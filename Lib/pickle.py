@@ -57,9 +57,9 @@ compatible_formats = ["1.0",            # Original protocol 0
 HIGHEST_PROTOCOL = 4
 
 # The protocol we write by default.  May be less than HIGHEST_PROTOCOL.
-# We intentionally write a protocol that Python 2.x cannot read;
-# there are too many issues with that.
-DEFAULT_PROTOCOL = 3
+# Only bump this if the oldest still supported version of Python already
+# includes it.
+DEFAULT_PROTOCOL = 4
 
 class PickleError(Exception):
     """A common base class for the other pickling exceptions."""
@@ -183,6 +183,7 @@ __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$", x)])
 
 class _Framer:
 
+    _FRAME_SIZE_MIN = 4
     _FRAME_SIZE_TARGET = 64 * 1024
 
     def __init__(self, file_write):
@@ -203,11 +204,12 @@ class _Framer:
             if f.tell() >= self._FRAME_SIZE_TARGET or force:
                 data = f.getbuffer()
                 write = self.file_write
-                # Issue a single call to the write method of the underlying
-                # file object for the frame opcode with the size of the
-                # frame. The concatenation is expected to be less expensive
-                # than issuing an additional call to write.
-                write(FRAME + pack("<Q", len(data)))
+                if len(data) >= self._FRAME_SIZE_MIN:
+                    # Issue a single call to the write method of the underlying
+                    # file object for the frame opcode with the size of the
+                    # frame. The concatenation is expected to be less expensive
+                    # than issuing an additional call to write.
+                    write(FRAME + pack("<Q", len(data)))
 
                 # Issue a separate call to write to append the frame
                 # contents without concatenation to the above to avoid a
@@ -374,8 +376,8 @@ class _Pickler:
 
         The optional *protocol* argument tells the pickler to use the
         given protocol; supported protocols are 0, 1, 2, 3 and 4.  The
-        default protocol is 3; a backward-incompatible protocol designed
-        for Python 3.
+        default protocol is 4. It was introduced in Python 3.4, it is
+        incompatible with previous versions.
 
         Specifying a negative protocol version selects the highest
         protocol version supported.  The higher the protocol used, the
@@ -508,11 +510,7 @@ class _Pickler:
             rv = reduce(obj)
         else:
             # Check for a class with a custom metaclass; treat as regular class
-            try:
-                issc = issubclass(t, type)
-            except TypeError: # t is not a class (old Boost; see SF #502085)
-                issc = False
-            if issc:
+            if issubclass(t, type):
                 self.save_global(obj)
                 return
 

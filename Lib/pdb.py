@@ -1532,7 +1532,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         __main__.__dict__.update({
             "__name__": "__main__",
             "__file__": self.mainpyfile,
-            "__package__": module_name,
+            "__package__": mod_spec.parent,
             "__loader__": mod_spec.loader,
             "__spec__": mod_spec,
             "__builtins__": __builtins__,
@@ -1638,9 +1638,11 @@ def help():
     pydoc.pager(__doc__)
 
 _usage = """\
-usage: pdb.py [-c command] ... pyfile [arg] ...
+usage: pdb.py [-c command] ... [-m module | pyfile] [arg] ...
 
-Debug the Python program given by pyfile.
+Debug the Python program given by pyfile. Alternatively,
+an executable module or package to debug can be specified using
+the -m switch.
 
 Initial commands are read from .pdbrc files in your home directory
 and in the current directory, if they exist.  Commands supplied with

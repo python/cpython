@@ -1,0 +1,3 @@
+Fix :func:`os.readlink` on Windows, which was mistakenly treating the
+``PrintNameOffset`` field of the reparse data buffer as a number of
+characters instead of bytes. Patch by Craig Holmquist and SSE4.

@@ -1,5 +1,4 @@
 #include "Python.h"
-#include "internal/import.h"
 #include "internal/pystate.h"
 #include "structmember.h"
 #include "osdefs.h"
@@ -784,6 +783,35 @@ zipimport_zipimporter_get_source_impl(ZipImporter *self, PyObject *fullname)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+zipimport.zipimporter.get_resource_reader
+
+    fullname: unicode
+    /
+
+Return the ResourceReader for a package in a zip file.
+
+If 'fullname' is a package within the zip file, return the 'ResourceReader'
+object for the package.  Otherwise return None.
+
+[clinic start generated code]*/
+
+static PyObject *
+zipimport_zipimporter_get_resource_reader_impl(ZipImporter *self,
+                                               PyObject *fullname)
+/*[clinic end generated code: output=5e367d431f830726 input=bfab94d736e99151]*/
+{
+    PyObject *module = PyImport_ImportModule("importlib.resources");
+    if (module == NULL) {
+        return NULL;
+    }
+    PyObject *retval = PyObject_CallMethod(
+        module, "_zipimport_get_resource_reader",
+        "OO", (PyObject *)self, fullname);
+    Py_DECREF(module);
+    return retval;
+}
+
 
 static PyMethodDef zipimporter_methods[] = {
     ZIPIMPORT_ZIPIMPORTER_FIND_MODULE_METHODDEF
@@ -794,6 +822,7 @@ static PyMethodDef zipimporter_methods[] = {
     ZIPIMPORT_ZIPIMPORTER_GET_DATA_METHODDEF
     ZIPIMPORT_ZIPIMPORTER_GET_CODE_METHODDEF
     ZIPIMPORT_ZIPIMPORTER_GET_SOURCE_METHODDEF
+    ZIPIMPORT_ZIPIMPORTER_GET_RESOURCE_READER_METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -1045,7 +1074,7 @@ read_directory(PyObject *archive)
         if (flags & 0x0800) {
             charset = "utf-8";
         }
-        else if (!PyThreadState_GET()->interp->codecs_initialized) {
+        else if (!_PyInterpreterState_Get()->codecs_initialized) {
             /* During bootstrap, we may need to load the encodings
                package from a ZIP file. But the cp437 encoding is implemented
                in Python in the encodings package.
@@ -1322,12 +1351,13 @@ unmarshal_code(PyObject *pathname, PyObject *data, time_t mtime)
 
     uint32_t flags = get_uint32(buf + 4);
     if (flags != 0) {
+        _PyCoreConfig *config = &_PyInterpreterState_Get()->core_config;
         // Hash-based pyc. We currently refuse to handle checked hash-based
         // pycs. We could validate hash-based pycs against the source, but it
         // seems likely that most people putting hash-based pycs in a zipfile
         // will use unchecked ones.
-        if (strcmp(_Py_CheckHashBasedPycsMode, "never") &&
-            (flags != 0x1 || !strcmp(_Py_CheckHashBasedPycsMode, "always")))
+        if (strcmp(config->_check_hash_pycs_mode, "never") &&
+            (flags != 0x1 || !strcmp(config->_check_hash_pycs_mode, "always")))
             Py_RETURN_NONE;
     } else if ((mtime != 0 && !eq_mtime(get_uint32(buf + 8), mtime))) {
         if (Py_VerboseFlag) {

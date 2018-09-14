@@ -101,7 +101,7 @@ More condensed:
 
 .. function:: new(name[, data])
 
-   Is a generic constructor that takes the string name of the desired
+   Is a generic constructor that takes the string *name* of the desired
    algorithm as its first parameter.  It also exists to allow access to the
    above listed hashes as well as any other algorithms that your OpenSSL
    library may offer.  The named constructors are much faster than :func:`new`
@@ -162,10 +162,10 @@ A hash object has the following attributes:
 A hash object has the following methods:
 
 
-.. method:: hash.update(arg)
+.. method:: hash.update(data)
 
-   Update the hash object with the object *arg*, which must be interpretable as
-   a buffer of bytes.  Repeated calls are equivalent to a single call with the
+   Update the hash object with the :term:`bytes-like object`.
+   Repeated calls are equivalent to a single call with the
    concatenation of all the arguments: ``m.update(a); m.update(b)`` is
    equivalent to ``m.update(a+b)``.
 
@@ -206,7 +206,7 @@ by the SHAKE algorithm.
 .. method:: shake.digest(length)
 
    Return the digest of the data passed to the :meth:`update` method so far.
-   This is a bytes object of size ``length`` which may contain bytes in
+   This is a bytes object of size *length* which may contain bytes in
    the whole range from 0 to 255.
 
 
@@ -244,10 +244,10 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    *dklen* is the length of the derived key. If *dklen* is ``None`` then the
    digest size of the hash algorithm *hash_name* is used, e.g. 64 for SHA-512.
 
-   >>> import hashlib, binascii
+   >>> import hashlib
    >>> dk = hashlib.pbkdf2_hmac('sha256', b'password', b'salt', 100000)
-   >>> binascii.hexlify(dk)
-   b'0394a2ede332c9a13eb82e9b24631604c31df978b4e2f0fbd2c549944f9d79a5'
+   >>> dk.hex()
+   '0394a2ede332c9a13eb82e9b24631604c31df978b4e2f0fbd2c549944f9d79a5'
 
    .. versionadded:: 3.4
 
@@ -262,9 +262,10 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    The function provides scrypt password-based key derivation function as
    defined in :rfc:`7914`.
 
-   *password* and *salt* must be bytes-like objects. Applications and
-   libraries should limit *password* to a sensible length (e.g. 1024). *salt*
-   should be about 16 or more bytes from a proper source, e.g. :func:`os.urandom`.
+   *password* and *salt* must be :term:`bytes-like objects
+   <bytes-like object>`.  Applications and libraries should limit *password*
+   to a sensible length (e.g. 1024).  *salt* should be about 16 or more
+   bytes from a proper source, e.g. :func:`os.urandom`.
 
    *n* is the CPU/Memory cost factor, *r* the block size, *p* parallelization
    factor and *maxmem* limits memory (OpenSSL 1.1.0 defaults to 32 MiB).
@@ -283,7 +284,7 @@ BLAKE2
 .. index::
    single: blake2b, blake2s
 
-BLAKE2_ is a cryptographic hash function defined in RFC-7693_ that comes in two
+BLAKE2_ is a cryptographic hash function defined in :rfc:`7693` that comes in two
 flavors:
 
 * **BLAKE2b**, optimized for 64-bit platforms and produces digests of any size
@@ -305,11 +306,11 @@ Creating hash objects
 New hash objects are created by calling constructor functions:
 
 
-.. function:: blake2b(data=b'', digest_size=64, key=b'', salt=b'', \
+.. function:: blake2b(data=b'', *, digest_size=64, key=b'', salt=b'', \
                 person=b'', fanout=1, depth=1, leaf_size=0, node_offset=0,  \
                 node_depth=0, inner_size=0, last_node=False)
 
-.. function:: blake2s(data=b'', digest_size=32, key=b'', salt=b'', \
+.. function:: blake2s(data=b'', *, digest_size=32, key=b'', salt=b'', \
                 person=b'', fanout=1, depth=1, leaf_size=0, node_offset=0,  \
                 node_depth=0, inner_size=0, last_node=False)
 
@@ -317,8 +318,8 @@ New hash objects are created by calling constructor functions:
 These functions return the corresponding hash objects for calculating
 BLAKE2b or BLAKE2s. They optionally take these general parameters:
 
-* *data*: initial chunk of data to hash, which must be interpretable as buffer
-  of bytes.
+* *data*: initial chunk of data to hash, which must be
+  :term:`bytes-like object`.  It can be passed only as positional argument.
 
 * *digest_size*: size of output digest in bytes.
 
@@ -427,7 +428,7 @@ object, and, finally, get the digest out of the object by calling
 
 
 As a shortcut, you can pass the first chunk of data to update directly to the
-constructor as the first argument (or as *data* keyword argument):
+constructor as the positional argument:
 
     >>> from hashlib import blake2b
     >>> blake2b(b'Hello world').hexdigest()
@@ -546,7 +547,7 @@ on the hash function used in digital signatures.
     preparer, generates all or part of a message to be signed by a second
     party, the message signer. If the message preparer is able to find
     cryptographic hash function collisions (i.e., two messages producing the
-    same hash value), then she might prepare meaningful versions of the message
+    same hash value), then they might prepare meaningful versions of the message
     that would produce the same hash value and digital signature, but with
     different results (e.g., transferring $1,000,000 to an account, rather than
     $10). Cryptographic hash functions have been designed with collision
@@ -562,7 +563,7 @@ on the hash function used in digital signatures.
     by the signer.
 
     (`NIST SP-800-106 "Randomized Hashing for Digital Signatures"
-    <http://csrc.nist.gov/publications/nistpubs/800-106/NIST-SP-800-106.pdf>`_)
+    <https://csrc.nist.gov/publications/detail/sp/800-106/final>`_)
 
 In BLAKE2 the salt is processed as a one-time input to the hash function during
 initialization, rather than as an input to each compression function.
@@ -707,7 +708,6 @@ Domain Dedication 1.0 Universal:
 
 * *Alexandr Sokolovskiy*
 
-.. _RFC-7693: https://tools.ietf.org/html/rfc7693
 .. _BLAKE2: https://blake2.net
 .. _HMAC: https://en.wikipedia.org/wiki/Hash-based_message_authentication_code
 .. _BLAKE: https://131002.net/blake/
@@ -728,7 +728,7 @@ Domain Dedication 1.0 Universal:
    https://blake2.net
       Official BLAKE2 website.
 
-   http://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf
+   https://csrc.nist.gov/csrc/media/publications/fips/180/2/archive/2002-08-01/documents/fips180-2.pdf
       The FIPS 180-2 publication on Secure Hash Algorithms.
 
    https://en.wikipedia.org/wiki/Cryptographic_hash_function#Cryptographic_hash_algorithms

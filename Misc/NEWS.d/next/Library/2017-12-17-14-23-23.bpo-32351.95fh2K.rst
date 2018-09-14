@@ -1,1 +1,0 @@
-Use fastpath in asyncio.sleep if delay<0 (2x boost)

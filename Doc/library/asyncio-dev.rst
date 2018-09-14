@@ -23,7 +23,7 @@ To enable all debug checks for an application:
 * Enable the asyncio debug mode globally by setting the environment variable
   :envvar:`PYTHONASYNCIODEBUG` to ``1``, using ``-X dev`` command line option
   (see the :option:`-X` option), or by calling
-  :meth:`AbstractEventLoop.set_debug`.
+  :meth:`loop.set_debug`.
 * Set the log level of the :ref:`asyncio logger <asyncio-logger>` to
   :py:data:`logging.DEBUG`. For example, call
   ``logging.basicConfig(level=logging.DEBUG)`` at startup.
@@ -35,11 +35,11 @@ Examples debug checks:
 
 * Log :ref:`coroutines defined but never "yielded from"
   <asyncio-coroutine-not-scheduled>`
-* :meth:`~AbstractEventLoop.call_soon` and :meth:`~AbstractEventLoop.call_at` methods
+* :meth:`loop.call_soon` and :meth:`loop.call_at` methods
   raise an exception if they are called from the wrong thread.
 * Log the execution time of the selector
 * Log callbacks taking more than 100 ms to be executed. The
-  :attr:`AbstractEventLoop.slow_callback_duration` attribute is the minimum
+  :attr:`loop.slow_callback_duration` attribute is the minimum
   duration in seconds of "slow" callbacks.
 * :exc:`ResourceWarning` warnings are emitted when transports and event loops
   are :ref:`not closed explicitly <asyncio-close-transports>`.
@@ -51,7 +51,7 @@ Examples debug checks:
 
 .. seealso::
 
-   The :meth:`AbstractEventLoop.set_debug` method and the :ref:`asyncio logger
+   The :meth:`loop.set_debug` method and the :ref:`asyncio logger
    <asyncio-logger>`.
 
 
@@ -75,7 +75,7 @@ For example, write::
 
 Don't schedule directly a call to the :meth:`~Future.set_result` or the
 :meth:`~Future.set_exception` method of a future with
-:meth:`AbstractEventLoop.call_soon`: the future can be cancelled before its method
+:meth:`loop.call_soon`: the future can be cancelled before its method
 is called.
 
 If you wait for a future, you should check early if the future was cancelled to
@@ -96,13 +96,16 @@ The :func:`shield` function can also be used to ignore cancellation.
 Concurrency and multithreading
 ------------------------------
 
-An event loop runs in a thread and executes all callbacks and tasks in the same
-thread. While a task is running in the event loop, no other task is running in
-the same thread. But when the task uses ``await``, the task is suspended
-and the event loop executes the next task.
+An event loop runs in a thread (typically the main thread) and executes
+all callbacks and tasks in its thread.  While a task is running in the
+event loop, no other tasks may run in the same thread. When a task
+executes an ``await`` expression, the running task gets suspended, and the
+event loop executes the next task. Prior to suspending the task, the awaiting
+chain is checked, and if the chain ends with a future, the running task is
+not suspended.
 
 To schedule a callback from a different thread, the
-:meth:`AbstractEventLoop.call_soon_threadsafe` method should be used. Example::
+:meth:`loop.call_soon_threadsafe` method should be used. Example::
 
     loop.call_soon_threadsafe(callback, *args)
 
@@ -122,9 +125,9 @@ To schedule a coroutine object from a different thread, the
      future = asyncio.run_coroutine_threadsafe(coro_func(), loop)
      result = future.result(timeout)  # Wait for the result with a timeout
 
-The :meth:`AbstractEventLoop.run_in_executor` method can be used with a thread pool
-executor to execute a callback in different thread to not block the thread of
-the event loop.
+The :meth:`loop.run_in_executor` method can be used with a
+:class:`concurrent.futures.ThreadPoolExecutor` to execute a callback in
+different thread so as not to block the event loop's main thread.
 
 .. seealso::
 
@@ -151,7 +154,7 @@ APIs like :ref:`protocols <asyncio-protocol>`.
 
 An executor can be used to run a task in a different thread or even in a
 different process, to not block the thread of the event loop. See the
-:meth:`AbstractEventLoop.run_in_executor` method.
+:meth:`loop.run_in_executor` method.
 
 .. seealso::
 
@@ -182,9 +185,10 @@ Detect coroutine objects never scheduled
 ----------------------------------------
 
 When a coroutine function is called and its result is not passed to
-:func:`ensure_future` or to the :meth:`AbstractEventLoop.create_task` method,
-the execution of the coroutine object will never be scheduled which is
-probably a bug.  :ref:`Enable the debug mode of asyncio <asyncio-debug-mode>`
+:meth:`asyncio.create_task` the execution of the coroutine object will
+never be scheduled which is probably a bug. Using ``asyncio.create_task`` is
+preferred to the low level :func:`ensure_future` and :meth:`loop.create_task`
+methods. :ref:`Enable the debug mode of asyncio <asyncio-debug-mode>`
 to :ref:`log a warning <asyncio-logger>` to detect it.
 
 Example with the bug::
@@ -203,8 +207,9 @@ Output in debug mode::
       File "test.py", line 7, in <module>
         test()
 
-The fix is to call the :func:`ensure_future` function or the
-:meth:`AbstractEventLoop.create_task` method with the coroutine object.
+The fix is to call the :meth:`asyncio.create_task` function. Using
+``asyncio.create_task`` is preferred to the low level :func:`ensure_future` and
+:meth:`loop.create_task` methods.
 
 .. seealso::
 
@@ -279,14 +284,9 @@ coroutine in another coroutine and use classic try/except::
     loop.run_forever()
     loop.close()
 
-Another option is to use the :meth:`AbstractEventLoop.run_until_complete`
-function::
+Another option is to use the :meth:`asyncio.run` function::
 
-    task = asyncio.ensure_future(bug())
-    try:
-        loop.run_until_complete(task)
-    except Exception:
-        print("exception consumed")
+    asyncio.run(bug())
 
 .. seealso::
 

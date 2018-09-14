@@ -1,0 +1,2 @@
+argparse subparsers are once again not required by default, reverting the
+change in behavior introduced by bpo-26510 in 3.7.0a2.

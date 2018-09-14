@@ -1637,7 +1637,7 @@ class MappingTestCase(TestBase):
         # has to keep looping to find the first object we delete.
         objs.reverse()
 
-        # Turn on mutation in C.__eq__.  The first time thru the loop,
+        # Turn on mutation in C.__eq__.  The first time through the loop,
         # under the iterkeys() business the first comparison will delete
         # the last item iterkeys() would see, and that causes a
         #     RuntimeError: dictionary changed size during iteration

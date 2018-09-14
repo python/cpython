@@ -266,15 +266,46 @@ class AIFCLowLevelTest(unittest.TestCase):
         b = io.BytesIO(b'FORM' + struct.pack('>L', 4) + b'AIFF')
         self.assertRaises(aifc.Error, aifc.open, b)
 
+    def test_read_no_ssnd_chunk(self):
+        b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
+        b += b'COMM' + struct.pack('>LhlhhLL', 38, 1, 0, 8,
+                                   0x4000 | 12, 11025<<18, 0)
+        b += b'NONE' + struct.pack('B', 14) + b'not compressed' + b'\x00'
+        with self.assertRaisesRegex(aifc.Error, 'COMM chunk and/or SSND chunk'
+                                                ' missing'):
+            aifc.open(io.BytesIO(b))
+
     def test_read_wrong_compression_type(self):
         b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
-        b += b'COMM' + struct.pack('>LhlhhLL', 23, 0, 0, 0, 0, 0, 0)
+        b += b'COMM' + struct.pack('>LhlhhLL', 23, 1, 0, 8,
+                                   0x4000 | 12, 11025<<18, 0)
         b += b'WRNG' + struct.pack('B', 0)
         self.assertRaises(aifc.Error, aifc.open, io.BytesIO(b))
 
+    def test_read_wrong_number_of_channels(self):
+        for nchannels in 0, -1:
+            b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
+            b += b'COMM' + struct.pack('>LhlhhLL', 38, nchannels, 0, 8,
+                                       0x4000 | 12, 11025<<18, 0)
+            b += b'NONE' + struct.pack('B', 14) + b'not compressed' + b'\x00'
+            b += b'SSND' + struct.pack('>L', 8) + b'\x00' * 8
+            with self.assertRaisesRegex(aifc.Error, 'bad # of channels'):
+                aifc.open(io.BytesIO(b))
+
+    def test_read_wrong_sample_width(self):
+        for sampwidth in 0, -1:
+            b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
+            b += b'COMM' + struct.pack('>LhlhhLL', 38, 1, 0, sampwidth,
+                                       0x4000 | 12, 11025<<18, 0)
+            b += b'NONE' + struct.pack('B', 14) + b'not compressed' + b'\x00'
+            b += b'SSND' + struct.pack('>L', 8) + b'\x00' * 8
+            with self.assertRaisesRegex(aifc.Error, 'bad sample width'):
+                aifc.open(io.BytesIO(b))
+
     def test_read_wrong_marks(self):
         b = b'FORM' + struct.pack('>L', 4) + b'AIFF'
-        b += b'COMM' + struct.pack('>LhlhhLL', 18, 0, 0, 0, 0, 0, 0)
+        b += b'COMM' + struct.pack('>LhlhhLL', 18, 1, 0, 8,
+                                   0x4000 | 12, 11025<<18, 0)
         b += b'SSND' + struct.pack('>L', 8) + b'\x00' * 8
         b += b'MARK' + struct.pack('>LhB', 3, 1, 1)
         with self.assertWarns(UserWarning) as cm:
@@ -285,7 +316,8 @@ class AIFCLowLevelTest(unittest.TestCase):
 
     def test_read_comm_kludge_compname_even(self):
         b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
-        b += b'COMM' + struct.pack('>LhlhhLL', 18, 0, 0, 0, 0, 0, 0)
+        b += b'COMM' + struct.pack('>LhlhhLL', 18, 1, 0, 8,
+                                   0x4000 | 12, 11025<<18, 0)
         b += b'NONE' + struct.pack('B', 4) + b'even' + b'\x00'
         b += b'SSND' + struct.pack('>L', 8) + b'\x00' * 8
         with self.assertWarns(UserWarning) as cm:
@@ -295,7 +327,8 @@ class AIFCLowLevelTest(unittest.TestCase):
 
     def test_read_comm_kludge_compname_odd(self):
         b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
-        b += b'COMM' + struct.pack('>LhlhhLL', 18, 0, 0, 0, 0, 0, 0)
+        b += b'COMM' + struct.pack('>LhlhhLL', 18, 1, 0, 8,
+                                   0x4000 | 12, 11025<<18, 0)
         b += b'NONE' + struct.pack('B', 3) + b'odd'
         b += b'SSND' + struct.pack('>L', 8) + b'\x00' * 8
         with self.assertWarns(UserWarning) as cm:

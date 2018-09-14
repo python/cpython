@@ -1,14 +1,21 @@
 import enum
 import inspect
 import pydoc
+import sys
 import unittest
+import sys
 import threading
 from collections import OrderedDict
 from enum import Enum, IntEnum, EnumMeta, Flag, IntFlag, unique, auto
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
+from datetime import timedelta
 
+try:
+    import threading
+except ImportError:
+    threading = None
 
 # for pickle tests
 try:
@@ -320,7 +327,10 @@ class TestEnum(unittest.TestCase):
     def test_contains(self):
         Season = self.Season
         self.assertIn(Season.AUTUMN, Season)
-        self.assertNotIn(3, Season)
+        with self.assertRaises(TypeError):
+            3 in Season
+        with self.assertRaises(TypeError):
+            'AUTUMN' in Season
 
         val = Season(3)
         self.assertIn(val, Season)
@@ -1503,6 +1513,23 @@ class TestEnum(unittest.TestCase):
             yellow = 6
         self.assertEqual(MoreColor.magenta.hex(), '5 hexlified!')
 
+    def test_subclass_duplicate_name(self):
+        class Base(Enum):
+            def test(self):
+                pass
+        class Test(Base):
+            test = 1
+        self.assertIs(type(Test.test), Test)
+
+    def test_subclass_duplicate_name_dynamic(self):
+        from types import DynamicClassAttribute
+        class Base(Enum):
+            @DynamicClassAttribute
+            def test(self):
+                return 'dynamic'
+        class Test(Base):
+            test = 1
+        self.assertEqual(Test.test.test, 'dynamic')
 
     def test_no_duplicates(self):
         class UniqueEnum(Enum):
@@ -1546,6 +1573,34 @@ class TestEnum(unittest.TestCase):
                 return G * self.mass / (self.radius * self.radius)
         self.assertEqual(round(Planet.EARTH.surface_gravity, 2), 9.80)
         self.assertEqual(Planet.EARTH.value, (5.976e+24, 6.37814e6))
+
+    def test_ignore(self):
+        class Period(timedelta, Enum):
+            '''
+            different lengths of time
+            '''
+            def __new__(cls, value, period):
+                obj = timedelta.__new__(cls, value)
+                obj._value_ = value
+                obj.period = period
+                return obj
+            _ignore_ = 'Period i'
+            Period = vars()
+            for i in range(13):
+                Period['month_%d' % i] = i*30, 'month'
+            for i in range(53):
+                Period['week_%d' % i] = i*7, 'week'
+            for i in range(32):
+                Period['day_%d' % i] = i, 'day'
+            OneDay = day_1
+            OneWeek = week_1
+            OneMonth = month_1
+        self.assertFalse(hasattr(Period, '_ignore_'))
+        self.assertFalse(hasattr(Period, 'Period'))
+        self.assertFalse(hasattr(Period, 'i'))
+        self.assertTrue(isinstance(Period.day_1, timedelta))
+        self.assertTrue(Period.month_1 is Period.day_30)
+        self.assertTrue(Period.week_4 is Period.day_28)
 
     def test_nonhash_value(self):
         class AutoNumberInAList(Enum):
@@ -1643,6 +1698,38 @@ class TestEnum(unittest.TestCase):
             third = auto()
         self.assertEqual([Dupes.first, Dupes.second, Dupes.third], list(Dupes))
 
+    def test_missing(self):
+        class Color(Enum):
+            red = 1
+            green = 2
+            blue = 3
+            @classmethod
+            def _missing_(cls, item):
+                if item == 'three':
+                    return cls.blue
+                elif item == 'bad return':
+                    # trigger internal error
+                    return 5
+                elif item == 'error out':
+                    raise ZeroDivisionError
+                else:
+                    # trigger not found
+                    return None
+        self.assertIs(Color('three'), Color.blue)
+        self.assertRaises(ValueError, Color, 7)
+        try:
+            Color('bad return')
+        except TypeError as exc:
+            self.assertTrue(isinstance(exc.__context__, ValueError))
+        else:
+            raise Exception('Exception not raised.')
+        try:
+            Color('error out')
+        except ZeroDivisionError as exc:
+            self.assertTrue(isinstance(exc.__context__, ValueError))
+        else:
+            raise Exception('Exception not raised.')
+
 
 class TestOrder(unittest.TestCase):
 
@@ -1718,6 +1805,13 @@ class TestFlag(unittest.TestCase):
         RW = 2
         AC = 3
         CE = 1<<19
+
+    class Color(Flag):
+        BLACK = 0
+        RED = 1
+        GREEN = 2
+        BLUE = 4
+        PURPLE = RED|BLUE
 
     def test_str(self):
         Perm = self.Perm
@@ -1921,7 +2015,21 @@ class TestFlag(unittest.TestCase):
         test_pickle_dump_load(self.assertIs, FlagStooges.CURLY|FlagStooges.MOE)
         test_pickle_dump_load(self.assertIs, FlagStooges)
 
-    def test_containment(self):
+    def test_contains(self):
+        Open = self.Open
+        Color = self.Color
+        self.assertFalse(Color.BLACK in Open)
+        self.assertFalse(Open.RO in Color)
+        with self.assertRaises(TypeError):
+            'BLACK' in Color
+        with self.assertRaises(TypeError):
+            'RO' in Open
+        with self.assertRaises(TypeError):
+            1 in Color
+        with self.assertRaises(TypeError):
+            1 in Open
+
+    def test_member_contains(self):
         Perm = self.Perm
         R, W, X = Perm
         RW = R | W
@@ -2038,6 +2146,13 @@ class TestIntFlag(unittest.TestCase):
         RW = 2
         AC = 3
         CE = 1<<19
+
+    class Color(IntFlag):
+        BLACK = 0
+        RED = 1
+        GREEN = 2
+        BLUE = 4
+        PURPLE = RED|BLUE
 
     def test_type(self):
         Perm = self.Perm
@@ -2307,7 +2422,23 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(len(lst), len(Thing))
         self.assertEqual(len(Thing), 0, Thing)
 
-    def test_containment(self):
+    def test_contains(self):
+        Open = self.Open
+        Color = self.Color
+        self.assertTrue(Color.GREEN in Color)
+        self.assertTrue(Open.RW in Open)
+        self.assertFalse(Color.GREEN in Open)
+        self.assertFalse(Open.RW in Color)
+        with self.assertRaises(TypeError):
+            'GREEN' in Color
+        with self.assertRaises(TypeError):
+            'RW' in Open
+        with self.assertRaises(TypeError):
+            2 in Color
+        with self.assertRaises(TypeError):
+            2 in Open
+
+    def test_member_contains(self):
         Perm = self.Perm
         R, W, X = Perm
         RW = R | W
@@ -2326,6 +2457,8 @@ class TestIntFlag(unittest.TestCase):
         self.assertFalse(R in WX)
         self.assertFalse(W in RX)
         self.assertFalse(X in RW)
+        with self.assertRaises(TypeError):
+            self.assertFalse('test' in RW)
 
     def test_bool(self):
         Perm = self.Perm
@@ -2586,7 +2719,7 @@ CONVERT_TEST_NAME_F = 5
 
 class TestIntEnumConvert(unittest.TestCase):
     def test_convert_value_lookup_priority(self):
-        test_type = enum.IntEnum._convert(
+        test_type = enum.IntEnum._convert_(
                 'UnittestConvert',
                 ('test.test_enum', '__main__')[__name__=='__main__'],
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
@@ -2596,7 +2729,7 @@ class TestIntEnumConvert(unittest.TestCase):
         self.assertEqual(test_type(5).name, 'CONVERT_TEST_NAME_A')
 
     def test_convert(self):
-        test_type = enum.IntEnum._convert(
+        test_type = enum.IntEnum._convert_(
                 'UnittestConvert',
                 ('test.test_enum', '__main__')[__name__=='__main__'],
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
@@ -2611,6 +2744,24 @@ class TestIntEnumConvert(unittest.TestCase):
         self.assertEqual([name for name in dir(test_type)
                           if name[0:2] not in ('CO', '__')],
                          [], msg='Names other than CONVERT_TEST_* found.')
+
+    @unittest.skipUnless(sys.version_info[:2] == (3, 8),
+                         '_convert was deprecated in 3.8')
+    def test_convert_warn(self):
+        with self.assertWarns(DeprecationWarning):
+            enum.IntEnum._convert(
+                'UnittestConvert',
+                ('test.test_enum', '__main__')[__name__=='__main__'],
+                filter=lambda x: x.startswith('CONVERT_TEST_'))
+
+    @unittest.skipUnless(sys.version_info >= (3, 9),
+                         '_convert was removed in 3.9')
+    def test_convert_raise(self):
+        with self.assertRaises(AttributeError):
+            enum.IntEnum._convert(
+                'UnittestConvert',
+                ('test.test_enum', '__main__')[__name__=='__main__'],
+                filter=lambda x: x.startswith('CONVERT_TEST_'))
 
 
 if __name__ == '__main__':

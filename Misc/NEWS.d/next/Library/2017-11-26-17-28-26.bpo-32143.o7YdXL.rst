@@ -1,1 +1,0 @@
-os.statvfs() includes the f_fsid field from statvfs(2)

@@ -1,2 +1,0 @@
-Add params to dataclasses.make_dataclasses(): init, repr, eq, order, hash,
-and frozen.  Pass them through to dataclass().

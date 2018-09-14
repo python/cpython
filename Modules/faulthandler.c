@@ -533,7 +533,7 @@ faulthandler_disable(void)
 }
 
 static PyObject*
-faulthandler_disable_py(PyObject *self)
+faulthandler_disable_py(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     if (!fatal_error.enabled) {
         Py_RETURN_FALSE;
@@ -543,7 +543,7 @@ faulthandler_disable_py(PyObject *self)
 }
 
 static PyObject*
-faulthandler_is_enabled(PyObject *self)
+faulthandler_is_enabled(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyBool_FromLong(fatal_error.enabled);
 }
@@ -718,7 +718,8 @@ faulthandler_dump_traceback_later(PyObject *self,
 }
 
 static PyObject*
-faulthandler_cancel_dump_traceback_later_py(PyObject *self)
+faulthandler_cancel_dump_traceback_later_py(PyObject *self,
+                                            PyObject *Py_UNUSED(ignored))
 {
     cancel_dump_traceback_later();
     Py_RETURN_NONE;
@@ -1116,7 +1117,7 @@ stack_overflow(uintptr_t min_sp, uintptr_t max_sp, size_t *depth)
 }
 
 static PyObject *
-faulthandler_stack_overflow(PyObject *self)
+faulthandler_stack_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     size_t depth, size;
     uintptr_t sp = (uintptr_t)&depth;
@@ -1177,9 +1178,9 @@ static PyMethodDef module_methods[] = {
      (PyCFunction)faulthandler_py_enable, METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("enable(file=sys.stderr, all_threads=True): "
                "enable the fault handler")},
-    {"disable", (PyCFunction)faulthandler_disable_py, METH_NOARGS,
+    {"disable", faulthandler_disable_py, METH_NOARGS,
      PyDoc_STR("disable(): disable the fault handler")},
-    {"is_enabled", (PyCFunction)faulthandler_is_enabled, METH_NOARGS,
+    {"is_enabled", faulthandler_is_enabled, METH_NOARGS,
      PyDoc_STR("is_enabled()->bool: check if the handler is enabled")},
     {"dump_traceback",
      (PyCFunction)faulthandler_dump_traceback_py, METH_VARARGS|METH_KEYWORDS,
@@ -1194,7 +1195,7 @@ static PyMethodDef module_methods[] = {
                "or each timeout seconds if repeat is True. If exit is True, "
                "call _exit(1) which is not safe.")},
     {"cancel_dump_traceback_later",
-     (PyCFunction)faulthandler_cancel_dump_traceback_later_py, METH_NOARGS,
+     faulthandler_cancel_dump_traceback_later_py, METH_NOARGS,
      PyDoc_STR("cancel_dump_traceback_later():\ncancel the previous call "
                "to dump_traceback_later().")},
 #endif
@@ -1227,7 +1228,7 @@ static PyMethodDef module_methods[] = {
     {"_fatal_error", faulthandler_fatal_error_py, METH_VARARGS,
      PyDoc_STR("_fatal_error(message): call Py_FatalError(message)")},
 #ifdef FAULTHANDLER_STACK_OVERFLOW
-    {"_stack_overflow", (PyCFunction)faulthandler_stack_overflow, METH_NOARGS,
+    {"_stack_overflow", faulthandler_stack_overflow, METH_NOARGS,
      PyDoc_STR("_stack_overflow(): recursive call to raise a stack overflow")},
 #endif
 #ifdef MS_WINDOWS

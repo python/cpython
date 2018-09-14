@@ -1,2 +1,0 @@
-Now that dict is defined as keeping insertion order, drop OrderedDict and
-just use plain dict.

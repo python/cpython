@@ -207,6 +207,24 @@ The :mod:`signal` module defines the following functions:
    installed from Python.
 
 
+.. function:: strsignal(signalnum)
+
+   Return the system description of the signal *signalnum*, such as
+   "Interrupt", "Segmentation fault", etc. Returns :const:`None` if the signal
+   is not recognized.
+
+   .. versionadded:: 3.8
+
+
+.. function:: valid_signals()
+
+   Return the set of valid signal numbers on this platform.  This can be
+   less than ``range(1, NSIG)`` if some signals are reserved by the system
+   for internal use.
+
+   .. versionadded:: 3.8
+
+
 .. function:: pause()
 
    Cause the process to sleep until a signal is received; the appropriate handler
@@ -259,8 +277,8 @@ The :mod:`signal` module defines the following functions:
      argument.
 
    *mask* is a set of signal numbers (e.g. {:const:`signal.SIGINT`,
-   :const:`signal.SIGTERM`}). Use ``range(1, signal.NSIG)`` for a full mask
-   including all signals.
+   :const:`signal.SIGTERM`}). Use :func:`~signal.valid_signals` for a full
+   mask including all signals.
 
    For example, ``signal.pthread_sigmask(signal.SIG_BLOCK, [])`` reads the
    signal mask of the calling thread.
@@ -485,3 +503,37 @@ be sent, and the handler raises an exception. ::
 
    signal.alarm(0)          # Disable the alarm
 
+Note on SIGPIPE
+---------------
+
+Piping output of your program to tools like :manpage:`head(1)` will
+cause a :const:`SIGPIPE` signal to be sent to your process when the receiver
+of its standard output closes early.  This results in an exception
+like :code:`BrokenPipeError: [Errno 32] Broken pipe`.  To handle this
+case, wrap your entry point to catch this exception as follows::
+
+    import os
+    import sys
+
+    def main():
+        try:
+            # simulate large output (your code replaces this loop)
+            for x in range(10000):
+                print("y")
+            # flush output here to force SIGPIPE to be triggered
+            # while inside this try block.
+            sys.stdout.flush()
+        except BrokenPipeError:
+            # Python flushes standard streams on exit; redirect remaining output
+            # to devnull to avoid another BrokenPipeError at shutdown
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stdout.fileno())
+            sys.exit(1)  # Python exits with error code 1 on EPIPE
+
+    if __name__ == '__main__':
+        main()
+
+Do not set :const:`SIGPIPE`'s disposition to :const:`SIG_DFL`
+in order to avoid :exc:`BrokenPipeError`.  Doing that would cause
+your program to exit unexpectedly also whenever any socket connection
+is interrupted while your program is still writing to it.

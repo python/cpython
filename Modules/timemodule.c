@@ -523,6 +523,10 @@ time_localtime(PyObject *self, PyObject *args)
 #endif
 }
 
+#if defined(__linux__) && !defined(__GLIBC__)
+static const char *utc_string = NULL;
+#endif
+
 PyDoc_STRVAR(localtime_doc,
 "localtime([seconds]) -> (tm_year,tm_mon,tm_mday,tm_hour,tm_min,\n\
                           tm_sec,tm_wday,tm_yday,tm_isdst)\n\
@@ -551,6 +555,12 @@ gettmarg(PyObject *args, struct tm *p, const char *format)
                           &p->tm_hour, &p->tm_min, &p->tm_sec,
                           &p->tm_wday, &p->tm_yday, &p->tm_isdst))
         return 0;
+
+    if (y < INT_MIN + 1900) {
+        PyErr_SetString(PyExc_OverflowError, "year out of range");
+        return 0;
+    }
+
     p->tm_year = y - 1900;
     p->tm_mon--;
     p->tm_wday = (p->tm_wday + 1) % 7;
@@ -559,11 +569,32 @@ gettmarg(PyObject *args, struct tm *p, const char *format)
     if (Py_TYPE(args) == &StructTimeType) {
         PyObject *item;
         item = PyTuple_GET_ITEM(args, 9);
-        p->tm_zone = item == Py_None ? NULL : (char*)PyUnicode_AsUTF8(item);
+        if (item != Py_None) {
+            p->tm_zone = PyUnicode_AsUTF8(item);
+            if (p->tm_zone == NULL) {
+                return 0;
+            }
+#if defined(__linux__) && !defined(__GLIBC__)
+            // Make an attempt to return the C library's own timezone strings to
+            // it. musl refuses to process a tm_zone field unless it produced
+            // it. See issue #34672.
+            if (utc_string && strcmp(p->tm_zone, utc_string) == 0) {
+                p->tm_zone = utc_string;
+            }
+            else if (tzname[0] && strcmp(p->tm_zone, tzname[0]) == 0) {
+                p->tm_zone = tzname[0];
+            }
+            else if (tzname[1] && strcmp(p->tm_zone, tzname[1]) == 0) {
+                p->tm_zone = tzname[1];
+            }
+#endif
+        }
         item = PyTuple_GET_ITEM(args, 10);
-        p->tm_gmtoff = item == Py_None ? 0 : PyLong_AsLong(item);
-        if (PyErr_Occurred())
-            return 0;
+        if (item != Py_None) {
+            p->tm_gmtoff = PyLong_AsLong(item);
+            if (PyErr_Occurred())
+                return 0;
+        }
     }
 #endif /* HAVE_STRUCT_TM_TM_ZONE */
     return 1;
@@ -809,8 +840,7 @@ time_strftime(PyObject *self, PyObject *args)
 #ifdef HAVE_WCSFTIME
             ret = PyUnicode_FromWideChar(outbuf, buflen);
 #else
-            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen,
-                                                "surrogateescape");
+            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen, "surrogateescape");
 #endif
             PyMem_Free(outbuf);
             break;
@@ -1193,11 +1223,13 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
             if (freq != -1) {
                 /* check that _PyTime_MulDiv(t, SEC_TO_NS, ticks_per_second)
                    cannot overflow below */
+#if LONG_MAX > _PyTime_MAX / SEC_TO_NS
                 if ((_PyTime_t)freq > _PyTime_MAX / SEC_TO_NS) {
                     PyErr_SetString(PyExc_OverflowError,
                                     "_SC_CLK_TCK is too large");
                     return -1;
                 }
+#endif
 
                 ticks_per_second = freq;
             }
@@ -1729,6 +1761,14 @@ PyInit_time(void)
     PyModule_AddIntConstant(m, "_STRUCT_TM_ITEMS", 11);
     PyModule_AddObject(m, "struct_time", (PyObject*) &StructTimeType);
     initialized = 1;
+
+#if defined(__linux__) && !defined(__GLIBC__)
+    struct tm tm;
+    const time_t zero = 0;
+    if (gmtime_r(&zero, &tm) != NULL)
+        utc_string = tm.tm_zone;
+#endif
+
     return m;
 }
 

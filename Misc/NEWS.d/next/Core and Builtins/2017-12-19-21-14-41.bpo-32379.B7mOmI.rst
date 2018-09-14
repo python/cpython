@@ -1,1 +1,0 @@
-Make MRO computation faster when a class inherits from a single base.

@@ -320,6 +320,17 @@ def ensure_bytecode_path(bytecode_path):
 
 
 @contextlib.contextmanager
+def temporary_pycache_prefix(prefix):
+    """Adjust and restore sys.pycache_prefix."""
+    _orig_prefix = sys.pycache_prefix
+    sys.pycache_prefix = prefix
+    try:
+        yield
+    finally:
+        sys.pycache_prefix = _orig_prefix
+
+
+@contextlib.contextmanager
 def create_modules(*names):
     """Temporarily create each named module with an attribute (named 'attr')
     that contains the name passed into the context manager that caused the
@@ -397,6 +408,9 @@ class CASEOKTestBase:
 
 def create_package(file, path, is_package=True, contents=()):
     class Reader(ResourceReader):
+        def get_resource_reader(self, package):
+            return self
+
         def open_resource(self, path):
             self._path = path
             if isinstance(file, Exception):
@@ -545,6 +559,10 @@ class ZipSetupBase:
             del cls._zip_path
         except AttributeError:
             pass
+
+    def setUp(self):
+        modules = support.modules_setup()
+        self.addCleanup(support.modules_cleanup, *modules)
 
 
 class ZipSetup(ZipSetupBase):

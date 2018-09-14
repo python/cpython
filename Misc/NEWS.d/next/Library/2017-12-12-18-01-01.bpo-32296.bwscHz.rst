@@ -1,2 +1,0 @@
-Implement asyncio._get_running_loop() and get_event_loop() in C. This makes
-them 4x faster.

@@ -322,7 +322,7 @@ search_for_prefix(const _PyCoreConfig *core_config,
     /* Check to see if argv[0] is in the build directory */
     wcsncpy(prefix, calculate->argv0_path, MAXPATHLEN);
     prefix[MAXPATHLEN] = L'\0';
-    joinpath(prefix, L"Modules/Setup");
+    joinpath(prefix, L"Modules/Setup.local");
     if (isfile(prefix)) {
         /* Check VPATH to see if argv0_path is in the build directory. */
         vpath = Py_DecodeLocale(VPATH, NULL);
@@ -372,7 +372,7 @@ calculate_prefix(const _PyCoreConfig *core_config,
 {
     calculate->prefix_found = search_for_prefix(core_config, calculate, prefix);
     if (!calculate->prefix_found) {
-        if (!Py_FrozenFlag) {
+        if (!core_config->_frozen) {
             fprintf(stderr,
                 "Could not find platform independent libraries <prefix>\n");
         }
@@ -449,8 +449,8 @@ search_for_exec_prefix(const _PyCoreConfig *core_config,
             n = fread(buf, 1, MAXPATHLEN, f);
             buf[n] = '\0';
             fclose(f);
-            rel_builddir_path = _Py_DecodeUTF8_surrogateescape(buf, n, NULL);
-            if (rel_builddir_path != NULL) {
+            rel_builddir_path = _Py_DecodeUTF8_surrogateescape(buf, n);
+            if (rel_builddir_path) {
                 wcsncpy(exec_prefix, calculate->argv0_path, MAXPATHLEN);
                 exec_prefix[MAXPATHLEN] = L'\0';
                 joinpath(exec_prefix, rel_builddir_path);
@@ -495,7 +495,7 @@ calculate_exec_prefix(const _PyCoreConfig *core_config,
                                                           calculate,
                                                           exec_prefix);
     if (!calculate->exec_prefix_found) {
-        if (!Py_FrozenFlag) {
+        if (!core_config->_frozen) {
             fprintf(stderr,
                 "Could not find platform dependent libraries <exec_prefix>\n");
         }
@@ -915,7 +915,7 @@ calculate_path_impl(const _PyCoreConfig *core_config,
     calculate_exec_prefix(core_config, calculate, exec_prefix);
 
     if ((!calculate->prefix_found || !calculate->exec_prefix_found) &&
-        !Py_FrozenFlag)
+        !core_config->_frozen)
     {
         fprintf(stderr,
                 "Consider setting $PYTHONHOME to <prefix>[:<exec_prefix>]\n");
@@ -946,7 +946,7 @@ calculate_path_impl(const _PyCoreConfig *core_config,
 
 
 _PyInitError
-_PyPathConfig_Calculate(_PyPathConfig *config, const _PyCoreConfig *core_config)
+_PyPathConfig_Calculate_impl(_PyPathConfig *config, const _PyCoreConfig *core_config)
 {
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));

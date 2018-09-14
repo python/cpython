@@ -160,7 +160,7 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
 
 
 
-The :mod:`abc` module also provides the following decorators:
+The :mod:`abc` module also provides the following decorator:
 
 .. decorator:: abstractmethod
 
@@ -236,7 +236,14 @@ The :mod:`abc` module also provides the following decorators:
       multiple-inheritance.
 
 
+The :mod:`abc` module also supports the following legacy decorators:
+
 .. decorator:: abstractclassmethod
+
+   .. versionadded:: 3.2
+   .. deprecated:: 3.3
+       It is now possible to use :class:`classmethod` with
+       :func:`abstractmethod`, making this decorator redundant.
 
    A subclass of the built-in :func:`classmethod`, indicating an abstract
    classmethod. Otherwise it is similar to :func:`abstractmethod`.
@@ -251,13 +258,13 @@ The :mod:`abc` module also provides the following decorators:
           def my_abstract_classmethod(cls, ...):
               ...
 
-   .. versionadded:: 3.2
-   .. deprecated:: 3.3
-       It is now possible to use :class:`classmethod` with
-       :func:`abstractmethod`, making this decorator redundant.
-
 
 .. decorator:: abstractstaticmethod
+
+   .. versionadded:: 3.2
+   .. deprecated:: 3.3
+       It is now possible to use :class:`staticmethod` with
+       :func:`abstractmethod`, making this decorator redundant.
 
    A subclass of the built-in :func:`staticmethod`, indicating an abstract
    staticmethod. Otherwise it is similar to :func:`abstractmethod`.
@@ -272,22 +279,16 @@ The :mod:`abc` module also provides the following decorators:
           def my_abstract_staticmethod(...):
               ...
 
-   .. versionadded:: 3.2
-   .. deprecated:: 3.3
-       It is now possible to use :class:`staticmethod` with
-       :func:`abstractmethod`, making this decorator redundant.
-
 
 .. decorator:: abstractproperty
 
+   .. deprecated:: 3.3
+       It is now possible to use :class:`property`, :meth:`property.getter`,
+       :meth:`property.setter` and :meth:`property.deleter` with
+       :func:`abstractmethod`, making this decorator redundant.
+
    A subclass of the built-in :func:`property`, indicating an abstract
    property.
-
-   Using this function requires that the class's metaclass is :class:`ABCMeta`
-   or is derived from it. A class that has a metaclass derived from
-   :class:`ABCMeta` cannot be instantiated unless all of its abstract methods
-   and properties are overridden. The abstract properties can be called using
-   any of the normal 'super' call mechanisms.
 
    This special case is deprecated, as the :func:`property` decorator
    is now correctly identified as abstract when applied to an abstract
@@ -320,12 +321,6 @@ The :mod:`abc` module also provides the following decorators:
           @C.x.setter
           def x(self, val):
               ...
-
-
-   .. deprecated:: 3.3
-       It is now possible to use :class:`property`, :meth:`property.getter`,
-       :meth:`property.setter` and :meth:`property.deleter` with
-       :func:`abstractmethod`, making this decorator redundant.
 
 
 The :mod:`abc` module also provides the following functions:
