@@ -3435,22 +3435,22 @@ written in Python, such as a mail server's external command delivery program.
    :c:func:`posix_spawn_file_actions_adddup2` API calls used to prepare
    for the :c:func:`posix_spawn` call itself.
 
-   The *setpgroup* argument will set the process group of the child to the value
-   specified. If the value specified is 0, the child's process group ID will be
-   made the same as its process ID. If the value of *setpgroup* is not set, the
-   child will inherit the parent's process group ID. This argument corresponds
-   to the C library :c:data:`POSIX_SPAWN_SETPGROUP` flag.
+   The *setpgroup* argument will set the process group of the child process to
+   the value specified. If the value specified is 0, the child's process group
+   ID will be made the same as its process ID. If the value of *setpgroup* is
+   not set, the child process will inherit the parent's process group ID. This
+   argument corresponds to the C library :c:data:`POSIX_SPAWN_SETPGROUP` flag.
 
    If the *resetids* argument is ``True`` it will reset the effective UID and
-   GID of the child to the real UID and GID of the parent process. If the
-   argument is ``False``, then the child retains the effective UID and GID of
-   the parent. In either case, if the set-user-ID and set-group-ID permission
-   bits are enabled on the executable file, their effect will override the
-   setting of the effective UID and GID. This argument corresponds to the C
-   library :c:data:`POSIX_SPAWN_RESETIDS` flag.
+   GID of the child process to the real UID and GID of the parent process. If
+   the argument is ``False``, then the child process retains the effective UID
+   and GID of the parent. In either case, if the set-user-ID and set-group-ID
+   permission bits are enabled on the executable file, their effect will
+   override the setting of the effective UID and GID. This argument corresponds
+   to the C library :c:data:`POSIX_SPAWN_RESETIDS` flag.
 
    The *setsigmask* argument will set the signal mask to the signal set
-   specified. If the parameter is not used, then the child inherits the
+   specified. If the parameter is not used, then the child process inherits the
    parent's signal mask. This argument corresponds to the C library
    :c:data:`POSIX_SPAWN_SETSIGMASK` flag.
 
@@ -3465,10 +3465,10 @@ written in Python, such as a mail server's external command delivery program.
    :c:data:`POSIX_SPAWN_SETSCHEDPARAM` and :c:data:`POSIX_SPAWN_SETSCHEDULER`
    flags.
 
-  If the value of *use_vfork* is true, the child will be created using
-  :c:func:`vfork` instead of :c:func:`fork`. This corresponds to the
-  GNU specific flag :c:data:`POSIX_SPAWN_USEVFORK`. If the flag is not
-  available on the platform, :exc:`NotImplementedError` will be raised.
+  If the value of *use_vfork* is true, the child process will be created using
+  :c:func:`vfork` instead of :c:func:`fork`. This corresponds to the GNU
+  specific flag :c:data:`POSIX_SPAWN_USEVFORK`. If the flag is not available on
+  the platform, :exc:`NotImplementedError` will be raised.
 
    Availability: Unix. Using *use_vfork* is only available on Linux.
 
