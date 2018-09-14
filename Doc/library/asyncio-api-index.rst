@@ -15,7 +15,7 @@ Utilities to run asyncio programs, create Tasks, and
 await on multiple things with timeouts.
 
 .. list-table::
-    :widths: 30 70
+    :widths: 50 50
 
     * - :func:`run`
       - Create event loop, run a coroutine, close the loop.
@@ -71,7 +71,7 @@ implement connection pools, and pub/sub patterns.
 
 
 .. list-table::
-    :widths: 30 70
+    :widths: 50 50
 
     * - :class:`Queue`
       - A FIFO queue.
@@ -97,7 +97,7 @@ Subprocesses
 Utilities to spawn subprocesses and run shell commands.
 
 .. list-table::
-    :widths: 30 70
+    :widths: 50 50
 
     * - ``await`` :func:`create_subprocess_exec`
       - Create a subprocess.
@@ -120,7 +120,7 @@ Streams
 High-level APIs to work with network IO.
 
 .. list-table::
-    :widths: 30 70
+    :widths: 50 50
 
     * - ``await`` :func:`open_connection`
       -  Establish a TCP connection.
@@ -155,7 +155,7 @@ Synchronization
 Threading-like synchronization primitives that can be used in Tasks.
 
 .. list-table::
-    :widths: 30 70
+    :widths: 50 50
 
     * - :class:`Lock`
       - A mutex lock.
@@ -185,7 +185,7 @@ Exceptions
 ==========
 
 .. list-table::
-    :widths: 30 70
+    :widths: 50 50
 
 
     * - :exc:`asyncio.TimeoutError`
