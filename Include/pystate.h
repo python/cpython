@@ -76,6 +76,7 @@ typedef struct _is {
         _Py_atomic_int eval_breaker;
         struct _pending_calls pending;
         // XXX Is "active" the right word?
+        int active;
         unsigned long active_thread;
     } ceval;
 #endif

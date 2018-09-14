@@ -227,6 +227,7 @@ PyEval_ReInitThreads(void)
     recreate_gil();
     current_tstate->interp->ceval.pending.lock = PyThread_allocate_lock();
     take_gil(current_tstate);
+    current_tstate->interp->ceval.active = 1;
     current_tstate->interp->ceval.active_thread = PyThread_get_thread_ident();
 
     /* Destroy all threads except the current one */

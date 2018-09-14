@@ -138,6 +138,7 @@ PyInterpreterState_New(void)
     interp->id_refcount = -1;
     interp->check_interval = 100;
 
+    interp->ceval.active = 1;
     interp->ceval.active_thread = PyThread_get_thread_ident();
     interp->ceval.pending.lock = PyThread_allocate_lock();
     if (interp->ceval.pending.lock == NULL) {
