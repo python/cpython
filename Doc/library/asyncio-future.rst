@@ -40,8 +40,10 @@ Future Functions
 
    If *obj* is neither of the above a :exc:`TypeError` is raised.
 
-   See also the :func:`create_task` function which is the preferred way
-   for creating new Tasks.
+   .. important::
+
+      See also the :func:`create_task` function which is the
+      preferred way for creating new Tasks.
 
    .. versionchanged:: 3.5.1
       The function accepts any :term:`awaitable` object.
@@ -68,10 +70,10 @@ Future Object
    Typically Futures are used to enable low-level
    callback-based code (e.g. in protocols implemented using asyncio
    :ref:`transports <asyncio-transports-protocols>`)
-   to interoperate with high-level async/await code.  The rule of
-   thumb is to never expose Future objects in user-facing APIs.
+   to interoperate with high-level async/await code.
 
-   The recommended way to create a Future object is to call
+   The rule of thumb is to never expose Future objects in user-facing
+   APIs, and the recommended way to create a Future object is to call
    :meth:`loop.create_future`.  This way alternative event loop
    implementations can inject their own optimized implementations
    of a Future object.
@@ -83,17 +85,17 @@ Future Object
 
       Return the result of the Future.
 
+      If the Future is *done* and has a result set by the
+      :meth:`set_result` method, the result value is returned.
+
+      If the Future is *done* and has an exception set by the
+      :meth:`set_exception` method, this method raises the exception.
+
       If the Future has been *cancelled*, this method raises
       a :exc:`CancelledError` exception.
 
       If the Future's result isn't yet available, this method raises
       a :exc:`InvalidStateError` exception.
-
-      If the Future is *done* and has an exception set by the
-      :meth:`set_exception` method, this method raises the exception.
-
-      If the Future is *done* and has a result set by the
-      :meth:`set_result` method, the result value is returned.
 
    .. method:: set_result(result)
 
@@ -108,6 +110,14 @@ Future Object
 
       Raises a :exc:`InvalidStateError` error if the Future is
       already *done*.
+
+   .. method:: done()
+
+      Return ``True`` if the Future is *done*.
+
+      A Future is *done* if it was *cancelled* or if it has a result
+      or an exception set with :meth:`set_result` or
+      :meth:`set_exception` calls.
 
    .. method:: add_done_callback(callback, *, context=None)
 
@@ -172,18 +182,10 @@ Future Object
 
       Return ``True`` if the Future was *cancelled*.
 
-   .. method:: done()
 
-      Return ``True`` if the Future is *done*.
-
-      A Future is *done* if it was *cancelled* or if it has a result
-      or an exception set with :meth:`set_result` or
-      :meth:`set_exception` calls.
-
-
-In the example below, we create a Future object, schedule an
-asynchronous Task to set result for that Future, and finally, we
-wait until the Future has a result::
+This example creates a Future object, creates and schedules an
+asynchronous Task to set result for the Future, and waits until
+the Future has a result::
 
     async def set_after(fut, delay, value):
         # Sleep for *delay* seconds.
@@ -214,22 +216,24 @@ wait until the Future has a result::
     asyncio.run(main())
 
 
-.. note::
+.. important::
 
    The Future object was designed to mimic
    :class:`concurrent.futures.Future`.  Key differences include:
 
-   - :class:`concurrent.futures.Future` instances cannot be awaited.
+   - unlike asyncio Futures, :class:`concurrent.futures.Future`
+     instances cannot be awaited.
 
-   - :meth:`Future.result` and :meth:`Future.exception` do not accept
-     the *timeout* argument.
+   - :meth:`asyncio.Future.result` and :meth:`asyncio.Future.exception`
+     do not accept the *timeout* argument.
 
-   - :meth:`Future.result` and :meth:`Future.exception` raise an
-     :exc:`InvalidStateError` exception when the Future is not *done*.
+   - :meth:`asyncio.Future.result` and :meth:`asyncio.Future.exception`
+     raise an :exc:`InvalidStateError` exception when the Future is not
+     *done*.
 
-   - Callbacks registered with :meth:`add_done_callback` are not
-     called immediately.  They are scheduled with :meth:`loop.call_soon`
-     instead.
+   - Callbacks registered with :meth:`asyncio.Future.add_done_callback`
+     are not called immediately.  They are scheduled with
+     :meth:`loop.call_soon` instead.
 
    - asyncio Future is not compatible with the
      :func:`concurrent.futures.wait` and
