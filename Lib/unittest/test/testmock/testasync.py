@@ -265,6 +265,22 @@ class CoroutineSpecSetTest(unittest.TestCase):
         self.assertTrue(isinstance(mock, MagicMock))
 
 
+class CoroutineArguments(unittest.TestCase):
+    async def compute(x):
+        yield x
+
+    def test_add_return_value(self):
+        mock = CoroutineMock(self.compute, return_value=10)
+        output = mock(5)
+        self.assertEqual(output, 10)
+
+    def test_add_side_effect(self):
+        pass
+
+    def test_add_side_effect_with_exception(self):
+        pass
+
+
 class CoroutineMagicMethods(unittest.TestCase):
     class AsyncContextManager:
         def __init__(self):
