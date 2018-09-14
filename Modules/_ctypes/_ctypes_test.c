@@ -664,6 +664,16 @@ EXPORT(void) TwoOutArgs(int a, int *pi, int b, int *pj)
 
 typedef struct {
     char f1;
+} Size1;
+
+
+typedef struct {
+    char f1;
+    char f2;
+} Size2;
+
+typedef struct {
+    char f1;
     char f2;
     char f3;
 } Size3;
@@ -712,6 +722,19 @@ typedef struct {
     char f7;
     char f8;
 } Size8;
+
+EXPORT(Size1) TestSize1() {
+    Size1 f;
+    f.f1 = 'a';
+    return f;
+}
+
+EXPORT(Size2) TestSize2() {
+    Size2 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    return f;
+}
 
 EXPORT(Size3) TestSize3() {
     Size3 f;
