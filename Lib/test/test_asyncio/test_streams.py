@@ -1054,6 +1054,19 @@ os.close(fd)
 
         self.assertEqual([], messages)
 
+    @unittest.skipIf(ssl is None, 'No ssl module')
+    def test_connect_start_tls(self):
+        with test_utils.run_test_server(use_ssl=True) as httpd:
+            # connect without SSL but upgrade to TLS just after
+            # connection is established
+            stream = self.loop.run_until_complete(
+                asyncio.connect(*httpd.address))
+
+            self.loop.run_until_complete(
+                stream.start_tls(
+                    sslcontext=test_utils.dummy_ssl_context()))
+            self._basetest_connect(stream)
+
 
 if __name__ == '__main__':
     unittest.main()

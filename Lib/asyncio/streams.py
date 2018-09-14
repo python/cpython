@@ -801,7 +801,7 @@ class Stream(StreamReader, StreamWriter):
     async def start_tls(self, sslcontext, *,
                         server_hostname=None,
                         ssl_handshake_timeout=None):
-        server_side = self._protocol.self._client_connected_cb is not None
+        server_side = self._protocol._client_connected_cb is not None
         await self.drain()
         transport = await self._loop.start_tls(
             self._transport, self._protocol, sslcontext,
