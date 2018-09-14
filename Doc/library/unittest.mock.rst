@@ -98,7 +98,7 @@ mock (or other object) during the test and restored when the test ends:
 .. note::
 
    When you nest patch decorators the mocks are passed in to the decorated
-   function in the same order they applied (the normal *python* order that
+   function in the same order they applied (the normal *Python* order that
    decorators are applied). This means from the bottom up, so in the example
    above the mock for ``module.ClassName1`` is passed in first.
 
