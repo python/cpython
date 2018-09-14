@@ -1415,7 +1415,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
         }
         /* Disallow usage in ClassBlock */
         if (ste->ste_type == ClassBlock) {
-            PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_CLASS, e->v.Name.id);
+            PyErr_Format(PyExc_TargetScopeError, NAMED_EXPR_COMP_IN_CLASS, e->v.Name.id);
             PyErr_SyntaxLocationObject(st->st_filename,
                                         e->lineno,
                                         e->col_offset);
