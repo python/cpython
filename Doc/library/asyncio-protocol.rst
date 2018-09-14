@@ -29,7 +29,7 @@ abstraction for a socket (or similar I/O endpoint) while a protocol
 is an abstraction for an application, from the transport's point
 of view.
 
-Yet another view is simply that the transport and protocol interfaces
+Yet another view is the transport and protocol interfaces
 together define an abstract interface for using network I/O and
 interprocess I/O.
 
@@ -109,7 +109,7 @@ Transports Hierarchy
    Interface representing a bidirectional transport, such as a
    TCP connection.
 
-   The user never instantiates a transport directly; they call a
+   The user does not instantiate a transport directly; they call a
    utility function, passing it a protocol factory and other
    information necessary to create the transport and protocol.
 
@@ -388,7 +388,7 @@ Subprocess Transports
 .. method:: SubprocessTransport.get_returncode()
 
    Return the subprocess return code as an integer or :const:`None`
-   if it hasn't returned, similarly to the
+   if it hasn't returned, which is similar to the
    :attr:`subprocess.Popen.returncode` attribute.
 
 .. method:: SubprocessTransport.kill()
@@ -427,11 +427,10 @@ asyncio provides a set of abstract base classes that should be used
 to implement network protocols.  Those classes are meant to be used
 together with :ref:`transports <asyncio-transport>`.
 
-Subclasses of abstract base protocol classes can implement some or
-all methods.  All those methods are callbacks: they are called by
+Subclasses of abstract base protocol classes may implement some or
+all methods.  All these methods are callbacks: they are called by
 transports on certain events, for example when some data is received.
-Base protocol methods are not supposed to be called by anything but
-the corresponding transport.
+A base protocol method should be called by the corresponding transport.
 
 
 Base Protocols
@@ -531,7 +530,7 @@ accept factories that return streaming protocols.
 
    Whether the data is buffered, chunked or reassembled depends on
    the transport.  In general, you shouldn't rely on specific semantics
-   and instead make your parsing generic and flexible enough.  However,
+   and instead make your parsing generic and flexible. However,
    data is always received in the correct order.
 
    The method can be called an arbitrary number of times during
@@ -551,12 +550,12 @@ accept factories that return streaming protocols.
 
    This method may return a false value (including ``None``), in which case
    the transport will close itself.  Conversely, if this method returns a
-   true value, closing the transport is up to the protocol.  Since the
-   default implementation returns ``None``, it implicitly closes the
+   true value, the protocol used determines whether to close the transport.
+   Since the default implementation returns ``None``, it implicitly closes the
    connection.
 
    Some transports such as SSL don't support half-closed connections,
-   in which case returning true from this method will not prevent closing
+   in which case returning true from this method will result in closing
    the connection.
 
 
@@ -581,8 +580,8 @@ Buffered Streaming Protocols
 Buffered Protocols can be used with any event loop method
 that supports `Streaming Protocols`_.
 
-The idea of ``BufferedProtocol`` is that it allows to manually allocate
-and control the receive buffer.  Event loops can then use the buffer
+The idea of ``BufferedProtocol`` is that it allows manual allocation
+and control of the receive buffer.  Event loops can then use the buffer
 provided by the protocol to avoid unnecessary data copies.  This
 can result in noticeable performance improvement for protocols that
 receive big amounts of data.  Sophisticated protocols implementations
@@ -658,10 +657,10 @@ factories passed to the :meth:`loop.create_datagram_endpoint` method.
 .. note::
 
    On BSD systems (macOS, FreeBSD, etc.) flow control is not supported
-   for datagram protocols, because send failures caused by
-   writing too many packets cannot be detected easily.
+   for datagram protocols, because it is difficult to detect easily send
+   failures caused by writing too many packets.
 
-   The socket always appears 'ready' and excess packets are dropped; an
+   The socket always appears 'ready' and excess packets are dropped. An
    :class:`OSError` with ``errno`` set to :const:`errno.ENOBUFS` may
    or may not be raised; if it is raised, it will be reported to
    :meth:`DatagramProtocol.error_received` but otherwise ignored.
@@ -705,8 +704,8 @@ Examples
 TCP Echo Server
 ---------------
 
-TCP echo server using the :meth:`loop.create_server` method, send back
-received data and close the connection::
+Create a TCP echo server using the :meth:`loop.create_server` method, send back
+received data, and close the connection::
 
     import asyncio
 
@@ -754,8 +753,8 @@ received data and close the connection::
 TCP Echo Client
 ---------------
 
-TCP echo client  using the :meth:`loop.create_connection` method, send
-data and wait until the connection is closed::
+A TCP echo client using the :meth:`loop.create_connection` method, sends
+data, and waits until the connection is closed::
 
     import asyncio
 
@@ -812,8 +811,8 @@ data and wait until the connection is closed::
 UDP Echo Server
 ---------------
 
-UDP echo server using the :meth:`loop.create_datagram_endpoint`
-method, send back received data::
+A UDP echo server, using the :meth:`loop.create_datagram_endpoint`
+method, sends back received data::
 
     import asyncio
 
@@ -856,8 +855,8 @@ method, send back received data::
 UDP Echo Client
 ---------------
 
-UDP echo client using the :meth:`loop.create_datagram_endpoint`
-method, send data and close the transport when we received the answer::
+A UDP echo client, using the :meth:`loop.create_datagram_endpoint`
+method, sends data and closes the transport when it receives the answer::
 
     import asyncio
 
@@ -978,7 +977,7 @@ Wait until a socket receives data using the
 loop.subprocess_exec() and SubprocessProtocol
 ---------------------------------------------
 
-An example of a subprocess protocol using to get the output of a
+An example of a subprocess protocol used to get the output of a
 subprocess and to wait for the subprocess exit.
 
 The subprocess is created by th :meth:`loop.subprocess_exec` method::
