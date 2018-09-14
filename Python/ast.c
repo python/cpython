@@ -2658,7 +2658,6 @@ ast_for_expr(struct compiling *c, const node *n)
  loop:
     switch (TYPE(n)) {
         case namedexpr_test:
-            // If there are 3 children, continue with named expression
             if (NCH(n) == 3)
                 return ast_for_namedexpr(c, n);
         case test:
