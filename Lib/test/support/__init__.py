@@ -36,7 +36,7 @@ import unittest
 import urllib.error
 import warnings
 
-from .testresult import RegressionTestRunner
+from .testresult import get_test_runner
 
 try:
     import multiprocessing.process
@@ -1896,7 +1896,7 @@ def _filter_suite(suite, pred):
 
 def _run_suite(suite):
     """Run tests from a unittest.TestSuite-derived class."""
-    runner = RegressionTestRunner(sys.stdout, verbosity=verbose)
+    runner = get_test_runner(sys.stdout, verbosity=verbose)
 
     # TODO: Remove this before merging (here for easy comparison with old impl)
     #runner = unittest.TextTestRunner(sys.stdout, verbosity=2, failfast=failfast)

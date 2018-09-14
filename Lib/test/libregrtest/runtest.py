@@ -95,8 +95,8 @@ def runtest(ns, test):
         FAILED           test failed
         PASSED           test passed
 
-    If ns.xmlpath is not None, xml_data is a string containing the
-    generated testsuite element containing results.
+    If ns.xmlpath is not None, xml_data is a list containing each
+    generated testsuite element.
     """
 
     output_on_failure = ns.verbose3

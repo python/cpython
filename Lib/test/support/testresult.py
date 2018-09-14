@@ -2,6 +2,7 @@
 
 '''
 
+import functools
 import io
 import sys
 import time
@@ -12,14 +13,12 @@ import xml.etree.ElementTree as ET
 
 from datetime import datetime
 
-class RegressionTestResult(unittest.TestResult):
+class RegressionTestResult(unittest.TextTestResult):
     separator1 = '=' * 70 + '\n'
     separator2 = '-' * 70 + '\n'
 
     def __init__(self, stream, descriptions, verbosity):
-        super().__init__(stream, descriptions, verbosity)
-        self.stream = stream
-        self.descriptions = descriptions
+        super().__init__(stream=stream, descriptions=descriptions, verbosity=0)
         self.buffer = True
         self.__suite = ET.Element('testsuite')
         self.__suite.set('start', datetime.utcnow().isoformat(' '))
@@ -40,13 +39,6 @@ class RegressionTestResult(unittest.TestResult):
         except TypeError:
             return str(test_id)
         return repr(test)
-
-    def getDescription(self, test):
-        doc_first_line = test.shortDescription()
-        if self.descriptions and doc_first_line:
-            return '\n'.join((str(test), doc_first_line))
-        else:
-            return str(test)
 
     def startTest(self, test):
         super().startTest(test)
@@ -100,9 +92,8 @@ class RegressionTestResult(unittest.TestResult):
         else:
             typename = repr(err_type)
 
-        # TODO: Limit err_tb
-        tb = traceback.format_exception(err_type, err_value, err_tb)
         msg = traceback.format_exception(err_type, err_value, None)
+        tb = traceback.format_exception(err_type, err_value, err_tb)
 
         return {
             'type': typename,
@@ -160,13 +151,24 @@ class RegressionTestResult(unittest.TestResult):
         e.set('failures', str(len(self.failures)))
         return e
 
-class RegressionTestRunner:
-    def __init__(self, stream, verbosity):
-        self.result = RegressionTestResult(stream, None, verbosity)
+class QuietRegressionTestRunner:
+    def __init__(self, stream):
+        self.result = RegressionTestResult(stream, None, 0)
 
     def run(self, test):
         test(self.result)
         return self.result
+
+def get_test_runner_class(verbosity):
+    if verbosity:
+        return functools.partial(unittest.TextTestRunner,
+                                 resultclass=RegressionTestResult,
+                                 buffer=True,
+                                 verbosity=verbosity)
+    return QuietRegressionTestRunner
+
+def get_test_runner(stream, verbosity):
+    return get_test_runner_class(verbosity)(stream)
 
 if __name__ == '__main__':
     class TestTests(unittest.TestCase):
@@ -189,7 +191,8 @@ if __name__ == '__main__':
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestTests))
     stream = io.StringIO()
-    runner = RegressionTestRunner(sys.stdout, sum(a == '-v' for a in sys.argv))
+    runner_cls = get_test_runner_class(sum(a == '-v' for a in sys.argv))
+    runner = runner_cls(sys.stdout)
     result = runner.run(suite)
     print('Output:', stream.getvalue())
     print('XML: ', end='')
