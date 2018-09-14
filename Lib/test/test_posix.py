@@ -1659,15 +1659,17 @@ class TestPosixSpawn(unittest.TestCase):
                               os.environ, setsigdef=[signal.NSIG, signal.NSIG+1])
 
     @requires_sched
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'netbsd')),
+                     "bpo-34685: test can fail on BSD")
     def test_setscheduler_only_param(self):
         policy = os.sched_getscheduler(0)
         priority = os.sched_get_priority_min(policy)
         code = textwrap.dedent(f"""\
-            import os
+            import os, sys
             if os.sched_getscheduler(0) != {policy}:
-                os.exit(101)
+                sys.exit(101)
             if os.sched_getparam(0).sched_priority != {priority}:
-                os.exit(102)""")
+                sys.exit(102)""")
         pid = posix.posix_spawn(
             sys.executable,
             [sys.executable, '-c', code],
@@ -1677,15 +1679,17 @@ class TestPosixSpawn(unittest.TestCase):
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
 
     @requires_sched
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'netbsd')),
+                     "bpo-34685: test can fail on BSD")
     def test_setscheduler_with_policy(self):
         policy = os.sched_getscheduler(0)
         priority = os.sched_get_priority_min(policy)
         code = textwrap.dedent(f"""\
-            import os
+            import os, sys
             if os.sched_getscheduler(0) != {policy}:
-                os.exit(101)
+                sys.exit(101)
             if os.sched_getparam(0).sched_priority != {priority}:
-                os.exit(102)""")
+                sys.exit(102)""")
         pid = posix.posix_spawn(
             sys.executable,
             [sys.executable, '-c', code],
