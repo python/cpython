@@ -13,11 +13,11 @@ those of the :mod:`threading` module with two important caveats:
   be used for OS threads synchronization (use :mod:`threading` for
   that);
 
-* methods of synchronization objects do not accept the *timeout*
+* methods of synchronization primitives do not accept the *timeout*
   argument; use the :func:`asyncio.wait_for` function to perform
   operations with timeouts.
 
-asyncio has the following basic primitives:
+asyncio has the following basic sychronization primitives:
 
 * :class:`Lock`
 * :class:`Event`
@@ -72,7 +72,7 @@ Lock
 
       When the lock is *locked*, reset it to *unlocked* and return.
 
-      If the lock is *unlocked* a :exc:`RuntimeError` is raised.
+      If the lock is *unlocked*, a :exc:`RuntimeError` is raised.
 
    .. method:: locked()
 
@@ -97,7 +97,7 @@ Event
    Example::
 
       async def waiter(event):
-          print('waiting ...')
+          print('waiting for it ...')
           await event.wait()
           print('... got it!')
 
