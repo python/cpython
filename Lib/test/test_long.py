@@ -3,6 +3,7 @@ from test import support
 
 import sys
 
+import enum
 import random
 import math
 import array
@@ -1348,6 +1349,37 @@ class LongTest(unittest.TestCase):
             for shift in (0, 2):
                 self.assertEqual(type(value << shift), int)
                 self.assertEqual(type(value >> shift), int)
+
+    def test_as_integer_ratio(self):
+        tests = [10, 0, -10, 1]
+        for value in tests:
+            numerator, denominator = value.as_integer_ratio()
+            self.assertEqual((numerator, denominator), (value, 1))
+            self.assertIsInstance(numerator, int)
+            self.assertIsInstance(denominator, int)
+
+    def test_as_integer_ratio_maxint(self):
+        x = sys.maxsize + 1
+        self.assertEqual(x.as_integer_ratio()[0], x)
+
+    def test_as_integer_ratio_bool(self):
+        self.assertEqual(True.as_integer_ratio(), (1, 1))
+        self.assertEqual(False.as_integer_ratio(), (0, 1))
+        self.assertEqual(type(True.as_integer_ratio()[0]), int)
+        self.assertEqual(type(False.as_integer_ratio()[0]), int)
+
+    def test_as_integer_ratio_int_enum(self):
+        class Foo(enum.IntEnum):
+            X = 42
+        self.assertEqual(Foo.X.as_integer_ratio(), (42, 1))
+        self.assertEqual(type(Foo.X.as_integer_ratio()[0]), int)
+
+    def test_as_integer_ratio_int_flag(self):
+        class Foo(enum.IntFlag):
+            R = 1 << 2
+        self.assertEqual(Foo.R.as_integer_ratio(), (4, 1))
+        self.assertEqual(type(Foo.R.as_integer_ratio()[0]), int)
+
 
 
 if __name__ == "__main__":
