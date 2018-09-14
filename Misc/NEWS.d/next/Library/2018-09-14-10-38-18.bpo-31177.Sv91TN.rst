@@ -1,0 +1,1 @@
+Skip deleted attributes while calling :meth:`mock.reset_mock`.
