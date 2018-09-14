@@ -1506,10 +1506,6 @@ are themselves mocks.
 (Contributed by Mario Corchero in :issue:`30541`.)
 
 
-New function :func:`~unicodedata.is_normalized` can be used to verify a string
-is in a specific normal form. (Contributed by Max Belanger, David Euresti in
-:issue:`32285`.)
-
 urllib.parse
 ------------
 

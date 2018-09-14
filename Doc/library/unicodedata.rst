@@ -138,7 +138,7 @@ following functions:
    Returns whether the Unicode string *unistr* is in the normal form *form*. Valid
    values for *form* are 'NFC', 'NFKC', 'NFD', and 'NFKD'.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.8
 
 
 In addition, the module exposes the following constant:
