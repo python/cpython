@@ -2441,6 +2441,7 @@ pending_threadfunc(PyObject *self, PyObject *arg)
     Py_INCREF(callable);
 
     Py_BEGIN_ALLOW_THREADS
+    /* XXX Use the internal _Py_AddPendingCall(). */
     r = Py_AddPendingCall(&_pending_callback, callable);
     Py_END_ALLOW_THREADS
 
