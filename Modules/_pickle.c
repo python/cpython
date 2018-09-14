@@ -6991,7 +6991,6 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
 {
     PyObject **new_memo;
     size_t new_memo_size = 0;
-    size_t i;
 
     if (obj == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -7008,7 +7007,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
         if (new_memo == NULL)
             return -1;
 
-        for (i = 0; i < new_memo_size; i++) {
+        for (size_t i = 0; i < new_memo_size; i++) {
             Py_XINCREF(unpickler->memo[i]);
             new_memo[i] = unpickler->memo[i];
         }
@@ -7056,8 +7055,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
 
   error:
     if (new_memo_size) {
-        i = new_memo_size;
-        for (i = new_memo_size - 1; i != SIZE_MAX; i--) {
+        for (size_t i = new_memo_size - 1; i != SIZE_MAX; i--) {
             Py_XDECREF(new_memo[i]);
         }
         PyMem_FREE(new_memo);
