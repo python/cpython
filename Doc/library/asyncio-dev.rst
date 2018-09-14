@@ -407,7 +407,7 @@ traceback where the task was created. Example of log in debug mode:
 Close transports and event loops
 --------------------------------
 
-When a transport is no more needed, call its ``close()`` method to release
+When a transport is no longer needed, call its ``close()`` method to release
 resources. Event loops must also be closed explicitly.
 
 If a transport or an event loop is not closed explicitly, a
