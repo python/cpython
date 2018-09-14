@@ -15,6 +15,7 @@ The list of modules described in this chapter is:
 
 
 .. toctree::
+   :maxdepth: 1
 
    asyncio.rst
    socket.rst
