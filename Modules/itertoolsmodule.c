@@ -3475,6 +3475,7 @@ typedef struct {
     PyObject *total;
     PyObject *it;
     PyObject *binop;
+    PyObject *initial;
 } accumulateobject;
 
 static PyTypeObject accumulate_type;
@@ -3484,13 +3485,16 @@ static PyTypeObject accumulate_type;
 itertools.accumulate.__new__
     iterable: object
     func as binop: object = None
-Return series of accumulated sums (or other binary function results).
+    /
+    initial: object(c_default="NULL") = 0
+Return series of accumulated sums (or other binary  function results).
 [clinic start generated code]*/
 
 static PyObject *
 itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
-                          PyObject *binop)
-/*[clinic end generated code: output=514d0fb30ba14d55 input=6d9d16aaa1d3cbfc]*/
+                          PyObject *binop, PyObject *initial)
+/*[clinic end generated code: output=66da2650627128f8 input=81217eb2acbda6df]*/
+
 {
     PyObject *it;
     accumulateobject *lz;
@@ -3514,6 +3518,8 @@ itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
     }
     lz->total = NULL;
     lz->it = it;
+    Py_XINCREF(initial);
+    lz->initial = initial;
     return (PyObject *)lz;
 }
 
@@ -3524,6 +3530,7 @@ accumulate_dealloc(accumulateobject *lz)
     Py_XDECREF(lz->binop);
     Py_XDECREF(lz->total);
     Py_XDECREF(lz->it);
+    Py_XDECREF(lz->initial);
     Py_TYPE(lz)->tp_free(lz);
 }
 
@@ -3533,6 +3540,7 @@ accumulate_traverse(accumulateobject *lz, visitproc visit, void *arg)
     Py_VISIT(lz->binop);
     Py_VISIT(lz->it);
     Py_VISIT(lz->total);
+    Py_VISIT(lz->initial);
     return 0;
 }
 
@@ -3541,6 +3549,13 @@ accumulate_next(accumulateobject *lz)
 {
     PyObject *val, *newtotal;
 
+    if (lz->initial != NULL) {
+        newtotal = lz->initial;
+        Py_INCREF(newtotal);
+        Py_SETREF(lz->total, newtotal);
+        lz->initial = NULL;
+        return newtotal;
+    }
     val = (*Py_TYPE(lz->it)->tp_iternext)(lz->it);
     if (val == NULL)
         return NULL;
