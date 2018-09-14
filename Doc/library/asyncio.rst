@@ -29,7 +29,7 @@ asyncio provides a set of **high-level** APIs to:
 
 * :ref:`synchronize <asyncio-sync>` concurrent code;
 
-as well as **low-level** APIs to:
+as well as **low-level** APIs for *library and framework developers* to:
 
 * create and manage :ref:`event loops <asyncio-event-loop>`, which
   provide asynchronous APIs for networking, subprocesses, OS signals,
