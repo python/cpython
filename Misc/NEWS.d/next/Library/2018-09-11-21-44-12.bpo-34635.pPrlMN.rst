@@ -1,0 +1,3 @@
+Added :func:`inspect.getsubclasses`, :func:`inspect.getallsubclasses`, and
+:func:`inspect.getsubclasstree`. These can be used to probe the subclasses
+of a class. Patch by Benjamin Mintz.
