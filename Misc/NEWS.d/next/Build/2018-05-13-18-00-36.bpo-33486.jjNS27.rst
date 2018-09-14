@@ -1,0 +1,2 @@
+autotools have been regenerated.
+autotools 2.69 or newer is now required to regenerate "configure"
