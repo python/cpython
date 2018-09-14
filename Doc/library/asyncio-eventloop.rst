@@ -1429,7 +1429,7 @@ event loop::
 
 .. seealso::
 
-   A similar :ref:`Hello World <asyncio-hello-world-coroutine>`
+   A similar :ref:`Hello World <coroutine>`
    example created with a coroutine and the :func:`run` function.
 
 
