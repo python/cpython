@@ -1543,9 +1543,8 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT(st, expr, e->v.Starred.value);
         break;
     case Name_kind:
-        /* Special-case named expr */
+        /* Special-case: named expr */
         if (e->v.Name.ctx == NamedStore && st->st_cur->ste_comprehension) {
-            /* Helper to traverse and find proper scope to add variable to outer scope */
             if(!symtable_extend_namedexpr_scope(st, e))
                 VISIT_QUIT(st, 0);
         }
