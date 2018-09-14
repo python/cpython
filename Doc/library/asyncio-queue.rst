@@ -140,6 +140,8 @@ Exceptions
 Examples
 ========
 
+.. _asyncio_example_queue_dist:
+
 Queues can be used to distribute workload between several
 concurrent tasks::
 
