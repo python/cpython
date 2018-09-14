@@ -121,6 +121,16 @@ Future Object
       or an exception set with :meth:`set_result` or
       :meth:`set_exception` calls.
 
+   .. method:: cancelled()
+
+      Return ``True`` if the Future was *cancelled*.
+
+      The method is usually used to check if a Future is not
+      *cancelled* before setting a result or an exception for it::
+
+          if not fut.cancelled():
+              fut.set_result(42)
+
    .. method:: add_done_callback(callback, *, context=None)
 
       Add a callback to be run when the Future is *done*.
@@ -179,10 +189,6 @@ Future Object
       Return the event loop the Future object is bound to.
 
       .. versionadded:: 3.7
-
-   .. method:: cancelled()
-
-      Return ``True`` if the Future was *cancelled*.
 
 
 This example creates a Future object, creates and schedules an
