@@ -4742,3 +4742,4 @@ types, where they are relevant.  Some of these are not reported by the
 
 .. [5] To format only a tuple you should therefore provide a singleton tuple whose only
    element is the tuple to be formatted.
+
