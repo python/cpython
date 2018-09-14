@@ -1,14 +1,12 @@
-:mod:`asyncio` --- Asynchronous I/O, event loop, coroutines and tasks
-=====================================================================
+:mod:`asyncio` --- Asynchronous I/O
+===================================
 
 .. module:: asyncio
-   :synopsis: Asynchronous I/O, event loop, coroutines and tasks.
-
-.. versionadded:: 3.4
-
-**Source code:** :source:`Lib/asyncio/`
+   :synopsis: Asynchronous I/O.
 
 --------------
+
+.. TODO: rewrite the introduction section
 
 This module provides infrastructure for writing single-threaded concurrent
 code using coroutines, multiplexing I/O access over sockets and other
@@ -44,25 +42,40 @@ programming: see the :ref:`Develop with asyncio <asyncio-dev>` page which lists
 common traps and explains how to avoid them. :ref:`Enable the debug mode
 <asyncio-debug-mode>` during development to detect common issues.
 
-Table of contents:
+High-level APIs:
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
+
+   asyncio-task.rst
+   asyncio-stream.rst
+   asyncio-sync.rst
+   asyncio-subprocess.rst
+   asyncio-queue.rst
+   asyncio-exceptions.rst
+
+Low-level APIs:
+
+.. toctree::
+   :maxdepth: 1
 
    asyncio-eventloop.rst
+   asyncio-future.rst
+   asyncio-protocol.rst
    asyncio-policy.rst
    asyncio-platforms.rst
-   asyncio-task.rst
-   asyncio-protocol.rst
-   asyncio-stream.rst
-   asyncio-subprocess.rst
-   asyncio-sync.rst
-   asyncio-queue.rst
+
+Guides and Tutorials:
+
+.. toctree::
+   :maxdepth: 1
+
    asyncio-dev.rst
-   asyncio-exceptions.rst
+
 
 .. seealso::
 
-   The :mod:`asyncio` module was designed in :PEP:`3156`. For a
-   motivational primer on transports and protocols, see :PEP:`3153`.
-
+   The :mod:`asyncio` module was proposed in :PEP:`3156`.
+   Since the acceptance of the PEP many new APIs were added and many
+   original APIs were altered.  The PEP should be treated as a
+   historical document.
