@@ -1566,6 +1566,22 @@ class MockTest(unittest.TestCase):
             self.assertRaises(AttributeError, getattr, mock, 'f')
 
 
+    def test_attribute_deletion_reset_mock(self):
+        mock = Mock()
+        mock.something.return_value = 3
+
+        self.assertEqual(mock.something(), 3)
+        self.assertTrue(mock.something.called)
+        self.assertTrue(hasattr(mock, 'm'))
+
+        del mock.m
+        self.assertFalse(hasattr(mock, 'm'))
+
+        mock.reset_mock()
+        self.assertFalse(hasattr(mock, 'm'))
+        self.assertFalse(mock.something.called)
+
+
     def test_class_assignable(self):
         for mock in Mock(), MagicMock():
             self.assertNotIsInstance(mock, int)
