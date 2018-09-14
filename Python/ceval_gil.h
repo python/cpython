@@ -160,6 +160,9 @@ static void drop_gil(PyThreadState *tstate)
     }
 
     MUTEX_LOCK(_PyRuntime.ceval.gil.mutex);
+    /* Mark the interpreter as inactive. */
+    tstate->interp->ceval.active = 0;
+    tstate->interp->ceval.active_thread = 0;
     _Py_ANNOTATE_RWLOCK_RELEASED(&_PyRuntime.ceval.gil.locked, /*is_write=*/1);
     _Py_atomic_store_relaxed(&_PyRuntime.ceval.gil.locked, 0);
     COND_SIGNAL(_PyRuntime.ceval.gil.cond);
@@ -243,6 +246,10 @@ _ready:
     if (tstate->async_exc != NULL) {
         _PyEval_SignalAsyncExc(tstate->interp);
     }
+
+    /* Mark the interpreter as active. */
+    tstate->interp->ceval.active = 1;
+    tstate->interp->ceval.active_thread = PyThread_get_thread_ident();
 
     MUTEX_UNLOCK(_PyRuntime.ceval.gil.mutex);
     errno = err;
