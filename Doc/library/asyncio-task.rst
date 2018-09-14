@@ -165,7 +165,7 @@ Sleeping
    If *result* is provided, it is returned to the caller
    when the coroutine completes.
 
-   .. _asyncio-date-coroutine:
+   .. _asyncio_example_sleep:
 
    Example of coroutine displaying the current date every second
    during 5 seconds::
@@ -218,6 +218,8 @@ Running Tasks Concurrently
    .. versionchanged:: 3.7
       If the *gather* itself is cancelled, the cancellation is
       propagated regardless of *return_exceptions*.
+
+   .. _asyncio_example_gather:
 
    Example::
 
@@ -315,6 +317,8 @@ Timeouts
    so the total wait time may exceed the *timeout*.
 
    If the wait is cancelled, the future *fut* is also cancelled.
+
+   .. _asyncio_example_waitfor:
 
    Example::
 
@@ -538,6 +542,8 @@ Task Object
       not guarantee that the Task will be cancelled, although
       suppressing cancellation completely is not common and is actively
       discouraged.
+
+      .. _asyncio_example_task_cancel:
 
       The following example illustrates how coroutines can intercept
       the cancellation request::

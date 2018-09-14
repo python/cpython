@@ -94,6 +94,8 @@ Event
    :meth:`clear` method.  The :meth:`wait` method blocks until the
    flag is set to *true*.  The flag is set to *false* initially.
 
+   .. _asyncio_example_sync_event:
+
    Example::
 
       async def waiter(event):

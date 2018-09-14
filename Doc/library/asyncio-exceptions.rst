@@ -1,6 +1,8 @@
 .. currentmodule:: asyncio
 
 
+.. _asyncio-exceptions:
+
 ==========
 Exceptions
 ==========
@@ -10,7 +12,7 @@ Exceptions
 
    The operation has exceeded the given deadline.
 
-   .. note::
+   .. important::
       This exception is different from the builtin :exc:`TimeoutError`
       exception.
 
@@ -23,7 +25,7 @@ Exceptions
    when asyncio Tasks are cancelled.  In almost all situations the
    exception must always be re-raised.
 
-   .. note::
+   .. important::
 
       This exception is a subclass of :exc:`Exception`, so it can be
       accidentally suppressed by ``try..except`` block::
