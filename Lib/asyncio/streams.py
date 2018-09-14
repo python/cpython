@@ -792,3 +792,20 @@ class Stream(StreamReader, StreamWriter):
 
     def __repr__(self):
         return StreamReader.__repr__(self)
+
+    async def sendfile(self, file, offset=0, count=None, *, fallback=True):
+        await self.drain()
+        return await self._loop.sendfile(self._transport, file,
+                                         offset, count, fallback=fallback)
+
+    async def start_tls(self, sslcontext, *,
+                        server_hostname=None,
+                        ssl_handshake_timeout=None):
+        server_side = self._protocol.self._client_connected_cb is not None
+        await self.drain()
+        transport = await self._loop.start_tls(
+            self._transport, self._protocol, sslcontext,
+            server_side=server_side, server_hostname=server_hostname,
+            ssl_handshake_timeout=ssl_handshake_timeout)
+        self._transport = transport
+        self._protocol._transport = transport

@@ -1015,6 +1015,45 @@ os.close(fd)
                 asyncio.connect_unix(httpd.address))
             self._basetest_connect(stream)
 
+    def test_sendfile(self):
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        with open(support.TESTFN, 'wb') as fp:
+            fp.write(b'data\n')
+        self.addCleanup(support.unlink, support.TESTFN)
+
+        async def do_serve(reader, writer):
+            data = await reader.readline()
+            self.assertEqual(data, b'begin\n')
+            data = await reader.readline()
+            self.assertEqual(data, b'data\n')
+            data = await reader.readline()
+            self.assertEqual(data, b'end\n')
+            await writer.awrite(b'done\n')
+            await writer.aclose()
+
+        server = self.loop.run_until_complete(
+            asyncio.start_server(do_serve, 'localhost', 0, loop=self.loop))
+
+        host, port = server.sockets[0].getsockname()
+
+        async def do_connect():
+            stream = await asyncio.connect(host, port)
+            stream.write(b'begin\n')
+            with open(support.TESTFN, 'rb') as fp:
+                await stream.sendfile(fp)
+            stream.write(b'end\n')
+            data = await stream.readline()
+            self.assertEqual(data, b'done\n')
+            await stream.aclose()
+
+        self.loop.run_until_complete(do_connect())
+        server.close()
+        self.loop.run_until_complete(server.wait_closed())
+
+        self.assertEqual([], messages)
+
 
 if __name__ == '__main__':
     unittest.main()
