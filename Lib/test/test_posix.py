@@ -1799,8 +1799,8 @@ class TestPosixSpawn(unittest.TestCase):
                 os.environ,
                 use_vfork=True
             )
-        except NotImplementedError as e:
-            raise unittest.SkipTest(e)
+        except NotImplementedError as exc:
+            raise self.skipTest(str(exc))
         else:
             self.assertEqual(os.waitpid(pid, 0), (pid, 0))
 

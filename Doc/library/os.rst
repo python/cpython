@@ -3470,7 +3470,7 @@ written in Python, such as a mail server's external command delivery program.
   GNU specific flag :c:data:`POSIX_SPAWN_USEVFORK`. If the flag is not
   available on the platform, :exc:`NotImplementedError` will be raised.
 
-   Availability: Using *use_vfork* is only available on Linux.
+   Availability: Unix. Using *use_vfork* is only available on Linux.
 
    .. versionadded:: 3.7
 
