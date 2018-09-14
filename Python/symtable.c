@@ -1374,6 +1374,50 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 }
 
 static int
+symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e) {
+    assert(st->st_stack);
+
+    Py_ssize_t i, size;
+    struct _symtable_entry *ste;
+    size = PyList_GET_SIZE(st->st_stack);
+    assert(size);
+
+    /* Iterate over the stack in reverse and add to the nearest adequate scope */
+    for (i = size - 1; i >= 0; i--) {
+        ste = (struct _symtable_entry *) PyList_GET_ITEM(st->st_stack, i);
+
+        /* If our current entry is a comprehension, skip it */
+        if (ste->ste_comprehension) {
+            continue;
+        }
+
+        /* If we find a FunctionBlock entry, add as NONLOCAL/LOCAL */
+        if (ste->ste_type == FunctionBlock) {
+            if (!symtable_add_def(st, e->v.Name.id, DEF_NONLOCAL))
+                VISIT_QUIT(st, 0);
+            if (!symtable_record_directive(st, e->v.Name.id, e->lineno, e->col_offset))
+                VISIT_QUIT(st, 0);
+
+            return symtable_add_def_helper(st, e->v.Name.id, DEF_LOCAL, ste);
+        }
+        /* If we find a ModuleBlock entry, add as GLOBAL */
+        if (ste->ste_type == ModuleBlock) {
+            if (!symtable_add_def(st, e->v.Name.id, DEF_GLOBAL))
+                VISIT_QUIT(st, 0);
+            if (!symtable_record_directive(st, e->v.Name.id, e->lineno, e->col_offset))
+                VISIT_QUIT(st, 0);
+
+            return symtable_add_def_helper(st, e->v.Name.id, DEF_GLOBAL, ste);
+        }
+        /* XXX handle ClassBlock */
+        if (ste->ste_type == ClassBlock) {
+            printf("XXX: error handling not implemented\n");
+        }
+    }
+    return 0;
+}
+
+static int
 symtable_visit_expr(struct symtable *st, expr_ty e)
 {
     if (++st->recursion_depth > st->recursion_limit) {
@@ -1486,6 +1530,12 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT(st, expr, e->v.Starred.value);
         break;
     case Name_kind:
+        /* Special-case named expr */
+        if (e->v.Name.ctx == NamedStore && st->st_cur->ste_comprehension) {
+            /* Helper to traverse and find proper scope to add variable to outer scope */
+            if(!symtable_extend_namedexpr_scope(st, e))
+                VISIT_QUIT(st, 0);
+        }
         if (!symtable_add_def(st, e->v.Name.id,
                               e->v.Name.ctx == Load ? USE : DEF_LOCAL))
             VISIT_QUIT(st, 0);
