@@ -52,12 +52,8 @@ class EINTRBaseTest(unittest.TestCase):
 
         # Issue #25277: Use faulthandler to try to debug a hang on FreeBSD
         if hasattr(faulthandler, 'dump_traceback_later'):
-            try:
-                preserve_stderr = sys.stderr
-                sys.stderr = sys.__stderr__
-                faulthandler.dump_traceback_later(10 * 60, exit=True)
-            finally:
-                sys.stderr = preserve_stderr
+            faulthandler.dump_traceback_later(10 * 60, exit=True,
+                                              file=sys.__stderr__)
 
     @classmethod
     def stop_alarm(cls):
