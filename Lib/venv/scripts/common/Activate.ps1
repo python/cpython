@@ -1,3 +1,8 @@
+function Script:add-bin($envPath) {
+    $binPath = Join-Path -Path $env:VIRTUAL_ENV -ChildPath __VENV_BIN_NAME__
+    return ($binPath, $envPath) -join [IO.Path]::PathSeparator
+}
+
 function global:deactivate ([switch]$NonDestructive) {
     # Revert to original values
     if (Test-Path function:_OLD_VIRTUAL_PROMPT) {
@@ -48,4 +53,4 @@ if (Test-Path env:PYTHONHOME) {
 
 # Add the venv to the PATH
 copy-item env:PATH env:_OLD_VIRTUAL_PATH
-$env:PATH = "$env:VIRTUAL_ENV\__VENV_BIN_NAME__;$env:PATH"
+$env:PATH = add-bin $env:PATH
