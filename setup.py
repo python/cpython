@@ -927,6 +927,9 @@ class PyBuildExt(build_ext):
         # C-optimized pickle replacement
         self.add(Extension("_pickle", ["_pickle.c"],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        # helper for converting Python code objects to static C structures
+        self.add(Extension('_serializer', ['_serializer.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # _json speedups
         self.add(Extension("_json", ["_json.c"],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))

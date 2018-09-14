@@ -17,6 +17,8 @@
 
 #include <locale.h>               // setlocale()
 
+#include "frozenmodules.h"
+
 #ifdef HAVE_SIGNAL_H
 #  include <signal.h>             // SIG_IGN
 #endif
@@ -134,7 +136,11 @@ init_importlib(PyThreadState *tstate, PyObject *sysmod)
     PyInterpreterState *interp = tstate->interp;
     int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
 
-    // Import _importlib through its frozen version, _frozen_importlib.
+    /* Import _importlib through its frozen version, _frozen_importlib. */
+    if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
+        PySys_FormatStderr("can't import _frozen_importlib\n");
+        return -1;
+    }
     if (verbose) {
         PySys_FormatStderr("import _frozen_importlib # frozen\n");
     }
@@ -774,6 +780,8 @@ pycore_interp_init(PyThreadState *tstate)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+    _PyFrozenModules_Init();
 
     // The GC must be initialized before the first GC collection.
     status = _PyGC_Init(interp);
@@ -1687,6 +1695,8 @@ Py_FinalizeEx(void)
     // Make any remaining pending calls.
     _Py_FinishPendingCalls(tstate);
 
+    _PyFrozenModules_Finalize();
+
     /* The interpreter is still entirely intact at this point, and the
      * exit funcs may be relying on that.  In particular, if some thread
      * or exit func is still waiting to do an import, the import machinery
@@ -1887,6 +1897,8 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
 
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
 
+    _PyFrozenModules_Disable();
+
     /* Copy the current interpreter config into the new interpreter */
     const PyConfig *config;
 #ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
@@ -1923,6 +1935,7 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
         goto error;
     }
 
+    _PyFrozenModules_Enable();
     *tstate_p = tstate;
     return _PyStatus_OK();
 
@@ -1930,6 +1943,7 @@ error:
     *tstate_p = NULL;
 
     /* Oops, it didn't work.  Undo it all. */
+    _PyFrozenModules_Disable();
     PyErr_PrintEx(0);
     PyThreadState_Clear(tstate);
     PyThreadState_Delete(tstate);

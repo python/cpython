@@ -16,7 +16,9 @@
 #include "code.h"
 #include "importdl.h"
 #include "pydtrace.h"
+#include "frozenmodules.h"
 
+#include <stdbool.h>
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
@@ -1066,6 +1068,15 @@ find_frozen(PyObject *name)
 static PyObject *
 get_frozen_object(PyObject *name)
 {
+    int needs_path;
+    PyObject *co = _PyFrozenModule_GetCode(name, &needs_path);
+    if (co != NULL) {
+        Py_INCREF(co);
+        if (Py_VerboseFlag) {
+            PySys_FormatStderr("found static frozen module %U\n", name);
+        }
+        return co;
+    }
     const struct _frozen *p = find_frozen(name);
     int size;
 
@@ -1090,6 +1101,17 @@ get_frozen_object(PyObject *name)
 static PyObject *
 is_frozen_package(PyObject *name)
 {
+    int ispackage;
+    PyObject *co = _PyFrozenModule_GetCode(name, &ispackage);
+    if (co != NULL) {
+        if (ispackage) {
+            Py_RETURN_TRUE;
+        }
+        else {
+            Py_RETURN_FALSE;
+        }
+    }
+
     const struct _frozen *p = find_frozen(name);
     int size;
 
@@ -1121,25 +1143,33 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
     const struct _frozen *p;
     PyObject *co, *m, *d;
     int ispackage;
-    int size;
 
-    p = find_frozen(name);
-
-    if (p == NULL)
-        return 0;
-    if (p->code == NULL) {
-        _PyErr_Format(tstate, PyExc_ImportError,
-                      "Excluded frozen object named %R",
-                      name);
-        return -1;
+    co = _PyFrozenModule_GetCode(name, &ispackage);
+    if (co != NULL) {
+        Py_INCREF(co);
+        if (Py_VerboseFlag) {
+            PySys_FormatStderr("found static frozen module %U\n", name);
+        }
     }
-    size = p->size;
-    ispackage = (size < 0);
-    if (ispackage)
-        size = -size;
-    co = PyMarshal_ReadObjectFromString((const char *)p->code, size);
-    if (co == NULL)
-        return -1;
+    else {
+        const struct _frozen *p;
+        p = find_frozen(name);
+        if (p == NULL)
+            return 0;
+        if (p->code == NULL) {
+            PyErr_Format(PyExc_ImportError,
+                         "Excluded frozen object named %R",
+                         name);
+            return -1;
+        }
+        int size = p->size;
+        ispackage = (size < 0);
+        if (ispackage)
+            size = -size;
+        co = PyMarshal_ReadObjectFromString((const char *)p->code, size);
+        if (co == NULL)
+            return -1;
+    }
     if (!PyCode_Check(co)) {
         _PyErr_Format(tstate, PyExc_TypeError,
                       "frozen object %R is not a code object",
@@ -1191,6 +1221,9 @@ PyImport_ImportFrozenModule(const char *name)
     nameobj = PyUnicode_InternFromString(name);
     if (nameobj == NULL)
         return -1;
+    if (Py_VerboseFlag) {
+        PySys_FormatStderr("import frozen module %U\n", nameobj);
+    }
     ret = PyImport_ImportFrozenModuleObject(nameobj);
     Py_DECREF(nameobj);
     return ret;
@@ -1549,6 +1582,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     PyObject *package = NULL;
     PyInterpreterState *interp = tstate->interp;
     int has_from;
+    _Bool from_frozen_module = false;
 
     if (name == NULL) {
         _PyErr_SetString(tstate, PyExc_ValueError, "Empty module name");
@@ -1590,7 +1624,18 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         goto error;
     }
 
+    if (mod == NULL) {
+        /* try finding code object from frozenmodules.c */
+        mod = _PyFrozenModule_Lookup(abs_name);
+        from_frozen_module = true;
+        if (mod != NULL && Py_VerboseFlag) {
+            PySys_FormatStderr("found static frozen module %U\n", abs_name);
+        }
+    }
+
     if (mod != NULL && mod != Py_None) {
+        if (!from_frozen_module)
+            Py_INCREF(mod);
         if (import_ensure_initialized(tstate->interp, mod, abs_name) < 0) {
             goto error;
         }
@@ -1945,6 +1990,12 @@ static PyObject *
 _imp_is_frozen_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=01f408f5ec0f2577 input=7301dbca1897d66b]*/
 {
+    int ispackage;
+    PyObject *co = _PyFrozenModule_GetCode(name, &ispackage);
+    if (co != NULL) {
+        return PyBool_FromLong(ispackage ? -1 : 1);
+    }
+
     const struct _frozen *p;
 
     p = find_frozen(name);
