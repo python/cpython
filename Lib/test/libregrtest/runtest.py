@@ -115,17 +115,7 @@ def runtest(ns, test):
         if output_on_failure:
             support.verbose = True
 
-            # Reuse the same instance to all calls to runtest(). Some
-            # tests keep a reference to sys.stdout or sys.stderr
-            # (eg. test_argparse).
-            if runtest.stringio is None:
-                stream = io.StringIO()
-                runtest.stringio = stream
-            else:
-                stream = runtest.stringio
-                stream.seek(0)
-                stream.truncate()
-
+            stream = io.StringIO()
             orig_stdout = sys.stdout
             orig_stderr = sys.stderr
             try:
@@ -154,7 +144,6 @@ def runtest(ns, test):
             faulthandler.cancel_dump_traceback_later()
         cleanup_test_droppings(test, ns.verbose)
         support.junit_xml_list = None
-runtest.stringio = None
 
 
 def post_test_cleanup():
