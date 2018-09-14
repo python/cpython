@@ -21,6 +21,7 @@
 #include <process.h>
 #endif
 #endif
+#include "internal/pycore_pystate.h"
 
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
