@@ -11,7 +11,7 @@ Abstract
 --------
 
 Defines descriptors, summarizes the protocol, and shows how descriptors are
-called.  Examines a custom descriptor and several built-in python descriptors
+called.  Examines a custom descriptor and several built-in Python descriptors
 including functions, properties, static methods, and class methods.  Shows how
 each works by giving a pure Python equivalent and a sample application.
 
@@ -275,7 +275,7 @@ variable name.
 To support method calls, functions include the :meth:`__get__` method for
 binding methods during attribute access.  This means that all functions are
 non-data descriptors which return bound methods when they are invoked from an
-object.  In pure python, it works like this::
+object.  In pure Python, it works like this::
 
     class Function(object):
         . . .
