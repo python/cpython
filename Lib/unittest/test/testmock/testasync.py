@@ -335,8 +335,13 @@ class CoroutineMockAssert(unittest.TestCase):
 
     def setUp(self):
         self.mock = CoroutineMock()
+        self.old_policy = asyncio.events._event_loop_policy
 
-    async def runnable_test(self, *args):
+    def tearDown(self):
+        # Restore the original event loop policy.
+        asyncio.events._event_loop_policy = self.old_policy
+
+    async def _runnable_test(self, *args):
         if not args:
             await self.mock()
         else:
@@ -346,29 +351,29 @@ class CoroutineMockAssert(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.mock.assert_awaited()
 
-        asyncio.run(self.runnable_test())
+        asyncio.run(self._runnable_test())
         self.mock.assert_awaited()
 
     def test_assert_awaited_once(self):
         with self.assertRaises(AssertionError):
             self.mock.assert_awaited_once()
 
-        asyncio.run(self.runnable_test())
+        asyncio.run(self._runnable_test())
         self.mock.assert_awaited_once()
 
-        asyncio.run(self.runnable_test())
+        asyncio.run(self._runnable_test())
         with self.assertRaises(AssertionError):
             self.mock.assert_awaited_once()
 
     def test_assert_awaited_with(self):
-        asyncio.run(self.runnable_test())
+        asyncio.run(self._runnable_test())
         with self.assertRaises(AssertionError):
             self.mock.assert_awaited_with('foo')
 
-        asyncio.run(self.runnable_test('foo'))
+        asyncio.run(self._runnable_test('foo'))
         self.mock.assert_awaited_with('foo')
 
-        asyncio.run(self.runnable_test('SomethingElse'))
+        asyncio.run(self._runnable_test('SomethingElse'))
         with self.assertRaises(AssertionError):
             self.mock.assert_awaited_with('foo')
 
@@ -376,10 +381,10 @@ class CoroutineMockAssert(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.mock.assert_awaited_once_with('foo')
 
-        asyncio.run(self.runnable_test('foo'))
+        asyncio.run(self._runnable_test('foo'))
         self.mock.assert_awaited_once_with('foo')
 
-        asyncio.run(self.runnable_test('foo'))
+        asyncio.run(self._runnable_test('foo'))
         with self.assertRaises(AssertionError):
             self.mock.assert_awaited_once_with('foo')
 
@@ -387,14 +392,14 @@ class CoroutineMockAssert(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.mock.assert_any_await('NormalFoo')
 
-        asyncio.run(self.runnable_test('foo'))
+        asyncio.run(self._runnable_test('foo'))
         with self.assertRaises(AssertionError):
             self.mock.assert_any_await('NormalFoo')
 
-        asyncio.run(self.runnable_test('NormalFoo'))
+        asyncio.run(self._runnable_test('NormalFoo'))
         self.mock.assert_any_await('NormalFoo')
 
-        asyncio.run(self.runnable_test('SomethingElse'))
+        asyncio.run(self._runnable_test('SomethingElse'))
         self.mock.assert_any_await('NormalFoo')
 
     def test_assert_has_awaits_no_order(self):
@@ -403,18 +408,18 @@ class CoroutineMockAssert(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.mock.assert_has_awaits(calls)
 
-        asyncio.run(self.runnable_test('foo'))
+        asyncio.run(self._runnable_test('foo'))
         with self.assertRaises(AssertionError):
             self.mock.assert_has_awaits(calls)
 
-        asyncio.run(self.runnable_test('NormalFoo'))
+        asyncio.run(self._runnable_test('NormalFoo'))
         with self.assertRaises(AssertionError):
             self.mock.assert_has_awaits(calls)
 
-        asyncio.run(self.runnable_test('baz'))
+        asyncio.run(self._runnable_test('baz'))
         self.mock.assert_has_awaits(calls)
 
-        asyncio.run(self.runnable_test('SomethingElse'))
+        asyncio.run(self._runnable_test('SomethingElse'))
         self.mock.assert_has_awaits(calls)
 
     def test_assert_has_awaits_ordered(self):
@@ -422,23 +427,23 @@ class CoroutineMockAssert(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.mock.assert_has_awaits(calls, any_order=True)
 
-        asyncio.run(self.runnable_test('baz'))
+        asyncio.run(self._runnable_test('baz'))
         with self.assertRaises(AssertionError):
             self.mock.assert_has_awaits(calls, any_order=True)
 
-        asyncio.run(self.runnable_test('foo'))
+        asyncio.run(self._runnable_test('foo'))
         with self.assertRaises(AssertionError):
             self.mock.assert_has_awaits(calls, any_order=True)
 
-        asyncio.run(self.runnable_test('NormalFoo'))
+        asyncio.run(self._runnable_test('NormalFoo'))
         self.mock.assert_has_awaits(calls, any_order=True)
 
-        asyncio.run(self.runnable_test('qux'))
+        asyncio.run(self._runnable_test('qux'))
         self.mock.assert_has_awaits(calls, any_order=True)
 
     def test_assert_not_awaited(self):
         self.mock.assert_not_awaited()
 
-        asyncio.run(self.runnable_test())
+        asyncio.run(self._runnable_test())
         with self.assertRaises(AssertionError):
             self.mock.assert_not_awaited()
