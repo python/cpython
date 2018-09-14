@@ -1341,12 +1341,11 @@ built-in types.
   involved, they compare mathematically (algorithmically) correct without loss
   of precision.
 
-  The not-a-number values :const:`float('NaN')` and :const:`Decimal('NaN')`
-  are special.  They are identical to themselves (``x is x`` is true) but
-  are not equal to themselves (``x == x`` is false).  Additionally,
-  comparing any number to a not-a-number value
-  will return ``False``.  For example, both ``3 < float('NaN')`` and
-  ``float('NaN') < 3`` will return ``False``.
+  The not-a-number values ``float('NaN')`` and ``decimal.Decimal('NaN')`` are
+  special.  Any ordered comparison of a number to a not-a-number value is false.
+  A counter-intuitive implication is that not-a-number values are not equal to
+  themselves.  For example, if ``x = float('NaN')``, ``3 < x``, ``x < 3``, ``x
+  == x``, ``x != x`` are all false.  This behavior is compliant with IEEE 754.
 
 * Binary sequences (instances of :class:`bytes` or :class:`bytearray`) can be
   compared within and across their types.  They compare lexicographically using
