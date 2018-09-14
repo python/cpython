@@ -260,7 +260,7 @@ class HTMLParser(_markupbase.ParserBase):
         if rawdata[i:i+4] == '<!--':
             # this case is actually already handled in goahead()
             return self.parse_comment(i)
-        elif rawdata[i:i+3] == '<![CDATA[':
+        elif rawdata[i:i+9] == '<![CDATA[':
             return self.parse_marked_section(i)
         elif rawdata[i:i+9].lower() == '<!doctype':
             # find the closing >

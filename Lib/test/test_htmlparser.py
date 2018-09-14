@@ -635,6 +635,30 @@ text
         ]
         self._run_check(html, expected)
 
+    def test_cdata_declarations(self):
+        # More tests should be added. See also "8.2.4.42. Markup
+        # declaration open state", "8.2.4.69. CDATA section state",
+        # and issue 32876
+        html = ('<![CDATA[just some plain text]]>')
+        expected = [('unknown decl', 'CDATA[just some plain text')]
+        self._run_check(html, expected)
+
+    def test_cdata_declarations_multiline(self):
+        html = ('<code><![CDATA['
+                '    if (a < b && a > b) {'
+                '        printf("[<marquee>How?</marquee>]");'
+                '    }'
+                ']]></code>')
+        expected = [
+            ('starttag', 'code', []),
+            ('unknown decl',
+             'CDATA[    if (a < b && a > b) {        '
+             'printf("[<marquee>How?</marquee>]");    }'),
+            ('endtag', 'code')
+        ]
+        self._run_check(html, expected)
+
+
     def test_convert_charrefs_dropped_text(self):
         # #23144: make sure that all the events are triggered when
         # convert_charrefs is True, even if we don't call .close()
