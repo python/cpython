@@ -75,11 +75,3 @@ Reference
 
    asyncio-api-index.rst
    asyncio-dev.rst
-
-
-.. seealso::
-
-   The :mod:`asyncio` module was proposed in :PEP:`3156`.
-   Since the acceptance of the PEP many new APIs were added and many
-   original APIs were altered.  The PEP should be treated as a
-   historical document.
