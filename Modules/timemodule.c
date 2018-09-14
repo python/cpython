@@ -1764,7 +1764,8 @@ PyInit_time(void)
 
 #if defined(__linux__) && !defined(__GLIBC__)
     struct tm tm;
-    if (gmtime_r(0, &tm) != NULL)
+    const time_t zero = 0;
+    if (gmtime_r(&zero, &tm) != NULL)
         utc_string = tm.tm_zone;
 #endif
 
