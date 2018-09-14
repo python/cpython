@@ -1,0 +1,226 @@
+diff --git a/Lib/ctypes/test/test_values.py b/Lib/ctypes/test/test_values.py
+index e71b48020f..f35fc08d6e 100644
+--- a/Lib/ctypes/test/test_values.py
++++ b/Lib/ctypes/test/test_values.py
+@@ -61,10 +61,7 @@ class PythonValuesTestCase(unittest.TestCase):
+         # found, but don't worry about its size too much.  The same
+         # applies to _frozen_importlib_external.
+         bootstrap_seen = []
+-        bootstrap_expected = [
+-                b'_frozen_importlib',
+-                b'_frozen_importlib_external',
+-                ]
++        bootstrap_expected = []
+         for entry in ft:
+             # This is dangerous. We *can* iterate over a pointer, but
+             # the loop will not terminate (maybe with an access
+diff --git a/Makefile.pre.in b/Makefile.pre.in
+index 1c9ffea6ee..3b45806d8d 100644
+--- a/Makefile.pre.in
++++ b/Makefile.pre.in
+@@ -354,6 +354,7 @@ PYTHON_OBJS=	\
+ 		Python/structmember.o \
+ 		Python/symtable.o \
+ 		Python/sysmodule.o \
++		Python/frozenmodules.o \
+ 		Python/traceback.o \
+ 		Python/getopt.o \
+ 		Python/pystrcmp.o \
+@@ -777,6 +778,12 @@ Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile
+ 		$(MULTIARCH_CPPFLAGS) \
+ 		-o $@ $(srcdir)/Python/sysmodule.c
+ 
++Python/frozenmodules.o: $(srcdir)/Python/frozenmodules.c $(srcdir)/Python/frozenmodules.h Makefile
++	$(CC) -c $(PY_CORE_CFLAGS) \
++		-DABIFLAGS='"$(ABIFLAGS)"' \
++		$(MULTIARCH_CPPFLAGS) \
++		-o $@ $(srcdir)/Python/frozenmodules.c
++
+ $(IO_OBJS): $(IO_H)
+ 
+ $(PGEN): $(PGENOBJS)
+@@ -1009,6 +1016,7 @@ PYTHON_HEADERS= \
+ 		pyconfig.h \
+ 		$(PARSER_HEADERS) \
+ 		$(srcdir)/Include/Python-ast.h \
++		$(srcdir)/Python/frozenmodules.h \
+ 		$(DTRACE_HEADERS)
+ 
+ $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
+diff --git a/Python/frozenmodules.h b/Python/frozenmodules.h
+new file mode 100644
+index 0000000000..6ad5ba1989
+--- /dev/null
++++ b/Python/frozenmodules.h
+@@ -0,0 +1,20 @@
++/* Frozen python modules */
++
++#ifndef Py_CHILLEDMODULES_H
++#define Py_CHILLEDMODULES_H
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++
++extern void _PyFrozenModules_Init(void);
++extern PyObject* _PyFrozenModule_Lookup(PyObject* name);
++extern void _PyFrozenModules_Finalize(void);
++extern int _PyFrozenModules_ImportBootstrap(void);
++extern void _PyFrozenModules_Disable(void);
++extern void _PyFrozenModules_Enable(void);
++
++#ifdef __cplusplus
++}
++#endif
++#endif /* !Py_CHILLEDMODULES_H */
+diff --git a/Python/frozen.c b/Python/frozen.c
+index 7e04f3ca02..7751813b69 100644
+--- a/Python/frozen.c
++++ b/Python/frozen.c
+@@ -2,8 +2,6 @@
+ /* Dummy frozen modules initializer */
+ 
+ #include "Python.h"
+-#include "importlib.h"
+-#include "importlib_external.h"
+ 
+ /* In order to test the support for frozen modules, by default we
+    define a single frozen module, __hello__.  Loading it will print
+@@ -28,10 +26,6 @@ static unsigned char M___hello__[] = {
+ #define SIZE (int)sizeof(M___hello__)
+ 
+ static const struct _frozen _PyImport_FrozenModules[] = {
+-    /* importlib */
+-    {"_frozen_importlib", _Py_M__importlib, (int)sizeof(_Py_M__importlib)},
+-    {"_frozen_importlib_external", _Py_M__importlib_external,
+-        (int)sizeof(_Py_M__importlib_external)},
+     /* Test module */
+     {"__hello__", M___hello__, SIZE},
+     /* Test package (negative size indicates package-ness) */
+diff --git a/Python/import.c b/Python/import.c
+index fa0a9e1f2a..b978e799ca 100644
+--- a/Python/import.c
++++ b/Python/import.c
+@@ -11,7 +11,9 @@
+ #include "frameobject.h"
+ #include "osdefs.h"
+ #include "importdl.h"
++#include "frozenmodules.h"
+ 
++#include <stdbool.h>
+ #ifdef HAVE_FCNTL_H
+ #include <fcntl.h>
+ #endif
+@@ -1502,6 +1504,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
+     PyObject *package = NULL;
+     PyInterpreterState *interp = PyThreadState_GET()->interp;
+     int has_from;
++    _Bool from_frozen_module = false;
+ 
+     if (name == NULL) {
+         PyErr_SetString(PyExc_ValueError, "Empty module name");
+@@ -1538,6 +1541,10 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
+     }
+ 
+     mod = PyDict_GetItem(interp->modules, abs_name);
++    if(mod == NULL) {
++        mod = _PyFrozenModule_Lookup(abs_name);
++        from_frozen_module = true;
++    }
+     if (mod != NULL && mod != Py_None) {
+         _Py_IDENTIFIER(__spec__);
+         _Py_IDENTIFIER(_initializing);
+@@ -1546,7 +1553,8 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
+         PyObject *spec;
+         int initializing = 0;
+ 
+-        Py_INCREF(mod);
++        if (!from_frozen_module)
++            Py_INCREF(mod);
+         /* Optimization: only call _bootstrap._lock_unlock_module() if
+            __spec__._initializing is true.
+            NOTE: because of this, initializing must be set *before*
+diff --git a/Python/pylifecycle.c b/Python/pylifecycle.c
+index ecfdfee218..57a43bacab 100644
+--- a/Python/pylifecycle.c
++++ b/Python/pylifecycle.c
+@@ -16,6 +16,8 @@
+ #include "osdefs.h"
+ #include <locale.h>
+ 
++#include "frozenmodules.h"
++
+ #ifdef HAVE_SIGNAL_H
+ #include <signal.h>
+ #endif
+@@ -32,6 +34,7 @@
+ #undef BYTE
+ #include "windows.h"
+ 
++
+ extern PyTypeObject PyWindowsConsoleIO_Type;
+ #define PyWindowsConsoleIO_Check(op) (PyObject_TypeCheck((op), &PyWindowsConsoleIO_Type))
+ #endif
+@@ -253,7 +256,7 @@ import_init(PyInterpreterState *interp, PyObject *sysmod)
+     PyObject *value;
+ 
+     /* Import _importlib through its frozen version, _frozen_importlib. */
+-    if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
++    if (_PyFrozenModules_ImportBootstrap() <= 0) {
+         Py_FatalError("Py_Initialize: can't import _frozen_importlib");
+     }
+     else if (Py_VerboseFlag) {
+@@ -417,6 +420,8 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
+     PySys_SetObject("__stderr__", pstderr);
+     Py_DECREF(pstderr);
+ 
++    _PyFrozenModules_Init();
++
+     _PyImport_Init();
+ 
+     _PyImportHooks_Init();
+@@ -432,6 +437,8 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
+ 
+     import_init(interp, sysmod);
+ 
++
++
+     /* initialize the faulthandler module */
+     if (_PyFaulthandler_Init())
+         Py_FatalError("Py_Initialize: can't initialize faulthandler");
+@@ -556,6 +563,8 @@ Py_FinalizeEx(void)
+ 
+     wait_for_thread_shutdown();
+ 
++    _PyFrozenModules_Finalize();
++
+     /* The interpreter is still entirely intact at this point, and the
+      * exit funcs may be relying on that.  In particular, if some thread
+      * or exit func is still waiting to do an import, the import machinery
+@@ -786,6 +795,8 @@ Py_NewInterpreter(void)
+ 
+     save_tstate = PyThreadState_Swap(tstate);
+ 
++    _PyFrozenModules_Disable();
++
+     /* XXX The following is lax in error checking */
+ 
+     interp->modules = PyDict_New();
+@@ -836,12 +847,16 @@ Py_NewInterpreter(void)
+             initsite();
+     }
+ 
+-    if (!PyErr_Occurred())
++    if (!PyErr_Occurred()) {
++        _PyFrozenModules_Enable();
+         return tstate;
++    }
+ 
+ handle_error:
+     /* Oops, it didn't work.  Undo it all. */
+ 
++    _PyFrozenModules_Enable();
++
+     PyErr_PrintEx(0);
+     PyThreadState_Clear(tstate);
+     PyThreadState_Swap(save_tstate);
