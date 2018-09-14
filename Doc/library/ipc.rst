@@ -1,11 +1,11 @@
 .. _ipc:
 
 *****************************************
-Interprocess Communication and Networking
+Networking and Interprocess Communication
 *****************************************
 
-The modules described in this chapter provide mechanisms for different processes
-to communicate.
+The modules described in this chapter provide mechanisms for
+networking and inter-processes communication.
 
 Some modules only work for two processes that are on the same machine, e.g.
 :mod:`signal` and :mod:`mmap`.  Other modules support networking protocols
