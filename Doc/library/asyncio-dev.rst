@@ -81,7 +81,7 @@ To schedule a callback from a different OS thread, the
     loop.call_soon_threadsafe(callback, *args)
 
 Almost all asyncio objects are not thread safe, which is typically
-not a problem unless there is code that works with them from an outside
+not a problem unless there is code that works with them from outside
 of a Task or a callback.  If there's a need for such code to call a
 low-level asyncio API, the :meth:`loop.call_soon_threadsafe` method
 should be used, e.g.::
@@ -95,7 +95,7 @@ To schedule a coroutine object from a different OS thread, the
      async def coro_func():
           return await asyncio.sleep(1, 42)
 
-     # Later in some OS thread:
+     # Later in another OS thread:
 
      future = asyncio.run_coroutine_threadsafe(coro_func(), loop)
      # Wait for the result:
