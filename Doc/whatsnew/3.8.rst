@@ -221,6 +221,11 @@ Changes in Python behavior
   in the leftmost :keyword:`for` clause).
   (Contributed by Serhiy Storchaka in :issue:`10544`.)
 
+* Special methods ``__divmod__`` and ``__rdivmod__`` should now return a tuple
+  of size 2.  :func:`divmod` and :c:func`PyNumber_Divmod` will raise now an
+  error if the result is not a 2-tuple.
+  (Contributed by Serhiy Storchaka in :issue:`34676`.)
+
 
 Changes in the Python API
 -------------------------

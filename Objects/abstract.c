@@ -946,7 +946,6 @@ BINARY_FUNC(PyNumber_And, nb_and, "&")
 BINARY_FUNC(PyNumber_Lshift, nb_lshift, "<<")
 BINARY_FUNC(PyNumber_Rshift, nb_rshift, ">>")
 BINARY_FUNC(PyNumber_Subtract, nb_subtract, "-")
-BINARY_FUNC(PyNumber_Divmod, nb_divmod, "divmod()")
 
 PyObject *
 PyNumber_Add(PyObject *v, PyObject *w)
@@ -959,6 +958,20 @@ PyNumber_Add(PyObject *v, PyObject *w)
             return (*m->sq_concat)(v, w);
         }
         result = binop_type_error(v, w, "+");
+    }
+    return result;
+}
+
+PyObject *
+PyNumber_Divmod(PyObject *v, PyObject *w)
+{
+    PyObject *result = binary_op(v, w, NB_SLOT(nb_divmod), "divmod()");
+    if (result != NULL
+        && !(PyTuple_Check(result) && PyTuple_GET_SIZE(result) == 2))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "__divmod__() and __rdivmod__() must return a 2-tuple");
+        Py_CLEAR(result);
     }
     return result;
 }
