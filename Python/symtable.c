@@ -31,8 +31,8 @@
 
 #define IMPORT_STAR_WARNING "import * only allowed at module level"
 
-#define NAMED_EXPR_IN_CLASS \
-"named expression cannot be used in a class body"
+#define NAMED_EXPR_COMP_IN_CLASS \
+"named expression within a comprehension cannot be used in a class body"
 
 static PySTEntryObject *
 ste_new(struct symtable *st, identifier name, _Py_block_ty block,
@@ -1377,7 +1377,8 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 }
 
 static int
-symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e) {
+symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
+{
     assert(st->st_stack);
 
     Py_ssize_t i, size;
@@ -1412,15 +1413,20 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e) {
 
             return symtable_add_def_helper(st, e->v.Name.id, DEF_GLOBAL, ste);
         }
-        /* XXX handle ClassBlock */
+        /* Disallow usage in ClassBlock */
         if (ste->ste_type == ClassBlock) {
-            PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_IN_CLASS, e->v.Name.id);
+            PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_CLASS, e->v.Name.id);
             PyErr_SyntaxLocationObject(st->st_filename,
                                         e->lineno,
                                         e->col_offset);
             VISIT_QUIT(st, 0);
         }
     }
+
+    /* We should always find either a FunctionBlock, ModuleBlock or ClassBlock
+       and should never fall to this case
+    */
+    assert(0);
     return 0;
 }
 
