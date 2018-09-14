@@ -315,6 +315,28 @@ StreamWriter
 
       .. versionadded:: 3.7
 
+   .. coroutinemethod:: sendfile(file, offset=0, count=None, \*, \
+                                 fallback=True)
+
+      Send a *file* to a peer.  Return the total number of bytes
+      sent.
+
+      For more details about arguments and implementation see
+      :meth:`loop.sendfile`.
+
+      .. versionadded:: 3.8
+
+   .. coroutinemethod:: start_tls(sslcontext, \*, \
+                                  server_hostname=None, \
+                                  ssl_handshake_timeout=None)
+
+      Upgrade an existing transport-based connection to TLS.
+
+      For more details about arguments and implementation see
+      :meth:`loop.start_tls`.
+
+      .. versionadded:: 3.8
+
 
 Examples
 ========
