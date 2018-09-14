@@ -60,7 +60,7 @@ Queue
 
    .. coroutinemethod:: join()
 
-      Block until all items in the queue have been gotten and processed.
+      Block until all items in the queue have been received and processed.
 
       The count of unfinished tasks goes up whenever an item is added
       to the queue. The count goes down whenever a consumer thread calls
