@@ -11,9 +11,9 @@
 --------------
 
 The :mod:`pyclbr` module provides limited information about the
-functions, classes, and methods defined in a python-coded module.  The
+functions, classes, and methods defined in a Python-coded module.  The
 information is sufficient to implement a module browser.  The
-information is extracted from the python source code rather than by
+information is extracted from the Python source code rather than by
 importing the module, so this module is safe to use with untrusted code.
 This restriction makes it impossible to use this module with modules not
 implemented in Python, including all standard and optional extension
