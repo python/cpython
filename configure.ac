@@ -4744,11 +4744,6 @@ then
       [Define if poll() sets errno on invalid file descriptors.])
 fi
 
-# Before we can test tzset, we need to check if struct tm has a tm_zone
-# (which is not required by ISO C or UNIX spec) and/or if we support
-# tzname[]
-AC_STRUCT_TIMEZONE
-
 # check tzset(3) exists and works like we expect it to
 AC_MSG_CHECKING(for working tzset())
 AC_CACHE_VAL(ac_cv_working_tzset, [
