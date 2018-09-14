@@ -52,6 +52,11 @@ The :mod:`functools` module defines the following functions:
    Since a dictionary is used to cache results, the positional and keyword
    arguments to the function must be hashable.
 
+   Distinct argument patterns may be considered to be distinct calls with
+   separate cache entries.  For example, `f(a=1, b=2)` and `f(b=2, a=1)`
+   differ in their keyword argument order and may have two separate cache
+   entries.
+
    If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
    grow without bound.  The LRU feature performs best when *maxsize* is a
    power-of-two.
