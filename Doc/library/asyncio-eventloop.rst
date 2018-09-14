@@ -1075,6 +1075,11 @@ Enabling debug mode
 
    Set the debug mode of the event loop.
 
+   .. versionchanged:: 3.7
+
+      The new ``-X dev`` command line option can now also be used
+      to enable the debug mode.
+
 .. seealso::
 
    The :ref:`debug mode of asyncio <asyncio-debug-mode>`.
