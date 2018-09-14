@@ -9,6 +9,8 @@ Subprocesses
 This section describes high-level async/await asyncio APIs to
 create and manage subprocesses.
 
+.. _asyncio_example_subprocess_shell:
+
 Here's an example of how asyncio can run a shell command and
 communicate its result back::
 

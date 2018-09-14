@@ -42,8 +42,8 @@ as well as **low-level** APIs for *library and framework developers* to:
   with async/await syntax.
 
 
-Contents
---------
+Reference
+---------
 
 .. rubric:: High-level APIs
 
@@ -73,6 +73,7 @@ Contents
 .. toctree::
    :maxdepth: 1
 
+   asyncio-api-index.rst
    asyncio-dev.rst
 
 

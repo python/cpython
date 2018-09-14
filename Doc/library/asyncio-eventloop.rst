@@ -1466,7 +1466,7 @@ during 5 seconds, and then stops the event loop::
 
 .. seealso::
 
-   A similar :ref:`current date <asyncio-date-coroutine>` example
+   A similar :ref:`current date <asyncio_example_sleep>` example
    created with a coroutine and the :func:`run` function.
 
 
