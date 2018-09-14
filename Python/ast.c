@@ -94,6 +94,8 @@ expr_context_name(expr_context_ty ctx)
         return "Load";
     case Store:
         return "Store";
+    case NamedStore:
+        return "NamedStore";
     case Del:
         return "Del";
     case AugLoad:
@@ -1100,7 +1102,6 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
 static int
 set_namedexpr_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
 {
-    asdl_seq *s = NULL;
     /* If a particular expression type can't be used for assign / delete,
        set expr_name to its name and an error message will be generated.
     */
