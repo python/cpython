@@ -266,19 +266,30 @@ class CoroutineSpecSetTest(unittest.TestCase):
 
 
 class CoroutineArguments(unittest.TestCase):
-    async def compute(x):
-        yield x
+    # I want to add more tests here with more complicate use-cases.
+    def setUp(self):
+        self.old_policy = asyncio.events._event_loop_policy
+
+    def tearDown(self):
+        # Restore the original event loop policy.
+        asyncio.events._event_loop_policy = self.old_policy
 
     def test_add_return_value(self):
-        mock = CoroutineMock(self.compute, return_value=10)
-        output = mock(5)
+        async def addition(self, var):
+            return var + 1
+
+        mock = CoroutineMock(addition, return_value=10)
+        output = asyncio.run(mock(5))
+
         self.assertEqual(output, 10)
 
-    def test_add_side_effect(self):
-        pass
+    def test_add_side_effect_exception(self):
+        async def addition(self, var):
+            return var + 1
 
-    def test_add_side_effect_with_exception(self):
-        pass
+        mock = CoroutineMock(addition, side_effect=Exception('err'))
+        with self.assertRaises(Exception):
+            asyncio.run(mock(5))
 
 
 class CoroutineMagicMethods(unittest.TestCase):
