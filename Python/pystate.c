@@ -1455,7 +1455,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     return 0;
 }
 
-static void
+static int
 _release_xidata(void *arg)
 {
     _PyCrossInterpreterData *data = (_PyCrossInterpreterData *)arg;
@@ -1463,36 +1463,14 @@ _release_xidata(void *arg)
         data->free(data->data);
     }
     Py_XDECREF(data->obj);
-}
-
-static void
-_call_in_interpreter(struct _gilstate_runtime_state *gilstate,
-                     PyInterpreterState *interp,
-                     void (*func)(void *), void *arg)
-{
-    /* We would use Py_AddPendingCall() if it weren't specific to the
-     * main interpreter (see bpo-33608).  In the meantime we take a
-     * naive approach.
-     */
-    PyThreadState *save_tstate = NULL;
-    if (interp != _PyRuntimeGILState_GetThreadState(gilstate)->interp) {
-        // XXX Using the "head" thread isn't strictly correct.
-        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-        // XXX Possible GILState issues?
-        save_tstate = _PyThreadState_Swap(gilstate, tstate);
-    }
-
-    func(arg);
-
-    // Switch back.
-    if (save_tstate != NULL) {
-        _PyThreadState_Swap(gilstate, save_tstate);
-    }
+    return 0;
 }
 
 void
 _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
 {
+    _PyRuntimeState *runtime = &_PyRuntime;
+
     if (data->data == NULL && data->obj == NULL) {
         // Nothing to release!
         return;
@@ -1509,9 +1487,10 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
     }
 
     // "Release" the data and/or the object.
-    struct _gilstate_runtime_state *gilstate = &_PyRuntime.gilstate;
-    // XXX Use _Py_AddPendingCall().
-    _call_in_interpreter(gilstate, interp, _release_xidata, data);
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    _PyEval_AddPendingCall(tstate,
+                           &runtime->ceval, &interp->ceval,
+                           0, _release_xidata, data);
 }
 
 PyObject *
