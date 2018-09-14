@@ -1,6 +1,9 @@
 .. currentmodule:: asyncio
 
 
+.. _asyncio-transports-protocols:
+
+
 ========================
 Transports and Protocols
 ========================
@@ -393,10 +396,12 @@ Subprocess Transports
 
 .. method:: SubprocessTransport.kill()
 
-   Kill the subprocess, as in :meth:`subprocess.Popen.kill`.
+   Kill the subprocess.
 
    On POSIX systems, the function sends SIGKILL to the subprocess.
    On Windows, this method is an alias for :meth:`terminate`.
+
+   See also :meth:`subprocess.Popen.kill`.
 
 .. method:: SubprocessTransport.send_signal(signal)
 
@@ -405,17 +410,20 @@ Subprocess Transports
 
 .. method:: SubprocessTransport.terminate()
 
-   Ask the subprocess to stop, as in :meth:`subprocess.Popen.terminate`.
+   Stop the subprocess.
 
    On POSIX systems, this method sends SIGTERM to the subprocess.
    On Windows, the Windows API function TerminateProcess() is called to
    stop the subprocess.
 
+   See also :meth:`subprocess.Popen.terminate`.
+
 .. method:: SubprocessTransport.close()
 
-   Kill the subprocess by calling the :meth:`kill` method
-   if the subprocess hasn't returned yet, and close transports of all
-   pipes (*stdin*, *stdout* and *stderr*).
+   Kill the subprocess by calling the :meth:`kill` method.
+
+   If the subprocess hasn't returned yet, and close transports of
+   *stdin*, *stdout*, and *stderr* pipes.
 
 
 .. _asyncio-protocol:
