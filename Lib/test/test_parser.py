@@ -811,7 +811,8 @@ class ParserStackLimitTestCase(unittest.TestCase):
         return "["*level+"]"*level
 
     def test_deeply_nested_list(self):
-        # XXX used to be 99 levels in 2.x, used to be 93 levels in 3.7.X
+        # This has fluctuated between 99 levels in 2.x, down to 93 levels in
+        # 3.7.X and back up to 99 in 3.8.X. Related to MAXSTACK size in Parser.h
         e = self._nested_expression(99)
         st = parser.expr(e)
         st.compile()
