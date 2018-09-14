@@ -1,6 +1,8 @@
 .. currentmodule:: asyncio
 
 
+.. _asyncio-futures:
+
 =======
 Futures
 =======

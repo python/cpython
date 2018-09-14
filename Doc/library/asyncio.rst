@@ -6,41 +6,40 @@
 
 --------------
 
-.. TODO: rewrite the introduction section
+asyncio is a library to write **concurrent** code using
+**async/await** syntax.
 
-This module provides infrastructure for writing single-threaded concurrent
-code using coroutines, multiplexing I/O access over sockets and other
-resources, running network clients and servers, and other related primitives.
-Here is a more detailed list of the package contents:
+asyncio is used as a foundation for multiple Python asynchronous
+frameworks that provide high-performance network and web-servers,
+database connection libraries, distributed task queues, etc.
 
-* a pluggable :ref:`event loop <asyncio-event-loop>` with various system-specific
-  implementations;
+asyncio is often a perfect fit for IO-bound and high-level
+**structured** network code.
 
-* :ref:`transport <asyncio-transport>` and :ref:`protocol <asyncio-protocol>` abstractions
-  (similar to those in `Twisted <https://twistedmatrix.com/trac/>`_);
+asyncio provides a set of **high-level** APIs to:
 
-* concrete support for TCP, UDP, SSL, subprocess pipes, delayed calls, and
-  others (some may be system-dependent);
+* :ref:`run Python coroutines <coroutine>` concurrently and
+  have full control over their execution;
 
-* a :class:`Future` class that mimics the one in the :mod:`concurrent.futures`
-  module, but adapted for use with the event loop;
+* perform :ref:`network IO and IPC <asyncio-streams>`;
 
-* coroutines and tasks based on ``yield from`` (:PEP:`380`), to help write
-  concurrent code in a sequential fashion;
+* control :ref:`subprocesses <asyncio-subprocess>`;
 
-* cancellation support for :class:`Future`\s and coroutines;
+* distribute tasks via :ref:`queues <asyncio-queues>`;
 
-* :ref:`synchronization primitives <asyncio-sync>` for use between coroutines in
-  a single thread, mimicking those in the :mod:`threading` module;
+* :ref:`synchronize <asyncio-sync>` concurrent code;
 
-* an interface for passing work off to a threadpool, for times when
-  you absolutely, positively have to use a library that makes blocking
-  I/O calls.
+as well as **low-level** APIs to:
 
-Asynchronous programming is more complex than classical "sequential"
-programming: see the :ref:`Develop with asyncio <asyncio-dev>` page which lists
-common traps and explains how to avoid them. :ref:`Enable the debug mode
-<asyncio-debug-mode>` during development to detect common issues.
+* create and manage :ref:`event loops <asyncio-event-loop>`, which
+  provide asynchronous APIs for networking, subprocesses, OS signals,
+  etc;
+
+* implement efficient protocols using
+  :ref:`transports <asyncio-transports-protocols>`;
+
+* :ref:`bridge <asyncio-futures>` callback-based libraries and code
+  with async/await syntax.
 
 High-level APIs:
 
