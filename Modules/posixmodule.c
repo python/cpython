@@ -32,6 +32,7 @@
 #else
 #include "winreparse.h"
 #endif
+#include "internal/pystate.h"
 
 /* On android API level 21, 'AT_EACCESS' is not declared although
  * HAVE_FACCESSAT is defined. */
@@ -420,6 +421,7 @@ void
 PyOS_AfterFork_Child(void)
 {
     _PyGILState_Reinit();
+    _PyInterpreterState_DeleteExceptMain();
     PyEval_ReInitThreads();
     _PyImport_ReInitLock();
     _PySignal_AfterFork();
@@ -5790,6 +5792,10 @@ os_fork1_impl(PyObject *module)
 {
     pid_t pid;
 
+    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
+        PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
+        return NULL;
+    }
     PyOS_BeforeFork();
     pid = fork1();
     if (pid == 0) {
@@ -5821,6 +5827,10 @@ os_fork_impl(PyObject *module)
 {
     pid_t pid;
 
+    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
+        PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
+        return NULL;
+    }
     PyOS_BeforeFork();
     pid = fork();
     if (pid == 0) {
@@ -6416,6 +6426,10 @@ os_forkpty_impl(PyObject *module)
     int master_fd = -1;
     pid_t pid;
 
+    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
+        PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
+        return NULL;
+    }
     PyOS_BeforeFork();
     pid = forkpty(&master_fd, NULL, NULL, NULL);
     if (pid == 0) {

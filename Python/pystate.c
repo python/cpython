@@ -268,6 +268,44 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 }
 
 
+/*
+ * Delete all interpreter states except the main interpreter.  If there
+ * is a current interpreter state, it *must* be the main interpreter.
+ */
+void
+_PyInterpreterState_DeleteExceptMain()
+{
+    PyThreadState *tstate = PyThreadState_Swap(NULL);
+    if (tstate != NULL && tstate->interp != _PyRuntime.interpreters.main) {
+        Py_FatalError("PyInterpreterState_DeleteExceptMain: not main interpreter");
+    }
+
+    HEAD_LOCK();
+    PyInterpreterState *interp = _PyRuntime.interpreters.head;
+    _PyRuntime.interpreters.head = NULL;
+    for (; interp != NULL; interp = interp->next) {
+        if (interp == _PyRuntime.interpreters.main) {
+            _PyRuntime.interpreters.main->next = NULL;
+            _PyRuntime.interpreters.head = interp;
+            continue;
+        }
+
+        PyInterpreterState_Clear(interp);  // XXX must activate?
+        zapthreads(interp);
+        if (interp->id_mutex != NULL) {
+            PyThread_free_lock(interp->id_mutex);
+        }
+        PyMem_RawFree(interp);
+    }
+    HEAD_UNLOCK();
+
+    if (_PyRuntime.interpreters.head == NULL) {
+        Py_FatalError("PyInterpreterState_DeleteExceptMain: missing main");
+    }
+    PyThreadState_Swap(tstate);
+}
+
+
 PyInterpreterState *
 _PyInterpreterState_Get(void)
 {
