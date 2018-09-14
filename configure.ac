@@ -2066,7 +2066,7 @@ AC_CHECK_HEADERS(asm/types.h crypt.h conio.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
 ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
 sched.h shadow.h signal.h stropts.h termios.h \
-unistd.h utime.h \
+utime.h \
 poll.h sys/devpoll.h sys/epoll.h sys/poll.h \
 sys/audioio.h sys/xattr.h sys/bsdtty.h sys/event.h sys/file.h sys/ioctl.h \
 sys/kern_control.h sys/loadavg.h sys/lock.h sys/mkdev.h sys/modem.h \
@@ -4743,11 +4743,6 @@ then
   AC_DEFINE(HAVE_BROKEN_POLL, 1,
       [Define if poll() sets errno on invalid file descriptors.])
 fi
-
-# Before we can test tzset, we need to check if struct tm has a tm_zone
-# (which is not required by ISO C or UNIX spec) and/or if we support
-# tzname[]
-AC_STRUCT_TIMEZONE
 
 # check tzset(3) exists and works like we expect it to
 AC_MSG_CHECKING(for working tzset())

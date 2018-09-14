@@ -213,41 +213,6 @@ module os
 extern char        *ctermid_r(char *);
 #endif
 
-#ifndef HAVE_UNISTD_H
-#if ( defined(__WATCOMC__) || defined(_MSC_VER) ) && !defined(__QNX__)
-extern int mkdir(const char *);
-#else
-extern int mkdir(const char *, mode_t);
-#endif
-#if defined(__IBMC__) || defined(__IBMCPP__)
-extern int chdir(char *);
-extern int rmdir(char *);
-#else
-extern int chdir(const char *);
-extern int rmdir(const char *);
-#endif
-extern int chmod(const char *, mode_t);
-/*#ifdef HAVE_FCHMOD
-extern int fchmod(int, mode_t);
-#endif*/
-/*#ifdef HAVE_LCHMOD
-extern int lchmod(const char *, mode_t);
-#endif*/
-extern int chown(const char *, uid_t, gid_t);
-extern char *getcwd(char *, int);
-extern char *strerror(int);
-extern int link(const char *, const char *);
-extern int rename(const char *, const char *);
-extern int stat(const char *, struct stat *);
-extern int unlink(const char *);
-#ifdef HAVE_SYMLINK
-extern int symlink(const char *, const char *);
-#endif /* HAVE_SYMLINK */
-#ifdef HAVE_LSTAT
-extern int lstat(const char *, struct stat *);
-#endif /* HAVE_LSTAT */
-#endif /* !HAVE_UNISTD_H */
-
 #endif /* !_MSC_VER */
 
 #ifdef HAVE_POSIX_SPAWN
