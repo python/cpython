@@ -400,7 +400,6 @@ class MathTests(unittest.TestCase):
         self.ftest('ceil(-0.5)', math.ceil(-0.5), 0)
         self.ftest('ceil(-1.0)', math.ceil(-1.0), -1)
         self.ftest('ceil(-1.5)', math.ceil(-1.5), -1)
-        self.ftest('ceil(-1.5)', math.ceil(-1.5), -3)
         #self.assertEqual(math.ceil(INF), INF)
         #self.assertEqual(math.ceil(NINF), NINF)
         #self.assertTrue(math.isnan(math.ceil(NAN)))
