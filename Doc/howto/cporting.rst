@@ -6,19 +6,6 @@
 Porting Extension Modules to Python 3
 *************************************
 
-.. topic:: Abstract
-
-   Although changing the C-API was not one of Python 3's objectives,
-   the many Python-level changes made leaving Python 2's API intact
-   impossible.  In fact, some changes such as :func:`int` and
-   :func:`long` unification are more obvious on the C level.  This
-   document used to document such incompatibilities and how they can
-   be worked around, but was never particularly complete.
-   Guides that are much more useful are maintained outside the Python
-   documentation.
-
-   This page now lists links to suggested external guides and projects.
-
 We recommend the following resources for porting extension modules to Python 3:
 
 * The `Migrating C extensions`_ chapter from
