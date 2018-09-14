@@ -2924,11 +2924,24 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 asdl_seq_SET(args, nargs++, e);
             }
             else if (TYPE(CHILD(ch, 1)) == COLONEQUAL) {
+                /* treat colon equal as positional argument */
+                if (nkeywords) {
+                    if (ndoublestars) {
+                        ast_error(c, chch,
+                                "positional argument follows "
+                                "keyword argument unpacking");
+                    }
+                    else {
+                        ast_error(c, chch,
+                                "positional argument follows "
+                                "keyword argument");
+                    }
+                    return NULL;
+                }
                 e = ast_for_namedexpr(c, ch);
                 if (!e)
                     return NULL;
                 asdl_seq_SET(args, nargs++, e);
-                nargs++;
             }
             else {
                 /* a keyword argument */
