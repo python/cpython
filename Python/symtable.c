@@ -31,6 +31,9 @@
 
 #define IMPORT_STAR_WARNING "import * only allowed at module level"
 
+#define NAMED_EXPR_IN_CLASS \
+"named expression cannot be used in a class body"
+
 static PySTEntryObject *
 ste_new(struct symtable *st, identifier name, _Py_block_ty block,
         void *key, int lineno, int col_offset)
@@ -1411,7 +1414,11 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e) {
         }
         /* XXX handle ClassBlock */
         if (ste->ste_type == ClassBlock) {
-            printf("XXX: error handling not implemented\n");
+            PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_IN_CLASS, e->v.Name.id);
+            PyErr_SyntaxLocationObject(st->st_filename,
+                                        e->lineno,
+                                        e->col_offset);
+            VISIT_QUIT(st, 0);
         }
     }
     return 0;
