@@ -1,5 +1,6 @@
 .. currentmodule:: asyncio
 
+.. _asyncio-queues:
 
 ======
 Queues
