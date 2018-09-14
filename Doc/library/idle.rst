@@ -303,7 +303,7 @@ Python Docs
    and open docs.python.org showing the latest Python documentation.
 
 Turtle Demo
-   Run the turtledemo module with example python code and turtle drawings.
+   Run the turtledemo module with example Python code and turtle drawings.
 
 Additional help sources may be added here with the Configure IDLE dialog under
 the General tab.
