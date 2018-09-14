@@ -2,7 +2,6 @@
 # E-mail: fuzzyman AT voidspace DOT org DOT uk
 # http://www.voidspace.org.uk/python/mock/
 
-import inspect
 import unittest
 from unittest.test.testmock.support import is_instance, X, SomeClass
 
@@ -146,12 +145,6 @@ class TestCallable(unittest.TestCase):
         mock.wibble.assert_called_once_with()
 
         self.assertRaises(TypeError, mock.wibble, 'some',  'args')
-
-    def test_inspect_iscoroutine_function(self):
-        def foo(): pass
-
-        mock = Mock(foo)
-        self.assertFalse(inspect.iscoroutine(mock))
 
 
 if __name__ == "__main__":

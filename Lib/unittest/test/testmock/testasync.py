@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import call, CoroutineMock, patch, MagicMock
 
 
-class AsyncFoo(object):
+class AsyncClass(object):
     def __init__(self, a):
         pass
     async def coroutine_method(self):
@@ -14,17 +14,22 @@ class AsyncFoo(object):
     @asyncio.coroutine
     def decorated_cr_method(self):
         pass
+    def normal_method(self):
+        pass
 
 async def coroutine_func():
     pass
 
-class NormalFoo(object):
+def normal_func():
+    pass
+
+class NormalClass(object):
     def a(self):
         pass
 
 
-async_foo_name = f'{__name__}.AsyncFoo'
-normal_foo_name = f'{__name__}.NormalFoo'
+async_foo_name = f'{__name__}.AsyncClass'
+normal_foo_name = f'{__name__}.NormalClass'
 
 
 def run_coroutine(coroutine):
@@ -38,11 +43,11 @@ def run_coroutine(coroutine):
 
 class CoroutinePatchDecoratorTest(unittest.TestCase):
     def test_is_coroutine_function_patch(self):
-        @patch.object(AsyncFoo, 'coroutine_method')
+        @patch.object(AsyncClass, 'coroutine_method')
         def test_async(mock_method):
             self.assertTrue(asyncio.iscoroutinefunction(mock_method))
 
-        @patch.object(AsyncFoo, 'decorated_cr_method')
+        @patch.object(AsyncClass, 'decorated_cr_method')
         def test_async_decorator(mock_g):
             self.assertTrue(asyncio.iscoroutinefunction(mock_g))
 
@@ -50,11 +55,11 @@ class CoroutinePatchDecoratorTest(unittest.TestCase):
         test_async_decorator()
 
     def test_is_coroutine_patch(self):
-        @patch.object(AsyncFoo, 'coroutine_method')
+        @patch.object(AsyncClass, 'coroutine_method')
         def test_async(mock_method):
             self.assertTrue(asyncio.iscoroutine(mock_method()))
 
-        @patch.object(AsyncFoo, 'decorated_cr_method')
+        @patch.object(AsyncClass, 'decorated_cr_method')
         def test_async_decorator(mock_method):
             self.assertTrue(asyncio.iscoroutine(mock_method()))
 
@@ -67,11 +72,11 @@ class CoroutinePatchDecoratorTest(unittest.TestCase):
         test_no_parent_attribute()
 
     def test_is_coroutinemock_patch(self):
-        @patch.object(AsyncFoo, 'coroutine_method')
+        @patch.object(AsyncClass, 'coroutine_method')
         def test_async(mock_method):
             self.assertTrue(isinstance(mock_method, CoroutineMock))
 
-        @patch.object(AsyncFoo, 'decorated_cr_method')
+        @patch.object(AsyncClass, 'decorated_cr_method')
         def test_async_decorator(mock_method):
             self.assertTrue(isinstance(mock_method, CoroutineMock))
 
@@ -82,11 +87,11 @@ class CoroutinePatchDecoratorTest(unittest.TestCase):
 class CoroutinePatchCMTest(unittest.TestCase):
     def test_is_coroutine_function_cm(self):
         def test_async():
-            with patch.object(AsyncFoo, 'coroutine_method') as mock_method:
+            with patch.object(AsyncClass, 'coroutine_method') as mock_method:
                 self.assertTrue(asyncio.iscoroutinefunction(mock_method))
 
         def test_async_decorator():
-            with patch.object(AsyncFoo, 'decorated_cr_method') as mock_method:
+            with patch.object(AsyncClass, 'decorated_cr_method') as mock_method:
                 self.assertTrue(asyncio.iscoroutinefunction(mock_method))
 
         test_async()
@@ -94,22 +99,22 @@ class CoroutinePatchCMTest(unittest.TestCase):
 
     def test_is_coroutine_cm(self):
         def test_async():
-            with patch.object(AsyncFoo, 'coroutine_method') as mock_method:
+            with patch.object(AsyncClass, 'coroutine_method') as mock_method:
                 self.assertTrue(asyncio.iscoroutine(mock_method()))
 
         def test_async_decorator():
-            with patch.object(AsyncFoo, 'decorated_cr_method') as mock_method:
+            with patch.object(AsyncClass, 'decorated_cr_method') as mock_method:
                 self.assertTrue(asyncio.iscoroutine(mock_method()))
         test_async()
         test_async_decorator()
 
     def test_is_coroutinemock_cm(self):
         def test_async():
-            with patch.object(AsyncFoo, 'coroutine_method') as mock_method:
+            with patch.object(AsyncClass, 'coroutine_method') as mock_method:
                 self.assertTrue(isinstance(mock_method, CoroutineMock))
 
         def test_async_decorator():
-            with patch.object(AsyncFoo, 'decorated_cr_method') as mock_method:
+            with patch.object(AsyncClass, 'decorated_cr_method') as mock_method:
                 self.assertTrue(isinstance(mock_method, CoroutineMock))
 
         test_async()
@@ -132,7 +137,11 @@ class CoroutineMockTest(unittest.TestCase):
         self.assertTrue(asyncio.iscoroutine(mock()))
         self.assertIn('assert_awaited', dir(mock))
 
-    # Should I test making a non-coroutine a coroutine mock?
+    def test_iscoroutinefunction_normal_function(self):
+        def foo(): pass
+        mock = CoroutineMock(foo)
+        self.assertTrue(asyncio.iscoroutinefunction(mock))
+        self.assertTrue(inspect.iscoroutinefunction(mock))
 
 
 class CoroutineAutospecTest(unittest.TestCase):
@@ -140,7 +149,7 @@ class CoroutineAutospecTest(unittest.TestCase):
         @patch(async_foo_name, autospec=True)
         def test_async(mock_method):
             self.assertTrue(isinstance(
-                             mock_method.decorated_cr_method,
+                             mock_method.coroutine_method,
                              CoroutineMock))
             self.assertTrue(isinstance(mock_method, MagicMock))
 
@@ -151,23 +160,50 @@ class CoroutineAutospecTest(unittest.TestCase):
                                 CoroutineMock))
             self.assertTrue(isinstance(mock_method, MagicMock))
 
+        @patch(async_foo_name, autospec=True)
+        def test_normal_method(mock_method):
+            self.assertTrue(isinstance(
+                                mock_method.normal_method,
+                                MagicMock))
+
         test_async()
         test_async_decorator()
+        test_normal_method()
 
 
 class CoroutineSpecTest(unittest.TestCase):
-    def test_spec_as_coroutine_positional(self):
+    def test_spec_as_coroutine_positional_magicmock(self):
         mock = MagicMock(coroutine_func)
-        self.assertIsInstance(mock, MagicMock)  # Is this what we want?
+        self.assertIsInstance(mock, MagicMock)
         self.assertTrue(asyncio.iscoroutine(mock()))
 
-    def test_spec_as_coroutine_kw(self):
+    def test_spec_as_coroutine_kw_magicmock(self):
         mock = MagicMock(spec=coroutine_func)
         self.assertIsInstance(mock, MagicMock)
         self.assertTrue(asyncio.iscoroutine(mock()))
 
+    def test_spec_as_coroutine_kw_coroutinemock(self):
+        mock = CoroutineMock(spec=coroutine_func)
+        self.assertIsInstance(mock, CoroutineMock)
+        self.assertTrue(asyncio.iscoroutine(mock()))
+
+    def test_spec_as_coroutine_positional_coroutinemock(self):
+        mock = CoroutineMock(coroutine_func)
+        self.assertIsInstance(mock, CoroutineMock)
+        self.assertTrue(asyncio.iscoroutine(mock()))
+
+    def test_spec_as_normal_kw_coroutinemock(self):
+        mock = CoroutineMock(spec=normal_func)
+        self.assertIsInstance(mock, CoroutineMock)
+        self.assertTrue(asyncio.iscoroutine(mock()))
+
+    def test_spec_as_normal_positional_coroutinemock(self):
+        mock = CoroutineMock(normal_func)
+        self.assertIsInstance(mock, CoroutineMock)
+        self.assertTrue(asyncio.iscoroutine(mock()))
+
     def test_spec_coroutine_mock(self):
-        @patch.object(AsyncFoo, 'coroutine_method', spec=True)
+        @patch.object(AsyncClass, 'coroutine_method', spec=True)
         def test_async(mock_method):
             self.assertTrue(isinstance(mock_method, CoroutineMock))
 
@@ -183,45 +219,49 @@ class CoroutineSpecTest(unittest.TestCase):
         test_async()
 
     def test_target_coroutine_spec_not(self):
-        @patch.object(AsyncFoo, 'coroutine_method', spec=NormalFoo.a)
+        @patch.object(AsyncClass, 'coroutine_method', spec=NormalClass.a)
         def test_async_attribute(mock_method):
             self.assertTrue(isinstance(mock_method, MagicMock))
-            self.assertFalse(inspect.iscoroutinefunction(mock_method))
+            self.assertFalse(inspect.iscoroutine(mock_method))
+            self.assertFalse(asyncio.iscoroutine(mock_method))
 
         test_async_attribute()
 
     def test_target_not_coroutine_spec_is(self):
-        @patch.object(NormalFoo, 'a', spec=coroutine_func)
+        @patch.object(NormalClass, 'a', spec=coroutine_func)
         def test_attribute_not_coroutine_spec_is(mock_coroutine_func):
             self.assertTrue(isinstance(mock_coroutine_func, CoroutineMock))
-            # should check here is there is coroutine functionality
         test_attribute_not_coroutine_spec_is()
 
     def test_spec_coroutine_attributes(self):
-        @patch(normal_foo_name, spec=AsyncFoo)
-        def test_coroutine_attributes_coroutines(MockNormalFoo):
-            self.assertTrue(isinstance(MockNormalFoo.coroutine_method,
+        @patch(normal_foo_name, spec=AsyncClass)
+        def test_coroutine_attributes_coroutines(MockNormalClass):
+            self.assertTrue(isinstance(MockNormalClass.coroutine_method,
                                        CoroutineMock))
-            self.assertTrue(isinstance(MockNormalFoo, MagicMock))
+            self.assertTrue(isinstance(MockNormalClass, MagicMock))
 
         test_coroutine_attributes_coroutines()
 
 
 class CoroutineSpecSetTest(unittest.TestCase):
     def test_is_coroutinemock_patch(self):
-        @patch.object(AsyncFoo, 'coroutine_method', spec_set=True)
+        @patch.object(AsyncClass, 'coroutine_method', spec_set=True)
         def test_async(coroutine_method):
             self.assertTrue(isinstance(coroutine_method, CoroutineMock))
 
     def test_is_coroutine_coroutinemock(self):
-        mock = CoroutineMock(spec_set=AsyncFoo.coroutine_method)
+        mock = CoroutineMock(spec_set=AsyncClass.coroutine_method)
         self.assertTrue(asyncio.iscoroutinefunction(mock))
         self.assertTrue(isinstance(mock, CoroutineMock))
 
     def test_is_child_coroutinemock(self):
-        mock = MagicMock(spec_set=AsyncFoo)
+        mock = MagicMock(spec_set=AsyncClass)
         self.assertTrue(asyncio.iscoroutinefunction(mock.coroutine_method))
+        self.assertTrue(asyncio.iscoroutinefunction(mock.decorated_cr_method))
+        self.assertFalse(asyncio.iscoroutinefunction(mock.normal_method))
         self.assertTrue(isinstance(mock.coroutine_method, CoroutineMock))
+        self.assertTrue(isinstance(mock.decorated_cr_method, CoroutineMock))
+        self.assertTrue(isinstance(mock.normal_method, MagicMock))
         self.assertTrue(isinstance(mock, MagicMock))
 
 
@@ -292,125 +332,113 @@ class CoroutineMagicMethods(unittest.TestCase):
 
 
 class CoroutineMockAssert(unittest.TestCase):
-    @asyncio.coroutine
+
+    def setUp(self):
+        self.mock = CoroutineMock()
+
+    async def runnable_test(self, *args):
+        if not args:
+            await self.mock()
+        else:
+            await self.mock(*args)
+
     def test_assert_awaited(self):
-        mock = CoroutineMock()
-
         with self.assertRaises(AssertionError):
-            mock.assert_awaited()
+            self.mock.assert_awaited()
 
-        yield from mock()
-        mock.assert_awaited()
+        asyncio.run(self.runnable_test())
+        self.mock.assert_awaited()
 
-    @asyncio.coroutine
     def test_assert_awaited_once(self):
-        mock = CoroutineMock()
-
         with self.assertRaises(AssertionError):
-            mock.assert_awaited_once()
+            self.mock.assert_awaited_once()
 
-        yield from mock()
-        mock.assert_awaited_once()
+        asyncio.run(self.runnable_test())
+        self.mock.assert_awaited_once()
 
-        yield from mock()
+        asyncio.run(self.runnable_test())
         with self.assertRaises(AssertionError):
-            mock.assert_awaited_once()
+            self.mock.assert_awaited_once()
 
-    @asyncio.coroutine
     def test_assert_awaited_with(self):
-        mock = CoroutineMock()
-
+        asyncio.run(self.runnable_test())
         with self.assertRaises(AssertionError):
-            mock.assert_awaited_with('foo')
+            self.mock.assert_awaited_with('foo')
 
-        yield from mock('foo')
-        mock.assert_awaited_with('foo')
+        asyncio.run(self.runnable_test('foo'))
+        self.mock.assert_awaited_with('foo')
 
-        yield from mock('NormalFoo')
+        asyncio.run(self.runnable_test('SomethingElse'))
         with self.assertRaises(AssertionError):
-            mock.assert_awaited_with('foo')
+            self.mock.assert_awaited_with('foo')
 
-    @asyncio.coroutine
     def test_assert_awaited_once_with(self):
-        mock = CoroutineMock()
-
         with self.assertRaises(AssertionError):
-            mock.assert_awaited_once_with('foo')
+            self.mock.assert_awaited_once_with('foo')
 
-        yield from mock('foo')
-        mock.assert_awaited_once_with('foo')
+        asyncio.run(self.runnable_test('foo'))
+        self.mock.assert_awaited_once_with('foo')
 
-        yield from mock('foo')
+        asyncio.run(self.runnable_test('foo'))
         with self.assertRaises(AssertionError):
-            mock.assert_awaited_once_with('foo')
+            self.mock.assert_awaited_once_with('foo')
 
-    @asyncio.coroutine
     def test_assert_any_wait(self):
-        mock = CoroutineMock()
-
         with self.assertRaises(AssertionError):
-            mock.assert_any_await('NormalFoo')
+            self.mock.assert_any_await('NormalFoo')
 
-        yield from mock('foo')
+        asyncio.run(self.runnable_test('foo'))
         with self.assertRaises(AssertionError):
-            mock.assert_any_await('NormalFoo')
+            self.mock.assert_any_await('NormalFoo')
 
-        yield from mock('NormalFoo')
-        mock.assert_any_await('NormalFoo')
+        asyncio.run(self.runnable_test('NormalFoo'))
+        self.mock.assert_any_await('NormalFoo')
 
-        yield from mock('baz')
-        mock.assert_any_await('NormalFoo')
+        asyncio.run(self.runnable_test('SomethingElse'))
+        self.mock.assert_any_await('NormalFoo')
 
-    @asyncio.coroutine
-    def test_assert_has_awaits(self):
+    def test_assert_has_awaits_no_order(self):
         calls = [call('NormalFoo'), call('baz')]
 
-        with self.subTest('any_order=False'):
-            mock = CoroutineMock()
-
-            with self.assertRaises(AssertionError):
-                mock.assert_has_awaits(calls)
-
-            yield from mock('foo')
-            with self.assertRaises(AssertionError):
-                mock.assert_has_awaits(calls)
-
-            yield from mock('NormalFoo')
-            with self.assertRaises(AssertionError):
-                mock.assert_has_awaits(calls)
-
-            yield from mock('baz')
-            mock.assert_has_awaits(calls)
-
-            yield from mock('qux')
-            mock.assert_has_awaits(calls)
-
-        with self.subTest('any_order=True'):
-            mock = CoroutineMock()
-
-            with self.assertRaises(AssertionError):
-                mock.assert_has_awaits(calls, any_order=True)
-
-            yield from mock('baz')
-            with self.assertRaises(AssertionError):
-                mock.assert_has_awaits(calls, any_order=True)
-
-            yield from mock('foo')
-            with self.assertRaises(AssertionError):
-                mock.assert_has_awaits(calls, any_order=True)
-
-            yield from mock('NormalFoo')
-            mock.assert_has_awaits(calls, any_order=True)
-
-            yield from mock('qux')
-            mock.assert_has_awaits(calls, any_order=True)
-
-    @asyncio.coroutine
-    def test_assert_not_awaited(self):
-        mock = CoroutineMock()
-
-        mock.assert_not_awaited()
-
-        yield from mock()
         with self.assertRaises(AssertionError):
-            mock.assert_not_awaited()
+            self.mock.assert_has_awaits(calls)
+
+        asyncio.run(self.runnable_test('foo'))
+        with self.assertRaises(AssertionError):
+            self.mock.assert_has_awaits(calls)
+
+        asyncio.run(self.runnable_test('NormalFoo'))
+        with self.assertRaises(AssertionError):
+            self.mock.assert_has_awaits(calls)
+
+        asyncio.run(self.runnable_test('baz'))
+        self.mock.assert_has_awaits(calls)
+
+        asyncio.run(self.runnable_test('SomethingElse'))
+        self.mock.assert_has_awaits(calls)
+
+    def test_assert_has_awaits_ordered(self):
+        calls = [call('NormalFoo'), call('baz')]
+        with self.assertRaises(AssertionError):
+            self.mock.assert_has_awaits(calls, any_order=True)
+
+        asyncio.run(self.runnable_test('baz'))
+        with self.assertRaises(AssertionError):
+            self.mock.assert_has_awaits(calls, any_order=True)
+
+        asyncio.run(self.runnable_test('foo'))
+        with self.assertRaises(AssertionError):
+            self.mock.assert_has_awaits(calls, any_order=True)
+
+        asyncio.run(self.runnable_test('NormalFoo'))
+        self.mock.assert_has_awaits(calls, any_order=True)
+
+        asyncio.run(self.runnable_test('qux'))
+        self.mock.assert_has_awaits(calls, any_order=True)
+
+    def test_assert_not_awaited(self):
+        self.mock.assert_not_awaited()
+
+        asyncio.run(self.runnable_test())
+        with self.assertRaises(AssertionError):
+            self.mock.assert_not_awaited()

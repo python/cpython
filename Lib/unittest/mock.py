@@ -391,9 +391,8 @@ class NonCallableMock(Base):
 
     def __init__(
             self, spec=None, wraps=None, name=None, spec_set=None,
-            parent=None, _spec_state=None, _new_name='',
-            _new_parent=None, _spec_as_instance=False, _eat_self=None,
-            unsafe=False, **kwargs
+            parent=None, _spec_state=None, _new_name='', _new_parent=None,
+            _spec_as_instance=False, _eat_self=None, unsafe=False, **kwargs
         ):
         if _new_parent is None:
             _new_parent = parent
@@ -928,7 +927,7 @@ class NonCallableMock(Base):
         if not issubclass(_type, CallableMixin):
             if issubclass(_type, NonCallableMagicMock):
                 klass = MagicMock
-            elif issubclass(_type, NonCallableMock):
+            elif issubclass(_type, NonCallableMock) :
                 klass = Mock
         else:
             klass = _type.__mro__[1]
@@ -1056,10 +1055,6 @@ class CallableMixin(Base):
                  wraps=None, name=None, spec_set=None, parent=None,
                  _spec_state=None, _new_name='', _new_parent=None, **kwargs):
         self.__dict__['_mock_return_value'] = return_value
-        # Makes inspect.iscoroutinefunction() return False when testing a Mock.
-        code_mock = NonCallableMock(spec_set=CodeType)
-        code_mock.co_flags = 0
-        self.__dict__['__code__'] = code_mock
         _safe_super(CallableMixin, self).__init__(
             spec, wraps, name, spec_set, parent,
             _spec_state, _new_name, _new_parent, **kwargs
