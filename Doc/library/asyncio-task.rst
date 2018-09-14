@@ -240,7 +240,7 @@ Running Tasks Concurrently
 
       asyncio.run(main())
 
-      # Expected output::
+      # Expected output:
       #
       #     Task A: Compute factorial(2)...
       #     Task B: Compute factorial(2)...
