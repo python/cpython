@@ -2,8 +2,6 @@
 
 .. _asyncio-queues:
 
-.. _asyncio-queues:
-
 ======
 Queues
 ======
