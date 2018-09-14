@@ -25,7 +25,6 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "internal/pystate.h"
 #include "pythread.h"
 #include "structmember.h"
 #ifndef MS_WINDOWS
@@ -33,6 +32,7 @@
 #else
 #include "winreparse.h"
 #endif
+#include "internal/pystate.h"
 
 /* On android API level 21, 'AT_EACCESS' is not declared although
  * HAVE_FACCESSAT is defined. */
