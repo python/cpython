@@ -74,7 +74,7 @@ steps:
 
 - script: xvfb-run ./venv/bin/python -m coverage run --pylib -m test --fail-env-changed -uall,-cpu
   env:
-    COVERAGE_PROCESS_START=$(Build.Repository.LocalPath)/.coveragerc
+    COVERAGE_PROCESS_START: $(Build.Repository.LocalPath)/.coveragerc
   displayName: 'Tests with coverage'
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
