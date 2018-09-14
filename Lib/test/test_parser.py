@@ -808,7 +808,7 @@ class ParserStackLimitTestCase(unittest.TestCase):
 
     def test_deeply_nested_list(self):
         # XXX used to be 99 levels in 2.x, used to be 93 levels in 3.7.X
-        e = self._nested_expression(88)
+        e = self._nested_expression(99)
         st = parser.expr(e)
         st.compile()
 
