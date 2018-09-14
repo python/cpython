@@ -576,6 +576,11 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             &restore_signals, &call_setsid, &preexec_fn))
         return NULL;
 
+    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
+        PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
+        return NULL;
+    }
+
     if (close_fds && errpipe_write < 3) {  /* precondition */
         PyErr_SetString(PyExc_ValueError, "errpipe_write must be >= 3");
         return NULL;
