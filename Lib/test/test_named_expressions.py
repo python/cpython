@@ -75,7 +75,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
 
         # XXX this fails, but with the wrong exception type - should be TargetScopeError
         # with self.assertRaisesRegex(TargetScopeError, ""):
-        with self.assertRaisesRegex(UnboundLocalError, "local variable 'j' referenced before assignment"):
+        with self.assertRaisesRegex(NameError, "name 'j' is not defined"):
             exec(code, {}, {})
 
     def test_named_expression_invalid_13(self):
@@ -138,14 +138,14 @@ class NamedExpressionAssignmentTest(unittest.TestCase):
         def spam(a):
             return a
         input_data = [1, 2, 3]
-        results = [(x, y, x/y) for x in input_data if (y := spam(x)) > 0]
-        self.assertEqual(results, [(1, 1, 1.0), (2, 2, 1.0), (3, 3, 1.0)])
+        res = [(x, y, x/y) for x in input_data if (y := spam(x)) > 0]
+        self.assertEqual(res, [(1, 1, 1.0), (2, 2, 1.0), (3, 3, 1.0)])
 
     def test_named_expression_assignment_08(self):
         def spam(a):
             return a
-        results = [[y := spam(x), x/y] for x in range(1, 5)]
-        self.assertEqual(results, [[1, 1.0], [2, 1.0], [3, 1.0], [4, 1.0]])
+        res = [[y := spam(x), x/y] for x in range(1, 5)]
+        self.assertEqual(res, [[1, 1.0], [2, 1.0], [3, 1.0], [4, 1.0]])
 
     def test_named_expression_assignment_09(self):
         (x := 1, 2)
@@ -190,42 +190,79 @@ class NamedExpressionScopeTest(unittest.TestCase):
         with self.assertRaisesRegex(NameError, "name 'a' is not defined"):
             exec(code, {}, {})
 
-    @unittest.skip("Not implemented -- comprehension scope")
     def test_named_expression_scope_02(self):
         total = 0
         partial_sums = [total := total + v for v in range(5)]
-        self.assertEqual(total, 15)
+        self.assertEqual(partial_sums, [0, 1, 3, 6, 10])
+        self.assertEqual(total, 10)
 
-    @unittest.skip("Not implemented -- comprehension scope")
     def test_named_expression_scope_03(self):
         containsOne = any((lastNum := num) == 1 for num in [1, 2, 3])
         self.assertTrue(containsOne)
-        self.assertEqual(lastNum, 3)
+        self.assertEqual(lastNum, 1)
 
-    @unittest.skip("Test WIP, Not implemented -- comprehension scope")
     def test_named_expression_scope_04(self):
         def spam(a):
             return a
-        results = [[y := spam(x), x/y] for x in range(1, 5)]
-        self.assertEqual(y, 'something')
+        res = [[y := spam(x), x/y] for x in range(1, 5)]
+        self.assertEqual(y, 4)
 
-    @unittest.skip("Test WIP, Not implemented -- comprehension scope")
     def test_named_expression_scope_05(self):
         def spam(a):
             return a
         input_data = [1, 2, 3]
-        results = [(x, y, x/y) for x in input_data if (y := spam(x)) > 0]
-        self.assertEqual(y, 'something')
+        res = [(x, y, x/y) for x in input_data if (y := spam(x)) > 0]
+        self.assertEqual(res, [(1, 1, 1.0), (2, 2, 1.0), (3, 3, 1.0)])
+        self.assertEqual(y, 3)
 
-    @unittest.skip("Test WIP, Not implemented -- comprehension scope")
     def test_named_expression_scope_05(self):
-        a = [[spam := i for i in range(3)] for j in range(2)]
-        self.assertEqual(a, [[0, 1, 2], [0, 1, 2]])
+        res = [[spam := i for i in range(3)] for j in range(2)]
+        self.assertEqual(res, [[0, 1, 2], [0, 1, 2]])
         self.assertEqual(spam, 2)
 
     def test_named_expression_scope_07(self):
         len(lines := [1, 2])
         self.assertEqual(lines, [1, 2])
+
+    def test_named_expression_scope_08(self):
+        def spam(a):
+            return a
+
+        def eggs(b):
+            return b * 2
+
+        res = [spam(a := eggs(b := h)) for h in range(2)]
+        self.assertEqual(res, [0, 2])
+        self.assertEqual(a, 2)
+        self.assertEqual(b, 1)
+
+    def test_named_expression_scope_09(self):
+        def spam(a):
+            return a
+
+        def eggs(b):
+            return b * 2
+
+        res = [spam(a := eggs(a := h)) for h in range(2)]
+        self.assertEqual(res, [0, 2])
+        self.assertEqual(a, 2)
+
+    def test_named_expression_scope_10(self):
+        res = [b := [a := 1 for i in range(2)] for j in range(2)]
+
+        self.assertEqual(res, [[1, 1], [1, 1]])
+        self.assertEqual(a, 1)
+        self.assertEqual(b, [1, 1])
+
+
+    def test_named_expression_scope_11(self):
+        ns = {}
+        code = "[j := i for i in range(5)]"
+        exec(code, ns, {})
+
+        self.assertEqual(ns["j"], 4)
+
+
 
 
 if __name__ == "__main__":
