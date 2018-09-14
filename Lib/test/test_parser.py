@@ -452,6 +452,10 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite(
             "if self._is_special and (ans := self._check_nans(context=context)): return ans"
         )
+        self.check_suite("foo(b := 2, a=1)")
+        self.check_suite("foo(b := 2, a=1)")
+        self.check_suite("foo((b := 2), a=1)")
+        self.check_suite("foo(c=(b := 2), a=1)")
 
 #
 #  Second, we take *invalid* trees and make sure we get ParserError
