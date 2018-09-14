@@ -1731,7 +1731,15 @@ ast_for_decorated(struct compiling *c, const node *n)
 static expr_ty
 ast_for_namedexpr(struct compiling *c, const node *n)
 {
-    /* namedexpr_test: test [':=' test] */
+    /* if_stmt: 'if' namedexpr_test ':' suite ('elif' namedexpr_test ':' suite)*
+         ['else' ':' suite]
+       namedexpr_test: test [':=' test]
+       argument: ( test [comp_for] |
+            test ':=' test |
+            test '=' test |
+            '**' test |
+            '*' test )
+    */
     expr_ty target, value;
 
     target = ast_for_expr(c, CHILD(n, 0));
