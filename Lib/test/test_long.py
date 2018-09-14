@@ -1365,20 +1365,20 @@ class LongTest(unittest.TestCase):
     def test_as_integer_ratio_bool(self):
         self.assertEqual(True.as_integer_ratio(), (1, 1))
         self.assertEqual(False.as_integer_ratio(), (0, 1))
-        assert(type(True.as_integer_ratio()[0]) == int)
-        assert(type(False.as_integer_ratio()[0]) == int)
+        self.assertEqual(type(True.as_integer_ratio()[0]), int)
+        self.assertEqual(type(False.as_integer_ratio()[0]), int)
 
     def test_as_integer_ratio_int_enum(self):
         class Foo(enum.IntEnum):
             X = 42
         self.assertEqual(Foo.X.as_integer_ratio(), (42, 1))
-        assert(type(Foo.X.as_integer_ratio()[0] == int))
+        self.assertEqual(type(Foo.X.as_integer_ratio()[0]), int)
 
     def test_as_integer_ratio_int_flag(self):
         class Foo(enum.IntFlag):
             R = 1 << 2
         self.assertEqual(Foo.R.as_integer_ratio(), (4, 1))
-        assert(type(Foo.R.as_integer_ratio()[0]) == int)
+        self.assertEqual(type(Foo.R.as_integer_ratio()[0]), int)
 
 
 

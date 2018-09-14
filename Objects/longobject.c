@@ -5280,12 +5280,13 @@ static PyObject *
 int_as_integer_ratio_impl(PyObject *self)
 /*[clinic end generated code: output=e60803ae1cc8621a input=55ce3058e15de393]*/
 {
-  if PyLong_CheckExact(self)
-    return PyTuple_Pack(2, self, _PyLong_One);
-  else {
-      PyObject *temp = PyNumber_Positive(self);
-      Py_DECREF(temp);
-      return PyTuple_Pack(2, temp, _PyLong_One);
+    if PyLong_CheckExact(self) {
+        return PyTuple_Pack(2, self, _PyLong_One);
+    } else {
+        PyObject *numerator = _PyLong_Copy(self);
+        PyObject *ratio_tuple = PyTuple_Pack(2, numerator, _PyLong_One);
+        Py_DECREF(numerator);
+        return ratio_tuple;
     }
 }
 
