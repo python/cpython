@@ -30,15 +30,18 @@ To enable debugging for an application:
   command line option for Python (see the :option:`-X` option).
 
 * Yet another way to enable the debug mode is by calling
-  :meth:`loop.set_debug`.
+  :meth:`loop.set_debug` or by passing ``debug=True`` to
+  :func:`asyncio.run`.
 
-* Set the log level of the :ref:`asyncio logger <asyncio-logger>` to
+In addition to enabling debug mode, consider also:
+
+* setting the log level of the :ref:`asyncio logger <asyncio-logger>` to
   :py:data:`logging.DEBUG`, for example the following snippet of code
   can be run at startup of the application::
 
     logging.basicConfig(level=logging.DEBUG)
 
-* Configure the :mod:`warnings` module to display
+* configuring the :mod:`warnings` module to display
   :exc:`ResourceWarning` warnings.  One way of doing that is by
   using the ``-Wdefault`` command line option.
 
