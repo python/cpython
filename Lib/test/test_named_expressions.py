@@ -71,33 +71,25 @@ class NamedExpressionInvalidTest(unittest.TestCase):
             exec(code, {}, {})
 
     def test_named_expression_invalid_12(self):
-        code = """[[(j := j) for i in range(5)] for j in range(5)]"""
-
-        # XXX this fails, but with the wrong exception type - should be TargetScopeError
-        # with self.assertRaisesRegex(TargetScopeError, ""):
-        with self.assertRaisesRegex(NameError, "name 'j' is not defined"):
-            exec(code, {}, {})
-
-    def test_named_expression_invalid_13(self):
         code = """(lambda: x := 1)"""
 
         with self.assertRaisesRegex(SyntaxError, "can't use named assignment with lambda"):
             exec(code, {}, {})
 
-    def test_named_expression_invalid_14(self):
+    def test_named_expression_invalid_13(self):
         code = """((a, b) := (1, 2))"""
 
         with self.assertRaisesRegex(SyntaxError, "can't use named assignment with tuple"):
             exec(code, {}, {})
 
     @unittest.skip("Not implemented -- custom check for named expr")
-    def test_named_expression_invalid_15(self):
+    def test_named_expression_invalid_14(self):
         code = """foo(a=1, b := 2)"""
 
         with self.assertRaisesRegex(SyntaxError, "positional argument follows keyword argument"):
             exec(code, {}, {})
 
-    def test_named_expression_invalid_16(self):
+    def test_named_expression_invalid_15(self):
         code = """foo(a=1, (b := 2))"""
 
         with self.assertRaisesRegex(SyntaxError, "positional argument follows keyword argument"):
