@@ -37,6 +37,7 @@ struct _pending_calls {
     int async_exc;
 #define NPENDINGCALLS 32
     struct {
+        unsigned long thread_id;
         int (*func)(void *);
         void *arg;
     } calls[NPENDINGCALLS];

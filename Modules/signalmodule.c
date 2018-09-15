@@ -303,6 +303,7 @@ trip_signal(int sig_num)
                     _PyEval_AddPendingCall(tstate,
                                            &runtime->ceval,
                                            &tstate->interp->ceval,
+                                           runtime->main_thread,
                                            report_wakeup_send_error,
                                            (void *)(intptr_t) last_error);
                 }
@@ -324,6 +325,7 @@ trip_signal(int sig_num)
                     _PyEval_AddPendingCall(tstate,
                                            &runtime->ceval,
                                            &tstate->interp->ceval,
+                                           runtime->main_thread,
                                            report_wakeup_write_error,
                                            (void *)(intptr_t)errno);
                 }

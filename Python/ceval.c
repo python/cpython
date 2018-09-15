@@ -388,7 +388,7 @@ _PyEval_SignalReceived(struct _ceval_runtime_state *ceval_r)
 
 /* Push one item onto the queue while holding the lock. */
 static int
-_push_pending_call(struct _pending_calls *pending,
+_push_pending_call(struct _pending_calls *pending, unsigned long thread_id,
                    int (*func)(void *), void *arg)
 {
     int i = pending->last;
@@ -396,6 +396,7 @@ _push_pending_call(struct _pending_calls *pending,
     if (j == pending->first) {
         return -1; /* Queue full */
     }
+    pending->calls[i].thread_id = thread_id;
     pending->calls[i].func = func;
     pending->calls[i].arg = arg;
     pending->last = j;
@@ -404,7 +405,7 @@ _push_pending_call(struct _pending_calls *pending,
 
 /* Pop one item off the queue while holding the lock. */
 static void
-_pop_pending_call(struct _pending_calls *pending,
+_pop_pending_call(struct _pending_calls *pending, unsigned long *thread_id,
                   int (**func)(void *), void **arg)
 {
     int i = pending->first;
@@ -414,6 +415,7 @@ _pop_pending_call(struct _pending_calls *pending,
 
     *func = pending->calls[i].func;
     *arg = pending->calls[i].arg;
+    *thread_id = pending->calls[i].thread_id;
     pending->first = (i + 1) % NPENDINGCALLS;
 }
 
@@ -426,6 +428,7 @@ int
 _PyEval_AddPendingCall(PyThreadState *tstate,
                        struct _ceval_runtime_state *ceval_r,
                        struct _ceval_interpreter_state *ceval_i,
+                       unsigned long thread_id,
                        int (*func)(void *), void *arg)
 {
     struct _pending_calls *pending = &ceval_i->pending;
@@ -443,7 +446,7 @@ _PyEval_AddPendingCall(PyThreadState *tstate,
         _PyErr_Restore(tstate, exc, val, tb);
         return -1;
     }
-    int result = _push_pending_call(pending, func, arg);
+    int result = _push_pending_call(pending, thread_id, func, arg);
 
     /* signal loop */
     SIGNAL_PENDING_CALLS(ceval_r, ceval_i);
@@ -462,6 +465,7 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     return _PyEval_AddPendingCall(tstate,
                                   &runtime->ceval, &interp->ceval,
+                                  runtime->main_thread,
                                   func, arg);
 }
 
@@ -497,6 +501,7 @@ static int
 make_pending_calls(PyInterpreterState *interp)
 {
     _PyRuntimeState *runtime = interp->runtime;
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     static int busy = 0;
 
     /* don't perform recursive pending calls */
@@ -513,14 +518,25 @@ make_pending_calls(PyInterpreterState *interp)
 
     /* perform a bounded number of calls, in case of recursion */
     struct _pending_calls *pending = &ceval_i->pending;
+    unsigned long thread_id = 0;
     for (int i=0; i<NPENDINGCALLS; i++) {
         int (*func)(void *) = NULL;
         void *arg = NULL;
 
         /* pop one item off the queue while holding the lock */
         PyThread_acquire_lock(pending->lock, WAIT_LOCK);
-        _pop_pending_call(pending, &func, &arg);
+        _pop_pending_call(pending, &thread_id, &func, &arg);
         PyThread_release_lock(pending->lock);
+
+        if (thread_id && PyThread_get_thread_ident() != thread_id) {
+            // Thread mismatch, so move it to the end of the list
+            // and start over.
+            _PyEval_AddPendingCall(tstate,
+                                   &runtime->ceval, &interp->ceval,
+                                   thread_id,
+                                   func, arg);
+            return 0;
+        }
 
         /* having released the lock, perform the callback */
         if (func == NULL) {

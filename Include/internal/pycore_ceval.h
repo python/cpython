@@ -21,6 +21,7 @@ PyAPI_FUNC(int) _PyEval_AddPendingCall(
     PyThreadState *tstate,
     struct _ceval_runtime_state *,
     struct _ceval_interpreter_state *,
+    unsigned long thread_id,
     int (*func)(void *),
     void *arg);
 PyAPI_FUNC(void) _PyEval_FinishPendingCalls(PyInterpreterState *);
