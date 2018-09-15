@@ -602,9 +602,9 @@ typedef struct {
 } PyMemoEntry;
 
 typedef struct {
-    Py_ssize_t mt_mask;
-    Py_ssize_t mt_used;
-    Py_ssize_t mt_allocated;
+    size_t mt_mask;
+    size_t mt_used;
+    size_t mt_allocated;
     PyMemoEntry *mt_table;
 } PyMemoTable;
 
@@ -737,7 +737,6 @@ PyMemoTable_New(void)
 static PyMemoTable *
 PyMemoTable_Copy(PyMemoTable *self)
 {
-    Py_ssize_t i;
     PyMemoTable *new = PyMemoTable_New();
     if (new == NULL)
         return NULL;
@@ -754,7 +753,7 @@ PyMemoTable_Copy(PyMemoTable *self)
         PyErr_NoMemory();
         return NULL;
     }
-    for (i = 0; i < self->mt_allocated; i++) {
+    for (size_t i = 0; i < self->mt_allocated; i++) {
         Py_XINCREF(self->mt_table[i].me_key);
     }
     memcpy(new->mt_table, self->mt_table,
@@ -800,7 +799,7 @@ _PyMemoTable_Lookup(PyMemoTable *self, PyObject *key)
 {
     size_t i;
     size_t perturb;
-    size_t mask = (size_t)self->mt_mask;
+    size_t mask = self->mt_mask;
     PyMemoEntry *table = self->mt_table;
     PyMemoEntry *entry;
     Py_hash_t hash = (Py_hash_t)key >> 3;
@@ -826,9 +825,14 @@ _PyMemoTable_ResizeTable(PyMemoTable *self, size_t min_size)
     PyMemoEntry *oldtable = NULL;
     PyMemoEntry *oldentry, *newentry;
     size_t new_size = MT_MINSIZE;
-    Py_ssize_t to_process;
+    size_t to_process;
 
     assert(min_size > 0);
+
+    if (min_size > PY_SSIZE_T_MAX) {
+        PyErr_NoMemory();
+        return -1;
+    }
 
     /* Find the smallest valid table size >= min_size. */
     while (new_size < min_size)
@@ -905,7 +909,8 @@ PyMemoTable_Set(PyMemoTable *self, PyObject *key, Py_ssize_t value)
      * Very large memo tables (over 50K items) use doubling instead.
      * This may help applications with severe memory constraints.
      */
-    if (!(self->mt_used * 3 >= (self->mt_mask + 1) * 2))
+    size_t triple_used = self->mt_used * 3;
+    if (triple_used > self->mt_used && triple_used < self->mt_allocated * 2)
         return 0;
     return _PyMemoTable_ResizeTable(self,
         (self->mt_used > 50000 ? 2 : 4) * self->mt_used);
@@ -4409,14 +4414,13 @@ static PyObject *
 _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
 /*[clinic end generated code: output=bb83a919d29225ef input=b73043485ac30b36]*/
 {
-    Py_ssize_t i;
     PyMemoTable *memo;
     PyObject *new_memo = PyDict_New();
     if (new_memo == NULL)
         return NULL;
 
     memo = self->pickler->memo;
-    for (i = 0; i < memo->mt_allocated; ++i) {
+    for (size_t i = 0; i < memo->mt_allocated; ++i) {
         PyMemoEntry entry = memo->mt_table[i];
         if (entry.me_key != NULL) {
             int status;
