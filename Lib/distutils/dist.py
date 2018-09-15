@@ -860,7 +860,7 @@ Common commands: (see '--help-commands' for more)
 
             # Set any options that were supplied in config files
             # or on the command line.  (NB. support for error
-            # reporting is lame here: any errors aren't reported
+            # reporting is limited here: any errors aren't reported
             # until 'finalize_options()' is called, which means
             # we won't report the source of the error.)
             options = self.command_options.get(command)

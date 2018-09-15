@@ -24,7 +24,7 @@ python M.py
 
 This won't display anything unless an example fails, in which case the
 failing example(s) and the cause(s) of the failure(s) are printed to stdout
-(why not stderr? because stderr is a lame hack <0.2 wink>), and the final
+(why not stderr? because stderr is a hack <0.2 wink>), and the final
 line of output is "Test failed.".
 
 Run it with the -v switch instead:
