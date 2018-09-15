@@ -29,8 +29,8 @@ usage: %(script)s [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]
    or: %(script)s cmd --help
 """
 
-def gen_usage (script_name):
-    script = os.path.basename(script_name)
+
+def gen_usage(script_name):
     return USAGE % vars()
 
 
@@ -54,7 +54,8 @@ extension_keywords = ('name', 'sources', 'include_dirs',
                       'extra_objects', 'extra_compile_args', 'extra_link_args',
                       'swig_opts', 'export_symbols', 'depends', 'language')
 
-def setup (**attrs):
+
+def setup(**attrs):
     """The gateway to the Distutils: do everything your setup script needs
     to do, in a highly flexible and user-driven way.  Briefly: create a
     Distribution instance; find and parse config files; parse the command
@@ -99,7 +100,7 @@ def setup (**attrs):
 
     if 'script_name' not in attrs:
         attrs['script_name'] = os.path.basename(sys.argv[0])
-    if 'script_args'  not in attrs:
+    if 'script_args' not in attrs:
         attrs['script_args'] = sys.argv[1:]
 
     # Create the Distribution instance, using the remaining arguments
@@ -110,8 +111,8 @@ def setup (**attrs):
         if 'name' not in attrs:
             raise SystemExit("error in setup command: %s" % msg)
         else:
-            raise SystemExit("error in %s setup command: %s" % \
-                  (attrs['name'], msg))
+            raise SystemExit(
+                "error in %s setup command: %s" % (attrs['name'], msg))
 
     if _setup_stop_after == "init":
         return dist
@@ -155,8 +156,7 @@ def setup (**attrs):
             else:
                 raise SystemExit("error: %s" % (exc,))
 
-        except (DistutilsError,
-                CCompilerError) as msg:
+        except (DistutilsError, CCompilerError) as msg:
             if DEBUG:
                 raise
             else:
@@ -167,7 +167,7 @@ def setup (**attrs):
 # setup ()
 
 
-def run_setup (script_name, script_args=None, stop_after="run"):
+def run_setup(script_name, script_args=None, stop_after="run"):
     """Run a setup script in a somewhat controlled environment, and
     return the Distribution instance that drives things.  This is useful
     if you need to find out the distribution meta-data (passed as
@@ -222,13 +222,13 @@ def run_setup (script_name, script_args=None, stop_after="run"):
         pass
 
     if _setup_distribution is None:
-        raise RuntimeError(("'distutils.core.setup()' was never called -- "
-               "perhaps '%s' is not a Distutils setup script?") % \
-              script_name)
+        raise RuntimeError(
+            ("'distutils.core.setup()' was never called -- "
+             "perhaps '%s' is not a Distutils setup script?") % script_name)
 
     # I wonder if the setup script's namespace -- g and l -- would be of
     # any interest to callers?
-    #print "_setup_distribution:", _setup_distribution
+    # print "_setup_distribution:", _setup_distribution
     return _setup_distribution
 
 # run_setup ()
