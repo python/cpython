@@ -93,6 +93,12 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
+unsigned long
+_PyRuntimeState_GetMainThreadID(_PyRuntimeState *runtime)
+{
+    return runtime->main_thread;
+}
+
 #define HEAD_LOCK() PyThread_acquire_lock(_PyRuntime.interpreters.mutex, \
                                           WAIT_LOCK)
 #define HEAD_UNLOCK() PyThread_release_lock(_PyRuntime.interpreters.mutex)
@@ -138,8 +144,6 @@ PyInterpreterState_New(void)
     interp->id_refcount = -1;
     interp->check_interval = 100;
 
-    //interp->ceval.active = 1;
-    //interp->ceval.active_thread = PyThread_get_thread_ident();
     interp->ceval.pending.lock = PyThread_allocate_lock();
     if (interp->ceval.pending.lock == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -156,6 +160,10 @@ PyInterpreterState_New(void)
     interp->dlopenflags = RTLD_LAZY;
 #endif
 #endif
+
+    if (_PyRuntime.main_thread == 0) {
+        _PyRuntime.main_thread = PyThread_get_thread_ident();
+    }
 
     HEAD_LOCK();
     if (_PyRuntime.interpreters.next_id < 0) {

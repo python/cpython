@@ -188,6 +188,8 @@ typedef struct pyruntimestate {
         struct _xidregitem *head;
     } xidregistry;
 
+    unsigned long main_thread;
+
 #define NEXITFUNCS 32
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;
@@ -210,6 +212,8 @@ PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
 /* Initialize _PyRuntimeState.
    Return NULL on success, or return an error message on failure. */
 PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
+
+PyAPI_FUNC(unsigned long) _PyRuntimeState_GetMainThreadID(_PyRuntimeState*);
 
 #define _Py_CURRENTLY_FINALIZING(tstate) \
     (_PyRuntime.finalizing == tstate)

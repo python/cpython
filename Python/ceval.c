@@ -225,6 +225,7 @@ PyEval_ReInitThreads(void)
     if (!gil_created())
         return;
     recreate_gil();
+    _PyRuntime.main_thread = PyThread_get_thread_ident();
     current_tstate->interp->ceval.pending.lock = PyThread_allocate_lock();
     take_gil(current_tstate);
 

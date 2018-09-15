@@ -96,7 +96,7 @@ class sigset_t_converter(CConverter):
 
 #include <sys/types.h> /* For pid_t */
 #include "pythread.h"
-static unsigned long main_thread;
+#define main_thread _PyRuntimeState_GetMainThreadID(&_PyRuntime)
 static pid_t main_pid;
 
 static volatile struct {
@@ -1281,7 +1281,6 @@ PyInit__signal(void)
     PyObject *m, *d, *x;
     int i;
 
-    main_thread = PyThread_get_thread_ident();
     main_pid = getpid();
 
     /* Create the module and add the functions */
@@ -1683,7 +1682,6 @@ _PySignal_AfterFork(void)
      * in both processes if they came in just before the fork() but before
      * the interpreter had an opportunity to call the handlers.  issue9535. */
     _clear_pending_signals();
-    main_thread = PyThread_get_thread_ident();
     main_pid = getpid();
 }
 
