@@ -104,7 +104,7 @@ class UnicodeFileTests(unittest.TestCase):
             self._apply_failure(os.listdir, name)
 
     if sys.platform == 'win32':
-        # Windows is lunatic. Issue #13366.
+        # Windows is weird. Issue #13366.
         _listdir_failure = NotADirectoryError, FileNotFoundError
     else:
         _listdir_failure = NotADirectoryError
