@@ -207,6 +207,8 @@ typedef struct pyruntimestate {
         struct _xidregitem *head;
     } xidregistry;
 
+    unsigned long main_thread;
+
 #define NEXITFUNCS 32
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;

@@ -146,6 +146,10 @@ PyInterpreterState_New(void)
 #endif
 #endif
 
+    if (_PyRuntime.main_thread == 0) {
+        _PyRuntime.main_thread = PyThread_get_thread_ident();
+    }
+
     HEAD_LOCK();
     if (_PyRuntime.interpreters.next_id < 0) {
         /* overflow or Py_Initialize() not called! */
