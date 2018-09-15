@@ -206,6 +206,9 @@ class InitVar(metaclass=_InitVarMeta):
     def __init__(self, type):
         self.type = type
 
+    def __repr__(self):
+        return f'dataclasses.InitVar[{self.type.__name__}]'
+
 
 # Instances of Field are only ever created from within this module,
 # and only from the field() function, although Field instances are
