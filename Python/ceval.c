@@ -365,6 +365,17 @@ _pop_pending_call(int (**func)(void *), void **arg)
 int
 Py_AddPendingCall(int (*func)(void *), void *arg)
 {
+    if (_PyRuntime.finalizing) {
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
+        PyErr_SetString(PyExc_SystemError,
+                        "Py_AddPendingCall: cannot add pending calls "
+                        "(Python shutting down)");
+        PyErr_Print();
+        PyErr_Restore(exc, val, tb);
+        return -1;
+    }
+
     PyThread_acquire_lock(_PyRuntime.ceval.pending.lock, WAIT_LOCK);
     int result = _push_pending_call(func, arg);
     PyThread_release_lock(_PyRuntime.ceval.pending.lock);
