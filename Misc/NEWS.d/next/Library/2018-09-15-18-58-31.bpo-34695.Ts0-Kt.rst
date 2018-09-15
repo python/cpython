@@ -1,0 +1,1 @@
+Fix crash if :meth:`sqlite3.Cache.get` is called before ``__init__``.

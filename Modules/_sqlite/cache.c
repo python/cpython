@@ -22,6 +22,7 @@
  */
 
 #include "cache.h"
+#include "module.h"
 #include <limits.h>
 
 /* only used internally */
@@ -112,12 +113,25 @@ void pysqlite_cache_dealloc(pysqlite_Cache* self)
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
+static int pysqlite_check_cache(pysqlite_Cache *self) {
+    if (self->factory == NULL) {
+        PyErr_SetString(pysqlite_ProgrammingError,
+                        "Cache.__init__ was not called or failed.");
+        return 0;
+    }
+    return 1;
+}
+
 PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* args)
 {
     PyObject* key = args;
     pysqlite_Node* node;
     pysqlite_Node* ptr;
     PyObject* data;
+
+    if (!pysqlite_check_cache(self)) {
+        return NULL;
+    }
 
     node = (pysqlite_Node*)PyDict_GetItem(self->mapping, key);
     if (node) {
@@ -217,6 +231,10 @@ PyObject* pysqlite_cache_display(pysqlite_Cache* self, PyObject* args)
     PyObject* prevkey;
     PyObject* nextkey;
     PyObject* display_str;
+
+    if (!pysqlite_check_cache(self)) {
+        return NULL;
+    }
 
     ptr = self->first;
 
