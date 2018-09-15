@@ -315,6 +315,13 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, _testcapi.get_mapping_values, bad_mapping)
         self.assertRaises(TypeError, _testcapi.get_mapping_items, bad_mapping)
 
+    def test_bytearray_from_obj(self):
+        for obj in 1, range(1), [], tuple(), {}, set():
+            with self.assertRaisesRegex(TypeError, 'buffer protocol'):
+                _testcapi.get_bytearray(obj)
+        self.assertEqual(_testcapi.get_bytearray(b'1'), bytearray(b'1'))
+        self.assertEqual(_testcapi.get_bytearray(bytearray()), bytearray(b''))
+
 
 class TestPendingCalls(unittest.TestCase):
 

@@ -100,6 +100,11 @@ _canresize(PyByteArrayObject *self)
 PyObject *
 PyByteArray_FromObject(PyObject *input)
 {
+    if (!PyObject_CheckBuffer(input)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "argument must support the buffer protocol");
+        return NULL;
+    }
     return PyObject_CallFunctionObjArgs((PyObject *)&PyByteArray_Type,
                                         input, NULL);
 }
@@ -679,7 +684,8 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
             return -1;
         }
         /* Make a copy and call this function recursively */
-        values = PyByteArray_FromObject(values);
+        values = PyObject_CallFunctionObjArgs((PyObject *)&PyByteArray_Type,
+                                              values, NULL);
         if (values == NULL)
             return -1;
         err = bytearray_ass_subscript(self, index, values);

@@ -1,0 +1,2 @@
+:c:func:`PyByteArray_FromObject` now only accepts arguments that support the
+:ref:`buffer protocol <bufferobjects>`.

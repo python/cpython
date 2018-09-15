@@ -4795,6 +4795,11 @@ fail:
 #undef SET_ITEM
 }
 
+static PyObject *
+get_bytearray(PyObject *self, PyObject *obj)
+{
+    return PyByteArray_FromObject(obj);
+}
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -5020,6 +5025,7 @@ static PyMethodDef TestMethods[] = {
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
     {"get_coreconfig", get_coreconfig, METH_NOARGS},
+    {"get_bytearray", get_bytearray, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
