@@ -835,8 +835,9 @@ _PyMemoTable_ResizeTable(PyMemoTable *self, size_t min_size)
     }
 
     /* Find the smallest valid table size >= min_size. */
-    while (new_size < min_size)
+    while (new_size < min_size) {
         new_size <<= 1;
+    }
     /* new_size needs to be a power of two. */
     assert((new_size & (new_size - 1)) == 0);
 
@@ -910,8 +911,9 @@ PyMemoTable_Set(PyMemoTable *self, PyObject *key, Py_ssize_t value)
      * This may help applications with severe memory constraints.
      */
     size_t triple_used = self->mt_used * 3;
-    if (triple_used > self->mt_used && triple_used < self->mt_allocated * 2)
+    if (triple_used > self->mt_used && triple_used < self->mt_allocated * 2) {
         return 0;
+    }
     return _PyMemoTable_ResizeTable(self,
         (self->mt_used > 50000 ? 2 : 4) * self->mt_used);
 }
