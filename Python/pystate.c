@@ -1302,7 +1302,7 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
     }
 
     // "Release" the data and/or the object.
-    _Py_AddPendingCall(interp, _release_xidata, data);
+    _Py_AddPendingCall(interp, 0, _release_xidata, data);
 }
 
 PyObject *

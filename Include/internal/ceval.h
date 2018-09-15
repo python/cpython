@@ -9,7 +9,7 @@ extern "C" {
 
 struct _is;  // See PyInterpreterState in pystate.h.
 
-PyAPI_FUNC(int) _Py_AddPendingCall(struct _is*, int (*)(void *), void *);
+PyAPI_FUNC(int) _Py_AddPendingCall(struct _is*, unsigned long, int (*)(void *), void *);
 PyAPI_FUNC(int) _Py_MakePendingCalls(struct _is*);
 
 struct _pending_calls {
@@ -22,6 +22,7 @@ struct _pending_calls {
     int async_exc;
 #define NPENDINGCALLS 32
     struct {
+        unsigned long thread_id;
         int (*func)(void *);
         void *arg;
     } calls[NPENDINGCALLS];

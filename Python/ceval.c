@@ -315,7 +315,7 @@ int
 Py_AddPendingCall(int (*func)(void *), void *arg)
 {
     PyInterpreterState *interp = _PyRuntime.interpreters.main;
-    return _Py_AddPendingCall(interp, func, arg);
+    return _Py_AddPendingCall(interp, _PyRuntime.main_thread, func, arg);
 }
 
 /* This implementation is thread-safe.  It allows
@@ -324,7 +324,7 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
  */
 
 int
-_Py_AddPendingCall(PyInterpreterState *interp, int (*func)(void *), void *arg)
+_Py_AddPendingCall(PyInterpreterState *interp, unsigned long thread_id, int (*func)(void *), void *arg)
 {
     int i, j, result=0;
     PyThread_type_lock lock = interp->ceval.pending.lock;
@@ -364,6 +364,7 @@ _Py_AddPendingCall(PyInterpreterState *interp, int (*func)(void *), void *arg)
     if (j == interp->ceval.pending.first) {
         result = -1; /* Queue full */
     } else {
+        interp->ceval.pending.calls[i].thread_id = thread_id;
         interp->ceval.pending.calls[i].func = func;
         interp->ceval.pending.calls[i].arg = arg;
         interp->ceval.pending.last = j;
@@ -400,12 +401,6 @@ _Py_MakePendingCalls(PyInterpreterState *interp)
             return -1;
     }
 
-    /* only service pending calls on main thread */
-    if (!interp->ceval.active ||
-        PyThread_get_thread_ident() != interp->ceval.active_thread)
-    {
-        return 0;
-    }
     /* don't perform recursive pending calls */
     if (busy)
         return 0;
@@ -432,8 +427,15 @@ _Py_MakePendingCalls(PyInterpreterState *interp)
         if (j == interp->ceval.pending.last) {
             func = NULL; /* Queue empty */
         } else {
+            unsigned long thread_id = interp->ceval.pending.calls[j].thread_id;
             func = interp->ceval.pending.calls[j].func;
             arg = interp->ceval.pending.calls[j].arg;
+            if (thread_id && PyThread_get_thread_ident() != thread_id) {
+                // Thread mismatch, so move it to the end of the list
+                // and start over.
+                _Py_AddPendingCall(interp, thread_id, func, arg);
+                func = NULL;
+            }
             interp->ceval.pending.first = (j + 1) % NPENDINGCALLS;
         }
         PyThread_release_lock(interp->ceval.pending.lock);

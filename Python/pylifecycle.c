@@ -1427,8 +1427,6 @@ Py_EndInterpreter(PyThreadState *tstate)
 
     // Wrap up existing threads.
     wait_for_thread_shutdown();
-    interp->ceval.active = 1;
-    interp->ceval.active_thread = PyThread_get_thread_ident();
 
     // Make any pending calls.
     if (_Py_atomic_load_relaxed(

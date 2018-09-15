@@ -281,6 +281,7 @@ trip_signal(int sig_num)
                     /* Py_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
                     _Py_AddPendingCall(_PyRuntime.interpreters.main,
+                                       main_thread,
                                        report_wakeup_send_error,
                                        (void *)(intptr_t) last_error);
                 }
@@ -300,6 +301,7 @@ trip_signal(int sig_num)
                     /* Py_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
                     _Py_AddPendingCall(_PyRuntime.interpreters.main,
+                                       main_thread,
                                        report_wakeup_write_error,
                                        (void *)(intptr_t)errno);
                 }
