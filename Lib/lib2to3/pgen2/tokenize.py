@@ -56,7 +56,7 @@ def _combinations(*l):
 Whitespace = r'[ \f\t]*'
 Comment = r'#[^\r\n]*'
 Ignore = Whitespace + any(r'\\\r?\n' + Whitespace) + maybe(Comment)
-Name = r'\w(?<!\d)\w*'
+Name = r'\w+'
 
 Binnumber = r'0[bB]_?[01]+(?:_[01]+)*'
 Hexnumber = r'0[xX]_?[\da-fA-F]+(?:_[\da-fA-F]+)*[lL]?'
@@ -107,8 +107,8 @@ ContStr = group(_litprefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
 PseudoExtras = group(r'\\\r?\n', Comment, Triple)
 PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
 
-nameprog, tokenprog, pseudoprog, single3prog, double3prog = map(
-    re.compile, (Name, Token, PseudoToken, Single3, Double3))
+tokenprog, pseudoprog, single3prog, double3prog = map(
+    re.compile, (Token, PseudoToken, Single3, Double3))
 
 _strprefixes = (
     _combinations('r', 'R', 'f', 'F') |
@@ -500,7 +500,7 @@ def generate_tokens(readline):
                             yield stashed
                             stashed = None
                         yield (STRING, token, spos, epos, line)
-                elif nameprog.match(token):                # ordinary name
+                elif initial.isidentifier():               # ordinary name
                     if token in ('async', 'await'):
                         if async_def:
                             yield (ASYNC if token == 'async' else AWAIT,
