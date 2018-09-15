@@ -480,37 +480,49 @@ class EnumMeta(type):
         if not bases:
             return object, Enum
 
-        # double check that we are not subclassing a class with existing
-        # enumeration members; while we're at it, see if any other data
-        # type has been mixed in so we can use the correct __new__
-        member_type = first_enum = None
-        for base in bases:
-            if  (base is not Enum and
-                    issubclass(base, Enum) and
-                    base._member_names_):
-                raise TypeError("Cannot extend enumerations")
-        # base is now the last base in bases
-        if not issubclass(base, Enum):
-            raise TypeError("new enumerations must be created as "
-                    "`ClassName([mixin_type,] enum_type)`")
+        def _find_data_type(bases):
+            for chain in bases:
+                for base in chain.__mro__:
+                    if base is object:
+                        continue
+                    elif '__new__' in base.__dict__:
+                        if issubclass(base, Enum) and not hasattr(base, '__new_member__'):
+                            continue
+                        return base
 
-        # get correct mix-in type (either mix-in type of Enum subclass, or
-        # first base if last base is Enum)
-        if not issubclass(bases[0], Enum):
-            member_type = bases[0]     # first data type
-            first_enum = bases[-1]  # enum type
+        # check that zero or one concrete data type has been used, and only one
+        # Enum type has been used, and that that Enum has no members
+        member_type = first_enum = None
+        if len(bases) == 1:
+            member_type = _find_data_type(bases) or object
+            first_enum = bases[0]
+        elif len(bases) == 2:
+            mixin, first_enum = bases
+            if not issubclass(first_enum, Enum) or issubclass(mixin, Enum):
+                raise TypeError("new enumerations must be created as "
+                        "`EnumName([mixin_type, ...] [data_type,] enum_type)`")
+            # search for a concrete data type in mixin or first_enum
+            member_type = _find_data_type(bases) or object
         else:
-            for base in bases[0].__mro__:
-                # most common: (IntEnum, int, Enum, object)
-                # possible:    (<Enum 'AutoIntEnum'>, <Enum 'IntEnum'>,
-                #               <class 'int'>, <Enum 'Enum'>,
-                #               <class 'object'>)
-                if issubclass(base, Enum):
-                    if first_enum is None:
-                        first_enum = base
-                else:
-                    if member_type is None:
-                        member_type = base
+            # more than two bases
+            *mixins, first_enum = bases
+            if (not issubclass(first_enum, Enum)
+                    or any([issubclass(m, Enum) for m in mixins])
+                ):
+                raise TypeError("new enumerations must be created as "
+                        "`EnumName([mixin_type, ...] [data_type,] enum_type)`")
+            *mixins, data_type = mixins
+            # verify that none of the mixins are a data type
+            if _find_data_type(mixins):
+                raise TypeError("new enumerations must be created as "
+                        "`EnumName([mixin_type, ...] [data_type,] enum_type)`")
+            # check if data type is one, or base Enum has one
+            member_type = _find_data_type(bases[-2:]) or object
+
+        # finally, double check that we are not subclassing a class with existing
+        # enumeration members
+        if first_enum._member_names_:
+            raise TypeError("Cannot extend enumerations")
 
         return member_type, first_enum
 

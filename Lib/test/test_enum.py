@@ -122,6 +122,22 @@ class TestHelpers(unittest.TestCase):
                 '__', '___', '____', '_____',):
             self.assertFalse(enum._is_dunder(s))
 
+# for subclassing tests
+
+class classproperty:
+
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+        self.fget = fget
+        self.fset = fset
+        self.fdel = fdel
+        if doc is None and fget is not None:
+            doc = fget.__doc__
+        self.__doc__ = doc
+
+    def __get__(self, instance, ownerclass):
+        return self.fget(ownerclass)
+
+
 # tests
 
 class TestEnum(unittest.TestCase):
@@ -1730,6 +1746,44 @@ class TestEnum(unittest.TestCase):
         else:
             raise Exception('Exception not raised.')
 
+    def test_multiple_mixin(self):
+        class MaxMixin:
+            @classproperty
+            def MAX(cls):
+                max = len(cls)
+                cls.MAX = max
+                return max
+        class StrMixin:
+            def __str__(self):
+                return self._name_.lower()
+        class Color(MaxMixin, Enum):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 3)
+        self.assertEqual(Color.MAX, 3)
+        self.assertEqual(str(Color.BLUE), 'Color.BLUE')
+        class Color(MaxMixin, StrMixin, Enum):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 3)
+        self.assertEqual(Color.MAX, 3)
+        self.assertEqual(str(Color.BLUE), 'blue')
+        class Color(StrMixin, MaxMixin, Enum):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 3)
+        self.assertEqual(Color.MAX, 3)
+        self.assertEqual(str(Color.BLUE), 'blue')
+
 
 class TestOrder(unittest.TestCase):
 
@@ -2092,6 +2146,49 @@ class TestFlag(unittest.TestCase):
             c = 4
             d = 6
         self.assertEqual(repr(Bizarre(7)), '<Bizarre.d|c|b: 7>')
+
+    def test_multiple_mixin(self):
+        class AllMixin:
+            @classproperty
+            def ALL(cls):
+                members = list(cls)
+                all_value = None
+                if members:
+                    all_value = members[0]
+                    for member in members[1:]:
+                        all_value |= member
+                cls.ALL = all_value
+                return all_value
+        class StrMixin:
+            def __str__(self):
+                return self._name_.lower()
+        class Color(AllMixin, Flag):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 4)
+        self.assertEqual(Color.ALL.value, 7)
+        self.assertEqual(str(Color.BLUE), 'Color.BLUE')
+        class Color(AllMixin, StrMixin, Flag):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 4)
+        self.assertEqual(Color.ALL.value, 7)
+        self.assertEqual(str(Color.BLUE), 'blue')
+        class Color(StrMixin, AllMixin, Flag):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 4)
+        self.assertEqual(Color.ALL.value, 7)
+        self.assertEqual(str(Color.BLUE), 'blue')
 
     @support.reap_threads
     def test_unique_composite(self):
@@ -2468,6 +2565,49 @@ class TestIntFlag(unittest.TestCase):
         for f in Open:
             self.assertEqual(bool(f.value), bool(f))
 
+    def test_multiple_mixin(self):
+        class AllMixin:
+            @classproperty
+            def ALL(cls):
+                members = list(cls)
+                all_value = None
+                if members:
+                    all_value = members[0]
+                    for member in members[1:]:
+                        all_value |= member
+                cls.ALL = all_value
+                return all_value
+        class StrMixin:
+            def __str__(self):
+                return self._name_.lower()
+        class Color(AllMixin, IntFlag):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 4)
+        self.assertEqual(Color.ALL.value, 7)
+        self.assertEqual(str(Color.BLUE), 'Color.BLUE')
+        class Color(AllMixin, StrMixin, IntFlag):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 4)
+        self.assertEqual(Color.ALL.value, 7)
+        self.assertEqual(str(Color.BLUE), 'blue')
+        class Color(StrMixin, AllMixin, IntFlag):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 4)
+        self.assertEqual(Color.ALL.value, 7)
+        self.assertEqual(str(Color.BLUE), 'blue')
+
     @support.reap_threads
     def test_unique_composite(self):
         # override __eq__ to be identity only
@@ -2551,6 +2691,7 @@ class TestUnique(unittest.TestCase):
             name = 2
             triple = 3
             value = 4
+
 
 
 expected_help_output_with_docs = """\
