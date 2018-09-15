@@ -1444,7 +1444,7 @@ Overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
 // UDP functions
 
 PyDoc_STRVAR(
-    Overlapped_WSAConnect_doc,
+    overlapped_WSAConnect_doc,
     "WSAConnect(client_handle, address_as_bytes) -> Overlapped[None]\n\n"
     "Bind a remote address to a connectionless (UDP) socket");
 
@@ -1453,7 +1453,7 @@ PyDoc_STRVAR(
  * _only_ be used for connection-less sockets (UDP).
  */
 static PyObject *
-Overlapped_WSAConnect(OverlappedObject *self, PyObject *args) {
+overlapped_WSAConnect(PyObject *self, PyObject *args) {
     SOCKET ConnectSocket;
     PyObject *AddressObj;
     char AddressBuf[sizeof(struct sockaddr_in6)];
@@ -1464,18 +1464,10 @@ Overlapped_WSAConnect(OverlappedObject *self, PyObject *args) {
     if(!PyArg_ParseTuple(args, F_HANDLE "O", &ConnectSocket, &AddressObj))
         return NULL;
 
-    if(self->type != TYPE_NONE) {
-        PyErr_SetString(PyExc_ValueError, "operation already attempted");
-        return NULL;
-    }
-
     Length = sizeof(AddressBuf);
     Length = parse_address(AddressObj, Address, Length);
     if(Length < 0)
         return NULL;
-
-    //self->type = TYPE_CONNECT;
-    //self->handle = (HANDLE)ConnectSocket;
 
     Py_BEGIN_ALLOW_THREADS
         // WSAConnect does not support overlapped I/O so this call will
@@ -1485,10 +1477,6 @@ Overlapped_WSAConnect(OverlappedObject *self, PyObject *args) {
     Py_END_ALLOW_THREADS
 
     err = err == ERROR_SUCCESS ? 0 : WSAGetLastError();
-
-    // Reset the operation type since WSAConnect finishes immediately
-    //self->type = TYPE_NOT_STARTED;
-    //self->error = err = ret ? ERROR_SUCCESS : WSAGetLastError();
 
     switch(err) {
     case ERROR_SUCCESS:
@@ -1751,8 +1739,8 @@ static PyMethodDef overlapped_functions[] = {
     {"ConnectPipe",
      (PyCFunction)ConnectPipe,
      METH_VARARGS, ConnectPipe_doc},
-    {"WSAConnect", (PyCFunction) Overlapped_WSAConnect,
-     METH_VARARGS, Overlapped_WSAConnect_doc},
+    {"WSAConnect", (PyCFunction) overlapped_WSAConnect,
+     METH_VARARGS, overlapped_WSAConnect_doc},
     {NULL}
 };
 
