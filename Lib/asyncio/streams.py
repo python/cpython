@@ -809,3 +809,4 @@ class Stream(StreamReader, StreamWriter):
             ssl_handshake_timeout=ssl_handshake_timeout)
         self._transport = transport
         self._protocol._transport = transport
+        self._over_ssl = True
