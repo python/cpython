@@ -1,2 +1,2 @@
 Fix test_embed for AIX
-author: Michael Felt
+Patch by Michael Felt
