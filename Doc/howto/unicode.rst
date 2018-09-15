@@ -719,10 +719,10 @@ with the ``surrogateescape`` error handler::
        f.write(data)
 
 The ``surrogateescape`` error handler will decode any non-ASCII bytes
-as code points in the Unicode Private Use Area ranging from U+DC80 to
-U+DCFF.  These private code points will then be turned back into the
-same bytes when the ``surrogateescape`` error handler is used when
-encoding the data and writing it back out.
+as code points in a special range running from U+DC80 to
+U+DCFF.  These code points will then turn back into the
+same bytes when the ``surrogateescape`` error handler is used to
+encode the data and write it back out.
 
 
 References
