@@ -10,6 +10,13 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         with self.assertRaisesRegex(SyntaxError, "invalid syntax"):
             exec(code, {}, {})
 
+    def test_named_expression_invalid_01(self):
+        code = """((x) := 0)"""
+
+        with self.assertRaisesRegex(SyntaxError,
+            "can't use named assignment with expression"):
+            exec(code, {}, {})
+
     def test_named_expression_invalid_02(self):
         code = """x = y := 0"""
 
@@ -28,10 +35,16 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         with self.assertRaisesRegex(SyntaxError, "invalid syntax"):
             exec(code, {}, {})
 
+    # XXX this error message now follows the error message you get with
+    # keyword args:
+    # >>> spam((1,2)=1)
+    # File "<stdin>", line 1
+    # SyntaxError: keyword can't be an expression
     def test_named_expression_invalid_06(self):
         code = """((a, b) := (1, 2))"""
 
-        with self.assertRaisesRegex(SyntaxError, "can't use named assignment with tuple"):
+        with self.assertRaisesRegex(SyntaxError,
+            "can't use named assignment with expression"):
             exec(code, {}, {})
 
     def test_named_expression_invalid_07(self):
