@@ -392,7 +392,7 @@ Restricted Enum subclassing
 
 A new :class:`Enum` class must have one base Enum class, up to one concrete
 data type, and as many :class:`object`-based mixin classes as needed.  The
-order of these base classes is:: 
+order of these base classes is::
 
     def EnumName([mix-in, ...,] [data-type,] base-enum):
         pass
