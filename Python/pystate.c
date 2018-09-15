@@ -189,8 +189,6 @@ void
 PyInterpreterState_Clear(PyInterpreterState *interp)
 {
     PyThreadState *p;
-    // XXX Also ensure that all pending calls have been made.  Disallow
-    // registration of more pending calls.
     HEAD_LOCK();
     for (p = interp->tstate_head; p != NULL; p = p->next)
         PyThreadState_Clear(p);
