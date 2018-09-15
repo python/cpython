@@ -285,11 +285,11 @@ class QueryTestCase(unittest.TestCase):
         self.assertEqual(pprint.pformat([d, d]),
             "[{'a': 1, 'b': 1, 'c': 1}, {'a': 1, 'b': 1, 'c': 1}]")
 
-        # The next one is kind of goofy.  The sorted order depends on the
+        # The next one is kind of odd.  The sorted order depends on the
         # alphabetic order of type names:  "int" < "str" < "tuple".  Before
         # Python 2.5, this was in the test_same_as_repr() test.  It's worth
         # keeping around for now because it's one of few tests of pprint
-        # against a crazy mix of types.
+        # against a random mix of types.
         self.assertEqual(pprint.pformat({"xy\tab\n": (3,), 5: [[]], (): {}}),
             r"{5: [[]], 'xy\tab\n': (3,), (): {}}")
 

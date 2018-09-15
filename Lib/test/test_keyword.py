@@ -79,7 +79,7 @@ class TestKeywordGeneration(unittest.TestCase):
                     {1, "turnip"},
                 \t{1, "This one is tab indented"
                     {278, 0},
-                    {1, "crazy but legal"
+                    {1, "weird but legal"
                 "also legal" {1, "
                     {1, "continue"},
                    {1, "lemon"},
@@ -94,7 +94,7 @@ class TestKeywordGeneration(unittest.TestCase):
             "        'This one is tab indented',",
             "        'also legal',",
             "        'continue',",
-            "        'crazy but legal',",
+            "        'weird but legal',",
             "        'jello',",
             "        'lemon',",
             "        'tomato',",
