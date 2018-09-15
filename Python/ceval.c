@@ -174,9 +174,11 @@ PyEval_InitThreads(void)
     PyThread_init_thread();
     create_gil();
     take_gil(_PyThreadState_GET());
-    _PyRuntime.ceval.pending.main_thread = PyThread_get_thread_ident();
-    if (!_PyRuntime.ceval.pending.lock)
+    // Set it to the ID of the main thread of the main interpreter.
+    _PyRuntime.main_thread = PyThread_get_thread_ident();
+    if (!_PyRuntime.ceval.pending.lock) {
         _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
+    }
 }
 
 void
@@ -243,9 +245,9 @@ PyEval_ReInitThreads(void)
     if (!gil_created())
         return;
     recreate_gil();
-    _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
     take_gil(current_tstate);
-    _PyRuntime.ceval.pending.main_thread = PyThread_get_thread_ident();
+    _PyRuntime.main_thread = PyThread_get_thread_ident();
+    _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
 
     /* Destroy all threads except the current one */
     _PyThreadState_DeleteExcept(current_tstate);
@@ -395,10 +397,10 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
 static int
 handle_signals(void)
 {
-    /* Only handle signals on main thread. */
-    if (_PyRuntime.ceval.pending.main_thread &&
-        PyThread_get_thread_ident() != _PyRuntime.ceval.pending.main_thread)
-    {
+    /* Only handle signals on main thread.  PyEval_InitThreads must
+     * have been called already.
+     */
+    if (PyThread_get_thread_ident() != _PyRuntime.main_thread) {
         return 0;
     }
     /*
@@ -423,9 +425,7 @@ make_pending_calls(void)
     static int busy = 0;
 
     /* only service pending calls on main thread */
-    if (_PyRuntime.ceval.pending.main_thread &&
-        PyThread_get_thread_ident() != _PyRuntime.ceval.pending.main_thread)
-    {
+    if (PyThread_get_thread_ident() != _PyRuntime.main_thread) {
         return 0;
     }
 

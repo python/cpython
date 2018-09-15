@@ -60,6 +60,8 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
         return _Py_INIT_ERR("Can't initialize threads for cross-interpreter data registry");
     }
 
+    // runtime->main_thread is set in PyEval_InitThreads().
+
     return _Py_INIT_OK();
 }
 
