@@ -1461,6 +1461,19 @@ Py_EndInterpreter(PyThreadState *tstate)
 
     wait_for_thread_shutdown();
 
+    if (_Py_atomic_load_relaxed(
+                &(interp->ceval.pending.calls_to_do)))
+    {
+        // XXX Ensure that the interpreter is running in the current thread?
+        if (_Py_MakePendingCalls(interp) < 0) {
+            PyObject *exc, *val, *tb;
+            PyErr_Fetch(&exc, &val, &tb);
+            PyErr_BadInternalCall();
+            _PyErr_ChainExceptions(exc, val, tb);
+            PyErr_Print();
+        }
+    }
+
     call_py_exitfuncs(interp);
 
     if (tstate != interp->tstate_head || tstate->next != NULL)
