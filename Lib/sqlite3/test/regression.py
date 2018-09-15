@@ -397,6 +397,17 @@ class RegressionTests(unittest.TestCase):
         del ref
         support.gc_collect()
 
+    def CheckBpo34695(self):
+        """
+        The interpreter shouldn't crash in case Cache.__init__() is not
+        called.
+        """
+        cache = sqlite.Cache.__new__(sqlite.Cache, lambda x: x)
+        self.assertRaisesRegex(sqlite.ProgrammingError, r'Cache\.__init__',
+                               cache.get, 42)
+        self.assertRaisesRegex(sqlite.ProgrammingError, r'Cache\.__init__',
+                               cache.display)
+
 
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
