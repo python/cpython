@@ -9,6 +9,8 @@ Subprocesses
 This section describes high-level async/await asyncio APIs to
 create and manage subprocesses.
 
+.. _asyncio_example_subprocess_shell:
+
 Here's an example of how asyncio can run a shell command and
 communicate its result back::
 
@@ -62,8 +64,7 @@ Creating Subprocesses
 
    The *limit* argument sets the buffer limit for :class:`StreamReader`
    wrappers for :attr:`Process.stdout` and :attr:`Process.stderr`
-   (if :attr:`subprocess.PIPE` is passed to *stdout* and *stderr*
-   arguments).
+   (if :attr:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
 
    Return a :class:`~asyncio.subprocess.Process` instance.
 
@@ -78,15 +79,14 @@ Creating Subprocesses
 
    The *limit* argument sets the buffer limit for :class:`StreamReader`
    wrappers for :attr:`Process.stdout` and :attr:`Process.stderr`
-   (if :attr:`subprocess.PIPE` is passed to *stdout* and *stderr*
-   arguments).
+   (if :attr:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
 
    Return a :class:`~asyncio.subprocess.Process` instance.
 
    See the documentation of :meth:`loop.subprocess_shell` for other
    parameters.
 
-.. note::
+.. important::
 
    It is the application's responsibility to ensure that all whitespace and
    metacharacters are quoted appropriately to avoid `shell injection
@@ -98,7 +98,8 @@ Creating Subprocesses
 .. note::
 
    The default event loop that asyncio is pre-configured
-   to use on **Windows** does not support subprocesses.
+   to use on **Windows** does not support subprocesses. Subprocesses are
+   available for Windows if the :class:`ProactorEventLoop` is used.
    See :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>`
    for details.
 
@@ -206,7 +207,7 @@ communicate with them.
       exception is ignored.  This condition occurs when the process
       exits before all data are written into *stdin*.
 
-      If its desired to send data to the process' *stdin*,
+      If it is desired to send data to the process' *stdin*,
       the process needs to be created with ``stdin=PIPE``.  Similarly,
       to get anything other than ``None`` in the result tuple, the
       process has to be created with ``stdout=PIPE`` and/or
@@ -265,8 +266,8 @@ communicate with them.
       Use the :meth:`communicate` method rather than
       :attr:`process.stdin.write() <stdin>`,
       :attr:`await process.stdout.read() <stdout>` or
-      :attr:`await process.stderr.read <stderr>`
-      to avoid deadlocks due to streams pausing reading or writing
+      :attr:`await process.stderr.read <stderr>`.
+      This avoids deadlocks due to streams pausing reading or writing
       and blocking the child process.
 
    .. attribute:: pid

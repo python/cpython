@@ -32,7 +32,7 @@
 #include <errno.h>
 #endif
 #include <stdlib.h>
-#ifdef HAVE_UNISTD_H
+#ifndef MS_WINDOWS
 #include <unistd.h>
 #endif
 #ifdef HAVE_CRYPT_H

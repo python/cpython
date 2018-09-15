@@ -9,7 +9,8 @@ Platforms Support
 =================
 
 The :mod:`asyncio` module has been designed to be portable,
-but some platforms have subtle differences and limitations.
+but some platforms have subtle differences and limitations
+due to the platforms' underlying architecture and capabilities.
 
 
 All Platforms
@@ -26,7 +27,7 @@ All event loops on Windows do not support the following methods:
 
 * :meth:`loop.create_unix_connection` and
   :meth:`loop.create_unix_server` are not supported.
-  The :data:`socket.AF_UNIX` socket family is specific to UNIX/
+  The :data:`socket.AF_UNIX` socket family is specific to UNIX.
 
 * :meth:`loop.add_signal_handler` and
   :meth:`loop.remove_signal_handler` are not supported.
@@ -66,8 +67,8 @@ Windows configuration.
 Subprocess Support on Windows
 -----------------------------
 
-:class:`SelectorEventLoop` on Windows does not support subproceses,
-so :class:`ProactorEventLoop` should be used instead::
+:class:`SelectorEventLoop` on Windows does not support subproceses.
+On Windows, :class:`ProactorEventLoop` should be used instead::
 
   import asyncio
 

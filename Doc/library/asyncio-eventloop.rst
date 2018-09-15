@@ -1075,6 +1075,11 @@ Enabling debug mode
 
    Set the debug mode of the event loop.
 
+   .. versionchanged:: 3.7
+
+      The new ``-X dev`` command line option can now also be used
+      to enable the debug mode.
+
 .. seealso::
 
    The :ref:`debug mode of asyncio <asyncio-debug-mode>`.
@@ -1429,7 +1434,7 @@ event loop::
 
 .. seealso::
 
-   A similar :ref:`Hello World <asyncio-hello-world-coroutine>`
+   A similar :ref:`Hello World <coroutine>`
    example created with a coroutine and the :func:`run` function.
 
 
@@ -1466,7 +1471,7 @@ during 5 seconds, and then stops the event loop::
 
 .. seealso::
 
-   A similar :ref:`current date <asyncio-date-coroutine>` example
+   A similar :ref:`current date <asyncio_example_sleep>` example
    created with a coroutine and the :func:`run` function.
 
 
