@@ -10,6 +10,8 @@ Streams are high-level async/await-ready primitives to work with
 network connections.  Streams allow sending and receiving data without
 using callbacks or low-level protocols and transports.
 
+.. _asyncio_example_stream:
+
 Here is an example of a TCP echo client written using asyncio
 streams::
 

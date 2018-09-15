@@ -557,7 +557,7 @@ function.
       >>> sig.parameters['b'].annotation
       <class 'int'>
 
-   Accepts a wide range of python callables, from plain functions and classes to
+   Accepts a wide range of Python callables, from plain functions and classes to
    :func:`functools.partial` objects.
 
    Raises :exc:`ValueError` if no signature can be provided, and
