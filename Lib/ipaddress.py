@@ -597,14 +597,13 @@ class _BaseAddress(_IPAddressBase):
     def __format__(self, fmt):
         """Returns an IP address as a formatted string. 
         
-            Supported presentation types are:
-            's': returns the IP address as a string (default)
-            'b' or 'n': converts to binary and returns a zero-padded string
-            'X' or 'x': converts to upper- or lower-case hex and returns a zero-padded string
+        Supported presentation types are:
+        's': returns the IP address as a string (default)
+        'b' or 'n': converts to binary and returns a zero-padded string
+        'X' or 'x': converts to upper- or lower-case hex and returns a zero-padded string
 
-            For binary and hex presentation types, the alternate form specifier
-            '#' and the grouping option '_' are supported.
-
+        For binary and hex presentation types, the alternate form specifier
+        '#' and the grouping option '_' are supported.
         """
 
 
