@@ -322,23 +322,24 @@ _PyEval_SignalReceived(void)
 }
 
 static int
-_add_pending_call(PyInterpreterState *interp, int (*func)(void *), void *arg)
+_add_pending_call(PyInterpreterState *interp, unsigned long thread_id, int (*func)(void *), void *arg)
 {
     int i = interp->ceval.pending.last;
     int j = (i + 1) % NPENDINGCALLS;
     if (j == interp->ceval.pending.first) {
         return -1; /* Queue full */
     }
+    interp->ceval.pending.calls[i].thread_id = thread_id;
     interp->ceval.pending.calls[i].func = func;
     interp->ceval.pending.calls[i].arg = arg;
     interp->ceval.pending.last = j;
     return 0;
 }
 
+/* pop one item off the queue while holding the lock */
 static void
 _pop_pending_call(PyInterpreterState *interp, int (**func)(void *), void **arg)
 {
-    /* pop one item off the queue while holding the lock */
     int i = interp->ceval.pending.first;
     if (i == interp->ceval.pending.last) {
         return; /* Queue empty */
@@ -347,13 +348,21 @@ _pop_pending_call(PyInterpreterState *interp, int (**func)(void *), void **arg)
     *func = interp->ceval.pending.calls[i].func;
     *arg = interp->ceval.pending.calls[i].arg;
     interp->ceval.pending.first = (i + 1) % NPENDINGCALLS;
+
+    unsigned long thread_id = interp->ceval.pending.calls[i].thread_id;
+    if (thread_id && PyThread_get_thread_ident() != thread_id) {
+        // Thread mismatch, so move it to the end of the list
+        // and start over.
+        _Py_AddPendingCall(interp, thread_id, *func, *arg);
+        return;
+    }
 }
 
 int
 Py_AddPendingCall(int (*func)(void *), void *arg)
 {
     PyInterpreterState *interp = _PyRuntime.interpreters.main;
-    return _Py_AddPendingCall(interp, func, arg);
+    return _Py_AddPendingCall(interp, _PyRuntime.main_thread, func, arg);
 }
 
 /* This implementation is thread-safe.  It allows
@@ -362,7 +371,7 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
  */
 
 int
-_Py_AddPendingCall(PyInterpreterState *interp, int (*func)(void *), void *arg)
+_Py_AddPendingCall(PyInterpreterState *interp, unsigned long thread_id, int (*func)(void *), void *arg)
 {
     /* try a few times for the lock.  Since this mechanism is used
      * for signal handling (on the main thread), there is a (slim)
@@ -396,7 +405,7 @@ _Py_AddPendingCall(PyInterpreterState *interp, int (*func)(void *), void *arg)
         goto done;
     }
 
-    result = _add_pending_call(interp, func, arg);
+    result = _add_pending_call(interp, thread_id, func, arg);
     /* signal main loop */
     SIGNAL_PENDING_CALLS(interp);
 
