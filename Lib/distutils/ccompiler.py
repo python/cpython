@@ -1042,7 +1042,7 @@ def gen_preprocess_options(macros, include_dirs):
     C++.
     """
     # XXX it would be nice (mainly aesthetic, and so we don't generate
-    # stupid-looking command lines) to go over 'macros' and eliminate
+    # bad-looking command lines) to go over 'macros' and eliminate
     # redundant definitions/undefinitions (ie. ensure that only the
     # latest mention of a particular macro winds up on the command
     # line).  I don't think it's essential, though, since most (all?)

@@ -9,7 +9,7 @@ TO DO:
     - performance?  (updates of large sets of locals are slow)
     - better integration of "debug module"
     - debugger should be global resource (attached to flist, not to shell)
-    - fix the stupid bug where you need to step twice
+    - fix the annoying bug where you need to step twice
     - display class name in stack viewer entries for methods
     - suppress tracing through IDLE internals (e.g. print) DONE
     - add a button to suppress through a specific module or class or method

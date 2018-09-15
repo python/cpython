@@ -696,7 +696,7 @@ class ExtensionTests(unittest.TestCase):
         cur = con.cursor()
         cur.executescript("""
             -- bla bla
-            /* a stupid comment */
+            /* a comment */
             create table a(i);
             insert into a(i) values (5);
             """)
