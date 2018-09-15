@@ -4,10 +4,12 @@ import unittest
 
 from collections import namedtuple
 import os
+import platform
 import re
 import subprocess
 import sys
-import platform
+
+
 # AIX libc prints an empty string as '' rather than the string '(null)'
 NULL_STR = '' if platform.system() == 'AIX' else '(null)'
 

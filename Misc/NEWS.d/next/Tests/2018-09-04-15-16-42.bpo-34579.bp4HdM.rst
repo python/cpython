@@ -1,2 +1,2 @@
-Add AIX specific DEFAULT_CONFIG
-author: M Felt
+Fix test_embed for AIX
+author: Michael Felt
