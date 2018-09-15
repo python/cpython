@@ -1459,8 +1459,19 @@ Py_EndInterpreter(PyThreadState *tstate)
     if (tstate->frame != NULL)
         Py_FatalError("Py_EndInterpreter: thread still has a frame");
 
+    // Mark as finalizing.
+    if (interp->ceval.pending.lock != NULL) {
+        PyThread_acquire_lock(interp->ceval.pending.lock, 1);
+    }
+    interp->finalizing = 1;
+    if (interp->ceval.pending.lock != NULL) {
+        PyThread_release_lock(interp->ceval.pending.lock);
+    }
+
+    // Wrap up existing threads.
     wait_for_thread_shutdown();
 
+    // Make any pending calls.
     if (_Py_atomic_load_relaxed(
                 &(interp->ceval.pending.calls_to_do)))
     {

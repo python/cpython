@@ -386,10 +386,21 @@ _Py_AddPendingCall(PyInterpreterState *interp, int (*func)(void *), void *arg)
             return -1;
     }
 
-    int result = _add_pending_call(interp, func, arg);
+    int result = -1;
+    if (interp->finalizing) {
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
+        PyErr_SetString(PyExc_SystemError, "Py_AddPendingCall: cannot add pending calls (interpreter shutting down)");
+        PyErr_Print();
+        PyErr_Restore(exc, val, tb);
+        goto done;
+    }
+
+    result = _add_pending_call(interp, func, arg);
     /* signal main loop */
     SIGNAL_PENDING_CALLS(interp);
 
+done:
     if (lock != NULL)
         PyThread_release_lock(lock);
     return result;
