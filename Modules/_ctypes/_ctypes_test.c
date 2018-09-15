@@ -666,7 +666,6 @@ typedef struct {
     char f1;
 } Size1;
 
-
 typedef struct {
     char f1;
     char f2;
@@ -722,6 +721,216 @@ typedef struct {
     char f7;
     char f8;
 } Size8;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+    char f9;
+} Size9;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+    char f9;
+    char f10;
+} Size10;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+    char f9;
+    char f10;
+    char f11;
+} Size11;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+    char f9;
+    char f10;
+    char f11;
+    char f12;
+} Size12;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+    char f9;
+    char f10;
+    char f11;
+    char f12;
+    char f13;
+} Size13;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+    char f9;
+    char f10;
+    char f11;
+    char f12;
+    char f13;
+    char f14;
+} Size14;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+    char f9;
+    char f10;
+    char f11;
+    char f12;
+    char f13;
+    char f14;
+    char f15;
+} Size15;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+    char f9;
+    char f10;
+    char f11;
+    char f12;
+    char f13;
+    char f14;
+    char f15;
+    char f16;
+} Size16;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+    char f9;
+    char f10;
+    char f11;
+    char f12;
+    char f13;
+    char f14;
+    char f15;
+    char f16;
+    char f17;
+} Size17;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+    char f9;
+    char f10;
+    char f11;
+    char f12;
+    char f13;
+    char f14;
+    char f15;
+    char f16;
+    char f17;
+    char f18;
+} Size18;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+    char f9;
+    char f10;
+    char f11;
+    char f12;
+    char f13;
+    char f14;
+    char f15;
+    char f16;
+    char f17;
+    char f18;
+    char f19;
+} Size19;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+    char f9;
+    char f10;
+    char f11;
+    char f12;
+    char f13;
+    char f14;
+    char f15;
+    char f16;
+    char f17;
+    char f18;
+    char f19;
+    char f20;
+} Size20;
 
 EXPORT(Size1) TestSize1() {
     Size1 f;
@@ -796,6 +1005,240 @@ EXPORT(Size8) TestSize8() {
     f.f6 = 'f';
     f.f7 = 'g';
     f.f8 = 'h';
+    return f;
+}
+
+EXPORT(Size9) TestSize9() {
+    Size9 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    f.f9 = 'i';
+    return f;
+}
+
+EXPORT(Size10) TestSize10() {
+    Size10 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    f.f9 = 'i';
+    f.f10 = 'j';
+    return f;
+}
+
+EXPORT(Size11) TestSize11() {
+    Size11 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    f.f9 = 'i';
+    f.f10 = 'j';
+    f.f11 = 'k';
+    return f;
+}
+
+EXPORT(Size12) TestSize12() {
+    Size12 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    f.f9 = 'i';
+    f.f10 = 'j';
+    f.f11 = 'k';
+    f.f12 = 'l';
+    return f;
+}
+
+EXPORT(Size13) TestSize13() {
+    Size13 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    f.f9 = 'i';
+    f.f10 = 'j';
+    f.f11 = 'k';
+    f.f12 = 'l';
+    f.f13 = 'm';
+    return f;
+}
+
+EXPORT(Size14) TestSize14() {
+    Size14 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    f.f9 = 'i';
+    f.f10 = 'j';
+    f.f11 = 'k';
+    f.f12 = 'l';
+    f.f13 = 'm';
+    f.f14 = 'n';
+    return f;
+}
+
+EXPORT(Size15) TestSize15() {
+    Size15 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    f.f9 = 'i';
+    f.f10 = 'j';
+    f.f11 = 'k';
+    f.f12 = 'l';
+    f.f13 = 'm';
+    f.f14 = 'n';
+    f.f15 = 'o';
+    return f;
+}
+
+EXPORT(Size16) TestSize16() {
+    Size16 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    f.f9 = 'i';
+    f.f10 = 'j';
+    f.f11 = 'k';
+    f.f12 = 'l';
+    f.f13 = 'm';
+    f.f14 = 'n';
+    f.f15 = 'o';
+    f.f16 = 'p';
+    return f;
+}
+
+EXPORT(Size17) TestSize17() {
+    Size17 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    f.f9 = 'i';
+    f.f10 = 'j';
+    f.f11 = 'k';
+    f.f12 = 'l';
+    f.f13 = 'm';
+    f.f14 = 'n';
+    f.f15 = 'o';
+    f.f16 = 'p';
+    f.f17 = 'q';
+    return f;
+}
+
+EXPORT(Size18) TestSize18() {
+    Size18 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    f.f9 = 'i';
+    f.f10 = 'j';
+    f.f11 = 'k';
+    f.f12 = 'l';
+    f.f13 = 'm';
+    f.f14 = 'n';
+    f.f15 = 'o';
+    f.f16 = 'p';
+    f.f17 = 'q';
+    f.f18 = 'r';
+    return f;
+}
+
+EXPORT(Size19) TestSize19() {
+    Size19 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    f.f9 = 'i';
+    f.f10 = 'j';
+    f.f11 = 'k';
+    f.f12 = 'l';
+    f.f13 = 'm';
+    f.f14 = 'n';
+    f.f15 = 'o';
+    f.f16 = 'p';
+    f.f17 = 'q';
+    f.f18 = 'r';
+    f.f19 = 's';
+    return f;
+}
+
+EXPORT(Size20) TestSize20() {
+    Size20 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    f.f9 = 'i';
+    f.f10 = 'j';
+    f.f11 = 'k';
+    f.f12 = 'l';
+    f.f13 = 'm';
+    f.f14 = 'n';
+    f.f15 = 'o';
+    f.f16 = 'p';
+    f.f17 = 'q';
+    f.f18 = 'r';
+    f.f19 = 's';
+    f.f20 = 't';
     return f;
 }
 
