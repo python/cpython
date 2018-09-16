@@ -67,6 +67,12 @@ using the :func:`ensure_future` function or the :meth:`AbstractEventLoop.create_
 method.
 
 
+If a coroutine calls ``await coroutine`` or ``yield from coroutine`` recursively on
+itself, rather than on another coroutine, this call will execute immediately. No other
+coroutines will be scheduled to run when a coroutine is recursively calling itself,
+unless it also makes calls to other coroutines. 
+
+
 Coroutines (and tasks) can only run when the event loop is running.
 
 .. decorator:: coroutine
