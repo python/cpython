@@ -135,6 +135,7 @@ library/http.client,,:port,host:port
 library/http.cookies,,`,!#$%&'*+-.^_`|~:
 library/imaplib,,:MM,"""DD-Mmm-YYYY HH:MM:SS"
 library/imaplib,,:SS,"""DD-Mmm-YYYY HH:MM:SS"
+library/importlib,,:main,(e.g. ``foo.bar:main``) into the ``foo.bar.main`` object.  Raises
 library/inspect,,:int,">>> def foo(a, *, b:int, **kwargs):"
 library/inspect,,:int,"'(a, *, b:int, **kwargs)'"
 library/inspect,,:int,'b:int'
