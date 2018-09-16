@@ -101,7 +101,7 @@ def skip(reason):
         return test_item
     if isinstance(reason, types.FunctionType):
         test_item = reason
-        reason = 'unconditionally'
+        reason = ''
         return decorator(test_item)
     return decorator
 

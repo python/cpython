@@ -265,7 +265,7 @@ class Test_TestSkipping(unittest.TestCase):
         test = Foo("test_1")
         suite = unittest.TestSuite([test])
         suite.run(result)
-        self.assertEqual(result.skipped, [(test, "unconditionally")])
+        self.assertEqual(result.skipped, [(test, "")])
 
 if __name__ == "__main__":
     unittest.main()
