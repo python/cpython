@@ -1,0 +1,2 @@
+For AIX, when ABI == 32-bit Skip value (-1) in `test__xxsubinterpreters.py.ShareableTypeTests._assert_values`
+author: M Felt
