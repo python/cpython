@@ -3089,6 +3089,13 @@ class TestSignatureObject(unittest.TestCase):
         foo_sig = MySignature.from_callable(foo)
         self.assertTrue(isinstance(foo_sig, MySignature))
 
+    def test_signature_from_callable_class(self):
+        # A regression test for a class inheriting its signature from `object`.
+        class MySignature(inspect.Signature): pass
+        class foo: pass
+        foo_sig = MySignature.from_callable(foo)
+        self.assertTrue(isinstance(foo_sig, MySignature))
+
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_signature_from_callable_builtin_obj(self):
