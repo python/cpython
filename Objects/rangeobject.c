@@ -614,7 +614,7 @@ range_subscript(rangeobject* self, PyObject* item)
     }
     PyErr_Format(PyExc_TypeError,
                  "range indices must be integers or slices, not %.200s",
-                 item->ob_type->tp_name);
+                 Py_TYPE(item)->tp_name);
     return NULL;
 }
 

@@ -143,7 +143,7 @@ static FNFCIGETNEXTCABINET(cb_getnextcabinet)
         if (!PyBytes_Check(result)) {
             PyErr_Format(PyExc_TypeError,
                 "Incorrect return type %s from getnextcabinet",
-                result->ob_type->tp_name);
+                Py_TYPE(result)->tp_name);
             Py_DECREF(result);
             return FALSE;
         }
@@ -718,7 +718,7 @@ view_execute(msiobj *view, PyObject*args)
         return NULL;
 
     if (oparams != Py_None) {
-        if (oparams->ob_type != &record_Type) {
+        if (Py_TYPE(oparams) != &record_Type) {
             PyErr_SetString(PyExc_TypeError, "Execute argument must be a record");
             return NULL;
         }
@@ -774,7 +774,7 @@ view_modify(msiobj *view, PyObject *args)
     if (!PyArg_ParseTuple(args, "iO:Modify", &kind, &data))
         return NULL;
 
-    if (data->ob_type != &record_Type) {
+    if (Py_TYPE(data) != &record_Type) {
         PyErr_SetString(PyExc_TypeError, "Modify expects a record object");
         return NULL;
     }

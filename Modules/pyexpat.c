@@ -1369,7 +1369,7 @@ xmlparse_setattro(xmlparseobject *self, PyObject *name, PyObject *v)
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
                      "attribute name must be string, not '%.200s'",
-                     name->ob_type->tp_name);
+                     Py_TYPE(name)->tp_name);
         return -1;
     }
     if (v == NULL) {

@@ -1045,7 +1045,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         PyErr_Format(
             PyExc_TypeError,
             "TextIOWrapper() argument 'errors' must be str or None, not %.50s",
-            errors->ob_type->tp_name);
+            Py_TYPE(errors)->tp_name);
         return -1;
     }
 

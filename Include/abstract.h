@@ -509,8 +509,8 @@ PyAPI_FUNC(int) PyObject_AsWriteBuffer(PyObject *obj,
 
 /* Return 1 if the getbuffer function is available, otherwise return 0. */
 #define PyObject_CheckBuffer(obj) \
-    (((obj)->ob_type->tp_as_buffer != NULL) &&  \
-     ((obj)->ob_type->tp_as_buffer->bf_getbuffer != NULL))
+    ((Py_TYPE(obj)->tp_as_buffer != NULL) &&  \
+     (Py_TYPE(obj)->tp_as_buffer->bf_getbuffer != NULL))
 
 /* This is a C-API version of the getbuffer function call.  It checks
    to make sure object has the required function pointer and issues the
@@ -596,8 +596,8 @@ PyAPI_FUNC(PyObject *) PyObject_GetIter(PyObject *);
 PyAPI_FUNC(int) PyIter_Check(PyObject *);
 #ifndef Py_LIMITED_API
 #define PyIter_Check(obj) \
-    ((obj)->ob_type->tp_iternext != NULL && \
-     (obj)->ob_type->tp_iternext != &_PyObject_NextNotImplemented)
+    (Py_TYPE(obj)->tp_iternext != NULL && \
+     Py_TYPE(obj)->tp_iternext != &_PyObject_NextNotImplemented)
 #endif
 
 /* Takes an iterator object and calls its tp_iternext slot,
@@ -721,8 +721,8 @@ PyAPI_FUNC(PyObject *) PyNumber_Or(PyObject *o1, PyObject *o2);
 PyAPI_FUNC(int) PyIndex_Check(PyObject *);
 #ifndef Py_LIMITED_API
 #define PyIndex_Check(obj)                              \
-    ((obj)->ob_type->tp_as_number != NULL &&            \
-     (obj)->ob_type->tp_as_number->nb_index != NULL)
+    (Py_TYPE(obj)->tp_as_number != NULL &&            \
+     Py_TYPE(obj)->tp_as_number->nb_index != NULL)
 #endif
 
 /* Returns the object 'o' converted to a Python int, or NULL with an exception

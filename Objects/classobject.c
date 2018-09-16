@@ -136,7 +136,7 @@ static PyObject *
 method_getattro(PyObject *obj, PyObject *name)
 {
     PyMethodObject *im = (PyMethodObject *)obj;
-    PyTypeObject *tp = obj->ob_type;
+    PyTypeObject *tp = Py_TYPE(obj);
     PyObject *descr = NULL;
 
     {
@@ -148,9 +148,9 @@ method_getattro(PyObject *obj, PyObject *name)
     }
 
     if (descr != NULL) {
-        descrgetfunc f = TP_DESCR_GET(descr->ob_type);
+        descrgetfunc f = TP_DESCR_GET(Py_TYPE(descr));
         if (f != NULL)
-            return f(descr, obj, (PyObject *)obj->ob_type);
+            return f(descr, obj, (PyObject *)Py_TYPE(obj));
         else {
             Py_INCREF(descr);
             return descr;
@@ -447,7 +447,7 @@ static PyGetSetDef instancemethod_getset[] = {
 static PyObject *
 instancemethod_getattro(PyObject *self, PyObject *name)
 {
-    PyTypeObject *tp = self->ob_type;
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject *descr = NULL;
 
     if (tp->tp_dict == NULL) {
@@ -457,9 +457,9 @@ instancemethod_getattro(PyObject *self, PyObject *name)
     descr = _PyType_Lookup(tp, name);
 
     if (descr != NULL) {
-        descrgetfunc f = TP_DESCR_GET(descr->ob_type);
+        descrgetfunc f = TP_DESCR_GET(Py_TYPE(descr));
         if (f != NULL)
-            return f(descr, self, (PyObject *)self->ob_type);
+            return f(descr, self, (PyObject *)Py_TYPE(self));
         else {
             Py_INCREF(descr);
             return descr;

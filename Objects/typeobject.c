@@ -3150,7 +3150,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
                      "attribute name must be string, not '%.200s'",
-                     name->ob_type->tp_name);
+                     Py_TYPE(name)->tp_name);
         return NULL;
     }
 
@@ -3792,12 +3792,12 @@ object_richcompare(PyObject *self, PyObject *other, int op)
     case Py_NE:
         /* By default, __ne__() delegates to __eq__() and inverts the result,
            unless the latter returns NotImplemented. */
-        if (self->ob_type->tp_richcompare == NULL) {
+        if (Py_TYPE(self)->tp_richcompare == NULL) {
             res = Py_NotImplemented;
             Py_INCREF(res);
             break;
         }
-        res = (*self->ob_type->tp_richcompare)(self, other, Py_EQ);
+        res = (*Py_TYPE(self)->tp_richcompare)(self, other, Py_EQ);
         if (res != NULL && res != Py_NotImplemented) {
             int ok = PyObject_IsTrue(res);
             Py_DECREF(res);
@@ -4114,7 +4114,7 @@ _PyObject_GetState(PyObject *obj, int required)
     if (getstate == NULL) {
         PyObject *slotnames;
 
-        if (required && obj->ob_type->tp_itemsize) {
+        if (required && Py_TYPE(obj)->tp_itemsize) {
             PyErr_Format(PyExc_TypeError,
                          "can't pickle %.200s objects",
                          Py_TYPE(obj)->tp_name);
@@ -4147,13 +4147,13 @@ _PyObject_GetState(PyObject *obj, int required)
         assert(slotnames == Py_None || PyList_Check(slotnames));
         if (required) {
             Py_ssize_t basicsize = PyBaseObject_Type.tp_basicsize;
-            if (obj->ob_type->tp_dictoffset)
+            if (Py_TYPE(obj)->tp_dictoffset)
                 basicsize += sizeof(PyObject *);
-            if (obj->ob_type->tp_weaklistoffset)
+            if (Py_TYPE(obj)->tp_weaklistoffset)
                 basicsize += sizeof(PyObject *);
             if (slotnames != Py_None)
                 basicsize += sizeof(PyObject *) * PyList_GET_SIZE(slotnames);
-            if (obj->ob_type->tp_basicsize > basicsize) {
+            if (Py_TYPE(obj)->tp_basicsize > basicsize) {
                 Py_DECREF(slotnames);
                 Py_DECREF(state);
                 PyErr_Format(PyExc_TypeError,
@@ -4626,7 +4626,7 @@ object___format___impl(PyObject *self, PyObject *format_spec)
     if (PyUnicode_GET_LENGTH(format_spec) > 0) {
         PyErr_Format(PyExc_TypeError,
                      "unsupported format string passed to %.200s.__format__",
-                     self->ob_type->tp_name);
+                     Py_TYPE(self)->tp_name);
         return NULL;
     }
     return PyObject_Str(self);
@@ -4645,10 +4645,10 @@ object___sizeof___impl(PyObject *self)
     Py_ssize_t res, isize;
 
     res = 0;
-    isize = self->ob_type->tp_itemsize;
+    isize = Py_TYPE(self)->tp_itemsize;
     if (isize > 0)
         res = Py_SIZE(self) * isize;
-    res += self->ob_type->tp_basicsize;
+    res += Py_TYPE(self)->tp_basicsize;
 
     return PyLong_FromSsize_t(res);
 }
@@ -7277,7 +7277,7 @@ set_names(PyTypeObject *type)
                 _PyErr_FormatFromCause(PyExc_RuntimeError,
                     "Error calling __set_name__ on '%.100s' instance %R "
                     "in '%.100s'",
-                    value->ob_type->tp_name, key, type->tp_name);
+                    Py_TYPE(value)->tp_name, key, type->tp_name);
                 Py_DECREF(names_to_set);
                 return -1;
             }

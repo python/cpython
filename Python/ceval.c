@@ -2583,7 +2583,7 @@ main_loop:
                     if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
                         PyErr_Format(PyExc_TypeError,
                                 "'%.200s' object is not a mapping",
-                                arg->ob_type->tp_name);
+                                Py_TYPE(arg)->tp_name);
                     }
                     Py_DECREF(sum);
                     goto error;
@@ -2902,7 +2902,7 @@ main_loop:
         TARGET(FOR_ITER) {
             /* before: [iter]; after: [iter, iter()] *or* [] */
             PyObject *iter = TOP();
-            PyObject *next = (*iter->ob_type->tp_iternext)(iter);
+            PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
                 PUSH(next);
                 PREDICT(STORE_FAST);
@@ -4119,11 +4119,11 @@ unpack_iterable(PyObject *v, int argcnt, int argcntafter, PyObject **sp)
     it = PyObject_GetIter(v);
     if (it == NULL) {
         if (PyErr_ExceptionMatches(PyExc_TypeError) &&
-            v->ob_type->tp_iter == NULL && !PySequence_Check(v))
+            Py_TYPE(v)->tp_iter == NULL && !PySequence_Check(v))
         {
             PyErr_Format(PyExc_TypeError,
                          "cannot unpack non-iterable %.200s object",
-                         v->ob_type->tp_name);
+                         Py_TYPE(v)->tp_name);
         }
         return 0;
     }
@@ -4508,7 +4508,7 @@ PyEval_GetFuncName(PyObject *func)
     else if (PyCFunction_Check(func))
         return ((PyCFunctionObject*)func)->m_ml->ml_name;
     else
-        return func->ob_type->tp_name;
+        return Py_TYPE(func)->tp_name;
 }
 
 const char *
@@ -4957,13 +4957,13 @@ import_all_from(PyObject *locals, PyObject *v)
 static int
 check_args_iterable(PyObject *func, PyObject *args)
 {
-    if (args->ob_type->tp_iter == NULL && !PySequence_Check(args)) {
+    if (Py_TYPE(args)->tp_iter == NULL && !PySequence_Check(args)) {
         PyErr_Format(PyExc_TypeError,
                      "%.200s%.200s argument after * "
                      "must be an iterable, not %.200s",
                      PyEval_GetFuncName(func),
                      PyEval_GetFuncDesc(func),
-                     args->ob_type->tp_name);
+                     Py_TYPE(args)->tp_name);
         return -1;
     }
     return 0;
@@ -4977,7 +4977,7 @@ format_kwargs_mapping_error(PyObject *func, PyObject *kwargs)
                  "must be a mapping, not %.200s",
                  PyEval_GetFuncName(func),
                  PyEval_GetFuncDesc(func),
-                 kwargs->ob_type->tp_name);
+                 Py_TYPE(kwargs)->tp_name);
 }
 
 static void
