@@ -52,6 +52,10 @@ from enum import Enum
 
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
 
+_WIN32 = sys.platform == 'win32'
+_AIX = sys.platform.startswith("aix")
+_MAC_DELIM =  b':' if not _AIX else b'.'
+
 RESERVED_NCS, RFC_4122, RESERVED_MICROSOFT, RESERVED_FUTURE = [
     'reserved for NCS compatibility', 'specified in RFC 4122',
     'reserved for Microsoft compatibility', 'reserved for future definition']
@@ -390,7 +394,7 @@ def _find_mac(command, args, hw_identifiers, get_index):
                     if words[i] in hw_identifiers:
                         try:
                             word = words[get_index(i)]
-                            mac = int(word.replace(b':', b''), 16)
+                            mac = int(word.replace(_MAC_DELIM, b''), 16)
                             if _is_universal(mac):
                                 return mac
                             first_local_mac = first_local_mac or mac
@@ -401,6 +405,48 @@ def _find_mac(command, args, hw_identifiers, get_index):
                             # dashes. These should be ignored in favor of a
                             # real MAC address
                             pass
+    except OSError:
+        pass
+    return first_local_mac or None
+
+def _find_mac_netstat(command, args, hw_identifiers, get_index):
+    first_local_mac = None
+    mac = None
+    try:
+        proc = _popen(command, *args.split())
+        if not proc:
+            return None
+        with proc:
+            words = proc.stdout.readline().rstrip().split()
+            try:
+                i = words.index(hw_identifiers)
+            except ValueError:
+                return None
+            for line in proc.stdout:
+                try:
+                    words = line.rstrip().split()
+                    word = words[get_index(i)]
+                    if len(word) == 17 and word.count(_MAC_DELIM) == 5:
+                        mac = int(word.replace(_MAC_DELIM, b''), 16)
+                    elif _AIX and  word.count(_MAC_DELIM) == 5:
+                        # the extracted hex string is not a 12 hex digit
+                        # string, so add the fields piece by piece
+                        if len(word) < 17 and len(word) >= 11:
+                            mac = 0
+                            fields = word.split(_MAC_DELIM)
+                            for hex in fields:
+                                mac <<= 8
+                                mac += int(hex, 16)
+                    if mac and _is_universal(mac):
+                        return mac
+                    first_local_mac = first_local_mac or mac
+                except (ValueError, IndexError):
+                    # Virtual interfaces, such as those provided by
+                    # VPNs, do not have a colon-delimited MAC address
+                    # as expected, but a 16-byte HWAddr separated by
+                    # dashes. These should be ignored in favor of a
+                    # real MAC address
+                    pass
     except OSError:
         pass
     return first_local_mac or None
@@ -456,32 +502,9 @@ def _lanscan_getnode():
 
 def _netstat_getnode():
     """Get the hardware address on Unix by running netstat."""
-    # This might work on AIX, Tru64 UNIX.
-    first_local_mac = None
-    try:
-        proc = _popen('netstat', '-ia')
-        if not proc:
-            return None
-        with proc:
-            words = proc.stdout.readline().rstrip().split()
-            try:
-                i = words.index(b'Address')
-            except ValueError:
-                return None
-            for line in proc.stdout:
-                try:
-                    words = line.rstrip().split()
-                    word = words[i]
-                    if len(word) == 17 and word.count(b':') == 5:
-                        mac = int(word.replace(b':', b''), 16)
-                        if _is_universal(mac):
-                            return mac
-                        first_local_mac = first_local_mac or mac
-                except (ValueError, IndexError):
-                    pass
-    except OSError:
-        pass
-    return first_local_mac or None
+    # This works on AIX and might work on Tru64 UNIX.
+    mac = _find_mac_netstat('netstat', '-ia', b'Address', lambda i: i+0)
+    return mac if mac else None
 
 def _ipconfig_getnode():
     """Get the hardware address on Windows by running ipconfig.exe."""
@@ -673,12 +696,14 @@ def _random_getnode():
     return random.getrandbits(48) | (1 << 40)
 
 
+if _AIX:
+    _NODE_GETTERS = [_unix_getnode, _netstat_getnode]
+elif _WIN32:
+    _NODE_GETTERS = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
+else:
+    _NODE_GETTERS = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
+                          _arp_getnode, _lanscan_getnode, _netstat_getnode]
 _node = None
-
-_NODE_GETTERS_WIN32 = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
-
-_NODE_GETTERS_UNIX = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
-                      _arp_getnode, _lanscan_getnode, _netstat_getnode]
 
 def getnode(*, getters=None):
     """Get the hardware address as a 48-bit positive integer.
@@ -692,12 +717,7 @@ def getnode(*, getters=None):
     if _node is not None:
         return _node
 
-    if sys.platform == 'win32':
-        getters = _NODE_GETTERS_WIN32
-    else:
-        getters = _NODE_GETTERS_UNIX
-
-    for getter in getters + [_random_getnode]:
+    for getter in _NODE_GETTERS + [_random_getnode]:
         try:
             _node = getter()
         except:
@@ -705,7 +725,6 @@ def getnode(*, getters=None):
         if (_node is not None) and (0 <= _node < (1 << 48)):
             return _node
     assert False, '_random_getnode() returned invalid value: {}'.format(_node)
-
 
 _last_timestamp = None
 
