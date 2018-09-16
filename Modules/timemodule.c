@@ -948,7 +948,7 @@ time_mktime(PyObject *self, PyObject *tup)
 #ifdef _AIX
     time_t clk;
     int     year = buf.tm_year;
-    int     days = 0;
+    int     delta_days = 0;
 #endif
 
     if (!gettmarg(tup, &buf,
@@ -968,20 +968,21 @@ time_mktime(PyObject *self, PyObject *tup)
                         "mktime argument out of range");
         return NULL;
     }
-    /* year < 1970 */
-    if (year < 70) do {
+    year = buf.tm_year;
+    /* year < 1970 - adjust buf.tm_year into legal range */
+    while (buf.tm_year < 70) {
         buf.tm_year += 4;
-        days -= (366 + (365 * 3));
-    } while (buf.tm_year < 70);
+        delta_days -= (366 + (365 * 3));
+    }
 
     buf.tm_wday = -1;
     clk = mktime(&buf);
     buf.tm_year = year;
 
-    if (buf.tm_wday != -1 && days)
-        buf.tm_wday = (buf.tm_wday + days) % 7;
+    if (buf.tm_wday != -1 && delta_days)
+        buf.tm_wday = (buf.tm_wday + delta_days) % 7;
 
-    tt = clk + (days * (24 * 3600));
+    tt = clk + (delta_days * (24 * 3600));
 #endif
     /* Return value of -1 does not necessarily mean an error, but tm_wday
      * cannot remain set to -1 if mktime succeeded. */
