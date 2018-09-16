@@ -1,2 +1,2 @@
-Fallback to a default reason when @unittest.skip is uncalled. Patch by
+Fallback to a default reason when :func:`unittest.skip` is uncalled. Patch by
 Naitree Zhu.
