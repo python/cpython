@@ -979,7 +979,7 @@ time_mktime(PyObject *self, PyObject *tup)
     clk = mktime(&buf);
     buf.tm_year = year;
 
-    if (buf.tm_wday != -1 && delta_days)
+    if ((buf.tm_wday != -1) && delta_days)
         buf.tm_wday = (buf.tm_wday + delta_days) % 7;
 
     tt = clk + (delta_days * (24 * 3600));
