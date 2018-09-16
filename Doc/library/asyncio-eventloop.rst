@@ -535,6 +535,9 @@ Creating network servers
 
    Arguments:
 
+   * *protocol_factory* must be a callable returning a
+     :ref:`protocol <asyncio-protocol>` implementation.
+
    * The *host* parameter can be set to several types which determine behavior:
        - If *host* is a string, the TCP server is bound to *host* and *port*.
        - if *host* is a sequence of strings, the TCP server is bound to all
@@ -617,6 +620,9 @@ Creating network servers
    :class:`str`, :class:`bytes`, and :class:`~pathlib.Path` paths
    are supported.
 
+   See the documentation of the :meth:`loop.create_server` method
+   for information about arguments to this method.
+
    Availability: UNIX.
 
    .. versionadded:: 3.7
@@ -636,6 +642,9 @@ Creating network servers
    of asyncio but that use asyncio to handle them.
 
    Parameters:
+
+   * *protocol_factory* must be a callable returning a
+     :ref:`protocol <asyncio-protocol>` implementation.
 
    * *sock* is a preexisting socket object returned from
      :meth:`socket.accept <socket.socket.accept>`.
@@ -909,7 +918,8 @@ Working with pipes
    *pipe* is a :term:`file-like object <file object>`.
 
    Return pair ``(transport, protocol)``, where *transport* supports
-   the :class:`ReadTransport` interface.
+   the :class:`ReadTransport` interface and *protocol* is an object
+   instantiated by the *protocol_factory*.
 
    With :class:`SelectorEventLoop` event loop, the *pipe* is set to
    non-blocking mode.
@@ -924,7 +934,8 @@ Working with pipes
    *pipe* is :term:`file-like object <file object>`.
 
    Return pair ``(transport, protocol)``, where *transport* supports
-   :class:`WriteTransport` interface.
+   :class:`WriteTransport` interface and *protocol* is an object
+   instantiated by the *protocol_factory*.
 
    With :class:`SelectorEventLoop` event loop, the *pipe* is set to
    non-blocking mode.
@@ -1159,7 +1170,8 @@ async/await code consider using high-level convenient
    for documentation on other arguments.
 
    Returns a pair of ``(transport, protocol)``, where *transport*
-   conforms to the :class:`asyncio.SubprocessTransport` base class.
+   conforms to the :class:`asyncio.SubprocessTransport` base class and
+   *protocol* is an object instantiated by the *protocol_factory*.
 
 .. coroutinemethod:: loop.subprocess_shell(protocol_factory, cmd, \*, \
                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
@@ -1180,7 +1192,8 @@ async/await code consider using high-level convenient
    the remaining arguments.
 
    Returns a pair of ``(transport, protocol)``, where *transport*
-   conforms to the :class:`SubprocessTransport` base class.
+   conforms to the :class:`SubprocessTransport` base class and
+   *protocol* is an object instantiated by the *protocol_factory*.
 
 .. note::
    It is the application's responsibility to ensure that all whitespace
