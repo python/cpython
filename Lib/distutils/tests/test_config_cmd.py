@@ -44,6 +44,13 @@ class ConfigTestCase(support.LoggingSilencer,
             self.skipTest('The %r command is not found' % cmd)
         pkg_dir, dist = self.create_dist()
         cmd = config(dist)
+        # XLC (cc, xlc, xlC, etc) does not accept "-o to redirect the output of -E"
+        # redirected output is needed to perform cmd.search_cpp()
+        if sys.platform[:3] == "aix":
+            cppcompiler = cmd.check_compiler()
+            cpp_cmd = cppcompiler.preprocessor[0]
+            if not cpp_cmd.startswith("g"):
+                self.skipTest('The command %s does not support arguments "-E -o"' % cpp_cmd)
 
         # simple pattern searches
         match = cmd.search_cpp(pattern='xxx', body='/* xxx */')
