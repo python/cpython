@@ -8,10 +8,9 @@ import shutil
 import subprocess
 import sys
 
-AIX = sys.platform.startswith("aix")
-
 py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
+AIX = sys.platform.startswith("aix")
 
 def importable(name):
     try:
