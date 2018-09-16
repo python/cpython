@@ -1,5 +1,5 @@
 function Script:add-bin($envPath) {
-    $binPath = Join-Path -Path $env:VIRTUAL_ENV -ChildPath __VENV_BIN_NAME__
+    $binPath = Join-Path -Path $env:VIRTUAL_ENV -ChildPath '__VENV_BIN_NAME__'
     return ($binPath, $envPath) -join [IO.Path]::PathSeparator
 }
 
