@@ -382,7 +382,7 @@ exit:
 }
 
 PyDoc_STRVAR(itertools_accumulate__doc__,
-"accumulate(iterable, func=None, /, initial=0)\n"
+"accumulate(iterable, func=None, *, initial=None)\n"
 "--\n"
 "\n"
 "Return series of accumulated sums (or other binary  function results).");
@@ -395,8 +395,8 @@ static PyObject *
 itertools_accumulate(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", "", "initial", NULL};
-    static _PyArg_Parser _parser = {"O|OO:accumulate", _keywords, 0};
+    static const char * const _keywords[] = {"iterable", "func", "initial", NULL};
+    static _PyArg_Parser _parser = {"O|O$O:accumulate", _keywords, 0};
     PyObject *iterable;
     PyObject *binop = Py_None;
     PyObject *initial = NULL;
@@ -510,4 +510,4 @@ itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3ea8c62e738b844a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e523e549ab118753 input=a9049054013a1b77]*/
