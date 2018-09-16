@@ -939,7 +939,7 @@ class HTTPPasswordMgrWithPriorAuth(HTTPPasswordMgrWithDefaultRealm):
 
 class AbstractBasicAuthHandler:
 
-    # XXX this allows for multiple auth-schemes, but will stupidly pick
+    # XXX this allows for multiple auth-schemes, but will simply pick
     # the last one with a realm specified.
 
     # allow for double- and single-quoted realm values

@@ -1111,7 +1111,7 @@ class FormatTest(unittest.TestCase):
             'thousands_sep' : ' '
             }
 
-        crazy = {
+        weird = {
             'decimal_point' : '&',
             'grouping': make_grouping([1, 4, 2, CHAR_MAX]),
             'thousands_sep' : '-'
@@ -1126,17 +1126,17 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(get_fmt(Decimal('12.7'), en_US), '12.7')
         self.assertEqual(get_fmt(Decimal('12.7'), fr_FR), '12,7')
         self.assertEqual(get_fmt(Decimal('12.7'), ru_RU), '12,7')
-        self.assertEqual(get_fmt(Decimal('12.7'), crazy), '1-2&7')
+        self.assertEqual(get_fmt(Decimal('12.7'), weird), '1-2&7')
 
         self.assertEqual(get_fmt(123456789, en_US), '123,456,789')
         self.assertEqual(get_fmt(123456789, fr_FR), '123456789')
         self.assertEqual(get_fmt(123456789, ru_RU), '123 456 789')
-        self.assertEqual(get_fmt(1234567890123, crazy), '123456-78-9012-3')
+        self.assertEqual(get_fmt(1234567890123, weird), '123456-78-9012-3')
 
         self.assertEqual(get_fmt(123456789, en_US, '.6n'), '1.23457e+8')
         self.assertEqual(get_fmt(123456789, fr_FR, '.6n'), '1,23457e+8')
         self.assertEqual(get_fmt(123456789, ru_RU, '.6n'), '1,23457e+8')
-        self.assertEqual(get_fmt(123456789, crazy, '.6n'), '1&23457e+8')
+        self.assertEqual(get_fmt(123456789, weird, '.6n'), '1&23457e+8')
 
         # zero padding
         self.assertEqual(get_fmt(1234, fr_FR, '03n'), '1234')
@@ -1151,14 +1151,14 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(get_fmt(12345, en_US, '09n'), '0,012,345')
         self.assertEqual(get_fmt(12345, en_US, '010n'), '00,012,345')
 
-        self.assertEqual(get_fmt(123456, crazy, '06n'), '1-2345-6')
-        self.assertEqual(get_fmt(123456, crazy, '07n'), '1-2345-6')
-        self.assertEqual(get_fmt(123456, crazy, '08n'), '1-2345-6')
-        self.assertEqual(get_fmt(123456, crazy, '09n'), '01-2345-6')
-        self.assertEqual(get_fmt(123456, crazy, '010n'), '0-01-2345-6')
-        self.assertEqual(get_fmt(123456, crazy, '011n'), '0-01-2345-6')
-        self.assertEqual(get_fmt(123456, crazy, '012n'), '00-01-2345-6')
-        self.assertEqual(get_fmt(123456, crazy, '013n'), '000-01-2345-6')
+        self.assertEqual(get_fmt(123456, weird, '06n'), '1-2345-6')
+        self.assertEqual(get_fmt(123456, weird, '07n'), '1-2345-6')
+        self.assertEqual(get_fmt(123456, weird, '08n'), '1-2345-6')
+        self.assertEqual(get_fmt(123456, weird, '09n'), '01-2345-6')
+        self.assertEqual(get_fmt(123456, weird, '010n'), '0-01-2345-6')
+        self.assertEqual(get_fmt(123456, weird, '011n'), '0-01-2345-6')
+        self.assertEqual(get_fmt(123456, weird, '012n'), '00-01-2345-6')
+        self.assertEqual(get_fmt(123456, weird, '013n'), '000-01-2345-6')
 
         # wide char separator and decimal point
         self.assertEqual(get_fmt(Decimal('-1.5'), dotsep_wide, '020n'),

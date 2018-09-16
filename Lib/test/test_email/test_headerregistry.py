@@ -290,7 +290,7 @@ class TestContentTypeHeader(TestHeaderBase):
             [errors.InvalidHeaderDefect]),
 
         'junk_text_in_content_type': (
-            '<crazy "stuff">',
+            '<random "stuff">',
             'text/plain',
             'text',
             'plain',
