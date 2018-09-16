@@ -4,11 +4,12 @@ import builtins
 import contextlib
 import io
 import os
+import platform
 import shutil
 import subprocess
 import sys
 
-AIX = sys.platform.startswith("aix")
+AIX = platform.system() == 'AIX'
 
 py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
@@ -536,7 +537,7 @@ en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
                     command='netstat',
                     args='-ia',
                     hw_identifiers=b'Address',
-                    get_index=lambda x: x * 1,
+                    get_index=lambda x: x,
                 )
 
         self.assertEqual(mac, 0xfead0c012304)
