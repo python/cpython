@@ -385,7 +385,7 @@ PyDoc_STRVAR(itertools_accumulate__doc__,
 "accumulate(iterable, func=None, *, initial=None)\n"
 "--\n"
 "\n"
-"Return series of accumulated sums (or other binary  function results).");
+"Return series of accumulated sums (or other binary function results).");
 
 static PyObject *
 itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
@@ -510,4 +510,4 @@ itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e523e549ab118753 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8747700a12551d60 input=a9049054013a1b77]*/
