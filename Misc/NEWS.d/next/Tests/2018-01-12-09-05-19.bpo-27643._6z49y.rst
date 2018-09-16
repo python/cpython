@@ -1,0 +1,5 @@
+Test_C test case needs "signed short" bitfields, but the
+IBM XLC compiler (on AIX) does not support this
+Skip the code and test when AIX and XLC are used
+
+Applicable to Python2-2.7 and later
