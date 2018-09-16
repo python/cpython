@@ -136,6 +136,9 @@ typedef struct _ffi_type
   /*@null@*/ struct _ffi_type **elements;
 } ffi_type;
 
+int can_return_struct_as_int(size_t);
+int can_return_struct_as_sint64(size_t);
+
 /* These are defined in types.c */
 extern ffi_type ffi_type_void;
 extern ffi_type ffi_type_uint8;
