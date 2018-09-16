@@ -4,13 +4,11 @@ import builtins
 import contextlib
 import io
 import os
-import pickle
-import platform
 import shutil
 import subprocess
 import sys
 
-AIX = platform.system() == 'AIX'
+AIX = sys.platform.startswith("aix")
 
 py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
