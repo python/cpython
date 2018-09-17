@@ -888,6 +888,7 @@ _Py_InitializeFromConfig(const _PyCoreConfig *config)
 {
     PyInterpreterState *interp = NULL;
     _PyInitError err;
+    
     err = _Py_InitializeCore(&interp, config);
     if (_Py_INIT_FAILED(err)) {
         return err;
