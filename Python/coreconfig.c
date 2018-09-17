@@ -816,7 +816,9 @@ config_read_env_vars(_PyCoreConfig *config)
             }
         }
         else if (strcmp(env, "warn") == 0) {
-            config->_coerce_c_locale_warn = 1;
+            if (config->_coerce_c_locale_warn < 0) {
+                config->_coerce_c_locale_warn = 1;
+            }
         }
         else {
             if (config->_coerce_c_locale < 0) {
@@ -1323,6 +1325,9 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     }
     if (config->_coerce_c_locale < 0) {
         config->_coerce_c_locale = 0;
+    }
+    if (config->_coerce_c_locale_warn < 0) {
+        config->_coerce_c_locale_warn = 0;
     }
     if (config->utf8_mode < 0) {
         config->utf8_mode = 0;
