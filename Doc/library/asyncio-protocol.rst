@@ -308,7 +308,7 @@ Write-only Transports
    the buffer size becomes less than or equal to the *low* value.
 
    The defaults are implementation-specific.  If only the
-   high watemark is given, the low watermark defaults to an
+   high watermark is given, the low watermark defaults to an
    implementation-specific value less than or equal to the
    high watermark.  Setting *high* to zero forces *low* to zero as
    well, and causes :meth:`~BaseProtocol.pause_writing` to be called
