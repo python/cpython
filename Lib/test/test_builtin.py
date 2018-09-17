@@ -473,10 +473,14 @@ class BuiltinTest(unittest.TestCase):
             return FakeRDivmod()
 
         self.assertEqual(divmod(fake_divmod((2, 3)), []), (2, 3))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(divmod(fake_divmod([2, 3]), []), (2, 3))
         self.assertRaises(TypeError, divmod, fake_divmod(42), [])
         self.assertRaises(TypeError, divmod, fake_divmod(()), [])
         self.assertRaises(TypeError, divmod, fake_divmod((1, 2, 3)), [])
         self.assertEqual(divmod([], fake_rdivmod((2, 3))), (2, 3))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(divmod([], fake_rdivmod([2, 3])), (2, 3))
         self.assertRaises(TypeError, divmod, [], fake_rdivmod(42))
         self.assertRaises(TypeError, divmod, [], fake_rdivmod(()))
         self.assertRaises(TypeError, divmod, [], fake_rdivmod((1, 2, 3)))

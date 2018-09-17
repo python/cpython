@@ -965,13 +965,39 @@ PyNumber_Add(PyObject *v, PyObject *w)
 PyObject *
 PyNumber_Divmod(PyObject *v, PyObject *w)
 {
+    PyObject *orig_result = NULL;
     PyObject *result = binary_op(v, w, NB_SLOT(nb_divmod), "divmod()");
-    if (result != NULL
-        && !(PyTuple_Check(result) && PyTuple_GET_SIZE(result) == 2))
-    {
+    if (result == NULL) {
+        return NULL;
+    }
+    if (!PyTuple_Check(result)) {
+        orig_result = result;
+        result = PySequence_Tuple(result);
+        if (result == NULL) {
+            Py_DECREF(orig_result);
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                goto error;
+            }
+            return NULL;
+        }
+    }
+    if (PyTuple_GET_SIZE(result) != 2) {
+        Py_XDECREF(orig_result);
+        Py_DECREF(result);
+error:
         PyErr_SetString(PyExc_TypeError,
                         "__divmod__() and __rdivmod__() must return a 2-tuple");
-        Py_CLEAR(result);
+        return NULL;
+    }
+    if (orig_result != NULL) {
+        Py_DECREF(orig_result);
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "__divmod__() and __rdivmod__() must return a 2-tuple",
+                         1) < 0)
+        {
+            Py_DECREF(result);
+            return NULL;
+        }
     }
     return result;
 }
