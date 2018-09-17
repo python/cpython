@@ -20,7 +20,7 @@ Coroutines
 
 Coroutines declared with async/await syntax is the preferred way of
 writing asyncio applications.  For example, the following snippet
-of code prints "hello", waits 1 second, and prints "world"::
+of code prints "hello", waits 1 second, and then prints "world"::
 
     >>> import asyncio
 
@@ -41,10 +41,10 @@ be executed::
 
 To actually run a coroutine asyncio provides three main mechanisms:
 
-* By using the :func:`asyncio.run` function to run the top-level
+* The :func:`asyncio.run` function to run the top-level
   entry point "main()" function (see the above example.)
 
-* By awaiting on a coroutine.  The following snippet of code will
+* Awaiting on a coroutine.  The following snippet of code will
   print "hello" after waiting for 1 second, and then print "world"
   after waiting for *another* 2 seconds::
 
@@ -72,7 +72,7 @@ To actually run a coroutine asyncio provides three main mechanisms:
       world
       finished at 17:13:55
 
-* By using the :func:`asyncio.create_task` function to run coroutines
+* The :func:`asyncio.create_task` function to run coroutines
   concurrently as asyncio :class:`Tasks <Task>`.
 
   Let's modify the above example and run two "set_after" coroutines
@@ -130,8 +130,8 @@ Running an asyncio Program
     programs, and should ideally only be called once.
 
     .. versionadded:: 3.7
-       **Important:** this has been added to asyncio in Python 3.7
-       on a :term:`provisional basis <provisional api>`.
+       **Important:** this function has been added to asyncio in
+       Python 3.7 on a :term:`provisional basis <provisional api>`.
 
 
 Creating Tasks
@@ -139,13 +139,13 @@ Creating Tasks
 
 .. function:: create_task(coro, \*, name=None)
 
-   Wrap a :ref:`coroutine <coroutine>` *coro* into a task and schedule
+   Wrap the *coro* :ref:`coroutine <coroutine>` into a task and schedule
    its execution. Return the task object.
 
    If *name* is not ``None``, it is set as the name of the task using
    :meth:`Task.set_name`.
 
-   The task is executed in :func:`get_running_loop` context,
+   The task is executed in the loop returned by :func:`get_running_loop`,
    :exc:`RuntimeError` is raised if there is no running loop in
    current thread.
 
@@ -168,7 +168,7 @@ Sleeping
    .. _asyncio_example_sleep:
 
    Example of coroutine displaying the current date every second
-   during 5 seconds::
+   for 5 seconds::
 
     import asyncio
     import datetime
@@ -198,7 +198,7 @@ Running Tasks Concurrently
    order of the original *fs* sequence.
 
    All coroutines in the *fs* list are automatically
-   wrapped in :class:`Tasks <Task>`.
+   scheduled as :class:`Tasks <Task>`.
 
    If *return_exceptions* is ``True``, exceptions in the Tasks/Futures
    are treated the same as successful results, and gathered in the
@@ -263,14 +263,14 @@ Shielding Tasks From Cancellation
    Wait for a Future/Task while protecting it from being cancelled.
 
    *fut* can be a coroutine, a Task, or a Future-like object.  If
-   *fut* is a coroutine it is automatically wrapped in a
+   *fut* is a coroutine it is automatically scheduled as a
    :class:`Task`.
 
    The statement::
 
        res = await shield(something())
 
-   is equivalent to the statement::
+   is equivalent to::
 
        res = await something()
 
@@ -278,7 +278,7 @@ Shielding Tasks From Cancellation
    Task running in ``something()`` is not cancelled.  From the point
    of view of ``something()``, the cancellation did not happen.
    Although its caller is still cancelled, so the "await" expression
-   still raises :exc:`CancelledError`.
+   still raises a :exc:`CancelledError`.
 
    If ``something()`` is cancelled by other means (i.e. from within
    itself) that would also cancel ``shield()``.
@@ -298,10 +298,10 @@ Timeouts
 
 .. coroutinefunction:: wait_for(fut, timeout, \*, loop=None)
 
-   Wait for the coroutine, Task, or Future to complete with timeout.
+   Wait for a coroutine, Task, or Future to complete with timeout.
 
    *fut* can be a coroutine, a Task, or a Future-like object.  If
-   *fut* is a coroutine it is automatically wrapped in a
+   *fut* is a coroutine it is automatically scheduled as a
    :class:`Task`.
 
    *timeout* can either be ``None`` or a float or int number of seconds
@@ -352,10 +352,10 @@ Waiting Primitives
 .. coroutinefunction:: wait(fs, \*, loop=None, timeout=None,\
                             return_when=ALL_COMPLETED)
 
-   Wait for a set of Futures to complete.
+   Wait for a set of couroutines, Tasks, or Futures to complete.
 
    *fs* is a list of coroutines, Futures, and/or Tasks.  Coroutines
-   are automatically wrapped in :class:`Tasks <Task>`.
+   are automatically scheduled as :class:`Tasks <Task>`.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
@@ -363,7 +363,7 @@ Waiting Primitives
    the maximum number of seconds to wait before returning.
 
    Note that this function does not raise :exc:`asyncio.TimeoutError`.
-   Futures or Tasks that aren't done when the timeout occurs are just
+   Futures or Tasks that aren't done when the timeout occurs are simply
    returned in the second set.
 
    *return_when* indicates when this function should return.  It must
@@ -397,7 +397,7 @@ Waiting Primitives
 
 .. function:: as_completed(fs, \*, loop=None, timeout=None)
 
-   Return an iterator which values, when waited for, are
+   Return an iterator of awaitables which return
    :class:`Future` instances.
 
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
@@ -500,9 +500,9 @@ Task Object
    IO operations.
 
    Use the high-level :func:`asyncio.create_task` function to create
-   Tasks, or low-level :meth:`loop.create_task` or
-   :func:`ensure_future` functions.  Manually instantiating Task
-   objects is discouraged.
+   Tasks, or the low-level :meth:`loop.create_task` or
+   :func:`ensure_future` functions.  Manual instantiation of Tasks
+   is discouraged.
 
    To cancel a running Task use the :meth:`cancel` method.  Calling it
    will cause the Task to throw a :exc:`CancelledError` exception into
@@ -660,7 +660,7 @@ Task Object
       If *loop* is ``None``, the :func:`get_event_loop` function
       is used to get the current loop.
 
-      This function is **deprecated** and scheduled for removal in
+      This method is **deprecated** and will be removed in
       Python 3.9.  Use the :func:`all_tasks` function instead.
 
    .. classmethod:: current_task(loop=None)
@@ -670,7 +670,7 @@ Task Object
       If *loop* is ``None``, the :func:`get_event_loop` function
       is used to get the current loop.
 
-      This function is **deprecated** and scheduled for removal in
+      This method is **deprecated** and will be removed in
       Python 3.9.  Use the :func:`current_task` function instead.
 
 
@@ -682,10 +682,10 @@ Generator-based Coroutines
 .. note::
 
    Support for generator-based coroutines is **deprecated** and
-   scheduled for removal in Python 4.0.
+   is scheduled for removal in Python 4.0.
 
 Generator-based coroutines predate async/await syntax.  They are
-Python generators that use ``yield from`` expression is to await
+Python generators that use ``yield from`` expressions to await
 on Futures and other coroutines.
 
 Generator-based coroutines should be decorated with

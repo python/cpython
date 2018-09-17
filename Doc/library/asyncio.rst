@@ -20,7 +20,7 @@
        asyncio.run(main())
 
 asyncio is a library to write **concurrent** code using
-**async/await** syntax.
+the **async/await** syntax.
 
 asyncio is used as a foundation for multiple Python asynchronous
 frameworks that provide high-performance network and web-servers,
@@ -42,7 +42,8 @@ asyncio provides a set of **high-level** APIs to:
 
 * :ref:`synchronize <asyncio-sync>` concurrent code;
 
-as well as **low-level** APIs for *library and framework developers* to:
+Additionally, there are **low-level** APIs for
+*library and framework developers* to:
 
 * create and manage :ref:`event loops <asyncio-event-loop>`, which
   provide asynchronous APIs for :meth:`networking <loop.create_server>`,

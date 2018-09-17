@@ -4,11 +4,11 @@
 .. _asyncio-platform-support:
 
 
-=================
-Platforms Support
-=================
+================
+Platform Support
+================
 
-The :mod:`asyncio` module has been designed to be portable,
+The :mod:`asyncio` module was designed to be portable,
 but some platforms have subtle differences and limitations
 due to the platforms' underlying architecture and capabilities.
 
@@ -17,7 +17,7 @@ All Platforms
 =============
 
 * :meth:`loop.add_reader` and :meth:`loop.add_writer`
-  cannot be used to monitor file IO.
+  cannot be used to monitor file I/O.
 
 
 Windows
@@ -27,7 +27,7 @@ All event loops on Windows do not support the following methods:
 
 * :meth:`loop.create_unix_connection` and
   :meth:`loop.create_unix_server` are not supported.
-  The :data:`socket.AF_UNIX` socket family is specific to UNIX.
+  The :data:`socket.AF_UNIX` socket family is specific to Unix.
 
 * :meth:`loop.add_signal_handler` and
   :meth:`loop.remove_signal_handler` are not supported.
