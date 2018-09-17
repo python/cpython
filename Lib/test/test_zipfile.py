@@ -718,6 +718,20 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         with zipfile.ZipFile(TESTFN2, "r", zipfile.ZIP_STORED) as zipfp:
             self.assertEqual(zipfp.namelist(), ["absolute"])
 
+    def test_append(self):
+        # Test that appending to the Zip64 archive doesn't change
+        # extra fields of existing entries.
+        with zipfile.ZipFile(TESTFN2, "w", allowZip64=True) as zipfp:
+            zipfp.writestr("strfile", self.data)
+        with zipfile.ZipFile(TESTFN2, "r", allowZip64=True) as zipfp:
+            zinfo = zipfp.getinfo("strfile")
+            extra = zinfo.extra
+        with zipfile.ZipFile(TESTFN2, "a", allowZip64=True) as zipfp:
+            zipfp.writestr("strfile2", self.data)
+        with zipfile.ZipFile(TESTFN2, "r", allowZip64=True) as zipfp:
+            zinfo = zipfp.getinfo("strfile")
+            self.assertEqual(zinfo.extra, extra)
+
 @requires_zlib
 class DeflateTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
                                    unittest.TestCase):
