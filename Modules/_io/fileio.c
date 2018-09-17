@@ -15,6 +15,7 @@
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
+#include <string.h>
 #include <stddef.h> /* For offsetof */
 #include "_iomodule.h"
 
