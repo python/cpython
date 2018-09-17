@@ -10094,9 +10094,20 @@ os__getdiskusage_impl(PyObject *module, path_t *path)
 {
     BOOL retval;
     ULARGE_INTEGER _, total, free;
+    WCHAR wpath[MAX_PATH];
+    struct _Py_stat_struct stat;
+
+    assert(path->length + 1 < MAX_PATH);
+    wcscpy_s(wpath, path->length + 1, path->wide);
+
+    if (win32_stat(wpath, &stat))
+        return PyErr_SetFromWindowsErr(0);
+
+    if (!(stat.st_mode & S_IFDIR))
+        _dirnameW(wpath);
 
     Py_BEGIN_ALLOW_THREADS
-    retval = GetDiskFreeSpaceExW(path->wide, &_, &total, &free);
+    retval = GetDiskFreeSpaceExW(wpath, &_, &total, &free);
     Py_END_ALLOW_THREADS
     if (retval == 0)
         return PyErr_SetFromWindowsErr(0);
