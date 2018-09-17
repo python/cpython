@@ -5261,6 +5261,41 @@ long_is_finite(PyObject *v)
 #endif
 
 /*[clinic input]
+int.as_integer_ratio
+
+Return integer ratio.
+
+Return a pair of integers, whose ratio is exactly equal to the original int
+and with a positive denominator.
+
+>>> (10).as_integer_ratio()
+(10, 1)
+>>> (-10).as_integer_ratio()
+(-10, 1)
+>>> (0).as_integer_ratio()
+(0, 1)
+[clinic start generated code]*/
+
+static PyObject *
+int_as_integer_ratio_impl(PyObject *self)
+/*[clinic end generated code: output=e60803ae1cc8621a input=55ce3058e15de393]*/
+{
+    PyObject *numerator;
+    PyObject *ratio_tuple;
+
+    if (PyLong_CheckExact(self)) {
+        return PyTuple_Pack(2, self, _PyLong_One);
+    }
+    numerator = _PyLong_Copy((PyLongObject *) self);
+    if (numerator == NULL) {
+        return NULL;
+    }
+    ratio_tuple = PyTuple_Pack(2, numerator, _PyLong_One);
+    Py_DECREF(numerator);
+    return ratio_tuple;
+}
+
+/*[clinic input]
 int.to_bytes
 
     length: Py_ssize_t
@@ -5392,6 +5427,7 @@ static PyMethodDef long_methods[] = {
 #endif
     INT_TO_BYTES_METHODDEF
     INT_FROM_BYTES_METHODDEF
+    INT_AS_INTEGER_RATIO_METHODDEF
     {"__trunc__",       long_long_meth, METH_NOARGS,
      "Truncating an Integral returns itself."},
     {"__floor__",       long_long_meth, METH_NOARGS,
