@@ -709,8 +709,7 @@ config_init_utf8_mode(_PyCoreConfig *config)
     /* The C locale and the POSIX locale enable the UTF-8 Mode (PEP 540) */
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
     if (ctype_loc != NULL
-       && (strcmp(ctype_loc, "C") == 0
-           || strcmp(ctype_loc, "POSIX") == 0))
+        && (strcmp(ctype_loc, "C") == 0 || strcmp(ctype_loc, "POSIX") == 0))
     {
         config->utf8_mode = 1;
         return _Py_INIT_OK();
