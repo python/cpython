@@ -277,8 +277,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'filesystem_errors': None,
 
         'utf8_mode': 0,
-        'coerce_c_locale': 0,
-        'coerce_c_locale_warn': 0,
 
         'pycache_prefix': NULL_STR,
         'program_name': './_testembed',
@@ -306,6 +304,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         '_install_importlib': 1,
         '_check_hash_pycs_mode': 'default',
         '_frozen': 0,
+        '_coerce_c_locale': 0,
+        '_coerce_c_locale_warn': 0,
     }
 
     def get_stdio_encoding(self, env):
