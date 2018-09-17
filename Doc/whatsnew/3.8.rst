@@ -91,9 +91,17 @@ Other Language Changes
   was lifted.
   (Contributed by Serhiy Storchaka in :issue:`32489`.)
 
+* The ``int`` type now has a new ``as_integer_ratio`` method compatible
+  with the existing ``float.as_integer_ratio`` method.
+  (Contributed by Lisa Roach in :issue:`33073`.)
+
 * Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
+* The syntax allowed for keyword names in function calls was further
+  restricted. In particular, ``f((keyword)=arg)`` is no longer allowed. It was
+  never intended to permit more than a bare name on the left-hand side of a
+  keyword argument assignment term. See :issue:`34641`.
 
 New Modules
 ===========

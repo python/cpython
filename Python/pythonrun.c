@@ -1295,12 +1295,6 @@ PyParser_SimpleParseStringFlagsFilename(const char *str, const char *filename,
     return n;
 }
 
-node *
-PyParser_SimpleParseStringFilename(const char *str, const char *filename, int start)
-{
-    return PyParser_SimpleParseStringFlagsFilename(str, filename, start, 0);
-}
-
 /* May want to move a more generalized form of this to parsetok.c or
    even parser modules. */
 

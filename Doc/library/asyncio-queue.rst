@@ -1,5 +1,6 @@
 .. currentmodule:: asyncio
 
+.. _asyncio-queues:
 
 ======
 Queues
@@ -60,7 +61,7 @@ Queue
 
    .. coroutinemethod:: join()
 
-      Block until all items in the queue have been gotten and processed.
+      Block until all items in the queue have been received and processed.
 
       The count of unfinished tasks goes up whenever an item is added
       to the queue. The count goes down whenever a consumer thread calls
@@ -138,6 +139,8 @@ Exceptions
 
 Examples
 ========
+
+.. _asyncio_example_queue_dist:
 
 Queues can be used to distribute workload between several
 concurrent tasks::
