@@ -1,0 +1,1 @@
+Fixed thread-safety of error handling in _ssl.
