@@ -1,9 +1,9 @@
 .. currentmodule:: asyncio
 
 
-====================
-Low-level APIs Index
-====================
+===================
+Low-level API Index
+===================
 
 This page lists all low-level asyncio APIs.
 
@@ -84,16 +84,16 @@ See also the main documentation section about the
     :class: full-width-table
 
     * - :meth:`loop.call_soon`
-      - Call a callable soon.
+      - Invoke a callback soon.
 
     * - :meth:`loop.call_soon_threadsafe`
       - A thread-safe variant of :meth:`loop.call_soon`.
 
     * - :meth:`loop.call_later`
-      - Call callback *after* the given time.
+      - Invoke a callback *after* the given time.
 
     * - :meth:`loop.call_at`
-      - Call callback *at* the given time.
+      - Invoke a callback *at* the given time.
 
 
 .. rubric:: Thread/Process Pool
@@ -102,8 +102,8 @@ See also the main documentation section about the
     :class: full-width-table
 
     * - ``await`` :meth:`loop.run_in_executor`
-      - Run a CPU-bound function in a :mod:`concurrent.futures`
-        executor.
+      - Run a CPU-bound or other blocking function in
+        a :mod:`concurrent.futures` executor.
 
     * - :meth:`loop.set_default_executor`
       - Set the default executor for :meth:`loop.run_in_executor`.
@@ -118,8 +118,7 @@ See also the main documentation section about the
       - Create a :class:`Future` object.
 
     * - :meth:`loop.create_task`
-      - Wrap a coroutine into :class:`Task` and schedule
-        it for execution.
+      - Schedule coroutine as a :class:`Task`.
 
     * - :meth:`loop.set_task_factory`
       - Set a factory used by :meth:`loop.create_task` to
@@ -173,10 +172,10 @@ See also the main documentation section about the
       - Upgrade an existing connection to TLS.
 
     * - ``await`` :meth:`loop.connect_read_pipe`
-      - Wrap a read-pipe into a ``(transport, protocol)`` pair.
+      - Wrap a read end of a pipe into a ``(transport, protocol)`` pair.
 
     * - ``await`` :meth:`loop.connect_write_pipe`
-      - Wrap a write-pipe into a ``(transport, protocol)`` pair.
+      - Wrap a write end of a pipe into a ``(transport, protocol)`` pair.
 
 
 .. rubric:: Sockets
@@ -203,16 +202,16 @@ See also the main documentation section about the
       - Send a file over the :class:`~socket.socket`.
 
     * - :meth:`loop.add_reader`
-      - Start watching an FD for read availability.
+      - Start watching a file descriptor for read availability.
 
     * - :meth:`loop.remove_reader`
-      - Stop watching an FD for read availability.
+      - Stop watching a file descriptor for read availability.
 
     * - :meth:`loop.add_writer`
-      - Start watching an FD for write availability.
+      - Start watching a file descriptor for write availability.
 
     * - :meth:`loop.remove_writer`
-      - Stop watching an FD for write availability.
+      - Stop watching a file descriptor for write availability.
 
 
 .. rubric:: Unix Signals
@@ -304,7 +303,7 @@ All transports implement the following methods:
 
 
 Transports that can receive data (TCP and Unix connections,
-read-pipes, etc).  Returned from methods like
+pipes, etc).  Returned from methods like
 :meth:`loop.create_connection`, :meth:`loop.create_unix_connection`,
 :meth:`loop.connect_read_pipe`, etc:
 
@@ -324,7 +323,7 @@ read-pipes, etc).  Returned from methods like
 
 
 Transports that can Send data (TCP and Unix connections,
-write-pipes, etc).  Returned from methods like
+pipes, etc).  Returned from methods like
 :meth:`loop.create_connection`, :meth:`loop.create_unix_connection`,
 :meth:`loop.connect_write_pipe`, etc:
 
@@ -350,11 +349,11 @@ write-pipes, etc).  Returned from methods like
 
     * - :meth:`transport.get_write_buffer_size()
         <WriteTransport.get_write_buffer_size>`
-      - Return high- and low-water limits for write flow control.
+      - Return high and low water marks for write flow control.
 
     * - :meth:`transport.set_write_buffer_limits()
         <WriteTransport.set_write_buffer_limits>`
-      - Set new high- and low-water limits for write flow control.
+      - Set new high and low water marks for write flow control.
 
 
 Transports returned by :meth:`loop.create_datagram_endpoint`:
@@ -371,7 +370,7 @@ Transports returned by :meth:`loop.create_datagram_endpoint`:
       - Close the transport immediately.
 
 
-Low-level transports abstraction over subprocesses.
+Low-level transport abstraction over subprocesses.
 Returned by :meth:`loop.subprocess_exec` and
 :meth:`loop.subprocess_shell`:
 
@@ -420,10 +419,10 @@ Protocol classes can implement the following **callback methods**:
       - Called when the connection is lost or closed.
 
     * - ``callback`` :meth:`pause_writing() <BaseProtocol.pause_writing>`
-      - Called when the transport's buffer goes over the high-water mark.
+      - Called when the transport's buffer goes over the high water mark.
 
     * - ``callback`` :meth:`resume_writing() <BaseProtocol.resume_writing>`
-      - Called when the transport's buffer drains below the low-water mark.
+      - Called when the transport's buffer drains below the low water mark.
 
 
 .. rubric:: Streaming Protocols (TCP, Unix Sockets, Pipes)

@@ -1,9 +1,9 @@
 .. currentmodule:: asyncio
 
 
-=====================
-High-level APIs Index
-=====================
+====================
+High-level API Index
+====================
 
 This page lists all high-level async/await enabled asyncio APIs.
 
@@ -37,7 +37,7 @@ await on multiple things with timeouts.
       - Shield from cancellation.
 
     * - ``await`` :func:`wait`
-      - Monitor for completeness.
+      - Monitor for completion.
 
     * - :func:`current_task`
       - Return the current Task.
@@ -52,7 +52,7 @@ await on multiple things with timeouts.
       - Schedule a coroutine from another OS thread.
 
     * - ``for in`` :func:`as_completed`
-      - Monitor for completeness with a ``for`` loop.
+      - Monitor for completion with a ``for`` loop.
 
 
 .. rubric:: Examples
