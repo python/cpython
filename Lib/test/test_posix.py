@@ -1794,6 +1794,20 @@ class TestPosixSpawn(unittest.TestCase):
         with open(dupfile) as f:
             self.assertEqual(f.read(), 'hello')
 
+    def test_use_vfork(self):
+        args = self.python_args('-c', 'pass')
+        try:
+            pid = posix.posix_spawn(
+                args[0],
+                args,
+                os.environ,
+                use_vfork=True
+            )
+        except NotImplementedError as exc:
+            raise self.skipTest(str(exc))
+        else:
+            self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+
 
 def test_main():
     try:
