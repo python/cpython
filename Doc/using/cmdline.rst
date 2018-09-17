@@ -822,7 +822,7 @@ conflict.
    to skip coercing the legacy ASCII-based C and POSIX locales to a more
    capable UTF-8 based alternative.
 
-   If this variable is *not* set (or is set to a value other than ``0``), he
+   If this variable is *not* set (or is set to a value other than ``0``), the
    ``LC_ALL`` locale override environment variable is also not set, and the
    current locale reported for the ``LC_CTYPE`` category is either the default
    ``C`` locale, or else the explicitly ASCII-based ``POSIX`` locale, then the
