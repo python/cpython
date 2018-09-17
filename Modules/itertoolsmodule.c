@@ -3494,7 +3494,6 @@ static PyObject *
 itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
                           PyObject *binop, PyObject *initial)
 /*[clinic end generated code: output=66da2650627128f8 input=759cc7dd710216bd]*/
-
 {
     PyObject *it;
     accumulateobject *lz;
