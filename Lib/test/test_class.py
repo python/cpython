@@ -20,8 +20,6 @@ testmeths = [
     "rfloordiv",
     "mod",
     "rmod",
-    "divmod",
-    "rdivmod",
     "pow",
     "rpow",
     "rshift",
@@ -117,6 +115,15 @@ def __gt__(self, *args):
 @trackCall
 def __ge__(self, *args):
     return True
+
+@trackCall
+def __divmod__(self, *args):
+    return 1, 2
+
+@trackCall
+def __rdivmod__(self, *args):
+    return 1, 2
+
 """
 
 # Synthesize all the other AllTests methods from the names in testmeths.
