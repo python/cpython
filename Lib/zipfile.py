@@ -159,6 +159,27 @@ _CD64_NUMBER_ENTRIES_TOTAL = 7
 _CD64_DIRECTORY_SIZE = 8
 _CD64_OFFSET_START_CENTDIR = 9
 
+_EXTRA_FIELD_STRUCT = struct.Struct('<HH')
+
+def _strip_extra(extra, xids):
+    # Remove Extra Fields with specified IDs.
+    unpack = _EXTRA_FIELD_STRUCT.unpack
+    modified = False
+    buffer = []
+    start = i = 0
+    while i + 4 <= len(extra):
+        xid, xlen = unpack(extra[i : i + 4])
+        j = i + 4 + xlen
+        if xid in xids:
+            if i != start:
+                buffer.append(extra[start : i])
+            start = j
+            modified = True
+        i = j
+    if not modified:
+        return extra
+    return b''.join(buffer)
+
 def _check_zipfile(fp):
     try:
         if _EndRecData(fp):
@@ -1813,6 +1834,7 @@ class ZipFile:
             min_version = 0
             if extra:
                 # Append a ZIP64 field to the extra's
+                extra_data = _strip_extra(extra_data, (1,))
                 extra_data = struct.pack(
                     '<HH' + 'Q'*len(extra),
                     1, 8*len(extra), *extra) + extra_data
