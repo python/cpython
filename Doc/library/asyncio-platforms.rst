@@ -8,7 +8,7 @@
 Platform Support
 ================
 
-The :mod:`asyncio` module was designed to be portable,
+The :mod:`asyncio` module is designed to be portable,
 but some platforms have subtle differences and limitations
 due to the platforms' underlying architecture and capabilities.
 

@@ -1110,7 +1110,7 @@ async/await code consider using the high-level
 
 .. note::
 
-   The default asyncion event loop on **Windows** does not support
+   The default asyncio event loop on **Windows** does not support
    subprocesses. See :ref:`Subprocess Support on Windows
    <asyncio-windows-subprocess>` for details.
 
