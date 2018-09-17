@@ -3486,14 +3486,14 @@ itertools.accumulate.__new__
     iterable: object
     func as binop: object = None
     *
-    initial: object(c_default="NULL") = None
+    initial: object = None
 Return series of accumulated sums (or other binary function results).
 [clinic start generated code]*/
 
 static PyObject *
 itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
                           PyObject *binop, PyObject *initial)
-/*[clinic end generated code: output=66da2650627128f8 input=759cc7dd710216bd]*/
+/*[clinic end generated code: output=66da2650627128f8 input=c4ce20ac59bf7ffd]*/
 {
     PyObject *it;
     accumulateobject *lz;
@@ -3548,9 +3548,10 @@ accumulate_next(accumulateobject *lz)
 {
     PyObject *val, *newtotal;
 
-    if (lz->initial != NULL) {
+    if (lz->initial != Py_None) {
         lz->total = lz->initial;
-        lz->initial = NULL;
+        Py_INCREF(Py_None);
+        lz->initial = Py_None;
         Py_INCREF(lz->total);
         return lz->total;
     }

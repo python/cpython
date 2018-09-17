@@ -399,7 +399,7 @@ itertools_accumulate(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static _PyArg_Parser _parser = {"O|O$O:accumulate", _keywords, 0};
     PyObject *iterable;
     PyObject *binop = Py_None;
-    PyObject *initial = NULL;
+    PyObject *initial = Py_None;
 
     if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &iterable, &binop, &initial)) {
@@ -510,4 +510,4 @@ itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8747700a12551d60 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c8c47b766deeffc3 input=a9049054013a1b77]*/
