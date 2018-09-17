@@ -69,9 +69,9 @@ DEFINE_CONSTS_FOR_NEW(sha512)
 #include "clinic/_hashopenssl.c.h"
 /*[clinic input]
 module _hashlib
-class _hashlib.HASH "EVPobject *" "& EVPtype"
+class _hashlib.HASH "EVPobject *" "&EVPtype"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=0bbddc2511878cb3]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a881a5092eecad28]*/
 
 
 /* LCOV_EXCL_START */
@@ -348,8 +348,8 @@ EVP_repr(EVPobject *self)
 /*[clinic input]
 _hashlib.HASH.__init__ as EVP_tp_init
 
-    name as name_obj: object
-    string as data_obj: object = NULL
+    name as name_obj: unicode
+    string as data_obj: object(py_default="b''") = NULL
 
 A hash is an object used to calculate a checksum of a string of information.
 
@@ -368,7 +368,7 @@ digest_size -- number of bytes in this hashes output
 
 static int
 EVP_tp_init_impl(EVPobject *self, PyObject *name_obj, PyObject *data_obj)
-/*[clinic end generated code: output=44766d27757cf851 input=0f25418da0af7669]*/
+/*[clinic end generated code: output=44766d27757cf851 input=407bb666f22797e7]*/
 {
     Py_buffer view;
     char *nameStr;
@@ -376,13 +376,6 @@ EVP_tp_init_impl(EVPobject *self, PyObject *name_obj, PyObject *data_obj)
 
     if (data_obj)
         GET_BUFFER_VIEW_OR_ERROR(data_obj, &view, return -1);
-
-    if (!PyArg_Parse(name_obj, "s", &nameStr)) {
-        PyErr_SetString(PyExc_TypeError, "name must be a string");
-        if (data_obj)
-            PyBuffer_Release(&view);
-        return -1;
-    }
 
     digest = EVP_get_digestbyname(nameStr);
     if (!digest) {
@@ -503,7 +496,7 @@ EVPnew(PyObject *name_obj,
 
 /*[clinic input]
 @classmethod
-_hashlib.HASH.__new__ as EVP_new
+_hashlib.new as EVP_new
 
     name as name_obj: object
     string as data_obj: object = NULL
@@ -518,7 +511,7 @@ The MD5 and SHA1 algorithms are always supported.
 
 static PyObject *
 EVP_new_impl(PyTypeObject *type, PyObject *name_obj, PyObject *data_obj)
-/*[clinic end generated code: output=c32d5b2891606e15 input=ed304e5c85296130]*/
+/*[clinic end generated code: output=c32d5b2891606e15 input=4afc55412501a1fb]*/
 {
     Py_buffer view = { 0 };
     PyObject *ret_obj;

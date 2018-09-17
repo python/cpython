@@ -66,7 +66,7 @@ PyDoc_STRVAR(EVP_update__doc__,
     {"update", (PyCFunction)EVP_update, METH_O, EVP_update__doc__},
 
 PyDoc_STRVAR(EVP_tp_init__doc__,
-"HASH(name, string=None)\n"
+"HASH(name, string=b\'\')\n"
 "--\n"
 "\n"
 "A hash is an object used to calculate a checksum of a string of information.\n"
@@ -91,7 +91,7 @@ EVP_tp_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"name", "string", NULL};
-    static _PyArg_Parser _parser = {"O|O:HASH", _keywords, 0};
+    static _PyArg_Parser _parser = {"U|O:HASH", _keywords, 0};
     PyObject *name_obj;
     PyObject *data_obj = NULL;
 
@@ -106,7 +106,7 @@ exit:
 }
 
 PyDoc_STRVAR(EVP_new__doc__,
-"HASH(name, string=None)\n"
+"new($type, /, name, string=None)\n"
 "--\n"
 "\n"
 "Return a new hash object using the named algorithm.\n"
@@ -116,19 +116,22 @@ PyDoc_STRVAR(EVP_new__doc__,
 "\n"
 "The MD5 and SHA1 algorithms are always supported.");
 
+#define EVP_NEW_METHODDEF    \
+    {"new", (PyCFunction)EVP_new, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, EVP_new__doc__},
+
 static PyObject *
 EVP_new_impl(PyTypeObject *type, PyObject *name_obj, PyObject *data_obj);
 
 static PyObject *
-EVP_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+EVP_new(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", "string", NULL};
-    static _PyArg_Parser _parser = {"O|O:HASH", _keywords, 0};
+    static _PyArg_Parser _parser = {"O|O:new", _keywords, 0};
     PyObject *name_obj;
     PyObject *data_obj = NULL;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &name_obj, &data_obj)) {
         goto exit;
     }
@@ -289,4 +292,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=30d2d839c4c65430 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a13351501fa314de input=a9049054013a1b77]*/
