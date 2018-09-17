@@ -15,7 +15,6 @@
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
-#include <string.h>
 #include <stddef.h> /* For offsetof */
 #include "_iomodule.h"
 
@@ -455,7 +454,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
            be an error - ENOTDIR */
         if (S_ISREG(fdfstat.st_mode)) {
 #ifdef MS_WINDOWS
-                rcpt= strrch(widename, '\');
+                rcpt = strrchr(widename, '\');
 #else
 		rcpt = strrchr(name, '/');
 #endif
