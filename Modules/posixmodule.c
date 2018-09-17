@@ -7524,67 +7524,61 @@ os_wait_impl(PyObject *module)
 
 
 #if defined(HAVE_READLINK) || defined(MS_WINDOWS)
-PyDoc_STRVAR(readlink__doc__,
-"readlink(path, *, dir_fd=None) -> path\n\n\
-Return a string representing the path to which the symbolic link points.\n\
-\n\
-If dir_fd is not None, it should be a file descriptor open to a directory,\n\
-  and path should be relative; path will then be relative to that directory.\n\
-dir_fd may not be implemented on your platform.\n\
-  If it is unavailable, using it will raise a NotImplementedError.");
+/*[clinic input]
+os.readlink
+
+    path: path_t
+    *
+    dir_fd: dir_fd(requires='readlinkat') = None
+
+Return a string representing the path to which the symbolic link points.
+
+If dir_fd is not None, it should be a file descriptor open to a directory,
+and path should be relative; path will then be relative to that directory.
+
+dir_fd may not be implemented on your platform.  If it is unavailable,
+using it will raise a NotImplementedError.
+[clinic start generated code]*/
 
 static PyObject *
-posix_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
+os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
+/*[clinic end generated code: output=d21b732a2e814030 input=113c87e0db1ecaf2]*/
 {
-    path_t path;
-    int dir_fd = DEFAULT_DIR_FD;
 #if defined(HAVE_READLINK)
     char buffer[MAXPATHLEN+1];
     ssize_t length;
+
+    Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_READLINKAT
+    if (dir_fd != DEFAULT_DIR_FD)
+        length = readlinkat(dir_fd, path->narrow, buffer, MAXPATHLEN);
+    else
+#endif
+        length = readlink(path->narrow, buffer, MAXPATHLEN);
+    Py_END_ALLOW_THREADS
+
+    if (length < 0) {
+        return path_error(path);
+    }
+    buffer[length] = '\0';
+
+    if (PyUnicode_Check(path->object))
+        return PyUnicode_DecodeFSDefaultAndSize(buffer, length);
+    else
+        return PyBytes_FromStringAndSize(buffer, length);
 #elif defined(MS_WINDOWS)
     DWORD n_bytes_returned;
     DWORD io_result;
     HANDLE reparse_point_handle;
-
     char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
     const wchar_t *print_name;
-#endif
-    PyObject *return_value = NULL;
-    static char *keywords[] = {"path", "dir_fd", NULL};
+    PyObject *result;
 
-    memset(&path, 0, sizeof(path));
-    path.function_name = "readlink";
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|$O&:readlink", keywords,
-                          path_converter, &path,
-                          READLINKAT_DIR_FD_CONVERTER, &dir_fd))
-        return NULL;
-
-#if defined(HAVE_READLINK)
-    Py_BEGIN_ALLOW_THREADS
-#ifdef HAVE_READLINKAT
-    if (dir_fd != DEFAULT_DIR_FD)
-        length = readlinkat(dir_fd, path.narrow, buffer, MAXPATHLEN);
-    else
-#endif
-        length = readlink(path.narrow, buffer, MAXPATHLEN);
-    Py_END_ALLOW_THREADS
-
-    if (length < 0) {
-        return_value = path_error(&path);
-        goto exit;
-    }
-    buffer[length] = '\0';
-
-    if (PyUnicode_Check(path.object))
-        return_value = PyUnicode_DecodeFSDefaultAndSize(buffer, length);
-    else
-        return_value = PyBytes_FromStringAndSize(buffer, length);
-#elif defined(MS_WINDOWS)
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
     reparse_point_handle = CreateFileW(
-        path.wide,
+        path->wide,
         0,
         0,
         0,
@@ -7594,8 +7588,7 @@ posix_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (reparse_point_handle == INVALID_HANDLE_VALUE) {
-        return_value = path_error(&path);
-        goto exit;
+        return path_error(path);
     }
 
     Py_BEGIN_ALLOW_THREADS
@@ -7612,28 +7605,25 @@ posix_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (io_result == 0) {
-        return_value = path_error(&path);
-        goto exit;
+        return path_error(path);
     }
 
     if (rdb->ReparseTag != IO_REPARSE_TAG_SYMLINK)
     {
         PyErr_SetString(PyExc_ValueError,
                 "not a symbolic link");
-        goto exit;
+        return NULL;
     }
     print_name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
                  rdb->SymbolicLinkReparseBuffer.PrintNameOffset);
 
-    return_value = PyUnicode_FromWideChar(print_name,
-                          rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
-    if (path.narrow) {
-        Py_SETREF(return_value, PyUnicode_EncodeFSDefault(return_value));
+    result = PyUnicode_FromWideChar(print_name,
+            rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
+    if (path->narrow) {
+        Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
     }
+    return result;
 #endif
-exit:
-    path_cleanup(&path);
-    return return_value;
 }
 #endif /* defined(HAVE_READLINK) || defined(MS_WINDOWS) */
 
@@ -11918,43 +11908,45 @@ os_set_handle_inheritable_impl(PyObject *module, intptr_t handle,
 #endif /* MS_WINDOWS */
 
 #ifndef MS_WINDOWS
-PyDoc_STRVAR(get_blocking__doc__,
-    "get_blocking(fd) -> bool\n" \
-    "\n" \
-    "Get the blocking mode of the file descriptor:\n" \
-    "False if the O_NONBLOCK flag is set, True if the flag is cleared.");
+/*[clinic input]
+os.get_blocking -> bool
+    fd: int
+    /
 
-static PyObject*
-posix_get_blocking(PyObject *self, PyObject *args)
+Get the blocking mode of the file descriptor.
+
+Return False if the O_NONBLOCK flag is set, True if the flag is cleared.
+[clinic start generated code]*/
+
+static int
+os_get_blocking_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=336a12ad76a61482 input=f4afb59d51560179]*/
 {
-    int fd;
     int blocking;
-
-    if (!PyArg_ParseTuple(args, "i:get_blocking", &fd))
-        return NULL;
 
     _Py_BEGIN_SUPPRESS_IPH
     blocking = _Py_get_blocking(fd);
     _Py_END_SUPPRESS_IPH
-    if (blocking < 0)
-        return NULL;
-    return PyBool_FromLong(blocking);
+    return blocking;
 }
 
-PyDoc_STRVAR(set_blocking__doc__,
-    "set_blocking(fd, blocking)\n" \
-    "\n" \
-    "Set the blocking mode of the specified file descriptor.\n" \
-    "Set the O_NONBLOCK flag if blocking is False,\n" \
-    "clear the O_NONBLOCK flag otherwise.");
+/*[clinic input]
+os.set_blocking
+    fd: int
+    blocking: bool(accept={int})
+    /
 
-static PyObject*
-posix_set_blocking(PyObject *self, PyObject *args)
+Set the blocking mode of the specified file descriptor.
+
+Set the O_NONBLOCK flag if blocking is False,
+clear the O_NONBLOCK flag otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+os_set_blocking_impl(PyObject *module, int fd, int blocking)
+/*[clinic end generated code: output=384eb43aa0762a9d input=bf5c8efdc5860ff3]*/
 {
-    int fd, blocking, result;
-
-    if (!PyArg_ParseTuple(args, "ii:set_blocking", &fd, &blocking))
-        return NULL;
+    int result;
 
     _Py_BEGIN_SUPPRESS_IPH
     result = _Py_set_blocking(fd, blocking);
@@ -13048,11 +13040,7 @@ static PyMethodDef posix_methods[] = {
     OS_GETPRIORITY_METHODDEF
     OS_SETPRIORITY_METHODDEF
     OS_POSIX_SPAWN_METHODDEF
-#if defined(HAVE_READLINK) || defined(MS_WINDOWS)
-    {"readlink",        (PyCFunction)posix_readlink,
-                        METH_VARARGS | METH_KEYWORDS,
-                        readlink__doc__},
-#endif /* defined(HAVE_READLINK) || defined(MS_WINDOWS) */
+    OS_READLINK_METHODDEF
     OS_RENAME_METHODDEF
     OS_REPLACE_METHODDEF
     OS_RMDIR_METHODDEF
@@ -13206,8 +13194,8 @@ static PyMethodDef posix_methods[] = {
     OS_GET_HANDLE_INHERITABLE_METHODDEF
     OS_SET_HANDLE_INHERITABLE_METHODDEF
 #ifndef MS_WINDOWS
-    {"get_blocking", posix_get_blocking, METH_VARARGS, get_blocking__doc__},
-    {"set_blocking", posix_set_blocking, METH_VARARGS, set_blocking__doc__},
+    OS_GET_BLOCKING_METHODDEF
+    OS_SET_BLOCKING_METHODDEF
 #endif
     OS_SCANDIR_METHODDEF
     OS_FSPATH_METHODDEF
