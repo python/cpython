@@ -324,10 +324,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'print(sys.getfilesystemencoding(), '
                 'sys.getfilesystemencodeerrors())')
         args = (sys.executable, '-c', code)
-        env = dict(env)
-        if not isolated:
-            env['PYTHONCOERCECLOCALE'] = '0'
-            env['PYTHONUTF8'] = '0'
         proc = subprocess.run(args, text=True, env=env,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE)
