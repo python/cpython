@@ -296,11 +296,19 @@ typedef struct {
     int _frozen;
 
     /* C locale coercion (PEP 538).
-       Enabled by the PYTHONCOERCECLOCALE environment variable.
-       Unset (equal to -1) by default.
 
-       _coerce_c_locale_warn is set to 1 by PYTHONCOERCECLOCALE=warn. */
+       The option is enabled by the PYTHONCOERCECLOCALE environment
+       variable. The option is also enabled if the LC_CTYPE locale is "C"
+       and a target locale (ex: "C.UTF-8") is supported by the platform.
+
+       See also the _coerce_c_locale_warn option. */
     int _coerce_c_locale;
+
+    /* C locale coercion warning (PEP 538).
+
+       Enabled by the PYTHONCOERCECLOCALE=warn environment variable.
+
+       See also the _coerce_c_locale option. */
     int _coerce_c_locale_warn;
 
 } _PyCoreConfig;
