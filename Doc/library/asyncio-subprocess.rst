@@ -318,6 +318,8 @@ An example using the :class:`~asyncio.subprocess.Process` class to
 control a subprocess and the :class:`StreamReader` class to read from
 the *stdout*.
 
+.. _asyncio_example_create_subprocess_exec:
+
 The subprocess is created by the :func:`create_subprocess_exec`
 function::
 
@@ -349,5 +351,5 @@ function::
     print(f"Current date: {date}")
 
 
-See also the :ref:`same example <asyncio-subprocess-proto-example>`
+See also the :ref:`same example <asyncio_example_subprocess_proto>`
 written using low-level APIs.
