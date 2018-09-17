@@ -78,6 +78,7 @@ static PySocketModule_APIObject PySocketModule;
 #include "openssl/err.h"
 #include "openssl/rand.h"
 #include "openssl/bio.h"
+#include "openssl/dh.h"
 
 /* SSL error object */
 static PyObject *PySSLErrorObject;
