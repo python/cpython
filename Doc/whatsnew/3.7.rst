@@ -637,10 +637,10 @@ include:
   (Contributed by Yury Selivanov in :issue:`32314`.)
 
 * asyncio gained support for :mod:`contextvars`.
-  :meth:`loop.call_soon() <asyncio.AbstractEventLoop.call_soon>`,
-  :meth:`loop.call_soon_threadsafe() <asyncio.AbstractEventLoop.call_soon_threadsafe>`,
-  :meth:`loop.call_later() <asyncio.AbstractEventLoop.call_later>`,
-  :meth:`loop.call_at() <asyncio.AbstractEventLoop.call_at>`, and
+  :meth:`loop.call_soon() <asyncio.loop.call_soon>`,
+  :meth:`loop.call_soon_threadsafe() <asyncio.loop.call_soon_threadsafe>`,
+  :meth:`loop.call_later() <asyncio.loop.call_later>`,
+  :meth:`loop.call_at() <asyncio.loop.call_at>`, and
   :meth:`Future.add_done_callback() <asyncio.Future.add_done_callback>`
   have a new optional keyword-only *context* parameter.
   :class:`Tasks <asyncio.Task>` now track their context automatically.
@@ -651,11 +651,11 @@ include:
   to ``asyncio.get_event_loop().create_task()``.
   (Contributed by Andrew Svetlov in :issue:`32311`.)
 
-* The new :meth:`loop.start_tls() <asyncio.AbstractEventLoop.start_tls>`
+* The new :meth:`loop.start_tls() <asyncio.loop.start_tls>`
   method can be used to upgrade an existing connection to TLS.
   (Contributed by Yury Selivanov in :issue:`23749`.)
 
-* The new :meth:`loop.sock_recv_into() <asyncio.AbstractEventLoop.sock_recv_into>`
+* The new :meth:`loop.sock_recv_into() <asyncio.loop.sock_recv_into>`
   method allows reading data from a socket directly into a provided buffer making
   it possible to reduce data copies.
   (Contributed by Antoine Pitrou in :issue:`31819`.)
@@ -683,13 +683,13 @@ include:
   can be used to determine if the writer is closing.
   (Contributed by Andrew Svetlov in :issue:`32391`.)
 
-* The new :meth:`loop.sock_sendfile() <asyncio.AbstractEventLoop.sock_sendfile>`
+* The new :meth:`loop.sock_sendfile() <asyncio.loop.sock_sendfile>`
   coroutine method allows sending files using :mod:`os.sendfile` when possible.
   (Contributed by Andrew Svetlov in :issue:`32410`.)
 
-* The new :meth:`Task.get_loop() <asyncio.Task.get_loop>` and
-  :meth:`Future.get_loop() <asyncio.Future.get_loop>` methods
-  return the instance of the loop on which a task or a future were created.
+* The new :meth:`Future.get_loop() <asyncio.Future.get_loop>` and
+  ``Task.get_loop()`` methods return the instance of the loop on which a task or
+  a future were created.
   :meth:`Server.get_loop() <asyncio.Server.get_loop>` allows doing the same for
   :class:`asyncio.Server` objects.
   (Contributed by Yury Selivanov in :issue:`32415` and
@@ -698,8 +698,8 @@ include:
 * It is now possible to control how instances of :class:`asyncio.Server` begin
   serving.  Previously, the server would start serving immediately when created.
   The new *start_serving* keyword argument to
-  :meth:`loop.create_server() <asyncio.AbstractEventLoop.create_server>` and
-  :meth:`loop.create_unix_server() <asyncio.AbstractEventLoop.create_unix_server>`,
+  :meth:`loop.create_server() <asyncio.loop.create_server>` and
+  :meth:`loop.create_unix_server() <asyncio.loop.create_unix_server>`,
   as well as :meth:`Server.start_serving() <asyncio.Server.start_serving>`, and
   :meth:`Server.serve_forever() <asyncio.Server.serve_forever>`
   can be used to decouple server instantiation and serving.  The new
@@ -717,20 +717,20 @@ include:
   (Contributed by Yury Selivanov in :issue:`32662`.)
 
 * Callback objects returned by
-  :func:`loop.call_later() <asyncio.AbstractEventLoop.call_later>`
+  :func:`loop.call_later() <asyncio.loop.call_later>`
   gained the new :meth:`when() <asyncio.TimerHandle.when>` method which
   returns an absolute scheduled callback timestamp.
   (Contributed by Andrew Svetlov in :issue:`32741`.)
 
 * The :meth:`loop.create_datagram_endpoint() \
-  <asyncio.AbstractEventLoop.create_datagram_endpoint>` method
+  <asyncio.loop.create_datagram_endpoint>` method
   gained support for Unix sockets.
   (Contributed by Quentin Dawans in :issue:`31245`.)
 
 * The :func:`asyncio.open_connection`, :func:`asyncio.start_server` functions,
-  :meth:`loop.create_connection() <asyncio.AbstractEventLoop.create_connection>`,
-  :meth:`loop.create_server() <asyncio.AbstractEventLoop.create_server>`,
-  :meth:`loop.create_accepted_socket() <asyncio.BaseEventLoop.connect_accepted_socket>`
+  :meth:`loop.create_connection() <asyncio.loop.create_connection>`,
+  :meth:`loop.create_server() <asyncio.loop.create_server>`,
+  :meth:`loop.create_accepted_socket() <asyncio.loop.connect_accepted_socket>`
   methods and their corresponding UNIX socket variants now accept the
   *ssl_handshake_timeout* keyword argument.
   (Contributed by Neil Aspinall in :issue:`29970`.)
@@ -1923,8 +1923,7 @@ asyncio
 Support for directly ``await``-ing instances of :class:`asyncio.Lock` and
 other asyncio synchronization primitives has been deprecated.  An
 asynchronous context manager must be used in order to acquire and release
-the synchronization resource.  See :ref:`async-with-locks` for more
-information.
+the synchronization resource.
 (Contributed by Andrew Svetlov in :issue:`32253`.)
 
 The :meth:`asyncio.Task.current_task` and :meth:`asyncio.Task.all_tasks`
@@ -2360,11 +2359,11 @@ Changes in the Python API
   (Contributed by Brett Cannon in :issue:`33169`.)
 
 * In :mod:`asyncio`,
-  :meth:`loop.sock_recv() <asyncio.AbstractEventLoop.sock_recv>`,
-  :meth:`loop.sock_sendall() <asyncio.AbstractEventLoop.sock_sendall>`,
-  :meth:`loop.sock_accept() <asyncio.AbstractEventLoop.sock_accept>`,
-  :meth:`loop.getaddrinfo() <asyncio.AbstractEventLoop.getaddrinfo>`,
-  :meth:`loop.getnameinfo() <asyncio.AbstractEventLoop.getnameinfo>`
+  :meth:`loop.sock_recv() <asyncio.loop.sock_recv>`,
+  :meth:`loop.sock_sendall() <asyncio.loop.sock_sendall>`,
+  :meth:`loop.sock_accept() <asyncio.loop.sock_accept>`,
+  :meth:`loop.getaddrinfo() <asyncio.loop.getaddrinfo>`,
+  :meth:`loop.getnameinfo() <asyncio.loop.getnameinfo>`
   have been changed to be proper coroutine methods to match their
   documentation.  Previously, these methods returned :class:`asyncio.Future`
   instances.
