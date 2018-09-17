@@ -10,6 +10,8 @@ Streams are high-level async/await-ready primitives to work with
 network connections.  Streams allow sending and receiving data without
 using callbacks or low-level protocols and transports.
 
+.. _asyncio_example_stream:
+
 Here is an example of a TCP echo client written using asyncio
 streams::
 
@@ -20,13 +22,13 @@ streams::
             '127.0.0.1', 8888)
 
         print(f'Send: {message!r}')
-        writer.write(message.encode())
+        await writer.awrite(message.encode())
 
         data = await reader.read(100)
         print(f'Received: {data.decode()!r}')
 
         print('Close the connection')
-        writer.close()
+        await writer.aclose()
 
     asyncio.run(tcp_echo_client('Hello World!'))
 
@@ -229,13 +231,56 @@ StreamWriter
    directly; use :func:`open_connection` and :func:`start_server`
    instead.
 
+   .. coroutinemethod:: awrite(data)
+
+      Write *data* to the stream.
+
+      The method respects control-flow, execution is paused if write
+      buffer reaches high-water limit.
+
+      .. versionadded:: 3.8
+
+   .. coroutinemethod:: aclose()
+
+      Close the stream.
+
+      Wait for finishing all closing actions, e.g. SSL shutdown for
+      secure sockets.
+
+      .. versionadded:: 3.8
+
+   .. method:: can_write_eof()
+
+      Return *True* if the underlying transport supports
+      the :meth:`write_eof` method, *False* otherwise.
+
+   .. method:: write_eof()
+
+      Close the write end of the stream after the buffered write
+      data is flushed.
+
+   .. attribute:: transport
+
+      Return the underlying asyncio transport.
+
+   .. method:: get_extra_info(name, default=None)
+
+      Access optional transport information; see
+      :meth:`BaseTransport.get_extra_info` for details.
+
    .. method:: write(data)
 
       Write *data* to the stream.
 
+      This method doesn't apply control-flow. The call should be
+      followed by :meth:`drain`.
+
    .. method:: writelines(data)
 
       Write a list (or any iterable) of bytes to the stream.
+
+      This method doesn't apply control-flow. The call should be
+      followed by :meth:`drain`.
 
    .. coroutinemethod:: drain()
 
@@ -272,25 +317,6 @@ StreamWriter
 
       .. versionadded:: 3.7
 
-   .. method:: can_write_eof()
-
-      Return *True* if the underlying transport supports
-      the :meth:`write_eof` method, *False* otherwise.
-
-   .. method:: write_eof()
-
-      Close the write end of the stream after the buffered write
-      data is flushed.
-
-   .. attribute:: transport
-
-      Return the underlying asyncio transport.
-
-   .. method:: get_extra_info(name, default=None)
-
-      Access optional transport information; see
-      :meth:`BaseTransport.get_extra_info` for details.
-
 
 Examples
 ========
@@ -322,7 +348,7 @@ TCP echo client using the :func:`asyncio.open_connection` function::
 
 .. seealso::
 
-   The :ref:`TCP echo client protocol <asyncio-tcp-echo-client-protocol>`
+   The :ref:`TCP echo client protocol <asyncio_example_tcp_echo_client_protocol>`
    example uses the low-level :meth:`loop.create_connection` method.
 
 
@@ -364,7 +390,7 @@ TCP echo server using the :func:`asyncio.start_server` function::
 
 .. seealso::
 
-   The :ref:`TCP echo server protocol <asyncio-tcp-echo-server-protocol>`
+   The :ref:`TCP echo server protocol <asyncio_example_tcp_echo_server_protocol>`
    example uses the :meth:`loop.create_server` method.
 
 
@@ -418,7 +444,7 @@ or with HTTPS::
     python example.py https://example.com/path/page.html
 
 
-.. _asyncio-register-socket-streams:
+.. _asyncio_example_create_connection-streams:
 
 Register an open socket to wait for data using streams
 ------------------------------------------------------
@@ -458,9 +484,9 @@ Coroutine waiting until a socket receives data using the
 .. seealso::
 
    The :ref:`register an open socket to wait for data using a protocol
-   <asyncio-register-socket>` example uses a low-level protocol and
+   <asyncio_example_create_connection>` example uses a low-level protocol and
    the :meth:`loop.create_connection` method.
 
    The :ref:`watch a file descriptor for read events
-   <asyncio-watch-read-event>` example uses the low-level
+   <asyncio_example_watch_fd>` example uses the low-level
    :meth:`loop.add_reader` method to watch a file descriptor.
