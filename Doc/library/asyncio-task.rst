@@ -130,7 +130,7 @@ Running an asyncio Program
     programs, and should ideally only be called once.
 
     .. versionadded:: 3.7
-       **Important:** this has been been added to asyncio in Python 3.7
+       **Important:** this has been added to asyncio in Python 3.7
        on a :term:`provisional basis <provisional api>`.
 
 
@@ -188,7 +188,7 @@ Sleeping
 Running Tasks Concurrently
 ==========================
 
-.. coroutinefunction:: gather(\*fs, loop=None, return_exceptions=False)
+.. function:: gather(\*fs, loop=None, return_exceptions=False)
 
    Return a Future aggregating results from the given coroutine objects,
    Tasks, or Futures.
