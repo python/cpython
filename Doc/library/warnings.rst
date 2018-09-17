@@ -207,8 +207,8 @@ Some examples::
    error::ResourceWarning       # Treat ResourceWarning messages as errors
    default::DeprecationWarning  # Show DeprecationWarning messages
    ignore,default:::mymodule    # Only report warnings triggered by "mymodule"
-   error:::mymodule[.*]         # Convert warnings to errors in "mymodule"
-                                # and any subpackages of "mymodule"
+   error:::mymodule(\..*)?      # Convert warnings to errors in "mymodule"
+                                # and any of its submodules and subpackages
 
 
 .. _default-warning-filter:
