@@ -400,7 +400,7 @@ class FaultHandlerTests(unittest.TestCase):
         if filename:
             lineno = 9
         elif fd is not None:
-            lineno = 12
+            lineno = 11
         else:
             lineno = 14
         expected = [
