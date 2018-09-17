@@ -301,12 +301,20 @@ typedef struct {
        variable. The option is also enabled if the LC_CTYPE locale is "C"
        and a target locale (ex: "C.UTF-8") is supported by the platform.
 
+       Py_Initialize() and Py_Main() must not enable C locale coercion: it is
+       always disabled. The warning can only be enabled by the Python program
+       ("python3).
+
        See also the _coerce_c_locale_warn option. */
     int _coerce_c_locale;
 
     /* C locale coercion warning (PEP 538).
 
        Enabled by the PYTHONCOERCECLOCALE=warn environment variable.
+
+       Py_Initialize() and Py_Main() must not enable C locale coercion warning:
+       it is always disabled. The warning can only be enabled by the Python
+       program ("python3).
 
        See also the _coerce_c_locale option. */
     int _coerce_c_locale_warn;
@@ -328,7 +336,8 @@ typedef struct {
         .use_hash_seed = -1, \
         .faulthandler = -1, \
         .tracemalloc = -1, \
-        ._coerce_c_locale = -1, \
+        ._coerce_c_locale = 0, \
+        ._coerce_c_locale_warn = 0, \
         .utf8_mode = -1, \
         .argc = -1, \
         .nmodule_search_path = -1, \
