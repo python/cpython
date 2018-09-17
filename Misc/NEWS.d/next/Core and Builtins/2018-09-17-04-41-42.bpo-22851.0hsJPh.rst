@@ -1,0 +1,1 @@
+Fix a segfault when accessing ``generator.gi_frame.f_restricted``.
