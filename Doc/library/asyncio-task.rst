@@ -352,7 +352,7 @@ Waiting Primitives
 .. coroutinefunction:: wait(fs, \*, loop=None, timeout=None,\
                             return_when=ALL_COMPLETED)
 
-   Wait for a set of couroutines, Tasks, or Futures to complete.
+   Wait for a set of coroutines, Tasks, or Futures to complete.
 
    *fs* is a list of coroutines, Futures, and/or Tasks.  Coroutines
    are automatically scheduled as :class:`Tasks <Task>`.
