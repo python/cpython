@@ -18,7 +18,7 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
                               PyBytesObject *s);
 
 static PyObject *
-_testconsole_write_input(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_testconsole_write_input(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"file", "s", NULL};
@@ -53,7 +53,7 @@ static PyObject *
 _testconsole_read_output_impl(PyObject *module, PyObject *file);
 
 static PyObject *
-_testconsole_read_output(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_testconsole_read_output(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"file", NULL};
@@ -79,4 +79,4 @@ exit:
 #ifndef _TESTCONSOLE_READ_OUTPUT_METHODDEF
     #define _TESTCONSOLE_READ_OUTPUT_METHODDEF
 #endif /* !defined(_TESTCONSOLE_READ_OUTPUT_METHODDEF) */
-/*[clinic end generated code: output=ac80ed19e6edc0af input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e7dd05a60463c5f0 input=a9049054013a1b77]*/

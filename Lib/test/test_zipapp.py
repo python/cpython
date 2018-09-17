@@ -8,6 +8,7 @@ import tempfile
 import unittest
 import zipapp
 import zipfile
+from test.support import requires_zlib
 
 from unittest.mock import patch
 
@@ -100,6 +101,7 @@ class ZipAppTest(unittest.TestCase):
         expected_target = self.tmpdir / 'source.pyz'
         self.assertTrue(expected_target.is_file())
 
+    @requires_zlib
     def test_create_archive_with_compression(self):
         # Test packing a directory into a compressed archive.
         source = self.tmpdir / 'source'
@@ -363,7 +365,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         args = [str(original), '-o', str(original)]
         with self.assertRaises(SystemExit) as cm:
             zipapp.main(args)
-        # Program should exit with a non-zero returm code.
+        # Program should exit with a non-zero return code.
         self.assertTrue(cm.exception.code)
 
     def test_cmdline_copy_change_main(self):
@@ -373,7 +375,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         args = [str(original), '-o', str(target), '-m', 'foo:bar']
         with self.assertRaises(SystemExit) as cm:
             zipapp.main(args)
-        # Program should exit with a non-zero returm code.
+        # Program should exit with a non-zero return code.
         self.assertTrue(cm.exception.code)
 
     @patch('sys.stdout', new_callable=io.StringIO)
@@ -383,7 +385,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         args = [str(target), '--info']
         with self.assertRaises(SystemExit) as cm:
             zipapp.main(args)
-        # Program should exit with a zero returm code.
+        # Program should exit with a zero return code.
         self.assertEqual(cm.exception.code, 0)
         self.assertEqual(mock_stdout.getvalue(), "Interpreter: <none>\n")
 
@@ -393,7 +395,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         args = [str(target), '--info']
         with self.assertRaises(SystemExit) as cm:
             zipapp.main(args)
-        # Program should exit with a non-zero returm code.
+        # Program should exit with a non-zero return code.
         self.assertTrue(cm.exception.code)
 
 

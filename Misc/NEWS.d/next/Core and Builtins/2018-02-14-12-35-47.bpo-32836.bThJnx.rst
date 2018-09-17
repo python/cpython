@@ -1,0 +1,1 @@
+Don't use temporary variables in cases of list/dict/set comprehensions

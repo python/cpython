@@ -1,0 +1,1 @@
+Rename and deprecate undocumented functions in :func:`urllib.parse`.

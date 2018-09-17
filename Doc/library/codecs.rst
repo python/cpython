@@ -802,7 +802,7 @@ The design is such that one can use the factory functions returned by the
 :func:`lookup` function to construct the instance.
 
 
-.. class:: StreamReaderWriter(stream, Reader, Writer, errors)
+.. class:: StreamReaderWriter(stream, Reader, Writer, errors='strict')
 
    Creates a :class:`StreamReaderWriter` instance. *stream* must be a file-like
    object. *Reader* and *Writer* must be factory functions or classes providing the
@@ -826,7 +826,7 @@ The design is such that one can use the factory functions returned by the
 :func:`lookup` function to construct the instance.
 
 
-.. class:: StreamRecoder(stream, encode, decode, Reader, Writer, errors)
+.. class:: StreamRecoder(stream, encode, decode, Reader, Writer, errors='strict')
 
    Creates a :class:`StreamRecoder` instance which implements a two-way conversion:
    *encode* and *decode* work on the frontend — the data visible to
@@ -977,10 +977,14 @@ e.g. ``'utf-8'`` is a valid alias for the ``'utf_8'`` codec.
 
    Some common encodings can bypass the codecs lookup machinery to
    improve performance.  These optimization opportunities are only
-   recognized by CPython for a limited set of aliases: utf-8, utf8,
-   latin-1, latin1, iso-8859-1, mbcs (Windows only), ascii, utf-16,
-   and utf-32.  Using alternative spellings for these encodings may
-   result in slower execution.
+   recognized by CPython for a limited set of (case insensitive)
+   aliases: utf-8, utf8, latin-1, latin1, iso-8859-1, iso8859-1, mbcs
+   (Windows only), ascii, us-ascii, utf-16, utf16, utf-32, utf32, and
+   the same using underscores instead of dashes. Using alternative
+   aliases for these encodings may result in slower execution.
+
+   .. versionchanged:: 3.6
+      Optimization opportunity recognized for us-ascii.
 
 Many of the character sets support the same languages. They vary in individual
 characters (e.g. whether the EURO SIGN is supported or not), and in the
@@ -1421,7 +1425,7 @@ to the user.
 
 Python supports this conversion in several ways:  the ``idna`` codec performs
 conversion between Unicode and ACE, separating an input string into labels
-based on the separator characters defined in `section 3.1`_ (1) of :rfc:`3490`
+based on the separator characters defined in :rfc:`section 3.1 of RFC 3490 <3490#section-3.1>`
 and converting each label to ACE as required, and conversely separating an input
 byte string into labels based on the ``.`` separator and converting any ACE
 labels found into unicode.  Furthermore, the :mod:`socket` module
@@ -1431,8 +1435,6 @@ socket module. On top of that, modules that have host names as function
 parameters, such as :mod:`http.client` and :mod:`ftplib`, accept Unicode host
 names (:mod:`http.client` then also transparently sends an IDNA hostname in the
 :mailheader:`Host` field if it sends that field at all).
-
-.. _section 3.1: https://tools.ietf.org/html/rfc3490#section-3.1
 
 When receiving host names from the wire (such as in reverse name lookup), no
 automatic conversion to Unicode is performed: Applications wishing to present

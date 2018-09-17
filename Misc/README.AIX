@@ -51,24 +51,24 @@ Note: this section may not apply when compiling Python as a 64 bit
 application.
 
 By default on AIX each program gets one segment register for its data
-segment. As each segment register covers 256 MB, a Python program that
-would use more than 256MB will raise a MemoryError.  The standard
+segment. As each segment register covers 256 MiB, a Python program that
+would use more than 256 MiB will raise a MemoryError.  The standard
 Python test suite is one such application.
 
 To allocate more segment registers to Python, you must use the linker
 option -bmaxdata or the ldedit tool to specify the number of bytes you
 need in the data segment.
 
-For example, if you want to allow 512MB of memory for Python (this is
+For example, if you want to allow 512 MiB of memory for Python (this is
 enough for the test suite to run without MemoryErrors), you should run
 the following command at the end of compilation:
 
 ldedit -b maxdata:0x20000000 ./python
 
-You can allow up to 2GB of memory for Python by using the value
+You can allow up to 2 GiB of memory for Python by using the value
 0x80000000 for maxdata.
 
-It is also possible to go beyond 2GB of memory by activating Large
+It is also possible to go beyond 2 GiB of memory by activating Large
 Page Use. You should consult the IBM documentation if you need to use
 this option. You can also follow the discussion of this problem
 in issue 11212 at bugs.python.org.

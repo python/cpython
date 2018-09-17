@@ -1,6 +1,0 @@
-Improvements to path predicates in ElementTree:
-
-* Allow whitespace around predicate parts, i.e. "[a = 'text']" instead of requiring the less readable "[a='text']".
-* Add support for text comparison of the current node, like "[.='text']".
-
-Patch by Stefan Behnel.

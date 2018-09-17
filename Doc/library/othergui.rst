@@ -11,9 +11,9 @@ available for Python:
    `PyGObject <https://wiki.gnome.org/Projects/PyGObject>`_
       PyGObject provides introspection bindings for C libraries using
       `GObject <https://developer.gnome.org/gobject/stable/>`_.  One of
-      these libraries is the `GTK+ 3 <http://www.gtk.org/>`_ widget set.
+      these libraries is the `GTK+ 3 <https://www.gtk.org/>`_ widget set.
       GTK+ comes with many more widgets than Tkinter provides.  An online
-      `Python GTK+ 3 Tutorial <https://python-gtk-3-tutorial.readthedocs.org/en/latest/>`_
+      `Python GTK+ 3 Tutorial <https://python-gtk-3-tutorial.readthedocs.io/>`_
       is available.
 
    `PyGTK <http://www.pygtk.org/>`_
@@ -35,7 +35,7 @@ available for Python:
       Compared to PyQt, its licensing scheme is friendlier to non-open source
       applications.
 
-   `wxPython <http://www.wxpython.org>`_
+   `wxPython <https://www.wxpython.org>`_
       wxPython is a cross-platform GUI toolkit for Python that is built around
       the popular `wxWidgets <https://www.wxwidgets.org/>`_ (formerly wxWindows)
       C++ toolkit.  It provides a native look and feel for applications on

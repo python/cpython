@@ -159,9 +159,9 @@ class PollTests(unittest.TestCase):
             self.fail('Overflow must have occurred')
 
         # Issues #15989, #17919
-        self.assertRaises(OverflowError, pollster.register, 0, -1)
+        self.assertRaises(ValueError, pollster.register, 0, -1)
         self.assertRaises(OverflowError, pollster.register, 0, 1 << 64)
-        self.assertRaises(OverflowError, pollster.modify, 1, -1)
+        self.assertRaises(ValueError, pollster.modify, 1, -1)
         self.assertRaises(OverflowError, pollster.modify, 1, 1 << 64)
 
     @cpython_only
@@ -203,6 +203,28 @@ class PollTests(unittest.TestCase):
             # and make the call to poll() from the thread return
             os.write(w, b'spam')
             t.join()
+
+    @unittest.skipUnless(threading, 'Threading required for this test.')
+    @reap_threads
+    def test_poll_blocks_with_negative_ms(self):
+        for timeout_ms in [None, -1000, -1, -1.0, -0.1, -1e-100]:
+            # Create two file descriptors. This will be used to unlock
+            # the blocking call to poll.poll inside the thread
+            r, w = os.pipe()
+            pollster = select.poll()
+            pollster.register(r, select.POLLIN)
+
+            poll_thread = threading.Thread(target=pollster.poll, args=(timeout_ms,))
+            poll_thread.start()
+            poll_thread.join(timeout=0.1)
+            self.assertTrue(poll_thread.is_alive())
+
+            # Write to the pipe so pollster.poll unblocks and the thread ends.
+            os.write(w, b'spam')
+            poll_thread.join()
+            self.assertFalse(poll_thread.is_alive())
+            os.close(r)
+            os.close(w)
 
 
 def test_main():

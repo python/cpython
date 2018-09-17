@@ -165,6 +165,7 @@ class NetworkedNNTPTestsMixin:
         # XXX this could exceptionally happen...
         self.assertNotIn(article.lines[-1], (b".", b".\n", b".\r\n"))
 
+    @unittest.skipIf(True, "FIXME: see bpo-32128")
     def test_article_head_body(self):
         resp, count, first, last, name = self.server.group(self.GROUP_NAME)
         # Try to find an available article

@@ -51,6 +51,8 @@ The :mod:`wave` module defines the following function and exception:
 
    A synonym for :func:`.open`, maintained for backwards compatibility.
 
+   .. deprecated-removed:: 3.7 3.9
+
 
 .. exception:: Error
 

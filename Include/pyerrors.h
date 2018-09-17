@@ -78,6 +78,7 @@ PyAPI_FUNC(void) PyErr_SetNone(PyObject *);
 PyAPI_FUNC(void) PyErr_SetObject(PyObject *, PyObject *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyErr_SetKeyError(PyObject *);
+_PyErr_StackItem *_PyErr_GetTopmostException(PyThreadState *tstate);
 #endif
 PyAPI_FUNC(void) PyErr_SetString(
     PyObject *exception,
@@ -96,13 +97,15 @@ PyAPI_FUNC(void) PyErr_SetExcInfo(PyObject *, PyObject *, PyObject *);
     (defined(__GNUC_MAJOR__) && \
      ((__GNUC_MAJOR__ >= 3) || \
       (__GNUC_MAJOR__ == 2) && (__GNUC_MINOR__ >= 5)))
-#define _Py_NO_RETURN __attribute__((__noreturn__))
+#  define _Py_NO_RETURN __attribute__((__noreturn__))
+#elif defined(_MSC_VER)
+#  define _Py_NO_RETURN __declspec(noreturn)
 #else
-#define _Py_NO_RETURN
+#  define _Py_NO_RETURN
 #endif
 
 /* Defined in Python/pylifecycle.c */
-PyAPI_FUNC(void) Py_FatalError(const char *message) _Py_NO_RETURN;
+PyAPI_FUNC(void) _Py_NO_RETURN Py_FatalError(const char *message);
 
 #if defined(Py_DEBUG) || defined(Py_LIMITED_API)
 #define _PyErr_OCCURRED() PyErr_Occurred()
@@ -139,8 +142,10 @@ PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
 #define PyExceptionInstance_Check(x)                    \
     PyType_FastSubclass((x)->ob_type, Py_TPFLAGS_BASE_EXC_SUBCLASS)
 
-#define PyExceptionClass_Name(x) \
-     ((char *)(((PyTypeObject*)(x))->tp_name))
+PyAPI_FUNC(const char *) PyExceptionClass_Name(PyObject *);
+#ifndef Py_LIMITED_API
+#define PyExceptionClass_Name(x)  (((PyTypeObject*)(x))->tp_name)
+#endif
 
 #define PyExceptionInstance_Class(x) ((PyObject*)((x)->ob_type))
 
@@ -218,8 +223,6 @@ PyAPI_DATA(PyObject *) PyExc_IOError;
 #ifdef MS_WINDOWS
 PyAPI_DATA(PyObject *) PyExc_WindowsError;
 #endif
-
-PyAPI_DATA(PyObject *) PyExc_RecursionErrorInst;
 
 /* Predefined warning categories */
 PyAPI_DATA(PyObject *) PyExc_Warning;

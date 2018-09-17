@@ -1,18 +1,19 @@
-'''Test functions and SearchEngine class in idlelib.searchengine.py.'''
+"Test searchengine, coverage 99%."
+
+from idlelib import searchengine as se
+import unittest
+# from test.support import requires
+from tkinter import  BooleanVar, StringVar, TclError  # ,Tk, Text
+import tkinter.messagebox as tkMessageBox
+from idlelib.idle_test.mock_tk import Var, Mbox
+from idlelib.idle_test.mock_tk import Text as mockText
+import re
 
 # With mock replacements, the module does not use any gui widgets.
 # The use of tk.Text is avoided (for now, until mock Text is improved)
 # by patching instances with an index function returning what is needed.
 # This works because mock Text.get does not use .index.
-
-import re
-import unittest
-# from test.support import requires
-from tkinter import  BooleanVar, StringVar, TclError  # ,Tk, Text
-import tkinter.messagebox as tkMessageBox
-from idlelib import searchengine as se
-from idlelib.idle_test.mock_tk import Var, Mbox
-from idlelib.idle_test.mock_tk import Text as mockText
+# The tkinter imports are used to restore searchengine.
 
 def setUpModule():
     # Replace s-e module tkinter imports other than non-gui TclError.
@@ -326,4 +327,4 @@ class ForwardBackwardTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2, exit=2)
+    unittest.main(verbosity=2)

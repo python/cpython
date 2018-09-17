@@ -33,7 +33,7 @@
 
 /** the adapters registry **/
 
-PyObject *psyco_adapters;
+static PyObject *psyco_adapters = NULL;
 
 /* pysqlite_microprotocols_init - initialize the adapters dictionary */
 

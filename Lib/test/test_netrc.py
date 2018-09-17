@@ -1,4 +1,5 @@
 import netrc, os, unittest, sys, tempfile, textwrap
+from unittest import mock
 from test import support
 
 
@@ -126,8 +127,44 @@ class NetrcTestCase(unittest.TestCase):
             os.chmod(fn, 0o622)
             self.assertRaises(netrc.NetrcParseError, netrc.netrc)
 
-def test_main():
-    support.run_unittest(NetrcTestCase)
+    def test_file_not_found_in_home(self):
+        d = support.TESTFN
+        os.mkdir(d)
+        self.addCleanup(support.rmtree, d)
+        with support.EnvironmentVarGuard() as environ:
+            environ.set('HOME', d)
+            self.assertRaises(FileNotFoundError, netrc.netrc)
+
+    def test_file_not_found_explicit(self):
+        self.assertRaises(FileNotFoundError, netrc.netrc,
+                          file='unlikely_netrc')
+
+    def test_home_not_set(self):
+        fake_home = support.TESTFN
+        os.mkdir(fake_home)
+        self.addCleanup(support.rmtree, fake_home)
+        fake_netrc_path = os.path.join(fake_home, '.netrc')
+        with open(fake_netrc_path, 'w') as f:
+            f.write('machine foo.domain.com login bar password pass')
+        os.chmod(fake_netrc_path, 0o600)
+
+        orig_expanduser = os.path.expanduser
+        called = []
+
+        def fake_expanduser(s):
+            called.append(s)
+            with support.EnvironmentVarGuard() as environ:
+                environ.set('HOME', fake_home)
+                result = orig_expanduser(s)
+                return result
+
+        with support.swap_attr(os.path, 'expanduser', fake_expanduser):
+            nrc = netrc.netrc()
+            login, account, password = nrc.authenticators('foo.domain.com')
+            self.assertEqual(login, 'bar')
+
+        self.assertTrue(called)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

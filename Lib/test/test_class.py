@@ -534,6 +534,16 @@ class ClassTests(unittest.TestCase):
         else:
             self.fail("attribute error for I.__init__ got masked")
 
+    def assertNotOrderable(self, a, b):
+        with self.assertRaises(TypeError):
+            a < b
+        with self.assertRaises(TypeError):
+            a > b
+        with self.assertRaises(TypeError):
+            a <= b
+        with self.assertRaises(TypeError):
+            a >= b
+
     def testHashComparisonOfMethods(self):
         # Test comparison and hash of methods
         class A:
@@ -544,24 +554,30 @@ class ClassTests(unittest.TestCase):
             def g(self):
                 pass
             def __eq__(self, other):
-                return self.x == other.x
+                return True
             def __hash__(self):
-                return self.x
+                raise TypeError
         class B(A):
             pass
 
         a1 = A(1)
-        a2 = A(2)
-        self.assertEqual(a1.f, a1.f)
-        self.assertNotEqual(a1.f, a2.f)
-        self.assertNotEqual(a1.f, a1.g)
-        self.assertEqual(a1.f, A(1).f)
+        a2 = A(1)
+        self.assertTrue(a1.f == a1.f)
+        self.assertFalse(a1.f != a1.f)
+        self.assertFalse(a1.f == a2.f)
+        self.assertTrue(a1.f != a2.f)
+        self.assertFalse(a1.f == a1.g)
+        self.assertTrue(a1.f != a1.g)
+        self.assertNotOrderable(a1.f, a1.f)
         self.assertEqual(hash(a1.f), hash(a1.f))
-        self.assertEqual(hash(a1.f), hash(A(1).f))
 
-        self.assertNotEqual(A.f, a1.f)
-        self.assertNotEqual(A.f, A.g)
-        self.assertEqual(B.f, A.f)
+        self.assertFalse(A.f == a1.f)
+        self.assertTrue(A.f != a1.f)
+        self.assertFalse(A.f == A.g)
+        self.assertTrue(A.f != A.g)
+        self.assertTrue(B.f == A.f)
+        self.assertFalse(B.f != A.f)
+        self.assertNotOrderable(A.f, A.f)
         self.assertEqual(hash(B.f), hash(A.f))
 
         # the following triggers a SystemError in 2.4
@@ -594,6 +610,55 @@ class ClassTests(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             type.__setattr__(A, b'x', None)
+
+    def testConstructorErrorMessages(self):
+        # bpo-31506: Improves the error message logic for object_new & object_init
+
+        # Class without any method overrides
+        class C:
+            pass
+
+        with self.assertRaisesRegex(TypeError, r'C\(\) takes no arguments'):
+            C(42)
+
+        with self.assertRaisesRegex(TypeError, r'C\(\) takes no arguments'):
+            C.__new__(C, 42)
+
+        with self.assertRaisesRegex(TypeError, r'C\(\).__init__\(\) takes no arguments'):
+            C().__init__(42)
+
+        with self.assertRaisesRegex(TypeError, r'C\(\) takes no arguments'):
+            object.__new__(C, 42)
+
+        with self.assertRaisesRegex(TypeError, r'C\(\).__init__\(\) takes no arguments'):
+            object.__init__(C(), 42)
+
+        # Class with both `__init__` & `__new__` method overridden
+        class D:
+            def __new__(cls, *args, **kwargs):
+                super().__new__(cls, *args, **kwargs)
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+        with self.assertRaisesRegex(TypeError, r'object.__new__\(\) takes no argument'):
+            D(42)
+
+        with self.assertRaisesRegex(TypeError, r'object.__new__\(\) takes no argument'):
+            D.__new__(D, 42)
+
+        with self.assertRaisesRegex(TypeError, r'object.__new__\(\) takes no argument'):
+            object.__new__(D, 42)
+
+        # Class that only overrides __init__
+        class E:
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+        with self.assertRaisesRegex(TypeError, r'object.__init__\(\) takes no argument'):
+            E().__init__(42)
+
+        with self.assertRaisesRegex(TypeError, r'object.__init__\(\) takes no argument'):
+            object.__init__(E(), 42)
 
 if __name__ == '__main__':
     unittest.main()

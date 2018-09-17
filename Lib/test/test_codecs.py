@@ -5,8 +5,14 @@ import locale
 import sys
 import unittest
 import encodings
+from unittest import mock
 
 from test import support
+
+try:
+    import _testcapi
+except ImportError as exc:
+    _testcapi = None
 
 try:
     import ctypes
@@ -196,19 +202,33 @@ class ReadTest(MixInCheckStateHandling):
         self.assertEqual(f.read(), ''.join(lines[1:]))
         self.assertEqual(f.read(), '')
 
+        # Issue #32110: Test readline() followed by read(n)
+        f = getreader()
+        self.assertEqual(f.readline(), lines[0])
+        self.assertEqual(f.read(1), lines[1][0])
+        self.assertEqual(f.read(0), '')
+        self.assertEqual(f.read(100), data[len(lines[0]) + 1:][:100])
+
         # Issue #16636: Test readline() followed by readlines()
         f = getreader()
         self.assertEqual(f.readline(), lines[0])
         self.assertEqual(f.readlines(), lines[1:])
         self.assertEqual(f.read(), '')
 
-        # Test read() followed by read()
+        # Test read(n) followed by read()
         f = getreader()
         self.assertEqual(f.read(size=40, chars=5), data[:5])
         self.assertEqual(f.read(), data[5:])
         self.assertEqual(f.read(), '')
 
-        # Issue #12446: Test read() followed by readlines()
+        # Issue #32110: Test read(n) followed by read(n)
+        f = getreader()
+        self.assertEqual(f.read(size=40, chars=5), data[:5])
+        self.assertEqual(f.read(1), data[5])
+        self.assertEqual(f.read(0), '')
+        self.assertEqual(f.read(100), data[6:106])
+
+        # Issue #12446: Test read(n) followed by readlines()
         f = getreader()
         self.assertEqual(f.read(size=40, chars=5), data[:5])
         self.assertEqual(f.readlines(), [lines[0][5:]] + lines[1:])
@@ -1005,6 +1025,7 @@ class UTF7Test(ReadTest, unittest.TestCase):
             (b'a+////,+IKw-b', 'a\uffff\ufffd\u20acb'),
             (b'a+IKw-b\xff', 'a\u20acb\ufffd'),
             (b'a+IKw\xffb', 'a\u20ac\ufffdb'),
+            (b'a+@b', 'a\ufffdb'),
         ]
         for raw, expected in tests:
             with self.subTest(raw=raw):
@@ -1203,6 +1224,8 @@ class EscapeDecodeTest(unittest.TestCase):
             check(br"\8", b"\\8")
         with self.assertWarns(DeprecationWarning):
             check(br"\9", b"\\9")
+        with self.assertWarns(DeprecationWarning):
+            check(b"\\\xfa", b"\\\xfa")
 
     def test_errors(self):
         decode = codecs.escape_decode
@@ -2033,13 +2056,12 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
 
     @support.cpython_only
     def test_basics_capi(self):
-        from _testcapi import codec_incrementalencoder, codec_incrementaldecoder
         s = "abc123"  # all codecs should be able to encode these
         for encoding in all_unicode_encodings:
             if encoding not in broken_unicode_with_stateful:
                 # check incremental decoder/encoder (fetched via the C API)
                 try:
-                    cencoder = codec_incrementalencoder(encoding)
+                    cencoder = _testcapi.codec_incrementalencoder(encoding)
                 except LookupError:  # no IncrementalEncoder
                     pass
                 else:
@@ -2048,7 +2070,7 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                     for c in s:
                         encodedresult += cencoder.encode(c)
                     encodedresult += cencoder.encode("", True)
-                    cdecoder = codec_incrementaldecoder(encoding)
+                    cdecoder = _testcapi.codec_incrementaldecoder(encoding)
                     decodedresult = ""
                     for c in encodedresult:
                         decodedresult += cdecoder.decode(bytes([c]))
@@ -2059,12 +2081,12 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                 if encoding not in ("idna", "mbcs"):
                     # check incremental decoder/encoder with errors argument
                     try:
-                        cencoder = codec_incrementalencoder(encoding, "ignore")
+                        cencoder = _testcapi.codec_incrementalencoder(encoding, "ignore")
                     except LookupError:  # no IncrementalEncoder
                         pass
                     else:
                         encodedresult = b"".join(cencoder.encode(c) for c in s)
-                        cdecoder = codec_incrementaldecoder(encoding, "ignore")
+                        cdecoder = _testcapi.codec_incrementaldecoder(encoding, "ignore")
                         decodedresult = "".join(cdecoder.decode(bytes([c]))
                                                 for c in encodedresult)
                         self.assertEqual(decodedresult, s,
@@ -2474,6 +2496,8 @@ class UnicodeEscapeTest(unittest.TestCase):
             check(br"\8", "\\8")
         with self.assertWarns(DeprecationWarning):
             check(br"\9", "\\9")
+        with self.assertWarns(DeprecationWarning):
+            check(b"\\\xfa", "\\\xfa")
 
     def test_decode_errors(self):
         decode = codecs.unicode_escape_decode
@@ -3162,16 +3186,9 @@ class CodePageTest(unittest.TestCase):
     def test_mbcs_alias(self):
         # Check that looking up our 'default' codepage will return
         # mbcs when we don't have a more specific one available
-        import _bootlocale
-        def _get_fake_codepage(*a):
-            return 'cp123'
-        old_getpreferredencoding = _bootlocale.getpreferredencoding
-        _bootlocale.getpreferredencoding = _get_fake_codepage
-        try:
+        with mock.patch('_winapi.GetACP', return_value=123):
             codec = codecs.lookup('cp123')
             self.assertEqual(codec.name, 'mbcs')
-        finally:
-            _bootlocale.getpreferredencoding = old_getpreferredencoding
 
 
 class ASCIITest(unittest.TestCase):
@@ -3248,6 +3265,110 @@ class Latin1Test(unittest.TestCase):
         ):
             with self.subTest(data=data, expected=expected):
                 self.assertEqual(data.decode('latin1'), expected)
+
+
+@unittest.skipIf(_testcapi is None, 'need _testcapi module')
+class LocaleCodecTest(unittest.TestCase):
+    """
+    Test indirectly _Py_DecodeUTF8Ex() and _Py_EncodeUTF8Ex().
+    """
+    ENCODING = sys.getfilesystemencoding()
+    STRINGS = ("ascii", "ulatin1:\xa7\xe9",
+               "u255:\xff",
+               "UCS:\xe9\u20ac\U0010ffff",
+               "surrogates:\uDC80\uDCFF")
+    BYTES_STRINGS = (b"blatin1:\xa7\xe9", b"b255:\xff")
+    SURROGATES = "\uDC80\uDCFF"
+
+    def encode(self, text, errors="strict"):
+        return _testcapi.EncodeLocaleEx(text, 0, errors)
+
+    def check_encode_strings(self, errors):
+        for text in self.STRINGS:
+            with self.subTest(text=text):
+                try:
+                    expected = text.encode(self.ENCODING, errors)
+                except UnicodeEncodeError:
+                    with self.assertRaises(RuntimeError) as cm:
+                        self.encode(self.SURROGATES)
+                    errmsg = str(cm.exception)
+                    self.assertTrue(errmsg.startswith("encode error: pos=0, reason="), errmsg)
+                else:
+                    encoded = self.encode(text, errors)
+                    self.assertEqual(encoded, expected)
+
+    def test_encode_strict(self):
+        self.check_encode_strings("strict")
+
+    def test_encode_surrogateescape(self):
+        self.check_encode_strings("surrogateescape")
+
+    def test_encode_surrogatepass(self):
+        try:
+            self.encode('', 'surrogatepass')
+        except ValueError as exc:
+            if str(exc) == 'unsupported error handler':
+                self.skipTest(f"{self.ENCODING!r} encoder doesn't support "
+                              f"surrogatepass error handler")
+            else:
+                raise
+
+        self.check_encode_strings("surrogatepass")
+
+    def decode(self, encoded, errors="strict"):
+        return _testcapi.DecodeLocaleEx(encoded, 0, errors)
+
+    def check_decode_strings(self, errors):
+        is_utf8 = (self.ENCODING == "utf-8")
+        if is_utf8:
+            encode_errors = 'surrogateescape'
+        else:
+            encode_errors = 'strict'
+
+        strings = list(self.BYTES_STRINGS)
+        for text in self.STRINGS:
+            try:
+                encoded = text.encode(self.ENCODING, encode_errors)
+                if encoded not in strings:
+                    strings.append(encoded)
+            except UnicodeEncodeError:
+                encoded = None
+
+            if is_utf8:
+                encoded2 = text.encode(self.ENCODING, 'surrogatepass')
+                if encoded2 != encoded:
+                    strings.append(encoded2)
+
+        for encoded in strings:
+            with self.subTest(encoded=encoded):
+                try:
+                    expected = encoded.decode(self.ENCODING, errors)
+                except UnicodeDecodeError:
+                    with self.assertRaises(RuntimeError) as cm:
+                        self.decode(encoded, errors)
+                    errmsg = str(cm.exception)
+                    self.assertTrue(errmsg.startswith("decode error: "), errmsg)
+                else:
+                    decoded = self.decode(encoded, errors)
+                    self.assertEqual(decoded, expected)
+
+    def test_decode_strict(self):
+        self.check_decode_strings("strict")
+
+    def test_decode_surrogateescape(self):
+        self.check_decode_strings("surrogateescape")
+
+    def test_decode_surrogatepass(self):
+        try:
+            self.decode(b'', 'surrogatepass')
+        except ValueError as exc:
+            if str(exc) == 'unsupported error handler':
+                self.skipTest(f"{self.ENCODING!r} decoder doesn't support "
+                              f"surrogatepass error handler")
+            else:
+                raise
+
+        self.check_decode_strings("surrogatepass")
 
 
 if __name__ == "__main__":

@@ -104,11 +104,11 @@ def abs_paths():
             continue   # don't mess with a PEP 302-supplied __file__
         try:
             m.__file__ = os.path.abspath(m.__file__)
-        except (AttributeError, OSError):
+        except (AttributeError, OSError, TypeError):
             pass
         try:
             m.__cached__ = os.path.abspath(m.__cached__)
-        except (AttributeError, OSError):
+        except (AttributeError, OSError, TypeError):
             pass
 
 
@@ -340,11 +340,6 @@ def getsitepackages(prefixes=None):
         else:
             sitepackages.append(prefix)
             sitepackages.append(os.path.join(prefix, "lib", "site-packages"))
-        # for framework builds *only* we add the standard Apple locations.
-        if sys.platform == "darwin" and sys._framework:
-            sitepackages.append(
-                os.path.join("/Library", sys._framework,
-                             '%d.%d' % sys.version_info[:2], "site-packages"))
     return sitepackages
 
 def addsitepackages(known_paths, prefixes=None):
@@ -444,7 +439,16 @@ def enablerlcompleter():
                 readline.read_history_file(history)
             except OSError:
                 pass
-            atexit.register(readline.write_history_file, history)
+
+            def write_history():
+                try:
+                    readline.write_history_file(history)
+                except (FileNotFoundError, PermissionError):
+                    # home directory does not exist or is not writable
+                    # https://bugs.python.org/issue19891
+                    pass
+
+            atexit.register(write_history)
 
     sys.__interactivehook__ = register_readline
 

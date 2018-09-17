@@ -8,5 +8,5 @@
 const char *
 Py_GetPlatform(void)
 {
-	return PLATFORM;
+    return PLATFORM;
 }

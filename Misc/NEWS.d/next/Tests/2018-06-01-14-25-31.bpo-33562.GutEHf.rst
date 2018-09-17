@@ -1,0 +1,2 @@
+Check that a global asyncio event loop policy is not left behind by any
+tests.

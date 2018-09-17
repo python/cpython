@@ -1,7 +1,6 @@
-"""Test idlelib.configdialog.
+"""Test configdialog, coverage 94%.
 
 Half the class creates dialog, half works with user customizations.
-Coverage: 95%.
 """
 from idlelib import configdialog
 from test.support import requires
@@ -44,10 +43,9 @@ def tearDownModule():
     tracers.detach()
     tracers.clear()
     changes.clear()
-    del dialog
     root.update_idletasks()
     root.destroy()
-    del root
+    root = dialog = None
 
 
 class FontPageTest(unittest.TestCase):
@@ -62,6 +60,7 @@ class FontPageTest(unittest.TestCase):
         page = cls.page = dialog.fontpage
         dialog.note.select(page)
         page.set_samples = Func()  # Mask instance method.
+        page.update()
 
     @classmethod
     def tearDownClass(cls):
@@ -192,6 +191,7 @@ class FontPageTest(unittest.TestCase):
     def test_set_samples(self):
         d = self.page
         del d.set_samples  # Unmask method for test
+        orig_samples = d.font_sample, d.highlight_sample
         d.font_sample, d.highlight_sample = {}, {}
         d.font_name.set('test')
         d.font_size.set('5')
@@ -202,7 +202,7 @@ class FontPageTest(unittest.TestCase):
         d.set_samples()
         self.assertTrue(d.font_sample == d.highlight_sample == expected)
 
-        del d.font_sample, d.highlight_sample
+        d.font_sample, d.highlight_sample = orig_samples
         d.set_samples = Func()  # Re-mask for other tests.
 
 
@@ -211,6 +211,7 @@ class IndentTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.page = dialog.fontpage
+        cls.page.update()
 
     def test_load_tab_cfg(self):
         d = self.page
@@ -241,6 +242,7 @@ class HighPageTest(unittest.TestCase):
         page.paint_theme_sample = Func()
         page.set_highlight_target = Func()
         page.set_color_sample = Func()
+        page.update()
 
     @classmethod
     def tearDownClass(cls):
@@ -1086,6 +1088,7 @@ class GenPageTest(unittest.TestCase):
         dialog.note.select(page)
         page.set = page.set_add_delete_state = Func()
         page.upc = page.update_help_changes = Func()
+        page.update()
 
     @classmethod
     def tearDownClass(cls):
@@ -1170,7 +1173,7 @@ class GenPageTest(unittest.TestCase):
     def test_context(self):
         self.page.context_int.delete(0, 'end')
         self.page.context_int.insert(0, '1')
-        self.assertEqual(extpage, {'CodeContext': {'numlines': '1'}})
+        self.assertEqual(extpage, {'CodeContext': {'maxlines': '1'}})
 
     def test_source_selected(self):
         d = self.page

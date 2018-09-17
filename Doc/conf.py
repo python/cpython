@@ -38,16 +38,21 @@ highlight_language = 'python3'
 needs_sphinx = '1.2'
 
 # Ignore any .rst files in the venv/ directory.
-exclude_patterns = ['venv/*', 'README.rst']
+venvdir = os.getenv('VENVDIR', 'venv')
+exclude_patterns = [venvdir+'/*', 'README.rst']
 
 
 # Options for HTML output
 # -----------------------
 
 # Use our custom theme.
-html_theme = 'pydoctheme'
+html_theme = 'python_docs_theme'
 html_theme_path = ['tools']
-html_theme_options = {'collapsiblesidebar': True}
+html_theme_options = {
+    'collapsiblesidebar': True,
+    'issues_url': 'https://docs.python.org/3/bugs.html',
+    'root_include_title': False   # We use the version switcher instead.
+}
 
 # Short title used e.g. for <title> HTML tags.
 html_short_title = '%s Documentation' % release
@@ -89,11 +94,10 @@ html_split_index = True
 # Options for LaTeX output
 # ------------------------
 
+latex_engine = 'xelatex'
+
 # Get LaTeX to handle Unicode correctly
 latex_elements = {
-    'inputenc': r'\usepackage[utf8x]{inputenc}',
-    'utf8extra': '',
-    'fontenc': r'\usepackage[T1,T2A]{fontenc}',
 }
 
 # Additional stuff for the LaTeX preamble.

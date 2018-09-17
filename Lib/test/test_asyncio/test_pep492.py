@@ -1,16 +1,33 @@
 """Tests support for new syntax introduced by PEP 492."""
 
+import sys
 import types
 import unittest
 
-try:
-    from test import support
-except ImportError:
-    from asyncio import test_support as support
+from test import support
 from unittest import mock
 
 import asyncio
-from asyncio import test_utils
+from test.test_asyncio import utils as test_utils
+
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
+# Test that asyncio.iscoroutine() uses collections.abc.Coroutine
+class FakeCoro:
+    def send(self, value):
+        pass
+
+    def throw(self, typ, val=None, tb=None):
+        pass
+
+    def close(self):
+        pass
+
+    def __await__(self):
+        yield
 
 
 class BaseTest(test_utils.TestCase):
@@ -59,12 +76,13 @@ class LockTests(BaseTest):
         async def test(lock):
             await asyncio.sleep(0.01, loop=self.loop)
             self.assertFalse(lock.locked())
-            with await lock as _lock:
-                self.assertIs(_lock, None)
-                self.assertTrue(lock.locked())
-                await asyncio.sleep(0.01, loop=self.loop)
-                self.assertTrue(lock.locked())
-            self.assertFalse(lock.locked())
+            with self.assertWarns(DeprecationWarning):
+                with await lock as _lock:
+                    self.assertIs(_lock, None)
+                    self.assertTrue(lock.locked())
+                    await asyncio.sleep(0.01, loop=self.loop)
+                    self.assertTrue(lock.locked())
+                self.assertFalse(lock.locked())
 
         for primitive in primitives:
             self.loop.run_until_complete(test(primitive))
@@ -101,13 +119,6 @@ class CoroutineTests(BaseTest):
         finally:
             f.close() # silence warning
 
-        # Test that asyncio.iscoroutine() uses collections.abc.Coroutine
-        class FakeCoro:
-            def send(self, value): pass
-            def throw(self, typ, val=None, tb=None): pass
-            def close(self): pass
-            def __await__(self): yield
-
         self.assertTrue(asyncio.iscoroutine(FakeCoro()))
 
     def test_iscoroutinefunction(self):
@@ -142,35 +153,14 @@ class CoroutineTests(BaseTest):
         data = self.loop.run_until_complete(foo())
         self.assertEqual(data, 'spam')
 
-    @mock.patch('asyncio.coroutines.logger')
-    def test_async_def_wrapped(self, m_log):
-        async def foo():
-            pass
+    def test_debug_mode_manages_coroutine_origin_tracking(self):
         async def start():
-            foo_coro = foo()
-            self.assertRegex(
-                repr(foo_coro),
-                r'<CoroWrapper .*\.foo\(\) running at .*pep492.*>')
+            self.assertTrue(sys.get_coroutine_origin_tracking_depth() > 0)
 
-            with support.check_warnings((r'.*foo.*was never',
-                                         RuntimeWarning)):
-                foo_coro = None
-                support.gc_collect()
-                self.assertTrue(m_log.error.called)
-                message = m_log.error.call_args[0][0]
-                self.assertRegex(message,
-                                 r'CoroWrapper.*foo.*was never')
-
+        self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 0)
         self.loop.set_debug(True)
         self.loop.run_until_complete(start())
-
-        async def start():
-            foo_coro = foo()
-            task = asyncio.ensure_future(foo_coro, loop=self.loop)
-            self.assertRegex(repr(task), r'Task.*foo.*running')
-
-        self.loop.run_until_complete(start())
-
+        self.assertEqual(sys.get_coroutine_origin_tracking_depth(), 0)
 
     def test_types_coroutine(self):
         def gen():
@@ -220,9 +210,9 @@ class CoroutineTests(BaseTest):
                 t.cancel()
 
         self.loop.set_debug(True)
-        with self.assertRaisesRegex(
-            RuntimeError,
-            r'Cannot await.*test_double_await.*\bafunc\b.*while.*\bsleep\b'):
+        with self.assertRaises(
+                RuntimeError,
+                msg='coroutine is being awaited already'):
 
             self.loop.run_until_complete(runner())
 

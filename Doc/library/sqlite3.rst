@@ -107,7 +107,7 @@ This example uses the iterator form::
       The SQLite web page; the documentation describes the syntax and the
       available data types for the supported SQL dialect.
 
-   http://www.w3schools.com/sql/
+   https://www.w3schools.com/sql/
       Tutorial, reference and examples for learning SQL syntax.
 
    :pep:`249` - Database API Specification 2.0
@@ -172,9 +172,13 @@ Module functions and constants
 
 .. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri])
 
-   Opens a connection to the SQLite database file *database*. You can use
-   ``":memory:"`` to open a database connection to a database that resides in RAM
-   instead of on disk.
+   Opens a connection to the SQLite database file *database*. By default returns a
+   :class:`Connection` object, unless a custom *factory* is given.
+
+   *database* is a :term:`path-like object` giving the pathname (absolute or
+   relative to the current  working directory) of the database file to be opened.
+   You can use ``":memory:"`` to open a database connection to a database that
+   resides in RAM instead of on disk.
 
    When a database is accessed by multiple connections, and one of the processes
    modifies the database, the SQLite database is locked until that transaction is
@@ -223,14 +227,17 @@ Module functions and constants
    .. versionchanged:: 3.4
       Added the *uri* parameter.
 
+   .. versionchanged:: 3.7
+      *database* can now also be a :term:`path-like object`, not only a string.
+
 
 .. function:: register_converter(typename, callable)
 
    Registers a callable to convert a bytestring from the database into a custom
    Python type. The callable will be invoked for all database values that are of
    the type *typename*. Confer the parameter *detect_types* of the :func:`connect`
-   function for how the type detection works. Note that the case of *typename* and
-   the name of the type in your query must match!
+   function for how the type detection works. Note that *typename* and the name of
+   the type in your query are matched in case-insensitive manner.
 
 
 .. function:: register_adapter(type, callable)
@@ -274,7 +281,7 @@ Connection Objects
 
    .. attribute:: isolation_level
 
-      Get or set the current isolation level. :const:`None` for autocommit mode or
+      Get or set the current default isolation level. :const:`None` for autocommit mode or
       one of "DEFERRED", "IMMEDIATE" or "EXCLUSIVE". See section
       :ref:`sqlite3-controlling-transactions` for a more detailed explanation.
 
@@ -330,16 +337,23 @@ Connection Objects
       :meth:`~Cursor.executescript` method with the given *sql_script*, and
       returns the cursor.
 
-   .. method:: create_function(name, num_params, func)
+   .. method:: create_function(name, num_params, func, *, deterministic=False)
 
       Creates a user-defined function that you can later use from within SQL
       statements under the function name *name*. *num_params* is the number of
       parameters the function accepts (if *num_params* is -1, the function may
       take any number of arguments), and *func* is a Python callable that is
-      called as the SQL function.
+      called as the SQL function. If *deterministic* is true, the created function
+      is marked as `deterministic <https://sqlite.org/deterministic.html>`_, which
+      allows SQLite to perform additional optimizations. This flag is supported by
+      SQLite 3.8.3 or higher, :exc:`NotSupportedError` will be raised if used
+      with older versions.
 
       The function can return any of the types supported by SQLite: bytes, str, int,
       float and ``None``.
+
+      .. versionchanged:: 3.8
+         The *deterministic* parameter was added.
 
       Example:
 
@@ -420,6 +434,10 @@ Connection Objects
 
       If you want to clear any previously installed progress handler, call the
       method with :const:`None` for *handler*.
+
+      Returning a non-zero value from the handler function will terminate the
+      currently executing query and cause it to raise an :exc:`OperationalError`
+      exception.
 
 
    .. method:: set_trace_callback(trace_callback)
@@ -519,6 +537,56 @@ Connection Objects
          with open('dump.sql', 'w') as f:
              for line in con.iterdump():
                  f.write('%s\n' % line)
+
+
+   .. method:: backup(target, *, pages=0, progress=None, name="main", sleep=0.250)
+
+      This method makes a backup of a SQLite database even while it's being accessed
+      by other clients, or concurrently by the same connection.  The copy will be
+      written into the mandatory argument *target*, that must be another
+      :class:`Connection` instance.
+
+      By default, or when *pages* is either ``0`` or a negative integer, the entire
+      database is copied in a single step; otherwise the method performs a loop
+      copying up to *pages* pages at a time.
+
+      If *progress* is specified, it must either be ``None`` or a callable object that
+      will be executed at each iteration with three integer arguments, respectively
+      the *status* of the last iteration, the *remaining* number of pages still to be
+      copied and the *total* number of pages.
+
+      The *name* argument specifies the database name that will be copied: it must be
+      a string containing either ``"main"``, the default, to indicate the main
+      database, ``"temp"`` to indicate the temporary database or the name specified
+      after the ``AS`` keyword in an ``ATTACH DATABASE`` statement for an attached
+      database.
+
+      The *sleep* argument specifies the number of seconds to sleep by between
+      successive attempts to backup remaining pages, can be specified either as an
+      integer or a floating point value.
+
+      Example 1, copy an existing database into another::
+
+         import sqlite3
+
+         def progress(status, remaining, total):
+             print(f'Copied {total-remaining} of {total} pages...')
+
+         con = sqlite3.connect('existing_db.db')
+         with sqlite3.connect('backup.db') as bck:
+             con.backup(bck, pages=1, progress=progress)
+
+      Example 2, copy an existing database into a transient copy::
+
+         import sqlite3
+
+         source = sqlite3.connect('existing_db.db')
+         dest = sqlite3.connect(':memory:')
+         source.backup(dest)
+
+      Availability: SQLite 3.6.11 or higher
+
+      .. versionadded:: 3.7
 
 
 .. _sqlite3-cursor-objects:
@@ -760,6 +828,20 @@ Exceptions
    exists, syntax error in the SQL statement, wrong number of parameters
    specified, etc.  It is a subclass of :exc:`DatabaseError`.
 
+.. exception:: OperationalError
+
+   Exception raised for errors that are related to the database's operation
+   and not necessarily under the control of the programmer, e.g. an unexpected
+   disconnect occurs, the data source name is not found, a transaction could
+   not be processed, etc.  It is a subclass of :exc:`DatabaseError`.
+
+.. exception:: NotSupportedError
+
+   Exception raised in case a method or database API was used which is not
+   supported by the database, e.g. calling the :meth:`~Connection.rollback`
+   method on a connection that does not support transaction or has
+   transactions turned off.  It is a subclass of :exc:`DatabaseError`.
+
 
 .. _sqlite3-types:
 
@@ -928,22 +1010,30 @@ timestamp converter.
 Controlling Transactions
 ------------------------
 
-By default, the :mod:`sqlite3` module opens transactions implicitly before a
-Data Modification Language (DML)  statement (i.e.
+The underlying ``sqlite3`` library operates in ``autocommit`` mode by default,
+but the Python :mod:`sqlite3` module by default does not.
+
+``autocommit`` mode means that statements that modify the database take effect
+immediately.  A ``BEGIN`` or ``SAVEPOINT`` statement disables ``autocommit``
+mode, and a ``COMMIT``, a ``ROLLBACK``, or a ``RELEASE`` that ends the
+outermost transaction, turns ``autocommit`` mode back on.
+
+The Python :mod:`sqlite3` module by default issues a ``BEGIN`` statement
+implicitly before a Data Modification Language (DML) statement (i.e.
 ``INSERT``/``UPDATE``/``DELETE``/``REPLACE``).
 
-You can control which kind of ``BEGIN`` statements sqlite3 implicitly executes
-(or none at all) via the *isolation_level* parameter to the :func:`connect`
+You can control which kind of ``BEGIN`` statements :mod:`sqlite3` implicitly
+executes via the *isolation_level* parameter to the :func:`connect`
 call, or via the :attr:`isolation_level` property of connections.
+If you specify no *isolation_level*, a plain ``BEGIN`` is used, which is
+equivalent to specifying ``DEFERRED``.  Other possible values are ``IMMEDIATE``
+and ``EXCLUSIVE``.
 
-If you want **autocommit mode**, then set :attr:`isolation_level` to ``None``.
-
-Otherwise leave it at its default, which will result in a plain "BEGIN"
-statement, or set it to one of SQLite's supported isolation levels: "DEFERRED",
-"IMMEDIATE" or "EXCLUSIVE".
-
-The current transaction state is exposed through the
-:attr:`Connection.in_transaction` attribute of the connection object.
+You can disable the :mod:`sqlite3` module's implicit transaction management by
+setting :attr:`isolation_level` to ``None``.  This will leave the underlying
+``sqlite3`` library operating in ``autocommit`` mode.  You can then completely
+control the transaction state by explicitly issuing ``BEGIN``, ``ROLLBACK``,
+``SAVEPOINT``, and ``RELEASE`` statements in your code.
 
 .. versionchanged:: 3.6
    :mod:`sqlite3` used to implicitly commit an open transaction before DDL

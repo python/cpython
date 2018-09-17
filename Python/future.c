@@ -5,6 +5,7 @@
 #include "graminit.h"
 #include "code.h"
 #include "symtable.h"
+#include "ast.h"
 
 #define UNDEFINED_FUTURE_FEATURE "future feature %.100s is not defined"
 #define ERR_LATE_FUTURE \
@@ -41,7 +42,9 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
         } else if (strcmp(feature, FUTURE_BARRY_AS_BDFL) == 0) {
             ff->ff_features |= CO_FUTURE_BARRY_AS_BDFL;
         } else if (strcmp(feature, FUTURE_GENERATOR_STOP) == 0) {
-            ff->ff_features |= CO_FUTURE_GENERATOR_STOP;
+            continue;
+        } else if (strcmp(feature, FUTURE_ANNOTATIONS) == 0) {
+            ff->ff_features |= CO_FUTURE_ANNOTATIONS;
         } else if (strcmp(feature, "braces") == 0) {
             PyErr_SetString(PyExc_SyntaxError,
                             "not a chance");
@@ -76,7 +79,11 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
        but is preceded by a regular import.
     */
 
-    for (i = 0; i < asdl_seq_LEN(mod->v.Module.body); i++) {
+    i = 0;
+    if (_PyAST_GetDocString(mod->v.Module.body) != NULL)
+        i++;
+
+    for (; i < asdl_seq_LEN(mod->v.Module.body); i++) {
         stmt_ty s = (stmt_ty)asdl_seq_GET(mod->v.Module.body, i);
 
         if (done && s->lineno > prev_line)

@@ -5,6 +5,24 @@
 extern "C" {
 #endif
 
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
+typedef enum {
+    _Py_ERROR_UNKNOWN=0,
+    _Py_ERROR_STRICT,
+    _Py_ERROR_SURROGATEESCAPE,
+    _Py_ERROR_REPLACE,
+    _Py_ERROR_IGNORE,
+    _Py_ERROR_BACKSLASHREPLACE,
+    _Py_ERROR_SURROGATEPASS,
+    _Py_ERROR_XMLCHARREFREPLACE,
+    _Py_ERROR_OTHER
+} _Py_error_handler;
+
+PyAPI_FUNC(_Py_error_handler) _Py_GetErrorHandler(const char *errors);
+#endif
+
+
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 PyAPI_FUNC(wchar_t *) Py_DecodeLocale(
     const char *arg,
@@ -13,10 +31,54 @@ PyAPI_FUNC(wchar_t *) Py_DecodeLocale(
 PyAPI_FUNC(char*) Py_EncodeLocale(
     const wchar_t *text,
     size_t *error_pos);
+
+PyAPI_FUNC(char*) _Py_EncodeLocaleRaw(
+    const wchar_t *text,
+    size_t *error_pos);
+#endif
+
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(int) _Py_DecodeUTF8Ex(
+    const char *arg,
+    Py_ssize_t arglen,
+    wchar_t **wstr,
+    size_t *wlen,
+    const char **reason,
+    _Py_error_handler errors);
+
+PyAPI_FUNC(int) _Py_EncodeUTF8Ex(
+    const wchar_t *text,
+    char **str,
+    size_t *error_pos,
+    const char **reason,
+    int raw_malloc,
+    _Py_error_handler errors);
+
+PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(
+    const char *arg,
+    Py_ssize_t arglen);
+#endif
+
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
+PyAPI_FUNC(int) _Py_DecodeLocaleEx(
+    const char *arg,
+    wchar_t **wstr,
+    size_t *wlen,
+    const char **reason,
+    int current_locale,
+    _Py_error_handler errors);
+
+PyAPI_FUNC(int) _Py_EncodeLocaleEx(
+    const wchar_t *text,
+    char **str,
+    size_t *error_pos,
+    const char **reason,
+    int current_locale,
+    _Py_error_handler errors);
 #endif
 
 #ifndef Py_LIMITED_API
-
 PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
 
 #ifdef MS_WINDOWS
@@ -111,6 +173,9 @@ PyAPI_FUNC(int) _Py_get_inheritable(int fd);
 PyAPI_FUNC(int) _Py_set_inheritable(int fd, int inheritable,
                                     int *atomic_flag_works);
 
+PyAPI_FUNC(int) _Py_set_inheritable_async_safe(int fd, int inheritable,
+                                               int *atomic_flag_works);
+
 PyAPI_FUNC(int) _Py_dup(int fd);
 
 #ifndef MS_WINDOWS
@@ -119,7 +184,17 @@ PyAPI_FUNC(int) _Py_get_blocking(int fd);
 PyAPI_FUNC(int) _Py_set_blocking(int fd, int blocking);
 #endif   /* !MS_WINDOWS */
 
+PyAPI_FUNC(int) _Py_GetLocaleconvNumeric(
+    PyObject **decimal_point,
+    PyObject **thousands_sep,
+    const char **grouping);
+
 #endif   /* Py_LIMITED_API */
+
+
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(int) _Py_GetForceASCII(void);
+#endif
 
 #ifdef __cplusplus
 }
