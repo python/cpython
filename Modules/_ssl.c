@@ -74,6 +74,7 @@
 #include "openssl/ssl.h"
 #include "openssl/err.h"
 #include "openssl/rand.h"
+#include "openssl/dh.h"
 
 /* SSL error object */
 static PyObject *PySSLErrorObject;
