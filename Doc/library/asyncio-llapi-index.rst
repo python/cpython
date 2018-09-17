@@ -8,8 +8,8 @@ Low-level API Index
 This page lists all low-level asyncio APIs.
 
 
-Accessing Event Loop
-====================
+Obtaining the Event Loop
+========================
 
 .. list-table::
     :widths: 50 50
