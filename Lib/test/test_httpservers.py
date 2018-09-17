@@ -13,6 +13,7 @@ import sys
 import re
 import base64
 import ntpath
+import platform
 import shutil
 import email.message
 import email.utils
@@ -29,6 +30,7 @@ from io import BytesIO
 import unittest
 from test import support
 
+AIX = platform.system() == 'AIX'
 
 class NoLogRequestHandler:
     def log_message(self, *args):
@@ -417,9 +419,11 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         #constructs the path relative to the root directory of the HTTPServer
         response = self.request(self.base_url + '/test')
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
-        # check for trailing "/" which should return 404. See Issue17324
-        response = self.request(self.base_url + '/test/')
-        self.check_status_and_reason(response, HTTPStatus.NOT_FOUND)
+        # AIX open() will open a filename with a trailing slash - as a file
+        if not AIX:
+            # check for trailing "/" which should return 404. See Issue17324
+            response = self.request(self.base_url + '/test/')
+            self.check_status_and_reason(response, HTTPStatus.NOT_FOUND)
         response = self.request(self.base_url + '/')
         self.check_status_and_reason(response, HTTPStatus.OK)
         response = self.request(self.base_url)
@@ -519,8 +523,9 @@ class SimpleHTTPServerTestCase(BaseTestCase):
     def test_path_without_leading_slash(self):
         response = self.request(self.tempdir_name + '/test')
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
-        response = self.request(self.tempdir_name + '/test/')
-        self.check_status_and_reason(response, HTTPStatus.NOT_FOUND)
+        if not AIX:
+            response = self.request(self.tempdir_name + '/test/')
+            self.check_status_and_reason(response, HTTPStatus.NOT_FOUND)
         response = self.request(self.tempdir_name + '/')
         self.check_status_and_reason(response, HTTPStatus.OK)
         response = self.request(self.tempdir_name)

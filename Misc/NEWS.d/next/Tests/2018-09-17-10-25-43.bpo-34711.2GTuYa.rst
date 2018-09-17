@@ -1,0 +1,2 @@
+Fix test_httpservers on AIX
+patch by Michael Felt
