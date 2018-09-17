@@ -191,6 +191,8 @@ Future Object
       .. versionadded:: 3.7
 
 
+.. _asyncio_example_future:
+
 This example creates a Future object, creates and schedules an
 asynchronous Task to set result for the Future, and waits until
 the Future has a result::
