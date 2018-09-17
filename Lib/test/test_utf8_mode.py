@@ -19,7 +19,6 @@ class UTF8ModeTests(unittest.TestCase):
     DEFAULT_ENV = {
         'PYTHONUTF8': '',
         'PYTHONLEGACYWINDOWSFSENCODING': '',
-        'PYTHONCOERCECLOCALE': '0',
     }
 
     def posix_locale(self):
@@ -27,6 +26,8 @@ class UTF8ModeTests(unittest.TestCase):
         return (loc in POSIX_LOCALES)
 
     def get_output(self, *args, failure=False, **kw):
+        # Never enable the C locale coercion (PEP 538)
+        #args = ('-X', 'coerce_c_locale=0', *args)
         kw = dict(self.DEFAULT_ENV, **kw)
         if failure:
             out = assert_python_failure(*args, **kw)

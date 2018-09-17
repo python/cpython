@@ -340,9 +340,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         for key in list(env):
             if key.startswith('PYTHON'):
                 del env[key]
-        # Disable C locale coercion and UTF-8 mode to not depend
-        # on the current locale
-        env['PYTHONCOERCECLOCALE'] = '0'
+        # Disable UTF-8 mode to not depend on the current locale
         env['PYTHONUTF8'] = '0'
 
         if expected['stdio_encoding'] is None or expected['stdio_errors'] is None:
