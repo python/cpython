@@ -302,7 +302,7 @@ typedef struct {
        and a target locale (ex: "C.UTF-8") is supported by the platform.
 
        Py_Initialize() and Py_Main() must not enable C locale coercion: it is
-       always disabled. The warning can only be enabled by the Python program
+       always disabled. The option can only be enabled by the Python program
        ("python3).
 
        See also the _coerce_c_locale_warn option. */
