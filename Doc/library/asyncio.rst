@@ -43,12 +43,13 @@ as well as **low-level** APIs for *library and framework developers* to:
   with async/await syntax.
 
 
-Reference
----------
+.. We use the "rubric" directive here to avoid creating
+   the "Reference" subsection in the TOC.
 
-.. rubric:: High-level APIs
+.. rubric:: Reference
 
 .. toctree::
+   :caption: High-level APIs
    :maxdepth: 1
 
    asyncio-task.rst
@@ -58,9 +59,8 @@ Reference
    asyncio-queue.rst
    asyncio-exceptions.rst
 
-.. rubric:: Low-level APIs
-
 .. toctree::
+   :caption: Low-level APIs
    :maxdepth: 1
 
    asyncio-eventloop.rst
@@ -69,10 +69,10 @@ Reference
    asyncio-policy.rst
    asyncio-platforms.rst
 
-.. rubric:: Guides and Tutorials
-
 .. toctree::
+   :caption: Guides and Tutorials
    :maxdepth: 1
 
    asyncio-api-index.rst
+   asyncio-llapi-index.rst
    asyncio-dev.rst
