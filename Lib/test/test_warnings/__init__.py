@@ -1157,6 +1157,26 @@ class EnvironmentVariableTests(BaseTest):
         self.assertEqual(stdout,
             b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
 
+    def test_module_regex(self):
+        WARN_NOWHERE = 'True'
+        WARN_IN_MAIN = "import warnings; warnings.warn('__main__ warning');"
+        WARN_IN_SUBMOD = "import test.test_warnings.data.submodule_warning;"
+        # Check the warning is ignored by default:
+        assert_python_ok("-c", WARN_IN_MAIN, PYTHONWARNINGS="")
+        assert_python_ok("-c", WARN_IN_MAIN, PYTHONWARNINGS="ignore")
+        assert_python_ok("-c", WARN_IN_SUBMOD, PYTHONWARNINGS="")
+        assert_python_ok("-c", WARN_IN_SUBMOD, PYTHONWARNINGS="ignore")
+        # The submodule warning is still ignored because the pattern selects
+        # only to the package itself, not the submodule:
+        assert_python_ok("-c", WARN_IN_SUBMOD, PYTHONWARNINGS="error:::test")
+        # Warnings can be enabled by using wildcard regex:
+        assert_python_ok("-c", WARN_NOWHERE, PYTHONWARNINGS="error:::.*")
+        assert_python_failure("-c", WARN_IN_MAIN, PYTHONWARNINGS="error:::.*")
+        assert_python_failure("-c", WARN_IN_SUBMOD, PYTHONWARNINGS="error:::.*")
+        # Warning from submodule is raised using a more specific pattern:
+        assert_python_failure("-c", WARN_IN_SUBMOD,
+            PYTHONWARNINGS=r"error:::test.test_warnings(\..*)?")
+
     def test_conflicting_envvar_and_command_line(self):
         rc, stdout, stderr = assert_python_failure("-Werror::DeprecationWarning", "-c",
             "import sys, warnings; sys.stdout.write(str(sys.warnoptions)); "

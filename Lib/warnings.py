@@ -220,12 +220,8 @@ def _setoption(arg):
                                                  for s in parts]
     action = _getaction(action)
     category = _getcategory(category)
-    if message or module:
-        import re
-    if message:
-        message = re.escape(message)
     if module:
-        module = re.escape(module) + r'\Z'
+        module = r'\A(' + module + r')\Z'
     if lineno:
         try:
             lineno = int(lineno)

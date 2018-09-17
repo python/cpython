@@ -1,0 +1,2 @@
+When passing warning filters via ``-W`` or ``PYTHONWARNINGS``, treat the
+``module`` part as regex.
