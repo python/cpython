@@ -1862,7 +1862,9 @@ config_read_env_vars(_PyCoreConfig *config)
             }
         }
         else if (strcmp(env, "warn") == 0) {
-            config->_coerce_c_locale_warn = 1;
+            if (config->_coerce_c_locale_warn < 0) {
+                config->_coerce_c_locale_warn = 1;
+            }
         }
         else {
             if (config->_coerce_c_locale < 0) {
@@ -2320,6 +2322,9 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     if (config->_coerce_c_locale < 0) {
         config->_coerce_c_locale = 0;
     }
+    if (config->_coerce_c_locale_warn < 0) {
+        config->_coerce_c_locale_warn = 0;
+    }
     if (config->utf8_mode < 0) {
         config->utf8_mode = 0;
     }
@@ -2638,7 +2643,7 @@ pymain_run_python(_PyMain *pymain)
 
 
 static void
-pymain_init(_PyMain *pymain)
+pymain_init(_PyMain *pymain, int use_c_locale_coercion)
 {
     /* 754 requires that FP exceptions run in "no stop" mode by default,
      * and until C vendors implement C99's ways to control FP exceptions,
@@ -2651,6 +2656,11 @@ pymain_init(_PyMain *pymain)
 
     pymain->config._disable_importlib = 0;
     pymain->config.install_signal_handlers = 1;
+    if (use_c_locale_coercion) {
+        /* set to -1 to be able to enable the feature */
+        pymain->config._coerce_c_locale = -1;
+        pymain->config._coerce_c_locale_warn = -1;
+    }
 }
 
 
@@ -2751,9 +2761,9 @@ pymain_cmdline(_PyMain *pymain)
 
 
 static int
-pymain_main(_PyMain *pymain)
+pymain_main(_PyMain *pymain, int use_c_locale_coercion)
 {
-    pymain_init(pymain);
+    pymain_init(pymain, use_c_locale_coercion);
 
     int res = pymain_cmdline(pymain);
     if (res < 0) {
@@ -2802,10 +2812,22 @@ Py_Main(int argc, wchar_t **argv)
     pymain.argc = argc;
     pymain.wchar_argv = argv;
 
-    return pymain_main(&pymain);
+    return pymain_main(&pymain, 0);
 }
 
 
+#ifdef MS_WINDOWS
+int
+_Py_WindowsMain(int argc, wchar_t **argv)
+{
+    _PyMain pymain = _PyMain_INIT;
+    pymain.use_bytes_argv = 0;
+    pymain.argc = argc;
+    pymain.wchar_argv = argv;
+
+    return pymain_main(&pymain, 1);
+}
+#else
 int
 _Py_UnixMain(int argc, char **argv)
 {
@@ -2814,8 +2836,9 @@ _Py_UnixMain(int argc, char **argv)
     pymain.argc = argc;
     pymain.bytes_argv = argv;
 
-    return pymain_main(&pymain);
+    return pymain_main(&pymain, 1);
 }
+#endif
 
 
 /* this is gonna seem *real weird*, but if you put some other code between

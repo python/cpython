@@ -81,7 +81,8 @@ typedef struct {
         .install_signal_handlers = -1, \
         .ignore_environment = -1, \
         .use_hash_seed = -1, \
-        ._coerce_c_locale = -1, \
+        ._coerce_c_locale = 0, \
+        ._coerce_c_locale_warn = 0, \
         .faulthandler = -1, \
         .tracemalloc = -1, \
         .utf8_mode = -1, \
