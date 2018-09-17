@@ -254,12 +254,21 @@ def _parse_makefile(filename, vars=None):
     while len(variables) > 0:
         for name in tuple(variables):
             value = notdone[name]
-            m1 = _findvar1_rx.search(value)
-            m2 = _findvar2_rx.search(value)
-            if m1 and m2:
-                m = m1 if m1.start() < m2.start() else m2
-            else:
-                m = m1 if m1 else m2
+            m = None
+            offset = 0
+            for substr in value.split('$$'):
+                m1 = _findvar1_rx.search(substr)
+                m2 = _findvar2_rx.search(substr)
+                if m1 and m2:
+                    m = m1 if m1.start() < m2.start() else m2
+                else:
+                    m = m1 if m1 else m2
+                if m is not None:
+                    break
+
+                # Add 2 to account for the $$ which were removed by split('$$')
+                offset += 2 + len(substr)
+
             if m is not None:
                 n = m.group(1)
                 found = True
@@ -287,11 +296,12 @@ def _parse_makefile(filename, vars=None):
                     done[n] = item = ""
 
                 if found:
-                    after = value[m.end():]
-                    value = value[:m.start()] + item + after
-                    if "$" in after:
+                    after = value[offset + m.end():]
+                    value = value[:offset + m.start()] + item.replace('$', '$$') + after
+                    if "$" in after.replace('$$', ''):
                         notdone[name] = value
                     else:
+                        value = value.replace('$$', '$')
                         try:
                             value = int(value)
                         except ValueError:
