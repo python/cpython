@@ -225,6 +225,55 @@ def _releaseLock():
     if _lock:
         _lock.release()
 
+
+# Prevent a held logging lock from blocking a child from logging.
+
+if not hasattr(os, 'register_at_fork'):  # Windows and friends.
+    def _register_at_fork_acquire_release(instance):
+        pass  # no-op when os.register_at_fork does not exist.
+else:  # The os.register_at_fork API exists
+    os.register_at_fork(before=_acquireLock,
+                        after_in_child=_releaseLock,
+                        after_in_parent=_releaseLock)
+
+    # A collection of instances with acquire and release methods (logging.Handler)
+    # to be called before and after fork.  The weakref avoids us keeping discarded
+    # Handler instances alive forever in case an odd program creates and destroys
+    # many over its lifetime.
+    _at_fork_acquire_release_weakset = weakref.WeakSet()
+
+
+    def _register_at_fork_acquire_release(instance):
+        # We put the instance itself in a single WeakSet as we MUST have only
+        # one atomic weak ref. used by both before and after atfork calls to
+        # guarantee matched pairs of acquire and release calls.
+        _at_fork_acquire_release_weakset.add(instance)
+
+
+    def _at_fork_weak_calls(method_name):
+        for instance in _at_fork_acquire_release_weakset:
+            method = getattr(instance, method_name)
+            try:
+                method()
+            except Exception as err:
+                # Similar to what PyErr_WriteUnraisable does.
+                print("Ignoring exception from logging atfork", instance,
+                      method_name, "method:", err, file=sys.stderr)
+
+
+    def _before_at_fork_weak_calls():
+        _at_fork_weak_calls('acquire')
+
+
+    def _after_at_fork_weak_calls():
+        _at_fork_weak_calls('release')
+
+
+    os.register_at_fork(before=_before_at_fork_weak_calls,
+                        after_in_child=_after_at_fork_weak_calls,
+                        after_in_parent=_after_at_fork_weak_calls)
+
+
 #---------------------------------------------------------------------------
 #   The logging record
 #---------------------------------------------------------------------------
@@ -424,7 +473,8 @@ class Formatter(object):
     responsible for converting a LogRecord to (usually) a string which can
     be interpreted by either a human or an external system. The base Formatter
     allows a formatting string to be specified. If none is supplied, the
-    default value of "%s(message)" is used.
+    the style-dependent default value, "%(message)s", "{message}", or
+    "${message}", is used.
 
     The Formatter can be initialized with a format string which makes use of
     knowledge of the LogRecord attributes - e.g. the default value mentioned
@@ -794,6 +844,7 @@ class Handler(Filterer):
         Acquire a thread lock for serializing access to the underlying I/O.
         """
         self.lock = threading.RLock()
+        _register_at_fork_acquire_release(self)
 
     def acquire(self):
         """

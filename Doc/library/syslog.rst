@@ -48,7 +48,7 @@ The module defines the following functions:
    .. versionchanged:: 3.2
       In previous versions, keyword arguments were not allowed, and *ident* was
       required.  The default for *ident* was dependent on the system libraries,
-      and often was ``python`` instead of the name of the python program file.
+      and often was ``python`` instead of the name of the Python program file.
 
 
 .. function:: closelog()

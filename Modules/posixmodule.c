@@ -32,6 +32,7 @@
 #else
 #include "winreparse.h"
 #endif
+#include "internal/pystate.h"
 
 /* On android API level 21, 'AT_EACCESS' is not declared although
  * HAVE_FACCESSAT is defined. */
@@ -212,41 +213,6 @@ module os
    (default) */
 extern char        *ctermid_r(char *);
 #endif
-
-#ifndef HAVE_UNISTD_H
-#if ( defined(__WATCOMC__) || defined(_MSC_VER) ) && !defined(__QNX__)
-extern int mkdir(const char *);
-#else
-extern int mkdir(const char *, mode_t);
-#endif
-#if defined(__IBMC__) || defined(__IBMCPP__)
-extern int chdir(char *);
-extern int rmdir(char *);
-#else
-extern int chdir(const char *);
-extern int rmdir(const char *);
-#endif
-extern int chmod(const char *, mode_t);
-/*#ifdef HAVE_FCHMOD
-extern int fchmod(int, mode_t);
-#endif*/
-/*#ifdef HAVE_LCHMOD
-extern int lchmod(const char *, mode_t);
-#endif*/
-extern int chown(const char *, uid_t, gid_t);
-extern char *getcwd(char *, int);
-extern char *strerror(int);
-extern int link(const char *, const char *);
-extern int rename(const char *, const char *);
-extern int stat(const char *, struct stat *);
-extern int unlink(const char *);
-#ifdef HAVE_SYMLINK
-extern int symlink(const char *, const char *);
-#endif /* HAVE_SYMLINK */
-#ifdef HAVE_LSTAT
-extern int lstat(const char *, struct stat *);
-#endif /* HAVE_LSTAT */
-#endif /* !HAVE_UNISTD_H */
 
 #endif /* !_MSC_VER */
 
@@ -455,6 +421,7 @@ void
 PyOS_AfterFork_Child(void)
 {
     _PyGILState_Reinit();
+    _PyInterpreterState_DeleteExceptMain();
     PyEval_ReInitThreads();
     _PyImport_ReInitLock();
     _PySignal_AfterFork();
@@ -488,8 +455,8 @@ PyOS_AfterFork(void)
 
 #ifdef MS_WINDOWS
 /* defined in fileutils.c */
-PyAPI_FUNC(void) _Py_time_t_to_FILE_TIME(time_t, int, FILETIME *);
-PyAPI_FUNC(void) _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *,
+void _Py_time_t_to_FILE_TIME(time_t, int, FILETIME *);
+void _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *,
                                             ULONG, struct _Py_stat_struct *);
 #endif
 
@@ -4630,6 +4597,12 @@ split_py_long_to_s_and_ns(PyObject *py_long, time_t *s, long *ns)
     divmod = PyNumber_Divmod(py_long, billion);
     if (!divmod)
         goto exit;
+    if (!PyTuple_Check(divmod) || PyTuple_GET_SIZE(divmod) != 2) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s.__divmod__() must return a 2-tuple, not %.200s",
+                     Py_TYPE(py_long)->tp_name, Py_TYPE(divmod)->tp_name);
+        goto exit;
+    }
     *s = _PyLong_AsTime_t(PyTuple_GET_ITEM(divmod, 0));
     if ((*s == -1) && PyErr_Occurred())
         goto exit;
@@ -5178,6 +5151,114 @@ enum posix_spawn_file_actions_identifier {
 };
 
 static int
+convert_sched_param(PyObject *param, struct sched_param *res);
+
+static int
+parse_posix_spawn_flags(PyObject *setpgroup, int resetids, PyObject *setsigmask,
+                        PyObject *setsigdef, PyObject *scheduler,
+                        posix_spawnattr_t *attrp)
+{
+    long all_flags = 0;
+
+    errno = posix_spawnattr_init(attrp);
+    if (errno) {
+        posix_error();
+        return -1;
+    }
+
+    if (setpgroup) {
+        pid_t pgid = PyLong_AsPid(setpgroup);
+        if (pgid == (pid_t)-1 && PyErr_Occurred()) {
+            goto fail;
+        }
+        errno = posix_spawnattr_setpgroup(attrp, pgid);
+        if (errno) {
+            posix_error();
+            goto fail;
+        }
+        all_flags |= POSIX_SPAWN_SETPGROUP;
+    }
+
+    if (resetids) {
+        all_flags |= POSIX_SPAWN_RESETIDS;
+    }
+
+   if (setsigmask) {
+        sigset_t set;
+        if (!_Py_Sigset_Converter(setsigmask, &set)) {
+            goto fail;
+        }
+        errno = posix_spawnattr_setsigmask(attrp, &set);
+        if (errno) {
+            posix_error();
+            goto fail;
+        }
+        all_flags |= POSIX_SPAWN_SETSIGMASK;
+    }
+
+    if (setsigdef) {
+        sigset_t set;
+        if (!_Py_Sigset_Converter(setsigdef, &set)) {
+            goto fail;
+        }
+        errno = posix_spawnattr_setsigdefault(attrp, &set);
+        if (errno) {
+            posix_error();
+            goto fail;
+        }
+        all_flags |= POSIX_SPAWN_SETSIGDEF;
+    }
+
+    if (scheduler) {
+#ifdef POSIX_SPAWN_SETSCHEDULER
+        PyObject *py_schedpolicy;
+        struct sched_param schedparam;
+
+        if (!PyArg_ParseTuple(scheduler, "OO&"
+                        ";A scheduler tuple must have two elements",
+                        &py_schedpolicy, convert_sched_param, &schedparam)) {
+            goto fail;
+        }
+        if (py_schedpolicy != Py_None) {
+            int schedpolicy = _PyLong_AsInt(py_schedpolicy);
+
+            if (schedpolicy == -1 && PyErr_Occurred()) {
+                goto fail;
+            }
+            errno = posix_spawnattr_setschedpolicy(attrp, schedpolicy);
+            if (errno) {
+                posix_error();
+                goto fail;
+            }
+            all_flags |= POSIX_SPAWN_SETSCHEDULER;
+        }
+        errno = posix_spawnattr_setschedparam(attrp, &schedparam);
+        if (errno) {
+            posix_error();
+            goto fail;
+        }
+        all_flags |= POSIX_SPAWN_SETSCHEDPARAM;
+#else
+        PyErr_SetString(PyExc_NotImplementedError,
+                "The scheduler option is not supported in this system.");
+        goto fail;
+#endif
+    }
+
+    errno = posix_spawnattr_setflags(attrp, all_flags);
+    if (errno) {
+        posix_error();
+        goto fail;
+    }
+
+    return 0;
+
+fail:
+    (void)posix_spawnattr_destroy(attrp);
+    return -1;
+}
+
+static int
 parse_file_actions(PyObject *file_actions,
                    posix_spawn_file_actions_t *file_actionsp,
                    PyObject *temp_buffer)
@@ -5277,6 +5358,7 @@ parse_file_actions(PyObject *file_actions,
         }
         Py_DECREF(file_action);
     }
+
     Py_DECREF(seq);
     return 0;
 
@@ -5296,22 +5378,37 @@ os.posix_spawn
         Tuple or list of strings.
     env: object
         Dictionary of strings mapping to strings.
-    file_actions: object = None
-        A sequence of file action tuples.
     /
+    *
+    file_actions: object(c_default='NULL') = ()
+        A sequence of file action tuples.
+    setpgroup: object = NULL
+        The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.
+    resetids: bool(accept={int}) = False
+        If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.
+    setsigmask: object(c_default='NULL') = ()
+        The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
+    setsigdef: object(c_default='NULL') = ()
+        The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.
+    scheduler: object = NULL
+        A tuple with the scheduler policy (optional) and parameters.
 
 Execute the program specified by path in a new process.
 [clinic start generated code]*/
 
 static PyObject *
 os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
-                    PyObject *env, PyObject *file_actions)
-/*[clinic end generated code: output=d023521f541c709c input=a3db1021d33230dc]*/
+                    PyObject *env, PyObject *file_actions,
+                    PyObject *setpgroup, int resetids, PyObject *setsigmask,
+                    PyObject *setsigdef, PyObject *scheduler)
+/*[clinic end generated code: output=45dfa4c515d09f2c input=2891c2f1d457e39b]*/
 {
     EXECV_CHAR **argvlist = NULL;
     EXECV_CHAR **envlist = NULL;
     posix_spawn_file_actions_t file_actions_buf;
     posix_spawn_file_actions_t *file_actionsp = NULL;
+    posix_spawnattr_t attr;
+    posix_spawnattr_t *attrp = NULL;
     Py_ssize_t argc, envc;
     PyObject *result = NULL;
     PyObject *temp_buffer = NULL;
@@ -5354,7 +5451,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
         goto exit;
     }
 
-    if (file_actions != Py_None) {
+    if (file_actions != NULL) {
         /* There is a bug in old versions of glibc that makes some of the
          * helper functions for manipulating file actions not copy the provided
          * buffers. The problem is that posix_spawn_file_actions_addopen does not
@@ -5373,9 +5470,15 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
         file_actionsp = &file_actions_buf;
     }
 
+    if (parse_posix_spawn_flags(setpgroup, resetids, setsigmask,
+                                setsigdef, scheduler, &attr)) {
+        goto exit;
+    }
+    attrp = &attr;
+
     _Py_BEGIN_SUPPRESS_IPH
     err_code = posix_spawn(&pid, path->narrow,
-                           file_actionsp, NULL, argvlist, envlist);
+                           file_actionsp, attrp, argvlist, envlist);
     _Py_END_SUPPRESS_IPH
     if (err_code) {
         errno = err_code;
@@ -5387,6 +5490,9 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
 exit:
     if (file_actionsp) {
         (void)posix_spawn_file_actions_destroy(file_actionsp);
+    }
+    if (attrp) {
+        (void)posix_spawnattr_destroy(attrp);
     }
     if (envlist) {
         free_string_array(envlist, envc);
@@ -5686,6 +5792,10 @@ os_fork1_impl(PyObject *module)
 {
     pid_t pid;
 
+    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
+        PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
+        return NULL;
+    }
     PyOS_BeforeFork();
     pid = fork1();
     if (pid == 0) {
@@ -5717,6 +5827,10 @@ os_fork_impl(PyObject *module)
 {
     pid_t pid;
 
+    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
+        PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
+        return NULL;
+    }
     PyOS_BeforeFork();
     pid = fork();
     if (pid == 0) {
@@ -6312,6 +6426,10 @@ os_forkpty_impl(PyObject *module)
     int master_fd = -1;
     pid_t pid;
 
+    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
+        PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
+        return NULL;
+    }
     PyOS_BeforeFork();
     pid = forkpty(&master_fd, NULL, NULL, NULL);
     if (pid == 0) {

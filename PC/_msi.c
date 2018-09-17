@@ -330,6 +330,10 @@ msierror(int status)
     code = MsiRecordGetInteger(err, 1); /* XXX code */
     if (MsiFormatRecord(0, err, res, &size) == ERROR_MORE_DATA) {
         res = malloc(size+1);
+        if (res == NULL) {
+            MsiCloseHandle(err);
+            return PyErr_NoMemory();
+        }
         MsiFormatRecord(0, err, res, &size);
         res[size]='\0';
     }
@@ -560,6 +564,9 @@ summary_getproperty(msiobj* si, PyObject *args)
         &fval, sval, &ssize);
     if (status == ERROR_MORE_DATA) {
         sval = malloc(ssize);
+        if (sval == NULL) {
+            return PyErr_NoMemory();
+        }
         status = MsiSummaryInfoGetProperty(si->h, field, &type, &ival,
             &fval, sval, &ssize);
     }
