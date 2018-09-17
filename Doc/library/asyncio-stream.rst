@@ -348,7 +348,7 @@ TCP echo client using the :func:`asyncio.open_connection` function::
 
 .. seealso::
 
-   The :ref:`TCP echo client protocol <asyncio-tcp-echo-client-protocol>`
+   The :ref:`TCP echo client protocol <asyncio_example_tcp_echo_client_protocol>`
    example uses the low-level :meth:`loop.create_connection` method.
 
 
@@ -390,7 +390,7 @@ TCP echo server using the :func:`asyncio.start_server` function::
 
 .. seealso::
 
-   The :ref:`TCP echo server protocol <asyncio-tcp-echo-server-protocol>`
+   The :ref:`TCP echo server protocol <asyncio_example_tcp_echo_server_protocol>`
    example uses the :meth:`loop.create_server` method.
 
 
@@ -444,7 +444,7 @@ or with HTTPS::
     python example.py https://example.com/path/page.html
 
 
-.. _asyncio-register-socket-streams:
+.. _asyncio_example_create_connection-streams:
 
 Register an open socket to wait for data using streams
 ------------------------------------------------------
@@ -484,9 +484,9 @@ Coroutine waiting until a socket receives data using the
 .. seealso::
 
    The :ref:`register an open socket to wait for data using a protocol
-   <asyncio-register-socket>` example uses a low-level protocol and
+   <asyncio_example_create_connection>` example uses a low-level protocol and
    the :meth:`loop.create_connection` method.
 
    The :ref:`watch a file descriptor for read events
-   <asyncio-watch-read-event>` example uses the low-level
+   <asyncio_example_watch_fd>` example uses the low-level
    :meth:`loop.add_reader` method to watch a file descriptor.

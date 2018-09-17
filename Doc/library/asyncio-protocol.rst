@@ -707,7 +707,7 @@ factories passed to the :meth:`loop.subprocess_exec` and
 Examples
 ========
 
-.. _asyncio-tcp-echo-server-protocol:
+.. _asyncio_example_tcp_echo_server_protocol:
 
 TCP Echo Server
 ---------------
@@ -756,7 +756,7 @@ received data, and close the connection::
    The :ref:`TCP echo server using streams <asyncio-tcp-echo-server-streams>`
    example uses the high-level :func:`asyncio.start_server` function.
 
-.. _asyncio-tcp-echo-client-protocol:
+.. _asyncio_example_tcp_echo_client_protocol:
 
 TCP Echo Client
 ---------------
@@ -914,7 +914,7 @@ method, sends data and closes the transport when it receives the answer::
     asyncio.run(main())
 
 
-.. _asyncio-register-socket:
+.. _asyncio_example_create_connection:
 
 Connecting Existing Sockets
 ---------------------------
@@ -973,14 +973,14 @@ Wait until a socket receives data using the
 .. seealso::
 
    The :ref:`watch a file descriptor for read events
-   <asyncio-watch-read-event>` example uses the low-level
+   <asyncio_example_watch_fd>` example uses the low-level
    :meth:`loop.add_reader` method to register an FD.
 
    The :ref:`register an open socket to wait for data using streams
-   <asyncio-register-socket-streams>` example uses high-level streams
+   <asyncio_example_create_connection-streams>` example uses high-level streams
    created by the :func:`open_connection` function in a coroutine.
 
-.. _asyncio-subprocess-proto-example:
+.. _asyncio_example_subprocess_proto:
 
 loop.subprocess_exec() and SubprocessProtocol
 ---------------------------------------------
@@ -1037,3 +1037,6 @@ The subprocess is created by th :meth:`loop.subprocess_exec` method::
 
     date = asyncio.run(get_date())
     print(f"Current date: {date}")
+
+See also the :ref:`same example <asyncio_example_create_subprocess_exec>`
+written using high-level APIs.
