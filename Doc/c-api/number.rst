@@ -66,7 +66,7 @@ Number Protocol
    See the built-in function :func:`divmod`. Returns *NULL* on failure.  This is
    the equivalent of the Python expression ``divmod(o1, o2)``.
 
-   .. versionchanged: 3.8
+   .. versionchanged:: 3.8
       Always returns a tuple of size 2 on success.
 
 
