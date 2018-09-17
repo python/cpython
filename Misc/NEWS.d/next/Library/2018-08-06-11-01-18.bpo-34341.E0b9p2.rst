@@ -1,0 +1,2 @@
+Appending to the ZIP archive with the ZIP64 extension no longer grows the
+size of extra fields of existing entries.
