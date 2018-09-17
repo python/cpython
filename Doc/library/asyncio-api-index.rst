@@ -16,6 +16,7 @@ await on multiple things with timeouts.
 
 .. list-table::
     :widths: 50 50
+    :class: full-width-table
 
     * - :func:`run`
       - Create event loop, run a coroutine, close the loop.
@@ -47,6 +48,12 @@ await on multiple things with timeouts.
     * - :class:`Task`
       - Task object.
 
+    * - :func:`run_coroutine_threadsafe`
+      - Schedule a coroutine from another OS thread.
+
+    * - ``for in`` :func:`as_completed`
+      - Monitor for completeness with a ``for`` loop.
+
 
 .. rubric:: Examples
 
@@ -72,6 +79,7 @@ implement connection pools, and pub/sub patterns.
 
 .. list-table::
     :widths: 50 50
+    :class: full-width-table
 
     * - :class:`Queue`
       - A FIFO queue.
@@ -98,6 +106,7 @@ Utilities to spawn subprocesses and run shell commands.
 
 .. list-table::
     :widths: 50 50
+    :class: full-width-table
 
     * - ``await`` :func:`create_subprocess_exec`
       - Create a subprocess.
@@ -121,6 +130,7 @@ High-level APIs to work with network IO.
 
 .. list-table::
     :widths: 50 50
+    :class: full-width-table
 
     * - ``await`` :func:`open_connection`
       -  Establish a TCP connection.
@@ -156,6 +166,7 @@ Threading-like synchronization primitives that can be used in Tasks.
 
 .. list-table::
     :widths: 50 50
+    :class: full-width-table
 
     * - :class:`Lock`
       - A mutex lock.
@@ -186,6 +197,7 @@ Exceptions
 
 .. list-table::
     :widths: 50 50
+    :class: full-width-table
 
 
     * - :exc:`asyncio.TimeoutError`

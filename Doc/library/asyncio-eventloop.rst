@@ -969,7 +969,7 @@ Availability: UNIX.
 Executing code in thread or process pools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: loop.run_in_executor(executor, func, \*args)
+.. coroutinemethod:: loop.run_in_executor(executor, func, \*args)
 
    Arrange for a *func* to be called in the specified executor.
 
@@ -1405,7 +1405,7 @@ need to be written this way; consider using high-level functions
 like :func:`asyncio.run`.
 
 
-.. _asyncio-hello-world-callback:
+.. _asyncio_example_lowlevel_helloworld:
 
 Hello World with call_soon()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1438,7 +1438,7 @@ event loop::
    example created with a coroutine and the :func:`run` function.
 
 
-.. _asyncio-date-callback:
+.. _asyncio_example_call_later:
 
 Display the current date with call_later()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1475,7 +1475,7 @@ during 5 seconds, and then stops the event loop::
    created with a coroutine and the :func:`run` function.
 
 
-.. _asyncio-watch-read-event:
+.. _asyncio_example_watch_fd:
 
 Watch a file descriptor for read events
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1518,14 +1518,16 @@ Wait until a file descriptor received some data using the
 
 .. seealso::
 
-   * A similar :ref:`example <asyncio-register-socket>`
+   * A similar :ref:`example <asyncio_example_create_connection>`
      using transports, protocols, and the
      :meth:`loop.create_connection` method.
 
-   * Another similar :ref:`example <asyncio-register-socket-streams>`
+   * Another similar :ref:`example <asyncio_example_create_connection-streams>`
      using the high-level :func:`asyncio.open_connection` function
      and streams.
 
+
+.. _asyncio_example_unix_signals:
 
 Set signal handlers for SIGINT and SIGTERM
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
