@@ -6,6 +6,19 @@
 
 --------------
 
+.. sidebar:: Hello World!
+
+   .. code-block:: python
+
+       import asyncio
+
+       async def main():
+           print('Hello ...')
+           await asyncio.sleep(1)
+           print('... World!')
+
+       asyncio.run(main())
+
 asyncio is a library to write **concurrent** code using
 **async/await** syntax.
 
