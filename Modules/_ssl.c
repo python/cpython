@@ -63,6 +63,7 @@ static PySocketModule_APIObject PySocketModule;
 #include "openssl/err.h"
 #include "openssl/rand.h"
 #include "openssl/bio.h"
+#include "openssl/dh.h"
 
 #ifndef HAVE_X509_VERIFY_PARAM_SET1_HOST
 #  ifdef LIBRESSL_VERSION_NUMBER
