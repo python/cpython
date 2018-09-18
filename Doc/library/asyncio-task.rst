@@ -20,7 +20,8 @@ Coroutines
 
 Coroutines declared with async/await syntax is the preferred way of
 writing asyncio applications.  For example, the following snippet
-of code prints "hello", waits 1 second, and then prints "world"::
+of code (requires Python 3.7+) prints "hello", waits 1 second,
+and then prints "world"::
 
     >>> import asyncio
 
