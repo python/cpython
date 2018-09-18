@@ -15,6 +15,7 @@ from . import base_events
 from . import constants
 from . import events
 from . import futures
+from . import exceptions
 from . import protocols
 from . import sslproto
 from . import transports
@@ -282,7 +283,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
             self._force_close(exc)
         except OSError as exc:
             self._fatal_error(exc, 'Fatal read error on pipe transport')
-        except futures.CancelledError:
+        except exceptions.CancelledError:
             if not self._closing:
                 raise
         else:
@@ -343,6 +344,10 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
 
     def _loop_writing(self, f=None, data=None):
         try:
+            if f is not None and self._write_fut is None and self._closing:
+                # XXX most likely self._force_close() has been called, and
+                # it has set self._write_fut to None.
+                return
             assert f is self._write_fut
             self._write_fut = None
             self._pending_write = 0
@@ -551,11 +556,11 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         try:
             fileno = file.fileno()
         except (AttributeError, io.UnsupportedOperation) as err:
-            raise events.SendfileNotAvailableError("not a regular file")
+            raise exceptions.SendfileNotAvailableError("not a regular file")
         try:
             fsize = os.fstat(fileno).st_size
         except OSError as err:
-            raise events.SendfileNotAvailableError("not a regular file")
+            raise exceptions.SendfileNotAvailableError("not a regular file")
         blocksize = count if count else fsize
         if not blocksize:
             return 0  # empty file
@@ -611,7 +616,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             if f is not None:
                 f.result()  # may raise
             f = self._proactor.recv(self._ssock, 4096)
-        except futures.CancelledError:
+        except exceptions.CancelledError:
             # _close_self_pipe() has been called, stop waiting for data
             return
         except Exception as exc:
@@ -662,7 +667,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 elif self._debug:
                     logger.debug("Accept failed on socket %r",
                                  sock, exc_info=True)
-            except futures.CancelledError:
+            except exceptions.CancelledError:
                 sock.close()
             else:
                 self._accept_futures[sock.fileno()] = f

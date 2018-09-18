@@ -89,6 +89,7 @@ __all__ = [
     "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_unless_bind_unix_socket",
+    "ignore_warnings",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
     "setswitchinterval",
@@ -136,6 +137,22 @@ def _ignore_deprecated_imports(ignore=True):
             yield
     else:
         yield
+
+
+def ignore_warnings(*, category):
+    """Decorator to suppress deprecation warnings.
+
+    Use of context managers to hide warnings make diffs
+    more noisy and tools like 'git blame' less useful.
+    """
+    def decorator(test):
+        @functools.wraps(test)
+        def wrapper(self, *args, **kwargs):
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', category=category)
+                return test(self, *args, **kwargs)
+        return wrapper
+    return decorator
 
 
 def import_module(name, deprecated=False, *, required_on=()):
@@ -1938,8 +1955,8 @@ def set_match_tests(patterns):
 
         def match_test_regex(test_id):
             if regex_match(test_id):
-                # The regex matchs the whole identifier like
-                # 'test.test_os.FileTests.test_access'
+                # The regex matches the whole identifier, for example
+                # 'test.test_os.FileTests.test_access'.
                 return True
             else:
                 # Try to match parts of the test identifier.

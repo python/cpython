@@ -600,8 +600,8 @@ static asdl_seq *ast_for_exprlist(struct compiling *, const node *,
 static expr_ty ast_for_testlist(struct compiling *, const node *);
 static stmt_ty ast_for_classdef(struct compiling *, const node *, asdl_seq *);
 
-static stmt_ty ast_for_with_stmt(struct compiling *, const node *, int);
-static stmt_ty ast_for_for_stmt(struct compiling *, const node *, int);
+static stmt_ty ast_for_with_stmt(struct compiling *, const node *, bool);
+static stmt_ty ast_for_for_stmt(struct compiling *, const node *, bool);
 
 /* Note different signature for ast_for_call */
 static expr_ty ast_for_call(struct compiling *, const node *, expr_ty, bool);
@@ -1569,10 +1569,11 @@ ast_for_decorators(struct compiling *c, const node *n)
 }
 
 static stmt_ty
-ast_for_funcdef_impl(struct compiling *c, const node *n,
-                     asdl_seq *decorator_seq, int is_async)
+ast_for_funcdef_impl(struct compiling *c, const node *n0,
+                     asdl_seq *decorator_seq, bool is_async)
 {
     /* funcdef: 'def' NAME parameters ['->' test] ':' suite */
+    const node * const n = is_async ? CHILD(n0, 1) : n0;
     identifier name;
     arguments_ty args;
     asdl_seq *body;
@@ -1601,7 +1602,7 @@ ast_for_funcdef_impl(struct compiling *c, const node *n,
 
     if (is_async)
         return AsyncFunctionDef(name, args, body, decorator_seq, returns,
-                                LINENO(n), n->n_col_offset, c->c_arena);
+                                LINENO(n0), n0->n_col_offset, c->c_arena);
     else
         return FunctionDef(name, args, body, decorator_seq, returns,
                            LINENO(n), n->n_col_offset, c->c_arena);
@@ -1616,8 +1617,8 @@ ast_for_async_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_se
     assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
     REQ(CHILD(n, 1), funcdef);
 
-    return ast_for_funcdef_impl(c, CHILD(n, 1), decorator_seq,
-                                1 /* is_async */);
+    return ast_for_funcdef_impl(c, n, decorator_seq,
+                                true /* is_async */);
 }
 
 static stmt_ty
@@ -1625,7 +1626,7 @@ ast_for_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 {
     /* funcdef: 'def' NAME parameters ['->' test] ':' suite */
     return ast_for_funcdef_impl(c, n, decorator_seq,
-                                0 /* is_async */);
+                                false /* is_async */);
 }
 
 
@@ -1639,15 +1640,15 @@ ast_for_async_stmt(struct compiling *c, const node *n)
 
     switch (TYPE(CHILD(n, 1))) {
         case funcdef:
-            return ast_for_funcdef_impl(c, CHILD(n, 1), NULL,
-                                        1 /* is_async */);
+            return ast_for_funcdef_impl(c, n, NULL,
+                                        true /* is_async */);
         case with_stmt:
-            return ast_for_with_stmt(c, CHILD(n, 1),
-                                     1 /* is_async */);
+            return ast_for_with_stmt(c, n,
+                                     true /* is_async */);
 
         case for_stmt:
-            return ast_for_for_stmt(c, CHILD(n, 1),
-                                    1 /* is_async */);
+            return ast_for_for_stmt(c, n,
+                                    true /* is_async */);
 
         default:
             PyErr_Format(PyExc_SystemError,
@@ -2814,29 +2815,56 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func, bool allowgen)
                 identifier key, tmp;
                 int k;
 
-                /* chch is test, but must be an identifier? */
-                e = ast_for_expr(c, chch);
-                if (!e)
-                    return NULL;
-                /* f(lambda x: x[0] = 3) ends up getting parsed with
-                 * LHS test = lambda x: x[0], and RHS test = 3.
-                 * SF bug 132313 points out that complaining about a keyword
-                 * then is very confusing.
-                 */
-                if (e->kind == Lambda_kind) {
+                // To remain LL(1), the grammar accepts any test (basically, any
+                // expression) in the keyword slot of a call site.  So, we need
+                // to manually enforce that the keyword is a NAME here.
+                static const int name_tree[] = {
+                    test,
+                    or_test,
+                    and_test,
+                    not_test,
+                    comparison,
+                    expr,
+                    xor_expr,
+                    and_expr,
+                    shift_expr,
+                    arith_expr,
+                    term,
+                    factor,
+                    power,
+                    atom_expr,
+                    atom,
+                    0,
+                };
+                node *expr_node = chch;
+                for (int i = 0; name_tree[i]; i++) {
+                    if (TYPE(expr_node) != name_tree[i])
+                        break;
+                    if (NCH(expr_node) != 1)
+                        break;
+                    expr_node = CHILD(expr_node, 0);
+                }
+                if (TYPE(expr_node) == lambdef) {
+                    // f(lambda x: x[0] = 3) ends up getting parsed with LHS
+                    // test = lambda x: x[0], and RHS test = 3.  Issue #132313
+                    // points out that complaining about a keyword then is very
+                    // confusing.
                     ast_error(c, chch,
                             "lambda cannot contain assignment");
                     return NULL;
                 }
-                else if (e->kind != Name_kind) {
+                else if (TYPE(expr_node) != NAME) {
                     ast_error(c, chch,
-                            "keyword can't be an expression");
+                              "keyword can't be an expression");
                     return NULL;
                 }
-                else if (forbidden_name(c, e->v.Name.id, ch, 1)) {
+                key = new_identifier(STR(expr_node), c);
+                if (key == NULL) {
                     return NULL;
                 }
-                key = e->v.Name.id;
+                if (forbidden_name(c, key, chch, 1)) {
+                    return NULL;
+                }
                 for (k = 0; k < nkeywords; k++) {
                     tmp = ((keyword_ty)asdl_seq_GET(keywords, k))->arg;
                     if (tmp && !PyUnicode_Compare(tmp, key)) {
@@ -3252,6 +3280,8 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
             break;
         case STAR:
             str = PyUnicode_InternFromString("*");
+            if (!str)
+                return NULL;
             if (PyArena_AddPyObject(c->c_arena, str) < 0) {
                 Py_DECREF(str);
                 return NULL;
@@ -3679,8 +3709,9 @@ ast_for_while_stmt(struct compiling *c, const node *n)
 }
 
 static stmt_ty
-ast_for_for_stmt(struct compiling *c, const node *n, int is_async)
+ast_for_for_stmt(struct compiling *c, const node *n0, bool is_async)
 {
+    const node * const n = is_async ? CHILD(n0, 1) : n0;
     asdl_seq *_target, *seq = NULL, *suite_seq;
     expr_ty expression;
     expr_ty target, first;
@@ -3715,7 +3746,7 @@ ast_for_for_stmt(struct compiling *c, const node *n, int is_async)
 
     if (is_async)
         return AsyncFor(target, expression, suite_seq, seq,
-                        LINENO(n), n->n_col_offset,
+                        LINENO(n0), n0->n_col_offset,
                         c->c_arena);
     else
         return For(target, expression, suite_seq, seq,
@@ -3867,8 +3898,9 @@ ast_for_with_item(struct compiling *c, const node *n)
 
 /* with_stmt: 'with' with_item (',' with_item)* ':' suite */
 static stmt_ty
-ast_for_with_stmt(struct compiling *c, const node *n, int is_async)
+ast_for_with_stmt(struct compiling *c, const node *n0, bool is_async)
 {
+    const node * const n = is_async ? CHILD(n0, 1) : n0;
     int i, n_items;
     asdl_seq *items, *body;
 
@@ -3890,7 +3922,7 @@ ast_for_with_stmt(struct compiling *c, const node *n, int is_async)
         return NULL;
 
     if (is_async)
-        return AsyncWith(items, body, LINENO(n), n->n_col_offset, c->c_arena);
+        return AsyncWith(items, body, LINENO(n0), n0->n_col_offset, c->c_arena);
     else
         return With(items, body, LINENO(n), n->n_col_offset, c->c_arena);
 }
