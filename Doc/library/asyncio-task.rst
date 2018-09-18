@@ -75,7 +75,7 @@ To actually run a coroutine asyncio provides three main mechanisms:
 * The :func:`asyncio.create_task` function to run coroutines
   concurrently as asyncio :class:`Tasks <Task>`.
 
-  Let's modify the above example and run two "set_after" coroutines
+  Let's modify the above example and run two ``say_after`` coroutines
   *concurrently*::
 
       async def main():
