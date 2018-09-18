@@ -113,9 +113,9 @@ static int test_forced_io_encoding(void)
     printf("--- Set errors only ---\n");
     check_stdio_details(NULL, "ignore");
     printf("--- Set encoding only ---\n");
-    check_stdio_details("latin-1", NULL);
+    check_stdio_details("iso8859-1", NULL);
     printf("--- Set encoding and errors ---\n");
-    check_stdio_details("latin-1", "replace");
+    check_stdio_details("iso8859-1", "replace");
 
     /* Check calling after initialization fails */
     Py_Initialize();
@@ -328,8 +328,8 @@ dump_config(void)
     printf("dump_refs = %i\n", config->dump_refs);
     printf("malloc_stats = %i\n", config->malloc_stats);
 
-    printf("coerce_c_locale = %i\n", config->coerce_c_locale);
-    printf("coerce_c_locale_warn = %i\n", config->coerce_c_locale_warn);
+    printf("filesystem_encoding = %s\n", config->filesystem_encoding);
+    printf("filesystem_errors = %s\n", config->filesystem_errors);
     printf("utf8_mode = %i\n", config->utf8_mode);
 
     printf("pycache_prefix = %ls\n", config->pycache_prefix);
@@ -374,6 +374,8 @@ dump_config(void)
     printf("user_site_directory = %i\n", config->user_site_directory);
     printf("buffered_stdio = %i\n", config->buffered_stdio);
     ASSERT_EQUAL(config->buffered_stdio, !Py_UnbufferedStdioFlag);
+    printf("stdio_encoding = %s\n", config->stdio_encoding);
+    printf("stdio_errors = %s\n", config->stdio_errors);
 
     /* FIXME: test legacy_windows_fs_encoding */
     /* FIXME: test legacy_windows_stdio */
@@ -381,6 +383,8 @@ dump_config(void)
     printf("_install_importlib = %i\n", config->_install_importlib);
     printf("_check_hash_pycs_mode = %s\n", config->_check_hash_pycs_mode);
     printf("_frozen = %i\n", config->_frozen);
+    printf("_coerce_c_locale = %i\n", config->_coerce_c_locale);
+    printf("_coerce_c_locale_warn = %i\n", config->_coerce_c_locale_warn);
 
 #undef ASSERT_EQUAL
 #undef ASSERT_STR_EQUAL
@@ -478,8 +482,6 @@ static int test_init_from_config(void)
     putenv("PYTHONMALLOCSTATS=0");
     config.malloc_stats = 1;
 
-    /* FIXME: test coerce_c_locale and coerce_c_locale_warn */
-
     putenv("PYTHONUTF8=0");
     Py_UTF8Mode = 0;
     config.utf8_mode = 1;
@@ -532,6 +534,11 @@ static int test_init_from_config(void)
     Py_UnbufferedStdioFlag = 0;
     config.buffered_stdio = 0;
 
+    putenv("PYTHONIOENCODING=cp424");
+    Py_SetStandardStreamEncoding("ascii", "ignore");
+    config.stdio_encoding = "iso8859-1";
+    config.stdio_errors = "replace";
+
     putenv("PYTHONNOUSERSITE=");
     Py_NoUserSiteDirectory = 0;
     config.user_site_directory = 0;
@@ -569,6 +576,7 @@ static void test_init_env_putenvs(void)
     putenv("PYTHONNOUSERSITE=1");
     putenv("PYTHONFAULTHANDLER=1");
     putenv("PYTHONDEVMODE=1");
+    putenv("PYTHONIOENCODING=iso8859-1:replace");
     /* FIXME: test PYTHONWARNINGS */
     /* FIXME: test PYTHONEXECUTABLE */
     /* FIXME: test PYTHONHOME */
@@ -596,8 +604,7 @@ static int test_init_isolated(void)
     /* Test _PyCoreConfig.isolated=1 */
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
-    /* Set coerce_c_locale and utf8_mode to not depend on the locale */
-    config.coerce_c_locale = 0;
+    /* Set utf8_mode to not depend on the locale */
     config.utf8_mode = 0;
     /* Use path starting with "./" avoids a search along the PATH */
     config.program_name = L"./_testembed";

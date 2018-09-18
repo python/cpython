@@ -19,7 +19,13 @@ PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
  */
 PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
                                              const char *errors);
+#endif
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(void) _Py_ClearStandardStreamEncoding(void);
+#endif
 
+
+#ifndef Py_LIMITED_API
 /* PEP 432 Multi-phase initialization API (Private while provisional!) */
 PyAPI_FUNC(_PyInitError) _Py_InitializeCore(
     PyInterpreterState **interp,
@@ -77,7 +83,11 @@ PyAPI_FUNC(int) Py_FdIsInteractive(FILE *, const char *);
 /* Bootstrap __main__ (defined in Modules/main.c) */
 PyAPI_FUNC(int) Py_Main(int argc, wchar_t **argv);
 #ifdef Py_BUILD_CORE
+#  ifdef MS_WINDOWS
+PyAPI_FUNC(int) _Py_WindowsMain(int argc, wchar_t **argv);
+#  else
 PyAPI_FUNC(int) _Py_UnixMain(int argc, char **argv);
+#  endif
 #endif
 
 /* In getpath.c */
@@ -117,7 +127,7 @@ PyAPI_FUNC(const char *) _Py_gitversion(void);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyBuiltin_Init(void);
 PyAPI_FUNC(_PyInitError) _PySys_BeginInit(PyObject **sysmod);
-PyAPI_FUNC(int) _PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config);
+PyAPI_FUNC(int) _PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp);
 PyAPI_FUNC(_PyInitError) _PyImport_Init(PyInterpreterState *interp);
 PyAPI_FUNC(void) _PyExc_Init(PyObject * bltinmod);
 PyAPI_FUNC(_PyInitError) _PyImportHooks_Init(void);
@@ -169,9 +179,12 @@ PyAPI_FUNC(int) _PyOS_URandomNonblock(void *buffer, Py_ssize_t size);
 
 /* Legacy locale support */
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _Py_CoerceLegacyLocale(const _PyCoreConfig *config);
+PyAPI_FUNC(void) _Py_CoerceLegacyLocale(int warn);
 PyAPI_FUNC(int) _Py_LegacyLocaleDetected(void);
 PyAPI_FUNC(char *) _Py_SetLocaleFromEnv(int category);
+#endif
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(int) _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 #endif
 
 #ifdef __cplusplus

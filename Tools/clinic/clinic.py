@@ -2787,7 +2787,7 @@ class str_converter(CConverter):
 
 #
 # This is the fourth or fifth rewrite of registering all the
-# crazy string converter format units.  Previous approaches hid
+# string converter format units.  Previous approaches hid
 # bugs--generally mismatches between the semantics of the format
 # unit and the arguments necessary to represent those semantics
 # properly.  Hopefully with this approach we'll get it 100% right.

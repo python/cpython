@@ -559,15 +559,18 @@ select_error(void)
 #  define SET_SOCK_ERROR(err) WSASetLastError(err)
 #  define SOCK_TIMEOUT_ERR WSAEWOULDBLOCK
 #  define SOCK_INPROGRESS_ERR WSAEWOULDBLOCK
-#  define SUPPRESS_DEPRECATED_CALL __pragma(warning(suppress: 4996))
 #else
 #  define GET_SOCK_ERROR errno
 #  define SET_SOCK_ERROR(err) do { errno = err; } while (0)
 #  define SOCK_TIMEOUT_ERR EWOULDBLOCK
 #  define SOCK_INPROGRESS_ERR EINPROGRESS
-#  define SUPPRESS_DEPRECATED_CALL
 #endif
 
+#ifdef _MSC_VER
+#  define SUPPRESS_DEPRECATED_CALL __pragma(warning(suppress: 4996))
+#else
+#  define SUPPRESS_DEPRECATED_CALL
+#endif
 
 #ifdef MS_WINDOWS
 /* Does WSASocket() support the WSA_FLAG_NO_HANDLE_INHERIT flag? */
@@ -1580,7 +1583,7 @@ idna_converter(PyObject *obj, struct maybe_idna *data)
 
 static int
 getsockaddrarg(PySocketSockObject *s, PyObject *args,
-               struct sockaddr *addr_ret, int *len_ret)
+               struct sockaddr *addr_ret, int *len_ret, const char *caller)
 {
     switch (s->sock_family) {
 
@@ -1646,13 +1649,17 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         if (!PyTuple_Check(args)) {
             PyErr_Format(
                 PyExc_TypeError,
-                "getsockaddrarg: "
-                "AF_NETLINK address must be tuple, not %.500s",
-                Py_TYPE(args)->tp_name);
+                "%s(): AF_NETLINK address must be tuple, not %.500s",
+                caller, Py_TYPE(args)->tp_name);
             return 0;
         }
-        if (!PyArg_ParseTuple(args, "II:getsockaddrarg", &pid, &groups))
+        if (!PyArg_ParseTuple(args,
+                              "II;AF_NETLINK address must be a pair "
+                              "(pid, groups)",
+                              &pid, &groups))
+        {
             return 0;
+        }
         addr->nl_family = AF_NETLINK;
         addr->nl_pid = pid;
         addr->nl_groups = groups;
@@ -1700,14 +1707,22 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         if (!PyTuple_Check(args)) {
             PyErr_Format(
                 PyExc_TypeError,
-                "getsockaddrarg: "
-                "AF_INET address must be tuple, not %.500s",
-                Py_TYPE(args)->tp_name);
+                "%s(): AF_INET address must be tuple, not %.500s",
+                caller, Py_TYPE(args)->tp_name);
             return 0;
         }
-        if (!PyArg_ParseTuple(args, "O&i:getsockaddrarg",
+        if (!PyArg_ParseTuple(args,
+                              "O&i;AF_INET address must be a pair "
+                              "(host, port)",
                               idna_converter, &host, &port))
+        {
+            assert(PyErr_Occurred());
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_Format(PyExc_OverflowError,
+                             "%s(): port must be 0-65535.", caller);
+            }
             return 0;
+        }
         addr=(struct sockaddr_in*)addr_ret;
         result = setipaddr(host.buf, (struct sockaddr *)addr,
                            sizeof(*addr),  AF_INET);
@@ -1715,9 +1730,9 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         if (result < 0)
             return 0;
         if (port < 0 || port > 0xffff) {
-            PyErr_SetString(
+            PyErr_Format(
                 PyExc_OverflowError,
-                "getsockaddrarg: port must be 0-65535.");
+                "%s(): port must be 0-65535.", caller);
             return 0;
         }
         addr->sin_family = AF_INET;
@@ -1737,14 +1752,21 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         if (!PyTuple_Check(args)) {
             PyErr_Format(
                 PyExc_TypeError,
-                "getsockaddrarg: "
-                "AF_INET6 address must be tuple, not %.500s",
-                Py_TYPE(args)->tp_name);
+                "%s(): AF_INET6 address must be tuple, not %.500s",
+                caller, Py_TYPE(args)->tp_name);
             return 0;
         }
-        if (!PyArg_ParseTuple(args, "O&i|II",
+        if (!PyArg_ParseTuple(args,
+                              "O&i|II;AF_INET6 address must be a tuple "
+                              "(host, port[, flowinfo[, scopeid]])",
                               idna_converter, &host, &port, &flowinfo,
-                              &scope_id)) {
+                              &scope_id))
+        {
+            assert(PyErr_Occurred());
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_Format(PyExc_OverflowError,
+                             "%s(): port must be 0-65535.", caller);
+            }
             return 0;
         }
         addr = (struct sockaddr_in6*)addr_ret;
@@ -1754,15 +1776,15 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         if (result < 0)
             return 0;
         if (port < 0 || port > 0xffff) {
-            PyErr_SetString(
+            PyErr_Format(
                 PyExc_OverflowError,
-                "getsockaddrarg: port must be 0-65535.");
+                "%s(): port must be 0-65535.", caller);
             return 0;
         }
         if (flowinfo > 0xfffff) {
-            PyErr_SetString(
+            PyErr_Format(
                 PyExc_OverflowError,
-                "getsockaddrarg: flowinfo must be 0-1048575.");
+                "%s(): flowinfo must be 0-1048575.", caller);
             return 0;
         }
         addr->sin6_family = s->sock_family;
@@ -1788,8 +1810,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             _BT_L2_MEMB(addr, family) = AF_BLUETOOTH;
             if (!PyArg_ParseTuple(args, "si", &straddr,
                                   &_BT_L2_MEMB(addr, psm))) {
-                PyErr_SetString(PyExc_OSError, "getsockaddrarg: "
-                                "wrong format");
+                PyErr_Format(PyExc_OSError,
+                             "%s(): wrong format", caller);
                 return 0;
             }
             if (setbdaddr(straddr, &_BT_L2_MEMB(addr, bdaddr)) < 0)
@@ -1807,8 +1829,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             _BT_RC_MEMB(addr, family) = AF_BLUETOOTH;
             if (!PyArg_ParseTuple(args, "si", &straddr,
                                   &_BT_RC_MEMB(addr, channel))) {
-                PyErr_SetString(PyExc_OSError, "getsockaddrarg: "
-                                "wrong format");
+                PyErr_Format(PyExc_OSError,
+                             "%s(): wrong format", caller);
                 return 0;
             }
             if (setbdaddr(straddr, &_BT_RC_MEMB(addr, bdaddr)) < 0)
@@ -1824,8 +1846,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             const char *straddr;
             _BT_HCI_MEMB(addr, family) = AF_BLUETOOTH;
             if (!PyBytes_Check(args)) {
-                PyErr_SetString(PyExc_OSError, "getsockaddrarg: "
-                    "wrong format");
+                PyErr_Format(PyExc_OSError, "%s: "
+                             "wrong format", caller);
                 return 0;
             }
             straddr = PyBytes_AS_STRING(args);
@@ -1834,8 +1856,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 #else  /* __NetBSD__ || __DragonFly__ */
             _BT_HCI_MEMB(addr, family) = AF_BLUETOOTH;
             if (!PyArg_ParseTuple(args, "i", &_BT_HCI_MEMB(addr, dev))) {
-                PyErr_SetString(PyExc_OSError, "getsockaddrarg: "
-                                "wrong format");
+                PyErr_Format(PyExc_OSError,
+                             "%s(): wrong format", caller);
                 return 0;
             }
 #endif /* !(__NetBSD__ || __DragonFly__) */
@@ -1851,8 +1873,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             addr = (struct sockaddr_sco *)addr_ret;
             _BT_SCO_MEMB(addr, family) = AF_BLUETOOTH;
             if (!PyBytes_Check(args)) {
-                PyErr_SetString(PyExc_OSError, "getsockaddrarg: "
-                                "wrong format");
+                PyErr_Format(PyExc_OSError,
+                             "%s(): wrong format", caller);
                 return 0;
             }
             straddr = PyBytes_AS_STRING(args);
@@ -1864,7 +1886,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         }
 #endif /* !__FreeBSD__ */
         default:
-            PyErr_SetString(PyExc_OSError, "getsockaddrarg: unknown Bluetooth protocol");
+            PyErr_Format(PyExc_OSError,
+                         "%s(): unknown Bluetooth protocol", caller);
             return 0;
         }
     }
@@ -1878,21 +1901,32 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         const char *interfaceName;
         int protoNumber;
         int hatype = 0;
-        int pkttype = 0;
+        int pkttype = PACKET_HOST;
         Py_buffer haddr = {NULL, NULL};
 
         if (!PyTuple_Check(args)) {
             PyErr_Format(
                 PyExc_TypeError,
-                "getsockaddrarg: "
-                "AF_PACKET address must be tuple, not %.500s",
-                Py_TYPE(args)->tp_name);
+                "%s(): AF_PACKET address must be tuple, not %.500s",
+                caller, Py_TYPE(args)->tp_name);
             return 0;
         }
-        if (!PyArg_ParseTuple(args, "si|iiy*", &interfaceName,
-                              &protoNumber, &pkttype, &hatype,
+        /* XXX: improve the default error message according to the
+           documentation of AF_PACKET, which would be added as part
+           of bpo-25041. */
+        if (!PyArg_ParseTuple(args,
+                              "si|iiy*;AF_PACKET address must be a tuple of "
+                              "two to five elements",
+                              &interfaceName, &protoNumber, &pkttype, &hatype,
                               &haddr))
+        {
+            assert(PyErr_Occurred());
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_Format(PyExc_OverflowError,
+                             "%s(): address argument out of range", caller);
+            }
             return 0;
+        }
         strncpy(ifr.ifr_name, interfaceName, sizeof(ifr.ifr_name));
         ifr.ifr_name[(sizeof(ifr.ifr_name))-1] = '\0';
         if (ioctl(s->sock_fd, SIOCGIFINDEX, &ifr) < 0) {
@@ -1907,9 +1941,9 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             return 0;
         }
         if (protoNumber < 0 || protoNumber > 0xffff) {
-            PyErr_SetString(
+            PyErr_Format(
                 PyExc_OverflowError,
-                "getsockaddrarg: protoNumber must be 0-65535.");
+                "%s(): proto must be 0-65535.", caller);
             PyBuffer_Release(&haddr);
             return 0;
         }
@@ -1941,16 +1975,18 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         if (!PyTuple_Check(args)) {
             PyErr_Format(
                 PyExc_TypeError,
-                "getsockaddrarg: "
-                "AF_TIPC address must be tuple, not %.500s",
-                Py_TYPE(args)->tp_name);
+                "%s(): AF_TIPC address must be tuple, not %.500s",
+                caller, Py_TYPE(args)->tp_name);
             return 0;
         }
 
         if (!PyArg_ParseTuple(args,
-                                "IIII|I;Invalid TIPC address format",
-                                &atype, &v1, &v2, &v3, &scope))
+                              "IIII|I;AF_TIPC address must be a tuple "
+                              "(addr_type, v1, v2, v3[, scope])",
+                              &atype, &v1, &v2, &v3, &scope))
+        {
             return 0;
+        }
 
         addr = (struct sockaddr_tipc *) addr_ret;
         memset(addr, 0, sizeof(struct sockaddr_tipc));
@@ -1999,9 +2035,19 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             Py_ssize_t len;
             addr = (struct sockaddr_can *)addr_ret;
 
-            if (!PyArg_ParseTuple(args, "O&", PyUnicode_FSConverter,
-                                              &interfaceName))
+            if (!PyTuple_Check(args)) {
+                PyErr_Format(PyExc_TypeError,
+                             "%s(): AF_CAN address must be tuple, not %.500s",
+                             caller, Py_TYPE(args)->tp_name);
                 return 0;
+            }
+            if (!PyArg_ParseTuple(args,
+                                  "O&;AF_CAN address must be a tuple "
+                                  "(interface, )",
+                                  PyUnicode_FSConverter, &interfaceName))
+            {
+                return 0;
+            }
 
             len = PyBytes_GET_SIZE(interfaceName);
 
@@ -2078,8 +2124,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         }
 #endif /* CAN_ISOTP */
         default:
-            PyErr_SetString(PyExc_OSError,
-                            "getsockaddrarg: unsupported CAN protocol");
+            PyErr_Format(PyExc_OSError,
+                         "%s(): unsupported CAN protocol", caller);
             return 0;
         }
 #endif /* AF_CAN && SIOCGIFINDEX */
@@ -2125,9 +2171,9 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 addr->sc_unit = 0;
             } else if (!PyArg_ParseTuple(args, "II",
                                          &(addr->sc_id), &(addr->sc_unit))) {
-                PyErr_SetString(PyExc_TypeError, "getsockaddrarg: "
-                                "expected str or tuple of two ints");
-
+                PyErr_Format(PyExc_TypeError,
+                             "%s(): PF_SYSTEM address must be a str or "
+                             "a pair (id, unit)", caller);
                 return 0;
             }
 
@@ -2136,8 +2182,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         }
 #endif /* SYSPROTO_CONTROL */
         default:
-            PyErr_SetString(PyExc_OSError,
-                            "getsockaddrarg: unsupported PF_SYSTEM protocol");
+            PyErr_Format(PyExc_OSError,
+                         "%s(): unsupported PF_SYSTEM protocol", caller);
             return 0;
         }
 #endif /* PF_SYSTEM */
@@ -2152,9 +2198,19 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         memset(sa, 0, sizeof(*sa));
         sa->salg_family = AF_ALG;
 
-        if (!PyArg_ParseTuple(args, "ss|HH:getsockaddrarg",
-                                &type, &name, &sa->salg_feat, &sa->salg_mask))
+        if (!PyTuple_Check(args)) {
+            PyErr_Format(PyExc_TypeError,
+                         "%s(): AF_ALG address must be tuple, not %.500s",
+                         caller, Py_TYPE(args)->tp_name);
             return 0;
+        }
+        if (!PyArg_ParseTuple(args,
+                              "ss|HH;AF_ALG address must be a tuple "
+                              "(type, name[, feat[, mask]])",
+                              &type, &name, &sa->salg_feat, &sa->salg_mask))
+        {
+            return 0;
+        }
         /* sockaddr_alg has fixed-sized char arrays for type and name */
         if (strlen(type) > sizeof(sa->salg_type)) {
             PyErr_SetString(PyExc_ValueError, "AF_ALG type too long.");
@@ -2175,7 +2231,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     /* More cases here... */
 
     default:
-        PyErr_SetString(PyExc_OSError, "getsockaddrarg: bad family");
+        PyErr_Format(PyExc_OSError, "%s(): bad family", caller);
         return 0;
 
     }
@@ -2907,8 +2963,9 @@ sock_bind(PySocketSockObject *s, PyObject *addro)
     int addrlen;
     int res;
 
-    if (!getsockaddrarg(s, addro, SAS2SA(&addrbuf), &addrlen))
+    if (!getsockaddrarg(s, addro, SAS2SA(&addrbuf), &addrlen, "bind")) {
         return NULL;
+    }
     Py_BEGIN_ALLOW_THREADS
     res = bind(s->sock_fd, SAS2SA(&addrbuf), addrlen);
     Py_END_ALLOW_THREADS
@@ -2922,7 +2979,7 @@ PyDoc_STRVAR(bind_doc,
 \n\
 Bind the socket to a local address.  For IP sockets, the address is a\n\
 pair (host, port); the host must refer to the local host. For raw packet\n\
-sockets the address is a tuple (ifname, proto [,pkttype [,hatype]])");
+sockets the address is a tuple (ifname, proto [,pkttype [,hatype [,addr]]])");
 
 
 /* s.close() method.
@@ -3071,8 +3128,9 @@ sock_connect(PySocketSockObject *s, PyObject *addro)
     int addrlen;
     int res;
 
-    if (!getsockaddrarg(s, addro, SAS2SA(&addrbuf), &addrlen))
+    if (!getsockaddrarg(s, addro, SAS2SA(&addrbuf), &addrlen, "connect")) {
         return NULL;
+    }
 
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, 1);
     if (res < 0)
@@ -3097,8 +3155,9 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
     int addrlen;
     int res;
 
-    if (!getsockaddrarg(s, addro, SAS2SA(&addrbuf), &addrlen))
+    if (!getsockaddrarg(s, addro, SAS2SA(&addrbuf), &addrlen, "connect_ex")) {
         return NULL;
+    }
 
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, 0);
     if (res < 0)
@@ -4097,7 +4156,7 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
         return select_error();
     }
 
-    if (!getsockaddrarg(s, addro, SAS2SA(&addrbuf), &addrlen)) {
+    if (!getsockaddrarg(s, addro, SAS2SA(&addrbuf), &addrlen, "sendto")) {
         PyBuffer_Release(&pbuf);
         return NULL;
     }
@@ -4228,8 +4287,11 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
 
     /* Parse destination address. */
     if (addr_arg != NULL && addr_arg != Py_None) {
-        if (!getsockaddrarg(s, addr_arg, SAS2SA(&addrbuf), &addrlen))
+        if (!getsockaddrarg(s, addr_arg, SAS2SA(&addrbuf), &addrlen,
+                            "sendmsg"))
+        {
             goto finally;
+        }
         msg.msg_name = &addrbuf;
         msg.msg_namelen = addrlen;
     }

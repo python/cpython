@@ -91,9 +91,17 @@ Other Language Changes
   was lifted.
   (Contributed by Serhiy Storchaka in :issue:`32489`.)
 
+* The ``int`` type now has a new ``as_integer_ratio`` method compatible
+  with the existing ``float.as_integer_ratio`` method.
+  (Contributed by Lisa Roach in :issue:`33073`.)
+
 * Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
+* The syntax allowed for keyword names in function calls was further
+  restricted. In particular, ``f((keyword)=arg)`` is no longer allowed. It was
+  never intended to permit more than a bare name on the left-hand side of a
+  keyword argument assignment term. See :issue:`34641`.
 
 New Modules
 ===========
@@ -156,6 +164,10 @@ Optimizations
   objects (e.g. tuple, list, dict) size is reduced 4 or 8 bytes.
   (Contributed by Inada Naoki in :issue:`33597`)
 
+* :class:`uuid.UUID` now uses ``__slots__`` to reduce its memory footprint.
+  Note that this means that instances can no longer be weak-referenced and
+  that arbitrary attributes can no longer be added to them.
+
 
 Build and C API Changes
 =======================
@@ -179,15 +191,6 @@ Build and C API Changes
 
   (Contributed by Antoine Pitrou in :issue:`32430`.)
 
-* The :meth:`__getitem__` methods of :class:`xml.dom.pulldom.DOMEventStream`,
-  :class:`wsgiref.util.FileWrapper` and :class:`fileinput.FileInput` have been
-  deprecated.
-
-  Implementations of these methods have been ignoring their *index* parameter,
-  and returning the next item instead.
-
-  (Contributed by Berker Peksag in :issue:`9372`.)
-
 
 Deprecated
 ==========
@@ -200,9 +203,18 @@ Deprecated
 
 * Passing an object that is not an instance of
   :class:`concurrent.futures.ThreadPoolExecutor` to
-  :meth:`asyncio.AbstractEventLoop.set_default_executor()` is
+  :meth:`asyncio.loop.set_default_executor()` is
   deprecated and will be prohibited in Python 3.9.
   (Contributed by Elvis Pranskevichus in :issue:`34075`.)
+
+* The :meth:`__getitem__` methods of :class:`xml.dom.pulldom.DOMEventStream`,
+  :class:`wsgiref.util.FileWrapper` and :class:`fileinput.FileInput` have been
+  deprecated.
+
+  Implementations of these methods have been ignoring their *index* parameter,
+  and returning the next item instead.
+
+  (Contributed by Berker Peksag in :issue:`9372`.)
 
 
 Removed
@@ -285,10 +297,23 @@ Changes in the Python API
 
 * Asyncio tasks can now be named, either by passing the ``name`` keyword
   argument to :func:`asyncio.create_task` or
-  the :meth:`~asyncio.AbstractEventLoop.create_task` event loop method, or by
+  the :meth:`~asyncio.loop.create_task` event loop method, or by
   calling the :meth:`~asyncio.Task.set_name` method on the task object. The
   task name is visible in the ``repr()`` output of :class:`asyncio.Task` and
   can also be retrieved using the :meth:`~asyncio.Task.get_name` method.
+
+* The :meth:`mmap.flush() <mmap.mmap.flush>` method now returns ``None`` on
+  success and raises an exception on error under all platforms.  Previously,
+  its behavior was platform-depended: a nonzero value was returned on success;
+  zero was returned on error under Windows.  A zero value was returned on
+  success; an exception was raised on error under Unix.
+  (Contributed by Berker Peksag in :issue:`2122`.)
+
+* The function :func:`math.factorial` no longer accepts arguments that are not
+  int-like. (Contributed by Pablo Galindo in :issue:`33083`.)
+
+* :class:`uuid.UUID` now uses ``__slots__``, therefore instances can no longer
+  be weak-referenced and attributes can no longer be added.
 
 
 CPython bytecode changes

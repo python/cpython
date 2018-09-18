@@ -63,8 +63,40 @@ typedef struct {
     int show_alloc_count;   /* -X showalloccount */
     int dump_refs;          /* PYTHONDUMPREFS */
     int malloc_stats;       /* PYTHONMALLOCSTATS */
-    int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
-    int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
+
+    /* Python filesystem encoding and error handler:
+       sys.getfilesystemencoding() and sys.getfilesystemencodeerrors().
+
+       Default encoding and error handler:
+
+       * if Py_SetStandardStreamEncoding() has been called: they have the
+         highest priority;
+       * PYTHONIOENCODING environment variable;
+       * The UTF-8 Mode uses UTF-8/surrogateescape;
+       * locale encoding: ANSI code page on Windows, UTF-8 on Android,
+         LC_CTYPE locale encoding on other platforms;
+       * On Windows, "surrogateescape" error handler;
+       * "surrogateescape" error handler if the LC_CTYPE locale is "C" or "POSIX";
+       * "surrogateescape" error handler if the LC_CTYPE locale has been coerced
+         (PEP 538);
+       * "strict" error handler.
+
+       Supported error handlers: "strict", "surrogateescape" and
+       "surrogatepass". The surrogatepass error handler is only supported
+       if Py_DecodeLocale() and Py_EncodeLocale() use directly the UTF-8 codec;
+       it's only used on Windows.
+
+       initfsencoding() updates the encoding to the Python codec name.
+       For example, "ANSI_X3.4-1968" is replaced with "ascii".
+
+       On Windows, sys._enablelegacywindowsfsencoding() sets the
+       encoding/errors to mbcs/replace at runtime.
+
+
+       See Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors.
+       */
+    char *filesystem_encoding;
+    char *filesystem_errors;
 
     /* Enable UTF-8 mode?
        Set by -X utf8 command line option and PYTHONUTF8 environment variable.
@@ -203,6 +235,18 @@ typedef struct {
        If set to -1 (default), it is set to !Py_UnbufferedStdioFlag. */
     int buffered_stdio;
 
+    /* Encoding of sys.stdin, sys.stdout and sys.stderr.
+       Value set from PYTHONIOENCODING environment variable and
+       Py_SetStandardStreamEncoding() function.
+       See also 'stdio_errors' attribute. */
+    char *stdio_encoding;
+
+    /* Error handler of sys.stdin and sys.stdout.
+       Value set from PYTHONIOENCODING environment variable and
+       Py_SetStandardStreamEncoding() function.
+       See also 'stdio_encoding' attribute. */
+    char *stdio_errors;
+
 #ifdef MS_WINDOWS
     /* If greater than 1, use the "mbcs" encoding instead of the UTF-8
        encoding for the filesystem encoding.
@@ -251,6 +295,30 @@ typedef struct {
        If set to -1 (default), inherit Py_FrozenFlag value. */
     int _frozen;
 
+    /* C locale coercion (PEP 538).
+
+       The option is enabled by the PYTHONCOERCECLOCALE environment
+       variable. The option is also enabled if the LC_CTYPE locale is "C"
+       and a target locale (ex: "C.UTF-8") is supported by the platform.
+
+       Py_Initialize() and Py_Main() must not enable C locale coercion: it is
+       always disabled. The option can only be enabled by the Python program
+       ("python3).
+
+       See also the _coerce_c_locale_warn option. */
+    int _coerce_c_locale;
+
+    /* C locale coercion warning (PEP 538).
+
+       Enabled by the PYTHONCOERCECLOCALE=warn environment variable.
+
+       Py_Initialize() and Py_Main() must not enable C locale coercion warning:
+       it is always disabled. The warning can only be enabled by the Python
+       program ("python3).
+
+       See also the _coerce_c_locale option. */
+    int _coerce_c_locale_warn;
+
 } _PyCoreConfig;
 
 #ifdef MS_WINDOWS
@@ -268,7 +336,8 @@ typedef struct {
         .use_hash_seed = -1, \
         .faulthandler = -1, \
         .tracemalloc = -1, \
-        .coerce_c_locale = -1, \
+        ._coerce_c_locale = 0, \
+        ._coerce_c_locale_warn = 0, \
         .utf8_mode = -1, \
         .argc = -1, \
         .nmodule_search_path = -1, \
@@ -310,6 +379,18 @@ PyAPI_FUNC(int) _PyCoreConfig_GetEnvDup(
     wchar_t **dest,
     wchar_t *wname,
     char *name);
+#endif
+
+
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(int) _Py_SetFileSystemEncoding(
+    const char *encoding,
+    const char *errors);
+PyAPI_FUNC(void) _Py_ClearFileSystemEncoding(void);
+#endif
+
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(PyObject*) _Py_wstrlist_as_pylist(int len, wchar_t **list);
 #endif
 
 

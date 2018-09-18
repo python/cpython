@@ -5,6 +5,7 @@ from test.support import run_unittest, verbose, requires_IEEE_754
 from test import support
 import unittest
 import itertools
+import decimal
 import math
 import os
 import platform
@@ -509,6 +510,10 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.factorial, -10**100)
         self.assertRaises(ValueError, math.factorial, -1e100)
         self.assertRaises(ValueError, math.factorial, math.pi)
+
+    def testFactorialNonIntegers(self):
+        self.assertRaises(TypeError, math.factorial, decimal.Decimal(5.2))
+        self.assertRaises(TypeError, math.factorial, "5")
 
     # Other implementations may place different upper bounds.
     @support.cpython_only
@@ -1350,8 +1355,6 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.tanh(NAN)))
 
     @requires_IEEE_754
-    @unittest.skipIf(sysconfig.get_config_var('TANH_PRESERVES_ZERO_SIGN') == 0,
-                     "system tanh() function doesn't copy the sign")
     def testTanhSign(self):
         # check that tanh(-0.) == -0. on IEEE 754 systems
         self.assertEqual(math.tanh(-0.), -0.)

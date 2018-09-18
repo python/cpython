@@ -1,6 +1,7 @@
 import collections.abc
 import io
 import os
+import sys
 import errno
 import pathlib
 import pickle
@@ -2202,6 +2203,29 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             self.assertEqual(p5.expanduser(), p5)
             self.assertEqual(p6.expanduser(), p6)
             self.assertRaises(RuntimeError, p7.expanduser)
+
+    @unittest.skipIf(sys.platform != "darwin",
+                     "Bad file descriptor in /dev/fd affects only macOS")
+    def test_handling_bad_descriptor(self):
+        try:
+            file_descriptors = list(pathlib.Path('/dev/fd').rglob("*"))[3:]
+            if not file_descriptors:
+                self.skipTest("no file descriptors - issue was not reproduced")
+            # Checking all file descriptors because there is no guarantee
+            # which one will fail.
+            for f in file_descriptors:
+                f.exists()
+                f.is_dir()
+                f.is_file()
+                f.is_symlink()
+                f.is_block_device()
+                f.is_char_device()
+                f.is_fifo()
+                f.is_socket()
+        except OSError as e:
+            if e.errno == errno.EBADF:
+                self.fail("Bad file descriptor not handled.")
+            raise
 
 
 @only_nt
