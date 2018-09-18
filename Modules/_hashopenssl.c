@@ -348,7 +348,7 @@ EVP_repr(EVPobject *self)
 /*[clinic input]
 _hashlib.HASH.__init__ as EVP_tp_init
 
-    name as name_obj: unicode
+    name as name_obj: object
     string as data_obj: object(py_default="b''") = NULL
 
 A hash is an object used to calculate a checksum of a string of information.
@@ -368,7 +368,7 @@ digest_size -- number of bytes in this hashes output
 
 static int
 EVP_tp_init_impl(EVPobject *self, PyObject *name_obj, PyObject *data_obj)
-/*[clinic end generated code: output=44766d27757cf851 input=407bb666f22797e7]*/
+/*[clinic end generated code: output=44766d27757cf851 input=dac22658387f9b5d]*/
 {
     Py_buffer view;
     char *nameStr;
@@ -376,6 +376,13 @@ EVP_tp_init_impl(EVPobject *self, PyObject *name_obj, PyObject *data_obj)
 
     if (data_obj)
         GET_BUFFER_VIEW_OR_ERROR(data_obj, &view, return -1);
+
+    if (!PyArg_Parse(name_obj, "s", &nameStr)) {
+        PyErr_SetString(PyExc_TypeError, "name must be a string");
+        if (data_obj)
+            PyBuffer_Release(&view);
+        return -1;
+    }
 
     digest = EVP_get_digestbyname(nameStr);
     if (!digest) {
@@ -495,7 +502,6 @@ EVPnew(PyObject *name_obj,
 /* The module-level function: new() */
 
 /*[clinic input]
-@classmethod
 _hashlib.new as EVP_new
 
     name as name_obj: object
@@ -510,8 +516,8 @@ The MD5 and SHA1 algorithms are always supported.
 [clinic start generated code]*/
 
 static PyObject *
-EVP_new_impl(PyTypeObject *type, PyObject *name_obj, PyObject *data_obj)
-/*[clinic end generated code: output=c32d5b2891606e15 input=4afc55412501a1fb]*/
+EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj)
+/*[clinic end generated code: output=9e7cf664e04b0226 input=8b50a062cb4cdcaf]*/
 {
     Py_buffer view = { 0 };
     PyObject *ret_obj;
@@ -1039,7 +1045,7 @@ GEN_CONSTRUCTOR(sha512)
 /* List of functions exported by this module */
 
 static struct PyMethodDef EVP_functions[] = {
-    {"new", (PyCFunction)EVP_new, METH_VARARGS|METH_KEYWORDS, EVP_new__doc__},
+    EVP_NEW_METHODDEF
 #ifdef PY_PBKDF2_HMAC
     PBKDF2_HMAC_METHODDEF
 #endif

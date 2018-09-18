@@ -91,7 +91,7 @@ EVP_tp_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"name", "string", NULL};
-    static _PyArg_Parser _parser = {"U|O:HASH", _keywords, 0};
+    static _PyArg_Parser _parser = {"O|O:HASH", _keywords, 0};
     PyObject *name_obj;
     PyObject *data_obj = NULL;
 
@@ -106,7 +106,7 @@ exit:
 }
 
 PyDoc_STRVAR(EVP_new__doc__,
-"new($type, /, name, string=None)\n"
+"new($module, /, name, string=None)\n"
 "--\n"
 "\n"
 "Return a new hash object using the named algorithm.\n"
@@ -117,13 +117,13 @@ PyDoc_STRVAR(EVP_new__doc__,
 "The MD5 and SHA1 algorithms are always supported.");
 
 #define EVP_NEW_METHODDEF    \
-    {"new", (PyCFunction)EVP_new, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, EVP_new__doc__},
+    {"new", (PyCFunction)EVP_new, METH_FASTCALL|METH_KEYWORDS, EVP_new__doc__},
 
 static PyObject *
-EVP_new_impl(PyTypeObject *type, PyObject *name_obj, PyObject *data_obj);
+EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj);
 
 static PyObject *
-EVP_new(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+EVP_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", "string", NULL};
@@ -135,7 +135,7 @@ EVP_new(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *k
         &name_obj, &data_obj)) {
         goto exit;
     }
-    return_value = EVP_new_impl(type, name_obj, data_obj);
+    return_value = EVP_new_impl(module, name_obj, data_obj);
 
 exit:
     return return_value;
@@ -292,4 +292,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=a13351501fa314de input=a9049054013a1b77]*/
+/*[clinic end generated code: output=69c6e63372ece993 input=a9049054013a1b77]*/
