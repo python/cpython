@@ -2574,6 +2574,11 @@ xmlparser(PyObject* self_, PyObject* args, PyObject* kw)
         PyErr_NoMemory();
         return NULL;
     }
+    /* expat < 2.1.0 has no XML_SetHashSalt() */
+    if (EXPAT(SetHashSalt) != NULL) {
+        EXPAT(SetHashSalt)(self->parser,
+                           (unsigned long)_Py_HashSecret.prefix);
+    }
 
     ALLOC(sizeof(XMLParserObject), "create expatparser");
 

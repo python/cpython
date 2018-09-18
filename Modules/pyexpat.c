@@ -2042,6 +2042,11 @@ MODULE_INITFUNC(void)
     capi.SetProcessingInstructionHandler = XML_SetProcessingInstructionHandler;
     capi.SetUnknownEncodingHandler = XML_SetUnknownEncodingHandler;
     capi.SetUserData = XML_SetUserData;
+#if XML_COMBINED_VERSION >= 20100
+    capi.SetHashSalt = XML_SetHashSalt;
+#else
+    capi.SetHashSalt = NULL;
+#endif
 
     /* export using capsule */
     capi_object = PyCapsule_New(&capi, PyExpat_CAPSULE_NAME, NULL);
