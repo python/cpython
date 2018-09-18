@@ -159,13 +159,16 @@ class CmdLineTest(unittest.TestCase):
         env = os.environ.copy()
         # Use C locale to get ascii for the locale encoding
         env['LC_ALL'] = 'C'
-        env['PYTHONCOERCECLOCALE'] = '0'
         code = (
             b'import locale; '
             b'print(ascii("' + undecodable + b'"), '
                 b'locale.getpreferredencoding())')
         p = subprocess.Popen(
-            [sys.executable, "-c", code],
+            [sys.executable,
+             # Disable C locale coercion and UTF-8 Mode to not use UTF-8
+             "-X", "coerce_c_locale=0",
+             "-X", "utf8=0",
+             "-c", code],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             env=env)
         stdout, stderr = p.communicate()
