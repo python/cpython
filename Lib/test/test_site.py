@@ -159,13 +159,11 @@ class HelperFunctionsTests(unittest.TestCase):
         # Issue 5258
         pth_dir, pth_fn = self.make_pth("abc\x00def\n")
         with captured_stderr() as err_out:
-            site.addpackage(pth_dir, pth_fn, set())
-        self.assertRegex(err_out.getvalue(), "line 1")
-        self.assertRegex(err_out.getvalue(),
-            re.escape(os.path.join(pth_dir, pth_fn)))
-        # XXX: ditto previous XXX comment.
-        self.assertRegex(err_out.getvalue(), 'Traceback')
-        self.assertRegex(err_out.getvalue(), 'ValueError')
+            self.assertFalse(site.addpackage(pth_dir, pth_fn, set()))
+        self.assertEqual(err_out.getvalue(), "")
+        for path in sys.path:
+            if isinstance(path, str):
+                self.assertNotIn("abc\x00def", path)
 
     def test_addsitedir(self):
         # Same tests for test_addpackage since addsitedir() essentially just
