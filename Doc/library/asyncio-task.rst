@@ -233,7 +233,8 @@ Sleeping
    If *result* is provided, it is returned to the caller
    when the coroutine completes.
 
-   The *loop* argument is deprecated.
+   The *loop* argument is deprecated and scheduled for removal
+   in Python 4.0.
 
    .. _asyncio_example_sleep:
 
@@ -388,6 +389,9 @@ Timeouts
 
    If the wait is cancelled, the future *fut* is also cancelled.
 
+   The *loop* argument is deprecated and scheduled for removal
+   in Python 4.0.
+
    .. _asyncio_example_waitfor:
 
    Example::
@@ -430,6 +434,9 @@ Waiting Primitives
    scheduled as a Task.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
+
+   The *loop* argument is deprecated and scheduled for removal
+   in Python 4.0.
 
    *timeout* (a float or int), if specified, can be used to control
    the maximum number of seconds to wait before returning.
