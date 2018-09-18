@@ -228,7 +228,6 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 #endif
     PyObject *stringobj = NULL;
     const char *s;
-    char *rcpt;
     int ret = 0;
     int rwa = 0, plus = 0;
     int flags = 0;
