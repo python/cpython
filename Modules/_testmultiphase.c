@@ -624,6 +624,18 @@ bad_traverse(PyObject *self, visitproc visit, void *arg) {
     testmultiphase_state *m_state;
 
     m_state = PyModule_GetState(self);
+
+#ifdef _AIX
+/*
+ * AIX does not have a segmentation fault is a NULL pointer is accessed
+ * In order to mimic other systems that would crash if &(m_state->integer) == NULL
+ * force a non-zero exit status
+ */
+    if (&(m_state->integer) == NULL) {
+        exit(255);
+    }
+#endif
+
     Py_VISIT(m_state->integer);
     return 0;
 }
