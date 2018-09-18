@@ -1,2 +1,2 @@
-For AIX, when ABI == 32-bit Skip value (-1) in `test__xxsubinterpreters.py.ShareableTypeTests._assert_values`
-author: M Felt
+For AIX, when (sys.maxsize < 2**31) skip value (-1) in `test__xxsubinterpreters.py.ShareableTypeTests._assert_values`
+patch by Michael Felt
