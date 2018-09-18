@@ -447,6 +447,30 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         }
     }
     else {
+#if defined(S_ISREG) && defined(ENOTDIR)
+        /* On AIX and Windows, open may succeed for files with a trailing slash.
+           The Open Group specifies filenames ending with a trailing slash should
+           be an error - ENOTDIR */
+	if (S_ISREG(fdfstat.st_mode)) {
+	    int trailing_slash = 0;
+#ifdef MS_WINDOWS
+	    size_t len = wcslen(widename);
+	    if (len && (widename[len - 1] == L'\\' || widename[len - 1] == L'/')) {
+		trailing_slash = 1;
+	    }
+#else
+	    size_t len = strlen(name);
+	    if (len && name[len - 1] == '/') {
+		trailing_slash = 1;
+	    }
+#endif
+	    if (trailing_slash) {
+		errno = ENOTDIR;
+		PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
+		goto error;
+	    }
+	}
+#endif
 #if defined(S_ISDIR) && defined(EISDIR)
         /* On Unix, open will succeed for directories.
            In Python, there should be no file objects referring to
