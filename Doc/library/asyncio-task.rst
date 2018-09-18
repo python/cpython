@@ -103,6 +103,31 @@ To actually run a coroutine asyncio provides three main mechanisms:
       world
       finished at 17:14:34
 
+
+.. _asyncio-awaitables:
+
+Awaitables
+==========
+
+We say that an object is an *awaitable* object if it can be used
+in an :keyword:`await` expression.
+
+
+.. rubric:: Coroutines and Tasks
+
+Python coroutines are *awaitables*::
+
+    async def nested():
+        return 42
+
+    async def main():
+        # Will print "42":
+        print(await nested())
+
+*Tasks* are used to schedule coroutines *concurrently*.
+See the previous :ref:`section <coroutine>` for an introduction
+to coroutines and tasks.
+
 Note that in this documentation the term "coroutine" can be used for
 two closely related concepts:
 
@@ -112,14 +137,13 @@ two closely related concepts:
   *coroutine function*.
 
 
-Futures
-=======
+.. rubric:: Futures
 
 There is a dedicated section about the :ref:`asyncio Future object
 <asyncio-futures>`, but the concept is so fundamental to asyncio that
 it needs a brief introduction in this section.
 
-A Future is a special **low-level** object that represents
+A Future is a special **low-level** awaitable object that represents
 an **eventual result** of an asynchronous operation.
 Future objects in asyncio are needed to allow callback-based code
 to be used with async/await.
@@ -138,13 +162,6 @@ APIs, should be awaited::
             function_that_returns_a_future_object(),
             some_python_coroutine()
         )
-
-asyncio :class:`Tasks <Task>` have compatible API with Futures
-with regards to cancellation and introspection.
-
-Many asyncio APIs are documented to accept coroutines, Tasks, or
-Futures.  What it means is that they are ready to accept anything
-you can await on.
 
 
 Running an asyncio Program
@@ -175,8 +192,8 @@ Creating Tasks
 
 .. function:: create_task(coro, \*, name=None)
 
-   Wrap the *coro* :ref:`coroutine <coroutine>` into a task and schedule
-   its execution. Return the task object.
+   Wrap the *coro* :ref:`coroutine <coroutine>` into a Task and
+   schedule its execution.  Return the Task object.
 
    If *name* is not ``None``, it is set as the name of the task using
    :meth:`Task.set_name`.
@@ -238,36 +255,29 @@ Running Tasks Concurrently
 
 .. function:: gather(\*fs, loop=None, return_exceptions=False)
 
-   Return a :class:`Future` aggregating results from the given
-   set of coroutine objects, :class:`Tasks <Task>`, or Futures.
-
-   Should also be used to schedule operations to be performed
+   Run a set of :ref:`awaitable objects <asyncio-awaitables>`
    *concurrently*.
 
-   If all Tasks/Futures are completed successfully, the result is an
+   *fs* is a list of awaitable objects.  Coroutines in *fs* sequence
+   are automatically scheduled as Tasks.
+
+   If all awaitables are completed successfully, the result is an
    aggregate list of returned values.  The result values are in the
    order of the original *fs* sequence.
 
-   All coroutines in the *fs* list are automatically
-   scheduled as Tasks.
-
    If *return_exceptions* is ``True``, exceptions are treated the
-   same as successful results, and gathered in the result list.
+   same as successful results, and aggregated in the result list.
    Otherwise, the first raised exception is immediately propagated
-   to the returned Future.
+   to the task that awaits on ``gather()``.
 
-   If ``gather`` is *cancelled*, all submitted Tasks and Futures
+   If ``gather`` is *cancelled*, all submitted awaitables
    (that have not completed yet) are also *cancelled*.
 
    If any Task/Future from the *fs* list is *cancelled*, it is
-   treated as if it raised :exc:`CancelledError` -- the ``gather``
+   treated as if it raised :exc:`CancelledError` -- the ``gather()``
    call is **not** cancelled in this case.  This is to prevent the
    cancellation of one submitted Task/Future to cause other
    Tasks/Futures to be cancelled.
-
-   .. versionchanged:: 3.7
-      If the *gather* itself is cancelled, the cancellation is
-      propagated regardless of *return_exceptions*.
 
    .. _asyncio_example_gather:
 
@@ -305,13 +315,17 @@ Running Tasks Concurrently
       #     Task C: Compute factorial(4)...
       #     Task C: factorial(4) = 24
 
+   .. versionchanged:: 3.7
+      If the *gather* itself is cancelled, the cancellation is
+      propagated regardless of *return_exceptions*.
+
 
 Shielding Tasks From Cancellation
 =================================
 
 .. coroutinefunction:: shield(fut, \*, loop=None)
 
-   Wait for a :class:`Task` or :class:`Future` while protecting it
+   Protect an :ref:`awaitable object <asyncio-awaitables>`
    from being :meth:`cancelled <Task.cancel>`.
 
    *fut* can be a coroutine, a Task, or a Future-like object.  If
@@ -349,11 +363,12 @@ Timeouts
 
 .. coroutinefunction:: wait_for(fut, timeout, \*, loop=None)
 
-   Wait for a coroutine, :class:`Task`, or :class:`Future` to complete
-   with timeout.
+   Wait for an :ref:`awaitable object <asyncio-awaitables>` to
+   complete with a timeout.
 
-   *fut* can be a coroutine, a Task, or a Future-like object.  If
-   *fut* is a coroutine it is automatically scheduled as a Task.
+   *fut* can be a coroutine, a :class:`Task`, or a :class:`Future`
+   object.  If *fut* is a coroutine it is automatically scheduled as a
+   Task.
 
    *timeout* can either be ``None`` or a float or int number of seconds
    to wait for.  If *timeout* is ``None``, block until the future
@@ -404,8 +419,8 @@ Waiting Primitives
 .. coroutinefunction:: wait(fs, \*, loop=None, timeout=None,\
                             return_when=ALL_COMPLETED)
 
-   Wait for a set of coroutines, :class:`Tasks <Task>`,
-   or :class:`Futures <Future>` to complete.
+   Wait for a set of :ref:`awaitable objects <asyncio-awaitables>`
+   to complete.
 
    *fs* is a list of coroutines, Futures, and/or Tasks.  Coroutines
    are automatically scheduled as Tasks.
