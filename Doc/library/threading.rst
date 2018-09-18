@@ -936,16 +936,16 @@ As an example, here is a simple way to synchronize a client and server thread::
       Return the barrier to the default, empty state.  Any threads waiting on it
       will receive the :class:`BrokenBarrierError` exception.
 
-      Note that using this function may can require some external
-      synchronization if there are other threads whose state is unknown.  If a
-      barrier is broken it may be better to just leave it and create a new one.
+      Note that using this function may require some external synchronization if
+      there are other threads whose state is unknown.  If a barrier is broken it
+      may be better to just leave it and create a new one.
 
    .. method:: abort()
 
       Put the barrier into a broken state.  This causes any active or future
       calls to :meth:`wait` to fail with the :class:`BrokenBarrierError`.  Use
-      this for example if one of the needs to abort, to avoid deadlocking the
-      application.
+      this for example if one of the threads needs to abort, to avoid
+      deadlocking the application.
 
       It may be preferable to simply create the barrier with a sensible
       *timeout* value to automatically guard against one of the threads going
