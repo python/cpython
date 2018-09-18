@@ -140,7 +140,7 @@ two closely related concepts:
 .. rubric:: Futures
 
 There is a dedicated section about the :ref:`asyncio Future object
-<asyncio-futures>`, but the concept is so fundamental to asyncio that
+<asyncio-futures>`, but the concept is fundamental to asyncio so
 it needs a brief introduction in this section.
 
 A Future is a special **low-level** awaitable object that represents
