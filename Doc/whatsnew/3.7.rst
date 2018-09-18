@@ -2494,3 +2494,10 @@ versions, it respected an ill-defined subset of those environment variables,
 while in Python 3.7.0 it didn't read any of them due to :issue:`34247`). If
 this behavior is unwanted, set :c:data:`Py_IgnoreEnvironmentFlag` to 1 before
 calling :c:func:`Py_Initialize`.
+
+:c:func:`Py_Initialize` and :c:func:`Py_Main` cannot enable the C locale
+coercion (:pep:`538`) anymore: it is always disabled. It can now only be
+enabled by the Python program ("python3).
+
+New :option:`-X` ``coerce_c_locale`` command line option to control C locale
+coercion (:pep:`538`).
