@@ -712,9 +712,9 @@ class SourceLoader(SourceOnlyLoader):
         if magic is None:
             magic = self.util.MAGIC_NUMBER
         data = bytearray(magic)
-        data.extend(self.init._w_long(0))
-        data.extend(self.init._w_long(self.source_mtime))
-        data.extend(self.init._w_long(self.source_size))
+        data.extend(self.init._pack_uint32(0))
+        data.extend(self.init._pack_uint32(self.source_mtime))
+        data.extend(self.init._pack_uint32(self.source_size))
         code_object = compile(self.source, self.path, 'exec',
                                 dont_inherit=True)
         data.extend(marshal.dumps(code_object))
@@ -876,9 +876,9 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
         if bytecode_written:
             self.assertIn(self.cached, self.loader.written)
             data = bytearray(self.util.MAGIC_NUMBER)
-            data.extend(self.init._w_long(0))
-            data.extend(self.init._w_long(self.loader.source_mtime))
-            data.extend(self.init._w_long(self.loader.source_size))
+            data.extend(self.init._pack_uint32(0))
+            data.extend(self.init._pack_uint32(self.loader.source_mtime))
+            data.extend(self.init._pack_uint32(self.loader.source_size))
             data.extend(marshal.dumps(code_object))
             self.assertEqual(self.loader.written[self.cached], bytes(data))
 
