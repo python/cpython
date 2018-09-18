@@ -206,6 +206,9 @@ Creating Tasks
    Python 3.7, the low-level :func:`asyncio.ensure_future` function
    can be used instead::
 
+       async def coro():
+           ...
+
        # In Python 3.7+
        task = asyncio.create_task(coro())
        ...
@@ -230,6 +233,8 @@ Sleeping
    If *result* is provided, it is returned to the caller
    when the coroutine completes.
 
+   The *loop* argument is deprecated.
+
    .. _asyncio_example_sleep:
 
    Example of coroutine displaying the current date every second
@@ -253,7 +258,7 @@ Sleeping
 Running Tasks Concurrently
 ==========================
 
-.. function:: gather(\*fs, loop=None, return_exceptions=False)
+.. awaitablefunction:: gather(\*fs, loop=None, return_exceptions=False)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *fs*
    sequence *concurrently*.
@@ -323,7 +328,7 @@ Running Tasks Concurrently
 Shielding Tasks From Cancellation
 =================================
 
-.. coroutinefunction:: shield(fut, \*, loop=None)
+.. awaitablefunction:: shield(fut, \*, loop=None)
 
    Protect an :ref:`awaitable object <asyncio-awaitables>`
    from being :meth:`cancelled <Task.cancel>`.
@@ -486,7 +491,8 @@ Scheduling From Other Threads
 
    Submit a coroutine to the given event loop.  Thread-safe.
 
-   Return a :class:`concurrent.futures.Future` to access the result.
+   Return a :class:`concurrent.futures.Future` to wait for the result
+   from another OS thread.
 
    This function is meant to be called from a different OS thread
    than the one where the event loop is running.  Example::
