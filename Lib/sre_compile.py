@@ -597,7 +597,7 @@ def isstring(obj):
 
 def _code(p, flags):
 
-    flags = p.pattern.flags | flags
+    flags = p.state.flags | flags
     code = []
 
     # compile info block
@@ -772,13 +772,13 @@ def compile(p, flags=0):
         dis(code)
 
     # map in either direction
-    groupindex = p.pattern.groupdict
-    indexgroup = [None] * p.pattern.groups
+    groupindex = p.state.groupdict
+    indexgroup = [None] * p.state.groups
     for k, i in groupindex.items():
         indexgroup[i] = k
 
     return _sre.compile(
-        pattern, flags | p.pattern.flags, code,
-        p.pattern.groups-1,
+        pattern, flags | p.state.flags, code,
+        p.state.groups-1,
         groupindex, tuple(indexgroup)
         )
