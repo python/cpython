@@ -106,7 +106,7 @@ exit:
 }
 
 PyDoc_STRVAR(EVP_new__doc__,
-"new($module, /, name, string=None)\n"
+"new($module, /, name, string=b\'\')\n"
 "--\n"
 "\n"
 "Return a new hash object using the named algorithm.\n"
@@ -292,4 +292,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=69c6e63372ece993 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=239faa50f6fdcb82 input=a9049054013a1b77]*/

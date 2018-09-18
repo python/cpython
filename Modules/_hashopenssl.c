@@ -505,7 +505,7 @@ EVPnew(PyObject *name_obj,
 _hashlib.new as EVP_new
 
     name as name_obj: object
-    string as data_obj: object = NULL
+    string as data_obj: object(py_default="b''") = NULL
 
 Return a new hash object using the named algorithm.
 
@@ -517,7 +517,7 @@ The MD5 and SHA1 algorithms are always supported.
 
 static PyObject *
 EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj)
-/*[clinic end generated code: output=9e7cf664e04b0226 input=8b50a062cb4cdcaf]*/
+/*[clinic end generated code: output=9e7cf664e04b0226 input=1c46e40e0fec91f3]*/
 {
     Py_buffer view = { 0 };
     PyObject *ret_obj;
