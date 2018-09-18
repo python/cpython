@@ -143,8 +143,8 @@ asyncio :class:`Tasks <Task>` have compatible API with Futures
 with regards to cancellation and introspection.
 
 Many asyncio APIs are documented to accept coroutines, Tasks, or
-Futures.  What it means is that they are ready to accept any
-objects you can await on.
+Futures.  What it means is that they are ready to accept anything
+you can await on.
 
 
 Running an asyncio Program
