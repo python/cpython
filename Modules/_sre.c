@@ -87,24 +87,17 @@ static const char copyright[] =
 /* search engine state */
 
 #define SRE_IS_DIGIT(ch)\
-    ((ch) < 128 && Py_ISDIGIT(ch))
+    ((ch) <= '9' && Py_ISDIGIT(ch))
 #define SRE_IS_SPACE(ch)\
-    ((ch) < 128 && Py_ISSPACE(ch))
+    ((ch) <= ' ' && Py_ISSPACE(ch))
 #define SRE_IS_LINEBREAK(ch)\
     ((ch) == '\n')
-#define SRE_IS_ALNUM(ch)\
-    ((ch) < 128 && Py_ISALNUM(ch))
 #define SRE_IS_WORD(ch)\
-    ((ch) < 128 && (Py_ISALNUM(ch) || (ch) == '_'))
+    ((ch) <= 'z' && (Py_ISALNUM(ch) || (ch) == '_'))
 
 static unsigned int sre_lower_ascii(unsigned int ch)
 {
     return ((ch) < 128 ? Py_TOLOWER(ch) : ch);
-}
-
-static unsigned int sre_upper_ascii(unsigned int ch)
-{
-    return ((ch) < 128 ? Py_TOUPPER(ch) : ch);
 }
 
 /* locale-specific character predicates */
@@ -295,7 +288,7 @@ _sre_ascii_iscased_impl(PyObject *module, int character)
 /*[clinic end generated code: output=4f454b630fbd19a2 input=9f0bd952812c7ed3]*/
 {
     unsigned int ch = (unsigned int)character;
-    return ch != sre_lower_ascii(ch) || ch != sre_upper_ascii(ch);
+    return ch < 128 && Py_ISALPHA(ch);
 }
 
 /*[clinic input]

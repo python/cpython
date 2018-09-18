@@ -781,6 +781,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -829,7 +830,6 @@ enable_ipv6
 with_doc_strings
 with_pymalloc
 with_c_locale_coercion
-with_c_locale_warning
 with_valgrind
 with_dtrace
 with_libm
@@ -891,6 +891,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1143,6 +1144,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1280,7 +1290,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1433,6 +1443,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1522,9 +1533,6 @@ Optional Packages:
   --with(out)-pymalloc    disable/enable specialized mallocs
   --with(out)-c-locale-coercion
                           disable/enable C locale coercion to a UTF-8 based
-                          locale
-  --with(out)-c-locale-warning
-                          disable/enable locale compatibility warning in the C
                           locale
   --with-valgrind         Enable Valgrind support
   --with(out)-dtrace      disable/enable DTrace support
@@ -2749,9 +2757,9 @@ HAS_GIT=no-repository
 fi
 if test $HAS_GIT = found
 then
-    GITVERSION="git -C \$(srcdir) rev-parse --short HEAD"
-    GITTAG="git -C \$(srcdir) describe --all --always --dirty"
-    GITBRANCH="git -C \$(srcdir) name-rev --name-only HEAD"
+    GITVERSION="git --git-dir \$(srcdir)/.git rev-parse --short HEAD"
+    GITTAG="git --git-dir \$(srcdir)/.git describe --all --always --dirty"
+    GITBRANCH="git --git-dir \$(srcdir)/.git name-rev --name-only HEAD"
 else
     GITVERSION=""
     GITTAG=""
@@ -7717,7 +7725,7 @@ for ac_header in asm/types.h crypt.h conio.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
 ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
 sched.h shadow.h signal.h stropts.h termios.h \
-unistd.h utime.h \
+utime.h \
 poll.h sys/devpoll.h sys/epoll.h sys/poll.h \
 sys/audioio.h sys/xattr.h sys/bsdtty.h sys/event.h sys/file.h sys/ioctl.h \
 sys/kern_control.h sys/loadavg.h sys/lock.h sys/mkdev.h sys/modem.h \
@@ -11046,29 +11054,6 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_c_locale_coercion" >&5
 $as_echo "$with_c_locale_coercion" >&6; }
 
-# Check for --with-c-locale-warning
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-c-locale-warning" >&5
-$as_echo_n "checking for --with-c-locale-warning... " >&6; }
-
-# Check whether --with-c-locale-warning was given.
-if test "${with_c_locale_warning+set}" = set; then :
-  withval=$with_c_locale_warning;
-fi
-
-
-if test -z "$with_c_locale_warning"
-then
-    with_c_locale_warning="yes"
-fi
-if test "$with_c_locale_warning" != "no"
-then
-
-$as_echo "#define PY_WARN_ON_C_LOCALE 1" >>confdefs.h
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_c_locale_warning" >&5
-$as_echo "$with_c_locale_warning" >&6; }
-
 # Check for Valgrind support
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-valgrind" >&5
 $as_echo_n "checking for --with-valgrind... " >&6; }
@@ -11269,10 +11254,11 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  clock confstr ctermid dup3 execv faccessat fchmod fchmodat fchown fchownat \
  fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
+ getgrgid_r getgrnam_r \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
- getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
+ getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
  if_nameindex \
- initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
+ initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise posix_spawn pread preadv preadv2 \
@@ -11283,7 +11269,7 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
  sched_rr_get_interval \
  sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
- sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy symlinkat sync \
+ sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy strsignal symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname unlinkat unsetenv utimensat utimes waitid waitpid wait3 wait4 \
  wcscoll wcsftime wcsxfrm wmemcmp writev _getpty
@@ -11298,6 +11284,23 @@ _ACEOF
 fi
 done
 
+
+# Force lchmod off for Linux. Linux disallows changing the mode of symbolic
+# links. Some libc implementations have a stub lchmod implementation that always
+# returns an error.
+if test "$MACHDEP" != linux; then
+  for ac_func in lchmod
+do :
+  ac_fn_c_check_func "$LINENO" "lchmod" "ac_cv_func_lchmod"
+if test "x$ac_cv_func_lchmod" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LCHMOD 1
+_ACEOF
+
+fi
+done
+
+fi
 
 ac_fn_c_check_decl "$LINENO" "dirfd" "ac_cv_have_decl_dirfd" "#include <sys/types.h>
        #include <dirent.h>
@@ -14177,103 +14180,6 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-# On FreeBSD 6.2, it appears that tanh(-0.) returns 0. instead of
-# -0. on some architectures.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether tanh preserves the sign of zero" >&5
-$as_echo_n "checking whether tanh preserves the sign of zero... " >&6; }
-if ${ac_cv_tanh_preserves_zero_sign+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-if test "$cross_compiling" = yes; then :
-  ac_cv_tanh_preserves_zero_sign=no
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <math.h>
-#include <stdlib.h>
-int main() {
-    /* return 0 if either negative zeros don't exist
-       on this platform or if negative zeros exist
-       and tanh(-0.) == -0. */
-  if (atan2(0., -1.) == atan2(-0., -1.) ||
-      atan2(tanh(-0.), -1.) == atan2(-0., -1.)) exit(0);
-  else exit(1);
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_cv_tanh_preserves_zero_sign=yes
-else
-  ac_cv_tanh_preserves_zero_sign=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tanh_preserves_zero_sign" >&5
-$as_echo "$ac_cv_tanh_preserves_zero_sign" >&6; }
-if test "$ac_cv_tanh_preserves_zero_sign" = yes
-then
-
-$as_echo "#define TANH_PRESERVES_ZERO_SIGN 1" >>confdefs.h
-
-fi
-
-if test "$ac_cv_func_log1p" = yes
-then
-    # On some versions of AIX, log1p(-0.) returns 0. instead of
-    # -0.  See issue #9920.
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether log1p drops the sign of negative zero" >&5
-$as_echo_n "checking whether log1p drops the sign of negative zero... " >&6; }
-    if ${ac_cv_log1p_drops_zero_sign+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-    if test "$cross_compiling" = yes; then :
-  ac_cv_log1p_drops_zero_sign=no
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-    #include <math.h>
-    #include <stdlib.h>
-    int main() {
-        /* Fail if the signs of log1p(-0.) and -0. can be
-	   distinguished. */
-        if (atan2(log1p(-0.), -1.) == atan2(-0., -1.))
-            return 0;
-        else
-            return 1;
-    }
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_cv_log1p_drops_zero_sign=no
-else
-  ac_cv_log1p_drops_zero_sign=yes
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_log1p_drops_zero_sign" >&5
-$as_echo "$ac_cv_log1p_drops_zero_sign" >&6; }
-fi
-if test "$ac_cv_log1p_drops_zero_sign" = yes
-then
-
-$as_echo "#define LOG1P_DROPS_ZERO_SIGN 1" >>confdefs.h
-
-fi
-
-LIBS=$LIBS_SAVE
-
 # For multiprocessing module, check that sem_open
 # actually works.  For FreeBSD versions <= 7.2,
 # the kernel module that provides POSIX semaphores
@@ -14627,19 +14533,21 @@ fi
 $as_echo "$ac_cv_wchar_t_signed" >&6; }
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether wchar_t is usable" >&5
+$as_echo_n "checking whether wchar_t is usable... " >&6; }
 # wchar_t is only usable if it maps to an unsigned type
 if test "$ac_cv_sizeof_wchar_t" -ge 2 \
           -a "$ac_cv_wchar_t_signed" = "no"
 then
-  HAVE_USABLE_WCHAR_T="yes"
 
 $as_echo "#define HAVE_USABLE_WCHAR_T 1" >>confdefs.h
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
 else
-  HAVE_USABLE_WCHAR_T="no usable wchar_t found"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_USABLE_WCHAR_T" >&5
-$as_echo "$HAVE_USABLE_WCHAR_T" >&6; }
 
 # check for endianness
  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether byte ordering is bigendian" >&5
@@ -15435,77 +15343,6 @@ then
 $as_echo "#define HAVE_BROKEN_POLL 1" >>confdefs.h
 
 fi
-
-# Before we can test tzset, we need to check if struct tm has a tm_zone
-# (which is not required by ISO C or UNIX spec) and/or if we support
-# tzname[]
-ac_fn_c_check_member "$LINENO" "struct tm" "tm_zone" "ac_cv_member_struct_tm_tm_zone" "#include <sys/types.h>
-#include <$ac_cv_struct_tm>
-
-"
-if test "x$ac_cv_member_struct_tm_tm_zone" = xyes; then :
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_STRUCT_TM_TM_ZONE 1
-_ACEOF
-
-
-fi
-
-if test "$ac_cv_member_struct_tm_tm_zone" = yes; then
-
-$as_echo "#define HAVE_TM_ZONE 1" >>confdefs.h
-
-else
-  ac_fn_c_check_decl "$LINENO" "tzname" "ac_cv_have_decl_tzname" "#include <time.h>
-"
-if test "x$ac_cv_have_decl_tzname" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_TZNAME $ac_have_decl
-_ACEOF
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for tzname" >&5
-$as_echo_n "checking for tzname... " >&6; }
-if ${ac_cv_var_tzname+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <time.h>
-#if !HAVE_DECL_TZNAME
-extern char *tzname[];
-#endif
-
-int
-main ()
-{
-return tzname[0][0];
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_var_tzname=yes
-else
-  ac_cv_var_tzname=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_var_tzname" >&5
-$as_echo "$ac_cv_var_tzname" >&6; }
-  if test $ac_cv_var_tzname = yes; then
-
-$as_echo "#define HAVE_TZNAME 1" >>confdefs.h
-
-  fi
-fi
-
 
 # check tzset(3) exists and works like we expect it to
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working tzset()" >&5
@@ -16561,7 +16398,6 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
     #include <stdatomic.h>
     atomic_int value = ATOMIC_VAR_INIT(1);
-    _Atomic void *py_atomic_address = (void*) &value;
     int main() {
       int loaded_value = atomic_load(&value);
       return 0;
@@ -18355,12 +18191,6 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
-echo "creating Modules/Setup" >&6
-if test ! -f Modules/Setup
-then
-	cp $srcdir/Modules/Setup.dist Modules/Setup
-fi
-
 echo "creating Modules/Setup.local" >&6
 if test ! -f Modules/Setup.local
 then
@@ -18370,7 +18200,7 @@ fi
 echo "creating Makefile" >&6
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local Modules/Setup
+			Modules/Setup.local $srcdir/Modules/Setup
 mv config.c Modules
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then

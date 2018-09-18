@@ -281,7 +281,7 @@ Connection Objects
 
    .. attribute:: isolation_level
 
-      Get or set the current isolation level. :const:`None` for autocommit mode or
+      Get or set the current default isolation level. :const:`None` for autocommit mode or
       one of "DEFERRED", "IMMEDIATE" or "EXCLUSIVE". See section
       :ref:`sqlite3-controlling-transactions` for a more detailed explanation.
 
@@ -337,16 +337,23 @@ Connection Objects
       :meth:`~Cursor.executescript` method with the given *sql_script*, and
       returns the cursor.
 
-   .. method:: create_function(name, num_params, func)
+   .. method:: create_function(name, num_params, func, *, deterministic=False)
 
       Creates a user-defined function that you can later use from within SQL
       statements under the function name *name*. *num_params* is the number of
       parameters the function accepts (if *num_params* is -1, the function may
       take any number of arguments), and *func* is a Python callable that is
-      called as the SQL function.
+      called as the SQL function. If *deterministic* is true, the created function
+      is marked as `deterministic <https://sqlite.org/deterministic.html>`_, which
+      allows SQLite to perform additional optimizations. This flag is supported by
+      SQLite 3.8.3 or higher, :exc:`NotSupportedError` will be raised if used
+      with older versions.
 
       The function can return any of the types supported by SQLite: bytes, str, int,
       float and ``None``.
+
+      .. versionchanged:: 3.8
+         The *deterministic* parameter was added.
 
       Example:
 
@@ -828,6 +835,13 @@ Exceptions
    disconnect occurs, the data source name is not found, a transaction could
    not be processed, etc.  It is a subclass of :exc:`DatabaseError`.
 
+.. exception:: NotSupportedError
+
+   Exception raised in case a method or database API was used which is not
+   supported by the database, e.g. calling the :meth:`~Connection.rollback`
+   method on a connection that does not support transaction or has
+   transactions turned off.  It is a subclass of :exc:`DatabaseError`.
+
 
 .. _sqlite3-types:
 
@@ -996,22 +1010,30 @@ timestamp converter.
 Controlling Transactions
 ------------------------
 
-By default, the :mod:`sqlite3` module opens transactions implicitly before a
-Data Modification Language (DML)  statement (i.e.
+The underlying ``sqlite3`` library operates in ``autocommit`` mode by default,
+but the Python :mod:`sqlite3` module by default does not.
+
+``autocommit`` mode means that statements that modify the database take effect
+immediately.  A ``BEGIN`` or ``SAVEPOINT`` statement disables ``autocommit``
+mode, and a ``COMMIT``, a ``ROLLBACK``, or a ``RELEASE`` that ends the
+outermost transaction, turns ``autocommit`` mode back on.
+
+The Python :mod:`sqlite3` module by default issues a ``BEGIN`` statement
+implicitly before a Data Modification Language (DML) statement (i.e.
 ``INSERT``/``UPDATE``/``DELETE``/``REPLACE``).
 
-You can control which kind of ``BEGIN`` statements sqlite3 implicitly executes
-(or none at all) via the *isolation_level* parameter to the :func:`connect`
+You can control which kind of ``BEGIN`` statements :mod:`sqlite3` implicitly
+executes via the *isolation_level* parameter to the :func:`connect`
 call, or via the :attr:`isolation_level` property of connections.
+If you specify no *isolation_level*, a plain ``BEGIN`` is used, which is
+equivalent to specifying ``DEFERRED``.  Other possible values are ``IMMEDIATE``
+and ``EXCLUSIVE``.
 
-If you want **autocommit mode**, then set :attr:`isolation_level` to ``None``.
-
-Otherwise leave it at its default, which will result in a plain "BEGIN"
-statement, or set it to one of SQLite's supported isolation levels: "DEFERRED",
-"IMMEDIATE" or "EXCLUSIVE".
-
-The current transaction state is exposed through the
-:attr:`Connection.in_transaction` attribute of the connection object.
+You can disable the :mod:`sqlite3` module's implicit transaction management by
+setting :attr:`isolation_level` to ``None``.  This will leave the underlying
+``sqlite3`` library operating in ``autocommit`` mode.  You can then completely
+control the transaction state by explicitly issuing ``BEGIN``, ``ROLLBACK``,
+``SAVEPOINT``, and ``RELEASE`` statements in your code.
 
 .. versionchanged:: 3.6
    :mod:`sqlite3` used to implicitly commit an open transaction before DDL

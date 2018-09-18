@@ -300,6 +300,7 @@ from __future__ import print_function"""
         old, new = self.refactor_file(fn)
         self.assertIn(b"\r\n", old)
         self.assertIn(b"\r\n", new)
+        self.assertNotIn(b"\r\r\n", new)
 
     def test_refactor_docstring(self):
         rt = self.rt()

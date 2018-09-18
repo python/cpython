@@ -2038,7 +2038,7 @@ static PyObject *
 ndarray_get_readonly(NDArrayObject *self, void *closure)
 {
     Py_buffer *base = &self->head->base;
-    return PyLong_FromLong(base->readonly);
+    return PyBool_FromLong(base->readonly);
 }
 
 static PyObject *

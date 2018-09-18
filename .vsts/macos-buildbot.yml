@@ -4,7 +4,7 @@
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 
 queue:
-  name: Hosted macOS Preview
+  name: Hosted macOS
 
 trigger:
   branches:
@@ -24,7 +24,7 @@ steps:
   clean: true
   fetchDepth: 5
 
-- script: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl
+- script: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-vsts
   displayName: 'Configure CPython (debug)'
 
 - script: make -s -j4

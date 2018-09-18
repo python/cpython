@@ -6,7 +6,7 @@
 int
 wmain(int argc, wchar_t **argv)
 {
-    return Py_Main(argc, argv);
+    return _Py_WindowsMain(argc, argv);
 }
 #else
 int

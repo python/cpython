@@ -1,0 +1,3 @@
+Fixed creating a controller for :mod:`webbrowser` when a user specifies a
+path to an entry in the BROWSER environment variable.  Based on patch by
+John Still.
