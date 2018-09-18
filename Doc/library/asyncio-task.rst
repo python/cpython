@@ -238,7 +238,7 @@ Running Tasks Concurrently
               factorial("A", 2),
               factorial("B", 3),
               factorial("C", 4),
-          ))
+          )
 
       asyncio.run(main())
 
