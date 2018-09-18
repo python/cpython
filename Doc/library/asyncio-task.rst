@@ -241,6 +241,9 @@ Running Tasks Concurrently
    Return a :class:`Future` aggregating results from the given
    set of coroutine objects, :class:`Tasks <Task>`, or Futures.
 
+   Should also be used to schedule operations to be performed
+   *concurrently*.
+
    If all Tasks/Futures are completed successfully, the result is an
    aggregate list of returned values.  The result values are in the
    order of the original *fs* sequence.
@@ -248,20 +251,19 @@ Running Tasks Concurrently
    All coroutines in the *fs* list are automatically
    scheduled as Tasks.
 
-   If *return_exceptions* is ``True``, exceptions in the Tasks/Futures
-   are treated the same as successful results, and gathered in the
-   result list.  Otherwise, the first raised exception is immediately
-   propagated to the returned Future.
+   If *return_exceptions* is ``True``, exceptions are treated the
+   same as successful results, and gathered in the result list.
+   Otherwise, the first raised exception is immediately propagated
+   to the returned Future.
 
-   If the outer Future is *cancelled*, all submitted Tasks/Futures
+   If ``gather`` is *cancelled*, all submitted Tasks and Futures
    (that have not completed yet) are also *cancelled*.
 
-   If any child is *cancelled*, it is treated as if it raised
-   :exc:`CancelledError` -- the outer Future is **not** cancelled in
-   this case.  This is to prevent the cancellation of one submitted
-   Task/Future to cause other Tasks/Futures to be cancelled.
-
-   All futures must share the same event loop.
+   If any Task/Future from the *fs* list is *cancelled*, it is
+   treated as if it raised :exc:`CancelledError` -- the ``gather``
+   call is **not** cancelled in this case.  This is to prevent the
+   cancellation of one submitted Task/Future to cause other
+   Tasks/Futures to be cancelled.
 
    .. versionchanged:: 3.7
       If the *gather* itself is cancelled, the cancellation is
@@ -282,6 +284,7 @@ Running Tasks Concurrently
           print(f"Task {name}: factorial({number}) = {f}")
 
       async def main():
+          # Schedule three calls *concurrently*:
           await asyncio.gather(
               factorial("A", 2),
               factorial("B", 3),
