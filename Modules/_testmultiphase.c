@@ -632,7 +632,7 @@ bad_traverse(PyObject *self, visitproc visit, void *arg) {
  * force a non-zero exit status
  */
     if (&(m_state->integer) == NULL) {
-	exit(255);
+        exit(255);
     }
 #endif
 
