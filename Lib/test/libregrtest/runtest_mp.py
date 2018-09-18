@@ -71,7 +71,7 @@ def run_tests_slave(slaveargs):
     try:
         result = runtest(ns, testname)
     except KeyboardInterrupt:
-        result = INTERRUPTED, ''
+        result = INTERRUPTED, '', None
     except BaseException as e:
         traceback.print_exc()
         result = CHILD_ERROR, str(e)
@@ -126,7 +126,7 @@ class MultiprocessThread(threading.Thread):
             self.current_test = None
 
         if retcode != 0:
-            result = (CHILD_ERROR, "Exit code %s" % retcode)
+            result = (CHILD_ERROR, "Exit code %s" % retcode, None)
             self.output.put((test, stdout.rstrip(), stderr.rstrip(),
                              result))
             return False
@@ -137,6 +137,7 @@ class MultiprocessThread(threading.Thread):
             return True
 
         result = json.loads(result)
+        assert len(result) == 3, f"Invalid result tuple: {result!r}"
         self.output.put((test, stdout.rstrip(), stderr.rstrip(),
                          result))
         return False
@@ -199,7 +200,7 @@ def run_tests_multiprocess(regrtest):
             regrtest.accumulate_result(test, result)
 
             # Display progress
-            ok, test_time = result
+            ok, test_time, xml_data = result
             text = format_test_result(test, ok)
             if (ok not in (CHILD_ERROR, INTERRUPTED)
                 and test_time >= PROGRESS_MIN_TIME
