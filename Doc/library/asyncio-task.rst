@@ -112,14 +112,49 @@ two closely related concepts:
   *coroutine function*.
 
 
+Futures
+=======
+
+There is a dedicated section about the :ref:`asyncio Future object
+<asyncio-futures>`, but the concept is so fundamental to asyncio that
+it needs a brief introduction in this section.
+
+A Future is a special **low-level** object that represents
+an **eventual result** of an asynchronous operation.
+Future objects in asyncio are needed to allow callback-based code
+to be used with async/await.
+
+Normally, **there is no need** to create Future objects at the
+application level code.
+
+Future objects, sometimes exposed by libraries and some asyncio
+APIs, should be awaited::
+
+    async def main():
+        await function_that_returns_a_future_object()
+
+        # this is also valid:
+        await asyncio.gather(
+            function_that_returns_a_future_object(),
+            some_python_coroutine()
+        )
+
+asyncio :class:`Tasks <Task>` have compatible API with Futures
+with regards to cancellation and introspection.
+
+Many asyncio APIs are documented to accept coroutines, Tasks, or
+Futures.  What it means is that they are ready to accept any
+objects you can await on.
+
+
 Running an asyncio Program
 ==========================
 
 .. function:: run(coro, \*, debug=False)
 
     This function runs the passed coroutine, taking care of
-    managing the asyncio event loop and finalizing asynchronous
-    generators.
+    managing the asyncio event loop and *finalizing asynchronous
+    generators*.
 
     This function cannot be called when another asyncio event loop is
     running in the same thread.
@@ -149,6 +184,18 @@ Creating Tasks
    The task is executed in the loop returned by :func:`get_running_loop`,
    :exc:`RuntimeError` is raised if there is no running loop in
    current thread.
+
+   This function has been **added in Python 3.7**.  Prior to
+   Python 3.7, the low-level :func:`asyncio.ensure_future` function
+   can be used instead::
+
+       # In Python 3.7+
+       task = asyncio.create_task(coro())
+       ...
+
+       # This works in all Python versions but is less readable
+       task = asyncio.ensure_future(coro())
+       ...
 
    .. versionadded:: 3.7
 
@@ -191,15 +238,15 @@ Running Tasks Concurrently
 
 .. function:: gather(\*fs, loop=None, return_exceptions=False)
 
-   Return a Future aggregating results from the given coroutine objects,
-   Tasks, or Futures.
+   Return a :class:`Future` aggregating results from the given
+   set of coroutine objects, :class:`Tasks <Task>`, or Futures.
 
    If all Tasks/Futures are completed successfully, the result is an
    aggregate list of returned values.  The result values are in the
    order of the original *fs* sequence.
 
    All coroutines in the *fs* list are automatically
-   scheduled as :class:`Tasks <Task>`.
+   scheduled as Tasks.
 
    If *return_exceptions* is ``True``, exceptions in the Tasks/Futures
    are treated the same as successful results, and gathered in the
@@ -261,11 +308,11 @@ Shielding Tasks From Cancellation
 
 .. coroutinefunction:: shield(fut, \*, loop=None)
 
-   Wait for a Future/Task while protecting it from being cancelled.
+   Wait for a :class:`Task` or :class:`Future` while protecting it
+   from being :meth:`cancelled <Task.cancel>`.
 
    *fut* can be a coroutine, a Task, or a Future-like object.  If
-   *fut* is a coroutine it is automatically scheduled as a
-   :class:`Task`.
+   *fut* is a coroutine it is automatically scheduled as a Task.
 
    The statement::
 
@@ -299,11 +346,11 @@ Timeouts
 
 .. coroutinefunction:: wait_for(fut, timeout, \*, loop=None)
 
-   Wait for a coroutine, Task, or Future to complete with timeout.
+   Wait for a coroutine, :class:`Task`, or :class:`Future` to complete
+   with timeout.
 
    *fut* can be a coroutine, a Task, or a Future-like object.  If
-   *fut* is a coroutine it is automatically scheduled as a
-   :class:`Task`.
+   *fut* is a coroutine it is automatically scheduled as a Task.
 
    *timeout* can either be ``None`` or a float or int number of seconds
    to wait for.  If *timeout* is ``None``, block until the future
@@ -312,7 +359,8 @@ Timeouts
    If a timeout occurs, it cancels the task and raises
    :exc:`asyncio.TimeoutError`.
 
-   To avoid the task cancellation, wrap it in :func:`shield`.
+   To avoid the task :meth:`cancellation <Task.cancel>`,
+   wrap it in :func:`shield`.
 
    The function will wait until the future is actually cancelled,
    so the total wait time may exceed the *timeout*.
@@ -353,10 +401,11 @@ Waiting Primitives
 .. coroutinefunction:: wait(fs, \*, loop=None, timeout=None,\
                             return_when=ALL_COMPLETED)
 
-   Wait for a set of coroutines, Tasks, or Futures to complete.
+   Wait for a set of coroutines, :class:`Tasks <Task>`,
+   or :class:`Futures <Future>` to complete.
 
    *fs* is a list of coroutines, Futures, and/or Tasks.  Coroutines
-   are automatically scheduled as :class:`Tasks <Task>`.
+   are automatically scheduled as Tasks.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
