@@ -229,7 +229,7 @@ def islink(path):
     """
     try:
         st = os.lstat(path)
-    except (OSError, AttributeError):
+    except (OSError, ValueError, AttributeError):
         return False
     return stat.S_ISLNK(st.st_mode)
 
@@ -239,7 +239,7 @@ def lexists(path):
     """Test whether a path exists.  Returns True for broken symbolic links"""
     try:
         st = os.lstat(path)
-    except OSError:
+    except (OSError, ValueError):
         return False
     return True
 
@@ -524,7 +524,7 @@ else:  # use native Windows method on Windows
         """Return the absolute version of a path."""
         try:
             return _getfullpathname(path)
-        except OSError:
+        except (OSError, ValueError):
             return _abspath_fallback(path)
 
 # realpath is a no-op on systems without islink support
