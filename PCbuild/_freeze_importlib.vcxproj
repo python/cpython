@@ -77,19 +77,26 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Lib\importlib\_bootstrap.py">
+      <ModName>importlib._bootstrap</ModName>
       <IntFile>$(IntDir)importlib.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\importlib.h</OutFile>
     </None>
     <None Include="..\Lib\importlib\_bootstrap_external.py">
+      <ModName>importlib._bootstrap_external</ModName>
       <IntFile>$(IntDir)importlib_external.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\importlib_external.h</OutFile>
+    </None>
+    <None Include="..\Lib\zipimport.py">
+      <ModName>zipimport</ModName>
+      <IntFile>$(IntDir)importlib_zipimport.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\importlib_zipimport.h</OutFile>
     </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <Target Name="_RebuildImportLib">
-    <Exec Command='"$(TargetPath)" "%(None.FullPath)" "%(None.IntFile)"' />
+    <Exec Command='"$(TargetPath)" "%(None.ModName)" "%(None.FullPath)" "%(None.IntFile)"' />
     
     <PropertyGroup>
       <_OldContent Condition="Exists($(OutTargetPath))"></_OldContent>
@@ -114,6 +121,7 @@
     <ItemGroup>
       <Clean Include="$(IntDir)importlib.g.h" />
       <Clean Include="$(IntDir)importlib_external.g.h" />
+      <Clean Include="$(IntDir)importlib_zipimport.g.h" />
     </ItemGroup>
   </Target>
 </Project>
