@@ -3259,6 +3259,11 @@ xmlparser_init(PyObject *self, PyObject *args, PyObject *kwds)
         PyErr_NoMemory();
         return -1;
     }
+    /* expat < 2.1.0 has no XML_SetHashSalt() */
+    if (EXPAT(SetHashSalt) != NULL) {
+        EXPAT(SetHashSalt)(self_xp->parser,
+                           (unsigned long)_Py_HashSecret.expat.hashsalt);
+    }
 
     if (target) {
         Py_INCREF(target);
