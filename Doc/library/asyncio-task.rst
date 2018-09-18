@@ -255,11 +255,11 @@ Running Tasks Concurrently
 
 .. function:: gather(\*fs, loop=None, return_exceptions=False)
 
-   Run a set of :ref:`awaitable objects <asyncio-awaitables>`
+   Run a sequence of :ref:`awaitable objects <asyncio-awaitables>`
    *concurrently*.
 
-   *fs* is a list of awaitable objects.  Coroutines in *fs* sequence
-   are automatically scheduled as Tasks.
+   *fs* is a list of awaitable objects.  Coroutines in the *fs*
+   sequence are automatically scheduled as Tasks.
 
    If all awaitables are completed successfully, the result is an
    aggregate list of returned values.  The result values are in the
@@ -273,7 +273,7 @@ Running Tasks Concurrently
    If ``gather`` is *cancelled*, all submitted awaitables
    (that have not completed yet) are also *cancelled*.
 
-   If any Task/Future from the *fs* list is *cancelled*, it is
+   If any Task/Future from the *fs* sequence is *cancelled*, it is
    treated as if it raised :exc:`CancelledError` -- the ``gather()``
    call is **not** cancelled in this case.  This is to prevent the
    cancellation of one submitted Task/Future to cause other
