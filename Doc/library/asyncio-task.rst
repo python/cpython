@@ -363,12 +363,10 @@ Timeouts
 
 .. coroutinefunction:: wait_for(fut, timeout, \*, loop=None)
 
-   Wait for an :ref:`awaitable object <asyncio-awaitables>` to
-   complete with a timeout.
+   Wait for the *fut* :ref:`awaitable <asyncio-awaitables>`
+   to complete with a timeout.
 
-   *fut* can be a coroutine, a :class:`Task`, or a :class:`Future`
-   object.  If *fut* is a coroutine it is automatically scheduled as a
-   Task.
+   If *fut* is a coroutine it is automatically scheduled as a Task.
 
    *timeout* can either be ``None`` or a float or int number of seconds
    to wait for.  If *timeout* is ``None``, block until the future
@@ -419,11 +417,12 @@ Waiting Primitives
 .. coroutinefunction:: wait(fs, \*, loop=None, timeout=None,\
                             return_when=ALL_COMPLETED)
 
-   Wait for a set of :ref:`awaitable objects <asyncio-awaitables>`
-   to complete.
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *fs*
+   sequence concurrently and block until the condition specified
+   by *return_when*.
 
-   *fs* is a list of coroutines, Futures, and/or Tasks.  Coroutines
-   are automatically scheduled as Tasks.
+   If any awaitable in *fs* is a coroutine, it is automatically
+   scheduled as a Task.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
@@ -465,8 +464,10 @@ Waiting Primitives
 
 .. function:: as_completed(fs, \*, loop=None, timeout=None)
 
-   Return an iterator of awaitables which return
-   :class:`Future` instances.
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *fs*
+   set concurrently.  Return an iterator of :class:`Future` objects.
+   Each Future object returned represents the earliest result
+   from the set of the remaining awaitables.
 
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
    all Futures are done.
@@ -474,7 +475,7 @@ Waiting Primitives
    Example::
 
        for f in as_completed(fs):
-           result = await f
+           earliest_result = await f
            # ...
 
 
