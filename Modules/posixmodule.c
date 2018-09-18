@@ -10075,26 +10075,27 @@ os__getdiskusage_impl(PyObject *module, path_t *path)
     Py_END_ALLOW_THREADS
     if (retval == 0) {
         if (GetLastError() == ERROR_DIRECTORY) {
-            PyObject *result = NULL;
-            wchar_t *wpath = NULL;
-            path_t dir_path = *path;
+            wchar_t *dir_path = NULL;
 
-            wpath = PyMem_New(wchar_t, dir_path.length + 1);
-            if (wpath == NULL)
+            dir_path = PyMem_New(wchar_t, path->length + 1);
+            if (dir_path == NULL)
                 return PyErr_NoMemory();
 
-            wcscpy_s(wpath, dir_path.length + 1, path->wide);
-            _dirnameW(wpath);
-            dir_path.wide = wpath;
+            wcscpy_s(dir_path, path->length + 1, path->wide);
 
-            result = os__getdiskusage_impl(module, &dir_path);
-
-            PyMem_Free(wpath);
-            return result;
+            if (_dirnameW(dir_path) != -1) {
+                Py_BEGIN_ALLOW_THREADS
+                retval = GetDiskFreeSpaceExW(dir_path, &_, &total, &free);
+                Py_END_ALLOW_THREADS
+            }
+            PyMem_Free(dir_path);
+            if (retval)
+                goto success;
         }
         return PyErr_SetFromWindowsErr(0);
     }
 
+success:
     return Py_BuildValue("(LL)", total.QuadPart, free.QuadPart);
 }
 #endif /* MS_WINDOWS */
