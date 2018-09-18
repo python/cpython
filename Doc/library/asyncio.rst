@@ -8,7 +8,7 @@
 
 .. sidebar:: Hello World!
 
-   .. code-block:: python
+   ::
 
        import asyncio
 
