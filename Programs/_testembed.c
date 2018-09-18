@@ -328,8 +328,8 @@ dump_config(void)
     printf("dump_refs = %i\n", config->dump_refs);
     printf("malloc_stats = %i\n", config->malloc_stats);
 
-    printf("coerce_c_locale = %i\n", config->coerce_c_locale);
-    printf("coerce_c_locale_warn = %i\n", config->coerce_c_locale_warn);
+    printf("_coerce_c_locale = %i\n", config->_coerce_c_locale);
+    printf("_coerce_c_locale_warn = %i\n", config->_coerce_c_locale_warn);
     printf("utf8_mode = %i\n", config->utf8_mode);
 
     printf("program_name = %ls\n", config->program_name);
@@ -473,8 +473,6 @@ static int test_init_from_config(void)
     putenv("PYTHONMALLOCSTATS=0");
     config.malloc_stats = 1;
 
-    /* FIXME: test coerce_c_locale and coerce_c_locale_warn */
-
     putenv("PYTHONUTF8=0");
     Py_UTF8Mode = 0;
     config.utf8_mode = 1;
@@ -544,8 +542,7 @@ static int test_init_isolated(void)
     /* Test _PyCoreConfig.isolated=1 */
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
-    /* Set coerce_c_locale and utf8_mode to not depend on the locale */
-    config.coerce_c_locale = 0;
+    /* Set utf8_mode to not depend on the locale */
     config.utf8_mode = 0;
     /* Use path starting with "./" avoids a search along the PATH */
     config.program_name = L"./_testembed";

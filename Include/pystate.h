@@ -41,8 +41,6 @@ typedef struct {
     int show_alloc_count;   /* -X showalloccount */
     int dump_refs;          /* PYTHONDUMPREFS */
     int malloc_stats;       /* PYTHONMALLOCSTATS */
-    int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
-    int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
     int utf8_mode;          /* PYTHONUTF8, -X utf8; -1 means unknown */
 
     wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
@@ -74,6 +72,8 @@ typedef struct {
 
     /* Private fields */
     int _disable_importlib; /* Needed by freeze_importlib */
+    int _coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
+    int _coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
 } _PyCoreConfig;
 
 #define _PyCoreConfig_INIT \
@@ -81,7 +81,8 @@ typedef struct {
         .install_signal_handlers = -1, \
         .ignore_environment = -1, \
         .use_hash_seed = -1, \
-        .coerce_c_locale = -1, \
+        ._coerce_c_locale = 0, \
+        ._coerce_c_locale_warn = 0, \
         .faulthandler = -1, \
         .tracemalloc = -1, \
         .utf8_mode = -1, \

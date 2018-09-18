@@ -1834,6 +1834,17 @@ config_init_utf8_mode(_PyCoreConfig *config)
         return _Py_INIT_OK();
     }
 
+#ifndef MS_WINDOWS
+    /* The C locale and the POSIX locale enable the UTF-8 Mode (PEP 540) */
+    const char *ctype_loc = setlocale(LC_CTYPE, NULL);
+    if (ctype_loc != NULL
+        && (strcmp(ctype_loc, "C") == 0 || strcmp(ctype_loc, "POSIX") == 0))
+    {
+        config->utf8_mode = 1;
+        return _Py_INIT_OK();
+    }
+#endif
+
     return _Py_INIT_OK();
 }
 
@@ -1857,16 +1868,18 @@ config_read_env_vars(_PyCoreConfig *config)
     const char *env = config_get_env_var("PYTHONCOERCECLOCALE");
     if (env) {
         if (strcmp(env, "0") == 0) {
-            if (config->coerce_c_locale < 0) {
-                config->coerce_c_locale = 0;
+            if (config->_coerce_c_locale < 0) {
+                config->_coerce_c_locale = 0;
             }
         }
         else if (strcmp(env, "warn") == 0) {
-            config->coerce_c_locale_warn = 1;
+            if (config->_coerce_c_locale_warn < 0) {
+                config->_coerce_c_locale_warn = 1;
+            }
         }
         else {
-            if (config->coerce_c_locale < 0) {
-                config->coerce_c_locale = 1;
+            if (config->_coerce_c_locale < 0) {
+                config->_coerce_c_locale = 1;
             }
         }
     }
@@ -2046,7 +2059,7 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
          * See the documentation of the PYTHONCOERCECLOCALE setting for more
          * details.
          */
-        if (config->coerce_c_locale && !locale_coerced) {
+        if (config->_coerce_c_locale && !locale_coerced) {
             locale_coerced = 1;
             _Py_CoerceLegacyLocale(config);
             encoding_changed = 1;
@@ -2073,7 +2086,7 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
            pymain_read_conf_impl(). Reset Py_IsolatedFlag and Py_NoSiteFlag
            modified by _PyCoreConfig_Read(). */
         int new_utf8_mode = config->utf8_mode;
-        int new_coerce_c_locale = config->coerce_c_locale;
+        int new_coerce_c_locale = config->_coerce_c_locale;
         Py_IgnoreEnvironmentFlag = init_ignore_env;
         if (_PyCoreConfig_Copy(config, &save_config) < 0) {
             pymain->err = _Py_INIT_NO_MEMORY();
@@ -2085,7 +2098,7 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
         cmdline_get_global_config(cmdline);
         _PyCoreConfig_GetGlobalConfig(config);
         config->utf8_mode = new_utf8_mode;
-        config->coerce_c_locale = new_coerce_c_locale;
+        config->_coerce_c_locale = new_coerce_c_locale;
 
         /* The encoding changed: read again the configuration
            with the new encoding */
@@ -2103,28 +2116,76 @@ done:
 }
 
 
-static void
-config_init_locale(_PyCoreConfig *config)
+static _PyInitError
+config_init_coerce_c_locale(_PyCoreConfig *config)
 {
-    if (config->coerce_c_locale < 0) {
-        /* The C locale enables the C locale coercion (PEP 538) */
-        if (_Py_LegacyLocaleDetected()) {
-            config->coerce_c_locale = 1;
+    const wchar_t *xopt = config_get_xoption(config, L"coerce_c_locale");
+    if (xopt) {
+        wchar_t *sep = wcschr(xopt, L'=');
+        if (sep) {
+            xopt = sep + 1;
+            if (wcscmp(xopt, L"1") == 0) {
+                if (config->_coerce_c_locale < 0) {
+                    config->_coerce_c_locale = 1;
+                }
+            }
+            else if (wcscmp(xopt, L"0") == 0) {
+                if (config->_coerce_c_locale < 0) {
+                    config->_coerce_c_locale = 0;
+                }
+            }
+            else if (wcscmp(xopt, L"warn") == 0) {
+                if (config->_coerce_c_locale_warn < 0) {
+                    config->_coerce_c_locale_warn = 1;
+                }
+            }
+            else {
+                return _Py_INIT_USER_ERR("invalid -X coerce_c_locale option value");
+            }
+        }
+        else {
+            if (config->_coerce_c_locale < 0) {
+                config->_coerce_c_locale = 1;
+            }
+        }
+
+        if (config->_coerce_c_locale_warn < 0) {
+            config->_coerce_c_locale_warn = 0;
         }
     }
 
-#ifndef MS_WINDOWS
-    if (config->utf8_mode < 0) {
-        /* The C locale and the POSIX locale enable the UTF-8 Mode (PEP 540) */
-        const char *ctype_loc = setlocale(LC_CTYPE, NULL);
-        if (ctype_loc != NULL
-           && (strcmp(ctype_loc, "C") == 0
-               || strcmp(ctype_loc, "POSIX") == 0))
-        {
-            config->utf8_mode = 1;
+    const char *env = config_get_env_var("PYTHONCOERCECLOCALE");
+    if (env) {
+        if (strcmp(env, "0") == 0) {
+            if (config->_coerce_c_locale < 0) {
+                config->_coerce_c_locale = 0;
+            }
+        }
+        else if (strcmp(env, "warn") == 0) {
+            if (config->_coerce_c_locale_warn < 0) {
+                config->_coerce_c_locale_warn = 1;
+            }
+        }
+        else {
+            if (config->_coerce_c_locale < 0) {
+                config->_coerce_c_locale = 1;
+            }
+        }
+
+        if (config->_coerce_c_locale_warn < 0) {
+            config->_coerce_c_locale_warn = 0;
         }
     }
-#endif
+
+    if (config->_coerce_c_locale < 0) {
+        /* The C locale enables the C locale coercion (PEP 538) */
+        if (_Py_LegacyLocaleDetected()) {
+            config->_coerce_c_locale = 1;
+            return _Py_INIT_OK();
+        }
+    }
+
+    return _Py_INIT_OK();
 }
 
 
@@ -2284,8 +2345,11 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         }
     }
 
-    if (config->utf8_mode < 0 || config->coerce_c_locale < 0) {
-        config_init_locale(config);
+    if (config->_coerce_c_locale < 0 || config->_coerce_c_locale_warn < 0) {
+        err = config_init_coerce_c_locale(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
 
     if (!config->_disable_importlib) {
@@ -2317,8 +2381,11 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     if (config->tracemalloc < 0) {
         config->tracemalloc = 0;
     }
-    if (config->coerce_c_locale < 0) {
-        config->coerce_c_locale = 0;
+    if (config->_coerce_c_locale < 0) {
+        config->_coerce_c_locale = 0;
+    }
+    if (config->_coerce_c_locale_warn < 0) {
+        config->_coerce_c_locale_warn = 0;
     }
     if (config->utf8_mode < 0) {
         config->utf8_mode = 0;
@@ -2326,6 +2393,10 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     if (config->argc < 0) {
         config->argc = 0;
     }
+
+    assert(config->_coerce_c_locale >= 0);
+    assert(config->_coerce_c_locale_warn >= 0);
+    assert(config->ignore_environment >= 0);
 
     return _Py_INIT_OK();
 }
@@ -2410,8 +2481,8 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(dump_refs);
     COPY_ATTR(malloc_stats);
 
-    COPY_ATTR(coerce_c_locale);
-    COPY_ATTR(coerce_c_locale_warn);
+    COPY_ATTR(_coerce_c_locale);
+    COPY_ATTR(_coerce_c_locale_warn);
     COPY_ATTR(utf8_mode);
 
     COPY_STR_ATTR(module_search_path_env);
@@ -2638,7 +2709,7 @@ pymain_run_python(_PyMain *pymain)
 
 
 static void
-pymain_init(_PyMain *pymain)
+pymain_init(_PyMain *pymain, int use_c_locale_coercion)
 {
     /* 754 requires that FP exceptions run in "no stop" mode by default,
      * and until C vendors implement C99's ways to control FP exceptions,
@@ -2651,6 +2722,11 @@ pymain_init(_PyMain *pymain)
 
     pymain->config._disable_importlib = 0;
     pymain->config.install_signal_handlers = 1;
+    if (use_c_locale_coercion) {
+        /* set to -1 to be able to enable the feature */
+        pymain->config._coerce_c_locale = -1;
+        pymain->config._coerce_c_locale_warn = -1;
+    }
 }
 
 
@@ -2751,9 +2827,9 @@ pymain_cmdline(_PyMain *pymain)
 
 
 static int
-pymain_main(_PyMain *pymain)
+pymain_main(_PyMain *pymain, int use_c_locale_coercion)
 {
-    pymain_init(pymain);
+    pymain_init(pymain, use_c_locale_coercion);
 
     int res = pymain_cmdline(pymain);
     if (res < 0) {
@@ -2802,10 +2878,22 @@ Py_Main(int argc, wchar_t **argv)
     pymain.argc = argc;
     pymain.wchar_argv = argv;
 
-    return pymain_main(&pymain);
+    return pymain_main(&pymain, 0);
 }
 
 
+#ifdef MS_WINDOWS
+int
+_Py_WindowsMain(int argc, wchar_t **argv)
+{
+    _PyMain pymain = _PyMain_INIT;
+    pymain.use_bytes_argv = 0;
+    pymain.argc = argc;
+    pymain.wchar_argv = argv;
+
+    return pymain_main(&pymain, 1);
+}
+#else
 int
 _Py_UnixMain(int argc, char **argv)
 {
@@ -2814,8 +2902,9 @@ _Py_UnixMain(int argc, char **argv)
     pymain.argc = argc;
     pymain.bytes_argv = argv;
 
-    return pymain_main(&pymain);
+    return pymain_main(&pymain, 1);
 }
+#endif
 
 
 /* this is gonna seem *real weird*, but if you put some other code between

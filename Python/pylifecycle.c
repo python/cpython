@@ -400,7 +400,7 @@ static const char *_C_LOCALE_WARNING =
 static void
 _emit_stderr_warning_for_legacy_locale(const _PyCoreConfig *core_config)
 {
-    if (core_config->coerce_c_locale_warn) {
+    if (core_config->_coerce_c_locale_warn) {
         if (_Py_LegacyLocaleDetected()) {
             fprintf(stderr, "%s", _C_LOCALE_WARNING);
         }
@@ -462,7 +462,7 @@ _coerce_default_locale_settings(const _PyCoreConfig *config, const _LocaleCoerci
                 "Error setting LC_CTYPE, skipping C locale coercion\n");
         return;
     }
-    if (config->coerce_c_locale_warn) {
+    if (config->_coerce_c_locale_warn) {
         fprintf(stderr, C_LOCALE_COERCION_WARNING, newloc);
     }
 
