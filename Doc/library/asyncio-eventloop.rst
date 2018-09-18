@@ -989,7 +989,7 @@ Availability: Unix.
 Executing code in thread or process pools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. coroutinemethod:: loop.run_in_executor(executor, func, \*args)
+.. awaitablemethod:: loop.run_in_executor(executor, func, \*args)
 
    Arrange for *func* to be called in the specified executor.
 

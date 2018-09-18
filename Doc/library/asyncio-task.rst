@@ -103,6 +103,31 @@ To actually run a coroutine asyncio provides three main mechanisms:
       world
       finished at 17:14:34
 
+
+.. _asyncio-awaitables:
+
+Awaitables
+==========
+
+We say that an object is an *awaitable* object if it can be used
+in an :keyword:`await` expression.
+
+
+.. rubric:: Coroutines and Tasks
+
+Python coroutines are *awaitables*::
+
+    async def nested():
+        return 42
+
+    async def main():
+        # Will print "42":
+        print(await nested())
+
+*Tasks* are used to schedule coroutines *concurrently*.
+See the previous :ref:`section <coroutine>` for an introduction
+to coroutines and tasks.
+
 Note that in this documentation the term "coroutine" can be used for
 two closely related concepts:
 
@@ -112,14 +137,41 @@ two closely related concepts:
   *coroutine function*.
 
 
+.. rubric:: Futures
+
+There is a dedicated section about the :ref:`asyncio Future object
+<asyncio-futures>`, but the concept is fundamental to asyncio so
+it needs a brief introduction in this section.
+
+A Future is a special **low-level** awaitable object that represents
+an **eventual result** of an asynchronous operation.
+Future objects in asyncio are needed to allow callback-based code
+to be used with async/await.
+
+Normally, **there is no need** to create Future objects at the
+application level code.
+
+Future objects, sometimes exposed by libraries and some asyncio
+APIs, should be awaited::
+
+    async def main():
+        await function_that_returns_a_future_object()
+
+        # this is also valid:
+        await asyncio.gather(
+            function_that_returns_a_future_object(),
+            some_python_coroutine()
+        )
+
+
 Running an asyncio Program
 ==========================
 
 .. function:: run(coro, \*, debug=False)
 
     This function runs the passed coroutine, taking care of
-    managing the asyncio event loop and finalizing asynchronous
-    generators.
+    managing the asyncio event loop and *finalizing asynchronous
+    generators*.
 
     This function cannot be called when another asyncio event loop is
     running in the same thread.
@@ -140,8 +192,8 @@ Creating Tasks
 
 .. function:: create_task(coro, \*, name=None)
 
-   Wrap the *coro* :ref:`coroutine <coroutine>` into a task and schedule
-   its execution. Return the task object.
+   Wrap the *coro* :ref:`coroutine <coroutine>` into a Task and
+   schedule its execution.  Return the Task object.
 
    If *name* is not ``None``, it is set as the name of the task using
    :meth:`Task.set_name`.
@@ -149,6 +201,21 @@ Creating Tasks
    The task is executed in the loop returned by :func:`get_running_loop`,
    :exc:`RuntimeError` is raised if there is no running loop in
    current thread.
+
+   This function has been **added in Python 3.7**.  Prior to
+   Python 3.7, the low-level :func:`asyncio.ensure_future` function
+   can be used instead::
+
+       async def coro():
+           ...
+
+       # In Python 3.7+
+       task = asyncio.create_task(coro())
+       ...
+
+       # This works in all Python versions but is less readable
+       task = asyncio.ensure_future(coro())
+       ...
 
    .. versionadded:: 3.7
 
@@ -165,6 +232,9 @@ Sleeping
 
    If *result* is provided, it is returned to the caller
    when the coroutine completes.
+
+   The *loop* argument is deprecated and scheduled for removal
+   in Python 4.0.
 
    .. _asyncio_example_sleep:
 
@@ -189,36 +259,31 @@ Sleeping
 Running Tasks Concurrently
 ==========================
 
-.. function:: gather(\*fs, loop=None, return_exceptions=False)
+.. awaitablefunction:: gather(\*fs, loop=None, return_exceptions=False)
 
-   Return a Future aggregating results from the given coroutine objects,
-   Tasks, or Futures.
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *fs*
+   sequence *concurrently*.
 
-   If all Tasks/Futures are completed successfully, the result is an
-   aggregate list of returned values.  The result values are in the
-   order of the original *fs* sequence.
+   If any awaitable in *fs* is a coroutine, it is automatically
+   scheduled as a Task.
 
-   All coroutines in the *fs* list are automatically
-   scheduled as :class:`Tasks <Task>`.
+   If all awaitables are completed successfully, the result is an
+   aggregate list of returned values.  The order of result values
+   corresponds to the order of awaitables in *fs*.
 
-   If *return_exceptions* is ``True``, exceptions in the Tasks/Futures
-   are treated the same as successful results, and gathered in the
-   result list.  Otherwise, the first raised exception is immediately
-   propagated to the returned Future.
+   If *return_exceptions* is ``True``, exceptions are treated the
+   same as successful results, and aggregated in the result list.
+   Otherwise, the first raised exception is immediately propagated
+   to the task that awaits on ``gather()``.
 
-   If the outer Future is *cancelled*, all submitted Tasks/Futures
+   If ``gather`` is *cancelled*, all submitted awaitables
    (that have not completed yet) are also *cancelled*.
 
-   If any child is *cancelled*, it is treated as if it raised
-   :exc:`CancelledError` -- the outer Future is **not** cancelled in
-   this case.  This is to prevent the cancellation of one submitted
-   Task/Future to cause other Tasks/Futures to be cancelled.
-
-   All futures must share the same event loop.
-
-   .. versionchanged:: 3.7
-      If the *gather* itself is cancelled, the cancellation is
-      propagated regardless of *return_exceptions*.
+   If any Task or Future from the *fs* sequence is *cancelled*, it is
+   treated as if it raised :exc:`CancelledError` -- the ``gather()``
+   call is **not** cancelled in this case.  This is to prevent the
+   cancellation of one submitted Task/Future to cause other
+   Tasks/Futures to be cancelled.
 
    .. _asyncio_example_gather:
 
@@ -235,6 +300,7 @@ Running Tasks Concurrently
           print(f"Task {name}: factorial({number}) = {f}")
 
       async def main():
+          # Schedule three calls *concurrently*:
           await asyncio.gather(
               factorial("A", 2),
               factorial("B", 3),
@@ -255,17 +321,21 @@ Running Tasks Concurrently
       #     Task C: Compute factorial(4)...
       #     Task C: factorial(4) = 24
 
+   .. versionchanged:: 3.7
+      If the *gather* itself is cancelled, the cancellation is
+      propagated regardless of *return_exceptions*.
+
 
 Shielding Tasks From Cancellation
 =================================
 
-.. coroutinefunction:: shield(fut, \*, loop=None)
+.. awaitablefunction:: shield(fut, \*, loop=None)
 
-   Wait for a Future/Task while protecting it from being cancelled.
+   Protect an :ref:`awaitable object <asyncio-awaitables>`
+   from being :meth:`cancelled <Task.cancel>`.
 
    *fut* can be a coroutine, a Task, or a Future-like object.  If
-   *fut* is a coroutine it is automatically scheduled as a
-   :class:`Task`.
+   *fut* is a coroutine it is automatically scheduled as a Task.
 
    The statement::
 
@@ -299,11 +369,10 @@ Timeouts
 
 .. coroutinefunction:: wait_for(fut, timeout, \*, loop=None)
 
-   Wait for a coroutine, Task, or Future to complete with timeout.
+   Wait for the *fut* :ref:`awaitable <asyncio-awaitables>`
+   to complete with a timeout.
 
-   *fut* can be a coroutine, a Task, or a Future-like object.  If
-   *fut* is a coroutine it is automatically scheduled as a
-   :class:`Task`.
+   If *fut* is a coroutine it is automatically scheduled as a Task.
 
    *timeout* can either be ``None`` or a float or int number of seconds
    to wait for.  If *timeout* is ``None``, block until the future
@@ -312,12 +381,16 @@ Timeouts
    If a timeout occurs, it cancels the task and raises
    :exc:`asyncio.TimeoutError`.
 
-   To avoid the task cancellation, wrap it in :func:`shield`.
+   To avoid the task :meth:`cancellation <Task.cancel>`,
+   wrap it in :func:`shield`.
 
    The function will wait until the future is actually cancelled,
    so the total wait time may exceed the *timeout*.
 
    If the wait is cancelled, the future *fut* is also cancelled.
+
+   The *loop* argument is deprecated and scheduled for removal
+   in Python 4.0.
 
    .. _asyncio_example_waitfor:
 
@@ -353,12 +426,17 @@ Waiting Primitives
 .. coroutinefunction:: wait(fs, \*, loop=None, timeout=None,\
                             return_when=ALL_COMPLETED)
 
-   Wait for a set of coroutines, Tasks, or Futures to complete.
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *fs*
+   sequence concurrently and block until the condition specified
+   by *return_when*.
 
-   *fs* is a list of coroutines, Futures, and/or Tasks.  Coroutines
-   are automatically scheduled as :class:`Tasks <Task>`.
+   If any awaitable in *fs* is a coroutine, it is automatically
+   scheduled as a Task.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
+
+   The *loop* argument is deprecated and scheduled for removal
+   in Python 4.0.
 
    *timeout* (a float or int), if specified, can be used to control
    the maximum number of seconds to wait before returning.
@@ -398,8 +476,10 @@ Waiting Primitives
 
 .. function:: as_completed(fs, \*, loop=None, timeout=None)
 
-   Return an iterator of awaitables which return
-   :class:`Future` instances.
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *fs*
+   set concurrently.  Return an iterator of :class:`Future` objects.
+   Each Future object returned represents the earliest result
+   from the set of the remaining awaitables.
 
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
    all Futures are done.
@@ -407,7 +487,7 @@ Waiting Primitives
    Example::
 
        for f in as_completed(fs):
-           result = await f
+           earliest_result = await f
            # ...
 
 
@@ -418,7 +498,8 @@ Scheduling From Other Threads
 
    Submit a coroutine to the given event loop.  Thread-safe.
 
-   Return a :class:`concurrent.futures.Future` to access the result.
+   Return a :class:`concurrent.futures.Future` to wait for the result
+   from another OS thread.
 
    This function is meant to be called from a different OS thread
    than the one where the event loop is running.  Example::

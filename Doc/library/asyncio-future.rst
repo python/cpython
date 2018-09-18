@@ -7,7 +7,7 @@
 Futures
 =======
 
-*Future* objects are used to bridge low-level callback-based code
+*Future* objects are used to bridge **low-level callback-based code**
 with high-level async/await code.
 
 
