@@ -10069,19 +10069,31 @@ os__getdiskusage_impl(PyObject *module, path_t *path)
 {
     BOOL retval;
     ULARGE_INTEGER _, total, free;
-    WCHAR wpath[MAX_PATH];
-
-    assert(path->length + 1 < MAX_PATH);
-    wcscpy_s(wpath, path->length + 1, path->wide);
-
-    if (!(GetFileAttributesW(wpath) & FILE_ATTRIBUTE_DIRECTORY))
-        _dirnameW(wpath);
 
     Py_BEGIN_ALLOW_THREADS
-    retval = GetDiskFreeSpaceExW(wpath, &_, &total, &free);
+    retval = GetDiskFreeSpaceExW(path->wide, &_, &total, &free);
     Py_END_ALLOW_THREADS
-    if (retval == 0)
+    if (retval == 0) {
+        if (GetLastError() == ERROR_DIRECTORY) {
+            PyObject *result = NULL;
+            wchar_t *wpath = NULL;
+            path_t dir_path = *path;
+
+            wpath = PyMem_New(wchar_t, dir_path.length + 1);
+            if (wpath == NULL)
+                return PyErr_NoMemory();
+
+            wcscpy_s(wpath, dir_path.length + 1, path->wide);
+            _dirnameW(wpath);
+            dir_path.wide = wpath;
+
+            result = os__getdiskusage_impl(module, &dir_path);
+
+            PyMem_Free(wpath);
+            return result;
+        }
         return PyErr_SetFromWindowsErr(0);
+    }
 
     return Py_BuildValue("(LL)", total.QuadPart, free.QuadPart);
 }
