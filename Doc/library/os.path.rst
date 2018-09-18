@@ -55,6 +55,14 @@ the :mod:`glob` module.)
    * :mod:`macpath` for old-style MacOS paths
 
 
+.. versionchanged:: 3.8
+
+   :func:`exists`, :func:`lexists`, :func:`isdir`, :func:`isfile`,
+   :func:`islink`, and :func:`ismount` now return ``False`` instead of
+   raising an exception for paths that contain characters or bytes
+   unrepresentable at the OS level.
+
+
 .. function:: abspath(path)
 
    Return a normalized absolutized version of the pathname *path*. On most
