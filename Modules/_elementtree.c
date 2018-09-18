@@ -3305,6 +3305,11 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
         PyErr_NoMemory();
         return -1;
     }
+    /* expat < 2.1.0 has no XML_SetHashSalt() */
+    if (EXPAT(SetHashSalt) != NULL) {
+        EXPAT(SetHashSalt)(self->parser,
+                           (unsigned long)_Py_HashSecret.expat.hashsalt);
+    }
 
     if (target) {
         Py_INCREF(target);
