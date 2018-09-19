@@ -338,7 +338,9 @@ class UUID:
     def version(self):
         # The version bits are only meaningful for RFC 4122 UUIDs.
         if self.variant == RFC_4122:
-            return int((self.int >> 76) & 0xf)
+            uuid_version = int((self.int >> 76) & 0xf)
+            if 0 < uuid_version < 6:
+                return uuid_version
 
 def _popen(command, *args):
     import os, shutil, subprocess
