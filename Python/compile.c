@@ -3683,6 +3683,7 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
        !s  : 001  0x1  FVC_STR
        !r  : 010  0x2  FVC_REPR
        !a  : 011  0x3  FVC_ASCII
+       !t  : 100  0x4  FVC_TYPE_FQN
 
        next bit is whether or not we have a format spec:
        yes : 100  0x4
@@ -3698,6 +3699,7 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     case 's': oparg = FVC_STR;   break;
     case 'r': oparg = FVC_REPR;  break;
     case 'a': oparg = FVC_ASCII; break;
+    case 't': oparg = FVC_TYPE_FQN; break;
     case -1:  oparg = FVC_NONE;  break;
     default:
         PyErr_SetString(PyExc_SystemError,

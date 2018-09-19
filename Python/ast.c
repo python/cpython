@@ -4635,7 +4635,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
 
         /* Validate the conversion. */
         if (!(conversion == 's' || conversion == 'r'
-              || conversion == 'a')) {
+              || conversion == 'a' || conversion == 't')) {
             ast_error(c, n, "f-string: invalid conversion character: "
                             "expected 's', 'r', or 'a'");
             return -1;

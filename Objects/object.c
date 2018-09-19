@@ -568,6 +568,13 @@ PyObject_ASCII(PyObject *v)
     return res;
 }
 
+PyObject*
+_PyObject_TypeFQN(PyObject *v)
+{
+    PyTypeObject *type = Py_TYPE(v);
+    return _PyType_FQN(type);
+}
+
 PyObject *
 PyObject_Bytes(PyObject *v)
 {

@@ -502,6 +502,7 @@ PyAPI_FUNC(PyObject *) PyType_GenericNew(PyTypeObject *,
                                                PyObject *, PyObject *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);
+PyAPI_FUNC(PyObject*) _PyType_FQN(PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyType_LookupId(PyTypeObject *, _Py_Identifier *);
 PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, _Py_Identifier *);
@@ -525,6 +526,7 @@ PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_Repr(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_Str(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_ASCII(PyObject *);
+PyAPI_FUNC(PyObject*) _PyObject_TypeFQN(PyObject *v);
 PyAPI_FUNC(PyObject *) PyObject_Bytes(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_RichCompare(PyObject *, PyObject *, int);
 PyAPI_FUNC(int) PyObject_RichCompareBool(PyObject *, PyObject *, int);
