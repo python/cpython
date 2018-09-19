@@ -119,11 +119,7 @@ PyAPI_FUNC(int) Py_FdIsInteractive(FILE *, const char *);
 /* Bootstrap __main__ (defined in Modules/main.c) */
 PyAPI_FUNC(int) Py_Main(int argc, wchar_t **argv);
 #ifdef Py_BUILD_CORE
-#  ifdef MS_WINDOWS
-PyAPI_FUNC(int) _Py_WindowsMain(int argc, wchar_t **argv);
-#  else
 PyAPI_FUNC(int) _Py_UnixMain(int argc, char **argv);
-#  endif
 #endif
 
 /* In getpath.c */

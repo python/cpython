@@ -267,6 +267,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'malloc_stats': 0,
         'utf8_mode': 0,
 
+        'coerce_c_locale': 0,
+        'coerce_c_locale_warn': 0,
+
         'program_name': './_testembed',
         'argc': 0,
         'argv': '[]',
@@ -287,8 +290,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         '_disable_importlib': 0,
         'Py_FrozenFlag': 0,
-        '_coerce_c_locale': 0,
-        '_coerce_c_locale_warn': 0,
     }
 
     def check_config(self, testname, expected):
