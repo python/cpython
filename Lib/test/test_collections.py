@@ -331,6 +331,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(p._fields, ('x', 'y'))                             # test _fields attribute
         self.assertEqual(p._replace(x=1), (1, 22))                          # test _replace method
         self.assertEqual(p._asdict(), dict(x=11, y=22))                     # test _asdict method
+        self.assertEqual(list(p._asdict()), ['x', 'y'])                     # test _asdict ordering
 
         try:
             p._replace(x=1, error=2)
