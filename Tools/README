@@ -1,7 +1,7 @@
 This directory contains a number of Python programs that are useful
 while building or extending Python.
 
-buildbot        Batchfiles for running on Windows buildbot workers.
+buildbot        Batchfiles for running on Windows buildslaves.
 
 ccbench         A Python threads-based concurrency benchmark. (*)
 
