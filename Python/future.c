@@ -5,6 +5,7 @@
 #include "graminit.h"
 #include "code.h"
 #include "symtable.h"
+#include "ast.h"
 
 #define UNDEFINED_FUTURE_FEATURE "future feature %.100s is not defined"
 #define ERR_LATE_FUTURE \
@@ -78,7 +79,11 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
        but is preceded by a regular import.
     */
 
-    for (i = 0; i < asdl_seq_LEN(mod->v.Module.body); i++) {
+    i = 0;
+    if (_PyAST_GetDocString(mod->v.Module.body) != NULL)
+        i++;
+
+    for (; i < asdl_seq_LEN(mod->v.Module.body); i++) {
         stmt_ty s = (stmt_ty)asdl_seq_GET(mod->v.Module.body, i);
 
         if (done && s->lineno > prev_line)

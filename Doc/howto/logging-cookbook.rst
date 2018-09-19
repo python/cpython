@@ -1652,11 +1652,11 @@ works::
 Inserting a BOM into messages sent to a SysLogHandler
 -----------------------------------------------------
 
-`RFC 5424 <https://tools.ietf.org/html/rfc5424>`_ requires that a
+:rfc:`5424` requires that a
 Unicode message be sent to a syslog daemon as a set of bytes which have the
 following structure: an optional pure-ASCII component, followed by a UTF-8 Byte
-Order Mark (BOM), followed by Unicode encoded using UTF-8. (See the `relevant
-section of the specification <https://tools.ietf.org/html/rfc5424#section-6>`_.)
+Order Mark (BOM), followed by Unicode encoded using UTF-8. (See the
+:rfc:`relevant section of the specification <5424#section-6>`.)
 
 In Python 3.1, code was added to
 :class:`~logging.handlers.SysLogHandler` to insert a BOM into the message, but
@@ -1666,7 +1666,7 @@ appear before it.
 
 As this behaviour is broken, the incorrect BOM insertion code is being removed
 from Python 3.2.4 and later. However, it is not being replaced, and if you
-want to produce RFC 5424-compliant messages which include a BOM, an optional
+want to produce :rfc:`5424`-compliant messages which include a BOM, an optional
 pure-ASCII sequence before it and arbitrary Unicode after it, encoded using
 UTF-8, then you need to do the following:
 
@@ -1689,7 +1689,7 @@ UTF-8, then you need to do the following:
 
 The formatted message *will* be encoded using UTF-8 encoding by
 ``SysLogHandler``. If you follow the above rules, you should be able to produce
-RFC 5424-compliant messages. If you don't, logging may not complain, but your
+:rfc:`5424`-compliant messages. If you don't, logging may not complain, but your
 messages will not be RFC 5424-compliant, and your syslog daemon may complain.
 
 

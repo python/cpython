@@ -212,12 +212,12 @@ Example
 -------
 
 To demonstrate several uses of the :func:`pprint` function and its parameters,
-let's fetch information about a project from `PyPI <https://pypi.python.org/pypi>`_::
+let's fetch information about a project from `PyPI <https://pypi.org>`_::
 
    >>> import json
    >>> import pprint
    >>> from urllib.request import urlopen
-   >>> with urlopen('http://pypi.python.org/pypi/Twisted/json') as url:
+   >>> with urlopen('http://pypi.org/project/Twisted/json') as url:
    ...     http_info = url.info()
    ...     raw_data = url.read().decode(http_info.get_content_charset())
    >>> project_info = json.loads(raw_data)
@@ -248,9 +248,9 @@ In its basic form, :func:`pprint` shows the whole object::
              'maintainer': '',
              'maintainer_email': '',
              'name': 'Twisted',
-             'package_url': 'http://pypi.python.org/pypi/Twisted',
+             'package_url': 'http://pypi.org/project/Twisted',
              'platform': 'UNKNOWN',
-             'release_url': 'http://pypi.python.org/pypi/Twisted/12.3.0',
+             'release_url': 'http://pypi.org/project/Twisted/12.3.0',
              'requires_python': None,
              'stable_version': None,
              'summary': 'An asynchronous networking framework written in Python',
@@ -264,7 +264,7 @@ In its basic form, :func:`pprint` shows the whole object::
               'python_version': 'source',
               'size': 2615733,
               'upload_time': '2012-12-26T12:47:03',
-              'url': 'https://pypi.python.org/packages/source/T/Twisted/Twisted-12.3.0.tar.bz2'},
+              'url': 'https://pypi.org/packages/source/T/Twisted/Twisted-12.3.0.tar.bz2'},
              {'comment_text': '',
               'downloads': 5224,
               'filename': 'Twisted-12.3.0.win32-py2.7.msi',
@@ -274,7 +274,7 @@ In its basic form, :func:`pprint` shows the whole object::
               'python_version': '2.7',
               'size': 2916352,
               'upload_time': '2012-12-26T12:48:15',
-              'url': 'https://pypi.python.org/packages/2.7/T/Twisted/Twisted-12.3.0.win32-py2.7.msi'}]}
+              'url': 'https://pypi.org/packages/2.7/T/Twisted/Twisted-12.3.0.win32-py2.7.msi'}]}
 
 The result can be limited to a certain *depth* (ellipsis is used for deeper
 contents)::
@@ -301,9 +301,9 @@ contents)::
              'maintainer': '',
              'maintainer_email': '',
              'name': 'Twisted',
-             'package_url': 'http://pypi.python.org/pypi/Twisted',
+             'package_url': 'http://pypi.org/project/Twisted',
              'platform': 'UNKNOWN',
-             'release_url': 'http://pypi.python.org/pypi/Twisted/12.3.0',
+             'release_url': 'http://pypi.org/project/Twisted/12.3.0',
              'requires_python': None,
              'stable_version': None,
              'summary': 'An asynchronous networking framework written in Python',
@@ -339,9 +339,9 @@ cannot be split, the specified width will be exceeded::
              'maintainer': '',
              'maintainer_email': '',
              'name': 'Twisted',
-             'package_url': 'http://pypi.python.org/pypi/Twisted',
+             'package_url': 'http://pypi.org/project/Twisted',
              'platform': 'UNKNOWN',
-             'release_url': 'http://pypi.python.org/pypi/Twisted/12.3.0',
+             'release_url': 'http://pypi.org/project/Twisted/12.3.0',
              'requires_python': None,
              'stable_version': None,
              'summary': 'An asynchronous networking '

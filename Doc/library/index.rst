@@ -30,12 +30,13 @@ optional components.
 In addition to the standard library, there is a growing collection of
 several thousand components (from individual programs and modules to
 packages and entire application development frameworks), available from
-the `Python Package Index <https://pypi.python.org/pypi>`_.
+the `Python Package Index <https://pypi.org>`_.
 
-
+.. We don't use :numbered: option for the TOC below as it enforces
+   numbered sections for the entire stdlib docs.  If desired,
+   :numbered: can be enabled on a per-module basis.
 .. toctree::
    :maxdepth: 2
-   :numbered:
 
    intro.rst
    functions.rst

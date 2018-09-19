@@ -31,6 +31,10 @@ from test.test_asyncio import utils as test_utils
 MOCK_ANY = mock.ANY
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 def close_pipe_transport(transport):
     # Don't call transport.close() because the event loop and the selector
     # are mocked
@@ -517,7 +521,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def test_sock_sendfile_not_available(self):
         sock, proto = self.prepare()
         with mock.patch('asyncio.unix_events.os', spec=[]):
-            with self.assertRaisesRegex(events.SendfileNotAvailableError,
+            with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
                                         "os[.]sendfile[(][)] is not available"):
                 self.run_loop(self.loop._sock_sendfile_native(sock, self.file,
                                                               0, None))
@@ -526,7 +530,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def test_sock_sendfile_not_a_file(self):
         sock, proto = self.prepare()
         f = object()
-        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+        with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))
@@ -535,7 +539,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def test_sock_sendfile_iobuffer(self):
         sock, proto = self.prepare()
         f = io.BytesIO()
-        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+        with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))
@@ -545,7 +549,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         sock, proto = self.prepare()
         f = mock.Mock()
         f.fileno.return_value = -1
-        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+        with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))
@@ -601,7 +605,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         with self.assertRaises(KeyError):
             self.loop._selector.get_key(sock)
         exc = fut.exception()
-        self.assertIsInstance(exc, events.SendfileNotAvailableError)
+        self.assertIsInstance(exc, asyncio.SendfileNotAvailableError)
         self.assertEqual(0, self.file.tell())
 
     def test_sock_sendfile_os_error_next_call(self):
@@ -626,7 +630,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
 
         fileno = self.file.fileno()
         fut = self.loop.create_future()
-        err = events.SendfileNotAvailableError()
+        err = asyncio.SendfileNotAvailableError()
         with mock.patch('os.sendfile', side_effect=err):
             self.loop._sock_sendfile_native_impl(fut, sock.fileno(),
                                                  sock, fileno,

@@ -367,12 +367,9 @@ validate_assignlist(asdl_seq *targets, expr_context_ty ctx)
 }
 
 static int
-validate_body(asdl_seq *body, const char *owner, int allowempty)
+validate_body(asdl_seq *body, const char *owner)
 {
-    if (!allowempty && !validate_nonempty_seq(body, "body", owner)) {
-        return 0;
-    }
-    return validate_stmts(body);
+    return validate_nonempty_seq(body, "body", owner) && validate_stmts(body);
 }
 
 static int
@@ -381,15 +378,13 @@ validate_stmt(stmt_ty stmt)
     int i;
     switch (stmt->kind) {
     case FunctionDef_kind:
-        return validate_body(stmt->v.FunctionDef.body, "FunctionDef",
-                             stmt->v.FunctionDef.docstring != NULL) &&
+        return validate_body(stmt->v.FunctionDef.body, "FunctionDef") &&
             validate_arguments(stmt->v.FunctionDef.args) &&
             validate_exprs(stmt->v.FunctionDef.decorator_list, Load, 0) &&
             (!stmt->v.FunctionDef.returns ||
              validate_expr(stmt->v.FunctionDef.returns, Load));
     case ClassDef_kind:
-        return validate_body(stmt->v.ClassDef.body, "ClassDef",
-                             stmt->v.ClassDef.docstring != NULL) &&
+        return validate_body(stmt->v.ClassDef.body, "ClassDef") &&
             validate_exprs(stmt->v.ClassDef.bases, Load, 0) &&
             validate_keywords(stmt->v.ClassDef.keywords) &&
             validate_exprs(stmt->v.ClassDef.decorator_list, Load, 0);
@@ -417,20 +412,20 @@ validate_stmt(stmt_ty stmt)
     case For_kind:
         return validate_expr(stmt->v.For.target, Store) &&
             validate_expr(stmt->v.For.iter, Load) &&
-            validate_body(stmt->v.For.body, "For", 0) &&
+            validate_body(stmt->v.For.body, "For") &&
             validate_stmts(stmt->v.For.orelse);
     case AsyncFor_kind:
         return validate_expr(stmt->v.AsyncFor.target, Store) &&
             validate_expr(stmt->v.AsyncFor.iter, Load) &&
-            validate_body(stmt->v.AsyncFor.body, "AsyncFor", 0) &&
+            validate_body(stmt->v.AsyncFor.body, "AsyncFor") &&
             validate_stmts(stmt->v.AsyncFor.orelse);
     case While_kind:
         return validate_expr(stmt->v.While.test, Load) &&
-            validate_body(stmt->v.While.body, "While", 0) &&
+            validate_body(stmt->v.While.body, "While") &&
             validate_stmts(stmt->v.While.orelse);
     case If_kind:
         return validate_expr(stmt->v.If.test, Load) &&
-            validate_body(stmt->v.If.body, "If", 0) &&
+            validate_body(stmt->v.If.body, "If") &&
             validate_stmts(stmt->v.If.orelse);
     case With_kind:
         if (!validate_nonempty_seq(stmt->v.With.items, "items", "With"))
@@ -441,7 +436,7 @@ validate_stmt(stmt_ty stmt)
                 (item->optional_vars && !validate_expr(item->optional_vars, Store)))
                 return 0;
         }
-        return validate_body(stmt->v.With.body, "With", 0);
+        return validate_body(stmt->v.With.body, "With");
     case AsyncWith_kind:
         if (!validate_nonempty_seq(stmt->v.AsyncWith.items, "items", "AsyncWith"))
             return 0;
@@ -451,7 +446,7 @@ validate_stmt(stmt_ty stmt)
                 (item->optional_vars && !validate_expr(item->optional_vars, Store)))
                 return 0;
         }
-        return validate_body(stmt->v.AsyncWith.body, "AsyncWith", 0);
+        return validate_body(stmt->v.AsyncWith.body, "AsyncWith");
     case Raise_kind:
         if (stmt->v.Raise.exc) {
             return validate_expr(stmt->v.Raise.exc, Load) &&
@@ -463,7 +458,7 @@ validate_stmt(stmt_ty stmt)
         }
         return 1;
     case Try_kind:
-        if (!validate_body(stmt->v.Try.body, "Try", 0))
+        if (!validate_body(stmt->v.Try.body, "Try"))
             return 0;
         if (!asdl_seq_LEN(stmt->v.Try.handlers) &&
             !asdl_seq_LEN(stmt->v.Try.finalbody)) {
@@ -479,7 +474,7 @@ validate_stmt(stmt_ty stmt)
             excepthandler_ty handler = asdl_seq_GET(stmt->v.Try.handlers, i);
             if ((handler->v.ExceptHandler.type &&
                  !validate_expr(handler->v.ExceptHandler.type, Load)) ||
-                !validate_body(handler->v.ExceptHandler.body, "ExceptHandler", 0))
+                !validate_body(handler->v.ExceptHandler.body, "ExceptHandler"))
                 return 0;
         }
         return (!asdl_seq_LEN(stmt->v.Try.finalbody) ||
@@ -504,8 +499,7 @@ validate_stmt(stmt_ty stmt)
     case Expr_kind:
         return validate_expr(stmt->v.Expr.value, Load);
     case AsyncFunctionDef_kind:
-        return validate_body(stmt->v.AsyncFunctionDef.body, "AsyncFunctionDef",
-                             stmt->v.AsyncFunctionDef.docstring != NULL) &&
+        return validate_body(stmt->v.AsyncFunctionDef.body, "AsyncFunctionDef") &&
             validate_arguments(stmt->v.AsyncFunctionDef.args) &&
             validate_exprs(stmt->v.AsyncFunctionDef.decorator_list, Load, 0) &&
             (!stmt->v.AsyncFunctionDef.returns ||
@@ -600,16 +594,14 @@ struct compiling {
 static asdl_seq *seq_for_testlist(struct compiling *, const node *);
 static expr_ty ast_for_expr(struct compiling *, const node *);
 static stmt_ty ast_for_stmt(struct compiling *, const node *);
-static asdl_seq *ast_for_body(struct compiling *c, const node *n,
-                              string *docstring);
-static string docstring_from_stmts(asdl_seq *stmts);
+static asdl_seq *ast_for_suite(struct compiling *c, const node *n);
 static asdl_seq *ast_for_exprlist(struct compiling *, const node *,
                                   expr_context_ty);
 static expr_ty ast_for_testlist(struct compiling *, const node *);
 static stmt_ty ast_for_classdef(struct compiling *, const node *, asdl_seq *);
 
-static stmt_ty ast_for_with_stmt(struct compiling *, const node *, int);
-static stmt_ty ast_for_for_stmt(struct compiling *, const node *, int);
+static stmt_ty ast_for_with_stmt(struct compiling *, const node *, bool);
+static stmt_ty ast_for_for_stmt(struct compiling *, const node *, bool);
 
 /* Note different signature for ast_for_call */
 static expr_ty ast_for_call(struct compiling *, const node *, expr_ty, bool);
@@ -820,7 +812,7 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
                     }
                 }
             }
-            res = Module(stmts, docstring_from_stmts(stmts), arena);
+            res = Module(stmts, arena);
             break;
         case eval_input: {
             expr_ty testlist_ast;
@@ -1577,15 +1569,15 @@ ast_for_decorators(struct compiling *c, const node *n)
 }
 
 static stmt_ty
-ast_for_funcdef_impl(struct compiling *c, const node *n,
-                     asdl_seq *decorator_seq, int is_async)
+ast_for_funcdef_impl(struct compiling *c, const node *n0,
+                     asdl_seq *decorator_seq, bool is_async)
 {
     /* funcdef: 'def' NAME parameters ['->' test] ':' suite */
+    const node * const n = is_async ? CHILD(n0, 1) : n0;
     identifier name;
     arguments_ty args;
     asdl_seq *body;
     expr_ty returns = NULL;
-    string docstring;
     int name_i = 1;
 
     REQ(n, funcdef);
@@ -1604,18 +1596,16 @@ ast_for_funcdef_impl(struct compiling *c, const node *n,
             return NULL;
         name_i += 2;
     }
-    body = ast_for_body(c, CHILD(n, name_i + 3), &docstring);
+    body = ast_for_suite(c, CHILD(n, name_i + 3));
     if (!body)
         return NULL;
 
     if (is_async)
         return AsyncFunctionDef(name, args, body, decorator_seq, returns,
-                                docstring, LINENO(n),
-                                n->n_col_offset, c->c_arena);
+                                LINENO(n0), n0->n_col_offset, c->c_arena);
     else
         return FunctionDef(name, args, body, decorator_seq, returns,
-                           docstring, LINENO(n),
-                           n->n_col_offset, c->c_arena);
+                           LINENO(n), n->n_col_offset, c->c_arena);
 }
 
 static stmt_ty
@@ -1627,8 +1617,8 @@ ast_for_async_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_se
     assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
     REQ(CHILD(n, 1), funcdef);
 
-    return ast_for_funcdef_impl(c, CHILD(n, 1), decorator_seq,
-                                1 /* is_async */);
+    return ast_for_funcdef_impl(c, n, decorator_seq,
+                                true /* is_async */);
 }
 
 static stmt_ty
@@ -1636,7 +1626,7 @@ ast_for_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 {
     /* funcdef: 'def' NAME parameters ['->' test] ':' suite */
     return ast_for_funcdef_impl(c, n, decorator_seq,
-                                0 /* is_async */);
+                                false /* is_async */);
 }
 
 
@@ -1650,15 +1640,15 @@ ast_for_async_stmt(struct compiling *c, const node *n)
 
     switch (TYPE(CHILD(n, 1))) {
         case funcdef:
-            return ast_for_funcdef_impl(c, CHILD(n, 1), NULL,
-                                        1 /* is_async */);
+            return ast_for_funcdef_impl(c, n, NULL,
+                                        true /* is_async */);
         case with_stmt:
-            return ast_for_with_stmt(c, CHILD(n, 1),
-                                     1 /* is_async */);
+            return ast_for_with_stmt(c, n,
+                                     true /* is_async */);
 
         case for_stmt:
-            return ast_for_for_stmt(c, CHILD(n, 1),
-                                    1 /* is_async */);
+            return ast_for_for_stmt(c, n,
+                                    true /* is_async */);
 
         default:
             PyErr_Format(PyExc_SystemError,
@@ -2825,29 +2815,56 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func, bool allowgen)
                 identifier key, tmp;
                 int k;
 
-                /* chch is test, but must be an identifier? */
-                e = ast_for_expr(c, chch);
-                if (!e)
-                    return NULL;
-                /* f(lambda x: x[0] = 3) ends up getting parsed with
-                 * LHS test = lambda x: x[0], and RHS test = 3.
-                 * SF bug 132313 points out that complaining about a keyword
-                 * then is very confusing.
-                 */
-                if (e->kind == Lambda_kind) {
+                // To remain LL(1), the grammar accepts any test (basically, any
+                // expression) in the keyword slot of a call site.  So, we need
+                // to manually enforce that the keyword is a NAME here.
+                static const int name_tree[] = {
+                    test,
+                    or_test,
+                    and_test,
+                    not_test,
+                    comparison,
+                    expr,
+                    xor_expr,
+                    and_expr,
+                    shift_expr,
+                    arith_expr,
+                    term,
+                    factor,
+                    power,
+                    atom_expr,
+                    atom,
+                    0,
+                };
+                node *expr_node = chch;
+                for (int i = 0; name_tree[i]; i++) {
+                    if (TYPE(expr_node) != name_tree[i])
+                        break;
+                    if (NCH(expr_node) != 1)
+                        break;
+                    expr_node = CHILD(expr_node, 0);
+                }
+                if (TYPE(expr_node) == lambdef) {
+                    // f(lambda x: x[0] = 3) ends up getting parsed with LHS
+                    // test = lambda x: x[0], and RHS test = 3.  Issue #132313
+                    // points out that complaining about a keyword then is very
+                    // confusing.
                     ast_error(c, chch,
                             "lambda cannot contain assignment");
                     return NULL;
                 }
-                else if (e->kind != Name_kind) {
+                else if (TYPE(expr_node) != NAME) {
                     ast_error(c, chch,
-                            "keyword can't be an expression");
+                              "keyword can't be an expression");
                     return NULL;
                 }
-                else if (forbidden_name(c, e->v.Name.id, ch, 1)) {
+                key = new_identifier(STR(expr_node), c);
+                if (key == NULL) {
                     return NULL;
                 }
-                key = e->v.Name.id;
+                if (forbidden_name(c, key, chch, 1)) {
+                    return NULL;
+                }
                 for (k = 0; k < nkeywords; k++) {
                     tmp = ((keyword_ty)asdl_seq_GET(keywords, k))->arg;
                     if (tmp && !PyUnicode_Compare(tmp, key)) {
@@ -3263,6 +3280,8 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
             break;
         case STAR:
             str = PyUnicode_InternFromString("*");
+            if (!str)
+                return NULL;
             if (PyArena_AddPyObject(c->c_arena, str) < 0) {
                 Py_DECREF(str);
                 return NULL;
@@ -3528,32 +3547,6 @@ ast_for_suite(struct compiling *c, const node *n)
     return seq;
 }
 
-static string
-docstring_from_stmts(asdl_seq *stmts)
-{
-    if (stmts && stmts->size) {
-        stmt_ty s = (stmt_ty)asdl_seq_GET(stmts, 0);
-        /* If first statement is a literal string, it's the doc string. */
-        if (s->kind == Expr_kind && s->v.Expr.value->kind == Str_kind) {
-            string doc = s->v.Expr.value->v.Str.s;
-            /* not very efficient, but simple */
-            memmove(&asdl_seq_GET(stmts, 0), &asdl_seq_GET(stmts, 1),
-                    (stmts->size - 1) * sizeof(void*));
-            stmts->size--;
-            return doc;
-        }
-    }
-    return NULL;
-}
-
-static asdl_seq *
-ast_for_body(struct compiling *c, const node *n, string *docstring)
-{
-    asdl_seq *stmts = ast_for_suite(c, n);
-    *docstring = docstring_from_stmts(stmts);
-    return stmts;
-}
-
 static stmt_ty
 ast_for_if_stmt(struct compiling *c, const node *n)
 {
@@ -3716,8 +3709,9 @@ ast_for_while_stmt(struct compiling *c, const node *n)
 }
 
 static stmt_ty
-ast_for_for_stmt(struct compiling *c, const node *n, int is_async)
+ast_for_for_stmt(struct compiling *c, const node *n0, bool is_async)
 {
+    const node * const n = is_async ? CHILD(n0, 1) : n0;
     asdl_seq *_target, *seq = NULL, *suite_seq;
     expr_ty expression;
     expr_ty target, first;
@@ -3752,7 +3746,7 @@ ast_for_for_stmt(struct compiling *c, const node *n, int is_async)
 
     if (is_async)
         return AsyncFor(target, expression, suite_seq, seq,
-                        LINENO(n), n->n_col_offset,
+                        LINENO(n0), n0->n_col_offset,
                         c->c_arena);
     else
         return For(target, expression, suite_seq, seq,
@@ -3904,8 +3898,9 @@ ast_for_with_item(struct compiling *c, const node *n)
 
 /* with_stmt: 'with' with_item (',' with_item)* ':' suite */
 static stmt_ty
-ast_for_with_stmt(struct compiling *c, const node *n, int is_async)
+ast_for_with_stmt(struct compiling *c, const node *n0, bool is_async)
 {
+    const node * const n = is_async ? CHILD(n0, 1) : n0;
     int i, n_items;
     asdl_seq *items, *body;
 
@@ -3927,7 +3922,7 @@ ast_for_with_stmt(struct compiling *c, const node *n, int is_async)
         return NULL;
 
     if (is_async)
-        return AsyncWith(items, body, LINENO(n), n->n_col_offset, c->c_arena);
+        return AsyncWith(items, body, LINENO(n0), n0->n_col_offset, c->c_arena);
     else
         return With(items, body, LINENO(n), n->n_col_offset, c->c_arena);
 }
@@ -3938,13 +3933,12 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
     /* classdef: 'class' NAME ['(' arglist ')'] ':' suite */
     PyObject *classname;
     asdl_seq *s;
-    string docstring;
     expr_ty call;
 
     REQ(n, classdef);
 
     if (NCH(n) == 4) { /* class NAME ':' suite */
-        s = ast_for_body(c, CHILD(n, 3), &docstring);
+        s = ast_for_suite(c, CHILD(n, 3));
         if (!s)
             return NULL;
         classname = NEW_IDENTIFIER(CHILD(n, 1));
@@ -3952,12 +3946,12 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
             return NULL;
         if (forbidden_name(c, classname, CHILD(n, 3), 0))
             return NULL;
-        return ClassDef(classname, NULL, NULL, s, decorator_seq, docstring,
+        return ClassDef(classname, NULL, NULL, s, decorator_seq,
                         LINENO(n), n->n_col_offset, c->c_arena);
     }
 
     if (TYPE(CHILD(n, 3)) == RPAR) { /* class NAME '(' ')' ':' suite */
-        s = ast_for_body(c, CHILD(n, 5), &docstring);
+        s = ast_for_suite(c, CHILD(n, 5));
         if (!s)
             return NULL;
         classname = NEW_IDENTIFIER(CHILD(n, 1));
@@ -3965,7 +3959,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
             return NULL;
         if (forbidden_name(c, classname, CHILD(n, 3), 0))
             return NULL;
-        return ClassDef(classname, NULL, NULL, s, decorator_seq, docstring,
+        return ClassDef(classname, NULL, NULL, s, decorator_seq,
                         LINENO(n), n->n_col_offset, c->c_arena);
     }
 
@@ -3982,7 +3976,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         if (!call)
             return NULL;
     }
-    s = ast_for_body(c, CHILD(n, 6), &docstring);
+    s = ast_for_suite(c, CHILD(n, 6));
     if (!s)
         return NULL;
     classname = NEW_IDENTIFIER(CHILD(n, 1));
@@ -3992,8 +3986,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         return NULL;
 
     return ClassDef(classname, call->v.Call.args, call->v.Call.keywords, s,
-                    decorator_seq, docstring, LINENO(n), n->n_col_offset,
-                    c->c_arena);
+                    decorator_seq, LINENO(n), n->n_col_offset, c->c_arena);
 }
 
 static stmt_ty
@@ -4063,7 +4056,7 @@ ast_for_stmt(struct compiling *c, const node *n)
                 return ast_for_async_stmt(c, ch);
             default:
                 PyErr_Format(PyExc_SystemError,
-                             "unhandled small_stmt: TYPE=%d NCH=%d\n",
+                             "unhandled compound_stmt: TYPE=%d NCH=%d\n",
                              TYPE(n), NCH(n));
                 return NULL;
         }
@@ -5297,5 +5290,25 @@ parsestrplus(struct compiling *c, const node *n)
 error:
     Py_XDECREF(bytes_str);
     FstringParser_Dealloc(&state);
+    return NULL;
+}
+
+PyObject *
+_PyAST_GetDocString(asdl_seq *body)
+{
+    if (!asdl_seq_LEN(body)) {
+        return NULL;
+    }
+    stmt_ty st = (stmt_ty)asdl_seq_GET(body, 0);
+    if (st->kind != Expr_kind) {
+        return NULL;
+    }
+    expr_ty e = st->v.Expr.value;
+    if (e->kind == Str_kind) {
+        return e->v.Str.s;
+    }
+    if (e->kind == Constant_kind && PyUnicode_CheckExact(e->v.Constant.value)) {
+        return e->v.Constant.value;
+    }
     return NULL;
 }

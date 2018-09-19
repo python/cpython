@@ -1,0 +1,2 @@
+:func:`base64.b32decode` could raise UnboundLocalError or OverflowError for
+incorrect padding.  Now it always raises :exc:`base64.Error` in these cases.

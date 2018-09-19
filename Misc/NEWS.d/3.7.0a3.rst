@@ -1544,8 +1544,8 @@ Multilingual Plane, tcl/tk will use other fonts that define a character. The
 expanded example give users of non-Latin characters a better idea of what
 they might see in IDLE's shell and editors.
 
-To make room for the expanded sample, frames on the Font tab are re-
-arranged.  The Font/Tabs help explains a bit about the additions.
+To make room for the expanded sample, frames on the Font tab are
+re-arranged.  The Font/Tabs help explains a bit about the additions.
 
 ..
 
@@ -1566,9 +1566,6 @@ and Subversion are no longer used to develop CPython.
 .. section: Tools/Demos
 
 Make redemo work with Python 3.6 and newer versions.
-
-In Python 3.6, flags like re.DOTALL became members of an enum.IntFlag so
-usages like ``getattr(re, 'DOTALL')`` are invalid.
 
 Also, remove the ``LOCALE`` option since it doesn't work with string
 patterns in Python 3.

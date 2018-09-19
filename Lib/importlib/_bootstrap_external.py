@@ -43,14 +43,20 @@ def _make_relax_case():
     return _relax_case
 
 
-def _w_long(x):
+def _pack_uint32(x):
     """Convert a 32-bit integer to little-endian."""
     return (int(x) & 0xFFFFFFFF).to_bytes(4, 'little')
 
 
-def _r_long(int_bytes):
+def _unpack_uint32(data):
     """Convert 4 bytes in little-endian to an integer."""
-    return int.from_bytes(int_bytes, 'little')
+    assert len(data) == 4
+    return int.from_bytes(data, 'little')
+
+def _unpack_uint16(data):
+    """Convert 2 bytes in little-endian to an integer."""
+    assert len(data) == 2
+    return int.from_bytes(data, 'little')
 
 
 def _path_join(*path_parts):
@@ -100,6 +106,15 @@ def _path_isdir(path):
     if not path:
         path = _os.getcwd()
     return _path_is_mode_type(path, 0o040000)
+
+
+def _path_isabs(path):
+    """Replacement for os.path.isabs.
+
+    Considers a Windows drive-relative path (no drive, but starts with slash) to
+    still be "absolute".
+    """
+    return path.startswith(path_separators) or path[1:3] in _pathseps_with_colon
 
 
 def _write_atomic(path, data, mode=0o666):
@@ -246,6 +261,8 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.7a2  3391 (update GET_AITER #31709)
 #     Python 3.7a4  3392 (PEP 552: Deterministic pycs #31650)
 #     Python 3.7b1  3393 (remove STORE_ANNOTATION opcode #32550)
+#     Python 3.7b5  3394 (restored docstring as the firts stmt in the body;
+#                         this might affected the first line number #32911)
 #     Python 3.8a1  3400 (move frame block handling to compiler #17611)
 #     Python 3.8a1  3401 (add END_ASYNC_FOR #33041)
 #
@@ -310,7 +327,33 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
         if not optimization.isalnum():
             raise ValueError('{!r} is not alphanumeric'.format(optimization))
         almost_filename = '{}.{}{}'.format(almost_filename, _OPT, optimization)
-    return _path_join(head, _PYCACHE, almost_filename + BYTECODE_SUFFIXES[0])
+    filename = almost_filename + BYTECODE_SUFFIXES[0]
+    if sys.pycache_prefix is not None:
+        # We need an absolute path to the py file to avoid the possibility of
+        # collisions within sys.pycache_prefix, if someone has two different
+        # `foo/bar.py` on their system and they import both of them using the
+        # same sys.pycache_prefix. Let's say sys.pycache_prefix is
+        # `C:\Bytecode`; the idea here is that if we get `Foo\Bar`, we first
+        # make it absolute (`C:\Somewhere\Foo\Bar`), then make it root-relative
+        # (`Somewhere\Foo\Bar`), so we end up placing the bytecode file in an
+        # unambiguous `C:\Bytecode\Somewhere\Foo\Bar\`.
+        if not _path_isabs(head):
+            head = _path_join(_os.getcwd(), head)
+
+        # Strip initial drive from a Windows path. We know we have an absolute
+        # path here, so the second part of the check rules out a POSIX path that
+        # happens to contain a colon at the second character.
+        if head[1] == ':' and head[0] not in path_separators:
+            head = head[2:]
+
+        # Strip initial path separator from `head` to complete the conversion
+        # back to a root-relative path before joining.
+        return _path_join(
+            sys.pycache_prefix,
+            head.lstrip(path_separators),
+            filename,
+        )
+    return _path_join(head, _PYCACHE, filename)
 
 
 def source_from_cache(path):
@@ -326,23 +369,29 @@ def source_from_cache(path):
         raise NotImplementedError('sys.implementation.cache_tag is None')
     path = _os.fspath(path)
     head, pycache_filename = _path_split(path)
-    head, pycache = _path_split(head)
-    if pycache != _PYCACHE:
-        raise ValueError('{} not bottom-level directory in '
-                         '{!r}'.format(_PYCACHE, path))
+    found_in_pycache_prefix = False
+    if sys.pycache_prefix is not None:
+        stripped_path = sys.pycache_prefix.rstrip(path_separators)
+        if head.startswith(stripped_path + path_sep):
+            head = head[len(stripped_path):]
+            found_in_pycache_prefix = True
+    if not found_in_pycache_prefix:
+        head, pycache = _path_split(head)
+        if pycache != _PYCACHE:
+            raise ValueError(f'{_PYCACHE} not bottom-level directory in '
+                             f'{path!r}')
     dot_count = pycache_filename.count('.')
     if dot_count not in {2, 3}:
-        raise ValueError('expected only 2 or 3 dots in '
-                         '{!r}'.format(pycache_filename))
+        raise ValueError(f'expected only 2 or 3 dots in {pycache_filename!r}')
     elif dot_count == 3:
         optimization = pycache_filename.rsplit('.', 2)[-2]
         if not optimization.startswith(_OPT):
             raise ValueError("optimization portion of filename does not start "
-                             "with {!r}".format(_OPT))
+                             f"with {_OPT!r}")
         opt_level = optimization[len(_OPT):]
         if not opt_level.isalnum():
-            raise ValueError("optimization level {!r} is not an alphanumeric "
-                             "value".format(optimization))
+            raise ValueError(f"optimization level {optimization!r} is not an "
+                             "alphanumeric value")
     base_filename = pycache_filename.partition('.')[0]
     return _path_join(head, base_filename + SOURCE_SUFFIXES[0])
 
@@ -460,7 +509,7 @@ def _classify_pyc(data, name, exc_details):
         message = f'reached EOF while reading pyc header of {name!r}'
         _bootstrap._verbose_message('{}', message)
         raise EOFError(message)
-    flags = _r_long(data[4:8])
+    flags = _unpack_uint32(data[4:8])
     # Only the first two flags are defined.
     if flags & ~0b11:
         message = f'invalid flags {flags!r} in {name!r}'
@@ -487,12 +536,12 @@ def _validate_timestamp_pyc(data, source_mtime, source_size, name,
     An ImportError is raised if the bytecode is stale.
 
     """
-    if _r_long(data[8:12]) != (source_mtime & 0xFFFFFFFF):
+    if _unpack_uint32(data[8:12]) != (source_mtime & 0xFFFFFFFF):
         message = f'bytecode is stale for {name!r}'
         _bootstrap._verbose_message('{}', message)
         raise ImportError(message, **exc_details)
     if (source_size is not None and
-        _r_long(data[12:16]) != (source_size & 0xFFFFFFFF)):
+        _unpack_uint32(data[12:16]) != (source_size & 0xFFFFFFFF)):
         raise ImportError(f'bytecode is stale for {name!r}', **exc_details)
 
 
@@ -536,9 +585,9 @@ def _compile_bytecode(data, name=None, bytecode_path=None, source_path=None):
 def _code_to_timestamp_pyc(code, mtime=0, source_size=0):
     "Produce the data for a timestamp-based pyc."
     data = bytearray(MAGIC_NUMBER)
-    data.extend(_w_long(0))
-    data.extend(_w_long(mtime))
-    data.extend(_w_long(source_size))
+    data.extend(_pack_uint32(0))
+    data.extend(_pack_uint32(mtime))
+    data.extend(_pack_uint32(source_size))
     data.extend(marshal.dumps(code))
     return data
 
@@ -547,7 +596,7 @@ def _code_to_hash_pyc(code, source_hash, checked=True):
     "Produce the data for a hash-based pyc."
     data = bytearray(MAGIC_NUMBER)
     flags = 0b1 | checked << 1
-    data.extend(_w_long(flags))
+    data.extend(_pack_uint32(flags))
     assert len(source_hash) == 8
     data.extend(source_hash)
     data.extend(marshal.dumps(code))
@@ -1531,6 +1580,7 @@ def _setup(_bootstrap_module):
     setattr(self_module, '_os', os_module)
     setattr(self_module, 'path_sep', path_sep)
     setattr(self_module, 'path_separators', ''.join(path_separators))
+    setattr(self_module, '_pathseps_with_colon', {f':{s}' for s in path_separators})
 
     # Directly load the _thread module (needed during bootstrap).
     thread_module = _bootstrap._builtin_from_name('_thread')

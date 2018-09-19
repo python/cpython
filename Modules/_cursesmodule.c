@@ -4001,7 +4001,7 @@ _curses_tigetflag_impl(PyObject *module, const char *capname)
 {
     PyCursesSetupTermCalled;
 
-    return PyLong_FromLong( (long) tigetflag( capname ) );
+    return PyLong_FromLong( (long) tigetflag( (char *)capname ) );
 }
 
 /*[clinic input]
@@ -4023,7 +4023,7 @@ _curses_tigetnum_impl(PyObject *module, const char *capname)
 {
     PyCursesSetupTermCalled;
 
-    return PyLong_FromLong( (long) tigetnum( capname ) );
+    return PyLong_FromLong( (long) tigetnum( (char *)capname ) );
 }
 
 /*[clinic input]
@@ -4045,7 +4045,7 @@ _curses_tigetstr_impl(PyObject *module, const char *capname)
 {
     PyCursesSetupTermCalled;
 
-    capname = tigetstr( capname );
+    capname = tigetstr( (char *)capname );
     if (capname == NULL || capname == (char*) -1) {
         Py_RETURN_NONE;
     }
@@ -4080,7 +4080,7 @@ _curses_tparm_impl(PyObject *module, const char *str, int i1, int i2, int i3,
 
     PyCursesSetupTermCalled;
 
-    result = tparm(str,i1,i2,i3,i4,i5,i6,i7,i8,i9);
+    result = tparm((char *)str,i1,i2,i3,i4,i5,i6,i7,i8,i9);
     if (!result) {
         PyErr_SetString(PyCursesError, "tparm() returned NULL");
         return NULL;

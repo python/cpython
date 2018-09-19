@@ -8,6 +8,7 @@ from idlelib.debugobj import ObjectTreeItem, make_objecttreeitem
 from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
 
 def StackBrowser(root, flist=None, tb=None, top=None):
+    global sc, item, node  # For testing.
     if top is None:
         top = tk.Toplevel(root)
     sc = ScrolledCanvas(top, bg="white", highlightthickness=0)
@@ -134,7 +135,6 @@ def _stack_viewer(parent):  # htest #
         intentional_name_error
     except NameError:
         exc_type, exc_value, exc_tb = sys.exc_info()
-
     # inject stack trace to sys
     sys.last_type = exc_type
     sys.last_value = exc_value
@@ -148,5 +148,8 @@ def _stack_viewer(parent):  # htest #
     del sys.last_traceback
 
 if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_stackviewer', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(_stack_viewer)

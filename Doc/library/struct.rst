@@ -405,6 +405,12 @@ The :mod:`struct` module also defines the following type:
    methods is more efficient than calling the :mod:`struct` functions with the
    same format since the format string only needs to be compiled once.
 
+   .. note::
+
+      The compiled versions of the most recent format strings passed to
+      :class:`Struct` and the module-level functions are cached, so programs
+      that use only a few format strings needn't worry about reusing a single
+      :class:`Struct` instance.
 
    Compiled Struct objects support the following methods and attributes:
 

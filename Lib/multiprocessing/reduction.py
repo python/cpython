@@ -68,12 +68,16 @@ if sys.platform == 'win32':
     __all__ += ['DupHandle', 'duplicate', 'steal_handle']
     import _winapi
 
-    def duplicate(handle, target_process=None, inheritable=False):
+    def duplicate(handle, target_process=None, inheritable=False,
+                  *, source_process=None):
         '''Duplicate a handle.  (target_process is a handle not a pid!)'''
+        current_process = _winapi.GetCurrentProcess()
+        if source_process is None:
+            source_process = current_process
         if target_process is None:
-            target_process = _winapi.GetCurrentProcess()
+            target_process = current_process
         return _winapi.DuplicateHandle(
-            _winapi.GetCurrentProcess(), handle, target_process,
+            source_process, handle, target_process,
             0, inheritable, _winapi.DUPLICATE_SAME_ACCESS)
 
     def steal_handle(source_pid, handle):
