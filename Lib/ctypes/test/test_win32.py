@@ -60,7 +60,7 @@ class ReturnStructSizesTestCase(unittest.TestCase):
             fields = [ ("f%d" % f, c_char) for f in range(1, i + 1)]
             class S(Structure):
                 _fields_ = fields
-            f = getattr(dll, f"TestSize{i}")
+            f = getattr(dll, "TestSize%d" % i)
             f.restype = S
             res = f()
             for i, f in enumerate(fields):
