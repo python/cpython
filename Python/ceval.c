@@ -4642,15 +4642,39 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
 static PyObject *
 do_call_core(PyObject *func, PyObject *callargs, PyObject *kwdict)
 {
+    PyObject *result;
+
     if (PyCFunction_Check(func)) {
-        PyObject *result;
         PyThreadState *tstate = PyThreadState_GET();
         C_TRACE(result, PyCFunction_Call(func, callargs, kwdict));
         return result;
     }
-    else {
-        return PyObject_Call(func, callargs, kwdict);
+    else if (Py_TYPE(func) == &PyMethodDescr_Type) {
+        PyThreadState *tstate = PyThreadState_GET();
+        Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
+        if (nargs > 0 && tstate->use_tracing) {
+            /* We need to create a temporary bound method as argument
+               for profiling.
+
+               If nargs == 0, then this cannot work because we have no
+               "self". In any case, the call itself would raise
+               TypeError (foo needs an argument), so we just skip
+               profiling. */
+            PyObject *self = PyTuple_GET_ITEM(callargs, 0);
+            func = Py_TYPE(func)->tp_descr_get(func, self, (PyObject*)Py_TYPE(self));
+            if (func == NULL) {
+                return NULL;
+            }
+
+            C_TRACE(result, _PyCFunction_FastCallDict(func,
+                                                      &PyTuple_GET_ITEM(callargs, 1),
+                                                      nargs - 1,
+                                                      kwdict));
+            Py_DECREF(func);
+            return result;
+        }
     }
+    return PyObject_Call(func, callargs, kwdict);
 }
 
 /* Extract a slice index from a PyLong or an object with the
