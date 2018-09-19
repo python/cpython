@@ -195,8 +195,6 @@ class UUID:
             if not 0 <= int < 1<<128:
                 raise ValueError('int is out of range (need a 128-bit value)')
         if version is not None:
-            if not 1 <= version <= 5:
-                raise ValueError('illegal version number')
             # Set the variant to RFC 4122.
             int &= ~(0xc000 << 48)
             int |= 0x8000 << 48
@@ -205,6 +203,9 @@ class UUID:
             int |= version << 76
         object.__setattr__(self, 'int', int)
         object.__setattr__(self, 'is_safe', is_safe)
+        version = self.version
+        if version is not None and not 1 <= version <= 5:
+            raise ValueError('illegal version number')
 
     def __getstate__(self):
         d = {'int': self.int}
