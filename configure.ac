@@ -4206,74 +4206,24 @@ fi
 # * Check for various properties of floating point *
 # **************************************************
 
-AC_MSG_CHECKING(whether C doubles are little-endian IEEE 754 binary64)
-AC_CACHE_VAL(ac_cv_little_endian_double, [
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <string.h>
-int main() {
-    double x = 9006104071832581.0;
-    if (memcmp(&x, "\x05\x04\x03\x02\x01\xff\x3f\x43", 8) == 0)
-        return 0;
-    else
-        return 1;
-}
-]])],
-[ac_cv_little_endian_double=yes],
-[ac_cv_little_endian_double=no],
-[ac_cv_little_endian_double=no])])
-AC_MSG_RESULT($ac_cv_little_endian_double)
-if test "$ac_cv_little_endian_double" = yes
-then
-  AC_DEFINE(DOUBLE_IS_LITTLE_ENDIAN_IEEE754, 1,
-  [Define if C doubles are 64-bit IEEE 754 binary format, stored
-   with the least significant byte first])
-fi
-
-AC_MSG_CHECKING(whether C doubles are big-endian IEEE 754 binary64)
-AC_CACHE_VAL(ac_cv_big_endian_double, [
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <string.h>
-int main() {
-    double x = 9006104071832581.0;
-    if (memcmp(&x, "\x43\x3f\xff\x01\x02\x03\x04\x05", 8) == 0)
-        return 0;
-    else
-        return 1;
-}
-]])],
-[ac_cv_big_endian_double=yes],
-[ac_cv_big_endian_double=no],
-[ac_cv_big_endian_double=no])])
-AC_MSG_RESULT($ac_cv_big_endian_double)
-if test "$ac_cv_big_endian_double" = yes
+AX_C_FLOAT_WORDS_BIGENDIAN
+if test "$ax_cv_c_float_words_bigendian" = "yes"
 then
   AC_DEFINE(DOUBLE_IS_BIG_ENDIAN_IEEE754, 1,
   [Define if C doubles are 64-bit IEEE 754 binary format, stored
    with the most significant byte first])
-fi
-
-# Some ARM platforms use a mixed-endian representation for doubles.
-# While Python doesn't currently have full support for these platforms
-# (see e.g., issue 1762561), we can at least make sure that float <-> string
-# conversions work.
-AC_MSG_CHECKING(whether C doubles are ARM mixed-endian IEEE 754 binary64)
-AC_CACHE_VAL(ac_cv_mixed_endian_double, [
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <string.h>
-int main() {
-    double x = 9006104071832581.0;
-    if (memcmp(&x, "\x01\xff\x3f\x43\x05\x04\x03\x02", 8) == 0)
-        return 0;
-    else
-        return 1;
-}
-]])],
-[ac_cv_mixed_endian_double=yes],
-[ac_cv_mixed_endian_double=no],
-[ac_cv_mixed_endian_double=no])])
-AC_MSG_RESULT($ac_cv_mixed_endian_double)
-if test "$ac_cv_mixed_endian_double" = yes
+elif test "$ax_cv_c_float_words_bigendian" = "no"
 then
+  AC_DEFINE(DOUBLE_IS_LITTLE_ENDIAN_IEEE754, 1,
+  [Define if C doubles are 64-bit IEEE 754 binary format, stored
+   with the least significant byte first])
+else
+  # Some ARM platforms use a mixed-endian representation for doubles.
+  # While Python doesn't currently have full support for these platforms
+  # (see e.g., issue 1762561), we can at least make sure that float <-> string
+  # conversions work.
+  # FLOAT_WORDS_BIGENDIAN doesnt actually detect this case, but if it's not big
+  # or little, then it must be this?
   AC_DEFINE(DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754, 1,
   [Define if C doubles are 64-bit IEEE 754 binary format, stored
    in ARM mixed-endian order (byte order 45670123)])
