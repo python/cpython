@@ -1335,7 +1335,7 @@ opcodes = [
       stack_before=[],
       stack_after=[pybool],
       proto=2,
-      doc="""True.
+      doc="""False.
 
       Push False onto the stack."""),
 
