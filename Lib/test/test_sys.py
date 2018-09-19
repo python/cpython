@@ -656,8 +656,9 @@ class SysModuleTest(unittest.TestCase):
 
     def c_locale_get_error_handler(self, locale, isolated=False, encoding=None):
         # Force the POSIX locale
-        env = dict(os.environ)
+        env = os.environ.copy()
         env["LC_ALL"] = locale
+        env["PYTHONCOERCECLOCALE"] = "0"
         code = '\n'.join((
             'import sys',
             'def dump(name):',
@@ -667,10 +668,7 @@ class SysModuleTest(unittest.TestCase):
             'dump("stdout")',
             'dump("stderr")',
         ))
-        args = [sys.executable,
-                "-X", "utf8=0",
-                "-X", "coerce_c_locale=0",
-                "-c", code]
+        args = [sys.executable, "-X", "utf8=0", "-c", code]
         if isolated:
             args.append("-I")
         if encoding is not None:
