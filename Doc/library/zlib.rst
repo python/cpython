@@ -231,6 +231,11 @@ Compression objects support the following methods:
    compress a set of data that share a common initial prefix.
 
 
+.. versionchanged:: 3.8
+   Added :func:`copy.copy` and :func:`copy.deepcopy` support to compression
+   objects.
+
+
 Decompression objects support the following methods and attributes:
 
 
@@ -296,6 +301,11 @@ Decompression objects support the following methods and attributes:
    Returns a copy of the decompression object.  This can be used to save the state
    of the decompressor midway through the data stream in order to speed up random
    seeks into the stream at a future point.
+
+
+.. versionchanged:: 3.8
+   Added :func:`copy.copy` and :func:`copy.deepcopy` support to decompression
+   objects.
 
 
 Information about the version of the zlib library in use is available through

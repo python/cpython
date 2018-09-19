@@ -109,7 +109,7 @@ class ExecutorMixin:
     def setUp(self):
         super().setUp()
 
-        self.t1 = time.time()
+        self.t1 = time.monotonic()
         if hasattr(self, "ctx"):
             self.executor = self.executor_type(
                 max_workers=self.worker_count,
@@ -125,10 +125,10 @@ class ExecutorMixin:
         self.executor.shutdown(wait=True)
         self.executor = None
 
-        dt = time.time() - self.t1
+        dt = time.monotonic() - self.t1
         if test.support.verbose:
             print("%.2fs" % dt, end=' ')
-        self.assertLess(dt, 60, "synchronization issue: test lasted too long")
+        self.assertLess(dt, 300, "synchronization issue: test lasted too long")
 
         super().tearDown()
 
@@ -240,9 +240,9 @@ class FailingInitializerMixin(ExecutorMixin):
                 with self.assertRaises(BrokenExecutor):
                     future.result()
             # At some point, the executor should break
-            t1 = time.time()
+            t1 = time.monotonic()
             while not self.executor._broken:
-                if time.time() - t1 > 5:
+                if time.monotonic() - t1 > 5:
                     self.fail("executor not broken after 5 s.")
                 time.sleep(0.01)
             # ... and from this point submit() is guaranteed to fail
@@ -1205,6 +1205,34 @@ class FutureTests(BaseTestCase):
 
         self.assertTrue(isinstance(f1.exception(timeout=5), OSError))
         t.join()
+
+    def test_multiple_set_result(self):
+        f = create_future(state=PENDING)
+        f.set_result(1)
+
+        with self.assertRaisesRegex(
+                futures.InvalidStateError,
+                'FINISHED: <Future at 0x[0-9a-f]+ '
+                'state=finished returned int>'
+        ):
+            f.set_result(2)
+
+        self.assertTrue(f.done())
+        self.assertEqual(f.result(), 1)
+
+    def test_multiple_set_exception(self):
+        f = create_future(state=PENDING)
+        e = ValueError()
+        f.set_exception(e)
+
+        with self.assertRaisesRegex(
+                futures.InvalidStateError,
+                'FINISHED: <Future at 0x[0-9a-f]+ '
+                'state=finished raised ValueError>'
+        ):
+            f.set_exception(Exception())
+
+        self.assertEqual(f.exception(), e)
 
 
 @test.support.reap_threads

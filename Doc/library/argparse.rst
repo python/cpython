@@ -1539,7 +1539,7 @@ Sub-commands
 
 .. method:: ArgumentParser.add_subparsers([title], [description], [prog], \
                                           [parser_class], [action], \
-                                          [option_string], [dest], [required] \
+                                          [option_string], [dest], [required], \
                                           [help], [metavar])
 
    Many programs split up their functionality into a number of sub-commands,
@@ -1577,7 +1577,7 @@ Sub-commands
      stored; by default ``None`` and no value is stored
 
    * required_ - Whether or not a subcommand must be provided, by default
-     ``True``.
+     ``False``.
 
    * help_ - help for sub-parser group in help output, by default ``None``
 

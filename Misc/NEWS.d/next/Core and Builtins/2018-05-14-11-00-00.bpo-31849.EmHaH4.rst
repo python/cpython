@@ -1,0 +1,1 @@
+Fix signed/unsigned comparison warning in pyhash.c.

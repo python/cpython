@@ -117,7 +117,7 @@ programming), software engineering (unit testing, logging, profiling, parsing
 Python code), and operating system interfaces (system calls, filesystems, TCP/IP
 sockets).  Look at the table of contents for :ref:`library-index` to get an idea
 of what's available.  A wide variety of third-party extensions are also
-available.  Consult `the Python Package Index <https://pypi.python.org/pypi>`_ to
+available.  Consult `the Python Package Index <https://pypi.org>`_ to
 find packages of interest to you.
 
 

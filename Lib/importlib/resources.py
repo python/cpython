@@ -2,7 +2,6 @@ import os
 import tempfile
 
 from . import abc as resources_abc
-from builtins import open as builtins_open
 from contextlib import contextmanager, suppress
 from importlib import import_module
 from importlib.abc import ResourceLoader
@@ -13,6 +12,19 @@ from typing import Iterable, Iterator, Optional, Set, Union   # noqa: F401
 from typing import cast
 from typing.io import BinaryIO, TextIO
 from zipimport import ZipImportError
+
+
+__all__ = [
+    'Package',
+    'Resource',
+    'contents',
+    'is_resource',
+    'open_binary',
+    'open_text',
+    'path',
+    'read_binary',
+    'read_text',
+    ]
 
 
 Package = Union[str, ModuleType]
@@ -82,7 +94,7 @@ def open_binary(package: Package, resource: Resource) -> BinaryIO:
     package_path = os.path.dirname(absolute_package_path)
     full_path = os.path.join(package_path, resource)
     try:
-        return builtins_open(full_path, mode='rb')
+        return open(full_path, mode='rb')
     except OSError:
         # Just assume the loader is a resource loader; all the relevant
         # importlib.machinery loaders are and an AttributeError for
@@ -116,8 +128,7 @@ def open_text(package: Package,
     package_path = os.path.dirname(absolute_package_path)
     full_path = os.path.join(package_path, resource)
     try:
-        return builtins_open(
-            full_path, mode='r', encoding=encoding, errors=errors)
+        return open(full_path, mode='r', encoding=encoding, errors=errors)
     except OSError:
         # Just assume the loader is a resource loader; all the relevant
         # importlib.machinery loaders are and an AttributeError for
@@ -246,86 +257,3 @@ def contents(package: Package) -> Iterable[str]:
     else:
         package_directory = Path(package.__spec__.origin).parent
         return os.listdir(package_directory)
-
-
-# Private implementation of ResourceReader and get_resource_reader() for
-# zipimport.  Don't use these directly!  We're implementing these in Python
-# because 1) it's easier, 2) zipimport will likely get rewritten in Python
-# itself at some point, so doing this all in C would just be a waste of
-# effort.
-
-class _ZipImportResourceReader(resources_abc.ResourceReader):
-    """Private class used to support ZipImport.get_resource_reader().
-
-    This class is allowed to reference all the innards and private parts of
-    the zipimporter.
-    """
-
-    def __init__(self, zipimporter, fullname):
-        self.zipimporter = zipimporter
-        self.fullname = fullname
-
-    def open_resource(self, resource):
-        fullname_as_path = self.fullname.replace('.', '/')
-        path = f'{fullname_as_path}/{resource}'
-        try:
-            return BytesIO(self.zipimporter.get_data(path))
-        except OSError:
-            raise FileNotFoundError(path)
-
-    def resource_path(self, resource):
-        # All resources are in the zip file, so there is no path to the file.
-        # Raising FileNotFoundError tells the higher level API to extract the
-        # binary data and create a temporary file.
-        raise FileNotFoundError
-
-    def is_resource(self, name):
-        # Maybe we could do better, but if we can get the data, it's a
-        # resource.  Otherwise it isn't.
-        fullname_as_path = self.fullname.replace('.', '/')
-        path = f'{fullname_as_path}/{name}'
-        try:
-            self.zipimporter.get_data(path)
-        except OSError:
-            return False
-        return True
-
-    def contents(self):
-        # This is a bit convoluted, because fullname will be a module path,
-        # but _files is a list of file names relative to the top of the
-        # archive's namespace.  We want to compare file paths to find all the
-        # names of things inside the module represented by fullname.  So we
-        # turn the module path of fullname into a file path relative to the
-        # top of the archive, and then we iterate through _files looking for
-        # names inside that "directory".
-        fullname_path = Path(self.zipimporter.get_filename(self.fullname))
-        relative_path = fullname_path.relative_to(self.zipimporter.archive)
-        # Don't forget that fullname names a package, so its path will include
-        # __init__.py, which we want to ignore.
-        assert relative_path.name == '__init__.py'
-        package_path = relative_path.parent
-        subdirs_seen = set()
-        for filename in self.zipimporter._files:
-            try:
-                relative = Path(filename).relative_to(package_path)
-            except ValueError:
-                continue
-            # If the path of the file (which is relative to the top of the zip
-            # namespace), relative to the package given when the resource
-            # reader was created, has a parent, then it's a name in a
-            # subdirectory and thus we skip it.
-            parent_name = relative.parent.name
-            if len(parent_name) == 0:
-                yield relative.name
-            elif parent_name not in subdirs_seen:
-                subdirs_seen.add(parent_name)
-                yield parent_name
-
-
-def _zipimport_get_resource_reader(zipimporter, fullname):
-    try:
-        if not zipimporter.is_package(fullname):
-            return None
-    except ZipImportError:
-        return None
-    return _ZipImportResourceReader(zipimporter, fullname)

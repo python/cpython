@@ -893,7 +893,7 @@ class GeneralModuleTests(unittest.TestCase):
         )
         for addr in ['0.1.1.~1', '1+.1.1.1', '::1q', '::1::2',
                      '1:1:1:1:1:1:1:1:1']:
-            with self.assertRaises(OSError):
+            with self.assertRaises(OSError, msg=addr):
                 socket.gethostbyname(addr)
             with self.assertRaises(OSError, msg=explanation):
                 socket.gethostbyaddr(addr)
@@ -2053,33 +2053,6 @@ class RDSTest(ThreadedRDSSocketTest):
     def _testSelect(self):
         self.data = b'select'
         self.cli.sendto(self.data, 0, (HOST, self.port))
-
-    def testCongestion(self):
-        # wait until the sender is done
-        self.evt.wait()
-
-    def _testCongestion(self):
-        # test the behavior in case of congestion
-        self.data = b'fill'
-        self.cli.setblocking(False)
-        try:
-            # try to lower the receiver's socket buffer size
-            self.cli.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 16384)
-        except OSError:
-            pass
-        with self.assertRaises(OSError) as cm:
-            try:
-                # fill the receiver's socket buffer
-                while True:
-                    self.cli.sendto(self.data, 0, (HOST, self.port))
-            finally:
-                # signal the receiver we're done
-                self.evt.set()
-        # sendto() should have failed with ENOBUFS
-        self.assertEqual(cm.exception.errno, errno.ENOBUFS)
-        # and we should have received a congestion notification through poll
-        r, w, x = select.select([self.serv], [], [], 3.0)
-        self.assertIn(self.serv, r)
 
 
 @unittest.skipIf(fcntl is None, "need fcntl")
@@ -5843,7 +5816,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
                                  op=socket.ALG_OP_ENCRYPT, iv=iv)
                 enc = op.recv(msglen * multiplier)
             self.assertEqual(len(enc), msglen * multiplier)
-            self.assertTrue(enc[:msglen], ciphertext)
+            self.assertEqual(enc[:msglen], ciphertext)
 
             op, _ = algo.accept()
             with op:

@@ -159,13 +159,16 @@ class CmdLineTest(unittest.TestCase):
         env = os.environ.copy()
         # Use C locale to get ascii for the locale encoding
         env['LC_ALL'] = 'C'
-        env['PYTHONCOERCECLOCALE'] = '0'
         code = (
             b'import locale; '
             b'print(ascii("' + undecodable + b'"), '
                 b'locale.getpreferredencoding())')
         p = subprocess.Popen(
-            [sys.executable, "-c", code],
+            [sys.executable,
+             # Disable C locale coercion and UTF-8 Mode to not use UTF-8
+             "-X", "coerce_c_locale=0",
+             "-X", "utf8=0",
+             "-c", code],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             env=env)
         stdout, stderr = p.communicate()
@@ -507,25 +510,51 @@ class CmdLineTest(unittest.TestCase):
                 PYTHONDONTWRITEBYTECODE=value,
                 PYTHONVERBOSE=value,
             )
+            dont_write_bytecode = int(bool(value))
             code = (
                 "import sys; "
                 "sys.stderr.write(str(sys.flags)); "
                 f"""sys.exit(not (
                     sys.flags.debug == sys.flags.optimize ==
-                    sys.flags.dont_write_bytecode == sys.flags.verbose ==
+                    sys.flags.verbose ==
                     {expected}
+                    and sys.flags.dont_write_bytecode == {dont_write_bytecode}
                 ))"""
             )
             with self.subTest(envar_value=value):
                 assert_python_ok('-c', code, **env_vars)
 
+    def test_set_pycache_prefix(self):
+        # sys.pycache_prefix can be set from either -X pycache_prefix or
+        # PYTHONPYCACHEPREFIX env var, with the former taking precedence.
+        NO_VALUE = object()  # `-X pycache_prefix` with no `=PATH`
+        cases = [
+            # (PYTHONPYCACHEPREFIX, -X pycache_prefix, sys.pycache_prefix)
+            (None, None, None),
+            ('foo', None, 'foo'),
+            (None, 'bar', 'bar'),
+            ('foo', 'bar', 'bar'),
+            ('foo', '', None),
+            ('foo', NO_VALUE, None),
+        ]
+        for envval, opt, expected in cases:
+            exp_clause = "is None" if expected is None else f'== "{expected}"'
+            code = f"import sys; sys.exit(not sys.pycache_prefix {exp_clause})"
+            args = ['-c', code]
+            env = {} if envval is None else {'PYTHONPYCACHEPREFIX': envval}
+            if opt is NO_VALUE:
+                args[:0] = ['-X', 'pycache_prefix']
+            elif opt is not None:
+                args[:0] = ['-X', f'pycache_prefix={opt}']
+            with self.subTest(envval=envval, opt=opt):
+                with support.temp_cwd():
+                    assert_python_ok(*args, **env)
+
     def run_xdev(self, *args, check_exitcode=True, xdev=True):
         env = dict(os.environ)
         env.pop('PYTHONWARNINGS', None)
         env.pop('PYTHONDEVMODE', None)
-        # Force malloc() to disable the debug hooks which are enabled
-        # by default for Python compiled in debug mode
-        env['PYTHONMALLOC'] = 'malloc'
+        env.pop('PYTHONMALLOC', None)
 
         if xdev:
             args = (sys.executable, '-X', 'dev', *args)

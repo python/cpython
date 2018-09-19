@@ -1722,6 +1722,18 @@ class TestCollectionABCs(ABCTestCase):
         mss.clear()
         self.assertEqual(len(mss), 0)
 
+        # issue 34427
+        # extending self should not cause infinite loop
+        items = 'ABCD'
+        mss2 = MutableSequenceSubclass()
+        mss2.extend(items + items)
+        mss.clear()
+        mss.extend(items)
+        mss.extend(mss)
+        self.assertEqual(len(mss), len(mss2))
+        self.assertEqual(list(mss), list(mss2))
+
+
 ################################################################################
 ### Counter
 ################################################################################

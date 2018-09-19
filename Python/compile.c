@@ -1117,6 +1117,12 @@ stack_effect(int opcode, int oparg, int jump)
 }
 
 int
+PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump)
+{
+    return stack_effect(opcode, oparg, jump);
+}
+
+int
 PyCompile_OpcodeStackEffect(int opcode, int oparg)
 {
     return stack_effect(opcode, oparg, -1);
@@ -1587,27 +1593,41 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
    and for annotations. */
 
 static int
-compiler_body(struct compiler *c, asdl_seq *stmts, string docstring)
+compiler_body(struct compiler *c, asdl_seq *stmts)
 {
+    int i = 0;
+    stmt_ty st;
+    PyObject *docstring;
+
     /* Set current line number to the line number of first statement.
        This way line number for SETUP_ANNOTATIONS will always
        coincide with the line number of first "real" statement in module.
        If body is empy, then lineno will be set later in assemble. */
     if (c->u->u_scope_type == COMPILER_SCOPE_MODULE &&
         !c->u->u_lineno && asdl_seq_LEN(stmts)) {
-        stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
+        st = (stmt_ty)asdl_seq_GET(stmts, 0);
         c->u->u_lineno = st->lineno;
     }
     /* Every annotated class and module should have __annotations__. */
     if (find_ann(stmts)) {
         ADDOP(c, SETUP_ANNOTATIONS);
     }
+    if (!asdl_seq_LEN(stmts))
+        return 1;
     /* if not -OO mode, set docstring */
-    if (c->c_optimize < 2 && docstring) {
-        ADDOP_LOAD_CONST(c, docstring);
-        ADDOP_NAME(c, STORE_NAME, __doc__, names);
+    if (c->c_optimize < 2) {
+        docstring = _PyAST_GetDocString(stmts);
+        if (docstring) {
+            i = 1;
+            st = (stmt_ty)asdl_seq_GET(stmts, 0);
+            assert(st->kind == Expr_kind);
+            VISIT(c, expr, st->v.Expr.value);
+            if (!compiler_nameop(c, __doc__, Store))
+                return 0;
+        }
     }
-    VISIT_SEQ(c, stmt, stmts);
+    for (; i < asdl_seq_LEN(stmts); i++)
+        VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
     return 1;
 }
 
@@ -1627,7 +1647,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
         return NULL;
     switch (mod->kind) {
     case Module_kind:
-        if (!compiler_body(c, mod->v.Module.body, mod->v.Module.docstring)) {
+        if (!compiler_body(c, mod->v.Module.body)) {
             compiler_exit_scope(c);
             return 0;
         }
@@ -1822,7 +1842,7 @@ error:
 static int
 compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
 {
-    ADDOP_LOAD_CONST_NEW(c, _PyAST_ExprAsUnicode(annotation, 1));
+    ADDOP_LOAD_CONST_NEW(c, _PyAST_ExprAsUnicode(annotation));
     return 1;
 }
 
@@ -1957,7 +1977,7 @@ static int
 compiler_function(struct compiler *c, stmt_ty s, int is_async)
 {
     PyCodeObject *co;
-    PyObject *qualname, *docstring = Py_None;
+    PyObject *qualname, *docstring = NULL;
     arguments_ty args;
     expr_ty returns;
     identifier name;
@@ -2010,16 +2030,16 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     /* if not -OO mode, add docstring */
-    if (c->c_optimize < 2 && s->v.FunctionDef.docstring)
-        docstring = s->v.FunctionDef.docstring;
-    if (compiler_add_const(c, docstring) < 0) {
+    if (c->c_optimize < 2) {
+        docstring = _PyAST_GetDocString(body);
+    }
+    if (compiler_add_const(c, docstring ? docstring : Py_None) < 0) {
         compiler_exit_scope(c);
         return 0;
     }
 
     c->u->u_argcount = asdl_seq_LEN(args->args);
     c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
-    /* if there was a docstring, we need to skip the first statement */
     VISIT_SEQ_IN_SCOPE(c, stmt, body);
     co = assemble(c, 1);
     qualname = c->u->u_qualname;
@@ -2101,7 +2121,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         }
         Py_DECREF(str);
         /* compile the body proper */
-        if (!compiler_body(c, s->v.ClassDef.body, s->v.ClassDef.docstring)) {
+        if (!compiler_body(c, s->v.ClassDef.body)) {
             compiler_exit_scope(c);
             return 0;
         }
@@ -4075,10 +4095,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     is_async_generator = c->u->u_ste->ste_coroutine;
 
     if (is_async_generator && !is_async_function && type != COMP_GENEXP) {
-        if (e->lineno > c->u->u_lineno) {
-            c->u->u_lineno = e->lineno;
-            c->u->u_lineno_set = 0;
-        }
         compiler_error(c, "asynchronous comprehension outside of "
                           "an asynchronous function");
         goto error_in_scope;
@@ -4416,17 +4432,8 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 }
 
 static int
-compiler_visit_expr(struct compiler *c, expr_ty e)
+compiler_visit_expr1(struct compiler *c, expr_ty e)
 {
-    /* If expr e has a different line number than the last expr/stmt,
-       set a new line number for the next instruction.
-    */
-    if (e->lineno > c->u->u_lineno) {
-        c->u->u_lineno = e->lineno;
-        c->u->u_lineno_set = 0;
-    }
-    /* Updating the column offset is always harmless. */
-    c->u->u_col_offset = e->col_offset;
     switch (e->kind) {
     case BoolOp_kind:
         return compiler_boolop(c, e);
@@ -4593,6 +4600,31 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         return compiler_tuple(c, e);
     }
     return 1;
+}
+
+static int
+compiler_visit_expr(struct compiler *c, expr_ty e)
+{
+    /* If expr e has a different line number than the last expr/stmt,
+       set a new line number for the next instruction.
+    */
+    int old_lineno = c->u->u_lineno;
+    int old_col_offset = c->u->u_col_offset;
+    if (e->lineno != c->u->u_lineno) {
+        c->u->u_lineno = e->lineno;
+        c->u->u_lineno_set = 0;
+    }
+    /* Updating the column offset is always harmless. */
+    c->u->u_col_offset = e->col_offset;
+
+    int res = compiler_visit_expr1(c, e);
+
+    if (old_lineno != c->u->u_lineno) {
+        c->u->u_lineno = old_lineno;
+        c->u->u_lineno_set = 0;
+    }
+    c->u->u_col_offset = old_col_offset;
+    return res;
 }
 
 static int
@@ -5536,7 +5568,7 @@ assemble(struct compiler *c, int addNone)
 }
 
 #undef PyAST_Compile
-PyAPI_FUNC(PyCodeObject *)
+PyCodeObject *
 PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
               PyArena *arena)
 {

@@ -9,6 +9,10 @@ from test.test_asyncio import utils as test_utils
 from test.test_asyncio import functional as func_tests
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class BaseStartServer(func_tests.FunctionalTestCaseMixin):
 
     def new_loop(self):

@@ -1,0 +1,1 @@
+improve base64 exception message for encoded inputs of invalid length

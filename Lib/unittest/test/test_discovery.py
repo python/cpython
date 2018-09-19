@@ -4,10 +4,11 @@ import re
 import sys
 import types
 import pickle
-import builtins
 from test import support
+import test.test_importlib.util
 
 import unittest
+import unittest.mock
 import unittest.test
 
 
@@ -820,7 +821,6 @@ class TestDiscovery(unittest.TestCase):
     def test_discovery_from_dotted_namespace_packages(self):
         loader = unittest.TestLoader()
 
-        orig_import = __import__
         package = types.ModuleType('package')
         package.__path__ = ['/a', '/b']
         package.__spec__ = types.SimpleNamespace(
@@ -832,11 +832,6 @@ class TestDiscovery(unittest.TestCase):
             sys.modules[packagename] = package
             return package
 
-        def cleanup():
-            builtins.__import__ = orig_import
-        self.addCleanup(cleanup)
-        builtins.__import__ = _import
-
         _find_tests_args = []
         def _find_tests(start_dir, pattern, namespace=None):
             _find_tests_args.append((start_dir, pattern))
@@ -844,28 +839,34 @@ class TestDiscovery(unittest.TestCase):
 
         loader._find_tests = _find_tests
         loader.suiteClass = list
-        suite = loader.discover('package')
+
+        with unittest.mock.patch('builtins.__import__', _import):
+            # Since loader.discover() can modify sys.path, restore it when done.
+            with support.DirsOnSysPath():
+                # Make sure to remove 'package' from sys.modules when done.
+                with test.test_importlib.util.uncache('package'):
+                    suite = loader.discover('package')
+
         self.assertEqual(suite, ['/a/tests', '/b/tests'])
 
     def test_discovery_failed_discovery(self):
         loader = unittest.TestLoader()
         package = types.ModuleType('package')
-        orig_import = __import__
 
         def _import(packagename, *args, **kwargs):
             sys.modules[packagename] = package
             return package
 
-        def cleanup():
-            builtins.__import__ = orig_import
-        self.addCleanup(cleanup)
-        builtins.__import__ = _import
-
-        with self.assertRaises(TypeError) as cm:
-            loader.discover('package')
-        self.assertEqual(str(cm.exception),
-                         'don\'t know how to discover from {!r}'
-                         .format(package))
+        with unittest.mock.patch('builtins.__import__', _import):
+            # Since loader.discover() can modify sys.path, restore it when done.
+            with support.DirsOnSysPath():
+                # Make sure to remove 'package' from sys.modules when done.
+                with test.test_importlib.util.uncache('package'):
+                    with self.assertRaises(TypeError) as cm:
+                        loader.discover('package')
+                    self.assertEqual(str(cm.exception),
+                                     'don\'t know how to discover from {!r}'
+                                     .format(package))
 
 
 if __name__ == '__main__':

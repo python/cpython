@@ -1,0 +1,3 @@
+Fix and document idlelib/idle_test/template.py. The revised file compiles,
+runs, and tests OK.  idle_test/README.txt explains how to use it to create
+new IDLE test files.

@@ -51,7 +51,9 @@ Directory and files operations
 .. function:: copyfile(src, dst, *, follow_symlinks=True)
 
    Copy the contents (no metadata) of the file named *src* to a file named
-   *dst* and return *dst*.  *src* and *dst* are path names given as strings.
+   *dst* and return *dst* in the most efficient way possible.
+   *src* and *dst* are path names given as strings.
+
    *dst* must be the complete target file name; look at :func:`shutil.copy`
    for a copy that accepts a target directory path.  If *src* and *dst*
    specify the same file, :exc:`SameFileError` is raised.
@@ -74,6 +76,10 @@ Directory and files operations
       Raise :exc:`SameFileError` instead of :exc:`Error`.  Since the former is
       a subclass of the latter, this change is backward compatible.
 
+   .. versionchanged:: 3.8
+      Platform-specific fast-copy syscalls may be used internally in order to
+      copy the file more efficiently. See
+      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
 .. exception:: SameFileError
 
@@ -163,6 +169,11 @@ Directory and files operations
       Added *follow_symlinks* argument.
       Now returns path to the newly created file.
 
+   .. versionchanged:: 3.8
+      Platform-specific fast-copy syscalls may be used internally in order to
+      copy the file more efficiently. See
+      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+
 .. function:: copy2(src, dst, *, follow_symlinks=True)
 
    Identical to :func:`~shutil.copy` except that :func:`copy2`
@@ -184,6 +195,11 @@ Directory and files operations
       Added *follow_symlinks* argument, try to copy extended
       file system attributes too (currently Linux only).
       Now returns path to the newly created file.
+
+   .. versionchanged:: 3.8
+      Platform-specific fast-copy syscalls may be used internally in order to
+      copy the file more efficiently. See
+      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
 .. function:: ignore_patterns(\*patterns)
 
@@ -241,6 +257,10 @@ Directory and files operations
       Added the *ignore_dangling_symlinks* argument to silent dangling symlinks
       errors when *symlinks* is false.
 
+   .. versionchanged:: 3.8
+      Platform-specific fast-copy syscalls may be used internally in order to
+      copy the file more efficiently. See
+      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None)
 
@@ -314,6 +334,11 @@ Directory and files operations
    .. versionchanged:: 3.5
       Added the *copy_function* keyword argument.
 
+   .. versionchanged:: 3.8
+      Platform-specific fast-copy syscalls may be used internally in order to
+      copy the file more efficiently. See
+      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+
 .. function:: disk_usage(path)
 
    Return disk usage statistics about the given path as a :term:`named tuple`
@@ -370,6 +395,32 @@ Directory and files operations
    operation. For :func:`copytree`, the exception argument is a list of 3-tuples
    (*srcname*, *dstname*, *exception*).
 
+.. _shutil-platform-dependent-efficient-copy-operations:
+
+Platform-dependent efficient copy operations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Starting from Python 3.8 all functions involving a file copy (:func:`copyfile`,
+:func:`copy`, :func:`copy2`, :func:`copytree`, and :func:`move`) may use
+platform-specific "fast-copy" syscalls in order to copy the file more
+efficiently (see :issue:`33671`).
+"fast-copy" means that the copying operation occurs within the kernel, avoiding
+the use of userspace buffers in Python as in "``outfd.write(infd.read())``".
+
+On macOS `fcopyfile`_ is used to copy the file content (not metadata).
+
+On Linux, Solaris and other POSIX platforms where :func:`os.sendfile` supports
+copies between 2 regular file descriptors :func:`os.sendfile` is used.
+
+On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
+instead of 16 KiB) and a :func:`memoryview`-based variant of
+:func:`shutil.copyfileobj` is used.
+
+If the fast-copy operation fails and no data was written in the destination
+file then shutil will silently fallback on using less efficient
+:func:`copyfileobj` function internally.
+
+.. versionchanged:: 3.8
 
 .. _shutil-copytree-example:
 
@@ -654,6 +705,8 @@ Querying the size of the output terminal
 
    .. versionadded:: 3.3
 
+.. _`fcopyfile`:
+   http://www.manpagez.com/man/3/copyfile/
+
 .. _`Other Environment Variables`:
    http://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html#tag_002_003
-
