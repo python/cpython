@@ -63,6 +63,8 @@ typedef struct {
     int show_alloc_count;   /* -X showalloccount */
     int dump_refs;          /* PYTHONDUMPREFS */
     int malloc_stats;       /* PYTHONMALLOCSTATS */
+    int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
+    int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
 
     /* Python filesystem encoding and error handler:
        sys.getfilesystemencoding() and sys.getfilesystemencodeerrors().
@@ -295,22 +297,6 @@ typedef struct {
        If set to -1 (default), inherit Py_FrozenFlag value. */
     int _frozen;
 
-    /* C locale coercion (PEP 538).
-
-       The option is enabled by the PYTHONCOERCECLOCALE environment
-       variable. The option is also enabled if the LC_CTYPE locale is "C"
-       and a target locale (ex: "C.UTF-8") is supported by the platform.
-
-       See also the _coerce_c_locale_warn option. */
-    int _coerce_c_locale;
-
-    /* C locale coercion warning (PEP 538).
-
-       Enabled by the PYTHONCOERCECLOCALE=warn environment variable.
-
-       See also the _coerce_c_locale option. */
-    int _coerce_c_locale_warn;
-
 } _PyCoreConfig;
 
 #ifdef MS_WINDOWS
@@ -328,7 +314,7 @@ typedef struct {
         .use_hash_seed = -1, \
         .faulthandler = -1, \
         .tracemalloc = -1, \
-        ._coerce_c_locale = -1, \
+        .coerce_c_locale = -1, \
         .utf8_mode = -1, \
         .argc = -1, \
         .nmodule_search_path = -1, \

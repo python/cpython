@@ -330,6 +330,8 @@ dump_config(void)
 
     printf("filesystem_encoding = %s\n", config->filesystem_encoding);
     printf("filesystem_errors = %s\n", config->filesystem_errors);
+    printf("coerce_c_locale = %i\n", config->coerce_c_locale);
+    printf("coerce_c_locale_warn = %i\n", config->coerce_c_locale_warn);
     printf("utf8_mode = %i\n", config->utf8_mode);
 
     printf("pycache_prefix = %ls\n", config->pycache_prefix);
@@ -383,8 +385,6 @@ dump_config(void)
     printf("_install_importlib = %i\n", config->_install_importlib);
     printf("_check_hash_pycs_mode = %s\n", config->_check_hash_pycs_mode);
     printf("_frozen = %i\n", config->_frozen);
-    printf("_coerce_c_locale = %i\n", config->_coerce_c_locale);
-    printf("_coerce_c_locale_warn = %i\n", config->_coerce_c_locale_warn);
 
 #undef ASSERT_EQUAL
 #undef ASSERT_STR_EQUAL
@@ -482,7 +482,7 @@ static int test_init_from_config(void)
     putenv("PYTHONMALLOCSTATS=0");
     config.malloc_stats = 1;
 
-    /* FIXME: test _coerce_c_locale and _coerce_c_locale_warn */
+    /* FIXME: test coerce_c_locale and coerce_c_locale_warn */
 
     putenv("PYTHONUTF8=0");
     Py_UTF8Mode = 0;
@@ -606,8 +606,8 @@ static int test_init_isolated(void)
     /* Test _PyCoreConfig.isolated=1 */
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
-    /* Set _coerce_c_locale and utf8_mode to not depend on the locale */
-    config._coerce_c_locale = 0;
+    /* Set coerce_c_locale and utf8_mode to not depend on the locale */
+    config.coerce_c_locale = 0;
     config.utf8_mode = 0;
     /* Use path starting with "./" avoids a search along the PATH */
     config.program_name = L"./_testembed";

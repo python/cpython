@@ -1342,9 +1342,9 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
          * See the documentation of the PYTHONCOERCECLOCALE setting for more
          * details.
          */
-        if (config->_coerce_c_locale && !locale_coerced) {
+        if (config->coerce_c_locale && !locale_coerced) {
             locale_coerced = 1;
-            _Py_CoerceLegacyLocale(config->_coerce_c_locale_warn);
+            _Py_CoerceLegacyLocale(config->coerce_c_locale_warn);
             encoding_changed = 1;
         }
 
@@ -1367,7 +1367,7 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
         /* Reset the configuration before reading again the configuration,
            just keep UTF-8 Mode value. */
         int new_utf8_mode = config->utf8_mode;
-        int new_coerce_c_locale = config->_coerce_c_locale;
+        int new_coerce_c_locale = config->coerce_c_locale;
         if (_PyCoreConfig_Copy(config, &save_config) < 0) {
             pymain->err = _Py_INIT_NO_MEMORY();
             goto done;
@@ -1375,7 +1375,7 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
         pymain_clear_cmdline(pymain, cmdline);
         memset(cmdline, 0, sizeof(*cmdline));
         config->utf8_mode = new_utf8_mode;
-        config->_coerce_c_locale = new_coerce_c_locale;
+        config->coerce_c_locale = new_coerce_c_locale;
 
         /* The encoding changed: read again the configuration
            with the new encoding */
