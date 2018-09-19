@@ -3498,7 +3498,6 @@ itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
     PyObject *it;
     accumulateobject *lz;
 
-
     /* Get iterator. */
     it = PyObject_GetIter(iterable);
     if (it == NULL)
