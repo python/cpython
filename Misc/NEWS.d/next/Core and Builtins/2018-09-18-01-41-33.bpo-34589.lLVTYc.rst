@@ -1,2 +1,0 @@
-Add a new :option:`-X` ``coerce_c_locale`` command line option to control C
-locale coercion (:pep:`538`).

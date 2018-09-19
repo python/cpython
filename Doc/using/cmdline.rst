@@ -438,22 +438,13 @@ Miscellaneous options
      * Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
        ``True``
 
-   * ``-X utf8`` enables UTF-8 mode (:pep:`540`) for operating system interfaces, overriding
+   * ``-X utf8`` enables UTF-8 mode for operating system interfaces, overriding
      the default locale-aware mode. ``-X utf8=0`` explicitly disables UTF-8
      mode (even when it would otherwise activate automatically).
      See :envvar:`PYTHONUTF8` for more details.
    * ``-X pycache_prefix=PATH`` enables writing ``.pyc`` files to a parallel
      tree rooted at the given directory instead of to the code tree. See also
      :envvar:`PYTHONPYCACHEPREFIX`.
-   * ``-X coerce_c_locale`` or ``-X coerce_c_locale=1`` tries to coerce the C
-     locale (:pep:`538`).
-     ``-X coerce_c_locale=0`` skips coercing the legacy ASCII-based C and POSIX
-     locales to a more capable UTF-8 based alternative.
-     ``-X coerce_c_locale=warn`` will cause Python to emit warning messages on
-     ``stderr`` if either the locale coercion activates, or else if a locale
-     that *would* have triggered coercion is still active when the Python
-     runtime is initialized.
-     See :envvar:`PYTHONCOERCECLOCALE` for more details.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -472,9 +463,6 @@ Miscellaneous options
 
    .. versionadded:: 3.7
       The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
-
-   .. versionadded:: 3.7.1
-      The ``-X coerce_c_locale`` option.
 
    .. versionadded:: 3.8
       The ``-X pycache_prefix`` option.
@@ -861,8 +849,6 @@ conflict.
    default in legacy ASCII-based locales. Both features must be disabled in
    order to force the interpreter to use ``ASCII`` instead of ``UTF-8`` for
    system interfaces.
-
-   Also available as the :option:`-X` ``coerce_c_locale`` option.
 
    Availability: \*nix
 

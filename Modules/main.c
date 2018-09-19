@@ -1342,9 +1342,9 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
          * See the documentation of the PYTHONCOERCECLOCALE setting for more
          * details.
          */
-        if (config->_coerce_c_locale && !locale_coerced) {
+        if (config->coerce_c_locale && !locale_coerced) {
             locale_coerced = 1;
-            _Py_CoerceLegacyLocale(config->_coerce_c_locale_warn);
+            _Py_CoerceLegacyLocale(config->coerce_c_locale_warn);
             encoding_changed = 1;
         }
 
@@ -1367,7 +1367,7 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
         /* Reset the configuration before reading again the configuration,
            just keep UTF-8 Mode value. */
         int new_utf8_mode = config->utf8_mode;
-        int new_coerce_c_locale = config->_coerce_c_locale;
+        int new_coerce_c_locale = config->coerce_c_locale;
         if (_PyCoreConfig_Copy(config, &save_config) < 0) {
             pymain->err = _Py_INIT_NO_MEMORY();
             goto done;
@@ -1375,7 +1375,7 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
         pymain_clear_cmdline(pymain, cmdline);
         memset(cmdline, 0, sizeof(*cmdline));
         config->utf8_mode = new_utf8_mode;
-        config->_coerce_c_locale = new_coerce_c_locale;
+        config->coerce_c_locale = new_coerce_c_locale;
 
         /* The encoding changed: read again the configuration
            with the new encoding */
@@ -1700,8 +1700,7 @@ pymain_cmdline(_PyMain *pymain, _PyCoreConfig *config)
 
 
 static int
-pymain_init(_PyMain *pymain, PyInterpreterState **interp_p,
-            int use_c_locale_coercion)
+pymain_init(_PyMain *pymain, PyInterpreterState **interp_p)
 {
     /* 754 requires that FP exceptions run in "no stop" mode by default,
      * and until C vendors implement C99's ways to control FP exceptions,
@@ -1714,11 +1713,6 @@ pymain_init(_PyMain *pymain, PyInterpreterState **interp_p,
 
     _PyCoreConfig local_config = _PyCoreConfig_INIT;
     _PyCoreConfig *config = &local_config;
-    if (use_c_locale_coercion) {
-        /* set to -1 to be able to enable the feature */
-        config->_coerce_c_locale = -1;
-        config->_coerce_c_locale_warn = -1;
-    }
 
     _PyCoreConfig_GetGlobalConfig(config);
 
@@ -1753,10 +1747,10 @@ pymain_init(_PyMain *pymain, PyInterpreterState **interp_p,
 
 
 static int
-pymain_main(_PyMain *pymain, int use_c_locale_coercion)
+pymain_main(_PyMain *pymain)
 {
     PyInterpreterState *interp;
-    int res = pymain_init(pymain, &interp, use_c_locale_coercion);
+    int res = pymain_init(pymain, &interp);
     if (res != 1) {
         if (pymain_run_python(pymain, interp) < 0) {
             _Py_FatalInitError(pymain->err);
@@ -1783,22 +1777,10 @@ Py_Main(int argc, wchar_t **argv)
     pymain.argc = argc;
     pymain.wchar_argv = argv;
 
-    return pymain_main(&pymain, 0);
+    return pymain_main(&pymain);
 }
 
 
-#ifdef MS_WINDOWS
-int
-_Py_WindowsMain(int argc, wchar_t **argv)
-{
-    _PyMain pymain = _PyMain_INIT;
-    pymain.use_bytes_argv = 0;
-    pymain.argc = argc;
-    pymain.wchar_argv = argv;
-
-    return pymain_main(&pymain, 1);
-}
-#else
 int
 _Py_UnixMain(int argc, char **argv)
 {
@@ -1807,9 +1789,8 @@ _Py_UnixMain(int argc, char **argv)
     pymain.argc = argc;
     pymain.bytes_argv = argv;
 
-    return pymain_main(&pymain, 1);
+    return pymain_main(&pymain);
 }
-#endif
 
 
 /* this is gonna seem *real weird*, but if you put some other code between
