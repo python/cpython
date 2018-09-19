@@ -146,6 +146,13 @@ Changes in the Python API
   a database if it does not exist.
   (Contributed by Serhiy Storchaka in :issue:`32749`.)
 
+* The :meth:`~collections.namedtuple._asdict` method returns a :class:`dict`
+  instead of :class:`collections.OrderedDict`, because :class:`dict` keeps
+  insertion order, which is the same behavior as
+  :class:`collections.OrderedDict`.  Anyone relying on
+  :meth:`~collections.OrderedDict.move_to_end` will want to explicitly construct
+  an :class:`collections.OrderedDict`.
+
 
 CPython bytecode changes
 ------------------------
