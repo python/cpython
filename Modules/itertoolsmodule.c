@@ -3581,6 +3581,19 @@ accumulate_next(accumulateobject *lz)
 static PyObject *
 accumulate_reduce(accumulateobject *lz, PyObject *Py_UNUSED(ignored))
 {
+    if (lz->initial != Py_None) {
+        PyObject *it;
+
+        assert(lz->total == NULL);
+        if (PyType_Ready(&chain_type) < 0)
+            return NULL;
+        it = PyObject_CallFunction((PyObject *)&chain_type, "(O)O",
+                                   lz->initial, lz->it);
+        if (it == NULL)
+            return NULL;
+        return Py_BuildValue("O(OO)O", Py_TYPE(lz),
+                            it, lz->binop?lz->binop:Py_None, Py_None);
+    }
     if (lz->total == Py_None) {
         PyObject *it;
 
