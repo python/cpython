@@ -13853,131 +13853,77 @@ fi
 # * Check for various properties of floating point *
 # **************************************************
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C doubles are little-endian IEEE 754 binary64" >&5
-$as_echo_n "checking whether C doubles are little-endian IEEE 754 binary64... " >&6; }
-if ${ac_cv_little_endian_double+:} false; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether float word ordering is bigendian" >&5
+$as_echo_n "checking whether float word ordering is bigendian... " >&6; }
+if ${ax_cv_c_float_words_bigendian+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-if test "$cross_compiling" = yes; then :
-  ac_cv_little_endian_double=no
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+ax_cv_c_float_words_bigendian=unknown
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#include <string.h>
-int main() {
-    double x = 9006104071832581.0;
-    if (memcmp(&x, "\x05\x04\x03\x02\x01\xff\x3f\x43", 8) == 0)
-        return 0;
-    else
-        return 1;
-}
+
+double d = 90904234967036810337470478905505011476211692735615632014797120844053488865816695273723469097858056257517020191247487429516932130503560650002327564517570778480236724525140520121371739201496540132640109977779420565776568942592.0;
+
 
 _ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_cv_little_endian_double=yes
-else
-  ac_cv_little_endian_double=no
+if ac_fn_c_try_compile "$LINENO"; then :
+
+
+if grep noonsees conftest.$ac_objext >/dev/null ; then
+  ax_cv_c_float_words_bigendian=yes
 fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_little_endian_double" >&5
-$as_echo "$ac_cv_little_endian_double" >&6; }
-if test "$ac_cv_little_endian_double" = yes
-then
-
-$as_echo "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
-
+if grep seesnoon conftest.$ac_objext >/dev/null ; then
+  if test "$ax_cv_c_float_words_bigendian" = unknown; then
+    ax_cv_c_float_words_bigendian=no
+  else
+    ax_cv_c_float_words_bigendian=unknown
+  fi
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C doubles are big-endian IEEE 754 binary64" >&5
-$as_echo_n "checking whether C doubles are big-endian IEEE 754 binary64... " >&6; }
-if ${ac_cv_big_endian_double+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-if test "$cross_compiling" = yes; then :
-  ac_cv_big_endian_double=no
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <string.h>
-int main() {
-    double x = 9006104071832581.0;
-    if (memcmp(&x, "\x43\x3f\xff\x01\x02\x03\x04\x05", 8) == 0)
-        return 0;
-    else
-        return 1;
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_cv_big_endian_double=yes
-else
-  ac_cv_big_endian_double=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
 
 fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_c_float_words_bigendian" >&5
+$as_echo "$ax_cv_c_float_words_bigendian" >&6; }
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_big_endian_double" >&5
-$as_echo "$ac_cv_big_endian_double" >&6; }
-if test "$ac_cv_big_endian_double" = yes
+case $ax_cv_c_float_words_bigendian in
+  yes)
+
+$as_echo "#define FLOAT_WORDS_BIGENDIAN 1" >>confdefs.h
+ ;;
+  no)
+     ;;
+  *)
+    as_fn_error $? "
+
+Unknown float word ordering. You need to manually preset
+ax_cv_c_float_words_bigendian=no (or yes) according to your system.
+
+    " "$LINENO" 5 ;;
+esac
+
+
+if test "$ax_cv_c_float_words_bigendian" = "yes"
 then
 
 $as_echo "#define DOUBLE_IS_BIG_ENDIAN_IEEE754 1" >>confdefs.h
 
-fi
-
-# Some ARM platforms use a mixed-endian representation for doubles.
-# While Python doesn't currently have full support for these platforms
-# (see e.g., issue 1762561), we can at least make sure that float <-> string
-# conversions work.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C doubles are ARM mixed-endian IEEE 754 binary64" >&5
-$as_echo_n "checking whether C doubles are ARM mixed-endian IEEE 754 binary64... " >&6; }
-if ${ac_cv_mixed_endian_double+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-if test "$cross_compiling" = yes; then :
-  ac_cv_mixed_endian_double=no
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <string.h>
-int main() {
-    double x = 9006104071832581.0;
-    if (memcmp(&x, "\x01\xff\x3f\x43\x05\x04\x03\x02", 8) == 0)
-        return 0;
-    else
-        return 1;
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_cv_mixed_endian_double=yes
-else
-  ac_cv_mixed_endian_double=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_mixed_endian_double" >&5
-$as_echo "$ac_cv_mixed_endian_double" >&6; }
-if test "$ac_cv_mixed_endian_double" = yes
+elif test "$ax_cv_c_float_words_bigendian" = "no"
 then
+
+$as_echo "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
+
+else
+  # Some ARM platforms use a mixed-endian representation for doubles.
+  # While Python doesn't currently have full support for these platforms
+  # (see e.g., issue 1762561), we can at least make sure that float <-> string
+  # conversions work.
+  # FLOAT_WORDS_BIGENDIAN doesnt actually detect this case, but if it's not big
+  # or little, then it must be this?
 
 $as_echo "#define DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754 1" >>confdefs.h
 
