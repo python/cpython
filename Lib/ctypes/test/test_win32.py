@@ -57,7 +57,7 @@ class ReturnStructSizesTestCase(unittest.TestCase):
     def test_sizes(self):
         dll = CDLL(_ctypes_test.__file__)
         for i in range(1, 11):
-            fields = [ (f"f{f}", c_char) for f in range(1, i + 1)]
+            fields = [ ("f%d" % f, c_char) for f in range(1, i + 1)]
             class S(Structure):
                 _fields_ = fields
             f = getattr(dll, f"TestSize{i}")
