@@ -1240,6 +1240,8 @@ INT_GETTER(CurrentLineNumber)
 INT_GETTER(CurrentColumnNumber)
 INT_GETTER(CurrentByteIndex)
 
+#undef INT_GETTER
+
 static PyObject *
 xmlparse_buffer_text_getter(xmlparseobject *self, void *closure)
 {
@@ -1428,6 +1430,9 @@ static PyGetSetDef xmlparse_getsetlist[] = {
     {NULL},
 };
 
+#undef XMLPARSE_GETTER_DEF
+#undef XMLPARSE_GETTER_SETTER_DEF
+
 static int
 xmlparse_traverse(xmlparseobject *op, visitproc visit, void *arg)
 {
@@ -1585,6 +1590,7 @@ static struct PyModuleDef pyexpatmodule = {
 static int init_handler_descrs(void)
 {
     int i;
+    assert(!PyType_HasFeature(&Xmlparsetype, Py_TPFLAGS_VALID_VERSION_TAG));
     for (i = 0; handler_info[i].name != NULL; i++) {
         struct HandlerInfo *hi = &handler_info[i];
         hi->getset.name = hi->name;
