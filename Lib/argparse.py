@@ -599,6 +599,8 @@ class HelpFormatter(object):
 
     def _expand_help(self, action):
         params = dict(vars(action), prog=self._prog)
+        if action.option_strings:
+            params['flag'] = action.option_strings[0]
         for name in list(params):
             if params[name] is SUPPRESS:
                 del params[name]
