@@ -1,4 +1,4 @@
-sudo apt-get update
+sudo apt-get update || true
 
 sudo apt-get -yq install \
     build-essential \
