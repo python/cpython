@@ -41,6 +41,11 @@ needs_sphinx = '1.2'
 venvdir = os.getenv('VENVDIR', 'venv')
 exclude_patterns = [venvdir+'/*', 'README.rst']
 
+# Disable Docutils smartquotes for several translations
+smartquotes_excludes = {
+    'languages': ['ja', 'fr', 'zh_TW'], 'builders': ['man', 'text'],
+}
+
 
 # Options for HTML output
 # -----------------------
