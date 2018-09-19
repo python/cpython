@@ -321,7 +321,7 @@ Changes in the Python API
   :class:`collections.OrderedDict`.  Anyone relying on
   :meth:`~collections.OrderedDict.move_to_end` will want to explicitly construct
   an :class:`collections.OrderedDict`.
-  (Contributed by Michael Selik in :issue:`33464`.)
+  (Contributed by Michael Selik in :issue:`33463`.)
 
 
 CPython bytecode changes
