@@ -1700,8 +1700,7 @@ pymain_cmdline(_PyMain *pymain, _PyCoreConfig *config)
 
 
 static int
-pymain_init(_PyMain *pymain, PyInterpreterState **interp_p,
-            int use_c_locale_coercion)
+pymain_init(_PyMain *pymain, PyInterpreterState **interp_p)
 {
     /* 754 requires that FP exceptions run in "no stop" mode by default,
      * and until C vendors implement C99's ways to control FP exceptions,
@@ -1714,11 +1713,6 @@ pymain_init(_PyMain *pymain, PyInterpreterState **interp_p,
 
     _PyCoreConfig local_config = _PyCoreConfig_INIT;
     _PyCoreConfig *config = &local_config;
-    if (use_c_locale_coercion) {
-        /* set to -1 to be able to enable the feature */
-        config->_coerce_c_locale = -1;
-        config->_coerce_c_locale_warn = -1;
-    }
 
     _PyCoreConfig_GetGlobalConfig(config);
 
@@ -1753,10 +1747,10 @@ pymain_init(_PyMain *pymain, PyInterpreterState **interp_p,
 
 
 static int
-pymain_main(_PyMain *pymain, int use_c_locale_coercion)
+pymain_main(_PyMain *pymain)
 {
     PyInterpreterState *interp;
-    int res = pymain_init(pymain, &interp, use_c_locale_coercion);
+    int res = pymain_init(pymain, &interp);
     if (res != 1) {
         if (pymain_run_python(pymain, interp) < 0) {
             _Py_FatalInitError(pymain->err);
@@ -1783,22 +1777,10 @@ Py_Main(int argc, wchar_t **argv)
     pymain.argc = argc;
     pymain.wchar_argv = argv;
 
-    return pymain_main(&pymain, 0);
+    return pymain_main(&pymain);
 }
 
 
-#ifdef MS_WINDOWS
-int
-_Py_WindowsMain(int argc, wchar_t **argv)
-{
-    _PyMain pymain = _PyMain_INIT;
-    pymain.use_bytes_argv = 0;
-    pymain.argc = argc;
-    pymain.wchar_argv = argv;
-
-    return pymain_main(&pymain, 1);
-}
-#else
 int
 _Py_UnixMain(int argc, char **argv)
 {
@@ -1807,9 +1789,8 @@ _Py_UnixMain(int argc, char **argv)
     pymain.argc = argc;
     pymain.bytes_argv = argv;
 
-    return pymain_main(&pymain, 1);
+    return pymain_main(&pymain);
 }
-#endif
 
 
 /* this is gonna seem *real weird*, but if you put some other code between

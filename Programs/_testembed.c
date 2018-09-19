@@ -482,6 +482,8 @@ static int test_init_from_config(void)
     putenv("PYTHONMALLOCSTATS=0");
     config.malloc_stats = 1;
 
+    /* FIXME: test _coerce_c_locale and _coerce_c_locale_warn */
+
     putenv("PYTHONUTF8=0");
     Py_UTF8Mode = 0;
     config.utf8_mode = 1;
@@ -604,7 +606,8 @@ static int test_init_isolated(void)
     /* Test _PyCoreConfig.isolated=1 */
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
-    /* Set utf8_mode to not depend on the locale */
+    /* Set _coerce_c_locale and utf8_mode to not depend on the locale */
+    config._coerce_c_locale = 0;
     config.utf8_mode = 0;
     /* Use path starting with "./" avoids a search along the PATH */
     config.program_name = L"./_testembed";
