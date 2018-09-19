@@ -37,5 +37,14 @@ steps:
 - script: make pythoninfo
   displayName: 'Display build info'
 
-- script: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
+- script: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu --junit-xml=$(build.binariesDirectory)/test-results.xml"
   displayName: 'Tests'
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    testResultsFiles: '$(build.binariesDirectory)/test-results.xml'
+    mergeTestResults: true
+    testRunTitle: '$(build.sourceBranchName)-linux'
+    platform: linux
+  condition: succeededOrFailed()
