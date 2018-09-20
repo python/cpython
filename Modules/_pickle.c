@@ -910,12 +910,12 @@ PyMemoTable_Set(PyMemoTable *self, PyObject *key, Py_ssize_t value)
      * Very large memo tables (over 50K items) use doubling instead.
      * This may help applications with severe memory constraints.
      */
-    size_t triple_used = self->mt_used * 3;
-    if (triple_used > self->mt_used && triple_used < self->mt_allocated * 2) {
+    if (SIZE_MAX / 3 >= self->mt_used && self->mt_used * 3 < self->mt_allocated * 2) {
         return 0;
     }
-    return _PyMemoTable_ResizeTable(self,
-        (self->mt_used > 50000 ? 2 : 4) * self->mt_used);
+    // self->mt_used is always < PY_SSIZE_T_MAX, so this can't overflow.
+    size_t desired_size = (self->mt_used > 50000 ? 2 : 4) * self->mt_used;
+    return _PyMemoTable_ResizeTable(self, desired_size);
 }
 
 #undef MT_MINSIZE
