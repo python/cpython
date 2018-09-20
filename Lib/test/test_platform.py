@@ -19,7 +19,7 @@ class PlatformTest(unittest.TestCase):
         # so we add the directory to the path and PYTHONPATH.
         env = None
         if sys.platform == "win32":
-            env = os.environ.copy()
+            env = {k.upper(): os.environ[k] for k in os.environ}
             env["PATH"] = "{};{}".format(
                 os.path.dirname(sys.executable), env.get("PATH", ""))
             env["PYTHONHOME"] = os.path.dirname(sys.executable)
@@ -31,8 +31,8 @@ class PlatformTest(unittest.TestCase):
                                  stderr=subprocess.PIPE, env=env)
             r = p.communicate()
             if p.returncode:
-                print(r[0])
-                print(r[1], file=sys.stderr)
+                print(repr(r[0]))
+                print(repr(r[1]), file=sys.stderr)
                 self.fail('unexpected return code: {0} (0x{0:08X})'
                           .format(p.returncode))
             return r

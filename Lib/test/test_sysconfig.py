@@ -237,7 +237,7 @@ class TestSysConfig(unittest.TestCase):
         # to add the directory to the path.
         env = None
         if sys.platform == "win32":
-            env = os.environ.copy()
+            env = {k.upper(): os.environ[k] for k in os.environ}
             env["PATH"] = "{};{}".format(
                 os.path.dirname(sys.executable), env.get("PATH", ""))
             # Requires PYTHONHOME as well since we locate stdlib from the
