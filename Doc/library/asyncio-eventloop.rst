@@ -1001,20 +1001,16 @@ Executing code in thread or process pools
       import asyncio
       import concurrent.futures
 
-      def cpu_bound_or_blocking_io():
-          # Perform either:
-          #
-          # * a CPU-intensive computation;
-          #
-          # * a blocking IO operation, such as a network
-          #   request using a blocking IO library such as
-          #   "requests";
-          #
-          # * a blocking IO operation, such as writing to files
-          #   or calling functions of "shutil" module; etc.
-          #
-          # For the purposes of this example let's compute
-          # something:
+      def blocking_io():
+          # File operations (such as logging) can block the
+          # event loop: run them in a thread pool.
+          with open('/dev/urandom', 'rb') as f:
+              return f.read(100)
+
+      def cpu_bound():
+          # CPU-bound operations will block the event loop:
+          # in general it is preferable to run them in a
+          # process pool.
           return sum(i * i for i in range(10 ** 7))
 
       async def main():
@@ -1022,20 +1018,20 @@ Executing code in thread or process pools
 
           # Run in the default loop's executor:
           result = await loop.run_in_executor(
-              None, cpu_bound_or_blocking_io)
+              None, blocking_io)
           print('default thread pool', result)
 
-          # Run in a custom thread-pool:
+          # Run in a custom thread pool:
           with concurrent.futures.ThreadPoolExecutor() as pool:
               result = await loop.run_in_executor(
-                  pool, cpu_bound_or_blocking_io)
-              print('custom thread-pool', result)
+                  pool, blocking_io)
+              print('custom thread pool', result)
 
-          # Run in a custom process-pool:
+          # Run in a custom process pool:
           with concurrent.futures.ProcessPoolExecutor() as pool:
               result = await loop.run_in_executor(
-                  pool, cpu_bound_or_blocking_io)
-              print('custom process-pool', result)
+                  pool, cpu_bound)
+              print('custom process pool', result)
 
       asyncio.run(main())
 
