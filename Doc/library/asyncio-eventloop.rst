@@ -996,8 +996,6 @@ Executing code in thread or process pools
    The *executor* argument should be an :class:`concurrent.futures.Executor`
    instance. The default executor is used if *executor* is ``None``.
 
-   This method returns a :class:`asyncio.Future` object.
-
    Example::
 
       import asyncio
@@ -1040,6 +1038,8 @@ Executing code in thread or process pools
               print('custom process-pool', result)
 
       asyncio.run(main())
+
+   This method returns a :class:`asyncio.Future` object.
 
    Use :func:`functools.partial` :ref:`to pass keywords
    <asyncio-pass-keywords>` to *func*.
