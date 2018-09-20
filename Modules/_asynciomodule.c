@@ -2821,7 +2821,11 @@ set_exception:
 
     Py_XDECREF(o);
     /* Check if `result` is a generator */
-    if (PyGen_Check(result)) {
+    res = PyObject_IsInstance(result, (PyObject*)&PyGen_Type);
+    if (res < 0) {
+        goto fail;
+    }
+    if (res) {
         /* `result` is a generator */
         o = task_set_error_soon(
             task, PyExc_RuntimeError,
