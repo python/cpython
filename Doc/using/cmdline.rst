@@ -852,8 +852,46 @@ conflict.
 
    Availability: \*nix
 
+   .. note::
+
+      Running in the legacy C locale is `not actually supported`_, as it almost
+      inevitably leads to text encoding and decoding problems at operating
+      system interfaces. As such, the ability to disable locale coercion or emit
+      warnings when it occurs is provided solely as a debugging aid when
+      behavioural differences are encountered across different platforms
+      (where some platforms may not define a suitable coercion target), or
+      embedding applications (where some applications, including older versions
+      of CPython, will manage the locale differently from the way the CPython
+      3.7+ CLI does).
+
+   .. _not actually supported: https://www.python.org/dev/peps/pep-0011/#legacy-c-locale
+
+   .. note::
+
+      As locale coercion occurs before the command line arguments are processed,
+      setting ``PYTHONCOERCECLOCALE=0`` will prevent locale coercion even when
+      the :option:`-E` or :option`-I` option is specified. The
+      ``PYTHONCOERCECLOCALE=warn`` case is handled later, and respects those
+      options as usual (i.e. no locale coercion warnings will ever be displayed
+      even when the :option:`-E` or :option`-I` option is specified).
+
    .. versionadded:: 3.7
-      See :pep:`538` for more details.
+      See :pep:`538` for more details. Note that the 3.7 implementation differs
+      from the PEP in a few key aspects due to some unintended interactions
+      with the :pep:`540` implementation: 1) ``LC_ALL=C`` must be used to
+      disable locale coercion when the :option:`-E` or :option`-I` option is
+      specified (``PYTHONCOERCECLOCALE=0`` won't work); 2) calling
+      :c:func:`Py_Initialize` in an embedding application will trigger locale
+      coercion when running in the C locale;  2) calling :c:func:`Py_Main` in
+      an embedding application will trigger locale coercion when running in the
+      C locale.
+
+   .. versionchanged:: 3.8
+      The locale coercion implementation has been brought back into line with
+      the approach described in :pep:`538`: calling :c:func:`Py_Initialize` and
+      :c:func:`Py_Main` will never implicitly trigger local coercion, and
+      ``PYTHONCOERCECLOCALE=0`` takes effect even when the :option:`-E` or
+      :option`-I` option is specified
 
 
 .. envvar:: PYTHONDEVMODE
