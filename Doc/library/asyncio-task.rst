@@ -202,6 +202,9 @@ APIs, can be awaited::
             some_python_coroutine()
         )
 
+A good example of a low-level function that returns a Future object
+is :meth:`loop.run_in_executor`.
+
 
 Running an asyncio Program
 ==========================
