@@ -54,8 +54,17 @@ steps:
   displayName: 'Display build info'
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
-- script: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+- script: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0 --junit-xml="$(Build.BinariesDirectory)\test-results.xml"
   displayName: 'Tests'
   env:
     PREFIX: $(Py_OutDir)\$(outDirSuffix)
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    testResultsFiles: '$(Build.BinariesDirectory)\test-results.xml'
+    mergeTestResults: true
+    testRunTitle: '$(System.PullRequest.TargetBranch)-$(outDirSuffix)'
+    platform: $(outDirSuffix)
+  condition: and(succeededOrFailed(), ne(variables['DocOnly'], 'true'))

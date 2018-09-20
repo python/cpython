@@ -4,10 +4,14 @@ import unittest
 
 from collections import namedtuple
 import os
+import platform
 import re
 import subprocess
 import sys
 
+
+# AIX libc prints an empty string as '' rather than the string '(null)'
+NULL_STR = '' if platform.system() == 'AIX' else '(null)'
 
 class EmbeddingTestsMixin:
     def setUp(self):
@@ -258,7 +262,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'use_environment': 1,
         'use_hash_seed': 0,
         'hash_seed': 0,
-        'allocator': '(null)',
+        'allocator': NULL_STR,
         'dev_mode': 0,
         'faulthandler': 0,
         'tracemalloc': 0,
@@ -275,11 +279,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'utf8_mode': 0,
         'warn_on_c_locale': 0,
 
-        'pycache_prefix': '(null)',
+        'pycache_prefix': NULL_STR,
         'program_name': './_testembed',
         'argc': 0,
         'argv': '[]',
-        'program': '(null)',
+        'program': NULL_STR,
 
         'isolated': 0,
         'site_import': 1,

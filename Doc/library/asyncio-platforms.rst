@@ -4,19 +4,20 @@
 .. _asyncio-platform-support:
 
 
-=================
-Platforms Support
-=================
+================
+Platform Support
+================
 
-The :mod:`asyncio` module has been designed to be portable,
-but some platforms have subtle differences and limitations.
+The :mod:`asyncio` module is designed to be portable,
+but some platforms have subtle differences and limitations
+due to the platforms' underlying architecture and capabilities.
 
 
 All Platforms
 =============
 
 * :meth:`loop.add_reader` and :meth:`loop.add_writer`
-  cannot be used to monitor file IO.
+  cannot be used to monitor file I/O.
 
 
 Windows
@@ -26,7 +27,7 @@ All event loops on Windows do not support the following methods:
 
 * :meth:`loop.create_unix_connection` and
   :meth:`loop.create_unix_server` are not supported.
-  The :data:`socket.AF_UNIX` socket family is specific to UNIX/
+  The :data:`socket.AF_UNIX` socket family is specific to Unix.
 
 * :meth:`loop.add_signal_handler` and
   :meth:`loop.remove_signal_handler` are not supported.
@@ -66,8 +67,8 @@ Windows configuration.
 Subprocess Support on Windows
 -----------------------------
 
-:class:`SelectorEventLoop` on Windows does not support subproceses,
-so :class:`ProactorEventLoop` should be used instead::
+:class:`SelectorEventLoop` on Windows does not support subproceses.
+On Windows, :class:`ProactorEventLoop` should be used instead::
 
   import asyncio
 

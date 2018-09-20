@@ -1,5 +1,6 @@
 .. currentmodule:: asyncio
 
+.. _asyncio-queues:
 
 ======
 Queues
@@ -9,7 +10,7 @@ asyncio queues are designed to be similar to classes of the
 :mod:`queue` module.  Although asyncio queues are not thread-safe,
 they are designed to be used specifically in async/await code.
 
-Note that methods on asyncio queues don't have a *timeout* parameter;
+Note that methods of asyncio queues don't have a *timeout* parameter;
 use :func:`asyncio.wait_for` function to do queue operations with a
 timeout.
 
@@ -60,7 +61,7 @@ Queue
 
    .. coroutinemethod:: join()
 
-      Block until all items in the queue have been gotten and processed.
+      Block until all items in the queue have been received and processed.
 
       The count of unfinished tasks goes up whenever an item is added
       to the queue. The count goes down whenever a consumer thread calls
@@ -71,7 +72,7 @@ Queue
    .. coroutinemethod:: put(item)
 
       Put an item into the queue. If the queue is full, wait until a
-      free slot is available before adding item.
+      free slot is available before adding the item.
 
    .. method:: put_nowait(item)
 
@@ -81,7 +82,7 @@ Queue
 
    .. method:: qsize()
 
-      Number of items in the queue.
+      Return the number of items in the queue.
 
    .. method:: task_done()
 
@@ -138,6 +139,8 @@ Exceptions
 
 Examples
 ========
+
+.. _asyncio_example_queue_dist:
 
 Queues can be used to distribute workload between several
 concurrent tasks::

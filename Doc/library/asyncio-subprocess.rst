@@ -9,8 +9,10 @@ Subprocesses
 This section describes high-level async/await asyncio APIs to
 create and manage subprocesses.
 
+.. _asyncio_example_subprocess_shell:
+
 Here's an example of how asyncio can run a shell command and
-communicate its result back::
+obtain its result::
 
     import asyncio
 
@@ -39,7 +41,7 @@ will print::
 Because all asyncio subprocess functions are asynchronous and asyncio
 provides many tools to work with such functions, it is easy to execute
 and monitor multiple subprocesses in parallel.  It is indeed trivial
-to modify the above example to run a few commands at once::
+to modify the above example to run several commands simultaneously::
 
     async def main():
         await asyncio.gather(
@@ -62,8 +64,7 @@ Creating Subprocesses
 
    The *limit* argument sets the buffer limit for :class:`StreamReader`
    wrappers for :attr:`Process.stdout` and :attr:`Process.stderr`
-   (if :attr:`subprocess.PIPE` is passed to *stdout* and *stderr*
-   arguments).
+   (if :attr:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
 
    Return a :class:`~asyncio.subprocess.Process` instance.
 
@@ -74,37 +75,37 @@ Creating Subprocesses
                           stdout=None, stderr=None, loop=None, \
                           limit=None, \*\*kwds)
 
-   Run the shell command *cmd*.
+   Run the *cmd* shell command.
 
    The *limit* argument sets the buffer limit for :class:`StreamReader`
    wrappers for :attr:`Process.stdout` and :attr:`Process.stderr`
-   (if :attr:`subprocess.PIPE` is passed to *stdout* and *stderr*
-   arguments).
+   (if :attr:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
 
    Return a :class:`~asyncio.subprocess.Process` instance.
 
    See the documentation of :meth:`loop.subprocess_shell` for other
    parameters.
 
-.. note::
+.. important::
 
    It is the application's responsibility to ensure that all whitespace and
-   metacharacters are quoted appropriately to avoid `shell injection
+   special characters are quoted appropriately to avoid `shell injection
    <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
    vulnerabilities. The :func:`shlex.quote` function can be used to properly
-   escape whitespace and shell metacharacters in strings that are going to be
-   used to construct shell commands.
+   escape whitespace and special shell characters in strings that are going
+   to be used to construct shell commands.
 
 .. note::
 
-   The default event loop that asyncio is pre-configured
-   to use on **Windows** does not support subprocesses.
+   The default asyncio event loop implementation on **Windows** does not
+   support subprocesses. Subprocesses are available for Windows if a
+   :class:`ProactorEventLoop` is used.
    See :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>`
    for details.
 
 .. seealso::
 
-   asyncio has also *low-level* APIs to work with subprocesses:
+   asyncio also has the following *low-level* APIs to work with subprocesses:
    :meth:`loop.subprocess_exec`, :meth:`loop.subprocess_shell`,
    :meth:`loop.connect_read_pipe`, :meth:`loop.connect_write_pipe`,
    as well as the :ref:`Subprocess Transports <asyncio-subprocess-transports>`
@@ -129,22 +130,23 @@ Constants
 
 .. data:: asyncio.subprocess.STDOUT
 
-   Can be passed to the *stderr* parameter to redirect process'
-   *stderr* to *stdout*.
+   Special value that can be used as the *stderr* argument and indicates
+   that standard error should be redirected into standard output.
 
 .. data:: asyncio.subprocess.DEVNULL
 
-   Can be passed as the *stdin*, *stdout* or *stderr* parameters
-   to redirect the corresponding subprocess' IO to :data:`os.devnull`.
+   Special value that can be used as the *stdin*, *stdout* or *stderr* argument
+   to process creation functions.  It indicates that the special file
+   :data:`os.devnull` will be used for the corresponding subprocess stream.
 
 
 Interacting with Subprocesses
 =============================
 
 Both :func:`create_subprocess_exec` and :func:`create_subprocess_shell`
-functions return instances of the *Process* class.  It is a high-level
-wrapper that allows to watch for subprocesses completion and
-communicate with them.
+functions return instances of the *Process* class.  *Process* is a high-level
+wrapper that allows communicating with subprocesses and watching for
+their completion.
 
 .. class:: asyncio.subprocess.Process
 
@@ -160,7 +162,7 @@ communicate with them.
      the :meth:`~subprocess.Popen.poll` method;
 
    * the :meth:`~asyncio.subprocess.Process.communicate` and
-     :meth:`~asyncio.subprocess.Process.wait` methods don't take a
+     :meth:`~asyncio.subprocess.Process.wait` methods don't have a
      *timeout* parameter: use the :func:`wait_for` function;
 
    * the :meth:`Process.wait() <asyncio.subprocess.Process.wait>` method
@@ -176,7 +178,7 @@ communicate with them.
 
    .. coroutinemethod:: wait()
 
-      Wait for child process to terminate.
+      Wait for the child process to terminate.
 
       Set and return the :attr:`returncode` attribute.
 
@@ -206,7 +208,7 @@ communicate with them.
       exception is ignored.  This condition occurs when the process
       exits before all data are written into *stdin*.
 
-      If its desired to send data to the process' *stdin*,
+      If it is desired to send data to the process' *stdin*,
       the process needs to be created with ``stdin=PIPE``.  Similarly,
       to get anything other than ``None`` in the result tuple, the
       process has to be created with ``stdout=PIPE`` and/or
@@ -228,9 +230,9 @@ communicate with them.
 
    .. method:: terminate()
 
-      Stop the child.
+      Stop the child process.
 
-      On Posix OSs the method sends :py:data:`signal.SIGTERM` to the
+      On POSIX systems this method sends :py:data:`signal.SIGTERM` to the
       child process.
 
       On Windows the Win32 API function :c:func:`TerminateProcess` is
@@ -240,7 +242,7 @@ communicate with them.
 
       Kill the child.
 
-      On Posix OSs the function sends :py:data:`SIGKILL` to the child
+      On POSIX systems this method sends :py:data:`SIGKILL` to the child
       process.
 
       On Windows this method is an alias for :meth:`terminate`.
@@ -265,8 +267,8 @@ communicate with them.
       Use the :meth:`communicate` method rather than
       :attr:`process.stdin.write() <stdin>`,
       :attr:`await process.stdout.read() <stdout>` or
-      :attr:`await process.stderr.read <stderr>`
-      to avoid deadlocks due to streams pausing reading or writing
+      :attr:`await process.stderr.read <stderr>`.
+      This avoids deadlocks due to streams pausing reading or writing
       and blocking the child process.
 
    .. attribute:: pid
@@ -283,7 +285,7 @@ communicate with them.
       A ``None`` value indicates that the process has not terminated yet.
 
       A negative value ``-N`` indicates that the child was terminated
-      by signal ``N`` (Unix only).
+      by signal ``N`` (POSIX only).
 
 
 .. _asyncio-subprocess-threads:
@@ -291,17 +293,17 @@ communicate with them.
 Subprocess and Threads
 ----------------------
 
-asyncio built-in event loops support running subprocesses from
-different threads, but there are the following limitations:
+Standard asyncio event loop supports running subprocesses from
+different threads, but there are limitations:
 
 * An event loop must run in the main thread.
 
-* The child watcher must be instantiated in the main thread,
+* The child watcher must be instantiated in the main thread
   before executing subprocesses from other threads. Call the
   :func:`get_child_watcher` function in the main thread to instantiate
   the child watcher.
 
-Note, that alternative event loop implementations might not share
+Note that alternative event loop implementations might not share
 the above limitations; please refer to their documentation.
 
 .. seealso::
@@ -315,7 +317,9 @@ Examples
 
 An example using the :class:`~asyncio.subprocess.Process` class to
 control a subprocess and the :class:`StreamReader` class to read from
-the *stdout*.
+its standard output.
+
+.. _asyncio_example_create_subprocess_exec:
 
 The subprocess is created by the :func:`create_subprocess_exec`
 function::
@@ -348,5 +352,5 @@ function::
     print(f"Current date: {date}")
 
 
-See also the :ref:`same example <asyncio-subprocess-proto-example>`
+See also the :ref:`same example <asyncio_example_subprocess_proto>`
 written using low-level APIs.
