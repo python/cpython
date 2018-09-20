@@ -1,1 +1,2 @@
 Added delayed check of UUID version number to check version number on actual instance.
+Added new keyword-only argument `strict=True` for strict version checking.
