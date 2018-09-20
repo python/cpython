@@ -1,0 +1,7 @@
+The locale coercion implementation has been adjusted back to being closer to
+the design documented in PEP 538. This means locale coercion is once again
+solely the responsibility of the application embedding the CPython runtime
+(in CPython's case, the CLI wrapper), with the runtime only providing
+support to detect legacy locales, actually apply the changes needed to
+coerce the locale to a UTF-8 based one, and to emit warnings when requested
+via PYTHONCOERCECLOCALE=warn.
