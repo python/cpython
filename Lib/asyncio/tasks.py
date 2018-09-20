@@ -383,6 +383,10 @@ async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
 
     if loop is None:
         loop = events.get_event_loop()
+    else:
+        warnings.warn("The loop argument is deprecated and scheduled for"
+                      "removal in Python 4.0.",
+                      DeprecationWarning, stacklevel=2)
 
     fs = {ensure_future(f, loop=loop) for f in set(fs)}
 
@@ -409,6 +413,10 @@ async def wait_for(fut, timeout, *, loop=None):
     """
     if loop is None:
         loop = events.get_event_loop()
+    else:
+        warnings.warn("The loop argument is deprecated and scheduled for"
+                      "removal in Python 4.0.",
+                      DeprecationWarning, stacklevel=2)
 
     if timeout is None:
         return await fut

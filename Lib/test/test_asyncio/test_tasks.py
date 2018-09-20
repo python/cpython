@@ -3229,6 +3229,37 @@ class SleepTests(test_utils.TestCase):
             self.loop.run_until_complete(asyncio.sleep(0.01, loop=self.loop))
 
 
+class WaitTests(test_utils.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(None)
+
+    def tearDown(self):
+        self.loop.close()
+        self.loop = None
+        super().tearDown()
+
+    def test_loop_argument_is_deprecated_in_wait(self):
+        """
+        this test should be removed in Python 4.0 when the loop argument
+        will be removed
+        """
+        with self.assertWarns(DeprecationWarning):
+            self.loop.run_until_complete(asyncio.wait([coroutine_function()],
+                                                      loop=self.loop))
+
+    def test_loop_argument_is_deprecated_in_wait_for(self):
+        """
+        this test should be removed in Python 4.0 when the loop argument
+        will be removed
+        """
+        with self.assertWarns(DeprecationWarning):
+            self.loop.run_until_complete(asyncio.wait_for(coroutine_function(),
+                                                          0.01,
+                                                          loop=self.loop))
+
+
 class CompatibilityTests(test_utils.TestCase):
     # Tests for checking a bridge between old-styled coroutines
     # and async/await syntax
