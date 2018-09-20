@@ -145,6 +145,9 @@ two closely related concepts:
 * a *coroutine object*: an object returned by calling a
   *coroutine function*.
 
+asyncio also supports legacy :ref:`generator-based
+<asyncio_generator_based_coro>` coroutines.
+
 
 .. rubric:: Tasks
 
