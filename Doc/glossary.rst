@@ -136,7 +136,7 @@ Glossary
 
    awaitable
       An object that can be used in an :keyword:`await` expression.  Can be
-      a :term:`coroutine` or an object with an :meth:`__await__` method.
+      a :term:`coroutine` object or an object with an :meth:`__await__` method.
       See also :pep:`492`.
 
    BDFL

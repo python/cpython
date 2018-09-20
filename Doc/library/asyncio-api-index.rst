@@ -19,7 +19,7 @@ await on multiple things with timeouts.
     :class: full-width-table
 
     * - :func:`run`
-      - Create event loop, run a coroutine, close the loop.
+      - Create event loop, run a coroutine object, close the loop.
 
     * - :func:`create_task`
       - Start an asyncio Task.
