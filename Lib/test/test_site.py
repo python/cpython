@@ -6,7 +6,8 @@ executing have not been removed.
 """
 import unittest
 import test.support
-from test.support import captured_stderr, TESTFN, EnvironmentVarGuard, change_cwd
+from test.support import (captured_stderr, TESTFN, EnvironmentVarGuard,
+                          change_cwd)
 import builtins
 import os
 import sys
