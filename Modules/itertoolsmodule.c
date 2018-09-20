@@ -3590,7 +3590,7 @@ accumulate_reduce(accumulateobject *lz, PyObject *Py_UNUSED(ignored))
                                    lz->initial, lz->it);
         if (it == NULL)
             return NULL;
-        return Py_BuildValue("O(OO)O", Py_TYPE(lz),
+        return Py_BuildValue("O(NO)O", Py_TYPE(lz),
                             it, lz->binop?lz->binop:Py_None, Py_None);
     }
     if (lz->total == Py_None) {
