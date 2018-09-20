@@ -650,7 +650,8 @@ class OrderedDictTests:
         support.check_free_after_iterating(self, lambda d: iter(d.values()), self.OrderedDict)
         support.check_free_after_iterating(self, lambda d: iter(d.items()), self.OrderedDict)
 
-    # TODO: Move this test to more appropriate place.
+    # TODO: This test is relating to PEP 468.
+    # Move this test to somewhere more appropriate.
     def test_kwargs_order(self):
         # bpo-34320
         od = self.OrderedDict([('a', 1), ('b', 2)])
@@ -664,7 +665,8 @@ class OrderedDictTests:
         self.assertIsInstance(res, dict)
         self.assertEqual(list(res.items()), expected)
 
-    # TODO: Move this test to more appropriate place.
+    # TODO: This test is relating to PEP 520.
+    # Move this test to somewhere more appropriate.
     def test_type_namespace_order(self):
         # bpo-34320
         od = self.OrderedDict([('a', 1), ('b', 2)])
