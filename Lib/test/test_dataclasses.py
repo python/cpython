@@ -6,6 +6,7 @@ from dataclasses import *
 
 import pickle
 import inspect
+import builtins
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
@@ -191,6 +192,55 @@ class TestCase(unittest.TestCase):
         sig = inspect.signature(C.__init__)
         first = next(iter(sig.parameters))
         self.assertEqual('self', first)
+
+    def test_field_named_object(self):
+        @dataclass
+        class C:
+            object: str
+        c = C('foo')
+        self.assertEqual(c.object, 'foo')
+
+    def test_field_named_object_frozen(self):
+        @dataclass(frozen=True)
+        class C:
+            object: str
+        c = C('foo')
+        self.assertEqual(c.object, 'foo')
+
+    def test_field_named_like_builtin(self):
+        # Attribute names can shadow built-in names
+        # since code generation is used.
+        # Ensure that this is not happening.
+        exclusions = {'None', 'True', 'False'}
+        builtins_names = sorted(
+            b for b in builtins.__dict__.keys()
+            if not b.startswith('__') and b not in exclusions
+        )
+        attributes = [(name, str) for name in builtins_names]
+        C = make_dataclass('C', attributes)
+
+        c = C(*[name for name in builtins_names])
+
+        for name in builtins_names:
+            self.assertEqual(getattr(c, name), name)
+
+    def test_field_named_like_builtin_frozen(self):
+        # Attribute names can shadow built-in names
+        # since code generation is used.
+        # Ensure that this is not happening
+        # for frozen data classes.
+        exclusions = {'None', 'True', 'False'}
+        builtins_names = sorted(
+            b for b in builtins.__dict__.keys()
+            if not b.startswith('__') and b not in exclusions
+        )
+        attributes = [(name, str) for name in builtins_names]
+        C = make_dataclass('C', attributes, frozen=True)
+
+        c = C(*[name for name in builtins_names])
+
+        for name in builtins_names:
+            self.assertEqual(getattr(c, name), name)
 
     def test_0_field_compare(self):
         # Ensure that order=False is the default.
@@ -1379,6 +1429,70 @@ class TestCase(unittest.TestCase):
         self.assertEqual(d, OrderedDict([('x', 42), ('y', 2)]))
         self.assertIs(type(d), OrderedDict)
 
+    def test_helper_asdict_namedtuple(self):
+        T = namedtuple('T', 'a b c')
+        @dataclass
+        class C:
+            x: str
+            y: T
+        c = C('outer', T(1, C('inner', T(11, 12, 13)), 2))
+
+        d = asdict(c)
+        self.assertEqual(d, {'x': 'outer',
+                             'y': T(1,
+                                    {'x': 'inner',
+                                     'y': T(11, 12, 13)},
+                                    2),
+                             }
+                         )
+
+        # Now with a dict_factory.  OrderedDict is convenient, but
+        # since it compares to dicts, we also need to have separate
+        # assertIs tests.
+        d = asdict(c, dict_factory=OrderedDict)
+        self.assertEqual(d, {'x': 'outer',
+                             'y': T(1,
+                                    {'x': 'inner',
+                                     'y': T(11, 12, 13)},
+                                    2),
+                             }
+                         )
+
+        # Make sure that the returned dicts are actuall OrderedDicts.
+        self.assertIs(type(d), OrderedDict)
+        self.assertIs(type(d['y'][1]), OrderedDict)
+
+    def test_helper_asdict_namedtuple_key(self):
+        # Ensure that a field that contains a dict which has a
+        # namedtuple as a key works with asdict().
+
+        @dataclass
+        class C:
+            f: dict
+        T = namedtuple('T', 'a')
+
+        c = C({T('an a'): 0})
+
+        self.assertEqual(asdict(c), {'f': {T(a='an a'): 0}})
+
+    def test_helper_asdict_namedtuple_derived(self):
+        class T(namedtuple('Tbase', 'a')):
+            def my_a(self):
+                return self.a
+
+        @dataclass
+        class C:
+            f: T
+
+        t = T(6)
+        c = C(t)
+
+        d = asdict(c)
+        self.assertEqual(d, {'f': T(a=6)})
+        # Make sure that t has been copied, not used directly.
+        self.assertIsNot(d['f'], t)
+        self.assertEqual(d['f'].my_a(), 6)
+
     def test_helper_astuple(self):
         # Basic tests for astuple(), it should return a new tuple.
         @dataclass
@@ -1490,6 +1604,21 @@ class TestCase(unittest.TestCase):
         t = astuple(c, tuple_factory=nt)
         self.assertEqual(t, NT(42, 2))
         self.assertIs(type(t), NT)
+
+    def test_helper_astuple_namedtuple(self):
+        T = namedtuple('T', 'a b c')
+        @dataclass
+        class C:
+            x: str
+            y: T
+        c = C('outer', T(1, C('inner', T(11, 12, 13)), 2))
+
+        t = astuple(c)
+        self.assertEqual(t, ('outer', T(1, ('inner', (11, 12, 13)), 2)))
+
+        # Now, using a tuple_factory.  list is convenient here.
+        t = astuple(c, tuple_factory=list)
+        self.assertEqual(t, ['outer', T(1, ['inner', T(11, 12, 13)], 2)])
 
     def test_dynamic_class_creation(self):
         cls_dict = {'__annotations__': {'x': int, 'y': int},

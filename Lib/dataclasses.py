@@ -4,6 +4,7 @@ import copy
 import types
 import inspect
 import keyword
+import builtins
 
 __all__ = ['dataclass',
            'field',
@@ -343,6 +344,11 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
     # worries about external callers.
     if locals is None:
         locals = {}
+    # __builtins__ may be the "builtins" module or
+    # the value of its "__dict__",
+    # so make sure "__builtins__" is the module.
+    if globals is not None and '__builtins__' not in globals:
+        globals['__builtins__'] = builtins
     return_annotation = ''
     if return_type is not MISSING:
         locals['_return_type'] = return_type
@@ -365,7 +371,7 @@ def _field_assign(frozen, name, value, self_name):
     # self_name is what "self" is called in this function: don't
     # hard-code "self", since that might be a field name.
     if frozen:
-        return f'object.__setattr__({self_name},{name!r},{value})'
+        return f'__builtins__.object.__setattr__({self_name},{name!r},{value})'
     return f'{self_name}.{name}={value}'
 
 
@@ -1020,11 +1026,36 @@ def _asdict_inner(obj, dict_factory):
             value = _asdict_inner(getattr(obj, f.name), dict_factory)
             result.append((f.name, value))
         return dict_factory(result)
+    elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
+        # obj is a namedtuple.  Recurse into it, but the returned
+        # object is another namedtuple of the same type.  This is
+        # similar to how other list- or tuple-derived classes are
+        # treated (see below), but we just need to create them
+        # differently because a namedtuple's __init__ needs to be
+        # called differently (see bpo-34363).
+
+        # I'm not using namedtuple's _asdict()
+        # method, because:
+        # - it does not recurse in to the namedtuple fields and
+        #   convert them to dicts (using dict_factory).
+        # - I don't actually want to return a dict here.  The the main
+        #   use case here is json.dumps, and it handles converting
+        #   namedtuples to lists.  Admittedly we're losing some
+        #   information here when we produce a json list instead of a
+        #   dict.  Note that if we returned dicts here instead of
+        #   namedtuples, we could no longer call asdict() on a data
+        #   structure where a namedtuple was used as a dict key.
+
+        return type(obj)(*[_asdict_inner(v, dict_factory) for v in obj])
     elif isinstance(obj, (list, tuple)):
+        # Assume we can create an object of this type by passing in a
+        # generator (which is not true for namedtuples, handled
+        # above).
         return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
     elif isinstance(obj, dict):
-        return type(obj)((_asdict_inner(k, dict_factory), _asdict_inner(v, dict_factory))
-                          for k, v in obj.items())
+        return type(obj)((_asdict_inner(k, dict_factory),
+                          _asdict_inner(v, dict_factory))
+                         for k, v in obj.items())
     else:
         return copy.deepcopy(obj)
 
@@ -1060,7 +1091,18 @@ def _astuple_inner(obj, tuple_factory):
             value = _astuple_inner(getattr(obj, f.name), tuple_factory)
             result.append(value)
         return tuple_factory(result)
+    elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
+        # obj is a namedtuple.  Recurse into it, but the returned
+        # object is another namedtuple of the same type.  This is
+        # similar to how other list- or tuple-derived classes are
+        # treated (see below), but we just need to create them
+        # differently because a namedtuple's __init__ needs to be
+        # called differently (see bpo-34363).
+        return type(obj)(*[_astuple_inner(v, tuple_factory) for v in obj])
     elif isinstance(obj, (list, tuple)):
+        # Assume we can create an object of this type by passing in a
+        # generator (which is not true for namedtuples, handled
+        # above).
         return type(obj)(_astuple_inner(v, tuple_factory) for v in obj)
     elif isinstance(obj, dict):
         return type(obj)((_astuple_inner(k, tuple_factory), _astuple_inner(v, tuple_factory))

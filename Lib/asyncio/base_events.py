@@ -37,6 +37,7 @@ except ImportError:  # pragma: no cover
 from . import constants
 from . import coroutines
 from . import events
+from . import exceptions
 from . import futures
 from . import protocols
 from . import sslproto
@@ -60,6 +61,9 @@ _MIN_CANCELLED_TIMER_HANDLES_FRACTION = 0.5
 # methods (_fatal_error())
 _FATAL_ERROR_IGNORE = (BrokenPipeError,
                        ConnectionResetError, ConnectionAbortedError)
+
+if ssl is not None:
+    _FATAL_ERROR_IGNORE = _FATAL_ERROR_IGNORE + (ssl.SSLCertVerificationError,)
 
 _HAS_IPv6 = hasattr(socket, 'AF_INET6')
 
@@ -327,7 +331,7 @@ class Server(events.AbstractServer):
 
         try:
             await self._serving_forever_fut
-        except futures.CancelledError:
+        except exceptions.CancelledError:
             try:
                 self.close()
                 await self.wait_closed()
@@ -384,18 +388,20 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Create a Future object attached to the loop."""
         return futures.Future(loop=self)
 
-    def create_task(self, coro):
+    def create_task(self, coro, *, name=None):
         """Schedule a coroutine object.
 
         Return a task object.
         """
         self._check_closed()
         if self._task_factory is None:
-            task = tasks.Task(coro, loop=self)
+            task = tasks.Task(coro, loop=self, name=name)
             if task._source_traceback:
                 del task._source_traceback[-1]
         else:
             task = self._task_factory(self, coro)
+            tasks._set_task_name(task, name)
+
         return task
 
     def set_task_factory(self, factory):
@@ -798,7 +804,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         try:
             return await self._sock_sendfile_native(sock, file,
                                                     offset, count)
-        except events.SendfileNotAvailableError as exc:
+        except exceptions.SendfileNotAvailableError as exc:
             if not fallback:
                 raise
         return await self._sock_sendfile_fallback(sock, file,
@@ -807,7 +813,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def _sock_sendfile_native(self, sock, file, offset, count):
         # NB: sendfile syscall is not supported for SSL sockets and
         # non-mmap files even if sendfile is supported by OS
-        raise events.SendfileNotAvailableError(
+        raise exceptions.SendfileNotAvailableError(
             f"syscall sendfile is not available for socket {sock!r} "
             "and file {file!r} combination")
 
@@ -1051,7 +1057,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             try:
                 return await self._sendfile_native(transport, file,
                                                    offset, count)
-            except events.SendfileNotAvailableError as exc:
+            except exceptions.SendfileNotAvailableError as exc:
                 if not fallback:
                     raise
 
@@ -1064,7 +1070,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                                              offset, count)
 
     async def _sendfile_native(self, transp, file, offset, count):
-        raise events.SendfileNotAvailableError(
+        raise exceptions.SendfileNotAvailableError(
             "sendfile syscall is not supported")
 
     async def _sendfile_fallback(self, transp, file, offset, count):

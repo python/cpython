@@ -304,7 +304,7 @@ _PyImport_Fini2(void)
 PyObject *
 PyImport_GetModuleDict(void)
 {
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     if (interp->modules == NULL) {
         Py_FatalError("PyImport_GetModuleDict: no module dictionary!");
     }
@@ -397,7 +397,7 @@ PyImport_Cleanup(void)
 {
     Py_ssize_t pos;
     PyObject *key, *value, *dict;
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     PyObject *modules = PyImport_GetModuleDict();
     PyObject *weaklist = NULL;
     const char * const *p;
@@ -592,7 +592,7 @@ long
 PyImport_GetMagicNumber(void)
 {
     long res;
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     PyObject *external, *pyc_magic;
 
     external = PyObject_GetAttrString(interp->importlib, "_bootstrap_external");
@@ -892,7 +892,7 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
             goto error;
     }
     else if (cpathobj != NULL) {
-        PyInterpreterState *interp = PyThreadState_GET()->interp;
+        PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
         _Py_IDENTIFIER(_get_sourcefile);
 
         if (interp == NULL) {
@@ -972,7 +972,7 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
                               PyObject *cpathname)
 {
     PyObject *d, *external, *res;
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     _Py_IDENTIFIER(_fix_up_module);
 
     d = module_dict_for_exec(name);
@@ -1138,7 +1138,7 @@ get_path_importer(PyObject *path_importer_cache, PyObject *path_hooks,
     return importer;
 }
 
-PyAPI_FUNC(PyObject *)
+PyObject *
 PyImport_GetImporter(PyObject *path) {
     PyObject *importer=NULL, *path_importer_cache=NULL, *path_hooks=NULL;
 
@@ -1619,7 +1619,7 @@ import_find_and_load(PyObject *abs_name)
 {
     _Py_IDENTIFIER(_find_and_load);
     PyObject *mod = NULL;
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     int import_time = interp->core_config.import_time;
     static int import_level;
     static _PyTime_t accumulated;
@@ -1680,7 +1680,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     PyObject *final_mod = NULL;
     PyObject *mod = NULL;
     PyObject *package = NULL;
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     int has_from;
 
     if (name == NULL) {
@@ -2289,7 +2289,7 @@ PyInit__imp(void)
     d = PyModule_GetDict(m);
     if (d == NULL)
         goto failure;
-    _PyCoreConfig *config = &PyThreadState_GET()->interp->core_config;
+    _PyCoreConfig *config = &_PyInterpreterState_Get()->core_config;
     PyObject *pyc_mode = PyUnicode_FromString(config->_check_hash_pycs_mode);
     if (pyc_mode == NULL) {
         goto failure;
