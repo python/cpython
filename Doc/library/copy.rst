@@ -22,7 +22,7 @@ Interface summary:
    Return a shallow copy of *x*.
 
 
-.. function:: deepcopy(x)
+.. function:: deepcopy(x[, memo])
 
    Return a deep copy of *x*.
 
