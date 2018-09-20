@@ -122,16 +122,20 @@ There are three main types of *awaitable* objects:
 Python coroutines are *awaitables* and therefore can be awaited from
 other coroutines::
 
+    import asyncio
+
     async def nested():
         return 42
 
     async def main():
-        # Nothing happens if we just call "nested()":
-        nested()  # a coroutine object is created but it is
-                  # not awaited and not wrapped into a Task.
+        # Nothing happens if we just call "nested()".
+        # (a coroutine object is created but not awaited)
+        nested()
 
         # Let's do it differently now and await it:
         print(await nested())  # will print "42".
+
+    asyncio.run(main())
 
 Note that in this documentation the term "coroutine" can be used for
 two closely related concepts:
@@ -146,31 +150,40 @@ two closely related concepts:
 
 *Tasks* are used to schedule coroutines *concurrently*.
 
-When a coroutine is :func:`wrapped <create_task>` into a
-*Task* the coroutine is automatically scheduled to run soon.
+When a coroutine is wrapped into a *Task* with functions like
+:func:`asyncio.create_task` the coroutine is automatically
+scheduled to run soon::
 
-The *Task* object can then be awaited for the result of the coroutine
-at a later point in time.
+    import asyncio
 
-The *Task* object can also be used to :meth:`cancel <Task.cancel>`
-the coroutine.
+    async def nested():
+        return 42
+
+    async def main():
+        # Schedule nested() to run soon concurrently
+        # with "main()".
+        task = asyncio.create_task(nested())
+
+        # "task" can now be used to cancel "nested()", or
+        # can simply be awaited to wait until it is complete:
+        await task
+
+    asyncio.run(main())
 
 
 .. rubric:: Futures
 
-There is a dedicated section about the :ref:`asyncio Future object
-<asyncio-futures>`, but the concept is fundamental to asyncio so
-it needs a brief introduction in this section.
+A :class:`Future` is a special **low-level** awaitable object that
+represents an **eventual result** of an asynchronous operation.
 
-A Future is a special **low-level** awaitable object that represents
-an **eventual result** of an asynchronous operation.
-
-When a Future object is *awaited* it means that we wait until
-the Future is resolved in some other place.
+When a Future object is *awaited* it means that the coroutine will
+wait until the Future is resolved in some other place.
 
 Future objects in asyncio are needed to allow callback-based code
-to be used with async/await.  Normally **there is no need**
-to create Future objects at the application level code.
+to be used with async/await.
+
+Normally **there is no need** to create Future objects at the
+application level code.
 
 Future objects, sometimes exposed by libraries and some asyncio
 APIs, can be awaited::
