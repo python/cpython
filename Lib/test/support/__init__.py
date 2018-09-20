@@ -1408,6 +1408,9 @@ def transient_internet(resource_name, *, timeout=30.0, errnos=()):
         ('EHOSTUNREACH', 113),
         ('ENETUNREACH', 101),
         ('ETIMEDOUT', 110),
+        # socket.create_connection() fails randomly with
+        # EADDRNOTAVAIL on Travis CI.
+        ('EADDRNOTAVAIL', 99),
     ]
     default_gai_errnos = [
         ('EAI_AGAIN', -3),
