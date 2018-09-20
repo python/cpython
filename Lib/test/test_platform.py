@@ -3,6 +3,7 @@ import os
 import platform
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import unittest
 import warnings
@@ -16,29 +17,34 @@ class PlatformTest(unittest.TestCase):
     @support.skip_unless_symlink
     def test_architecture_via_symlink(self): # issue3762
         # On Windows, the EXE needs to know where pythonXY.dll and *.pyd is at
-        # so we add the directory to the path and PYTHONPATH.
+        # so we add the directory to the path, PYTHONHOME and PYTHONPATH.
+        env = None
         if sys.platform == "win32":
-            def restore_environ(old_env):
-                os.environ.clear()
-                os.environ.update(old_env)
+            env = {k.upper(): os.environ[k] for k in os.environ}
+            env["PATH"] = "{};{}".format(
+                os.path.dirname(sys.executable), env.get("PATH", ""))
+            env["PYTHONHOME"] = os.path.dirname(sys.executable)
+            if sysconfig.is_python_build(True):
+                env["PYTHONPATH"] = os.path.dirname(os.__file__)
 
-            self.addCleanup(restore_environ, dict(os.environ))
-
-            os.environ["Path"] = "{};{}".format(
-                os.path.dirname(sys.executable), os.environ["Path"])
-            os.environ["PYTHONPATH"] = os.path.dirname(sys.executable)
-
-        def get(python):
+        def get(python, env=None):
             cmd = [python, '-c',
                 'import platform; print(platform.architecture())']
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-            return p.communicate()
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE, env=env)
+            r = p.communicate()
+            if p.returncode:
+                print(repr(r[0]))
+                print(repr(r[1]), file=sys.stderr)
+                self.fail('unexpected return code: {0} (0x{0:08X})'
+                          .format(p.returncode))
+            return r
 
         real = os.path.realpath(sys.executable)
         link = os.path.abspath(support.TESTFN)
         os.symlink(real, link)
         try:
-            self.assertEqual(get(real), get(link))
+            self.assertEqual(get(real), get(link, env=env))
         finally:
             os.remove(link)
 
