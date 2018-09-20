@@ -293,17 +293,17 @@ Sleeping
 Running Tasks Concurrently
 ==========================
 
-.. awaitablefunction:: gather(\*fs, loop=None, return_exceptions=False)
+.. awaitablefunction:: gather(\*aws, loop=None, return_exceptions=False)
 
-   Run :ref:`awaitable objects <asyncio-awaitables>` in the *fs*
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
    sequence *concurrently*.
 
-   If any awaitable in *fs* is a coroutine, it is automatically
+   If any awaitable in *aws* is a coroutine, it is automatically
    scheduled as a Task.
 
    If all awaitables are completed successfully, the result is an
    aggregate list of returned values.  The order of result values
-   corresponds to the order of awaitables in *fs*.
+   corresponds to the order of awaitables in *aws*.
 
    If *return_exceptions* is ``True``, exceptions are treated the
    same as successful results, and aggregated in the result list.
@@ -313,7 +313,7 @@ Running Tasks Concurrently
    If ``gather`` is *cancelled*, all submitted awaitables
    (that have not completed yet) are also *cancelled*.
 
-   If any Task or Future from the *fs* sequence is *cancelled*, it is
+   If any Task or Future from the *aws* sequence is *cancelled*, it is
    treated as if it raised :exc:`CancelledError` -- the ``gather()``
    call is **not** cancelled in this case.  This is to prevent the
    cancellation of one submitted Task/Future to cause other
@@ -363,13 +363,13 @@ Running Tasks Concurrently
 Shielding Tasks From Cancellation
 =================================
 
-.. awaitablefunction:: shield(fut, \*, loop=None)
+.. awaitablefunction:: shield(aw, \*, loop=None)
 
    Protect an :ref:`awaitable object <asyncio-awaitables>`
    from being :meth:`cancelled <Task.cancel>`.
 
-   *fut* can be a coroutine, a Task, or a Future-like object.  If
-   *fut* is a coroutine it is automatically scheduled as a Task.
+   *aw* can be a coroutine, a Task, or a Future-like object.  If
+   *aw* is a coroutine it is automatically scheduled as a Task.
 
    The statement::
 
@@ -401,12 +401,12 @@ Shielding Tasks From Cancellation
 Timeouts
 ========
 
-.. coroutinefunction:: wait_for(fut, timeout, \*, loop=None)
+.. coroutinefunction:: wait_for(aw, timeout, \*, loop=None)
 
-   Wait for the *fut* :ref:`awaitable <asyncio-awaitables>`
+   Wait for the *aw* :ref:`awaitable <asyncio-awaitables>`
    to complete with a timeout.
 
-   If *fut* is a coroutine it is automatically scheduled as a Task.
+   If *aw* is a coroutine it is automatically scheduled as a Task.
 
    *timeout* can either be ``None`` or a float or int number of seconds
    to wait for.  If *timeout* is ``None``, block until the future
@@ -421,7 +421,7 @@ Timeouts
    The function will wait until the future is actually cancelled,
    so the total wait time may exceed the *timeout*.
 
-   If the wait is cancelled, the future *fut* is also cancelled.
+   If the wait is cancelled, the future *aw* is also cancelled.
 
    The *loop* argument is deprecated and scheduled for removal
    in Python 4.0.
@@ -449,22 +449,22 @@ Timeouts
        #     timeout!
 
    .. versionchanged:: 3.7
-      When *fut* is cancelled due to a timeout, ``wait_for`` waits
-      for *fut* to be cancelled.  Previously, it raised
+      When *aw* is cancelled due to a timeout, ``wait_for`` waits
+      for *aw* to be cancelled.  Previously, it raised
       :exc:`asyncio.TimeoutError` immediately.
 
 
 Waiting Primitives
 ==================
 
-.. coroutinefunction:: wait(fs, \*, loop=None, timeout=None,\
+.. coroutinefunction:: wait(aws, \*, loop=None, timeout=None,\
                             return_when=ALL_COMPLETED)
 
-   Run :ref:`awaitable objects <asyncio-awaitables>` in the *fs*
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
    sequence concurrently and block until the condition specified
    by *return_when*.
 
-   If any awaitable in *fs* is a coroutine, it is automatically
+   If any awaitable in *aws* is a coroutine, it is automatically
    scheduled as a Task.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
@@ -505,12 +505,12 @@ Waiting Primitives
 
    Usage::
 
-        done, pending = await asyncio.wait(fs)
+        done, pending = await asyncio.wait(aws)
 
 
-.. function:: as_completed(fs, \*, loop=None, timeout=None)
+.. function:: as_completed(aws, \*, loop=None, timeout=None)
 
-   Run :ref:`awaitable objects <asyncio-awaitables>` in the *fs*
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
    set concurrently.  Return an iterator of :class:`Future` objects.
    Each Future object returned represents the earliest result
    from the set of the remaining awaitables.
@@ -520,7 +520,7 @@ Waiting Primitives
 
    Example::
 
-       for f in as_completed(fs):
+       for f in as_completed(aws):
            earliest_result = await f
            # ...
 
