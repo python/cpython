@@ -586,6 +586,11 @@ async def sleep(delay, result=None, *, loop=None):
 
     if loop is None:
         loop = events.get_event_loop()
+    else:
+        warnings.warn("The loop argument is deprecated and scheduled for"
+                      "removal in Python 4.0.",
+                      DeprecationWarning, stacklevel=2)
+
     future = loop.create_future()
     h = loop.call_later(delay,
                         futures._set_result_unless_cancelled,

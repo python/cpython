@@ -3220,6 +3220,14 @@ class SleepTests(test_utils.TestCase):
         self.loop.run_until_complete(coro())
         self.assertEqual(result, 11)
 
+    def test_loop_argument_is_deprecated(self):
+        """
+        this test should be removed in Python 4.0 when the loop argument
+        will be removed
+        """
+        with self.assertWarns(DeprecationWarning):
+            self.loop.run_until_complete(asyncio.sleep(0.01, loop=self.loop))
+
 
 class CompatibilityTests(test_utils.TestCase):
     # Tests for checking a bridge between old-styled coroutines
