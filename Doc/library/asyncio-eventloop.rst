@@ -755,7 +755,7 @@ Watching file descriptors
    invoke *callback* with the specified arguments once *fd* is available for
    writing.
 
-   Use :func:`functools.partial` :ref:`to pass keywords
+   Use :func:`functools.partial` :ref:`to pass keyword arguments
    <asyncio-pass-keywords>` to *func*.
 
 .. method:: loop.remove_writer(fd)
@@ -969,7 +969,7 @@ Unix signals
    Raise :exc:`ValueError` if the signal number is invalid or uncatchable.
    Raise :exc:`RuntimeError` if there is a problem setting up the handler.
 
-   Use :func:`functools.partial` :ref:`to pass keywords
+   Use :func:`functools.partial` :ref:`to pass keyword arguments
    <asyncio-pass-keywords>` to *func*.
 
 .. method:: loop.remove_signal_handler(sig)
@@ -1039,7 +1039,7 @@ Executing code in thread or process pools
 
    This method returns a :class:`asyncio.Future` object.
 
-   Use :func:`functools.partial` :ref:`to pass keywords
+   Use :func:`functools.partial` :ref:`to pass keyword arguments
    <asyncio-pass-keywords>` to *func*.
 
    .. versionchanged:: 3.5.3
