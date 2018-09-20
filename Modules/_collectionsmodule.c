@@ -1051,7 +1051,7 @@ deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
     assert(0 <= start && start <= stop && stop <= Py_SIZE(deque));
 
     for (i=0 ; i<start-BLOCKLEN ; i+=BLOCKLEN) {
-            b = b->rightlink;
+        b = b->rightlink;
     }
     for ( ; i<start ; i++) {
         index++;
