@@ -650,6 +650,7 @@ class OrderedDictTests:
         support.check_free_after_iterating(self, lambda d: iter(d.values()), self.OrderedDict)
         support.check_free_after_iterating(self, lambda d: iter(d.items()), self.OrderedDict)
 
+    # TODO: Move this test to more appropriate place.
     def test_kwargs_order(self):
         # bpo-34320
         od = self.OrderedDict([('a', 1), ('b', 2)])
@@ -663,6 +664,7 @@ class OrderedDictTests:
         self.assertIsInstance(res, dict)
         self.assertEqual(list(res.items()), expected)
 
+    # TODO: Move this test to more appropriate place.
     def test_type_namespace_order(self):
         # bpo-34320
         od = self.OrderedDict([('a', 1), ('b', 2)])
@@ -673,19 +675,13 @@ class OrderedDictTests:
         self.assertEqual(list(C.__dict__.items())[:2], [('b', 2), ('a', 1)])
 
     def test_dict_copy_order(self):
-        # Issue 34320
+        # bpo-34320
         od = self.OrderedDict([('a', 1), ('b', 2)])
         od.move_to_end('a')
         expected = list(od.items())
 
         copy = dict(od)
         self.assertEqual(list(copy.items()), expected)
-
-    # Namespace preserves order by language spec from 3.6.
-    # Dict preserves order by language spec from 3.7.
-    # Dict preserves order by implementation from 3.6.
-    if sys.version_info < (3, 7):
-        test_dict_copy_order = support.cpython_only(test_dict_copy_order)
 
 
 class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
