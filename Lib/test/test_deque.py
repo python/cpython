@@ -288,6 +288,11 @@ class TestBasic(unittest.TestCase):
                     else:
                         self.assertEqual(d.index(element, start, stop), target)
 
+        # Test large start argument
+        d = deque(range(0, 10000, 10))
+        i = d.index(9500, 900)
+        self.assertEqual(d[i], 9500)
+
     def test_index_bug_24913(self):
         d = deque('A' * 3)
         with self.assertRaises(ValueError):
