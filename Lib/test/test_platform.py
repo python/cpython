@@ -3,6 +3,7 @@ import os
 import platform
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import unittest
 import warnings
@@ -16,13 +17,15 @@ class PlatformTest(unittest.TestCase):
     @support.skip_unless_symlink
     def test_architecture_via_symlink(self): # issue3762
         # On Windows, the EXE needs to know where pythonXY.dll and *.pyd is at
-        # so we add the directory to the path and PYTHONPATH.
+        # so we add the directory to the path, PYTHONHOME and PYTHONPATH.
         env = None
         if sys.platform == "win32":
             env = {k.upper(): os.environ[k] for k in os.environ}
             env["PATH"] = "{};{}".format(
                 os.path.dirname(sys.executable), env.get("PATH", ""))
             env["PYTHONHOME"] = os.path.dirname(sys.executable)
+            if sysconfig.is_python_build(True):
+                env["PYTHONPATH"] = os.path.dirname(os.__file__)
 
         def get(python, env=None):
             cmd = [python, '-c',

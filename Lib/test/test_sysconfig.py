@@ -243,6 +243,8 @@ class TestSysConfig(unittest.TestCase):
             # Requires PYTHONHOME as well since we locate stdlib from the
             # EXE path and not the DLL path (which should be fixed)
             env["PYTHONHOME"] = os.path.dirname(sys.executable)
+            if sysconfig.is_python_build(True):
+                env["PYTHONPATH"] = os.path.dirname(os.__file__)
 
         # Issue 7880
         def get(python, env=None):
