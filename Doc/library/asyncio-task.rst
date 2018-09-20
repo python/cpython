@@ -109,32 +109,51 @@ To actually run a coroutine asyncio provides three main mechanisms:
 Awaitables
 ==========
 
-We say that an object is an *awaitable* object if it can be used
-in an :keyword:`await` expression.
+We say that an object is an **awaitable** object if it can be used
+in an :keyword:`await` expression.  Many asyncio APIs are designed to
+accept awaitables.
+
+There are three main types of *awaitable* objects:
+**coroutines**, **Tasks**, and **Futures**.
 
 
-.. rubric:: Coroutines and Tasks
+.. rubric:: Coroutines
 
-Python coroutines are *awaitables*::
+Python coroutines are *awaitables* and therefore can be awaited from
+other coroutines::
 
     async def nested():
         return 42
 
     async def main():
-        # Will print "42":
-        print(await nested())
+        # Nothing happens if we just call "nested()":
+        nested()  # a coroutine object is created but it is
+                  # not awaited and not wrapped into a Task.
 
-*Tasks* are used to schedule coroutines *concurrently*.
-See the previous :ref:`section <coroutine>` for an introduction
-to coroutines and tasks.
+        # Let's do it differently now and await it:
+        print(await nested())  # will print "42".
 
 Note that in this documentation the term "coroutine" can be used for
 two closely related concepts:
 
 * a *coroutine function*: an :keyword:`async def` function;
 
-* a *coroutine object*: object returned by calling a
+* a *coroutine object*: an object returned by calling a
   *coroutine function*.
+
+
+.. rubric:: Tasks
+
+*Tasks* are used to schedule coroutines *concurrently*.
+
+When a coroutine is :func:`wrapped <create_task>` into a
+*Task* the coroutine is automatically scheduled to run soon.
+
+The *Task* object can then be awaited for the result of the coroutine
+at a later point in time.
+
+The *Task* object can also be used to :meth:`cancel <Task.cancel>`
+the coroutine.
 
 
 .. rubric:: Futures
@@ -145,14 +164,16 @@ it needs a brief introduction in this section.
 
 A Future is a special **low-level** awaitable object that represents
 an **eventual result** of an asynchronous operation.
-Future objects in asyncio are needed to allow callback-based code
-to be used with async/await.
 
-Normally, **there is no need** to create Future objects at the
-application level code.
+When a Future object is *awaited* it means that we wait until
+the Future is resolved in some other place.
+
+Future objects in asyncio are needed to allow callback-based code
+to be used with async/await.  Normally **there is no need**
+to create Future objects at the application level code.
 
 Future objects, sometimes exposed by libraries and some asyncio
-APIs, should be awaited::
+APIs, can be awaited::
 
     async def main():
         await function_that_returns_a_future_object()
@@ -192,8 +213,8 @@ Creating Tasks
 
 .. function:: create_task(coro, \*, name=None)
 
-   Wrap the *coro* :ref:`coroutine <coroutine>` into a Task and
-   schedule its execution.  Return the Task object.
+   Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
+   and schedule its execution.  Return the Task object.
 
    If *name* is not ``None``, it is set as the name of the task using
    :meth:`Task.set_name`.
@@ -678,6 +699,52 @@ Task Object
 
       A Task is *done* when the wrapped coroutine either returned
       a value, raised an exception, or the Task was cancelled.
+
+   .. method:: result()
+
+      Return the result of the Task.
+
+      If the Task is *done*, the result of the wrapped coroutine
+      is returned (or if the coroutine raised an exception, that
+      exception is re-raised.)
+
+      If the Task has been *cancelled*, this method raises
+      a :exc:`CancelledError` exception.
+
+      If the Task's result isn't yet available, this method raises
+      a :exc:`InvalidStateError` exception.
+
+   .. method:: exception()
+
+      Return the exception of the Task.
+
+      If the wrapped coroutine raised an exception that exception
+      is returned.  If the wrapped coroutine returned normally
+      this method returns ``None``.
+
+      If the Task has been *cancelled*, this method raises a
+      :exc:`CancelledError` exception.
+
+      If the Task isn't *done* yet, this method raises an
+      :exc:`InvalidStateError` exception.
+
+   .. method:: add_done_callback(callback, *, context=None)
+
+      Add a callback to be run when the Task is *done*.
+
+      This method should only be used in low-level callback-based code.
+
+      See the documentation of :meth:`Future.add_done_callback`
+      for more details.
+
+   .. method:: remove_done_callback(callback)
+
+      Remove *callback* from the callbacks list.
+
+      This method should only be used in low-level callback-based code.
+
+      See the documentation of :meth:`Future.remove_done_callback`
+      for more details.
 
    .. method:: get_stack(\*, limit=None)
 

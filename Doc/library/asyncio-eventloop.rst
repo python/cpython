@@ -996,10 +996,53 @@ Executing code in thread or process pools
    The *executor* argument should be an :class:`concurrent.futures.Executor`
    instance. The default executor is used if *executor* is ``None``.
 
+   This method returns a :class:`asyncio.Future` object.
+
+   Example::
+
+      import asyncio
+      import concurrent.futures
+
+      def cpu_bound_or_blocking_io():
+          # Perform either:
+          #
+          # * a CPU-intensive computation;
+          #
+          # * a blocking IO operation, such as a network
+          #   request using a blocking IO library such as
+          #   "requests";
+          #
+          # * a blocking IO operation, such as writing to files
+          #   or calling functions of "shutil" module; etc.
+          #
+          # For the purposes of this example let's compute
+          # something:
+          return sum(i * i for i in range(10 ** 7))
+
+      async def main():
+          loop = asyncio.get_running_loop()
+
+          # Run in the default loop's executor:
+          result = await loop.run_in_executor(
+              None, cpu_bound_or_blocking_io)
+          print('default thread pool', result)
+
+          # Run in a custom thread-pool:
+          with concurrent.futures.ThreadPoolExecutor() as pool:
+              result = await loop.run_in_executor(
+                  pool, cpu_bound_or_blocking_io)
+              print('custom thread-pool', result)
+
+          # Run in a custom process-pool:
+          with concurrent.futures.ProcessPoolExecutor() as pool:
+              result = await loop.run_in_executor(
+                  pool, cpu_bound_or_blocking_io)
+              print('custom process-pool', result)
+
+      asyncio.run(main())
+
    Use :func:`functools.partial` :ref:`to pass keywords
    <asyncio-pass-keywords>` to *func*.
-
-   This method returns a :class:`asyncio.Future` object.
 
    .. versionchanged:: 3.5.3
       :meth:`loop.run_in_executor` no longer configures the
