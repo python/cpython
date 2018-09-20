@@ -1,0 +1,4 @@
+The hash function for tuples is now based on xxHash.
+This makes a high rate of collisions much less likely.
+Additionally, on 64-bit systems it improves tuple hashes in general.
+Patch by Jeroen Demeyer.
