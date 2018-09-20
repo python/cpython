@@ -1554,6 +1554,12 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
             PyErr_SetString(pysqlite_OperationalError, sqlite3_errstr(rc));
 #else
             switch (rc) {
+                case SQLITE_ERROR:
+                    /* Description of SQLITE_ERROR in SQLite 3.7.14 and older
+                       releases. */
+                    PyErr_SetString(pysqlite_OperationalError,
+                                    "SQL logic error or missing database");
+                    break;
                 case SQLITE_READONLY:
                     PyErr_SetString(pysqlite_OperationalError,
                                     "attempt to write a readonly database");
