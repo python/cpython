@@ -251,6 +251,8 @@ class BasicSocketTests(unittest.TestCase):
 
             self.assertNotEqual(child_random, parent_random)
 
+    maxDiff = None
+
     def test_parse_cert(self):
         # note that this uses an 'unofficial' function in _ssl.c,
         # provided solely for this test, to exercise the certificate
@@ -265,9 +267,9 @@ class BasicSocketTests(unittest.TestCase):
                           (('commonName', 'localhost'),))
                         )
         # Note the next three asserts will fail if the keys are regenerated
-        self.assertEqual(p['notAfter'], asn1time('Jan 17 19:09:06 2028 GMT'))
-        self.assertEqual(p['notBefore'], asn1time('Jan 19 19:09:06 2018 GMT'))
-        self.assertEqual(p['serialNumber'], 'F9BA076D5B6ABD9B')
+        self.assertEqual(p['notAfter'], asn1time('Aug 26 14:23:15 2028 GMT'))
+        self.assertEqual(p['notBefore'], asn1time('Aug 29 14:23:15 2018 GMT'))
+        self.assertEqual(p['serialNumber'], '98A7CF88C74A32ED')
         self.assertEqual(p['subject'],
                          ((('countryName', 'XY'),),
                           (('localityName', 'Castle Anthrax'),),
