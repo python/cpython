@@ -137,13 +137,15 @@ other coroutines::
 
     asyncio.run(main())
 
-Note that in this documentation the term "coroutine" can be used for
-two closely related concepts:
+.. important::
 
-* a *coroutine function*: an :keyword:`async def` function;
+   In this documentation the term "coroutine" can be used for
+   two closely related concepts:
 
-* a *coroutine object*: an object returned by calling a
-  *coroutine function*.
+   * a *coroutine function*: an :keyword:`async def` function;
+
+   * a *coroutine object*: an object returned by calling a
+     *coroutine function*.
 
 asyncio also supports legacy :ref:`generator-based
 <asyncio_generator_based_coro>` coroutines.
