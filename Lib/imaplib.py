@@ -966,7 +966,7 @@ class IMAP4:
             else:
                 literator = None
                 if self.utf8_enabled:
-                    data = data + bytes('UTF8 (~{%s}' % len(literal), self._encoding)
+                    data = data + bytes(' UTF8 (~{%s}' % len(literal), self._encoding)
                     literal = literal + b')'
                 else:
                     data = data + bytes(' {%s}' % len(literal), self._encoding)
