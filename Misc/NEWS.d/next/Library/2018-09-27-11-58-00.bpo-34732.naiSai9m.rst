@@ -1,2 +1,2 @@
-Added delayed check of UUID version number to check version number on actual instance.
-Added new keyword-only argument `strict=True` for strict version checking.
+RFC_4122 UUIDs are now being checked for valid versions upon instantiation.
+Therefor a new keyword-only argument ``strict`` has been added to ``UUID.__init__``, defaulting to ``True``.
