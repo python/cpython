@@ -891,7 +891,7 @@ conflict.
       the approach described in :pep:`538`: calling :c:func:`Py_Initialize` and
       :c:func:`Py_Main` will never implicitly trigger local coercion, and
       ``PYTHONCOERCECLOCALE=0`` takes effect even when the :option:`-E` or
-      :option`-I` option is specified
+      :option`-I` option is specified.
 
 
 .. envvar:: PYTHONDEVMODE
