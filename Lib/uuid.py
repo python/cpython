@@ -122,7 +122,7 @@ class UUID:
 
     def __init__(self, hex=None, bytes=None, bytes_le=None, fields=None,
                        int=None, version=None,
-                       *, is_safe=SafeUUID.unknown):
+                       *, is_safe=SafeUUID.unknown, strict=True):
         r"""Create a UUID from either a string of 32 hexadecimal digits,
         a string of 16 bytes as the 'bytes' argument, a string of 16 bytes
         in little-endian order as the 'bytes_le' argument, a tuple of six
@@ -204,7 +204,7 @@ class UUID:
         object.__setattr__(self, 'int', int)
         object.__setattr__(self, 'is_safe', is_safe)
         version = self.version
-        if version is not None and not 1 <= version <= 5:
+        if strict and version is not None and not 1 <= version <= 5:
             raise ValueError('illegal version number')
 
     def __getstate__(self):
@@ -656,7 +656,7 @@ def _windll_getnode():
     _load_system_functions()
     _buffer = ctypes.create_string_buffer(16)
     if _UuidCreate(_buffer) == 0:
-        return UUID(bytes=bytes_(_buffer.raw)).node
+        return UUID(bytes=bytes_(_buffer.raw), strict=False).node
 
 def _random_getnode():
     """Get a random node ID."""
