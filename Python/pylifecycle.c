@@ -355,8 +355,12 @@ _Py_CoerceLegacyLocale(const char **coercion_target,
                        const char **coercion_warning)
 {
     int locale_was_coerced = 0;
-    *coercion_target = NULL;
-    *coercion_warning = NULL;
+    if (coercion_target != NULL) {
+        *coercion_target = NULL;
+    }
+    if (coercion_warning != NULL) {
+        *coercion_warning = NULL;
+    }
 #ifdef PY_COERCE_C_LOCALE
     char *oldloc = NULL;
 
@@ -386,8 +390,12 @@ defined(HAVE_LANGINFO_H) && defined(CODESET)
 #endif
                 /* Successfully configured locale, so make it the default */
                 _coerce_default_locale_settings(target);
-                *coercion_target = target->locale_name;
-                *coercion_warning = C_LOCALE_COERCION_WARNING;
+                if (coercion_target != NULL) {
+                    *coercion_target = target->locale_name;
+                }
+                if (coercion_warning != NULL) {
+                    *coercion_warning = C_LOCALE_COERCION_WARNING;
+                }
                 locale_was_coerced = 1;
                 goto done;
             }
