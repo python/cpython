@@ -654,6 +654,7 @@ time_strftime(PyObject *self, PyObject *args)
         if (outbuf[1] == L'y' && buf.tm_year < 0) {
             PyErr_SetString(PyExc_ValueError,
                             "format %y requires year >= 1900 on AIX");
+            PyMem_Free(format);
             return NULL;
         }
     }
