@@ -129,7 +129,8 @@ other coroutines::
 
     async def main():
         # Nothing happens if we just call "nested()".
-        # (a coroutine object is created but not awaited)
+        # A coroutine object is created but not awaited,
+        # so it *won't run at all*.
         nested()
 
         # Let's do it differently now and await it:
@@ -313,12 +314,15 @@ Running Tasks Concurrently
    aggregate list of returned values.  The order of result values
    corresponds to the order of awaitables in *aws*.
 
+   If *return_exceptions* is ``False`` (default), the first
+   raised exception is immediately propagated to the task that
+   awaits on ``gather()``.  Other awaitables in the *aws* sequence
+   **won't be cancelled** and will continue to run.
+
    If *return_exceptions* is ``True``, exceptions are treated the
    same as successful results, and aggregated in the result list.
-   Otherwise, the first raised exception is immediately propagated
-   to the task that awaits on ``gather()``.
 
-   If ``gather`` is *cancelled*, all submitted awaitables
+   If ``gather()`` is *cancelled*, all submitted awaitables
    (that have not completed yet) are also *cancelled*.
 
    If any Task or Future from the *aws* sequence is *cancelled*, it is
@@ -368,16 +372,15 @@ Running Tasks Concurrently
       propagated regardless of *return_exceptions*.
 
 
-Shielding Tasks From Cancellation
-=================================
+Shielding From Cancellation
+===========================
 
 .. awaitablefunction:: shield(aw, \*, loop=None)
 
    Protect an :ref:`awaitable object <asyncio-awaitables>`
    from being :meth:`cancelled <Task.cancel>`.
 
-   *aw* can be a coroutine, a Task, or a Future-like object.  If
-   *aw* is a coroutine it is automatically scheduled as a Task.
+   If *aw* is a coroutine it is automatically scheduled as a Task.
 
    The statement::
 
@@ -609,7 +612,7 @@ Task Object
 
 .. class:: Task(coro, \*, loop=None, name=None)
 
-   A :class:`Future`-like object that wraps a Python
+   A :class:`Future-like <Future>` object that runs a Python
    :ref:`coroutine <coroutine>`.  Not thread-safe.
 
    Tasks are used to run coroutines in event loops.
@@ -831,7 +834,7 @@ Task Object
       is used to get the current loop.
 
       This method is **deprecated** and will be removed in
-      Python 3.9.  Use the :func:`all_tasks` function instead.
+      Python 3.9.  Use the :func:`asyncio.all_tasks` function instead.
 
    .. classmethod:: current_task(loop=None)
 
@@ -841,7 +844,8 @@ Task Object
       is used to get the current loop.
 
       This method is **deprecated** and will be removed in
-      Python 3.9.  Use the :func:`current_task` function instead.
+      Python 3.9.  Use the :func:`asyncio.current_task` function
+      instead.
 
 
 .. _asyncio_generator_based_coro:
