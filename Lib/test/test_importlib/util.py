@@ -10,7 +10,6 @@ import io
 import os
 import os.path
 from pathlib import Path, PurePath
-import py_compile
 from test import support
 import unittest
 import sys
