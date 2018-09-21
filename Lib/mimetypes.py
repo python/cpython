@@ -514,6 +514,7 @@ def _default_mime_types():
         '.txt'    : 'text/plain',
         '.ustar'  : 'application/x-ustar',
         '.vcf'    : 'text/x-vcard',
+        '.wasm'   : 'application/wasm',
         '.wav'    : 'audio/x-wav',
         '.webm'   : 'video/webm',
         '.wiz'    : 'application/msword',
