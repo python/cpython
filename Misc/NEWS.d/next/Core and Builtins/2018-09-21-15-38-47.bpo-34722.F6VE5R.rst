@@ -1,0 +1,4 @@
+Ensures that sets / frozensets marshal in a consistent order by sorting the
+serialised items before writing them. This will result in somewhat slower
+serialisation but bytecode files using set literals in certain contexts will
+now serialise deterministically where it didn't before.
