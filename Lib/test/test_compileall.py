@@ -555,6 +555,30 @@ class CommandLineTests(unittest.TestCase):
             self.assertTrue(compile_dir.called)
             self.assertEqual(compile_dir.call_args[-1]['workers'], None)
 
+    def test_deterministic_serialization(self):
+        # http://bugs.python.org/issue34722
+        # We have to test this in subprocesses since the nondeterminism
+        # revolves around the hash seed.
+        with open(os.path.join(self.pkgdir, 'set.py'), 'w') as f:
+            f.write("def test(x):\n")
+            f.write("    if x in {'ONE', 'TWO', 'THREE'}:\n")
+            f.write("        pass\n")
+
+        def compile_dir():
+            self.assertRunOK(
+                '-q',
+                '--invalidation-mode=unchecked-hash',
+                self.pkgdir,
+            )
+            for file in sorted(os.listdir(self.pkgdir_cachedir)):
+                with open(os.path.join(self.pkgdir_cachedir, file), 'rb') as f:
+                    yield f.read()
+
+        serialized = list(compile_dir())
+        for _ in range(5):
+            shutil.rmtree(self.pkgdir_cachedir)
+            self.assertEqual(serialized, list(compile_dir()))
+
 
 if __name__ == "__main__":
     unittest.main()
