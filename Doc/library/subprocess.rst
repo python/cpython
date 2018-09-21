@@ -1199,14 +1199,15 @@ handling consistency are valid for these functions.
       Windows support was added.
 
       The function now returns (exitcode, output) instead of (status, output)
-      as it did in Python 3.3.3 and earlier.  See :func:`WEXITSTATUS`.
+      as it did in Python 3.3.3 and earlier.  exitcode has the same value as
+      :attr:`~Popen.returncode`.
 
 
 .. function:: getoutput(cmd)
 
    Return output (stdout and stderr) of executing *cmd* in a shell.
 
-   Like :func:`getstatusoutput`, except the exit status is ignored and the return
+   Like :func:`getstatusoutput`, except the exit code is ignored and the return
    value is a string containing the command's output.  Example::
 
       >>> subprocess.getoutput('ls /bin/ls')
