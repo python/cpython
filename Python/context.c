@@ -18,22 +18,25 @@ module _contextvars
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=a0955718c8b8cea6]*/
 
 
-#define ENSURE_Context(o, err_ret)          \
-    if (!PyContext_CheckExact(o)) {         \
-        PyErr_SetNone(PyExc_TypeError);     \
-        return err_ret;                     \
+#define ENSURE_Context(o, err_ret)                                  \
+    if (!PyContext_CheckExact(o)) {                                 \
+        PyErr_SetString(PyExc_TypeError,                            \
+                        "an instance of Context was expected");     \
+        return err_ret;                                             \
     }
 
-#define ENSURE_ContextVar(o, err_ret)       \
-    if (!PyContextVar_CheckExact(o)) {      \
-        PyErr_SetNone(PyExc_TypeError);     \
-        return err_ret;                     \
+#define ENSURE_ContextVar(o, err_ret)                               \
+    if (!PyContextVar_CheckExact(o)) {                              \
+        PyErr_SetString(PyExc_TypeError,                            \
+                       "an instance of ContextVar was expected");   \
+        return err_ret;                                             \
     }
 
-#define ENSURE_ContextToken(o, err_ret)     \
-    if (!PyContextToken_CheckExact(o)) {    \
-        PyErr_SetNone(PyExc_TypeError);     \
-        return err_ret;                     \
+#define ENSURE_ContextToken(o, err_ret)                             \
+    if (!PyContextToken_CheckExact(o)) {                            \
+        PyErr_SetString(PyExc_TypeError,                            \
+                        "an instance of Token was expected");       \
+        return err_ret;                                             \
     }
 
 

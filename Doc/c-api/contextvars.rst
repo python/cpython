@@ -10,7 +10,7 @@ Context Variables Objects
 
    .. note::
 
-      In Python 3.7.1 signatures of all context variables
+      In Python 3.7.1 the signatures of all context variables
       C APIs were **changed** to use :c:type:`PyObject` pointers instead
       of :c:type:`PyContext`, :c:type:`PyContextVar`, and
       :c:type:`PyContextToken`, e.g.::
