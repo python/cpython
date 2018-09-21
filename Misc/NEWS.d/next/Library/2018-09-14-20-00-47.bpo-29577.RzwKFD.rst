@@ -1,1 +1,1 @@
-Support multiple mixin classes when creating `Enum`s.
+Support multiple mixin classes when creating Enums.
