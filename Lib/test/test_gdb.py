@@ -321,7 +321,21 @@ class PrettyPrintTests(DebuggerTests):
 
     def test_strings(self):
         'Verify the pretty-printing of unicode strings'
-        encoding = locale.getpreferredencoding()
+        # We cannot simply call locale.getpreferredencoding() here,
+        # as GDB might have been linked against a different version
+        # of Python with a different encoding and coercion policy
+        # with respect to PEP 538 and PEP 540.
+        out, err = run_gdb(
+            '--eval-command',
+            'python import locale; print(locale.getpreferredencoding())')
+
+        if err:
+            raise RuntimeError(
+                'unable to determine the preferred encoding '
+                'of embedded Python in GDB.')
+
+        encoding = out.strip()
+
         def check_repr(text):
             try:
                 text.encode(encoding)
