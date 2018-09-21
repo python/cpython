@@ -2494,3 +2494,7 @@ versions, it respected an ill-defined subset of those environment variables,
 while in Python 3.7.0 it didn't read any of them due to :issue:`34247`). If
 this behavior is unwanted, set :c:data:`Py_IgnoreEnvironmentFlag` to 1 before
 calling :c:func:`Py_Initialize`.
+
+In 3.7.1 the C API for Context Variables
+:ref:`was updated <contextvarsobjects_pointertype_change>` to use
+:c:type:`PyObject` pointers.  See also :issue:`34762`.
