@@ -1,2 +1,3 @@
-Tuple unpacking is now allowed without parenthesis in yield and return
-statements, e.g. ``yield 1, 2, 3, *rest``.
+Iterable unpacking is now allowed without parenthesis in yield and return
+statements, e.g. ``yield 1, 2, 3, *rest``. Thanks to David Cuthbert for the
+change and jChapman for added tests.
