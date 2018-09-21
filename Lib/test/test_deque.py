@@ -290,8 +290,11 @@ class TestBasic(unittest.TestCase):
 
         # Test large start argument
         d = deque(range(0, 10000, 10))
-        i = d.index(9500, 900)
-        self.assertEqual(d[i], 9500)
+        for step in range(100):
+            i = d.index(8500, 700)
+            self.assertEqual(d[i], 8500)
+            # Repeat test with a different internal offset
+            d.rotate()
 
     def test_index_bug_24913(self):
         d = deque('A' * 3)
