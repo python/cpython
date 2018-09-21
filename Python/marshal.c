@@ -496,7 +496,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object((PyObject *)NULL, p);
     }
     else if (PyAnySet_CheckExact(v)) {
-        PyObject *value, *it;
+        PyObject *value, *l;
 
         if (PyObject_TypeCheck(v, &PySet_Type))
             W_TYPE(TYPE_SET, p);
@@ -509,17 +509,27 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             return;
         }
         W_SIZE(n, p);
-        it = PyObject_GetIter(v);
-        if (it == NULL) {
+        l = PySequence_List(v);
+        if (l == NULL) {
             p->depth--;
             p->error = WFERR_UNMARSHALLABLE;
             return;
         }
-        while ((value = PyIter_Next(it)) != NULL) {
-            w_object(value, p);
-            Py_DECREF(value);
+        for (i = 0; i < n; i++) {
+            value = PyList_GetItem(l, i);
+            value = PyMarshal_WriteObjectToString(value, Py_MARSHAL_VERSION);
+            PyList_SetItem(l, i, value);
         }
-        Py_DECREF(it);
+        if (PyList_Sort(l) == -1) {
+            Py_DECREF(l);
+            p->depth--;
+            p->error = WFERR_UNMARSHALLABLE;
+            return;
+        }
+        for (i = 0; i < n; i++) {
+            w_object(PyList_GetItem(l, i), p);
+        }
+        Py_DECREF(l);
         if (PyErr_Occurred()) {
             p->depth--;
             p->error = WFERR_UNMARSHALLABLE;
