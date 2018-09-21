@@ -490,37 +490,13 @@ class EnumMeta(type):
                             continue
                         return base
 
-        # check that zero or one concrete data type has been used, and only one
-        # Enum type has been used, and that that Enum has no members
-        member_type = first_enum = None
-        if len(bases) == 1:
-            member_type = _find_data_type(bases) or object
-            first_enum = bases[0]
-        elif len(bases) == 2:
-            mixin, first_enum = bases
-            if not issubclass(first_enum, Enum) or issubclass(mixin, Enum):
-                raise TypeError("new enumerations must be created as "
-                        "`EnumName([mixin_type, ...] [data_type,] enum_type)`")
-            # search for a concrete data type in mixin or first_enum
-            member_type = _find_data_type(bases) or object
-        else:
-            # more than two bases
-            *mixins, first_enum = bases
-            if (not issubclass(first_enum, Enum)
-                    or any([issubclass(m, Enum) for m in mixins])
-                ):
-                raise TypeError("new enumerations must be created as "
-                        "`EnumName([mixin_type, ...] [data_type,] enum_type)`")
-            *mixins, data_type = mixins
-            # verify that none of the mixins are a data type
-            if _find_data_type(mixins):
-                raise TypeError("new enumerations must be created as "
-                        "`EnumName([mixin_type, ...] [data_type,] enum_type)`")
-            # check if data type is one, or base Enum has one
-            member_type = _find_data_type(bases[-2:]) or object
-
-        # finally, double check that we are not subclassing a class with existing
-        # enumeration members
+        # ensure final parent class is an Enum derivative, find any concrete
+        # data type, and check that Enum has no members
+        first_enum = bases[-1]
+        if not issubclass(first_enum, Enum):
+            raise TypeError("new enumerations should be created as "
+                    "`EnumName([mixin_type, ...] [data_type,] enum_type)`")
+        member_type = _find_data_type(bases) or object
         if first_enum._member_names_:
             raise TypeError("Cannot extend enumerations")
 
