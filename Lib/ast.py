@@ -323,6 +323,9 @@ class NodeTransformer(NodeVisitor):
         return node
 
 
+# The following code is for backward compatibility.
+# It will be removed in future.
+
 def _getter(self):
     return self.value
 
@@ -332,66 +335,52 @@ def _setter(self, value):
 Constant.n = property(_getter, _setter)
 Constant.s = property(_getter, _setter)
 
-_unspecified = object()
+class _ABC(type):
 
+    def __instancecheck__(cls, inst):
+        if not isinstance(inst, Constant):
+            return False
+        if cls in _const_types:
+            try:
+                value = inst.value
+            except AttributeError:
+                return False
+            else:
+                return type(value) in _const_types[cls]
+        return type.__instancecheck__(cls, inst)
 
-class Num(Constant):
-    _fields = ('n',)
-
-    def __new__(cls, s=_unspecified, **kwargs):
-        if s is _unspecified:
-            return Constant(**kwargs)
-        return Constant(value=s, **kwargs)
-
-    @staticmethod
-    def __instancecheck__(instance):
-        return (isinstance(instance, Constant) and
-                type(instance.value) in (int, float, complex))
-
-
-class Str(Constant):
-    _fields = ('s',)
-
-    def __new__(cls, s=_unspecified, **kwargs):
-        if s is _unspecified:
-            return Constant(**kwargs)
-        return Constant(value=s, **kwargs)
-
-    @staticmethod
-    def __instancecheck__(instance):
-        return isinstance(instance, Constant) and type(instance.value) is str
-
-
-class Bytes(Constant):
-    _fields = ('s',)
-
-    def __new__(cls, s=_unspecified, **kwargs):
-        if s is _unspecified:
-            return Constant(**kwargs)
-        return Constant(value=s, **kwargs)
-
-    @staticmethod
-    def __instancecheck__(instance):
-        return isinstance(instance, Constant) and type(instance.value) is bytes
-
-
-class NameConstant(Constant):
-    def __new__(cls, *args, **kwargs):
+def _new(cls, *args, **kwargs):
+    if cls in _const_types:
         return Constant(*args, **kwargs)
+    return Constant.__new__(cls, *args, **kwargs)
 
-    @staticmethod
-    def __instancecheck__(instance):
-        return (isinstance(instance, Constant) and
-                (instance.value is False or instance.value is True or
-                 instance.value is None))
+class Num(Constant, metaclass=_ABC):
+    _fields = ('n',)
+    __new__ = _new
 
+class Str(Constant, metaclass=_ABC):
+    _fields = ('s',)
+    __new__ = _new
 
-class Ellipsis(Constant):
+class Bytes(Constant, metaclass=_ABC):
+    _fields = ('s',)
+    __new__ = _new
+
+class NameConstant(Constant, metaclass=_ABC):
+    __new__ = _new
+
+class Ellipsis(Constant, metaclass=_ABC):
     _fields = ()
 
-    def __new__(cls, **kwargs):
-        return Constant(..., **kwargs)
+    def __new__(cls, *args, **kwargs):
+        if cls is Ellipsis:
+            return Constant(..., *args, **kwargs)
+        return Constant.__new__(cls, *args, **kwargs)
 
-    @staticmethod
-    def __instancecheck__(instance):
-        return isinstance(instance, Constant) and instance.value is ...
+_const_types = {
+    Num: (int, float, complex),
+    Str: (str,),
+    Bytes: (bytes,),
+    NameConstant: (type(None), bool),
+    Ellipsis: (type(...),),
+}

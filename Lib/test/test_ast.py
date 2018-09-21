@@ -330,6 +330,95 @@ class AST_Tests(unittest.TestCase):
         self.assertRaises(TypeError, ast.Num, 1, 2)
         self.assertRaises(TypeError, ast.Num, 1, 2, lineno=0)
 
+        self.assertEqual(ast.Num(42).n, 42)
+        self.assertEqual(ast.Num(4.25).n, 4.25)
+        self.assertEqual(ast.Num(4.25j).n, 4.25j)
+        self.assertEqual(ast.Str('42').s, '42')
+        self.assertEqual(ast.Bytes(b'42').s, b'42')
+        self.assertIs(ast.NameConstant(True).value, True)
+        self.assertIs(ast.NameConstant(False).value, False)
+        self.assertIs(ast.NameConstant(None).value, None)
+
+        self.assertEqual(ast.Constant(42).value, 42)
+        self.assertEqual(ast.Constant(4.25).value, 4.25)
+        self.assertEqual(ast.Constant(4.25j).value, 4.25j)
+        self.assertEqual(ast.Constant('42').value, '42')
+        self.assertEqual(ast.Constant(b'42').value, b'42')
+        self.assertIs(ast.Constant(True).value, True)
+        self.assertIs(ast.Constant(False).value, False)
+        self.assertIs(ast.Constant(None).value, None)
+        self.assertIs(ast.Constant(...).value, ...)
+
+    def test_realtype(self):
+        self.assertEqual(type(ast.Num(42)), ast.Constant)
+        self.assertEqual(type(ast.Num(4.25)), ast.Constant)
+        self.assertEqual(type(ast.Num(4.25j)), ast.Constant)
+        self.assertEqual(type(ast.Str('42')), ast.Constant)
+        self.assertEqual(type(ast.Bytes(b'42')), ast.Constant)
+        self.assertEqual(type(ast.NameConstant(True)), ast.Constant)
+        self.assertEqual(type(ast.NameConstant(False)), ast.Constant)
+        self.assertEqual(type(ast.NameConstant(None)), ast.Constant)
+        self.assertEqual(type(ast.Ellipsis()), ast.Constant)
+
+    def test_isinstance(self):
+        self.assertTrue(isinstance(ast.Num(42), ast.Num))
+        self.assertTrue(isinstance(ast.Num(4.2), ast.Num))
+        self.assertTrue(isinstance(ast.Num(4.2j), ast.Num))
+        self.assertTrue(isinstance(ast.Str('42'), ast.Str))
+        self.assertTrue(isinstance(ast.Bytes(b'42'), ast.Bytes))
+        self.assertTrue(isinstance(ast.NameConstant(True), ast.NameConstant))
+        self.assertTrue(isinstance(ast.NameConstant(False), ast.NameConstant))
+        self.assertTrue(isinstance(ast.NameConstant(None), ast.NameConstant))
+        self.assertTrue(isinstance(ast.Ellipsis(), ast.Ellipsis))
+
+        self.assertTrue(isinstance(ast.Constant(42), ast.Num))
+        self.assertTrue(isinstance(ast.Constant(4.2), ast.Num))
+        self.assertTrue(isinstance(ast.Constant(4.2j), ast.Num))
+        self.assertTrue(isinstance(ast.Constant('42'), ast.Str))
+        self.assertTrue(isinstance(ast.Constant(b'42'), ast.Bytes))
+        self.assertTrue(isinstance(ast.Constant(True), ast.NameConstant))
+        self.assertTrue(isinstance(ast.Constant(False), ast.NameConstant))
+        self.assertTrue(isinstance(ast.Constant(None), ast.NameConstant))
+        self.assertTrue(isinstance(ast.Constant(...), ast.Ellipsis))
+
+        self.assertFalse(isinstance(ast.Str('42'), ast.Num))
+        self.assertFalse(isinstance(ast.Num(42), ast.Str))
+        self.assertFalse(isinstance(ast.Str('42'), ast.Bytes))
+        self.assertFalse(isinstance(ast.Num(42), ast.NameConstant))
+        self.assertFalse(isinstance(ast.Num(42), ast.Ellipsis))
+
+        self.assertFalse(isinstance(ast.Constant('42'), ast.Num))
+        self.assertFalse(isinstance(ast.Constant(42), ast.Str))
+        self.assertFalse(isinstance(ast.Constant('42'), ast.Bytes))
+        self.assertFalse(isinstance(ast.Constant(42), ast.NameConstant))
+        self.assertFalse(isinstance(ast.Constant(42), ast.Ellipsis))
+
+        self.assertFalse(isinstance(ast.Constant(), ast.Num))
+        self.assertFalse(isinstance(ast.Constant(), ast.Str))
+        self.assertFalse(isinstance(ast.Constant(), ast.Bytes))
+        self.assertFalse(isinstance(ast.Constant(), ast.NameConstant))
+        self.assertFalse(isinstance(ast.Constant(), ast.Ellipsis))
+
+    def test_subclasses(self):
+        class N(ast.Num):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.z = 'spam'
+        class N2(ast.Num):
+            pass
+
+        n = N(42)
+        self.assertEqual(n.n, 42)
+        self.assertEqual(n.z, 'spam')
+        self.assertEqual(type(n), N)
+        self.assertTrue(isinstance(n, N))
+        self.assertTrue(isinstance(n, ast.Num))
+        self.assertFalse(isinstance(n, N2))
+        self.assertFalse(isinstance(ast.Num(42), N))
+        n = N(n=42)
+        self.assertEqual(n.n, 42)
+        self.assertEqual(type(n), N)
+
     def test_module(self):
         body = [ast.Num(42)]
         x = ast.Module(body)
