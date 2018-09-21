@@ -5002,6 +5002,7 @@ double _PyUnicode_ToNumeric(Py_UCS4 ch)
         return (double) 3.0/80.0;
     case 0x1374:
     case 0x303A:
+    case 0x4E17:
     case 0x324A:
     case 0x325A:
     case 0x5345:
