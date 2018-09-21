@@ -331,10 +331,14 @@ class PrettyPrintTests(DebuggerTests):
 
         if err:
             raise RuntimeError(
-                'unable to determine the preferred encoding '
-                'of embedded Python in GDB.')
+                f'unable to determine the preferred encoding '
+                f'of embedded Python in GDB: {err}')
 
-        encoding = out.strip()
+        encoding = out.rstrip()
+        if not encoding:
+            raise RuntimeError(
+                f'unable to determine the preferred encoding '
+                f'of embedded Python in GDB: the command returned no output')
 
         def check_repr(text):
             try:
