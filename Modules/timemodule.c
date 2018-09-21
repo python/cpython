@@ -1522,7 +1522,7 @@ PyDoc_STRVAR(get_clock_info_doc,
 \n\
 Get information of the specified clock.");
 
-#if !defined(HAVE_TZNAME) || defined(__GLIBC__) || defined(__CYGWIN__)
+#ifndef HAVE_DECL_TZNAME
 static void
 get_zone(char *zone, int n, struct tm *p)
 {
@@ -1543,7 +1543,7 @@ get_gmtoff(time_t t, struct tm *p)
     return timegm(p) - t;
 #endif
 }
-#endif /* !defined(HAVE_TZNAME) || defined(__GLIBC__) || defined(__CYGWIN__) */
+#endif // !HAVE_DECL_TZNAME
 
 static void
 PyInit_timezone(PyObject *m) {
@@ -1563,7 +1563,7 @@ PyInit_timezone(PyObject *m) {
 
     And I'm lazy and hate C so nyer.
      */
-#if defined(HAVE_TZNAME) && !defined(__GLIBC__) && !defined(__CYGWIN__)
+#ifdef HAVE_DECL_TZNAME
     PyObject *otz0, *otz1;
     tzset();
     PyModule_AddIntConstant(m, "timezone", timezone);
@@ -1574,54 +1574,52 @@ PyInit_timezone(PyObject *m) {
 #endif
     PyModule_AddIntConstant(m, "daylight", daylight);
     otz0 = PyUnicode_DecodeLocale(tzname[0], "surrogateescape");
-    otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
-    PyModule_AddObject(m, "tzname", Py_BuildValue("(NN)", otz0, otz1));
-#else /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
-    {
-#define YEAR ((time_t)((365 * 24 + 6) * 3600))
-        time_t t;
-        struct tm p;
-        long janzone, julyzone;
-        char janname[10], julyname[10];
-        t = (time((time_t *)0) / YEAR) * YEAR;
-        _PyTime_localtime(t, &p);
-        get_zone(janname, 9, &p);
-        janzone = -get_gmtoff(t, &p);
-        janname[9] = '\0';
-        t += YEAR/2;
-        _PyTime_localtime(t, &p);
-        get_zone(julyname, 9, &p);
-        julyzone = -get_gmtoff(t, &p);
-        julyname[9] = '\0';
-
-        if( janzone < julyzone ) {
-            /* DST is reversed in the southern hemisphere */
-            PyModule_AddIntConstant(m, "timezone", julyzone);
-            PyModule_AddIntConstant(m, "altzone", janzone);
-            PyModule_AddIntConstant(m, "daylight",
-                                    janzone != julyzone);
-            PyModule_AddObject(m, "tzname",
-                               Py_BuildValue("(zz)",
-                                             julyname, janname));
-        } else {
-            PyModule_AddIntConstant(m, "timezone", janzone);
-            PyModule_AddIntConstant(m, "altzone", julyzone);
-            PyModule_AddIntConstant(m, "daylight",
-                                    janzone != julyzone);
-            PyModule_AddObject(m, "tzname",
-                               Py_BuildValue("(zz)",
-                                             janname, julyname));
-        }
+    if (otz0 == NULL) {
+        return;
     }
-#ifdef __CYGWIN__
-    tzset();
-    PyModule_AddIntConstant(m, "timezone", _timezone);
-    PyModule_AddIntConstant(m, "altzone", _timezone-3600);
-    PyModule_AddIntConstant(m, "daylight", _daylight);
-    PyModule_AddObject(m, "tzname",
-                       Py_BuildValue("(zz)", _tzname[0], _tzname[1]));
-#endif /* __CYGWIN__ */
-#endif /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
+    otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
+    if (otz1 == NULL) {
+        Py_DECREF(otz0);
+        return;
+    }
+    PyObject *tzname_obj = Py_BuildValue("(NN)", otz0, otz1);
+    if (tzname_obj == NULL)
+        return;
+    PyModule_AddObject(m, "tzname", tzname_obj);
+#else // !HAVE_DECL_TZNAME
+    static const time_t YEAR = (365 * 24 + 6) * 3600;
+    time_t t;
+    struct tm p;
+    long janzone, julyzone;
+    char janname[10], julyname[10];
+    t = (time((time_t *)0) / YEAR) * YEAR;
+    _PyTime_localtime(t, &p);
+    get_zone(janname, 9, &p);
+    janzone = -get_gmtoff(t, &p);
+    janname[9] = '\0';
+    t += YEAR/2;
+    _PyTime_localtime(t, &p);
+    get_zone(julyname, 9, &p);
+    julyzone = -get_gmtoff(t, &p);
+    julyname[9] = '\0';
+
+    PyObject *tzname_obj;
+    if (janzone < julyzone) {
+        /* DST is reversed in the southern hemisphere */
+        PyModule_AddIntConstant(m, "timezone", julyzone);
+        PyModule_AddIntConstant(m, "altzone", janzone);
+        PyModule_AddIntConstant(m, "daylight", janzone != julyzone);
+        tzname_obj = Py_BuildValue("(zz)", julyname, janname);
+    } else {
+        PyModule_AddIntConstant(m, "timezone", janzone);
+        PyModule_AddIntConstant(m, "altzone", julyzone);
+        PyModule_AddIntConstant(m, "daylight", janzone != julyzone);
+        tzname_obj = Py_BuildValue("(zz)", janname, julyname);
+    }
+    if (tzname_obj == NULL)
+        return;
+    PyModule_AddObject(m, "tzname", tzname_obj);
+#endif // !HAVE_DECL_TZNAME
 }
 
 
