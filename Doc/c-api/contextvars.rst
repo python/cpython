@@ -5,6 +5,25 @@
 Context Variables Objects
 -------------------------
 
+.. _contextvarsobjects_pointertype_change:
+.. versionchanged:: 3.7.1
+
+   .. note::
+
+      In Python 3.7.1 the signatures of all context variables
+      C APIs were **changed** to use :c:type:`PyObject` pointers instead
+      of :c:type:`PyContext`, :c:type:`PyContextVar`, and
+      :c:type:`PyContextToken`, e.g.::
+
+         // in 3.7.0:
+         PyContext *PyContext_New(void);
+
+         // in 3.7.1+:
+         PyObject *PyContext_New(void);
+
+      See :issue:`34762` for more details.
+
+
 .. versionadded:: 3.7
 
 This section details the public C API for the :mod:`contextvars` module.
@@ -56,27 +75,27 @@ Type-check macros:
 
 Context object management functions:
 
-.. c:function:: PyContext *PyContext_New(void)
+.. c:function:: PyObject *PyContext_New(void)
 
    Create a new empty context object.  Returns ``NULL`` if an error
    has occurred.
 
-.. c:function:: PyContext *PyContext_Copy(PyContext *ctx)
+.. c:function:: PyObject *PyContext_Copy(PyObject *ctx)
 
    Create a shallow copy of the passed *ctx* context object.
    Returns ``NULL`` if an error has occurred.
 
-.. c:function:: PyContext *PyContext_CopyCurrent(void)
+.. c:function:: PyObject *PyContext_CopyCurrent(void)
 
    Create a shallow copy of the current thread context.
    Returns ``NULL`` if an error has occurred.
 
-.. c:function:: int PyContext_Enter(PyContext *ctx)
+.. c:function:: int PyContext_Enter(PyObject *ctx)
 
    Set *ctx* as the current context for the current thread.
    Returns ``0`` on success, and ``-1`` on error.
 
-.. c:function:: int PyContext_Exit(PyContext *ctx)
+.. c:function:: int PyContext_Exit(PyObject *ctx)
 
    Deactivate the *ctx* context and restore the previous context as the
    current context for the current thread.  Returns ``0`` on success,
@@ -90,14 +109,14 @@ Context object management functions:
 
 Context variable functions:
 
-.. c:function:: PyContextVar *PyContextVar_New(const char *name, PyObject *def)
+.. c:function:: PyObject *PyContextVar_New(const char *name, PyObject *def)
 
    Create a new ``ContextVar`` object.  The *name* parameter is used
    for introspection and debug purposes.  The *def* parameter may optionally
    specify the default value for the context variable.  If an error has
    occurred, this function returns ``NULL``.
 
-.. c:function:: int PyContextVar_Get(PyContextVar *var, PyObject *default_value, PyObject **value)
+.. c:function:: int PyContextVar_Get(PyObject *var, PyObject *default_value, PyObject **value)
 
    Get the value of a context variable.  Returns ``-1`` if an error has
    occurred during lookup, and ``0`` if no error occurred, whether or not
@@ -112,13 +131,13 @@ Context variable functions:
 
    If the value was found, the function will create a new reference to it.
 
-.. c:function:: PyContextToken *PyContextVar_Set(PyContextVar *var, PyObject *value)
+.. c:function:: PyObject *PyContextVar_Set(PyObject *var, PyObject *value)
 
    Set the value of *var* to *value* in the current context.  Returns a
-   pointer to a :c:type:`PyContextToken` object, or ``NULL`` if an error
+   pointer to a :c:type:`PyObject` object, or ``NULL`` if an error
    has occurred.
 
-.. c:function:: int PyContextVar_Reset(PyContextVar *var, PyContextToken *token)
+.. c:function:: int PyContextVar_Reset(PyObject *var, PyObject *token)
 
    Reset the state of the *var* context variable to that it was in before
    :c:func:`PyContextVar_Set` that returned the *token* was called.
