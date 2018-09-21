@@ -511,6 +511,7 @@ class BaseManager(object):
         Listener, Client = listener_client[self._serializer]
         conn = Client(self._address, authkey=self._authkey)
         dispatch(conn, None, 'dummy')
+        BaseProxy._address_to_local.pop(self._address, None)
         self._state.value = State.STARTED
 
     def start(self, initializer=None, initargs=()):
