@@ -10,6 +10,7 @@ import io
 import os
 import os.path
 from pathlib import Path, PurePath
+import py_compile
 from test import support
 import unittest
 import sys
@@ -304,6 +305,26 @@ def writes_bytecode_files(fxn):
         finally:
             sys.dont_write_bytecode = original
         return to_return
+    return wrapper
+
+
+def without_source_date_epoch(fxn):
+    """Runs function with SOURCE_DATE_EPOCH unset."""
+    @functools.wraps(fxn)
+    def wrapper(*args, **kwargs):
+        with support.EnvironmentVarGuard() as env:
+            env.unset('SOURCE_DATE_EPOCH')
+            return fxn(*args, **kwargs)
+    return wrapper
+
+
+def with_source_date_epoch(fxn):
+    """Runs function with SOURCE_DATE_EPOCH set."""
+    @functools.wraps(fxn)
+    def wrapper(*args, **kwargs):
+        with support.EnvironmentVarGuard() as env:
+            env['SOURCE_DATE_EPOCH'] = '123456789'
+            return fxn(*args, **kwargs)
     return wrapper
 
 

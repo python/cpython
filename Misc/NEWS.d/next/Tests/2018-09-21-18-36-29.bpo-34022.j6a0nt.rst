@@ -1,0 +1,1 @@
+Unbreak importlib tests when :envvar:`SOURCE_DATE_EPOCH` is set.

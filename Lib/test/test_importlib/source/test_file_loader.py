@@ -236,6 +236,7 @@ class SimpleTest(abc.LoaderTests):
                 loader.load_module('bad name')
 
     @util.writes_bytecode_files
+    @util.without_source_date_epoch
     def test_checked_hash_based_pyc(self):
         with util.create_modules('_temp') as mapping:
             source = mapping['_temp']
@@ -267,6 +268,7 @@ class SimpleTest(abc.LoaderTests):
             )
 
     @util.writes_bytecode_files
+    @util.without_source_date_epoch
     def test_overridden_checked_hash_based_pyc(self):
         with util.create_modules('_temp') as mapping, \
              unittest.mock.patch('_imp.check_hash_based_pycs', 'never'):
@@ -292,6 +294,7 @@ class SimpleTest(abc.LoaderTests):
             self.assertEqual(mod.state, 'old')
 
     @util.writes_bytecode_files
+    @util.without_source_date_epoch
     def test_unchecked_hash_based_pyc(self):
         with util.create_modules('_temp') as mapping:
             source = mapping['_temp']
@@ -322,6 +325,7 @@ class SimpleTest(abc.LoaderTests):
             )
 
     @util.writes_bytecode_files
+    @util.without_source_date_epoch
     def test_overiden_unchecked_hash_based_pyc(self):
         with util.create_modules('_temp') as mapping, \
              unittest.mock.patch('_imp.check_hash_based_pycs', 'always'):
@@ -357,6 +361,25 @@ class SimpleTest(abc.LoaderTests):
  Source_SimpleTest
  ) = util.test_both(SimpleTest, importlib=importlib, machinery=machinery,
                     abc=importlib_abc, util=importlib_util)
+
+
+# Run tests with SOURCE_DATE_EPOCH set explicitly.
+class SourceDateEpochTestMeta(type(Source_SimpleTest)):
+    def __new__(mcls, name, bases, dct):
+        cls = super().__new__(mcls, name, bases, dct)
+
+        for attr in dir(cls):
+            if attr.startswith('test_'):
+                meth = getattr(cls, attr)
+                wrapper = util.with_source_date_epoch(meth)
+                setattr(cls, attr, wrapper)
+
+        return cls
+
+
+class SourceDateEpoch_SimpleTest(Source_SimpleTest,
+                                 metaclass=SourceDateEpochTestMeta):
+    pass
 
 
 class BadBytecodeTest:
@@ -617,6 +640,7 @@ class SourceLoaderBadBytecodeTest:
 
     # [bad timestamp]
     @util.writes_bytecode_files
+    @util.without_source_date_epoch
     def test_old_timestamp(self):
         # When the timestamp is older than the source, bytecode should be
         # regenerated.
@@ -666,6 +690,12 @@ class SourceLoaderBadBytecodeTestPEP451(
  ) = util.test_both(SourceLoaderBadBytecodeTestPEP451, importlib=importlib,
                     machinery=machinery, abc=importlib_abc,
                     util=importlib_util)
+
+
+class SourceDateEpoch_SourceBadBytecodePEP451(
+        Source_SourceBadBytecodePEP451,
+        metaclass=SourceDateEpochTestMeta):
+    pass
 
 
 class SourceLoaderBadBytecodeTestPEP302(
