@@ -18,6 +18,25 @@ module _contextvars
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=a0955718c8b8cea6]*/
 
 
+#define ENSURE_Context(o, err_ret)          \
+    if (!PyContext_CheckExact(o)) {         \
+        PyErr_SetNone(PyExc_TypeError);     \
+        return err_ret;                     \
+    }
+
+#define ENSURE_ContextVar(o, err_ret)       \
+    if (!PyContextVar_CheckExact(o)) {      \
+        PyErr_SetNone(PyExc_TypeError);     \
+        return err_ret;                     \
+    }
+
+#define ENSURE_ContextToken(o, err_ret)     \
+    if (!PyContextToken_CheckExact(o)) {    \
+        PyErr_SetNone(PyExc_TypeError);     \
+        return err_ret;                     \
+    }
+
+
 /////////////////////////// Context API
 
 
@@ -50,21 +69,23 @@ _PyContext_NewHamtForTests(void)
 }
 
 
-PyContext *
+PyObject *
 PyContext_New(void)
 {
-    return context_new_empty();
+    return (PyObject *)context_new_empty();
 }
 
 
-PyContext *
-PyContext_Copy(PyContext * ctx)
+PyObject *
+PyContext_Copy(PyObject * octx)
 {
-    return context_new_from_vars(ctx->ctx_vars);
+    ENSURE_Context(octx, NULL)
+    PyContext *ctx = (PyContext *)octx;
+    return (PyObject *)context_new_from_vars(ctx->ctx_vars);
 }
 
 
-PyContext *
+PyObject *
 PyContext_CopyCurrent(void)
 {
     PyContext *ctx = context_get();
@@ -72,13 +93,16 @@ PyContext_CopyCurrent(void)
         return NULL;
     }
 
-    return context_new_from_vars(ctx->ctx_vars);
+    return (PyObject *)context_new_from_vars(ctx->ctx_vars);
 }
 
 
 int
-PyContext_Enter(PyContext *ctx)
+PyContext_Enter(PyObject *octx)
 {
+    ENSURE_Context(octx, -1)
+    PyContext *ctx = (PyContext *)octx;
+
     if (ctx->ctx_entered) {
         PyErr_Format(PyExc_RuntimeError,
                      "cannot enter context: %R is already entered", ctx);
@@ -100,8 +124,11 @@ PyContext_Enter(PyContext *ctx)
 
 
 int
-PyContext_Exit(PyContext *ctx)
+PyContext_Exit(PyObject *octx)
 {
+    ENSURE_Context(octx, -1)
+    PyContext *ctx = (PyContext *)octx;
+
     if (!ctx->ctx_entered) {
         PyErr_Format(PyExc_RuntimeError,
                      "cannot exit context: %R has not been entered", ctx);
@@ -129,7 +156,7 @@ PyContext_Exit(PyContext *ctx)
 }
 
 
-PyContextVar *
+PyObject *
 PyContextVar_New(const char *name, PyObject *def)
 {
     PyObject *pyname = PyUnicode_FromString(name);
@@ -138,14 +165,15 @@ PyContextVar_New(const char *name, PyObject *def)
     }
     PyContextVar *var = contextvar_new(pyname, def);
     Py_DECREF(pyname);
-    return var;
+    return (PyObject *)var;
 }
 
 
 int
-PyContextVar_Get(PyContextVar *var, PyObject *def, PyObject **val)
+PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
 {
-    assert(PyContextVar_CheckExact(var));
+    ENSURE_ContextVar(ovar, -1)
+    PyContextVar *var = (PyContextVar *)ovar;
 
     PyThreadState *ts = PyThreadState_GET();
     assert(ts != NULL);
@@ -204,9 +232,12 @@ error:
 }
 
 
-PyContextToken *
-PyContextVar_Set(PyContextVar *var, PyObject *val)
+PyObject *
+PyContextVar_Set(PyObject *ovar, PyObject *val)
 {
+    ENSURE_ContextVar(ovar, NULL)
+    PyContextVar *var = (PyContextVar *)ovar;
+
     if (!PyContextVar_CheckExact(var)) {
         PyErr_SetString(
             PyExc_TypeError, "an instance of ContextVar was expected");
@@ -233,13 +264,18 @@ PyContextVar_Set(PyContextVar *var, PyObject *val)
         return NULL;
     }
 
-    return tok;
+    return (PyObject *)tok;
 }
 
 
 int
-PyContextVar_Reset(PyContextVar *var, PyContextToken *tok)
+PyContextVar_Reset(PyObject *ovar, PyObject *otok)
 {
+    ENSURE_ContextVar(ovar, -1)
+    ENSURE_ContextToken(otok, -1)
+    PyContextVar *var = (PyContextVar *)ovar;
+    PyContextToken *tok = (PyContextToken *)otok;
+
     if (tok->tok_used) {
         PyErr_Format(PyExc_RuntimeError,
                      "%R has already been used once", tok);
@@ -376,7 +412,7 @@ context_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             PyExc_TypeError, "Context() does not accept any arguments");
         return NULL;
     }
-    return (PyObject *)PyContext_New();
+    return PyContext_New();
 }
 
 static int
@@ -587,14 +623,14 @@ context_run(PyContext *self, PyObject *const *args,
         return NULL;
     }
 
-    if (PyContext_Enter(self)) {
+    if (PyContext_Enter((PyObject *)self)) {
         return NULL;
     }
 
     PyObject *call_result = _PyObject_FastCallKeywords(
         args[0], args + 1, nargs - 1, kwnames);
 
-    if (PyContext_Exit(self)) {
+    if (PyContext_Exit((PyObject *)self)) {
         return NULL;
     }
 
@@ -908,7 +944,7 @@ _contextvars_ContextVar_get_impl(PyContextVar *self, PyObject *default_value)
     }
 
     PyObject *val;
-    if (PyContextVar_Get(self, default_value, &val) < 0) {
+    if (PyContextVar_Get((PyObject *)self, default_value, &val) < 0) {
         return NULL;
     }
 
@@ -937,7 +973,7 @@ static PyObject *
 _contextvars_ContextVar_set(PyContextVar *self, PyObject *value)
 /*[clinic end generated code: output=446ed5e820d6d60b input=c0a6887154227453]*/
 {
-    return (PyObject *)PyContextVar_Set(self, value);
+    return PyContextVar_Set((PyObject *)self, value);
 }
 
 /*[clinic input]
@@ -961,7 +997,7 @@ _contextvars_ContextVar_reset(PyContextVar *self, PyObject *token)
         return NULL;
     }
 
-    if (PyContextVar_Reset(self, (PyContextToken *)token)) {
+    if (PyContextVar_Reset((PyObject *)self, token)) {
         return NULL;
     }
 
