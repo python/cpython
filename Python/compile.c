@@ -1117,6 +1117,12 @@ stack_effect(int opcode, int oparg, int jump)
 }
 
 int
+PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump)
+{
+    return stack_effect(opcode, oparg, jump);
+}
+
+int
 PyCompile_OpcodeStackEffect(int opcode, int oparg)
 {
     return stack_effect(opcode, oparg, -1);
@@ -4089,10 +4095,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     is_async_generator = c->u->u_ste->ste_coroutine;
 
     if (is_async_generator && !is_async_function && type != COMP_GENEXP) {
-        if (e->lineno > c->u->u_lineno) {
-            c->u->u_lineno = e->lineno;
-            c->u->u_lineno_set = 0;
-        }
         compiler_error(c, "asynchronous comprehension outside of "
                           "an asynchronous function");
         goto error_in_scope;
@@ -4430,17 +4432,8 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 }
 
 static int
-compiler_visit_expr(struct compiler *c, expr_ty e)
+compiler_visit_expr1(struct compiler *c, expr_ty e)
 {
-    /* If expr e has a different line number than the last expr/stmt,
-       set a new line number for the next instruction.
-    */
-    if (e->lineno > c->u->u_lineno) {
-        c->u->u_lineno = e->lineno;
-        c->u->u_lineno_set = 0;
-    }
-    /* Updating the column offset is always harmless. */
-    c->u->u_col_offset = e->col_offset;
     switch (e->kind) {
     case BoolOp_kind:
         return compiler_boolop(c, e);
@@ -4607,6 +4600,31 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         return compiler_tuple(c, e);
     }
     return 1;
+}
+
+static int
+compiler_visit_expr(struct compiler *c, expr_ty e)
+{
+    /* If expr e has a different line number than the last expr/stmt,
+       set a new line number for the next instruction.
+    */
+    int old_lineno = c->u->u_lineno;
+    int old_col_offset = c->u->u_col_offset;
+    if (e->lineno != c->u->u_lineno) {
+        c->u->u_lineno = e->lineno;
+        c->u->u_lineno_set = 0;
+    }
+    /* Updating the column offset is always harmless. */
+    c->u->u_col_offset = e->col_offset;
+
+    int res = compiler_visit_expr1(c, e);
+
+    if (old_lineno != c->u->u_lineno) {
+        c->u->u_lineno = old_lineno;
+        c->u->u_lineno_set = 0;
+    }
+    c->u->u_col_offset = old_col_offset;
+    return res;
 }
 
 static int

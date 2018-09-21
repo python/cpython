@@ -1,6 +1,8 @@
 .. currentmodule:: asyncio
 
 
+.. _asyncio-exceptions:
+
 ==========
 Exceptions
 ==========
@@ -10,7 +12,7 @@ Exceptions
 
    The operation has exceeded the given deadline.
 
-   .. note::
+   .. important::
       This exception is different from the builtin :exc:`TimeoutError`
       exception.
 
@@ -21,12 +23,12 @@ Exceptions
 
    This exception can be caught to perform custom operations
    when asyncio Tasks are cancelled.  In almost all situations the
-   exception must always be re-raised.
+   exception must be re-raised.
 
-   .. note::
+   .. important::
 
       This exception is a subclass of :exc:`Exception`, so it can be
-      accidentally suppressed by ``try..except`` block::
+      accidentally suppressed by an overly broad ``try..except`` block::
 
         try:
             await operation
@@ -63,27 +65,27 @@ Exceptions
 
 .. exception:: IncompleteReadError
 
-    Incomplete read error.
+    The requested read operation did not complete fully.
 
-    Raised by :ref:`asyncio streams <asyncio-streams>` APIs.
+    Raised by the :ref:`asyncio stream APIs<asyncio-streams>`.
 
     This exception is a subclass of :exc:`EOFError`.
 
    .. attribute:: expected
 
-      Total number (:class:`int`) of expected bytes.
+      The total number (:class:`int`) of expected bytes.
 
    .. attribute:: partial
 
-      Read :class:`bytes` string before the end of stream was reached.
+      A string of :class:`bytes` read before the end of stream was reached.
 
 
 .. exception:: LimitOverrunError
 
-   Reached the buffer limit while looking for a separator.
+   Reached the buffer size limit while looking for a separator.
 
-   Raised by :ref:`asyncio streams <asyncio-streams>` APIs.
+   Raised by the :ref:`asyncio stream APIs <asyncio-streams>`.
 
    .. attribute:: consumed
 
-      Total number of to be consumed bytes.
+      The total number of to be consumed bytes.

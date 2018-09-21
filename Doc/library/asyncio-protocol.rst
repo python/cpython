@@ -1,14 +1,17 @@
 .. currentmodule:: asyncio
 
 
+.. _asyncio-transports-protocols:
+
+
 ========================
 Transports and Protocols
 ========================
 
 .. rubric:: Preface
 
-Transports and Protocols are used by **low-level** event loop
-APIs such as :meth:`loop.create_connection`.  They require using
+Transports and Protocols are used by the **low-level** event loop
+APIs such as :meth:`loop.create_connection`.  They use
 callback-based programming style and enable high-performance
 implementations of network or IPC protocols (e.g. HTTP).
 
@@ -279,7 +282,7 @@ Write-only Transports
 
 .. method:: WriteTransport.get_write_buffer_limits()
 
-   Get the *high*- and *low*-water limits for write flow control. Return a
+   Get the *high* and *low* watermarks for write flow control. Return a
    tuple ``(low, high)`` where *low* and *high* are positive number of
    bytes.
 
@@ -289,14 +292,14 @@ Write-only Transports
 
 .. method:: WriteTransport.set_write_buffer_limits(high=None, low=None)
 
-   Set the *high*- and *low*-water limits for write flow control.
+   Set the *high* and *low* watermarks for write flow control.
 
    These two values (measured in number of
    bytes) control when the protocol's
    :meth:`protocol.pause_writing() <BaseProtocol.pause_writing>`
    and :meth:`protocol.resume_writing() <BaseProtocol.resume_writing>`
-   methods are called. If specified, the low-water limit must be less
-   than or equal to the high-water limit.  Neither *high* nor *low*
+   methods are called. If specified, the low watermark must be less
+   than or equal to the high watermark.  Neither *high* nor *low*
    can be negative.
 
    :meth:`~BaseProtocol.pause_writing` is called when the buffer size
@@ -305,9 +308,9 @@ Write-only Transports
    the buffer size becomes less than or equal to the *low* value.
 
    The defaults are implementation-specific.  If only the
-   high-water limit is given, the low-water limit defaults to an
+   high watermark is given, the low watermark defaults to an
    implementation-specific value less than or equal to the
-   high-water limit.  Setting *high* to zero forces *low* to zero as
+   high watermark.  Setting *high* to zero forces *low* to zero as
    well, and causes :meth:`~BaseProtocol.pause_writing` to be called
    whenever the buffer becomes non-empty.  Setting *low* to zero causes
    :meth:`~BaseProtocol.resume_writing` to be called only once the
@@ -334,11 +337,11 @@ Write-only Transports
 
 .. method:: WriteTransport.write_eof()
 
-   Close the write end of the transport after flushing buffered data.
+   Close the write end of the transport after flushing all buffered data.
    Data may still be received.
 
    This method can raise :exc:`NotImplementedError` if the transport
-   (e.g. SSL) doesn't support half-closes.
+   (e.g. SSL) doesn't support half-closed connections.
 
 
 Datagram Transports
@@ -393,10 +396,12 @@ Subprocess Transports
 
 .. method:: SubprocessTransport.kill()
 
-   Kill the subprocess, as in :meth:`subprocess.Popen.kill`.
+   Kill the subprocess.
 
    On POSIX systems, the function sends SIGKILL to the subprocess.
    On Windows, this method is an alias for :meth:`terminate`.
+
+   See also :meth:`subprocess.Popen.kill`.
 
 .. method:: SubprocessTransport.send_signal(signal)
 
@@ -405,17 +410,20 @@ Subprocess Transports
 
 .. method:: SubprocessTransport.terminate()
 
-   Ask the subprocess to stop, as in :meth:`subprocess.Popen.terminate`.
+   Stop the subprocess.
 
    On POSIX systems, this method sends SIGTERM to the subprocess.
    On Windows, the Windows API function TerminateProcess() is called to
    stop the subprocess.
 
+   See also :meth:`subprocess.Popen.terminate`.
+
 .. method:: SubprocessTransport.close()
 
-   Kill the subprocess by calling the :meth:`kill` method
-   if the subprocess hasn't returned yet, and close transports of all
-   pipes (*stdin*, *stdout* and *stderr*).
+   Kill the subprocess by calling the :meth:`kill` method.
+
+   If the subprocess hasn't returned yet, and close transports of
+   *stdin*, *stdout*, and *stderr* pipes.
 
 
 .. _asyncio-protocol:
@@ -498,18 +506,18 @@ method for more details.
 
 .. method:: BaseProtocol.pause_writing()
 
-   Called when the transport's buffer goes over the high-water mark.
+   Called when the transport's buffer goes over the high watermark.
 
 .. method:: BaseProtocol.resume_writing()
 
-   Called when the transport's buffer drains below the low-water mark.
+   Called when the transport's buffer drains below the low watermark.
 
-If the buffer size equals the high-water mark,
+If the buffer size equals the high watermark,
 :meth:`~BaseProtocol.pause_writing` is not called: the buffer size must
 go strictly over.
 
 Conversely, :meth:`~BaseProtocol.resume_writing` is called when the
-buffer size is equal or lower than the low-water mark.  These end
+buffer size is equal or lower than the low watermark.  These end
 conditions are important to ensure that things go as expected when
 either mark is zero.
 
@@ -533,13 +541,12 @@ accept factories that return streaming protocols.
    and instead make your parsing generic and flexible. However,
    data is always received in the correct order.
 
-   The method can be called an arbitrary number of times during
-   a connection.
+   The method can be called an arbitrary number of times while
+   a connection is open.
 
    However, :meth:`protocol.eof_received() <Protocol.eof_received>`
-   is called at most once and, if called,
-   :meth:`protocol.data_received() <Protocol.data_received>`
-   won't be called after it.
+   is called at most once.  Once `eof_received()` is called,
+   ``data_received()`` is not called anymore.
 
 .. method:: Protocol.eof_received()
 
@@ -554,9 +561,9 @@ accept factories that return streaming protocols.
    Since the default implementation returns ``None``, it implicitly closes the
    connection.
 
-   Some transports such as SSL don't support half-closed connections,
-   in which case returning true from this method will result in closing
-   the connection.
+   Some transports, including SSL, don't support half-closed connections,
+   in which case returning true from this method will result in the connection
+   being closed.
 
 
 State machine:
@@ -580,12 +587,12 @@ Buffered Streaming Protocols
 Buffered Protocols can be used with any event loop method
 that supports `Streaming Protocols`_.
 
-The idea of ``BufferedProtocol`` is that it allows manual allocation
+``BufferedProtocol`` implementations allow explicit manual allocation
 and control of the receive buffer.  Event loops can then use the buffer
 provided by the protocol to avoid unnecessary data copies.  This
 can result in noticeable performance improvement for protocols that
-receive big amounts of data.  Sophisticated protocols implementations
-can allocate the buffer only once at creation time.
+receive big amounts of data.  Sophisticated protocol implementations
+can significantly reduce the number of buffer allocations.
 
 The following callbacks are called on :class:`BufferedProtocol`
 instances:
@@ -594,12 +601,12 @@ instances:
 
    Called to allocate a new receive buffer.
 
-   *sizehint* is a recommended minimal size for the returned
-   buffer.  It is acceptable to return smaller or bigger buffers
+   *sizehint* is the recommended minimum size for the returned
+   buffer.  It is acceptable to return smaller or larger buffers
    than what *sizehint* suggests.  When set to -1, the buffer size
-   can be arbitrary. It is an error to return a zero-sized buffer.
+   can be arbitrary. It is an error to return a buffer with a zero size.
 
-   Must return an object that implements the
+   ``get_buffer()`` must return an object implementing the
    :ref:`buffer protocol <bufferobjects>`.
 
 .. method:: BufferedProtocol.buffer_updated(nbytes)
@@ -650,14 +657,14 @@ factories passed to the :meth:`loop.create_datagram_endpoint` method.
    :class:`OSError`.  *exc* is the :class:`OSError` instance.
 
    This method is called in rare conditions, when the transport (e.g. UDP)
-   detects that a datagram couldn't be delivered to its recipient.
+   detects that a datagram could not be delivered to its recipient.
    In many conditions though, undeliverable datagrams will be silently
    dropped.
 
 .. note::
 
    On BSD systems (macOS, FreeBSD, etc.) flow control is not supported
-   for datagram protocols, because it is difficult to detect easily send
+   for datagram protocols, because there is no reliable way to detect send
    failures caused by writing too many packets.
 
    The socket always appears 'ready' and excess packets are dropped. An
@@ -699,7 +706,7 @@ factories passed to the :meth:`loop.subprocess_exec` and
 Examples
 ========
 
-.. _asyncio-tcp-echo-server-protocol:
+.. _asyncio_example_tcp_echo_server_protocol:
 
 TCP Echo Server
 ---------------
@@ -748,7 +755,7 @@ received data, and close the connection::
    The :ref:`TCP echo server using streams <asyncio-tcp-echo-server-streams>`
    example uses the high-level :func:`asyncio.start_server` function.
 
-.. _asyncio-tcp-echo-client-protocol:
+.. _asyncio_example_tcp_echo_client_protocol:
 
 TCP Echo Client
 ---------------
@@ -906,7 +913,7 @@ method, sends data and closes the transport when it receives the answer::
     asyncio.run(main())
 
 
-.. _asyncio-register-socket:
+.. _asyncio_example_create_connection:
 
 Connecting Existing Sockets
 ---------------------------
@@ -965,14 +972,14 @@ Wait until a socket receives data using the
 .. seealso::
 
    The :ref:`watch a file descriptor for read events
-   <asyncio-watch-read-event>` example uses the low-level
+   <asyncio_example_watch_fd>` example uses the low-level
    :meth:`loop.add_reader` method to register an FD.
 
    The :ref:`register an open socket to wait for data using streams
-   <asyncio-register-socket-streams>` example uses high-level streams
+   <asyncio_example_create_connection-streams>` example uses high-level streams
    created by the :func:`open_connection` function in a coroutine.
 
-.. _asyncio-subprocess-proto-example:
+.. _asyncio_example_subprocess_proto:
 
 loop.subprocess_exec() and SubprocessProtocol
 ---------------------------------------------
@@ -1029,3 +1036,6 @@ The subprocess is created by th :meth:`loop.subprocess_exec` method::
 
     date = asyncio.run(get_date())
     print(f"Current date: {date}")
+
+See also the :ref:`same example <asyncio_example_create_subprocess_exec>`
+written using high-level APIs.
