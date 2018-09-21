@@ -329,16 +329,11 @@ class PrettyPrintTests(DebuggerTests):
             '--eval-command',
             'python import locale; print(locale.getpreferredencoding())')
 
-        if err:
+        encoding = out.rstrip()
+        if err or not encoding:
             raise RuntimeError(
                 f'unable to determine the preferred encoding '
                 f'of embedded Python in GDB: {err}')
-
-        encoding = out.rstrip()
-        if not encoding:
-            raise RuntimeError(
-                f'unable to determine the preferred encoding '
-                f'of embedded Python in GDB: the command returned no output')
 
         def check_repr(text):
             try:
