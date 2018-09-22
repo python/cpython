@@ -64,6 +64,7 @@ class PythonValuesTestCase(unittest.TestCase):
         bootstrap_expected = [
                 b'_frozen_importlib',
                 b'_frozen_importlib_external',
+                b'zipimport',
                 ]
         for entry in ft:
             # This is dangerous. We *can* iterate over a pointer, but

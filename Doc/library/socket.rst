@@ -70,6 +70,13 @@ created.  Socket addresses are represented as follows:
   notation like ``'daring.cwi.nl'`` or an IPv4 address like ``'100.50.200.5'``,
   and *port* is an integer.
 
+  - For IPv4 addresses, two special forms are accepted instead of a host
+    address: ``''`` represents :const:`INADDR_ANY`, which is used to bind to all
+    interfaces, and the string ``'<broadcast>'`` represents
+    :const:`INADDR_BROADCAST`.  This behavior is not compatible with IPv6,
+    therefore, you may want to avoid these if you intend to support IPv6 with your
+    Python programs.
+
 - For :const:`AF_INET6` address family, a four-tuple ``(host, port, flowinfo,
   scopeid)`` is used, where *flowinfo* and *scopeid* represent the ``sin6_flowinfo``
   and ``sin6_scope_id`` members in :const:`struct sockaddr_in6` in C.  For
@@ -166,16 +173,25 @@ created.  Socket addresses are represented as follows:
 
   .. versionadded:: 3.7
 
-- Certain other address families (:const:`AF_PACKET`, :const:`AF_CAN`)
-  support specific representations.
+- :const:`AF_PACKET` is a low-level interface directly to network devices.
+  The packets are represented by the tuple
+  ``(ifname, proto[, pkttype[, hatype[, addr]]])`` where:
 
-  .. XXX document them!
+  - *ifname* - String specifying the device name.
+  - *proto* - An in network-byte-order integer specifying the Ethernet
+    protocol number.
+  - *pkttype* - Optional integer specifying the packet type:
 
-For IPv4 addresses, two special forms are accepted instead of a host address:
-the empty string represents :const:`INADDR_ANY`, and the string
-``'<broadcast>'`` represents :const:`INADDR_BROADCAST`.  This behavior is not
-compatible with IPv6, therefore, you may want to avoid these if you intend
-to support IPv6 with your Python programs.
+    - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
+    - ``PACKET_BROADCAST`` - Physical-layer broadcast packet.
+    - ``PACKET_MULTIHOST`` - Packet sent to a physical-layer multicast address.
+    - ``PACKET_OTHERHOST`` - Packet to some other host that has been caught by
+      a device driver in promiscuous mode.
+    - ``PACKET_OUTGOING`` - Packet originating from the local host that is
+      looped back to a packet socket.
+  - *hatype* - Optional integer specifying the ARP hardware address type.
+  - *addr* - Optional bytes-like object specifying the hardware physical
+    address, whose interpretation depends on the device.
 
 If you use a hostname in the *host* portion of IPv4/v6 socket address, the
 program may show a nondeterministic behavior, as Python uses the first address
@@ -375,6 +391,16 @@ Constants
    .. versionadded:: 3.7
 
 
+.. data:: AF_PACKET
+          PF_PACKET
+          PACKET_*
+
+   Many constants of these forms, documented in the Linux documentation, are
+   also defined in the socket module.
+
+   Availability: Linux >= 2.2.
+
+
 .. data:: AF_RDS
           PF_RDS
           SOL_RDS
@@ -468,12 +494,12 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    Create a new socket using the given address family, socket type and protocol
    number.  The address family should be :const:`AF_INET` (the default),
-   :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN` or :const:`AF_RDS`. The
-   socket type should be :const:`SOCK_STREAM` (the default),
-   :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other ``SOCK_``
-   constants. The protocol number is usually zero and may be omitted or in the
-   case where the address family is :const:`AF_CAN` the protocol should be one
-   of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`
+   :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN`, :const:`AF_PACKET`,
+   or :const:`AF_RDS`. The socket type should be :const:`SOCK_STREAM` (the
+   default), :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other
+   ``SOCK_`` constants. The protocol number is usually zero and may be omitted
+   or in the case where the address family is :const:`AF_CAN` the protocol
+   should be one of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`.
 
    If *fileno* is specified, the values for *family*, *type*, and *proto* are
    auto-detected from the specified file descriptor.  Auto-detection can be

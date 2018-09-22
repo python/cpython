@@ -72,6 +72,12 @@ PyAPI_FUNC(_PyInitError) _PyPathConfig_Calculate_impl(
     const _PyCoreConfig *core_config);
 PyAPI_FUNC(void) _PyPathConfig_ClearGlobal(void);
 
+PyAPI_FUNC(void) _Py_wstrlist_clear(
+    int len,
+    wchar_t **list);
+PyAPI_FUNC(wchar_t**) _Py_wstrlist_copy(
+    int len,
+    wchar_t **list);
 PyAPI_FUNC(_PyInitError) _Py_wstrlist_append(
     int *len,
     wchar_t ***list,
@@ -212,6 +218,7 @@ PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
 /* Other */
 
 PyAPI_FUNC(_PyInitError) _PyInterpreterState_Enable(_PyRuntimeState *);
+PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(void);
 
 #ifdef __cplusplus
 }

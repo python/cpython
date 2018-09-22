@@ -513,7 +513,7 @@ class SMTP:
         """SMTP 'noop' command -- doesn't do anything :>"""
         return self.docmd("noop")
 
-    def mail(self, sender, options=[]):
+    def mail(self, sender, options=()):
         """SMTP 'mail' command -- begins mail xfer session.
 
         This method may raise the following exceptions:
@@ -534,7 +534,7 @@ class SMTP:
         self.putcmd("mail", "FROM:%s%s" % (quoteaddr(sender), optionlist))
         return self.getreply()
 
-    def rcpt(self, recip, options=[]):
+    def rcpt(self, recip, options=()):
         """SMTP 'rcpt' command -- indicates 1 recipient for this mail."""
         optionlist = ''
         if options and self.does_esmtp:
@@ -615,7 +615,7 @@ class SMTP:
 
         It will be called to process the server's challenge response; the
         challenge argument it is passed will be a bytes.  It should return
-        bytes data that will be base64 encoded and sent to the server.
+        an ASCII string that will be base64 encoded and sent to the server.
 
         Keyword arguments:
             - initial_response_ok: Allow sending the RFC 4954 initial-response
@@ -785,8 +785,8 @@ class SMTP:
             raise SMTPResponseException(resp, reply)
         return (resp, reply)
 
-    def sendmail(self, from_addr, to_addrs, msg, mail_options=[],
-                 rcpt_options=[]):
+    def sendmail(self, from_addr, to_addrs, msg, mail_options=(),
+                 rcpt_options=()):
         """This command performs an entire mail transaction.
 
         The arguments are:
@@ -890,7 +890,7 @@ class SMTP:
         return senderrs
 
     def send_message(self, msg, from_addr=None, to_addrs=None,
-                mail_options=[], rcpt_options={}):
+                     mail_options=(), rcpt_options=()):
         """Converts message to a bytestring and passes it to sendmail.
 
         The arguments are as for sendmail, except that msg is an
@@ -923,7 +923,7 @@ class SMTP:
         # option allowing the user to enable the heuristics.  (It should be
         # possible to guess correctly almost all of the time.)
 
-        mail_options = mail_options[:]
+        mail_options = list(mail_options)
         self.ehlo_or_helo_if_needed()
         resent = msg.get_all('Resent-Date')
         if resent is None:

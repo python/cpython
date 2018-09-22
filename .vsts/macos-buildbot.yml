@@ -4,7 +4,7 @@
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 
 queue:
-  name: Hosted macOS Preview
+  name: Hosted macOS
 
 trigger:
   branches:
@@ -24,7 +24,7 @@ steps:
   clean: true
   fetchDepth: 5
 
-- script: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl
+- script: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-vsts
   displayName: 'Configure CPython (debug)'
 
 - script: make -s -j4
@@ -33,5 +33,14 @@ steps:
 - script: make pythoninfo
   displayName: 'Display build info'
 
-- script: make buildbottest TESTOPTS="-j4 -uall,-cpu"
+- script: make buildbottest TESTOPTS="-j4 -uall,-cpu --junit-xml=$(build.binariesDirectory)/test-results.xml"
   displayName: 'Tests'
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    testResultsFiles: '$(build.binariesDirectory)/test-results.xml'
+    mergeTestResults: true
+    testRunTitle: '$(build.sourceBranchName)-macOS'
+    platform: macOS
+  condition: succeededOrFailed()

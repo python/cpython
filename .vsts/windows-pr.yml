@@ -37,13 +37,34 @@ steps:
   clean: true
   fetchDepth: 5
 
+- powershell: |
+   git fetch -q origin $(System.PullRequest.TargetBranch)
+   if (-not (git diff --name-only HEAD (git merge-base HEAD FETCH_HEAD) | sls -NotMatch '(\.rst$)|(^Doc)|(^Misc)')) {
+      Write-Host 'Only docs were updated. Skipping build'
+      Write-Host '##vso[task.setvariable variable=DocOnly]true'
+   }
+  displayName: Detect doc-only changes
+  condition: and(succeeded(), variables['System.PullRequest.TargetBranch'])
+
 - script: PCbuild\build.bat -e $(buildOpt)
   displayName: 'Build CPython'
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
 - script: python.bat -m test.pythoninfo
   displayName: 'Display build info'
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
-- script: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+- script: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0 --junit-xml="$(Build.BinariesDirectory)\test-results.xml"
   displayName: 'Tests'
   env:
     PREFIX: $(Py_OutDir)\$(outDirSuffix)
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    testResultsFiles: '$(Build.BinariesDirectory)\test-results.xml'
+    mergeTestResults: true
+    testRunTitle: '$(System.PullRequest.TargetBranch)-$(outDirSuffix)'
+    platform: $(outDirSuffix)
+  condition: and(succeededOrFailed(), ne(variables['DocOnly'], 'true'))

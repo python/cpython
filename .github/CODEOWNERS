@@ -16,6 +16,11 @@
 **/*hashlib*                  @python/crypto-team
 **/*pyhash*                   @python/crypto-team
 
+# HTML
+/Lib/html/                    @ezio-melotti
+/Lib/_markupbase.py           @ezio-melotti
+/Lib/test/test_html*.py       @ezio-melotti
+
 # Import (including importlib).
 # Ignoring importlib.h so as to not get flagged on
 # all pull requests that change the the emitted

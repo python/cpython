@@ -4,7 +4,7 @@
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 
 queue:
-  name: Hosted Linux Preview
+  name: 'Hosted Ubuntu 1604'
 
 trigger:
   branches:
@@ -30,31 +30,9 @@ steps:
 
 #- template: linux-deps.yml
 
-# See https://github.com/Microsoft/vsts-agent/blob/master/docs/preview/yamlgettingstarted-templates.md
-# For now, we copy/paste the steps
-- script: echo "deb-src http://archive.ubuntu.com/ubuntu/ xenial main" > /etc/apt/sources.list.d/python.list && sudo apt-get update
-  displayName: 'Update apt-get lists'
-
 - script: echo ##vso[task.prependpath]$(OPENSSL_DIR)
   displayName: 'Add $(OPENSSL_DIR) to PATH'
-- script: >
-    sudo apt-get -yq install
-    build-essential
-    zlib1g-dev
-    libbz2-dev
-    liblzma-dev
-    libncurses5-dev
-    libreadline6-dev
-    libsqlite3-dev
-    libssl-dev
-    libgdbm-dev
-    tk-dev
-    lzma
-    lzma-dev
-    liblzma-dev
-    libffi-dev
-    uuid-dev
-    xvfb
+- script: ./.vsts/install_deps.sh
   displayName: 'Install dependencies'
 - script: python3 Tools/ssl/multissltests.py --steps=library --base-directory $(build.sourcesDirectory)/multissl --openssl $(OPENSSL) --system Linux
   displayName: 'python multissltests.py'
@@ -68,5 +46,14 @@ steps:
 - script: make pythoninfo
   displayName: 'Display build info'
 
-- script: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
+- script: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu --junit-xml=$(build.binariesDirectory)/test-results.xml"
   displayName: 'Tests'
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    testResultsFiles: '$(build.binariesDirectory)/test-results.xml'
+    mergeTestResults: true
+    testRunTitle: '$(build.sourceBranchName)-linux'
+    platform: linux
+  condition: succeededOrFailed()
