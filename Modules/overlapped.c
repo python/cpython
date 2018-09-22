@@ -792,7 +792,6 @@ Overlapped_getresult(OverlappedObject *self, PyObject *args)
             PyTuple_SetItem(self->read_from.result, 1, addr);
 
             Py_INCREF(self->read_from.result);
-            Py_INCREF(self->read_from.addr);
             Py_INCREF(self->read_from.buffer);
             return self->read_from.result;
         default:
