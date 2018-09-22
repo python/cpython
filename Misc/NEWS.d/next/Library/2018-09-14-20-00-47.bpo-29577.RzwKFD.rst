@@ -1,0 +1,1 @@
+Support multiple mixin classes when creating Enums.
