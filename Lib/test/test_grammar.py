@@ -824,11 +824,17 @@ class GrammarTests(unittest.TestCase):
         test_inner()
 
     def test_return(self):
-        # 'return' [testlist]
+        # 'return' [testlist_star_expr]
         def g1(): return
         def g2(): return 1
+        def g3():
+            z = [2, 3]
+            return 1, *z
+
         g1()
         x = g2()
+        y = g3()
+        self.assertEqual(y, (1, 2, 3), "unparenthesized star expr return")
         check_syntax_error(self, "class foo:return 1")
 
     def test_break_in_finally(self):
@@ -981,6 +987,9 @@ class GrammarTests(unittest.TestCase):
         def g(): f((yield 1), 1)
         def g(): f((yield from ()))
         def g(): f((yield from ()), 1)
+        # Do not require parenthesis for tuple unpacking
+        def g(): rest = 4, 5, 6; yield 1, 2, 3, *rest
+        self.assertEquals(list(g()), [(1, 2, 3, 4, 5, 6)])
         check_syntax_error(self, "def g(): f(yield 1)")
         check_syntax_error(self, "def g(): f(yield 1, 1)")
         check_syntax_error(self, "def g(): f(yield from ())")
