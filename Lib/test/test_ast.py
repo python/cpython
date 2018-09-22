@@ -726,8 +726,7 @@ class ASTValidatorTests(unittest.TestCase):
         else:
             with self.assertRaises(exc) as cm:
                 compile(mod, "<test>", mode)
-            if msg is not None:
-                self.assertIn(msg, str(cm.exception))
+            self.assertIn(msg, str(cm.exception))
 
     def expr(self, node, msg=None, *, exc=ValueError):
         mod = ast.Module([ast.Expr(node)])

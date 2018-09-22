@@ -688,12 +688,12 @@ static int
 append_ast_attribute(_PyUnicodeWriter *writer, expr_ty e)
 {
     const char *period;
-    APPEND_EXPR(e->v.Attribute.value, PR_ATOM);
+    expr_ty v = e->v.Attribute.value;
+    APPEND_EXPR(v, PR_ATOM);
 
     /* Special case: integers require a space for attribute access to be
-       unambiguous.  Floats and complex numbers don't but work with it, too. */
-    if (e->v.Attribute.value->kind == Constant_kind)
-    {
+       unambiguous. */
+    if (v->kind == Constant_kind && PyLong_CheckExact(v->v.Constant.value)) {
         period = " .";
     }
     else {
