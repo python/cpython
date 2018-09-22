@@ -6,7 +6,7 @@ import _ast
 import tempfile
 import types
 from test import support
-from test.support import script_helper
+from test.support import script_helper, FakePath
 
 class TestSpecifics(unittest.TestCase):
 
@@ -663,13 +663,7 @@ if 1:
 
     def test_path_like_objects(self):
         # An implicit test for PyUnicode_FSDecoder().
-        class PathLike:
-            def __init__(self, path):
-                self._path = path
-            def __fspath__(self):
-                return self._path
-
-        compile("42", PathLike("test_compile_pathlike"), "single")
+        compile("42", FakePath("test_compile_pathlike"), "single")
 
     def test_stack_overflow(self):
         # bpo-31113: Stack overflow when compile a long sequence of
@@ -862,7 +856,7 @@ class TestStackSizeStability(unittest.TestCase):
             """
         self.check_stack_size(snippet)
 
-    def test_for_break_inside_finally_block(self):
+    def test_for_break_continue_inside_finally_block(self):
         snippet = """
             for x in y:
                 try:
@@ -870,6 +864,8 @@ class TestStackSizeStability(unittest.TestCase):
                 finally:
                     if z:
                         break
+                    elif u:
+                        continue
                     else:
                         a
             else:

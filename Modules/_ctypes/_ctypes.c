@@ -1412,8 +1412,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     StgDictObject *stgdict;
     StgDictObject *itemdict;
     PyObject *length_attr, *type_attr;
-    long length;
-    int overflow;
+    Py_ssize_t length;
     Py_ssize_t itemsize, itemalign;
 
     /* create the new instance (which is a class,
@@ -1441,14 +1440,15 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF(length_attr);
         goto error;
     }
-    length = PyLong_AsLongAndOverflow(length_attr, &overflow);
-    if (overflow) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "The '_length_' attribute is too large");
-        Py_DECREF(length_attr);
+    length = PyLong_AsSsize_t(length_attr);
+    Py_DECREF(length_attr);
+    if (length == -1 && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "The '_length_' attribute is too large");
+        }
         goto error;
     }
-    Py_DECREF(length_attr);
 
     if (_PyObject_LookupAttrId((PyObject *)result, &PyId__type_, &type_attr) < 0) {
         goto error;
@@ -5409,7 +5409,7 @@ cast_check_pointertype(PyObject *arg)
     if (PyCFuncPtrTypeObject_Check(arg))
         return 1;
     dict = PyType_stgdict(arg);
-    if (dict) {
+    if (dict != NULL && dict->proto != NULL) {
         if (PyUnicode_Check(dict->proto)
             && (strchr("sPzUZXO", PyUnicode_AsUTF8(dict->proto)[0]))) {
             /* simple pointer types, c_void_p, c_wchar_p, BSTR, ... */

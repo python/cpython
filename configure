@@ -781,6 +781,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -807,8 +808,6 @@ enable_universalsdk
 with_universal_archs
 with_framework_name
 enable_framework
-with_gcc
-with_icc
 with_cxx_main
 with_suffix
 enable_shared
@@ -831,7 +830,6 @@ enable_ipv6
 with_doc_strings
 with_pymalloc
 with_c_locale_coercion
-with_c_locale_warning
 with_valgrind
 with_dtrace
 with_libm
@@ -893,6 +891,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1145,6 +1144,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1282,7 +1290,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1435,6 +1443,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1494,8 +1503,6 @@ Optional Packages:
   --with-framework-name=FRAMEWORK
                           specify an alternate name of the framework built
                           with --enable-framework
-  --without-gcc           never use gcc
-  --with-icc              build with icc
   --with-cxx-main=<compiler>
                           compile main() and link python executable with C++
                           compiler
@@ -1526,9 +1533,6 @@ Optional Packages:
   --with(out)-pymalloc    disable/enable specialized mallocs
   --with(out)-c-locale-coercion
                           disable/enable C locale coercion to a UTF-8 based
-                          locale
-  --with(out)-c-locale-warning
-                          disable/enable locale compatibility warning in the C
                           locale
   --with-valgrind         Enable Valgrind support
   --with(out)-dtrace      disable/enable DTrace support
@@ -2753,9 +2757,9 @@ HAS_GIT=no-repository
 fi
 if test $HAS_GIT = found
 then
-    GITVERSION="git -C \$(srcdir) rev-parse --short HEAD"
-    GITTAG="git -C \$(srcdir) describe --all --always --dirty"
-    GITBRANCH="git -C \$(srcdir) name-rev --name-only HEAD"
+    GITVERSION="git --git-dir \$(srcdir)/.git rev-parse --short HEAD"
+    GITTAG="git --git-dir \$(srcdir)/.git describe --all --always --dirty"
+    GITBRANCH="git --git-dir \$(srcdir)/.git name-rev --name-only HEAD"
 else
     GITVERSION=""
     GITTAG=""
@@ -3004,7 +3008,7 @@ if test "${enable_universalsdk+set}" = set; then :
   enableval=$enable_universalsdk;
 	case $enableval in
 	yes)
-		# Locate the best usable SDK, see Mac/README.txt for more
+		# Locate the best usable SDK, see Mac/README for more
 		# information
 		enableval="`/usr/bin/xcodebuild -version -sdk macosx Path 2>/dev/null`"
 		if ! ( echo $enableval | grep -E '\.sdk' 1>/dev/null )
@@ -3442,57 +3446,6 @@ EXPORT_MACOSX_DEPLOYMENT_TARGET='#'
 # when running configure or make.  The build should not break if they do.
 # BASECFLAGS should generally not be messed with, however.
 
-# XXX shouldn't some/most/all of this code be merged with the stuff later
-# on that fiddles with OPT and BASECFLAGS?
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --without-gcc" >&5
-$as_echo_n "checking for --without-gcc... " >&6; }
-
-# Check whether --with-gcc was given.
-if test "${with_gcc+set}" = set; then :
-  withval=$with_gcc;
-	case $withval in
-	no)	CC=${CC:-cc}
-		without_gcc=yes;;
-	yes)	CC=gcc
-		without_gcc=no;;
-	*)	CC=$withval
-		without_gcc=$withval;;
-	esac
-else
-
-	case $ac_sys_system in
-	AIX*)   CC=${CC:-xlc_r}
-		without_gcc=;;
-	*)	without_gcc=no;;
-	esac
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $without_gcc" >&5
-$as_echo "$without_gcc" >&6; }
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-icc" >&5
-$as_echo_n "checking for --with-icc... " >&6; }
-
-# Check whether --with-icc was given.
-if test "${with_icc+set}" = set; then :
-  withval=$with_icc;
-	case $withval in
-	no)	CC=${CC:-cc}
-		with_icc=no;;
-	yes)	CC=icc
-		CXX=icpc
-		with_icc=yes;;
-	*)	CC=$withval
-		with_icc=$withval;;
-	esac
-else
-
-	with_icc=no
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_icc" >&5
-$as_echo "$with_icc" >&6; }
-
 # If the user switches compilers, we can't believe the cache
 if test ! -z "$ac_cv_prog_CC" -a ! -z "$CC" -a "$CC" != "$ac_cv_prog_CC"
 then
@@ -3510,7 +3463,7 @@ fi
 if test "$ac_sys_system" = "Darwin"
 then
 	# Compiler selection on MacOSX is more complicated than
-	# AC_PROG_CC can handle, see Mac/README.txt for more
+	# AC_PROG_CC can handle, see Mac/README for more
 	# information
 	if test -z "${CC}"
 	then
@@ -5238,6 +5191,26 @@ cat >> conftest.c <<EOF
         ia64-linux-gnu
 # elif defined(__m68k__) && !defined(__mcoldfire__)
         m68k-linux-gnu
+# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6) && defined(_MIPSEL)
+#  if _MIPS_SIM == _ABIO32
+        mipsisa32r6el-linux-gnu
+#  elif _MIPS_SIM == _ABIN32
+        mipsisa64r6el-linux-gnuabin32
+#  elif _MIPS_SIM == _ABI64
+        mipsisa64r6el-linux-gnuabi64
+#  else
+#   error unknown platform triplet
+#  endif
+# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6)
+#  if _MIPS_SIM == _ABIO32
+        mipsisa32r6-linux-gnu
+#  elif _MIPS_SIM == _ABIN32
+        mipsisa64r6-linux-gnuabin32
+#  elif _MIPS_SIM == _ABI64
+        mipsisa64r6-linux-gnuabi64
+#  else
+#   error unknown platform triplet
+#  endif
 # elif defined(__mips_hard_float) && defined(_MIPSEL)
 #  if _MIPS_SIM == _ABIO32
         mipsel-linux-gnu
@@ -5280,6 +5253,14 @@ cat >> conftest.c <<EOF
         sparc64-linux-gnu
 # elif defined(__sparc__)
         sparc-linux-gnu
+# elif defined(__riscv)
+#  if __riscv_xlen == 32
+        riscv32-linux-gnu
+#  elif __riscv_xlen == 64
+        riscv64-linux-gnu
+#  else
+#   error unknown platform triplet
+#  endif
 # else
 #   error unknown platform triplet
 # endif
@@ -6454,6 +6435,14 @@ if test "$Py_LTO" = 'true' ; then
       esac
       ;;
   esac
+
+  if test "$ac_cv_prog_cc_g" = "yes"
+  then
+      # bpo-30345: Add -g to LDFLAGS when compiling with LTO
+      # to get debug symbols.
+      LTOFLAGS="$LTOFLAGS -g"
+  fi
+
   CFLAGS="$CFLAGS $LTOFLAGS"
   LDFLAGS="$LDFLAGS $LTOFLAGS"
 fi
@@ -6703,9 +6692,6 @@ if test "${OPT-unset}" = "unset"
 then
     case $GCC in
     yes)
-        if test "$CC" != 'g++' ; then
-	    STRICT_PROTO="-Wstrict-prototypes"
-	fi
         # For gcc 4.x we need to use -fwrapv so lets check if its supported
         if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
            WRAP="-fwrapv"
@@ -6751,8 +6737,6 @@ then
 	    OPT="-O3 -Wall"
 	    ;;
 	esac
-
-	OPT="$OPT $STRICT_PROTO"
 
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
@@ -7121,6 +7105,47 @@ fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_unreachable_code_warning" >&5
 $as_echo "$ac_cv_enable_unreachable_code_warning" >&6; }
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn on $CC strict-prototypes warning" >&5
+$as_echo_n "checking if we can turn on $CC strict-prototypes warning... " >&6; }
+     ac_save_cc="$CC"
+     CC="$CC -Werror -Wstrict-prototypes"
+     if ${ac_cv_enable_enable_strict_prototypes_warning+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+       ac_cv_enable_strict_prototypes_warning=yes
+
+else
+
+       ac_cv_enable_strict_prototypes_warning=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+     CC="$ac_save_cc"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_strict_prototypes_warning" >&5
+$as_echo "$ac_cv_enable_strict_prototypes_warning" >&6; }
+
+    if test $ac_cv_enable_strict_prototypes_warning = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"
+    fi
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can make implicit function declaration an error in $CC" >&5
 $as_echo_n "checking if we can make implicit function declaration an error in $CC... " >&6; }
      ac_save_cc="$CC"
@@ -7176,7 +7201,6 @@ $as_echo "$ac_cv_enable_implicit_function_declaration_error" >&6; }
 	    BASECFLAGS="$BASECFLAGS -m486 -DSCO5"
 	    ;;
 
-    # is there any other compiler on Darwin besides gcc?
     Darwin*)
         # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
         # used to be here, but non-Apple gcc doesn't accept them.
@@ -7701,7 +7725,7 @@ for ac_header in asm/types.h crypt.h conio.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
 ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
 sched.h shadow.h signal.h stropts.h termios.h \
-unistd.h utime.h \
+utime.h \
 poll.h sys/devpoll.h sys/epoll.h sys/poll.h \
 sys/audioio.h sys/xattr.h sys/bsdtty.h sys/event.h sys/file.h sys/ioctl.h \
 sys/kern_control.h sys/loadavg.h sys/lock.h sys/mkdev.h sys/modem.h \
@@ -8629,32 +8653,48 @@ _ACEOF
 
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for long double support" >&5
-$as_echo_n "checking for long double support... " >&6; }
-have_long_double=no
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for long double" >&5
+$as_echo_n "checking for long double... " >&6; }
+if ${ac_cv_type_long_double+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$GCC" = yes; then
+       ac_cv_type_long_double=yes
+     else
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+/* The Stardent Vistra knows sizeof (long double), but does
+		 not support it.  */
+	      long double foo = 0.0L;
 int
 main ()
 {
-long double x; x = (long double)0;
+static int test_array [1 - 2 * !(/* On Ultrix 4.3 cc, long double is 4 and double is 8.  */
+	      sizeof (double) <= sizeof (long double))];
+test_array [0] = 0;
+return test_array [0];
+
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
+  ac_cv_type_long_double=yes
+else
+  ac_cv_type_long_double=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+     fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_type_long_double" >&5
+$as_echo "$ac_cv_type_long_double" >&6; }
+  if test $ac_cv_type_long_double = yes; then
 
 $as_echo "#define HAVE_LONG_DOUBLE 1" >>confdefs.h
 
-  have_long_double=yes
+  fi
 
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_long_double" >&5
-$as_echo "$have_long_double" >&6; }
-if test "$have_long_double" = yes ; then
 # The cast to long int works around a bug in the HP C Compiler
 # version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
 # declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
@@ -8688,7 +8728,6 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-fi
 
 # The cast to long int works around a bug in the HP C Compiler
 # version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
@@ -9587,6 +9626,38 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
 $as_echo "#define HAVE_UUID_CREATE 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+# Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
+# stream in big-endian byte-order
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_enc_be" >&5
+$as_echo_n "checking for uuid_enc_be... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <uuid.h>
+int
+main ()
+{
+
+#ifndef uuid_enc_be
+void *x = uuid_enc_be
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_UUID_ENC_BE 1" >>confdefs.h
 
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -10983,29 +11054,6 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_c_locale_coercion" >&5
 $as_echo "$with_c_locale_coercion" >&6; }
 
-# Check for --with-c-locale-warning
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-c-locale-warning" >&5
-$as_echo_n "checking for --with-c-locale-warning... " >&6; }
-
-# Check whether --with-c-locale-warning was given.
-if test "${with_c_locale_warning+set}" = set; then :
-  withval=$with_c_locale_warning;
-fi
-
-
-if test -z "$with_c_locale_warning"
-then
-    with_c_locale_warning="yes"
-fi
-if test "$with_c_locale_warning" != "no"
-then
-
-$as_echo "#define PY_WARN_ON_C_LOCALE 1" >>confdefs.h
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_c_locale_warning" >&5
-$as_echo "$with_c_locale_warning" >&6; }
-
 # Check for Valgrind support
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-valgrind" >&5
 $as_echo_n "checking for --with-valgrind... " >&6; }
@@ -11206,10 +11254,11 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  clock confstr ctermid dup3 execv faccessat fchmod fchmodat fchown fchownat \
  fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
+ getgrgid_r getgrnam_r \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
- getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
+ getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
  if_nameindex \
- initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
+ initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise posix_spawn pread preadv preadv2 \
@@ -11219,8 +11268,8 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
  sched_rr_get_interval \
- sigaction sigaltstack siginterrupt sigpending sigrelse \
- sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy symlinkat sync \
+ sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
+ sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy strsignal symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname unlinkat unsetenv utimensat utimes waitid waitpid wait3 wait4 \
  wcscoll wcsftime wcsxfrm wmemcmp writev _getpty
@@ -11235,6 +11284,23 @@ _ACEOF
 fi
 done
 
+
+# Force lchmod off for Linux. Linux disallows changing the mode of symbolic
+# links. Some libc implementations have a stub lchmod implementation that always
+# returns an error.
+if test "$MACHDEP" != linux; then
+  for ac_func in lchmod
+do :
+  ac_fn_c_check_func "$LINENO" "lchmod" "ac_cv_func_lchmod"
+if test "x$ac_cv_func_lchmod" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LCHMOD 1
+_ACEOF
+
+fi
+done
+
+fi
 
 ac_fn_c_check_decl "$LINENO" "dirfd" "ac_cv_have_decl_dirfd" "#include <sys/types.h>
        #include <dirent.h>
@@ -13787,131 +13853,77 @@ fi
 # * Check for various properties of floating point *
 # **************************************************
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C doubles are little-endian IEEE 754 binary64" >&5
-$as_echo_n "checking whether C doubles are little-endian IEEE 754 binary64... " >&6; }
-if ${ac_cv_little_endian_double+:} false; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether float word ordering is bigendian" >&5
+$as_echo_n "checking whether float word ordering is bigendian... " >&6; }
+if ${ax_cv_c_float_words_bigendian+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-if test "$cross_compiling" = yes; then :
-  ac_cv_little_endian_double=no
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+ax_cv_c_float_words_bigendian=unknown
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#include <string.h>
-int main() {
-    double x = 9006104071832581.0;
-    if (memcmp(&x, "\x05\x04\x03\x02\x01\xff\x3f\x43", 8) == 0)
-        return 0;
-    else
-        return 1;
-}
+
+double d = 90904234967036810337470478905505011476211692735615632014797120844053488865816695273723469097858056257517020191247487429516932130503560650002327564517570778480236724525140520121371739201496540132640109977779420565776568942592.0;
+
 
 _ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_cv_little_endian_double=yes
-else
-  ac_cv_little_endian_double=no
+if ac_fn_c_try_compile "$LINENO"; then :
+
+
+if grep noonsees conftest.$ac_objext >/dev/null ; then
+  ax_cv_c_float_words_bigendian=yes
 fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_little_endian_double" >&5
-$as_echo "$ac_cv_little_endian_double" >&6; }
-if test "$ac_cv_little_endian_double" = yes
-then
-
-$as_echo "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
-
+if grep seesnoon conftest.$ac_objext >/dev/null ; then
+  if test "$ax_cv_c_float_words_bigendian" = unknown; then
+    ax_cv_c_float_words_bigendian=no
+  else
+    ax_cv_c_float_words_bigendian=unknown
+  fi
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C doubles are big-endian IEEE 754 binary64" >&5
-$as_echo_n "checking whether C doubles are big-endian IEEE 754 binary64... " >&6; }
-if ${ac_cv_big_endian_double+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-if test "$cross_compiling" = yes; then :
-  ac_cv_big_endian_double=no
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <string.h>
-int main() {
-    double x = 9006104071832581.0;
-    if (memcmp(&x, "\x43\x3f\xff\x01\x02\x03\x04\x05", 8) == 0)
-        return 0;
-    else
-        return 1;
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_cv_big_endian_double=yes
-else
-  ac_cv_big_endian_double=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
 
 fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_c_float_words_bigendian" >&5
+$as_echo "$ax_cv_c_float_words_bigendian" >&6; }
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_big_endian_double" >&5
-$as_echo "$ac_cv_big_endian_double" >&6; }
-if test "$ac_cv_big_endian_double" = yes
+case $ax_cv_c_float_words_bigendian in
+  yes)
+
+$as_echo "#define FLOAT_WORDS_BIGENDIAN 1" >>confdefs.h
+ ;;
+  no)
+     ;;
+  *)
+    as_fn_error $? "
+
+Unknown float word ordering. You need to manually preset
+ax_cv_c_float_words_bigendian=no (or yes) according to your system.
+
+    " "$LINENO" 5 ;;
+esac
+
+
+if test "$ax_cv_c_float_words_bigendian" = "yes"
 then
 
 $as_echo "#define DOUBLE_IS_BIG_ENDIAN_IEEE754 1" >>confdefs.h
 
-fi
-
-# Some ARM platforms use a mixed-endian representation for doubles.
-# While Python doesn't currently have full support for these platforms
-# (see e.g., issue 1762561), we can at least make sure that float <-> string
-# conversions work.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C doubles are ARM mixed-endian IEEE 754 binary64" >&5
-$as_echo_n "checking whether C doubles are ARM mixed-endian IEEE 754 binary64... " >&6; }
-if ${ac_cv_mixed_endian_double+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-if test "$cross_compiling" = yes; then :
-  ac_cv_mixed_endian_double=no
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <string.h>
-int main() {
-    double x = 9006104071832581.0;
-    if (memcmp(&x, "\x01\xff\x3f\x43\x05\x04\x03\x02", 8) == 0)
-        return 0;
-    else
-        return 1;
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_cv_mixed_endian_double=yes
-else
-  ac_cv_mixed_endian_double=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_mixed_endian_double" >&5
-$as_echo "$ac_cv_mixed_endian_double" >&6; }
-if test "$ac_cv_mixed_endian_double" = yes
+elif test "$ax_cv_c_float_words_bigendian" = "no"
 then
+
+$as_echo "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
+
+else
+  # Some ARM platforms use a mixed-endian representation for doubles.
+  # While Python doesn't currently have full support for these platforms
+  # (see e.g., issue 1762561), we can at least make sure that float <-> string
+  # conversions work.
+  # FLOAT_WORDS_BIGENDIAN doesnt actually detect this case, but if it's not big
+  # or little, then it must be this?
 
 $as_echo "#define DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754 1" >>confdefs.h
 
@@ -14113,103 +14125,6 @@ cat >>confdefs.h <<_ACEOF
 #define HAVE_DECL_ISFINITE $ac_have_decl
 _ACEOF
 
-
-# On FreeBSD 6.2, it appears that tanh(-0.) returns 0. instead of
-# -0. on some architectures.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether tanh preserves the sign of zero" >&5
-$as_echo_n "checking whether tanh preserves the sign of zero... " >&6; }
-if ${ac_cv_tanh_preserves_zero_sign+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-if test "$cross_compiling" = yes; then :
-  ac_cv_tanh_preserves_zero_sign=no
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <math.h>
-#include <stdlib.h>
-int main() {
-    /* return 0 if either negative zeros don't exist
-       on this platform or if negative zeros exist
-       and tanh(-0.) == -0. */
-  if (atan2(0., -1.) == atan2(-0., -1.) ||
-      atan2(tanh(-0.), -1.) == atan2(-0., -1.)) exit(0);
-  else exit(1);
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_cv_tanh_preserves_zero_sign=yes
-else
-  ac_cv_tanh_preserves_zero_sign=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tanh_preserves_zero_sign" >&5
-$as_echo "$ac_cv_tanh_preserves_zero_sign" >&6; }
-if test "$ac_cv_tanh_preserves_zero_sign" = yes
-then
-
-$as_echo "#define TANH_PRESERVES_ZERO_SIGN 1" >>confdefs.h
-
-fi
-
-if test "$ac_cv_func_log1p" = yes
-then
-    # On some versions of AIX, log1p(-0.) returns 0. instead of
-    # -0.  See issue #9920.
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether log1p drops the sign of negative zero" >&5
-$as_echo_n "checking whether log1p drops the sign of negative zero... " >&6; }
-    if ${ac_cv_log1p_drops_zero_sign+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-    if test "$cross_compiling" = yes; then :
-  ac_cv_log1p_drops_zero_sign=no
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-    #include <math.h>
-    #include <stdlib.h>
-    int main() {
-        /* Fail if the signs of log1p(-0.) and -0. can be
-	   distinguished. */
-        if (atan2(log1p(-0.), -1.) == atan2(-0., -1.))
-            return 0;
-        else
-            return 1;
-    }
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_cv_log1p_drops_zero_sign=no
-else
-  ac_cv_log1p_drops_zero_sign=yes
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_log1p_drops_zero_sign" >&5
-$as_echo "$ac_cv_log1p_drops_zero_sign" >&6; }
-fi
-if test "$ac_cv_log1p_drops_zero_sign" = yes
-then
-
-$as_echo "#define LOG1P_DROPS_ZERO_SIGN 1" >>confdefs.h
-
-fi
-
-LIBS=$LIBS_SAVE
 
 # For multiprocessing module, check that sem_open
 # actually works.  For FreeBSD versions <= 7.2,
@@ -14564,19 +14479,21 @@ fi
 $as_echo "$ac_cv_wchar_t_signed" >&6; }
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether wchar_t is usable" >&5
+$as_echo_n "checking whether wchar_t is usable... " >&6; }
 # wchar_t is only usable if it maps to an unsigned type
 if test "$ac_cv_sizeof_wchar_t" -ge 2 \
           -a "$ac_cv_wchar_t_signed" = "no"
 then
-  HAVE_USABLE_WCHAR_T="yes"
 
 $as_echo "#define HAVE_USABLE_WCHAR_T 1" >>confdefs.h
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
 else
-  HAVE_USABLE_WCHAR_T="no usable wchar_t found"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_USABLE_WCHAR_T" >&5
-$as_echo "$HAVE_USABLE_WCHAR_T" >&6; }
 
 # check for endianness
  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether byte ordering is bigendian" >&5
@@ -15372,77 +15289,6 @@ then
 $as_echo "#define HAVE_BROKEN_POLL 1" >>confdefs.h
 
 fi
-
-# Before we can test tzset, we need to check if struct tm has a tm_zone
-# (which is not required by ISO C or UNIX spec) and/or if we support
-# tzname[]
-ac_fn_c_check_member "$LINENO" "struct tm" "tm_zone" "ac_cv_member_struct_tm_tm_zone" "#include <sys/types.h>
-#include <$ac_cv_struct_tm>
-
-"
-if test "x$ac_cv_member_struct_tm_tm_zone" = xyes; then :
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_STRUCT_TM_TM_ZONE 1
-_ACEOF
-
-
-fi
-
-if test "$ac_cv_member_struct_tm_tm_zone" = yes; then
-
-$as_echo "#define HAVE_TM_ZONE 1" >>confdefs.h
-
-else
-  ac_fn_c_check_decl "$LINENO" "tzname" "ac_cv_have_decl_tzname" "#include <time.h>
-"
-if test "x$ac_cv_have_decl_tzname" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_TZNAME $ac_have_decl
-_ACEOF
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for tzname" >&5
-$as_echo_n "checking for tzname... " >&6; }
-if ${ac_cv_var_tzname+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <time.h>
-#if !HAVE_DECL_TZNAME
-extern char *tzname[];
-#endif
-
-int
-main ()
-{
-return tzname[0][0];
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_var_tzname=yes
-else
-  ac_cv_var_tzname=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_var_tzname" >&5
-$as_echo "$ac_cv_var_tzname" >&6; }
-  if test $ac_cv_var_tzname = yes; then
-
-$as_echo "#define HAVE_TZNAME 1" >>confdefs.h
-
-  fi
-fi
-
 
 # check tzset(3) exists and works like we expect it to
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working tzset()" >&5
@@ -16498,7 +16344,6 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
     #include <stdatomic.h>
     atomic_int value = ATOMIC_VAR_INIT(1);
-    _Atomic void *py_atomic_address = (void*) &value;
     int main() {
       int loaded_value = atomic_load(&value);
       return 0;
@@ -18292,12 +18137,6 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
-echo "creating Modules/Setup" >&6
-if test ! -f Modules/Setup
-then
-	cp $srcdir/Modules/Setup.dist Modules/Setup
-fi
-
 echo "creating Modules/Setup.local" >&6
 if test ! -f Modules/Setup.local
 then
@@ -18307,7 +18146,7 @@ fi
 echo "creating Makefile" >&6
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local Modules/Setup
+			Modules/Setup.local $srcdir/Modules/Setup
 mv config.c Modules
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then

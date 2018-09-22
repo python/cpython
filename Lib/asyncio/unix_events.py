@@ -18,8 +18,10 @@ from . import base_subprocess
 from . import constants
 from . import coroutines
 from . import events
+from . import exceptions
 from . import futures
 from . import selector_events
+from . import tasks
 from . import transports
 from .log import logger
 
@@ -167,8 +169,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         if not isinstance(sig, int):
             raise TypeError(f'sig must be an int, not {sig!r}')
 
-        if not (1 <= sig < signal.NSIG):
-            raise ValueError(f'sig {sig} out of range(1, {signal.NSIG})')
+        if sig not in signal.valid_signals():
+            raise ValueError(f'invalid signal number {sig}')
 
     def _make_read_pipe_transport(self, pipe, protocol, waiter=None,
                                   extra=None):
@@ -308,6 +310,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                     ssl, backlog, ssl_handshake_timeout)
         if start_serving:
             server._start_serving()
+            # Skip one loop iteration so that all 'loop.add_reader'
+            # go through.
+            await tasks.sleep(0, loop=self)
 
         return server
 
@@ -315,16 +320,16 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         try:
             os.sendfile
         except AttributeError as exc:
-            raise events.SendfileNotAvailableError(
+            raise exceptions.SendfileNotAvailableError(
                 "os.sendfile() is not available")
         try:
             fileno = file.fileno()
         except (AttributeError, io.UnsupportedOperation) as err:
-            raise events.SendfileNotAvailableError("not a regular file")
+            raise exceptions.SendfileNotAvailableError("not a regular file")
         try:
             fsize = os.fstat(fileno).st_size
         except OSError as err:
-            raise events.SendfileNotAvailableError("not a regular file")
+            raise exceptions.SendfileNotAvailableError("not a regular file")
         blocksize = count if count else fsize
         if not blocksize:
             return 0  # empty file
@@ -378,7 +383,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 # one being 'file' is not a regular mmap(2)-like
                 # file, in which case we'll fall back on using
                 # plain send().
-                err = events.SendfileNotAvailableError(
+                err = exceptions.SendfileNotAvailableError(
                     "os.sendfile call failed")
                 self._sock_sendfile_update_filepos(fileno, offset, total_sent)
                 fut.set_exception(err)

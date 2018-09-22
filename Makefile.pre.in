@@ -106,7 +106,8 @@ ARFLAGS=	@ARFLAGS@
 # Extra C flags added for building the interpreter object files.
 CFLAGSFORSHARED=@CFLAGSFORSHARED@
 # C flags used for building the interpreter object files
-PY_CORE_CFLAGS=	$(PY_CFLAGS) $(PY_CFLAGS_NODIST) $(PY_CPPFLAGS) $(CFLAGSFORSHARED) -DPy_BUILD_CORE
+PY_STDMODULE_CFLAGS= $(PY_CFLAGS) $(PY_CFLAGS_NODIST) $(PY_CPPFLAGS) $(CFLAGSFORSHARED)
+PY_CORE_CFLAGS=	$(PY_STDMODULE_CFLAGS) -DPy_BUILD_CORE
 # Strict or non-strict aliasing flags used to compile dtoa.c, see above
 CFLAGS_ALIASING=@CFLAGS_ALIASING@
 
@@ -328,8 +329,9 @@ PYTHON_OBJS=	\
 		Python/ast_unparse.o \
 		Python/bltinmodule.o \
 		Python/ceval.o \
-		Python/compile.o \
 		Python/codecs.o \
+		Python/compile.o \
+		Python/coreconfig.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
 		Python/frozenmain.o \
@@ -560,10 +562,9 @@ coverage-report: regen-grammar regen-importlib
 	$(MAKE) coverage-lcov
 
 # Run "Argument Clinic" over all source files
-# (depends on python having already been built)
 .PHONY=clinic
-clinic: check-clean-src $(BUILDPYTHON) $(srcdir)/Modules/_blake2/blake2s_impl.c
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/clinic/clinic.py --make --srcdir $(srcdir)
+clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --srcdir $(srcdir)
 
 # Build the interpreter
 $(BUILDPYTHON):	Programs/python.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
@@ -593,19 +594,23 @@ Modules/_math.o: Modules/_math.c Modules/_math.h
 	$(CC) -c $(CCSHARED) $(PY_CORE_CFLAGS) -o $@ $<
 
 # blake2s is auto-generated from blake2b
-$(srcdir)/Modules/_blake2/blake2s_impl.c: $(BUILDPYTHON) $(srcdir)/Modules/_blake2/blake2b_impl.c $(srcdir)/Modules/_blake2/blake2b2s.py
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Modules/_blake2/blake2b2s.py
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/clinic/clinic.py -f $@
+$(srcdir)/Modules/_blake2/blake2s_impl.c: $(srcdir)/Modules/_blake2/blake2b_impl.c $(srcdir)/Modules/_blake2/blake2b2s.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Modules/_blake2/blake2b2s.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py -f $@
 
 # Build the shared modules
 # Under GNU make, MAKEFLAGS are sorted and normalized; the 's' for
 # -s, --silent or --quiet is always the first char.
 # Under BSD make, MAKEFLAGS might be " -s -v x=y".
+# Ignore macros passed by GNU make, passed after --
 sharedmods: $(BUILDPYTHON) pybuilddir.txt Modules/_math.o
-	@case "$$MAKEFLAGS" in \
+	@case "`echo X $$MAKEFLAGS | sed 's/^X //;s/ -- .*//'`" in \
 	    *\ -s*|s*) quiet="-q";; \
 	    *) quiet="";; \
 	esac; \
+	echo "$(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' \
+		_TCLTK_INCLUDES='$(TCLTK_INCLUDES)' _TCLTK_LIBS='$(TCLTK_LIBS)' \
+		$(PYTHON_FOR_BUILD) $(srcdir)/setup.py $$quiet build"; \
 	$(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' \
 		_TCLTK_INCLUDES='$(TCLTK_INCLUDES)' _TCLTK_LIBS='$(TCLTK_LIBS)' \
 		$(PYTHON_FOR_BUILD) $(srcdir)/setup.py $$quiet build
@@ -683,25 +688,15 @@ oldsharedmods: $(SHAREDMODS)
 Makefile Modules/config.c: Makefile.pre \
 				$(srcdir)/Modules/config.c.in \
 				$(MAKESETUP) \
-				Modules/Setup \
+				$(srcdir)/Modules/Setup \
 				Modules/Setup.local
 	$(SHELL) $(MAKESETUP) -c $(srcdir)/Modules/config.c.in \
 				-s Modules \
 				Modules/Setup.local \
-				Modules/Setup
+				$(srcdir)/Modules/Setup
 	@mv config.c Modules
 	@echo "The Makefile was updated, you may need to re-run make."
 
-
-Modules/Setup: $(srcdir)/Modules/Setup.dist
-	@if test -f Modules/Setup; then \
-		echo "-----------------------------------------------"; \
-		echo "Modules/Setup.dist is newer than Modules/Setup;"; \
-		echo "check to make sure you have all the updates you"; \
-		echo "need in your Modules/Setup file."; \
-		echo "Usually, copying Modules/Setup.dist to Modules/Setup will work."; \
-		echo "-----------------------------------------------"; \
-	fi
 
 Programs/_testembed: Programs/_testembed.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
 	$(LINKCC) $(PY_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
@@ -718,22 +713,29 @@ Programs/_freeze_importlib: Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FRO
 regen-importlib: Programs/_freeze_importlib
 	# Regenerate Python/importlib_external.h
 	# from Lib/importlib/_bootstrap_external.py using _freeze_importlib
-	./Programs/_freeze_importlib \
+	./Programs/_freeze_importlib importlib._bootstrap_external \
 	    $(srcdir)/Lib/importlib/_bootstrap_external.py \
 	    $(srcdir)/Python/importlib_external.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/importlib_external.h $(srcdir)/Python/importlib_external.h.new
 	# Regenerate Python/importlib.h from Lib/importlib/_bootstrap.py
 	# using _freeze_importlib
-	./Programs/_freeze_importlib \
+	./Programs/_freeze_importlib importlib._bootstrap \
 	    $(srcdir)/Lib/importlib/_bootstrap.py \
 	    $(srcdir)/Python/importlib.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib.h.new
+	# Regenerate Python/importlib_zipimport.h from Lib/zipimport.py
+	# using _freeze_importlib
+	./Programs/_freeze_importlib zipimport \
+	    $(srcdir)/Lib/zipimport.py \
+	    $(srcdir)/Python/importlib_zipimport.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/importlib_zipimport.h $(srcdir)/Python/importlib_zipimport.h.new
 
 
 ############################################################################
 # Regenerate all generated files
 
-regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar regen-ast regen-importlib
+regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar \
+	regen-ast regen-importlib clinic
 
 ############################################################################
 # Special rules for object files
@@ -901,7 +903,8 @@ regen-opcode-targets:
 
 Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/ceval_gil.h
 
-Python/frozen.o: $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib_external.h
+Python/frozen.o: $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib_external.h \
+		$(srcdir)/Python/importlib_zipimport.h
 
 # Generate DTrace probe macros, then rename them (PYTHON_ -> PyDTrace_) to
 # follow our naming conventions. dtrace(1) uses the output filename to generate
@@ -949,6 +952,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/codecs.h \
 		$(srcdir)/Include/compile.h \
 		$(srcdir)/Include/complexobject.h \
+		$(srcdir)/Include/coreconfig.h \
 		$(srcdir)/Include/descrobject.h \
 		$(srcdir)/Include/dictobject.h \
 		$(srcdir)/Include/dtoa.h \
@@ -1216,8 +1220,6 @@ bininstall: altbininstall
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s pydoc$(VERSION) pydoc3)
 	-rm -f $(DESTDIR)$(BINDIR)/2to3
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s 2to3-$(VERSION) 2to3)
-	-rm -f $(DESTDIR)$(BINDIR)/pyvenv
-	(cd $(DESTDIR)$(BINDIR); $(LN) -s pyvenv-$(VERSION) pyvenv)
 	if test "x$(LIPO_32BIT_FLAGS)" != "x" ; then \
 		rm -f $(DESTDIR)$(BINDIR)/python3-32$(EXE); \
 		(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-32$(EXE) python3-32$(EXE)) \
@@ -1475,7 +1477,7 @@ libainstall:	@DEF_MAKE_RULE@ python-config
 	$(INSTALL_DATA) Programs/python.o $(DESTDIR)$(LIBPL)/python.o
 	$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(DESTDIR)$(LIBPL)/config.c.in
 	$(INSTALL_DATA) Makefile $(DESTDIR)$(LIBPL)/Makefile
-	$(INSTALL_DATA) Modules/Setup $(DESTDIR)$(LIBPL)/Setup
+	$(INSTALL_DATA) $(srcdir)/Modules/Setup $(DESTDIR)$(LIBPL)/Setup
 	$(INSTALL_DATA) Modules/Setup.local $(DESTDIR)$(LIBPL)/Setup.local
 	$(INSTALL_DATA) Misc/python.pc $(DESTDIR)$(LIBPC)/python-$(VERSION).pc
 	$(INSTALL_SCRIPT) $(srcdir)/Modules/makesetup $(DESTDIR)$(LIBPL)/makesetup
@@ -1698,8 +1700,7 @@ distclean: clobber
 	for file in $(srcdir)/Lib/test/data/* ; do \
 	    if test "$$file" != "$(srcdir)/Lib/test/data/README"; then rm "$$file"; fi; \
 	done
-	-rm -f core Makefile Makefile.pre config.status \
-		Modules/Setup Modules/Setup.local \
+	-rm -f core Makefile Makefile.pre config.status Modules/Setup.local \
 		Modules/ld_so_aix Modules/python.exp Misc/python.pc \
 		Misc/python-config.sh
 	-rm -f python*-gdb.py

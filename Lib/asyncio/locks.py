@@ -7,6 +7,7 @@ import warnings
 
 from . import events
 from . import futures
+from . import exceptions
 from .coroutines import coroutine
 
 
@@ -192,7 +193,7 @@ class Lock(_ContextManagerMixin):
                 await fut
             finally:
                 self._waiters.remove(fut)
-        except futures.CancelledError:
+        except exceptions.CancelledError:
             if not self._locked:
                 self._wake_up_first()
             raise
@@ -358,12 +359,16 @@ class Condition(_ContextManagerMixin):
 
         finally:
             # Must reacquire lock even if wait is cancelled
+            cancelled = False
             while True:
                 try:
                     await self.acquire()
                     break
-                except futures.CancelledError:
-                    pass
+                except exceptions.CancelledError:
+                    cancelled = True
+
+            if cancelled:
+                raise exceptions.CancelledError
 
     async def wait_for(self, predicate):
         """Wait until a predicate becomes true.

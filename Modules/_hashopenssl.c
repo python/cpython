@@ -245,7 +245,7 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
 
     EVP_MD_CTX_free(temp_ctx);
 
-    return _Py_strhex((const char *)digest, digest_size);
+    return _Py_strhex((const char *)digest, (Py_ssize_t)digest_size);
 }
 
 PyDoc_STRVAR(EVP_update__doc__,
@@ -369,8 +369,8 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    self->name = name_obj;
-    Py_INCREF(self->name);
+    Py_INCREF(name_obj);
+    Py_XSETREF(self->name, name_obj);
 
     if (data_obj) {
         if (view.len >= HASHLIB_GIL_MINSIZE) {
@@ -729,6 +729,10 @@ pbkdf2_hmac(PyObject *self, PyObject *args, PyObject *kwdict)
 #if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(OPENSSL_NO_SCRYPT) && !defined(LIBRESSL_VERSION_NUMBER)
 #define PY_SCRYPT 1
 
+/* XXX: Parameters salt, n, r and p should be required keyword-only parameters.
+   They are optional in the Argument Clinic declaration only due to a
+   limitation of PyArg_ParseTupleAndKeywords. */
+
 /*[clinic input]
 _hashlib.scrypt
 
@@ -858,13 +862,13 @@ _hashlib.hmac_digest
     msg: Py_buffer
     digest: str
 
-Single-shot HMAC
+Single-shot HMAC.
 [clinic start generated code]*/
 
 static PyObject *
 _hashlib_hmac_digest_impl(PyObject *module, Py_buffer *key, Py_buffer *msg,
                           const char *digest)
-/*[clinic end generated code: output=75630e684cdd8762 input=10e964917921e2f2]*/
+/*[clinic end generated code: output=75630e684cdd8762 input=562d2f4249511bd3]*/
 {
     unsigned char md[EVP_MAX_MD_SIZE] = {0};
     unsigned int md_len = 0;

@@ -81,7 +81,7 @@ All of the classes in this module may safely be accessed from multiple threads.
    If *filename* is a file object (rather than an actual file name), a mode of
    ``'w'`` does not truncate the file, and is instead equivalent to ``'a'``.
 
-   The *buffering* argument is ignored. Its use is deprecated.
+   The *buffering* argument is ignored. Its use is deprecated since Python 3.0.
 
    If *mode* is ``'w'`` or ``'a'``, *compresslevel* can be a number between
    ``1`` and ``9`` specifying the level of compression: ``1`` produces the
@@ -108,6 +108,10 @@ All of the classes in this module may safely be accessed from multiple threads.
          object for *filename*).
 
       .. versionadded:: 3.3
+
+
+   .. deprecated:: 3.0
+      The keyword argument *buffering* was deprecated and is now ignored.
 
    .. versionchanged:: 3.1
       Support for the :keyword:`with` statement was added.

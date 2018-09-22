@@ -1,0 +1,2 @@
+Added support of ``\N{name}`` escapes in regular expressions.  Based on
+patch by Jonathan Eunice.

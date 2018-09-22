@@ -1,0 +1,4 @@
+Seven macro incompatibilities with the Limited API were fixed, and the
+macros :c:func:`PyIter_Check`, :c:func:`PyIndex_Check` and
+:c:func:`PyExceptionClass_Name` were added as functions.
+A script for automatic macro checks was added.
