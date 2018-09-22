@@ -203,9 +203,7 @@ The :mod:`csv` module defines the following classes:
    :class:`writer` instance.
 
    Note that unlike the :class:`DictReader` class, the *fieldnames* parameter
-   of the :class:`DictWriter` is not optional.  Since Python's :class:`dict`
-   objects are not ordered, there is not enough information available to deduce
-   the order in which the row should be written to file *f*.
+   of the :class:`DictWriter` class is not optional.
 
    A short usage example::
 
@@ -452,8 +450,9 @@ read CSV files (assuming they support complex numbers at all).
 
 .. method:: csvwriter.writerows(rows)
 
-   Write all the *rows* parameters (a list of *row* objects as described above) to
-   the writer's file object, formatted according to the current dialect.
+   Write all elements in *rows* (an iterable of *row* objects as described
+   above) to the writer's file object, formatted according to the current
+   dialect.
 
 Writer objects have the following public attribute:
 

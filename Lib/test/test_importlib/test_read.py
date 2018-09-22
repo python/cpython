@@ -1,6 +1,6 @@
 import unittest
 
-from importlib import resources
+from importlib import import_module, resources
 from . import data01
 from . import util
 
@@ -46,7 +46,16 @@ class ReadDiskTests(ReadTests, unittest.TestCase):
 
 
 class ReadZipTests(ReadTests, util.ZipSetup, unittest.TestCase):
-    pass
+    def test_read_submodule_resource(self):
+        submodule = import_module('ziptestdata.subdirectory')
+        result = resources.read_binary(
+            submodule, 'binary.file')
+        self.assertEqual(result, b'\0\1\2\3')
+
+    def test_read_submodule_resource_by_name(self):
+        result = resources.read_binary(
+            'ziptestdata.subdirectory', 'binary.file')
+        self.assertEqual(result, b'\0\1\2\3')
 
 
 if __name__ == '__main__':

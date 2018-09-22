@@ -51,7 +51,7 @@ sizeof_error(const char* fatname, const char* typname,
 }
 
 static PyObject*
-test_config(PyObject *self)
+test_config(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
 #define CHECK_SIZEOF(FATNAME, TYPE) \
             if (FATNAME != sizeof(TYPE)) \
@@ -70,7 +70,7 @@ test_config(PyObject *self)
 }
 
 static PyObject*
-test_sizeof_c_types(PyObject *self)
+test_sizeof_c_types(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
 #if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
 #pragma GCC diagnostic push
@@ -131,7 +131,7 @@ test_sizeof_c_types(PyObject *self)
 
 
 static PyObject*
-test_list_api(PyObject *self)
+test_list_api(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject* list;
     int i;
@@ -223,7 +223,7 @@ test_dict_inner(int count)
 }
 
 static PyObject*
-test_dict_iteration(PyObject* self)
+test_dict_iteration(PyObject* self, PyObject *Py_UNUSED(ignored))
 {
     int i;
 
@@ -315,7 +315,7 @@ static PyTypeObject _HashInheritanceTester_Type = {
 };
 
 static PyObject*
-test_lazy_hash_inheritance(PyObject* self)
+test_lazy_hash_inheritance(PyObject* self, PyObject *Py_UNUSED(ignored))
 {
     PyTypeObject *type;
     PyObject *obj;
@@ -411,7 +411,7 @@ raise_test_long_error(const char* msg)
 #include "testcapi_long.h"
 
 static PyObject *
-test_long_api(PyObject* self)
+test_long_api(PyObject* self, PyObject *Py_UNUSED(ignored))
 {
     return TESTNAME(raise_test_long_error);
 }
@@ -457,7 +457,7 @@ test_longlong_api(PyObject* self, PyObject *args)
 */
 
 static PyObject *
-test_long_and_overflow(PyObject *self)
+test_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *num, *one, *temp;
     long value;
@@ -621,7 +621,7 @@ test_long_and_overflow(PyObject *self)
 */
 
 static PyObject *
-test_long_long_and_overflow(PyObject *self)
+test_long_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *num, *one, *temp;
     long long value;
@@ -785,7 +785,7 @@ test_long_long_and_overflow(PyObject *self)
  */
 
 static PyObject *
-test_long_as_size_t(PyObject *self)
+test_long_as_size_t(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     size_t out_u;
     Py_ssize_t out_s;
@@ -821,7 +821,7 @@ test_long_as_size_t(PyObject *self)
  */
 
 static PyObject *
-test_long_as_double(PyObject *self)
+test_long_as_double(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     double out;
 
@@ -846,7 +846,7 @@ test_long_as_double(PyObject *self)
    it fails.
 */
 static PyObject *
-test_L_code(PyObject *self)
+test_L_code(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *tuple, *num;
     long long value;
@@ -1173,7 +1173,7 @@ getargs_K(PyObject *self, PyObject *args)
 /* This function not only tests the 'k' getargs code, but also the
    PyLong_AsUnsignedLongMask() function. */
 static PyObject *
-test_k_code(PyObject *self)
+test_k_code(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *tuple, *num;
     unsigned long value;
@@ -1531,7 +1531,7 @@ getargs_et_hash(PyObject *self, PyObject *args)
 /* Test the s and z codes for PyArg_ParseTuple.
 */
 static PyObject *
-test_s_code(PyObject *self)
+test_s_code(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     /* Unicode strings should be accepted */
     PyObject *tuple, *obj;
@@ -1637,7 +1637,7 @@ static volatile int x;
    of an error.
 */
 static PyObject *
-test_u_code(PyObject *self)
+test_u_code(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *tuple, *obj;
     Py_UNICODE *value;
@@ -1680,7 +1680,7 @@ test_u_code(PyObject *self)
 
 /* Test Z and Z# codes for PyArg_ParseTuple */
 static PyObject *
-test_Z_code(PyObject *self)
+test_Z_code(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *tuple, *obj;
     const Py_UNICODE *value1, *value2;
@@ -1735,7 +1735,7 @@ test_Z_code(PyObject *self)
 }
 
 static PyObject *
-test_widechar(PyObject *self)
+test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
 #if defined(SIZEOF_WCHAR_T) && (SIZEOF_WCHAR_T == 4)
     const wchar_t wtext[2] = {(wchar_t)0x10ABCDu};
@@ -2033,7 +2033,7 @@ getargs_w_star(PyObject *self, PyObject *args)
 
 
 static PyObject *
-test_empty_argparse(PyObject *self)
+test_empty_argparse(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     /* Test that formats can begin with '|'. See issue #4720. */
     PyObject *tuple, *dict = NULL;
@@ -2083,7 +2083,7 @@ codec_incrementaldecoder(PyObject *self, PyObject *args)
 
 /* Simple test of _PyLong_NumBits and _PyLong_Sign. */
 static PyObject *
-test_long_numbits(PyObject *self)
+test_long_numbits(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     struct triple {
         long input;
@@ -2131,7 +2131,7 @@ test_long_numbits(PyObject *self)
 /* Example passing NULLs to PyObject_Str(NULL). */
 
 static PyObject *
-test_null_strings(PyObject *self)
+test_null_strings(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *o1 = PyObject_Str(NULL), *o2 = PyObject_Str(NULL);
     PyObject *tuple = PyTuple_Pack(2, o1, o2);
@@ -2294,6 +2294,29 @@ make_timezones_capi(PyObject *self, PyObject *args) {
 }
 
 static PyObject *
+get_timezones_offset_zero(PyObject *self, PyObject *args) {
+    PyObject *offset = PyDelta_FromDSU(0, 0, 0);
+    PyObject *name = PyUnicode_FromString("");
+
+    // These two should return the UTC singleton
+    PyObject *utc_singleton_0 = PyTimeZone_FromOffset(offset);
+    PyObject *utc_singleton_1 = PyTimeZone_FromOffsetAndName(offset, NULL);
+
+    // This one will return +00:00 zone, but not the UTC singleton
+    PyObject *non_utc_zone = PyTimeZone_FromOffsetAndName(offset, name);
+
+    Py_DecRef(offset);
+    Py_DecRef(name);
+
+    PyObject *rv = PyTuple_New(3);
+    PyTuple_SET_ITEM(rv, 0, utc_singleton_0);
+    PyTuple_SET_ITEM(rv, 1, utc_singleton_1);
+    PyTuple_SET_ITEM(rv, 2, non_utc_zone);
+
+    return rv;
+}
+
+static PyObject *
 get_timezone_utc_capi(PyObject* self, PyObject *args) {
     int macro = 0;
     if (!PyArg_ParseTuple(args, "|p", &macro)) {
@@ -2406,7 +2429,8 @@ static int _pending_callback(void *arg)
 /* The following requests n callbacks to _pending_callback.  It can be
  * run from any python thread.
  */
-PyObject *pending_threadfunc(PyObject *self, PyObject *arg)
+static PyObject *
+pending_threadfunc(PyObject *self, PyObject *arg)
 {
     PyObject *callable;
     int r;
@@ -2469,7 +2493,7 @@ test_string_from_format(PyObject *self, PyObject *args)
 
 
 static PyObject *
-test_unicode_compare_with_ascii(PyObject *self) {
+test_unicode_compare_with_ascii(PyObject *self, PyObject *Py_UNUSED(ignored)) {
     PyObject *py_s = PyUnicode_FromStringAndSize("str\0", 4);
     int result;
     if (py_s == NULL)
@@ -2486,14 +2510,14 @@ test_unicode_compare_with_ascii(PyObject *self) {
 
 /* This is here to provide a docstring for test_descr. */
 static PyObject *
-test_with_docstring(PyObject *self)
+test_with_docstring(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     Py_RETURN_NONE;
 }
 
 /* Test PyOS_string_to_double. */
 static PyObject *
-test_string_to_double(PyObject *self) {
+test_string_to_double(PyObject *self, PyObject *Py_UNUSED(ignored)) {
     double result;
     const char *msg;
 
@@ -2858,7 +2882,7 @@ exception_print(PyObject *self, PyObject *args)
 
 /* reliably raise a MemoryError */
 static PyObject *
-raise_memoryerror(PyObject *self)
+raise_memoryerror(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyErr_NoMemory();
     return NULL;
@@ -2931,7 +2955,7 @@ make_exception_with_doc(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static PyObject *
-make_memoryview_from_NULL_pointer(PyObject *self)
+make_memoryview_from_NULL_pointer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     Py_buffer info;
     if (PyBuffer_FillInfo(&info, NULL, NULL, 1, 1, PyBUF_FULL_RO) < 0)
@@ -3044,7 +3068,7 @@ getbuffer_with_null_view(PyObject* self, PyObject *obj)
 /* Test that the fatal error from not having a current thread doesn't
    cause an infinite loop.  Run via Lib/test/test_capi.py */
 static PyObject *
-crash_no_current_thread(PyObject *self)
+crash_no_current_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     Py_BEGIN_ALLOW_THREADS
     /* Using PyThreadState_Get() directly allows the test to pass in
@@ -3192,8 +3216,7 @@ slot_tp_del(PyObject *self)
         _Py_NewReference(self);
         self->ob_refcnt = refcnt;
     }
-    assert(!PyType_IS_GC(Py_TYPE(self)) ||
-           _Py_AS_GC(self)->gc.gc_refs != _PyGC_REFS_UNTRACKED);
+    assert(!PyType_IS_GC(Py_TYPE(self)) || _PyObject_GC_IS_TRACKED(self));
     /* If Py_REF_DEBUG, _Py_NewReference bumped _Py_RefTotal, so
      * we need to undo that. */
     _Py_DEC_REFTOTAL;
@@ -3251,7 +3274,7 @@ _test_incref(PyObject *ob)
 }
 
 static PyObject *
-test_xincref_doesnt_leak(PyObject *ob)
+test_xincref_doesnt_leak(PyObject *ob, PyObject *Py_UNUSED(ignored))
 {
     PyObject *obj = PyLong_FromLong(0);
     Py_XINCREF(_test_incref(obj));
@@ -3262,7 +3285,7 @@ test_xincref_doesnt_leak(PyObject *ob)
 }
 
 static PyObject *
-test_incref_doesnt_leak(PyObject *ob)
+test_incref_doesnt_leak(PyObject *ob, PyObject *Py_UNUSED(ignored))
 {
     PyObject *obj = PyLong_FromLong(0);
     Py_INCREF(_test_incref(obj));
@@ -3273,21 +3296,21 @@ test_incref_doesnt_leak(PyObject *ob)
 }
 
 static PyObject *
-test_xdecref_doesnt_leak(PyObject *ob)
+test_xdecref_doesnt_leak(PyObject *ob, PyObject *Py_UNUSED(ignored))
 {
     Py_XDECREF(PyLong_FromLong(0));
     Py_RETURN_NONE;
 }
 
 static PyObject *
-test_decref_doesnt_leak(PyObject *ob)
+test_decref_doesnt_leak(PyObject *ob, PyObject *Py_UNUSED(ignored))
 {
     Py_DECREF(PyLong_FromLong(0));
     Py_RETURN_NONE;
 }
 
 static PyObject *
-test_incref_decref_API(PyObject *ob)
+test_incref_decref_API(PyObject *ob, PyObject *Py_UNUSED(ignored))
 {
     PyObject *obj = PyLong_FromLong(0);
     Py_IncRef(obj);
@@ -3297,7 +3320,7 @@ test_incref_decref_API(PyObject *ob)
 }
 
 static PyObject *
-test_pymem_alloc0(PyObject *self)
+test_pymem_alloc0(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     void *ptr;
 
@@ -3523,19 +3546,19 @@ finally:
 }
 
 static PyObject *
-test_pymem_setrawallocators(PyObject *self)
+test_pymem_setrawallocators(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return test_setallocators(PYMEM_DOMAIN_RAW);
 }
 
 static PyObject *
-test_pymem_setallocators(PyObject *self)
+test_pymem_setallocators(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return test_setallocators(PYMEM_DOMAIN_MEM);
 }
 
 static PyObject *
-test_pyobject_setallocators(PyObject *self)
+test_pyobject_setallocators(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return test_setallocators(PYMEM_DOMAIN_OBJ);
 }
@@ -3658,7 +3681,7 @@ set_nomemory(PyObject *self, PyObject *args)
 }
 
 static PyObject*
-remove_mem_hooks(PyObject *self)
+remove_mem_hooks(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     fm_remove_hooks();
     Py_RETURN_NONE;
@@ -4527,12 +4550,258 @@ new_hamt(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+encode_locale_ex(PyObject *self, PyObject *args)
+{
+    PyObject *unicode;
+    int current_locale = 0;
+    wchar_t *wstr;
+    PyObject *res = NULL;
+    const char *errors = NULL;
+
+    if (!PyArg_ParseTuple(args, "U|is", &unicode, &current_locale, &errors)) {
+        return NULL;
+    }
+    wstr = PyUnicode_AsWideCharString(unicode, NULL);
+    if (wstr == NULL) {
+        return NULL;
+    }
+    _Py_error_handler error_handler = _Py_GetErrorHandler(errors);
+
+    char *str = NULL;
+    size_t error_pos;
+    const char *reason = NULL;
+    int ret = _Py_EncodeLocaleEx(wstr,
+                                 &str, &error_pos, &reason,
+                                 current_locale, error_handler);
+    PyMem_Free(wstr);
+
+    switch(ret) {
+    case 0:
+        res = PyBytes_FromString(str);
+        PyMem_RawFree(str);
+        break;
+    case -1:
+        PyErr_NoMemory();
+        break;
+    case -2:
+        PyErr_Format(PyExc_RuntimeError, "encode error: pos=%zu, reason=%s",
+                     error_pos, reason);
+        break;
+    case -3:
+        PyErr_SetString(PyExc_ValueError, "unsupported error handler");
+        break;
+    default:
+        PyErr_SetString(PyExc_ValueError, "unknow error code");
+        break;
+    }
+    return res;
+}
+
+
+static PyObject *
+decode_locale_ex(PyObject *self, PyObject *args)
+{
+    char *str;
+    int current_locale = 0;
+    PyObject *res = NULL;
+    const char *errors = NULL;
+
+    if (!PyArg_ParseTuple(args, "y|is", &str, &current_locale, &errors)) {
+        return NULL;
+    }
+    _Py_error_handler error_handler = _Py_GetErrorHandler(errors);
+
+    wchar_t *wstr = NULL;
+    size_t wlen = 0;
+    const char *reason = NULL;
+    int ret = _Py_DecodeLocaleEx(str,
+                                 &wstr, &wlen, &reason,
+                                 current_locale, error_handler);
+
+    switch(ret) {
+    case 0:
+        res = PyUnicode_FromWideChar(wstr, wlen);
+        PyMem_RawFree(wstr);
+        break;
+    case -1:
+        PyErr_NoMemory();
+        break;
+    case -2:
+        PyErr_Format(PyExc_RuntimeError, "decode error: pos=%zu, reason=%s",
+                     wlen, reason);
+        break;
+    case -3:
+        PyErr_SetString(PyExc_ValueError, "unsupported error handler");
+        break;
+    default:
+        PyErr_SetString(PyExc_ValueError, "unknow error code");
+        break;
+    }
+    return res;
+}
+
+
+static PyObject *
+get_coreconfig(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    const _PyCoreConfig *config = &interp->core_config;
+    PyObject *dict, *obj;
+
+    dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+
+#define FROM_STRING(STR) \
+    ((STR != NULL) ? \
+        PyUnicode_FromString(STR) \
+        : (Py_INCREF(Py_None), Py_None))
+#define FROM_WSTRING(STR) \
+    ((STR != NULL) ? \
+        PyUnicode_FromWideChar(STR, -1) \
+        : (Py_INCREF(Py_None), Py_None))
+#define SET_ITEM(KEY, EXPR) \
+        do { \
+            obj = (EXPR); \
+            if (obj == NULL) { \
+                return NULL; \
+            } \
+            int res = PyDict_SetItemString(dict, (KEY), obj); \
+            Py_DECREF(obj); \
+            if (res < 0) { \
+                goto fail; \
+            } \
+        } while (0)
+
+    SET_ITEM("install_signal_handlers",
+             PyLong_FromLong(config->install_signal_handlers));
+    SET_ITEM("use_environment",
+             PyLong_FromLong(config->use_environment));
+    SET_ITEM("use_hash_seed",
+             PyLong_FromLong(config->use_hash_seed));
+    SET_ITEM("hash_seed",
+             PyLong_FromUnsignedLong(config->hash_seed));
+    SET_ITEM("allocator",
+             FROM_STRING(config->allocator));
+    SET_ITEM("dev_mode",
+             PyLong_FromLong(config->dev_mode));
+    SET_ITEM("faulthandler",
+             PyLong_FromLong(config->faulthandler));
+    SET_ITEM("tracemalloc",
+             PyLong_FromLong(config->tracemalloc));
+    SET_ITEM("import_time",
+             PyLong_FromLong(config->import_time));
+    SET_ITEM("show_ref_count",
+             PyLong_FromLong(config->show_ref_count));
+    SET_ITEM("show_alloc_count",
+             PyLong_FromLong(config->show_alloc_count));
+    SET_ITEM("dump_refs",
+             PyLong_FromLong(config->dump_refs));
+    SET_ITEM("malloc_stats",
+             PyLong_FromLong(config->malloc_stats));
+    SET_ITEM("coerce_c_locale",
+             PyLong_FromLong(config->coerce_c_locale));
+    SET_ITEM("coerce_c_locale_warn",
+             PyLong_FromLong(config->coerce_c_locale_warn));
+    SET_ITEM("filesystem_encoding",
+             FROM_STRING(config->filesystem_encoding));
+    SET_ITEM("filesystem_errors",
+             FROM_STRING(config->filesystem_errors));
+    SET_ITEM("stdio_encoding",
+             FROM_STRING(config->stdio_encoding));
+    SET_ITEM("utf8_mode",
+             PyLong_FromLong(config->utf8_mode));
+    SET_ITEM("pycache_prefix",
+             FROM_WSTRING(config->pycache_prefix));
+    SET_ITEM("program_name",
+             FROM_WSTRING(config->program_name));
+    SET_ITEM("argv",
+             _Py_wstrlist_as_pylist(config->argc, config->argv));
+    SET_ITEM("program",
+             FROM_WSTRING(config->program));
+    SET_ITEM("warnoptions",
+             _Py_wstrlist_as_pylist(config->nwarnoption, config->warnoptions));
+    SET_ITEM("module_search_path_env",
+             FROM_WSTRING(config->module_search_path_env));
+    SET_ITEM("home",
+             FROM_WSTRING(config->home));
+    SET_ITEM("module_search_paths",
+             _Py_wstrlist_as_pylist(config->nmodule_search_path, config->module_search_paths));
+    SET_ITEM("executable",
+             FROM_WSTRING(config->executable));
+    SET_ITEM("prefix",
+             FROM_WSTRING(config->prefix));
+    SET_ITEM("base_prefix",
+             FROM_WSTRING(config->base_prefix));
+    SET_ITEM("exec_prefix",
+             FROM_WSTRING(config->exec_prefix));
+    SET_ITEM("base_exec_prefix",
+             FROM_WSTRING(config->base_exec_prefix));
+#ifdef MS_WINDOWS
+    SET_ITEM("dll_path",
+             FROM_WSTRING(config->dll_path));
+#endif
+    SET_ITEM("isolated",
+             PyLong_FromLong(config->isolated));
+    SET_ITEM("site_import",
+             PyLong_FromLong(config->site_import));
+    SET_ITEM("bytes_warning",
+             PyLong_FromLong(config->bytes_warning));
+    SET_ITEM("inspect",
+             PyLong_FromLong(config->inspect));
+    SET_ITEM("interactive",
+             PyLong_FromLong(config->interactive));
+    SET_ITEM("optimization_level",
+             PyLong_FromLong(config->optimization_level));
+    SET_ITEM("parser_debug",
+             PyLong_FromLong(config->parser_debug));
+    SET_ITEM("write_bytecode",
+             PyLong_FromLong(config->write_bytecode));
+    SET_ITEM("verbose",
+             PyLong_FromLong(config->verbose));
+    SET_ITEM("quiet",
+             PyLong_FromLong(config->quiet));
+    SET_ITEM("user_site_directory",
+             PyLong_FromLong(config->user_site_directory));
+    SET_ITEM("buffered_stdio",
+             PyLong_FromLong(config->buffered_stdio));
+    SET_ITEM("stdio_encoding",
+             FROM_STRING(config->stdio_encoding));
+    SET_ITEM("stdio_errors",
+             FROM_STRING(config->stdio_errors));
+#ifdef MS_WINDOWS
+    SET_ITEM("legacy_windows_fs_encoding",
+             PyLong_FromLong(config->legacy_windows_fs_encoding));
+    SET_ITEM("legacy_windows_stdio",
+             PyLong_FromLong(config->legacy_windows_stdio));
+#endif
+    SET_ITEM("_install_importlib",
+             PyLong_FromLong(config->_install_importlib));
+    SET_ITEM("_check_hash_pycs_mode",
+             FROM_STRING(config->_check_hash_pycs_mode));
+    SET_ITEM("_frozen",
+             PyLong_FromLong(config->_frozen));
+
+    return dict;
+
+fail:
+    Py_DECREF(dict);
+    return NULL;
+
+#undef FROM_STRING
+#undef FROM_WSTRING
+#undef SET_ITEM
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
-    {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
+    {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
     {"set_errno",               set_errno,                       METH_VARARGS},
-    {"test_config",             (PyCFunction)test_config,        METH_NOARGS},
-    {"test_sizeof_c_types",     (PyCFunction)test_sizeof_c_types, METH_NOARGS},
+    {"test_config",             test_config,                     METH_NOARGS},
+    {"test_sizeof_c_types",     test_sizeof_c_types,             METH_NOARGS},
     {"test_datetime_capi",  test_datetime_capi,              METH_NOARGS},
     {"datetime_check_date",     datetime_check_date,             METH_VARARGS},
     {"datetime_check_time",     datetime_check_time,             METH_VARARGS},
@@ -4540,32 +4809,33 @@ static PyMethodDef TestMethods[] = {
     {"datetime_check_delta",     datetime_check_delta,           METH_VARARGS},
     {"datetime_check_tzinfo",     datetime_check_tzinfo,         METH_VARARGS},
     {"make_timezones_capi",     make_timezones_capi,             METH_NOARGS},
+    {"get_timezones_offset_zero",   get_timezones_offset_zero,   METH_NOARGS},
     {"get_timezone_utc_capi",    get_timezone_utc_capi,            METH_VARARGS},
-    {"test_list_api",           (PyCFunction)test_list_api,      METH_NOARGS},
-    {"test_dict_iteration",     (PyCFunction)test_dict_iteration,METH_NOARGS},
+    {"test_list_api",           test_list_api,                   METH_NOARGS},
+    {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
     {"dict_hassplittable",      dict_hassplittable,              METH_O},
-    {"test_lazy_hash_inheritance",      (PyCFunction)test_lazy_hash_inheritance,METH_NOARGS},
-    {"test_long_api",           (PyCFunction)test_long_api,      METH_NOARGS},
-    {"test_xincref_doesnt_leak",(PyCFunction)test_xincref_doesnt_leak,      METH_NOARGS},
-    {"test_incref_doesnt_leak", (PyCFunction)test_incref_doesnt_leak,      METH_NOARGS},
-    {"test_xdecref_doesnt_leak",(PyCFunction)test_xdecref_doesnt_leak,      METH_NOARGS},
-    {"test_decref_doesnt_leak", (PyCFunction)test_decref_doesnt_leak,      METH_NOARGS},
-    {"test_incref_decref_API",  (PyCFunction)test_incref_decref_API,       METH_NOARGS},
-    {"test_long_and_overflow", (PyCFunction)test_long_and_overflow,
-     METH_NOARGS},
-    {"test_long_as_double",     (PyCFunction)test_long_as_double,METH_NOARGS},
-    {"test_long_as_size_t",     (PyCFunction)test_long_as_size_t,METH_NOARGS},
-    {"test_long_numbits",       (PyCFunction)test_long_numbits,  METH_NOARGS},
-    {"test_k_code",             (PyCFunction)test_k_code,        METH_NOARGS},
-    {"test_empty_argparse", (PyCFunction)test_empty_argparse,METH_NOARGS},
+    {"test_lazy_hash_inheritance",      test_lazy_hash_inheritance,METH_NOARGS},
+    {"test_long_api",           test_long_api,                   METH_NOARGS},
+    {"test_xincref_doesnt_leak",test_xincref_doesnt_leak,        METH_NOARGS},
+    {"test_incref_doesnt_leak", test_incref_doesnt_leak,         METH_NOARGS},
+    {"test_xdecref_doesnt_leak",test_xdecref_doesnt_leak,        METH_NOARGS},
+    {"test_decref_doesnt_leak", test_decref_doesnt_leak,         METH_NOARGS},
+    {"test_incref_decref_API",  test_incref_decref_API,          METH_NOARGS},
+    {"test_long_and_overflow",  test_long_and_overflow,          METH_NOARGS},
+    {"test_long_as_double",     test_long_as_double,             METH_NOARGS},
+    {"test_long_as_size_t",     test_long_as_size_t,             METH_NOARGS},
+    {"test_long_numbits",       test_long_numbits,               METH_NOARGS},
+    {"test_k_code",             test_k_code,                     METH_NOARGS},
+    {"test_empty_argparse",     test_empty_argparse,             METH_NOARGS},
     {"parse_tuple_and_keywords", parse_tuple_and_keywords, METH_VARARGS},
-    {"test_null_strings",       (PyCFunction)test_null_strings,  METH_NOARGS},
+    {"test_null_strings",       test_null_strings,               METH_NOARGS},
     {"test_string_from_format", (PyCFunction)test_string_from_format, METH_NOARGS},
-    {"test_with_docstring", (PyCFunction)test_with_docstring, METH_NOARGS,
+    {"test_with_docstring",     test_with_docstring,             METH_NOARGS,
      PyDoc_STR("This is a pretty normal docstring.")},
-    {"test_string_to_double", (PyCFunction)test_string_to_double, METH_NOARGS},
-    {"test_unicode_compare_with_ascii", (PyCFunction)test_unicode_compare_with_ascii, METH_NOARGS},
+    {"test_string_to_double",   test_string_to_double,           METH_NOARGS},
+    {"test_unicode_compare_with_ascii", test_unicode_compare_with_ascii,
+     METH_NOARGS},
     {"test_capsule", (PyCFunction)test_capsule, METH_NOARGS},
     {"test_from_contiguous", (PyCFunction)test_from_contiguous, METH_NOARGS},
 #if (defined(__linux__) || defined(__FreeBSD__)) && defined(__GNUC__)
@@ -4596,9 +4866,8 @@ static PyMethodDef TestMethods[] = {
     {"getargs_L",               getargs_L,                       METH_VARARGS},
     {"getargs_K",               getargs_K,                       METH_VARARGS},
     {"test_longlong_api",       test_longlong_api,               METH_NOARGS},
-    {"test_long_long_and_overflow",
-        (PyCFunction)test_long_long_and_overflow, METH_NOARGS},
-    {"test_L_code",             (PyCFunction)test_L_code,        METH_NOARGS},
+    {"test_long_long_and_overflow",test_long_long_and_overflow,  METH_NOARGS},
+    {"test_L_code",             test_L_code,                     METH_NOARGS},
     {"getargs_f",               getargs_f,                       METH_VARARGS},
     {"getargs_d",               getargs_d,                       METH_VARARGS},
     {"getargs_D",               getargs_D,                       METH_VARARGS},
@@ -4629,10 +4898,10 @@ static PyMethodDef TestMethods[] = {
      (PyCFunction)codec_incrementalencoder,                      METH_VARARGS},
     {"codec_incrementaldecoder",
      (PyCFunction)codec_incrementaldecoder,                      METH_VARARGS},
-    {"test_s_code",             (PyCFunction)test_s_code,        METH_NOARGS},
-    {"test_u_code",             (PyCFunction)test_u_code,        METH_NOARGS},
-    {"test_Z_code",             (PyCFunction)test_Z_code,        METH_NOARGS},
-    {"test_widechar",           (PyCFunction)test_widechar,      METH_NOARGS},
+    {"test_s_code",             test_s_code,                     METH_NOARGS},
+    {"test_u_code",             test_u_code,                     METH_NOARGS},
+    {"test_Z_code",             test_Z_code,                     METH_NOARGS},
+    {"test_widechar",           test_widechar,                   METH_NOARGS},
     {"unicode_aswidechar",      unicode_aswidechar,              METH_VARARGS},
     {"unicode_aswidecharstring",unicode_aswidecharstring,        METH_VARARGS},
     {"unicode_asucs4",          unicode_asucs4,                  METH_VARARGS},
@@ -4653,26 +4922,22 @@ static PyMethodDef TestMethods[] = {
     {"code_newempty",           code_newempty,                   METH_VARARGS},
     {"make_exception_with_doc", (PyCFunction)make_exception_with_doc,
      METH_VARARGS | METH_KEYWORDS},
-    {"make_memoryview_from_NULL_pointer", (PyCFunction)make_memoryview_from_NULL_pointer,
+    {"make_memoryview_from_NULL_pointer", make_memoryview_from_NULL_pointer,
      METH_NOARGS},
-    {"crash_no_current_thread", (PyCFunction)crash_no_current_thread, METH_NOARGS},
+    {"crash_no_current_thread", crash_no_current_thread,         METH_NOARGS},
     {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
     {"pytime_object_to_time_t", test_pytime_object_to_time_t,  METH_VARARGS},
     {"pytime_object_to_timeval", test_pytime_object_to_timeval,  METH_VARARGS},
     {"pytime_object_to_timespec", test_pytime_object_to_timespec,  METH_VARARGS},
     {"with_tp_del",             with_tp_del,                     METH_VARARGS},
     {"create_cfunction",        create_cfunction,                METH_NOARGS},
-    {"test_pymem_alloc0",
-     (PyCFunction)test_pymem_alloc0, METH_NOARGS},
-    {"test_pymem_setrawallocators",
-     (PyCFunction)test_pymem_setrawallocators, METH_NOARGS},
-    {"test_pymem_setallocators",
-     (PyCFunction)test_pymem_setallocators, METH_NOARGS},
-    {"test_pyobject_setallocators",
-     (PyCFunction)test_pyobject_setallocators, METH_NOARGS},
+    {"test_pymem_alloc0",       test_pymem_alloc0,               METH_NOARGS},
+    {"test_pymem_setrawallocators",test_pymem_setrawallocators,  METH_NOARGS},
+    {"test_pymem_setallocators",test_pymem_setallocators,        METH_NOARGS},
+    {"test_pyobject_setallocators",test_pyobject_setallocators,  METH_NOARGS},
     {"set_nomemory", (PyCFunction)set_nomemory, METH_VARARGS,
      PyDoc_STR("set_nomemory(start:int, stop:int = 0)")},
-    {"remove_mem_hooks", (PyCFunction)remove_mem_hooks, METH_NOARGS,
+    {"remove_mem_hooks",        remove_mem_hooks,                METH_NOARGS,
      PyDoc_STR("Remove memory hooks.")},
     {"no_docstring",
         (PyCFunction)test_with_docstring, METH_NOARGS},
@@ -4752,6 +5017,9 @@ static PyMethodDef TestMethods[] = {
     {"get_mapping_items", get_mapping_items, METH_O},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {"hamt", new_hamt, METH_NOARGS},
+    {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
+    {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
+    {"get_coreconfig", get_coreconfig, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -5175,7 +5443,7 @@ static PyMethodDef generic_alias_methods[] = {
     {NULL}  /* sentinel */
 };
 
-PyTypeObject GenericAlias_Type = {
+static PyTypeObject GenericAlias_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "GenericAlias",
     sizeof(PyGenericAliasObject),
@@ -5212,7 +5480,7 @@ static PyMethodDef generic_methods[] = {
     {NULL}  /* sentinel */
 };
 
-PyTypeObject Generic_Type = {
+static PyTypeObject Generic_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "Generic",
     sizeof(PyGenericObject),

@@ -1,0 +1,3 @@
+Deprecate ``Py_UNICODE`` usage in ``c-api/arg`` document. ``Py_UNICODE``
+related APIs are deprecated since Python 3.3, but it is missed in the
+document.

@@ -1,0 +1,1 @@
+Fix a leak in set_symmetric_difference().

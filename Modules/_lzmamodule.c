@@ -1163,17 +1163,21 @@ _lzma_LZMADecompressor___init___impl(Decompressor *self, int format,
     self->lzs.allocator = &self->alloc;
     self->lzs.next_in = NULL;
 
-    self->lock = PyThread_allocate_lock();
-    if (self->lock == NULL) {
+    PyThread_type_lock lock = PyThread_allocate_lock();
+    if (lock == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
         return -1;
     }
+    if (self->lock != NULL) {
+        PyThread_free_lock(self->lock);
+    }
+    self->lock = lock;
 
     self->check = LZMA_CHECK_UNKNOWN;
     self->needs_input = 1;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-    self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
+    Py_XSETREF(self->unused_data, PyBytes_FromStringAndSize(NULL, 0));
     if (self->unused_data == NULL)
         goto error;
 

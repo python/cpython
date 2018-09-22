@@ -972,20 +972,23 @@ PyDoc_STRVAR(os__getfinalpathname__doc__,
     {"_getfinalpathname", (PyCFunction)os__getfinalpathname, METH_O, os__getfinalpathname__doc__},
 
 static PyObject *
-os__getfinalpathname_impl(PyObject *module, PyObject *path);
+os__getfinalpathname_impl(PyObject *module, path_t *path);
 
 static PyObject *
 os__getfinalpathname(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    PyObject *path;
+    path_t path = PATH_T_INITIALIZE("_getfinalpathname", "path", 0, 0);
 
-    if (!PyArg_Parse(arg, "U:_getfinalpathname", &path)) {
+    if (!PyArg_Parse(arg, "O&:_getfinalpathname", path_converter, &path)) {
         goto exit;
     }
-    return_value = os__getfinalpathname_impl(module, path);
+    return_value = os__getfinalpathname_impl(module, &path);
 
 exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
     return return_value;
 }
 
@@ -1002,27 +1005,6 @@ PyDoc_STRVAR(os__isdir__doc__,
 #define OS__ISDIR_METHODDEF    \
     {"_isdir", (PyCFunction)os__isdir, METH_O, os__isdir__doc__},
 
-static PyObject *
-os__isdir_impl(PyObject *module, path_t *path);
-
-static PyObject *
-os__isdir(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    path_t path = PATH_T_INITIALIZE("_isdir", "path", 0, 0);
-
-    if (!PyArg_Parse(arg, "O&:_isdir", path_converter, &path)) {
-        goto exit;
-    }
-    return_value = os__isdir_impl(module, &path);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 #endif /* defined(MS_WINDOWS) */
 
 #if defined(MS_WINDOWS)
@@ -1037,23 +1019,26 @@ PyDoc_STRVAR(os__getvolumepathname__doc__,
     {"_getvolumepathname", (PyCFunction)os__getvolumepathname, METH_FASTCALL|METH_KEYWORDS, os__getvolumepathname__doc__},
 
 static PyObject *
-os__getvolumepathname_impl(PyObject *module, PyObject *path);
+os__getvolumepathname_impl(PyObject *module, path_t *path);
 
 static PyObject *
 os__getvolumepathname(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {"U:_getvolumepathname", _keywords, 0};
-    PyObject *path;
+    static _PyArg_Parser _parser = {"O&:_getvolumepathname", _keywords, 0};
+    path_t path = PATH_T_INITIALIZE("_getvolumepathname", "path", 0, 0);
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &path)) {
+        path_converter, &path)) {
         goto exit;
     }
-    return_value = os__getvolumepathname_impl(module, path);
+    return_value = os__getvolumepathname_impl(module, &path);
 
 exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
     return return_value;
 }
 
@@ -1724,7 +1709,9 @@ exit:
 #if defined(HAVE_POSIX_SPAWN)
 
 PyDoc_STRVAR(os_posix_spawn__doc__,
-"posix_spawn($module, path, argv, env, file_actions=None, /)\n"
+"posix_spawn($module, path, argv, env, /, *, file_actions=(),\n"
+"            setpgroup=None, resetids=False, setsigmask=(),\n"
+"            setsigdef=(), scheduler=None)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -1736,29 +1723,48 @@ PyDoc_STRVAR(os_posix_spawn__doc__,
 "  env\n"
 "    Dictionary of strings mapping to strings.\n"
 "  file_actions\n"
-"    FileActions object.");
+"    A sequence of file action tuples.\n"
+"  setpgroup\n"
+"    The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.\n"
+"  resetids\n"
+"    If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.\n"
+"  setsigmask\n"
+"    The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.\n"
+"  setsigdef\n"
+"    The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.\n"
+"  scheduler\n"
+"    A tuple with the scheduler policy (optional) and parameters.");
 
 #define OS_POSIX_SPAWN_METHODDEF    \
-    {"posix_spawn", (PyCFunction)os_posix_spawn, METH_FASTCALL, os_posix_spawn__doc__},
+    {"posix_spawn", (PyCFunction)os_posix_spawn, METH_FASTCALL|METH_KEYWORDS, os_posix_spawn__doc__},
 
 static PyObject *
 os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
-                    PyObject *env, PyObject *file_actions);
+                    PyObject *env, PyObject *file_actions,
+                    PyObject *setpgroup, int resetids, PyObject *setsigmask,
+                    PyObject *setsigdef, PyObject *scheduler);
 
 static PyObject *
-os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsigmask", "setsigdef", "scheduler", NULL};
+    static _PyArg_Parser _parser = {"O&OO|$OOiOOO:posix_spawn", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("posix_spawn", "path", 0, 0);
     PyObject *argv;
     PyObject *env;
-    PyObject *file_actions = Py_None;
+    PyObject *file_actions = NULL;
+    PyObject *setpgroup = NULL;
+    int resetids = 0;
+    PyObject *setsigmask = NULL;
+    PyObject *setsigdef = NULL;
+    PyObject *scheduler = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&OO|O:posix_spawn",
-        path_converter, &path, &argv, &env, &file_actions)) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        path_converter, &path, &argv, &env, &file_actions, &setpgroup, &resetids, &setsigmask, &setsigdef, &scheduler)) {
         goto exit;
     }
-    return_value = os_posix_spawn_impl(module, &path, argv, env, file_actions);
+    return_value = os_posix_spawn_impl(module, &path, argv, env, file_actions, setpgroup, resetids, setsigmask, setsigdef, scheduler);
 
 exit:
     /* Cleanup for path */
@@ -3159,6 +3165,50 @@ os_wait(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_WAIT) */
 
+#if (defined(HAVE_READLINK) || defined(MS_WINDOWS))
+
+PyDoc_STRVAR(os_readlink__doc__,
+"readlink($module, /, path, *, dir_fd=None)\n"
+"--\n"
+"\n"
+"Return a string representing the path to which the symbolic link points.\n"
+"\n"
+"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
+"and path should be relative; path will then be relative to that directory.\n"
+"\n"
+"dir_fd may not be implemented on your platform.  If it is unavailable,\n"
+"using it will raise a NotImplementedError.");
+
+#define OS_READLINK_METHODDEF    \
+    {"readlink", (PyCFunction)os_readlink, METH_FASTCALL|METH_KEYWORDS, os_readlink__doc__},
+
+static PyObject *
+os_readlink_impl(PyObject *module, path_t *path, int dir_fd);
+
+static PyObject *
+os_readlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"path", "dir_fd", NULL};
+    static _PyArg_Parser _parser = {"O&|$O&:readlink", _keywords, 0};
+    path_t path = PATH_T_INITIALIZE("readlink", "path", 0, 0);
+    int dir_fd = DEFAULT_DIR_FD;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        path_converter, &path, READLINKAT_DIR_FD_CONVERTER, &dir_fd)) {
+        goto exit;
+    }
+    return_value = os_readlink_impl(module, &path, dir_fd);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* (defined(HAVE_READLINK) || defined(MS_WINDOWS)) */
+
 #if defined(HAVE_SYMLINK)
 
 PyDoc_STRVAR(os_symlink__doc__,
@@ -3846,6 +3896,40 @@ exit:
 
     return return_value;
 }
+
+#if defined(__APPLE__)
+
+PyDoc_STRVAR(os__fcopyfile__doc__,
+"_fcopyfile($module, infd, outfd, flags, /)\n"
+"--\n"
+"\n"
+"Efficiently copy content or metadata of 2 regular file descriptors (macOS).");
+
+#define OS__FCOPYFILE_METHODDEF    \
+    {"_fcopyfile", (PyCFunction)os__fcopyfile, METH_FASTCALL, os__fcopyfile__doc__},
+
+static PyObject *
+os__fcopyfile_impl(PyObject *module, int infd, int outfd, int flags);
+
+static PyObject *
+os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int infd;
+    int outfd;
+    int flags;
+
+    if (!_PyArg_ParseStack(args, nargs, "iii:_fcopyfile",
+        &infd, &outfd, &flags)) {
+        goto exit;
+    }
+    return_value = os__fcopyfile_impl(module, infd, outfd, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(__APPLE__) */
 
 PyDoc_STRVAR(os_fstat__doc__,
 "fstat($module, /, fd)\n"
@@ -5014,23 +5098,26 @@ PyDoc_STRVAR(os__getdiskusage__doc__,
     {"_getdiskusage", (PyCFunction)os__getdiskusage, METH_FASTCALL|METH_KEYWORDS, os__getdiskusage__doc__},
 
 static PyObject *
-os__getdiskusage_impl(PyObject *module, Py_UNICODE *path);
+os__getdiskusage_impl(PyObject *module, path_t *path);
 
 static PyObject *
 os__getdiskusage(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {"u:_getdiskusage", _keywords, 0};
-    Py_UNICODE *path;
+    static _PyArg_Parser _parser = {"O&:_getdiskusage", _keywords, 0};
+    path_t path = PATH_T_INITIALIZE("_getdiskusage", "path", 0, 0);
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &path)) {
+        path_converter, &path)) {
         goto exit;
     }
-    return_value = os__getdiskusage_impl(module, path);
+    return_value = os__getdiskusage_impl(module, &path);
 
 exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
     return return_value;
 }
 
@@ -5809,6 +5896,80 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
+#if !defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os_get_blocking__doc__,
+"get_blocking($module, fd, /)\n"
+"--\n"
+"\n"
+"Get the blocking mode of the file descriptor.\n"
+"\n"
+"Return False if the O_NONBLOCK flag is set, True if the flag is cleared.");
+
+#define OS_GET_BLOCKING_METHODDEF    \
+    {"get_blocking", (PyCFunction)os_get_blocking, METH_O, os_get_blocking__doc__},
+
+static int
+os_get_blocking_impl(PyObject *module, int fd);
+
+static PyObject *
+os_get_blocking(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    int _return_value;
+
+    if (!PyArg_Parse(arg, "i:get_blocking", &fd)) {
+        goto exit;
+    }
+    _return_value = os_get_blocking_impl(module, fd);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* !defined(MS_WINDOWS) */
+
+#if !defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os_set_blocking__doc__,
+"set_blocking($module, fd, blocking, /)\n"
+"--\n"
+"\n"
+"Set the blocking mode of the specified file descriptor.\n"
+"\n"
+"Set the O_NONBLOCK flag if blocking is False,\n"
+"clear the O_NONBLOCK flag otherwise.");
+
+#define OS_SET_BLOCKING_METHODDEF    \
+    {"set_blocking", (PyCFunction)os_set_blocking, METH_FASTCALL, os_set_blocking__doc__},
+
+static PyObject *
+os_set_blocking_impl(PyObject *module, int fd, int blocking);
+
+static PyObject *
+os_set_blocking(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    int blocking;
+
+    if (!_PyArg_ParseStack(args, nargs, "ii:set_blocking",
+        &fd, &blocking)) {
+        goto exit;
+    }
+    return_value = os_set_blocking_impl(module, fd, blocking);
+
+exit:
+    return return_value;
+}
+
+#endif /* !defined(MS_WINDOWS) */
+
 PyDoc_STRVAR(os_DirEntry_is_symlink__doc__,
 "is_symlink($self, /)\n"
 "--\n"
@@ -6361,6 +6522,10 @@ exit:
     #define OS_WAIT_METHODDEF
 #endif /* !defined(OS_WAIT_METHODDEF) */
 
+#ifndef OS_READLINK_METHODDEF
+    #define OS_READLINK_METHODDEF
+#endif /* !defined(OS_READLINK_METHODDEF) */
+
 #ifndef OS_SYMLINK_METHODDEF
     #define OS_SYMLINK_METHODDEF
 #endif /* !defined(OS_SYMLINK_METHODDEF) */
@@ -6404,6 +6569,10 @@ exit:
 #ifndef OS_PREADV_METHODDEF
     #define OS_PREADV_METHODDEF
 #endif /* !defined(OS_PREADV_METHODDEF) */
+
+#ifndef OS__FCOPYFILE_METHODDEF
+    #define OS__FCOPYFILE_METHODDEF
+#endif /* !defined(OS__FCOPYFILE_METHODDEF) */
 
 #ifndef OS_PIPE_METHODDEF
     #define OS_PIPE_METHODDEF
@@ -6577,7 +6746,15 @@ exit:
     #define OS_SET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_SET_HANDLE_INHERITABLE_METHODDEF) */
 
+#ifndef OS_GET_BLOCKING_METHODDEF
+    #define OS_GET_BLOCKING_METHODDEF
+#endif /* !defined(OS_GET_BLOCKING_METHODDEF) */
+
+#ifndef OS_SET_BLOCKING_METHODDEF
+    #define OS_SET_BLOCKING_METHODDEF
+#endif /* !defined(OS_SET_BLOCKING_METHODDEF) */
+
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=8e5d4a01257b6292 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=40cac0135f846202 input=a9049054013a1b77]*/

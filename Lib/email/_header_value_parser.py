@@ -1875,7 +1875,7 @@ def get_group(value):
     if not value:
         group.defects.append(errors.InvalidHeaderDefect(
             "end of header in group"))
-    if value[0] != ';':
+    elif value[0] != ';':
         raise errors.HeaderParseError(
             "expected ';' at end of group but found {}".format(value))
     group.append(ValueTerminal(';', 'group-terminator'))
@@ -2745,8 +2745,8 @@ def _fold_mime_parameters(part, lines, maxlen, encoding):
 
     Using the decoded list of parameters and values, format them according to
     the RFC rules, including using RFC2231 encoding if the value cannot be
-    expressed in 'encoding' and/or the paramter+value is too long to fit within
-    'maxlen'.
+    expressed in 'encoding' and/or the parameter+value is too long to fit
+    within 'maxlen'.
 
     """
     # Special case for RFC2231 encoding: start from decoded values and use

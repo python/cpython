@@ -70,12 +70,24 @@ created.  Socket addresses are represented as follows:
   notation like ``'daring.cwi.nl'`` or an IPv4 address like ``'100.50.200.5'``,
   and *port* is an integer.
 
+  - For IPv4 addresses, two special forms are accepted instead of a host
+    address: ``''`` represents :const:`INADDR_ANY`, which is used to bind to all
+    interfaces, and the string ``'<broadcast>'`` represents
+    :const:`INADDR_BROADCAST`.  This behavior is not compatible with IPv6,
+    therefore, you may want to avoid these if you intend to support IPv6 with your
+    Python programs.
+
 - For :const:`AF_INET6` address family, a four-tuple ``(host, port, flowinfo,
   scopeid)`` is used, where *flowinfo* and *scopeid* represent the ``sin6_flowinfo``
   and ``sin6_scope_id`` members in :const:`struct sockaddr_in6` in C.  For
   :mod:`socket` module methods, *flowinfo* and *scopeid* can be omitted just for
   backward compatibility.  Note, however, omission of *scopeid* can cause problems
   in manipulating scoped IPv6 addresses.
+
+  .. versionchanged:: 3.7
+     For multicast addresses (with *scopeid* meaningful) *address* may not contain
+     ``%scope`` (or ``zone id``) part. This information is superfluous and may
+     be safely omitted (recommended).
 
 - :const:`AF_NETLINK` sockets are represented as pairs ``(pid, groups)``.
 
@@ -161,16 +173,25 @@ created.  Socket addresses are represented as follows:
 
   .. versionadded:: 3.7
 
-- Certain other address families (:const:`AF_PACKET`, :const:`AF_CAN`)
-  support specific representations.
+- :const:`AF_PACKET` is a low-level interface directly to network devices.
+  The packets are represented by the tuple
+  ``(ifname, proto[, pkttype[, hatype[, addr]]])`` where:
 
-  .. XXX document them!
+  - *ifname* - String specifying the device name.
+  - *proto* - An in network-byte-order integer specifying the Ethernet
+    protocol number.
+  - *pkttype* - Optional integer specifying the packet type:
 
-For IPv4 addresses, two special forms are accepted instead of a host address:
-the empty string represents :const:`INADDR_ANY`, and the string
-``'<broadcast>'`` represents :const:`INADDR_BROADCAST`.  This behavior is not
-compatible with IPv6, therefore, you may want to avoid these if you intend
-to support IPv6 with your Python programs.
+    - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
+    - ``PACKET_BROADCAST`` - Physical-layer broadcast packet.
+    - ``PACKET_MULTIHOST`` - Packet sent to a physical-layer multicast address.
+    - ``PACKET_OTHERHOST`` - Packet to some other host that has been caught by
+      a device driver in promiscuous mode.
+    - ``PACKET_OUTGOING`` - Packet originating from the local host that is
+      looped back to a packet socket.
+  - *hatype* - Optional integer specifying the ARP hardware address type.
+  - *addr* - Optional bytes-like object specifying the hardware physical
+    address, whose interpretation depends on the device.
 
 If you use a hostname in the *host* portion of IPv4/v6 socket address, the
 program may show a nondeterministic behavior, as Python uses the first address
@@ -315,8 +336,15 @@ Constants
       ``SO_DOMAIN``, ``SO_PROTOCOL``, ``SO_PEERSEC``, ``SO_PASSSEC``,
       ``TCP_USER_TIMEOUT``, ``TCP_CONGESTION`` were added.
 
+   .. versionchanged:: 3.6.5
+      On Windows, ``TCP_FASTOPEN``, ``TCP_KEEPCNT`` appear if run-time Windows
+      supports.
+
    .. versionchanged:: 3.7
       ``TCP_NOTSENT_LOWAT`` was added.
+
+      On Windows, ``TCP_KEEPIDLE``, ``TCP_KEEPINTVL`` appear if run-time Windows
+      supports.
 
 .. data:: AF_CAN
           PF_CAN
@@ -361,6 +389,16 @@ Constants
    Availability: Linux >= 2.6.25
 
    .. versionadded:: 3.7
+
+
+.. data:: AF_PACKET
+          PF_PACKET
+          PACKET_*
+
+   Many constants of these forms, documented in the Linux documentation, are
+   also defined in the socket module.
+
+   Availability: Linux >= 2.2.
 
 
 .. data:: AF_RDS
@@ -456,12 +494,12 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    Create a new socket using the given address family, socket type and protocol
    number.  The address family should be :const:`AF_INET` (the default),
-   :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN` or :const:`AF_RDS`. The
-   socket type should be :const:`SOCK_STREAM` (the default),
-   :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other ``SOCK_``
-   constants. The protocol number is usually zero and may be omitted or in the
-   case where the address family is :const:`AF_CAN` the protocol should be one
-   of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`
+   :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN`, :const:`AF_PACKET`,
+   or :const:`AF_RDS`. The socket type should be :const:`SOCK_STREAM` (the
+   default), :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other
+   ``SOCK_`` constants. The protocol number is usually zero and may be omitted
+   or in the case where the address family is :const:`AF_CAN` the protocol
+   should be one of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`.
 
    If *fileno* is specified, the values for *family*, *type*, and *proto* are
    auto-detected from the specified file descriptor.  Auto-detection can be
@@ -635,6 +673,10 @@ The :mod:`socket` module also offers various network-related services:
    .. versionchanged:: 3.2
       parameters can now be passed using keyword arguments.
 
+   .. versionchanged:: 3.7
+      for IPv6 multicast addresses, string representing an address will not
+      contain ``%scope`` part.
+
 .. function:: getfqdn([name])
 
    Return a fully qualified domain name for *name*. If *name* is omitted or empty,
@@ -693,6 +735,8 @@ The :mod:`socket` module also offers various network-related services:
    or numeric address representation in *host*.  Similarly, *port* can contain a
    string port name or a numeric port number.
 
+   For IPv6 addresses, ``%scope`` is appended to the host part if *sockaddr*
+   contains meaningful *scopeid*. Usually this happens for multicast addresses.
 
 .. function:: getprotobyname(protocolname)
 
@@ -1193,6 +1237,10 @@ to sockets.
       an exception, the method now retries the system call instead of raising
       an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
+   .. versionchanged:: 3.7
+      For multicast IPv6 address, first item of *address* does not contain
+      ``%scope`` part anymore. In order to get full IPv6 address use
+      :func:`getnameinfo`.
 
 .. method:: socket.recvmsg(bufsize[, ancbufsize[, flags]])
 

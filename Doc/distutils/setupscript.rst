@@ -625,7 +625,7 @@ Notes:
 
 (7)
     The valid classifiers are listed on
-    `PyPI <https://pypi.python.org/pypi?:action=list_classifiers>`_.
+    `PyPI <https://pypi.org/classifiers>`_.
 
 (8)
     To preserve backward compatibility, this field also accepts a string. If

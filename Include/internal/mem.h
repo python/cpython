@@ -116,7 +116,6 @@ struct _gc_runtime_state {
 
     int enabled;
     int debug;
-    long disabled_threads;
     /* linked lists of container objects */
     struct gc_generation generations[NUM_GENERATIONS];
     PyGC_Head *generation0;
