@@ -1,0 +1,1 @@
+Make TextView use the text colors from the main IDLE configuration.
