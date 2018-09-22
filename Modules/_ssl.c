@@ -2583,9 +2583,9 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
             break;
     }
 
-    if (err.ssl < 0) {
+    if (ret < 0) {
         Py_XDECREF(sock);
-        return PySSL_SetError(self, err.ssl, __FILE__, __LINE__);
+        return PySSL_SetError(self, ret, __FILE__, __LINE__);
     }
     if (sock)
         /* It's already INCREF'ed */
