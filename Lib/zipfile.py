@@ -159,6 +159,29 @@ _CD64_NUMBER_ENTRIES_TOTAL = 7
 _CD64_DIRECTORY_SIZE = 8
 _CD64_OFFSET_START_CENTDIR = 9
 
+_DD_SIGNATURE = 0x08074b50
+
+_EXTRA_FIELD_STRUCT = struct.Struct('<HH')
+
+def _strip_extra(extra, xids):
+    # Remove Extra Fields with specified IDs.
+    unpack = _EXTRA_FIELD_STRUCT.unpack
+    modified = False
+    buffer = []
+    start = i = 0
+    while i + 4 <= len(extra):
+        xid, xlen = unpack(extra[i : i + 4])
+        j = i + 4 + xlen
+        if xid in xids:
+            if i != start:
+                buffer.append(extra[start : i])
+            start = j
+            modified = True
+        i = j
+    if not modified:
+        return extra
+    return b''.join(buffer)
+
 def _check_zipfile(fp):
     try:
         if _EndRecData(fp):
@@ -469,7 +492,7 @@ class ZipInfo (object):
             extra = extra[ln+4:]
 
     @classmethod
-    def from_file(cls, filename, arcname=None):
+    def from_file(cls, filename, arcname=None, *, strict_timestamps=True):
         """Construct an appropriate ZipInfo for a file on the filesystem.
 
         filename should be the path to a file or directory on the filesystem.
@@ -484,6 +507,10 @@ class ZipInfo (object):
         isdir = stat.S_ISDIR(st.st_mode)
         mtime = time.localtime(st.st_mtime)
         date_time = mtime[0:6]
+        if not strict_timestamps and date_time[0] < 1980:
+            date_time = (1980, 1, 1, 0, 0, 0)
+        elif not strict_timestamps and date_time[0] > 2107:
+            date_time = (2107, 12, 31, 23, 59, 59)
         # Create ZipInfo instance to store file information
         if arcname is None:
             arcname = filename
@@ -701,11 +728,11 @@ class _SharedFile:
 
     def seek(self, offset, whence=0):
         with self._lock:
-            if self.writing():
+            if self._writing():
                 raise ValueError("Can't reposition in the ZIP file while "
                         "there is an open writing handle on it. "
                         "Close the writing handle before trying to read.")
-            self._file.seek(self._pos)
+            self._file.seek(offset, whence)
             self._pos = self._file.tell()
             return self._pos
 
@@ -1021,14 +1048,13 @@ class ZipExtFile(io.BufferedIOBase):
             read_offset = 0
         elif read_offset < 0:
             # Position is before the current position. Reset the ZipExtFile
-
             self._fileobj.seek(self._orig_compress_start)
             self._running_crc = self._orig_start_crc
             self._compress_left = self._orig_compress_size
             self._left = self._orig_file_size
             self._readbuffer = b''
             self._offset = 0
-            self._decompressor = zipfile._get_decompressor(self._compress_type)
+            self._decompressor = _get_decompressor(self._compress_type)
             self._eof = False
             read_offset = new_pos
 
@@ -1094,8 +1120,8 @@ class _ZipWriteFile(io.BufferedIOBase):
         # Write updated header info
         if self._zinfo.flag_bits & 0x08:
             # Write CRC and file sizes after the file data
-            fmt = '<LQQ' if self._zip64 else '<LLL'
-            self._fileobj.write(struct.pack(fmt, self._zinfo.CRC,
+            fmt = '<LLQQ' if self._zip64 else '<LLLL'
+            self._fileobj.write(struct.pack(fmt, _DD_SIGNATURE, self._zinfo.CRC,
                 self._zinfo.compress_size, self._zinfo.file_size))
             self._zipfile.start_dir = self._fileobj.tell()
         else:
@@ -1148,7 +1174,7 @@ class ZipFile:
     _windows_illegal_name_trans_table = None
 
     def __init__(self, file, mode="r", compression=ZIP_STORED, allowZip64=True,
-                 compresslevel=None):
+                 compresslevel=None, *, strict_timestamps=True):
         """Open the ZIP file with mode read 'r', write 'w', exclusive create 'x',
         or append 'a'."""
         if mode not in ('r', 'w', 'x', 'a'):
@@ -1166,6 +1192,7 @@ class ZipFile:
         self.mode = mode
         self.pwd = None
         self._comment = b''
+        self._strict_timestamps = strict_timestamps
 
         # Check if we were passed a file-like object
         if isinstance(file, os.PathLike):
@@ -1685,7 +1712,8 @@ class ZipFile:
                 "Can't write to ZIP archive while an open writing handle exists"
             )
 
-        zinfo = ZipInfo.from_file(filename, arcname)
+        zinfo = ZipInfo.from_file(filename, arcname,
+                                  strict_timestamps=self._strict_timestamps)
 
         if zinfo.is_dir():
             zinfo.compress_size = 0
@@ -1814,6 +1842,7 @@ class ZipFile:
             min_version = 0
             if extra:
                 # Append a ZIP64 field to the extra's
+                extra_data = _strip_extra(extra_data, (1,))
                 extra_data = struct.pack(
                     '<HH' + 'Q'*len(extra),
                     1, 8*len(extra), *extra) + extra_data

@@ -55,16 +55,15 @@ CAPATH = data_file("capath")
 BYTES_CAPATH = os.fsencode(CAPATH)
 CAFILE_NEURONIO = data_file("capath", "4e1295a3.0")
 CAFILE_CACERT = data_file("capath", "5ed36f99.0")
-WRONG_CERT = data_file("wrongcert.pem")
 
 CERTFILE_INFO = {
     'issuer': ((('countryName', 'XY'),),
                (('localityName', 'Castle Anthrax'),),
                (('organizationName', 'Python Software Foundation'),),
                (('commonName', 'localhost'),)),
-    'notAfter': 'Jan 17 19:09:06 2028 GMT',
-    'notBefore': 'Jan 19 19:09:06 2018 GMT',
-    'serialNumber': 'F9BA076D5B6ABD9B',
+    'notAfter': 'Aug 26 14:23:15 2028 GMT',
+    'notBefore': 'Aug 29 14:23:15 2018 GMT',
+    'serialNumber': '98A7CF88C74A32ED',
     'subject': ((('countryName', 'XY'),),
              (('localityName', 'Castle Anthrax'),),
              (('organizationName', 'Python Software Foundation'),),
@@ -87,9 +86,9 @@ SIGNED_CERTFILE_INFO = {
     'issuer': ((('countryName', 'XY'),),
             (('organizationName', 'Python Software Foundation CA'),),
             (('commonName', 'our-ca-server'),)),
-    'notAfter': 'Nov 28 19:09:06 2027 GMT',
-    'notBefore': 'Jan 19 19:09:06 2018 GMT',
-    'serialNumber': '82EDBF41C880919C',
+    'notAfter': 'Jul  7 14:23:16 2028 GMT',
+    'notBefore': 'Aug 29 14:23:16 2018 GMT',
+    'serialNumber': 'CB2D80995A69525C',
     'subject': ((('countryName', 'XY'),),
              (('localityName', 'Castle Anthrax'),),
              (('organizationName', 'Python Software Foundation'),),
@@ -118,7 +117,7 @@ BADKEY = data_file("badkey.pem")
 NOKIACERT = data_file("nokia.pem")
 NULLBYTECERT = data_file("nullbytecert.pem")
 
-DHFILE = data_file("dh1024.pem")
+DHFILE = data_file("ffdh3072.pem")
 BYTES_DHFILE = os.fsencode(DHFILE)
 
 # Not defined in all versions of OpenSSL
@@ -318,6 +317,8 @@ class BasicSocketTests(unittest.TestCase):
             self.assertEqual(len(parent_random), 16)
 
             self.assertNotEqual(child_random, parent_random)
+
+    maxDiff = None
 
     def test_parse_cert(self):
         # note that this uses an 'unofficial' function in _ssl.c,
@@ -1714,6 +1715,47 @@ class SSLObjectTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "public constructor"):
             ssl.SSLObject(bio, bio)
 
+    def test_unwrap(self):
+        client_ctx, server_ctx, hostname = testing_context()
+        c_in = ssl.MemoryBIO()
+        c_out = ssl.MemoryBIO()
+        s_in = ssl.MemoryBIO()
+        s_out = ssl.MemoryBIO()
+        client = client_ctx.wrap_bio(c_in, c_out, server_hostname=hostname)
+        server = server_ctx.wrap_bio(s_in, s_out, server_side=True)
+
+        # Loop on the handshake for a bit to get it settled
+        for _ in range(5):
+            try:
+                client.do_handshake()
+            except ssl.SSLWantReadError:
+                pass
+            if c_out.pending:
+                s_in.write(c_out.read())
+            try:
+                server.do_handshake()
+            except ssl.SSLWantReadError:
+                pass
+            if s_out.pending:
+                c_in.write(s_out.read())
+        # Now the handshakes should be complete (don't raise WantReadError)
+        client.do_handshake()
+        server.do_handshake()
+
+        # Now if we unwrap one side unilaterally, it should send close-notify
+        # and raise WantReadError:
+        with self.assertRaises(ssl.SSLWantReadError):
+            client.unwrap()
+
+        # But server.unwrap() does not raise, because it reads the client's
+        # close-notify:
+        s_in.write(c_out.read())
+        server.unwrap()
+
+        # And now that the client gets the server's close-notify, it doesn't
+        # raise either.
+        c_in.write(s_out.read())
+        client.unwrap()
 
 class SimpleBackgroundTests(unittest.TestCase):
     """Tests that connect to a simple server running in the background"""
@@ -2825,8 +2867,8 @@ class ThreadedTests(unittest.TestCase):
         connect to it with a wrong client certificate fails.
         """
         client_context, server_context, hostname = testing_context()
-        # load client cert
-        client_context.load_cert_chain(WRONG_CERT)
+        # load client cert that is not signed by trusted CA
+        client_context.load_cert_chain(CERTFILE)
         # require TLS client authentication
         server_context.verify_mode = ssl.CERT_REQUIRED
         # TLS 1.3 has different handshake
@@ -2858,7 +2900,8 @@ class ThreadedTests(unittest.TestCase):
     @unittest.skipUnless(ssl.HAS_TLSv1_3, "Test needs TLS 1.3")
     def test_wrong_cert_tls13(self):
         client_context, server_context, hostname = testing_context()
-        client_context.load_cert_chain(WRONG_CERT)
+        # load client cert that is not signed by trusted CA
+        client_context.load_cert_chain(CERTFILE)
         server_context.verify_mode = ssl.CERT_REQUIRED
         server_context.minimum_version = ssl.TLSVersion.TLSv1_3
         client_context.minimum_version = ssl.TLSVersion.TLSv1_3
@@ -3492,7 +3535,7 @@ class ThreadedTests(unittest.TestCase):
         client_context, server_context, hostname = testing_context()
         # OpenSSL enables all TLS 1.3 ciphers, enforce TLS 1.2 for test
         client_context.options |= ssl.OP_NO_TLSv1_3
-        # Force different suites on client and master
+        # Force different suites on client and server
         client_context.set_ciphers("AES128")
         server_context.set_ciphers("AES256")
         with ThreadedEchoServer(context=server_context) as server:

@@ -1294,7 +1294,7 @@ syntaxerror(struct tok_state *tok, const char *format, ...)
     va_end(vargs);
     PyErr_SyntaxLocationObject(tok->filename,
                                tok->lineno,
-                               tok->cur - tok->line_start);
+                               (int)(tok->cur - tok->line_start));
     tok->done = E_ERROR;
 #else
     tok->done = E_TOKEN;
@@ -1324,7 +1324,7 @@ verify_identifier(struct tok_state *tok)
     if (tok->decoding_erred)
         return 0;
     s = PyUnicode_DecodeUTF8(tok->start, tok->cur - tok->start, NULL);
-    if (s == NULL || PyUnicode_READY(s) == -1) {
+    if (s == NULL) {
         if (PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
             PyErr_Clear();
             tok->done = E_IDENTIFIER;

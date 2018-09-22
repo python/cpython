@@ -96,7 +96,7 @@ extern Py_ssize_t null_strings, one_strings;
 void
 dump_counts(FILE* f)
 {
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     if (!interp->core_config.show_alloc_count) {
         return;
     }
@@ -2180,7 +2180,7 @@ _PyTrash_thread_destroy_chain(void)
 /* For Py_LIMITED_API, we need an out-of-line version of _Py_Dealloc.
    Define this here, so we can undefine the macro. */
 #undef _Py_Dealloc
-PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
+void _Py_Dealloc(PyObject *);
 void
 _Py_Dealloc(PyObject *op)
 {
