@@ -1735,6 +1735,47 @@ class SSLObjectTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "public constructor"):
             ssl.SSLObject(bio, bio)
 
+    def test_unwrap(self):
+        client_ctx, server_ctx, hostname = testing_context()
+        c_in = ssl.MemoryBIO()
+        c_out = ssl.MemoryBIO()
+        s_in = ssl.MemoryBIO()
+        s_out = ssl.MemoryBIO()
+        client = client_ctx.wrap_bio(c_in, c_out, server_hostname=hostname)
+        server = server_ctx.wrap_bio(s_in, s_out, server_side=True)
+
+        # Loop on the handshake for a bit to get it settled
+        for _ in range(5):
+            try:
+                client.do_handshake()
+            except ssl.SSLWantReadError:
+                pass
+            if c_out.pending:
+                s_in.write(c_out.read())
+            try:
+                server.do_handshake()
+            except ssl.SSLWantReadError:
+                pass
+            if s_out.pending:
+                c_in.write(s_out.read())
+        # Now the handshakes should be complete (don't raise WantReadError)
+        client.do_handshake()
+        server.do_handshake()
+
+        # Now if we unwrap one side unilaterally, it should send close-notify
+        # and raise WantReadError:
+        with self.assertRaises(ssl.SSLWantReadError):
+            client.unwrap()
+
+        # But server.unwrap() does not raise, because it reads the client's
+        # close-notify:
+        s_in.write(c_out.read())
+        server.unwrap()
+
+        # And now that the client gets the server's close-notify, it doesn't
+        # raise either.
+        c_in.write(s_out.read())
+        client.unwrap()
 
 class SimpleBackgroundTests(unittest.TestCase):
     """Tests that connect to a simple server running in the background"""
