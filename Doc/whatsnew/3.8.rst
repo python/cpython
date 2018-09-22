@@ -103,6 +103,10 @@ Other Language Changes
   never intended to permit more than a bare name on the left-hand side of a
   keyword argument assignment term. See :issue:`34641`.
 
+* Iterable unpacking is now allowed without parentheses in :keyword:`yield`
+  and :keyword:`return` statements.
+  (Contributed by David Cuthbert and Jordan Chapman in :issue:`32117`.)
+
 New Modules
 ===========
 
