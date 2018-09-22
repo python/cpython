@@ -159,6 +159,8 @@ _CD64_NUMBER_ENTRIES_TOTAL = 7
 _CD64_DIRECTORY_SIZE = 8
 _CD64_OFFSET_START_CENTDIR = 9
 
+_DD_SIGNATURE = 0x08074b50
+
 _EXTRA_FIELD_STRUCT = struct.Struct('<HH')
 
 def _strip_extra(extra, xids):
@@ -1114,8 +1116,8 @@ class _ZipWriteFile(io.BufferedIOBase):
         # Write updated header info
         if self._zinfo.flag_bits & 0x08:
             # Write CRC and file sizes after the file data
-            fmt = '<LQQ' if self._zip64 else '<LLL'
-            self._fileobj.write(struct.pack(fmt, self._zinfo.CRC,
+            fmt = '<LLQQ' if self._zip64 else '<LLLL'
+            self._fileobj.write(struct.pack(fmt, _DD_SIGNATURE, self._zinfo.CRC,
                 self._zinfo.compress_size, self._zinfo.file_size))
             self._zipfile.start_dir = self._fileobj.tell()
         else:
