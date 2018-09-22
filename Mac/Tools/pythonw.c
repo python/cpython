@@ -195,8 +195,6 @@ main(int argc, char **argv) {
                 err(1, "realpath: %s", path);
             }
         }
-
-        setenv("__PYVENV_LAUNCHER__", real_path, 1);
     }
 
     /*

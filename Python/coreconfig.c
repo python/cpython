@@ -505,8 +505,8 @@ _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
 }
 
 
-/* Get the program name: use PYTHONEXECUTABLE and __PYVENV_LAUNCHER__
-   environment variables on macOS if available. */
+/* Get the program name: use PYTHONEXECUTABLE
+   environment variable on macOS if available. */
 static _PyInitError
 config_init_program_name(_PyCoreConfig *config)
 {
@@ -543,24 +543,6 @@ config_init_program_name(_PyCoreConfig *config)
         config->program_name = program_name;
         return _Py_INIT_OK();
     }
-#ifdef WITH_NEXT_FRAMEWORK
-    else {
-        const char* pyvenv_launcher = getenv("__PYVENV_LAUNCHER__");
-        if (pyvenv_launcher && *pyvenv_launcher) {
-            /* Used by Mac/Tools/pythonw.c to forward
-             * the argv0 of the stub executable
-             */
-            size_t len;
-            wchar_t* program_name = Py_DecodeLocale(pyvenv_launcher, &len);
-            if (program_name == NULL) {
-                return DECODE_LOCALE_ERR("__PYVENV_LAUNCHER__ environment "
-                                         "variable", (Py_ssize_t)len);
-            }
-            config->program_name = program_name;
-            return _Py_INIT_OK();
-        }
-    }
-#endif   /* WITH_NEXT_FRAMEWORK */
 #endif   /* __APPLE__ */
 
     /* Use argv[0] by default, if available */
