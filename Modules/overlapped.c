@@ -39,7 +39,8 @@
 
 enum {TYPE_NONE, TYPE_NOT_STARTED, TYPE_READ, TYPE_READINTO, TYPE_WRITE,
       TYPE_ACCEPT, TYPE_CONNECT, TYPE_DISCONNECT, TYPE_CONNECT_NAMED_PIPE,
-      TYPE_WAIT_NAMED_PIPE_AND_CONNECT, TYPE_TRANSMIT_FILE, TYPE_READ_FROM, TYPE_WRITE_TO};
+      TYPE_WAIT_NAMED_PIPE_AND_CONNECT, TYPE_TRANSMIT_FILE, TYPE_READ_FROM,
+      TYPE_WRITE_TO};
 
 typedef struct {
     PyObject_HEAD
@@ -56,7 +57,8 @@ typedef struct {
         /* Buffer passed by the user: TYPE_WRITE, TYPE_WRITE_TO, and TYPE_READINTO */
         Py_buffer user_buffer;
 
-        /* Data used for reading from a connection-less socket: TYPE_READ_FROM */
+        /* Data used for reading from a connection-less socket:
+           TYPE_READ_FROM */
         struct {
             // A (buffer, (host, port)) tuple
             PyObject *result;
@@ -720,6 +722,7 @@ Overlapped_getresult(OverlappedObject *self, PyObject *args)
     DWORD transferred = 0;
     BOOL ret;
     DWORD err;
+    PyObject *addr;
 
     if (!PyArg_ParseTuple(args, "|" F_BOOL, &wait))
         return NULL;
@@ -745,10 +748,15 @@ Overlapped_getresult(OverlappedObject *self, PyObject *args)
         case ERROR_MORE_DATA:
             break;
         case ERROR_BROKEN_PIPE:
-            if (self->type == TYPE_READ || self->type == TYPE_READINTO)
+            if (self->type == TYPE_READ || self->type == TYPE_READINTO) {
                 break;
-            else if(self->type == TYPE_READ_FROM && (self->read_from.result != NULL || self->read_from.buffer != NULL))
+            }
+            else if (self->type == TYPE_READ_FROM &&
+                     (self->read_from.result != NULL ||
+                      self->read_from.buffer != NULL))
+            {
                 break;
+            }
             /* fall through */
         default:
             return SetFromWindowsErr(err);
@@ -764,22 +772,28 @@ Overlapped_getresult(OverlappedObject *self, PyObject *args)
             Py_INCREF(self->allocated_buffer);
             return self->allocated_buffer;
         case TYPE_READ_FROM:
-            PyBytes_CheckExact(self->read_from.buffer);
+            assert(PyBytes_CheckExact(self->read_from.buffer));
 
-            if(transferred != PyBytes_GET_SIZE(self->read_from.buffer) &&
-               _PyBytes_Resize(&self->read_from.buffer, transferred))
+            if (transferred != PyBytes_GET_SIZE(self->read_from.buffer) &&
+                _PyBytes_Resize(&self->read_from.buffer, transferred))
+            {
                 return NULL;
+            }
+
+            // unparse the address
+            addr = unparse_address((SOCKADDR*)&self->read_from.address,
+                                   self->read_from.address_length);
 
             // The result is a two item tuple: (message, (address, port))
             self->read_from.result = PyTuple_New(2);
             // first item: message
             PyTuple_SetItem(self->read_from.result, 0, self->read_from.buffer);
             // second item: tuple(address, port)
-            PyTuple_SetItem(self->read_from.result, 1,
-                            unparse_address((SOCKADDR*)&self->read_from.address,
-                                            self->read_from.address_length));
+            PyTuple_SetItem(self->read_from.result, 1, addr);
 
             Py_INCREF(self->read_from.result);
+            Py_INCREF(self->read_from.addr);
+            Py_INCREF(self->read_from.buffer);
             return self->read_from.result;
         default:
             return PyLong_FromUnsignedLong((unsigned long) transferred);
@@ -1461,19 +1475,21 @@ overlapped_WSAConnect(PyObject *self, PyObject *args) {
     int Length;
     DWORD err;
 
-    if(!PyArg_ParseTuple(args, F_HANDLE "O", &ConnectSocket, &AddressObj))
+    if (!PyArg_ParseTuple(args, F_HANDLE "O", &ConnectSocket, &AddressObj)) {
         return NULL;
+    }
 
     Length = sizeof(AddressBuf);
     Length = parse_address(AddressObj, Address, Length);
-    if(Length < 0)
+    if (Length < 0) {
         return NULL;
+    }
 
     Py_BEGIN_ALLOW_THREADS
-        // WSAConnect does not support overlapped I/O so this call will
-        // successfully complete immediately.
-        err = WSAConnect(ConnectSocket, Address, Length,
-                         NULL, NULL, NULL, NULL);
+    // WSAConnect does not support overlapped I/O so this call will
+    // successfully complete immediately.
+    err = WSAConnect(ConnectSocket, Address, Length,
+                        NULL, NULL, NULL, NULL);
     Py_END_ALLOW_THREADS
 
     err = err == ERROR_SUCCESS ? 0 : WSAGetLastError();
@@ -1488,7 +1504,8 @@ overlapped_WSAConnect(PyObject *self, PyObject *args) {
 
 PyDoc_STRVAR(
     Overlapped_WSASendTo_doc,
-    "WSASendTo(handle, buf, flags, address_as_bytes) -> Overlapped[bytes_transferred]\n\n"
+    "WSASendTo(handle, buf, flags, address_as_bytes) -> "
+    "Overlapped[bytes_transferred]\n\n"
     "Start overlapped sendto over a connection-less (UDP) socket");
 
 static PyObject *
@@ -1505,26 +1522,30 @@ Overlapped_WSASendTo(OverlappedObject *self, PyObject *args) {
     int ret;
     DWORD err;
 
-    if(!PyArg_ParseTuple(args, F_HANDLE "O" F_DWORD "O",
-                         &handle, &bufobj, &flags, &AddressObj))
+    if (!PyArg_ParseTuple(args, F_HANDLE "O" F_DWORD "O",
+                          &handle, &bufobj, &flags, &AddressObj))
+    {
         return NULL;
+    }
 
     // Parse the "to" address
     AddressLength = sizeof(AddressBuf);
     AddressLength = parse_address(AddressObj, Address, AddressLength);
-    if(AddressLength < 0)
+    if (AddressLength < 0) {
         return NULL;
+    }
 
-    if(self->type != TYPE_NONE) {
+    if (self->type != TYPE_NONE) {
         PyErr_SetString(PyExc_ValueError, "operation already attempted");
         return NULL;
     }
 
-    if(!PyArg_Parse(bufobj, "y*", &self->user_buffer))
+    if (!PyArg_Parse(bufobj, "y*", &self->user_buffer)) {
         return NULL;
+    }
 
 #if SIZEOF_SIZE_T > SIZEOF_LONG
-    if(self->user_buffer.len > (Py_ssize_t)ULONG_MAX) {
+    if (self->user_buffer.len > (Py_ssize_t)ULONG_MAX) {
         PyBuffer_Release(&self->user_buffer);
         PyErr_SetString(PyExc_ValueError, "buffer to large");
         return NULL;
@@ -1537,11 +1558,12 @@ Overlapped_WSASendTo(OverlappedObject *self, PyObject *args) {
     wsabuf.buf = self->user_buffer.buf;
 
     Py_BEGIN_ALLOW_THREADS
-        ret = WSASendTo((SOCKET)handle, &wsabuf, 1, &written, flags,
-                        Address, AddressLength, &self->overlapped, NULL);
+    ret = WSASendTo((SOCKET)handle, &wsabuf, 1, &written, flags,
+                    Address, AddressLength, &self->overlapped, NULL);
     Py_END_ALLOW_THREADS
 
-    self->error = err = (ret == SOCKET_ERROR ? WSAGetLastError() : ERROR_SUCCESS);
+    self->error = err = (ret == SOCKET_ERROR ? WSAGetLastError() :
+                                               ERROR_SUCCESS);
 
     switch(err) {
     case ERROR_SUCCESS:
@@ -1571,11 +1593,13 @@ Overlapped_WSARecvFrom(OverlappedObject *self, PyObject *args) {
     int ret;
     DWORD err;
 
-    if(!PyArg_ParseTuple(args, F_HANDLE F_DWORD "|" F_DWORD,
-                         &handle, &size, &flags))
+    if (!PyArg_ParseTuple(args, F_HANDLE F_DWORD "|" F_DWORD,
+                          &handle, &size, &flags))
+    {
         return NULL;
+    }
 
-    if(self->type != TYPE_NONE) {
+    if (self->type != TYPE_NONE) {
         PyErr_SetString(PyExc_ValueError, "operation already attempted");
         return NULL;
     }
@@ -1584,8 +1608,9 @@ Overlapped_WSARecvFrom(OverlappedObject *self, PyObject *args) {
     size = Py_MIN(size, (DWORD)PY_SSIZE_T_MAX);
 #endif
     buf = PyBytes_FromStringAndSize(NULL, Py_MAX(size, 1));
-    if(buf == NULL)
+    if (buf == NULL) {
         return NULL;
+    }
 
     wsabuf.len = size;
     wsabuf.buf = PyBytes_AS_STRING(buf);
@@ -1597,13 +1622,14 @@ Overlapped_WSARecvFrom(OverlappedObject *self, PyObject *args) {
     self->read_from.address_length = sizeof(self->read_from.address);
 
     Py_BEGIN_ALLOW_THREADS
-        ret = WSARecvFrom((SOCKET)handle, &wsabuf, 1, &nread, &flags,
-                          (SOCKADDR*)&self->read_from.address,
-                          &self->read_from.address_length,
-                          &self->overlapped, NULL);
+    ret = WSARecvFrom((SOCKET)handle, &wsabuf, 1, &nread, &flags,
+                      (SOCKADDR*)&self->read_from.address,
+                      &self->read_from.address_length,
+                      &self->overlapped, NULL);
     Py_END_ALLOW_THREADS
 
-        self->error = err = (ret < 0 ? WSAGetLastError() : ERROR_SUCCESS);
+    self->error = err = (ret < 0 ? WSAGetLastError() : ERROR_SUCCESS);
+
     switch(err) {
     case ERROR_BROKEN_PIPE:
         mark_as_completed(&self->overlapped);
