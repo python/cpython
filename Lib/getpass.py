@@ -159,7 +159,7 @@ def getuser():
 
     """
 
-    for name in ('LOGNAME', 'USER', 'LNAME', 'USERNAME'):
+    for name in ('SUDO_USER', 'LOGNAME', 'USER', 'LNAME', 'USERNAME'):
         user = os.environ.get(name)
         if user:
             return user
