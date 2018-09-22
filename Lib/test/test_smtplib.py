@@ -614,7 +614,7 @@ class DefaultArgumentsTests(unittest.TestCase):
         self.smtp.has_extn, self.smtp.sendmail = Mock(), Mock()
 
     def testSendMessage(self):
-        expected_mail_options = ('SMTPUTF8', 'BODY=8BITMIME')
+        expected_mail_options = ['SMTPUTF8', 'BODY=8BITMIME']
         self.smtp.send_message(self.msg)
         self.smtp.send_message(self.msg)
         self.assertEqual(self.smtp.sendmail.call_args_list[0][0][3],
@@ -624,7 +624,7 @@ class DefaultArgumentsTests(unittest.TestCase):
 
     def testSendMessageWithMailOptions(self):
         mail_options = ['STARTTLS']
-        expected_mail_options = ('STARTTLS', 'SMTPUTF8', 'BODY=8BITMIME')
+        expected_mail_options = ['STARTTLS', 'SMTPUTF8', 'BODY=8BITMIME']
         self.smtp.send_message(self.msg, None, None, mail_options)
         self.assertEqual(mail_options, ['STARTTLS'])
         self.assertEqual(self.smtp.sendmail.call_args_list[0][0][3],
