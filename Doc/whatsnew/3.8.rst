@@ -267,6 +267,12 @@ Deprecated
   versions. :class:`~ast.Constant` should be used instead.
   (Contributed by Serhiy Storchaka in :issue:`32892`.)
 
+* :mod:`ast` classes ``Index`` and ``ExtSlice`` are considered deprecated
+  and will be removed in future Python versions.  Just ``value`` should be
+  used instead of ``Index(value)``.  ``Tuple(slices, Load())`` should be
+  used instead of ``ExtSlice(slices)``.
+  (Contributed by Serhiy Storchaka in :issue:`32892`.)
+
 
 Removed
 =======
@@ -369,6 +375,19 @@ Changes in the Python API
 * :mod:`xml.dom.minidom` and mod:`xml.sax` modules no longer process
   external entities by default.
   (Contributed by Christian Heimes in :issue:`17239`.)
+
+* Simplified AST for literals and subscription.
+
+  - All constants will be represented as :class:`ast.Constant` instances.
+    Instantiating old classes ``Num``, ``Str``, ``Bytes``, ``NameConstant``
+    and ``Ellipsis`` will return an instance of ``Constant``.
+    (Contributed by Serhiy Storchaka in :issue:`32892`.)
+
+  - Simple indices will be represented by their value, extended slices will
+    be represented as tuples.  ``Index(value)`` will return a ``value`` itself,
+    ``ExtSlice(slices)`` will return ``Tuple(slices, Load())``.
+    (Contributed by Serhiy Storchaka in :issue:`34822`.)
+
 
 CPython bytecode changes
 ------------------------

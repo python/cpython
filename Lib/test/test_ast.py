@@ -277,6 +277,10 @@ class AST_Tests(unittest.TestCase):
     def test_field_attr_existence(self):
         for name, item in ast.__dict__.items():
             if isinstance(item, type) and name != 'AST' and name[0].isupper():
+                if name == 'Index':
+                    # Index(value) just returns value now.
+                    # The argument is required.
+                    continue
                 x = item()
                 if isinstance(x, ast.AST):
                     self.assertEqual(type(x._fields), tuple)
@@ -1056,11 +1060,11 @@ class ASTValidatorTests(unittest.TestCase):
         self.expr(attr, "must have Load context")
 
     def test_subscript(self):
-        sub = ast.Subscript(ast.Name("x", ast.Store()), ast.Index(ast.Num(3)),
+        sub = ast.Subscript(ast.Name("x", ast.Store()), ast.Num(3),
                             ast.Load())
         self.expr(sub, "must have Load context")
         x = ast.Name("x", ast.Load())
-        sub = ast.Subscript(x, ast.Index(ast.Name("y", ast.Store())),
+        sub = ast.Subscript(x, ast.Name("y", ast.Store()),
                             ast.Load())
         self.expr(sub, "must have Load context")
         s = ast.Name("x", ast.Store())
@@ -1068,9 +1072,9 @@ class ASTValidatorTests(unittest.TestCase):
             sl = ast.Slice(*args)
             self.expr(ast.Subscript(x, sl, ast.Load()),
                       "must have Load context")
-        sl = ast.ExtSlice([])
-        self.expr(ast.Subscript(x, sl, ast.Load()), "empty dims on ExtSlice")
-        sl = ast.ExtSlice([ast.Index(s)])
+        sl = ast.Tuple([], ast.Load())
+        self.expr(ast.Subscript(x, sl, ast.Load()))
+        sl = ast.Tuple([s], ast.Load())
         self.expr(ast.Subscript(x, sl, ast.Load()), "must have Load context")
 
     def test_starred(self):
@@ -1306,13 +1310,13 @@ eval_results = [
 ('Expression', ('Constant', (1, 0), 10)),
 ('Expression', ('Constant', (1, 0), 'string')),
 ('Expression', ('Attribute', (1, 0), ('Name', (1, 0), 'a', ('Load',)), 'b', ('Load',))),
-('Expression', ('Subscript', (1, 0), ('Name', (1, 0), 'a', ('Load',)), ('Slice', ('Name', (1, 2), 'b', ('Load',)), ('Name', (1, 4), 'c', ('Load',)), None), ('Load',))),
+('Expression', ('Subscript', (1, 0), ('Name', (1, 0), 'a', ('Load',)), ('Slice', (1, 2), ('Name', (1, 2), 'b', ('Load',)), ('Name', (1, 4), 'c', ('Load',)), None), ('Load',))),
 ('Expression', ('Name', (1, 0), 'v', ('Load',))),
 ('Expression', ('List', (1, 0), [('Constant', (1, 1), 1), ('Constant', (1, 3), 2), ('Constant', (1, 5), 3)], ('Load',))),
 ('Expression', ('List', (1, 0), [], ('Load',))),
 ('Expression', ('Tuple', (1, 0), [('Constant', (1, 0), 1), ('Constant', (1, 2), 2), ('Constant', (1, 4), 3)], ('Load',))),
 ('Expression', ('Tuple', (1, 1), [('Constant', (1, 1), 1), ('Constant', (1, 3), 2), ('Constant', (1, 5), 3)], ('Load',))),
 ('Expression', ('Tuple', (1, 0), [], ('Load',))),
-('Expression', ('Call', (1, 0), ('Attribute', (1, 0), ('Attribute', (1, 0), ('Attribute', (1, 0), ('Name', (1, 0), 'a', ('Load',)), 'b', ('Load',)), 'c', ('Load',)), 'd', ('Load',)), [('Subscript', (1, 8), ('Attribute', (1, 8), ('Name', (1, 8), 'a', ('Load',)), 'b', ('Load',)), ('Slice', ('Constant', (1, 12), 1), ('Constant', (1, 14), 2), None), ('Load',))], [])),
+('Expression', ('Call', (1, 0), ('Attribute', (1, 0), ('Attribute', (1, 0), ('Attribute', (1, 0), ('Name', (1, 0), 'a', ('Load',)), 'b', ('Load',)), 'c', ('Load',)), 'd', ('Load',)), [('Subscript', (1, 8), ('Attribute', (1, 8), ('Name', (1, 8), 'a', ('Load',)), 'b', ('Load',)), ('Slice', (1, 12), ('Constant', (1, 12), 1), ('Constant', (1, 14), 2), None), ('Load',))], [])),
 ]
 main()

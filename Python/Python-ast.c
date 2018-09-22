@@ -336,6 +336,15 @@ static char *Tuple_fields[]={
     "elts",
     "ctx",
 };
+static PyTypeObject *Slice_type;
+_Py_IDENTIFIER(lower);
+_Py_IDENTIFIER(upper);
+_Py_IDENTIFIER(step);
+static char *Slice_fields[]={
+    "lower",
+    "upper",
+    "step",
+};
 static PyTypeObject *expr_context_type;
 static PyObject *Load_singleton, *Store_singleton, *Del_singleton,
 *AugLoad_singleton, *AugStore_singleton, *Param_singleton;
@@ -346,26 +355,6 @@ static PyTypeObject *Del_type;
 static PyTypeObject *AugLoad_type;
 static PyTypeObject *AugStore_type;
 static PyTypeObject *Param_type;
-static PyTypeObject *slice_type;
-static PyObject* ast2obj_slice(void*);
-static PyTypeObject *Slice_type;
-_Py_IDENTIFIER(lower);
-_Py_IDENTIFIER(upper);
-_Py_IDENTIFIER(step);
-static char *Slice_fields[]={
-    "lower",
-    "upper",
-    "step",
-};
-static PyTypeObject *ExtSlice_type;
-_Py_IDENTIFIER(dims);
-static char *ExtSlice_fields[]={
-    "dims",
-};
-static PyTypeObject *Index_type;
-static char *Index_fields[]={
-    "value",
-};
 static PyTypeObject *boolop_type;
 static PyObject *And_singleton, *Or_singleton;
 static PyObject* ast2obj_boolop(boolop_ty);
@@ -912,6 +901,8 @@ static int init_types(void)
     if (!List_type) return 0;
     Tuple_type = make_type("Tuple", expr_type, Tuple_fields, 2);
     if (!Tuple_type) return 0;
+    Slice_type = make_type("Slice", expr_type, Slice_fields, 3);
+    if (!Slice_type) return 0;
     expr_context_type = make_type("expr_context", &AST_type, NULL, 0);
     if (!expr_context_type) return 0;
     if (!add_attributes(expr_context_type, NULL, 0)) return 0;
@@ -939,15 +930,6 @@ static int init_types(void)
     if (!Param_type) return 0;
     Param_singleton = PyType_GenericNew(Param_type, NULL, NULL);
     if (!Param_singleton) return 0;
-    slice_type = make_type("slice", &AST_type, NULL, 0);
-    if (!slice_type) return 0;
-    if (!add_attributes(slice_type, NULL, 0)) return 0;
-    Slice_type = make_type("Slice", slice_type, Slice_fields, 3);
-    if (!Slice_type) return 0;
-    ExtSlice_type = make_type("ExtSlice", slice_type, ExtSlice_fields, 1);
-    if (!ExtSlice_type) return 0;
-    Index_type = make_type("Index", slice_type, Index_fields, 1);
-    if (!Index_type) return 0;
     boolop_type = make_type("boolop", &AST_type, NULL, 0);
     if (!boolop_type) return 0;
     if (!add_attributes(boolop_type, NULL, 0)) return 0;
@@ -1111,7 +1093,6 @@ static int obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena);
 static int obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena);
 static int obj2ast_expr_context(PyObject* obj, expr_context_ty* out, PyArena*
                                 arena);
-static int obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena);
 static int obj2ast_boolop(PyObject* obj, boolop_ty* out, PyArena* arena);
 static int obj2ast_operator(PyObject* obj, operator_ty* out, PyArena* arena);
 static int obj2ast_unaryop(PyObject* obj, unaryop_ty* out, PyArena* arena);
@@ -2116,7 +2097,7 @@ Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int lineno, int
 }
 
 expr_ty
-Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int lineno, int
+Subscript(expr_ty value, expr_ty slice, expr_context_ty ctx, int lineno, int
           col_offset, PyArena *arena)
 {
     expr_ty p;
@@ -2241,46 +2222,20 @@ Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset, PyArena
     return p;
 }
 
-slice_ty
-Slice(expr_ty lower, expr_ty upper, expr_ty step, PyArena *arena)
+expr_ty
+Slice(expr_ty lower, expr_ty upper, expr_ty step, int lineno, int col_offset,
+      PyArena *arena)
 {
-    slice_ty p;
-    p = (slice_ty)PyArena_Malloc(arena, sizeof(*p));
+    expr_ty p;
+    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
     p->kind = Slice_kind;
     p->v.Slice.lower = lower;
     p->v.Slice.upper = upper;
     p->v.Slice.step = step;
-    return p;
-}
-
-slice_ty
-ExtSlice(asdl_seq * dims, PyArena *arena)
-{
-    slice_ty p;
-    p = (slice_ty)PyArena_Malloc(arena, sizeof(*p));
-    if (!p)
-        return NULL;
-    p->kind = ExtSlice_kind;
-    p->v.ExtSlice.dims = dims;
-    return p;
-}
-
-slice_ty
-Index(expr_ty value, PyArena *arena)
-{
-    slice_ty p;
-    if (!value) {
-        PyErr_SetString(PyExc_ValueError,
-                        "field value is required for Index");
-        return NULL;
-    }
-    p = (slice_ty)PyArena_Malloc(arena, sizeof(*p));
-    if (!p)
-        return NULL;
-    p->kind = Index_kind;
-    p->v.Index.value = value;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
     return p;
 }
 
@@ -3203,7 +3158,7 @@ ast2obj_expr(void* _o)
         if (_PyObject_SetAttrId(result, &PyId_value, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_slice(o->v.Subscript.slice);
+        value = ast2obj_expr(o->v.Subscript.slice);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_slice, value) == -1)
             goto failed;
@@ -3270,6 +3225,25 @@ ast2obj_expr(void* _o)
             goto failed;
         Py_DECREF(value);
         break;
+    case Slice_kind:
+        result = PyType_GenericNew(Slice_type, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_expr(o->v.Slice.lower);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_lower, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(o->v.Slice.upper);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_upper, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(o->v.Slice.step);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_step, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
     }
     value = ast2obj_int(o->lineno);
     if (!value) goto failed;
@@ -3315,61 +3289,6 @@ PyObject* ast2obj_expr_context(expr_context_ty o)
             return NULL;
     }
 }
-PyObject*
-ast2obj_slice(void* _o)
-{
-    slice_ty o = (slice_ty)_o;
-    PyObject *result = NULL, *value = NULL;
-    if (!o) {
-        Py_RETURN_NONE;
-    }
-
-    switch (o->kind) {
-    case Slice_kind:
-        result = PyType_GenericNew(Slice_type, NULL, NULL);
-        if (!result) goto failed;
-        value = ast2obj_expr(o->v.Slice.lower);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_lower, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        value = ast2obj_expr(o->v.Slice.upper);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_upper, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        value = ast2obj_expr(o->v.Slice.step);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_step, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        break;
-    case ExtSlice_kind:
-        result = PyType_GenericNew(ExtSlice_type, NULL, NULL);
-        if (!result) goto failed;
-        value = ast2obj_list(o->v.ExtSlice.dims, ast2obj_slice);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_dims, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        break;
-    case Index_kind:
-        result = PyType_GenericNew(Index_type, NULL, NULL);
-        if (!result) goto failed;
-        value = ast2obj_expr(o->v.Index.value);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_value, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        break;
-    }
-    return result;
-failed:
-    Py_XDECREF(value);
-    Py_XDECREF(result);
-    return NULL;
-}
-
 PyObject* ast2obj_boolop(boolop_ty o)
 {
     switch(o) {
@@ -6592,7 +6511,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     }
     if (isinstance) {
         expr_ty value;
-        slice_ty slice;
+        expr_ty slice;
         expr_context_ty ctx;
 
         if (_PyObject_LookupAttrId(obj, &PyId_value, &tmp) < 0) {
@@ -6617,7 +6536,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_slice(tmp, &slice, arena);
+            res = obj2ast_expr(tmp, &slice, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6824,6 +6743,58 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         if (*out == NULL) goto failed;
         return 0;
     }
+    isinstance = PyObject_IsInstance(obj, (PyObject*)Slice_type);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (isinstance) {
+        expr_ty lower;
+        expr_ty upper;
+        expr_ty step;
+
+        if (_PyObject_LookupAttrId(obj, &PyId_lower, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            lower = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_expr(tmp, &lower, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (_PyObject_LookupAttrId(obj, &PyId_upper, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            upper = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_expr(tmp, &upper, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (_PyObject_LookupAttrId(obj, &PyId_step, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            step = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_expr(tmp, &step, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = Slice(lower, upper, step, lineno, col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of expr, but got %R", obj);
     failed:
@@ -6886,141 +6857,6 @@ obj2ast_expr_context(PyObject* obj, expr_context_ty* out, PyArena* arena)
     }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of expr_context, but got %R", obj);
-    return 1;
-}
-
-int
-obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
-{
-    int isinstance;
-
-    PyObject *tmp = NULL;
-
-    if (obj == Py_None) {
-        *out = NULL;
-        return 0;
-    }
-    isinstance = PyObject_IsInstance(obj, (PyObject*)Slice_type);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        expr_ty lower;
-        expr_ty upper;
-        expr_ty step;
-
-        if (_PyObject_LookupAttrId(obj, &PyId_lower, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            lower = NULL;
-        }
-        else {
-            int res;
-            res = obj2ast_expr(tmp, &lower, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        if (_PyObject_LookupAttrId(obj, &PyId_upper, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            upper = NULL;
-        }
-        else {
-            int res;
-            res = obj2ast_expr(tmp, &upper, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        if (_PyObject_LookupAttrId(obj, &PyId_step, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            step = NULL;
-        }
-        else {
-            int res;
-            res = obj2ast_expr(tmp, &step, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        *out = Slice(lower, upper, step, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
-    isinstance = PyObject_IsInstance(obj, (PyObject*)ExtSlice_type);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        asdl_seq* dims;
-
-        if (_PyObject_LookupAttrId(obj, &PyId_dims, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"dims\" missing from ExtSlice");
-            return 1;
-        }
-        else {
-            int res;
-            Py_ssize_t len;
-            Py_ssize_t i;
-            if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ExtSlice field \"dims\" must be a list, not a %.200s", tmp->ob_type->tp_name);
-                goto failed;
-            }
-            len = PyList_GET_SIZE(tmp);
-            dims = _Py_asdl_seq_new(len, arena);
-            if (dims == NULL) goto failed;
-            for (i = 0; i < len; i++) {
-                slice_ty val;
-                res = obj2ast_slice(PyList_GET_ITEM(tmp, i), &val, arena);
-                if (res != 0) goto failed;
-                if (len != PyList_GET_SIZE(tmp)) {
-                    PyErr_SetString(PyExc_RuntimeError, "ExtSlice field \"dims\" changed size during iteration");
-                    goto failed;
-                }
-                asdl_seq_SET(dims, i, val);
-            }
-            Py_CLEAR(tmp);
-        }
-        *out = ExtSlice(dims, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
-    isinstance = PyObject_IsInstance(obj, (PyObject*)Index_type);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        expr_ty value;
-
-        if (_PyObject_LookupAttrId(obj, &PyId_value, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Index");
-            return 1;
-        }
-        else {
-            int res;
-            res = obj2ast_expr(tmp, &value, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        *out = Index(value, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
-
-    PyErr_Format(PyExc_TypeError, "expected some sort of slice, but got %R", obj);
-    failed:
-    Py_XDECREF(tmp);
     return 1;
 }
 
@@ -7964,6 +7800,8 @@ PyInit__ast(void)
     if (PyDict_SetItemString(d, "List", (PyObject*)List_type) < 0) return NULL;
     if (PyDict_SetItemString(d, "Tuple", (PyObject*)Tuple_type) < 0) return
         NULL;
+    if (PyDict_SetItemString(d, "Slice", (PyObject*)Slice_type) < 0) return
+        NULL;
     if (PyDict_SetItemString(d, "expr_context", (PyObject*)expr_context_type) <
         0) return NULL;
     if (PyDict_SetItemString(d, "Load", (PyObject*)Load_type) < 0) return NULL;
@@ -7975,14 +7813,6 @@ PyInit__ast(void)
     if (PyDict_SetItemString(d, "AugStore", (PyObject*)AugStore_type) < 0)
         return NULL;
     if (PyDict_SetItemString(d, "Param", (PyObject*)Param_type) < 0) return
-        NULL;
-    if (PyDict_SetItemString(d, "slice", (PyObject*)slice_type) < 0) return
-        NULL;
-    if (PyDict_SetItemString(d, "Slice", (PyObject*)Slice_type) < 0) return
-        NULL;
-    if (PyDict_SetItemString(d, "ExtSlice", (PyObject*)ExtSlice_type) < 0)
-        return NULL;
-    if (PyDict_SetItemString(d, "Index", (PyObject*)Index_type) < 0) return
         NULL;
     if (PyDict_SetItemString(d, "boolop", (PyObject*)boolop_type) < 0) return
         NULL;

@@ -384,3 +384,11 @@ _const_types = {
     NameConstant: (type(None), bool),
     Ellipsis: (type(...),),
 }
+
+class Index(AST):
+    def __new__(cls, value, *args, **kwargs):
+        return value
+
+class ExtSlice(AST):
+    def __new__(cls, dims=(), *args, **kwargs):
+        return Tuple(list(dims), Load(), *args, **kwargs)
