@@ -1538,6 +1538,7 @@ pymain_run_filename(_PyMain *pymain, PyCompilerFlags *cf)
     else {
         fp = stdin;
     }
+    pymain_clear_config(pymain);
 
     pymain->status = pymain_run_file(fp, pymain->filename, cf);
 }
@@ -2602,8 +2603,6 @@ pymain_init_sys_path(_PyMain *pymain)
         return -1;
     }
 
-    pymain_clear_config(pymain);
-
     if (path0 != NULL) {
         if (pymain_update_sys_path(pymain, path0) < 0) {
             Py_DECREF(path0);
@@ -2624,9 +2623,11 @@ pymain_run_python(_PyMain *pymain)
     pymain_import_readline(pymain);
 
     if (pymain->command) {
+        pymain_clear_config(pymain);
         pymain->status = pymain_run_command(pymain->command, &cf);
     }
     else if (pymain->module) {
+        pymain_clear_config(pymain);
         pymain->status = (pymain_run_module(pymain->module, 1) != 0);
     }
     else {
