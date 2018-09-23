@@ -354,13 +354,17 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
         locals['_return_type'] = return_type
         return_annotation = '->_return_type'
     args = ','.join(args)
-    body = '\n'.join(f' {b}' for b in body)
+    body = '\n'.join(f'  {b}' for b in body)
 
     # Compute the text of the entire function.
-    txt = f'def {name}({args}){return_annotation}:\n{body}'
+    txt = f' def {name}({args}){return_annotation}:\n{body}'
+
+    local_vars = ', '.join(locals.keys())
+    txt = f"def __create_fn__({local_vars}):\n{txt}\n return {name}"
 
     exec(txt, globals, locals)
-    return locals[name]
+    create_fn = locals.pop('__create_fn__')
+    return create_fn(**locals)
 
 
 def _field_assign(frozen, name, value, self_name):
@@ -448,7 +452,7 @@ def _init_param(f):
     return f'{f.name}:_type_{f.name}{default}'
 
 
-def _init_fn(fields, frozen, has_post_init, self_name):
+def _init_fn(fields, frozen, has_post_init, self_name, modname):
     # fields contains both real fields and InitVar pseudo-fields.
 
     # Make sure we don't have fields without defaults following fields
@@ -466,12 +470,18 @@ def _init_fn(fields, frozen, has_post_init, self_name):
                 raise TypeError(f'non-default argument {f.name!r} '
                                 'follows default argument')
 
-    globals = {'MISSING': MISSING,
-               '_HAS_DEFAULT_FACTORY': _HAS_DEFAULT_FACTORY}
+    globals = sys.modules[modname].__dict__
+
+    locals = {f'_type_{f.name}': f.type for f in fields}
+    locals.update({
+        'MISSING': MISSING,
+        '_HAS_DEFAULT_FACTORY': _HAS_DEFAULT_FACTORY,
+        '__builtins__': builtins,
+    })
 
     body_lines = []
     for f in fields:
-        line = _field_init(f, frozen, globals, self_name)
+        line = _field_init(f, frozen, locals, self_name)
         # line is None means that this field doesn't require
         # initialization (it's a pseudo-field).  Just skip it.
         if line:
@@ -487,7 +497,6 @@ def _init_fn(fields, frozen, has_post_init, self_name):
     if not body_lines:
         body_lines = ['pass']
 
-    locals = {f'_type_{f.name}': f.type for f in fields}
     return _create_fn('__init__',
                       [self_name] + [_init_param(f) for f in fields if f.init],
                       body_lines,
@@ -877,6 +886,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
                                     # if possible.
                                     '__dataclass_self__' if 'self' in fields
                                             else 'self',
+                                    cls.__module__
                           ))
 
     # Get the fields as a list, and include only real fields.  This is

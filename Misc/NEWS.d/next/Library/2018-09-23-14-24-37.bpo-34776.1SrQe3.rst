@@ -1,0 +1,1 @@
+Fix dataclasses to support __future__ "annotations" mode
