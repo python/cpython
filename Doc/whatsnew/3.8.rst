@@ -140,13 +140,20 @@ pathlib
 contain characters unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
+ssl
+---
+
+Added :attr:`SSLContext.post_handshake_auth` to enable and
+:meth:`ssl.SSLSocket.verify_client_post_handshake` to initiate TLS 1.3
+post-handshake authentication.
+(Contributed by Christian Heimes in :issue:`34670`.)
+
 venv
 ----
 
 * :mod:`venv` now includes an ``Activate.ps1`` script on all platforms for
   activating virtual environments under PowerShell Core 6.1.
   (Contributed by Brett Cannon in :issue:`32718`.)
-
 
 Optimizations
 =============

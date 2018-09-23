@@ -777,6 +777,9 @@ class SSLObject:
         current SSL channel. """
         return self._sslobj.version()
 
+    def verify_client_post_handshake(self):
+        return self._sslobj.verify_client_post_handshake()
+
 
 class SSLSocket(socket):
     """This class implements a subtype of socket.socket that wraps
@@ -1091,6 +1094,12 @@ class SSLSocket(socket):
             s = self._sslobj.shutdown()
             self._sslobj = None
             return s
+        else:
+            raise ValueError("No SSL wrapper around " + str(self))
+
+    def verify_client_post_handshake(self):
+        if self._sslobj:
+            return self._sslobj.verify_client_post_handshake()
         else:
             raise ValueError("No SSL wrapper around " + str(self))
 
