@@ -182,14 +182,14 @@ Generic options
 
    .. code-block:: none
 
-       Python 3.7.0
+       Python 3.7.0b2+
 
    When given twice, print more information about the build, like:
 
    .. code-block:: none
 
-       Python 3.7.0 (default, Jun 29 2018, 00:03:57)
-       [GCC 5.5.0]
+       Python 3.7.0b2+ (3.7:0c076caaa8, Sep 22 2018, 12:04:24)
+       [GCC 6.2.0 20161005]
 
    .. versionadded:: 3.6
       The ``-VV`` option.
