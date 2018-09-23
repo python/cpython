@@ -1462,6 +1462,10 @@ Server and client-side specific TLS protocols for :class:`~ssl.SSLContext`
 were added.
 (Contributed by Christian Heimes in :issue:`28085`.)
 
+Added :attr:`SSLContext.post_handshake_auth` to enable and
+:meth:`ssl.SSLSocket.verify_client_post_handshake` to initiate TLS 1.3
+post-handshake authentication.
+(Contributed by Christian Heimes in :issue:`34670`.)
 
 statistics
 ----------
