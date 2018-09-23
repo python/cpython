@@ -455,11 +455,7 @@ def enablerlcompleter():
 def venv(known_paths):
     global PREFIXES, ENABLE_USER_SITE
 
-    env = os.environ
-    if sys.platform == 'darwin' and '__PYVENV_LAUNCHER__' in env:
-        executable = os.environ['__PYVENV_LAUNCHER__']
-    else:
-        executable = sys.executable
+    executable = sys.executable
     exe_dir, _ = os.path.split(os.path.abspath(executable))
     site_prefix = os.path.dirname(exe_dir)
     sys._home = None
