@@ -65,8 +65,8 @@ kind                       sax              etree             minidom          p
 =========================  ==============   ===============   ==============   ==============   ==============
 billion laughs             **Vulnerable**   **Vulnerable**    **Vulnerable**   **Vulnerable**   **Vulnerable**
 quadratic blowup           **Vulnerable**   **Vulnerable**    **Vulnerable**   **Vulnerable**   **Vulnerable**
-external entity expansion  **Vulnerable**   Safe    (1)       Safe    (2)      **Vulnerable**   Safe    (3)
-`DTD`_ retrieval           **Vulnerable**   Safe              Safe             **Vulnerable**   Safe
+external entity expansion  Safe (4)         Safe    (1)       Safe    (2)      Safe (4)         Safe    (3)
+`DTD`_ retrieval           Safe (4)         Safe              Safe             Safe (4)         Safe
 decompression bomb         Safe             Safe              Safe             Safe             **Vulnerable**
 =========================  ==============   ===============   ==============   ==============   ==============
 
@@ -75,6 +75,8 @@ decompression bomb         Safe             Safe              Safe             S
 2. :mod:`xml.dom.minidom` doesn't expand external entities and simply returns
    the unexpanded entity verbatim.
 3. :mod:`xmlrpclib` doesn't expand external entities and omits them.
+4. Since Python 3.8.0, external general entities are no longer processed by
+   default since Python.
 
 
 billion laughs / exponential entity expansion
