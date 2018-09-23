@@ -474,7 +474,6 @@ def _init_fn(fields, frozen, has_post_init, self_name, globals):
     locals.update({
         'MISSING': MISSING,
         '_HAS_DEFAULT_FACTORY': _HAS_DEFAULT_FACTORY,
-        '__builtins__': builtins,
     })
 
     body_lines = []
