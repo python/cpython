@@ -119,7 +119,8 @@ file_PyObject_Print(PyObject *op, PyFileObject *f, int flags)
 static PyFileObject*
 dircheck(PyFileObject* f)
 {
-#if defined(HAVE_FSTAT) && defined(S_IFDIR) && defined(EISDIR)
+#if !defined(MS_WINDOWS) && defined(HAVE_FSTAT) && defined(S_IFDIR) && \
+    defined(EISDIR)
     struct stat buf;
     int res;
     if (f->f_fp == NULL)

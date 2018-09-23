@@ -1,0 +1,2 @@
+Fix hang on startup if stdin refers to a pipe with an outstanding concurrent
+operation on Windows.

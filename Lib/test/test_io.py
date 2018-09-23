@@ -32,6 +32,8 @@ import weakref
 import warnings
 import abc
 import signal
+import subprocess
+import textwrap
 import errno
 from itertools import cycle, count
 from collections import deque
@@ -3131,6 +3133,43 @@ class MiscIOTest(unittest.TestCase):
         self.assertEqual(sent, received)
         self.assertTrue(wf.closed)
         self.assertTrue(rf.closed)
+
+    # bpo-34780
+    @unittest.skipUnless(sys.platform == 'win32', 'Win32-specific test')
+    def test_stdin_init_hang(self):
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        code = textwrap.dedent("""
+            import sys
+            sys.stdout.write('OK')
+            sys.stdout.flush()
+            sys.stdin.read()
+        """)
+        p = subprocess.Popen([sys.executable, '-c', code],
+                             stdin=r, stdout=subprocess.PIPE, bufsize=0)
+        try:
+            # Synchronize to increase chances that p is blocked in ReadFile()
+            # when p2 is started.
+            self.assertEqual(p.stdout.read(2), b'OK')
+            p.stdout.close()
+            p2 = subprocess.Popen([sys.executable, '-c', ''], stdin=r)
+            try:
+                start = time.time()
+                while time.time() - start < 10:
+                    exit_code = p2.poll()
+                    if exit_code is not None:
+                        self.assertEqual(exit_code, 0)
+                        break
+                    time.sleep(0.1)
+                else:
+                    self.fail('Child interpreter appears to hang')
+            finally:
+                p2.kill()
+                p2.wait()
+        finally:
+            p.kill()
+            p.wait()
 
 class CMiscIOTest(MiscIOTest):
     io = io

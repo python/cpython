@@ -6915,7 +6915,8 @@ posix_fdopen(PyObject *self, PyObject *args)
         PyMem_FREE(mode);
         return posix_error();
     }
-#if defined(HAVE_FSTAT) && defined(S_IFDIR) && defined(EISDIR)
+#if !defined(MS_WINDOWS) && defined(HAVE_FSTAT) && defined(S_IFDIR) && \
+    defined(EISDIR)
     {
         struct stat buf;
         const char *msg;
