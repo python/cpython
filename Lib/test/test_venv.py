@@ -52,10 +52,8 @@ class BaseTest(unittest.TestCase):
             self.bindir = 'bin'
             self.lib = ('lib', 'python%d.%d' % sys.version_info[:2])
             self.include = 'include'
-        if sys.platform == 'darwin' and '__PYVENV_LAUNCHER__' in os.environ:
-            executable = os.environ['__PYVENV_LAUNCHER__']
-        else:
-            executable = sys.executable
+
+        executable = sys.executable
         self.exe = os.path.split(executable)[-1]
 
     def tearDown(self):
@@ -304,6 +302,18 @@ class BasicTest(BaseTest):
             encoding='oem',
         )
         self.assertEqual(out.strip(), '0')
+
+    @unittest.skipUnless(sys.platform == 'darwin', 'only relevant on macOS')
+    def test_macos_env(self):
+        rmtree(self.env_dir)
+        builder = venv.EnvBuilder()
+        builder.create(self.env_dir)
+
+        envpy = os.path.join(os.path.realpath(self.env_dir),
+                             self.bindir, self.exe)
+        out, err = check_output([envpy, '-c',
+            'import os; print("__PYVENV_LAUNCHER__" in os.environ)'])
+        self.assertEqual(out.strip(), 'False'.encode())
 
 @skipInVenv
 class EnsurePipTest(BaseTest):
