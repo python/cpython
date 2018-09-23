@@ -1,0 +1,2 @@
+Encode default value before replacing it in the option. Based on patch by
+tanbro-liu.
