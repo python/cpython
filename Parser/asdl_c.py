@@ -94,8 +94,9 @@ class EmitVisitor(asdl.VisitorBase):
         else:
             lines = [s]
         for line in lines:
-            line = (" " * TABSIZE * depth) + line + "\n"
-            self.file.write(line)
+            if line:
+                line = (" " * TABSIZE * depth) + line
+            self.file.write(line + "\n")
 
 
 class TypeDefVisitor(EmitVisitor):
@@ -496,18 +497,31 @@ class Obj2ModVisitor(PickleVisitor):
 
     def visitField(self, field, name, sum=None, prod=None, depth=0):
         ctype = get_c_type(field.type)
-        if field.opt:
-            check = "exists_not_none(obj, &PyId_%s)" % (field.name,)
+        self.emit("if (_PyObject_LookupAttrId(obj, &PyId_%s, &tmp) < 0) {" % field.name, depth)
+        self.emit("return 1;", depth+1)
+        self.emit("}", depth)
+        if not field.opt:
+            self.emit("if (tmp == NULL) {", depth)
+            message = "required field \\\"%s\\\" missing from %s" % (field.name, name)
+            format = "PyErr_SetString(PyExc_TypeError, \"%s\");"
+            self.emit(format % message, depth+1, reflow=False)
+            self.emit("return 1;", depth+1)
         else:
-            check = "_PyObject_HasAttrId(obj, &PyId_%s)" % (field.name,)
-        self.emit("if (%s) {" % (check,), depth, reflow=False)
+            self.emit("if (tmp == NULL || tmp == Py_None) {", depth)
+            self.emit("Py_CLEAR(tmp);", depth+1)
+            if self.isNumeric(field):
+                self.emit("%s = 0;" % field.name, depth+1)
+            elif not self.isSimpleType(field):
+                self.emit("%s = NULL;" % field.name, depth+1)
+            else:
+                raise TypeError("could not determine the default value for %s" % field.name)
+        self.emit("}", depth)
+        self.emit("else {", depth)
+
         self.emit("int res;", depth+1)
         if field.seq:
             self.emit("Py_ssize_t len;", depth+1)
             self.emit("Py_ssize_t i;", depth+1)
-        self.emit("tmp = _PyObject_GetAttrId(obj, &PyId_%s);" % field.name, depth+1)
-        self.emit("if (tmp == NULL) goto failed;", depth+1)
-        if field.seq:
             self.emit("if (!PyList_Check(tmp)) {", depth+1)
             self.emit("PyErr_Format(PyExc_TypeError, \"%s field \\\"%s\\\" must "
                       "be a list, not a %%.200s\", tmp->ob_type->tp_name);" %
@@ -522,8 +536,8 @@ class Obj2ModVisitor(PickleVisitor):
                 self.emit("%s = _Py_asdl_seq_new(len, arena);" % field.name, depth+1)
             self.emit("if (%s == NULL) goto failed;" % field.name, depth+1)
             self.emit("for (i = 0; i < len; i++) {", depth+1)
-            self.emit("%s value;" % ctype, depth+2)
-            self.emit("res = obj2ast_%s(PyList_GET_ITEM(tmp, i), &value, arena);" %
+            self.emit("%s val;" % ctype, depth+2)
+            self.emit("res = obj2ast_%s(PyList_GET_ITEM(tmp, i), &val, arena);" %
                       field.type, depth+2, reflow=False)
             self.emit("if (res != 0) goto failed;", depth+2)
             self.emit("if (len != PyList_GET_SIZE(tmp)) {", depth+2)
@@ -533,7 +547,7 @@ class Obj2ModVisitor(PickleVisitor):
                       depth+3, reflow=False)
             self.emit("goto failed;", depth+3)
             self.emit("}", depth+2)
-            self.emit("asdl_seq_SET(%s, i, value);" % field.name, depth+2)
+            self.emit("asdl_seq_SET(%s, i, val);" % field.name, depth+2)
             self.emit("}", depth+1)
         else:
             self.emit("res = obj2ast_%s(tmp, &%s, arena);" %
@@ -541,19 +555,6 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("if (res != 0) goto failed;", depth+1)
 
         self.emit("Py_CLEAR(tmp);", depth+1)
-        self.emit("} else {", depth)
-        if not field.opt:
-            message = "required field \\\"%s\\\" missing from %s" % (field.name, name)
-            format = "PyErr_SetString(PyExc_TypeError, \"%s\");"
-            self.emit(format % message, depth+1, reflow=False)
-            self.emit("return 1;", depth+1)
-        else:
-            if self.isNumeric(field):
-                self.emit("%s = 0;" % field.name, depth+1)
-            elif not self.isSimpleType(field):
-                self.emit("%s = NULL;" % field.name, depth+1)
-            else:
-                raise TypeError("could not determine the default value for %s" % field.name)
         self.emit("}", depth)
 
 
@@ -633,6 +634,8 @@ typedef struct {
 static void
 ast_dealloc(AST_object *self)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(self);
     Py_CLEAR(self->dict);
     Py_TYPE(self)->tp_free(self);
 }
@@ -644,10 +647,11 @@ ast_traverse(AST_object *self, visitproc visit, void *arg)
     return 0;
 }
 
-static void
+static int
 ast_clear(AST_object *self)
 {
     Py_CLEAR(self->dict);
+    return 0;
 }
 
 static int
@@ -656,9 +660,9 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields;
-    fields = _PyObject_GetAttrId((PyObject*)Py_TYPE(self), &PyId__fields);
-    if (!fields)
-        PyErr_Clear();
+    if (_PyObject_LookupAttrId((PyObject*)Py_TYPE(self), &PyId__fields, &fields) < 0) {
+        goto cleanup;
+    }
     if (fields) {
         numfields = PySequence_Size(fields);
         if (numfields == -1)
@@ -703,19 +707,13 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 static PyObject *
 ast_type_reduce(PyObject *self, PyObject *unused)
 {
-    PyObject *res;
     _Py_IDENTIFIER(__dict__);
-    PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
-    if (dict == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError))
-            PyErr_Clear();
-        else
-            return NULL;
+    PyObject *dict;
+    if (_PyObject_LookupAttrId(self, &PyId___dict__, &dict) < 0) {
+        return NULL;
     }
     if (dict) {
-        res = Py_BuildValue("O()O", Py_TYPE(self), dict);
-        Py_DECREF(dict);
-        return res;
+        return Py_BuildValue("O()N", Py_TYPE(self), dict);
     }
     return Py_BuildValue("O()", Py_TYPE(self));
 }
@@ -953,19 +951,6 @@ static int add_ast_fields(void)
     }
     Py_DECREF(empty_tuple);
     return 0;
-}
-
-static int exists_not_none(PyObject *obj, _Py_Identifier *id)
-{
-    int isnone;
-    PyObject *attr = _PyObject_GetAttrId(obj, id);
-    if (!attr) {
-        PyErr_Clear();
-        return 0;
-    }
-    isnone = attr == Py_None;
-    Py_DECREF(attr);
-    return !isnone;
 }
 
 """, 0, reflow=False)
@@ -1282,59 +1267,55 @@ def main(srcfile, dump_module=False):
         print(mod)
     if not asdl.check(mod):
         sys.exit(1)
-    if INC_DIR:
-        p = "%s/%s-ast.h" % (INC_DIR, mod.name)
-        f = open(p, "w")
-        f.write(auto_gen_msg)
-        f.write('#include "asdl.h"\n\n')
-        c = ChainOfVisitors(TypeDefVisitor(f),
-                            StructVisitor(f),
-                            PrototypeVisitor(f),
-                            )
-        c.visit(mod)
-        f.write("PyObject* PyAST_mod2obj(mod_ty t);\n")
-        f.write("mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);\n")
-        f.write("int PyAST_Check(PyObject* obj);\n")
-        f.close()
+    if H_FILE:
+        with open(H_FILE, "w") as f:
+            f.write(auto_gen_msg)
+            f.write('#include "asdl.h"\n\n')
+            c = ChainOfVisitors(TypeDefVisitor(f),
+                                StructVisitor(f),
+                                PrototypeVisitor(f),
+                                )
+            c.visit(mod)
+            f.write("PyObject* PyAST_mod2obj(mod_ty t);\n")
+            f.write("mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);\n")
+            f.write("int PyAST_Check(PyObject* obj);\n")
 
-    if SRC_DIR:
-        p = os.path.join(SRC_DIR, str(mod.name) + "-ast.c")
-        f = open(p, "w")
-        f.write(auto_gen_msg)
-        f.write('#include <stddef.h>\n')
-        f.write('\n')
-        f.write('#include "Python.h"\n')
-        f.write('#include "%s-ast.h"\n' % mod.name)
-        f.write('\n')
-        f.write("static PyTypeObject AST_type;\n")
-        v = ChainOfVisitors(
-            PyTypesDeclareVisitor(f),
-            PyTypesVisitor(f),
-            Obj2ModPrototypeVisitor(f),
-            FunctionVisitor(f),
-            ObjVisitor(f),
-            Obj2ModVisitor(f),
-            ASTModuleVisitor(f),
-            PartingShots(f),
-            )
-        v.visit(mod)
-        f.close()
+    if C_FILE:
+        with open(C_FILE, "w") as f:
+            f.write(auto_gen_msg)
+            f.write('#include <stddef.h>\n')
+            f.write('\n')
+            f.write('#include "Python.h"\n')
+            f.write('#include "%s-ast.h"\n' % mod.name)
+            f.write('\n')
+            f.write("static PyTypeObject AST_type;\n")
+            v = ChainOfVisitors(
+                PyTypesDeclareVisitor(f),
+                PyTypesVisitor(f),
+                Obj2ModPrototypeVisitor(f),
+                FunctionVisitor(f),
+                ObjVisitor(f),
+                Obj2ModVisitor(f),
+                ASTModuleVisitor(f),
+                PartingShots(f),
+                )
+            v.visit(mod)
 
 if __name__ == "__main__":
     import getopt
 
-    INC_DIR = ''
-    SRC_DIR = ''
+    H_FILE = ''
+    C_FILE = ''
     dump_module = False
     opts, args = getopt.getopt(sys.argv[1:], "dh:c:")
     for o, v in opts:
         if o == '-h':
-            INC_DIR = v
+            H_FILE = v
         if o == '-c':
-            SRC_DIR = v
+            C_FILE = v
         if o == '-d':
             dump_module = True
-    if INC_DIR and SRC_DIR:
+    if H_FILE and C_FILE:
         print('Must specify exactly one output file')
         sys.exit(1)
     elif len(args) != 1:

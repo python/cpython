@@ -164,14 +164,10 @@ static PyObject *
 _io_BytesIO_read_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
-_io_BytesIO_read(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_BytesIO_read(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
-
-    if (!_PyArg_NoStackKeywords("read", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:read",
         _Py_convert_optional_to_ssize_t, &size)) {
@@ -199,14 +195,10 @@ static PyObject *
 _io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
-_io_BytesIO_read1(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_BytesIO_read1(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
-
-    if (!_PyArg_NoStackKeywords("read1", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:read1",
         _Py_convert_optional_to_ssize_t, &size)) {
@@ -235,14 +227,10 @@ static PyObject *
 _io_BytesIO_readline_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
-_io_BytesIO_readline(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_BytesIO_readline(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
-
-    if (!_PyArg_NoStackKeywords("readline", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:readline",
         _Py_convert_optional_to_ssize_t, &size)) {
@@ -271,14 +259,10 @@ static PyObject *
 _io_BytesIO_readlines_impl(bytesio *self, PyObject *arg);
 
 static PyObject *
-_io_BytesIO_readlines(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_BytesIO_readlines(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *arg = Py_None;
-
-    if (!_PyArg_NoStackKeywords("readlines", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_UnpackStack(args, nargs, "readlines",
         0, 1,
@@ -342,14 +326,10 @@ static PyObject *
 _io_BytesIO_truncate_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
-_io_BytesIO_truncate(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_BytesIO_truncate(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = self->pos;
-
-    if (!_PyArg_NoStackKeywords("truncate", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:truncate",
         _Py_convert_optional_to_ssize_t, &size)) {
@@ -380,15 +360,11 @@ static PyObject *
 _io_BytesIO_seek_impl(bytesio *self, Py_ssize_t pos, int whence);
 
 static PyObject *
-_io_BytesIO_seek(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_BytesIO_seek(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t pos;
     int whence = 0;
-
-    if (!_PyArg_NoStackKeywords("seek", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "n|i:seek",
         &pos, &whence)) {
@@ -468,4 +444,4 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9e63715414bffb2a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9ba9a68c8c5669e7 input=a9049054013a1b77]*/

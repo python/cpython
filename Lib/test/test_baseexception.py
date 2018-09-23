@@ -92,7 +92,7 @@ class ExceptionClassTests(unittest.TestCase):
         exc = Exception(arg)
         results = ([len(exc.args), 1], [exc.args[0], arg],
                    [str(exc), str(arg)],
-            [repr(exc), exc.__class__.__name__ + repr(exc.args)])
+            [repr(exc), '%s(%r)' % (exc.__class__.__name__, arg)])
         self.interface_test_driver(results)
 
     def test_interface_multi_arg(self):
@@ -163,7 +163,7 @@ class UsageTests(unittest.TestCase):
         self.raise_fails("spam")
 
     def test_catch_non_BaseException(self):
-        # Tryinng to catch an object that does not inherit from BaseException
+        # Trying to catch an object that does not inherit from BaseException
         # is not allowed.
         class NonBaseException(object):
             pass

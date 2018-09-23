@@ -6,7 +6,8 @@ executing have not been removed.
 """
 import unittest
 import test.support
-from test.support import captured_stderr, TESTFN, EnvironmentVarGuard
+from test.support import (captured_stderr, TESTFN, EnvironmentVarGuard,
+                          change_cwd)
 import builtins
 import os
 import sys
@@ -159,13 +160,11 @@ class HelperFunctionsTests(unittest.TestCase):
         # Issue 5258
         pth_dir, pth_fn = self.make_pth("abc\x00def\n")
         with captured_stderr() as err_out:
-            site.addpackage(pth_dir, pth_fn, set())
-        self.assertRegex(err_out.getvalue(), "line 1")
-        self.assertRegex(err_out.getvalue(),
-            re.escape(os.path.join(pth_dir, pth_fn)))
-        # XXX: ditto previous XXX comment.
-        self.assertRegex(err_out.getvalue(), 'Traceback')
-        self.assertRegex(err_out.getvalue(), 'ValueError')
+            self.assertFalse(site.addpackage(pth_dir, pth_fn, set()))
+        self.assertEqual(err_out.getvalue(), "")
+        for path in sys.path:
+            if isinstance(path, str):
+                self.assertNotIn("abc\x00def", path)
 
     def test_addsitedir(self):
         # Same tests for test_addpackage since addsitedir() essentially just
@@ -179,6 +178,17 @@ class HelperFunctionsTests(unittest.TestCase):
             self.pth_file_tests(pth_file)
         finally:
             pth_file.cleanup()
+
+    def test_getuserbase(self):
+        self.assertEqual(site._getuserbase(), sysconfig._getuserbase())
+
+    def test_get_path(self):
+        if sys.platform == 'darwin' and sys._framework:
+            scheme = 'osx_framework_user'
+        else:
+            scheme = os.name + '_user'
+        self.assertEqual(site._get_path(site._getuserbase()),
+                         sysconfig.get_path('purelib', scheme))
 
     @unittest.skipUnless(site.ENABLE_USER_SITE, "requires access to PEP 370 "
                           "user-site (site.ENABLE_USER_SITE)")
@@ -250,20 +260,8 @@ class HelperFunctionsTests(unittest.TestCase):
     def test_getsitepackages(self):
         site.PREFIXES = ['xoxo']
         dirs = site.getsitepackages()
-
-        if (sys.platform == "darwin" and
-            sysconfig.get_config_var("PYTHONFRAMEWORK")):
-            # OS X framework builds
-            site.PREFIXES = ['Python.framework']
-            dirs = site.getsitepackages()
-            self.assertEqual(len(dirs), 2)
-            wanted = os.path.join('/Library',
-                                  sysconfig.get_config_var("PYTHONFRAMEWORK"),
-                                  '%d.%d' % sys.version_info[:2],
-                                  'site-packages')
-            self.assertEqual(dirs[1], wanted)
-        elif os.sep == '/':
-            # OS X non-framwework builds, Linux, FreeBSD, etc
+        if os.sep == '/':
+            # OS X, Linux, FreeBSD, etc
             self.assertEqual(len(dirs), 1)
             wanted = os.path.join('xoxo', 'lib',
                                   'python%d.%d' % sys.version_info[:2],
@@ -349,40 +347,47 @@ class ImportSideEffectTests(unittest.TestCase):
         # __file__ if abs_paths() does not get run.  sys and builtins (the
         # only other modules imported before site.py runs) do not have
         # __file__ or __cached__ because they are built-in.
-        parent = os.path.relpath(os.path.dirname(os.__file__))
-        env = os.environ.copy()
-        env['PYTHONPATH'] = parent
-        code = ('import os, sys',
-            # use ASCII to avoid locale issues with non-ASCII directories
-            'os_file = os.__file__.encode("ascii", "backslashreplace")',
-            r'sys.stdout.buffer.write(os_file + b"\n")',
-            'os_cached = os.__cached__.encode("ascii", "backslashreplace")',
-            r'sys.stdout.buffer.write(os_cached + b"\n")')
-        command = '\n'.join(code)
-        # First, prove that with -S (no 'import site'), the paths are
-        # relative.
-        proc = subprocess.Popen([sys.executable, '-S', '-c', command],
-                                env=env,
-                                stdout=subprocess.PIPE)
-        stdout, stderr = proc.communicate()
+        try:
+            parent = os.path.relpath(os.path.dirname(os.__file__))
+            cwd = os.getcwd()
+        except ValueError:
+            # Failure to get relpath probably means we need to chdir
+            # to the same drive.
+            cwd, parent = os.path.split(os.path.dirname(os.__file__))
+        with change_cwd(cwd):
+            env = os.environ.copy()
+            env['PYTHONPATH'] = parent
+            code = ('import os, sys',
+                # use ASCII to avoid locale issues with non-ASCII directories
+                'os_file = os.__file__.encode("ascii", "backslashreplace")',
+                r'sys.stdout.buffer.write(os_file + b"\n")',
+                'os_cached = os.__cached__.encode("ascii", "backslashreplace")',
+                r'sys.stdout.buffer.write(os_cached + b"\n")')
+            command = '\n'.join(code)
+            # First, prove that with -S (no 'import site'), the paths are
+            # relative.
+            proc = subprocess.Popen([sys.executable, '-S', '-c', command],
+                                    env=env,
+                                    stdout=subprocess.PIPE)
+            stdout, stderr = proc.communicate()
 
-        self.assertEqual(proc.returncode, 0)
-        os__file__, os__cached__ = stdout.splitlines()[:2]
-        self.assertFalse(os.path.isabs(os__file__))
-        self.assertFalse(os.path.isabs(os__cached__))
-        # Now, with 'import site', it works.
-        proc = subprocess.Popen([sys.executable, '-c', command],
-                                env=env,
-                                stdout=subprocess.PIPE)
-        stdout, stderr = proc.communicate()
-        self.assertEqual(proc.returncode, 0)
-        os__file__, os__cached__ = stdout.splitlines()[:2]
-        self.assertTrue(os.path.isabs(os__file__),
-                        "expected absolute path, got {}"
-                        .format(os__file__.decode('ascii')))
-        self.assertTrue(os.path.isabs(os__cached__),
-                        "expected absolute path, got {}"
-                        .format(os__cached__.decode('ascii')))
+            self.assertEqual(proc.returncode, 0)
+            os__file__, os__cached__ = stdout.splitlines()[:2]
+            self.assertFalse(os.path.isabs(os__file__))
+            self.assertFalse(os.path.isabs(os__cached__))
+            # Now, with 'import site', it works.
+            proc = subprocess.Popen([sys.executable, '-c', command],
+                                    env=env,
+                                    stdout=subprocess.PIPE)
+            stdout, stderr = proc.communicate()
+            self.assertEqual(proc.returncode, 0)
+            os__file__, os__cached__ = stdout.splitlines()[:2]
+            self.assertTrue(os.path.isabs(os__file__),
+                            "expected absolute path, got {}"
+                            .format(os__file__.decode('ascii')))
+            self.assertTrue(os.path.isabs(os__cached__),
+                            "expected absolute path, got {}"
+                            .format(os__cached__.decode('ascii')))
 
     def test_no_duplicate_paths(self):
         # No duplicate paths should exist in sys.path
@@ -485,9 +490,7 @@ class StartupImportTests(unittest.TestCase):
                            'heapq', 'itertools', 'keyword', 'operator',
                            'reprlib', 'types', 'weakref'
                           }.difference(sys.builtin_module_names)
-        # http://bugs.python.org/issue28095
-        if sys.platform != 'darwin':
-            self.assertFalse(modules.intersection(collection_mods), stderr)
+        self.assertFalse(modules.intersection(collection_mods), stderr)
 
     def test_startup_interactivehook(self):
         r = subprocess.Popen([sys.executable, '-c',
@@ -551,7 +554,7 @@ class _pthFileTests(unittest.TestCase):
             'import sys; print("\\n".join(sys.path) if sys.flags.no_site else "")'
         ], env=env, encoding='ansi')
         actual_sys_path = output.rstrip().split('\n')
-        self.assert_(actual_sys_path, "sys.flags.no_site was False")
+        self.assertTrue(actual_sys_path, "sys.flags.no_site was False")
         self.assertEqual(
             actual_sys_path,
             sys_path,

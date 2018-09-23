@@ -538,7 +538,9 @@ target handler, and the system will resolve to the handler from the
 id.  If, however, a user defines a ``my.package.MyHandler`` which has
 an ``alternate`` handler, the configuration system would not know that
 the ``alternate`` referred to a handler.  To cater for this, a generic
-resolution system allows the user to specify::
+resolution system allows the user to specify:
+
+.. code-block:: yaml
 
     handlers:
       file:
@@ -552,7 +554,9 @@ The literal string ``'cfg://handlers.file'`` will be resolved in an
 analogous way to strings with the ``ext://`` prefix, but looking
 in the configuration itself rather than the import namespace.  The
 mechanism allows access by dot or by index, in a similar way to
-that provided by ``str.format``.  Thus, given the following snippet::
+that provided by ``str.format``.  Thus, given the following snippet:
+
+.. code-block:: yaml
 
     handlers:
       email:
@@ -715,7 +719,12 @@ a corresponding section in the configuration file.
 The ``args`` entry, when :func:`eval`\ uated in the context of the ``logging``
 package's namespace, is the list of arguments to the constructor for the handler
 class. Refer to the constructors for the relevant handlers, or to the examples
-below, to see how typical entries are constructed.
+below, to see how typical entries are constructed. If not provided, it defaults
+to ``()``.
+
+The optional ``kwargs`` entry, when :func:`eval`\ uated in the context of the
+``logging`` package's namespace, is the keyword argument dict to the constructor
+for the handler class. If not provided, it defaults to ``{}``.
 
 .. code-block:: ini
 
@@ -754,6 +763,7 @@ below, to see how typical entries are constructed.
    level=WARN
    formatter=form07
    args=('localhost', 'from@abc', ['user1@abc', 'user2@xyz'], 'Logger Subject')
+   kwargs={'timeout': 10.0}
 
    [handler_hand08]
    class=handlers.MemoryHandler
@@ -767,6 +777,7 @@ below, to see how typical entries are constructed.
    level=NOTSET
    formatter=form09
    args=('localhost:9022', '/log', 'GET')
+   kwargs={'secure': True}
 
 Sections which specify formatter configuration are typified by the following.
 
@@ -779,11 +790,10 @@ Sections which specify formatter configuration are typified by the following.
 
 The ``format`` entry is the overall format string, and the ``datefmt`` entry is
 the :func:`strftime`\ -compatible date/time format string.  If empty, the
-package substitutes ISO8601 format date/times, which is almost equivalent to
-specifying the date format string ``'%Y-%m-%d %H:%M:%S'``.  The ISO8601 format
-also specifies milliseconds, which are appended to the result of using the above
-format string, with a comma separator.  An example time in ISO8601 format is
-``2003-01-23 00:29:50,411``.
+package substitutes something which is almost equivalent to specifying the date
+format string ``'%Y-%m-%d %H:%M:%S'``.  This format also specifies milliseconds,
+which are appended to the result of using the above format string, with a comma
+separator.  An example time in this format is ``2003-01-23 00:29:50,411``.
 
 The ``class`` entry is optional.  It indicates the name of the formatter's class
 (as a dotted module and class name.)  This option is useful for instantiating a

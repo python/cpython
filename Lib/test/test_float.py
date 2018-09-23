@@ -51,7 +51,7 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertRaises(TypeError, float, {})
         self.assertRaisesRegex(TypeError, "not 'dict'", float, {})
         # Lone surrogate
-        self.assertRaises(UnicodeEncodeError, float, '\uD8F0')
+        self.assertRaises(ValueError, float, '\uD8F0')
         # check that we don't accept alternate exponent markers
         self.assertRaises(ValueError, float, "-1.7d29")
         self.assertRaises(ValueError, float, "3D-14")
@@ -60,6 +60,9 @@ class GeneralFloatCases(unittest.TestCase):
         # extra long strings should not be a problem
         float(b'.' + b'1'*1000)
         float('.' + '1'*1000)
+        # Invalid unicode string
+        # See bpo-34087
+        self.assertRaises(ValueError, float, '\u3053\u3093\u306b\u3061\u306f')
 
     def test_underscores(self):
         for lit in VALID_UNDERSCORE_LITERALS:
@@ -616,6 +619,12 @@ class IEEEFormatTestCase(unittest.TestCase):
                           ('<f', LE_FLOAT_INF),
                           ('<f', LE_FLOAT_NAN)]:
             struct.unpack(fmt, data)
+
+    @support.requires_IEEE_754
+    def test_serialized_float_rounding(self):
+        from _testcapi import FLT_MAX
+        self.assertEqual(struct.pack("<f", 3.40282356e38), struct.pack("<f", FLT_MAX))
+        self.assertEqual(struct.pack("<f", -3.40282356e38), struct.pack("<f", -FLT_MAX))
 
 class FormatTestCase(unittest.TestCase):
 

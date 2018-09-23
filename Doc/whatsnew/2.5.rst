@@ -229,7 +229,7 @@ required packages. ::
         )
 
 Another new enhancement to the Python package index at
-https://pypi.python.org is storing source and binary archives for a
+https://pypi.org is storing source and binary archives for a
 package.  The new :command:`upload` Distutils command will upload a package to
 the repository.
 
@@ -330,7 +330,7 @@ statement, only the ``from ... import`` form.
    :pep:`328` - Imports: Multi-Line and Absolute/Relative
       PEP written by Aahz; implemented by Thomas Wouters.
 
-   https://pylib.readthedocs.org/
+   https://pylib.readthedocs.io/
       The py library by Holger Krekel, which contains the :mod:`py.std` package.
 
 .. ======================================================================

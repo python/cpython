@@ -76,6 +76,7 @@ class ScrolledList:
         index = self.listbox.index("active")
         self.select(index)
         menu.tk_popup(event.x_root, event.y_root)
+        return "break"
 
     def make_menu(self):
         menu = Menu(self.listbox, tearoff=0)
@@ -141,6 +142,8 @@ def _scrolled_list(parent):  # htest #
         scrolled_list.append("Item %02d" % i)
 
 if __name__ == '__main__':
-    # At the moment, test_scrolledlist merely creates instance, like htest.
+    from unittest import main
+    main('idlelib.idle_test.test_scrolledlist', verbosity=2,)
+
     from idlelib.idle_test.htest import run
     run(_scrolled_list)

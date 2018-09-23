@@ -15,15 +15,11 @@ static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value);
 
 static PyObject *
-dict_fromkeys(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+dict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *iterable;
     PyObject *value = Py_None;
-
-    if (!_PyArg_NoStackKeywords("fromkeys", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_UnpackStack(args, nargs, "fromkeys",
         1, 2,
@@ -58,15 +54,11 @@ static PyObject *
 dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value);
 
 static PyObject *
-dict_get(PyDictObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+dict_get(PyDictObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *key;
     PyObject *default_value = Py_None;
-
-    if (!_PyArg_NoStackKeywords("get", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_UnpackStack(args, nargs, "get",
         1, 2,
@@ -95,15 +87,11 @@ dict_setdefault_impl(PyDictObject *self, PyObject *key,
                      PyObject *default_value);
 
 static PyObject *
-dict_setdefault(PyDictObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+dict_setdefault(PyDictObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *key;
     PyObject *default_value = Py_None;
-
-    if (!_PyArg_NoStackKeywords("setdefault", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_UnpackStack(args, nargs, "setdefault",
         1, 2,
@@ -115,4 +103,4 @@ dict_setdefault(PyDictObject *self, PyObject **args, Py_ssize_t nargs, PyObject 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=49e03ab4360f5be0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d7508c5091609a23 input=a9049054013a1b77]*/

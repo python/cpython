@@ -130,9 +130,6 @@ library/exceptions,,:err,err.object[err.start:err.end]
 library/functions,,:step,a[start:stop:step]
 library/functions,,:stop,"a[start:stop, i]"
 library/functions,,:stop,a[start:stop:step]
-library/hashlib,,:vatrogasac,>>> cookie = b'user:vatrogasac'
-library/hashlib,,:vatrogasac,"user:vatrogasac,349cf904533767ed2d755279a8df84d0"
-library/hashlib,,:policajac,">>> compare_digest(b'user:policajac', sig)"
 library/hashlib,,:LEAF,"h00 = blake2b(buf[0:LEAF_SIZE], fanout=FANOUT, depth=DEPTH,"
 library/http.client,,:port,host:port
 library/http.cookies,,`,!#$%&'*+-.^_`|~:
@@ -190,6 +187,8 @@ library/profile,,:lineno,filename:lineno(function)
 library/pyexpat,,:elem1,<py:elem1 />
 library/pyexpat,,:py,"xmlns:py = ""http://www.python.org/ns/"">"
 library/random,,:len,new_diff = mean(combined[:len(drug)]) - mean(combined[len(drug):])
+library/readline,,:bind,"python:bind -v"
+library/readline,,:bind,"python:bind ^I rl_complete"
 library/smtplib,,:port,method must support that as well as a regular host:port
 library/socket,,::,'5aef:2b::8'
 library/socket,,:can,"return (can_id, can_dlc, data[:can_dlc])"
@@ -262,12 +261,8 @@ tutorial/stdlib2,,:start,extra = data[start:start+extra_size]
 tutorial/stdlib2,,:start,"fields = struct.unpack('<IIIHH', data[start:start+16])"
 tutorial/stdlib2,,:start,filename = data[start:start+filenamesize]
 tutorial/stdlib2,,:Warning,WARNING:root:Warning:config file server.conf not found
-using/cmdline,,:category,action:message:category:module:line
 using/cmdline,,:errorhandler,:errorhandler
-using/cmdline,,:line,action:message:category:module:line
 using/cmdline,,:line,file:line: category: message
-using/cmdline,,:message,action:message:category:module:line
-using/cmdline,,:module,action:message:category:module:line
 using/unix,,:Packaging,https://en.opensuse.org/Portal:Packaging
 whatsnew/2.0,,:len,
 whatsnew/2.3,,::,
@@ -303,8 +298,22 @@ whatsnew/3.2,,:gz,">>> with tarfile.open(name='myarchive.tar.gz', mode='w:gz') a
 whatsnew/3.2,,:location,zope9-location = ${zope9:location}
 whatsnew/3.2,,:prefix,zope-conf = ${custom:prefix}/etc/zope.conf
 library/re,,`,!#$%&'*+-.^_`|~:
-library/re,,`,!\#\$%&'\*\+\-\.\^_`\|~:
+library/re,,`,!\#\$%\&'\*\+\-\.\^_`\|\~:
 library/tarfile,,:xz,'x:xz'
+library/warnings,,:message,action:message:category:module:line
+library/warnings,,:category,action:message:category:module:line
+library/warnings,,:module,action:message:category:module:line
+library/warnings,,:line,action:message:category:module:line
+library/warnings,,::,error::ResourceWarning
+library/warnings,,::,default::DeprecationWarning
+library/warnings,,::,default:::mymodule
+library/warnings,,:mymodule,default:::mymodule
+library/warnings,,::,error:::mymodule
+library/warnings,,:mymodule,error:::mymodule
+library/warnings,,::,ignore::DeprecationWarning
+library/warnings,,::,ignore::PendingDeprecationWarning
+library/warnings,,::,ignore::ImportWarning
+library/warnings,,::,ignore::ResourceWarning
 library/xml.etree.elementtree,,:sometag,prefix:sometag
 library/xml.etree.elementtree,,:fictional,"<actors xmlns:fictional=""http://characters.example.com"""
 library/xml.etree.elementtree,,:character,<fictional:character>Lancelot</fictional:character>
@@ -325,9 +334,12 @@ whatsnew/3.5,,:warning,'WARNING:root:warning\n'
 whatsnew/3.5,,::,>>> addr6 = ipaddress.IPv6Address('::1')
 whatsnew/3.5,,:root,ERROR:root:exception
 whatsnew/3.5,,:exception,ERROR:root:exception
-whatsnew/changelog,,:version,import sys; I = version[:version.index(' ')]
+whatsnew/changelog,,`,'`'
 whatsnew/changelog,,:end,str[start:end]
 library/binascii,,`,'`'
 library/uu,,`,'`'
 whatsnew/3.7,,`,'`'
-whatsnew/changelog,,`,'`'
+whatsnew/3.7,,::,error::BytesWarning
+whatsnew/changelog,,::,error::BytesWarning
+whatsnew/changelog,,::,default::BytesWarning
+whatsnew/changelog,,::,default::DeprecationWarning

@@ -61,15 +61,22 @@ do { memory -= size; printf("%8d - %s\n", memory, comment); } while (0)
 #define JOIN_SET(p, flag) ((void*) ((uintptr_t) (JOIN_OBJ(p)) | (flag)))
 #define JOIN_OBJ(p) ((PyObject*) ((uintptr_t) (p) & ~(uintptr_t)1))
 
+/* Py_SETREF for a PyObject* that uses a join flag. */
+Py_LOCAL_INLINE(void)
+_set_joined_ptr(PyObject **p, PyObject *new_joined_ptr)
+{
+    PyObject *tmp = JOIN_OBJ(*p);
+    *p = new_joined_ptr;
+    Py_DECREF(tmp);
+}
+
 /* Py_CLEAR for a PyObject* that uses a join flag. Pass the pointer by
  * reference since this function sets it to NULL.
 */
 static void _clear_joined_ptr(PyObject **p)
 {
     if (*p) {
-        PyObject *tmp = JOIN_OBJ(*p);
-        *p = NULL;
-        Py_DECREF(tmp);
+        _set_joined_ptr(p, NULL);
     }
 }
 
@@ -356,7 +363,6 @@ static int
 element_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *tag;
-    PyObject *tmp;
     PyObject *attrib = NULL;
     ElementObject *self_elem;
 
@@ -397,15 +403,11 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_INCREF(tag);
     Py_XSETREF(self_elem->tag, tag);
 
-    tmp = self_elem->text;
     Py_INCREF(Py_None);
-    self_elem->text = Py_None;
-    Py_DECREF(JOIN_OBJ(tmp));
+    _set_joined_ptr(&self_elem->text, Py_None);
 
-    tmp = self_elem->tail;
     Py_INCREF(Py_None);
-    self_elem->tail = Py_None;
-    Py_DECREF(JOIN_OBJ(tmp));
+    _set_joined_ptr(&self_elem->tail, Py_None);
 
     return 0;
 }
@@ -627,6 +629,7 @@ element_gc_clear(ElementObject *self)
 static void
 element_dealloc(ElementObject* self)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
     Py_TRASHCAN_SAFE_BEGIN(self)
 
@@ -674,12 +677,10 @@ _elementtree_Element_clear_impl(ElementObject *self)
     dealloc_extra(self);
 
     Py_INCREF(Py_None);
-    Py_DECREF(JOIN_OBJ(self->text));
-    self->text = Py_None;
+    _set_joined_ptr(&self->text, Py_None);
 
     Py_INCREF(Py_None);
-    Py_DECREF(JOIN_OBJ(self->tail));
-    self->tail = Py_None;
+    _set_joined_ptr(&self->tail, Py_None);
 
     Py_RETURN_NONE;
 }
@@ -701,13 +702,11 @@ _elementtree_Element___copy___impl(ElementObject *self)
     if (!element)
         return NULL;
 
-    Py_DECREF(JOIN_OBJ(element->text));
-    element->text = self->text;
-    Py_INCREF(JOIN_OBJ(element->text));
+    Py_INCREF(JOIN_OBJ(self->text));
+    _set_joined_ptr(&element->text, self->text);
 
-    Py_DECREF(JOIN_OBJ(element->tail));
-    element->tail = self->tail;
-    Py_INCREF(JOIN_OBJ(element->tail));
+    Py_INCREF(JOIN_OBJ(self->tail));
+    _set_joined_ptr(&element->tail, self->tail);
 
     if (self->extra) {
         if (element_resize(element, self->extra->length) < 0) {
@@ -732,14 +731,14 @@ LOCAL(PyObject *) deepcopy(PyObject *, PyObject *);
 /*[clinic input]
 _elementtree.Element.__deepcopy__
 
-    memo: object
+    memo: object(subclass_of="&PyDict_Type")
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element___deepcopy__(ElementObject *self, PyObject *memo)
-/*[clinic end generated code: output=d1f19851d17bf239 input=df24c2b602430b77]*/
+_elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
+/*[clinic end generated code: output=eefc3df50465b642 input=a2d40348c0aade10]*/
 {
     Py_ssize_t i;
     ElementObject* element;
@@ -775,14 +774,12 @@ _elementtree_Element___deepcopy__(ElementObject *self, PyObject *memo)
     text = deepcopy(JOIN_OBJ(self->text), memo);
     if (!text)
         goto error;
-    Py_DECREF(element->text);
-    element->text = JOIN_SET(text, JOIN_GET(self->text));
+    _set_joined_ptr(&element->text, JOIN_SET(text, JOIN_GET(self->text)));
 
     tail = deepcopy(JOIN_OBJ(self->tail), memo);
     if (!tail)
         goto error;
-    Py_DECREF(element->tail);
-    element->tail = JOIN_SET(tail, JOIN_GET(self->tail));
+    _set_joined_ptr(&element->tail, JOIN_SET(tail, JOIN_GET(self->tail)));
 
     if (self->extra) {
         if (element_resize(element, self->extra->length) < 0)
@@ -848,7 +845,8 @@ deepcopy(PyObject *object, PyObject *memo)
             /* Fall through to general case */
         }
         else if (Element_CheckExact(object)) {
-            return _elementtree_Element___deepcopy__((ElementObject *)object, memo);
+            return _elementtree_Element___deepcopy___impl(
+                (ElementObject *)object, memo);
         }
     }
 
@@ -966,13 +964,13 @@ element_setstate_from_attributes(ElementObject *self,
     Py_INCREF(tag);
     Py_XSETREF(self->tag, tag);
 
-    _clear_joined_ptr(&self->text);
-    self->text = text ? JOIN_SET(text, PyList_CheckExact(text)) : Py_None;
-    Py_INCREF(JOIN_OBJ(self->text));
+    text = text ? JOIN_SET(text, PyList_CheckExact(text)) : Py_None;
+    Py_INCREF(JOIN_OBJ(text));
+    _set_joined_ptr(&self->text, text);
 
-    _clear_joined_ptr(&self->tail);
-    self->tail = tail ? JOIN_SET(tail, PyList_CheckExact(tail)) : Py_None;
-    Py_INCREF(JOIN_OBJ(self->tail));
+    tail = tail ? JOIN_SET(tail, PyList_CheckExact(tail)) : Py_None;
+    Py_INCREF(JOIN_OBJ(tail));
+    _set_joined_ptr(&self->tail, tail);
 
     /* Handle ATTRIB and CHILDREN. */
     if (!children && !attrib)
@@ -1431,8 +1429,7 @@ static PyObject *
 _elementtree_Element_getiterator_impl(ElementObject *self, PyObject *tag)
 /*[clinic end generated code: output=cb69ff4a3742dfa1 input=500da1a03f7b9e28]*/
 {
-    /* Change for a DeprecationWarning in 1.4 */
-    if (PyErr_WarnEx(PyExc_PendingDeprecationWarning,
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "This method will be removed in future versions.  "
                      "Use 'tree.iter()' or 'list(tree.iter())' instead.",
                      1) < 0) {
@@ -2007,8 +2004,7 @@ element_text_setter(ElementObject *self, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
     Py_INCREF(value);
-    Py_DECREF(JOIN_OBJ(self->text));
-    self->text = value;
+    _set_joined_ptr(&self->text, value);
     return 0;
 }
 
@@ -2017,8 +2013,7 @@ element_tail_setter(ElementObject *self, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
     Py_INCREF(value);
-    Py_DECREF(JOIN_OBJ(self->tail));
-    self->tail = value;
+    _set_joined_ptr(&self->tail, value);
     return 0;
 }
 
@@ -2076,6 +2071,8 @@ elementiter_dealloc(ElementIterObject *it)
 {
     Py_ssize_t i = it->parent_stack_used;
     it->parent_stack_used = 0;
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(it);
     while (i--)
         Py_XDECREF(it->parent_stack[i].parent);
     PyMem_Free(it->parent_stack);
@@ -2083,7 +2080,6 @@ elementiter_dealloc(ElementIterObject *it)
     Py_XDECREF(it->sought_tag);
     Py_XDECREF(it->root_element);
 
-    PyObject_GC_UnTrack(it);
     PyObject_GC_Del(it);
 }
 
@@ -2773,12 +2769,6 @@ typedef struct {
 
 } XMLParserObject;
 
-static PyObject*
-_elementtree_XMLParser_doctype(XMLParserObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames);
-static PyObject *
-_elementtree_XMLParser_doctype_impl(XMLParserObject *self, PyObject *name,
-                                    PyObject *pubid, PyObject *system);
-
 /* helpers */
 
 LOCAL(PyObject*)
@@ -3142,10 +3132,9 @@ expat_start_doctype_handler(XMLParserObject *self,
                             const XML_Char *pubid,
                             int has_internal_subset)
 {
-    PyObject *self_pyobj = (PyObject *)self;
+    _Py_IDENTIFIER(doctype);
     PyObject *doctype_name_obj, *sysid_obj, *pubid_obj;
-    PyObject *parser_doctype = NULL;
-    PyObject *res = NULL;
+    PyObject *res;
 
     if (PyErr_Occurred())
         return;
@@ -3182,33 +3171,16 @@ expat_start_doctype_handler(XMLParserObject *self,
         res = PyObject_CallFunctionObjArgs(self->handle_doctype,
                                            doctype_name_obj, pubid_obj,
                                            sysid_obj, NULL);
-        Py_CLEAR(res);
+        Py_XDECREF(res);
     }
-    else {
-        /* Now see if the parser itself has a doctype method. If yes and it's
-         * a custom method, call it but warn about deprecation. If it's only
-         * the vanilla XMLParser method, do nothing.
-         */
-        parser_doctype = PyObject_GetAttrString(self_pyobj, "doctype");
-        if (parser_doctype &&
-            !(PyCFunction_Check(parser_doctype) &&
-              PyCFunction_GET_SELF(parser_doctype) == self_pyobj &&
-              PyCFunction_GET_FUNCTION(parser_doctype) ==
-                    (PyCFunction) _elementtree_XMLParser_doctype)) {
-            res = _elementtree_XMLParser_doctype_impl(self, doctype_name_obj,
-                                                      pubid_obj, sysid_obj);
-            if (!res)
-                goto clear;
-            Py_DECREF(res);
-            res = PyObject_CallFunctionObjArgs(parser_doctype,
-                                               doctype_name_obj, pubid_obj,
-                                               sysid_obj, NULL);
-            Py_CLEAR(res);
-        }
+    else if (_PyObject_LookupAttrId((PyObject *)self, &PyId_doctype, &res) > 0) {
+        (void)PyErr_WarnEx(PyExc_RuntimeWarning,
+                "The doctype() method of XMLParser is ignored.  "
+                "Define doctype() method on the TreeBuilder target.",
+                1);
+        Py_DECREF(res);
     }
 
-clear:
-    Py_XDECREF(parser_doctype);
     Py_DECREF(doctype_name_obj);
     Py_DECREF(pubid_obj);
     Py_DECREF(sysid_obj);
@@ -3257,28 +3229,32 @@ xmlparser_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)self;
 }
 
+static int
+ignore_attribute_error(PyObject *value)
+{
+    if (value == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            return -1;
+        }
+        PyErr_Clear();
+    }
+    return 0;
+}
+
 /*[clinic input]
 _elementtree.XMLParser.__init__
 
-    html: object = NULL
+    *
     target: object = NULL
     encoding: str(accept={str, NoneType}) = NULL
 
 [clinic start generated code]*/
 
 static int
-_elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
-                                     PyObject *target, const char *encoding)
-/*[clinic end generated code: output=d6a16c63dda54441 input=155bc5695baafffd]*/
+_elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
+                                     const char *encoding)
+/*[clinic end generated code: output=3ae45ec6cdf344e4 input=96288fcba916cfce]*/
 {
-    if (html != NULL) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "The html argument of XMLParser() is deprecated",
-                         1) < 0) {
-            return -1;
-        }
-    }
-
     self->entity = PyDict_New();
     if (!self->entity)
         return -1;
@@ -3296,6 +3272,11 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
         PyErr_NoMemory();
         return -1;
     }
+    /* expat < 2.1.0 has no XML_SetHashSalt() */
+    if (EXPAT(SetHashSalt) != NULL) {
+        EXPAT(SetHashSalt)(self->parser,
+                           (unsigned long)_Py_HashSecret.expat.hashsalt);
+    }
 
     if (target) {
         Py_INCREF(target);
@@ -3311,14 +3292,33 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
     self->target = target;
 
     self->handle_start = PyObject_GetAttrString(target, "start");
+    if (ignore_attribute_error(self->handle_start)) {
+        return -1;
+    }
     self->handle_data = PyObject_GetAttrString(target, "data");
+    if (ignore_attribute_error(self->handle_data)) {
+        return -1;
+    }
     self->handle_end = PyObject_GetAttrString(target, "end");
+    if (ignore_attribute_error(self->handle_end)) {
+        return -1;
+    }
     self->handle_comment = PyObject_GetAttrString(target, "comment");
+    if (ignore_attribute_error(self->handle_comment)) {
+        return -1;
+    }
     self->handle_pi = PyObject_GetAttrString(target, "pi");
+    if (ignore_attribute_error(self->handle_pi)) {
+        return -1;
+    }
     self->handle_close = PyObject_GetAttrString(target, "close");
+    if (ignore_attribute_error(self->handle_close)) {
+        return -1;
+    }
     self->handle_doctype = PyObject_GetAttrString(target, "doctype");
-
-    PyErr_Clear();
+    if (ignore_attribute_error(self->handle_doctype)) {
+        return -1;
+    }
 
     /* configure parser */
     EXPAT(SetUserData)(self->parser, self);
@@ -3377,7 +3377,11 @@ xmlparser_gc_traverse(XMLParserObject *self, visitproc visit, void *arg)
 static int
 xmlparser_gc_clear(XMLParserObject *self)
 {
-    EXPAT(ParserFree)(self->parser);
+    if (self->parser != NULL) {
+        XML_Parser parser = self->parser;
+        self->parser = NULL;
+        EXPAT(ParserFree)(parser);
+    }
 
     Py_CLEAR(self->handle_close);
     Py_CLEAR(self->handle_pi);
@@ -3581,30 +3585,6 @@ _elementtree_XMLParser__parse_whole(XMLParserObject *self, PyObject *file)
     }
 
     return res;
-}
-
-/*[clinic input]
-_elementtree.XMLParser.doctype
-
-    name: object
-    pubid: object
-    system: object
-    /
-
-[clinic start generated code]*/
-
-static PyObject *
-_elementtree_XMLParser_doctype_impl(XMLParserObject *self, PyObject *name,
-                                    PyObject *pubid, PyObject *system)
-/*[clinic end generated code: output=10fb50c2afded88d input=84050276cca045e1]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "This method of XMLParser is deprecated.  Define"
-                     " doctype() method on the TreeBuilder target.",
-                     1) < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -3891,7 +3871,6 @@ static PyMethodDef xmlparser_methods[] = {
     _ELEMENTTREE_XMLPARSER_CLOSE_METHODDEF
     _ELEMENTTREE_XMLPARSER__PARSE_WHOLE_METHODDEF
     _ELEMENTTREE_XMLPARSER__SETEVENTS_METHODDEF
-    _ELEMENTTREE_XMLPARSER_DOCTYPE_METHODDEF
     {NULL, NULL}
 };
 
@@ -3990,6 +3969,11 @@ PyInit__elementtree(void)
     st->deepcopy_obj = PyObject_GetAttrString(temp, "deepcopy");
     Py_XDECREF(temp);
 
+    if (st->deepcopy_obj == NULL) {
+        return NULL;
+    }
+
+    assert(!PyErr_Occurred());
     if (!(st->elementpath_obj = PyImport_ImportModule("xml.etree.ElementPath")))
         return NULL;
 

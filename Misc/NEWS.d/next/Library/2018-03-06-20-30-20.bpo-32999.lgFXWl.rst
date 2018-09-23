@@ -1,0 +1,2 @@
+Fix C implemetation of ``ABC.__subclasscheck__(cls, subclass)`` crashed when
+``subclass`` is not a type object.

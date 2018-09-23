@@ -1,0 +1,2 @@
+Remove the new API added in bpo-31356 (gc.ensure_disabled() context
+manager).

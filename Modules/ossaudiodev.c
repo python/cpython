@@ -53,7 +53,7 @@ typedef unsigned long uint32_t;
 
 typedef struct {
     PyObject_HEAD
-    char    *devicename;              /* name of the device file */
+    const char *devicename;           /* name of the device file */
     int      fd;                      /* file descriptor */
     int      mode;                    /* file mode (O_RDONLY, etc.) */
     Py_ssize_t icount;                /* input count */
@@ -82,8 +82,8 @@ newossobject(PyObject *arg)
 {
     oss_audio_t *self;
     int fd, afmts, imode;
-    char *devicename = NULL;
-    char *mode = NULL;
+    const char *devicename = NULL;
+    const char *mode = NULL;
 
     /* Two ways to call open():
          open(device, mode) (for consistency with builtin open())
@@ -167,7 +167,7 @@ oss_dealloc(oss_audio_t *self)
 static oss_mixer_t *
 newossmixerobject(PyObject *arg)
 {
-    char *devicename = NULL;
+    const char *devicename = NULL;
     int fd;
     oss_mixer_t *self;
 
@@ -964,7 +964,7 @@ oss_getattro(oss_audio_t *self, PyObject *nameobj)
 static PyTypeObject OSSAudioType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "ossaudiodev.oss_audio_device", /*tp_name*/
-    sizeof(oss_audio_t),        /*tp_size*/
+    sizeof(oss_audio_t),        /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     /* methods */
     (destructor)oss_dealloc,    /*tp_dealloc*/
@@ -996,7 +996,7 @@ static PyTypeObject OSSAudioType = {
 static PyTypeObject OSSMixerType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "ossaudiodev.oss_mixer_device", /*tp_name*/
-    sizeof(oss_mixer_t),            /*tp_size*/
+    sizeof(oss_mixer_t),            /*tp_basicsize*/
     0,                              /*tp_itemsize*/
     /* methods */
     (destructor)oss_mixer_dealloc,  /*tp_dealloc*/

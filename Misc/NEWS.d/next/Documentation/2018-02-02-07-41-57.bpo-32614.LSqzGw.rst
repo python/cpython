@@ -1,0 +1,3 @@
+Modify RE examples in documentation to use raw strings to prevent
+:exc:`DeprecationWarning` and add text to REGEX HOWTO to highlight the
+deprecation.

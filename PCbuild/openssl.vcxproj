@@ -1,0 +1,134 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|Win32">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|x64">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|Win32">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|x64">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B5FD6F1D-129E-4BFF-9340-03606FAC7283}</ProjectGuid>
+  </PropertyGroup>
+
+  <Import Project="python.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <Bitness>32</Bitness>
+    <Bitness Condition="$(Platform) == 'x64'">64</Bitness>
+    <ArchName>x86</ArchName>
+    <ArchName Condition="$(Platform) == 'x64'">amd64</ArchName>
+    <OpenSSLPlatform>VC-WIN32</OpenSSLPlatform>
+    <OpenSSLPlatform Condition="$(Platform) == 'x64'">VC-WIN64A</OpenSSLPlatform>
+    <SupportSigning>true</SupportSigning>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="pyproject.props" />
+
+  <PropertyGroup>
+    <IntDir>$(opensslDir)\tmp$(Bitness)dll</IntDir>
+    <OutDir>$(opensslOutDir)</OutDir>
+    <NMakeBuildCommandLine>setlocal
+set VCINSTALLDIR=$(VCInstallDir)
+if not exist "$(IntDir.TrimEnd('\'))" mkdir "$(IntDir.TrimEnd('\'))"
+cd /D "$(IntDir.TrimEnd('\'))"
+$(Perl) "$(opensslDir)\configure" $(OpenSSLPlatform) no-asm
+nmake
+</NMakeBuildCommandLine>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+
+  <Target Name="_PatchUplink" BeforeTargets="Build">
+    <PropertyGroup>
+      <Uplink>$(opensslDir)\ms\uplink.c</Uplink>
+      <BeforePatch>((h = GetModuleHandle(NULL)) == NULL)</BeforePatch>
+      <AfterPatch>((h = GetModuleHandleA("_ssl.pyd")) == NULL) if ((h = GetModuleHandleA("_ssl_d.pyd")) == NULL) if ((h = GetModuleHandle(NULL)) == NULL /*patched*/)</AfterPatch>
+    </PropertyGroup>
+    <Error Text="Cannot find $(Uplink)" Condition="!Exists($(Uplink))" />
+    <PropertyGroup>
+      <_Original>$([System.IO.File]::ReadAllText($(Uplink)))</_Original>
+      <_Patched>$(_Original.Replace($(BeforePatch), $(AfterPatch)))</_Patched>
+      <IsPatched>false</IsPatched>
+      <IsPatched Condition="$(_Patched) == $(_Original)">true</IsPatched>
+    </PropertyGroup>
+    <Message Text="$(Uplink) is already patched" Importance="normal" Condition="$(IsPatched)" />
+    <Message Text="Patching $(Uplink)" Importance="high" Condition="!$(IsPatched)" />
+    <WriteLinesToFile File="$(Uplink)"
+                      Lines="$(_Patched)"
+                      Overwrite="true"
+                      Encoding="ASCII"
+                      Condition="!$(IsPatched)" />
+  </Target>
+
+  <Target Name="_CopyToOutput" AfterTargets="Build">
+    <ItemGroup>
+      <_Built Include="$(opensslDir)\LICENSE" />
+      <_Built Include="$(IntDir)\libcrypto.lib;$(IntDir)\libcrypto-*.dll;$(IntDir)\libcrypto-*.pdb" />
+      <_Built Include="$(IntDir)\libssl.lib;$(IntDir)\libssl-*.dll;$(IntDir)\libssl-*.pdb" />
+      <_AppLink Include="$(opensslDir)\ms\applink.c" />
+      <_Include Include="$(opensslDir)\Include\openssl\*.h" />
+      <_Include Include="$(IntDir)\include\openssl\*.h" />
+    </ItemGroup>
+    <MakeDir Directories="$(opensslOutDir)\include\openssl" />
+    <Copy SourceFiles="@(_Built)" DestinationFolder="$(opensslOutDir)" />
+    <Copy SourceFiles="@(_AppLink)" DestinationFolder="$(opensslOutDir)\include" />
+    <Copy SourceFiles="@(_Include)" DestinationFolder="$(opensslOutDir)\include\openssl" />
+  </Target>
+
+  <Target Name="SignFiles" AfterTargets="Build" Condition="$(_SignCommand) != ''">
+    <ItemGroup>
+      <FilesToSign Include="$(opensslOutDir)\lib*.dll" />
+    </ItemGroup>
+    <Exec Command="$(_SignCommand) %(FilesToSign.FullPath)" ContinueOnError="true" />
+  </Target>
+
+  <Target Name="Clean" />
+  <Target Name="CleanAll">
+    <Delete Files="$(TargetPath);$(BuildPath)$(tclDLLName)" />
+    <RemoveDir Directories="$(IntDir)" />
+  </Target>
+  
+  <Target Name="LocateNMake">
+    <PropertyGroup>
+      <OutputFilename Condition="$(OutputFilename) == ''">$(Temp)\nmake.loc</OutputFilename>
+    </PropertyGroup>
+    <ItemGroup>
+      <_NMakeExe Include="$(VC_ExecutablePath_x86_x86)\nmake.exe" Condition="$(VC_ExecutablePath_x86_x86) != ''" />
+    </ItemGroup>
+    <MakeDir Directories="$([System.IO.Path]::GetDirectoryName($(OutputFilename)))" />
+    <WriteLinesToFile File="$(OutputFilename)" Lines="@(_NMakeExe)" />
+  </Target>
+  
+  <Target Name="ResolveAssemblyReferences" />
+</Project>

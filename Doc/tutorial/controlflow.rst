@@ -105,7 +105,7 @@ is possible to let the range start at another number, or to specify a different
 increment (even negative; sometimes this is called the 'step')::
 
     range(5, 10)
-       5 through 9
+       5, 6, 7, 8, 9
 
     range(0, 10, 3)
        0, 3, 6, 9
@@ -157,7 +157,7 @@ Later we will see more functions that return iterables and take iterables as arg
 :keyword:`break` and :keyword:`continue` Statements, and :keyword:`else` Clauses on Loops
 =========================================================================================
 
-The :keyword:`break` statement, like in C, breaks out of the smallest enclosing
+The :keyword:`break` statement, like in C, breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
 Loop statements may have an ``else`` clause; it is executed when the loop
@@ -678,8 +678,8 @@ Function Annotations
    single: -> (return annotation assignment)
 
 :ref:`Function annotations <function>` are completely optional metadata
-information about the types used by user-defined functions (see :pep:`484`
-for more information).
+information about the types used by user-defined functions (see :pep:`3107` and
+:pep:`484` for more information).
 
 Annotations are stored in the :attr:`__annotations__` attribute of the function
 as a dictionary and have no effect on any other part of the function.  Parameter

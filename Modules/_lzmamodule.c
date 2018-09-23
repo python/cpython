@@ -9,16 +9,13 @@
 
 #include "Python.h"
 #include "structmember.h"
-#ifdef WITH_THREAD
 #include "pythread.h"
-#endif
 
 #include <stdarg.h>
 #include <string.h>
 
 #include <lzma.h>
 
-#ifdef WITH_THREAD
 #define ACQUIRE_LOCK(obj) do { \
     if (!PyThread_acquire_lock((obj)->lock, 0)) { \
         Py_BEGIN_ALLOW_THREADS \
@@ -26,10 +23,6 @@
         Py_END_ALLOW_THREADS \
     } } while (0)
 #define RELEASE_LOCK(obj) PyThread_release_lock((obj)->lock)
-#else
-#define ACQUIRE_LOCK(obj)
-#define RELEASE_LOCK(obj)
-#endif
 
 
 /* Container formats: */
@@ -48,9 +41,7 @@ typedef struct {
     lzma_allocator alloc;
     lzma_stream lzs;
     int flushed;
-#ifdef WITH_THREAD
     PyThread_type_lock lock;
-#endif
 } Compressor;
 
 typedef struct {
@@ -63,9 +54,7 @@ typedef struct {
     char needs_input;
     uint8_t *input_buffer;
     size_t input_buffer_size;
-#ifdef WITH_THREAD
     PyThread_type_lock lock;
-#endif
 } Decompressor;
 
 /* LZMAError class object. */
@@ -757,13 +746,11 @@ Compressor_init(Compressor *self, PyObject *args, PyObject *kwargs)
     self->alloc.free = PyLzma_Free;
     self->lzs.allocator = &self->alloc;
 
-#ifdef WITH_THREAD
     self->lock = PyThread_allocate_lock();
     if (self->lock == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
         return -1;
     }
-#endif
 
     self->flushed = 0;
     switch (format) {
@@ -790,10 +777,8 @@ Compressor_init(Compressor *self, PyObject *args, PyObject *kwargs)
             break;
     }
 
-#ifdef WITH_THREAD
     PyThread_free_lock(self->lock);
     self->lock = NULL;
-#endif
     return -1;
 }
 
@@ -801,10 +786,8 @@ static void
 Compressor_dealloc(Compressor *self)
 {
     lzma_end(&self->lzs);
-#ifdef WITH_THREAD
     if (self->lock != NULL)
         PyThread_free_lock(self->lock);
-#endif
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -824,7 +807,7 @@ PyDoc_STRVAR(Compressor_doc,
 "be FORMAT_XZ (default), FORMAT_ALONE, or FORMAT_RAW.\n"
 "\n"
 "check specifies the integrity check to use. For FORMAT_XZ, the default\n"
-"is CHECK_CRC64. FORMAT_ALONE and FORMAT_RAW do not suport integrity\n"
+"is CHECK_CRC64. FORMAT_ALONE and FORMAT_RAW do not support integrity\n"
 "checks; for these formats, check must be omitted, or be CHECK_NONE.\n"
 "\n"
 "The settings used by the compressor can be specified either as a\n"
@@ -1180,19 +1163,21 @@ _lzma_LZMADecompressor___init___impl(Decompressor *self, int format,
     self->lzs.allocator = &self->alloc;
     self->lzs.next_in = NULL;
 
-#ifdef WITH_THREAD
-    self->lock = PyThread_allocate_lock();
-    if (self->lock == NULL) {
+    PyThread_type_lock lock = PyThread_allocate_lock();
+    if (lock == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
         return -1;
     }
-#endif
+    if (self->lock != NULL) {
+        PyThread_free_lock(self->lock);
+    }
+    self->lock = lock;
 
     self->check = LZMA_CHECK_UNKNOWN;
     self->needs_input = 1;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-    self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
+    Py_XSETREF(self->unused_data, PyBytes_FromStringAndSize(NULL, 0));
     if (self->unused_data == NULL)
         goto error;
 
@@ -1230,10 +1215,8 @@ _lzma_LZMADecompressor___init___impl(Decompressor *self, int format,
 
 error:
     Py_CLEAR(self->unused_data);
-#ifdef WITH_THREAD
     PyThread_free_lock(self->lock);
     self->lock = NULL;
-#endif
     return -1;
 }
 
@@ -1245,10 +1228,8 @@ Decompressor_dealloc(Decompressor *self)
 
     lzma_end(&self->lzs);
     Py_CLEAR(self->unused_data);
-#ifdef WITH_THREAD
     if (self->lock != NULL)
         PyThread_free_lock(self->lock);
-#endif
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 

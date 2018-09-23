@@ -246,7 +246,7 @@ in the top-level :mod:`email` package namespace.
       Removed the *strict* argument.  Added the *policy* keyword.
 
 
-.. function:: message_from_binary_file(fp, _class=None, *,
+.. function:: message_from_binary_file(fp, _class=None, *, \
                                        policy=policy.compat32)
 
    Return a message object structure tree from an open binary :term:`file

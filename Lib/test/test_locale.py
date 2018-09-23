@@ -346,9 +346,14 @@ class TestCollation(unittest.TestCase):
         self.assertLess(locale.strcoll('a', 'b'), 0)
         self.assertEqual(locale.strcoll('a', 'a'), 0)
         self.assertGreater(locale.strcoll('b', 'a'), 0)
+        # embedded null character
+        self.assertRaises(ValueError, locale.strcoll, 'a\0', 'a')
+        self.assertRaises(ValueError, locale.strcoll, 'a', 'a\0')
 
     def test_strxfrm(self):
         self.assertLess(locale.strxfrm('a'), locale.strxfrm('b'))
+        # embedded null character
+        self.assertRaises(ValueError, locale.strxfrm, 'a\0')
 
 
 class TestEnUSCollation(BaseLocalizedTest, TestCollation):
@@ -436,7 +441,7 @@ class NormalizeTest(unittest.TestCase):
 
     def test_valencia_modifier(self):
         self.check('ca_ES.UTF-8@valencia', 'ca_ES.UTF-8@valencia')
-        self.check('ca_ES@valencia', 'ca_ES.ISO8859-15@valencia')
+        self.check('ca_ES@valencia', 'ca_ES.UTF-8@valencia')
         self.check('ca@valencia', 'ca_ES.ISO8859-1@valencia')
 
     def test_devanagari_modifier(self):

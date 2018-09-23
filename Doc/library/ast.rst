@@ -113,6 +113,11 @@ and classes for traversing abstract syntax trees:
    Parse the source into an AST node.  Equivalent to ``compile(source,
    filename, mode, ast.PyCF_ONLY_AST)``.
 
+   .. warning::
+      It is possible to crash the Python interpreter with a
+      sufficiently large/complex string due to stack depth limitations
+      in Python's AST compiler.
+
 
 .. function:: literal_eval(node_or_string)
 
@@ -125,6 +130,11 @@ and classes for traversing abstract syntax trees:
    untrusted sources without the need to parse the values oneself.  It is not
    capable of evaluating arbitrarily complex expressions, for example involving
    operators or indexing.
+
+   .. warning::
+      It is possible to crash the Python interpreter with a
+      sufficiently large/complex string due to stack depth limitations
+      in Python's AST compiler.
 
    .. versionchanged:: 3.2
       Now allows bytes and set literals.
@@ -140,10 +150,6 @@ and classes for traversing abstract syntax trees:
 
    .. versionchanged:: 3.5
       :class:`AsyncFunctionDef` is now supported.
-
-   .. versionchanged:: 3.7
-      The docstring is now exported from the node docstring field, instead of
-      the first body statement.
 
 
 .. function:: fix_missing_locations(node)
@@ -261,5 +267,5 @@ and classes for traversing abstract syntax trees:
 
 .. seealso::
 
-    `Green Tree Snakes <https://greentreesnakes.readthedocs.org/>`_, an external documentation resource, has good
+    `Green Tree Snakes <https://greentreesnakes.readthedocs.io/>`_, an external documentation resource, has good
     details on working with Python ASTs.

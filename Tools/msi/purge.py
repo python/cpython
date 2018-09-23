@@ -25,7 +25,7 @@ except LookupError:
     sys.exit(1)
 
 URL = "https://www.python.org/ftp/python/{}/".format(m.group(1))
-
+REL = m.group(2) or ''
 
 FILES = [
     "core.msi",
@@ -50,6 +50,7 @@ FILES = [
     "test_d.msi",
     "test_pdb.msi",
     "tools.msi",
+    "ucrt.msi",
     "Windows6.0-KB2999226-x64.msu",
     "Windows6.0-KB2999226-x86.msu",
     "Windows6.1-KB2999226-x64.msu",
@@ -64,7 +65,7 @@ PATHS = [
     "python-{}-webinstall.exe".format(m.group(0)),
     "python-{}-amd64.exe".format(m.group(0)),
     "python-{}-amd64-webinstall.exe".format(m.group(0)),
-] + ["win32{}/{}".format(m.group(2), f) for f in FILES] + ["amd64{}/{}".format(m.group(2), f) for f in FILES]
+] + ["win32{}/{}".format(REL, f) for f in FILES] + ["amd64{}/{}".format(REL, f) for f in FILES]
 
 print('Purged:')
 for n in PATHS:

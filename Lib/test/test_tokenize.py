@@ -1,8 +1,10 @@
 from test import support
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
-                     open as tokenize_open, Untokenizer)
-from io import BytesIO
+                     open as tokenize_open, Untokenizer, generate_tokens,
+                     NEWLINE)
+from io import BytesIO, StringIO
+import unittest
 from unittest import TestCase, mock
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
@@ -10,26 +12,50 @@ import os
 import token
 
 
+# Converts a source string into a list of textual representation
+# of the tokens such as:
+# `    NAME       'if'          (1, 0) (1, 2)`
+# to make writing tests easier.
+def stringify_tokens_from_source(token_generator, source_string):
+    result = []
+    num_lines = len(source_string.splitlines())
+    missing_trailing_nl = source_string[-1] not in '\r\n'
+
+    for type, token, start, end, line in token_generator:
+        if type == ENDMARKER:
+            break
+        # Ignore the new line on the last line if the input lacks one
+        if missing_trailing_nl and type == NEWLINE and end[0] == num_lines:
+            continue
+        type = tok_name[type]
+        result.append(f"    {type:10} {token!r:13} {start} {end}")
+
+    return result
+
 class TokenizeTest(TestCase):
     # Tests for the tokenize module.
 
     # The tests can be really simple. Given a small fragment of source
-    # code, print out a table with tokens. The ENDMARKER is omitted for
-    # brevity.
+    # code, print out a table with tokens. The ENDMARKER, ENCODING and
+    # final NEWLINE are omitted for brevity.
 
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
-        # The ENDMARKER is omitted.
-        result = []
+        # The ENDMARKER and final NEWLINE are omitted.
         f = BytesIO(s.encode('utf-8'))
-        for type, token, start, end, line in tokenize(f.readline):
-            if type == ENDMARKER:
-                break
-            type = tok_name[type]
-            result.append(f"    {type:10} {token!r:13} {start} {end}")
+        result = stringify_tokens_from_source(tokenize(f.readline), s)
+
         self.assertEqual(result,
                          ["    ENCODING   'utf-8'       (0, 0) (0, 0)"] +
                          expected.rstrip().splitlines())
+
+    def test_implicit_newline(self):
+        # Make sure that the tokenizer puts in an implicit NEWLINE
+        # when the input lacks a trailing new line.
+        f = BytesIO("x".encode('utf-8'))
+        tokens = list(tokenize(f.readline))
+        self.assertEqual(tokens[-2].type, NEWLINE)
+        self.assertEqual(tokens[-1].type, ENDMARKER)
 
     def test_basic(self):
         self.check_tokenize("1 + 1", """\
@@ -758,7 +784,7 @@ def"', """\
     """)
 
         self.check_tokenize("async def foo(): pass", """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     NAME       'def'         (1, 6) (1, 9)
     NAME       'foo'         (1, 10) (1, 13)
     OP         '('           (1, 13) (1, 14)
@@ -775,7 +801,7 @@ async def foo():
     await
 async += 1
 ''', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     NAME       'def'         (1, 6) (1, 9)
     NAME       'foo'         (1, 10) (1, 13)
     OP         '('           (1, 13) (1, 14)
@@ -786,12 +812,12 @@ async += 1
     NAME       'def'         (2, 2) (2, 5)
     NAME       'foo'         (2, 6) (2, 9)
     OP         '('           (2, 9) (2, 10)
-    AWAIT      'await'       (2, 10) (2, 15)
+    NAME       'await'       (2, 10) (2, 15)
     OP         ')'           (2, 15) (2, 16)
     OP         ':'           (2, 16) (2, 17)
     NEWLINE    '\\n'          (2, 17) (2, 18)
     INDENT     '    '        (3, 0) (3, 4)
-    AWAIT      'await'       (3, 4) (3, 9)
+    NAME       'await'       (3, 4) (3, 9)
     OP         '='           (3, 10) (3, 11)
     NUMBER     '1'           (3, 12) (3, 13)
     NEWLINE    '\\n'          (3, 13) (3, 14)
@@ -801,7 +827,7 @@ async += 1
     OP         ':'           (4, 6) (4, 7)
     NEWLINE    '\\n'          (4, 7) (4, 8)
     INDENT     '    '        (5, 0) (5, 4)
-    AWAIT      'await'       (5, 4) (5, 9)
+    NAME       'await'       (5, 4) (5, 9)
     NEWLINE    '\\n'          (5, 9) (5, 10)
     DEDENT     ''            (6, 0) (6, 0)
     DEDENT     ''            (6, 0) (6, 0)
@@ -814,7 +840,7 @@ async += 1
         self.check_tokenize('''\
 async def foo():
   async for i in 1: pass''', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     NAME       'def'         (1, 6) (1, 9)
     NAME       'foo'         (1, 10) (1, 13)
     OP         '('           (1, 13) (1, 14)
@@ -822,7 +848,7 @@ async def foo():
     OP         ':'           (1, 15) (1, 16)
     NEWLINE    '\\n'          (1, 16) (1, 17)
     INDENT     '  '          (2, 0) (2, 2)
-    ASYNC      'async'       (2, 2) (2, 7)
+    NAME       'async'       (2, 2) (2, 7)
     NAME       'for'         (2, 8) (2, 11)
     NAME       'i'           (2, 12) (2, 13)
     NAME       'in'          (2, 14) (2, 16)
@@ -833,14 +859,14 @@ async def foo():
     """)
 
         self.check_tokenize('''async def foo(async): await''', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     NAME       'def'         (1, 6) (1, 9)
     NAME       'foo'         (1, 10) (1, 13)
     OP         '('           (1, 13) (1, 14)
-    ASYNC      'async'       (1, 14) (1, 19)
+    NAME       'async'       (1, 14) (1, 19)
     OP         ')'           (1, 19) (1, 20)
     OP         ':'           (1, 20) (1, 21)
-    AWAIT      'await'       (1, 22) (1, 27)
+    NAME       'await'       (1, 22) (1, 27)
     """)
 
         self.check_tokenize('''\
@@ -865,7 +891,7 @@ def f():
     OP         ':'           (3, 11) (3, 12)
     NAME       'pass'        (3, 13) (3, 17)
     NEWLINE    '\\n'          (3, 17) (3, 18)
-    ASYNC      'async'       (4, 2) (4, 7)
+    NAME       'async'       (4, 2) (4, 7)
     NAME       'def'         (4, 8) (4, 11)
     NAME       'bar'         (4, 12) (4, 15)
     OP         '('           (4, 15) (4, 16)
@@ -887,7 +913,7 @@ async def f():
   async def bar(): pass
 
   await = 2''', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     NAME       'def'         (1, 6) (1, 9)
     NAME       'f'           (1, 10) (1, 11)
     OP         '('           (1, 11) (1, 12)
@@ -903,7 +929,7 @@ async def f():
     OP         ':'           (3, 11) (3, 12)
     NAME       'pass'        (3, 13) (3, 17)
     NEWLINE    '\\n'          (3, 17) (3, 18)
-    ASYNC      'async'       (4, 2) (4, 7)
+    NAME       'async'       (4, 2) (4, 7)
     NAME       'def'         (4, 8) (4, 11)
     NAME       'bar'         (4, 12) (4, 15)
     OP         '('           (4, 15) (4, 16)
@@ -912,11 +938,19 @@ async def f():
     NAME       'pass'        (4, 19) (4, 23)
     NEWLINE    '\\n'          (4, 23) (4, 24)
     NL         '\\n'          (5, 0) (5, 1)
-    AWAIT      'await'       (6, 2) (6, 7)
+    NAME       'await'       (6, 2) (6, 7)
     OP         '='           (6, 8) (6, 9)
     NUMBER     '2'           (6, 10) (6, 11)
     DEDENT     ''            (7, 0) (7, 0)
     """)
+
+class GenerateTokensTest(TokenizeTest):
+    def check_tokenize(self, s, expected):
+        # Format the tokens in s in a table format.
+        # The ENDMARKER and final NEWLINE are omitted.
+        f = StringIO(s)
+        result = stringify_tokens_from_source(generate_tokens(f.readline), s)
+        self.assertEqual(result, expected.rstrip().splitlines())
 
 
 def decistmt(s):
@@ -1008,8 +1042,8 @@ class Test_Tokenize(TestCase):
             else:
                 return b''
 
-        # skip the initial encoding token and the end token
-        tokens = list(_tokenize(readline, encoding='utf-8'))[1:-1]
+        # skip the initial encoding token and the end tokens
+        tokens = list(_tokenize(readline, encoding='utf-8'))[1:-2]
         expected_tokens = [(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"')]
         self.assertEqual(tokens, expected_tokens,
                          "bytes not decoded with encoding")
@@ -1025,8 +1059,8 @@ class Test_Tokenize(TestCase):
             else:
                 return b''
 
-        # skip the end token
-        tokens = list(_tokenize(readline, encoding=None))[:-1]
+        # skip the end tokens
+        tokens = list(_tokenize(readline, encoding=None))[:-2]
         expected_tokens = [(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"')]
         self.assertEqual(tokens, expected_tokens,
                          "string not tokenized when encoding is None")
@@ -1326,7 +1360,7 @@ class TestTokenize(TestCase):
             tokenize_module.detect_encoding = orig_detect_encoding
             tokenize_module._tokenize = orig__tokenize
 
-        self.assertTrue(encoding_used, encoding)
+        self.assertEqual(encoding_used, encoding)
 
     def test_oneline_defs(self):
         buf = []
@@ -1337,18 +1371,21 @@ class TestTokenize(TestCase):
 
         # Test that 500 consequent, one-line defs is OK
         toks = list(tokenize(BytesIO(buf.encode('utf-8')).readline))
-        self.assertEqual(toks[-2].string, 'OK') # [-1] is always ENDMARKER
+        self.assertEqual(toks[-3].string, 'OK') # [-1] is always ENDMARKER
+                                                # [-2] is always NEWLINE
 
     def assertExactTypeEqual(self, opstr, *optypes):
         tokens = list(tokenize(BytesIO(opstr.encode('utf-8')).readline))
         num_optypes = len(optypes)
-        self.assertEqual(len(tokens), 2 + num_optypes)
+        self.assertEqual(len(tokens), 3 + num_optypes)
         self.assertEqual(tok_name[tokens[0].exact_type],
                          tok_name[ENCODING])
         for i in range(num_optypes):
             self.assertEqual(tok_name[tokens[i + 1].exact_type],
                              tok_name[optypes[i]])
         self.assertEqual(tok_name[tokens[1 + num_optypes].exact_type],
+                         tok_name[token.NEWLINE])
+        self.assertEqual(tok_name[tokens[2 + num_optypes].exact_type],
                          tok_name[token.ENDMARKER])
 
     def test_exact_type(self):
@@ -1501,7 +1538,7 @@ class TestRoundtrip(TestCase):
         self.check_roundtrip("if x == 1:\n"
                              "    print(x)\n")
         self.check_roundtrip("# This is a comment\n"
-                             "# This also")
+                             "# This also\n")
 
         # Some people use different formatting conventions, which makes
         # untokenize a little trickier. Note that this test involves trailing

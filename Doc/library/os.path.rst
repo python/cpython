@@ -55,6 +55,14 @@ the :mod:`glob` module.)
    * :mod:`macpath` for old-style MacOS paths
 
 
+.. versionchanged:: 3.8
+
+   :func:`exists`, :func:`lexists`, :func:`isdir`, :func:`isfile`,
+   :func:`islink`, and :func:`ismount` now return ``False`` instead of
+   raising an exception for paths that contain characters or bytes
+   unrepresentable at the OS level.
+
+
 .. function:: abspath(path)
 
    Return a normalized absolutized version of the pathname *path*. On most
@@ -192,22 +200,16 @@ the :mod:`glob` module.)
 
 .. function:: getatime(path)
 
-   Return the time of last access of *path*.  The return value is a number giving
+   Return the time of last access of *path*.  The return value is a floating point number giving
    the number of seconds since the epoch (see the  :mod:`time` module).  Raise
    :exc:`OSError` if the file does not exist or is inaccessible.
-
-   If :func:`os.stat_float_times` returns ``True``, the result is a floating point
-   number.
 
 
 .. function:: getmtime(path)
 
-   Return the time of last modification of *path*.  The return value is a number
+   Return the time of last modification of *path*.  The return value is a floating point number
    giving the number of seconds since the epoch (see the  :mod:`time` module).
    Raise :exc:`OSError` if the file does not exist or is inaccessible.
-
-   If :func:`os.stat_float_times` returns ``True``, the result is a floating point
-   number.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -246,8 +248,9 @@ the :mod:`glob` module.)
 
 .. function:: isfile(path)
 
-   Return ``True`` if *path* is an existing regular file.  This follows symbolic
-   links, so both :func:`islink` and :func:`isfile` can be true for the same path.
+   Return ``True`` if *path* is an :func:`existing <exists>` regular file.
+   This follows symbolic links, so both :func:`islink` and :func:`isfile` can
+   be true for the same path.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -255,8 +258,9 @@ the :mod:`glob` module.)
 
 .. function:: isdir(path)
 
-   Return ``True`` if *path* is an existing directory.  This follows symbolic
-   links, so both :func:`islink` and :func:`isdir` can be true for the same path.
+   Return ``True`` if *path* is an :func:`existing <exists>` directory.  This
+   follows symbolic links, so both :func:`islink` and :func:`isdir` can be true
+   for the same path.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -264,8 +268,9 @@ the :mod:`glob` module.)
 
 .. function:: islink(path)
 
-   Return ``True`` if *path* refers to a directory entry that is a symbolic link.
-   Always ``False`` if symbolic links are not supported by the Python runtime.
+   Return ``True`` if *path* refers to an :func:`existing <exists>` directory
+   entry that is a symbolic link.  Always ``False`` if symbolic links are not
+   supported by the Python runtime.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.

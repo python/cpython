@@ -15,9 +15,7 @@
 
 #include "Python.h"
 #include "pystrhex.h"
-#ifdef WITH_THREAD
 #include "pythread.h"
-#endif
 
 #include "../hashlib.h"
 #include "blake2ns.h"
@@ -28,7 +26,9 @@
 #include "impl/blake2.h"
 #include "impl/blake2-impl.h" /* for secure_zero_memory() and store48() */
 
-#ifdef BLAKE2_USE_SSE
+/* pure SSE2 implementation is very slow, so only use the more optimized SSSE3+
+ * https://bugs.python.org/issue31834 */
+#if defined(__SSSE3__) || defined(__SSE4_1__) || defined(__AVX__) || defined(__XOP__)
 #include "impl/blake2s.c"
 #else
 #include "impl/blake2s-ref.c"
@@ -41,18 +41,16 @@ typedef struct {
     PyObject_HEAD
     blake2s_param    param;
     blake2s_state    state;
-#ifdef WITH_THREAD
     PyThread_type_lock lock;
-#endif
 } BLAKE2sObject;
 
 #include "clinic/blake2s_impl.c.h"
 
 /*[clinic input]
-module _blake2s
-class _blake2s.blake2s "BLAKE2sObject *" "&PyBlake2_BLAKE2sType"
+module _blake2
+class _blake2.blake2s "BLAKE2sObject *" "&PyBlake2_BLAKE2sType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=edbfcf7557a685a7]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4b79d7ffe07286ce]*/
 
 
 static BLAKE2sObject *
@@ -60,27 +58,26 @@ new_BLAKE2sObject(PyTypeObject *type)
 {
     BLAKE2sObject *self;
     self = (BLAKE2sObject *)type->tp_alloc(type, 0);
-#ifdef WITH_THREAD
     if (self != NULL) {
         self->lock = NULL;
     }
-#endif
     return self;
 }
 
 /*[clinic input]
 @classmethod
-_blake2s.blake2s.__new__ as py_blake2s_new
-    string as data: object = NULL
+_blake2.blake2s.__new__ as py_blake2s_new
+    data: object(c_default="NULL") = b''
+    /
     *
-    digest_size: int(c_default="BLAKE2S_OUTBYTES") = _blake2s.blake2s.MAX_DIGEST_SIZE
-    key: Py_buffer = None
-    salt: Py_buffer = None
-    person: Py_buffer = None
+    digest_size: int(c_default="BLAKE2S_OUTBYTES") = _blake2.blake2s.MAX_DIGEST_SIZE
+    key: Py_buffer(c_default="NULL", py_default="b''") = None
+    salt: Py_buffer(c_default="NULL", py_default="b''") = None
+    person: Py_buffer(c_default="NULL", py_default="b''") = None
     fanout: int = 1
     depth: int = 1
-    leaf_size as leaf_size_obj: object = NULL
-    node_offset as node_offset_obj: object = NULL
+    leaf_size: unsigned_long = 0
+    node_offset: unsigned_long_long = 0
     node_depth: int = 0
     inner_size: int = 0
     last_node: bool = False
@@ -91,16 +88,13 @@ Return a new BLAKE2s hash object.
 static PyObject *
 py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
                     Py_buffer *key, Py_buffer *salt, Py_buffer *person,
-                    int fanout, int depth, PyObject *leaf_size_obj,
-                    PyObject *node_offset_obj, int node_depth,
+                    int fanout, int depth, unsigned long leaf_size,
+                    unsigned long long node_offset, int node_depth,
                     int inner_size, int last_node)
-/*[clinic end generated code: output=fe060b258a8cbfc6 input=458cfdcb3d0d47ff]*/
+/*[clinic end generated code: output=b95806be0514dcf7 input=641c0509debf714d]*/
 {
     BLAKE2sObject *self = NULL;
     Py_buffer buf;
-
-    unsigned long leaf_size = 0;
-    unsigned long long node_offset = 0;
 
     self = new_BLAKE2sObject(type);
     if (self == NULL) {
@@ -156,24 +150,13 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
     }
     self->param.depth = (uint8_t)depth;
 
-    if (leaf_size_obj != NULL) {
-        leaf_size = PyLong_AsUnsignedLong(leaf_size_obj);
-        if (leaf_size == (unsigned long) -1 && PyErr_Occurred()) {
-            goto error;
-        }
-        if (leaf_size > 0xFFFFFFFFU) {
-            PyErr_SetString(PyExc_OverflowError, "leaf_size is too large");
-            goto error;
-        }
+    if (leaf_size > 0xFFFFFFFFU) {
+        PyErr_SetString(PyExc_OverflowError, "leaf_size is too large");
+        goto error;
     }
-    self->param.leaf_length = (unsigned int)leaf_size;
+    // NB: Simple assignment here would be incorrect on big endian platforms.
+    store32(&(self->param.leaf_length), leaf_size);
 
-    if (node_offset_obj != NULL) {
-        node_offset = PyLong_AsUnsignedLongLong(node_offset_obj);
-        if (node_offset == (unsigned long long) -1 && PyErr_Occurred()) {
-            goto error;
-        }
-    }
 #ifdef HAVE_BLAKE2S
     if (node_offset > 0xFFFFFFFFFFFFULL) {
         /* maximum 2**48 - 1 */
@@ -182,7 +165,8 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
      }
     store48(&(self->param.node_offset), node_offset);
 #else
-    self->param.node_offset = node_offset;
+    // NB: Simple assignment here would be incorrect on big endian platforms.
+    store64(&(self->param.node_offset), node_offset);
 #endif
 
     if (node_depth < 0 || node_depth > 255) {
@@ -254,14 +238,14 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
 }
 
 /*[clinic input]
-_blake2s.blake2s.copy
+_blake2.blake2s.copy
 
 Return a copy of the hash object.
 [clinic start generated code]*/
 
 static PyObject *
-_blake2s_blake2s_copy_impl(BLAKE2sObject *self)
-/*[clinic end generated code: output=6c5bada404b7aed7 input=c8858e887ae4a07a]*/
+_blake2_blake2s_copy_impl(BLAKE2sObject *self)
+/*[clinic end generated code: output=5b90131c4eae275e input=0b9d44942f0fe4b2]*/
 {
     BLAKE2sObject *cpy;
 
@@ -276,23 +260,22 @@ _blake2s_blake2s_copy_impl(BLAKE2sObject *self)
 }
 
 /*[clinic input]
-_blake2s.blake2s.update
+_blake2.blake2s.update
 
-    obj: object
+    data: object
     /
 
-Update this hash object's state with the provided string.
+Update this hash object's state with the provided bytes-like object.
 [clinic start generated code]*/
 
 static PyObject *
-_blake2s_blake2s_update(BLAKE2sObject *self, PyObject *obj)
-/*[clinic end generated code: output=fe8438a1d3cede87 input=47a408b9a3cc05c5]*/
+_blake2_blake2s_update(BLAKE2sObject *self, PyObject *data)
+/*[clinic end generated code: output=757dc087fec37815 input=97500db2f9de4aaa]*/
 {
     Py_buffer buf;
 
-    GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
+    GET_BUFFER_VIEW_OR_ERROUT(data, &buf);
 
-#ifdef WITH_THREAD
     if (self->lock == NULL && buf.len >= HASHLIB_GIL_MINSIZE)
         self->lock = PyThread_allocate_lock();
 
@@ -305,23 +288,20 @@ _blake2s_blake2s_update(BLAKE2sObject *self, PyObject *obj)
     } else {
         blake2s_update(&self->state, buf.buf, buf.len);
     }
-#else
-    blake2s_update(&self->state, buf.buf, buf.len);
-#endif /* !WITH_THREAD */
     PyBuffer_Release(&buf);
 
     Py_RETURN_NONE;
 }
 
 /*[clinic input]
-_blake2s.blake2s.digest
+_blake2.blake2s.digest
 
-Return the digest value as a string of binary data.
+Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
-_blake2s_blake2s_digest_impl(BLAKE2sObject *self)
-/*[clinic end generated code: output=80e81a48c6f79cf9 input=feb9a220135bdeba]*/
+_blake2_blake2s_digest_impl(BLAKE2sObject *self)
+/*[clinic end generated code: output=40c566ca4bc6bc51 input=f41e0b8d6d937454]*/
 {
     uint8_t digest[BLAKE2S_OUTBYTES];
     blake2s_state state_cpy;
@@ -335,14 +315,14 @@ _blake2s_blake2s_digest_impl(BLAKE2sObject *self)
 }
 
 /*[clinic input]
-_blake2s.blake2s.hexdigest
+_blake2.blake2s.hexdigest
 
 Return the digest value as a string of hexadecimal digits.
 [clinic start generated code]*/
 
 static PyObject *
-_blake2s_blake2s_hexdigest_impl(BLAKE2sObject *self)
-/*[clinic end generated code: output=db6c5028c0a3c2e5 input=4e4877b8bd7aea91]*/
+_blake2_blake2s_hexdigest_impl(BLAKE2sObject *self)
+/*[clinic end generated code: output=15153eb5e59c52eb input=c77a1321567e8952]*/
 {
     uint8_t digest[BLAKE2S_OUTBYTES];
     blake2s_state state_cpy;
@@ -356,10 +336,10 @@ _blake2s_blake2s_hexdigest_impl(BLAKE2sObject *self)
 
 
 static PyMethodDef py_blake2s_methods[] = {
-    _BLAKE2S_BLAKE2S_COPY_METHODDEF
-    _BLAKE2S_BLAKE2S_DIGEST_METHODDEF
-    _BLAKE2S_BLAKE2S_HEXDIGEST_METHODDEF
-    _BLAKE2S_BLAKE2S_UPDATE_METHODDEF
+    _BLAKE2_BLAKE2S_COPY_METHODDEF
+    _BLAKE2_BLAKE2S_DIGEST_METHODDEF
+    _BLAKE2_BLAKE2S_HEXDIGEST_METHODDEF
+    _BLAKE2_BLAKE2S_UPDATE_METHODDEF
     {NULL, NULL}
 };
 
@@ -407,12 +387,10 @@ py_blake2s_dealloc(PyObject *self)
     /* Try not to leave state in memory. */
     secure_zero_memory(&obj->param, sizeof(obj->param));
     secure_zero_memory(&obj->state, sizeof(obj->state));
-#ifdef WITH_THREAD
     if (obj->lock) {
         PyThread_free_lock(obj->lock);
         obj->lock = NULL;
     }
-#endif
     PyObject_Del(self);
 }
 
@@ -420,7 +398,7 @@ py_blake2s_dealloc(PyObject *self)
 PyTypeObject PyBlake2_BLAKE2sType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_blake2.blake2s",        /* tp_name            */
-    sizeof(BLAKE2sObject),    /* tp_size            */
+    sizeof(BLAKE2sObject),    /* tp_basicsize       */
     0,                        /* tp_itemsize        */
     py_blake2s_dealloc,       /* tp_dealloc         */
     0,                        /* tp_print           */

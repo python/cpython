@@ -1,0 +1,1 @@
+Documentation changes for ipaddress.  Patch by Jon Foster and Berker Peksag.

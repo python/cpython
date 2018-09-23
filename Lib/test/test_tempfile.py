@@ -78,7 +78,6 @@ class BaseTestCase(unittest.TestCase):
     def tearDown(self):
         self._warnings_manager.__exit__(None, None, None)
 
-
     def nameCheck(self, name, dir, pre, suf):
         (ndir, nbase) = os.path.split(name)
         npre  = nbase[:len(pre)]
@@ -184,12 +183,15 @@ class TestRandomNameSequence(BaseTestCase):
         try:
             pid = os.fork()
             if not pid:
+                # child process
                 os.close(read_fd)
                 os.write(write_fd, next(self.r).encode("ascii"))
                 os.close(write_fd)
                 # bypass the normal exit handlers- leave those to
                 # the parent.
                 os._exit(0)
+
+            # parent process
             parent_value = next(self.r)
             child_value = os.read(read_fd, len(parent_value)).decode("ascii")
         finally:
@@ -200,6 +202,10 @@ class TestRandomNameSequence(BaseTestCase):
                     os.kill(pid, signal.SIGKILL)
                 except OSError:
                     pass
+
+                # Read the process exit status to avoid zombie process
+                os.waitpid(pid, 0)
+
             os.close(read_fd)
             os.close(write_fd)
         self.assertNotEqual(child_value, parent_value)
@@ -1088,6 +1094,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
             f.newlines
         with self.assertRaises(AttributeError):
             f.encoding
+        with self.assertRaises(AttributeError):
+            f.errors
 
         f.write(b'x')
         self.assertTrue(f._rolled)
@@ -1097,6 +1105,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
             f.newlines
         with self.assertRaises(AttributeError):
             f.encoding
+        with self.assertRaises(AttributeError):
+            f.errors
 
     def test_text_mode(self):
         # Creating a SpooledTemporaryFile with a text mode should produce
@@ -1113,6 +1123,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertIsNone(f.name)
         self.assertIsNone(f.newlines)
         self.assertIsNone(f.encoding)
+        self.assertIsNone(f.errors)
 
         f.write("xyzzy\n")
         f.seek(0)
@@ -1126,10 +1137,12 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertIsNotNone(f.name)
         self.assertEqual(f.newlines, os.linesep)
         self.assertIsNotNone(f.encoding)
+        self.assertIsNotNone(f.errors)
 
     def test_text_newline_and_encoding(self):
         f = tempfile.SpooledTemporaryFile(mode='w+', max_size=10,
-                                          newline='', encoding='utf-8')
+                                          newline='', encoding='utf-8',
+                                          errors='ignore')
         f.write("\u039B\r\n")
         f.seek(0)
         self.assertEqual(f.read(), "\u039B\r\n")
@@ -1138,6 +1151,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertIsNone(f.name)
         self.assertIsNone(f.newlines)
         self.assertIsNone(f.encoding)
+        self.assertIsNone(f.errors)
 
         f.write("\u039B" * 20 + "\r\n")
         f.seek(0)
@@ -1147,6 +1161,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertIsNotNone(f.name)
         self.assertIsNotNone(f.newlines)
         self.assertEqual(f.encoding, 'utf-8')
+        self.assertEqual(f.errors, 'ignore')
 
     def test_context_manager_before_rollover(self):
         # A SpooledTemporaryFile can be used as a context manager

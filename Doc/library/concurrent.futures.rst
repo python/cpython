@@ -40,21 +40,29 @@ Executor Objects
 
     .. method:: map(func, *iterables, timeout=None, chunksize=1)
 
-       Equivalent to :func:`map(func, *iterables) <map>` except *func* is executed
-       asynchronously and several calls to *func* may be made concurrently.  The
-       returned iterator raises a :exc:`concurrent.futures.TimeoutError` if
-       :meth:`~iterator.__next__` is called and the result isn't available
+       Similar to :func:`map(func, *iterables) <map>` except:
+
+       * the *iterables* are collected immediately rather than lazily;
+
+       * *func* is executed asynchronously and several calls to
+         *func* may be made concurrently.
+
+       The returned iterator raises a :exc:`concurrent.futures.TimeoutError`
+       if :meth:`~iterator.__next__` is called and the result isn't available
        after *timeout* seconds from the original call to :meth:`Executor.map`.
        *timeout* can be an int or a float.  If *timeout* is not specified or
-       ``None``, there is no limit to the wait time.  If a call raises an
-       exception, then that exception will be raised when its value is
-       retrieved from the iterator. When using :class:`ProcessPoolExecutor`, this
-       method chops *iterables* into a number of chunks which it submits to the
-       pool as separate tasks. The (approximate) size of these chunks can be
-       specified by setting *chunksize* to a positive integer. For very long
-       iterables, using a large value for *chunksize* can significantly improve
-       performance compared to the default size of 1. With :class:`ThreadPoolExecutor`,
-       *chunksize* has no effect.
+       ``None``, there is no limit to the wait time.
+
+       If a *func* call raises an exception, then that exception will be
+       raised when its value is retrieved from the iterator.
+
+       When using :class:`ProcessPoolExecutor`, this method chops *iterables*
+       into a number of chunks which it submits to the pool as separate
+       tasks.  The (approximate) size of these chunks can be specified by
+       setting *chunksize* to a positive integer.  For very long iterables,
+       using a large value for *chunksize* can significantly improve
+       performance compared to the default size of 1.  With
+       :class:`ThreadPoolExecutor`, *chunksize* has no effect.
 
        .. versionchanged:: 3.5
           Added the *chunksize* argument.
@@ -124,10 +132,16 @@ And::
    executor.submit(wait_on_future)
 
 
-.. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='')
+.. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=())
 
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously.
+
+   *initializer* is an optional callable that is called at the start of
+   each worker thread; *initargs* is a tuple of arguments passed to the
+   initializer.  Should *initializer* raise an exception, all currently
+   pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
+   as well any attempt to submit more jobs to the pool.
 
    .. versionchanged:: 3.5
       If *max_workers* is ``None`` or
@@ -141,6 +155,10 @@ And::
       The *thread_name_prefix* argument was added to allow users to
       control the threading.Thread names for worker threads created by
       the pool for easier debugging.
+
+   .. versionchanged:: 3.7
+      Added the *initializer* and *initargs* arguments.
+
 
 .. _threadpoolexecutor-example:
 
@@ -191,19 +209,34 @@ that :class:`ProcessPoolExecutor` will not work in the interactive interpreter.
 Calling :class:`Executor` or :class:`Future` methods from a callable submitted
 to a :class:`ProcessPoolExecutor` will result in deadlock.
 
-.. class:: ProcessPoolExecutor(max_workers=None)
+.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=())
 
    An :class:`Executor` subclass that executes calls asynchronously using a pool
    of at most *max_workers* processes.  If *max_workers* is ``None`` or not
    given, it will default to the number of processors on the machine.
    If *max_workers* is lower or equal to ``0``, then a :exc:`ValueError`
    will be raised.
+   *mp_context* can be a multiprocessing context or None. It will be used to
+   launch the workers. If *mp_context* is ``None`` or not given, the default
+   multiprocessing context is used.
+
+   *initializer* is an optional callable that is called at the start of
+   each worker process; *initargs* is a tuple of arguments passed to the
+   initializer.  Should *initializer* raise an exception, all currently
+   pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
+   as well any attempt to submit more jobs to the pool.
 
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a
       :exc:`BrokenProcessPool` error is now raised.  Previously, behaviour
       was undefined but operations on the executor or its futures would often
       freeze or deadlock.
+
+   .. versionchanged:: 3.7
+      The *mp_context* argument was added to allow users to control the
+      start_method for worker processes created by the pool.
+
+      Added the *initializer* and *initargs* arguments.
 
 
 .. _processpoolexecutor-example:
@@ -347,6 +380,11 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        This method should only be used by :class:`Executor` implementations and
        unit tests.
 
+       .. versionchanged:: 3.8
+          This method raises
+          :exc:`concurrent.futures.InvalidStateError` if the :class:`Future` is
+          already done.
+
     .. method:: set_exception(exception)
 
        Sets the result of the work associated with the :class:`Future` to the
@@ -355,6 +393,10 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        This method should only be used by :class:`Executor` implementations and
        unit tests.
 
+       .. versionchanged:: 3.8
+          This method raises
+          :exc:`concurrent.futures.InvalidStateError` if the :class:`Future` is
+          already done.
 
 Module Functions
 ----------------
@@ -425,13 +467,38 @@ Exception classes
 
    Raised when a future operation exceeds the given timeout.
 
+.. exception:: BrokenExecutor
+
+   Derived from :exc:`RuntimeError`, this exception class is raised
+   when an executor is broken for some reason, and cannot be used
+   to submit or execute new tasks.
+
+   .. versionadded:: 3.7
+
+.. exception:: InvalidStateError
+
+   Raised when an operation is performed on a future that is not allowed
+   in the current state.
+
+   .. versionadded:: 3.8
+
+.. currentmodule:: concurrent.futures.thread
+
+.. exception:: BrokenThreadPool
+
+   Derived from :exc:`~concurrent.futures.BrokenExecutor`, this exception
+   class is raised when one of the workers of a :class:`ThreadPoolExecutor`
+   has failed initializing.
+
+   .. versionadded:: 3.7
+
 .. currentmodule:: concurrent.futures.process
 
 .. exception:: BrokenProcessPool
 
-   Derived from :exc:`RuntimeError`, this exception class is raised when
-   one of the workers of a :class:`ProcessPoolExecutor` has terminated
-   in a non-clean fashion (for example, if it was killed from the outside).
+   Derived from :exc:`~concurrent.futures.BrokenExecutor` (formerly
+   :exc:`RuntimeError`), this exception class is raised when one of the
+   workers of a :class:`ProcessPoolExecutor` has terminated in a non-clean
+   fashion (for example, if it was killed from the outside).
 
    .. versionadded:: 3.3
-

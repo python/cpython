@@ -72,7 +72,9 @@ Here is the auxiliary module::
     def some_function():
         module_logger.info('received a call to "some_function"')
 
-The output looks like this::
+The output looks like this:
+
+.. code-block:: none
 
     2005-03-23 23:47:11,663 - spam_application - INFO -
        creating an instance of auxiliary_module.Auxiliary
@@ -127,7 +129,9 @@ shows logging from the main (initial) thread and another thread::
     if __name__ == '__main__':
         main()
 
-When run, the script should print something like the following::
+When run, the script should print something like the following:
+
+.. code-block:: none
 
      0 Thread-1 Hi from myfunc
      3 MainThread Hello from main
@@ -240,14 +244,18 @@ messages should not. Here's how you can achieve this::
    logger2.warning('Jail zesty vixen who grabbed pay from quack.')
    logger2.error('The five boxing wizards jump quickly.')
 
-When you run this, on the console you will see ::
+When you run this, on the console you will see
+
+.. code-block:: none
 
    root        : INFO     Jackdaws love my big sphinx of quartz.
    myapp.area1 : INFO     How quickly daft jumping zebras vex.
    myapp.area2 : WARNING  Jail zesty vixen who grabbed pay from quack.
    myapp.area2 : ERROR    The five boxing wizards jump quickly.
 
-and in the file you will see something like ::
+and in the file you will see something like
+
+.. code-block:: none
 
    10-22 22:19 root         INFO     Jackdaws love my big sphinx of quartz.
    10-22 22:19 myapp.area1  DEBUG    Quick zephyrs blow, vexing daft Jim.
@@ -515,7 +523,9 @@ module. Here is a basic working example::
        main()
 
 First run the server, and then the client. On the client side, nothing is
-printed on the console; on the server side, you should see something like::
+printed on the console; on the server side, you should see something like:
+
+.. code-block:: none
 
    About to start TCP server...
       59 root            INFO     Jackdaws love my big sphinx of quartz.
@@ -675,7 +685,9 @@ script::
             lvlname = logging.getLevelName(lvl)
             a2.log(lvl, 'A message at %s level with %d %s', lvlname, 2, 'parameters')
 
-which, when run, produces something like::
+which, when run, produces something like:
+
+.. code-block:: none
 
     2010-09-06 22:38:15,292 a.b.c DEBUG    IP: 123.231.231.123 User: fred     A debug message
     2010-09-06 22:38:15,300 a.b.c INFO     IP: 192.168.0.1     User: sheila   An info message with some parameters
@@ -941,7 +953,7 @@ Using file rotation
 -------------------
 
 .. sectionauthor:: Doug Hellmann, Vinay Sajip (changes)
-.. (see <http://blog.doughellmann.com/2007/05/pymotw-logging.html>)
+.. (see <https://pymotw.com/3/logging/>)
 
 Sometimes you want to let a log file grow to a certain size, then open a new
 file and log to that. You may want to keep a certain number of these files, and
@@ -976,7 +988,9 @@ logging package provides a :class:`~handlers.RotatingFileHandler`::
        print(filename)
 
 The result should be 6 separate files, each with part of the log history for the
-application::
+application:
+
+.. code-block:: none
 
    logging_rotatingfile_example.out
    logging_rotatingfile_example.out.1
@@ -1055,7 +1069,7 @@ to indicate additional contextual information to be added to the log). So
 you cannot directly make logging calls using :meth:`str.format` or
 :class:`string.Template` syntax, because internally the logging package
 uses %-formatting to merge the format string and the variable arguments.
-There would no changing this while preserving backward compatibility, since
+There would be no changing this while preserving backward compatibility, since
 all logging calls which are out there in existing code will be using %-format
 strings.
 
@@ -1258,8 +1272,8 @@ socket is created separately and passed to the handler (as its 'queue')::
 
     class ZeroMQSocketHandler(QueueHandler):
         def enqueue(self, record):
-            data = json.dumps(record.__dict__)
-            self.queue.send(data)
+            self.queue.send_json(record.__dict__)
+
 
     handler = ZeroMQSocketHandler(sock)
 
@@ -1272,11 +1286,10 @@ data needed by the handler to create the socket::
             self.ctx = ctx or zmq.Context()
             socket = zmq.Socket(self.ctx, socktype)
             socket.bind(uri)
-            QueueHandler.__init__(self, socket)
+            super().__init__(socket)
 
         def enqueue(self, record):
-            data = json.dumps(record.__dict__)
-            self.queue.send(data)
+            self.queue.send_json(record.__dict__)
 
         def close(self):
             self.queue.close()
@@ -1292,12 +1305,13 @@ of queues, for example a ZeroMQ 'subscribe' socket. Here's an example::
         def __init__(self, uri, *handlers, **kwargs):
             self.ctx = kwargs.get('ctx') or zmq.Context()
             socket = zmq.Socket(self.ctx, zmq.SUB)
-            socket.setsockopt(zmq.SUBSCRIBE, '')  # subscribe to everything
+            socket.setsockopt_string(zmq.SUBSCRIBE, '')  # subscribe to everything
             socket.connect(uri)
+            super().__init__(socket, *handlers, **kwargs)
 
         def dequeue(self):
-            msg = self.queue.recv()
-            return logging.makeLogRecord(json.loads(msg))
+            msg = self.queue.recv_json()
+            return logging.makeLogRecord(msg)
 
 
 .. seealso::
@@ -1638,11 +1652,11 @@ works::
 Inserting a BOM into messages sent to a SysLogHandler
 -----------------------------------------------------
 
-`RFC 5424 <https://tools.ietf.org/html/rfc5424>`_ requires that a
+:rfc:`5424` requires that a
 Unicode message be sent to a syslog daemon as a set of bytes which have the
 following structure: an optional pure-ASCII component, followed by a UTF-8 Byte
-Order Mark (BOM), followed by Unicode encoded using UTF-8. (See the `relevant
-section of the specification <https://tools.ietf.org/html/rfc5424#section-6>`_.)
+Order Mark (BOM), followed by Unicode encoded using UTF-8. (See the
+:rfc:`relevant section of the specification <5424#section-6>`.)
 
 In Python 3.1, code was added to
 :class:`~logging.handlers.SysLogHandler` to insert a BOM into the message, but
@@ -1652,7 +1666,7 @@ appear before it.
 
 As this behaviour is broken, the incorrect BOM insertion code is being removed
 from Python 3.2.4 and later. However, it is not being replaced, and if you
-want to produce RFC 5424-compliant messages which include a BOM, an optional
+want to produce :rfc:`5424`-compliant messages which include a BOM, an optional
 pure-ASCII sequence before it and arbitrary Unicode after it, encoded using
 UTF-8, then you need to do the following:
 
@@ -1675,7 +1689,7 @@ UTF-8, then you need to do the following:
 
 The formatted message *will* be encoded using UTF-8 encoding by
 ``SysLogHandler``. If you follow the above rules, you should be able to produce
-RFC 5424-compliant messages. If you don't, logging may not complain, but your
+:rfc:`5424`-compliant messages. If you don't, logging may not complain, but your
 messages will not be RFC 5424-compliant, and your syslog daemon may complain.
 
 
@@ -1706,7 +1720,9 @@ which uses JSON to serialise the event in a machine-parseable manner::
     logging.basicConfig(level=logging.INFO, format='%(message)s')
     logging.info(_('message 1', foo='bar', bar='baz', num=123, fnum=123.456))
 
-If the above script is run, it prints::
+If the above script is run, it prints:
+
+.. code-block:: none
 
     message 1 >>> {"fnum": 123.456, "num": 123, "bar": "baz", "foo": "bar"}
 
@@ -1753,7 +1769,9 @@ as in the following complete example::
     if __name__ == '__main__':
         main()
 
-When the above script is run, it prints::
+When the above script is run, it prints:
+
+.. code-block:: none
 
     message 1 >>> {"snowman": "\u2603", "set_value": [1, 2, 3]}
 
@@ -2083,7 +2101,9 @@ most obvious, but you can provide any callable which returns a
 
 This example shows how you can pass configuration data to the callable which
 constructs the instance, in the form of keyword parameters. When run, the above
-script will print::
+script will print:
+
+.. code-block:: none
 
     changed: hello
 
@@ -2150,7 +2170,9 @@ class, as shown in the following example::
     if __name__ == '__main__':
         main()
 
-When run, this produces a file with exactly two lines::
+When run, this produces a file with exactly two lines:
+
+.. code-block:: none
 
     28/01/2015 07:21:23|INFO|Sample message|
     28/01/2015 07:21:23|ERROR|ZeroDivisionError: integer division or modulo by zero|'Traceback (most recent call last):\n  File "logtest7.py", line 30, in main\n    x = 1 / 0\nZeroDivisionError: integer division or modulo by zero'|
@@ -2312,7 +2334,9 @@ Here's the script::
         write_line('Calling decorated foo with True')
         assert decorated_foo(True)
 
-When this script is run, the following output should be observed::
+When this script is run, the following output should be observed:
+
+.. code-block:: none
 
     Calling undecorated foo with False
     about to log at DEBUG ...
@@ -2408,7 +2432,9 @@ the following complete example::
         logging.config.dictConfig(LOGGING)
         logging.warning('The local time is %s', time.asctime())
 
-When this script is run, it should print something like::
+When this script is run, it should print something like:
+
+.. code-block:: none
 
     2015-10-17 12:53:29,501 The local time is Sat Oct 17 13:53:29 2015
     2015-10-17 13:53:29,501 The local time is Sat Oct 17 13:53:29 2015

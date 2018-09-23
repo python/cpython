@@ -25,7 +25,7 @@ static char errNotAHandle[] = "Object is not a handle";
 
 /* The win32api module reports the function name that failed,
    but this concept is not in the Python core.
-   Hopefully it will one day, and in the meantime I dont
+   Hopefully it will one day, and in the meantime I don't
    want to lose this info...
 */
 #define PyErr_SetFromWindowsErrWithFunction(rc, fnname) \
@@ -83,7 +83,7 @@ PyDoc_STRVAR(PyHKEY_doc,
 "the object is destroyed.  To guarantee cleanup, you can call either\n"
 "the Close() method on the PyHKEY, or the CloseKey() method.\n"
 "\n"
-"All functions which accept a handle object also accept an integer - \n"
+"All functions which accept a handle object also accept an integer --\n"
 "however, use of the handle object is encouraged.\n"
 "\n"
 "Functions:\n"
@@ -506,9 +506,9 @@ PyWinObject_CloseHKEY(PyObject *obHandle)
 ** Note that fixupMultiSZ and countString have both had changes
 ** made to support "incorrect strings".  The registry specification
 ** calls for strings to be terminated with 2 null bytes.  It seems
-** some commercial packages install strings which dont conform,
+** some commercial packages install strings which don't conform,
 ** causing this code to fail - however, "regedit" etc still work
-** with these strings (ie only we dont!).
+** with these strings (ie only we don't!).
 */
 static void
 fixupMultiSZ(wchar_t **str, wchar_t *data, int len)
@@ -905,7 +905,7 @@ winreg_CreateKeyEx_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
     HKEY retKey;
     long rc;
 
-    rc = RegCreateKeyExW(key, sub_key, reserved, NULL, (DWORD)NULL,
+    rc = RegCreateKeyExW(key, sub_key, reserved, NULL, 0,
                          access, NULL, &retKey, NULL);
     if (rc != ERROR_SUCCESS) {
         PyErr_SetFromWindowsErrWithFunction(rc, "CreateKeyEx");

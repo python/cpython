@@ -559,7 +559,8 @@ Pure paths provide the following methods and properties:
 .. method:: PurePath.with_suffix(suffix)
 
    Return a new path with the :attr:`suffix` changed.  If the original path
-   doesn't have a suffix, the new *suffix* is appended instead::
+   doesn't have a suffix, the new *suffix* is appended instead.  If the
+   *suffix* is an empty string, the original suffix is removed::
 
       >>> p = PureWindowsPath('c:/Downloads/pathlib.tar.gz')
       >>> p.with_suffix('.bz2')
@@ -567,6 +568,9 @@ Pure paths provide the following methods and properties:
       >>> p = PureWindowsPath('README')
       >>> p.with_suffix('.txt')
       PureWindowsPath('README.txt')
+      >>> p = PureWindowsPath('README.txt')
+      >>> p.with_suffix('')
+      PureWindowsPath('README')
 
 
 .. _concrete-paths:
@@ -634,7 +638,17 @@ Methods
 
 Concrete paths provide the following methods in addition to pure paths
 methods.  Many of these methods can raise an :exc:`OSError` if a system
-call fails (for example because the path doesn't exist):
+call fails (for example because the path doesn't exist).
+
+.. versionchanged:: 3.8
+
+   :meth:`~Path.exists()`, :meth:`~Path.is_dir()`, :meth:`~Path.is_file()`,
+   :meth:`~Path.is_mount()`, :meth:`~Path.is_symlink()`,
+   :meth:`~Path.is_block_device()`, :meth:`~Path.is_char_device()`,
+   :meth:`~Path.is_fifo()`, :meth:`~Path.is_socket()` now return ``False``
+   instead of raising an exception for paths that contain characters
+   unrepresentable at the OS level.
+
 
 .. classmethod:: Path.cwd()
 
@@ -759,6 +773,18 @@ call fails (for example because the path doesn't exist):
 
    ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
+
+
+.. method:: Path.is_mount()
+
+   Return ``True`` if the path is a :dfn:`mount point`: a point in a
+   file system where a different file system has been mounted.  On POSIX, the
+   function checks whether *path*'s parent, :file:`path/..`, is on a different
+   device than *path*, or whether :file:`path/..` and *path* point to the same
+   i-node on the same device --- this should detect mount points for all Unix
+   and POSIX variants.  Not implemented on Windows.
+
+   .. versionadded:: 3.7
 
 
 .. method:: Path.is_symlink()
@@ -899,7 +925,8 @@ call fails (for example because the path doesn't exist):
       >>> p.read_text()
       'Text file contents'
 
-   The optional parameters have the same meaning as in :func:`open`.
+   The file is opened and then closed. The optional parameters have the same
+   meaning as in :func:`open`.
 
    .. versionadded:: 3.5
 

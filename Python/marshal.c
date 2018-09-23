@@ -25,8 +25,14 @@ module marshal
  * and risks coring the interpreter.  When the object stack gets this deep,
  * raise an exception instead of continuing.
  * On Windows debug builds, reduce this value.
+ *
+ * BUG: https://bugs.python.org/issue33720
+ * On Windows PGO builds, the r_object function overallocates its stack and
+ * can cause a stack overflow. We reduce the maximum depth for all Windows
+ * releases to protect against this.
+ * #if defined(MS_WINDOWS) && defined(_DEBUG)
  */
-#if defined(MS_WINDOWS) && defined(_DEBUG)
+#if defined(MS_WINDOWS)
 #define MAX_MARSHAL_STACK_DEPTH 1000
 #else
 #define MAX_MARSHAL_STACK_DEPTH 2000
@@ -39,6 +45,9 @@ module marshal
 #define TYPE_STOPITER           'S'
 #define TYPE_ELLIPSIS           '.'
 #define TYPE_INT                'i'
+/* TYPE_INT64 is not generated anymore.
+   Supported for backward compatibility only. */
+#define TYPE_INT64              'I'
 #define TYPE_FLOAT              'f'
 #define TYPE_BINARY_FLOAT       'g'
 #define TYPE_COMPLEX            'x'
@@ -257,6 +266,32 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
     } while (d != 0);
 }
 
+static void
+w_float_bin(double v, WFILE *p)
+{
+    unsigned char buf[8];
+    if (_PyFloat_Pack8(v, buf, 1) < 0) {
+        p->error = WFERR_UNMARSHALLABLE;
+        return;
+    }
+    w_string((const char *)buf, 8, p);
+}
+
+static void
+w_float_str(double v, WFILE *p)
+{
+    int n;
+    char *buf = PyOS_double_to_string(v, 'g', 17, 0, NULL);
+    if (!buf) {
+        p->error = WFERR_NOMEMORY;
+        return;
+    }
+    n = (int)strlen(buf);
+    w_byte(n, p);
+    w_string(buf, n, p);
+    PyMem_Free(buf);
+}
+
 static int
 w_ref(PyObject *v, char *flag, WFILE *p)
 {
@@ -366,69 +401,24 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     }
     else if (PyFloat_CheckExact(v)) {
         if (p->version > 1) {
-            unsigned char buf[8];
-            if (_PyFloat_Pack8(PyFloat_AsDouble(v),
-                               buf, 1) < 0) {
-                p->error = WFERR_UNMARSHALLABLE;
-                return;
-            }
             W_TYPE(TYPE_BINARY_FLOAT, p);
-            w_string((char*)buf, 8, p);
+            w_float_bin(PyFloat_AS_DOUBLE(v), p);
         }
         else {
-            char *buf = PyOS_double_to_string(PyFloat_AS_DOUBLE(v),
-                                              'g', 17, 0, NULL);
-            if (!buf) {
-                p->error = WFERR_NOMEMORY;
-                return;
-            }
-            n = strlen(buf);
             W_TYPE(TYPE_FLOAT, p);
-            w_byte((int)n, p);
-            w_string(buf, n, p);
-            PyMem_Free(buf);
+            w_float_str(PyFloat_AS_DOUBLE(v), p);
         }
     }
     else if (PyComplex_CheckExact(v)) {
         if (p->version > 1) {
-            unsigned char buf[8];
-            if (_PyFloat_Pack8(PyComplex_RealAsDouble(v),
-                               buf, 1) < 0) {
-                p->error = WFERR_UNMARSHALLABLE;
-                return;
-            }
             W_TYPE(TYPE_BINARY_COMPLEX, p);
-            w_string((char*)buf, 8, p);
-            if (_PyFloat_Pack8(PyComplex_ImagAsDouble(v),
-                               buf, 1) < 0) {
-                p->error = WFERR_UNMARSHALLABLE;
-                return;
-            }
-            w_string((char*)buf, 8, p);
+            w_float_bin(PyComplex_RealAsDouble(v), p);
+            w_float_bin(PyComplex_ImagAsDouble(v), p);
         }
         else {
-            char *buf;
             W_TYPE(TYPE_COMPLEX, p);
-            buf = PyOS_double_to_string(PyComplex_RealAsDouble(v),
-                                        'g', 17, 0, NULL);
-            if (!buf) {
-                p->error = WFERR_NOMEMORY;
-                return;
-            }
-            n = strlen(buf);
-            w_byte((int)n, p);
-            w_string(buf, n, p);
-            PyMem_Free(buf);
-            buf = PyOS_double_to_string(PyComplex_ImagAsDouble(v),
-                                        'g', 17, 0, NULL);
-            if (!buf) {
-                p->error = WFERR_NOMEMORY;
-                return;
-            }
-            n = strlen(buf);
-            w_byte((int)n, p);
-            w_string(buf, n, p);
-            PyMem_Free(buf);
+            w_float_str(PyComplex_RealAsDouble(v), p);
+            w_float_str(PyComplex_ImagAsDouble(v), p);
         }
     }
     else if (PyBytes_CheckExact(v)) {
@@ -647,7 +637,6 @@ typedef struct {
     FILE *fp;
     int depth;
     PyObject *readable;  /* Stream-like object being read from */
-    PyObject *current_filename;
     char *ptr;
     char *end;
     char *buf;
@@ -784,6 +773,19 @@ r_long(RFILE *p)
     return x;
 }
 
+/* r_long64 deals with the TYPE_INT64 code. */
+static PyObject *
+r_long64(RFILE *p)
+{
+    const unsigned char *buffer = (const unsigned char *) r_string(8, p);
+    if (buffer == NULL) {
+        return NULL;
+    }
+    return _PyLong_FromByteArray(buffer, 8,
+                                 1 /* little endian */,
+                                 1 /* signed */);
+}
+
 static PyObject *
 r_PyLong(RFILE *p)
 {
@@ -857,6 +859,38 @@ r_PyLong(RFILE *p)
     PyErr_SetString(PyExc_ValueError,
                     "bad marshal data (digit out of range in long)");
     return NULL;
+}
+
+static double
+r_float_bin(RFILE *p)
+{
+    const unsigned char *buf = (const unsigned char *) r_string(8, p);
+    if (buf == NULL)
+        return -1;
+    return _PyFloat_Unpack8(buf, 1);
+}
+
+/* Issue #33720: Disable inlining for reducing the C stack consumption
+   on PGO builds. */
+_Py_NO_INLINE static double
+r_float_str(RFILE *p)
+{
+    int n;
+    char buf[256];
+    const char *ptr;
+    n = r_byte(p);
+    if (n == EOF) {
+        PyErr_SetString(PyExc_EOFError,
+            "EOF read where object expected");
+        return -1;
+    }
+    ptr = r_string(n, p);
+    if (ptr == NULL) {
+        return -1;
+    }
+    memcpy(buf, ptr, n);
+    buf[n] = '\0';
+    return PyOS_string_to_double(buf, NULL, NULL);
 }
 
 /* allocate the reflist index for a new object. Return -1 on failure */
@@ -983,6 +1017,11 @@ r_object(RFILE *p)
         R_REF(retval);
         break;
 
+    case TYPE_INT64:
+        retval = r_long64(p);
+        R_REF(retval);
+        break;
+
     case TYPE_LONG:
         retval = r_PyLong(p);
         R_REF(retval);
@@ -990,36 +1029,17 @@ r_object(RFILE *p)
 
     case TYPE_FLOAT:
         {
-            char buf[256];
-            const char *ptr;
-            double dx;
-            n = r_byte(p);
-            if (n == EOF) {
-                PyErr_SetString(PyExc_EOFError,
-                    "EOF read where object expected");
+            double x = r_float_str(p);
+            if (x == -1.0 && PyErr_Occurred())
                 break;
-            }
-            ptr = r_string(n, p);
-            if (ptr == NULL)
-                break;
-            memcpy(buf, ptr, n);
-            buf[n] = '\0';
-            dx = PyOS_string_to_double(buf, NULL, NULL);
-            if (dx == -1.0 && PyErr_Occurred())
-                break;
-            retval = PyFloat_FromDouble(dx);
+            retval = PyFloat_FromDouble(x);
             R_REF(retval);
             break;
         }
 
     case TYPE_BINARY_FLOAT:
         {
-            const unsigned char *buf;
-            double x;
-            buf = (const unsigned char *) r_string(8, p);
-            if (buf == NULL)
-                break;
-            x = _PyFloat_Unpack8(buf, 1);
+            double x = r_float_bin(p);
             if (x == -1.0 && PyErr_Occurred())
                 break;
             retval = PyFloat_FromDouble(x);
@@ -1029,35 +1049,11 @@ r_object(RFILE *p)
 
     case TYPE_COMPLEX:
         {
-            char buf[256];
-            const char *ptr;
             Py_complex c;
-            n = r_byte(p);
-            if (n == EOF) {
-                PyErr_SetString(PyExc_EOFError,
-                    "EOF read where object expected");
-                break;
-            }
-            ptr = r_string(n, p);
-            if (ptr == NULL)
-                break;
-            memcpy(buf, ptr, n);
-            buf[n] = '\0';
-            c.real = PyOS_string_to_double(buf, NULL, NULL);
+            c.real = r_float_str(p);
             if (c.real == -1.0 && PyErr_Occurred())
                 break;
-            n = r_byte(p);
-            if (n == EOF) {
-                PyErr_SetString(PyExc_EOFError,
-                    "EOF read where object expected");
-                break;
-            }
-            ptr = r_string(n, p);
-            if (ptr == NULL)
-                break;
-            memcpy(buf, ptr, n);
-            buf[n] = '\0';
-            c.imag = PyOS_string_to_double(buf, NULL, NULL);
+            c.imag = r_float_str(p);
             if (c.imag == -1.0 && PyErr_Occurred())
                 break;
             retval = PyComplex_FromCComplex(c);
@@ -1067,18 +1063,11 @@ r_object(RFILE *p)
 
     case TYPE_BINARY_COMPLEX:
         {
-            const unsigned char *buf;
             Py_complex c;
-            buf = (const unsigned char *) r_string(8, p);
-            if (buf == NULL)
-                break;
-            c.real = _PyFloat_Unpack8(buf, 1);
+            c.real = r_float_bin(p);
             if (c.real == -1.0 && PyErr_Occurred())
                 break;
-            buf = (const unsigned char *) r_string(8, p);
-            if (buf == NULL)
-                break;
-            c.imag = _PyFloat_Unpack8(buf, 1);
+            c.imag = r_float_bin(p);
             if (c.imag == -1.0 && PyErr_Occurred())
                 break;
             retval = PyComplex_FromCComplex(c);
@@ -1112,6 +1101,7 @@ r_object(RFILE *p)
 
     case TYPE_ASCII_INTERNED:
         is_interned = 1;
+        /* fall through */
     case TYPE_ASCII:
         n = r_long(p);
         if (PyErr_Occurred())
@@ -1124,6 +1114,7 @@ r_object(RFILE *p)
 
     case TYPE_SHORT_ASCII_INTERNED:
         is_interned = 1;
+        /* fall through */
     case TYPE_SHORT_ASCII:
         n = r_byte(p);
         if (n == EOF) {
@@ -1149,6 +1140,7 @@ r_object(RFILE *p)
 
     case TYPE_INTERNED:
         is_interned = 1;
+        /* fall through */
     case TYPE_UNICODE:
         {
         const char *buffer;
@@ -1387,18 +1379,6 @@ r_object(RFILE *p)
             filename = r_object(p);
             if (filename == NULL)
                 goto code_error;
-            if (PyUnicode_CheckExact(filename)) {
-                if (p->current_filename != NULL) {
-                    if (!PyUnicode_Compare(filename, p->current_filename)) {
-                        Py_DECREF(filename);
-                        Py_INCREF(p->current_filename);
-                        filename = p->current_filename;
-                    }
-                }
-                else {
-                    p->current_filename = filename;
-                }
-            }
             name = r_object(p);
             if (name == NULL)
                 goto code_error;
@@ -1481,7 +1461,6 @@ PyMarshal_ReadShortFromFile(FILE *fp)
     assert(fp);
     rf.readable = NULL;
     rf.fp = fp;
-    rf.current_filename = NULL;
     rf.end = rf.ptr = NULL;
     rf.buf = NULL;
     res = r_short(&rf);
@@ -1497,7 +1476,6 @@ PyMarshal_ReadLongFromFile(FILE *fp)
     long res;
     rf.fp = fp;
     rf.readable = NULL;
-    rf.current_filename = NULL;
     rf.ptr = rf.end = NULL;
     rf.buf = NULL;
     res = r_long(&rf);
@@ -1559,7 +1537,6 @@ PyMarshal_ReadObjectFromFile(FILE *fp)
     PyObject *result;
     rf.fp = fp;
     rf.readable = NULL;
-    rf.current_filename = NULL;
     rf.depth = 0;
     rf.ptr = rf.end = NULL;
     rf.buf = NULL;
@@ -1580,7 +1557,6 @@ PyMarshal_ReadObjectFromString(const char *str, Py_ssize_t len)
     PyObject *result;
     rf.fp = NULL;
     rf.readable = NULL;
-    rf.current_filename = NULL;
     rf.ptr = (char *)str;
     rf.end = (char *)str + len;
     rf.buf = NULL;
@@ -1720,7 +1696,6 @@ marshal_load(PyObject *module, PyObject *file)
         rf.depth = 0;
         rf.fp = NULL;
         rf.readable = file;
-        rf.current_filename = NULL;
         rf.ptr = rf.end = NULL;
         rf.buf = NULL;
         if ((rf.refs = PyList_New(0)) != NULL) {
@@ -1779,7 +1754,6 @@ marshal_loads_impl(PyObject *module, Py_buffer *bytes)
     PyObject* result;
     rf.fp = NULL;
     rf.readable = NULL;
-    rf.current_filename = NULL;
     rf.ptr = s;
     rf.end = s + n;
     rf.depth = 0;

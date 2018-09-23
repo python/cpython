@@ -1,16 +1,20 @@
-'''Test idlelib.help_about.
+"""Test help_about, coverage 100%.
+help_about.build_bits branches on sys.platform='darwin'.
+'100% combines coverage on Mac and others.
+"""
 
-Coverage: 100%
-'''
+from idlelib import help_about
+import unittest
 from test.support import requires, findfile
 from tkinter import Tk, TclError
-import unittest
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox_func
-from idlelib.help_about import AboutDialog as About
 from idlelib import textview
 import os.path
 from platform import python_version
+
+About = help_about.AboutDialog
+
 
 class LiveDialogTest(unittest.TestCase):
     """Simulate user clicking buttons other than [Close].
@@ -31,6 +35,9 @@ class LiveDialogTest(unittest.TestCase):
         cls.root.destroy()
         del cls.root
 
+    def test_build_bits(self):
+        self.assertIn(help_about.build_bits(), ('32', '64'))
+
     def test_dialog_title(self):
         """Test about dialog title"""
         self.assertEqual(self.dialog.title(), 'About IDLE')
@@ -44,40 +51,37 @@ class LiveDialogTest(unittest.TestCase):
     def test_printer_buttons(self):
         """Test buttons whose commands use printer function."""
         dialog = self.dialog
-        button_sources = [(self.dialog.py_license, license),
-                          (self.dialog.py_copyright, copyright),
-                          (self.dialog.py_credits, credits)]
+        button_sources = [(dialog.py_license, license, 'license'),
+                          (dialog.py_copyright, copyright, 'copyright'),
+                          (dialog.py_credits, credits, 'credits')]
 
-        for button, printer in button_sources:
-            printer._Printer__setup()
-            button.invoke()
-            self.assertEqual(
-                    printer._Printer__lines[0],
-                    dialog._current_textview.text.get('1.0', '1.end'))
-            self.assertEqual(
-                    printer._Printer__lines[1],
-                    dialog._current_textview.text.get('2.0', '2.end'))
-            dialog._current_textview.destroy()
+        for button, printer, name in button_sources:
+            with self.subTest(name=name):
+                printer._Printer__setup()
+                button.invoke()
+                get = dialog._current_textview.viewframe.textframe.text.get
+                lines = printer._Printer__lines
+                self.assertEqual(lines[0], get('1.0', '1.end'))
+                self.assertEqual(lines[1], get('2.0', '2.end'))
+                dialog._current_textview.destroy()
 
     def test_file_buttons(self):
         """Test buttons that display files."""
         dialog = self.dialog
-        button_sources = [(self.dialog.readme, 'README.txt'),
-                          (self.dialog.idle_news, 'NEWS.txt'),
-                          (self.dialog.idle_credits, 'CREDITS.txt')]
+        button_sources = [(self.dialog.readme, 'README.txt', 'readme'),
+                          (self.dialog.idle_news, 'NEWS.txt', 'news'),
+                          (self.dialog.idle_credits, 'CREDITS.txt', 'credits')]
 
-        for button, filename in button_sources:
-            button.invoke()
-            fn = findfile(filename, subdir='idlelib')
-            with open(fn) as f:
-                self.assertEqual(
-                        f.readline().strip(),
-                        dialog._current_textview.text.get('1.0', '1.end'))
-                f.readline()
-                self.assertEqual(
-                    f.readline().strip(),
-                    dialog._current_textview.text.get('3.0', '3.end'))
-            dialog._current_textview.destroy()
+        for button, filename, name in button_sources:
+            with  self.subTest(name=name):
+                button.invoke()
+                fn = findfile(filename, subdir='idlelib')
+                get = dialog._current_textview.viewframe.textframe.text.get
+                with open(fn, encoding='utf-8') as f:
+                    self.assertEqual(f.readline().strip(), get('1.0', '1.end'))
+                    f.readline()
+                    self.assertEqual(f.readline().strip(), get('3.0', '3.end'))
+                dialog._current_textview.destroy()
 
 
 class DefaultTitleTest(unittest.TestCase):
@@ -99,7 +103,9 @@ class DefaultTitleTest(unittest.TestCase):
 
     def test_dialog_title(self):
         """Test about dialog title"""
-        self.assertEqual(self.dialog.title(), f'About IDLE {python_version()}')
+        self.assertEqual(self.dialog.title(),
+                         f'About IDLE {python_version()}'
+                         f' ({help_about.build_bits()} bit)')
 
 
 class CloseTest(unittest.TestCase):

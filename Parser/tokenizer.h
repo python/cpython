@@ -47,9 +47,6 @@ struct tok_state {
        (Grammar/Grammar). */
     PyObject *filename;
 #endif
-    int altwarning;     /* Issue warning if alternate tabs don't match */
-    int alterror;       /* Issue error if alternate tabs don't match */
-    int alttabsize;     /* Alternate tab spacing */
     int altindstack[MAXINDENT];         /* Stack of alternate indents */
     /* Stuff for PEP 0263 */
     enum decoding_state decoding_state;
@@ -65,13 +62,6 @@ struct tok_state {
     const char* enc;        /* Encoding for the current str. */
     const char* str;
     const char* input; /* Tokenizer's newline translated copy of the string. */
-
-    /* async/await related fields; can be removed in 3.7 when async and await
-       become normal keywords. */
-    int async_def;        /* =1 if tokens are inside an 'async def' body. */
-    int async_def_indent; /* Indentation level of the outermost 'async def'. */
-    int async_def_nl;     /* =1 if the outermost 'async def' had at least one
-                             NEWLINE token after it. */
 };
 
 extern struct tok_state *PyTokenizer_FromString(const char *, int);
