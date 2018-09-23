@@ -91,9 +91,21 @@ Other Language Changes
   was lifted.
   (Contributed by Serhiy Storchaka in :issue:`32489`.)
 
+* The ``int`` type now has a new ``as_integer_ratio`` method compatible
+  with the existing ``float.as_integer_ratio`` method.
+  (Contributed by Lisa Roach in :issue:`33073`.)
+
 * Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
+* The syntax allowed for keyword names in function calls was further
+  restricted. In particular, ``f((keyword)=arg)`` is no longer allowed. It was
+  never intended to permit more than a bare name on the left-hand side of a
+  keyword argument assignment term. See :issue:`34641`.
+
+* Iterable unpacking is now allowed without parentheses in :keyword:`yield`
+  and :keyword:`return` statements.
+  (Contributed by David Cuthbert and Jordan Chapman in :issue:`32117`.)
 
 New Modules
 ===========
@@ -103,6 +115,38 @@ New Modules
 
 Improved Modules
 ================
+
+os.path
+-------
+
+:mod:`os.path` functions that return a boolean result like
+:func:`~os.path.exists`, :func:`~os.path.lexists`, :func:`~os.path.isdir`,
+:func:`~os.path.isfile`, :func:`~os.path.islink`, and :func:`~os.path.ismount`
+now return ``False`` instead of raising :exc:`ValueError` or its subclasses
+:exc:`UnicodeEncodeError` and :exc:`UnicodeDecodeError` for paths that contain
+characters or bytes unrepresentable at the OS level.
+(Contributed by Serhiy Storchaka in :issue:`33721`.)
+
+pathlib
+-------
+
+:mod:`pathlib.Path` methods that return a boolean result like
+:meth:`~pathlib.Path.exists()`, :meth:`~pathlib.Path.is_dir()`,
+:meth:`~pathlib.Path.is_file()`, :meth:`~pathlib.Path.is_mount()`,
+:meth:`~pathlib.Path.is_symlink()`, :meth:`~pathlib.Path.is_block_device()`,
+:meth:`~pathlib.Path.is_char_device()`, :meth:`~pathlib.Path.is_fifo()`,
+:meth:`~pathlib.Path.is_socket()` now return ``False`` instead of raising
+:exc:`ValueError` or its subclass :exc:`UnicodeEncodeError` for paths that
+contain characters unrepresentable at the OS level.
+(Contributed by Serhiy Storchaka in :issue:`33721`.)
+
+venv
+----
+
+* :mod:`venv` now includes an ``Activate.ps1`` script on all platforms for
+  activating virtual environments under PowerShell Core 6.1.
+  (Contributed by Brett Cannon in :issue:`32718`.)
+
 
 Optimizations
 =============
@@ -130,6 +174,10 @@ Optimizations
 * Removed one ``Py_ssize_t`` member from ``PyGC_Head``.  All GC tracked
   objects (e.g. tuple, list, dict) size is reduced 4 or 8 bytes.
   (Contributed by Inada Naoki in :issue:`33597`)
+
+* :class:`uuid.UUID` now uses ``__slots__`` to reduce its memory footprint.
+  Note that this means that instances can no longer be weak-referenced and
+  that arbitrary attributes can no longer be added to them.
 
 
 Build and C API Changes
@@ -166,7 +214,7 @@ Deprecated
 
 * Passing an object that is not an instance of
   :class:`concurrent.futures.ThreadPoolExecutor` to
-  :meth:`asyncio.AbstractEventLoop.set_default_executor()` is
+  :meth:`asyncio.loop.set_default_executor()` is
   deprecated and will be prohibited in Python 3.9.
   (Contributed by Elvis Pranskevichus in :issue:`34075`.)
 
@@ -260,7 +308,7 @@ Changes in the Python API
 
 * Asyncio tasks can now be named, either by passing the ``name`` keyword
   argument to :func:`asyncio.create_task` or
-  the :meth:`~asyncio.AbstractEventLoop.create_task` event loop method, or by
+  the :meth:`~asyncio.loop.create_task` event loop method, or by
   calling the :meth:`~asyncio.Task.set_name` method on the task object. The
   task name is visible in the ``repr()`` output of :class:`asyncio.Task` and
   can also be retrieved using the :meth:`~asyncio.Task.get_name` method.
@@ -272,13 +320,19 @@ Changes in the Python API
   success; an exception was raised on error under Unix.
   (Contributed by Berker Peksag in :issue:`2122`.)
 
+* The function :func:`math.factorial` no longer accepts arguments that are not
+  int-like. (Contributed by Pablo Galindo in :issue:`33083`.)
+
+* :class:`uuid.UUID` now uses ``__slots__``, therefore instances can no longer
+  be weak-referenced and attributes can no longer be added.
+
 
 CPython bytecode changes
 ------------------------
 
 * The interpreter loop  has been simplified by moving the logic of unrolling
   the stack of blocks into the compiler.  The compiler emits now explicit
-  instructions for adjusting the stack of values and calling the cleaning
+  instructions for adjusting the stack of values and calling the cleaning-
   up code for :keyword:`break`, :keyword:`continue` and :keyword:`return`.
 
   Removed opcodes :opcode:`BREAK_LOOP`, :opcode:`CONTINUE_LOOP`,

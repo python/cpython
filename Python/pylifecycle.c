@@ -191,7 +191,6 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     PyObject *importlib;
     PyObject *impmod;
     PyObject *value;
-    _PyInitError err;
 
     /* Import _importlib through its frozen version, _frozen_importlib. */
     if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
@@ -233,11 +232,6 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     Py_DECREF(value);
     Py_DECREF(impmod);
 
-    err = _PyImportZip_Init();
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
     return _Py_INIT_OK();
 }
 
@@ -252,7 +246,7 @@ initexternalimport(PyInterpreterState *interp)
         return _Py_INIT_ERR("external importer setup failed");
     }
     Py_DECREF(value);
-    return _Py_INIT_OK();
+    return _PyImportZip_Init();
 }
 
 /* Helper functions to better handle the legacy C locale
@@ -363,6 +357,13 @@ void
 _Py_CoerceLegacyLocale(int warn)
 {
 #ifdef PY_COERCE_C_LOCALE
+    char *oldloc = NULL;
+
+    oldloc = _PyMem_RawStrdup(setlocale(LC_CTYPE, NULL));
+    if (oldloc == NULL) {
+        return;
+    }
+
     const char *locale_override = getenv("LC_ALL");
     if (locale_override == NULL || *locale_override == '\0') {
         /* LC_ALL is also not set (or is set to an empty string) */
@@ -384,11 +385,16 @@ defined(HAVE_LANGINFO_H) && defined(CODESET)
 #endif
                 /* Successfully configured locale, so make it the default */
                 _coerce_default_locale_settings(warn, target);
-                return;
+                goto done;
             }
         }
     }
     /* No C locale warning here, as Py_Initialize will emit one later */
+
+    setlocale(LC_CTYPE, oldloc);
+
+done:
+    PyMem_RawFree(oldloc);
 #endif
 }
 
@@ -874,7 +880,7 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
 _PyInitError
 _Py_InitializeFromConfig(const _PyCoreConfig *config)
 {
-    PyInterpreterState *interp;
+    PyInterpreterState *interp = NULL;
     _PyInitError err;
     err = _Py_InitializeCore(&interp, config);
     if (_Py_INIT_FAILED(err)) {

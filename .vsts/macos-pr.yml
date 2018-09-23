@@ -4,7 +4,7 @@
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 
 queue:
-  name: Hosted macOS Preview
+  name: Hosted macOS
 
 trigger:
   branches:
@@ -50,6 +50,15 @@ steps:
   displayName: 'Display build info'
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
-- script: make buildbottest TESTOPTS="-j4 -uall,-cpu"
+- script: make buildbottest TESTOPTS="-j4 -uall,-cpu --junit-xml=$(build.binariesDirectory)/test-results.xml"
   displayName: 'Tests'
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    testResultsFiles: '$(build.binariesDirectory)/test-results.xml'
+    mergeTestResults: true
+    testRunTitle: '$(system.pullRequest.targetBranch)-macOS'
+    platform: macOS
+  condition: and(succeededOrFailed(), ne(variables['DocOnly'], 'true'))
