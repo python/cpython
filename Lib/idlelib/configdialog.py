@@ -512,7 +512,7 @@ class FontPage(Frame):
                     scroll_font: Scrollbar
                 frame_font_param: Frame
                     font_size_title: Label
-                    (*)sizelist: DynOptionMenu - font_size
+                    (*)sizelist: OptionMenu - font_size
                     (*)bold_toggle: Checkbutton - font_bold
             frame_sample: LabelFrame
                 (*)font_sample: Label
@@ -547,7 +547,7 @@ class FontPage(Frame):
         scroll_font.config(command=self.fontlist.yview)
         self.fontlist.config(yscrollcommand=scroll_font.set)
         font_size_title = Label(frame_font_param, text='Size :')
-        self.sizelist = DynOptionMenu(frame_font_param, self.font_size, None)
+        self.sizelist = OptionMenu(frame_font_param, self.font_size, None)
         self.bold_toggle = Checkbutton(
                 frame_font_param, variable=self.font_bold,
                 onvalue=1, offvalue=0, text='Bold')
@@ -611,9 +611,9 @@ class FontPage(Frame):
         except ValueError:
             pass
         # Set font size dropdown.
-        self.sizelist.SetMenu(('7', '8', '9', '10', '11', '12', '13', '14',
-                               '16', '18', '20', '22', '25', '29', '34', '40'),
-                              font_size)
+        self.sizelist.set_menu(font_size, *('7', '8', '9', '10', '11', '12',
+                                            '13', '14', '16', '18', '20', '22',
+                                            '25', '29', '34', '40'))
         # Set font weight.
         self.font_bold.set(font_bold)
         self.set_samples()
@@ -697,7 +697,7 @@ class HighPage(Frame):
         for the current theme.  Radiobuttons builtin_theme_on and
         custom_theme_on toggle var theme_source, which controls if the
         current set of colors are from a builtin or custom theme.
-        DynOptionMenus builtinlist and customlist contain lists of the
+        OptionMenus builtinlist and customlist contain lists of the
         builtin and custom themes, respectively, and the current item
         from each list is stored in vars builtin_name and custom_name.
 
@@ -727,7 +727,7 @@ class HighPage(Frame):
         if the current selected color for a tag is for the foreground or
         background.
 
-        DynOptionMenu targetlist contains a readable description of the
+        OptionMenu targetlist contains a readable description of the
         tags applied to Python source within IDLE.  Selecting one of the
         tags from this list populates highlight_target, which has a callback
         function set_highlight_target().
@@ -785,7 +785,7 @@ class HighPage(Frame):
                 (*)highlight_sample: Text
                 (*)frame_color_set: Frame
                     (*)button_set_color: Button
-                    (*)targetlist: DynOptionMenu - highlight_target
+                    (*)targetlist: OptionMenu - highlight_target
                 frame_fg_bg_toggle: Frame
                     (*)fg_on: Radiobutton - fg_bg_toggle
                     (*)bg_on: Radiobutton - fg_bg_toggle
@@ -794,8 +794,8 @@ class HighPage(Frame):
                 theme_type_title: Label
                 (*)builtin_theme_on: Radiobutton - theme_source
                 (*)custom_theme_on: Radiobutton - theme_source
-                (*)builtinlist: DynOptionMenu - builtin_name
-                (*)customlist: DynOptionMenu - custom_name
+                (*)builtinlist: OptionMenu - builtin_name
+                (*)customlist: OptionMenu - custom_name
                 (*)button_delete_custom: Button
                 (*)theme_message: Label
         """
@@ -876,9 +876,8 @@ class HighPage(Frame):
         self.button_set_color = Button(
                 self.frame_color_set, text='Choose Color for :',
                 command=self.get_color)
-        self.targetlist = DynOptionMenu(
-                self.frame_color_set, self.highlight_target, None,
-                highlightthickness=0) #, command=self.set_highlight_targetBinding
+        self.targetlist = OptionMenu(
+                self.frame_color_set, self.highlight_target, None)
         self.fg_on = Radiobutton(
                 frame_fg_bg_toggle, variable=self.fg_bg_toggle, value=1,
                 text='Foreground', command=self.set_color_sample_binding)
@@ -897,9 +896,9 @@ class HighPage(Frame):
         self.custom_theme_on = Radiobutton(
                 frame_theme, variable=self.theme_source, value=0,
                 command=self.set_theme_type, text='a Custom Theme')
-        self.builtinlist = DynOptionMenu(
+        self.builtinlist = OptionMenu(
                 frame_theme, self.builtin_name, None, command=None)
-        self.customlist = DynOptionMenu(
+        self.customlist = OptionMenu(
                 frame_theme, self.custom_name, None, command=None)
         self.button_delete_custom = Button(
                 frame_theme, text='Delete Custom Theme',
@@ -957,26 +956,26 @@ class HighPage(Frame):
         if self.theme_source.get():  # Default theme selected.
             item_list = idleConf.GetSectionList('default', 'highlight')
             item_list.sort()
-            self.builtinlist.SetMenu(item_list, current_option)
+            self.builtinlist.set_menu(current_option, *item_list)
             item_list = idleConf.GetSectionList('user', 'highlight')
             item_list.sort()
             if not item_list:
                 self.custom_theme_on.state(('disabled',))
                 self.custom_name.set('- no custom themes -')
             else:
-                self.customlist.SetMenu(item_list, item_list[0])
+                self.customlist.set_menu(item_list[0], *item_list)
         else:  # User theme selected.
             item_list = idleConf.GetSectionList('user', 'highlight')
             item_list.sort()
-            self.customlist.SetMenu(item_list, current_option)
+            self.customlist.set_menu(current_option, *item_list)
             item_list = idleConf.GetSectionList('default', 'highlight')
             item_list.sort()
-            self.builtinlist.SetMenu(item_list, item_list[0])
+            self.builtinlist.set_menu(item_list[0], *item_list)
         self.set_theme_type()
         # Load theme element option menu.
         theme_names = list(self.theme_elements.keys())
         theme_names.sort(key=lambda x: self.theme_elements[x][1])
-        self.targetlist.SetMenu(theme_names, theme_names[0])
+        self.targetlist.set_menu(theme_names[0], *theme_names)
         self.paint_theme_sample()
         self.set_highlight_target()
 
@@ -1050,13 +1049,13 @@ class HighPage(Frame):
             load_theme_cfg
         """
         if self.theme_source.get():
-            self.builtinlist['state'] = 'normal'
-            self.customlist['state'] = 'disabled'
+            self.builtinlist.state(('!disabled',))
+            self.customlist.state(('disabled',))
             self.button_delete_custom.state(('disabled',))
         else:
-            self.builtinlist['state'] = 'disabled'
+            self.builtinlist.state(('disabled',))
             self.custom_theme_on.state(('!disabled',))
-            self.customlist['state'] = 'normal'
+            self.customlist.state(('!disabled',))
             self.button_delete_custom.state(('!disabled',))
 
     def get_color(self):
@@ -1163,7 +1162,7 @@ class HighPage(Frame):
         # Change GUI over to the new theme.
         custom_theme_list = idleConf.GetSectionList('user', 'highlight')
         custom_theme_list.sort()
-        self.customlist.SetMenu(custom_theme_list, new_theme_name)
+        self.customlist.set_menu(new_theme_name, *custom_theme_list)
         self.theme_source.set(0)
         self.set_theme_type()
 
@@ -1312,9 +1311,9 @@ class HighPage(Frame):
         item_list.sort()
         if not item_list:
             self.custom_theme_on.state(('disabled',))
-            self.customlist.SetMenu(item_list, '- no custom themes -')
+            self.customlist.set_menu('- no custom themes -', *item_list)
         else:
-            self.customlist.SetMenu(item_list, item_list[0])
+            self.customlist.set_menu(item_list[0], *item_list)
         # Revert to default theme.
         self.theme_source.set(idleConf.defaultCfg['main'].Get('Theme', 'default'))
         self.builtin_name.set(idleConf.defaultCfg['main'].Get('Theme', 'name'))
@@ -1347,7 +1346,7 @@ class KeysPage(Frame):
         lists and calls load_keys_list for the current keyset.
         Radiobuttons builtin_keyset_on and custom_keyset_on toggle var
         keyset_source, which controls if the current set of keybindings
-        are from a builtin or custom keyset. DynOptionMenus builtinlist
+        are from a builtin or custom keyset.  OptionMenus builtinlist
         and customlist contain lists of the builtin and custom keysets,
         respectively, and the current item from each list is stored in
         vars builtin_name and custom_name.
@@ -1399,9 +1398,9 @@ class KeysPage(Frame):
                 frames[0]: Frame
                     (*)builtin_keyset_on: Radiobutton - var keyset_source
                     (*)custom_keyset_on: Radiobutton - var keyset_source
-                    (*)builtinlist: DynOptionMenu - var builtin_name,
+                    (*)builtinlist: OptionMenu - var builtin_name,
                             func keybinding_selected
-                    (*)customlist: DynOptionMenu - var custom_name,
+                    (*)customlist: OptionMenu - var custom_name,
                             func keybinding_selected
                     (*)keys_message: Label
                 frames[1]: Frame
@@ -1456,9 +1455,9 @@ class KeysPage(Frame):
         self.custom_keyset_on = Radiobutton(
                 frames[0], variable=self.keyset_source, value=0,
                 command=self.set_keys_type, text='Use a Custom Key Set')
-        self.builtinlist = DynOptionMenu(
+        self.builtinlist = OptionMenu(
                 frames[0], self.builtin_name, None, command=None)
-        self.customlist = DynOptionMenu(
+        self.customlist = OptionMenu(
                 frames[0], self.custom_name, None, command=None)
         self.button_delete_custom_keys = Button(
                 frames[1], text='Delete Custom Key Set',
@@ -1504,21 +1503,21 @@ class KeysPage(Frame):
         if self.keyset_source.get():  # Default theme selected.
             item_list = idleConf.GetSectionList('default', 'keys')
             item_list.sort()
-            self.builtinlist.SetMenu(item_list, current_option)
+            self.builtinlist.set_menu(current_option, *item_list)
             item_list = idleConf.GetSectionList('user', 'keys')
             item_list.sort()
             if not item_list:
                 self.custom_keyset_on.state(('disabled',))
                 self.custom_name.set('- no custom keys -')
             else:
-                self.customlist.SetMenu(item_list, item_list[0])
+                self.customlist.set_menu(item_list[0], *item_list)
         else:  # User key set selected.
             item_list = idleConf.GetSectionList('user', 'keys')
             item_list.sort()
-            self.customlist.SetMenu(item_list, current_option)
+            self.customlist.set_menu(current_option, *item_list)
             item_list = idleConf.GetSectionList('default', 'keys')
             item_list.sort()
-            self.builtinlist.SetMenu(item_list, idleConf.default_keys())
+            self.builtinlist.set_menu(idleConf.default_keys(), *item_list)
         self.set_keys_type()
         # Load keyset element list.
         keyset_name = idleConf.CurrentKeys()
@@ -1575,13 +1574,13 @@ class KeysPage(Frame):
     def set_keys_type(self):
         "Set available screen options based on builtin or custom key set."
         if self.keyset_source.get():
-            self.builtinlist['state'] = 'normal'
-            self.customlist['state'] = 'disabled'
+            self.builtinlist.state(('!disabled',))
+            self.customlist.state(('disabled',))
             self.button_delete_custom_keys.state(('disabled',))
         else:
-            self.builtinlist['state'] = 'disabled'
+            self.builtinlist.state(('disabled',))
             self.custom_keyset_on.state(('!disabled',))
-            self.customlist['state'] = 'normal'
+            self.customlist.state(('!disabled',))
             self.button_delete_custom_keys.state(('!disabled',))
 
     def get_new_keys(self):
@@ -1672,7 +1671,7 @@ class KeysPage(Frame):
         # Change GUI over to the new key set.
         custom_key_list = idleConf.GetSectionList('user', 'keys')
         custom_key_list.sort()
-        self.customlist.SetMenu(custom_key_list, new_key_set_name)
+        self.customlist.set_menu(new_key_set_name, *custom_key_list)
         self.keyset_source.set(0)
         self.set_keys_type()
 
@@ -1743,9 +1742,9 @@ class KeysPage(Frame):
         item_list.sort()
         if not item_list:
             self.custom_keyset_on.state(('disabled',))
-            self.customlist.SetMenu(item_list, '- no custom keys -')
+            self.customlist.set_menu('- no custom keys -', *item_list)
         else:
-            self.customlist.SetMenu(item_list, item_list[0])
+            self.customlist.set_menu(item_list[0], *item_list)
         # Revert to default key set.
         self.keyset_source.set(idleConf.defaultCfg['main']
                                 .Get('Keys', 'default'))

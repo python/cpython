@@ -1,0 +1,2 @@
+IDLE: Selectively replace DynOptionMenu with ttk.OptionMenu. Patch by Cheryl
+Sabella.
