@@ -79,6 +79,7 @@ class Error(Exception):
     pass
 
 WAVE_FORMAT_PCM = 0x0001
+WAVE_FORMAT_EXTENSIBLE = 0xFFFE
 
 _array_fmts = None, 'b', 'h', None, 'i'
 
@@ -254,19 +255,22 @@ class Wave_read:
 
     def _read_fmt_chunk(self, chunk):
         try:
-            wFormatTag, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack_from('<HHLLH', chunk.read(14))
+            wFormatTag, self._nchannels, self._framerate, dwAvgBytesPerSec, \
+            wBlockAlign, wBitsPerSample = \
+                struct.unpack_from('<HHLLHH', chunk.read(16))
         except struct.error:
             raise EOFError from None
-        if wFormatTag == WAVE_FORMAT_PCM:
-            try:
-                sampwidth = struct.unpack_from('<H', chunk.read(2))[0]
-            except struct.error:
-                raise EOFError from None
-            self._sampwidth = (sampwidth + 7) // 8
-            if not self._sampwidth:
-                raise Error('bad sample width')
-        else:
+        if wFormatTag == WAVE_FORMAT_EXTENSIBLE:
+            # Only the first 2 bytes (of 16) of SubFormat are needed.
+            cbSize, wValidBitsPerSample, dwChannelMask, \
+            SubFormatFmt = struct.unpack_from('<HHLH', chunk.read(10))
+            if SubFormatFmt != WAVE_FORMAT_PCM:
+                raise Error(f'unknown format: {SubFormatFmt}')
+        elif wFormatTag != WAVE_FORMAT_PCM:
             raise Error('unknown format: %r' % (wFormatTag,))
+        self._sampwidth = (wBitsPerSample + 7) // 8
+        if not self._sampwidth:
+            raise Error('bad sample width')
         if not self._nchannels:
             raise Error('bad # of channels')
         self._framesize = self._nchannels * self._sampwidth
