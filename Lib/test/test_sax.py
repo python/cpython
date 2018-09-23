@@ -13,13 +13,14 @@ except SAXReaderNotAvailable:
 from xml.sax.saxutils import XMLGenerator, escape, unescape, quoteattr, \
                              XMLFilterBase, prepare_input_source
 from xml.sax.expatreader import create_parser
-from xml.sax.handler import feature_namespaces
+from xml.sax.handler import feature_namespaces, feature_external_ges
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from io import BytesIO, StringIO
 import codecs
 import gc
 import os.path
 import shutil
+from urllib.error import URLError
 from test import support
 from test.support import findfile, run_unittest, TESTFN
 
@@ -911,6 +912,18 @@ class ExpatReaderTest(XmlTestBase):
         def unparsedEntityDecl(self, name, publicId, systemId, ndata):
             self._entities.append((name, publicId, systemId, ndata))
 
+
+    class TestEntityRecorder:
+        def __init__(self):
+            self.entities = []
+
+        def resolveEntity(self, publicId, systemId):
+            self.entities.append((publicId, systemId))
+            source = InputSource()
+            source.setPublicId(publicId)
+            source.setSystemId(systemId)
+            return source
+
     def test_expat_dtdhandler(self):
         parser = create_parser()
         handler = self.TestDTDHandler()
@@ -927,6 +940,32 @@ class ExpatReaderTest(XmlTestBase):
             [("GIF", "-//CompuServe//NOTATION Graphics Interchange Format 89a//EN", None)])
         self.assertEqual(handler._entities, [("img", None, "expat.gif", "GIF")])
 
+    def test_expat_external_dtd_enabled(self):
+        parser = create_parser()
+        parser.setFeature(feature_external_ges, True)
+        resolver = self.TestEntityRecorder()
+        parser.setEntityResolver(resolver)
+
+        with self.assertRaises(URLError):
+            parser.feed(
+                '<!DOCTYPE external SYSTEM "unsupported://non-existing">\n'
+            )
+        self.assertEqual(
+            resolver.entities, [(None, 'unsupported://non-existing')]
+        )
+
+    def test_expat_external_dtd_default(self):
+        parser = create_parser()
+        resolver = self.TestEntityRecorder()
+        parser.setEntityResolver(resolver)
+
+        parser.feed(
+            '<!DOCTYPE external SYSTEM "unsupported://non-existing">\n'
+        )
+        parser.feed('<doc />')
+        parser.close()
+        self.assertEqual(resolver.entities, [])
+
     # ===== EntityResolver support
 
     class TestEntityResolver:
@@ -936,8 +975,9 @@ class ExpatReaderTest(XmlTestBase):
             inpsrc.setByteStream(BytesIO(b"<entity/>"))
             return inpsrc
 
-    def test_expat_entityresolver(self):
+    def test_expat_entityresolver_enabled(self):
         parser = create_parser()
+        parser.setFeature(feature_external_ges, True)
         parser.setEntityResolver(self.TestEntityResolver())
         result = BytesIO()
         parser.setContentHandler(XMLGenerator(result))
@@ -950,6 +990,22 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), start +
                          b"<doc><entity></entity></doc>")
+
+    def test_expat_entityresolver_default(self):
+        parser = create_parser()
+        self.assertEqual(parser.getFeature(feature_external_ges), False)
+        parser.setEntityResolver(self.TestEntityResolver())
+        result = BytesIO()
+        parser.setContentHandler(XMLGenerator(result))
+
+        parser.feed('<!DOCTYPE doc [\n')
+        parser.feed('  <!ENTITY test SYSTEM "whatever">\n')
+        parser.feed(']>\n')
+        parser.feed('<doc>&test;</doc>')
+        parser.close()
+
+        self.assertEqual(result.getvalue(), start +
+                         b"<doc></doc>")
 
     # ===== Attributes support
 
