@@ -285,7 +285,13 @@ class HelpFormatter:
         if default_value is NO_DEFAULT or default_value is None:
             default_value = self.NO_DEFAULT_VALUE
 
-        return option.help.replace(self.default_tag, str(default_value))
+        encoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
+        if isinstance(default_value, unicode):
+            default_value = default_value.encode(encoding)
+        else:
+            default_value = str(default_value)
+
+        return option.help.replace(self.default_tag, default_value)
 
     def format_option(self, option):
         # The help for each option consists of two parts:
