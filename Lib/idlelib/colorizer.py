@@ -31,11 +31,12 @@ def make_pat():
 prog = re.compile(make_pat(), re.S)
 idprog = re.compile(r"\s+(\w+)", re.S)
 
-def color_config(text):  # Called from htest, Editor, and Turtle Demo.
+def color_config(text):
     """Set color options of Text widget.
 
     Should be called whenever ColorDelegator is called.
     """
+    # Called from htest, TextFrame, Editor, and Turtledemo.
     # Not automatic because ColorDelegator does not know 'text'.
     theme = idleConf.CurrentTheme()
     normal_colors = idleConf.GetHighlight(theme, 'normal')

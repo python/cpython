@@ -22,7 +22,7 @@ class TextFrame(Frame):
         self['height'] = 700
 
         self.text = text = Text(self, wrap='word', highlightthickness=0)
-        color_config(self.text)
+        color_config(text)
         self.scroll = scroll = Scrollbar(self, orient='vertical',
                                          takefocus=False, command=text.yview)
         text['yscrollcommand'] = scroll.set
