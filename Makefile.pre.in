@@ -329,8 +329,9 @@ PYTHON_OBJS=	\
 		Python/ast_unparse.o \
 		Python/bltinmodule.o \
 		Python/ceval.o \
-		Python/compile.o \
 		Python/codecs.o \
+		Python/compile.o \
+		Python/coreconfig.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
 		Python/frozenmain.o \
@@ -712,16 +713,22 @@ Programs/_freeze_importlib: Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FRO
 regen-importlib: Programs/_freeze_importlib
 	# Regenerate Python/importlib_external.h
 	# from Lib/importlib/_bootstrap_external.py using _freeze_importlib
-	./Programs/_freeze_importlib \
+	./Programs/_freeze_importlib importlib._bootstrap_external \
 	    $(srcdir)/Lib/importlib/_bootstrap_external.py \
 	    $(srcdir)/Python/importlib_external.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/importlib_external.h $(srcdir)/Python/importlib_external.h.new
 	# Regenerate Python/importlib.h from Lib/importlib/_bootstrap.py
 	# using _freeze_importlib
-	./Programs/_freeze_importlib \
+	./Programs/_freeze_importlib importlib._bootstrap \
 	    $(srcdir)/Lib/importlib/_bootstrap.py \
 	    $(srcdir)/Python/importlib.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib.h.new
+	# Regenerate Python/importlib_zipimport.h from Lib/zipimport.py
+	# using _freeze_importlib
+	./Programs/_freeze_importlib zipimport \
+	    $(srcdir)/Lib/zipimport.py \
+	    $(srcdir)/Python/importlib_zipimport.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/importlib_zipimport.h $(srcdir)/Python/importlib_zipimport.h.new
 
 
 ############################################################################
@@ -896,7 +903,8 @@ regen-opcode-targets:
 
 Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/ceval_gil.h
 
-Python/frozen.o: $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib_external.h
+Python/frozen.o: $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib_external.h \
+		$(srcdir)/Python/importlib_zipimport.h
 
 # Generate DTrace probe macros, then rename them (PYTHON_ -> PyDTrace_) to
 # follow our naming conventions. dtrace(1) uses the output filename to generate
@@ -944,6 +952,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/codecs.h \
 		$(srcdir)/Include/compile.h \
 		$(srcdir)/Include/complexobject.h \
+		$(srcdir)/Include/coreconfig.h \
 		$(srcdir)/Include/descrobject.h \
 		$(srcdir)/Include/dictobject.h \
 		$(srcdir)/Include/dtoa.h \

@@ -5,6 +5,8 @@ from tkinter import Toplevel, Text
 from tkinter.ttk import Frame, Scrollbar, Button
 from tkinter.messagebox import showerror
 
+from idlelib.colorizer import color_config
+
 
 class TextFrame(Frame):
     "Display text with scrollbar."
@@ -18,12 +20,9 @@ class TextFrame(Frame):
         super().__init__(parent)
         self['relief'] = 'sunken'
         self['height'] = 700
-        # TODO: get fg/bg from theme.
-        self.bg = '#ffffff'
-        self.fg = '#000000'
 
-        self.text = text = Text(self, wrap='word', highlightthickness=0,
-                                fg=self.fg, bg=self.bg)
+        self.text = text = Text(self, wrap='word', highlightthickness=0)
+        color_config(text)
         self.scroll = scroll = Scrollbar(self, orient='vertical',
                                          takefocus=False, command=text.yview)
         text['yscrollcommand'] = scroll.set
@@ -83,7 +82,8 @@ class ViewWindow(Toplevel):
                                             command=self.ok, takefocus=False)
         self.viewframe.pack(side='top', expand=True, fill='both')
 
-        if modal:
+        self.is_modal = modal
+        if self.is_modal:
             self.transient(parent)
             self.grab_set()
             if not _utest:
@@ -91,6 +91,8 @@ class ViewWindow(Toplevel):
 
     def ok(self, event=None):
         """Dismiss text viewer dialog."""
+        if self.is_modal:
+            self.grab_release()
         self.destroy()
 
 

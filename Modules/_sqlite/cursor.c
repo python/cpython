@@ -42,11 +42,7 @@ static int pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject*
     Py_XSETREF(self->connection, connection);
     Py_CLEAR(self->statement);
     Py_CLEAR(self->next_row);
-
-    Py_XSETREF(self->row_cast_map, PyList_New(0));
-    if (!self->row_cast_map) {
-        return -1;
-    }
+    Py_CLEAR(self->row_cast_map);
 
     Py_INCREF(Py_None);
     Py_XSETREF(self->description, Py_None);
@@ -365,8 +361,6 @@ static PyObject *
 _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
 {
     PyObject* operation;
-    const char* operation_cstr;
-    Py_ssize_t operation_len;
     PyObject* parameters_list = NULL;
     PyObject* parameters_iter = NULL;
     PyObject* parameters = NULL;
@@ -450,10 +444,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
         /* There is an active statement */
         pysqlite_statement_reset(self->statement);
     }
-
-    operation_cstr = PyUnicode_AsUTF8AndSize(operation, &operation_len);
-    if (operation_cstr == NULL)
-        goto error;
 
     /* reset description and rowcount */
     Py_INCREF(Py_None);

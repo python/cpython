@@ -89,7 +89,7 @@
 #endif
 
 #include <windows.h>
-#include <Shlwapi.h>
+#include <shlwapi.h>
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -563,7 +563,7 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path)
     wcscpy_s(prefix, MAXPATHLEN+1, path);
     reduce(prefix);
     config->isolated = 1;
-    config->no_site_import = 1;
+    config->site_import = 0;
 
     size_t bufsiz = MAXPATHLEN;
     size_t prefixlen = wcslen(prefix);
@@ -588,7 +588,7 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path)
         }
 
         if (strcmp(line, "import site") == 0) {
-            config->no_site_import = 0;
+            config->site_import = 1;
             continue;
         }
         else if (strncmp(line, "import ", 7) == 0) {

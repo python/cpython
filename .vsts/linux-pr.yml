@@ -4,7 +4,7 @@
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 
 queue:
-  name: Hosted Linux Preview
+  name: 'Hosted Ubuntu 1604'
 
 trigger:
   branches:
@@ -27,50 +27,58 @@ steps:
   clean: true
   fetchDepth: 5
 
-#- template: linux-deps.yml
+- script: |
+   git fetch -q origin $(system.pullRequest.targetBranch)
+   if ! git diff --name-only HEAD $(git merge-base HEAD FETCH_HEAD) | grep -qvE '(\.rst$|^Doc|^Misc)'
+   then
+     echo "Only docs were updated, stopping build process."
+     echo "##vso[task.setvariable variable=DocOnly]true"
+     exit
+   fi
+  displayName: Detect doc-only changes
+  condition: and(succeeded(), variables['system.pullRequest.targetBranch'])
 
-# See https://github.com/Microsoft/vsts-agent/blob/master/docs/preview/yamlgettingstarted-templates.md
-# For now, we copy/paste the steps
-- script: echo "deb-src http://archive.ubuntu.com/ubuntu/ xenial main" > /etc/apt/sources.list.d/python.list && sudo apt-get update
-  displayName: 'Update apt-get lists'
+#- template: linux-deps.yml
 
 - script: echo ##vso[task.prependpath]$(OPENSSL_DIR)
   displayName: 'Add $(OPENSSL_DIR) to PATH'
-- script: >
-    sudo apt-get -yq install
-    build-essential
-    zlib1g-dev
-    libbz2-dev
-    liblzma-dev
-    libncurses5-dev
-    libreadline6-dev
-    libsqlite3-dev
-    libssl-dev
-    libgdbm-dev
-    tk-dev
-    lzma
-    lzma-dev
-    liblzma-dev
-    libffi-dev
-    uuid-dev
-    xvfb
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
+
+- script: ./.vsts/install_deps.sh
   displayName: 'Install dependencies'
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
+
 - script: python3 Tools/ssl/multissltests.py --steps=library --base-directory $(build.sourcesDirectory)/multissl --openssl $(OPENSSL) --system Linux
   displayName: 'python multissltests.py'
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
 
 - script: ./configure --with-pydebug
   displayName: 'Configure CPython (debug)'
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
 - script: make -s -j4
   displayName: 'Build CPython'
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
 - script: make pythoninfo
   displayName: 'Display build info'
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
 # Run patchcheck and fail if anything is discovered
 - script: ./python Tools/scripts/patchcheck.py --travis true
   displayName: 'Run patchcheck.py'
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
-- script: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
+- script: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu --junit-xml=$(build.binariesDirectory)/test-results.xml"
   displayName: 'Tests'
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    testResultsFiles: '$(build.binariesDirectory)/test-results.xml'
+    mergeTestResults: true
+    testRunTitle: '$(system.pullRequest.targetBranch)-linux'
+    platform: linux
+  condition: and(succeededOrFailed(), ne(variables['DocOnly'], 'true'))

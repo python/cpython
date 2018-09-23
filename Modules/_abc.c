@@ -68,7 +68,7 @@ PyDoc_STRVAR(abc_data_doc,
 static PyTypeObject _abc_data_type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "_abc_data",                        /*tp_name*/
-    sizeof(_abc_data),                  /*tp_size*/
+    sizeof(_abc_data),                  /*tp_basicsize*/
     .tp_dealloc = (destructor)abc_data_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_alloc = PyType_GenericAlloc,
@@ -665,6 +665,9 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
 
     /* 6. Check if it's a subclass of a subclass (recursive). */
     subclasses = PyObject_CallMethod(self, "__subclasses__", NULL);
+    if (subclasses == NULL) {
+        goto end;
+    }
     if (!PyList_Check(subclasses)) {
         PyErr_SetString(PyExc_TypeError, "__subclasses__() must return a list");
         goto end;

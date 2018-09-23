@@ -85,6 +85,7 @@ __all__ = [
 
 import os as _os
 import re as _re
+import shutil as _shutil
 import sys as _sys
 
 from gettext import gettext as _, ngettext
@@ -164,15 +165,11 @@ class HelpFormatter(object):
 
         # default setting for width
         if width is None:
-            try:
-                width = int(_os.environ['COLUMNS'])
-            except (KeyError, ValueError):
-                width = 80
+            width = _shutil.get_terminal_size().columns
             width -= 2
 
         self._prog = prog
         self._indent_increment = indent_increment
-        self._max_help_position = max_help_position
         self._max_help_position = min(max_help_position,
                                       max(width - 20, indent_increment * 2))
         self._width = width

@@ -52,17 +52,17 @@ typedef struct _PyPathConfig {
     wchar_t *program_name;
     /* Set by Py_SetPythonHome() or PYTHONHOME environment variable */
     wchar_t *home;
-    /* isolated and no_site_import are used to set Py_IsolatedFlag and
+    /* isolated and site_import are used to set Py_IsolatedFlag and
        Py_NoSiteFlag flags on Windows in read_pth_file(). These fields
        are ignored when their value are equal to -1 (unset). */
     int isolated;
-    int no_site_import;
+    int site_import;
 } _PyPathConfig;
 
 #define _PyPathConfig_INIT \
     {.module_search_path = NULL, \
      .isolated = -1, \
-     .no_site_import = -1}
+     .site_import = -1}
 /* Note: _PyPathConfig_INIT sets other fields to 0/NULL */
 
 PyAPI_DATA(_PyPathConfig) _Py_path_config;
@@ -72,6 +72,12 @@ PyAPI_FUNC(_PyInitError) _PyPathConfig_Calculate_impl(
     const _PyCoreConfig *core_config);
 PyAPI_FUNC(void) _PyPathConfig_ClearGlobal(void);
 
+PyAPI_FUNC(void) _Py_wstrlist_clear(
+    int len,
+    wchar_t **list);
+PyAPI_FUNC(wchar_t**) _Py_wstrlist_copy(
+    int len,
+    wchar_t **list);
 PyAPI_FUNC(_PyInitError) _Py_wstrlist_append(
     int *len,
     wchar_t ***list,
@@ -212,6 +218,7 @@ PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
 /* Other */
 
 PyAPI_FUNC(_PyInitError) _PyInterpreterState_Enable(_PyRuntimeState *);
+PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(void);
 
 #ifdef __cplusplus
 }
