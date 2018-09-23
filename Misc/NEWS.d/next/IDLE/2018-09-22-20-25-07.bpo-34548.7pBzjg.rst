@@ -1,1 +1,1 @@
-Use user-selected color theme for read-only text views.
+Use configured color theme for read-only text views.
