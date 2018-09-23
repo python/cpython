@@ -34,7 +34,7 @@ idprog = re.compile(r"\s+(\w+)", re.S)
 def color_config(text):
     """Set color options of Text widget.
 
-    Should be called whenever ColorDelegator is called.
+    If ColorDelegator is used, this should be called first.
     """
     # Called from htest, TextFrame, Editor, and Turtledemo.
     # Not automatic because ColorDelegator does not know 'text'.
