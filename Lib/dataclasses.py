@@ -781,6 +781,11 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     if cls.__module__ in sys.modules:
         globals = sys.modules[cls.__module__].__dict__
     else:
+        # Theoretically this can happen if someone writes
+        # a custom string to cls.__module__.  In which case
+        # such dataclass won't be fully introspectable
+        # (w.r.t. typing.get_type_hints) but will still function
+        # correctly.
         globals = {}
 
     setattr(cls, _PARAMS, _DataclassParams(init, repr, eq, order,
