@@ -683,7 +683,7 @@ ast_error(struct compiling *c, const node *n, const char *errmsg)
         Py_INCREF(Py_None);
         loc = Py_None;
     }
-    tmp = Py_BuildValue("(OiiN)", c->c_filename, LINENO(n), n->n_col_offset, loc);
+    tmp = Py_BuildValue("(OiiN)", c->c_filename, LINENO(n), n->n_col_offset + 1, loc);
     if (!tmp)
         return 0;
     errstr = PyUnicode_FromString(errmsg);
