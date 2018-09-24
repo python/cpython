@@ -6,9 +6,9 @@ from . import tasks
 
 
 def run(main, *, debug=False):
-    """Run a coroutine.
+    """Run a coroutine function.
 
-    This function runs the passed coroutine, taking care of
+    This function runs the passed coroutine function, taking care of
     managing the asyncio event loop and finalizing asynchronous
     generators.
 
@@ -34,7 +34,7 @@ def run(main, *, debug=False):
             "asyncio.run() cannot be called from a running event loop")
 
     if not coroutines.iscoroutine(main):
-        raise ValueError("a coroutine was expected, got {!r}".format(main))
+        raise ValueError("a coroutine object was expected, got {!r}".format(main))
 
     loop = events.new_event_loop()
     try:

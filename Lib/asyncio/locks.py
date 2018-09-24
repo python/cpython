@@ -57,7 +57,7 @@ class _ContextManagerMixin:
 
     @coroutine
     def __iter__(self):
-        # This is not a coroutine.  It is meant to enable the idiom:
+        # This is not a coroutine function.  It is meant to enable the idiom:
         #
         #     with (yield from lock):
         #         <block>
@@ -121,7 +121,7 @@ class Lock(_ContextManagerMixin):
     release() call resets the state to unlocked; first coroutine which
     is blocked in acquire() is being processed.
 
-    acquire() is a coroutine and should be called with 'await'.
+    acquire() is a coroutine function and should be called with 'await'.
 
     Locks also support the asynchronous context management protocol.
     'async with lock' statement should be used.
