@@ -8,6 +8,8 @@
 
 from select import select
 import os
+import shutil
+import subprocess
 import tty
 
 __all__ = ["openpty","fork","spawn"]
@@ -17,6 +19,9 @@ STDOUT_FILENO = 1
 STDERR_FILENO = 2
 
 CHILD = 0
+
+PS_PATH = shutil.which('ps')
+TIMEOUT = None if PS_PATH is None else 1
 
 def openpty():
     """openpty() -> (master_fd, slave_fd)
@@ -126,14 +131,30 @@ def _read(fd):
     """Default read function."""
     return os.read(fd, 1024)
 
-def _copy(master_fd, master_read=_read, stdin_read=_read):
+def _is_zombie(pid):
+    """Check if pid is in zombie stat."""
+    if PS_PATH is None:
+        return False
+    try:
+        proc = subprocess.check_output([PS_PATH, 'axo', 'pid=,stat='])
+    except subprocess.CalledProcessError:
+        return False
+    for line in proc.splitlines():
+        _pid, stat = line.strip().decode().split()
+        if int(_pid) == pid:
+            return (stat == 'Z')
+    raise OSError(3, 'No such process')
+
+def _copy(pid, master_fd, master_read=_read, stdin_read=_read):
     """Parent copy loop.
     Copies
             pty master -> standard output   (master_read)
             standard input -> pty master    (stdin_read)"""
     fds = [master_fd, STDIN_FILENO]
     while True:
-        rfds, wfds, xfds = select(fds, [], [])
+        rfds, wfds, xfds = select(fds, [], [], TIMEOUT)
+        if _is_zombie(pid):
+            raise OSError(5, 'Input/output error')
         if master_fd in rfds:
             data = master_read(master_fd)
             if not data:  # Reached EOF.
@@ -161,7 +182,8 @@ def spawn(argv, master_read=_read, stdin_read=_read):
     except tty.error:    # This is the same as termios.error
         restore = 0
     try:
-        _copy(master_fd, master_read, stdin_read)
+        _copy(pid, master_fd, master_read, stdin_read)
+        # print('copied!')
     except OSError:
         if restore:
             tty.tcsetattr(STDIN_FILENO, tty.TCSAFLUSH, mode)
