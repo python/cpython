@@ -353,17 +353,43 @@ def _read_directory(archive):
         raise ZipImportError(f"can't open Zip file: {archive!r}", path=archive)
 
     with fp:
+        end_cent_dir_size = 22
         try:
-            fp.seek(-22, 2)
+            fp.seek(-end_cent_dir_size, 2)
             header_position = fp.tell()
-            buffer = fp.read(22)
+            buffer = fp.read(end_cent_dir_size)
         except OSError:
             raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
-        if len(buffer) != 22:
+        if len(buffer) != end_cent_dir_size:
             raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
-        if buffer[:4] != b'PK\x05\x06':
+        string_end_archive = b'PK\x05\x06'
+        if buffer[:4] != string_end_archive:
             # Bad: End of Central Dir signature
-            raise ZipImportError(f'not a Zip file: {archive!r}', path=archive)
+            # Check if there's a comment.
+            try:
+                fp.seek(0, 2)
+                file_size = fp.tell()
+            except OSError:
+                raise ZipImportError(f"can't read Zip file: {archive!r}",
+                                     path=archive)
+            max_comment_len = (1 << 16) - 1
+            max_comment_start = max(file_size - max_comment_len -
+                                    end_cent_dir_size, 0)
+            try:
+                fp.seek(max_comment_start)
+                data = fp.read()
+            except OSError:
+                raise ZipImportError(f"can't read Zip file: {archive!r}",
+                                     path=archive)
+            pos = data.rfind(string_end_archive)
+            if pos < 0:
+                raise ZipImportError(f'not a Zip file: {archive!r}',
+                                     path=archive)
+            buffer = data[pos:pos+end_cent_dir_size]
+            if len(buffer) != end_cent_dir_size:
+                raise ZipImportError(f"corrupt Zip file: {archive!r}",
+                                     path=archive)
+            header_position = file_size - len(data) + pos
 
         header_size = _unpack_uint32(buffer[12:16])
         header_offset = _unpack_uint32(buffer[16:20])

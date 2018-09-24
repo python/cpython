@@ -28,7 +28,8 @@ Any files may be present in the ZIP archive, but only files :file:`.py` and
 corresponding :file:`.pyc` file, meaning that if a ZIP archive
 doesn't contain :file:`.pyc` files, importing may be rather slow.
 
-ZIP archives with an archive comment are currently not supported.
+.. versionchanged:: 3.8
+   Previously, ZIP archives with an archive comment were not supported.
 
 .. seealso::
 
