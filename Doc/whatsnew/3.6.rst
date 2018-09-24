@@ -2055,6 +2055,15 @@ connected to and thus what Python interpreter will be used by the virtual
 environment.  (Contributed by Brett Cannon in :issue:`25154`.)
 
 
+xml
+---
+
+* As mitigation against DTD and external entity retrieval, the
+  :mod:`xml.dom.minidom` and mod:`xml.sax` modules no longer process
+  external entities by default.
+  (Contributed by Christian Heimes in :issue:`17239`.)
+
+
 Deprecated functions and types of the C API
 -------------------------------------------
 
@@ -2163,7 +2172,7 @@ Changes in the Python API
 
 * The functions in the :mod:`compileall` module now return booleans instead
   of ``1`` or ``0`` to represent success or failure, respectively. Thanks to
-  booleans being a subclass of integers, this should only be an issue if you
+  booleans being a subclass of integers, this should only be an issue if you7
   were doing identity checks for ``1`` or ``0``. See :issue:`25768`.
 
 * Reading the :attr:`~urllib.parse.SplitResult.port` attribute of
@@ -2408,3 +2417,10 @@ Notable changes in Python 3.6.5
 The :func:`locale.localeconv` function now sets temporarily the ``LC_CTYPE``
 locale to the ``LC_NUMERIC`` locale in some cases.
 (Contributed by Victor Stinner in :issue:`31900`.)
+
+
+Notable changes in Python 3.6.7
+===============================
+
+:mod:`xml.dom.minidom` and mod:`xml.sax` modules no longer process
+external entities by default. See also :issue:`17239`.
