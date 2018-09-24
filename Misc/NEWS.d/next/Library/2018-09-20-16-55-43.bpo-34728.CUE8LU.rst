@@ -1,2 +1,2 @@
-Add warn when deprecate argument `loop` is used in methods: `asyncio.sleep`,
+Add deprecation warning when `loop` is used in methods: `asyncio.sleep`,
 `asyncio.wait` and `asyncio.wait_for`.
