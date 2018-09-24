@@ -15,8 +15,6 @@ faq/programming,,::,for x in sequence[::-1]:
 faq/programming,,:reduce,"print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,"
 faq/programming,,:reduce,"Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,"
 faq/windows,,:bd8afb90ebf2,"Python 3.3.0 (v3.3.0:bd8afb90ebf2, Sep 29 2012, 10:55:48) [MSC v.1600 32 bit (Intel)] on win32"
-howto/cporting,,:encode,"if (!PyArg_ParseTuple(args, ""O:encode_object"", &myobj))"
-howto/cporting,,:say,"if (!PyArg_ParseTuple(args, ""U:say_hello"", &name))"
 howto/curses,,:black,"colors when it activates color mode.  They are: 0:black, 1:red,"
 howto/curses,,:red,"colors when it activates color mode.  They are: 0:black, 1:red,"
 howto/curses,,:green,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
