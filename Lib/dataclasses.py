@@ -344,11 +344,8 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
     # worries about external callers.
     if locals is None:
         locals = {}
-    # __builtins__ may be the "builtins" module or
-    # the value of its "__dict__",
-    # so make sure "__builtins__" is the module.
-    if '__builtins__' not in locals:
-        locals['__builtins__'] = builtins
+    if 'BUILTINS' not in locals:
+        locals['BUILTINS'] = builtins
     return_annotation = ''
     if return_type is not MISSING:
         locals['_return_type'] = return_type
@@ -375,7 +372,7 @@ def _field_assign(frozen, name, value, self_name):
     # self_name is what "self" is called in this function: don't
     # hard-code "self", since that might be a field name.
     if frozen:
-        return f'__builtins__.object.__setattr__({self_name},{name!r},{value})'
+        return f'BUILTINS.object.__setattr__({self_name},{name!r},{value})'
     return f'{self_name}.{name}={value}'
 
 
