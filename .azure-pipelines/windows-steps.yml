@@ -21,6 +21,7 @@ steps:
   displayName: 'Tests'
   env:
     PREFIX: $(Py_OutDir)\$(arch)
+    TMPDIR: '$(Build.BinariesDirectory)\temp'
 
 - task: PublishTestResults@2
   displayName: 'Publish Test Results'
