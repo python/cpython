@@ -24,6 +24,14 @@ the SAX API.
    constructed data.  If you need to parse untrusted or unauthenticated data see
    :ref:`xml-vulnerabilities`.
 
+.. versionchanged:: 3.7.1
+
+   The SAX parser no longer processes general external entities by default
+   to increase security. Before, the parser created network connections
+   to fetch remote files or loaded local files from the file
+   system for DTD and entities. The feature can be enabled again with method
+   :meth:`~xml.sax.xmlreader.XMLReader.setFeature` on the parser object
+   and argument :data:`~xml.sax.handler.feature_external_ges`.
 
 The convenience functions are:
 
