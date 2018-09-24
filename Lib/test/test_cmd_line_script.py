@@ -635,15 +635,16 @@ class CmdLineTest(unittest.TestCase):
         # if the script file doesn't exist.
         script = 'nonexistingscript.py'
         self.assertFalse(os.path.exists(script))
+        # Only test the base name, since the error message can use
+        # a relative path, whereas sys.executable can be an asolution path.
+        program = os.path.basename(sys.executable)
+
         proc = spawn_python(script, text=True,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
         out, err = proc.communicate()
-        # Only test the base name, since the error message can use
-        # a relative path, whereas sys.executable can be an asolution path.
-        program = os.path.basename(sys.executable)
         # "./python" must be in the error message:
-        # "./xyz: can't open file 'sss.py': [Errno 2] No such file ..."
+        # "./python: can't open file (...)"
         self.assertIn(program, err)
         self.assertNotEqual(proc.returncode, 0)
 
