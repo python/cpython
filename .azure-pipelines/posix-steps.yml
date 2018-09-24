@@ -48,7 +48,7 @@ steps:
     displayName: 'Tests'
 
 
-- script: python Tools/scripts/patchcheck.py --travis true
+- script: ./python Tools/scripts/patchcheck.py --travis true
   displayName: 'Run patchcheck.py'
   condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
 
