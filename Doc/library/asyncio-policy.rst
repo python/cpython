@@ -98,6 +98,14 @@ asyncio ships with the following built-in policies:
    is configured to use the default policy automatically.
 
 
+.. class:: WindowsSelectorEventLoopPolicy
+
+   An alternative event loop policy that uses the
+   :class:`SelectorEventLoop` event loop implementation.
+
+   Availability: Windows.
+
+
 .. class:: WindowsProactorEventLoopPolicy
 
    An alternative event loop policy that uses the

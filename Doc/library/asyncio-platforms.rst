@@ -23,6 +23,8 @@ All Platforms
 Windows
 =======
 
+The default event loop on Windows is :class:`ProactorEventLoop`.
+
 All event loops on Windows do not support the following methods:
 
 * :meth:`loop.create_unix_connection` and
@@ -61,22 +63,19 @@ hardware (availability of `HPET
 <https://en.wikipedia.org/wiki/High_Precision_Event_Timer>`_) and on the
 Windows configuration.
 
+.. versionchanged:: 3.8
+
+   On Windows, :class:`ProactorEventLoop` is now the default event loop.
+
 
 .. _asyncio-windows-subprocess:
 
 Subprocess Support on Windows
 -----------------------------
 
-:class:`SelectorEventLoop` on Windows does not support subproceses.
-On Windows, :class:`ProactorEventLoop` should be used instead::
+The default event loop :class:`ProactorEventLoop` supports subprocesses.
 
-  import asyncio
-
-  asyncio.set_event_loop_policy(
-      asyncio.WindowsProactorEventLoopPolicy())
-
-  asyncio.run(your_code())
-
+On Windows, :class:`SelectorEventLoop` does not support subprocesses.
 
 The :meth:`policy.set_child_watcher()
 <AbstractEventLoopPolicy.set_child_watcher>` function is also
