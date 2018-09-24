@@ -86,29 +86,38 @@ The following module functions all construct and return iterators. Some provide
 streams of infinite length, so they should only be accessed by functions or
 loops that truncate the stream.
 
-.. function:: accumulate(iterable[, func])
+.. function:: accumulate(iterable[, func, *, initial=None])
 
     Make an iterator that returns accumulated sums, or accumulated
     results of other binary functions (specified via the optional
-    *func* argument).  If *func* is supplied, it should be a function
+    *func* argument).
+
+    If *func* is supplied, it should be a function
     of two arguments. Elements of the input *iterable* may be any type
     that can be accepted as arguments to *func*. (For example, with
     the default operation of addition, elements may be any addable
     type including :class:`~decimal.Decimal` or
-    :class:`~fractions.Fraction`.) If the input iterable is empty, the
-    output iterable will also be empty.
+    :class:`~fractions.Fraction`.)
+
+    Usually, the number of elements output matches the input iterable.
+    However, if the keyword argument *initial* is provided, the
+    accumulation leads off with the *initial* value so that the output
+    has one more element than the input iterable.
 
     Roughly equivalent to::
 
-        def accumulate(iterable, func=operator.add):
+        def accumulate(iterable, func=operator.add, *, initial=None):
             'Return running totals'
             # accumulate([1,2,3,4,5]) --> 1 3 6 10 15
+            # accumulate([1,2,3,4,5], initial=100) --> 100 101 103 106 110 115
             # accumulate([1,2,3,4,5], operator.mul) --> 1 2 6 24 120
             it = iter(iterable)
-            try:
-                total = next(it)
-            except StopIteration:
-                return
+            total = initial
+            if initial is None:
+                try:
+                    total = next(it)
+                except StopIteration:
+                    return
             yield total
             for element in it:
                 total = func(total, element)
@@ -151,6 +160,9 @@ loops that truncate the stream.
 
     .. versionchanged:: 3.3
        Added the optional *func* parameter.
+
+    .. versionchanged:: 3.8
+       Added the optional *initial* parameter.
 
 .. function:: chain(*iterables)
 
