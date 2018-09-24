@@ -1,0 +1,32 @@
+steps:
+- checkout: self
+  clean: true
+  fetchDepth: 5
+
+- powershell: |
+    # Relocate build outputs outside of source directory to make cleaning faster
+    Write-Host '##vso[task.setvariable variable=Py_IntDir]$(Build.BinariesDirectory)\obj'
+    # UNDONE: Do not build to a different directory because of broken tests
+    Write-Host '##vso[task.setvariable variable=Py_OutDir]$(Build.SourcesDirectory)\PCbuild'
+    Write-Host '##vso[task.setvariable variable=EXTERNAL_DIR]$(Build.BinariesDirectory)\externals'
+  displayName: Update build locations
+
+- script: PCbuild\build.bat -e $(buildOpt)
+  displayName: 'Build CPython'
+
+- script: python.bat -m test.pythoninfo
+  displayName: 'Display build info'
+
+- script: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0 --junit-xml="$(Build.BinariesDirectory)\test-results.xml"
+  displayName: 'Tests'
+  env:
+    PREFIX: $(Py_OutDir)\$(arch)
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    testResultsFiles: '$(Build.BinariesDirectory)\test-results.xml'
+    mergeTestResults: true
+    testRunTitle: $(testRunTitle)
+    platform: $(testRunPlatform)
+  condition: succeededOrFailed()
