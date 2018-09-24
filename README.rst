@@ -9,7 +9,7 @@ This is Python version 3.7.0+
    :alt: CPython build status on Appveyor
    :target: https://ci.appveyor.com/project/python/cpython/branch/master
 
-.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%CI?branchName=3.7
+.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=3.7
    :alt: CPython build status on Azure Pipelines
    :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=3.7
 
