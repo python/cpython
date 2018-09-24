@@ -9,16 +9,8 @@ This is Python version 3.7.0+
    :alt: CPython build status on Appveyor
    :target: https://ci.appveyor.com/project/python/cpython/branch/master
 
-.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Linux-Buildbot?branchName=3.7&label=Linux
-   :alt: CPython build status on VSTS (Linux)
-   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=6&branchName=3.7
-
-.. image:: https://dev.azure.com/python/cpython/_apis/build/status/macOS-Buildbot?branchName=3.7&label=macOS
-   :alt: CPython build status on VSTS (macOS)
-   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=5&branchName=3.7
-
-.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Windows-Buildbot?branchName=3.7&label=Windows
-   :alt: CPython build status on VSTS (Windows)
+.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%CI?branchName=3.7
+   :alt: CPython build status on Azure Pipelines
    :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=3.7
 
 .. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg
