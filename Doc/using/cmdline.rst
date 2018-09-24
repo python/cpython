@@ -182,13 +182,13 @@ Generic options
 
    .. code-block:: none
 
-       Python 3.6.0b2+
+       Python 3.7.0b2+
 
    When given twice, print more information about the build, like:
 
    .. code-block:: none
 
-       Python 3.6.0b2+ (3.6:84a3c5003510+, Oct 26 2016, 02:33:55)
+       Python 3.7.0b2+ (3.7:0c076caaa8, Sep 22 2018, 12:04:24)
        [GCC 6.2.0 20161005]
 
    .. versionadded:: 3.6
