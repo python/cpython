@@ -472,13 +472,19 @@ Waiting Primitives
                             return_when=ALL_COMPLETED)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   sequence concurrently and block until the condition specified
+   set concurrently and block until the condition specified
    by *return_when*.
 
    If any awaitable in *aws* is a coroutine, it is automatically
-   scheduled as a Task.
+   scheduled as a Task.  Although it is
+   :ref:`not recommended <asyncio_example_wait_coroutine>` to pass
+   coroutine objects to ``wait()`` directly.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
+
+   Usage::
+
+        done, pending = await asyncio.wait(aws)
 
    The *loop* argument is deprecated and scheduled for removal
    in Python 4.0.
@@ -514,9 +520,32 @@ Waiting Primitives
    Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
    futures when a timeout occurs.
 
-   Usage::
+   .. _asyncio_example_wait_coroutine:
+   .. note::
 
-        done, pending = await asyncio.wait(aws)
+      ``wait()`` wraps coroutines into Tasks automatically and later
+      returns those implicitly created Task objects in ``(done, pending)``
+      sets.  Therefore the following code won't work as expected::
+
+          async def foo():
+              return 42
+
+          coro = foo()
+          done, pending = await asyncio.wait({coro})
+
+          if coro in done:
+              # This branch will never be run!
+
+      Here is how the above snippet can be fixed::
+
+          async def foo():
+              return 42
+
+          task = asyncio.create_task(foo())
+          done, pending = await asyncio.wait({task})
+
+          if task in done:
+              # Everything will work as expected now.
 
 
 .. function:: as_completed(aws, \*, loop=None, timeout=None)
