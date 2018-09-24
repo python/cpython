@@ -169,7 +169,7 @@ class SymtableTest(unittest.TestCase):
             else:
                 self.fail("no SyntaxError for %r" % (brokencode,))
         checkfilename("def f(x): foo)(", 14)  # parse-time
-        checkfilename("def f(x): global x", 10)  # symtable-build-time
+        checkfilename("def f(x): global x", 11)  # symtable-build-time
         symtable.symtable("pass", b"spam", "exec")
         with self.assertWarns(DeprecationWarning), \
              self.assertRaises(TypeError):
