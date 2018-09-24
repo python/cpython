@@ -58,7 +58,7 @@ if _false:
     import xml.sax.expatreader
 
 import os, sys
-if "PY_SAX_PARSER" in os.environ:
+if not sys.flags.ignore_environment and "PY_SAX_PARSER" in os.environ:
     default_parser_list = os.environ["PY_SAX_PARSER"].split(",")
 del os
 
