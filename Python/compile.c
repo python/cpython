@@ -4830,7 +4830,7 @@ compiler_error(struct compiler *c, const char *errstr)
         loc = Py_None;
     }
     u = Py_BuildValue("(OiiO)", c->c_filename, c->u->u_lineno,
-                      c->u->u_col_offset, loc);
+                      c->u->u_col_offset + 1, loc);
     if (!u)
         goto exit;
     v = Py_BuildValue("(zO)", errstr, u);
