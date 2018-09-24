@@ -893,7 +893,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
                                     # if possible.
                                     '__dataclass_self__' if 'self' in fields
                                             else 'self',
-                                    globals
+                                    globals,
                           ))
 
     # Get the fields as a list, and include only real fields.  This is
