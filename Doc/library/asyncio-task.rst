@@ -476,9 +476,9 @@ Waiting Primitives
    by *return_when*.
 
    If any awaitable in *aws* is a coroutine, it is automatically
-   scheduled as a Task.  Although it is
-   :ref:`not recommended <asyncio_example_wait_coroutine>` to pass
-   coroutine objects to ``wait()`` directly.
+   scheduled as a Task.  Although passing coroutines objects to
+   ``wait()`` directly is deprecated as it leads to
+   :ref:`confusing behavior <asyncio_example_wait_coroutine>`.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
@@ -523,7 +523,7 @@ Waiting Primitives
    .. _asyncio_example_wait_coroutine:
    .. note::
 
-      ``wait()`` wraps coroutines into Tasks automatically and later
+      ``wait()`` schedules coroutines as Tasks automatically and later
       returns those implicitly created Task objects in ``(done, pending)``
       sets.  Therefore the following code won't work as expected::
 
@@ -546,6 +546,9 @@ Waiting Primitives
 
           if task in done:
               # Everything will work as expected now.
+
+      Passing coroutine objects to ``wait()`` directly is
+      deprecated.
 
 
 .. function:: as_completed(aws, \*, loop=None, timeout=None)
