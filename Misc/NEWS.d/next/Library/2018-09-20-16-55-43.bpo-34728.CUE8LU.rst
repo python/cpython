@@ -1,0 +1,2 @@
+Add deprecation warning when `loop` is used in methods: `asyncio.sleep`,
+`asyncio.wait` and `asyncio.wait_for`.
