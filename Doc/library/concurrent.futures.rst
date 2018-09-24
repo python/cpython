@@ -223,7 +223,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    *initializer* is an optional callable that is called at the start of
    each worker process; *initargs* is a tuple of arguments passed to the
    initializer.  Should *initializer* raise an exception, all currently
-   pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
+   pending jobs will raise a :exc:`~concurrent.futures.process.BrokenProcessPool`,
    as well any attempt to submit more jobs to the pool.
 
    .. versionchanged:: 3.3
