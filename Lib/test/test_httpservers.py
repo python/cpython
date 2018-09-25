@@ -311,7 +311,7 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
             # To combat this, we send the test server the "Connection" header
             # with "close" for the value forcing the server and client to
             # terminate the socket allowing the test to resume.
-            self.con.request('GET', '/', headers={'Connection': 'close'})
+            self.con.request('GET', '/', headers={'Content-Length': '0', 'Connection': 'close'})
             self.con.getresponse()
 
         self.assertTrue(
