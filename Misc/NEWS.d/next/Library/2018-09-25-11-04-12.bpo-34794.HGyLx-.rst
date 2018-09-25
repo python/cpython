@@ -1,0 +1,2 @@
+Fixed a memory leak in :class:`Tkinter.Image` when set the *data* or
+*maskdata* options.

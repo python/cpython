@@ -3230,6 +3230,7 @@ Tkapp_CreateByteArray(PyObject *self, PyObject *args)
         return Tkinter_Error(self);
     }
     res = newPyTclObject(obj);
+    Tcl_DecrRefCount(obj);
     PyBuffer_Release(&view);
     return res;
 }
