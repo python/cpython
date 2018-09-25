@@ -2616,9 +2616,18 @@ class SendmsgStreamTests(SendmsgTests):
     def _testSendmsgTimeout(self):
         try:
             self.cli_sock.settimeout(0.03)
-            with self.assertRaises(socket.timeout):
+            try:
                 while True:
                     self.sendmsgToServer([b"a"*512])
+            except socket.timeout:
+                pass
+            except OSError as exc:
+                if exc.errno != errno.ENOMEM:
+                    raise
+                # bpo-33937 the test randomly fails on Travis CI with
+                # "OSError: [Errno 12] Cannot allocate memory"
+            else:
+                self.fail("socket.timeout not raised")
         finally:
             self.misc_event.set()
 
@@ -2641,8 +2650,10 @@ class SendmsgStreamTests(SendmsgTests):
             with self.assertRaises(OSError) as cm:
                 while True:
                     self.sendmsgToServer([b"a"*512], [], socket.MSG_DONTWAIT)
+            # bpo-33937: catch also ENOMEM, the test randomly fails on Travis CI
+            # with "OSError: [Errno 12] Cannot allocate memory"
             self.assertIn(cm.exception.errno,
-                          (errno.EAGAIN, errno.EWOULDBLOCK))
+                          (errno.EAGAIN, errno.EWOULDBLOCK, errno.ENOMEM))
         finally:
             self.misc_event.set()
 
