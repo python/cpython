@@ -116,6 +116,11 @@ New Modules
 Improved Modules
 ================
 
+asyncio
+-------
+
+On Windows, the default event loop is now :class:`~asyncio.ProactorEventLoop`.
+
 os.path
 -------
 

@@ -1014,7 +1014,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.loop = asyncio.new_event_loop()
+        self.loop = asyncio.SelectorEventLoop()
         self.set_event_loop(self.loop)
 
     @mock.patch('socket.getnameinfo')
