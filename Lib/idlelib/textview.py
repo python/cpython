@@ -6,6 +6,8 @@ from tkinter import Toplevel, Text, TclError,\
 from tkinter.ttk import Frame, Scrollbar, Button
 from tkinter.messagebox import showerror
 
+from idlelib.colorizer import color_config
+
 
 class AutoHiddenScrollbar(Scrollbar):
     """A scrollbar that is automatically hidden when not needed.
@@ -38,12 +40,9 @@ class TextFrame(Frame):
         super().__init__(parent)
         self['relief'] = 'sunken'
         self['height'] = 700
-        # TODO: get fg/bg from theme.
-        self.bg = '#ffffff'
-        self.fg = '#000000'
 
-        self.text = text = Text(self, wrap=wrap, highlightthickness=0,
-                                fg=self.fg, bg=self.bg)
+        self.text = text = Text(self, wrap='word', highlightthickness=0)
+        color_config(text)
         text.grid(row=0, column=0, sticky=N+S+E+W)
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)

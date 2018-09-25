@@ -20,10 +20,10 @@ rearrange their members in place, and don't return a specific item, never return
 the collection instance itself but ``None``.
 
 Some operations are supported by several object types; in particular,
-practically all objects can be compared, tested for truth value, and converted
-to a string (with the :func:`repr` function or the slightly different
-:func:`str` function).  The latter function is implicitly used when an object is
-written by the :func:`print` function.
+practically all objects can be compared for equality, tested for truth
+value, and converted to a string (with the :func:`repr` function or the
+slightly different :func:`str` function).  The latter function is implicitly
+used when an object is written by the :func:`print` function.
 
 
 .. _truth:
@@ -164,12 +164,10 @@ This table summarizes the comparison operations:
    pair: objects; comparing
 
 Objects of different types, except different numeric types, never compare equal.
-Furthermore, some types (for example, function objects) support only a degenerate
-notion of comparison where any two objects of that type are unequal.  The ``<``,
-``<=``, ``>`` and ``>=`` operators will raise a :exc:`TypeError` exception when
-comparing a complex number with another built-in numeric type, when the objects
-are of different types that cannot be compared, or in other cases where there is
-no defined ordering.
+The ``==`` operator is always defined but for some object types (for example,
+class objects) is equivalent to :keyword:`is`. The ``<``, ``<=``, ``>`` and ``>=``
+operators are only defined where they make sense; for example, they raise a
+:exc:`TypeError` exception when one of the arguments is a complex number.
 
 .. index::
    single: __eq__() (instance method)
@@ -197,8 +195,8 @@ exception.
    operator: not in
 
 Two more operations with the same syntactic priority, :keyword:`in` and
-:keyword:`not in`, are supported only by sequence types (below).
-
+:keyword:`not in`, are supported by types that are :term:`iterable` or
+implement the :meth:`__contains__` method.
 
 .. _typesnumeric:
 
@@ -539,6 +537,14 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.2
 
+.. method:: int.as_integer_ratio()
+
+   Return a pair of integers whose ratio is exactly equal to the original
+   integer and with a positive denominator. The integer ratio of integers
+   (whole numbers) is always the integer as the numerator and ``1`` as the
+   denominator.
+
+   .. versionadded:: 3.8
 
 Additional Methods on Float
 ---------------------------
