@@ -168,6 +168,8 @@ def body_encode(body, maxlinelen=76, eol=NL):
 
     """
 
+    if not maxlinelen:
+        maxlinelen=float('+inf')
     if maxlinelen < 4:
         raise ValueError("maxlinelen must be at least 4")
     if not body:
