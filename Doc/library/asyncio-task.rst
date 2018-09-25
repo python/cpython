@@ -476,7 +476,7 @@ Waiting Primitives
    by *return_when*.
 
    If any awaitable in *aws* is a coroutine, it is automatically
-   scheduled as a Task.  Although passing coroutines objects to
+   scheduled as a Task.  Passing coroutines objects to
    ``wait()`` directly is deprecated as it leads to
    :ref:`confusing behavior <asyncio_example_wait_coroutine>`.
 
