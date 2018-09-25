@@ -75,7 +75,7 @@ def make_parser(parser_list = []):
     default_parser_list.  The lists must contain the names of Python
     modules containing both a SAX parser and a create_parser function."""
 
-    for parser_name in parser_list + default_parser_list:
+    for parser_name in list(parser_list) + default_parser_list:
         try:
             return _create_parser(parser_name)
         except ImportError as e:

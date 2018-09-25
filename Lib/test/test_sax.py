@@ -254,6 +254,12 @@ class MakeParserTest(unittest.TestCase):
         from xml.sax import make_parser
         p = make_parser()
 
+    def test_make_parser3(self):
+        # Testing that make_parser can handle iterables other than a
+        # list
+        make_parser(('module', ))
+        make_parser({'module'})
+        make_parser({'module': None})
 
 # ===========================================================================
 #
