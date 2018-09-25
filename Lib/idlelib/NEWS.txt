@@ -3,6 +3,13 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-1529353: Output over N lines (50 by default) is squeezed down to a button.
+N can be changed in the PyShell section of the General page of the
+Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
+right clicking on the output.  Squeezed output can be expanded in place
+by double-clicking the button or into the clipboard or a separate window
+by right-clicking the button.
+
 bpo-34548: Use configured color theme for read-only text views.
 
 bpo-33839: Refactor ToolTip and CallTip classes; add documentation
