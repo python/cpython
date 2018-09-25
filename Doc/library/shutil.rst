@@ -343,8 +343,8 @@ Directory and files operations
 
    Return disk usage statistics about the given path as a :term:`named tuple`
    with the attributes *total*, *used* and *free*, which are the amount of
-   total, used and free space, in bytes. On Windows, *path* must be a
-   directory; on Unix, it can be a file or directory.
+   total, used and free space, in bytes. *path* may be a file or a
+   directory.
 
    .. versionadded:: 3.3
 
