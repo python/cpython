@@ -277,7 +277,7 @@ Sleeping
    when the coroutine completes.
 
    The *loop* argument is deprecated and scheduled for removal
-   in Python 4.0.
+   in Python 3.10.
 
    .. _asyncio_example_sleep:
 
@@ -435,7 +435,7 @@ Timeouts
    If the wait is cancelled, the future *aw* is also cancelled.
 
    The *loop* argument is deprecated and scheduled for removal
-   in Python 4.0.
+   in Python 3.10.
 
    .. _asyncio_example_waitfor:
 
@@ -487,7 +487,7 @@ Waiting Primitives
         done, pending = await asyncio.wait(aws)
 
    The *loop* argument is deprecated and scheduled for removal
-   in Python 4.0.
+   in Python 3.10.
 
    *timeout* (a float or int), if specified, can be used to control
    the maximum number of seconds to wait before returning.
@@ -888,7 +888,7 @@ Generator-based Coroutines
 .. note::
 
    Support for generator-based coroutines is **deprecated** and
-   is scheduled for removal in Python 4.0.
+   is scheduled for removal in Python 3.10.
 
 Generator-based coroutines predate async/await syntax.  They are
 Python generators that use ``yield from`` expressions to await
@@ -914,7 +914,7 @@ enforced.
             await old_style_coroutine()
 
     This decorator is **deprecated** and is scheduled for removal in
-    Python 4.0.
+    Python 3.10.
 
     This decorator should not be used for :keyword:`async def`
     coroutines.
