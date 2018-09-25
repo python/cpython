@@ -92,10 +92,14 @@ asyncio ships with the following built-in policies:
 .. class:: DefaultEventLoopPolicy
 
    The default asyncio policy.  Uses :class:`SelectorEventLoop`
-   on both Unix and Windows platforms.
+   on Unix and :class:`ProactorEventLoop` on Windows.
 
    There is no need to install the default policy manually. asyncio
    is configured to use the default policy automatically.
+
+   .. versionchanged:: 3.8
+
+      On Windows, :class:`ProactorEventLoop` is now used by default.
 
 
 .. class:: WindowsSelectorEventLoopPolicy
