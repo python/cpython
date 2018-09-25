@@ -163,7 +163,7 @@ _grep_dialog_spec = {
     'msg': "Click the 'Show GrepDialog' button.\n"
            "Test the various 'Find-in-files' functions.\n"
            "The results should be displayed in a new '*Output*' window.\n"
-           "'Right-click'->'Goto file/line' anywhere in the search results "
+           "'Right-click'->'Go to file/line' anywhere in the search results "
            "should open that file \nin a new EditorWindow."
     }
 
