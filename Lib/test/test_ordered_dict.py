@@ -650,41 +650,6 @@ class OrderedDictTests:
         support.check_free_after_iterating(self, lambda d: iter(d.values()), self.OrderedDict)
         support.check_free_after_iterating(self, lambda d: iter(d.items()), self.OrderedDict)
 
-    # TODO: This test is relating to PEP 468.
-    # Move this test to somewhere more appropriate.
-    def test_kwargs_order(self):
-        # bpo-34320
-        od = self.OrderedDict([('a', 1), ('b', 2)])
-        od.move_to_end('a')
-        expected = list(od.items())
-
-        def fn(**kw):
-            return kw
-
-        res = fn(**od)
-        self.assertIsInstance(res, dict)
-        self.assertEqual(list(res.items()), expected)
-
-    # TODO: This test is relating to PEP 520.
-    # Move this test to somewhere more appropriate.
-    def test_type_namespace_order(self):
-        # bpo-34320
-        od = self.OrderedDict([('a', 1), ('b', 2)])
-        od.move_to_end('a')
-        expected = list(od.items())
-
-        C = type('C', (), od)
-        self.assertEqual(list(C.__dict__.items())[:2], [('b', 2), ('a', 1)])
-
-    def test_dict_copy_order(self):
-        # bpo-34320
-        od = self.OrderedDict([('a', 1), ('b', 2)])
-        od.move_to_end('a')
-        expected = list(od.items())
-
-        copy = dict(od)
-        self.assertEqual(list(copy.items()), expected)
-
 
 class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
 
