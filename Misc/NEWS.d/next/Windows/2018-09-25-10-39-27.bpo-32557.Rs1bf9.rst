@@ -1,0 +1,1 @@
+Allow shutil.disk_usage to take a file path on Windows
