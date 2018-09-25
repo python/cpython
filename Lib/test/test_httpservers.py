@@ -305,7 +305,13 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
         self.con.connect()
 
         with support.captured_stderr() as err:
-            self.con.request('GET', '/')
+            # bpo-25095: HTTP/1.1 specifies that the socket connection is to
+            # remain open, this, on certain systems, causes Python to deadlock
+            # waiting for the socket to close.
+            # To combat this, we send the test server the "Connection" header
+            # with "close" for the value forcing the server and client to
+            # terminate the socket allowing the test to resume.
+            self.con.request('GET', '/', headers={'Content-Length': '0', 'Connection': 'close'})
             self.con.getresponse()
 
         self.assertTrue(
