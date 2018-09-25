@@ -1,5 +1,5 @@
 from collections import namedtuple
-from tkinter import Text
+from tkinter import Text, Tk
 import unittest
 from unittest.mock import Mock, NonCallableMagicMock, patch, sentinel, ANY
 from test.support import requires
@@ -14,6 +14,20 @@ from idlelib.pyshell import PyShell
 
 
 SENTINEL_VALUE = sentinel.SENTINEL_VALUE
+
+
+def get_test_tk_root(test_instance):
+    """helper for tests: create a root Tk object"""
+    requires('gui')
+    root = Tk()
+    root.withdraw()
+
+    def cleanup_root():
+        root.update_idletasks()
+        root.destroy()
+    test_instance.addCleanup(cleanup_root)
+
+    return root
 
 
 class TestCountLines(unittest.TestCase):
@@ -195,8 +209,8 @@ class TestSqueezer(unittest.TestCase):
 
     def test_auto_squeeze(self):
         """test that the auto-squeezing creates an ExpandingButton properly"""
-        requires('gui')
-        text_widget = Text()
+        root = get_test_tk_root(self)
+        text_widget = Text(root)
         text_widget.mark_set("iomark", "1.0")
 
         editwin = self.make_mock_editor_window()
@@ -211,11 +225,11 @@ class TestSqueezer(unittest.TestCase):
 
     def test_squeeze_current_text_event(self):
         """test the squeeze_current_text event"""
-        requires('gui')
+        root = get_test_tk_root(self)
 
         # squeezing text should work for both stdout and stderr
-        for tag_name in "stdout", "stderr":
-            text_widget = Text()
+        for tag_name in ["stdout", "stderr"]:
+            text_widget = Text(root)
             text_widget.mark_set("iomark", "1.0")
 
             editwin = self.make_mock_editor_window()
@@ -245,9 +259,9 @@ class TestSqueezer(unittest.TestCase):
 
     def test_squeeze_current_text_event_no_allowed_tags(self):
         """test that the event doesn't squeeze text without a relevant tag"""
-        requires('gui')
+        root = get_test_tk_root(self)
 
-        text_widget = Text()
+        text_widget = Text(root)
         text_widget.mark_set("iomark", "1.0")
 
         editwin = self.make_mock_editor_window()
@@ -270,9 +284,9 @@ class TestSqueezer(unittest.TestCase):
 
     def test_squeeze_text_before_existing_squeezed_text(self):
         """test squeezing text before existing squeezed text"""
-        requires('gui')
+        root = get_test_tk_root(self)
 
-        text_widget = Text()
+        text_widget = Text(root)
         text_widget.mark_set("iomark", "1.0")
 
         editwin = self.make_mock_editor_window()
@@ -328,9 +342,9 @@ class TestExpandingButton(unittest.TestCase):
     # Text and Button instances are created.
     def make_mock_squeezer(self):
         """helper for tests"""
-        requires('gui')
+        root = get_test_tk_root(self)
         squeezer = Mock()
-        squeezer.editwin.text = Text()
+        squeezer.editwin.text = Text(root)
 
         # Set default values for the configuration settings
         squeezer.auto_squeeze_min_lines = 50
