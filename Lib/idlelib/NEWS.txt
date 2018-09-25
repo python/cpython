@@ -3,10 +3,23 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-34548: Use configured color theme for read-only text views.
+
+bpo-33839: Refactor ToolTip and CallTip classes; add documentation
+and tests.
+
+bpo-34047: Fix mouse wheel scrolling direction on macOS.
+
+bpo-34275: Make calltips always visible on Mac.
+Patch by Kevin Walzer.
+
+bpo-34120: Fix freezing after closing some dialogs on Mac.
+This is one of multiple regressions from using newer tcl/tk.
+
 bpo-33975: Avoid small type when running htests.
 Since part of the purpose of human-viewed tests is to determine that
-widgets look right, it is important that they look the same for testing
-as when running IDLE.
+widgets look right, it is important that they look the same for
+testing as when running IDLE.
 
 bpo-33905: Add test for idlelib.stackview.StackBrowser.
 
