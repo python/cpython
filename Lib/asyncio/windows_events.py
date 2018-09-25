@@ -811,4 +811,4 @@ class WindowsProactorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
     _loop_factory = ProactorEventLoop
 
 
-DefaultEventLoopPolicy = WindowsSelectorEventLoopPolicy
+DefaultEventLoopPolicy = WindowsProactorEventLoopPolicy
