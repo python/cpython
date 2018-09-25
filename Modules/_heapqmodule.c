@@ -106,8 +106,8 @@ siftup(PyListObject *heap, Py_ssize_t pos)
 /*[clinic input]
 _heapq.heappush
 
-    heap: 'O'
-    item: 'O'
+    heap: object
+    item: object
     /
 
 Push item onto heap, maintaining the heap invariant.
@@ -115,7 +115,7 @@ Push item onto heap, maintaining the heap invariant.
 
 static PyObject *
 _heapq_heappush_impl(PyObject *module, PyObject *heap, PyObject *item)
-/*[clinic end generated code: output=912c094f47663935 input=f470c9fc0d9828ba]*/
+/*[clinic end generated code: output=912c094f47663935 input=7913545cb5118842]*/
 {
     if (!PyList_Check(heap)) {
         PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
@@ -170,7 +170,7 @@ heappop_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
 /*[clinic input]
 _heapq.heappop
 
-    heap: 'O'
+    heap: object
     /
 
 Pop the smallest item off the heap, maintaining the heap invariant.
@@ -178,7 +178,7 @@ Pop the smallest item off the heap, maintaining the heap invariant.
 
 static PyObject *
 _heapq_heappop(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=e1bbbc9866bce179 input=18c0e2fb289910b1]*/
+/*[clinic end generated code: output=e1bbbc9866bce179 input=9bd36317b806033d]*/
 {
     return heappop_internal(heap, siftup);
 }
@@ -212,8 +212,8 @@ heapreplace_internal(PyObject *heap, PyObject *item, int siftup_func(PyListObjec
 /*[clinic input]
 _heapq.heapreplace
 
-    heap: 'O'
-    item: 'O'
+    heap: object
+    item: object
     /
 
 Pop and return the current smallest value, and add the new item.
@@ -229,7 +229,7 @@ this routine unless written as part of a conditional replacement:
 
 static PyObject *
 _heapq_heapreplace_impl(PyObject *module, PyObject *heap, PyObject *item)
-/*[clinic end generated code: output=82ea55be8fbe24b4 input=2fd6e96dfe7ca6a9]*/
+/*[clinic end generated code: output=82ea55be8fbe24b4 input=e57ae8f4ecfc88e3]*/
 {
     return heapreplace_internal(heap, item, siftup);
 }
@@ -237,8 +237,8 @@ _heapq_heapreplace_impl(PyObject *module, PyObject *heap, PyObject *item)
 /*[clinic input]
 _heapq.heappushpop
 
-    heap: 'O'
-    item: 'O'
+    heap: object
+    item: object
     /
 
 Push item on the heap, then pop and return the smallest item from the heap.
@@ -249,7 +249,7 @@ a separate call to heappop().
 
 static PyObject *
 _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item)
-/*[clinic end generated code: output=67231dc98ed5774f input=01691177f1e422a8]*/
+/*[clinic end generated code: output=67231dc98ed5774f input=eb48c90ba77b2214]*/
 {
     PyObject *returnitem;
     int cmp;
@@ -386,7 +386,7 @@ heapify_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
 /*[clinic input]
 _heapq.heapify
 
-    heap: 'O'
+    heap: object
     /
 
 Transform list into a heap, in-place, in O(len(heap)) time.
@@ -394,7 +394,7 @@ Transform list into a heap, in-place, in O(len(heap)) time.
 
 static PyObject *
 _heapq_heapify(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=11483f23627c4616 input=ceed5d7f43dcf192]*/
+/*[clinic end generated code: output=11483f23627c4616 input=872c87504b8de970]*/
 {
     return heapify_internal(heap, siftup);
 }
@@ -491,7 +491,7 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
 /*[clinic input]
 _heapq._heappop_max
 
-    heap: 'O'
+    heap: object
     /
 
 Maxheap variant of heappop
@@ -499,7 +499,7 @@ Maxheap variant of heappop
 
 static PyObject *
 _heapq__heappop_max(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=acd30acf6384b13c input=6c017a4236ff0eba]*/
+/*[clinic end generated code: output=acd30acf6384b13c input=aba11b85f3394552]*/
 {
     return heappop_internal(heap, siftup_max);
 }
@@ -507,8 +507,8 @@ _heapq__heappop_max(PyObject *module, PyObject *heap)
 /*[clinic input]
 _heapq._heapreplace_max
 
-    heap: 'O'
-    item: 'O'
+    heap: object
+    item: object
     /
 
 Maxheap variant of heapreplace
@@ -517,7 +517,7 @@ Maxheap variant of heapreplace
 static PyObject *
 _heapq__heapreplace_max_impl(PyObject *module, PyObject *heap,
                              PyObject *item)
-/*[clinic end generated code: output=8ad7545e4a5e8adb input=55efb02fff6153b9]*/
+/*[clinic end generated code: output=8ad7545e4a5e8adb input=8f9df20110df9ddb]*/
 {
     return heapreplace_internal(heap, item, siftup_max);
 }
@@ -525,7 +525,7 @@ _heapq__heapreplace_max_impl(PyObject *module, PyObject *heap,
 /*[clinic input]
 _heapq._heapify_max
 
-    heap: 'O'
+    heap: object
     /
 
 Maxheap variant of heapify
@@ -533,7 +533,7 @@ Maxheap variant of heapify
 
 static PyObject *
 _heapq__heapify_max(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=1c6bb6b60d6a2133 input=6f7003b7119de983]*/
+/*[clinic end generated code: output=1c6bb6b60d6a2133 input=e23adafa21947386]*/
 {
     return heapify_internal(heap, siftup_max);
 }
