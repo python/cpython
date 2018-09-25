@@ -356,11 +356,11 @@ class IdleConfTest(unittest.TestCase):
 
         self.assertCountEqual(
             conf.GetSectionList('default', 'main'),
-            ['General', 'EditorWindow', 'Indent', 'Theme',
+            ['General', 'EditorWindow', 'PyShell', 'Indent', 'Theme',
              'Keys', 'History', 'HelpFiles'])
         self.assertCountEqual(
             conf.GetSectionList('user', 'main'),
-            ['General', 'EditorWindow', 'Indent', 'Theme',
+            ['General', 'EditorWindow', 'PyShell', 'Indent', 'Theme',
              'Keys', 'History', 'HelpFiles'])
 
         with self.assertRaises(config.InvalidConfigSet):
@@ -452,7 +452,7 @@ class IdleConfTest(unittest.TestCase):
 
         self.assertCountEqual(
             conf.RemoveKeyBindNames(conf.GetSectionList('default', 'extensions')),
-            ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch','ZzDummy'])
+            ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch', 'ZzDummy'])
 
     def test_get_extn_name_for_event(self):
         userextn.read_string('''
