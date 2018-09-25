@@ -17,7 +17,7 @@ SENTINEL_VALUE = sentinel.SENTINEL_VALUE
 
 
 def get_test_tk_root(test_instance):
-    """helper for tests: create a root Tk object"""
+    """Helper for tests: Create a root Tk object."""
     requires('gui')
     root = Tk()
     root.withdraw()
@@ -30,8 +30,8 @@ def get_test_tk_root(test_instance):
     return root
 
 
-class TestCountLines(unittest.TestCase):
-    """tests for the count_lines_with_wrapping function"""
+class CountLinesTest(unittest.TestCase):
+    """Tests for the count_lines_with_wrapping function."""
     def check(self, expected, text, linewidth, tabwidth):
         return self.assertEqual(
             expected,
@@ -39,23 +39,23 @@ class TestCountLines(unittest.TestCase):
         )
 
     def test_count_empty(self):
-        """test with an empty string"""
+        """Test with an empty string."""
         self.assertEqual(count_lines_with_wrapping(""), 0)
 
     def test_count_begins_with_empty_line(self):
-        """test with a string which begins with a newline"""
+        """Test with a string which begins with a newline."""
         self.assertEqual(count_lines_with_wrapping("\ntext"), 2)
 
     def test_count_ends_with_empty_line(self):
-        """test with a string which ends with a newline"""
+        """Test with a string which ends with a newline."""
         self.assertEqual(count_lines_with_wrapping("text\n"), 1)
 
     def test_count_several_lines(self):
-        """test with several lines of text"""
+        """Test with several lines of text."""
         self.assertEqual(count_lines_with_wrapping("1\n2\n3\n"), 3)
 
     def test_tab_width(self):
-        """test with various tab widths and line widths"""
+        """Test with various tab widths and line widths."""
         self.check(expected=1, text='\t' * 1, linewidth=8, tabwidth=4)
         self.check(expected=1, text='\t' * 2, linewidth=8, tabwidth=4)
         self.check(expected=2, text='\t' * 3, linewidth=8, tabwidth=4)
@@ -78,10 +78,10 @@ class TestCountLines(unittest.TestCase):
         self.check(expected=2, text='\t' * 6, linewidth=13, tabwidth=4)
 
 
-class TestSqueezer(unittest.TestCase):
-    """tests for the Squeezer class"""
+class SqueezerTest(unittest.TestCase):
+    """Tests for the Squeezer class."""
     def make_mock_editor_window(self):
-        """create a mock EditorWindow instance"""
+        """Create a mock EditorWindow instance."""
         editwin = NonCallableMagicMock()
         # isinstance(editwin, PyShell) must be true for Squeezer to enable
         # auto-squeezing; in practice this will always be true
@@ -89,13 +89,13 @@ class TestSqueezer(unittest.TestCase):
         return editwin
 
     def make_squeezer_instance(self, editor_window=None):
-        """create an actual Squeezer instance with a mock EditorWindow"""
+        """Create an actual Squeezer instance with a mock EditorWindow."""
         if editor_window is None:
             editor_window = self.make_mock_editor_window()
         return Squeezer(editor_window)
 
     def test_count_lines(self):
-        """test Squeezer.count_lines() with various inputs
+        """Test Squeezer.count_lines() with various inputs.
 
         This checks that Squeezer.count_lines() calls the
         count_lines_with_wrapping() function with the appropriate parameters.
@@ -106,7 +106,7 @@ class TestSqueezer(unittest.TestCase):
 
     def _prepare_mock_editwin_for_count_lines(self, editwin,
                                               linewidth, tabwidth):
-        """prepare a mock EditorWindow object so Squeezer.count_lines can run"""
+        """Prepare a mock EditorWindow object for Squeezer.count_lines."""
         CHAR_WIDTH = 10
         BORDER_WIDTH = 2
         PADDING_WIDTH = 1
@@ -136,7 +136,7 @@ class TestSqueezer(unittest.TestCase):
         self.addCleanup(patcher.stop)
 
     def _test_count_lines_helper(self, linewidth, tabwidth):
-        """helper for test_count_lines"""
+        """Helper for test_count_lines."""
         editwin = self.make_mock_editor_window()
         self._prepare_mock_editwin_for_count_lines(editwin, linewidth, tabwidth)
         squeezer = self.make_squeezer_instance(editwin)
@@ -149,14 +149,14 @@ class TestSqueezer(unittest.TestCase):
             mock_count_lines.assert_called_with(text, linewidth, tabwidth)
 
     def test_init(self):
-        """test the creation of Squeezer instances"""
+        """Test the creation of Squeezer instances."""
         editwin = self.make_mock_editor_window()
         squeezer = self.make_squeezer_instance(editwin)
         self.assertIs(squeezer.editwin, editwin)
         self.assertEqual(squeezer.expandingbuttons, [])
 
     def test_write_no_tags(self):
-        """test Squeezer's overriding of the EditorWindow's write() method"""
+        """Test Squeezer's overriding of the EditorWindow's write() method."""
         editwin = self.make_mock_editor_window()
         for text in ['', 'TEXT', 'LONG TEXT' * 1000, 'MANY_LINES\n' * 100]:
             editwin.write = orig_write = Mock(return_value=SENTINEL_VALUE)
@@ -168,7 +168,7 @@ class TestSqueezer(unittest.TestCase):
             self.assertEqual(len(squeezer.expandingbuttons), 0)
 
     def test_write_not_stdout(self):
-        """test Squeezer's overriding of the EditorWindow's write() method"""
+        """Test Squeezer's overriding of the EditorWindow's write() method."""
         for text in ['', 'TEXT', 'LONG TEXT' * 1000, 'MANY_LINES\n' * 100]:
             editwin = self.make_mock_editor_window()
             editwin.write.return_value = SENTINEL_VALUE
@@ -182,7 +182,7 @@ class TestSqueezer(unittest.TestCase):
             self.assertEqual(len(squeezer.expandingbuttons), 0)
 
     def test_write_stdout(self):
-        """test Squeezer's overriding of the EditorWindow's write() method"""
+        """Test Squeezer's overriding of the EditorWindow's write() method."""
         editwin = self.make_mock_editor_window()
         self._prepare_mock_editwin_for_count_lines(editwin,
                                                    linewidth=80, tabwidth=8)
@@ -208,7 +208,7 @@ class TestSqueezer(unittest.TestCase):
             self.assertEqual(len(squeezer.expandingbuttons), 1)
 
     def test_auto_squeeze(self):
-        """test that the auto-squeezing creates an ExpandingButton properly"""
+        """Test that the auto-squeezing creates an ExpandingButton properly."""
         root = get_test_tk_root(self)
         text_widget = Text(root)
         text_widget.mark_set("iomark", "1.0")
@@ -224,7 +224,7 @@ class TestSqueezer(unittest.TestCase):
         self.assertEqual(len(squeezer.expandingbuttons), 1)
 
     def test_squeeze_current_text_event(self):
-        """test the squeeze_current_text event"""
+        """Test the squeeze_current_text event."""
         root = get_test_tk_root(self)
 
         # squeezing text should work for both stdout and stderr
@@ -258,7 +258,7 @@ class TestSqueezer(unittest.TestCase):
             self.assertEqual(len(squeezer.expandingbuttons), 0)
 
     def test_squeeze_current_text_event_no_allowed_tags(self):
-        """test that the event doesn't squeeze text without a relevant tag"""
+        """Test that the event doesn't squeeze text without a relevant tag."""
         root = get_test_tk_root(self)
 
         text_widget = Text(root)
@@ -283,7 +283,7 @@ class TestSqueezer(unittest.TestCase):
         self.assertEqual(len(squeezer.expandingbuttons), 0)
 
     def test_squeeze_text_before_existing_squeezed_text(self):
-        """test squeezing text before existing squeezed text"""
+        """Test squeezing text before existing squeezed text."""
         root = get_test_tk_root(self)
 
         text_widget = Text(root)
@@ -329,19 +329,19 @@ class TestSqueezer(unittest.TestCase):
         return cls._make_sig(*args, **kwargs)
 
     def test_reload(self):
-        """test the reload() class-method"""
+        """Test the reload() class-method."""
         self.assertIsInstance(Squeezer.auto_squeeze_min_lines, int)
         idleConf.SetOption('main', 'PyShell', 'auto-squeeze-min-lines', '42')
         Squeezer.reload()
         self.assertEqual(Squeezer.auto_squeeze_min_lines, 42)
 
 
-class TestExpandingButton(unittest.TestCase):
-    """tests for the ExpandingButton class"""
+class ExpandingButtonTest(unittest.TestCase):
+    """Tests for the ExpandingButton class."""
     # In these tests the squeezer instance is a mock, but actual tkinter
     # Text and Button instances are created.
     def make_mock_squeezer(self):
-        """helper for tests"""
+        """Helper for tests: Create a mock Squeezer object."""
         root = get_test_tk_root(self)
         squeezer = Mock()
         squeezer.editwin.text = Text(root)
@@ -352,7 +352,7 @@ class TestExpandingButton(unittest.TestCase):
 
     @patch('idlelib.squeezer.Hovertip', autospec=Hovertip)
     def test_init(self, MockHovertip):
-        """Test the simplest creation of an ExpandingButton"""
+        """Test the simplest creation of an ExpandingButton."""
         squeezer = self.make_mock_squeezer()
         text_widget = squeezer.editwin.text
 
@@ -380,7 +380,7 @@ class TestExpandingButton(unittest.TestCase):
         self.assertIn('right-click', tooltip_text.lower())
 
     def test_expand(self):
-        """test the expand event"""
+        """Test the expand event."""
         squeezer = self.make_mock_squeezer()
         expandingbutton = ExpandingButton('TEXT', 'TAGS', 50, squeezer)
 
@@ -411,7 +411,7 @@ class TestExpandingButton(unittest.TestCase):
         squeezer.expandingbuttons.remove.assert_called_with(expandingbutton)
 
     def test_expand_dangerous_oupput(self):
-        """attempting to expand very long output asks user for confirmation"""
+        """Test that expanding very long output asks user for confirmation."""
         squeezer = self.make_mock_squeezer()
         text = 'a' * 10**5
         expandingbutton = ExpandingButton(text, 'TAGS', 50, squeezer)
@@ -452,7 +452,7 @@ class TestExpandingButton(unittest.TestCase):
         self.assertEqual(expandingbutton.text.get('1.0', 'end-1c'), text)
 
     def test_copy(self):
-        """test the copy event"""
+        """Test the copy event."""
         # testing with the actual clipboard proved problematic, so this test
         # replaces the clipboard manipulation functions with mocks and checks
         # that they are called appropriately
@@ -472,7 +472,7 @@ class TestExpandingButton(unittest.TestCase):
         expandingbutton.clipboard_append.assert_called_with('TEXT')
 
     def test_view(self):
-        """test the view event"""
+        """Test the view event."""
         squeezer = self.make_mock_squeezer()
         expandingbutton = ExpandingButton('TEXT', 'TAGS', 50, squeezer)
         expandingbutton.selection_own = Mock()
@@ -489,7 +489,7 @@ class TestExpandingButton(unittest.TestCase):
             self.assertEqual(mock_view_text.call_args[0][2], 'TEXT')
 
     def test_rmenu(self):
-        """test the context menu"""
+        """Test the context menu."""
         squeezer = self.make_mock_squeezer()
         expandingbutton = ExpandingButton('TEXT', 'TAGS', 50, squeezer)
         with patch('tkinter.Menu') as mock_Menu:
