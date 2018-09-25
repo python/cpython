@@ -451,13 +451,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         /* On AIX and Windows, open() may succeed for files with a trailing slash.
            The Open Group specifies filenames ending with a trailing slash should
            be an error - ENOTDIR */
-        if (
-#ifdef MS_WINDOWS
-            (widename != NULL)
-#else
-            (name != NULL)
-#endif
-                && S_ISREG(fdfstat.st_mode)) {
+        if ( (fd < 0) && S_ISREG(fdfstat.st_mode)) {
 
             int trailing_slash = 0;
 #ifdef MS_WINDOWS
