@@ -489,3 +489,7 @@ class TestExpandingButton(unittest.TestCase):
                              len(expandingbutton.rmenu_specs))
             for label, *data in expandingbutton.rmenu_specs:
                 mock_menu.add_command.assert_any_call(label=label, command=ANY)
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)
