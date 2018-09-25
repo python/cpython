@@ -116,6 +116,9 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 zinfo = ZipInfo(name, time.localtime(mtime))
                 zinfo.compress_type = self.compression
                 z.writestr(zinfo, data)
+            comment = kw.get("comment", None)
+            if comment is not None:
+                z.comment = comment
 
         stuff = kw.get("stuff", None)
         if stuff is not None:
@@ -664,6 +667,18 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             zipimport.zipimporter(bytearray(os.fsencode(filename)))
         with self.assertRaises(TypeError):
             zipimport.zipimporter(memoryview(os.fsencode(filename)))
+
+    def testComment(self):
+        files = {TESTMOD + ".py": (NOW, test_src)}
+        self.doTest(".py", files, TESTMOD, comment=b"comment")
+
+    def testBeginningCruftAndComment(self):
+        files = {TESTMOD + ".py": (NOW, test_src)}
+        self.doTest(".py", files, TESTMOD, stuff=b"cruft" * 64, comment=b"hi")
+
+    def testLargestPossibleComment(self):
+        files = {TESTMOD + ".py": (NOW, test_src)}
+        self.doTest(".py", files, TESTMOD, comment=b"c" * ((1 << 16) - 1))
 
 
 @support.requires_zlib
