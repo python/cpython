@@ -342,6 +342,24 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl__SSLSocket_verify_client_post_handshake__doc__,
+"verify_client_post_handshake($self, /)\n"
+"--\n"
+"\n"
+"Initiate TLS 1.3 post-handshake authentication");
+
+#define _SSL__SSLSOCKET_VERIFY_CLIENT_POST_HANDSHAKE_METHODDEF    \
+    {"verify_client_post_handshake", (PyCFunction)_ssl__SSLSocket_verify_client_post_handshake, METH_NOARGS, _ssl__SSLSocket_verify_client_post_handshake__doc__},
+
+static PyObject *
+_ssl__SSLSocket_verify_client_post_handshake_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_verify_client_post_handshake(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
+{
+    return _ssl__SSLSocket_verify_client_post_handshake_impl(self);
+}
+
 static PyObject *
 _ssl__SSLContext_impl(PyTypeObject *type, int proto_version);
 
@@ -1175,4 +1193,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=e2417fee28666f7c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c4e73b70ac3618ba input=a9049054013a1b77]*/
