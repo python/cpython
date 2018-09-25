@@ -1177,13 +1177,22 @@ Editor code context option revised.  Box displays all context lines up to
 maxlines.  Clicking on a context line jumps the editor to that line.  Context
 colors for custom themes is added to Highlights tab of Settings dialog.
 (Contributed by Cheryl Sabella and Terry Jan Reedy in :issue:`33642`,
-:issue:`33768`, and :issue:`33679`)
+:issue:`33768`, and :issue:`33679`.)
 
 On Windows, a new API call tells Windows that tk scales for DPI. On Windows
 8.1+ or 10, with DPI compatibility properties of the Python binary
 unchanged, and a monitor resolution greater than 96 DPI, this should
 make text and lines sharper.  It should otherwise have no effect.
-(Contributed by Terry Jan Reedy in :issue:`33656`).
+(Contributed by Terry Jan Reedy in :issue:`33656`.)
+
+New in 3.6.7:
+
+Output over N lines (50 by default) is squeezed down to a button.
+N can be changed in the PyShell section of the General page of the
+Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
+right clicking on the output.  Squeezed output can be expanded in place
+by double-clicking the button or into the clipboard or a separate window
+by right-clicking the button.  (Contributed by Tal Einat in :issue:`1529353`.)
 
 
 importlib
