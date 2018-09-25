@@ -57,8 +57,6 @@ class _ContextManagerMixin:
 
     @coroutine
     def __iter__(self):
-        # This is not a coroutine function.  It is meant to enable the idiom:
-        #
         #     with (yield from lock):
         #         <block>
         #
