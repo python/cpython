@@ -74,19 +74,22 @@ class NamedExpressionInvalidTest(unittest.TestCase):
     def test_named_expression_invalid_11(self):
         code = """spam(a=1, b := 2)"""
 
-        with self.assertRaisesRegex(SyntaxError, "positional argument follows keyword argument"):
+        with self.assertRaisesRegex(SyntaxError,
+            "positional argument follows keyword argument"):
             exec(code, {}, {})
 
     def test_named_expression_invalid_12(self):
         code = """spam(a=1, (b := 2))"""
 
-        with self.assertRaisesRegex(SyntaxError, "positional argument follows keyword argument"):
+        with self.assertRaisesRegex(SyntaxError,
+            "positional argument follows keyword argument"):
             exec(code, {}, {})
 
     def test_named_expression_invalid_13(self):
         code = """spam(a=1, (b := 2))"""
 
-        with self.assertRaisesRegex(SyntaxError, "positional argument follows keyword argument"):
+        with self.assertRaisesRegex(SyntaxError,
+            "positional argument follows keyword argument"):
             exec(code, {}, {})
 
     def test_named_expression_invalid_14(self):
@@ -98,7 +101,8 @@ class NamedExpressionInvalidTest(unittest.TestCase):
     def test_named_expression_invalid_15(self):
         code = """(lambda: x := 1)"""
 
-        with self.assertRaisesRegex(SyntaxError, "can't use named assignment with lambda"):
+        with self.assertRaisesRegex(SyntaxError,
+            "can't use named assignment with lambda"):
             exec(code, {}, {})
 
     def test_named_expression_invalid_16(self):
