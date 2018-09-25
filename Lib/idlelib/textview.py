@@ -41,7 +41,7 @@ class TextFrame(Frame):
         self['relief'] = 'sunken'
         self['height'] = 700
 
-        self.text = text = Text(self, wrap='word', highlightthickness=0)
+        self.text = text = Text(self, wrap=wrap, highlightthickness=0)
         color_config(text)
         text.grid(row=0, column=0, sticky=N+S+E+W)
         self.grid_rowconfigure(0, weight=1)
