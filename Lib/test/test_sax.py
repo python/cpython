@@ -256,7 +256,7 @@ class MakeParserTest(unittest.TestCase):
 
     def test_make_parser3(self):
         # Testing that make_parser can handle iterables other than a
-        # list
+        # list.
         make_parser(('module', ))
         make_parser({'module'})
         make_parser({'module': None})
