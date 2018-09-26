@@ -1,0 +1,3 @@
+Have macOS 10.9+ installer builds for 3.7.1rc and 3.6.7rc use a development
+snapshot of Tk 8.6 (post-8.6.8) to mitigate certain scroller issues seen
+with IDLE and tkinter apps.
