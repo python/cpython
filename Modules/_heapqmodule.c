@@ -494,12 +494,12 @@ _heapq._heappop_max
     heap: object
     /
 
-Maxheap variant of heappop
+Maxheap variant of heappop.
 [clinic start generated code]*/
 
 static PyObject *
 _heapq__heappop_max(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=acd30acf6384b13c input=aba11b85f3394552]*/
+/*[clinic end generated code: output=acd30acf6384b13c input=62ede3ba9117f541]*/
 {
     return heappop_internal(heap, siftup_max);
 }
@@ -511,13 +511,13 @@ _heapq._heapreplace_max
     item: object
     /
 
-Maxheap variant of heapreplace
+Maxheap variant of heapreplace.
 [clinic start generated code]*/
 
 static PyObject *
 _heapq__heapreplace_max_impl(PyObject *module, PyObject *heap,
                              PyObject *item)
-/*[clinic end generated code: output=8ad7545e4a5e8adb input=8f9df20110df9ddb]*/
+/*[clinic end generated code: output=8ad7545e4a5e8adb input=6d8f25131e0f0e5f]*/
 {
     return heapreplace_internal(heap, item, siftup_max);
 }
@@ -528,12 +528,12 @@ _heapq._heapify_max
     heap: object
     /
 
-Maxheap variant of heapify
+Maxheap variant of heapify.
 [clinic start generated code]*/
 
 static PyObject *
 _heapq__heapify_max(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=1c6bb6b60d6a2133 input=e23adafa21947386]*/
+/*[clinic end generated code: output=1c6bb6b60d6a2133 input=cdfcc6835b14110d]*/
 {
     return heapify_internal(heap, siftup_max);
 }

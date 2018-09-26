@@ -125,7 +125,7 @@ PyDoc_STRVAR(_heapq__heappop_max__doc__,
 "_heappop_max($module, heap, /)\n"
 "--\n"
 "\n"
-"Maxheap variant of heappop");
+"Maxheap variant of heappop.");
 
 #define _HEAPQ__HEAPPOP_MAX_METHODDEF    \
     {"_heappop_max", (PyCFunction)_heapq__heappop_max, METH_O, _heapq__heappop_max__doc__},
@@ -134,7 +134,7 @@ PyDoc_STRVAR(_heapq__heapreplace_max__doc__,
 "_heapreplace_max($module, heap, item, /)\n"
 "--\n"
 "\n"
-"Maxheap variant of heapreplace");
+"Maxheap variant of heapreplace.");
 
 #define _HEAPQ__HEAPREPLACE_MAX_METHODDEF    \
     {"_heapreplace_max", (PyCFunction)_heapq__heapreplace_max, METH_FASTCALL, _heapq__heapreplace_max__doc__},
@@ -165,8 +165,8 @@ PyDoc_STRVAR(_heapq__heapify_max__doc__,
 "_heapify_max($module, heap, /)\n"
 "--\n"
 "\n"
-"Maxheap variant of heapify");
+"Maxheap variant of heapify.");
 
 #define _HEAPQ__HEAPIFY_MAX_METHODDEF    \
     {"_heapify_max", (PyCFunction)_heapq__heapify_max, METH_O, _heapq__heapify_max__doc__},
-/*[clinic end generated code: output=f2c40d95126ac0ac input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0bb0dd0df473ab14 input=a9049054013a1b77]*/
