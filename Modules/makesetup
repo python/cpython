@@ -247,8 +247,8 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			case $doconfig in
 			no)	SHAREDMODS="$SHAREDMODS $file";;
 			esac
-			rule="$file: $objs"
-			rule="$rule; \$(BLDSHARED) $objs $libs $ExtraLibs -o $file"
+			rule="$file: $objs \$(LDLIBRARY)"
+			rule="$rule; \$(BLDSHARED) $objs \$(BLDLIBRARY) $libs $ExtraLibs -o $file"
 			echo "$rule" >>$rulesf
 		done
 	done

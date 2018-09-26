@@ -1,0 +1,3 @@
+Fix Modules/makesetup script for shared libraries. When Modules/Setup is
+modified to compile C extensions as shared libraries using Makefile, make
+sure that the generated shared library is linked to libpython3.X.
