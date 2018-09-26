@@ -1,5 +1,5 @@
-This is Python version 3.6.6+
-=============================
+This is Python version 3.6.7 release candidate
+==============================================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=3.6
    :alt: CPython build status on Travis CI

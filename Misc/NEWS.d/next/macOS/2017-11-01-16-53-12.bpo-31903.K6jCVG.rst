@@ -1,2 +1,0 @@
-In :mod:`_scproxy`, drop the GIL when calling into ``SystemConfiguration`` to avoid
-deadlocks.
