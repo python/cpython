@@ -94,6 +94,16 @@ def _have_socket_alg():
         s.close()
     return True
 
+def _have_socket_qipcrtr():
+    """Check whether AF_QIPCRTR sockets are supported on this host."""
+    try:
+        s = socket.socket(socket.AF_QIPCRTR, socket.SOCK_DGRAM, 0)
+    except (AttributeError, OSError):
+        return False
+    else:
+        s.close()
+    return True
+
 def _have_socket_vsock():
     """Check whether AF_VSOCK sockets are supported on this host."""
     ret = get_cid() is not None
@@ -112,6 +122,8 @@ HAVE_SOCKET_CAN_ISOTP = _have_socket_can_isotp()
 HAVE_SOCKET_RDS = _have_socket_rds()
 
 HAVE_SOCKET_ALG = _have_socket_alg()
+
+HAVE_SOCKET_QIPCRTR = _have_socket_qipcrtr()
 
 HAVE_SOCKET_VSOCK = _have_socket_vsock()
 
@@ -2054,6 +2066,34 @@ class RDSTest(ThreadedRDSSocketTest):
         self.data = b'select'
         self.cli.sendto(self.data, 0, (HOST, self.port))
 
+@unittest.skipUnless(HAVE_SOCKET_QIPCRTR,
+          'QIPCRTR sockets required for this test.')
+class BasicQIPCRTRTest(unittest.TestCase):
+
+    def testCrucialConstants(self):
+        socket.AF_QIPCRTR
+
+    def testCreateSocket(self):
+        with socket.socket(socket.AF_QIPCRTR, socket.SOCK_DGRAM) as s:
+            pass
+
+    def testUnbound(self):
+        with socket.socket(socket.AF_QIPCRTR, socket.SOCK_DGRAM) as s:
+            self.assertEqual(s.getsockname()[1], 0)
+
+    def testBindSock(self):
+        with socket.socket(socket.AF_QIPCRTR, socket.SOCK_DGRAM) as s:
+            support.bind_port(s, host=s.getsockname()[0])
+            self.assertNotEqual(s.getsockname()[1], 0)
+
+    def testInvalidBindSock(self):
+        with socket.socket(socket.AF_QIPCRTR, socket.SOCK_DGRAM) as s:
+            self.assertRaises(OSError, support.bind_port, s, host=-2)
+
+    def testAutoBindSock(self):
+        with socket.socket(socket.AF_QIPCRTR, socket.SOCK_DGRAM) as s:
+            s.connect((123, 123))
+            self.assertNotEqual(s.getsockname()[1], 0)
 
 @unittest.skipIf(fcntl is None, "need fcntl")
 @unittest.skipUnless(HAVE_SOCKET_VSOCK,
@@ -5978,6 +6018,7 @@ def test_main():
     tests.extend([BasicCANTest, CANTest])
     tests.extend([BasicRDSTest, RDSTest])
     tests.append(LinuxKernelCryptoAPI)
+    tests.append(BasicQIPCRTRTest)
     tests.extend([
         BasicVSOCKTest,
         ThreadedVSOCKSocketStreamTest,
