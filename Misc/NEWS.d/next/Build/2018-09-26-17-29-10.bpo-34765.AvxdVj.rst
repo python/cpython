@@ -1,0 +1,2 @@
+Update the outdated install-sh file to the latest revision from automake
+v1.16.1
