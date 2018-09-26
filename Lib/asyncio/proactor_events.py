@@ -430,9 +430,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
 
     def __init__(self, loop, sock, protocol, address=None,
                  waiter=None, extra=None):
-        super(_ProactorDatagramTransport, self).__init__(loop, sock, protocol,
-                                                         waiter=waiter,
-                                                         extra=extra)
+        super().__init__(loop, sock, protocol, waiter=waiter, extra=extra)
         self._address = address
         # We don't need to call _protocol.connection_made() since our base
         # constructor does it for us.
@@ -440,7 +438,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
         self._loop.call_soon(self._loop_reading)
 
     def _set_extra(self, sock):
-        super(_ProactorDatagramTransport, self)._set_extra(sock)
+        super()._set_extra(sock)
         self._extra['socket'] = sock
 
         try:
