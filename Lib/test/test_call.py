@@ -9,6 +9,23 @@ import struct
 import collections
 import itertools
 
+
+class FunctionCalls(unittest.TestCase):
+
+    def test_kwargs_order(self):
+        # bpo-34320:  **kwargs should preserve order of passed OrderedDict
+        od = collections.OrderedDict([('a', 1), ('b', 2)])
+        od.move_to_end('a')
+        expected = list(od.items())
+
+        def fn(**kw):
+            return kw
+
+        res = fn(**od)
+        self.assertIsInstance(res, dict)
+        self.assertEqual(list(res.items()), expected)
+
+
 # The test cases here cover several paths through the function calling
 # code.  They depend on the METH_XXX flag that is used to define a C
 # function, which can't be verified from Python.  If the METH_XXX decl

@@ -1222,6 +1222,36 @@ class DictTest(unittest.TestCase):
 
         self.assertRaises(RuntimeError, iter_and_mutate)
 
+    def test_dict_copy_order(self):
+        # bpo-34320
+        od = collections.OrderedDict([('a', 1), ('b', 2)])
+        od.move_to_end('a')
+        expected = list(od.items())
+
+        copy = dict(od)
+        self.assertEqual(list(copy.items()), expected)
+
+        # dict subclass doesn't override __iter__
+        class CustomDict(dict):
+            pass
+
+        pairs = [('a', 1), ('b', 2), ('c', 3)]
+
+        d = CustomDict(pairs)
+        self.assertEqual(pairs, list(dict(d).items()))
+
+        class CustomReversedDict(dict):
+            def keys(self):
+                return reversed(list(dict.keys(self)))
+
+            __iter__ = keys
+
+            def items(self):
+                return reversed(dict.items(self))
+
+        d = CustomReversedDict(pairs)
+        self.assertEqual(pairs[::-1], list(dict(d).items()))
+
 
 class CAPITest(unittest.TestCase):
 
