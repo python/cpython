@@ -473,7 +473,7 @@ class TestRawDataManager(TestEmailBase):
                 self.assertEqual(
                     m.get_payload(decode=True).decode('utf-8'), content)
                 self.assertEqual(m.get_content(), content)
-    
+
     def test_set_bytes_with_policy_max_line_length_none_or_0(self):
         for max_line_length in (0, None):
             with self.subTest(max_line_length=max_line_length):
@@ -485,7 +485,7 @@ class TestRawDataManager(TestEmailBase):
                 self.assertEqual(bytes(m), textwrap.dedent("""\
                     Content-Type: application/octet-stream
                     Content-Transfer-Encoding: base64
-                    """).encode('ascii') + b"\n" + 
+                    """).encode('ascii') + b"\n" +
                     b"Yv9ndXMJY29uCnQNZW50IHp6enp6enp6enp6enp6enp6enp6enp6enp6"
                     b"enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6"
                     b"enp6enp6enp6enp6\n")
