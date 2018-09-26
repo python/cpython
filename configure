@@ -8023,6 +8023,28 @@ fi
 done
 
 
+# On Linux, qrtr.h requires asm/types.h
+for ac_header in linux/qrtr.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "linux/qrtr.h" "ac_cv_header_linux_qrtr_h" "
+#ifdef HAVE_ASM_TYPES_H
+#include <asm/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+
+"
+if test "x$ac_cv_header_linux_qrtr_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LINUX_QRTR_H 1
+_ACEOF
+
+fi
+
+done
+
+
 for ac_header in linux/vm_sockets.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "linux/vm_sockets.h" "ac_cv_header_linux_vm_sockets_h" "
