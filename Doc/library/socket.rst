@@ -163,8 +163,8 @@ created.  Socket addresses are represented as follows:
 
 - :const:`AF_QIPCRTR` is a Linux-only socket based interface for communicating
   with services running on co-processors in Qualcomm platforms. The address
-  family is represented as a ``(node, port)`` tuple where the node and port are
-  integers.
+  family is represented as a ``(node, port)`` tuple where the *node* and *port*
+  are non-negative integers.
 
   .. versionadded:: 3.7
 
@@ -449,6 +449,13 @@ Constants
    available for NetBSD or DragonFlyBSD. :const:`HCI_TIME_STAMP` and
    :const:`HCI_DATA_DIR` are not available for FreeBSD, NetBSD, or
    DragonFlyBSD.
+
+.. data:: AF_QIPCRTR
+
+   Constant for Qualcomm's IPC router protocol, used to communicate with
+   service providing remote processors.
+
+   Availability: Linux >= 4.7.
 
 Functions
 ^^^^^^^^^

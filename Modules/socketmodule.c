@@ -55,6 +55,8 @@ Module interface:
   the Ethernet protocol number to be received. For example:
   ("eth0",0x1234).  Optional 3rd,4th,5th elements in the tuple
   specify packet-type and ha-type/addr.
+- an AF_QIPCRTR socket address is a (node, port) tuple where the
+  node and port are non-negative integers.
 - an AF_TIPC socket address is expressed as
  (addr_type, v1, v2, v3 [, scope]); where addr_type can be one of:
     TIPC_ADDR_NAMESEQ, TIPC_ADDR_NAME, and TIPC_ADDR_ID;
@@ -1591,7 +1593,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     case AF_QIPCRTR:
     {
         struct sockaddr_qrtr* addr;
-        int node, port;
+        unsigned int node, port;
         addr = (struct sockaddr_qrtr *)addr_ret;
         if (!PyTuple_Check(args)) {
             PyErr_Format(
@@ -1609,7 +1611,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         *len_ret = sizeof(*addr);
         return 1;
     }
-#endif
+#endif /* AF_QIPCRTR */
 
 #if defined(AF_VSOCK)
     case AF_VSOCK:
@@ -2163,7 +2165,7 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
         *len_ret = sizeof (struct sockaddr_qrtr);
         return 1;
     }
-#endif
+#endif /* AF_QIPCRTR */
 
 #if defined(AF_VSOCK)
        case AF_VSOCK:
