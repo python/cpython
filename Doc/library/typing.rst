@@ -169,6 +169,8 @@ It is possible to declare the return type of a callable without specifying
 the call signature by substituting a literal ellipsis
 for the list of arguments in the type hint: ``Callable[..., ReturnType]``.
 
+.. _generics:
+
 Generics
 --------
 
@@ -183,7 +185,7 @@ subscription to denote expected types for container elements.
    def notify_by_email(employees: Sequence[Employee],
                        overrides: Mapping[str, str]) -> None: ...
 
-Generics can be parametrized by using a new factory available in typing
+Generics can be parameterized by using a new factory available in typing
 called :class:`TypeVar`.
 
 ::
@@ -488,8 +490,9 @@ The module defines the following classes, functions and decorators:
    required to handle this particular case may change in future revisions of
    :pep:`484`.
 
-   The only legal parameters for :class:`Type` are classes, unions of classes, and
-   :data:`Any`. For example::
+   The only legal parameters for :class:`Type` are classes, :data:`Any`,
+   :ref:`type variables <generics>`, and unions of any of these types.
+   For example::
 
       def new_non_team_user(user_class: Type[Union[BaseUser, ProUser]]): ...
 
