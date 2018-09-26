@@ -1,3 +1,0 @@
-On FreeBSD, Py_DecodeLocale() and Py_EncodeLocale() now also forces the
-ASCII encoding if the LC_CTYPE locale is "POSIX", not only if the LC_CTYPE
-locale is "C".
