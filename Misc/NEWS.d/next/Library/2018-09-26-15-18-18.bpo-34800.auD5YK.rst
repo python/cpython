@@ -1,0 +1,2 @@
+Fix `email.contentmanager.set_content` raise error when
+`email.policy.Policy.max_line_length` is 0 or None. Patch by silane.
