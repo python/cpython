@@ -198,7 +198,7 @@ created.  Socket addresses are represented as follows:
   family is represented as a ``(node, port)`` tuple where the *node* and *port*
   are non-negative integers.
 
-  .. versionadded:: 3.7
+  .. versionadded:: 3.8
 
 If you use a hostname in the *host* portion of IPv4/v6 socket address, the
 program may show a nondeterministic behavior, as Python uses the first address
