@@ -1176,6 +1176,7 @@ class DictTest(unittest.TestCase):
 
         self.assertRaises(RuntimeError, iter_and_mutate)
 
+    @support.cpython_only
     def test_dict_copy_order(self):
         # bpo-34320
         od = collections.OrderedDict([('a', 1), ('b', 2)])
