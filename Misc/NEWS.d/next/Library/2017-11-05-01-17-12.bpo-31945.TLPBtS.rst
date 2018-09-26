@@ -1,3 +1,0 @@
-Add Configurable *blocksize* to ``HTTPConnection`` and
-``HTTPSConnection`` for improved upload throughput.  Patch by Nir
-Soffer.

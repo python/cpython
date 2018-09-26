@@ -1078,6 +1078,9 @@ setup_readline(readlinestate *mod_state)
         Py_FatalError("not enough memory to save locale");
 #endif
 
+    /* The name must be defined before initialization */
+    rl_readline_name = "python";
+
 #ifdef __APPLE__
     /* the libedit readline emulation resets key bindings etc
      * when calling rl_initialize.  So call it upfront
@@ -1099,7 +1102,6 @@ setup_readline(readlinestate *mod_state)
 
     using_history();
 
-    rl_readline_name = "python";
     /* Force rebind of TAB to insert-tab */
     rl_bind_key('\t', rl_insert);
     /* Bind both ESC-TAB and ESC-ESC to the completion function */
@@ -1352,13 +1354,27 @@ PyInit_readline(void)
     if (m == NULL)
         return NULL;
 
+    if (PyModule_AddIntConstant(m, "_READLINE_VERSION",
+                                RL_READLINE_VERSION) < 0) {
+        goto error;
+    }
+    if (PyModule_AddIntConstant(m, "_READLINE_RUNTIME_VERSION",
+                                rl_readline_version) < 0) {
+        goto error;
+    }
+    if (PyModule_AddStringConstant(m, "_READLINE_LIBRARY_VERSION",
+                                   rl_library_version) < 0)
+    {
+        goto error;
+    }
+
     mod_state = (readlinestate *) PyModule_GetState(m);
     PyOS_ReadlineFunctionPointer = call_readline;
     setup_readline(mod_state);
 
-    PyModule_AddIntConstant(m, "_READLINE_VERSION", RL_READLINE_VERSION);
-    PyModule_AddIntConstant(m, "_READLINE_RUNTIME_VERSION", rl_readline_version);
-    PyModule_AddStringConstant(m, "_READLINE_LIBRARY_VERSION", rl_library_version);
-
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }

@@ -271,10 +271,56 @@ class DictTest(unittest.TestCase):
         self.assertEqual(baddict3.fromkeys({"a", "b", "c"}), res)
 
     def test_copy(self):
-        d = {1:1, 2:2, 3:3}
-        self.assertEqual(d.copy(), {1:1, 2:2, 3:3})
+        d = {1: 1, 2: 2, 3: 3}
+        self.assertIsNot(d.copy(), d)
+        self.assertEqual(d.copy(), d)
+        self.assertEqual(d.copy(), {1: 1, 2: 2, 3: 3})
+
+        copy = d.copy()
+        d[4] = 4
+        self.assertNotEqual(copy, d)
+
         self.assertEqual({}.copy(), {})
         self.assertRaises(TypeError, d.copy, None)
+
+    def test_copy_fuzz(self):
+        for dict_size in [10, 100, 1000, 10000, 100000]:
+            dict_size = random.randrange(
+                dict_size // 2, dict_size + dict_size // 2)
+            with self.subTest(dict_size=dict_size):
+                d = {}
+                for i in range(dict_size):
+                    d[i] = i
+
+                d2 = d.copy()
+                self.assertIsNot(d2, d)
+                self.assertEqual(d, d2)
+                d2['key'] = 'value'
+                self.assertNotEqual(d, d2)
+                self.assertEqual(len(d2), len(d) + 1)
+
+    def test_copy_maintains_tracking(self):
+        class A:
+            pass
+
+        key = A()
+
+        for d in ({}, {'a': 1}, {key: 'val'}):
+            d2 = d.copy()
+            self.assertEqual(gc.is_tracked(d), gc.is_tracked(d2))
+
+    def test_copy_noncompact(self):
+        # Dicts don't compact themselves on del/pop operations.
+        # Copy will use a slow merging strategy that produces
+        # a compacted copy when roughly 33% of dict is a non-used
+        # keys-space (to optimize memory footprint).
+        # In this test we want to hit the slow/compacting
+        # branch of dict.copy() and make sure it works OK.
+        d = {k: k for k in range(1000)}
+        for k in range(950):
+            del d[k]
+        d2 = d.copy()
+        self.assertEqual(d2, d)
 
     def test_get(self):
         d = {}
@@ -467,6 +513,12 @@ class DictTest(unittest.TestCase):
 
         d = {1: BadRepr()}
         self.assertRaises(Exc, repr, d)
+
+    def test_repr_deep(self):
+        d = {}
+        for i in range(sys.getrecursionlimit() + 100):
+            d = {1: d}
+        self.assertRaises(RecursionError, repr, d)
 
     def test_eq(self):
         self.assertEqual({}, {})
@@ -1004,7 +1056,7 @@ class DictTest(unittest.TestCase):
             self.assertEqual(dict(it), data)
 
     def test_valuesiterator_pickling(self):
-        for proto in range(pickle.HIGHEST_PROTOCOL):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             data = {1:"a", 2:"b", 3:"c"}
             # data.values() isn't picklable, only its iterator
             it = iter(data.values())
@@ -1169,6 +1221,36 @@ class DictTest(unittest.TestCase):
                     d[2] = None # free d[2] --> X(2).__del__ was called
 
         self.assertRaises(RuntimeError, iter_and_mutate)
+
+    def test_dict_copy_order(self):
+        # bpo-34320
+        od = collections.OrderedDict([('a', 1), ('b', 2)])
+        od.move_to_end('a')
+        expected = list(od.items())
+
+        copy = dict(od)
+        self.assertEqual(list(copy.items()), expected)
+
+        # dict subclass doesn't override __iter__
+        class CustomDict(dict):
+            pass
+
+        pairs = [('a', 1), ('b', 2), ('c', 3)]
+
+        d = CustomDict(pairs)
+        self.assertEqual(pairs, list(dict(d).items()))
+
+        class CustomReversedDict(dict):
+            def keys(self):
+                return reversed(list(dict.keys(self)))
+
+            __iter__ = keys
+
+            def items(self):
+                return reversed(dict.items(self))
+
+        d = CustomReversedDict(pairs)
+        self.assertEqual(pairs[::-1], list(dict(d).items()))
 
 
 class CAPITest(unittest.TestCase):

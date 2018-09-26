@@ -1040,7 +1040,7 @@ itemgetter_repr(itemgetterobject *ig)
 }
 
 static PyObject *
-itemgetter_reduce(itemgetterobject *ig)
+itemgetter_reduce(itemgetterobject *ig, PyObject *Py_UNUSED(ignored))
 {
     if (ig->nitems == 1)
         return Py_BuildValue("O(O)", Py_TYPE(ig), ig->item);
@@ -1382,7 +1382,7 @@ attrgetter_repr(attrgetterobject *ag)
 }
 
 static PyObject *
-attrgetter_reduce(attrgetterobject *ag)
+attrgetter_reduce(attrgetterobject *ag, PyObject *Py_UNUSED(ignored))
 {
     PyObject *attrstrings = attrgetter_args(ag);
     if (attrstrings == NULL)
@@ -1615,7 +1615,7 @@ done:
 }
 
 static PyObject *
-methodcaller_reduce(methodcallerobject *mc)
+methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
 {
     PyObject *newargs;
     if (!mc->kwds || PyDict_GET_SIZE(mc->kwds) == 0) {

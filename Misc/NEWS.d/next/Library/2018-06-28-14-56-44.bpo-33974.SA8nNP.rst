@@ -1,0 +1,3 @@
+Fixed passing lists and tuples of strings containing special characters
+``"``, ``\``, ``{``, ``}`` and ``\n`` as options to :mod:`~tkinter.ttk`
+widgets.

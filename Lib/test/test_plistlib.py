@@ -169,6 +169,17 @@ class TestPlistlib(unittest.TestCase):
                     self.assertRaises(OverflowError, plistlib.dumps,
                                       pl, fmt=fmt)
 
+    def test_bytearray(self):
+        for pl in (b'<binary gunk>', b"<lots of binary gunk>\0\1\2\3" * 10):
+            for fmt in ALL_FORMATS:
+                with self.subTest(pl=pl, fmt=fmt):
+                    data = plistlib.dumps(bytearray(pl), fmt=fmt)
+                    pl2 = plistlib.loads(data)
+                    self.assertIsInstance(pl2, bytes)
+                    self.assertEqual(pl2, pl)
+                    data2 = plistlib.dumps(pl2, fmt=fmt)
+                    self.assertEqual(data, data2)
+
     def test_bytes(self):
         pl = self._create()
         data = plistlib.dumps(pl)
@@ -309,7 +320,8 @@ class TestPlistlib(unittest.TestCase):
                     'second': [1, 2],
                     'third': [3, 4],
                 })
-                self.assertIsNot(pl2['first'], pl2['second'])
+                if fmt != plistlib.FMT_BINARY:
+                    self.assertIsNot(pl2['first'], pl2['second'])
 
     def test_list_members(self):
         pl = {
@@ -431,6 +443,9 @@ class TestPlistlib(unittest.TestCase):
                 pl2 = plistlib.loads(data)
                 self.assertEqual(dict(pl), dict(pl2))
 
+
+class TestBinaryPlistlib(unittest.TestCase):
+
     def test_nonstandard_refs_size(self):
         # Issue #21538: Refs and offsets are 24-bit integers
         data = (b'bplist00'
@@ -442,6 +457,47 @@ class TestPlistlib(unittest.TestCase):
                 b'\x00\x00\x00\x00\x00\x00\x00\x00'
                 b'\x00\x00\x00\x00\x00\x00\x00\x13')
         self.assertEqual(plistlib.loads(data), {'a': 'b'})
+
+    def test_dump_duplicates(self):
+        # Test effectiveness of saving duplicated objects
+        for x in (None, False, True, 12345, 123.45, 'abcde', b'abcde',
+                  datetime.datetime(2004, 10, 26, 10, 33, 33),
+                  plistlib.Data(b'abcde'), bytearray(b'abcde'),
+                  [12, 345], (12, 345), {'12': 345}):
+            with self.subTest(x=x):
+                data = plistlib.dumps([x]*1000, fmt=plistlib.FMT_BINARY)
+                self.assertLess(len(data), 1100, repr(data))
+
+    def test_identity(self):
+        for x in (None, False, True, 12345, 123.45, 'abcde', b'abcde',
+                  datetime.datetime(2004, 10, 26, 10, 33, 33),
+                  plistlib.Data(b'abcde'), bytearray(b'abcde'),
+                  [12, 345], (12, 345), {'12': 345}):
+            with self.subTest(x=x):
+                data = plistlib.dumps([x]*2, fmt=plistlib.FMT_BINARY)
+                a, b = plistlib.loads(data)
+                if isinstance(x, tuple):
+                    x = list(x)
+                self.assertEqual(a, x)
+                self.assertEqual(b, x)
+                self.assertIs(a, b)
+
+    def test_cycles(self):
+        # recursive list
+        a = []
+        a.append(a)
+        b = plistlib.loads(plistlib.dumps(a, fmt=plistlib.FMT_BINARY))
+        self.assertIs(b[0], b)
+        # recursive tuple
+        a = ([],)
+        a[0].append(a)
+        b = plistlib.loads(plistlib.dumps(a, fmt=plistlib.FMT_BINARY))
+        self.assertIs(b[0][0], b)
+        # recursive dict
+        a = {}
+        a['x'] = a
+        b = plistlib.loads(plistlib.dumps(a, fmt=plistlib.FMT_BINARY))
+        self.assertIs(b['x'], b)
 
     def test_large_timestamp(self):
         # Issue #26709: 32-bit timestamp out of range

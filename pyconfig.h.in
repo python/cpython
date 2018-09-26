@@ -30,6 +30,10 @@
 /* Define if --enable-ipv6 is specified */
 #undef ENABLE_IPV6
 
+/* Define to 1 if your system stores words within floats with the most
+   significant word first */
+#undef FLOAT_WORDS_BIGENDIAN
+
 /* Define if flock needs to be linked with bsd library. */
 #undef FLOCK_NEEDS_LIBBSD
 
@@ -140,6 +144,9 @@
 /* Define to 1 if you have the `copysign' function. */
 #undef HAVE_COPYSIGN
 
+/* Define to 1 if you have the <crypt.h> header file. */
+#undef HAVE_CRYPT_H
+
 /* Define to 1 if you have the `ctermid' function. */
 #undef HAVE_CTERMID
 
@@ -209,6 +216,10 @@
 /* Define to 1 if you have the declaration of `RTLD_LOCAL', and to 0 if you
    don't. */
 #undef HAVE_DECL_RTLD_LOCAL
+
+/* Define to 1 if you have the declaration of `RTLD_MEMBER', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_MEMBER
 
 /* Define to 1 if you have the declaration of `RTLD_NODELETE', and to 0 if you
    don't. */
@@ -396,6 +407,12 @@
 /* Define to 1 if you have the `getentropy' function. */
 #undef HAVE_GETENTROPY
 
+/* Define to 1 if you have the `getgrgid_r' function. */
+#undef HAVE_GETGRGID_R
+
+/* Define to 1 if you have the `getgrnam_r' function. */
+#undef HAVE_GETGRNAM_R
+
 /* Define to 1 if you have the `getgrouplist' function. */
 #undef HAVE_GETGROUPLIST
 
@@ -450,6 +467,12 @@
 /* Define to 1 if you have the `getpwent' function. */
 #undef HAVE_GETPWENT
 
+/* Define to 1 if you have the `getpwnam_r' function. */
+#undef HAVE_GETPWNAM_R
+
+/* Define to 1 if you have the `getpwuid_r' function. */
+#undef HAVE_GETPWUID_R
+
 /* Define to 1 if the getrandom() function is available */
 #undef HAVE_GETRANDOM
 
@@ -496,7 +519,7 @@
 /* Define to 1 if you have the <ieeefp.h> header file. */
 #undef HAVE_IEEEFP_H
 
-/* Define to 1 if you have the 'if_nameindex' function. */
+/* Define to 1 if you have the `if_nameindex' function. */
 #undef HAVE_IF_NAMEINDEX
 
 /* Define if you have the 'inet_aton' function. */
@@ -613,7 +636,7 @@
 /* Define to 1 if you have the `log2' function. */
 #undef HAVE_LOG2
 
-/* Define this if you have the type long double. */
+/* Define to 1 if the system has the type `long double'. */
 #undef HAVE_LONG_DOUBLE
 
 /* Define to 1 if you have the `lstat' function. */
@@ -703,8 +726,17 @@
 /* Define to 1 if you have the `posix_fallocate' function. */
 #undef HAVE_POSIX_FALLOCATE
 
+/* Define to 1 if you have the `posix_spawn' function. */
+#undef HAVE_POSIX_SPAWN
+
 /* Define to 1 if you have the `pread' function. */
 #undef HAVE_PREAD
+
+/* Define to 1 if you have the `preadv' function. */
+#undef HAVE_PREADV
+
+/* Define to 1 if you have the `preadv2' function. */
+#undef HAVE_PREADV2
 
 /* Define if you have the 'prlimit' functions. */
 #undef HAVE_PRLIMIT
@@ -741,6 +773,12 @@
 
 /* Define to 1 if you have the `pwrite' function. */
 #undef HAVE_PWRITE
+
+/* Define to 1 if you have the `pwritev' function. */
+#undef HAVE_PWRITEV
+
+/* Define to 1 if you have the `pwritev2' function. */
+#undef HAVE_PWRITEV2
 
 /* Define to 1 if you have the `readlink' function. */
 #undef HAVE_READLINK
@@ -877,6 +915,9 @@
 /* Define to 1 if you have the `sigaltstack' function. */
 #undef HAVE_SIGALTSTACK
 
+/* Define to 1 if you have the `sigfillset' function. */
+#undef HAVE_SIGFILLSET
+
 /* Define to 1 if `si_band' is a member of `siginfo_t'. */
 #undef HAVE_SIGINFO_T_SI_BAND
 
@@ -941,7 +982,7 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
-/* Has stdatomic.h, atomic_int and _Atomic void* types work */
+/* Has stdatomic.h with atomic_int */
 #undef HAVE_STD_ATOMIC
 
 /* Define to 1 if you have the `strdup' function. */
@@ -961,6 +1002,9 @@
 
 /* Define to 1 if you have the <stropts.h> header file. */
 #undef HAVE_STROPTS_H
+
+/* Define to 1 if you have the `strsignal' function. */
+#undef HAVE_STRSIGNAL
 
 /* Define to 1 if `pw_gecos' is a member of `struct passwd'. */
 #undef HAVE_STRUCT_PASSWD_PW_GECOS
@@ -1190,8 +1234,20 @@
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
 
+/* Define if uuid_create() exists. */
+#undef HAVE_UUID_CREATE
+
+/* Define if uuid_enc_be() exists. */
+#undef HAVE_UUID_ENC_BE
+
 /* Define if uuid_generate_time_safe() exists. */
 #undef HAVE_UUID_GENERATE_TIME_SAFE
+
+/* Define to 1 if you have the <uuid.h> header file. */
+#undef HAVE_UUID_H
+
+/* Define to 1 if you have the <uuid/uuid.h> header file. */
+#undef HAVE_UUID_UUID_H
 
 /* Define to 1 if you have the `wait3' function. */
 #undef HAVE_WAIT3
@@ -1227,14 +1283,14 @@
 /* Define to 1 if you have the `writev' function. */
 #undef HAVE_WRITEV
 
+/* Define if libssl has X509_VERIFY_PARAM_set1_host and related function */
+#undef HAVE_X509_VERIFY_PARAM_SET1_HOST
+
 /* Define if the zlib library has inflateCopy */
 #undef HAVE_ZLIB_COPY
 
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY
-
-/* Define if log1p(-0.) is 0. rather than -0. */
-#undef LOG1P_DROPS_ZERO_SIGN
 
 /* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.
    */
@@ -1283,8 +1339,12 @@
 /* Define to printf format modifier for Py_ssize_t */
 #undef PY_FORMAT_SIZE_T
 
-/* Define to emit a locale compatibility warning in the C locale */
-#undef PY_WARN_ON_C_LOCALE
+/* Default cipher suites list for ssl module. 1: Python's preferred selection,
+   2: leave OpenSSL defaults untouched, 0: custom string */
+#undef PY_SSL_DEFAULT_CIPHERS
+
+/* Cipher suite string for PY_SSL_DEFAULT_CIPHERS=0 */
+#undef PY_SSL_DEFAULT_CIPHER_STRING
 
 /* Define if you want to build an interpreter with many run-time checks. */
 #undef Py_DEBUG
@@ -1366,9 +1426,6 @@
    (which you can't on SCO ODT 3.0). */
 #undef SYS_SELECT_WITH_SYS_TIME
 
-/* Define if tanh(-0.) is -0., or if platform doesn't have signed zeros */
-#undef TANH_PRESERVES_ZERO_SIGN
-
 /* Library needed by timemodule.c: librt may be needed for clock_gettime() */
 #undef TIMEMODULE_LIB
 
@@ -1402,9 +1459,6 @@
 # undef __EXTENSIONS__
 #endif
 
-
-/* Define if you want SIGFPE handled (see Include/pyfpe.h). */
-#undef WANT_SIGFPE_HANDLER
 
 /* Define if WINDOW in curses.h offers a field _flags. */
 #undef WINDOW_HAS_FLAGS

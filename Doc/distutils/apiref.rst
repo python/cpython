@@ -78,7 +78,7 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
    |                    | be built                       | :class:`distutils.core.Extension`                           |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *classifiers*      | A list of categories for the   | a list of strings; valid classifiers are listed on `PyPI    |
-   |                    | package                        | <https://pypi.python.org/pypi?:action=list_classifiers>`_.  |
+   |                    | package                        | <https://pypi.org/classifiers>`_.                           |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *distclass*        | the :class:`Distribution`      | a subclass of                                               |
    |                    | class to use                   | :class:`distutils.core.Distribution`                        |
@@ -286,9 +286,9 @@ the full reference.
    Distribution constructor. :func:`setup` creates a Distribution instance.
 
    .. versionchanged:: 3.7
-      :class:`~distutils.core.Distribution` now raises a :exc:`TypeError` if
-      ``classifiers``, ``keywords`` and ``platforms`` fields are not specified
-      as a list.
+      :class:`~distutils.core.Distribution` now warns if ``classifiers``,
+      ``keywords`` and ``platforms`` fields are not specified as a list or
+      a string.
 
 .. class:: Command
 

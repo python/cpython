@@ -61,7 +61,7 @@ except ImportError:
     INT_MAX = PY_SSIZE_T_MAX = sys.maxsize
 
 from test.support.script_helper import assert_python_ok
-from test.support import unix_shell
+from test.support import unix_shell, FakePath
 
 
 root_in_posix = False
@@ -83,21 +83,6 @@ HAVE_WHEEL_GROUP = sys.platform.startswith('freebsd') and os.getgid() == 0
 
 def requires_os_func(name):
     return unittest.skipUnless(hasattr(os, name), 'requires os.%s' % name)
-
-
-class _PathLike(os.PathLike):
-
-    def __init__(self, path=""):
-        self.path = path
-
-    def __str__(self):
-        return str(self.path)
-
-    def __fspath__(self):
-        if isinstance(self.path, BaseException):
-            raise self.path
-        else:
-            return self.path
 
 
 def create_file(filename, content=b'content'):
@@ -351,6 +336,11 @@ class StatAttributeTests(unittest.TestCase):
                     'ffree', 'favail', 'flag', 'namemax')
         for value, member in enumerate(members):
             self.assertEqual(getattr(result, 'f_' + member), result[value])
+
+        self.assertTrue(isinstance(result.f_fsid, int))
+
+        # Test that the size of the tuple doesn't change
+        self.assertEqual(len(result), 10)
 
         # Make sure that assignment really fails
         try:
@@ -645,6 +635,22 @@ class UtimeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             os.utime(self.fname, (5, 5), ns=(5, 5))
 
+    @support.cpython_only
+    def test_issue31577(self):
+        # The interpreter shouldn't crash in case utime() received a bad
+        # ns argument.
+        def get_bad_int(divmod_ret_val):
+            class BadInt:
+                def __divmod__(*args):
+                    return divmod_ret_val
+            return BadInt()
+        with self.assertRaises(TypeError):
+            os.utime(self.fname, ns=(get_bad_int(42), 1))
+        with self.assertRaises(TypeError):
+            os.utime(self.fname, ns=(get_bad_int(()), 1))
+        with self.assertRaises(TypeError):
+            os.utime(self.fname, ns=(get_bad_int((1, 2, 3)), 1))
+
 
 from test import mapping_tests
 
@@ -777,9 +783,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         value_str = value.decode(sys.getfilesystemencoding(), 'surrogateescape')
         self.assertEqual(os.environ['bytes'], value_str)
 
-    # On FreeBSD < 7 and OS X < 10.6, unsetenv() doesn't return a value (issue
-    # #13415).
-    @support.requires_freebsd_version(7)
+    # On OS X < 10.6, unsetenv() doesn't return a value (bpo-13415).
     @support.requires_mac_ver(10, 6)
     def test_unset_error(self):
         if sys.platform == "win32":
@@ -939,15 +943,14 @@ class WalkTests(unittest.TestCase):
                 dirs.remove('SUB1')
 
         self.assertEqual(len(all), 2)
-        self.assertEqual(all[0],
-                         (str(walk_path), ["SUB2"], ["tmp1"]))
+        self.assertEqual(all[0], (self.walk_path, ["SUB2"], ["tmp1"]))
 
         all[1][-1].sort()
         all[1][1].sort()
         self.assertEqual(all[1], self.sub2_tree)
 
     def test_file_like_path(self):
-        self.test_walk_prune(_PathLike(self.walk_path))
+        self.test_walk_prune(FakePath(self.walk_path))
 
     def test_walk_bottom_up(self):
         # Walk bottom-up.
@@ -1128,8 +1131,8 @@ class MakedirTests(unittest.TestCase):
             self.assertTrue(os.path.exists(path))
             self.assertTrue(os.path.isdir(path))
             if os.name != 'nt':
-                self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), 0o555)
-                self.assertEqual(stat.S_IMODE(os.stat(parent).st_mode), 0o775)
+                self.assertEqual(os.stat(path).st_mode & 0o777, 0o555)
+                self.assertEqual(os.stat(parent).st_mode & 0o777, 0o775)
 
     def test_exist_ok_existing_directory(self):
         path = os.path.join(support.TESTFN, 'dir1')
@@ -1321,7 +1324,7 @@ class URandomTests(unittest.TestCase):
             'sys.stdout.buffer.flush()'))
         out = assert_python_ok('-c', code)
         stdout = out[1]
-        self.assertEqual(len(stdout), 16)
+        self.assertEqual(len(stdout), count)
         return stdout
 
     def test_urandom_subprocess(self):
@@ -2052,6 +2055,53 @@ class Win32ListdirTests(unittest.TestCase):
                 [os.fsencode(path) for path in self.created_paths])
 
 
+@unittest.skipUnless(hasattr(os, 'readlink'), 'needs os.readlink()')
+class ReadlinkTests(unittest.TestCase):
+    filelink = 'readlinktest'
+    filelink_target = os.path.abspath(__file__)
+    filelinkb = os.fsencode(filelink)
+    filelinkb_target = os.fsencode(filelink_target)
+
+    def setUp(self):
+        self.assertTrue(os.path.exists(self.filelink_target))
+        self.assertTrue(os.path.exists(self.filelinkb_target))
+        self.assertFalse(os.path.exists(self.filelink))
+        self.assertFalse(os.path.exists(self.filelinkb))
+
+    def test_not_symlink(self):
+        filelink_target = FakePath(self.filelink_target)
+        self.assertRaises(OSError, os.readlink, self.filelink_target)
+        self.assertRaises(OSError, os.readlink, filelink_target)
+
+    def test_missing_link(self):
+        self.assertRaises(FileNotFoundError, os.readlink, 'missing-link')
+        self.assertRaises(FileNotFoundError, os.readlink,
+                          FakePath('missing-link'))
+
+    @support.skip_unless_symlink
+    def test_pathlike(self):
+        os.symlink(self.filelink_target, self.filelink)
+        self.addCleanup(support.unlink, self.filelink)
+        filelink = FakePath(self.filelink)
+        self.assertEqual(os.readlink(filelink), self.filelink_target)
+
+    @support.skip_unless_symlink
+    def test_pathlike_bytes(self):
+        os.symlink(self.filelinkb_target, self.filelinkb)
+        self.addCleanup(support.unlink, self.filelinkb)
+        path = os.readlink(FakePath(self.filelinkb))
+        self.assertEqual(path, self.filelinkb_target)
+        self.assertIsInstance(path, bytes)
+
+    @support.skip_unless_symlink
+    def test_bytes(self):
+        os.symlink(self.filelinkb_target, self.filelinkb)
+        self.addCleanup(support.unlink, self.filelinkb)
+        path = os.readlink(self.filelinkb)
+        self.assertEqual(path, self.filelinkb_target)
+        self.assertIsInstance(path, bytes)
+
+
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
 @support.skip_unless_symlink
 class Win32SymlinkTests(unittest.TestCase):
@@ -2162,6 +2212,55 @@ class Win32SymlinkTests(unittest.TestCase):
         finally:
             os.chdir(orig_dir)
 
+    @unittest.skipUnless(os.path.lexists(r'C:\Users\All Users')
+                            and os.path.exists(r'C:\ProgramData'),
+                            'Test directories not found')
+    def test_29248(self):
+        # os.symlink() calls CreateSymbolicLink, which creates
+        # the reparse data buffer with the print name stored
+        # first, so the offset is always 0. CreateSymbolicLink
+        # stores the "PrintName" DOS path (e.g. "C:\") first,
+        # with an offset of 0, followed by the "SubstituteName"
+        # NT path (e.g. "\??\C:\"). The "All Users" link, on
+        # the other hand, seems to have been created manually
+        # with an inverted order.
+        target = os.readlink(r'C:\Users\All Users')
+        self.assertTrue(os.path.samefile(target, r'C:\ProgramData'))
+
+    def test_buffer_overflow(self):
+        # Older versions would have a buffer overflow when detecting
+        # whether a link source was a directory. This test ensures we
+        # no longer crash, but does not otherwise validate the behavior
+        segment = 'X' * 27
+        path = os.path.join(*[segment] * 10)
+        test_cases = [
+            # overflow with absolute src
+            ('\\' + path, segment),
+            # overflow dest with relative src
+            (segment, path),
+            # overflow when joining src
+            (path[:180], path[:180]),
+        ]
+        for src, dest in test_cases:
+            try:
+                os.symlink(src, dest)
+            except FileNotFoundError:
+                pass
+            else:
+                try:
+                    os.remove(dest)
+                except OSError:
+                    pass
+            # Also test with bytes, since that is a separate code path.
+            try:
+                os.symlink(os.fsencode(src), os.fsencode(dest))
+            except FileNotFoundError:
+                pass
+            else:
+                try:
+                    os.remove(dest)
+                except OSError:
+                    pass
 
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
 class Win32JunctionTests(unittest.TestCase):
@@ -2270,7 +2369,7 @@ class PidTests(unittest.TestCase):
     def test_waitpid(self):
         args = [sys.executable, '-c', 'pass']
         # Add an implicit test for PyUnicode_FSConverter().
-        pid = os.spawnv(os.P_NOWAIT, _PathLike(args[0]), args)
+        pid = os.spawnv(os.P_NOWAIT, FakePath(args[0]), args)
         status = os.waitpid(pid, 0)
         self.assertEqual(status, (pid, 0))
 
@@ -2496,12 +2595,14 @@ class SendfileTestServer(asyncore.dispatcher, threading.Thread):
         def __init__(self, conn):
             asynchat.async_chat.__init__(self, conn)
             self.in_buffer = []
+            self.accumulate = True
             self.closed = False
             self.push(b"220 ready\r\n")
 
         def handle_read(self):
             data = self.recv(4096)
-            self.in_buffer.append(data)
+            if self.accumulate:
+                self.in_buffer.append(data)
 
         def get_data(self):
             return b''.join(self.in_buffer)
@@ -2582,6 +2683,8 @@ class TestSendfile(unittest.TestCase):
                                not sys.platform.startswith("sunos")
     requires_headers_trailers = unittest.skipUnless(SUPPORT_HEADERS_TRAILERS,
             'requires headers and trailers support')
+    requires_32b = unittest.skipUnless(sys.maxsize < 2**32,
+            'test is only meaningful on 32-bit builds')
 
     @classmethod
     def setUpClass(cls):
@@ -2612,17 +2715,13 @@ class TestSendfile(unittest.TestCase):
             self.server.stop()
         self.server = None
 
-    def sendfile_wrapper(self, sock, file, offset, nbytes, headers=[], trailers=[]):
+    def sendfile_wrapper(self, *args, **kwargs):
         """A higher level wrapper representing how an application is
         supposed to use sendfile().
         """
-        while 1:
+        while True:
             try:
-                if self.SUPPORT_HEADERS_TRAILERS:
-                    return os.sendfile(sock, file, offset, nbytes, headers,
-                                       trailers)
-                else:
-                    return os.sendfile(sock, file, offset, nbytes)
+                return os.sendfile(*args, **kwargs)
             except OSError as err:
                 if err.errno == errno.ECONNRESET:
                     # disconnected
@@ -2713,20 +2812,22 @@ class TestSendfile(unittest.TestCase):
     @requires_headers_trailers
     def test_headers(self):
         total_sent = 0
+        expected_data = b"x" * 512 + b"y" * 256 + self.DATA[:-1]
         sent = os.sendfile(self.sockno, self.fileno, 0, 4096,
-                            headers=[b"x" * 512])
+                            headers=[b"x" * 512, b"y" * 256])
+        self.assertLessEqual(sent, 512 + 256 + 4096)
         total_sent += sent
         offset = 4096
-        nbytes = 4096
-        while 1:
+        while total_sent < len(expected_data):
+            nbytes = min(len(expected_data) - total_sent, 4096)
             sent = self.sendfile_wrapper(self.sockno, self.fileno,
                                                     offset, nbytes)
             if sent == 0:
                 break
+            self.assertLessEqual(sent, nbytes)
             total_sent += sent
             offset += sent
 
-        expected_data = b"x" * 512 + self.DATA
         self.assertEqual(total_sent, len(expected_data))
         self.client.close()
         self.server.wait()
@@ -2742,12 +2843,30 @@ class TestSendfile(unittest.TestCase):
         create_file(TESTFN2, file_data)
 
         with open(TESTFN2, 'rb') as f:
-            os.sendfile(self.sockno, f.fileno(), 0, len(file_data),
-                        trailers=[b"1234"])
+            os.sendfile(self.sockno, f.fileno(), 0, 5,
+                        trailers=[b"123456", b"789"])
             self.client.close()
             self.server.wait()
             data = self.server.handler_instance.get_data()
-            self.assertEqual(data, b"abcdef1234")
+            self.assertEqual(data, b"abcde123456789")
+
+    @requires_headers_trailers
+    @requires_32b
+    def test_headers_overflow_32bits(self):
+        self.server.handler_instance.accumulate = False
+        with self.assertRaises(OSError) as cm:
+            os.sendfile(self.sockno, self.fileno, 0, 0,
+                        headers=[b"x" * 2**16] * 2**15)
+        self.assertEqual(cm.exception.errno, errno.EINVAL)
+
+    @requires_headers_trailers
+    @requires_32b
+    def test_trailers_overflow_32bits(self):
+        self.server.handler_instance.accumulate = False
+        with self.assertRaises(OSError) as cm:
+            os.sendfile(self.sockno, self.fileno, 0, 0,
+                        trailers=[b"x" * 2**16] * 2**15)
+        self.assertEqual(cm.exception.errno, errno.EINVAL)
 
     @requires_headers_trailers
     @unittest.skipUnless(hasattr(os, 'SF_NODISKIO'),
@@ -3074,19 +3193,15 @@ class FDInheritanceTests(unittest.TestCase):
 
         # inheritable by default
         fd2 = os.open(__file__, os.O_RDONLY)
-        try:
-            os.dup2(fd, fd2)
-            self.assertEqual(os.get_inheritable(fd2), True)
-        finally:
-            os.close(fd2)
+        self.addCleanup(os.close, fd2)
+        self.assertEqual(os.dup2(fd, fd2), fd2)
+        self.assertTrue(os.get_inheritable(fd2))
 
         # force non-inheritable
         fd3 = os.open(__file__, os.O_RDONLY)
-        try:
-            os.dup2(fd, fd3, inheritable=False)
-            self.assertEqual(os.get_inheritable(fd3), False)
-        finally:
-            os.close(fd3)
+        self.addCleanup(os.close, fd3)
+        self.assertEqual(os.dup2(fd, fd3, inheritable=False), fd3)
+        self.assertFalse(os.get_inheritable(fd3))
 
     @unittest.skipUnless(hasattr(os, 'openpty'), "need os.openpty()")
     def test_openpty(self):
@@ -3115,13 +3230,13 @@ class PathTConverterTests(unittest.TestCase):
             bytes_fspath = bytes_filename = None
         else:
             bytes_filename = support.TESTFN.encode('ascii')
-            bytes_fspath = _PathLike(bytes_filename)
-        fd = os.open(_PathLike(str_filename), os.O_WRONLY|os.O_CREAT)
+            bytes_fspath = FakePath(bytes_filename)
+        fd = os.open(FakePath(str_filename), os.O_WRONLY|os.O_CREAT)
         self.addCleanup(support.unlink, support.TESTFN)
         self.addCleanup(os.close, fd)
 
-        int_fspath = _PathLike(fd)
-        str_fspath = _PathLike(str_filename)
+        int_fspath = FakePath(fd)
+        str_fspath = FakePath(str_filename)
 
         for name, allow_fd, extra_args, cleanup_fn in self.functions:
             with self.subTest(name=name):
@@ -3526,16 +3641,16 @@ class TestPEP519(unittest.TestCase):
 
     def test_fsencode_fsdecode(self):
         for p in "path/like/object", b"path/like/object":
-            pathlike = _PathLike(p)
+            pathlike = FakePath(p)
 
             self.assertEqual(p, self.fspath(pathlike))
             self.assertEqual(b"path/like/object", os.fsencode(pathlike))
             self.assertEqual("path/like/object", os.fsdecode(pathlike))
 
     def test_pathlike(self):
-        self.assertEqual('#feelthegil', self.fspath(_PathLike('#feelthegil')))
-        self.assertTrue(issubclass(_PathLike, os.PathLike))
-        self.assertTrue(isinstance(_PathLike(), os.PathLike))
+        self.assertEqual('#feelthegil', self.fspath(FakePath('#feelthegil')))
+        self.assertTrue(issubclass(FakePath, os.PathLike))
+        self.assertTrue(isinstance(FakePath('x'), os.PathLike))
 
     def test_garbage_in_exception_out(self):
         vapor = type('blah', (), {})
@@ -3547,14 +3662,14 @@ class TestPEP519(unittest.TestCase):
 
     def test_bad_pathlike(self):
         # __fspath__ returns a value other than str or bytes.
-        self.assertRaises(TypeError, self.fspath, _PathLike(42))
+        self.assertRaises(TypeError, self.fspath, FakePath(42))
         # __fspath__ attribute that is not callable.
         c = type('foo', (), {})
         c.__fspath__ = 1
         self.assertRaises(TypeError, self.fspath, c())
         # __fspath__ raises an exception.
         self.assertRaises(ZeroDivisionError, self.fspath,
-                          _PathLike(ZeroDivisionError()))
+                          FakePath(ZeroDivisionError()))
 
 
 class TimesTests(unittest.TestCase):

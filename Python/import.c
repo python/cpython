@@ -1,10 +1,10 @@
-
 /* Module definition and import implementation */
 
 #include "Python.h"
 
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
+#include "internal/hash.h"
 #include "internal/pystate.h"
 #include "errcode.h"
 #include "marshal.h"
@@ -30,8 +30,7 @@ static PyObject *extensions = NULL;
 extern struct _inittab _PyImport_Inittab[];
 
 struct _inittab *PyImport_Inittab = _PyImport_Inittab;
-
-static PyObject *initstr = NULL;
+static struct _inittab *inittab_copy = NULL;
 
 /*[clinic input]
 module _imp
@@ -43,14 +42,8 @@ module _imp
 /* Initialize things */
 
 _PyInitError
-_PyImport_Init(void)
+_PyImport_Init(PyInterpreterState *interp)
 {
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
-    initstr = PyUnicode_InternFromString("__init__");
-    if (initstr == NULL) {
-        return _Py_INIT_ERR("Can't initialize import variables");
-    }
-
     interp->builtins_copy = PyDict_Copy(interp->builtins);
     if (interp->builtins_copy == NULL) {
         return _Py_INIT_ERR("Can't backup builtins dict");
@@ -98,7 +91,7 @@ _PyImportHooks_Init(void)
 _PyInitError
 _PyImportZip_Init(void)
 {
-    PyObject *path_hooks, *zimpimport;
+    PyObject *path_hooks, *zipimport;
     int err = 0;
 
     path_hooks = PySys_GetObject("path_hooks");
@@ -110,17 +103,17 @@ _PyImportZip_Init(void)
     if (Py_VerboseFlag)
         PySys_WriteStderr("# installing zipimport hook\n");
 
-    zimpimport = PyImport_ImportModule("zipimport");
-    if (zimpimport == NULL) {
+    zipimport = PyImport_ImportModule("zipimport");
+    if (zipimport == NULL) {
         PyErr_Clear(); /* No zip import module -- okay */
         if (Py_VerboseFlag)
             PySys_WriteStderr("# can't import zipimport\n");
     }
     else {
         _Py_IDENTIFIER(zipimporter);
-        PyObject *zipimporter = _PyObject_GetAttrId(zimpimport,
+        PyObject *zipimporter = _PyObject_GetAttrId(zipimport,
                                                     &PyId_zipimporter);
-        Py_DECREF(zimpimport);
+        Py_DECREF(zipimport);
         if (zipimporter == NULL) {
             PyErr_Clear(); /* No zipimporter object -- okay */
             if (Py_VerboseFlag)
@@ -293,12 +286,25 @@ _PyImport_Fini(void)
     }
 }
 
+void
+_PyImport_Fini2(void)
+{
+    /* Use the same memory allocator than PyImport_ExtendInittab(). */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    /* Free memory allocated by PyImport_ExtendInittab() */
+    PyMem_RawFree(inittab_copy);
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+}
+
 /* Helper for sys */
 
 PyObject *
 PyImport_GetModuleDict(void)
 {
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     if (interp->modules == NULL) {
         Py_FatalError("PyImport_GetModuleDict: no module dictionary!");
     }
@@ -357,7 +363,7 @@ PyImport_GetModule(PyObject *name)
     }
     else {
         m = PyObject_GetItem(modules, name);
-        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+        if (m == NULL && PyErr_ExceptionMatches(PyExc_KeyError)) {
             PyErr_Clear();
         }
     }
@@ -391,7 +397,7 @@ PyImport_Cleanup(void)
 {
     Py_ssize_t pos;
     PyObject *key, *value, *dict;
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     PyObject *modules = PyImport_GetModuleDict();
     PyObject *weaklist = NULL;
     const char * const *p;
@@ -409,12 +415,16 @@ PyImport_Cleanup(void)
 
     if (Py_VerboseFlag)
         PySys_WriteStderr("# clear builtins._\n");
-    PyDict_SetItemString(interp->builtins, "_", Py_None);
+    if (PyDict_SetItemString(interp->builtins, "_", Py_None) < 0) {
+        PyErr_WriteUnraisable(NULL);
+    }
 
     for (p = sys_deletes; *p != NULL; p++) {
         if (Py_VerboseFlag)
             PySys_WriteStderr("# clear sys.%s\n", *p);
-        PyDict_SetItemString(interp->sysdict, *p, Py_None);
+        if (PyDict_SetItemString(interp->sysdict, *p, Py_None) < 0) {
+            PyErr_WriteUnraisable(NULL);
+        }
     }
     for (p = sys_files; *p != NULL; p+=2) {
         if (Py_VerboseFlag)
@@ -422,7 +432,9 @@ PyImport_Cleanup(void)
         value = PyDict_GetItemString(interp->sysdict, *(p+1));
         if (value == NULL)
             value = Py_None;
-        PyDict_SetItemString(interp->sysdict, *p, value);
+        if (PyDict_SetItemString(interp->sysdict, *p, value) < 0) {
+            PyErr_WriteUnraisable(NULL);
+        }
     }
 
     /* We prepare a list which will receive (name, weakref) tuples of
@@ -430,27 +442,33 @@ PyImport_Cleanup(void)
        for diagnosis messages (in verbose mode), while the weakref helps
        detect those modules which have been held alive. */
     weaklist = PyList_New(0);
-    if (weaklist == NULL)
-        PyErr_Clear();
+    if (weaklist == NULL) {
+        PyErr_WriteUnraisable(NULL);
+    }
 
 #define STORE_MODULE_WEAKREF(name, mod) \
     if (weaklist != NULL) { \
         PyObject *wr = PyWeakref_NewRef(mod, NULL); \
-        if (name && wr) { \
+        if (wr) { \
             PyObject *tup = PyTuple_Pack(2, name, wr); \
-            PyList_Append(weaklist, tup); \
+            if (!tup || PyList_Append(weaklist, tup) < 0) { \
+                PyErr_WriteUnraisable(NULL); \
+            } \
             Py_XDECREF(tup); \
+            Py_DECREF(wr); \
         } \
-        Py_XDECREF(wr); \
-        if (PyErr_Occurred()) \
-            PyErr_Clear(); \
+        else { \
+            PyErr_WriteUnraisable(NULL); \
+        } \
     }
 #define CLEAR_MODULE(name, mod) \
     if (PyModule_Check(mod)) { \
         if (Py_VerboseFlag && PyUnicode_Check(name)) \
             PySys_FormatStderr("# cleanup[2] removing %U\n", name); \
         STORE_MODULE_WEAKREF(name, mod); \
-        PyObject_SetItem(modules, name, Py_None); \
+        if (PyObject_SetItem(modules, name, Py_None) < 0) { \
+            PyErr_WriteUnraisable(NULL); \
+        } \
     }
 
     /* Remove all modules from sys.modules, hoping that garbage collection
@@ -464,18 +482,21 @@ PyImport_Cleanup(void)
     else {
         PyObject *iterator = PyObject_GetIter(modules);
         if (iterator == NULL) {
-            PyErr_Clear();
+            PyErr_WriteUnraisable(NULL);
         }
         else {
             while ((key = PyIter_Next(iterator))) {
                 value = PyObject_GetItem(modules, key);
                 if (value == NULL) {
-                    PyErr_Clear();
+                    PyErr_WriteUnraisable(NULL);
                     continue;
                 }
                 CLEAR_MODULE(key, value);
                 Py_DECREF(value);
                 Py_DECREF(key);
+            }
+            if (PyErr_Occurred()) {
+                PyErr_WriteUnraisable(NULL);
             }
             Py_DECREF(iterator);
         }
@@ -487,17 +508,20 @@ PyImport_Cleanup(void)
     }
     else {
         _Py_IDENTIFIER(clear);
-        if (_PyObject_CallMethodId(modules, &PyId_clear, "") == NULL)
-            PyErr_Clear();
+        if (_PyObject_CallMethodId(modules, &PyId_clear, "") == NULL) {
+            PyErr_WriteUnraisable(NULL);
+        }
     }
     /* Restore the original builtins dict, to ensure that any
        user data gets cleared. */
     dict = PyDict_Copy(interp->builtins);
-    if (dict == NULL)
-        PyErr_Clear();
+    if (dict == NULL) {
+        PyErr_WriteUnraisable(NULL);
+    }
     PyDict_Clear(interp->builtins);
-    if (PyDict_Update(interp->builtins, interp->builtins_copy))
+    if (PyDict_Update(interp->builtins, interp->builtins_copy)) {
         PyErr_Clear();
+    }
     Py_XDECREF(dict);
     /* Clear module dict copies stored in the interpreter state */
     _PyState_ClearModules();
@@ -557,6 +581,7 @@ PyImport_Cleanup(void)
     /* Once more */
     _PyGC_CollectNoFail();
 
+#undef CLEAR_MODULE
 #undef STORE_MODULE_WEAKREF
 }
 
@@ -567,7 +592,7 @@ long
 PyImport_GetMagicNumber(void)
 {
     long res;
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     PyObject *external, *pyc_magic;
 
     external = PyObject_GetAttrString(interp->importlib, "_bootstrap_external");
@@ -867,7 +892,7 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
             goto error;
     }
     else if (cpathobj != NULL) {
-        PyInterpreterState *interp = PyThreadState_GET()->interp;
+        PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
         _Py_IDENTIFIER(_get_sourcefile);
 
         if (interp == NULL) {
@@ -947,7 +972,7 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
                               PyObject *cpathname)
 {
     PyObject *d, *external, *res;
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     _Py_IDENTIFIER(_fix_up_module);
 
     d = module_dict_for_exec(name);
@@ -1113,7 +1138,7 @@ get_path_importer(PyObject *path_importer_cache, PyObject *path_hooks,
     return importer;
 }
 
-PyAPI_FUNC(PyObject *)
+PyObject *
 PyImport_GetImporter(PyObject *path) {
     PyObject *importer=NULL, *path_importer_cache=NULL, *path_hooks=NULL;
 
@@ -1589,18 +1614,73 @@ resolve_name(PyObject *name, PyObject *globals, int level)
     return NULL;
 }
 
+static PyObject *
+import_find_and_load(PyObject *abs_name)
+{
+    _Py_IDENTIFIER(_find_and_load);
+    PyObject *mod = NULL;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    int import_time = interp->core_config.import_time;
+    static int import_level;
+    static _PyTime_t accumulated;
+
+    _PyTime_t t1 = 0, accumulated_copy = accumulated;
+
+    /* XOptions is initialized after first some imports.
+     * So we can't have negative cache before completed initialization.
+     * Anyway, importlib._find_and_load is much slower than
+     * _PyDict_GetItemIdWithError().
+     */
+    if (import_time) {
+        static int header = 1;
+        if (header) {
+            fputs("import time: self [us] | cumulative | imported package\n",
+                  stderr);
+            header = 0;
+        }
+
+        import_level++;
+        t1 = _PyTime_GetPerfCounter();
+        accumulated = 0;
+    }
+
+    if (PyDTrace_IMPORT_FIND_LOAD_START_ENABLED())
+        PyDTrace_IMPORT_FIND_LOAD_START(PyUnicode_AsUTF8(abs_name));
+
+    mod = _PyObject_CallMethodIdObjArgs(interp->importlib,
+                                        &PyId__find_and_load, abs_name,
+                                        interp->import_func, NULL);
+
+    if (PyDTrace_IMPORT_FIND_LOAD_DONE_ENABLED())
+        PyDTrace_IMPORT_FIND_LOAD_DONE(PyUnicode_AsUTF8(abs_name),
+                                       mod != NULL);
+
+    if (import_time) {
+        _PyTime_t cum = _PyTime_GetPerfCounter() - t1;
+
+        import_level--;
+        fprintf(stderr, "import time: %9ld | %10ld | %*s%s\n",
+                (long)_PyTime_AsMicroseconds(cum - accumulated, _PyTime_ROUND_CEILING),
+                (long)_PyTime_AsMicroseconds(cum, _PyTime_ROUND_CEILING),
+                import_level*2, "", PyUnicode_AsUTF8(abs_name));
+
+        accumulated = accumulated_copy + cum;
+    }
+
+    return mod;
+}
+
 PyObject *
 PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                                  PyObject *locals, PyObject *fromlist,
                                  int level)
 {
-    _Py_IDENTIFIER(_find_and_load);
     _Py_IDENTIFIER(_handle_fromlist);
     PyObject *abs_name = NULL;
     PyObject *final_mod = NULL;
     PyObject *mod = NULL;
     PyObject *package = NULL;
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     int has_from;
 
     if (name == NULL) {
@@ -1674,55 +1754,8 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
-        int import_time = interp->core_config.import_time;
-        static int import_level;
-        static _PyTime_t accumulated;
-
-        _PyTime_t t1 = 0, accumulated_copy = accumulated;
-
-        /* XOptions is initialized after first some imports.
-         * So we can't have negative cache before completed initialization.
-         * Anyway, importlib._find_and_load is much slower than
-         * _PyDict_GetItemIdWithError().
-         */
-        if (import_time) {
-            static int header = 1;
-            if (header) {
-                fputs("import time: self [us] | cumulative | imported package\n",
-                      stderr);
-                header = 0;
-            }
-
-            import_level++;
-            t1 = _PyTime_GetPerfCounter();
-            accumulated = 0;
-        }
-
         Py_XDECREF(mod);
-
-        if (PyDTrace_IMPORT_FIND_LOAD_START_ENABLED())
-            PyDTrace_IMPORT_FIND_LOAD_START(PyUnicode_AsUTF8(abs_name));
-
-        mod = _PyObject_CallMethodIdObjArgs(interp->importlib,
-                                            &PyId__find_and_load, abs_name,
-                                            interp->import_func, NULL);
-
-        if (PyDTrace_IMPORT_FIND_LOAD_DONE_ENABLED())
-            PyDTrace_IMPORT_FIND_LOAD_DONE(PyUnicode_AsUTF8(abs_name),
-                                           mod != NULL);
-
-        if (import_time) {
-            _PyTime_t cum = _PyTime_GetPerfCounter() - t1;
-
-            import_level--;
-            fprintf(stderr, "import time: %9ld | %10ld | %*s%s\n",
-                    (long)_PyTime_AsMicroseconds(cum - accumulated, _PyTime_ROUND_CEILING),
-                    (long)_PyTime_AsMicroseconds(cum, _PyTime_ROUND_CEILING),
-                    import_level*2, "", PyUnicode_AsUTF8(abs_name));
-
-            accumulated = accumulated_copy + cum;
-        }
-
+        mod = import_find_and_load(abs_name);
         if (mod == NULL) {
             goto error;
         }
@@ -1785,10 +1818,21 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
-        final_mod = _PyObject_CallMethodIdObjArgs(interp->importlib,
-                                                  &PyId__handle_fromlist, mod,
-                                                  fromlist, interp->import_func,
-                                                  NULL);
+        _Py_IDENTIFIER(__path__);
+        PyObject *path;
+        if (_PyObject_LookupAttrId(mod, &PyId___path__, &path) < 0) {
+            goto error;
+        }
+        if (path) {
+            Py_DECREF(path);
+            final_mod = _PyObject_CallMethodIdObjArgs(
+                        interp->importlib, &PyId__handle_fromlist,
+                        mod, fromlist, interp->import_func, NULL);
+        }
+        else {
+            final_mod = mod;
+            Py_INCREF(mod);
+        }
     }
 
   error:
@@ -2170,6 +2214,34 @@ _imp_exec_builtin_impl(PyObject *module, PyObject *mod)
     return exec_builtin_or_dynamic(mod);
 }
 
+/*[clinic input]
+_imp.source_hash
+
+    key: long
+    source: Py_buffer
+[clinic start generated code]*/
+
+static PyObject *
+_imp_source_hash_impl(PyObject *module, long key, Py_buffer *source)
+/*[clinic end generated code: output=edb292448cf399ea input=9aaad1e590089789]*/
+{
+    union {
+        uint64_t x;
+        char data[sizeof(uint64_t)];
+    } hash;
+    hash.x = _Py_KeyedHash((uint64_t)key, source->buf, source->len);
+#if !PY_LITTLE_ENDIAN
+    // Force to little-endian. There really ought to be a succinct standard way
+    // to do this.
+    for (size_t i = 0; i < sizeof(hash.data)/2; i++) {
+        char tmp = hash.data[i];
+        hash.data[i] = hash.data[sizeof(hash.data) - i - 1];
+        hash.data[sizeof(hash.data) - i - 1] = tmp;
+    }
+#endif
+    return PyBytes_FromStringAndSize(hash.data, sizeof(hash.data));
+}
+
 
 PyDoc_STRVAR(doc_imp,
 "(Extremely) low-level import machinery bits as used by importlib and imp.");
@@ -2189,6 +2261,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_EXEC_DYNAMIC_METHODDEF
     _IMP_EXEC_BUILTIN_METHODDEF
     _IMP__FIX_CO_FILENAME_METHODDEF
+    _IMP_SOURCE_HASH_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 
@@ -2206,7 +2279,7 @@ static struct PyModuleDef impmodule = {
 };
 
 PyMODINIT_FUNC
-PyInit_imp(void)
+PyInit__imp(void)
 {
     PyObject *m, *d;
 
@@ -2216,6 +2289,16 @@ PyInit_imp(void)
     d = PyModule_GetDict(m);
     if (d == NULL)
         goto failure;
+    _PyCoreConfig *config = &_PyInterpreterState_Get()->core_config;
+    PyObject *pyc_mode = PyUnicode_FromString(config->_check_hash_pycs_mode);
+    if (pyc_mode == NULL) {
+        goto failure;
+    }
+    if (PyDict_SetItemString(d, "check_hash_based_pycs", pyc_mode) < 0) {
+        Py_DECREF(pyc_mode);
+        goto failure;
+    }
+    Py_DECREF(pyc_mode);
 
     return m;
   failure:
@@ -2234,9 +2317,9 @@ PyInit_imp(void)
 int
 PyImport_ExtendInittab(struct _inittab *newtab)
 {
-    static struct _inittab *our_copy = NULL;
     struct _inittab *p;
-    int i, n;
+    size_t i, n;
+    int res = 0;
 
     /* Count the number of entries in both tables */
     for (n = 0; newtab[n].name != NULL; n++)
@@ -2246,19 +2329,33 @@ PyImport_ExtendInittab(struct _inittab *newtab)
     for (i = 0; PyImport_Inittab[i].name != NULL; i++)
         ;
 
+    /* Force default raw memory allocator to get a known allocator to be able
+       to release the memory in _PyImport_Fini2() */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
     /* Allocate new memory for the combined table */
-    p = our_copy;
-    PyMem_RESIZE(p, struct _inittab, i+n+1);
-    if (p == NULL)
-        return -1;
+    p = NULL;
+    if (i + n <= SIZE_MAX / sizeof(struct _inittab) - 1) {
+        size_t size = sizeof(struct _inittab) * (i + n + 1);
+        p = PyMem_RawRealloc(inittab_copy, size);
+    }
+    if (p == NULL) {
+        res = -1;
+        goto done;
+    }
 
-    /* Copy the tables into the new memory */
-    if (our_copy != PyImport_Inittab)
+    /* Copy the tables into the new memory at the first call
+       to PyImport_ExtendInittab(). */
+    if (inittab_copy != PyImport_Inittab) {
         memcpy(p, PyImport_Inittab, (i+1) * sizeof(struct _inittab));
-    PyImport_Inittab = our_copy = p;
-    memcpy(p+i, newtab, (n+1) * sizeof(struct _inittab));
+    }
+    memcpy(p + i, newtab, (n + 1) * sizeof(struct _inittab));
+    PyImport_Inittab = inittab_copy = p;
 
-    return 0;
+done:
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    return res;
 }
 
 /* Shorthand to add a single entry given a name and a function */

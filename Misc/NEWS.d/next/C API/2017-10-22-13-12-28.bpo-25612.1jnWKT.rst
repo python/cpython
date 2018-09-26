@@ -1,3 +1,0 @@
-Move the current exception state from the frame object to the co-routine.
-This simplifies the interpreter and fixes a couple of obscure bugs caused by
-having swap exception state when entering or exiting a generator.

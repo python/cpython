@@ -525,8 +525,10 @@ extern "C" {
  * Usage:
  *    int _Py_NO_INLINE x(void) { return 3; }
  */
-#if defined(__GNUC__) || defined(__clang__)
-#  define _Py_NO_INLINE __attribute__((noinline))
+#if defined(_MSC_VER)
+#  define _Py_NO_INLINE __declspec(noinline)
+#elif defined(__GNUC__) || defined(__clang__)
+#  define _Py_NO_INLINE __attribute__ ((noinline))
 #else
 #  define _Py_NO_INLINE
 #endif
@@ -564,18 +566,8 @@ extern char * _getpty(int *, int, mode_t, int);
  * workaround was provided by Tim Robbins of FreeBSD project.
  */
 
-#ifdef __FreeBSD__
-#include <osreldate.h>
-#if (__FreeBSD_version >= 500040 && __FreeBSD_version < 602113) || \
-    (__FreeBSD_version >= 700000 && __FreeBSD_version < 700054) || \
-    (__FreeBSD_version >= 800000 && __FreeBSD_version < 800001)
-# define _PY_PORT_CTYPE_UTF8_ISSUE
-#endif
-#endif
-
-
 #if defined(__APPLE__)
-# define _PY_PORT_CTYPE_UTF8_ISSUE
+#  define _PY_PORT_CTYPE_UTF8_ISSUE
 #endif
 
 #ifdef _PY_PORT_CTYPE_UTF8_ISSUE

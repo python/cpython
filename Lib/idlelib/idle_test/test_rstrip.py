@@ -1,5 +1,7 @@
+"Test rstrip, coverage 100%."
+
+from idlelib import rstrip
 import unittest
-import idlelib.rstrip as rs
 from idlelib.idle_test.mock_idle import Editor
 
 class rstripTest(unittest.TestCase):
@@ -7,7 +9,7 @@ class rstripTest(unittest.TestCase):
     def test_rstrip_line(self):
         editor = Editor()
         text = editor.text
-        do_rstrip = rs.RstripExtension(editor).do_rstrip
+        do_rstrip = rstrip.Rstrip(editor).do_rstrip
 
         do_rstrip()
         self.assertEqual(text.get('1.0', 'insert'), '')
@@ -20,12 +22,12 @@ class rstripTest(unittest.TestCase):
 
     def test_rstrip_multiple(self):
         editor = Editor()
-        #  Uncomment following to verify that test passes with real widgets.
-##        from idlelib.editor import EditorWindow as Editor
-##        from tkinter import Tk
-##        editor = Editor(root=Tk())
+        #  Comment above, uncomment 3 below to test with real Editor & Text.
+        #from idlelib.editor import EditorWindow as Editor
+        #from tkinter import Tk
+        #editor = Editor(root=Tk())
         text = editor.text
-        do_rstrip = rs.RstripExtension(editor).do_rstrip
+        do_rstrip = rstrip.Rstrip(editor).do_rstrip
 
         original = (
             "Line with an ending tab    \n"
@@ -45,5 +47,7 @@ class rstripTest(unittest.TestCase):
         do_rstrip()
         self.assertEqual(text.get('1.0', 'insert'), stripped)
 
+
+
 if __name__ == '__main__':
-    unittest.main(verbosity=2, exit=False)
+    unittest.main(verbosity=2)
