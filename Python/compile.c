@@ -1396,43 +1396,6 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
     } \
 }
 
-static int
-is_const(expr_ty e)
-{
-    switch (e->kind) {
-    case Constant_kind:
-    case Num_kind:
-    case Str_kind:
-    case Bytes_kind:
-    case Ellipsis_kind:
-    case NameConstant_kind:
-        return 1;
-    default:
-        return 0;
-    }
-}
-
-static PyObject *
-get_const_value(expr_ty e)
-{
-    switch (e->kind) {
-    case Constant_kind:
-        return e->v.Constant.value;
-    case Num_kind:
-        return e->v.Num.n;
-    case Str_kind:
-        return e->v.Str.s;
-    case Bytes_kind:
-        return e->v.Bytes.s;
-    case Ellipsis_kind:
-        return Py_Ellipsis;
-    case NameConstant_kind:
-        return e->v.NameConstant.value;
-    default:
-        Py_UNREACHABLE();
-    }
-}
-
 /* Search if variable annotations are present statically in a block. */
 
 static int
@@ -2569,7 +2532,7 @@ static int
 compiler_return(struct compiler *c, stmt_ty s)
 {
     int preserve_tos = ((s->v.Return.value != NULL) &&
-                        !is_const(s->v.Return.value));
+                        (s->v.Return.value->kind != Constant_kind));
     if (c->u->u_ste->ste_type != FunctionBlock)
         return compiler_error(c, "'return' outside function");
     if (s->v.Return.value != NULL &&
@@ -3055,7 +3018,7 @@ compiler_visit_stmt_expr(struct compiler *c, expr_ty value)
         return 1;
     }
 
-    if (is_const(value)) {
+    if (value->kind == Constant_kind) {
         /* ignore constant statement */
         return 1;
     }
@@ -3503,7 +3466,7 @@ are_all_items_const(asdl_seq *seq, Py_ssize_t begin, Py_ssize_t end)
     Py_ssize_t i;
     for (i = begin; i < end; i++) {
         expr_ty key = (expr_ty)asdl_seq_GET(seq, i);
-        if (key == NULL || !is_const(key))
+        if (key == NULL || key->kind != Constant_kind)
             return 0;
     }
     return 1;
@@ -3523,7 +3486,7 @@ compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end
             return 0;
         }
         for (i = begin; i < end; i++) {
-            key = get_const_value((expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
+            key = ((expr_ty)asdl_seq_GET(e->v.Dict.keys, i))->v.Constant.value;
             Py_INCREF(key);
             PyTuple_SET_ITEM(keys, i - begin, key);
         }
@@ -4245,8 +4208,8 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
 static int
 expr_constant(expr_ty e)
 {
-    if (is_const(e)) {
-        return PyObject_IsTrue(get_const_value(e));
+    if (e->kind == Constant_kind) {
+        return PyObject_IsTrue(e->v.Constant.value);
     }
     return -1;
 }
@@ -4522,25 +4485,10 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case Constant_kind:
         ADDOP_LOAD_CONST(c, e->v.Constant.value);
         break;
-    case Num_kind:
-        ADDOP_LOAD_CONST(c, e->v.Num.n);
-        break;
-    case Str_kind:
-        ADDOP_LOAD_CONST(c, e->v.Str.s);
-        break;
     case JoinedStr_kind:
         return compiler_joined_str(c, e);
     case FormattedValue_kind:
         return compiler_formatted_value(c, e);
-    case Bytes_kind:
-        ADDOP_LOAD_CONST(c, e->v.Bytes.s);
-        break;
-    case Ellipsis_kind:
-        ADDOP_LOAD_CONST(c, Py_Ellipsis);
-        break;
-    case NameConstant_kind:
-        ADDOP_LOAD_CONST(c, e->v.NameConstant.value);
-        break;
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
         if (e->v.Attribute.ctx != AugStore)
