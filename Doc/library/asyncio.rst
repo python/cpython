@@ -1,66 +1,78 @@
-:mod:`asyncio` --- Asynchronous I/O, event loop, coroutines and tasks
-=====================================================================
+:mod:`asyncio` --- Asynchronous I/O
+===================================
 
 .. module:: asyncio
-   :synopsis: Asynchronous I/O, event loop, coroutines and tasks.
-
-.. versionadded:: 3.4
-
-**Source code:** :source:`Lib/asyncio/`
+   :synopsis: Asynchronous I/O.
 
 --------------
 
-This module provides infrastructure for writing single-threaded concurrent
-code using coroutines, multiplexing I/O access over sockets and other
-resources, running network clients and servers, and other related primitives.
-Here is a more detailed list of the package contents:
+asyncio is a library to write **concurrent** code using
+**async/await** syntax.
 
-* a pluggable :ref:`event loop <asyncio-event-loop>` with various system-specific
-  implementations;
+asyncio is used as a foundation for multiple Python asynchronous
+frameworks that provide high-performance network and web-servers,
+database connection libraries, distributed task queues, etc.
 
-* :ref:`transport <asyncio-transport>` and :ref:`protocol <asyncio-protocol>` abstractions
-  (similar to those in `Twisted <https://twistedmatrix.com/trac/>`_);
+asyncio is often a perfect fit for IO-bound and high-level
+**structured** network code.
 
-* concrete support for TCP, UDP, SSL, subprocess pipes, delayed calls, and
-  others (some may be system-dependent);
+asyncio provides a set of **high-level** APIs to:
 
-* a :class:`Future` class that mimics the one in the :mod:`concurrent.futures`
-  module, but adapted for use with the event loop;
+* :ref:`run Python coroutines <coroutine>` concurrently and
+  have full control over their execution;
 
-* coroutines and tasks based on ``yield from`` (:PEP:`380`), to help write
-  concurrent code in a sequential fashion;
+* perform :ref:`network IO and IPC <asyncio-streams>`;
 
-* cancellation support for :class:`Future`\s and coroutines;
+* control :ref:`subprocesses <asyncio-subprocess>`;
 
-* :ref:`synchronization primitives <asyncio-sync>` for use between coroutines in
-  a single thread, mimicking those in the :mod:`threading` module;
+* distribute tasks via :ref:`queues <asyncio-queues>`;
 
-* an interface for passing work off to a threadpool, for times when
-  you absolutely, positively have to use a library that makes blocking
-  I/O calls.
+* :ref:`synchronize <asyncio-sync>` concurrent code;
 
-Asynchronous programming is more complex than classical "sequential"
-programming: see the :ref:`Develop with asyncio <asyncio-dev>` page which lists
-common traps and explains how to avoid them. :ref:`Enable the debug mode
-<asyncio-debug-mode>` during development to detect common issues.
+as well as **low-level** APIs for *library and framework developers* to:
 
-Table of contents:
+* create and manage :ref:`event loops <asyncio-event-loop>`, which
+  provide asynchronous APIs for :meth:`networking <loop.create_server>`,
+  running :meth:`subprocesses <loop.subprocess_exec>`,
+  handling :meth:`OS signals <loop.add_signal_handler>`, etc;
+
+* implement efficient protocols using
+  :ref:`transports <asyncio-transports-protocols>`;
+
+* :ref:`bridge <asyncio-futures>` callback-based libraries and code
+  with async/await syntax.
+
+
+Reference
+---------
+
+.. rubric:: High-level APIs
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
+
+   asyncio-task.rst
+   asyncio-stream.rst
+   asyncio-sync.rst
+   asyncio-subprocess.rst
+   asyncio-queue.rst
+   asyncio-exceptions.rst
+
+.. rubric:: Low-level APIs
+
+.. toctree::
+   :maxdepth: 1
 
    asyncio-eventloop.rst
-   asyncio-eventloops.rst
-   asyncio-task.rst
+   asyncio-future.rst
    asyncio-protocol.rst
-   asyncio-stream.rst
-   asyncio-subprocess.rst
-   asyncio-sync.rst
-   asyncio-queue.rst
+   asyncio-policy.rst
+   asyncio-platforms.rst
+
+.. rubric:: Guides and Tutorials
+
+.. toctree::
+   :maxdepth: 1
+
+   asyncio-api-index.rst
    asyncio-dev.rst
-
-.. seealso::
-
-   The :mod:`asyncio` module was designed in :PEP:`3156`. For a
-   motivational primer on transports and protocols, see :PEP:`3153`.
-

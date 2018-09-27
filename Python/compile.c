@@ -5567,7 +5567,7 @@ assemble(struct compiler *c, int addNone)
 }
 
 #undef PyAST_Compile
-PyAPI_FUNC(PyCodeObject *)
+PyCodeObject *
 PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
               PyArena *arena)
 {

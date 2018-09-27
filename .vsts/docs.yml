@@ -4,7 +4,7 @@
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 
 queue:
-  name: Hosted Linux Preview
+  name: 'Hosted Ubuntu 1604'
 
 trigger:
   branches:
@@ -23,21 +23,35 @@ steps:
   clean: true
   fetchDepth: 5
 
+- script: |
+   git fetch -q origin $(system.pullRequest.targetBranch)
+   if ! git diff --name-only HEAD $(git merge-base HEAD FETCH_HEAD) | grep -qE '(\.rst$|^Doc|^Misc)'
+   then
+     echo "No docs were updated, stopping build process."
+     echo "##vso[task.setvariable variable=NoDocs]true"
+     exit
+   fi
+  displayName: Detect doc-only changes
+  condition: and(succeeded(), variables['system.pullRequest.targetBranch'])
+
 - task: UsePythonVersion@0
   displayName: 'Use Python 3.6 or later'
   inputs:
     versionSpec: '>=3.6'
+  condition: and(succeeded(), ne(variables['NoDocs'], 'true'))
 
 - script: python -m pip install sphinx~=1.6.1 blurb python-docs-theme
   displayName: 'Install build dependencies'
+  condition: and(succeeded(), ne(variables['NoDocs'], 'true'))
 
 - script: make check suspicious html PYTHON=python
   workingDirectory: '$(build.sourcesDirectory)/Doc'
   displayName: 'Build documentation'
+  condition: and(succeeded(), ne(variables['NoDocs'], 'true'))
 
 - task: PublishBuildArtifacts@1
   displayName: 'Publish build'
-  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+  condition: and(and(succeeded(), ne(variables['Build.Reason'], 'PullRequest')), ne(variables['NoDocs'], 'true'))
   inputs:
     PathToPublish: '$(build.sourcesDirectory)/Doc/build'
     ArtifactName: build

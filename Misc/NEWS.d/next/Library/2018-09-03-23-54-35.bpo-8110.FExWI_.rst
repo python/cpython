@@ -1,0 +1,2 @@
+Refactored :mod:`subprocess` to check for Windows-specific modules rather
+than ``sys.platform == 'win32'``.
