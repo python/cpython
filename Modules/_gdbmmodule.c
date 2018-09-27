@@ -75,7 +75,7 @@ newdbmobject(const char *file, int flags, int mode)
     errno = 0;
     if ((dp->di_dbm = gdbm_open((char *)file, 0, flags, mode, NULL)) == 0) {
         if (errno != 0)
-            PyErr_SetFromErrno(DbmError);
+            PyErr_SetFromErrnoWithFilename(DbmError, file);
         else
             PyErr_SetString(DbmError, gdbm_strerror(gdbm_errno));
         Py_DECREF(dp);
