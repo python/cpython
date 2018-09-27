@@ -366,7 +366,7 @@ Changes in the Python API
 * :class:`uuid.UUID` now uses ``__slots__``, therefore instances can no longer
   be weak-referenced and attributes can no longer be added.
 
-* :mod:`xml.dom.minidom` and mod:`xml.sax` modules no longer process
+* :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
   external entities by default.
   (Contributed by Christian Heimes in :issue:`17239`.)
 
