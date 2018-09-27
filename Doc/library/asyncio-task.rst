@@ -893,8 +893,7 @@ enforced.
    Return ``True`` if *obj* is a :ref:`coroutine object <coroutine>`.
 
    This method is different from :func:`inspect.iscoroutine` because
-   it returns ``True`` for generator-based coroutines decorated with
-   :func:`@coroutine <coroutine>`.
+   it returns ``True`` for generator-based coroutines.
 
 .. function:: iscoroutinefunction(func)
 
