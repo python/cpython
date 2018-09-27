@@ -2029,11 +2029,11 @@ calls the platform C library's :func:`strftime` function, and platform
 variations are common.  To see the full set of format codes supported on your
 platform, consult the :manpage:`strftime(3)` documentation.
 
-Likewise, handling of format strings containing Unicode code points that can't
-be represented in the charset of the current locale is platform-dependent. On
-some platforms such code points are preserved intact in the output, while on
-others ``strftime`` may raise :exc:`UnicodeError` or return an empty string
-instead.
+For the same reason, handling of format strings containing Unicode code points
+that can't be represented in the charset of the current locale is also
+platform-dependent. On some platforms such code points are preserved intact in
+the output, while on others ``strftime`` may raise :exc:`UnicodeError` or return
+an empty string instead.
 
 The following is a list of all the format codes that the C standard (1989
 version) requires, and these work on all platforms with a standard C
