@@ -307,6 +307,26 @@ def writes_bytecode_files(fxn):
     return wrapper
 
 
+def without_source_date_epoch(fxn):
+    """Runs function with SOURCE_DATE_EPOCH unset."""
+    @functools.wraps(fxn)
+    def wrapper(*args, **kwargs):
+        with support.EnvironmentVarGuard() as env:
+            env.unset('SOURCE_DATE_EPOCH')
+            return fxn(*args, **kwargs)
+    return wrapper
+
+
+def with_source_date_epoch(fxn):
+    """Runs function with SOURCE_DATE_EPOCH set."""
+    @functools.wraps(fxn)
+    def wrapper(*args, **kwargs):
+        with support.EnvironmentVarGuard() as env:
+            env['SOURCE_DATE_EPOCH'] = '123456789'
+            return fxn(*args, **kwargs)
+    return wrapper
+
+
 def ensure_bytecode_path(bytecode_path):
     """Ensure that the __pycache__ directory for PEP 3147 pyc file exists.
 
