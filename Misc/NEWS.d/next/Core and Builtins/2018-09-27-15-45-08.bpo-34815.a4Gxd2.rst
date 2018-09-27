@@ -1,0 +1,1 @@
+Added __str__ behavior to Ellipsis such that ``str(Ellipsis)=="..."``.
