@@ -103,6 +103,10 @@ Other Language Changes
   never intended to permit more than a bare name on the left-hand side of a
   keyword argument assignment term. See :issue:`34641`.
 
+* Iterable unpacking is now allowed without parentheses in :keyword:`yield`
+  and :keyword:`return` statements.
+  (Contributed by David Cuthbert and Jordan Chapman in :issue:`32117`.)
+
 New Modules
 ===========
 
@@ -111,6 +115,73 @@ New Modules
 
 Improved Modules
 ================
+
+asyncio
+-------
+
+On Windows, the default event loop is now :class:`~asyncio.ProactorEventLoop`.
+
+
+idlelib and IDLE
+----------------
+
+Output over N lines (50 by default) is squeezed down to a button.
+N can be changed in the PyShell section of the General page of the
+Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
+right clicking on the output.  Squeezed output can be expanded in place
+by double-clicking the button or into the clipboard or a separate window
+by right-clicking the button.  (Contributed by Tal Einat in :issue:`1529353`.)
+
+The changes above have been backported to 3.7 maintenance releases.
+
+
+os.path
+-------
+
+:mod:`os.path` functions that return a boolean result like
+:func:`~os.path.exists`, :func:`~os.path.lexists`, :func:`~os.path.isdir`,
+:func:`~os.path.isfile`, :func:`~os.path.islink`, and :func:`~os.path.ismount`
+now return ``False`` instead of raising :exc:`ValueError` or its subclasses
+:exc:`UnicodeEncodeError` and :exc:`UnicodeDecodeError` for paths that contain
+characters or bytes unrepresentable at the OS level.
+(Contributed by Serhiy Storchaka in :issue:`33721`.)
+
+pathlib
+-------
+
+:mod:`pathlib.Path` methods that return a boolean result like
+:meth:`~pathlib.Path.exists()`, :meth:`~pathlib.Path.is_dir()`,
+:meth:`~pathlib.Path.is_file()`, :meth:`~pathlib.Path.is_mount()`,
+:meth:`~pathlib.Path.is_symlink()`, :meth:`~pathlib.Path.is_block_device()`,
+:meth:`~pathlib.Path.is_char_device()`, :meth:`~pathlib.Path.is_fifo()`,
+:meth:`~pathlib.Path.is_socket()` now return ``False`` instead of raising
+:exc:`ValueError` or its subclass :exc:`UnicodeEncodeError` for paths that
+contain characters unrepresentable at the OS level.
+(Contributed by Serhiy Storchaka in :issue:`33721`.)
+
+ssl
+---
+
+Added :attr:`SSLContext.post_handshake_auth` to enable and
+:meth:`ssl.SSLSocket.verify_client_post_handshake` to initiate TLS 1.3
+post-handshake authentication.
+(Contributed by Christian Heimes in :issue:`34670`.)
+
+venv
+----
+
+* :mod:`venv` now includes an ``Activate.ps1`` script on all platforms for
+  activating virtual environments under PowerShell Core 6.1.
+  (Contributed by Brett Cannon in :issue:`32718`.)
+
+xml
+---
+
+* As mitigation against DTD and external entity retrieval, the
+  :mod:`xml.dom.minidom` and mod:`xml.sax` modules no longer process
+  external entities by default.
+  (Contributed by Christian Heimes in :issue:`17239`.)
+
 
 Optimizations
 =============
@@ -290,13 +361,16 @@ Changes in the Python API
 * :class:`uuid.UUID` now uses ``__slots__``, therefore instances can no longer
   be weak-referenced and attributes can no longer be added.
 
+* :mod:`xml.dom.minidom` and mod:`xml.sax` modules no longer process
+  external entities by default.
+  (Contributed by Christian Heimes in :issue:`17239`.)
 
 CPython bytecode changes
 ------------------------
 
 * The interpreter loop  has been simplified by moving the logic of unrolling
   the stack of blocks into the compiler.  The compiler emits now explicit
-  instructions for adjusting the stack of values and calling the cleaning
+  instructions for adjusting the stack of values and calling the cleaning-
   up code for :keyword:`break`, :keyword:`continue` and :keyword:`return`.
 
   Removed opcodes :opcode:`BREAK_LOOP`, :opcode:`CONTINUE_LOOP`,

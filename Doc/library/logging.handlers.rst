@@ -973,9 +973,9 @@ possible, while any potentially slow operations (such as sending an email via
       Prepares a record for queuing. The object returned by this
       method is enqueued.
 
-      The base implementation formats the record to merge the message
-      and arguments, and removes unpickleable items from the record
-      in-place.
+      The base implementation formats the record to merge the message,
+      arguments, and exception information, if present.  It also
+      removes unpickleable items from the record in-place.
 
       You might want to override this method if you want to convert
       the record to a dict or JSON string, or send a modified copy
