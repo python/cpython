@@ -230,7 +230,7 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("lukasz.langa.pl")
         eq("call.me(maybe)")
         eq("1 .real")
-        eq("1.0 .real")
+        eq("1.0.real")
         eq("....__class__")
         eq("list[str]")
         eq("dict[str, int]")

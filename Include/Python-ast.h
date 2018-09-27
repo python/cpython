@@ -208,11 +208,10 @@ enum _expr_kind {BoolOp_kind=1, BinOp_kind=2, UnaryOp_kind=3, Lambda_kind=4,
                   IfExp_kind=5, Dict_kind=6, Set_kind=7, ListComp_kind=8,
                   SetComp_kind=9, DictComp_kind=10, GeneratorExp_kind=11,
                   Await_kind=12, Yield_kind=13, YieldFrom_kind=14,
-                  Compare_kind=15, Call_kind=16, Num_kind=17, Str_kind=18,
-                  FormattedValue_kind=19, JoinedStr_kind=20, Bytes_kind=21,
-                  NameConstant_kind=22, Ellipsis_kind=23, Constant_kind=24,
-                  Attribute_kind=25, Subscript_kind=26, Starred_kind=27,
-                  Name_kind=28, List_kind=29, Tuple_kind=30};
+                  Compare_kind=15, Call_kind=16, FormattedValue_kind=17,
+                  JoinedStr_kind=18, Constant_kind=19, Attribute_kind=20,
+                  Subscript_kind=21, Starred_kind=22, Name_kind=23,
+                  List_kind=24, Tuple_kind=25};
 struct _expr {
     enum _expr_kind kind;
     union {
@@ -298,14 +297,6 @@ struct _expr {
         } Call;
 
         struct {
-            object n;
-        } Num;
-
-        struct {
-            string s;
-        } Str;
-
-        struct {
             expr_ty value;
             int conversion;
             expr_ty format_spec;
@@ -314,14 +305,6 @@ struct _expr {
         struct {
             asdl_seq *values;
         } JoinedStr;
-
-        struct {
-            bytes s;
-        } Bytes;
-
-        struct {
-            singleton value;
-        } NameConstant;
 
         struct {
             constant value;
@@ -566,23 +549,12 @@ expr_ty _Py_Compare(expr_ty left, asdl_int_seq * ops, asdl_seq * comparators,
 #define Call(a0, a1, a2, a3, a4, a5) _Py_Call(a0, a1, a2, a3, a4, a5)
 expr_ty _Py_Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, int
                  lineno, int col_offset, PyArena *arena);
-#define Num(a0, a1, a2, a3) _Py_Num(a0, a1, a2, a3)
-expr_ty _Py_Num(object n, int lineno, int col_offset, PyArena *arena);
-#define Str(a0, a1, a2, a3) _Py_Str(a0, a1, a2, a3)
-expr_ty _Py_Str(string s, int lineno, int col_offset, PyArena *arena);
 #define FormattedValue(a0, a1, a2, a3, a4, a5) _Py_FormattedValue(a0, a1, a2, a3, a4, a5)
 expr_ty _Py_FormattedValue(expr_ty value, int conversion, expr_ty format_spec,
                            int lineno, int col_offset, PyArena *arena);
 #define JoinedStr(a0, a1, a2, a3) _Py_JoinedStr(a0, a1, a2, a3)
 expr_ty _Py_JoinedStr(asdl_seq * values, int lineno, int col_offset, PyArena
                       *arena);
-#define Bytes(a0, a1, a2, a3) _Py_Bytes(a0, a1, a2, a3)
-expr_ty _Py_Bytes(bytes s, int lineno, int col_offset, PyArena *arena);
-#define NameConstant(a0, a1, a2, a3) _Py_NameConstant(a0, a1, a2, a3)
-expr_ty _Py_NameConstant(singleton value, int lineno, int col_offset, PyArena
-                         *arena);
-#define Ellipsis(a0, a1, a2) _Py_Ellipsis(a0, a1, a2)
-expr_ty _Py_Ellipsis(int lineno, int col_offset, PyArena *arena);
 #define Constant(a0, a1, a2, a3) _Py_Constant(a0, a1, a2, a3)
 expr_ty _Py_Constant(constant value, int lineno, int col_offset, PyArena
                      *arena);
