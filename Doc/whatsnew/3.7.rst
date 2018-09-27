@@ -2521,5 +2521,5 @@ In 3.7.1 the C API for Context Variables
 :ref:`was updated <contextvarsobjects_pointertype_change>` to use
 :c:type:`PyObject` pointers.  See also :issue:`34762`.
 
-:mod:`xml.dom.minidom` and mod:`xml.sax` modules no longer process
+:mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
 external entities by default. See also :issue:`17239`.
