@@ -329,12 +329,6 @@ class Unparser:
         self.leave()
 
     # expr
-    def _Bytes(self, t):
-        self.write(repr(t.s))
-
-    def _Str(self, tree):
-        self.write(repr(tree.s))
-
     def _JoinedStr(self, t):
         self.write("f")
         string = io.StringIO()
@@ -351,10 +345,6 @@ class Unparser:
         for value in t.values:
             meth = getattr(self, "_fstring_" + type(value).__name__)
             meth(value, write)
-
-    def _fstring_Str(self, t, write):
-        value = t.s.replace("{", "{{").replace("}", "}}")
-        write(value)
 
     def _fstring_Constant(self, t, write):
         assert isinstance(t.value, str)
@@ -384,6 +374,7 @@ class Unparser:
 
     def _write_constant(self, value):
         if isinstance(value, (float, complex)):
+            # Substitute overflowing decimal literal for AST infinities.
             self.write(repr(value).replace("inf", INFSTR))
         else:
             self.write(repr(value))
@@ -398,15 +389,10 @@ class Unparser:
             else:
                 interleave(lambda: self.write(", "), self._write_constant, value)
             self.write(")")
+        elif value is ...:
+            self.write("...")
         else:
             self._write_constant(t.value)
-
-    def _NameConstant(self, t):
-        self.write(repr(t.value))
-
-    def _Num(self, t):
-        # Substitute overflowing decimal literal for AST infinities.
-        self.write(repr(t.n).replace("inf", INFSTR))
 
     def _List(self, t):
         self.write("[")
@@ -539,8 +525,7 @@ class Unparser:
         # Special case: 3.__abs__() is a syntax error, so if t.value
         # is an integer literal then we need to either parenthesize
         # it or add an extra space to get 3 .__abs__().
-        if ((isinstance(t.value, ast.Num) and isinstance(t.value.n, int))
-           or (isinstance(t.value, ast.Constant) and isinstance(t.value.value, int))):
+        if isinstance(t.value, ast.Constant) and isinstance(t.value.value, int):
             self.write(" ")
         self.write(".")
         self.write(t.attr)
