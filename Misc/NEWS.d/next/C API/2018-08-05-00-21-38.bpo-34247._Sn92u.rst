@@ -1,2 +1,0 @@
-Fix Py_Initialize() regression introduced in 3.7.0: read environment
-variables like PYTHONOPTIMIZE.

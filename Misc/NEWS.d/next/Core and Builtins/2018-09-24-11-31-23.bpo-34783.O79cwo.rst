@@ -1,2 +1,0 @@
-Fix a crash with musl libc (on Alpine Linux) when the script filename
-specified on the command line doesn't exist.
