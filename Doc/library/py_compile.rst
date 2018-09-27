@@ -80,7 +80,7 @@ byte-code cache files in the directory containing the source code.
    .. versionchanged:: 3.7.2
       The :envvar:`SOURCE_DATE_EPOCH` environment variable no longer
       overrides the value of the *invalidation_mode* argument, and determines
-      it's default value instead.
+      its default value instead.
 
 
 .. class:: PycInvalidationMode
