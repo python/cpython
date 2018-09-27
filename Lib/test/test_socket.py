@@ -3183,10 +3183,11 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     def testFDPassSeparateMinSpace(self):
         # Pass two FDs in two separate arrays, receiving them into the
         # minimum space for two arrays.
-        self.checkRecvmsgFDs(2,
+        num_fds = 2
+        self.checkRecvmsgFDs(num_fds,
                              self.doRecvmsg(self.serv_sock, len(MSG),
                                             socket.CMSG_SPACE(SIZEOF_INT) +
-                                            socket.CMSG_LEN(SIZEOF_INT)),
+                                            socket.CMSG_LEN(SIZEOF_INT * num_fds)),
                              maxcmsgs=2, ignoreflags=socket.MSG_CTRUNC)
 
     @testFDPassSeparateMinSpace.client_skip
