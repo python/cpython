@@ -1,0 +1,2 @@
+Fixed :meth:`Executor.map` and :func:`as_completed` timeouts being able to
+deviate.
