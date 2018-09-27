@@ -30,6 +30,12 @@ ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 }
 
 static PyObject *
+ellipsis_str(PyObject *op)
+{
+    return PyUnicode_FromString("...");
+}
+
+static PyObject *
 ellipsis_repr(PyObject *op)
 {
     return PyUnicode_FromString("Ellipsis");
@@ -62,7 +68,7 @@ PyTypeObject PyEllipsis_Type = {
     0,                                  /* tp_as_mapping */
     0,                                  /* tp_hash */
     0,                                  /* tp_call */
-    0,                                  /* tp_str */
+    ellipsis_str,                       /* tp_str */
     PyObject_GenericGetAttr,            /* tp_getattro */
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
