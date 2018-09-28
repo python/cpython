@@ -2812,7 +2812,7 @@ else:
                 ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_TLSv1_2
             )
             with ThreadedEchoServer(context=context) as server:
-                with context.wrap_socket(socket.socket()) as s:
+                with closing(context.wrap_socket(socket.socket())) as s:
                     s.connect((HOST, server.port))
                     self.assertIn(s.cipher()[0], [
                         'TLS13-AES-256-GCM-SHA384',
