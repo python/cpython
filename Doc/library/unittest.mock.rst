@@ -2208,7 +2208,7 @@ with any methods on the mock:
 
     >>> mock.has_data()
     <mock.Mock object at 0x...>
-    >>> mock.has_data.assret_called_with()
+    >>> mock.has_data.assert_called_with()
 
 Auto-speccing solves this problem. You can either pass ``autospec=True`` to
 :func:`patch` / :func:`patch.object` or use the :func:`create_autospec` function to create a
