@@ -537,6 +537,7 @@ Connection Objects
          with open('dump.sql', 'w') as f:
              for line in con.iterdump():
                  f.write('%s\n' % line)
+         con.close()
 
 
    .. method:: backup(target, *, pages=0, progress=None, name="main", sleep=0.250)
@@ -575,6 +576,7 @@ Connection Objects
          con = sqlite3.connect('existing_db.db')
          with sqlite3.connect('backup.db') as bck:
              con.backup(bck, pages=1, progress=progress)
+         con.close()
 
       Example 2, copy an existing database into a transient copy::
 
@@ -583,6 +585,8 @@ Connection Objects
          source = sqlite3.connect('existing_db.db')
          dest = sqlite3.connect(':memory:')
          source.backup(dest)
+         source.close()
+         dest.close()
 
       Availability: SQLite 3.6.11 or higher
 
