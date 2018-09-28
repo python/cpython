@@ -45,6 +45,8 @@ struct _ceval_runtime_state {
     /* Request for dropping the GIL */
     _Py_atomic_int gil_drop_request;
     struct _pending_calls pending;
+    /* Request for checking signals. */
+    _Py_atomic_int signals_pending;
     struct _gil_runtime_state gil;
 };
 

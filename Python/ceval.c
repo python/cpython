@@ -100,6 +100,7 @@ static long dxp[256];
     _Py_atomic_store_relaxed( \
         &_PyRuntime.ceval.eval_breaker, \
         GIL_REQUEST | \
+        _Py_atomic_load_relaxed(&_PyRuntime.ceval.signals_pending) | \
         _Py_atomic_load_relaxed(&_PyRuntime.ceval.pending.calls_to_do) | \
         _PyRuntime.ceval.pending.async_exc)
 
@@ -125,6 +126,18 @@ static long dxp[256];
 #define UNSIGNAL_PENDING_CALLS() \
     do { \
         _Py_atomic_store_relaxed(&_PyRuntime.ceval.pending.calls_to_do, 0); \
+        COMPUTE_EVAL_BREAKER(); \
+    } while (0)
+
+#define SIGNAL_PENDING_SIGNALS() \
+    do { \
+        _Py_atomic_store_relaxed(&_PyRuntime.ceval.signals_pending, 1); \
+        _Py_atomic_store_relaxed(&_PyRuntime.ceval.eval_breaker, 1); \
+    } while (0)
+
+#define UNSIGNAL_PENDING_SIGNALS() \
+    do { \
+        _Py_atomic_store_relaxed(&_PyRuntime.ceval.signals_pending, 0); \
         COMPUTE_EVAL_BREAKER(); \
     } while (0)
 
