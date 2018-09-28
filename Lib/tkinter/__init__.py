@@ -3770,6 +3770,24 @@ class Spinbox(Widget, XView):
         """
         return self.selection("element", element)
 
+    def selection_from(self, index):
+        """Set the fixed end of a selection to INDEX."""
+        self.selection('from', index)
+
+    def selection_present(self):
+        """Return True if there are characters selected in the entry, False
+        otherwise."""
+        return self.tk.getboolean(
+            self.tk.call(self._w, 'selection', 'present'))
+
+    def selection_range(self, start, end):
+        """Set the selection from START to END (not included)."""
+        self.selection('range', start, end)
+
+    def selection_to(self, index):
+        """Set the variable end of a selection to INDEX."""
+        self.selection('to', index)
+
 ###########################################################################
 
 class LabelFrame(Widget):
