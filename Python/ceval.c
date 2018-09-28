@@ -356,14 +356,12 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
     return result;
 }
 
-int
-Py_MakePendingCalls(void)
+static int
+make_pending_calls(void)
 {
     static int busy = 0;
     int i;
     int r = 0;
-
-    assert(PyGILState_Check());
 
     if (!_PyRuntime.ceval.pending.lock) {
         /* initial allocation of the lock */
@@ -425,6 +423,13 @@ error:
     busy = 0;
     SIGNAL_PENDING_CALLS(); /* We're not done yet */
     return -1;
+}
+
+int
+Py_MakePendingCalls(void)
+{
+    assert(PyGILState_Check());
+    return make_pending_calls();
 }
 
 /* The interpreter's recursion limit */
