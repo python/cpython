@@ -777,6 +777,11 @@ class ContextTests(unittest.TestCase):
         default = (ssl.OP_ALL | ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3)
         if not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (1, 1, 0):
             default |= ssl.OP_NO_COMPRESSION
+        if not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (1, 1, 1):
+            # define MIDDLEBOX constant, as python2.7 does not know about it
+            # but it is used by default.
+            OP_ENABLE_MIDDLEBOX_COMPAT = 1048576L
+            default |= OP_ENABLE_MIDDLEBOX_COMPAT
         self.assertEqual(default, ctx.options)
         ctx.options |= ssl.OP_NO_TLSv1
         self.assertEqual(default | ssl.OP_NO_TLSv1, ctx.options)
