@@ -575,7 +575,8 @@ Connection Objects
 
          con = sqlite3.connect('existing_db.db')
          bck = sqlite3.connect('backup.db')
-         con.backup(bck, pages=1, progress=progress)
+         with bck:
+             con.backup(bck, pages=1, progress=progress)
          bck.close()
          con.close()
 
@@ -586,8 +587,6 @@ Connection Objects
          source = sqlite3.connect('existing_db.db')
          dest = sqlite3.connect(':memory:')
          source.backup(dest)
-         source.close()
-         dest.close()
 
       Availability: SQLite 3.6.11 or higher
 
