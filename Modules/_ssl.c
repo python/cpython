@@ -4711,8 +4711,8 @@ _ssl_MemoryBIO_read_impl(PySSLMemoryBIO *self, int len)
 
     nbytes = BIO_read(self->bio, PyBytes_AS_STRING(result), len);
     /* There should never be any short reads but check anyway. */
-    if ((nbytes < len) && (_PyBytes_Resize(&result, len) < 0)) {
-        return NULL;
+    if (nbytes < len) {
+        _PyBytes_Resize(&result, len);
     }
 
     return result;
