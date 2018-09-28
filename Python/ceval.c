@@ -383,6 +383,8 @@ handle_signals(void)
 static int
 make_pending_calls(void)
 {
+    static int busy = 0;
+
     /* only service pending calls on main thread */
     if (_PyRuntime.ceval.pending.main_thread &&
         PyThread_get_thread_ident() != _PyRuntime.ceval.pending.main_thread)
@@ -390,11 +392,20 @@ make_pending_calls(void)
         return 0;
     }
 
+    /* don't perform recursive pending calls */
+    if (busy) {
+        return 0;
+    }
+    busy = 1;
+    int res = 0;
+
     if (!_PyRuntime.ceval.pending.lock) {
         /* initial allocation of the lock */
         _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
-        if (_PyRuntime.ceval.pending.lock == NULL)
+        if (_PyRuntime.ceval.pending.lock == NULL) {
+            busy = 0;
             return -1;
+        }
     }
 
     /* perform a bounded number of calls, in case of recursion */
@@ -417,12 +428,14 @@ make_pending_calls(void)
         /* having released the lock, perform the callback */
         if (func == NULL)
             break;
-        int r = func(arg);
-        if (r) {
-            return r;
+        res = func(arg);
+        if (res) {
+            break;
         }
     }
-    return 0;
+
+    busy = 0;
+    return res;
 }
 
 int
@@ -432,11 +445,6 @@ Py_MakePendingCalls(void)
 
     assert(PyGILState_Check());
 
-    /* don't perform recursive pending calls */
-    if (_PyRuntime.ceval.pending.busy) {
-        return 0;
-    }
-    _PyRuntime.ceval.pending.busy = 1;
     /* unsignal before starting to call callbacks, so that any callback
        added in-between re-signals */
     UNSIGNAL_PENDING_CALLS();
@@ -453,11 +461,9 @@ Py_MakePendingCalls(void)
         goto error;
     }
 
-    _PyRuntime.ceval.pending.busy = 0;
     return 0;
 
 error:
-    _PyRuntime.ceval.pending.busy = 0;
     SIGNAL_PENDING_CALLS(); /* We're not done yet */
     return res;
 }
@@ -992,26 +998,24 @@ main_loop:
                 */
                 goto fast_next_opcode;
             }
-            if (!_PyRuntime.ceval.pending.busy) {
-                _PyRuntime.ceval.pending.busy = 1;
-                if (_Py_atomic_load_relaxed(
-                            &_PyRuntime.ceval.signals_pending))
-                {
-                    if (handle_signals() != 0) {
-                        _PyRuntime.ceval.pending.busy = 0;
-                        goto error;
-                    }
+
+            if (_Py_atomic_load_relaxed(
+                        &_PyRuntime.ceval.signals_pending))
+            {
+                if (handle_signals() != 0) {
+                    goto error;
                 }
-                if (_Py_atomic_load_relaxed(
-                            &_PyRuntime.ceval.pending.calls_to_do))
-                {
-                    if (make_pending_calls() < 0) {
-                        _PyRuntime.ceval.pending.busy = 0;
-                        goto error;
-                    }
-                }
-                _PyRuntime.ceval.pending.busy = 1;
             }
+            if (_Py_atomic_load_relaxed(
+                        &_PyRuntime.ceval.pending.calls_to_do))
+            {
+                UNSIGNAL_PENDING_CALLS();
+                if (make_pending_calls() != 0) {
+                    SIGNAL_PENDING_CALLS();
+                    goto error;
+                }
+            }
+
             if (_Py_atomic_load_relaxed(
                         &_PyRuntime.ceval.gil_drop_request))
             {
