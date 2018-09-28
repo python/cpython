@@ -2942,6 +2942,9 @@ static PyObject *
 memory_format_get(PyMemoryViewObject *self)
 {
     CHECK_RELEASED(self);
+    if (self->view.format == NULL) {
+        return PyUnicode_FromString("B");
+    }
     return PyUnicode_FromString(self->view.format);
 }
 

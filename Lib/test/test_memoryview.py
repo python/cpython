@@ -394,6 +394,20 @@ class AbstractMemoryTests:
         self.assertEqual(c.format, "H")
         self.assertEqual(d.format, "H")
 
+    def test_minimal_buffer(self):
+        # We rely here on the fact that io.BufferedReader uses PyBuffer_FillInfo
+        # to construct its Py_buffer.
+        class TrapReader(io.RawIOBase):
+            def readable(self):
+                return True
+
+            def readinto(self, b):
+                self.format = b.format
+                return 0
+        r = TrapReader()
+        io.BufferedReader(r).read(1)
+        self.assertEqual(r.format, 'B')
+
 
 # Variations on source objects for the buffer: bytes-like objects, then arrays
 # with itemsize > 1.

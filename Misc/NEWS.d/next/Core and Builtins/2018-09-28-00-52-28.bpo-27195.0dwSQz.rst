@@ -1,0 +1,6 @@
+Access to the ``format`` of a ``memoryview`` object could crash if the
+corresponding field in the buffer structure was not set. Per documentation
+of the new-style buffer protocol, an unset ``format`` field is to be
+interpreted as ``"B"``, so that is now returned in this case.
+
+Patch by JP Sugarbroad.
