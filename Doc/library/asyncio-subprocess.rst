@@ -344,10 +344,6 @@ function::
         await proc.wait()
         return line
 
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(
-            asyncio.WindowsProactorEventLoopPolicy())
-
     date = asyncio.run(get_date())
     print(f"Current date: {date}")
 
