@@ -372,7 +372,6 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
 static int
 make_pending_calls(void)
 {
-    static int busy = 0;
     int i;
     int r = 0;
 
@@ -390,9 +389,9 @@ make_pending_calls(void)
         return 0;
     }
     /* don't perform recursive pending calls */
-    if (busy)
+    if (_PyRuntime.ceval.pending.busy)
         return 0;
-    busy = 1;
+    _PyRuntime.ceval.pending.busy = 1;
     /* unsignal before starting to call callbacks, so that any callback
        added in-between re-signals */
     UNSIGNAL_PENDING_CALLS();
@@ -429,11 +428,11 @@ make_pending_calls(void)
         }
     }
 
-    busy = 0;
+    _PyRuntime.ceval.pending.busy = 0;
     return r;
 
 error:
-    busy = 0;
+    _PyRuntime.ceval.pending.busy = 0;
     SIGNAL_PENDING_CALLS(); /* We're not done yet */
     return -1;
 }
