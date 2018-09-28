@@ -3775,7 +3775,7 @@ class Spinbox(Widget, XView):
         self.selection('from', index)
 
     def selection_present(self):
-        """Return True if there are characters selected in the entry, False
+        """Return True if there are characters selected in the spinbox, False
         otherwise."""
         return self.tk.getboolean(
             self.tk.call(self._w, 'selection', 'present'))
