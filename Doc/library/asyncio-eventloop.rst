@@ -1432,15 +1432,6 @@ on all platforms.
 
    Availability: Windows.
 
-   An example how to use :class:`ProactorEventLoop` on Windows::
-
-        import asyncio
-        import sys
-
-        if sys.platform == 'win32':
-            loop = asyncio.ProactorEventLoop()
-            asyncio.set_event_loop(loop)
-
    .. seealso::
 
       `MSDN documentation on I/O Completion Ports
