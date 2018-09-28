@@ -77,7 +77,7 @@ try_stmt: ('try' ':' suite
             ['else' ':' suite]
             ['finally' ':' suite] |
            'finally' ':' suite))
-with_stmt: 'with' with_item (',' with_item)*  ':' suite
+with_stmt: 'with' ( with_item (',' with_item)* | '(' with_item (',' with_item)* [','] ')' ) ':' suite
 with_item: test ['as' expr]
 # NB compile.c makes sure that the default except clause is last
 except_clause: 'except' [test ['as' NAME]]

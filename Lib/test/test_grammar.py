@@ -1479,6 +1479,10 @@ class GrammarTests(unittest.TestCase):
             pass
         with manager() as x, manager():
             pass
+        with (manager() as x, manager() as y):
+            pass
+        with (manager() as x, manager() as y,):
+            pass
 
     def test_if_else_expr(self):
         # Test ifelse expressions in various cases
