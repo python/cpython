@@ -13,6 +13,11 @@ extern "C" {
 
 struct _pending_calls {
     unsigned long main_thread;
+    /* "busy" is used to avoid reentrant triggering of pending call
+       handling, including signals.
+       coordinate between the eval loop and
+       Py_MakePendingCalls().  Consequently, it may be removed if the
+       latter is removed. */
     int busy;
     PyThread_type_lock lock;
     /* Request for running pending calls. */

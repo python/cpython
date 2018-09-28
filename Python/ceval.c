@@ -433,8 +433,9 @@ Py_MakePendingCalls(void)
     assert(PyGILState_Check());
 
     /* don't perform recursive pending calls */
-    if (_PyRuntime.ceval.pending.busy)
+    if (_PyRuntime.ceval.pending.busy) {
         return 0;
+    }
     _PyRuntime.ceval.pending.busy = 1;
     /* unsignal before starting to call callbacks, so that any callback
        added in-between re-signals */
@@ -991,17 +992,25 @@ main_loop:
                 */
                 goto fast_next_opcode;
             }
-            if (_Py_atomic_load_relaxed(
-                        &_PyRuntime.ceval.signals_pending))
-            {
-                if (Py_MakePendingCalls() < 0)
-                    goto error;
-            }
-            if (_Py_atomic_load_relaxed(
-                        &_PyRuntime.ceval.pending.calls_to_do))
-            {
-                if (Py_MakePendingCalls() < 0)
-                    goto error;
+            if (!_PyRuntime.ceval.pending.busy) {
+                _PyRuntime.ceval.pending.busy = 1;
+                if (_Py_atomic_load_relaxed(
+                            &_PyRuntime.ceval.signals_pending))
+                {
+                    if (handle_signals() != 0) {
+                        _PyRuntime.ceval.pending.busy = 0;
+                        goto error;
+                    }
+                }
+                if (_Py_atomic_load_relaxed(
+                            &_PyRuntime.ceval.pending.calls_to_do))
+                {
+                    if (make_pending_calls() < 0) {
+                        _PyRuntime.ceval.pending.busy = 0;
+                        goto error;
+                    }
+                }
+                _PyRuntime.ceval.pending.busy = 1;
             }
             if (_Py_atomic_load_relaxed(
                         &_PyRuntime.ceval.gil_drop_request))
