@@ -15,4 +15,6 @@ try:
 except sqlite3.IntegrityError:
     print("couldn't add Joe twice")
 
+# Connection object used as context manager only commits or rollbacks transactions,
+# so the connection object should be closed manually
 con.close()

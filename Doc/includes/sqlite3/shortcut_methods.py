@@ -19,4 +19,6 @@ for row in con.execute("select firstname, lastname from person"):
 
 print("I just deleted", con.execute("delete from person").rowcount, "rows")
 
+# close is not a shortcut method and it's not called automatically,
+# so the connection object should be closed manually
 con.close()
