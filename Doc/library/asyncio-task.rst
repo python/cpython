@@ -932,5 +932,4 @@ enforced.
    <coroutine>`.
 
    This method is different from :func:`inspect.iscoroutinefunction`
-   because it returns ``True`` for generator-based coroutine functions
-   decorated with :func:`@coroutine <coroutine>`.
+   because it returns ``True`` for generator and coroutine functions.
