@@ -150,7 +150,7 @@ else:
         '''Receive an array of fds over an AF_UNIX socket.'''
         a = array.array('i')
         bytes_size = a.itemsize * size
-        msg, ancdata, flags, addr = sock.recvmsg(1, socket.CMSG_LEN(bytes_size))
+        msg, ancdata, flags, addr = sock.recvmsg(1, socket.CMSG_SPACE(bytes_size))
         if not msg and not ancdata:
             raise EOFError
         try:
