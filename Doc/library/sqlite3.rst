@@ -574,8 +574,9 @@ Connection Objects
              print(f'Copied {total-remaining} of {total} pages...')
 
          con = sqlite3.connect('existing_db.db')
-         with sqlite3.connect('backup.db') as bck:
-             con.backup(bck, pages=1, progress=progress)
+         bck = sqlite3.connect('backup.db')
+         con.backup(bck, pages=1, progress=progress)
+         bck.close()
          con.close()
 
       Example 2, copy an existing database into a transient copy::
