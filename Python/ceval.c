@@ -397,14 +397,17 @@ make_pending_calls(void)
         return 0;
     }
     busy = 1;
+    /* unsignal before starting to call callbacks, so that any callback
+       added in-between re-signals */
+    UNSIGNAL_PENDING_CALLS();
     int res = 0;
 
     if (!_PyRuntime.ceval.pending.lock) {
         /* initial allocation of the lock */
         _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
         if (_PyRuntime.ceval.pending.lock == NULL) {
-            busy = 0;
-            return -1;
+            res = -1;
+            goto error;
         }
     }
 
@@ -430,14 +433,21 @@ make_pending_calls(void)
             break;
         res = func(arg);
         if (res) {
-            break;
+            goto error;
         }
     }
 
     busy = 0;
     return res;
+
+error:
+    busy = 0;
+    SIGNAL_PENDING_CALLS();
+    return res;
 }
 
+/* Py_MakePendingCalls() is a simple wrapper for the sake
+   of backward-compatibility. */
 int
 Py_MakePendingCalls(void)
 {
@@ -445,27 +455,19 @@ Py_MakePendingCalls(void)
 
     assert(PyGILState_Check());
 
-    /* unsignal before starting to call callbacks, so that any callback
-       added in-between re-signals */
-    UNSIGNAL_PENDING_CALLS();
-
     /* Python signal handler doesn't really queue a callback: it only signals
        that a signal was received, see _PyEval_SignalReceived(). */
     res = handle_signals();
     if (res != 0) {
-        goto error;
+        return res;
     }
 
     res = make_pending_calls();
     if (res != 0) {
-        goto error;
+        return res;
     }
 
     return 0;
-
-error:
-    SIGNAL_PENDING_CALLS(); /* We're not done yet */
-    return res;
 }
 
 /* The interpreter's recursion limit */
@@ -1009,9 +1011,7 @@ main_loop:
             if (_Py_atomic_load_relaxed(
                         &_PyRuntime.ceval.pending.calls_to_do))
             {
-                UNSIGNAL_PENDING_CALLS();
                 if (make_pending_calls() != 0) {
-                    SIGNAL_PENDING_CALLS();
                     goto error;
                 }
             }
