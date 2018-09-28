@@ -183,8 +183,22 @@ class RotatingFileHandler(BaseRotatingHandler):
         if self.maxBytes > 0:                   # are we rolling over?
             msg = "%s\n" % self.format(record)
             self.stream.seek(0, 2)  #due to non-posix-compliant Windows feature
-            if self.stream.tell() + len(msg) >= self.maxBytes:
+            """
+            For gunicorn running with multiple workers, each worker will have
+            separate RotatingFileHandler instances. Due to this, when rollover occurs,
+            the effect is reflected only for the current worker. To propagate the rollover
+            for all workers, both stream_size and file_size has to be checked and take action
+            accordingly.
+            """
+            file_size = os.stat(self.baseFilename).st_size + len(msg)
+            stream_size = self.stream.tell() + len(msg)
+            if file_size >= self.maxBytes:
+                #Rollover Yes!
                 return 1
+            if stream_size >= self.maxBytes:
+                #Rollover already done by previous worker; just update the stream.
+                self.stream.close()
+                self.stream = open(self.baseFilename, 'a')
         return 0
 
 class TimedRotatingFileHandler(BaseRotatingHandler):
