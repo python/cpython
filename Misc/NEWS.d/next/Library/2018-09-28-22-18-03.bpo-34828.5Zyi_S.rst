@@ -1,0 +1,3 @@
+Sqlite3.iterdump now correctly deletes the "sqlite_sequence" table and
+inserts the rows from the dumped db. Just like the command ".dump" in
+sqlite3 does.
