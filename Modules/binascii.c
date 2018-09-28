@@ -438,6 +438,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
 {
     const unsigned char *ascii_data;
     unsigned char *bin_data;
+    unsigned char *bin_data_start;
     int leftbits = 0;
     unsigned char this_ch;
     unsigned int leftchar = 0;
@@ -461,6 +462,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
     bin_data = _PyBytesWriter_Alloc(&writer, bin_len);
     if (bin_data == NULL)
         return NULL;
+    bin_data_start = bin_data;
 
     for( ; ascii_len > 0; ascii_len--, ascii_data++) {
         this_ch = *ascii_data;
@@ -516,9 +518,11 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
             ** This is an invalid length, as there is no possible input that
             ** could encoded into such a base64 string.
             */
-            PyErr_SetString(Error,
-                            "Invalid base64-encoded string: "
-                            "length cannot be 1 more than a multiple of 4");
+            PyErr_Format(Error,
+                         "Invalid base64-encoded string: "
+                         "number of data characters (%d) cannot be 1 more "
+                         "than a multiple of 4",
+                         (bin_data - bin_data_start) / 3 * 4 + 1);
         } else {
             PyErr_SetString(Error, "Incorrect padding");
         }
