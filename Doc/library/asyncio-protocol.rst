@@ -1030,10 +1030,6 @@ The subprocess is created by th :meth:`loop.subprocess_exec` method::
         data = bytes(protocol.output)
         return data.decode('ascii').rstrip()
 
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(
-            asyncio.WindowsProactorEventLoopPolicy())
-
     date = asyncio.run(get_date())
     print(f"Current date: {date}")
 
