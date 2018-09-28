@@ -7,8 +7,7 @@ import unittest
 from test.support import requires
 requires('gui')
 from os.path import abspath, dirname, join
-from tkinter import Tk, Text, TclError
-from tkinter import font as tkfont
+from tkinter import Tk
 from idlelib import config
 
 darwin = sys.platform == 'darwin'
@@ -41,56 +40,6 @@ class HelpFrameTest(unittest.TestCase):
     def test_line1(self):
         text = self.frame.text
         self.assertEqual(text.get('1.0', '1.end'), ' IDLE ')
-
-
-class FontSizerTest(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.root = root = Tk()
-        root.withdraw()
-        cls.text = Text(root)
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.text
-        cls.root.update_idletasks()
-        cls.root.destroy()
-        del cls.root
-
-    def setUp(self):
-        text = self.text
-        self.font = font = tkfont.Font(text, ('courier', 30))
-        text['font'] = font
-        text.insert('end', 'Test Text')
-        self.sizer = help.FontSizer(text)
-
-    def tearDown(self):
-        del self.sizer, self.font
-
-    def test_increase_font_size(self):
-        text = self.text
-        font = self.font
-        eq = self.assertEqual
-        text.focus_set()
-
-        eq(font['size'], 30)
-        text.event_generate('<<increase_font_size>>')
-        eq(font['size'], 31)
-        text.event_generate('<<increase_font_size>>')
-        eq(font['size'], 32)
-
-    def test_decrease_font_size(self):
-        text = self.text
-        font = self.font
-        eq = self.assertEqual
-        text.focus_set()
-
-        eq(font['size'], 30)
-        text.event_generate('<<decrease_font_size>>')
-        eq(font['size'], 29)
-        text.event_generate('<<decrease_font_size>>')
-        eq(font['size'], 28)
 
 
 class HelpTextTest(unittest.TestCase):

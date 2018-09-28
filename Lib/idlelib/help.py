@@ -24,8 +24,6 @@ copy_strip - Copy idle.html to help.html, rstripping each line.
 
 show_idlehelp - Create HelpWindow.  Called in EditorWindow.help_dialog.
 """
-import sys
-
 from html.parser import HTMLParser
 from os.path import abspath, dirname, isfile, join
 from platform import python_version
@@ -35,15 +33,12 @@ from tkinter.ttk import Menubutton, Scrollbar
 from tkinter import font as tkfont
 
 from idlelib.config import idleConf
+from idlelib.textview import FontSizer
 
 ## About IDLE ##
 
 
 ## IDLE Help ##
-
-darwin = sys.platform == 'darwin'
-MINIMUM_FONT_SIZE = 6
-MAXIMUM_FONT_SIZE = 100
 
 
 class HelpParser(HTMLParser):
@@ -170,69 +165,6 @@ class HelpParser(HTMLParser):
                     d = d[len(self.hprefix):]
                 self.header += d.strip()
             self.text.insert('end', d, (self.tags, self.chartags))
-
-
-class FontSizer:
-    "Support dynamic widget font resizing."
-    def __init__(self, widget, callback=None):
-        """"Add font resizing functionality to widget.
-
-        Args:
-            widget: Tk widget with font attribute to size.
-            callback: Function to call for additional font resizing
-                based on widget's font attribute.
-        """
-        self.widget = widget
-        self.callback = callback
-        self.bind_events()
-
-    def bind_events(self):
-        "Bind events to the widget."
-        shortcut = 'Command' if darwin else 'Control'
-        # Bind to keys with or without shift.
-        self.widget.event_add(
-                '<<increase_font_size>>',
-                f'<{shortcut}-Key-equal>', f'<{shortcut}-Key-plus>')
-        self.widget.bind('<<increase_font_size>>', self.increase_font_size)
-
-        self.widget.event_add(
-                '<<decrease_font_size>>',
-                f'<{shortcut}-Key-minus>', f'<{shortcut}-Key-underscore>')
-        self.widget.bind('<<decrease_font_size>>', self.decrease_font_size)
-
-        # Windows and Mac use MouseWheel.
-        self.widget.bind('<Control-MouseWheel>', self.update_mousewheel)
-        # Linux uses Button 4 (scroll down) and Button 5 (scroll up).
-        self.widget.bind('<Control-Button-4>', self.update_mousewheel)
-        self.widget.bind('<Control-Button-5>', self.update_mousewheel)
-
-    def set_text_size(self, new_size):
-        "Set the font size for this widget."
-        font = tkfont.Font(self.widget, name=self.widget['font'], exists=True)
-        size = new_size(font)
-        font['size'] = size
-        if self.callback:
-            self.callback(size)
-        return 'break'
-
-    def increase_font_size(self, event=None):
-        "Make font size larger."
-        def new_size(font):
-            return min(font['size'] + 1, MAXIMUM_FONT_SIZE)
-        return self.set_text_size(new_size)
-
-    def decrease_font_size(self, event=None):
-        "Make font size smaller."
-        def new_size(font):
-            return max(font['size'] - 1, MINIMUM_FONT_SIZE)
-        return self.set_text_size(new_size)
-
-    def update_mousewheel(self, event):
-        "Adjust font size based on mouse wheel direction."
-        if (event.delta < 0) == (not darwin):
-            return self.decrease_font_size()
-        else:
-            return self.increase_font_size()
 
 
 class HelpText(Text):
