@@ -80,7 +80,7 @@ ConfigParser -- responsible for parsing a list of
         Return list of configuration options for the named section.
 
     read(filenames, encoding=None)
-        Read and parse the list of named configuration files, given by
+        Read and parse the iterable of named configuration files, given by
         name.  A single filename is also allowed.  Non-existing files
         are ignored.  Return list of successfully read files.
 
@@ -676,13 +676,13 @@ class RawConfigParser(MutableMapping):
         return list(opts.keys())
 
     def read(self, filenames, encoding=None):
-        """Read and parse a filename or a list of filenames.
+        """Read and parse a filename or an iterable of filenames.
 
         Files that cannot be opened are silently ignored; this is
-        designed so that you can specify a list of potential
+        designed so that you can specify an iterable of potential
         configuration file locations (e.g. current directory, user's
         home directory, systemwide directory), and all existing
-        configuration files in the list will be read.  A single
+        configuration files in the iterable will be read.  A single
         filename may also be given.
 
         Return list of successfully read files.
