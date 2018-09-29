@@ -237,17 +237,13 @@ PyEval_ReInitThreads(void)
 }
 
 /* This function is used to signal that async exceptions are waiting to be
-   raised, therefore it is also useful in non-threaded builds. */
+   raised. */
 
 void
 _PyEval_SignalAsyncExc(void)
 {
     SIGNAL_ASYNC_EXC();
 }
-
-/* Functions save_thread and restore_thread are always defined so
-   dynamically loaded modules needn't be compiled separately for use
-   with and without threads: */
 
 PyThreadState *
 PyEval_SaveThread(void)
