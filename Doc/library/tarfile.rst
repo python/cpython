@@ -38,7 +38,7 @@ Some facts and figures:
   information like timestamp, access permissions and owner.
 
 .. note::
-   Handling of multi-stream bzip2 files is not supported.  Packages such as
+   Handling of multi-stream bzip2 files is not supported.  Modules such as
    `bz2file <https://github.com/nvawda/bz2file>`_ let you overcome this.
 
 
