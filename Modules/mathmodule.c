@@ -2126,11 +2126,7 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     double diffs_on_stack[NUM_STACK_ELEMS];
     double *diffs = diffs_on_stack;
 
-    if (!PyTuple_Check(p)) {
-        PyErr_SetString(PyExc_TypeError, "dist argument must be a tuple");
-        return NULL;
-    }
-    if (!PyTuple_Check(q)) {
+    if (!PyTuple_Check(p) || !PyTuple_Check(q)) {
         PyErr_SetString(PyExc_TypeError, "dist argument must be a tuple");
         return NULL;
     }
