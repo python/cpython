@@ -6804,7 +6804,7 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
 
     self->stack = (Pdata *)Pdata_New();
     if (self->stack == NULL)
-        return 1;
+        return -1;
 
     self->memo_size = 32;
     self->memo = _Unpickler_NewMemo(self->memo_size);
