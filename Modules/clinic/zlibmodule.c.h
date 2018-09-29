@@ -215,7 +215,7 @@ zlib_Compress_compress(compobject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:compress", &data)) {
+    if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     return_value = zlib_Compress_compress_impl(self, &data);
@@ -553,4 +553,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=d46c646770146ade input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7ce82a8712f2756c input=a9049054013a1b77]*/

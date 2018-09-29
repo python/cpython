@@ -20,7 +20,7 @@ binascii_a2b_uu(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "O&:a2b_uu", ascii_buffer_converter, &data)) {
+    if (!ascii_buffer_converter(arg, &data)) {
         goto exit;
     }
     return_value = binascii_a2b_uu_impl(module, &data);
@@ -87,7 +87,7 @@ binascii_a2b_base64(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "O&:a2b_base64", ascii_buffer_converter, &data)) {
+    if (!ascii_buffer_converter(arg, &data)) {
         goto exit;
     }
     return_value = binascii_a2b_base64_impl(module, &data);
@@ -154,7 +154,7 @@ binascii_a2b_hqx(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "O&:a2b_hqx", ascii_buffer_converter, &data)) {
+    if (!ascii_buffer_converter(arg, &data)) {
         goto exit;
     }
     return_value = binascii_a2b_hqx_impl(module, &data);
@@ -185,7 +185,7 @@ binascii_rlecode_hqx(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:rlecode_hqx", &data)) {
+    if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     return_value = binascii_rlecode_hqx_impl(module, &data);
@@ -217,7 +217,7 @@ binascii_b2a_hqx(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:b2a_hqx", &data)) {
+    if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     return_value = binascii_b2a_hqx_impl(module, &data);
@@ -249,7 +249,7 @@ binascii_rledecode_hqx(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:rledecode_hqx", &data)) {
+    if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     return_value = binascii_rledecode_hqx_impl(module, &data);
@@ -362,7 +362,7 @@ binascii_b2a_hex(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:b2a_hex", &data)) {
+    if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     return_value = binascii_b2a_hex_impl(module, &data);
@@ -396,7 +396,7 @@ binascii_hexlify(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:hexlify", &data)) {
+    if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     return_value = binascii_hexlify_impl(module, &data);
@@ -431,7 +431,7 @@ binascii_a2b_hex(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer hexstr = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "O&:a2b_hex", ascii_buffer_converter, &hexstr)) {
+    if (!ascii_buffer_converter(arg, &hexstr)) {
         goto exit;
     }
     return_value = binascii_a2b_hex_impl(module, &hexstr);
@@ -464,7 +464,7 @@ binascii_unhexlify(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer hexstr = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "O&:unhexlify", ascii_buffer_converter, &hexstr)) {
+    if (!ascii_buffer_converter(arg, &hexstr)) {
         goto exit;
     }
     return_value = binascii_unhexlify_impl(module, &hexstr);
@@ -554,4 +554,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=815f1c453fd6568f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9a30bbe5e3f9a722 input=a9049054013a1b77]*/

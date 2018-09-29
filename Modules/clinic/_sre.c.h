@@ -47,7 +47,13 @@ _sre_ascii_iscased(PyObject *module, PyObject *arg)
     int character;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "i:ascii_iscased", &character)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    character = _PyLong_AsInt(arg);
+    if (character == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = _sre_ascii_iscased_impl(module, character);
@@ -78,7 +84,13 @@ _sre_unicode_iscased(PyObject *module, PyObject *arg)
     int character;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "i:unicode_iscased", &character)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    character = _PyLong_AsInt(arg);
+    if (character == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = _sre_unicode_iscased_impl(module, character);
@@ -109,7 +121,13 @@ _sre_ascii_tolower(PyObject *module, PyObject *arg)
     int character;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "i:ascii_tolower", &character)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    character = _PyLong_AsInt(arg);
+    if (character == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = _sre_ascii_tolower_impl(module, character);
@@ -140,7 +158,13 @@ _sre_unicode_tolower(PyObject *module, PyObject *arg)
     int character;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "i:unicode_tolower", &character)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    character = _PyLong_AsInt(arg);
+    if (character == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = _sre_unicode_tolower_impl(module, character);
@@ -765,4 +789,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _sre_SRE_Scanner_search_impl(self);
 }
-/*[clinic end generated code: output=4b807104b65c1e0e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dd35720dead4af3e input=a9049054013a1b77]*/

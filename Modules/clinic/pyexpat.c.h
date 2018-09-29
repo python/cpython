@@ -61,7 +61,17 @@ pyexpat_xmlparser_SetBase(xmlparseobject *self, PyObject *arg)
     PyObject *return_value = NULL;
     const char *base;
 
-    if (!PyArg_Parse(arg, "s:SetBase", &base)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyErr_BadArgument("SetBase", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t base_length;
+    base = PyUnicode_AsUTF8AndSize(arg, &base_length);
+    if (base == NULL) {
+        goto exit;
+    }
+    if (strlen(base) != (size_t)base_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = pyexpat_xmlparser_SetBase_impl(self, base);
@@ -163,7 +173,13 @@ pyexpat_xmlparser_SetParamEntityParsing(xmlparseobject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    if (!PyArg_Parse(arg, "i:SetParamEntityParsing", &flag)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flag = _PyLong_AsInt(arg);
+    if (flag == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = pyexpat_xmlparser_SetParamEntityParsing_impl(self, flag);
@@ -277,7 +293,13 @@ pyexpat_ErrorString(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     long code;
 
-    if (!PyArg_Parse(arg, "l:ErrorString", &code)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    code = PyLong_AsLong(arg);
+    if (code == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = pyexpat_ErrorString_impl(module, code);
@@ -289,4 +311,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=34d02345deee104c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ff798c1598e06b4f input=a9049054013a1b77]*/

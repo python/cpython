@@ -19,9 +19,11 @@ _elementtree_Element_append(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *subelement;
 
-    if (!PyArg_Parse(arg, "O!:append", &Element_Type, &subelement)) {
+    if (!PyType_IsSubtype(arg->ob_type, &Element_Type)) {
+        _PyErr_BadArgument("append", (&Element_Type)->tp_name, arg);
         goto exit;
     }
+    subelement = arg;
     return_value = _elementtree_Element_append_impl(self, subelement);
 
 exit:
@@ -79,9 +81,11 @@ _elementtree_Element___deepcopy__(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *memo;
 
-    if (!PyArg_Parse(arg, "O!:__deepcopy__", &PyDict_Type, &memo)) {
+    if (!PyDict_Check(arg)) {
+        _PyErr_BadArgument("__deepcopy__", "dict", arg);
         goto exit;
     }
+    memo = arg;
     return_value = _elementtree_Element___deepcopy___impl(self, memo);
 
 exit:
@@ -507,9 +511,11 @@ _elementtree_Element_remove(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *subelement;
 
-    if (!PyArg_Parse(arg, "O!:remove", &Element_Type, &subelement)) {
+    if (!PyType_IsSubtype(arg->ob_type, &Element_Type)) {
+        _PyErr_BadArgument("remove", (&Element_Type)->tp_name, arg);
         goto exit;
     }
+    subelement = arg;
     return_value = _elementtree_Element_remove_impl(self, subelement);
 
 exit:
@@ -717,4 +723,4 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1bff22415aabb78b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1298466aa02cf6fd input=a9049054013a1b77]*/

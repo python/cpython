@@ -354,7 +354,7 @@ bytearray_append(PyByteArrayObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int item;
 
-    if (!PyArg_Parse(arg, "O&:append", _getbytevalue, &item)) {
+    if (!_getbytevalue(arg, &item)) {
         goto exit;
     }
     return_value = bytearray_append_impl(self, item);
@@ -430,7 +430,7 @@ bytearray_remove(PyByteArrayObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int value;
 
-    if (!PyArg_Parse(arg, "O&:remove", _getbytevalue, &value)) {
+    if (!_getbytevalue(arg, &value)) {
         goto exit;
     }
     return_value = bytearray_remove_impl(self, value);
@@ -640,9 +640,14 @@ bytearray_fromhex(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *string;
 
-    if (!PyArg_Parse(arg, "U:fromhex", &string)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyErr_BadArgument("fromhex", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    string = arg;
     return_value = bytearray_fromhex_impl(type, string);
 
 exit:
@@ -712,4 +717,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=bb9051a369adb328 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a87780f626353f2a input=a9049054013a1b77]*/

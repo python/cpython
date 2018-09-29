@@ -21,7 +21,8 @@ cmath_acos(PyObject *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:acos", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     /* modifications for z */
@@ -63,7 +64,8 @@ cmath_acosh(PyObject *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:acosh", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     /* modifications for z */
@@ -105,7 +107,8 @@ cmath_asin(PyObject *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:asin", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     /* modifications for z */
@@ -147,7 +150,8 @@ cmath_asinh(PyObject *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:asinh", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     /* modifications for z */
@@ -189,7 +193,8 @@ cmath_atan(PyObject *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:atan", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     /* modifications for z */
@@ -231,7 +236,8 @@ cmath_atanh(PyObject *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:atanh", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     /* modifications for z */
@@ -273,7 +279,8 @@ cmath_cos(PyObject *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:cos", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     /* modifications for z */
@@ -315,7 +322,8 @@ cmath_cosh(PyObject *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:cosh", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     /* modifications for z */
@@ -357,7 +365,8 @@ cmath_exp(PyObject *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:exp", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     /* modifications for z */
@@ -399,7 +408,8 @@ cmath_log10(PyObject *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:log10", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     /* modifications for z */
@@ -441,7 +451,8 @@ cmath_sin(PyObject *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:sin", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     /* modifications for z */
@@ -483,7 +494,8 @@ cmath_sinh(PyObject *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:sinh", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     /* modifications for z */
@@ -525,7 +537,8 @@ cmath_sqrt(PyObject *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:sqrt", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     /* modifications for z */
@@ -567,7 +580,8 @@ cmath_tan(PyObject *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:tan", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     /* modifications for z */
@@ -609,7 +623,8 @@ cmath_tanh(PyObject *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:tanh", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     /* modifications for z */
@@ -681,7 +696,8 @@ cmath_phase(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_complex z;
 
-    if (!PyArg_Parse(arg, "D:phase", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     return_value = cmath_phase_impl(module, z);
@@ -710,7 +726,8 @@ cmath_polar(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_complex z;
 
-    if (!PyArg_Parse(arg, "D:polar", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     return_value = cmath_polar_impl(module, z);
@@ -766,7 +783,8 @@ cmath_isfinite(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_complex z;
 
-    if (!PyArg_Parse(arg, "D:isfinite", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     return_value = cmath_isfinite_impl(module, z);
@@ -793,7 +811,8 @@ cmath_isnan(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_complex z;
 
-    if (!PyArg_Parse(arg, "D:isnan", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     return_value = cmath_isnan_impl(module, z);
@@ -820,7 +839,8 @@ cmath_isinf(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_complex z;
 
-    if (!PyArg_Parse(arg, "D:isinf", &z)) {
+    z = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     return_value = cmath_isinf_impl(module, z);
@@ -882,4 +902,4 @@ cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dd93c3a6aeb42ebb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1eea8989a543a28b input=a9049054013a1b77]*/

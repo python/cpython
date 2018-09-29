@@ -807,11 +807,15 @@ class CLanguage(Language):
                     {c_basename}({self_type}{self_name}, PyObject *%s)
                     """ % argname)
 
-                parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                    if (!PyArg_Parse(%s, "{format_units}:{name}", {parse_arguments})) {{
-                        goto exit;
-                    }}
-                    """ % argname, indent=4))
+                parsearg = converters[0].parse_arg(argname)
+                if parsearg is None:
+                    parsearg = """
+                        if (!PyArg_Parse(%s, "{format_units}:{name}", {parse_arguments})) {{
+                            goto exit;
+                        }}
+                        """ % argname
+                parser_definition = parser_body(parser_prototype,
+                                                normalize_snippet(parsearg, indent=4))
 
         elif has_option_groups:
             # positional parameters with option groups
@@ -2534,6 +2538,47 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         pass
 
+    def parse_arg(self, argname):
+        if self.format_unit == 'O&':
+            return """
+                if (!{converter}({argname}, &{paramname})) {{{{
+                    goto exit;
+                }}}}
+                """.format(argname=argname, paramname=self.name,
+                           converter=self.converter)
+        if self.format_unit == 'O!':
+            cast = '(%s)' % self.type if self.type != 'PyObject *' else ''
+            if self.subclass_of in type_checks:
+                typecheck, typename = type_checks[self.subclass_of]
+                return """
+                    if (!{typecheck}({argname})) {{{{
+                        _PyErr_BadArgument("{{name}}", "{typename}", {argname});
+                        goto exit;
+                    }}}}
+                    {paramname} = {cast}{argname};
+                    """.format(argname=argname, paramname=self.name,
+                               typecheck=typecheck, typename=typename, cast=cast)
+            return """
+                if (!PyType_IsSubtype({argname}->ob_type, {subclass_of})) {{{{
+                    _PyErr_BadArgument("{{name}}", ({subclass_of})->tp_name, {argname});
+                    goto exit;
+                }}}}
+                {paramname} = {cast}{argname};
+                """.format(argname=argname, paramname=self.name,
+                           subclass_of=self.subclass_of, cast=cast)
+
+type_checks = {
+    '&PyLong_Type': ('PyLong_Check', 'int'),
+    '&PyTuple_Type': ('PyTuple_Check', 'tuple'),
+    '&PyList_Type': ('PyList_Check', 'list'),
+    '&PySet_Type': ('PySet_Check', 'set'),
+    '&PyFrozenSet_Type': ('PyFrozenSet_Check', 'frozenset'),
+    '&PyDict_Type': ('PyDict_Check', 'dict'),
+    '&PyUnicode_Type': ('PyUnicode_Check', 'str'),
+    '&PyBytes_Type': ('PyBytes_Check', 'bytes'),
+    '&PyByteArray_Type': ('PyByteArray_Check', 'bytearray'),
+}
+
 
 class bool_converter(CConverter):
     type = 'int'
@@ -2549,6 +2594,28 @@ class bool_converter(CConverter):
         if self.default is not unspecified:
             self.default = bool(self.default)
             self.c_default = str(int(self.default))
+
+    def parse_arg(self, argname):
+        if self.format_unit == 'i':
+            return """
+                if (PyFloat_Check({argname})) {{{{
+                    PyErr_SetString(PyExc_TypeError,
+                                    "integer argument expected, got float" );
+                    goto exit;
+                }}}}
+                {paramname} = _PyLong_AsInt({argname});
+                if ({paramname} == -1 && PyErr_Occurred()) {{{{
+                    goto exit;
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        elif self.format_unit == 'p':
+            return """
+                {paramname} = PyObject_IsTrue({argname});
+                if ({paramname} < 0) {{{{
+                    goto exit;
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
 
 class char_converter(CConverter):
     type = 'char'
@@ -2580,6 +2647,22 @@ class char_converter(CConverter):
             c_ord = self.default[0]
             self.c_default = "'%s'" % self._escapes.get(c_ord, chr(c_ord))
 
+    def parse_arg(self, argname):
+        if self.format_unit == 'c':
+            return """
+                if (PyBytes_Check({argname}) && PyBytes_GET_SIZE({argname}) == 1) {{{{
+                    {paramname} = PyBytes_AS_STRING({argname})[0];
+                }}}}
+                else if (PyByteArray_Check({argname}) && PyByteArray_GET_SIZE({argname}) == 1) {{{{
+                    {paramname} = PyByteArray_AS_STRING({argname})[0];
+                }}}}
+                else {{{{
+                    _PyErr_BadArgument("{{name}}", "a byte string of length 1", {argname});
+                    goto exit;
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
+
 
 @add_legacy_c_converter('B', bitwise=True)
 class unsigned_char_converter(CConverter):
@@ -2592,6 +2675,53 @@ class unsigned_char_converter(CConverter):
         if bitwise:
             self.format_unit = 'B'
 
+    def parse_arg(self, argname):
+        if self.format_unit == 'b':
+            return """
+                if (PyFloat_Check({argname})) {{{{
+                    PyErr_SetString(PyExc_TypeError,
+                                    "integer argument expected, got float" );
+                    goto exit;
+                }}}}
+                {{{{
+                    long ival = PyLong_AsLong({argname});
+                    if (ival == -1 && PyErr_Occurred()) {{{{
+                        goto exit;
+                    }}}}
+                    else if (ival < 0) {{{{
+                        PyErr_SetString(PyExc_OverflowError,
+                                        "unsigned byte integer is less than minimum");
+                        goto exit;
+                    }}}}
+                    else if (ival > UCHAR_MAX) {{{{
+                        PyErr_SetString(PyExc_OverflowError,
+                                        "unsigned byte integer is greater than maximum");
+                        goto exit;
+                    }}}}
+                    else {{{{
+                        {paramname} = (unsigned char) ival;
+                    }}}}
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        elif self.format_unit == 'B':
+            return """
+                if (PyFloat_Check({argname})) {{{{
+                    PyErr_SetString(PyExc_TypeError,
+                                    "integer argument expected, got float" );
+                    goto exit;
+                }}}}
+                {{{{
+                    long ival = PyLong_AsUnsignedLongMask({argname});
+                    if (ival == -1 && PyErr_Occurred()) {{{{
+                        goto exit;
+                    }}}}
+                    else {{{{
+                        {paramname} = (unsigned char) ival;
+                    }}}}
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
+
 class byte_converter(unsigned_char_converter): pass
 
 class short_converter(CConverter):
@@ -2599,6 +2729,36 @@ class short_converter(CConverter):
     default_type = int
     format_unit = 'h'
     c_ignored_default = "0"
+
+    def parse_arg(self, argname):
+        if self.format_unit == 'h':
+            return """
+                if (PyFloat_Check({argname})) {{{{
+                    PyErr_SetString(PyExc_TypeError,
+                                    "integer argument expected, got float" );
+                    goto exit;
+                }}}}
+                {{{{
+                    long ival = PyLong_AsLong({argname});
+                    if (ival == -1 && PyErr_Occurred()) {{{{
+                        goto exit;
+                    }}}}
+                    else if (ival < SHRT_MIN) {{{{
+                        PyErr_SetString(PyExc_OverflowError,
+                                        "signed short integer is less than minimum");
+                        goto exit;
+                    }}}}
+                    else if (ival > SHRT_MAX) {{{{
+                        PyErr_SetString(PyExc_OverflowError,
+                                        "signed short integer is greater than maximum");
+                        goto exit;
+                    }}}}
+                    else {{{{
+                        {paramname} = (short) ival;
+                    }}}}
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
 
 class unsigned_short_converter(CConverter):
     type = 'unsigned short'
@@ -2626,6 +2786,36 @@ class int_converter(CConverter):
         if type != None:
             self.type = type
 
+    def parse_arg(self, argname):
+        if self.format_unit == 'i':
+            return """
+                if (PyFloat_Check({argname})) {{{{
+                    PyErr_SetString(PyExc_TypeError,
+                                    "integer argument expected, got float" );
+                    goto exit;
+                }}}}
+                {paramname} = _PyLong_AsInt({argname});
+                if ({paramname} == -1 && PyErr_Occurred()) {{{{
+                    goto exit;
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        elif self.format_unit == 'C':
+            return """
+                if (!PyUnicode_Check({argname})) {{{{
+                    _PyErr_BadArgument("{{name}}", "a unicode character", {argname});
+                    goto exit;
+                }}}}
+                if (PyUnicode_READY({argname})) {{{{
+                    goto exit;
+                }}}}
+                if (PyUnicode_GET_LENGTH({argname}) != 1) {{{{
+                    _PyErr_BadArgument("{{name}}", "a unicode character", {argname});
+                    goto exit;
+                }}}}
+                {paramname} = PyUnicode_READ_CHAR({argname}, 0);
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
+
 class unsigned_int_converter(CConverter):
     type = 'unsigned int'
     default_type = int
@@ -2637,11 +2827,41 @@ class unsigned_int_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedInt_Converter'
 
+    def parse_arg(self, argname):
+        if self.format_unit == 'I':
+            return """
+                if (PyFloat_Check({argname})) {{{{
+                    PyErr_SetString(PyExc_TypeError,
+                                    "integer argument expected, got float" );
+                    goto exit;
+                }}}}
+                {paramname} = (unsigned int)PyLong_AsUnsignedLongMask({argname});
+                if ({paramname} == (unsigned int)-1 && PyErr_Occurred()) {{{{
+                    goto exit;
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
+
 class long_converter(CConverter):
     type = 'long'
     default_type = int
     format_unit = 'l'
     c_ignored_default = "0"
+
+    def parse_arg(self, argname):
+        if self.format_unit == 'l':
+            return """
+                if (PyFloat_Check({argname})) {{{{
+                    PyErr_SetString(PyExc_TypeError,
+                                    "integer argument expected, got float" );
+                    goto exit;
+                }}}}
+                {paramname} = PyLong_AsLong({argname});
+                if ({paramname} == -1 && PyErr_Occurred()) {{{{
+                    goto exit;
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
 
 class unsigned_long_converter(CConverter):
     type = 'unsigned long'
@@ -2654,11 +2874,37 @@ class unsigned_long_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedLong_Converter'
 
+    def parse_arg(self, argname):
+        if self.format_unit == 'k':
+            return """
+                if (!PyLong_Check({argname})) {{{{
+                    _PyErr_BadArgument("{{name}}", "int", {argname});
+                    goto exit;
+                }}}}
+                {paramname} = PyLong_AsUnsignedLongMask({argname});
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
+
 class long_long_converter(CConverter):
     type = 'long long'
     default_type = int
     format_unit = 'L'
     c_ignored_default = "0"
+
+    def parse_arg(self, argname):
+        if self.format_unit == 'L':
+            return """
+                if (PyFloat_Check({argname})) {{{{
+                    PyErr_SetString(PyExc_TypeError,
+                                    "integer argument expected, got float" );
+                    goto exit;
+                }}}}
+                {paramname} = PyLong_AsLongLong({argname});
+                if ({paramname} == (PY_LONG_LONG)-1 && PyErr_Occurred()) {{{{
+                    goto exit;
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
 
 class unsigned_long_long_converter(CConverter):
     type = 'unsigned long long'
@@ -2670,6 +2916,17 @@ class unsigned_long_long_converter(CConverter):
             self.format_unit = 'K'
         else:
             self.converter = '_PyLong_UnsignedLongLong_Converter'
+
+    def parse_arg(self, argname):
+        if self.format_unit == 'K':
+            return """
+                if (!PyLong_Check({argname})) {{{{
+                    _PyErr_BadArgument("{{name}}", "int", {argname});
+                    goto exit;
+                }}}}
+                {paramname} = PyLong_AsUnsignedLongLongMask({argname});
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
 
 class Py_ssize_t_converter(CConverter):
     type = 'Py_ssize_t'
@@ -2683,6 +2940,29 @@ class Py_ssize_t_converter(CConverter):
             self.converter = '_Py_convert_optional_to_ssize_t'
         else:
             fail("Py_ssize_t_converter: illegal 'accept' argument " + repr(accept))
+
+    def parse_arg(self, argname):
+        if self.format_unit == 'n':
+            return """
+                if (PyFloat_Check({argname})) {{{{
+                    PyErr_SetString(PyExc_TypeError,
+                                    "integer argument expected, got float" );
+                    goto exit;
+                }}}}
+                {{{{
+                    Py_ssize_t ival = -1;
+                    PyObject *iobj = PyNumber_Index({argname});
+                    if (iobj != NULL) {{{{
+                        ival = PyLong_AsSsize_t(iobj);
+                        Py_DECREF(iobj);
+                    }}}}
+                    if (ival == -1 && PyErr_Occurred()) {{{{
+                        goto exit;
+                    }}}}
+                    {paramname} = ival;
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
 
 
 class slice_index_converter(CConverter):
@@ -2701,6 +2981,16 @@ class size_t_converter(CConverter):
     converter = '_PyLong_Size_t_Converter'
     c_ignored_default = "0"
 
+    def parse_arg(self, argname):
+        if self.format_unit == 'n':
+            return """
+                {paramname} = PyNumber_AsSsize_t({argname}, PyExc_OverflowError);
+                if ({paramname} == -1 && PyErr_Occurred()) {{{{
+                    goto exit;
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
+
 
 class float_converter(CConverter):
     type = 'float'
@@ -2708,11 +2998,31 @@ class float_converter(CConverter):
     format_unit = 'f'
     c_ignored_default = "0.0"
 
+    def parse_arg(self, argname):
+        if self.format_unit == 'f':
+            return """
+                {paramname} = (float) PyFloat_AsDouble({argname});
+                if (PyErr_Occurred()) {{{{
+                    goto exit;
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
+
 class double_converter(CConverter):
     type = 'double'
     default_type = float
     format_unit = 'd'
     c_ignored_default = "0.0"
+
+    def parse_arg(self, argname):
+        if self.format_unit == 'd':
+            return """
+                {paramname} = PyFloat_AsDouble({argname});
+                if (PyErr_Occurred()) {{{{
+                    goto exit;
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
 
 
 class Py_complex_converter(CConverter):
@@ -2720,6 +3030,16 @@ class Py_complex_converter(CConverter):
     default_type = complex
     format_unit = 'D'
     c_ignored_default = "{0.0, 0.0}"
+
+    def parse_arg(self, argname):
+        if self.format_unit == 'D':
+            return """
+                {paramname} = PyComplex_AsCComplex({argname});
+                if (PyErr_Occurred()) {{{{
+                    goto exit;
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
 
 
 class object_converter(CConverter):
@@ -2785,6 +3105,25 @@ class str_converter(CConverter):
             name = ensure_legal_c_identifier(self.name)
             return "".join(["if (", name, ") {\n   PyMem_FREE(", name, ");\n}\n"])
 
+    def parse_arg(self, argname):
+        if self.format_unit == 's':
+            return """
+                if (!PyUnicode_Check({argname})) {{{{
+                    _PyErr_BadArgument("{{name}}", "str", {argname});
+                    goto exit;
+                }}}}
+                Py_ssize_t {paramname}_length;
+                {paramname} = PyUnicode_AsUTF8AndSize({argname}, &{paramname}_length);
+                if ({paramname} == NULL) {{{{
+                    goto exit;
+                }}}}
+                if (strlen({paramname}) != (size_t){paramname}_length) {{{{
+                    PyErr_SetString(PyExc_ValueError, "embedded null character");
+                    goto exit;
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
+
 #
 # This is the fourth or fifth rewrite of registering all the
 # string converter format units.  Previous approaches hid
@@ -2848,6 +3187,20 @@ class unicode_converter(CConverter):
     default_type = (str, Null, NoneType)
     format_unit = 'U'
 
+    def parse_arg(self, argname):
+        if self.format_unit == 'U':
+            return """
+                if (!PyUnicode_Check({argname})) {{{{
+                    _PyErr_BadArgument("{{name}}", "str", {argname});
+                    goto exit;
+                }}}}
+                if (PyUnicode_READY({argname}) == -1) {{{{
+                    goto exit;
+                }}}}
+                {paramname} = {argname};
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
+
 @add_legacy_c_converter('u#', zeroes=True)
 @add_legacy_c_converter('Z', accept={str, NoneType})
 @add_legacy_c_converter('Z#', accept={str, NoneType}, zeroes=True)
@@ -2894,6 +3247,42 @@ class Py_buffer_converter(CConverter):
     def cleanup(self):
         name = ensure_legal_c_identifier(self.name)
         return "".join(["if (", name, ".obj) {\n   PyBuffer_Release(&", name, ");\n}\n"])
+
+    def parse_arg(self, argname):
+        if self.format_unit == 'y*':
+            return """
+                if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_SIMPLE) != 0) {{{{
+                    goto exit;
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        elif self.format_unit == 's*':
+            return """
+                if (PyUnicode_Check({argname})) {{{{
+                    Py_ssize_t len;
+                    const char *ptr = PyUnicode_AsUTF8AndSize({argname}, &len);
+                    if (ptr == NULL) {{{{
+                        goto exit;
+                    }}}}
+                    PyBuffer_FillInfo(&{paramname}, {argname}, (void *)ptr, len, 1, 0);
+                }}}}
+                else {{{{ /* any bytes-like object */
+                    if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_SIMPLE) != 0) {{{{
+                        goto exit;
+                    }}}}
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        elif self.format_unit == 'w*':
+            return """
+                if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_WRITABLE) < 0) {{{{
+                    _PyErr_BadArgument("{{name}}", "read-write bytes-like object", {argname});
+                    goto exit;
+                }}}}
+                if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
+                    _PyErr_BadArgument("{{name}}", "contiguous buffer", {argname});
+                    goto exit;
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
 
 
 def correct_name_for_self(f):

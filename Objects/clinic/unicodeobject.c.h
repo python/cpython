@@ -898,8 +898,22 @@ unicode_zfill(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t width;
 
-    if (!PyArg_Parse(arg, "n:zfill", &width)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
         goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        width = ival;
     }
     return_value = unicode_zfill_impl(self, width);
 
@@ -925,9 +939,14 @@ unicode___format__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *format_spec;
 
-    if (!PyArg_Parse(arg, "U:__format__", &format_spec)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyErr_BadArgument("__format__", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    format_spec = arg;
     return_value = unicode___format___impl(self, format_spec);
 
 exit:
@@ -951,4 +970,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=561c88c912b8fe3b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0542faeec10f4996 input=a9049054013a1b77]*/

@@ -36,7 +36,7 @@ _ssl__test_decode_cert(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *path;
 
-    if (!PyArg_Parse(arg, "O&:_test_decode_cert", PyUnicode_FSConverter, &path)) {
+    if (!PyUnicode_FSConverter(arg, &path)) {
         goto exit;
     }
     return_value = _ssl__test_decode_cert_impl(module, path);
@@ -211,7 +211,7 @@ _ssl__SSLSocket_write(PySSLSocket *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer b = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:write", &b)) {
+    if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     return_value = _ssl__SSLSocket_write_impl(self, &b);
@@ -400,7 +400,17 @@ _ssl__SSLContext_set_ciphers(PySSLContext *self, PyObject *arg)
     PyObject *return_value = NULL;
     const char *cipherlist;
 
-    if (!PyArg_Parse(arg, "s:set_ciphers", &cipherlist)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyErr_BadArgument("set_ciphers", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t cipherlist_length;
+    cipherlist = PyUnicode_AsUTF8AndSize(arg, &cipherlist_length);
+    if (cipherlist == NULL) {
+        goto exit;
+    }
+    if (strlen(cipherlist) != (size_t)cipherlist_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _ssl__SSLContext_set_ciphers_impl(self, cipherlist);
@@ -448,7 +458,7 @@ _ssl__SSLContext__set_npn_protocols(PySSLContext *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer protos = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:_set_npn_protocols", &protos)) {
+    if (PyObject_GetBuffer(arg, &protos, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     return_value = _ssl__SSLContext__set_npn_protocols_impl(self, &protos);
@@ -480,7 +490,7 @@ _ssl__SSLContext__set_alpn_protocols(PySSLContext *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer protos = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:_set_alpn_protocols", &protos)) {
+    if (PyObject_GetBuffer(arg, &protos, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     return_value = _ssl__SSLContext__set_alpn_protocols_impl(self, &protos);
@@ -823,7 +833,7 @@ _ssl_MemoryBIO_write(PySSLMemoryBIO *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer b = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:write", &b)) {
+    if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     return_value = _ssl_MemoryBIO_write_impl(self, &b);
@@ -912,7 +922,13 @@ _ssl_RAND_bytes(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int n;
 
-    if (!PyArg_Parse(arg, "i:RAND_bytes", &n)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    n = _PyLong_AsInt(arg);
+    if (n == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _ssl_RAND_bytes_impl(module, n);
@@ -942,7 +958,13 @@ _ssl_RAND_pseudo_bytes(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int n;
 
-    if (!PyArg_Parse(arg, "i:RAND_pseudo_bytes", &n)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    n = _PyLong_AsInt(arg);
+    if (n == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _ssl_RAND_pseudo_bytes_impl(module, n);
@@ -995,7 +1017,7 @@ _ssl_RAND_egd(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *path;
 
-    if (!PyArg_Parse(arg, "O&:RAND_egd", PyUnicode_FSConverter, &path)) {
+    if (!PyUnicode_FSConverter(arg, &path)) {
         goto exit;
     }
     return_value = _ssl_RAND_egd_impl(module, path);
@@ -1078,7 +1100,13 @@ _ssl_nid2obj(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int nid;
 
-    if (!PyArg_Parse(arg, "i:nid2obj", &nid)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    nid = _PyLong_AsInt(arg);
+    if (nid == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _ssl_nid2obj_impl(module, nid);
@@ -1193,4 +1221,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=c4e73b70ac3618ba input=a9049054013a1b77]*/
+/*[clinic end generated code: output=025093131871337b input=a9049054013a1b77]*/

@@ -482,6 +482,10 @@ PyAPI_FUNC(int) PyUnicodeTranslateError_SetReason(
     const char *reason          /* UTF-8 encoded string */
     );
 
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(void) _PyErr_BadArgument(const char *, const char *, PyObject *);
+#endif
+
 /* These APIs aren't really part of the error implementation, but
    often needed to format error messages; the native C lib APIs are
    not available on all platforms, which is why we provide emulations

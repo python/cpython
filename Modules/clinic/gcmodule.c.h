@@ -136,7 +136,13 @@ gc_set_debug(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flags;
 
-    if (!PyArg_Parse(arg, "i:set_debug", &flags)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flags = _PyLong_AsInt(arg);
+    if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = gc_set_debug_impl(module, flags);
@@ -325,4 +331,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=21dc9270b10b7891 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a9004fd9880a4d20 input=a9049054013a1b77]*/

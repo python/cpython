@@ -66,7 +66,7 @@ bytes_partition(PyBytesObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer sep = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:partition", &sep)) {
+    if (PyObject_GetBuffer(arg, &sep, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     return_value = bytes_partition_impl(self, &sep);
@@ -105,7 +105,7 @@ bytes_rpartition(PyBytesObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer sep = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:rpartition", &sep)) {
+    if (PyObject_GetBuffer(arg, &sep, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     return_value = bytes_rpartition_impl(self, &sep);
@@ -491,12 +491,17 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *string;
 
-    if (!PyArg_Parse(arg, "U:fromhex", &string)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyErr_BadArgument("fromhex", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    string = arg;
     return_value = bytes_fromhex_impl(type, string);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=470acd12b2534765 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2e94e4974041a0de input=a9049054013a1b77]*/

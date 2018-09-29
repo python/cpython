@@ -23,7 +23,13 @@ signal_alarm(PyObject *module, PyObject *arg)
     int seconds;
     long _return_value;
 
-    if (!PyArg_Parse(arg, "i:alarm", &seconds)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    seconds = _PyLong_AsInt(arg);
+    if (seconds == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = signal_alarm_impl(module, seconds);
@@ -120,7 +126,13 @@ signal_getsignal(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int signalnum;
 
-    if (!PyArg_Parse(arg, "i:getsignal", &signalnum)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    signalnum = _PyLong_AsInt(arg);
+    if (signalnum == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = signal_getsignal_impl(module, signalnum);
@@ -150,7 +162,13 @@ signal_strsignal(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int signalnum;
 
-    if (!PyArg_Parse(arg, "i:strsignal", &signalnum)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    signalnum = _PyLong_AsInt(arg);
+    if (signalnum == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = signal_strsignal_impl(module, signalnum);
@@ -255,7 +273,13 @@ signal_getitimer(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int which;
 
-    if (!PyArg_Parse(arg, "i:getitimer", &which)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    which = _PyLong_AsInt(arg);
+    if (which == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = signal_getitimer_impl(module, which);
@@ -348,7 +372,7 @@ signal_sigwait(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     sigset_t sigset;
 
-    if (!PyArg_Parse(arg, "O&:sigwait", _Py_Sigset_Converter, &sigset)) {
+    if (!_Py_Sigset_Converter(arg, &sigset)) {
         goto exit;
     }
     return_value = signal_sigwait_impl(module, sigset);
@@ -406,7 +430,7 @@ signal_sigwaitinfo(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     sigset_t sigset;
 
-    if (!PyArg_Parse(arg, "O&:sigwaitinfo", _Py_Sigset_Converter, &sigset)) {
+    if (!_Py_Sigset_Converter(arg, &sigset)) {
         goto exit;
     }
     return_value = signal_sigwaitinfo_impl(module, sigset);
@@ -534,4 +558,4 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=549f0efdc7405834 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=44fd8d6d9c007b95 input=a9049054013a1b77]*/

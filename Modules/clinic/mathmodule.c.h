@@ -108,7 +108,8 @@ math_frexp(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     double x;
 
-    if (!PyArg_Parse(arg, "d:frexp", &x)) {
+    x = PyFloat_AsDouble(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     return_value = math_frexp_impl(module, x);
@@ -168,7 +169,8 @@ math_modf(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     double x;
 
-    if (!PyArg_Parse(arg, "d:modf", &x)) {
+    x = PyFloat_AsDouble(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     return_value = math_modf_impl(module, x);
@@ -352,7 +354,8 @@ math_degrees(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     double x;
 
-    if (!PyArg_Parse(arg, "d:degrees", &x)) {
+    x = PyFloat_AsDouble(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     return_value = math_degrees_impl(module, x);
@@ -379,7 +382,8 @@ math_radians(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     double x;
 
-    if (!PyArg_Parse(arg, "d:radians", &x)) {
+    x = PyFloat_AsDouble(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     return_value = math_radians_impl(module, x);
@@ -406,7 +410,8 @@ math_isfinite(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     double x;
 
-    if (!PyArg_Parse(arg, "d:isfinite", &x)) {
+    x = PyFloat_AsDouble(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     return_value = math_isfinite_impl(module, x);
@@ -433,7 +438,8 @@ math_isnan(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     double x;
 
-    if (!PyArg_Parse(arg, "d:isnan", &x)) {
+    x = PyFloat_AsDouble(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     return_value = math_isnan_impl(module, x);
@@ -460,7 +466,8 @@ math_isinf(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     double x;
 
-    if (!PyArg_Parse(arg, "d:isinf", &x)) {
+    x = PyFloat_AsDouble(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     return_value = math_isinf_impl(module, x);
@@ -523,4 +530,4 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=239c51a5acefbafb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=237ea62836db1146 input=a9049054013a1b77]*/

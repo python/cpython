@@ -538,7 +538,7 @@ winreg_FlushKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:FlushKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_FlushKey_impl(module, key);
@@ -731,7 +731,7 @@ winreg_QueryInfoKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:QueryInfoKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_QueryInfoKey_impl(module, key);
@@ -1017,7 +1017,7 @@ winreg_DisableReflectionKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:DisableReflectionKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_DisableReflectionKey_impl(module, key);
@@ -1051,7 +1051,7 @@ winreg_EnableReflectionKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:EnableReflectionKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_EnableReflectionKey_impl(module, key);
@@ -1083,7 +1083,7 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:QueryReflectionKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_QueryReflectionKey_impl(module, key);
@@ -1091,4 +1091,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d1c8e2678015dd7d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e678d85aa4918ed4 input=a9049054013a1b77]*/

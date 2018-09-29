@@ -153,7 +153,7 @@ select_poll_unregister(pollObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "O&:unregister", fildes_converter, &fd)) {
+    if (!fildes_converter(arg, &fd)) {
         goto exit;
     }
     return_value = select_poll_unregister_impl(self, fd);
@@ -300,7 +300,7 @@ select_devpoll_unregister(devpollObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "O&:unregister", fildes_converter, &fd)) {
+    if (!fildes_converter(arg, &fd)) {
         goto exit;
     }
     return_value = select_devpoll_unregister_impl(self, fd);
@@ -550,7 +550,13 @@ select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "i:fromfd", &fd)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = select_epoll_fromfd_impl(type, fd);
@@ -893,7 +899,13 @@ select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "i:fromfd", &fd)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = select_kqueue_fromfd_impl(type, fd);
@@ -1047,4 +1059,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=561bec8bcb0e00c5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9939d859a7e7576b input=a9049054013a1b77]*/

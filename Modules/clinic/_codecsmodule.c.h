@@ -33,7 +33,17 @@ _codecs_lookup(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     const char *encoding;
 
-    if (!PyArg_Parse(arg, "s:lookup", &encoding)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyErr_BadArgument("lookup", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t encoding_length;
+    encoding = PyUnicode_AsUTF8AndSize(arg, &encoding_length);
+    if (encoding == NULL) {
+        goto exit;
+    }
+    if (strlen(encoding) != (size_t)encoding_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _codecs_lookup_impl(module, encoding);
@@ -138,7 +148,17 @@ _codecs__forget_codec(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     const char *encoding;
 
-    if (!PyArg_Parse(arg, "s:_forget_codec", &encoding)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyErr_BadArgument("_forget_codec", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t encoding_length;
+    encoding = PyUnicode_AsUTF8AndSize(arg, &encoding_length);
+    if (encoding == NULL) {
+        goto exit;
+    }
+    if (strlen(encoding) != (size_t)encoding_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _codecs__forget_codec_impl(module, encoding);
@@ -1342,9 +1362,14 @@ _codecs_charmap_build(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *map;
 
-    if (!PyArg_Parse(arg, "U:charmap_build", &map)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyErr_BadArgument("charmap_build", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    map = arg;
     return_value = _codecs_charmap_build_impl(module, map);
 
 exit:
@@ -1504,7 +1529,17 @@ _codecs_lookup_error(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     const char *name;
 
-    if (!PyArg_Parse(arg, "s:lookup_error", &name)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyErr_BadArgument("lookup_error", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(arg, &name_length);
+    if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _codecs_lookup_error_impl(module, name);
@@ -1536,4 +1571,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=06fa0d6803103c62 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dc81b815382ff8ec input=a9049054013a1b77]*/
