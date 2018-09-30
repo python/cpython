@@ -1098,11 +1098,12 @@ class ASTValidatorTests(unittest.TestCase):
         tests = [fn for fn in os.listdir(stdlib) if fn.endswith(".py")]
         tests.extend(["test/test_grammar.py", "test/test_unpack_ex.py"])
         for module in tests:
-            fn = os.path.join(stdlib, module)
-            with open(fn, "r", encoding="utf-8") as fp:
-                source = fp.read()
-            mod = ast.parse(source, fn)
-            compile(mod, fn, "exec")
+            with self.subTest(module):
+                fn = os.path.join(stdlib, module)
+                with open(fn, "r", encoding="utf-8") as fp:
+                    source = fp.read()
+                mod = ast.parse(source, fn)
+                compile(mod, fn, "exec")
 
 
 class ConstantTests(unittest.TestCase):

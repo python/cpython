@@ -305,6 +305,12 @@ Changes in Python behavior
   in the leftmost :keyword:`for` clause).
   (Contributed by Serhiy Storchaka in :issue:`10544`.)
 
+* The compiler will emit a syntax warning when the ``is`` or ``is not``
+  operator is used with a literal (except singletons ``None``, ``False``,
+  ``True`` and ``...``). It will became a :exc:`SyntaxError` if run the
+  interpreter with the ``-W error::SyntaxWarning`` option.
+  (Contributed by Serhiy Storchaka in :issue:`34850`.)
+
 
 Changes in the Python API
 -------------------------

@@ -1,0 +1,4 @@
+The compiler will emit a syntax warning when the ``is`` or ``is not``
+operator is used with a literal (except singletons ``None``, ``False``,
+``True`` and ``...``). If :exc:`SyntaxWarning` is raised as error, it will
+be replaced with a :exc:`SyntaxError`.
