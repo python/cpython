@@ -273,13 +273,15 @@ int
 _Py_LegacyLocaleDetected(void)
 {
 #ifndef MS_WINDOWS
-    /* On non-Windows systems, the C locale is considered a legacy locale */
-    /* XXX (ncoghlan): some platforms (notably Mac OS X) don't appear to treat
-     *                 the POSIX locale as a simple alias for the C locale, so
-     *                 we may also want to check for that explicitly.
+    /* On non-Windows systems, the ASCII-based C locale is considered a legacy
+     * locale that we don't trust to be accurate.
+     * Some platforms (notably Mac OS X and other *BSD platforms) don't treat
+     * the POSIX locale as a simple alias for the C locale, so we also check
+     * for that explicitly.
      */
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
-    return ctype_loc != NULL && strcmp(ctype_loc, "C") == 0;
+    return ctype_loc != NULL &&
+           (strcmp(ctype_loc, "C") == 0 || strcmp(ctype_loc, "C") == 0);
 #else
     /* Windows uses code pages instead of locales, so no locale is legacy */
     return 0;
@@ -287,8 +289,8 @@ _Py_LegacyLocaleDetected(void)
 }
 
 static const char *_C_LOCALE_WARNING =
-    "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
-    "encoding), which may cause Unicode compatibility problems. Using C.UTF-8, "
+    "Python runtime initialized with a legacy locale that uses a default ASCII "
+    "encoding, which may cause Unicode compatibility problems. Using C.UTF-8, "
     "C.utf8, or UTF-8 (if available) as alternative Unicode-compatible "
     "locales is recommended.\n";
 
@@ -327,7 +329,7 @@ _Py_IsLocaleCoercionTarget(const char *ctype_loc)
 
 #ifdef PY_COERCE_C_LOCALE
 static const char C_LOCALE_COERCION_WARNING[] =
-    "Python detected LC_CTYPE=C: LC_CTYPE coerced to %.20s (set another locale "
+    "Python detected a legacy locale: LC_CTYPE coerced to %.20s (set LC_ALL "
     "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behavior).\n";
 
 static void

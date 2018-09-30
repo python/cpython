@@ -806,23 +806,23 @@ conflict.
 
 .. envvar:: PYTHONCOERCECLOCALE
 
-   If set to the value ``0``, causes the main Python command line application
-   to skip coercing the legacy ASCII-based C and POSIX locales to a more
-   capable UTF-8 based alternative.
+   If set to the value ``0`` (encoded as ASCII bytes), causes the main Python
+   command line application to skip coercing the legacy ASCII-based C and
+   POSIX locales to a more capable UTF-8 based alternative. Locale coercion
+   is also skipped if the ``LC_ALL`` locale override environment variable is
+   set (as setting ``LC_CTYPE`` will have no effect in that case).
 
-   If this variable is *not* set (or is set to a value other than ``0``), the
-   ``LC_ALL`` locale override environment variable is also not set, and the
-   current locale reported for the ``LC_CTYPE`` category is either the default
-   ``C`` locale, or else the explicitly ASCII-based ``POSIX`` locale, then the
-   Python CLI will attempt to configure the following locales for the
-   ``LC_CTYPE`` category in the order listed before loading the interpreter
-   runtime:
+   Otherwise, when the current locale reported for the ``LC_CTYPE`` category is
+   either the default ``C`` locale, or else the explicitly ASCII-based ``POSIX``
+   locale, then the Python CLI will attempt to configure the following locales
+   for the ``LC_CTYPE`` category in the order listed before beginning to
+   initalise the interpreter runtime:
 
    * ``C.UTF-8``
    * ``C.utf8``
    * ``UTF-8``
 
-   If setting one of these locale categories succeeds, then the ``LC_CTYPE``
+   If enabling one of these locale categories succeeds, then the ``LC_CTYPE``
    environment variable will also be set accordingly in the current process
    environment before the Python runtime is initialized. This ensures that in
    addition to being seen by both the interpreter itself and other locale-aware
@@ -842,38 +842,44 @@ conflict.
    For debugging purposes, setting ``PYTHONCOERCECLOCALE=warn`` will cause
    Python to emit warning messages on ``stderr`` if either the locale coercion
    activates, or else if a locale that *would* have triggered coercion is
-   still active when the Python runtime is initialized.
+   still active when the Python runtime is initialized. (Note: as with the
+   locale coercion disabling marker, both the environment variable name and
+   the ``warn`` value must be encoded as ASCII text in order to have the
+   described effect)
 
    Also note that even when locale coercion is disabled, or when it fails to
-   find a suitable target locale, :envvar:`PYTHONUTF8` will still activate by
-   default in legacy ASCII-based locales. Both features must be disabled in
-   order to force the interpreter to use ``ASCII`` instead of ``UTF-8`` for
-   system interfaces.
+   find a suitable target locale, UTF-8 mode (as described under
+   :envvar:`PYTHONUTF8`) will still activate by default in these legacy
+   ASCII-based locales. Both features must be explicitly disabled in order to
+   force the interpreter to use ``ASCII`` instead of ``UTF-8`` for system
+   interfaces.
 
    Availability: \*nix
 
    .. note::
 
-      Running in the legacy C locale is `not actually supported`_, as it almost
-      inevitably leads to text encoding and decoding problems at operating
-      system interfaces. As such, the ability to disable locale coercion or emit
-      warnings when it occurs is provided solely as a debugging aid when
-      behavioural differences are encountered across different platforms
+      While UTF-8 mode is able to handle many of the issues that otherwise
+      arise, running in the legacy C locale is `not formally supported`_, as it
+      almost inevitably leads to text encoding and decoding problems at either
+      operating system interfaces or else between the interpreter runtime and
+      locale-aware extension modules. As such, the ability to disable locale
+      coercion or emit warnings when it occurs is provided solely as a debugging
+      aid when behavioural differences are encountered across different platforms
       (where some platforms may not define a suitable coercion target), or
       embedding applications (where some applications, including older versions
       of CPython, will manage the locale differently from the way the CPython
       3.7+ CLI does).
 
-   .. _not actually supported: https://www.python.org/dev/peps/pep-0011/#legacy-c-locale
+   .. _not formally supported: https://www.python.org/dev/peps/pep-0011/#legacy-c-locale
 
    .. note::
 
-      As locale coercion occurs before the command line arguments are processed,
-      setting ``PYTHONCOERCECLOCALE=0`` will prevent locale coercion even when
-      the :option:`-E` or :option:`-I` option is specified. The
-      ``PYTHONCOERCECLOCALE=warn`` case is handled later, and respects those
-      options as usual (i.e. no locale coercion warnings will ever be displayed
-      even when the :option:`-E` or :option:`-I` option is specified).
+      As a locale configuration variable, ``PYTHONCOERCECLOCALE`` is processed
+      in a way that is similar to the C level locale configuration variables
+      (``LANG``, ``LC_CTYPE``, and ``LC_ALL``): to have any effect, both the
+      key and the value must be encoded as ASCII bytes, and the setting is
+      processed even when :option:`-E` or :option:`-I` option is passed on the
+      command line.
 
    .. versionadded:: 3.7
       See :pep:`538` for more details. Note that the 3.7 implementation differs
@@ -887,11 +893,13 @@ conflict.
       C locale.
 
    .. versionchanged:: 3.8
-      The locale coercion implementation has been brought back into line with
-      the approach described in :pep:`538`: calling :c:func:`Py_Initialize` and
-      :c:func:`Py_Main` will never implicitly trigger local coercion, and
-      ``PYTHONCOERCECLOCALE=0`` takes effect even when the :option:`-E` or
-      :option:`-I` option is specified.
+      Locale coercion is now triggered by the POSIX locale, even on platforms
+      where that isn't a simple alias for the C locale.
+      The locale coercion implementation has also been brought back into line
+      with the approach described in :pep:`538`: calling :c:func:`Py_Initialize`
+      and :c:func:`Py_Main` will never implicitly trigger locale coercion, and
+      ``PYTHONCOERCECLOCALE=0`` and ``PYTHONCOERCECLOCALE=warn`` take effect
+      even when the :option:`-E` or :option:`-I` option is specified.
 
 
 .. envvar:: PYTHONDEVMODE

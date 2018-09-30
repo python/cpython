@@ -86,7 +86,7 @@ def _set_locale_in_subprocess(locale_name):
         # If there's no valid CODESET, we expect coercion to be skipped
         cmd_fmt += "; import sys; sys.exit(not locale.nl_langinfo(locale.CODESET))"
     cmd = cmd_fmt.format(locale_name)
-    result, py_cmd = run_python_until_end("-c", cmd, PYTHONCOERCECLOCALE='')
+    result, py_cmd = run_python_until_end("-c", cmd, __isolated=True)
     return result.rc == 0
 
 
@@ -152,7 +152,7 @@ class EncodingDetails(_EncodingDetails):
         """
         result, py_cmd = run_python_until_end(
             "-X", "utf8=0", "-c", cls.CHILD_PROCESS_SCRIPT,
-            **env_vars
+            __isolated=True, **env_vars
         )
         if not result.rc == 0:
             result.fail(py_cmd)
@@ -166,15 +166,15 @@ class EncodingDetails(_EncodingDetails):
 
 # Details of the shared library warning emitted at runtime
 LEGACY_LOCALE_WARNING = (
-    "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
-    "encoding), which may cause Unicode compatibility problems. Using C.UTF-8, "
+    "Python runtime initialized with a legacy locale that uses a default ASCII "
+    "encoding, which may cause Unicode compatibility problems. Using C.UTF-8, "
     "C.utf8, or UTF-8 (if available) as alternative Unicode-compatible "
     "locales is recommended."
 )
 
 # Details of the CLI locale coercion warning emitted at runtime
 CLI_COERCION_WARNING_FMT = (
-    "Python detected LC_CTYPE=C: LC_CTYPE coerced to {} (set another locale "
+    "Python detected a legacy locale: LC_CTYPE coerced to {} (set LC_ALL "
     "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behavior)."
 )
 
@@ -257,7 +257,6 @@ class LocaleConfigurationTests(_LocaleHandlingTestCase):
             "LANG": "",
             "LC_CTYPE": "",
             "LC_ALL": "",
-            "PYTHONCOERCECLOCALE": "",
         }
         for env_var in ("LANG", "LC_CTYPE"):
             for locale_to_set in AVAILABLE_TARGETS:
