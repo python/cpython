@@ -212,7 +212,7 @@ append_ast_args(_PyUnicodeWriter *writer, arguments_ty args)
     }
 
     /* vararg, or bare '*' if no varargs but keyword-only arguments present */
-    if (args->vararg || args->kwonlyargs) {
+    if (args->vararg || asdl_seq_LEN(args->kwonlyargs)) {
         APPEND_STR_IF_NOT_FIRST(", ");
         APPEND_STR("*");
         if (args->vararg) {
@@ -229,8 +229,11 @@ append_ast_args(_PyUnicodeWriter *writer, arguments_ty args)
 
         di = i - arg_count + default_count;
         if (di >= 0) {
-            APPEND_STR("=");
-            APPEND_EXPR((expr_ty)asdl_seq_GET(args->kw_defaults, di), PR_TEST);
+            expr_ty default_ = (expr_ty)asdl_seq_GET(args->kw_defaults, di);
+            if (default_) {
+                APPEND_STR("=");
+                APPEND_EXPR(default_, PR_TEST);
+            }
         }
     }
 
@@ -248,7 +251,7 @@ static int
 append_ast_lambda(_PyUnicodeWriter *writer, expr_ty e, int level)
 {
     APPEND_STR_IF(level > PR_TEST, "(");
-    APPEND_STR("lambda ");
+    APPEND_STR(asdl_seq_LEN(e->v.Lambda.args->args) ? "lambda " : "lambda");
     APPEND(args, e->v.Lambda.args);
     APPEND_STR(": ");
     APPEND_EXPR(e->v.Lambda.body, PR_TEST);
