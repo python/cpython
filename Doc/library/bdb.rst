@@ -320,7 +320,7 @@ The :mod:`bdb` module also defines two classes:
       ``(frame, lineno)`` tuple:
 
       * The canonical form of the filename which contains the frame.
-      * The function name, or ``"<lambda>"``.
+      * The function name.
       * The input arguments.
       * The return value.
       * The line of code (if it exists).

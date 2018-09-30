@@ -172,7 +172,7 @@ code if they are used incorrectly:
    >>> mock_function('wrong arguments')
    Traceback (most recent call last):
     ...
-   TypeError: <lambda>() takes exactly 3 arguments (1 given)
+   TypeError: missing a required argument: 'b'
 
 :func:`create_autospec` can also be used on classes, where it copies the signature of
 the ``__init__`` method, and on callable objects where it copies the signature of
@@ -2236,7 +2236,7 @@ we try to call it incorrectly:
     >>> req = request.Request()
     Traceback (most recent call last):
      ...
-    TypeError: <lambda>() takes at least 2 arguments (1 given)
+    TypeError: missing a required argument: 'url'
 
 The spec also applies to instantiated classes (i.e. the return value of
 specced mocks):

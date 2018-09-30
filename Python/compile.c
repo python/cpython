@@ -2306,31 +2306,40 @@ static int
 compiler_lambda(struct compiler *c, expr_ty e)
 {
     PyCodeObject *co;
-    PyObject *qualname;
-    static identifier name;
+    PyObject *name, *exprstr;
     Py_ssize_t funcflags;
     arguments_ty args = e->v.Lambda.args;
     assert(e->kind == Lambda_kind);
 
+    exprstr = _PyAST_ExprAsUnicode(e);
+    if (!exprstr) {
+        return 0;
+    }
+    name = PyUnicode_FromFormat("<%U>", exprstr);
+    Py_DECREF(exprstr);
     if (!name) {
-        name = PyUnicode_InternFromString("<lambda>");
-        if (!name)
-            return 0;
+        return 0;
     }
 
     funcflags = compiler_default_arguments(c, args);
     if (funcflags == -1) {
+        Py_DECREF(name);
         return 0;
     }
 
     if (!compiler_enter_scope(c, name, COMPILER_SCOPE_LAMBDA,
                               (void *)e, e->lineno))
+    {
+        Py_DECREF(name);
         return 0;
+    }
 
     /* Make None the first constant, so the lambda can't have a
        docstring. */
-    if (compiler_add_const(c, Py_None) < 0)
+    if (compiler_add_const(c, Py_None) < 0) {
+        Py_DECREF(name);
         return 0;
+    }
 
     c->u->u_argcount = asdl_seq_LEN(args->args);
     c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
@@ -2342,14 +2351,14 @@ compiler_lambda(struct compiler *c, expr_ty e)
         ADDOP_IN_SCOPE(c, RETURN_VALUE);
         co = assemble(c, 1);
     }
-    qualname = c->u->u_qualname;
-    Py_INCREF(qualname);
     compiler_exit_scope(c);
-    if (co == NULL)
+    if (co == NULL) {
+        Py_DECREF(name);
         return 0;
+    }
 
-    compiler_make_closure(c, co, funcflags, qualname);
-    Py_DECREF(qualname);
+    compiler_make_closure(c, co, funcflags, name);
+    Py_DECREF(name);
     Py_DECREF(co);
 
     return 1;

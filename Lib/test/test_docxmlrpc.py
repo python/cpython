@@ -114,8 +114,8 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
         self.client.request("GET", "/")
         response = self.client.getresponse()
 
-        self.assertIn((b'<dl><dt><a name="-&lt;lambda&gt;"><strong>'
-                       b'&lt;lambda&gt;</strong></a>(x, y)</dt></dl>'),
+        self.assertIn((b'<dl><dt><a name="-&lt;lambda x, y: x - y&gt;"><strong>'
+                       b'&lt;lambda x, y: x - y&gt;</strong></a>(x, y)</dt></dl>'),
                       response.read())
 
     @make_request_and_skipIf(sys.flags.optimize >= 2,

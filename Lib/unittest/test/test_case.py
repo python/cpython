@@ -1299,11 +1299,11 @@ test case
 
     def testAssertNotRaisesRegex(self):
         self.assertRaisesRegex(
-                self.failureException, '^Exception not raised by <lambda>$',
+                self.failureException, '^Exception not raised by <lambda: None>$',
                 self.assertRaisesRegex, Exception, re.compile('x'),
                 lambda: None)
         self.assertRaisesRegex(
-                self.failureException, '^Exception not raised by <lambda>$',
+                self.failureException, '^Exception not raised by <lambda: None>$',
                 self.assertRaisesRegex, Exception, 'x',
                 lambda: None)
         # Custom message

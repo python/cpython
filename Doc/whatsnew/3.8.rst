@@ -107,6 +107,18 @@ Other Language Changes
   and :keyword:`return` statements.
   (Contributed by David Cuthbert and Jordan Chapman in :issue:`32117`.)
 
+* The repr and the name of :keyword:`lambda` functions will now contain
+  the signature and body expression. For example::
+
+    >>> f = lambda x, y=1: x+y
+    >>> f
+    <lambda x, y=1: x + y at 0x7f437cd27890>
+    >>> f.__name__
+    '<lambda x, y=1: x + y>'
+
+  (Contributed by Serhiy Storchaka in :issue:`32489`.)
+
+
 New Modules
 ===========
 

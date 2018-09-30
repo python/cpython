@@ -145,8 +145,8 @@ class ReprTests(unittest.TestCase):
         self.assertIn(s.find("..."), [12, 13])
 
     def test_lambda(self):
-        r = repr(lambda x: x)
-        self.assertTrue(r.startswith("<function ReprTests.test_lambda.<locals>.<lambda"), r)
+        r = repr(lambda x, y=1: x+y)
+        self.assertTrue(r.startswith("<lambda x, y=1: x + y "), r)
         # XXX anonymous functions?  see func_repr
 
     def test_builtin_function(self):
