@@ -38,6 +38,9 @@ _zip_directory_cache = {}
 
 _module_type = type(sys)
 
+END_CENTRAL_DIR_SIZE = 22
+STRING_END_ARCHIVE = b'PK\x05\x06'
+MAX_COMMENT_LEN = (1 << 16) - 1
 
 class zipimporter:
     """zipimporter(archivepath) -> zipimporter object
@@ -354,16 +357,39 @@ def _read_directory(archive):
 
     with fp:
         try:
-            fp.seek(-22, 2)
+            fp.seek(-END_CENTRAL_DIR_SIZE, 2)
             header_position = fp.tell()
-            buffer = fp.read(22)
+            buffer = fp.read(END_CENTRAL_DIR_SIZE)
         except OSError:
             raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
-        if len(buffer) != 22:
+        if len(buffer) != END_CENTRAL_DIR_SIZE:
             raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
-        if buffer[:4] != b'PK\x05\x06':
+        if buffer[:4] != STRING_END_ARCHIVE:
             # Bad: End of Central Dir signature
-            raise ZipImportError(f'not a Zip file: {archive!r}', path=archive)
+            # Check if there's a comment.
+            try:
+                fp.seek(0, 2)
+                file_size = fp.tell()
+            except OSError:
+                raise ZipImportError(f"can't read Zip file: {archive!r}",
+                                     path=archive)
+            max_comment_start = max(file_size - MAX_COMMENT_LEN -
+                                    END_CENTRAL_DIR_SIZE, 0)
+            try:
+                fp.seek(max_comment_start)
+                data = fp.read()
+            except OSError:
+                raise ZipImportError(f"can't read Zip file: {archive!r}",
+                                     path=archive)
+            pos = data.rfind(STRING_END_ARCHIVE)
+            if pos < 0:
+                raise ZipImportError(f'not a Zip file: {archive!r}',
+                                     path=archive)
+            buffer = data[pos:pos+END_CENTRAL_DIR_SIZE]
+            if len(buffer) != END_CENTRAL_DIR_SIZE:
+                raise ZipImportError(f"corrupt Zip file: {archive!r}",
+                                     path=archive)
+            header_position = file_size - len(data) + pos
 
         header_size = _unpack_uint32(buffer[12:16])
         header_offset = _unpack_uint32(buffer[16:20])

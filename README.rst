@@ -9,16 +9,8 @@ This is Python version 3.8.0 alpha 0
    :alt: CPython build status on Appveyor
    :target: https://ci.appveyor.com/project/python/cpython/branch/master
 
-.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Linux-Buildbot?branchName=master&label=Linux
-   :alt: CPython build status on Azure DevOps (Linux)
-   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=6&branchName=master
-
-.. image:: https://dev.azure.com/python/cpython/_apis/build/status/macOS-Buildbot?branchName=master&label=macOS
-   :alt: CPython build status on Azure DevOps (macOS)
-   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=5&branchName=master
-
-.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Windows-Buildbot?branchName=master&label=Windows
-   :alt: CPython build status on Azure DevOps (Windows)
+.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=master
+   :alt: CPython build status on Azure DevOps
    :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=master
 
 .. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg

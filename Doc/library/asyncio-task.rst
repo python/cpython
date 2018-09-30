@@ -109,50 +109,90 @@ To actually run a coroutine asyncio provides three main mechanisms:
 Awaitables
 ==========
 
-We say that an object is an *awaitable* object if it can be used
-in an :keyword:`await` expression.
+We say that an object is an **awaitable** object if it can be used
+in an :keyword:`await` expression.  Many asyncio APIs are designed to
+accept awaitables.
+
+There are three main types of *awaitable* objects:
+**coroutines**, **Tasks**, and **Futures**.
 
 
-.. rubric:: Coroutines and Tasks
+.. rubric:: Coroutines
 
-Python coroutines are *awaitables*::
+Python coroutines are *awaitables* and therefore can be awaited from
+other coroutines::
+
+    import asyncio
 
     async def nested():
         return 42
 
     async def main():
-        # Will print "42":
-        print(await nested())
+        # Nothing happens if we just call "nested()".
+        # A coroutine object is created but not awaited,
+        # so it *won't run at all*.
+        nested()
+
+        # Let's do it differently now and await it:
+        print(await nested())  # will print "42".
+
+    asyncio.run(main())
+
+.. important::
+
+   In this documentation the term "coroutine" can be used for
+   two closely related concepts:
+
+   * a *coroutine function*: an :keyword:`async def` function;
+
+   * a *coroutine object*: an object returned by calling a
+     *coroutine function*.
+
+asyncio also supports legacy :ref:`generator-based
+<asyncio_generator_based_coro>` coroutines.
+
+
+.. rubric:: Tasks
 
 *Tasks* are used to schedule coroutines *concurrently*.
-See the previous :ref:`section <coroutine>` for an introduction
-to coroutines and tasks.
 
-Note that in this documentation the term "coroutine" can be used for
-two closely related concepts:
+When a coroutine is wrapped into a *Task* with functions like
+:func:`asyncio.create_task` the coroutine is automatically
+scheduled to run soon::
 
-* a *coroutine function*: an :keyword:`async def` function;
+    import asyncio
 
-* a *coroutine object*: object returned by calling a
-  *coroutine function*.
+    async def nested():
+        return 42
+
+    async def main():
+        # Schedule nested() to run soon concurrently
+        # with "main()".
+        task = asyncio.create_task(nested())
+
+        # "task" can now be used to cancel "nested()", or
+        # can simply be awaited to wait until it is complete:
+        await task
+
+    asyncio.run(main())
 
 
 .. rubric:: Futures
 
-There is a dedicated section about the :ref:`asyncio Future object
-<asyncio-futures>`, but the concept is fundamental to asyncio so
-it needs a brief introduction in this section.
+A :class:`Future` is a special **low-level** awaitable object that
+represents an **eventual result** of an asynchronous operation.
 
-A Future is a special **low-level** awaitable object that represents
-an **eventual result** of an asynchronous operation.
+When a Future object is *awaited* it means that the coroutine will
+wait until the Future is resolved in some other place.
+
 Future objects in asyncio are needed to allow callback-based code
 to be used with async/await.
 
-Normally, **there is no need** to create Future objects at the
+Normally **there is no need** to create Future objects at the
 application level code.
 
 Future objects, sometimes exposed by libraries and some asyncio
-APIs, should be awaited::
+APIs, can be awaited::
 
     async def main():
         await function_that_returns_a_future_object()
@@ -162,6 +202,9 @@ APIs, should be awaited::
             function_that_returns_a_future_object(),
             some_python_coroutine()
         )
+
+A good example of a low-level function that returns a Future object
+is :meth:`loop.run_in_executor`.
 
 
 Running an asyncio Program
@@ -192,8 +235,8 @@ Creating Tasks
 
 .. function:: create_task(coro, \*, name=None)
 
-   Wrap the *coro* :ref:`coroutine <coroutine>` into a Task and
-   schedule its execution.  Return the Task object.
+   Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
+   and schedule its execution.  Return the Task object.
 
    If *name* is not ``None``, it is set as the name of the task using
    :meth:`Task.set_name`.
@@ -234,7 +277,7 @@ Sleeping
    when the coroutine completes.
 
    The *loop* argument is deprecated and scheduled for removal
-   in Python 4.0.
+   in Python 3.10.
 
    .. _asyncio_example_sleep:
 
@@ -259,27 +302,30 @@ Sleeping
 Running Tasks Concurrently
 ==========================
 
-.. awaitablefunction:: gather(\*fs, loop=None, return_exceptions=False)
+.. awaitablefunction:: gather(\*aws, loop=None, return_exceptions=False)
 
-   Run :ref:`awaitable objects <asyncio-awaitables>` in the *fs*
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
    sequence *concurrently*.
 
-   If any awaitable in *fs* is a coroutine, it is automatically
+   If any awaitable in *aws* is a coroutine, it is automatically
    scheduled as a Task.
 
    If all awaitables are completed successfully, the result is an
    aggregate list of returned values.  The order of result values
-   corresponds to the order of awaitables in *fs*.
+   corresponds to the order of awaitables in *aws*.
+
+   If *return_exceptions* is ``False`` (default), the first
+   raised exception is immediately propagated to the task that
+   awaits on ``gather()``.  Other awaitables in the *aws* sequence
+   **won't be cancelled** and will continue to run.
 
    If *return_exceptions* is ``True``, exceptions are treated the
    same as successful results, and aggregated in the result list.
-   Otherwise, the first raised exception is immediately propagated
-   to the task that awaits on ``gather()``.
 
-   If ``gather`` is *cancelled*, all submitted awaitables
+   If ``gather()`` is *cancelled*, all submitted awaitables
    (that have not completed yet) are also *cancelled*.
 
-   If any Task or Future from the *fs* sequence is *cancelled*, it is
+   If any Task or Future from the *aws* sequence is *cancelled*, it is
    treated as if it raised :exc:`CancelledError` -- the ``gather()``
    call is **not** cancelled in this case.  This is to prevent the
    cancellation of one submitted Task/Future to cause other
@@ -326,16 +372,15 @@ Running Tasks Concurrently
       propagated regardless of *return_exceptions*.
 
 
-Shielding Tasks From Cancellation
-=================================
+Shielding From Cancellation
+===========================
 
-.. awaitablefunction:: shield(fut, \*, loop=None)
+.. awaitablefunction:: shield(aw, \*, loop=None)
 
    Protect an :ref:`awaitable object <asyncio-awaitables>`
    from being :meth:`cancelled <Task.cancel>`.
 
-   *fut* can be a coroutine, a Task, or a Future-like object.  If
-   *fut* is a coroutine it is automatically scheduled as a Task.
+   If *aw* is a coroutine it is automatically scheduled as a Task.
 
    The statement::
 
@@ -367,12 +412,12 @@ Shielding Tasks From Cancellation
 Timeouts
 ========
 
-.. coroutinefunction:: wait_for(fut, timeout, \*, loop=None)
+.. coroutinefunction:: wait_for(aw, timeout, \*, loop=None)
 
-   Wait for the *fut* :ref:`awaitable <asyncio-awaitables>`
+   Wait for the *aw* :ref:`awaitable <asyncio-awaitables>`
    to complete with a timeout.
 
-   If *fut* is a coroutine it is automatically scheduled as a Task.
+   If *aw* is a coroutine it is automatically scheduled as a Task.
 
    *timeout* can either be ``None`` or a float or int number of seconds
    to wait for.  If *timeout* is ``None``, block until the future
@@ -387,10 +432,10 @@ Timeouts
    The function will wait until the future is actually cancelled,
    so the total wait time may exceed the *timeout*.
 
-   If the wait is cancelled, the future *fut* is also cancelled.
+   If the wait is cancelled, the future *aw* is also cancelled.
 
    The *loop* argument is deprecated and scheduled for removal
-   in Python 4.0.
+   in Python 3.10.
 
    .. _asyncio_example_waitfor:
 
@@ -415,28 +460,34 @@ Timeouts
        #     timeout!
 
    .. versionchanged:: 3.7
-      When *fut* is cancelled due to a timeout, ``wait_for`` waits
-      for *fut* to be cancelled.  Previously, it raised
+      When *aw* is cancelled due to a timeout, ``wait_for`` waits
+      for *aw* to be cancelled.  Previously, it raised
       :exc:`asyncio.TimeoutError` immediately.
 
 
 Waiting Primitives
 ==================
 
-.. coroutinefunction:: wait(fs, \*, loop=None, timeout=None,\
+.. coroutinefunction:: wait(aws, \*, loop=None, timeout=None,\
                             return_when=ALL_COMPLETED)
 
-   Run :ref:`awaitable objects <asyncio-awaitables>` in the *fs*
-   sequence concurrently and block until the condition specified
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
+   set concurrently and block until the condition specified
    by *return_when*.
 
-   If any awaitable in *fs* is a coroutine, it is automatically
-   scheduled as a Task.
+   If any awaitable in *aws* is a coroutine, it is automatically
+   scheduled as a Task.  Passing coroutines objects to
+   ``wait()`` directly is deprecated as it leads to
+   :ref:`confusing behavior <asyncio_example_wait_coroutine>`.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
+   Usage::
+
+        done, pending = await asyncio.wait(aws)
+
    The *loop* argument is deprecated and scheduled for removal
-   in Python 4.0.
+   in Python 3.10.
 
    *timeout* (a float or int), if specified, can be used to control
    the maximum number of seconds to wait before returning.
@@ -469,14 +520,40 @@ Waiting Primitives
    Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
    futures when a timeout occurs.
 
-   Usage::
+   .. _asyncio_example_wait_coroutine:
+   .. note::
 
-        done, pending = await asyncio.wait(fs)
+      ``wait()`` schedules coroutines as Tasks automatically and later
+      returns those implicitly created Task objects in ``(done, pending)``
+      sets.  Therefore the following code won't work as expected::
+
+          async def foo():
+              return 42
+
+          coro = foo()
+          done, pending = await asyncio.wait({coro})
+
+          if coro in done:
+              # This branch will never be run!
+
+      Here is how the above snippet can be fixed::
+
+          async def foo():
+              return 42
+
+          task = asyncio.create_task(foo())
+          done, pending = await asyncio.wait({task})
+
+          if task in done:
+              # Everything will work as expected now.
+
+      Passing coroutine objects to ``wait()`` directly is
+      deprecated.
 
 
-.. function:: as_completed(fs, \*, loop=None, timeout=None)
+.. function:: as_completed(aws, \*, loop=None, timeout=None)
 
-   Run :ref:`awaitable objects <asyncio-awaitables>` in the *fs*
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
    set concurrently.  Return an iterator of :class:`Future` objects.
    Each Future object returned represents the earliest result
    from the set of the remaining awaitables.
@@ -486,7 +563,7 @@ Waiting Primitives
 
    Example::
 
-       for f in as_completed(fs):
+       for f in as_completed(aws):
            earliest_result = await f
            # ...
 
@@ -567,7 +644,7 @@ Task Object
 
 .. class:: Task(coro, \*, loop=None, name=None)
 
-   A :class:`Future`-like object that wraps a Python
+   A :class:`Future-like <Future>` object that runs a Python
    :ref:`coroutine <coroutine>`.  Not thread-safe.
 
    Tasks are used to run coroutines in event loops.
@@ -679,6 +756,52 @@ Task Object
       A Task is *done* when the wrapped coroutine either returned
       a value, raised an exception, or the Task was cancelled.
 
+   .. method:: result()
+
+      Return the result of the Task.
+
+      If the Task is *done*, the result of the wrapped coroutine
+      is returned (or if the coroutine raised an exception, that
+      exception is re-raised.)
+
+      If the Task has been *cancelled*, this method raises
+      a :exc:`CancelledError` exception.
+
+      If the Task's result isn't yet available, this method raises
+      a :exc:`InvalidStateError` exception.
+
+   .. method:: exception()
+
+      Return the exception of the Task.
+
+      If the wrapped coroutine raised an exception that exception
+      is returned.  If the wrapped coroutine returned normally
+      this method returns ``None``.
+
+      If the Task has been *cancelled*, this method raises a
+      :exc:`CancelledError` exception.
+
+      If the Task isn't *done* yet, this method raises an
+      :exc:`InvalidStateError` exception.
+
+   .. method:: add_done_callback(callback, *, context=None)
+
+      Add a callback to be run when the Task is *done*.
+
+      This method should only be used in low-level callback-based code.
+
+      See the documentation of :meth:`Future.add_done_callback`
+      for more details.
+
+   .. method:: remove_done_callback(callback)
+
+      Remove *callback* from the callbacks list.
+
+      This method should only be used in low-level callback-based code.
+
+      See the documentation of :meth:`Future.remove_done_callback`
+      for more details.
+
    .. method:: get_stack(\*, limit=None)
 
       Return the list of stack frames for this Task.
@@ -743,7 +866,7 @@ Task Object
       is used to get the current loop.
 
       This method is **deprecated** and will be removed in
-      Python 3.9.  Use the :func:`all_tasks` function instead.
+      Python 3.9.  Use the :func:`asyncio.all_tasks` function instead.
 
    .. classmethod:: current_task(loop=None)
 
@@ -753,7 +876,8 @@ Task Object
       is used to get the current loop.
 
       This method is **deprecated** and will be removed in
-      Python 3.9.  Use the :func:`current_task` function instead.
+      Python 3.9.  Use the :func:`asyncio.current_task` function
+      instead.
 
 
 .. _asyncio_generator_based_coro:
@@ -764,7 +888,7 @@ Generator-based Coroutines
 .. note::
 
    Support for generator-based coroutines is **deprecated** and
-   is scheduled for removal in Python 4.0.
+   is scheduled for removal in Python 3.10.
 
 Generator-based coroutines predate async/await syntax.  They are
 Python generators that use ``yield from`` expressions to await
@@ -790,7 +914,7 @@ enforced.
             await old_style_coroutine()
 
     This decorator is **deprecated** and is scheduled for removal in
-    Python 4.0.
+    Python 3.10.
 
     This decorator should not be used for :keyword:`async def`
     coroutines.
@@ -800,8 +924,7 @@ enforced.
    Return ``True`` if *obj* is a :ref:`coroutine object <coroutine>`.
 
    This method is different from :func:`inspect.iscoroutine` because
-   it returns ``True`` for generator-based coroutines decorated with
-   :func:`@coroutine <coroutine>`.
+   it returns ``True`` for generator-based coroutines.
 
 .. function:: iscoroutinefunction(func)
 

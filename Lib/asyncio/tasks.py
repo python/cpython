@@ -382,7 +382,11 @@ async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
         raise ValueError(f'Invalid return_when value: {return_when}')
 
     if loop is None:
-        loop = events.get_event_loop()
+        loop = events.get_running_loop()
+    else:
+        warnings.warn("The loop argument is deprecated and scheduled for "
+                      "removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
 
     fs = {ensure_future(f, loop=loop) for f in set(fs)}
 
@@ -408,7 +412,11 @@ async def wait_for(fut, timeout, *, loop=None):
     This function is a coroutine.
     """
     if loop is None:
-        loop = events.get_event_loop()
+        loop = events.get_running_loop()
+    else:
+        warnings.warn("The loop argument is deprecated and scheduled for "
+                      "removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
 
     if timeout is None:
         return await fut
@@ -585,7 +593,12 @@ async def sleep(delay, result=None, *, loop=None):
         return result
 
     if loop is None:
-        loop = events.get_event_loop()
+        loop = events.get_running_loop()
+    else:
+        warnings.warn("The loop argument is deprecated and scheduled for "
+                      "removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
+
     future = loop.create_future()
     h = loop.call_later(delay,
                         futures._set_result_unless_cancelled,

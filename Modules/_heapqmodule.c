@@ -8,6 +8,13 @@ annotated by François Pinard, and converted to C by Raymond Hettinger.
 
 #include "Python.h"
 
+#include "clinic/_heapqmodule.c.h"
+
+/*[clinic input]
+module _heapq
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d7cca0a2e4c0ceb3]*/
+
 static int
 siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 {
@@ -96,14 +103,20 @@ siftup(PyListObject *heap, Py_ssize_t pos)
     return siftdown(heap, startpos, pos);
 }
 
+/*[clinic input]
+_heapq.heappush
+
+    heap: object
+    item: object
+    /
+
+Push item onto heap, maintaining the heap invariant.
+[clinic start generated code]*/
+
 static PyObject *
-heappush(PyObject *self, PyObject *args)
+_heapq_heappush_impl(PyObject *module, PyObject *heap, PyObject *item)
+/*[clinic end generated code: output=912c094f47663935 input=7913545cb5118842]*/
 {
-    PyObject *heap, *item;
-
-    if (!PyArg_UnpackTuple(args, "heappush", 2, 2, &heap, &item))
-        return NULL;
-
     if (!PyList_Check(heap)) {
         PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
         return NULL;
@@ -116,9 +129,6 @@ heappush(PyObject *self, PyObject *args)
         return NULL;
     Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(heappush_doc,
-"heappush(heap, item) -> None. Push item onto heap, maintaining the heap invariant.");
 
 static PyObject *
 heappop_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
@@ -157,22 +167,26 @@ heappop_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
     return returnitem;
 }
 
+/*[clinic input]
+_heapq.heappop
+
+    heap: object
+    /
+
+Pop the smallest item off the heap, maintaining the heap invariant.
+[clinic start generated code]*/
+
 static PyObject *
-heappop(PyObject *self, PyObject *heap)
+_heapq_heappop(PyObject *module, PyObject *heap)
+/*[clinic end generated code: output=e1bbbc9866bce179 input=9bd36317b806033d]*/
 {
     return heappop_internal(heap, siftup);
 }
 
-PyDoc_STRVAR(heappop_doc,
-"Pop the smallest item off the heap, maintaining the heap invariant.");
-
 static PyObject *
-heapreplace_internal(PyObject *args, int siftup_func(PyListObject *, Py_ssize_t))
+heapreplace_internal(PyObject *heap, PyObject *item, int siftup_func(PyListObject *, Py_ssize_t))
 {
-    PyObject *heap, *item, *returnitem;
-
-    if (!PyArg_UnpackTuple(args, "heapreplace", 2, 2, &heap, &item))
-        return NULL;
+    PyObject *returnitem;
 
     if (!PyList_Check(heap)) {
         PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
@@ -194,30 +208,51 @@ heapreplace_internal(PyObject *args, int siftup_func(PyListObject *, Py_ssize_t)
     return returnitem;
 }
 
+
+/*[clinic input]
+_heapq.heapreplace
+
+    heap: object
+    item: object
+    /
+
+Pop and return the current smallest value, and add the new item.
+
+This is more efficient than heappop() followed by heappush(), and can be
+more appropriate when using a fixed-size heap.  Note that the value
+returned may be larger than item!  That constrains reasonable uses of
+this routine unless written as part of a conditional replacement:
+
+    if item > heap[0]:
+        item = heapreplace(heap, item)
+[clinic start generated code]*/
+
 static PyObject *
-heapreplace(PyObject *self, PyObject *args)
+_heapq_heapreplace_impl(PyObject *module, PyObject *heap, PyObject *item)
+/*[clinic end generated code: output=82ea55be8fbe24b4 input=e57ae8f4ecfc88e3]*/
 {
-    return heapreplace_internal(args, siftup);
+    return heapreplace_internal(heap, item, siftup);
 }
 
-PyDoc_STRVAR(heapreplace_doc,
-"heapreplace(heap, item) -> value. Pop and return the current smallest value, and add the new item.\n\
-\n\
-This is more efficient than heappop() followed by heappush(), and can be\n\
-more appropriate when using a fixed-size heap.  Note that the value\n\
-returned may be larger than item!  That constrains reasonable uses of\n\
-this routine unless written as part of a conditional replacement:\n\n\
-    if item > heap[0]:\n\
-        item = heapreplace(heap, item)\n");
+/*[clinic input]
+_heapq.heappushpop
+
+    heap: object
+    item: object
+    /
+
+Push item on the heap, then pop and return the smallest item from the heap.
+
+The combined action runs more efficiently than heappush() followed by
+a separate call to heappop().
+[clinic start generated code]*/
 
 static PyObject *
-heappushpop(PyObject *self, PyObject *args)
+_heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item)
+/*[clinic end generated code: output=67231dc98ed5774f input=eb48c90ba77b2214]*/
 {
-    PyObject *heap, *item, *returnitem;
+    PyObject *returnitem;
     int cmp;
-
-    if (!PyArg_UnpackTuple(args, "heappushpop", 2, 2, &heap, &item))
-        return NULL;
 
     if (!PyList_Check(heap)) {
         PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
@@ -251,11 +286,6 @@ heappushpop(PyObject *self, PyObject *args)
     }
     return returnitem;
 }
-
-PyDoc_STRVAR(heappushpop_doc,
-"heappushpop(heap, item) -> value. Push item on the heap, then pop and return the smallest item\n\
-from the heap. The combined action runs more efficiently than\n\
-heappush() followed by a separate call to heappop().");
 
 static Py_ssize_t
 keep_top_bit(Py_ssize_t n)
@@ -353,14 +383,21 @@ heapify_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_heapq.heapify
+
+    heap: object
+    /
+
+Transform list into a heap, in-place, in O(len(heap)) time.
+[clinic start generated code]*/
+
 static PyObject *
-heapify(PyObject *self, PyObject *heap)
+_heapq_heapify(PyObject *module, PyObject *heap)
+/*[clinic end generated code: output=11483f23627c4616 input=872c87504b8de970]*/
 {
     return heapify_internal(heap, siftup);
 }
-
-PyDoc_STRVAR(heapify_doc,
-"Transform list into a heap, in-place, in O(len(heap)) time.");
 
 static int
 siftdown_max(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
@@ -450,48 +487,68 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
     return siftdown_max(heap, startpos, pos);
 }
 
+
+/*[clinic input]
+_heapq._heappop_max
+
+    heap: object
+    /
+
+Maxheap variant of heappop.
+[clinic start generated code]*/
+
 static PyObject *
-heappop_max(PyObject *self, PyObject *heap)
+_heapq__heappop_max(PyObject *module, PyObject *heap)
+/*[clinic end generated code: output=acd30acf6384b13c input=62ede3ba9117f541]*/
 {
     return heappop_internal(heap, siftup_max);
 }
 
-PyDoc_STRVAR(heappop_max_doc, "Maxheap variant of heappop.");
+/*[clinic input]
+_heapq._heapreplace_max
+
+    heap: object
+    item: object
+    /
+
+Maxheap variant of heapreplace.
+[clinic start generated code]*/
 
 static PyObject *
-heapreplace_max(PyObject *self, PyObject *args)
+_heapq__heapreplace_max_impl(PyObject *module, PyObject *heap,
+                             PyObject *item)
+/*[clinic end generated code: output=8ad7545e4a5e8adb input=6d8f25131e0f0e5f]*/
 {
-    return heapreplace_internal(args, siftup_max);
+    return heapreplace_internal(heap, item, siftup_max);
 }
 
-PyDoc_STRVAR(heapreplace_max_doc, "Maxheap variant of heapreplace");
+/*[clinic input]
+_heapq._heapify_max
+
+    heap: object
+    /
+
+Maxheap variant of heapify.
+[clinic start generated code]*/
 
 static PyObject *
-heapify_max(PyObject *self, PyObject *heap)
+_heapq__heapify_max(PyObject *module, PyObject *heap)
+/*[clinic end generated code: output=1c6bb6b60d6a2133 input=cdfcc6835b14110d]*/
 {
     return heapify_internal(heap, siftup_max);
 }
 
-PyDoc_STRVAR(heapify_max_doc, "Maxheap variant of heapify.");
 
 static PyMethodDef heapq_methods[] = {
-    {"heappush",        (PyCFunction)heappush,
-        METH_VARARGS,           heappush_doc},
-    {"heappushpop",     (PyCFunction)heappushpop,
-        METH_VARARGS,           heappushpop_doc},
-    {"heappop",         (PyCFunction)heappop,
-        METH_O,                 heappop_doc},
-    {"heapreplace",     (PyCFunction)heapreplace,
-        METH_VARARGS,           heapreplace_doc},
-    {"heapify",         (PyCFunction)heapify,
-        METH_O,                 heapify_doc},
-    {"_heappop_max",    (PyCFunction)heappop_max,
-        METH_O,                 heappop_max_doc},
-    {"_heapreplace_max",(PyCFunction)heapreplace_max,
-        METH_VARARGS,           heapreplace_max_doc},
-    {"_heapify_max",    (PyCFunction)heapify_max,
-        METH_O,                 heapify_max_doc},
-    {NULL,              NULL}           /* sentinel */
+    _HEAPQ_HEAPPUSH_METHODDEF
+    _HEAPQ_HEAPPUSHPOP_METHODDEF
+    _HEAPQ_HEAPPOP_METHODDEF
+    _HEAPQ_HEAPREPLACE_METHODDEF
+    _HEAPQ_HEAPIFY_METHODDEF
+    _HEAPQ__HEAPPOP_MAX_METHODDEF
+    _HEAPQ__HEAPIFY_MAX_METHODDEF
+    _HEAPQ__HEAPREPLACE_MAX_METHODDEF
+    {NULL, NULL}           /* sentinel */
 };
 
 PyDoc_STRVAR(module_doc,

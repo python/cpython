@@ -3,6 +3,31 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-1529353: Output over N lines (50 by default) is squeezed down to a button.
+N can be changed in the PyShell section of the General page of the
+Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
+right clicking on the output.  Squeezed output can be expanded in place
+by double-clicking the button or into the clipboard or a separate window
+by right-clicking the button.
+
+bpo-34548: Use configured color theme for read-only text views.
+
+bpo-33839: Refactor ToolTip and CallTip classes; add documentation
+and tests.
+
+bpo-34047: Fix mouse wheel scrolling direction on macOS.
+
+bpo-34275: Make calltips always visible on Mac.
+Patch by Kevin Walzer.
+
+bpo-34120: Fix freezing after closing some dialogs on Mac.
+This is one of multiple regressions from using newer tcl/tk.
+
+bpo-33975: Avoid small type when running htests.
+Since part of the purpose of human-viewed tests is to determine that
+widgets look right, it is important that they look the same for
+testing as when running IDLE.
+
 bpo-33905: Add test for idlelib.stackview.StackBrowser.
 
 bpo-33924: Change mainmenu.menudefs key 'windows' to 'window'.
