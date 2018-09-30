@@ -15,7 +15,7 @@ from test.support.script_helper import (
 )
 
 # Set the list of ways we expect to be able to ask for the "C" locale
-EXPECTED_C_LOCALE_EQUIVALENTS = ["C", "invalid.ascii"]
+EXPECTED_C_LOCALE_EQUIVALENTS = ["C", "invalid.ascii", "POSIX"]
 
 # Set our expectation for the default encoding used in the C locale
 # for the filesystem encoding and the standard streams
@@ -31,12 +31,6 @@ if sys.platform.startswith("linux"):
         # Android defaults to using UTF-8 for all system interfaces
         EXPECTED_C_LOCALE_STREAM_ENCODING = "utf-8"
         EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
-    else:
-        # Linux distros typically alias the POSIX locale directly to the C
-        # locale.
-        # TODO: Once https://bugs.python.org/issue30672 is addressed, we'll be
-        #       able to check this case unconditionally
-        EXPECTED_C_LOCALE_EQUIVALENTS.append("POSIX")
 elif sys.platform.startswith("aix"):
     # AIX uses iso8859-1 in the C locale, other *nix platforms use ASCII
     EXPECTED_C_LOCALE_STREAM_ENCODING = "iso8859-1"
@@ -53,7 +47,6 @@ elif sys.platform == "cygwin":
 # Note that the above expectations are still wrong in some cases, such as:
 # * Windows when PYTHONLEGACYWINDOWSFSENCODING is set
 # * Any platform other than AIX that uses latin-1 in the C locale
-# * Any Linux distro where POSIX isn't a simple alias for the C locale
 # * Any Linux distro where the default locale is something other than "C"
 #
 # Options for dealing with this:
