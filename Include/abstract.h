@@ -590,9 +590,15 @@ PyAPI_FUNC(PyObject *) PyObject_Format(PyObject *obj,
    returns itself. */
 PyAPI_FUNC(PyObject *) PyObject_GetIter(PyObject *);
 
+/* Returns 1 if the object 'obj' provides iterator protocols, and 0 otherwise.
+
+   This function always succeeds. */
+PyAPI_FUNC(int) PyIter_Check(PyObject *);
+#ifndef Py_LIMITED_API
 #define PyIter_Check(obj) \
     ((obj)->ob_type->tp_iternext != NULL && \
      (obj)->ob_type->tp_iternext != &_PyObject_NextNotImplemented)
+#endif
 
 /* Takes an iterator object and calls its tp_iternext slot,
    returning the next value.
@@ -710,9 +716,14 @@ PyAPI_FUNC(PyObject *) PyNumber_Xor(PyObject *o1, PyObject *o2);
    This is the equivalent of the Python expression: o1 | o2. */
 PyAPI_FUNC(PyObject *) PyNumber_Or(PyObject *o1, PyObject *o2);
 
+/* Returns 1 if obj is an index integer (has the nb_index slot of the
+   tp_as_number structure filled in), and 0 otherwise. */
+PyAPI_FUNC(int) PyIndex_Check(PyObject *);
+#ifndef Py_LIMITED_API
 #define PyIndex_Check(obj)                              \
     ((obj)->ob_type->tp_as_number != NULL &&            \
      (obj)->ob_type->tp_as_number->nb_index != NULL)
+#endif
 
 /* Returns the object 'o' converted to a Python int, or NULL with an exception
    raised on failure. */
@@ -921,8 +932,10 @@ PyAPI_FUNC(PyObject *) PySequence_Fast(PyObject *o, const char* m);
 
 /* Assume tp_as_sequence and sq_item exist and that 'i' does not
    need to be corrected for a negative index. */
+#ifndef Py_LIMITED_API
 #define PySequence_ITEM(o, i)\
     ( Py_TYPE(o)->tp_as_sequence->sq_item(o, i) )
+#endif
 
 /* Return a pointer to the underlying item array for
    an object retured by PySequence_Fast */

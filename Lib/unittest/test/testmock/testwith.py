@@ -188,6 +188,7 @@ class TestMockOpen(unittest.TestCase):
 
     def test_readline_data(self):
         # Check that readline will return all the lines from the fake file
+        # And that once fully consumed, readline will return an empty string.
         mock = mock_open(read_data='foo\nbar\nbaz\n')
         with patch('%s.open' % __name__, mock, create=True):
             h = open('bar')
@@ -197,6 +198,7 @@ class TestMockOpen(unittest.TestCase):
         self.assertEqual(line1, 'foo\n')
         self.assertEqual(line2, 'bar\n')
         self.assertEqual(line3, 'baz\n')
+        self.assertEqual(h.readline(), '')
 
         # Check that we properly emulate a file that doesn't end in a newline
         mock = mock_open(read_data='foo')
@@ -204,6 +206,19 @@ class TestMockOpen(unittest.TestCase):
             h = open('bar')
             result = h.readline()
         self.assertEqual(result, 'foo')
+        self.assertEqual(h.readline(), '')
+
+
+    def test_dunder_iter_data(self):
+        # Check that dunder_iter will return all the lines from the fake file.
+        mock = mock_open(read_data='foo\nbar\nbaz\n')
+        with patch('%s.open' % __name__, mock, create=True):
+            h = open('bar')
+            lines = [l for l in h]
+        self.assertEqual(lines[0], 'foo\n')
+        self.assertEqual(lines[1], 'bar\n')
+        self.assertEqual(lines[2], 'baz\n')
+        self.assertEqual(h.readline(), '')
 
 
     def test_readlines_data(self):

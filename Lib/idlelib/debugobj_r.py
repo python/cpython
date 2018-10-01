@@ -34,3 +34,8 @@ class StubObjectTreeItem:
     def _GetSubList(self):
         sub_list = self.sockio.remotecall(self.oid, "_GetSubList", (), {})
         return [StubObjectTreeItem(self.sockio, oid) for oid in sub_list]
+
+
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_debugobj_r', verbosity=2)

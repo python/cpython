@@ -2305,6 +2305,179 @@ class TestSingleDispatch(unittest.TestCase):
         ))
         self.assertTrue(str(exc.exception).endswith(msg_suffix))
 
+    def test_invalid_positional_argument(self):
+        @functools.singledispatch
+        def f(*args):
+            pass
+        msg = 'f requires at least 1 positional argument'
+        with self.assertRaisesRegex(TypeError, msg):
+            f()
+
+
+class CachedCostItem:
+    _cost = 1
+
+    def __init__(self):
+        self.lock = py_functools.RLock()
+
+    @py_functools.cached_property
+    def cost(self):
+        """The cost of the item."""
+        with self.lock:
+            self._cost += 1
+        return self._cost
+
+
+class OptionallyCachedCostItem:
+    _cost = 1
+
+    def get_cost(self):
+        """The cost of the item."""
+        self._cost += 1
+        return self._cost
+
+    cached_cost = py_functools.cached_property(get_cost)
+
+
+class CachedCostItemWait:
+
+    def __init__(self, event):
+        self._cost = 1
+        self.lock = py_functools.RLock()
+        self.event = event
+
+    @py_functools.cached_property
+    def cost(self):
+        self.event.wait(1)
+        with self.lock:
+            self._cost += 1
+        return self._cost
+
+
+class CachedCostItemWithSlots:
+    __slots__ = ('_cost')
+
+    def __init__(self):
+        self._cost = 1
+
+    @py_functools.cached_property
+    def cost(self):
+        raise RuntimeError('never called, slots not supported')
+
+
+class TestCachedProperty(unittest.TestCase):
+    def test_cached(self):
+        item = CachedCostItem()
+        self.assertEqual(item.cost, 2)
+        self.assertEqual(item.cost, 2) # not 3
+
+    def test_cached_attribute_name_differs_from_func_name(self):
+        item = OptionallyCachedCostItem()
+        self.assertEqual(item.get_cost(), 2)
+        self.assertEqual(item.cached_cost, 3)
+        self.assertEqual(item.get_cost(), 4)
+        self.assertEqual(item.cached_cost, 3)
+
+    def test_threaded(self):
+        go = threading.Event()
+        item = CachedCostItemWait(go)
+
+        num_threads = 3
+
+        orig_si = sys.getswitchinterval()
+        sys.setswitchinterval(1e-6)
+        try:
+            threads = [
+                threading.Thread(target=lambda: item.cost)
+                for k in range(num_threads)
+            ]
+            with support.start_threads(threads):
+                go.set()
+        finally:
+            sys.setswitchinterval(orig_si)
+
+        self.assertEqual(item.cost, 2)
+
+    def test_object_with_slots(self):
+        item = CachedCostItemWithSlots()
+        with self.assertRaisesRegex(
+                TypeError,
+                "No '__dict__' attribute on 'CachedCostItemWithSlots' instance to cache 'cost' property.",
+        ):
+            item.cost
+
+    def test_immutable_dict(self):
+        class MyMeta(type):
+            @py_functools.cached_property
+            def prop(self):
+                return True
+
+        class MyClass(metaclass=MyMeta):
+            pass
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "The '__dict__' attribute on 'MyMeta' instance does not support item assignment for caching 'prop' property.",
+        ):
+            MyClass.prop
+
+    def test_reuse_different_names(self):
+        """Disallow this case because decorated function a would not be cached."""
+        with self.assertRaises(RuntimeError) as ctx:
+            class ReusedCachedProperty:
+                @py_functools.cached_property
+                def a(self):
+                    pass
+
+                b = a
+
+        self.assertEqual(
+            str(ctx.exception.__context__),
+            str(TypeError("Cannot assign the same cached_property to two different names ('a' and 'b')."))
+        )
+
+    def test_reuse_same_name(self):
+        """Reusing a cached_property on different classes under the same name is OK."""
+        counter = 0
+
+        @py_functools.cached_property
+        def _cp(_self):
+            nonlocal counter
+            counter += 1
+            return counter
+
+        class A:
+            cp = _cp
+
+        class B:
+            cp = _cp
+
+        a = A()
+        b = B()
+
+        self.assertEqual(a.cp, 1)
+        self.assertEqual(b.cp, 2)
+        self.assertEqual(a.cp, 1)
+
+    def test_set_name_not_called(self):
+        cp = py_functools.cached_property(lambda s: None)
+        class Foo:
+            pass
+
+        Foo.cp = cp
+
+        with self.assertRaisesRegex(
+                TypeError,
+                "Cannot use cached_property instance without calling __set_name__ on it.",
+        ):
+            Foo().cp
+
+    def test_access_from_class(self):
+        self.assertIsInstance(CachedCostItem.cost, py_functools.cached_property)
+
+    def test_doc(self):
+        self.assertEqual(CachedCostItem.cost.__doc__, "The cost of the item.")
+
 
 if __name__ == '__main__':
     unittest.main()

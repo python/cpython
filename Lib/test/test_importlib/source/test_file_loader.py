@@ -629,7 +629,7 @@ class SourceLoaderBadBytecodeTest:
                 bytecode_file.write(zeros)
             self.import_(mapping['_temp'], '_temp')
             source_mtime = os.path.getmtime(mapping['_temp'])
-            source_timestamp = self.importlib._w_long(source_mtime)
+            source_timestamp = self.importlib._pack_uint32(source_mtime)
             with open(bytecode_path, 'rb') as bytecode_file:
                 bytecode_file.seek(8)
                 self.assertEqual(bytecode_file.read(4), source_timestamp)

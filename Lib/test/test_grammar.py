@@ -100,6 +100,8 @@ INVALID_UNDERSCORE_LITERALS = [
 
 class TokenTests(unittest.TestCase):
 
+    check_syntax_error = check_syntax_error
+
     def test_backslash(self):
         # Backslash means line continuation:
         x = 1 \
@@ -183,6 +185,28 @@ class TokenTests(unittest.TestCase):
             self.assertRaises(SyntaxError, eval, lit)
         # Sanity check: no literal begins with an underscore
         self.assertRaises(NameError, eval, "_0")
+
+    def test_bad_numerical_literals(self):
+        check = self.check_syntax_error
+        check("0b12", "invalid digit '2' in binary literal")
+        check("0b1_2", "invalid digit '2' in binary literal")
+        check("0b2", "invalid digit '2' in binary literal")
+        check("0b1_", "invalid binary literal")
+        check("0b", "invalid binary literal")
+        check("0o18", "invalid digit '8' in octal literal")
+        check("0o1_8", "invalid digit '8' in octal literal")
+        check("0o8", "invalid digit '8' in octal literal")
+        check("0o1_", "invalid octal literal")
+        check("0o", "invalid octal literal")
+        check("0x1_", "invalid hexadecimal literal")
+        check("0x", "invalid hexadecimal literal")
+        check("1_", "invalid decimal literal")
+        check("012",
+              "leading zeros in decimal integer literals are not permitted; "
+              "use an 0o prefix for octal integers")
+        check("1.2_", "invalid decimal literal")
+        check("1e2_", "invalid decimal literal")
+        check("1e+", "invalid decimal literal")
 
     def test_string_literals(self):
         x = ''; y = ""; self.assertTrue(len(x) == 0 and x == y)
@@ -800,11 +824,17 @@ class GrammarTests(unittest.TestCase):
         test_inner()
 
     def test_return(self):
-        # 'return' [testlist]
+        # 'return' [testlist_star_expr]
         def g1(): return
         def g2(): return 1
+        def g3():
+            z = [2, 3]
+            return 1, *z
+
         g1()
         x = g2()
+        y = g3()
+        self.assertEqual(y, (1, 2, 3), "unparenthesized star expr return")
         check_syntax_error(self, "class foo:return 1")
 
     def test_break_in_finally(self):
@@ -957,6 +987,9 @@ class GrammarTests(unittest.TestCase):
         def g(): f((yield 1), 1)
         def g(): f((yield from ()))
         def g(): f((yield from ()), 1)
+        # Do not require parenthesis for tuple unpacking
+        def g(): rest = 4, 5, 6; yield 1, 2, 3, *rest
+        self.assertEquals(list(g()), [(1, 2, 3, 4, 5, 6)])
         check_syntax_error(self, "def g(): f(yield 1)")
         check_syntax_error(self, "def g(): f(yield 1, 1)")
         check_syntax_error(self, "def g(): f(yield from ())")

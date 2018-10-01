@@ -1,0 +1,2 @@
+Clarified the relationship between PEP 538's PYTHONCOERCECLOCALE and PEP
+540's PYTHONUTF8 mode.

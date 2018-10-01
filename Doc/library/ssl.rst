@@ -49,6 +49,9 @@ For more sophisticated applications, the :class:`ssl.SSLContext` class
 helps manage settings and certificates, which can then be inherited
 by SSL sockets created through the :meth:`SSLContext.wrap_socket` method.
 
+.. versionchanged:: 3.5.3
+   Updated to support linking with OpenSSL 1.1.0
+
 .. versionchanged:: 3.6
 
    OpenSSL 0.9.8, 1.0.0 and 1.0.1 are deprecated and no longer supported.
@@ -538,20 +541,28 @@ Constants
 .. data:: CERT_NONE
 
    Possible value for :attr:`SSLContext.verify_mode`, or the ``cert_reqs``
-   parameter to :func:`wrap_socket`.  In this mode (the default), no
-   certificates will be required from the other side of the socket connection.
-   If a certificate is received from the other end, no attempt to validate it
-   is made.
+   parameter to :func:`wrap_socket`.  Except for :const:`PROTOCOL_TLS_CLIENT`,
+   it is the default mode.  With client-side sockets, just about any
+   cert is accepted.  Validation errors, such as untrusted or expired cert,
+   are ignored and do not abort the TLS/SSL handshake.
+
+   In server mode, no certificate is requested from the client, so the client
+   does not send any for client cert authentication.
 
    See the discussion of :ref:`ssl-security` below.
 
 .. data:: CERT_OPTIONAL
 
    Possible value for :attr:`SSLContext.verify_mode`, or the ``cert_reqs``
-   parameter to :func:`wrap_socket`.  In this mode no certificates will be
-   required from the other side of the socket connection; but if they
-   are provided, validation will be attempted and an :class:`SSLError`
-   will be raised on failure.
+   parameter to :func:`wrap_socket`.  In client mode, :const:`CERT_OPTIONAL`
+   has the same meaning as :const:`CERT_REQUIRED`. It is recommended to
+   use :const:`CERT_REQUIRED` for client-side sockets instead.
+
+   In server mode, a client certificate request is sent to the client.  The
+   client may either ignore the request or send a certificate in order
+   perform TLS client cert authentication.  If the client chooses to send
+   a certificate, it is verified.  Any verification error immediately aborts
+   the TLS handshake.
 
    Use of this setting requires a valid set of CA certificates to
    be passed, either to :meth:`SSLContext.load_verify_locations` or as a
@@ -563,6 +574,15 @@ Constants
    parameter to :func:`wrap_socket`.  In this mode, certificates are
    required from the other side of the socket connection; an :class:`SSLError`
    will be raised if no certificate is provided, or if its validation fails.
+   This mode is **not** sufficient to verify a certificate in client mode as
+   it does not match hostnames.  :attr:`~SSLContext.check_hostname` must be
+   enabled as well to verify the authenticity of a cert.
+   :const:`PROTOCOL_TLS_CLIENT` uses :const:`CERT_REQUIRED` and
+   enables :attr:`~SSLContext.check_hostname` by default.
+
+   With server socket, this mode provides mandatory TLS client cert
+   authentication.  A client certificate request is sent to the client and
+   the client must provide a valid and trusted certificate.
 
    Use of this setting requires a valid set of CA certificates to
    be passed, either to :meth:`SSLContext.load_verify_locations` or as a
@@ -1294,6 +1314,26 @@ SSL sockets also have the following additional methods and attributes:
    returned socket should always be used for further communication with the
    other side of the connection, rather than the original socket.
 
+.. method:: SSLSocket.verify_client_post_handshake()
+
+   Requests post-handshake authentication (PHA) from a TLS 1.3 client. PHA
+   can only be initiated for a TLS 1.3 connection from a server-side socket,
+   after the initial TLS handshake and with PHA enabled on both sides, see
+   :attr:`SSLContext.post_handshake_auth`.
+
+   The method does not perform a cert exchange immediately. The server-side
+   sends a CertificateRequest during the next write event and expects the
+   client to respond with a certificate on the next read event.
+
+   If any precondition isn't met (e.g. not TLS 1.3, PHA not enabled), an
+   :exc:`SSLError` is raised.
+
+   .. versionadded:: 3.8
+
+   .. note::
+      Only available with OpenSSL 1.1.1 and TLS 1.3 enabled. Without TLS 1.3
+      support, the method raises :exc:`NotImplementedError`.
+
 .. method:: SSLSocket.version()
 
    Return the actual SSL protocol version negotiated by the connection
@@ -1587,7 +1627,7 @@ to speed up repeated connections from the same clients.
 
    Set the available ciphers for sockets created with this context.
    It should be a string in the `OpenSSL cipher list format
-   <https://wiki.openssl.org/index.php/Manual:Ciphers(1)#CIPHER_LIST_FORMAT>`_.
+   <https://www.openssl.org/docs/manmaster/man1/ciphers.html>`_.
    If no cipher can be selected (because compile-time options or other
    configuration forbids use of all the specified ciphers), an
    :class:`SSLError` will be raised.
@@ -1909,6 +1949,28 @@ to speed up repeated connections from the same clients.
          >>> ssl.create_default_context().options  # doctest: +SKIP
          <Options.OP_ALL|OP_NO_SSLv3|OP_NO_SSLv2|OP_NO_COMPRESSION: 2197947391>
 
+.. attribute:: SSLContext.post_handshake_auth
+
+   Enable TLS 1.3 post-handshake client authentication. Post-handshake auth
+   is disabled by default and a server can only request a TLS client
+   certificate during the initial handshake. When enabled, a server may
+   request a TLS client certificate at any time after the handshake.
+
+   When enabled on client-side sockets, the client signals the server that
+   it supports post-handshake authentication.
+
+   When enabled on server-side sockets, :attr:`SSLContext.verify_mode` must
+   be set to :data:`CERT_OPTIONAL` or :data:`CERT_REQUIRED`, too. The
+   actual client cert exchange is delayed until
+   :meth:`SSLSocket.verify_client_post_handshake` is called and some I/O is
+   performed.
+
+   .. versionadded:: 3.8
+
+   .. note::
+      Only available with OpenSSL 1.1.1 and TLS 1.3 enabled. Without TLS 1.3
+      support, the property value is None and can't be modified
+
 .. attribute:: SSLContext.protocol
 
    The protocol version chosen when constructing the context.  This attribute
@@ -1971,7 +2033,7 @@ message with one of the parts, you can decrypt it with the other part, and
 
 A certificate contains information about two principals.  It contains the name
 of a *subject*, and the subject's public key.  It also contains a statement by a
-second principal, the *issuer*, that the subject is who he claims to be, and
+second principal, the *issuer*, that the subject is who they claim to be, and
 that this is indeed the subject's public key.  The issuer's statement is signed
 with the issuer's private key, which only the issuer knows.  However, anyone can
 verify the issuer's statement by finding the issuer's public key, decrypting the
@@ -2534,11 +2596,6 @@ In server mode, if you want to authenticate your clients using the SSL layer
 (rather than using a higher-level authentication mechanism), you'll also have
 to specify :const:`CERT_REQUIRED` and similarly check the client certificate.
 
-   .. note::
-
-      In client mode, :const:`CERT_OPTIONAL` and :const:`CERT_REQUIRED` are
-      equivalent unless anonymous ciphers are enabled (they are disabled
-      by default).
 
 Protocol versions
 '''''''''''''''''

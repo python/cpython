@@ -18,7 +18,7 @@ Here are some of the useful functions provided by this module:
 
     getargvalues(), getcallargs() - get info about function arguments
     getfullargspec() - same, with support for Python 3 features
-    formatargspec(), formatargvalues() - format an argument spec
+    formatargvalues() - format an argument spec
     getouterframes(), getinnerframes() - get info about frames
     currentframe() - get the current stack frame
     stack(), trace() - get info about frames on the stack or in a traceback
@@ -954,7 +954,12 @@ def getsourcelines(object):
     object = unwrap(object)
     lines, lnum = findsource(object)
 
-    if ismodule(object):
+    if istraceback(object):
+        object = object.tb_frame
+
+    # for module or frame that corresponds to module, return all source lines
+    if (ismodule(object) or
+        (isframe(object) and object.f_code.co_name == "<module>")):
         return lines, 0
     else:
         return getblock(lines[lnum:]), lnum + 1
@@ -1211,7 +1216,19 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
     kwonlyargs, kwonlydefaults, annotations).  The other five arguments
     are the corresponding optional formatting functions that are called to
     turn names and values into strings.  The last argument is an optional
-    function to format the sequence of arguments."""
+    function to format the sequence of arguments.
+
+    Deprecated since Python 3.5: use the `signature` function and `Signature`
+    objects.
+    """
+
+    from warnings import warn
+
+    warn("`formatargspec` is deprecated since Python 3.5. Use `signature` and "
+         "the `Signature` object directly",
+         DeprecationWarning,
+         stacklevel=2)
+
     def formatargandannotation(arg):
         result = formatarg(arg)
         if arg in annotations:
@@ -1988,14 +2005,8 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             except NameError:
                 raise RuntimeError()
 
-        if isinstance(value, str):
-            return ast.Str(value)
-        if isinstance(value, (int, float)):
-            return ast.Num(value)
-        if isinstance(value, bytes):
-            return ast.Bytes(value)
-        if value in (True, False, None):
-            return ast.NameConstant(value)
+        if isinstance(value, (str, int, float, bytes, bool, type(None))):
+            return ast.Constant(value)
         raise RuntimeError()
 
     class RewriteSymbolics(ast.NodeTransformer):
@@ -2395,6 +2406,9 @@ class _ParameterKind(enum.IntEnum):
     def __str__(self):
         return self._name_
 
+    @property
+    def description(self):
+        return _PARAM_NAME_MAPPING[self]
 
 _POSITIONAL_ONLY         = _ParameterKind.POSITIONAL_ONLY
 _POSITIONAL_OR_KEYWORD   = _ParameterKind.POSITIONAL_OR_KEYWORD
@@ -2409,8 +2423,6 @@ _PARAM_NAME_MAPPING = {
     _KEYWORD_ONLY: 'keyword-only',
     _VAR_KEYWORD: 'variadic keyword'
 }
-
-_get_paramkind_descr = _PARAM_NAME_MAPPING.__getitem__
 
 
 class Parameter:
@@ -2453,7 +2465,7 @@ class Parameter:
         if default is not _empty:
             if self._kind in (_VAR_POSITIONAL, _VAR_KEYWORD):
                 msg = '{} parameters cannot have default values'
-                msg = msg.format(_get_paramkind_descr(self._kind))
+                msg = msg.format(self._kind.description)
                 raise ValueError(msg)
         self._default = default
         self._annotation = annotation
@@ -2475,7 +2487,7 @@ class Parameter:
                     'implicit arguments must be passed as '
                     'positional or keyword arguments, not {}'
                 )
-                msg = msg.format(_get_paramkind_descr(self._kind))
+                msg = msg.format(self._kind.description)
                 raise ValueError(msg)
             self._kind = _POSITIONAL_ONLY
             name = 'implicit{}'.format(name[1:])
@@ -2751,8 +2763,8 @@ class Signature:
                             'wrong parameter order: {} parameter before {} '
                             'parameter'
                         )
-                        msg = msg.format(_get_paramkind_descr(top_kind),
-                                         _get_paramkind_descr(kind))
+                        msg = msg.format(top_kind.description,
+                                         kind.description)
                         raise ValueError(msg)
                     elif kind > top_kind:
                         kind_defaults = False

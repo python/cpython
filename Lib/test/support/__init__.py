@@ -6,6 +6,7 @@ if __name__ != 'test.support':
 import asyncio.events
 import collections.abc
 import contextlib
+import datetime
 import errno
 import faulthandler
 import fnmatch
@@ -13,6 +14,7 @@ import functools
 import gc
 import importlib
 import importlib.util
+import io
 import logging.handlers
 import nntplib
 import os
@@ -33,6 +35,8 @@ import types
 import unittest
 import urllib.error
 import warnings
+
+from .testresult import get_test_runner
 
 try:
     import multiprocessing.process
@@ -89,6 +93,7 @@ __all__ = [
     "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_unless_bind_unix_socket",
+    "ignore_warnings",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
     "setswitchinterval",
@@ -136,6 +141,22 @@ def _ignore_deprecated_imports(ignore=True):
             yield
     else:
         yield
+
+
+def ignore_warnings(*, category):
+    """Decorator to suppress deprecation warnings.
+
+    Use of context managers to hide warnings make diffs
+    more noisy and tools like 'git blame' less useful.
+    """
+    def decorator(test):
+        @functools.wraps(test)
+        def wrapper(self, *args, **kwargs):
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', category=category)
+                return test(self, *args, **kwargs)
+        return wrapper
+    return decorator
 
 
 def import_module(name, deprecated=False, *, required_on=()):
@@ -278,6 +299,7 @@ use_resources = None     # Flag set to [] by regrtest.py
 max_memuse = 0           # Disable bigmem tests (they will still be run with
                          # small sizes, to make sure they work.)
 real_max_memuse = 0
+junit_xml_list = None    # list of testsuite XML elements
 failfast = False
 
 # _original_stdout is meant to hold stdout at the time regrtest began.
@@ -1404,6 +1426,9 @@ def transient_internet(resource_name, *, timeout=30.0, errnos=()):
         ('EHOSTUNREACH', 113),
         ('ENETUNREACH', 101),
         ('ETIMEDOUT', 110),
+        # socket.create_connection() fails randomly with
+        # EADDRNOTAVAIL on Travis CI.
+        ('EADDRNOTAVAIL', 99),
     ]
     default_gai_errnos = [
         ('EAI_AGAIN', -3),
@@ -1874,13 +1899,16 @@ def _filter_suite(suite, pred):
 
 def _run_suite(suite):
     """Run tests from a unittest.TestSuite-derived class."""
-    if verbose:
-        runner = unittest.TextTestRunner(sys.stdout, verbosity=2,
-                                         failfast=failfast)
-    else:
-        runner = BasicTestRunner()
+    runner = get_test_runner(sys.stdout, verbosity=verbose)
+
+    # TODO: Remove this before merging (here for easy comparison with old impl)
+    #runner = unittest.TextTestRunner(sys.stdout, verbosity=2, failfast=failfast)
 
     result = runner.run(suite)
+
+    if junit_xml_list is not None:
+        junit_xml_list.append(result.get_xml_element())
+
     if not result.wasSuccessful():
         if len(result.errors) == 1 and not result.failures:
             err = result.errors[0][1]
@@ -1938,8 +1966,8 @@ def set_match_tests(patterns):
 
         def match_test_regex(test_id):
             if regex_match(test_id):
-                # The regex matchs the whole identifier like
-                # 'test.test_os.FileTests.test_access'
+                # The regex matches the whole identifier, for example
+                # 'test.test_os.FileTests.test_access'.
                 return True
             else:
                 # Try to match parts of the test identifier.
@@ -2768,8 +2796,17 @@ def fd_count():
     if sys.platform.startswith(('linux', 'freebsd')):
         try:
             names = os.listdir("/proc/self/fd")
-            return len(names)
+            # Substract one because listdir() opens internally a file
+            # descriptor to list the content of the /proc/self/fd/ directory.
+            return len(names) - 1
         except FileNotFoundError:
+            pass
+
+    MAXFD = 256
+    if hasattr(os, 'sysconf'):
+        try:
+            MAXFD = os.sysconf("SC_OPEN_MAX")
+        except OSError:
             pass
 
     old_modes = None
@@ -2788,13 +2825,6 @@ def fd_count():
                                 msvcrt.CRT_ERROR,
                                 msvcrt.CRT_ASSERT):
                 old_modes[report_type] = msvcrt.CrtSetReportMode(report_type, 0)
-
-    MAXFD = 256
-    if hasattr(os, 'sysconf'):
-        try:
-            MAXFD = os.sysconf("SC_OPEN_MAX")
-        except OSError:
-            pass
 
     try:
         count = 0
@@ -2821,7 +2851,7 @@ def fd_count():
 
 class SaveSignals:
     """
-    Save an restore signal handlers.
+    Save and restore signal handlers.
 
     This class is only able to save/restore signal handlers registered
     by the Python signal module: see bpo-13285 for "external" signal

@@ -105,6 +105,12 @@ class DbmTestCase(unittest.TestCase):
             self.assertTrue(b'key' in db)
             self.assertEqual(db[b'key'], b'value')
 
+    def test_nonexisting_file(self):
+        nonexisting_file = 'nonexisting-file'
+        with self.assertRaises(dbm.ndbm.error) as cm:
+            dbm.ndbm.open(nonexisting_file)
+        self.assertIn(nonexisting_file, str(cm.exception))
+        self.assertEqual(cm.exception.filename, nonexisting_file)
 
 
 if __name__ == '__main__':

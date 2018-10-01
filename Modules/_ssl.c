@@ -63,6 +63,7 @@ static PySocketModule_APIObject PySocketModule;
 #include "openssl/err.h"
 #include "openssl/rand.h"
 #include "openssl/bio.h"
+#include "openssl/dh.h"
 
 #ifndef HAVE_X509_VERIFY_PARAM_SET1_HOST
 #  ifdef LIBRESSL_VERSION_NUMBER
@@ -420,7 +421,18 @@ typedef struct {
      */
     unsigned int hostflags;
     int protocol;
+#ifdef TLS1_3_VERSION
+    int post_handshake_auth;
+#endif
 } PySSLContext;
+
+typedef struct {
+    int ssl; /* last seen error from SSL */
+    int c; /* last seen error from libc */
+#ifdef MS_WINDOWS
+    int ws; /* last seen error from winsock */
+#endif
+} _PySSLError;
 
 typedef struct {
     PyObject_HEAD
@@ -431,11 +443,7 @@ typedef struct {
     enum py_ssl_server_or_client socket_type;
     PyObject *owner; /* Python level "owner" passed to servername callback */
     PyObject *server_hostname;
-    int ssl_errno; /* last seen error from SSL */
-    int c_errno; /* last seen error from libc */
-#ifdef MS_WINDOWS
-    int ws_errno; /* last seen error from winsock */
-#endif
+    _PySSLError err; /* last seen error from various sources */
 } PySSLSocket;
 
 typedef struct {
@@ -455,20 +463,19 @@ static PyTypeObject PySSLSocket_Type;
 static PyTypeObject PySSLMemoryBIO_Type;
 static PyTypeObject PySSLSession_Type;
 
+static inline _PySSLError _PySSL_errno(int failed, const SSL *ssl, int retcode)
+{
+    _PySSLError err = { 0 };
+    if (failed) {
 #ifdef MS_WINDOWS
-#define _PySSL_UPDATE_ERRNO_IF(cond, sock, retcode) if (cond) { \
-        (sock)->ws_errno = WSAGetLastError(); \
-        _PySSL_FIX_ERRNO; \
-        (sock)->c_errno = errno; \
-        (sock)->ssl_errno = SSL_get_error((sock->ssl), (retcode)); \
-    } else { sock->ws_errno = 0; sock->c_errno = 0; sock->ssl_errno = 0; }
-#else
-#define _PySSL_UPDATE_ERRNO_IF(cond, sock, retcode) if (cond) { \
-        (sock)->c_errno = errno; \
-        (sock)->ssl_errno = SSL_get_error((sock->ssl), (retcode)); \
-    } else { (sock)->c_errno = 0; (sock)->ssl_errno = 0; }
+        err.ws = WSAGetLastError();
+        _PySSL_FIX_ERRNO;
 #endif
-#define _PySSL_UPDATE_ERRNO(sock, retcode) _PySSL_UPDATE_ERRNO_IF(1, (sock), (retcode))
+        err.c = errno;
+        err.ssl = SSL_get_error(ssl, retcode);
+    }
+    return err;
+}
 
 /*[clinic input]
 module _ssl
@@ -702,7 +709,7 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
 {
     PyObject *type = PySSLErrorObject;
     char *errstr = NULL;
-    int err;
+    _PySSLError err;
     enum py_ssl_error p = PY_SSL_ERROR_NONE;
     unsigned long e = 0;
 
@@ -710,9 +717,9 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
     e = ERR_peek_last_error();
 
     if (sslsock->ssl != NULL) {
-        err = sslsock->ssl_errno;
+        err = sslsock->err;
 
-        switch (err) {
+        switch (err.ssl) {
         case SSL_ERROR_ZERO_RETURN:
             errstr = "TLS/SSL connection has been closed (EOF)";
             type = PySSLZeroReturnErrorObject;
@@ -748,11 +755,12 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
                     /* underlying BIO reported an I/O error */
                     ERR_clear_error();
 #ifdef MS_WINDOWS
-                    if (sslsock->ws_errno)
-                        return PyErr_SetFromWindowsErr(sslsock->ws_errno);
+                    if (err.ws) {
+                        return PyErr_SetFromWindowsErr(err.ws);
+                    }
 #endif
-                    if (sslsock->c_errno) {
-                        errno = sslsock->c_errno;
+                    if (err.c) {
+                        errno = err.c;
                         return PyErr_SetFromErrno(PyExc_OSError);
                     }
                     Py_INCREF(s);
@@ -882,6 +890,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
 {
     PySSLSocket *self;
     SSL_CTX *ctx = sslctx->ctx;
+    _PySSLError err = { 0 };
 
     self = PyObject_New(PySSLSocket, &PySSLSocket_Type);
     if (self == NULL)
@@ -894,11 +903,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->shutdown_seen_zero = 0;
     self->owner = NULL;
     self->server_hostname = NULL;
-    self->ssl_errno = 0;
-    self->c_errno = 0;
-#ifdef MS_WINDOWS
-    self->ws_errno = 0;
-#endif
+    self->err = err;
 
     /* Make sure the SSL error state is initialized */
     ERR_clear_error();
@@ -975,7 +980,7 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
 /*[clinic end generated code: output=6c0898a8936548f6 input=d2d737de3df018c8]*/
 {
     int ret;
-    int err;
+    _PySSLError err;
     int sockstate, nonblocking;
     PySocketSockObject *sock = GET_SOCKET(self);
     _PyTime_t timeout, deadline = 0;
@@ -1005,9 +1010,9 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
     do {
         PySSL_BEGIN_ALLOW_THREADS
         ret = SSL_do_handshake(self->ssl);
-        _PySSL_UPDATE_ERRNO_IF(ret < 1, self, ret);
+        err = _PySSL_errno(ret < 1, self->ssl, ret);
         PySSL_END_ALLOW_THREADS
-        err = self->ssl_errno;
+        self->err = err;
 
         if (PyErr_CheckSignals())
             goto error;
@@ -1015,9 +1020,9 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
         if (has_timeout)
             timeout = deadline - _PyTime_GetMonotonicClock();
 
-        if (err == SSL_ERROR_WANT_READ) {
+        if (err.ssl == SSL_ERROR_WANT_READ) {
             sockstate = PySSL_select(sock, 0, timeout);
-        } else if (err == SSL_ERROR_WANT_WRITE) {
+        } else if (err.ssl == SSL_ERROR_WANT_WRITE) {
             sockstate = PySSL_select(sock, 1, timeout);
         } else {
             sockstate = SOCKET_OPERATION_OK;
@@ -1038,7 +1043,8 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
         } else if (sockstate == SOCKET_IS_NONBLOCKING) {
             break;
         }
-    } while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
+    } while (err.ssl == SSL_ERROR_WANT_READ ||
+             err.ssl == SSL_ERROR_WANT_WRITE);
     Py_XDECREF(sock);
     if (ret < 1)
         return PySSL_SetError(self, ret, __FILE__, __LINE__);
@@ -2227,7 +2233,7 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
 {
     int len;
     int sockstate;
-    int err;
+    _PySSLError err;
     int nonblocking;
     PySocketSockObject *sock = GET_SOCKET(self);
     _PyTime_t timeout, deadline = 0;
@@ -2278,9 +2284,9 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
     do {
         PySSL_BEGIN_ALLOW_THREADS
         len = SSL_write(self->ssl, b->buf, (int)b->len);
-        _PySSL_UPDATE_ERRNO_IF(len <= 0, self, len);
+        err = _PySSL_errno(len <= 0, self->ssl, len);
         PySSL_END_ALLOW_THREADS
-        err = self->ssl_errno;
+        self->err = err;
 
         if (PyErr_CheckSignals())
             goto error;
@@ -2288,9 +2294,9 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
         if (has_timeout)
             timeout = deadline - _PyTime_GetMonotonicClock();
 
-        if (err == SSL_ERROR_WANT_READ) {
+        if (err.ssl == SSL_ERROR_WANT_READ) {
             sockstate = PySSL_select(sock, 0, timeout);
-        } else if (err == SSL_ERROR_WANT_WRITE) {
+        } else if (err.ssl == SSL_ERROR_WANT_WRITE) {
             sockstate = PySSL_select(sock, 1, timeout);
         } else {
             sockstate = SOCKET_OPERATION_OK;
@@ -2307,7 +2313,8 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
         } else if (sockstate == SOCKET_IS_NONBLOCKING) {
             break;
         }
-    } while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
+    } while (err.ssl == SSL_ERROR_WANT_READ ||
+             err.ssl == SSL_ERROR_WANT_WRITE);
 
     Py_XDECREF(sock);
     if (len > 0)
@@ -2331,11 +2338,14 @@ _ssl__SSLSocket_pending_impl(PySSLSocket *self)
 /*[clinic end generated code: output=983d9fecdc308a83 input=2b77487d6dfd597f]*/
 {
     int count = 0;
+    _PySSLError err;
 
     PySSL_BEGIN_ALLOW_THREADS
     count = SSL_pending(self->ssl);
-    _PySSL_UPDATE_ERRNO_IF(count < 0, self, count);
+    err = _PySSL_errno(count < 0, self->ssl, count);
     PySSL_END_ALLOW_THREADS
+    self->err = err;
+
     if (count < 0)
         return PySSL_SetError(self, count, __FILE__, __LINE__);
     else
@@ -2362,7 +2372,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
     char *mem;
     int count;
     int sockstate;
-    int err;
+    _PySSLError err;
     int nonblocking;
     PySocketSockObject *sock = GET_SOCKET(self);
     _PyTime_t timeout, deadline = 0;
@@ -2423,8 +2433,9 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
     do {
         PySSL_BEGIN_ALLOW_THREADS
         count = SSL_read(self->ssl, mem, len);
-        _PySSL_UPDATE_ERRNO_IF(count <= 0, self, count);
+        err = _PySSL_errno(count <= 0, self->ssl, count);
         PySSL_END_ALLOW_THREADS
+        self->err = err;
 
         if (PyErr_CheckSignals())
             goto error;
@@ -2432,12 +2443,11 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
         if (has_timeout)
             timeout = deadline - _PyTime_GetMonotonicClock();
 
-        err = self->ssl_errno;
-        if (err == SSL_ERROR_WANT_READ) {
+        if (err.ssl == SSL_ERROR_WANT_READ) {
             sockstate = PySSL_select(sock, 0, timeout);
-        } else if (err == SSL_ERROR_WANT_WRITE) {
+        } else if (err.ssl == SSL_ERROR_WANT_WRITE) {
             sockstate = PySSL_select(sock, 1, timeout);
-        } else if (err == SSL_ERROR_ZERO_RETURN &&
+        } else if (err.ssl == SSL_ERROR_ZERO_RETURN &&
                    SSL_get_shutdown(self->ssl) == SSL_RECEIVED_SHUTDOWN)
         {
             count = 0;
@@ -2453,7 +2463,8 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
         } else if (sockstate == SOCKET_IS_NONBLOCKING) {
             break;
         }
-    } while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
+    } while (err.ssl == SSL_ERROR_WANT_READ ||
+             err.ssl == SSL_ERROR_WANT_WRITE);
 
     if (count <= 0) {
         PySSL_SetError(self, count, __FILE__, __LINE__);
@@ -2487,7 +2498,8 @@ static PyObject *
 _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
 /*[clinic end generated code: output=ca1aa7ed9d25ca42 input=11d39e69b0a2bf4a]*/
 {
-    int err, sockstate, nonblocking;
+    _PySSLError err;
+    int sockstate, nonblocking, ret;
     int zeros = 0;
     PySocketSockObject *sock = GET_SOCKET(self);
     _PyTime_t timeout, deadline = 0;
@@ -2525,14 +2537,15 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
          */
         if (self->shutdown_seen_zero)
             SSL_set_read_ahead(self->ssl, 0);
-        err = SSL_shutdown(self->ssl);
-        _PySSL_UPDATE_ERRNO_IF(err < 0, self, err);
+        ret = SSL_shutdown(self->ssl);
+        err = _PySSL_errno(ret < 0, self->ssl, ret);
         PySSL_END_ALLOW_THREADS
+        self->err = err;
 
         /* If err == 1, a secure shutdown with SSL_shutdown() is complete */
-        if (err > 0)
+        if (ret > 0)
             break;
-        if (err == 0) {
+        if (ret == 0) {
             /* Don't loop endlessly; instead preserve legacy
                behaviour of trying SSL_shutdown() only twice.
                This looks necessary for OpenSSL < 0.9.8m */
@@ -2547,16 +2560,15 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
             timeout = deadline - _PyTime_GetMonotonicClock();
 
         /* Possibly retry shutdown until timeout or failure */
-        _PySSL_UPDATE_ERRNO(self, err);
-        if (self->ssl_errno == SSL_ERROR_WANT_READ)
+        if (err.ssl == SSL_ERROR_WANT_READ)
             sockstate = PySSL_select(sock, 0, timeout);
-        else if (self->ssl_errno == SSL_ERROR_WANT_WRITE)
+        else if (err.ssl == SSL_ERROR_WANT_WRITE)
             sockstate = PySSL_select(sock, 1, timeout);
         else
             break;
 
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
-            if (self->ssl_errno == SSL_ERROR_WANT_READ)
+            if (err.ssl == SSL_ERROR_WANT_READ)
                 PyErr_SetString(PySocketModule.timeout_error,
                                 "The read operation timed out");
             else
@@ -2574,9 +2586,9 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
             break;
     }
 
-    if (err < 0) {
+    if (ret < 0) {
         Py_XDECREF(sock);
-        return PySSL_SetError(self, err, __FILE__, __LINE__);
+        return PySSL_SetError(self, ret, __FILE__, __LINE__);
     }
     if (sock)
         /* It's already INCREF'ed */
@@ -2632,6 +2644,30 @@ _ssl__SSLSocket_get_channel_binding_impl(PySSLSocket *self,
         Py_RETURN_NONE;
 
     return PyBytes_FromStringAndSize(buf, len);
+}
+
+/*[clinic input]
+_ssl._SSLSocket.verify_client_post_handshake
+
+Initiate TLS 1.3 post-handshake authentication
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_verify_client_post_handshake_impl(PySSLSocket *self)
+/*[clinic end generated code: output=532147f3b1341425 input=6bfa874810a3d889]*/
+{
+#ifdef TLS1_3_VERSION
+    int err = SSL_verify_client_post_handshake(self->ssl);
+    if (err == 0)
+        return _setSSLError(NULL, 0, __FILE__, __LINE__);
+    else
+        Py_RETURN_NONE;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Post-handshake auth is not supported by your "
+                    "OpenSSL version.");
+    return NULL;
+#endif
 }
 
 #ifdef OPENSSL_VERSION_1_1
@@ -2810,6 +2846,7 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_SELECTED_ALPN_PROTOCOL_METHODDEF
     _SSL__SSLSOCKET_COMPRESSION_METHODDEF
     _SSL__SSLSOCKET_SHUTDOWN_METHODDEF
+    _SSL__SSLSOCKET_VERIFY_CLIENT_POST_HANDSHAKE_METHODDEF
     {NULL, NULL}
 };
 
@@ -2853,7 +2890,7 @@ static PyTypeObject PySSLSocket_Type = {
  */
 
 static int
-_set_verify_mode(SSL_CTX *ctx, enum py_ssl_cert_requirements n)
+_set_verify_mode(PySSLContext *self, enum py_ssl_cert_requirements n)
 {
     int mode;
     int (*verify_cb)(int, X509_STORE_CTX *) = NULL;
@@ -2873,9 +2910,13 @@ _set_verify_mode(SSL_CTX *ctx, enum py_ssl_cert_requirements n)
                         "invalid value for verify_mode");
         return -1;
     }
+#ifdef TLS1_3_VERSION
+    if (self->post_handshake_auth)
+        mode |= SSL_VERIFY_POST_HANDSHAKE;
+#endif
     /* keep current verify cb */
-    verify_cb = SSL_CTX_get_verify_callback(ctx);
-    SSL_CTX_set_verify(ctx, mode, verify_cb);
+    verify_cb = SSL_CTX_get_verify_callback(self->ctx);
+    SSL_CTX_set_verify(self->ctx, mode, verify_cb);
     return 0;
 }
 
@@ -2957,13 +2998,13 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     /* Don't check host name by default */
     if (proto_version == PY_SSL_VERSION_TLS_CLIENT) {
         self->check_hostname = 1;
-        if (_set_verify_mode(self->ctx, PY_SSL_CERT_REQUIRED) == -1) {
+        if (_set_verify_mode(self, PY_SSL_CERT_REQUIRED) == -1) {
             Py_DECREF(self);
             return NULL;
         }
     } else {
         self->check_hostname = 0;
-        if (_set_verify_mode(self->ctx, PY_SSL_CERT_NONE) == -1) {
+        if (_set_verify_mode(self, PY_SSL_CERT_NONE) == -1) {
             Py_DECREF(self);
             return NULL;
         }
@@ -3055,6 +3096,11 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     X509_VERIFY_PARAM_set_flags(params, X509_V_FLAG_TRUSTED_FIRST);
 #endif
     X509_VERIFY_PARAM_set_hostflags(params, self->hostflags);
+
+#ifdef TLS1_3_VERSION
+    self->post_handshake_auth = 0;
+    SSL_CTX_set_post_handshake_auth(self->ctx, self->post_handshake_auth);
+#endif
 
     return (PyObject *)self;
 }
@@ -3310,7 +3356,10 @@ _ssl__SSLContext__set_alpn_protocols_impl(PySSLContext *self,
 static PyObject *
 get_verify_mode(PySSLContext *self, void *c)
 {
-    switch (SSL_CTX_get_verify_mode(self->ctx)) {
+    /* ignore SSL_VERIFY_CLIENT_ONCE and SSL_VERIFY_POST_HANDSHAKE */
+    int mask = (SSL_VERIFY_NONE | SSL_VERIFY_PEER |
+                SSL_VERIFY_FAIL_IF_NO_PEER_CERT);
+    switch (SSL_CTX_get_verify_mode(self->ctx) & mask) {
     case SSL_VERIFY_NONE:
         return PyLong_FromLong(PY_SSL_CERT_NONE);
     case SSL_VERIFY_PEER:
@@ -3335,7 +3384,7 @@ set_verify_mode(PySSLContext *self, PyObject *arg, void *c)
                         "check_hostname is enabled.");
         return -1;
     }
-    return _set_verify_mode(self->ctx, n);
+    return _set_verify_mode(self, n);
 }
 
 static PyObject *
@@ -3541,13 +3590,50 @@ set_check_hostname(PySSLContext *self, PyObject *arg, void *c)
     if (check_hostname &&
             SSL_CTX_get_verify_mode(self->ctx) == SSL_VERIFY_NONE) {
         /* check_hostname = True sets verify_mode = CERT_REQUIRED */
-        if (_set_verify_mode(self->ctx, PY_SSL_CERT_REQUIRED) == -1) {
+        if (_set_verify_mode(self, PY_SSL_CERT_REQUIRED) == -1) {
             return -1;
         }
     }
     self->check_hostname = check_hostname;
     return 0;
 }
+
+static PyObject *
+get_post_handshake_auth(PySSLContext *self, void *c) {
+#if TLS1_3_VERSION
+    return PyBool_FromLong(self->post_handshake_auth);
+#else
+    Py_RETURN_NONE;
+#endif
+}
+
+#if TLS1_3_VERSION
+static int
+set_post_handshake_auth(PySSLContext *self, PyObject *arg, void *c) {
+    int (*verify_cb)(int, X509_STORE_CTX *) = NULL;
+    int mode = SSL_CTX_get_verify_mode(self->ctx);
+    int pha = PyObject_IsTrue(arg);
+
+    if (pha == -1) {
+        return -1;
+    }
+    self->post_handshake_auth = pha;
+
+    /* client-side socket setting, ignored by server-side */
+    SSL_CTX_set_post_handshake_auth(self->ctx, pha);
+
+    /* server-side socket setting, ignored by client-side */
+    verify_cb = SSL_CTX_get_verify_callback(self->ctx);
+    if (pha) {
+        mode |= SSL_VERIFY_POST_HANDSHAKE;
+    } else {
+        mode ^= SSL_VERIFY_POST_HANDSHAKE;
+    }
+    SSL_CTX_set_verify(self->ctx, mode, verify_cb);
+
+    return 0;
+}
+#endif
 
 static PyObject *
 get_protocol(PySSLContext *self, void *c) {
@@ -4452,6 +4538,13 @@ static PyGetSetDef context_getsetlist[] = {
                      (setter) set_sni_callback, PySSLContext_sni_callback_doc},
     {"options", (getter) get_options,
                 (setter) set_options, NULL},
+    {"post_handshake_auth", (getter) get_post_handshake_auth,
+#ifdef TLS1_3_VERSION
+                            (setter) set_post_handshake_auth,
+#else
+                            NULL,
+#endif
+                            NULL},
     {"protocol", (getter) get_protocol,
                  NULL, NULL},
     {"verify_flags", (getter) get_verify_flags,

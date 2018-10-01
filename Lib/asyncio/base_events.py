@@ -37,6 +37,7 @@ except ImportError:  # pragma: no cover
 from . import constants
 from . import coroutines
 from . import events
+from . import exceptions
 from . import futures
 from . import protocols
 from . import sslproto
@@ -60,6 +61,14 @@ _MIN_CANCELLED_TIMER_HANDLES_FRACTION = 0.5
 # methods (_fatal_error())
 _FATAL_ERROR_IGNORE = (BrokenPipeError,
                        ConnectionResetError, ConnectionAbortedError)
+
+if ssl is not None:
+    _FATAL_ERROR_IGNORE = _FATAL_ERROR_IGNORE + (ssl.SSLCertVerificationError,)
+
+_HAS_IPv6 = hasattr(socket, 'AF_INET6')
+
+# Maximum timeout passed to select to avoid OS limitations
+MAXIMUM_SELECT_TIMEOUT = 24 * 3600
 
 
 def _format_handle(handle):
@@ -123,7 +132,7 @@ def _ipaddr_info(host, port, family, type, proto):
 
     if family == socket.AF_UNSPEC:
         afs = [socket.AF_INET]
-        if hasattr(socket, 'AF_INET6'):
+        if _HAS_IPv6:
             afs.append(socket.AF_INET6)
     else:
         afs = [family]
@@ -139,7 +148,10 @@ def _ipaddr_info(host, port, family, type, proto):
         try:
             socket.inet_pton(af, host)
             # The host has already been resolved.
-            return af, type, proto, '', (host, port)
+            if _HAS_IPv6 and af == socket.AF_INET6:
+                return af, type, proto, '', (host, port, 0, 0)
+            else:
+                return af, type, proto, '', (host, port)
         except OSError:
             pass
 
@@ -319,7 +331,7 @@ class Server(events.AbstractServer):
 
         try:
             await self._serving_forever_fut
-        except futures.CancelledError:
+        except exceptions.CancelledError:
             try:
                 self.close()
                 await self.wait_closed()
@@ -376,18 +388,20 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Create a Future object attached to the loop."""
         return futures.Future(loop=self)
 
-    def create_task(self, coro):
+    def create_task(self, coro, *, name=None):
         """Schedule a coroutine object.
 
         Return a task object.
         """
         self._check_closed()
         if self._task_factory is None:
-            task = tasks.Task(coro, loop=self)
+            task = tasks.Task(coro, loop=self, name=name)
             if task._source_traceback:
                 del task._source_traceback[-1]
         else:
             task = self._task_factory(self, coro)
+            tasks._set_task_name(task, name)
+
         return task
 
     def set_task_factory(self, factory):
@@ -736,6 +750,12 @@ class BaseEventLoop(events.AbstractEventLoop):
             executor.submit(func, *args), loop=self)
 
     def set_default_executor(self, executor):
+        if not isinstance(executor, concurrent.futures.ThreadPoolExecutor):
+            warnings.warn(
+                'Using the default executor that is not an instance of '
+                'ThreadPoolExecutor is deprecated and will be prohibited '
+                'in Python 3.9',
+                DeprecationWarning, 2)
         self._default_executor = executor
 
     def _getaddrinfo_debug(self, host, port, family, type, proto, flags):
@@ -784,7 +804,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         try:
             return await self._sock_sendfile_native(sock, file,
                                                     offset, count)
-        except events.SendfileNotAvailableError as exc:
+        except exceptions.SendfileNotAvailableError as exc:
             if not fallback:
                 raise
         return await self._sock_sendfile_fallback(sock, file,
@@ -793,7 +813,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def _sock_sendfile_native(self, sock, file, offset, count):
         # NB: sendfile syscall is not supported for SSL sockets and
         # non-mmap files even if sendfile is supported by OS
-        raise events.SendfileNotAvailableError(
+        raise exceptions.SendfileNotAvailableError(
             f"syscall sendfile is not available for socket {sock!r} "
             "and file {file!r} combination")
 
@@ -1037,7 +1057,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             try:
                 return await self._sendfile_native(transport, file,
                                                    offset, count)
-            except events.SendfileNotAvailableError as exc:
+            except exceptions.SendfileNotAvailableError as exc:
                 if not fallback:
                     raise
 
@@ -1050,7 +1070,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                                              offset, count)
 
     async def _sendfile_native(self, transp, file, offset, count):
-        raise events.SendfileNotAvailableError(
+        raise exceptions.SendfileNotAvailableError(
             "sendfile syscall is not supported")
 
     async def _sendfile_fallback(self, transp, file, offset, count):
@@ -1097,7 +1117,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         if not getattr(transport, '_start_tls_compatible', False):
             raise TypeError(
-                f'transport {self!r} is not supported by start_tls()')
+                f'transport {transport!r} is not supported by start_tls()')
 
         waiter = self.create_future()
         ssl_protocol = sslproto.SSLProtocol(
@@ -1111,13 +1131,15 @@ class BaseEventLoop(events.AbstractEventLoop):
         transport.pause_reading()
 
         transport.set_protocol(ssl_protocol)
-        self.call_soon(ssl_protocol.connection_made, transport)
-        self.call_soon(transport.resume_reading)
+        conmade_cb = self.call_soon(ssl_protocol.connection_made, transport)
+        resume_cb = self.call_soon(transport.resume_reading)
 
         try:
             await waiter
         except Exception:
             transport.close()
+            conmade_cb.cancel()
+            resume_cb.cancel()
             raise
 
         return ssl_protocol._app_transport
@@ -1307,7 +1329,6 @@ class BaseEventLoop(events.AbstractEventLoop):
                 raise ValueError(
                     'host/port and sock can not be specified at the same time')
 
-            AF_INET6 = getattr(socket, 'AF_INET6', 0)
             if reuse_address is None:
                 reuse_address = os.name == 'posix' and sys.platform != 'cygwin'
             sockets = []
@@ -1347,7 +1368,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                     # Disable IPv4/IPv6 dual stack support (enabled by
                     # default on Linux) which makes a single socket
                     # listen on both address families.
-                    if af == AF_INET6 and hasattr(socket, 'IPPROTO_IPV6'):
+                    if (_HAS_IPv6 and
+                            af == socket.AF_INET6 and
+                            hasattr(socket, 'IPPROTO_IPV6')):
                         sock.setsockopt(socket.IPPROTO_IPV6,
                                         socket.IPV6_V6ONLY,
                                         True)
@@ -1474,6 +1497,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         if bufsize != 0:
             raise ValueError("bufsize must be 0")
         protocol = protocol_factory()
+        debug_log = None
         if self._debug:
             # don't log parameters: they may contain sensitive information
             # (password) and may be too long
@@ -1481,7 +1505,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             self._log_subprocess(debug_log, stdin, stdout, stderr)
         transport = await self._make_subprocess_transport(
             protocol, cmd, True, stdin, stdout, stderr, bufsize, **kwargs)
-        if self._debug:
+        if self._debug and debug_log is not None:
             logger.info('%s: %r', debug_log, transport)
         return transport, protocol
 
@@ -1502,6 +1526,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     f"program arguments must be a bytes or text string, "
                     f"not {type(arg).__name__}")
         protocol = protocol_factory()
+        debug_log = None
         if self._debug:
             # don't log parameters: they may contain sensitive information
             # (password) and may be too long
@@ -1510,7 +1535,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         transport = await self._make_subprocess_transport(
             protocol, popen_args, False, stdin, stdout, stderr,
             bufsize, **kwargs)
-        if self._debug:
+        if self._debug and debug_log is not None:
             logger.info('%s: %r', debug_log, transport)
         return transport, protocol
 
@@ -1692,30 +1717,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         elif self._scheduled:
             # Compute the desired timeout.
             when = self._scheduled[0]._when
-            timeout = max(0, when - self.time())
+            timeout = min(max(0, when - self.time()), MAXIMUM_SELECT_TIMEOUT)
 
-        if self._debug and timeout != 0:
-            t0 = self.time()
-            event_list = self._selector.select(timeout)
-            dt = self.time() - t0
-            if dt >= 1.0:
-                level = logging.INFO
-            else:
-                level = logging.DEBUG
-            nevent = len(event_list)
-            if timeout is None:
-                logger.log(level, 'poll took %.3f ms: %s events',
-                           dt * 1e3, nevent)
-            elif nevent:
-                logger.log(level,
-                           'poll %.3f ms took %.3f ms: %s events',
-                           timeout * 1e3, dt * 1e3, nevent)
-            elif dt >= 1.0:
-                logger.log(level,
-                           'poll %.3f ms took %.3f ms: timeout',
-                           timeout * 1e3, dt * 1e3)
-        else:
-            event_list = self._selector.select(timeout)
+        event_list = self._selector.select(timeout)
         self._process_events(event_list)
 
         # Handle 'later' callbacks that are ready.

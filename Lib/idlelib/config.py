@@ -925,7 +925,7 @@ def _dump():  # htest # (not really, but ignore in coverage)
     print('\nlines = ', line, ', crc = ', crc, sep='')
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_config',
-                  verbosity=2, exit=False)
-    #_dump()
+    from unittest import main
+    main('idlelib.idle_test.test_config', verbosity=2, exit=False)
+
+    # Run revised _dump() as htest?

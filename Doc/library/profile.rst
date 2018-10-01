@@ -272,6 +272,9 @@ functions:
 
       pr.print_stats()
 
+   .. versionchanged:: 3.8
+      Added context manager support.
+
    .. method:: enable()
 
       Start collecting profiling data.
@@ -306,6 +309,11 @@ functions:
    .. method:: runcall(func, *args, **kwargs)
 
       Profile ``func(*args, **kwargs)``
+
+Note that profiling will only work if the called command/function actually
+returns.  If the interpreter is terminated (e.g. via a :func:`sys.exit` call
+during the called command/function execution) no profiling results will be
+printed.
 
 .. _profile-stats:
 

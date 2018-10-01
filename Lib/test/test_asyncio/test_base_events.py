@@ -1,5 +1,6 @@
 """Tests for base_events.py"""
 
+import concurrent.futures
 import errno
 import logging
 import math
@@ -97,11 +98,11 @@ class BaseEventTests(test_utils.TestCase):
             base_events._ipaddr_info('1.2.3.4', 1, INET6, STREAM, TCP))
 
         self.assertEqual(
-            (INET6, STREAM, TCP, '', ('::3', 1)),
+            (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
             base_events._ipaddr_info('::3', 1, INET6, STREAM, TCP))
 
         self.assertEqual(
-            (INET6, STREAM, TCP, '', ('::3', 1)),
+            (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
             base_events._ipaddr_info('::3', 1, UNSPEC, STREAM, TCP))
 
         # IPv6 address with family IPv4.
@@ -211,9 +212,20 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertFalse(self.loop._ready)
 
     def test_set_default_executor(self):
-        executor = mock.Mock()
+        class DummyExecutor(concurrent.futures.ThreadPoolExecutor):
+            def submit(self, fn, *args, **kwargs):
+                raise NotImplementedError(
+                    'cannot submit into a dummy executor')
+
+        executor = DummyExecutor()
         self.loop.set_default_executor(executor)
         self.assertIs(executor, self.loop._default_executor)
+
+    def test_set_default_executor_deprecation_warnings(self):
+        executor = mock.Mock()
+
+        with self.assertWarns(DeprecationWarning):
+            self.loop.set_default_executor(executor)
 
     def test_call_soon(self):
         def cb():
@@ -358,31 +370,6 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertTrue(self.loop.get_debug())
         self.loop.set_debug(False)
         self.assertFalse(self.loop.get_debug())
-
-    @mock.patch('asyncio.base_events.logger')
-    def test__run_once_logging(self, m_logger):
-        def slow_select(timeout):
-            # Sleep a bit longer than a second to avoid timer resolution
-            # issues.
-            time.sleep(1.1)
-            return []
-
-        # logging needs debug flag
-        self.loop.set_debug(True)
-
-        # Log to INFO level if timeout > 1.0 sec.
-        self.loop._selector.select = slow_select
-        self.loop._process_events = mock.Mock()
-        self.loop._run_once()
-        self.assertEqual(logging.INFO, m_logger.log.call_args[0][0])
-
-        def fast_select(timeout):
-            time.sleep(0.001)
-            return []
-
-        self.loop._selector.select = fast_select
-        self.loop._run_once()
-        self.assertEqual(logging.DEBUG, m_logger.log.call_args[0][0])
 
     def test__run_once_schedule_handle(self):
         handle = None
@@ -813,6 +800,34 @@ class BaseEventLoopTests(test_utils.TestCase):
         task._log_destroy_pending = False
         coro.close()
 
+    def test_create_named_task_with_default_factory(self):
+        async def test():
+            pass
+
+        loop = asyncio.new_event_loop()
+        task = loop.create_task(test(), name='test_task')
+        try:
+            self.assertEqual(task.get_name(), 'test_task')
+        finally:
+            loop.run_until_complete(task)
+            loop.close()
+
+    def test_create_named_task_with_custom_factory(self):
+        def task_factory(loop, coro):
+            return asyncio.Task(coro, loop=loop)
+
+        async def test():
+            pass
+
+        loop = asyncio.new_event_loop()
+        loop.set_task_factory(task_factory)
+        task = loop.create_task(test(), name='test_task')
+        try:
+            self.assertEqual(task.get_name(), 'test_task')
+        finally:
+            loop.run_until_complete(task)
+            loop.close()
+
     def test_run_forever_keyboard_interrupt(self):
         # Python issue #22601: ensure that the temporary task created by
         # run_forever() consumes the KeyboardInterrupt and so don't log
@@ -974,7 +989,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.loop = asyncio.new_event_loop()
+        self.loop = asyncio.SelectorEventLoop()
         self.set_event_loop(self.loop)
 
     @mock.patch('socket.getnameinfo')
@@ -1076,6 +1091,26 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             srv = self.loop.run_until_complete(coro)
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
+
+    @unittest.skipUnless(hasattr(socket, 'AF_INET6'), 'no IPv6 support')
+    def test_create_server_ipv6(self):
+        async def main():
+            srv = await asyncio.start_server(
+                lambda: None, '::1', 0, loop=self.loop)
+            try:
+                self.assertGreater(len(srv.sockets), 0)
+            finally:
+                srv.close()
+                await srv.wait_closed()
+
+        try:
+            self.loop.run_until_complete(main())
+        except OSError as ex:
+            if (hasattr(errno, 'EADDRNOTAVAIL') and
+                    ex.errno == errno.EADDRNOTAVAIL):
+                self.skipTest('failed to bind to ::1')
+            else:
+                raise
 
     def test_create_datagram_endpoint_wrong_sock(self):
         sock = socket.socket(socket.AF_INET)
@@ -1886,7 +1921,7 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
     def test__sock_sendfile_native_failure(self):
         sock, proto = self.prepare()
 
-        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+        with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
                                     "sendfile is not available"):
             self.run_loop(self.loop._sock_sendfile_native(sock, self.file,
                                                           0, None))
@@ -1897,7 +1932,7 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
     def test_sock_sendfile_no_fallback(self):
         sock, proto = self.prepare()
 
-        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+        with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
                                     "sendfile is not available"):
             self.run_loop(self.loop.sock_sendfile(sock, self.file,
                                                   fallback=False))

@@ -257,6 +257,19 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         self.assertEqual(None, tr._buffer)
         self.assertEqual(tr._conn_lost, 1)
 
+    def test_loop_writing_force_close(self):
+        exc_handler = mock.Mock()
+        self.loop.set_exception_handler(exc_handler)
+        fut = asyncio.Future(loop=self.loop)
+        fut.set_result(1)
+        self.proactor.send.return_value = fut
+
+        tr = self.socket_transport()
+        tr.write(b'data')
+        tr._force_close(None)
+        test_utils.run_briefly(self.loop)
+        exc_handler.assert_not_called()
+
     def test_force_close_idempotent(self):
         tr = self.socket_transport()
         tr._closing = True
@@ -459,6 +472,8 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         self.assertFalse(self.protocol.pause_writing.called)
 
 
+@unittest.skip('FIXME: bpo-33694: these tests are too close '
+               'to the implementation and should be refactored or removed')
 class ProactorSocketTransportBufferedProtoTests(test_utils.TestCase):
 
     def setUp(self):
@@ -551,6 +566,8 @@ class ProactorSocketTransportBufferedProtoTests(test_utils.TestCase):
         self.loop._proactor.recv_into.assert_called_with(self.sock, buf)
         buf_proto.buffer_updated.assert_called_with(4)
 
+    @unittest.skip('FIXME: bpo-33694: this test is too close to the '
+                   'implementation and should be refactored or removed')
     def test_proto_buf_switch(self):
         tr = self.socket_transport()
         test_utils.run_briefly(self.loop)
@@ -934,7 +951,7 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def test_sock_sendfile_not_a_file(self):
         sock, proto = self.prepare()
         f = object()
-        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+        with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))
@@ -943,7 +960,7 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def test_sock_sendfile_iobuffer(self):
         sock, proto = self.prepare()
         f = io.BytesIO()
-        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+        with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))
@@ -953,7 +970,7 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         sock, proto = self.prepare()
         f = mock.Mock()
         f.fileno.return_value = -1
-        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+        with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))

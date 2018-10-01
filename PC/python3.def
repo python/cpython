@@ -248,6 +248,7 @@ EXPORTS
   PyExc_Warning=python38.PyExc_Warning DATA
   PyExc_WindowsError=python38.PyExc_WindowsError DATA
   PyExc_ZeroDivisionError=python38.PyExc_ZeroDivisionError DATA
+  PyExceptionClass_Name=python38.PyExceptionClass_Name
   PyException_GetCause=python38.PyException_GetCause
   PyException_GetContext=python38.PyException_GetContext
   PyException_GetTraceback=python38.PyException_GetTraceback
@@ -294,9 +295,11 @@ EXPORTS
   PyImport_ImportModuleLevelObject=python38.PyImport_ImportModuleLevelObject
   PyImport_ImportModuleNoBlock=python38.PyImport_ImportModuleNoBlock
   PyImport_ReloadModule=python38.PyImport_ReloadModule
+  PyIndex_Check=python38.PyIndex_Check
   PyInterpreterState_Clear=python38.PyInterpreterState_Clear
   PyInterpreterState_Delete=python38.PyInterpreterState_Delete
   PyInterpreterState_New=python38.PyInterpreterState_New
+  PyIter_Check=python38.PyIter_Check
   PyIter_Next=python38.PyIter_Next
   PyListIter_Type=python38.PyListIter_Type DATA
   PyListRevIter_Type=python38.PyListRevIter_Type DATA
