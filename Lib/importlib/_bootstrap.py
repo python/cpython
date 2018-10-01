@@ -628,7 +628,9 @@ def _exec(spec, module):
             spec.loader.load_module(name)
         else:
             spec.loader.exec_module(module)
-    return sys.modules[name]
+    module = sys.modules.pop(spec.name)
+    sys.modules[spec.name] = module
+    return module
 
 
 def _load_backward_compatible(spec):
@@ -676,10 +678,13 @@ def _load_unlocked(spec):
         else:
             spec.loader.exec_module(module)
 
+    # Move the module to the end of sys.modules.
     # We don't ensure that the import-related module attributes get
     # set in the sys.modules replacement case.  Such modules are on
     # their own.
-    return sys.modules[spec.name]
+    module = sys.modules.pop(spec.name)
+    sys.modules[spec.name] = module
+    return module
 
 # A method used during testing of _load_unlocked() and by
 # _load_module_shim().
