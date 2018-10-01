@@ -1,0 +1,2 @@
+Fixed ctypes Arrays Py_buffer implimentation to provide strides if
+requested.
