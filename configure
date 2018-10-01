@@ -650,6 +650,7 @@ DTRACE_HEADERS
 DFLAGS
 DTRACE
 LDLAST
+LDMAXDATA
 TCLTK_LIBS
 TCLTK_INCLUDES
 LIBFFI_INCLUDEDIR
@@ -10285,14 +10286,13 @@ case "$ac_sys_system" in
 	AIX*)
           if test -z "$OBJECT_MODE"
           then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: Increase AIX Memory from 256MB to 1GB" >&5
-$as_echo "$as_me: Increase AIX Memory from 256MB to 1GB" >&6;}
+            { $as_echo "$as_me:${as_lineno-$LINENO}: 'Specify AIX MAXDATA as 1GB (0x40000000)'" >&5
+$as_echo "$as_me: 'Specify AIX MAXDATA as 1GB (0x40000000)'" >&6;}
             if test "$GCC" != "yes"
-            then LDLAST='-bmaxdata=0x40000000'
-            else LDLAST='-Wl,bmaxdata=0x40000000'
+            then LDMAXDATA='-bmaxdata:0x40000000'
+            else LDMAXDATA='-Wl,bmaxdata:0x40000000'
             fi
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDLAST" >&5
-$as_echo "$LDLAST" >&6; }
+
           fi
          ;;
 esac

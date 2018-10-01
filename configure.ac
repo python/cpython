@@ -2961,12 +2961,12 @@ case "$ac_sys_system" in
 	AIX*)
           if test -z "$OBJECT_MODE"
           then
-            AC_MSG_NOTICE(Increase AIX Memory from 256MB to 1GB)
+            AC_MSG_NOTICE('Specify AIX MAXDATA as 1GB (0x40000000)')
             if test "$GCC" != "yes"
-            then LDLAST='-bmaxdata=0x40000000'
-            else LDLAST='-Wl,bmaxdata=0x40000000'
+            then LDMAXDATA='-bmaxdata:0x40000000'
+            else LDMAXDATA='-Wl,bmaxdata:0x40000000'
             fi
-            AC_MSG_RESULT($LDLAST)
+            AC_SUBST(LDMAXDATA)
           fi
          ;;
 esac
