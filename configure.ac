@@ -2959,13 +2959,14 @@ AC_MSG_RESULT($with_dbmliborder)
 # If 32-bit set default datasegment to 1 GByte (4 * 256MB Segments)
 case "$ac_sys_system" in
 	AIX*)
-          if test -z $OBJECT_MODE
+          if test -z "$OBJECT_MODE"
           then
             AC_MSG_NOTICE(Increase AIX Memory from 256MB to 1GB)
-            if test "$GCC" = "yes"
-            then LDLAST="-Wl,bmaxdata=0x40000000"
-            else LDLAST="-bmaxdata=0x40000000"
+            if test "$GCC" != "yes"
+            then LDLAST='-bmaxdata=0x40000000'
+            else LDLAST='-Wl,bmaxdata=0x40000000'
             fi
+            AC_MSG_RESULT($LDLAST)
           fi
          ;;
 esac
