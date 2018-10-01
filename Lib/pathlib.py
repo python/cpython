@@ -1331,6 +1331,9 @@ class Path(PurePath):
             if e.errno not in _IGNORED_ERROS:
                 raise
             return False
+        except ValueError:
+            # Non-encodable path
+            return False
         return True
 
     def is_dir(self):
@@ -1345,6 +1348,9 @@ class Path(PurePath):
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
             return False
+        except ValueError:
+            # Non-encodable path
+            return False
 
     def is_file(self):
         """
@@ -1358,6 +1364,9 @@ class Path(PurePath):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            return False
+        except ValueError:
+            # Non-encodable path
             return False
 
     def is_mount(self):
@@ -1392,6 +1401,9 @@ class Path(PurePath):
                 raise
             # Path doesn't exist
             return False
+        except ValueError:
+            # Non-encodable path
+            return False
 
     def is_block_device(self):
         """
@@ -1404,6 +1416,9 @@ class Path(PurePath):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            return False
+        except ValueError:
+            # Non-encodable path
             return False
 
     def is_char_device(self):
@@ -1418,6 +1433,9 @@ class Path(PurePath):
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
             return False
+        except ValueError:
+            # Non-encodable path
+            return False
 
     def is_fifo(self):
         """
@@ -1431,6 +1449,9 @@ class Path(PurePath):
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
             return False
+        except ValueError:
+            # Non-encodable path
+            return False
 
     def is_socket(self):
         """
@@ -1443,6 +1464,9 @@ class Path(PurePath):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            return False
+        except ValueError:
+            # Non-encodable path
             return False
 
     def expanduser(self):

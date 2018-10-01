@@ -1,8 +1,5 @@
--- ASDL's 7 builtin types are:
--- identifier, int, string, bytes, object, singleton, constant
---
--- singleton: None, True or False
--- constant can be None, whereas None means "no value" for object.
+-- ASDL's 5 builtin types are:
+-- identifier, int, string, object, constant
 
 module Python
 {
@@ -75,13 +72,8 @@ module Python
          -- x < 4 < 3 and (x < 4) < 3
          | Compare(expr left, cmpop* ops, expr* comparators)
          | Call(expr func, expr* args, keyword* keywords)
-         | Num(object n) -- a number as a PyObject.
-         | Str(string s) -- need to specify raw, unicode, etc?
          | FormattedValue(expr value, int? conversion, expr? format_spec)
          | JoinedStr(expr* values)
-         | Bytes(bytes s)
-         | NameConstant(singleton value)
-         | Ellipsis
          | Constant(constant value)
 
          -- the following expression can appear in assignment context

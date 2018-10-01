@@ -3345,6 +3345,21 @@ class QueueHandlerTest(BaseTest):
         self.assertFalse(handler.matches(levelno=logging.WARNING, message='4'))
         self.assertFalse(handler.matches(levelno=logging.ERROR, message='5'))
         self.assertTrue(handler.matches(levelno=logging.CRITICAL, message='6'))
+        handler.close()
+
+    @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
+                         'logging.handlers.QueueListener required for this test')
+    def test_queue_listener_with_StreamHandler(self):
+        # Test that traceback only appends once (bpo-34334).
+        listener = logging.handlers.QueueListener(self.queue, self.root_hdlr)
+        listener.start()
+        try:
+            1 / 0
+        except ZeroDivisionError as e:
+            exc = e
+            self.que_logger.exception(self.next_message(), exc_info=exc)
+        listener.stop()
+        self.assertEqual(self.stream.getvalue().strip().count('Traceback'), 1)
 
 if hasattr(logging.handlers, 'QueueListener'):
     import multiprocessing

@@ -816,7 +816,8 @@ os.close(fd)
         addr = q.get()
 
         # Should not be stuck in an infinite loop.
-        with self.assertRaises((ConnectionResetError, BrokenPipeError)):
+        with self.assertRaises((ConnectionResetError, ConnectionAbortedError,
+                                BrokenPipeError)):
             self.loop.run_until_complete(client(*addr))
 
         # Clean up the thread.  (Only on success; on failure, it may

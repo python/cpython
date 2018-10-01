@@ -30,6 +30,10 @@
 /* Define if --enable-ipv6 is specified */
 #undef ENABLE_IPV6
 
+/* Define to 1 if your system stores words within floats with the most
+   significant word first */
+#undef FLOAT_WORDS_BIGENDIAN
+
 /* Define if flock needs to be linked with bsd library. */
 #undef FLOCK_NEEDS_LIBBSD
 
@@ -610,6 +614,9 @@
 
 /* Define to 1 if you have the <linux/netlink.h> header file. */
 #undef HAVE_LINUX_NETLINK_H
+
+/* Define to 1 if you have the <linux/qrtr.h> header file. */
+#undef HAVE_LINUX_QRTR_H
 
 /* Define to 1 if you have the <linux/random.h> header file. */
 #undef HAVE_LINUX_RANDOM_H

@@ -371,31 +371,6 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.set_debug(False)
         self.assertFalse(self.loop.get_debug())
 
-    @mock.patch('asyncio.base_events.logger')
-    def test__run_once_logging(self, m_logger):
-        def slow_select(timeout):
-            # Sleep a bit longer than a second to avoid timer resolution
-            # issues.
-            time.sleep(1.1)
-            return []
-
-        # logging needs debug flag
-        self.loop.set_debug(True)
-
-        # Log to INFO level if timeout > 1.0 sec.
-        self.loop._selector.select = slow_select
-        self.loop._process_events = mock.Mock()
-        self.loop._run_once()
-        self.assertEqual(logging.INFO, m_logger.log.call_args[0][0])
-
-        def fast_select(timeout):
-            time.sleep(0.001)
-            return []
-
-        self.loop._selector.select = fast_select
-        self.loop._run_once()
-        self.assertEqual(logging.DEBUG, m_logger.log.call_args[0][0])
-
     def test__run_once_schedule_handle(self):
         handle = None
         processed = False
@@ -1014,7 +989,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.loop = asyncio.new_event_loop()
+        self.loop = asyncio.SelectorEventLoop()
         self.set_event_loop(self.loop)
 
     @mock.patch('socket.getnameinfo')
