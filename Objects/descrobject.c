@@ -1345,12 +1345,15 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         return NULL;
     }
     args = cached_args;
-    cached_args = NULL;
     if (!args) {
         args = PyTuple_New(1);
         if (!args)
             return NULL;
-        _PyObject_GC_UNTRACK(args);
+    }
+    else {
+        cached_args = NULL;
+        assert(Py_REFCNT(args) == 1);
+        Py_SIZE(args) = 1;
     }
     Py_INCREF(obj);
     PyTuple_SET_ITEM(args, 0, obj);
@@ -1358,12 +1361,12 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     if (cached_args == NULL && Py_REFCNT(args) == 1) {
         assert(PyTuple_GET_SIZE(args) == 1);
         assert(PyTuple_GET_ITEM(args, 0) == obj);
+        Py_SIZE(args) = 0;
         cached_args = args;
         Py_DECREF(obj);
     }
     else {
         assert(Py_REFCNT(args) >= 1);
-        _PyObject_GC_TRACK(args);
         Py_DECREF(args);
     }
     return ret;

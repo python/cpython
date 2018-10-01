@@ -1,0 +1,1 @@
+Fixed a crash in debug build when PYTHONDUMPREFS is set.
