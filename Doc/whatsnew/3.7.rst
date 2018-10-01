@@ -998,13 +998,22 @@ Editor code context option revised.  Box displays all context lines up to
 maxlines.  Clicking on a context line jumps the editor to that line.  Context
 colors for custom themes is added to Highlights tab of Settings dialog.
 (Contributed by Cheryl Sabella and Terry Jan Reedy in :issue:`33642`,
-:issue:`33768`, and :issue:`33679`,
+:issue:`33768`, and :issue:`33679`.)
 
 On Windows, a new API call tells Windows that tk scales for DPI. On Windows
 8.1+ or 10, with DPI compatibility properties of the Python binary
 unchanged, and a monitor resolution greater than 96 DPI, this should
 make text and lines sharper.  It should otherwise have no effect.
-(Contributed by Terry Jan Reedy in :issue:`33656`).
+(Contributed by Terry Jan Reedy in :issue:`33656`.)
+
+New in 3.7.1:
+
+Output over N lines (50 by default) is squeezed down to a button.
+N can be changed in the PyShell section of the General page of the
+Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
+right clicking on the output.  Squeezed output can be expanded in place
+by double-clicking the button or into the clipboard or a separate window
+by right-clicking the button.  (Contributed by Tal Einat in :issue:`1529353`.)
 
 The changes above have been backported to 3.6 maintenance releases.
 
@@ -1923,8 +1932,7 @@ asyncio
 Support for directly ``await``-ing instances of :class:`asyncio.Lock` and
 other asyncio synchronization primitives has been deprecated.  An
 asynchronous context manager must be used in order to acquire and release
-the synchronization resource.  See :ref:`async-with-locks` for more
-information.
+the synchronization resource.
 (Contributed by Andrew Svetlov in :issue:`32253`.)
 
 The :meth:`asyncio.Task.current_task` and :meth:`asyncio.Task.all_tasks`
@@ -2485,3 +2493,17 @@ The current exception state has been moved from the frame object to the co-routi
 This simplified the interpreter and fixed a couple of obscure bugs caused by
 having swap exception state when entering or exiting a generator.
 (Contributed by Mark Shannon in :issue:`25612`.)
+
+Notable changes in Python 3.7.1
+===============================
+
+Starting in 3.7.1, :c:func:`Py_Initialize` now consistently reads and respects
+all of the same environment settings as :c:func:`Py_Main` (in earlier Python
+versions, it respected an ill-defined subset of those environment variables,
+while in Python 3.7.0 it didn't read any of them due to :issue:`34247`). If
+this behavior is unwanted, set :c:data:`Py_IgnoreEnvironmentFlag` to 1 before
+calling :c:func:`Py_Initialize`.
+
+In 3.7.1 the C API for Context Variables
+:ref:`was updated <contextvarsobjects_pointertype_change>` to use
+:c:type:`PyObject` pointers.  See also :issue:`34762`.

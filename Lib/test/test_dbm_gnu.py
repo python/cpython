@@ -144,6 +144,13 @@ class TestGdbm(unittest.TestCase):
             self.assertTrue(b'key' in db)
             self.assertEqual(db[b'key'], b'value')
 
+    def test_nonexisting_file(self):
+        nonexisting_file = 'nonexisting-file'
+        with self.assertRaises(gdbm.error) as cm:
+            gdbm.open(nonexisting_file)
+        self.assertIn(nonexisting_file, str(cm.exception))
+        self.assertEqual(cm.exception.filename, nonexisting_file)
+
 
 if __name__ == '__main__':
     unittest.main()

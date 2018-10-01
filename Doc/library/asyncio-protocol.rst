@@ -1,14 +1,17 @@
 .. currentmodule:: asyncio
 
 
+.. _asyncio-transports-protocols:
+
+
 ========================
 Transports and Protocols
 ========================
 
 .. rubric:: Preface
 
-Transports and Protocols are used by **low-level** event loop
-APIs such as :meth:`loop.create_connection`.  They require using
+Transports and Protocols are used by the **low-level** event loop
+APIs such as :meth:`loop.create_connection`.  They use
 callback-based programming style and enable high-performance
 implementations of network or IPC protocols (e.g. HTTP).
 
@@ -29,7 +32,7 @@ abstraction for a socket (or similar I/O endpoint) while a protocol
 is an abstraction for an application, from the transport's point
 of view.
 
-Yet another view is simply that the transport and protocol interfaces
+Yet another view is the transport and protocol interfaces
 together define an abstract interface for using network I/O and
 interprocess I/O.
 
@@ -109,7 +112,7 @@ Transports Hierarchy
    Interface representing a bidirectional transport, such as a
    TCP connection.
 
-   The user never instantiates a transport directly; they call a
+   The user does not instantiate a transport directly; they call a
    utility function, passing it a protocol factory and other
    information necessary to create the transport and protocol.
 
@@ -279,7 +282,7 @@ Write-only Transports
 
 .. method:: WriteTransport.get_write_buffer_limits()
 
-   Get the *high*- and *low*-water limits for write flow control. Return a
+   Get the *high* and *low* watermarks for write flow control. Return a
    tuple ``(low, high)`` where *low* and *high* are positive number of
    bytes.
 
@@ -289,14 +292,14 @@ Write-only Transports
 
 .. method:: WriteTransport.set_write_buffer_limits(high=None, low=None)
 
-   Set the *high*- and *low*-water limits for write flow control.
+   Set the *high* and *low* watermarks for write flow control.
 
    These two values (measured in number of
    bytes) control when the protocol's
    :meth:`protocol.pause_writing() <BaseProtocol.pause_writing>`
    and :meth:`protocol.resume_writing() <BaseProtocol.resume_writing>`
-   methods are called. If specified, the low-water limit must be less
-   than or equal to the high-water limit.  Neither *high* nor *low*
+   methods are called. If specified, the low watermark must be less
+   than or equal to the high watermark.  Neither *high* nor *low*
    can be negative.
 
    :meth:`~BaseProtocol.pause_writing` is called when the buffer size
@@ -305,9 +308,9 @@ Write-only Transports
    the buffer size becomes less than or equal to the *low* value.
 
    The defaults are implementation-specific.  If only the
-   high-water limit is given, the low-water limit defaults to an
+   high watermark is given, the low watermark defaults to an
    implementation-specific value less than or equal to the
-   high-water limit.  Setting *high* to zero forces *low* to zero as
+   high watermark.  Setting *high* to zero forces *low* to zero as
    well, and causes :meth:`~BaseProtocol.pause_writing` to be called
    whenever the buffer becomes non-empty.  Setting *low* to zero causes
    :meth:`~BaseProtocol.resume_writing` to be called only once the
@@ -334,11 +337,11 @@ Write-only Transports
 
 .. method:: WriteTransport.write_eof()
 
-   Close the write end of the transport after flushing buffered data.
+   Close the write end of the transport after flushing all buffered data.
    Data may still be received.
 
    This method can raise :exc:`NotImplementedError` if the transport
-   (e.g. SSL) doesn't support half-closes.
+   (e.g. SSL) doesn't support half-closed connections.
 
 
 Datagram Transports
@@ -388,15 +391,17 @@ Subprocess Transports
 .. method:: SubprocessTransport.get_returncode()
 
    Return the subprocess return code as an integer or :const:`None`
-   if it hasn't returned, similarly to the
+   if it hasn't returned, which is similar to the
    :attr:`subprocess.Popen.returncode` attribute.
 
 .. method:: SubprocessTransport.kill()
 
-   Kill the subprocess, as in :meth:`subprocess.Popen.kill`.
+   Kill the subprocess.
 
    On POSIX systems, the function sends SIGKILL to the subprocess.
    On Windows, this method is an alias for :meth:`terminate`.
+
+   See also :meth:`subprocess.Popen.kill`.
 
 .. method:: SubprocessTransport.send_signal(signal)
 
@@ -405,18 +410,20 @@ Subprocess Transports
 
 .. method:: SubprocessTransport.terminate()
 
-   Ask the subprocess to stop, as in :meth:`subprocess.Popen.terminate`.
-   This method is an alias for the :meth:`close` method.
+   Stop the subprocess.
 
    On POSIX systems, this method sends SIGTERM to the subprocess.
    On Windows, the Windows API function TerminateProcess() is called to
    stop the subprocess.
 
+   See also :meth:`subprocess.Popen.terminate`.
+
 .. method:: SubprocessTransport.close()
 
-   Ask the subprocess to stop by calling the :meth:`terminate` method
-   if the subprocess hasn't returned yet, and close transports of all
-   pipes (*stdin*, *stdout* and *stderr*).
+   Kill the subprocess by calling the :meth:`kill` method.
+
+   If the subprocess hasn't returned yet, and close transports of
+   *stdin*, *stdout*, and *stderr* pipes.
 
 
 .. _asyncio-protocol:
@@ -428,11 +435,10 @@ asyncio provides a set of abstract base classes that should be used
 to implement network protocols.  Those classes are meant to be used
 together with :ref:`transports <asyncio-transport>`.
 
-Subclasses of abstract base protocol classes can implement some or
-all methods.  All those methods are callbacks: they are called by
+Subclasses of abstract base protocol classes may implement some or
+all methods.  All these methods are callbacks: they are called by
 transports on certain events, for example when some data is received.
-Base protocol methods are not supposed to be called by anything but
-the corresponding transport.
+A base protocol method should be called by the corresponding transport.
 
 
 Base Protocols
@@ -500,18 +506,18 @@ method for more details.
 
 .. method:: BaseProtocol.pause_writing()
 
-   Called when the transport's buffer goes over the high-water mark.
+   Called when the transport's buffer goes over the high watermark.
 
 .. method:: BaseProtocol.resume_writing()
 
-   Called when the transport's buffer drains below the low-water mark.
+   Called when the transport's buffer drains below the low watermark.
 
-If the buffer size equals the high-water mark,
+If the buffer size equals the high watermark,
 :meth:`~BaseProtocol.pause_writing` is not called: the buffer size must
 go strictly over.
 
 Conversely, :meth:`~BaseProtocol.resume_writing` is called when the
-buffer size is equal or lower than the low-water mark.  These end
+buffer size is equal or lower than the low watermark.  These end
 conditions are important to ensure that things go as expected when
 either mark is zero.
 
@@ -532,16 +538,15 @@ accept factories that return streaming protocols.
 
    Whether the data is buffered, chunked or reassembled depends on
    the transport.  In general, you shouldn't rely on specific semantics
-   and instead make your parsing generic and flexible enough.  However,
+   and instead make your parsing generic and flexible. However,
    data is always received in the correct order.
 
-   The method can be called an arbitrary number of times during
-   a connection.
+   The method can be called an arbitrary number of times while
+   a connection is open.
 
    However, :meth:`protocol.eof_received() <Protocol.eof_received>`
-   is called at most once and, if called,
-   :meth:`protocol.data_received() <Protocol.data_received>`
-   won't be called after it.
+   is called at most once.  Once `eof_received()` is called,
+   ``data_received()`` is not called anymore.
 
 .. method:: Protocol.eof_received()
 
@@ -552,13 +557,13 @@ accept factories that return streaming protocols.
 
    This method may return a false value (including ``None``), in which case
    the transport will close itself.  Conversely, if this method returns a
-   true value, closing the transport is up to the protocol.  Since the
-   default implementation returns ``None``, it implicitly closes the
+   true value, the protocol used determines whether to close the transport.
+   Since the default implementation returns ``None``, it implicitly closes the
    connection.
 
-   Some transports such as SSL don't support half-closed connections,
-   in which case returning true from this method will not prevent closing
-   the connection.
+   Some transports, including SSL, don't support half-closed connections,
+   in which case returning true from this method will result in the connection
+   being closed.
 
 
 State machine:
@@ -582,12 +587,12 @@ Buffered Streaming Protocols
 Buffered Protocols can be used with any event loop method
 that supports `Streaming Protocols`_.
 
-The idea of ``BufferedProtocol`` is that it allows to manually allocate
-and control the receive buffer.  Event loops can then use the buffer
+``BufferedProtocol`` implementations allow explicit manual allocation
+and control of the receive buffer.  Event loops can then use the buffer
 provided by the protocol to avoid unnecessary data copies.  This
 can result in noticeable performance improvement for protocols that
-receive big amounts of data.  Sophisticated protocols implementations
-can allocate the buffer only once at creation time.
+receive big amounts of data.  Sophisticated protocol implementations
+can significantly reduce the number of buffer allocations.
 
 The following callbacks are called on :class:`BufferedProtocol`
 instances:
@@ -596,12 +601,12 @@ instances:
 
    Called to allocate a new receive buffer.
 
-   *sizehint* is a recommended minimal size for the returned
-   buffer.  It is acceptable to return smaller or bigger buffers
+   *sizehint* is the recommended minimum size for the returned
+   buffer.  It is acceptable to return smaller or larger buffers
    than what *sizehint* suggests.  When set to -1, the buffer size
-   can be arbitrary. It is an error to return a zero-sized buffer.
+   can be arbitrary. It is an error to return a buffer with a zero size.
 
-   Must return an object that implements the
+   ``get_buffer()`` must return an object implementing the
    :ref:`buffer protocol <bufferobjects>`.
 
 .. method:: BufferedProtocol.buffer_updated(nbytes)
@@ -652,17 +657,17 @@ factories passed to the :meth:`loop.create_datagram_endpoint` method.
    :class:`OSError`.  *exc* is the :class:`OSError` instance.
 
    This method is called in rare conditions, when the transport (e.g. UDP)
-   detects that a datagram couldn't be delivered to its recipient.
+   detects that a datagram could not be delivered to its recipient.
    In many conditions though, undeliverable datagrams will be silently
    dropped.
 
 .. note::
 
    On BSD systems (macOS, FreeBSD, etc.) flow control is not supported
-   for datagram protocols, because send failures caused by
-   writing too many packets cannot be detected easily.
+   for datagram protocols, because there is no reliable way to detect send
+   failures caused by writing too many packets.
 
-   The socket always appears 'ready' and excess packets are dropped; an
+   The socket always appears 'ready' and excess packets are dropped. An
    :class:`OSError` with ``errno`` set to :const:`errno.ENOBUFS` may
    or may not be raised; if it is raised, it will be reported to
    :meth:`DatagramProtocol.error_received` but otherwise ignored.
@@ -701,13 +706,13 @@ factories passed to the :meth:`loop.subprocess_exec` and
 Examples
 ========
 
-.. _asyncio-tcp-echo-server-protocol:
+.. _asyncio_example_tcp_echo_server_protocol:
 
 TCP Echo Server
 ---------------
 
-TCP echo server using the :meth:`loop.create_server` method, send back
-received data and close the connection::
+Create a TCP echo server using the :meth:`loop.create_server` method, send back
+received data, and close the connection::
 
     import asyncio
 
@@ -750,13 +755,13 @@ received data and close the connection::
    The :ref:`TCP echo server using streams <asyncio-tcp-echo-server-streams>`
    example uses the high-level :func:`asyncio.start_server` function.
 
-.. _asyncio-tcp-echo-client-protocol:
+.. _asyncio_example_tcp_echo_client_protocol:
 
 TCP Echo Client
 ---------------
 
-TCP echo client  using the :meth:`loop.create_connection` method, send
-data and wait until the connection is closed::
+A TCP echo client using the :meth:`loop.create_connection` method, sends
+data, and waits until the connection is closed::
 
     import asyncio
 
@@ -813,8 +818,8 @@ data and wait until the connection is closed::
 UDP Echo Server
 ---------------
 
-UDP echo server using the :meth:`loop.create_datagram_endpoint`
-method, send back received data::
+A UDP echo server, using the :meth:`loop.create_datagram_endpoint`
+method, sends back received data::
 
     import asyncio
 
@@ -857,8 +862,8 @@ method, send back received data::
 UDP Echo Client
 ---------------
 
-UDP echo client using the :meth:`loop.create_datagram_endpoint`
-method, send data and close the transport when we received the answer::
+A UDP echo client, using the :meth:`loop.create_datagram_endpoint`
+method, sends data and closes the transport when it receives the answer::
 
     import asyncio
 
@@ -908,7 +913,7 @@ method, send data and close the transport when we received the answer::
     asyncio.run(main())
 
 
-.. _asyncio-register-socket:
+.. _asyncio_example_create_connection:
 
 Connecting Existing Sockets
 ---------------------------
@@ -967,19 +972,19 @@ Wait until a socket receives data using the
 .. seealso::
 
    The :ref:`watch a file descriptor for read events
-   <asyncio-watch-read-event>` example uses the low-level
+   <asyncio_example_watch_fd>` example uses the low-level
    :meth:`loop.add_reader` method to register an FD.
 
    The :ref:`register an open socket to wait for data using streams
-   <asyncio-register-socket-streams>` example uses high-level streams
+   <asyncio_example_create_connection-streams>` example uses high-level streams
    created by the :func:`open_connection` function in a coroutine.
 
-.. _asyncio-subprocess-proto-example:
+.. _asyncio_example_subprocess_proto:
 
 loop.subprocess_exec() and SubprocessProtocol
 ---------------------------------------------
 
-An example of a subprocess protocol using to get the output of a
+An example of a subprocess protocol used to get the output of a
 subprocess and to wait for the subprocess exit.
 
 The subprocess is created by th :meth:`loop.subprocess_exec` method::
@@ -1025,9 +1030,8 @@ The subprocess is created by th :meth:`loop.subprocess_exec` method::
         data = bytes(protocol.output)
         return data.decode('ascii').rstrip()
 
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(
-            asyncio.WindowsProactorEventLoopPolicy())
-
     date = asyncio.run(get_date())
     print(f"Current date: {date}")
+
+See also the :ref:`same example <asyncio_example_create_subprocess_exec>`
+written using high-level APIs.

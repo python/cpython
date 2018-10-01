@@ -35,6 +35,7 @@ import os
 import queue
 import random
 import re
+import signal
 import socket
 import struct
 import sys
@@ -665,6 +666,72 @@ class HandlerTest(BaseTest):
                 h.close()
                 if os.path.exists(fn):
                     os.unlink(fn)
+
+    # The implementation relies on os.register_at_fork existing, but we test
+    # based on os.fork existing because that is what users and this test use.
+    # This helps ensure that when fork exists (the important concept) that the
+    # register_at_fork mechanism is also present and used.
+    @unittest.skipIf(not hasattr(os, 'fork'), 'Test requires os.fork().')
+    def test_post_fork_child_no_deadlock(self):
+        """Ensure forked child logging locks are not held; bpo-6721."""
+        refed_h = logging.Handler()
+        refed_h.name = 'because we need at least one for this test'
+        self.assertGreater(len(logging._handlers), 0)
+
+        locks_held__ready_to_fork = threading.Event()
+        fork_happened__release_locks_and_end_thread = threading.Event()
+
+        def lock_holder_thread_fn():
+            logging._acquireLock()
+            try:
+                refed_h.acquire()
+                try:
+                    # Tell the main thread to do the fork.
+                    locks_held__ready_to_fork.set()
+
+                    # If the deadlock bug exists, the fork will happen
+                    # without dealing with the locks we hold, deadlocking
+                    # the child.
+
+                    # Wait for a successful fork or an unreasonable amount of
+                    # time before releasing our locks.  To avoid a timing based
+                    # test we'd need communication from os.fork() as to when it
+                    # has actually happened.  Given this is a regression test
+                    # for a fixed issue, potentially less reliably detecting
+                    # regression via timing is acceptable for simplicity.
+                    # The test will always take at least this long. :(
+                    fork_happened__release_locks_and_end_thread.wait(0.5)
+                finally:
+                    refed_h.release()
+            finally:
+                logging._releaseLock()
+
+        lock_holder_thread = threading.Thread(
+                target=lock_holder_thread_fn,
+                name='test_post_fork_child_no_deadlock lock holder')
+        lock_holder_thread.start()
+
+        locks_held__ready_to_fork.wait()
+        pid = os.fork()
+        if pid == 0:  # Child.
+            logging.error(r'Child process did not deadlock. \o/')
+            os._exit(0)
+        else:  # Parent.
+            fork_happened__release_locks_and_end_thread.set()
+            lock_holder_thread.join()
+            start_time = time.monotonic()
+            while True:
+                waited_pid, status = os.waitpid(pid, os.WNOHANG)
+                if waited_pid == pid:
+                    break  # child process exited.
+                if time.monotonic() - start_time > 7:
+                    break  # so long? implies child deadlock.
+                time.sleep(0.05)
+            if waited_pid != pid:
+                os.kill(pid, signal.SIGKILL)
+                waited_pid, status = os.waitpid(pid, 0)
+                self.fail("child process deadlocked.")
+            self.assertEqual(status, 0, msg="child process error")
 
 
 class BadStream(object):
@@ -3278,6 +3345,21 @@ class QueueHandlerTest(BaseTest):
         self.assertFalse(handler.matches(levelno=logging.WARNING, message='4'))
         self.assertFalse(handler.matches(levelno=logging.ERROR, message='5'))
         self.assertTrue(handler.matches(levelno=logging.CRITICAL, message='6'))
+        handler.close()
+
+    @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
+                         'logging.handlers.QueueListener required for this test')
+    def test_queue_listener_with_StreamHandler(self):
+        # Test that traceback only appends once (bpo-34334).
+        listener = logging.handlers.QueueListener(self.queue, self.root_hdlr)
+        listener.start()
+        try:
+            1 / 0
+        except ZeroDivisionError as e:
+            exc = e
+            self.que_logger.exception(self.next_message(), exc_info=exc)
+        listener.stop()
+        self.assertEqual(self.stream.getvalue().strip().count('Traceback'), 1)
 
 if hasattr(logging.handlers, 'QueueListener'):
     import multiprocessing

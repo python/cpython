@@ -8,20 +8,17 @@ Event Loop
 
 .. rubric:: Preface
 
-An event loop is the central component of every asyncio application.
+The event loop is the core of every asyncio application.
 Event loops run asynchronous tasks and callbacks, perform network
-IO operations, run subprocesses, etc.
+IO operations, and run subprocesses.
 
-In general, it is *not recommended* to use event loops directly at
-the application-level asyncio code.  They should only be accessed
-in low-level code in libraries and frameworks.
+Application developers should typically use the high-level asyncio functions,
+such as :func:`asyncio.run`, and should rarely need to reference the loop
+object or call its methods.  This section is intended mostly for authors
+of lower-level code, libraries, and frameworks, who need finer control over
+the event loop behavior.
 
-High-level asyncio applications should not need to work with event
-loops and should use the :func:`asyncio.run` function to initialize
-and run asynchronous code.
-
-
-.. rubric:: Accessing Event Loop
+.. rubric:: Obtaining the Event Loop
 
 The following low-level functions can be used to get, set, or create
 an event loop:
@@ -42,13 +39,13 @@ an event loop:
    been called, asyncio will create a new event loop and set it as the
    current one.
 
-   Because this function has a rather complex behavior (especially
-   when custom event loop policies are in use), it is recommended
-   to use the :func:`get_running_loop` function in coroutines and
-   callbacks instead.
+   Because this function has rather complex behavior (especially
+   when custom event loop policies are in use), using the
+   :func:`get_running_loop` function is preferred to :func:`get_event_loop`
+   in coroutines and callbacks.
 
-   Consider also using the :func:`asyncio.run` function instead of
-   manually creating and closing an event loop.
+   Consider also using the :func:`asyncio.run` function instead of using
+   lower level functions to manually create and close an event loop.
 
 .. function:: set_event_loop(loop)
 
@@ -67,17 +64,17 @@ and :func:`new_event_loop` functions can be altered by
 
 This documentation page contains the following sections:
 
-* The `Event Loop Methods`_ section is a reference documentation of
-  event loop APIs;
+* The `Event Loop Methods`_ section is the reference documentation of
+  the event loop APIs;
 
 * The `Callback Handles`_ section documents the :class:`Handle` and
-  :class:`TimerHandle`, instances of which are returned from functions
-  :meth:`loop.call_soon`, :meth:`loop.call_later`, etc;
+  :class:`TimerHandle` instances which are returned from scheduling
+  methods such as :meth:`loop.call_soon` and :meth:`loop.call_later`;
 
-* The `Server Objects`_ sections documents types returned from
+* The `Server Objects`_ section documents types returned from
   event loop methods like :meth:`loop.create_server`;
 
-* The `Event Loops Implementations`_ section documents the
+* The `Event Loop Implementations`_ section documents the
   :class:`SelectorEventLoop` and :class:`ProactorEventLoop` classes;
 
 * The `Examples`_ section showcases how to work with some event
@@ -89,7 +86,7 @@ This documentation page contains the following sections:
 Event Loop Methods
 ==================
 
-Event loops provide the following **low-level** APIs:
+Event loops have **low-level** APIs for the following:
 
 .. contents::
    :depth: 1
@@ -101,11 +98,11 @@ Running and stopping the loop
 
 .. method:: loop.run_until_complete(future)
 
-   Run until the *future* (an instance of :class:`Future`) is
+   Run until the *future* (an instance of :class:`Future`) has
    completed.
 
    If the argument is a :ref:`coroutine object <coroutine>` it
-   is implicitly wrapped into an :class:`asyncio.Task`.
+   is implicitly scheduled to run as a :class:`asyncio.Task`.
 
    Return the Future's result or raise its exception.
 
@@ -120,8 +117,8 @@ Running and stopping the loop
 
    If :meth:`stop` is called while :meth:`run_forever` is running,
    the loop will run the current batch of callbacks and then exit.
-   Note that callbacks scheduled by callbacks will not run in that
-   case; they will run the next time :meth:`run_forever` or
+   Note that new callbacks scheduled by callbacks will not run in this
+   case; instead, they will run the next time :meth:`run_forever` or
    :meth:`run_until_complete` is called.
 
 .. method:: loop.stop()
@@ -140,7 +137,7 @@ Running and stopping the loop
 
    Close the event loop.
 
-   The loop cannot not be running when this function is called.
+   The loop must be running when this function is called.
    Any pending callbacks will be discarded.
 
    This method clears all queues and shuts down the executor, but does
@@ -154,8 +151,13 @@ Running and stopping the loop
    Schedule all currently open :term:`asynchronous generator` objects to
    close with an :meth:`~agen.aclose()` call.  After calling this method,
    the event loop will issue a warning if a new asynchronous generator
-   is iterated.  Should be used to reliably finalize all scheduled
-   asynchronous generators, e.g.:
+   is iterated. This should be used to reliably finalize all scheduled
+   asynchronous generators.
+
+   Note that there is no need to call this function when
+   :func:`asyncio.run` is used.
+
+   Example::
 
     try:
         loop.run_forever()
@@ -166,14 +168,12 @@ Running and stopping the loop
    .. versionadded:: 3.6
 
 
-.. _asyncio-pass-keywords:
-
 Scheduling callbacks
 ^^^^^^^^^^^^^^^^^^^^
 
 .. method:: loop.call_soon(callback, *args, context=None)
 
-   Schedule *callback* to be called with *args* arguments at
+   Schedule a *callback* to be called with *args* arguments at
    the next iteration of the event loop.
 
    Callbacks are called in the order in which they are registered.
@@ -184,7 +184,9 @@ Scheduling callbacks
    The current context is used when no *context* is provided.
 
    An instance of :class:`asyncio.Handle` is returned, which can be
-   used to cancel the callback.
+   used later to cancel the callback.
+
+   This method is not thread-safe.
 
 .. method:: loop.call_soon_threadsafe(callback, *args, context=None)
 
@@ -198,18 +200,19 @@ Scheduling callbacks
    The *context* keyword-only parameter was added. See :pep:`567`
    for more details.
 
+.. _asyncio-pass-keywords:
+
 .. note::
 
-   Most :mod:`asyncio` scheduling functions don't allow to pass
-   keyword arguments.  To do that, use :func:`functools.partial`,
-   e.g.::
+   Most :mod:`asyncio` scheduling functions don't allow passing
+   keyword arguments.  To do that, use :func:`functools.partial`::
 
-      # will schedule "print("Hello", flush=True)":
+      # will schedule "print("Hello", flush=True)"
       loop.call_soon(
           functools.partial(print, "Hello", flush=True))
 
    Using partial objects is usually more convenient than using lambdas,
-   as asyncio can better render partial objects in debug and error
+   as asyncio can render partial objects better in debug and error
    messages.
 
 
@@ -232,8 +235,8 @@ clocks to track time.
    be used to cancel the callback.
 
    *callback* will be called exactly once.  If two callbacks are
-   scheduled for exactly the same time, it is undefined which will
-   be called first.
+   scheduled for exactly the same time, the order in which they
+   are called is undefined.
 
    The optional positional *args* will be passed to the callback when
    it is called. If you want the callback to be called with keyword
@@ -246,6 +249,11 @@ clocks to track time.
    .. versionchanged:: 3.7
       The *context* keyword-only parameter was added. See :pep:`567`
       for more details.
+
+   .. versionchanged:: 3.8
+      In Python 3.7 and earlier with the default event loop implementation,
+      the *delay* could not exceed one day.
+      This has been fixed in Python 3.8.
 
 .. method:: loop.call_at(when, callback, *args, context=None)
 
@@ -261,6 +269,11 @@ clocks to track time.
    .. versionchanged:: 3.7
       The *context* keyword-only parameter was added. See :pep:`567`
       for more details.
+
+   .. versionchanged:: 3.8
+      In Python 3.7 and earlier with the default event loop implementation,
+      the difference between *when* and the current time could not exceed
+      one day.  This has been fixed in Python 3.8.
 
 .. method:: loop.time()
 
@@ -284,8 +297,8 @@ Creating Futures and Tasks
 
    Create an :class:`asyncio.Future` object attached to the event loop.
 
-   This is the preferred way to create Futures in asyncio, that lets
-   third-party event loops to provide alternative implementations of
+   This is the preferred way to create Futures in asyncio. This lets
+   third-party event loops provide alternative implementations of
    the Future object (with better performance or instrumentation).
 
    .. versionadded:: 3.5.2
@@ -311,11 +324,10 @@ Creating Futures and Tasks
    :meth:`loop.create_task`.
 
    If *factory* is ``None`` the default task factory will be set.
-
-   If *factory* is a *callable*, it should have a signature matching
-   ``(loop, coro)``, where *loop* will be a reference to the active
-   event loop, *coro* will be a coroutine object.  The callable
-   must return an :class:`asyncio.Future` compatible object.
+   Otherwise, *factory* must be a *callable* with the signature matching
+   ``(loop, coro)``, where *loop* is a reference to the active
+   event loop, and *coro* is a coroutine object.  The callable
+   must return a :class:`asyncio.Future`-compatible object.
 
 .. method:: loop.get_task_factory()
 
@@ -362,28 +374,23 @@ Opening network connections
    The created transport is an implementation-dependent bidirectional
    stream.
 
-   .. note::
-      *protocol_factory* can be any kind of callable, not necessarily
-      a class.  For example, if you want to use a pre-created
-      protocol instance, you can pass ``lambda: my_protocol``.
-
    Other arguments:
 
-   * *ssl*: if given and not false, an SSL/TLS transport is created
+   * *ssl*: if given and not false, a SSL/TLS transport is created
      (by default a plain TCP transport is created).  If *ssl* is
      a :class:`ssl.SSLContext` object, this context is used to create
-     the transport; if *ssl* is :const:`True`, a context with some
-     unspecified default settings is used.
+     the transport; if *ssl* is :const:`True`, a default context returned
+     from :func:`ssl.create_default_context` is used.
 
      .. seealso:: :ref:`SSL/TLS security considerations <ssl-security>`
 
-   * *server_hostname*, is only for use together with *ssl*,
-     and sets or overrides the hostname that the target server's certificate
-     will be matched against.  By default the value of the *host* argument
+   * *server_hostname* sets or overrides the hostname that the target
+     server's certificate will be matched against.  Should only be passed
+     if *ssl* is not ``None``.  By default the value of the *host* argument
      is used.  If *host* is empty, there is no default and you must pass a
      value for *server_hostname*.  If *server_hostname* is an empty
      string, hostname matching is disabled (which is a serious security
-     risk, allowing for man-in-the-middle-attacks).
+     risk, allowing for potential man-in-the-middle attacks).
 
    * *family*, *proto*, *flags* are the optional address family, protocol
      and flags to be passed through to getaddrinfo() for *host* resolution.
@@ -397,10 +404,10 @@ Opening network connections
 
    * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
      to bind the socket to locally.  The *local_host* and *local_port*
-     are looked up using getaddrinfo(), similarly to *host* and *port*.
+     are looked up using ``getaddrinfo()``, similarly to *host* and *port*.
 
-   * *ssl_handshake_timeout* is (for an SSL connection) the time in seconds
-     to wait for the SSL handshake to complete before aborting the connection.
+   * *ssl_handshake_timeout* is (for a TLS connection) the time in seconds
+     to wait for the TLS handshake to complete before aborting the connection.
      ``60.0`` seconds if ``None`` (default).
 
    .. versionadded:: 3.7
@@ -414,7 +421,7 @@ Opening network connections
 
    .. versionchanged:: 3.5
 
-      Added support for SSL/TLS for :class:`ProactorEventLoop`.
+      Added support for SSL/TLS in :class:`ProactorEventLoop`.
 
    .. seealso::
 
@@ -459,12 +466,12 @@ Opening network connections
    * *reuse_address* tells the kernel to reuse a local socket in
      ``TIME_WAIT`` state, without waiting for its natural timeout to
      expire. If not specified will automatically be set to ``True`` on
-     UNIX.
+     Unix.
 
    * *reuse_port* tells the kernel to allow this endpoint to be bound to the
      same port as other existing endpoints are bound to, so long as they all
      set this flag when being created. This option is not supported on Windows
-     and some UNIX's. If the :py:data:`~socket.SO_REUSEPORT` constant is not
+     and some Unixes. If the :py:data:`~socket.SO_REUSEPORT` constant is not
      defined then this capability is unsupported.
 
    * *allow_broadcast* tells the kernel to allow this endpoint to send
@@ -475,7 +482,7 @@ Opening network connections
      transport. If specified, *local_addr* and *remote_addr* should be omitted
      (must be :const:`None`).
 
-   On Windows with :class:`ProactorEventLoop`, this method is not supported.
+   On Windows, with :class:`ProactorEventLoop`, this method is not supported.
 
    See :ref:`UDP echo client protocol <asyncio-udp-echo-client-protocol>` and
    :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
@@ -488,22 +495,22 @@ Opening network connections
                         path=None, \*, ssl=None, sock=None, \
                         server_hostname=None, ssl_handshake_timeout=None)
 
-   Create UNIX connection.
+   Create a Unix connection.
 
    The socket family will be :py:data:`~socket.AF_UNIX`; socket
    type will be :py:data:`~socket.SOCK_STREAM`.
 
    A tuple of ``(transport, protocol)`` is returned on success.
 
-   *path* is the name of a UNIX domain socket and is required,
-   unless a *sock* parameter is specified.  Abstract UNIX sockets,
+   *path* is the name of a Unix domain socket and is required,
+   unless a *sock* parameter is specified.  Abstract Unix sockets,
    :class:`str`, :class:`bytes`, and :class:`~pathlib.Path` paths are
    supported.
 
    See the documentation of the :meth:`loop.create_connection` method
    for information about arguments to this method.
 
-   Availability: UNIX.
+   Availability: Unix.
 
    .. versionadded:: 3.7
 
@@ -526,48 +533,56 @@ Creating network servers
                         ssl_handshake_timeout=None, start_serving=True)
 
    Create a TCP server (socket type :data:`~socket.SOCK_STREAM`) listening
-   on the *host* and *port* address.
+   on *port* of the *host* address.
 
    Returns a :class:`Server` object.
 
    Arguments:
 
-   * The *host* parameter can be a string, in that case the TCP server is
-     bound to *host* and *port*. The *host* parameter can also be a sequence
-     of strings and in that case the TCP server is bound to all hosts of the
-     sequence. If *host* is an empty string or ``None``, all interfaces are
-     assumed and a list of multiple sockets will be returned (most likely one
-     for IPv4 and another one for IPv6).
+   * *protocol_factory* must be a callable returning a
+     :ref:`protocol <asyncio-protocol>` implementation.
+
+   * The *host* parameter can be set to several types which determine where
+     the server would be listening:
+
+     - If *host* is a string, the TCP server is bound to a single network
+       interface specified by *host*.
+
+     - If *host* is a sequence of strings, the TCP server is bound to all
+       network interfaces specified by the sequence.
+
+     - If *host* is an empty string or ``None``, all interfaces are
+       assumed and a list of multiple sockets will be returned (most likely
+       one for IPv4 and another one for IPv6).
 
    * *family* can be set to either :data:`socket.AF_INET` or
      :data:`~socket.AF_INET6` to force the socket to use IPv4 or IPv6.
-     If not set it will be determined from host name
+     If not set, the *family* will be determined from host name
      (defaults to :data:`~socket.AF_UNSPEC`).
 
    * *flags* is a bitmask for :meth:`getaddrinfo`.
 
    * *sock* can optionally be specified in order to use a preexisting
-     socket object. If specified, *host* and *port* should be omitted (must be
-     :const:`None`).
+     socket object. If specified, *host* and *port* must not be specified.
 
    * *backlog* is the maximum number of queued connections passed to
      :meth:`~socket.socket.listen` (defaults to 100).
 
-   * *ssl* can be set to an :class:`~ssl.SSLContext` to enable SSL over the
-     accepted connections.
+   * *ssl* can be set to an :class:`~ssl.SSLContext` instance to enable
+     TLS over the accepted connections.
 
    * *reuse_address* tells the kernel to reuse a local socket in
      ``TIME_WAIT`` state, without waiting for its natural timeout to
      expire. If not specified will automatically be set to ``True`` on
-     UNIX.
+     Unix.
 
    * *reuse_port* tells the kernel to allow this endpoint to be bound to the
      same port as other existing endpoints are bound to, so long as they all
      set this flag when being created. This option is not supported on
      Windows.
 
-   * *ssl_handshake_timeout* is (for an SSL server) the time in seconds to wait
-     for the SSL handshake to complete before aborting the connection.
+   * *ssl_handshake_timeout* is (for a TLS server) the time in seconds to wait
+     for the TLS handshake to complete before aborting the connection.
      ``60.0`` seconds if ``None`` (default).
 
    * *start_serving* set to ``True`` (the default) causes the created server
@@ -587,8 +602,7 @@ Creating network servers
 
    .. versionchanged:: 3.5
 
-      Added support for SSL/TLS on Windows with
-      :class:`ProactorEventLoop`.
+      Added support for SSL/TLS in :class:`ProactorEventLoop`.
 
    .. versionchanged:: 3.5.1
 
@@ -608,12 +622,15 @@ Creating network servers
    Similar to :meth:`loop.create_server` but works with the
    :py:data:`~socket.AF_UNIX` socket family.
 
-   *path* is the name of a UNIX domain socket, and is required,
-   unless a *sock* argument is provided.  Abstract UNIX sockets,
+   *path* is the name of a Unix domain socket, and is required,
+   unless a *sock* argument is provided.  Abstract Unix sockets,
    :class:`str`, :class:`bytes`, and :class:`~pathlib.Path` paths
    are supported.
 
-   Availability: UNIX.
+   See the documentation of the :meth:`loop.create_server` method
+   for information about arguments to this method.
+
+   Availability: Unix.
 
    .. versionadded:: 3.7
 
@@ -632,6 +649,9 @@ Creating network servers
    of asyncio but that use asyncio to handle them.
 
    Parameters:
+
+   * *protocol_factory* must be a callable returning a
+     :ref:`protocol <asyncio-protocol>` implementation.
 
    * *sock* is a preexisting socket object returned from
      :meth:`socket.accept <socket.socket.accept>`.
@@ -667,17 +687,17 @@ Transferring files
 
    *offset* tells from where to start reading the file. If specified,
    *count* is the total number of bytes to transmit as opposed to
-   sending the file until EOF is reached. File position is updated on
-   return or also in case of error in which case :meth:`file.tell()
-   <io.IOBase.tell>` can be used to figure out the number of bytes
-   which were sent.
+   sending the file until EOF is reached. File position is always updated,
+   even when this method raises an error, and
+   :meth:`file.tell() <io.IOBase.tell>` can be used to obtain the actual
+   number of bytes sent.
 
    *fallback* set to ``True`` makes asyncio to manually read and send
    the file when the platform does not support the sendfile system call
    (e.g. Windows or SSL socket on Unix).
 
    Raise :exc:`SendfileNotAvailableError` if the system does not support
-   *sendfile* syscall and *fallback* is ``False``.
+   the *sendfile* syscall and *fallback* is ``False``.
 
    .. versionadded:: 3.7
 
@@ -709,8 +729,8 @@ TLS Upgrade
    * *server_hostname*: sets or overrides the host name that the target
      server's certificate will be matched against.
 
-   * *ssl_handshake_timeout* is (for an SSL connection) the time in seconds to
-     wait for the SSL handshake to complete before aborting the connection.
+   * *ssl_handshake_timeout* is (for a TLS connection) the time in seconds to
+     wait for the TLS handshake to complete before aborting the connection.
      ``60.0`` seconds if ``None`` (default).
 
    .. versionadded:: 3.7
@@ -721,24 +741,26 @@ Watching file descriptors
 
 .. method:: loop.add_reader(fd, callback, \*args)
 
-   Start watching the file descriptor for read availability and
-   call the *callback* with specified arguments.
+   Start monitoring the *fd* file descriptor for read availability and
+   invoke *callback* with the specified arguments once *fd* is available for
+   reading.
 
 .. method:: loop.remove_reader(fd)
 
-   Stop watching the file descriptor for read availability.
+   Stop monitoring the *fd* file descriptor for read availability.
 
 .. method:: loop.add_writer(fd, callback, \*args)
 
-   Start watching the file descriptor for write availability and then
-   call the *callback* with specified arguments.
+   Start monitoring the *fd* file descriptor for write availability and
+   invoke *callback* with the specified arguments once *fd* is available for
+   writing.
 
-   Use :func:`functools.partial` :ref:`to pass keywords
+   Use :func:`functools.partial` :ref:`to pass keyword arguments
    <asyncio-pass-keywords>` to *func*.
 
 .. method:: loop.remove_writer(fd)
 
-   Stop watching the file descriptor for write availability.
+   Stop monitoring the *fd* file descriptor for write availability.
 
 See also :ref:`Platform Support <asyncio-platform-support>` section
 for some limitations of these methods.
@@ -747,50 +769,50 @@ for some limitations of these methods.
 Working with socket objects directly
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In general, protocols implementations that use transport-based APIs
+In general, protocol implementations that use transport-based APIs
 such as :meth:`loop.create_connection` and :meth:`loop.create_server`
 are faster than implementations that work with sockets directly.
-However, there are use cases when performance is not critical and
+However, there are some use cases when performance is not critical, and
 working with :class:`~socket.socket` objects directly is more
 convenient.
 
 .. coroutinemethod:: loop.sock_recv(sock, nbytes)
 
-   Receive data.  Asynchronous version of
+   Receive up to *nbytes* from *sock*.  Asynchronous version of
    :meth:`socket.recv() <socket.socket.recv>`.
 
-   The received data is returned as a bytes object.  The maximum amount
-   of data to be received is specified by the *nbytes* argument.
+   Return the received data as a bytes object.
 
-   The socket *sock* must be non-blocking.
+   *sock* must be a non-blocking socket.
 
    .. versionchanged:: 3.7
-      Even though the method was always documented as a coroutine
-      method, before Python 3.7 it returned a :class:`Future`.
+      Even though this method was always documented as a coroutine
+      method, releases before Python 3.7 returned a :class:`Future`.
       Since Python 3.7 this is an ``async def`` method.
 
 .. coroutinemethod:: loop.sock_recv_into(sock, buf)
 
-   Receive data into a buffer.  Modeled after the blocking
+   Receive data from *sock* into the *buf* buffer.  Modeled after the blocking
    :meth:`socket.recv_into() <socket.socket.recv_into>` method.
 
    Return the number of bytes written to the buffer.
 
-   The socket *sock* must be non-blocking.
+   *sock* must be a non-blocking socket.
 
    .. versionadded:: 3.7
 
 .. coroutinemethod:: loop.sock_sendall(sock, data)
 
-   Send data to the socket. Asynchronous version of
+   Send *data* to the *sock* socket. Asynchronous version of
    :meth:`socket.sendall() <socket.socket.sendall>`.
 
-   This method continues to send data from *data* until either all data has
-   been sent or an error occurs.  ``None`` is returned on success.  On error,
-   an exception is raised, and there is no way to determine how much data, if
-   any, was successfully processed by the receiving end of the connection.
+   This method continues to send to the socket until either all data
+   in *data* has been sent or an error occurs.  ``None`` is returned
+   on success.  On error, an exception is raised. Additionally, there is no way
+   to determine how much data, if any, was successfully processed by the
+   receiving end of the connection.
 
-   The socket *sock* must be non-blocking.
+   *sock* must be a non-blocking socket.
 
    .. versionchanged:: 3.7
       Even though the method was always documented as a coroutine
@@ -799,11 +821,11 @@ convenient.
 
 .. coroutinemethod:: loop.sock_connect(sock, address)
 
-   Connect to a remote socket at *address*.
+   Connect *sock* to a remote socket at *address*.
 
    Asynchronous version of :meth:`socket.connect() <socket.socket.connect>`.
 
-   The socket *sock* must be non-blocking.
+   *sock* must be a non-blocking socket.
 
    .. versionchanged:: 3.5.2
       ``address`` no longer needs to be resolved.  ``sock_connect``
@@ -829,7 +851,7 @@ convenient.
    and *address* is the address bound to the socket on the other end of the
    connection.
 
-   The socket *sock* must be non-blocking.
+   *sock* must be a non-blocking socket.
 
    .. versionchanged:: 3.7
       Even though the method was always documented as a coroutine
@@ -844,30 +866,30 @@ convenient.
                                         \*, fallback=True)
 
    Send a file using high-performance :mod:`os.sendfile` if possible.
-   Return the total number of bytes which were sent.
+   Return the total number of bytes sent.
 
    Asynchronous version of :meth:`socket.sendfile() <socket.socket.sendfile>`.
 
-   *sock* must be non-blocking :class:`~socket.socket` of
-   :const:`socket.SOCK_STREAM` type.
+   *sock* must be a non-blocking :const:`socket.SOCK_STREAM`
+   :class:`~socket.socket`.
 
-   *file* must be a regular file object opened in binary mode.
+   *file* must be a regular file object open in binary mode.
 
    *offset* tells from where to start reading the file. If specified,
    *count* is the total number of bytes to transmit as opposed to
-   sending the file until EOF is reached. File position is updated on
-   return or also in case of error in which case :meth:`file.tell()
-   <io.IOBase.tell>` can be used to figure out the number of bytes
-   which were sent.
+   sending the file until EOF is reached. File position is always updated,
+   even when this method raises an error, and
+   :meth:`file.tell() <io.IOBase.tell>` can be used to obtain the actual
+   number of bytes sent.
 
-   *fallback* set to ``True`` makes asyncio to manually read and send
+   *fallback*, when set to ``True``, makes asyncio manually read and send
    the file when the platform does not support the sendfile syscall
    (e.g. Windows or SSL socket on Unix).
 
    Raise :exc:`SendfileNotAvailableError` if the system does not support
    *sendfile* syscall and *fallback* is ``False``.
 
-   The socket *sock* must be non-blocking.
+   *sock* must be a non-blocking socket.
 
    .. versionadded:: 3.7
 
@@ -896,7 +918,7 @@ Working with pipes
 
 .. coroutinemethod:: loop.connect_read_pipe(protocol_factory, pipe)
 
-   Register a read-pipe in the event loop.
+   Register the read end of *pipe* in the event loop.
 
    *protocol_factory* must be a callable returning an
    :ref:`asyncio protocol <asyncio-protocol>` implementation.
@@ -904,14 +926,15 @@ Working with pipes
    *pipe* is a :term:`file-like object <file object>`.
 
    Return pair ``(transport, protocol)``, where *transport* supports
-   the :class:`ReadTransport` interface.
+   the :class:`ReadTransport` interface and *protocol* is an object
+   instantiated by the *protocol_factory*.
 
    With :class:`SelectorEventLoop` event loop, the *pipe* is set to
    non-blocking mode.
 
 .. coroutinemethod:: loop.connect_write_pipe(protocol_factory, pipe)
 
-   Register a write-pipe in the event loop.
+   Register the write end of *pipe* in the event loop.
 
    *protocol_factory* must be a callable returning an
    :ref:`asyncio protocol <asyncio-protocol>` implementation.
@@ -919,7 +942,8 @@ Working with pipes
    *pipe* is :term:`file-like object <file object>`.
 
    Return pair ``(transport, protocol)``, where *transport* supports
-   :class:`WriteTransport` interface.
+   :class:`WriteTransport` interface and *protocol* is an object
+   instantiated by the *protocol_factory*.
 
    With :class:`SelectorEventLoop` event loop, the *pipe* is set to
    non-blocking mode.
@@ -927,7 +951,7 @@ Working with pipes
 .. note::
 
    :class:`SelectorEventLoop` does not support the above methods on
-   Windows.  Use :class:`ProactorEventLoop` instead.
+   Windows.  Use :class:`ProactorEventLoop` instead for Windows.
 
 .. seealso::
 
@@ -935,26 +959,27 @@ Working with pipes
    :meth:`loop.subprocess_shell` methods.
 
 
-UNIX signals
+Unix signals
 ^^^^^^^^^^^^
 
 .. method:: loop.add_signal_handler(signum, callback, \*args)
 
-   Add a handler for a signal.
+   Set *callback* as the handler for the *signum* signal.
 
    Raise :exc:`ValueError` if the signal number is invalid or uncatchable.
    Raise :exc:`RuntimeError` if there is a problem setting up the handler.
 
-   Use :func:`functools.partial` :ref:`to pass keywords
+   Use :func:`functools.partial` :ref:`to pass keyword arguments
    <asyncio-pass-keywords>` to *func*.
 
 .. method:: loop.remove_signal_handler(sig)
 
-   Remove a handler for a signal.
+   Remove the handler for the *sig* signal.
 
-   Return ``True`` if a signal handler was removed, ``False`` if not.
+   Return ``True`` if the signal handler was removed, or ``False`` if
+   no handler was set for the given signal.
 
-Availability: UNIX.
+Availability: Unix.
 
 .. seealso::
 
@@ -964,17 +989,58 @@ Availability: UNIX.
 Executing code in thread or process pools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: loop.run_in_executor(executor, func, \*args)
+.. awaitablemethod:: loop.run_in_executor(executor, func, \*args)
 
-   Arrange for a *func* to be called in the specified executor.
+   Arrange for *func* to be called in the specified executor.
 
    The *executor* argument should be an :class:`concurrent.futures.Executor`
    instance. The default executor is used if *executor* is ``None``.
 
-   Use :func:`functools.partial` :ref:`to pass keywords
-   <asyncio-pass-keywords>` to *func*.
+   Example::
+
+      import asyncio
+      import concurrent.futures
+
+      def blocking_io():
+          # File operations (such as logging) can block the
+          # event loop: run them in a thread pool.
+          with open('/dev/urandom', 'rb') as f:
+              return f.read(100)
+
+      def cpu_bound():
+          # CPU-bound operations will block the event loop:
+          # in general it is preferable to run them in a
+          # process pool.
+          return sum(i * i for i in range(10 ** 7))
+
+      async def main():
+          loop = asyncio.get_running_loop()
+
+          ## Options:
+
+          # 1. Run in the default loop's executor:
+          result = await loop.run_in_executor(
+              None, blocking_io)
+          print('default thread pool', result)
+
+          # 2. Run in a custom thread pool:
+          with concurrent.futures.ThreadPoolExecutor() as pool:
+              result = await loop.run_in_executor(
+                  pool, blocking_io)
+              print('custom thread pool', result)
+
+          # 3. Run in a custom process pool:
+          with concurrent.futures.ProcessPoolExecutor() as pool:
+              result = await loop.run_in_executor(
+                  pool, cpu_bound)
+              print('custom process pool', result)
+
+      asyncio.run(main())
 
    This method returns a :class:`asyncio.Future` object.
+
+   Use :func:`functools.partial` :ref:`to pass keyword arguments
+   <asyncio-pass-keywords>` to *func*.
 
    .. versionchanged:: 3.5.3
       :meth:`loop.run_in_executor` no longer configures the
@@ -1008,18 +1074,17 @@ Allows customizing how exceptions are handled in the event loop.
    Set *handler* as the new event loop exception handler.
 
    If *handler* is ``None``, the default exception handler will
-   be set.
-
-   If *handler* is a callable object, it should have a
-   matching signature to ``(loop, context)``, where ``loop``
-   will be a reference to the active event loop, ``context``
-   will be a ``dict`` object (see :meth:`call_exception_handler`
-   documentation for details about context).
+   be set.  Otherwise, *handler* must be a callable with the signature
+   matching ``(loop, context)``, where ``loop``
+   is a reference to the active event loop, and ``context``
+   is a ``dict`` object containing the details of the exception
+   (see :meth:`call_exception_handler` documentation for details
+   about context).
 
 .. method:: loop.get_exception_handler()
 
-   Return the exception handler, or ``None`` if the default one
-   is in use.
+   Return the current exception handler, or ``None`` if no custom
+   exception handler was set.
 
    .. versionadded:: 3.5.2
 
@@ -1028,8 +1093,8 @@ Allows customizing how exceptions are handled in the event loop.
    Default exception handler.
 
    This is called when an exception occurs and no exception
-   handler is set, and can be called by a custom exception
-   handler that wants to defer to the default behavior.
+   handler is set. This can be called by a custom exception
+   handler that wants to defer to the default handler behavior.
 
    *context* parameter has the same meaning as in
    :meth:`call_exception_handler`.
@@ -1039,7 +1104,7 @@ Allows customizing how exceptions are handled in the event loop.
    Call the current event loop exception handler.
 
    *context* is a ``dict`` object containing the following keys
-   (new keys may be introduced later):
+   (new keys may be introduced in future Python versions):
 
    * 'message': Error message;
    * 'exception' (optional): Exception object;
@@ -1051,9 +1116,9 @@ Allows customizing how exceptions are handled in the event loop.
 
    .. note::
 
-       Note: this method should not be overloaded in subclassed
-       event loops.  For any custom exception handling, use
-       :meth:`set_exception_handler()` method.
+       This method should not be overloaded in subclassed
+       event loops.  For custom exception handling, use
+       the :meth:`set_exception_handler()` method.
 
 Enabling debug mode
 ^^^^^^^^^^^^^^^^^^^
@@ -1070,6 +1135,11 @@ Enabling debug mode
 
    Set the debug mode of the event loop.
 
+   .. versionchanged:: 3.7
+
+      The new ``-X dev`` command line option can now also be used
+      to enable the debug mode.
+
 .. seealso::
 
    The :ref:`debug mode of asyncio <asyncio-debug-mode>`.
@@ -1078,17 +1148,16 @@ Enabling debug mode
 Running Subprocesses
 ^^^^^^^^^^^^^^^^^^^^
 
-Methods described in this subsections are low-level.  In an
-async/await code consider using high-level convenient
+Methods described in this subsections are low-level.  In regular
+async/await code consider using the high-level
 :func:`asyncio.create_subprocess_shell` and
-:func:`asyncio.create_subprocess_exec` functions instead.
+:func:`asyncio.create_subprocess_exec` convenience functions instead.
 
 .. note::
 
-   The default event loop that asyncio is pre-configured
-   to use on **Windows** does not support subprocesses.
-   See :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>`
-   for details.
+   The default asyncio event loop on **Windows** does not support
+   subprocesses. See :ref:`Subprocess Support on Windows
+   <asyncio-windows-subprocess>` for details.
 
 .. coroutinemethod:: loop.subprocess_exec(protocol_factory, \*args, \
                       stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
@@ -1103,8 +1172,8 @@ async/await code consider using high-level convenient
    * or :class:`bytes`, encoded to the
      :ref:`filesystem encoding <filesystem-encoding>`.
 
-   The first string specifies the program to execute,
-   and the remaining strings specify the arguments.  Together string
+   The first string specifies the program executable,
+   and the remaining strings specify the arguments.  Together, string
    arguments form the ``argv`` of the program.
 
    This is similar to the standard library :class:`subprocess.Popen`
@@ -1113,7 +1182,7 @@ async/await code consider using high-level convenient
    a single argument which is list of strings, *subprocess_exec*
    takes multiple string arguments.
 
-   The *protocol_factory* must instantiate a subclass of the
+   The *protocol_factory* must be a callable returning a subclass of the
    :class:`asyncio.SubprocessProtocol` class.
 
    Other parameters:
@@ -1149,7 +1218,8 @@ async/await code consider using high-level convenient
    for documentation on other arguments.
 
    Returns a pair of ``(transport, protocol)``, where *transport*
-   conforms to the :class:`asyncio.SubprocessTransport` base class.
+   conforms to the :class:`asyncio.SubprocessTransport` base class and
+   *protocol* is an object instantiated by the *protocol_factory*.
 
 .. coroutinemethod:: loop.subprocess_shell(protocol_factory, cmd, \*, \
                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
@@ -1163,21 +1233,22 @@ async/await code consider using high-level convenient
    This is similar to the standard library :class:`subprocess.Popen`
    class called with ``shell=True``.
 
-   The *protocol_factory* must instantiate a subclass of the
+   The *protocol_factory* must be a callable returning a subclass of the
    :class:`SubprocessProtocol` class.
 
    See :meth:`~loop.subprocess_exec` for more details about
    the remaining arguments.
 
    Returns a pair of ``(transport, protocol)``, where *transport*
-   conforms to the :class:`SubprocessTransport` base class.
+   conforms to the :class:`SubprocessTransport` base class and
+   *protocol* is an object instantiated by the *protocol_factory*.
 
 .. note::
    It is the application's responsibility to ensure that all whitespace
-   and metacharacters are quoted appropriately to avoid `shell injection
+   and special characters are quoted appropriately to avoid `shell injection
    <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
    vulnerabilities. The :func:`shlex.quote` function can be used to
-   properly escape whitespace and shell metacharacters in strings that
+   properly escape whitespace and special characters in strings that
    are going to be used to construct shell commands.
 
 
@@ -1191,12 +1262,12 @@ Callback Handles
 
    .. method:: cancel()
 
-      Cancel the call.  If the callback is already canceled or executed,
-      this method has no effect.
+      Cancel the callback.  If the callback has already been canceled
+      or executed, this method has no effect.
 
    .. method:: cancelled()
 
-      Return ``True`` if the call was cancelled.
+      Return ``True`` if the callback was cancelled.
 
       .. versionadded:: 3.7
 
@@ -1205,7 +1276,7 @@ Callback Handles
    A callback wrapper object returned by :meth:`loop.call_later`,
    and :meth:`loop.call_at`.
 
-   The class is inherited from :class:`Handle`.
+   This class is a subclass of :class:`Handle`.
 
    .. method:: when()
 
@@ -1238,8 +1309,7 @@ Do not instantiate the class directly.
       async with srv:
           # some code
 
-      # At this point, srv is closed and no longer accepts new
-      connections.
+      # At this point, srv is closed and no longer accepts new connections.
 
 
    .. versionchanged:: 3.7
@@ -1258,7 +1328,7 @@ Do not instantiate the class directly.
 
    .. method:: get_loop()
 
-      Gives the event loop associated with the server object.
+      Return the event loop associated with the server object.
 
       .. versionadded:: 3.7
 
@@ -1269,12 +1339,12 @@ Do not instantiate the class directly.
       This method is idempotent, so it can be called when
       the server is already being serving.
 
-      The new *start_serving* keyword-only parameter to
+      The *start_serving* keyword-only parameter to
       :meth:`loop.create_server` and
-      :meth:`asyncio.start_server` allows to create a Server object
-      that is not accepting connections right away.  In which case
-      this method, or :meth:`Server.serve_forever` can be used
-      to make the Server object to start accepting connections.
+      :meth:`asyncio.start_server` allows creating a Server object
+      that is not accepting connections initially.  In this case
+      ``Server.start_serving()``, or :meth:`Server.serve_forever` can be used
+      to make the Server start accepting connections.
 
       .. versionadded:: 3.7
 
@@ -1316,19 +1386,19 @@ Do not instantiate the class directly.
 
    .. attribute:: sockets
 
-      List of :class:`socket.socket` objects the server is listening to,
+      List of :class:`socket.socket` objects the server is listening on,
       or ``None`` if the server is closed.
 
       .. versionchanged:: 3.7
-         Prior to Python 3.7 ``Server.sockets`` used to return the
-         internal list of server's sockets directly.  In 3.7 a copy
+         Prior to Python 3.7 ``Server.sockets`` used to return an
+         internal list of server sockets directly.  In 3.7 a copy
          of that list is returned.
 
 
 .. _asyncio-event-loops:
 
-Event Loops Implementations
-===========================
+Event Loop Implementations
+==========================
 
 asyncio ships with two different event loop implementations:
 :class:`SelectorEventLoop` and :class:`ProactorEventLoop`.
@@ -1342,8 +1412,8 @@ on all platforms.
    An event loop based on the :mod:`selectors` module.
 
    Uses the most efficient *selector* available for the given
-   platform.  It is also possible to manually configure what
-   exact selector implementation should be used::
+   platform.  It is also possible to manually configure the
+   exact selector implementation to be used::
 
       import asyncio
       import selectors
@@ -1353,7 +1423,7 @@ on all platforms.
       asyncio.set_event_loop(loop)
 
 
-   Availability: UNIX, Windows.
+   Availability: Unix, Windows.
 
 
 .. class:: ProactorEventLoop
@@ -1361,15 +1431,6 @@ on all platforms.
    An event loop for Windows that uses "I/O Completion Ports" (IOCP).
 
    Availability: Windows.
-
-   An example how to use :class:`ProactorEventLoop` on Windows::
-
-        import asyncio
-        import sys
-
-        if sys.platform == 'win32':
-            loop = asyncio.ProactorEventLoop()
-            asyncio.set_event_loop(loop)
 
    .. seealso::
 
@@ -1390,13 +1451,13 @@ Examples
 ========
 
 Note that all examples in this section **purposefully** show how
-to use low-level event loop APIs such as :meth:`loop.run_forever`
+to use the low-level event loop APIs, such as :meth:`loop.run_forever`
 and :meth:`loop.call_soon`.  Modern asyncio applications rarely
-need to be written this way; consider using high-level functions
+need to be written this way; consider using the high-level functions
 like :func:`asyncio.run`.
 
 
-.. _asyncio-hello-world-callback:
+.. _asyncio_example_lowlevel_helloworld:
 
 Hello World with call_soon()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1408,6 +1469,7 @@ event loop::
     import asyncio
 
     def hello_world(loop):
+        """A callback to print 'Hello World' and stop the event loop"""
         print('Hello World')
         loop.stop()
 
@@ -1424,18 +1486,18 @@ event loop::
 
 .. seealso::
 
-   A similar :ref:`Hello World <asyncio-hello-world-coroutine>`
+   A similar :ref:`Hello World <coroutine>`
    example created with a coroutine and the :func:`run` function.
 
 
-.. _asyncio-date-callback:
+.. _asyncio_example_call_later:
 
 Display the current date with call_later()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-An example of callback displaying the current date every second. The
+An example of a callback displaying the current date every second. The
 callback uses the :meth:`loop.call_later` method to reschedule itself
-during 5 seconds, and then stops the event loop::
+after 5 seconds, and then stops the event loop::
 
     import asyncio
     import datetime
@@ -1461,11 +1523,11 @@ during 5 seconds, and then stops the event loop::
 
 .. seealso::
 
-   A similar :ref:`current date <asyncio-date-coroutine>` example
+   A similar :ref:`current date <asyncio_example_sleep>` example
    created with a coroutine and the :func:`run` function.
 
 
-.. _asyncio-watch-read-event:
+.. _asyncio_example_watch_fd:
 
 Watch a file descriptor for read events
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1478,6 +1540,7 @@ Wait until a file descriptor received some data using the
 
     # Create a pair of connected file descriptors
     rsock, wsock = socketpair()
+
     loop = asyncio.get_event_loop()
 
     def reader():
@@ -1500,26 +1563,28 @@ Wait until a file descriptor received some data using the
         # Run the event loop
         loop.run_forever()
     finally:
-        # We are done, close sockets and the event loop
+        # We are done. Close sockets and the event loop.
         rsock.close()
         wsock.close()
         loop.close()
 
 .. seealso::
 
-   * A similar :ref:`example <asyncio-register-socket>`
+   * A similar :ref:`example <asyncio_example_create_connection>`
      using transports, protocols, and the
      :meth:`loop.create_connection` method.
 
-   * Another similar :ref:`example <asyncio-register-socket-streams>`
+   * Another similar :ref:`example <asyncio_example_create_connection-streams>`
      using the high-level :func:`asyncio.open_connection` function
      and streams.
 
 
+.. _asyncio_example_unix_signals:
+
 Set signal handlers for SIGINT and SIGTERM
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-(This example only works on UNIX.)
+(This ``signals`` example only works on Unix.)
 
 Register handlers for signals :py:data:`SIGINT` and :py:data:`SIGTERM`
 using the :meth:`loop.add_signal_handler` method::
