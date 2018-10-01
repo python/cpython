@@ -57,6 +57,8 @@ PYTHONHASHSEED = '123'
 
 def cet_cf_protection():
     cflags = sysconfig.get_config_var('CFLAGS')
+    if not cflags:
+        return False
     flags = cflags.split()
     return (('-mcet' in flags)
             and any(flag.startswith('-fcf-protection') for flag in flags))
