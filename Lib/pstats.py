@@ -26,9 +26,12 @@ import time
 import marshal
 import re
 
+from collections import Counter
 from enum import StrEnum, _simple_enum
 from functools import cmp_to_key
 from dataclasses import dataclass
+from os.path import join
+from pathlib import Path
 
 __all__ = ["Stats", "SortKey", "FunctionProfile", "StatsProfile"]
 
@@ -276,16 +279,19 @@ class Stats:
         return self
 
     def strip_dirs(self):
+        return self._strip_directory_data(lambda fullpath_linenum_funcname: func_strip_path(fullpath_linenum_funcname))
+
+    def _strip_directory_data(self, strip_function):
         oldstats = self.stats
         self.stats = newstats = {}
         max_name_len = 0
         for func, (cc, nc, tt, ct, callers) in oldstats.items():
-            newfunc = func_strip_path(func)
+            newfunc = strip_function(func)
             if len(func_std_string(newfunc)) > max_name_len:
                 max_name_len = len(func_std_string(newfunc))
             newcallers = {}
             for func2, caller in callers.items():
-                newcallers[func_strip_path(func2)] = caller
+                newcallers[strip_function(func2)] = caller
 
             if newfunc in newstats:
                 newstats[newfunc] = add_func_stats(
@@ -296,13 +302,29 @@ class Stats:
         old_top = self.top_level
         self.top_level = new_top = set()
         for func in old_top:
-            new_top.add(func_strip_path(func))
+            new_top.add(strip_function(func))
 
         self.max_name_len = max_name_len
 
         self.fcn_list = None
         self.all_callees = None
         return self
+
+    def strip_non_unique_dirs(self):
+        full_paths = set()
+
+        for (full_path, _, _), (_, _, _, _, callers) in self.stats.items():
+            full_paths.add(full_path)
+            for (full_path_caller, _, _), _ in callers.items():
+                full_paths.add(full_path_caller)
+
+        minimal_path_by_full_path = _build_minimal_path_by_full_path(full_paths)
+
+        def strip_function(fullpath_linenum_funcname):
+            fullpath, linenum, funcname = fullpath_linenum_funcname
+            return minimal_path_by_full_path[fullpath], linenum, funcname
+
+        return self._strip_directory_data(strip_function)
 
     def calc_callees(self):
         if self.all_callees:
@@ -773,5 +795,42 @@ if __name__ == '__main__':
         print("Goodbye.", file=browser.stream)
     except KeyboardInterrupt:
         pass
+
+
+def _build_minimal_path_by_full_path(paths):
+    if not paths:
+        return paths
+
+    completed = {
+        full_path: None
+        for full_path in paths
+    }
+    split_path_by_full = {full_path: Path(full_path).parts for full_path in paths}
+    max_step = max(len(x) for x in split_path_by_full.values())
+    step = 1
+    while step <= max_step:
+        short_path_by_full = {
+            full_path: split_path_by_full[full_path][-step:]
+            for full_path, value in completed.items()
+            if value is None
+        }
+        full_path_by_short = {v: k for k, v in short_path_by_full.items()}
+
+        for short_path, count in Counter(short_path_by_full.values()).most_common():
+            if count == 1:
+                joined_short_path = join(*short_path)
+                # __init__.py is handled specially because it's a very common
+                # file name which gives no clue what file is meant
+                if joined_short_path == '__init__.py':
+                    continue
+                completed[full_path_by_short[short_path]] = joined_short_path
+
+        step += 1
+
+    return {
+        full_path: short_path if short_path is not None else full_path
+        for full_path, short_path in completed.items()
+    }
+
 
 # That's all, folks.
