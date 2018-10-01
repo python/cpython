@@ -1360,15 +1360,18 @@ class Misc:
         be executed. An optional function SUBST can
         be given which will be executed before FUNC."""
         f = CallWrapper(func, subst, self).__call__
-        name = repr(id(f))
         try:
             func = func.__func__
         except AttributeError:
             pass
         try:
-            name = name + func.__name__
+            name = func.__name__
         except AttributeError:
-            pass
+            name = ''
+        else:
+            if not re.fullmatch('[a-zA-Z0-9_]+', name):
+                name = ''
+        name = repr(id(f)) + name
         self.tk.createcommand(name, f)
         if needcleanup:
             if self._tclCommands is None:
