@@ -2955,6 +2955,21 @@ else
 fi])
 AC_MSG_RESULT($with_dbmliborder)
 
+# checks for AIX memory model
+# If 32-bit set default datasegment to 1 GByte (4 * 256MB Segments)
+case "$ac_sys_system" in
+	AIX*)
+          if test -z "$OBJECT_MODE"
+          then
+            AC_MSG_NOTICE('Specify AIX MAXDATA as 1GB (0x40000000)')
+            if test "$GCC" != "yes"
+            then LDMAXDATA='-bmaxdata:0x40000000'
+            else LDMAXDATA='-Wl,bmaxdata:0x40000000'
+            fi
+            AC_SUBST(LDMAXDATA)
+          fi
+         ;;
+esac
 AC_SUBST(LDLAST)
 
 # Templates for things AC_DEFINEd more than once.
