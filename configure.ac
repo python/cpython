@@ -2964,7 +2964,7 @@ case "$ac_sys_system" in
             AC_MSG_NOTICE('Specify AIX MAXDATA as 1GB (0x40000000)')
             if test "$GCC" != "yes"
             then LDMAXDATA='-bmaxdata:0x40000000'
-            else LDMAXDATA='-Wl,bmaxdata:0x40000000'
+            else LDMAXDATA='-Wl,-bmaxdata:0x40000000'
             fi
             AC_SUBST(LDMAXDATA)
           fi
