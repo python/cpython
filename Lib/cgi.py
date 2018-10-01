@@ -311,7 +311,8 @@ class FieldStorage:
     """
     def __init__(self, fp=None, headers=None, outerboundary=b'',
                  environ=os.environ, keep_blank_values=0, strict_parsing=0,
-                 limit=None, encoding='utf-8', errors='replace'):
+                 limit=None, encoding='utf-8', errors='replace',
+                 max_num_fields=None):
         """Constructor.  Read multipart/* until last part.
 
         Arguments, all optional:
@@ -351,10 +352,14 @@ class FieldStorage:
             for the page sending the form (content-type : meta http-equiv or
             header)
 
+        max_num_fields: Integer. If set, then __init__ throws an ValueError
+            if there are more than n fields read by parse_qsl().
+
         """
         method = 'GET'
         self.keep_blank_values = keep_blank_values
         self.strict_parsing = strict_parsing
+        self.max_num_fields = max_num_fields
         if 'REQUEST_METHOD' in environ:
             method = environ['REQUEST_METHOD'].upper()
         self.qs_on_post = None
@@ -578,12 +583,11 @@ class FieldStorage:
         qs = qs.decode(self.encoding, self.errors)
         if self.qs_on_post:
             qs += '&' + self.qs_on_post
-        self.list = []
         query = urllib.parse.parse_qsl(
             qs, self.keep_blank_values, self.strict_parsing,
-            encoding=self.encoding, errors=self.errors)
-        for key, value in query:
-            self.list.append(MiniFieldStorage(key, value))
+            encoding=self.encoding, errors=self.errors,
+            max_num_fields=self.max_num_fields)
+        self.list = [MiniFieldStorage(key, value) for key, value in query]
         self.skip_lines()
 
     FieldStorageClass = None
@@ -597,9 +601,9 @@ class FieldStorage:
         if self.qs_on_post:
             query = urllib.parse.parse_qsl(
                 self.qs_on_post, self.keep_blank_values, self.strict_parsing,
-                encoding=self.encoding, errors=self.errors)
-            for key, value in query:
-                self.list.append(MiniFieldStorage(key, value))
+                encoding=self.encoding, errors=self.errors,
+                max_num_fields=self.max_num_fields)
+            self.list.extend(MiniFieldStorage(key, value) for key, value in query)
 
         klass = self.FieldStorageClass or self.__class__
         first_line = self.fp.readline() # bytes
@@ -638,6 +642,8 @@ class FieldStorage:
                          self.encoding, self.errors)
             self.bytes_read += part.bytes_read
             self.list.append(part)
+            if self.max_num_fields is not None and self.max_num_fields < len(self.list):
+                raise ValueError('Max number of fields exceeded')
             if part.done or self.bytes_read >= self.length > 0:
                 break
         self.skip_lines()
