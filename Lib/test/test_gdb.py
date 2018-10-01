@@ -54,6 +54,16 @@ checkout_hook_path = os.path.join(os.path.dirname(sys.executable),
 
 PYTHONHASHSEED = '123'
 
+
+def cet_cf_protection():
+    cflags = sysconfig.get_config_var('CFLAGS')
+    flags = cflags.split()
+    return (('-mcet' in flags)
+            and any(flag.startswith('-fcf-protection') for flag in flags))
+
+CET_CF_PROTECTION = cet_cf_protection()
+
+
 def run_gdb(*args, **env_vars):
     """Runs gdb in --batch mode with the additional arguments given by *args.
 
@@ -162,6 +172,12 @@ class DebuggerTests(unittest.TestCase):
             commands += ['set print entry-values no']
 
         if cmds_after_breakpoint:
+            if CET_CF_PROTECTION:
+                # bpo-32962: When Python is compiled with -mcet
+                # -fcf-protection, function arguments are unusable before
+                # running the first instruction of the function entry point.
+                # The 'next' command makes the required first step.
+                commands += ['next']
             commands += cmds_after_breakpoint
         else:
             commands += ['backtrace']
@@ -869,9 +885,17 @@ id(42)
             id("first break point")
             l = MyList()
         ''')
+        cmds_after_breakpoint = ['break wrapper_call', 'continue']
+        if CET_CF_PROTECTION:
+            # bpo-32962: same case as in get_stack_trace():
+            # we need an additional 'next' command in order to read
+            # arguments of the innermost function of the call stack.
+            cmds_after_breakpoint.append('next')
+        cmds_after_breakpoint.append('py-bt')
+
         # Verify with "py-bt":
         gdb_output = self.get_stack_trace(cmd,
-                                          cmds_after_breakpoint=['break wrapper_call', 'continue', 'py-bt'])
+                                          cmds_after_breakpoint=cmds_after_breakpoint)
         self.assertRegex(gdb_output,
                          r"<method-wrapper u?'__init__' of MyList object at ")
 
