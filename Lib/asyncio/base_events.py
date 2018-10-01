@@ -16,6 +16,8 @@ to modify the meaning of the API call itself.
 import collections
 import collections.abc
 import concurrent.futures
+import contextvars
+import functools
 import heapq
 import itertools
 import logging
@@ -737,7 +739,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._write_to_self()
         return handle
 
-    def run_in_executor(self, executor, func, *args):
+    def run_in_executor(self, executor, func, *args, context=None):
         self._check_closed()
         if self._debug:
             self._check_callback(func, 'run_in_executor')
@@ -746,8 +748,15 @@ class BaseEventLoop(events.AbstractEventLoop):
             if executor is None:
                 executor = concurrent.futures.ThreadPoolExecutor()
                 self._default_executor = executor
+
+        if context is None:
+            context = contextvars.copy_context()
+
+        if args:
+            func = functools.partial(func, *args)
+
         return futures.wrap_future(
-            executor.submit(func, *args), loop=self)
+            executor.submit(context.run, func), loop=self)
 
     def set_default_executor(self, executor):
         if not isinstance(executor, concurrent.futures.ThreadPoolExecutor):

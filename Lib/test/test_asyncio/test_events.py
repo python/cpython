@@ -2,6 +2,7 @@
 
 import collections.abc
 import concurrent.futures
+import contextvars
 import functools
 import io
 import os
@@ -35,6 +36,9 @@ from asyncio import proactor_events
 from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
 from test import support
+
+foo_ctx = contextvars.ContextVar('foo')
+foo_ctx.set('bar')
 
 
 def tearDownModule():
@@ -370,6 +374,46 @@ class EventLoopTestsMixin:
         self.loop.call_soon_threadsafe = patched_call_soon
         time.sleep(0.4)
         self.assertFalse(called)
+
+    def test_run_in_executor_hierarchy(self):
+        def run():
+            foo_ctx.set('foo')
+            res = foo_ctx.get()
+            self.assertEqual(res, 'foo')
+            return res
+
+        f = self.loop.run_in_executor(None, run)
+        res = self.loop.run_until_complete(f)
+        self.assertEqual(res, 'foo')
+
+        res = foo_ctx.get()
+        self.assertEqual(res, 'bar')
+
+    def test_run_in_executor_no_context(self):
+        def run():
+            return foo_ctx.get()
+
+        f = self.loop.run_in_executor(None, run)
+        res = self.loop.run_until_complete(f)
+        self.assertEqual(res, 'bar')
+
+    def test_run_in_executor_context(self):
+        def run():
+            return foo_ctx.get()
+
+        context = contextvars.copy_context()
+        f = self.loop.run_in_executor(None, run, context=context)
+        res = self.loop.run_until_complete(f)
+        self.assertEqual(res, 'bar')
+
+    def test_run_in_executor_context_args(self):
+        def run(arg):
+            return (arg, foo_ctx.get())
+
+        context = contextvars.copy_context()
+        f = self.loop.run_in_executor(None, run, 'yo', context=context)
+        res = self.loop.run_until_complete(f)
+        self.assertEqual(res, ('yo', 'bar'))
 
     def test_reader_callback(self):
         r, w = socket.socketpair()
