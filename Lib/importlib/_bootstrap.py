@@ -639,7 +639,9 @@ def _load_backward_compatible(spec):
     # warning here.
     spec.loader.load_module(spec.name)
     # The module must be in sys.modules at this point!
-    module = sys.modules[spec.name]
+    # Move it to the end of sys.modules.
+    module = sys.modules.pop(spec.name)
+    sys.modules[spec.name] = module
     if getattr(module, '__loader__', None) is None:
         try:
             module.__loader__ = spec.loader
