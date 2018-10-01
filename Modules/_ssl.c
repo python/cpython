@@ -4711,6 +4711,7 @@ _ssl_MemoryBIO_read_impl(PySSLMemoryBIO *self, int len)
 
     nbytes = BIO_read(self->bio, PyBytes_AS_STRING(result), len);
     if (nbytes < 0) {
+        Py_DECREF(result);
         _setSSLError(NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
