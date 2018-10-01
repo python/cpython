@@ -10290,7 +10290,7 @@ case "$ac_sys_system" in
 $as_echo "$as_me: 'Specify AIX MAXDATA as 1GB (0x40000000)'" >&6;}
             if test "$GCC" != "yes"
             then LDMAXDATA='-bmaxdata:0x40000000'
-            else LDMAXDATA='-Wl,bmaxdata:0x40000000'
+            else LDMAXDATA='-Wl,-bmaxdata:0x40000000'
             fi
 
           fi
