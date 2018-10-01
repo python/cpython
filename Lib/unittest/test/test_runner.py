@@ -274,11 +274,9 @@ class TestClassCleanup(unittest.TestCase):
             def tearDownClass(cls):
                 ordering.append('tearDownClass')
 
-        # Update this
-        with self.assertRaises(Exception) as e:
-            runTests(TestableTest)
-            self.assertEqual(e, 'cleanup2')
-        # Test cleanUpClass items still get called.
+        result = runTests(TestableTest)
+        self.assertEqual(result.errors[0][1].splitlines()[-1],
+                         'Exception: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpClass', 'setUp', 'cleanup_exc',
                           'tearDownClass', 'cleanup_good'])
@@ -294,16 +292,16 @@ class TestClassCleanup(unittest.TestCase):
                 ordering.append('setUp')
                 self.addCleanup(cleanup, ordering)
             def testNothing(self):
-                pass
+                ordering.append('test')
             @classmethod
             def tearDownClass(cls):
                 ordering.append('tearDownClass')
 
-        with self.assertRaises(Exception) as e:
-            runTests(TestableTest)
-            self.assertEqual(e, 'cleanup2')
+        result = runTests(TestableTest)
+        self.assertEqual(result.errors[0][1].splitlines()[-1],
+                         'Exception: CleanUpExc')
         self.assertEqual(ordering,
-                         ['setUpClass', 'setUp', 'cleanup_good',
+                         ['setUpClass', 'setUp', 'test', 'cleanup_good',
                           'tearDownClass', 'cleanup_exc'])
 
     def test_with_errors_in_addClassCleanup_and_setUps(self):
@@ -339,11 +337,23 @@ class TestClassCleanup(unittest.TestCase):
         method_blow_up = False
         result = runTests(TestableTest)
         self.assertEqual(result.errors[0][1].splitlines()[-1],
-                         'Exception: CleanUpExc')
-        self.assertEqual(result.errors[1][1].splitlines()[-1],
                          'Exception: ClassExc')
+        self.assertEqual(result.errors[1][1].splitlines()[-1],
+                         'Exception: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpClass', 'cleanup_exc'])
+
+        ordering = []
+        class_blow_up = False
+        method_blow_up = True
+        result = runTests(TestableTest)
+        self.assertEqual(result.errors[0][1].splitlines()[-1],
+                         'Exception: MethodExc')
+        self.assertEqual(result.errors[1][1].splitlines()[-1],
+                         'Exception: CleanUpExc')
+        self.assertEqual(ordering,
+                         ['setUpClass', 'setUp', 'tearDownClass',
+                          'cleanup_exc'])
 
 
 class TestModuleCleanUp(unittest.TestCase):
@@ -374,25 +384,23 @@ class TestModuleCleanUp(unittest.TestCase):
     def test_doModuleCleanup_with_errors_in_addModuleCleanup(self):
         module_cleanups = []
 
-        def module_cleanup1(*args, **kwargs):
+        def module_cleanup_good(*args, **kwargs):
             module_cleanups.append((3, args, kwargs))
 
-        def module_cleanup2(*args, **kwargs):
+        def module_cleanup_bad(*args, **kwargs):
             raise Exception('CleanUpExc')
 
         class Module(object):
-            unittest.addModuleCleanup(module_cleanup1, 1, 2, 3,
+            unittest.addModuleCleanup(module_cleanup_good, 1, 2, 3,
                                       four='hello', five='goodbye')
-            unittest.addModuleCleanup(module_cleanup2)
-
+            unittest.addModuleCleanup(module_cleanup_bad)
         self.assertEqual(unittest.case._module_cleanups,
-                         [(module_cleanup1, (1, 2, 3),
+                         [(module_cleanup_good, (1, 2, 3),
                            dict(four='hello', five='goodbye')),
-                          (module_cleanup2, (), {})])
+                          (module_cleanup_bad, (), {})])
         with self.assertRaises(Exception) as e:
             unittest.case.doModuleCleanups()
-            self.assertEqual(e, 'CleanUpExc')
-
+        self.assertEqual(str(e.exception), 'CleanUpExc')
         self.assertEqual(unittest.case._module_cleanups, [])
 
     def test_run_module_cleanUp(self):

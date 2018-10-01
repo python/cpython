@@ -1448,7 +1448,7 @@ Test cases
 
       .. versionadded:: 3.1
 
-   .. method:: addClassCleanup(function, *args, **kwargs)
+   .. classmethod:: addClassCleanup(function, *args, **kwargs)
 
       Add a function to be called after :meth:`tearDownClass` to cleanup
       resources used during the test class. Functions will be called in reverse
@@ -1462,7 +1462,7 @@ Test cases
       .. versionadded:: 3.8
 
 
-   .. method:: doClassCleanups()
+   .. classmethod:: doClassCleanups()
 
       This method is called unconditionally after :meth:`tearDownClass`, or
       after :meth:`setUpClass` if :meth:`setUpClass` raises an exception.
@@ -1477,34 +1477,7 @@ Test cases
 
       .. versionadded:: 3.8
 
-   .. method:: addModuleCleanup(function, *args, **kwargs)
 
-      Add a function to be called after :meth:`tearDownModule` to cleanup
-      resources used during the test class. Functions will be called in reverse
-      order to the order they are added (:abbr:`LIFO (last-in, first-out)`).
-      They are called with any arguments and keyword arguments passed into
-      :meth:`addModuleCleanup` when they are added.
-
-      If :meth:`setUpModule` fails, meaning that :meth:`tearDownModule` is not
-      called, then any cleanup functions added will still be called.
-
-      .. versionadded:: 3.8
-
-
-   .. method:: doModuleCleanups()
-
-      This method is called unconditionally after :meth:`tearDownModule`, or
-      after :meth:`setUpModule` if :meth:`setUpModule` raises an exception.
-
-      It is responsible for calling all the cleanup functions added by
-      :meth:`addCleanupModule`. If you need cleanup functions to be called
-      *prior* to :meth:`tearDownModule` then you can call
-      :meth:`doCleanupsModule` yourself.
-
-      :meth:`doCleanupsModule` pops methods off the stack of cleanup
-      functions one at a time, so it can be called at any time.
-
-      .. versionadded:: 3.8
 
 
 
@@ -2328,6 +2301,38 @@ module will be run and the ``tearDownModule`` will not be run. If the exception 
 :exc:`SkipTest` exception then the module will be reported as having been skipped
 instead of as an error.
 
+To add cleanup code that must be run even in the case of an exception, use
+``addModuleCleanup``:
+
+
+.. function:: addModuleCleanup(function, *args, **kwargs)
+
+   Add a function to be called after :func:`tearDownModule` to cleanup
+   resources used during the test class. Functions will be called in reverse
+   order to the order they are added (:abbr:`LIFO (last-in, first-out)`).
+   They are called with any arguments and keyword arguments passed into
+   :meth:`addModuleCleanup` when they are added.
+
+   If :meth:`setUpModule` fails, meaning that :func:`tearDownModule` is not
+   called, then any cleanup functions added will still be called.
+
+   .. versionadded:: 3.8
+
+
+.. function:: doModuleCleanups()
+
+   This function is called unconditionally after :func:`tearDownModule`, or
+   after :func:`setUpModule` if :func:`setUpModule` raises an exception.
+
+   It is responsible for calling all the cleanup functions added by
+   :func:`addCleanupModule`. If you need cleanup functions to be called
+   *prior* to :func:`tearDownModule` then you can call
+   :func:`doModuleCleanups` yourself.
+
+   :func:`doModuleCleanups` pops methods off the stack of cleanup
+   functions one at a time, so it can be called at any time.
+
+   .. versionadded:: 3.8
 
 Signal Handling
 ---------------

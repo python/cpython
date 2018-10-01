@@ -86,11 +86,11 @@ def _id(obj):
 
 
 _module_cleanups = []
-
 def addModuleCleanup(function, *args, **kwargs):
     """Same as addCleanup, except the cleanup items are called even if
     setUpModule fails (unlike tearDownModule)."""
     _module_cleanups.append((function, args, kwargs))
+
 
 def doModuleCleanups():
     """Execute all module cleanup functions. Normally called for you after
@@ -103,7 +103,10 @@ def doModuleCleanups():
         except Exception as exc:
             exceptions.append(exc)
     if exceptions:
+        # Swallows all but first exception. If a multi-exception handler
+        # gets written we should use that here instead.
         raise exceptions[0]
+
 
 def skip(reason):
     """
@@ -410,6 +413,7 @@ class TestCase(object):
     # Attribute used by TestSuite for classSetUp
 
     _classSetupFailed = False
+
     _class_cleanups = []
 
     def __init__(self, methodName='runTest'):
@@ -686,15 +690,13 @@ class TestCase(object):
     def doClassCleanups(cls):
         """Execute all class cleanup functions. Normally called for you after
         tearDownClass."""
-        exceptions = []
+        cls.tearDown_exceptions = []
         while cls._class_cleanups:
             function, args, kwargs = cls._class_cleanups.pop()
             try:
                 function(*args, **kwargs)
             except Exception as exc:
-                exceptions.append(exc)
-        if exceptions:
-            raise exceptions[0]
+                cls.tearDown_exceptions.append(sys.exc_info())
 
     def __call__(self, *args, **kwds):
         return self.run(*args, **kwds)

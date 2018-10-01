@@ -1,2 +1,4 @@
-Add ``addModuleCleanup()`` and ``addClassCleanup()`` to unittest to support
-cleanups for setUpClass and setUpModule. Patch by Lisa Roach.
+Add :func:`~unittest.addModuleCleanup()` and
+:meth:`~unittest.TestCase.addClassCleanup()` to unittest to support
+cleanups for :func:`~unittest.setUpModule()` and
+:meth:`~unittest.TestCase.setUpClass()`. Patch by Lisa Roach.

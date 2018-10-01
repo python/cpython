@@ -104,6 +104,15 @@ New Modules
 Improved Modules
 ================
 
+unittest
+--------
+* Added :func:`~unittest.addModuleCleanup()` and
+  :meth:`~unittest.TestCase.addClassCleanup()` to unittest to support
+  cleanups for :func:`~unittest.setUpModule()` and
+  :meth:`~unittest.TestCase.setUpClass()`.
+  (Contributed by Lisa Roach in :issue:`24412`.)
+
+
 Optimizations
 =============
 
