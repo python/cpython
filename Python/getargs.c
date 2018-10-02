@@ -2416,13 +2416,10 @@ err:
 }
 
 
-static int
-unpack_stack(PyObject *const *args, Py_ssize_t nargs, const char *name,
-             Py_ssize_t min, Py_ssize_t max, va_list vargs)
+int
+_PyArg_CheckPositional(const char *name, Py_ssize_t nargs,
+                       Py_ssize_t min, Py_ssize_t max)
 {
-    Py_ssize_t i;
-    PyObject **o;
-
     assert(min >= 0);
     assert(min <= max);
 
@@ -2457,6 +2454,20 @@ unpack_stack(PyObject *const *args, Py_ssize_t nargs, const char *name,
                 "unpacked tuple should have %s%zd element%s,"
                 " but has %zd",
                 (min == max ? "" : "at most "), max, max == 1 ? "" : "s", nargs);
+        return 0;
+    }
+
+    return 1;
+}
+
+static int
+unpack_stack(PyObject *const *args, Py_ssize_t nargs, const char *name,
+             Py_ssize_t min, Py_ssize_t max, va_list vargs)
+{
+    Py_ssize_t i;
+    PyObject **o;
+
+    if (!_PyArg_CheckPositional(name, nargs, min, max)) {
         return 0;
     }
 

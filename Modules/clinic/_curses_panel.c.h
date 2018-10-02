@@ -149,8 +149,25 @@ _curses_panel_panel_move(PyCursesPanelObject *self, PyObject *const *args, Py_ss
     int y;
     int x;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:move",
-        &y, &x)) {
+    if (!_PyArg_CheckPositional("move", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    y = _PyLong_AsInt(args[0]);
+    if (y == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    x = _PyLong_AsInt(args[1]);
+    if (x == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_panel_panel_move_impl(self, y, x);
@@ -318,4 +335,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=4b211b4015e29100 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6794a6062afa8079 input=a9049054013a1b77]*/

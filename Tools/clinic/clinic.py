@@ -808,7 +808,12 @@ class CLanguage(Language):
                     """ % argname)
 
                 parsearg = converters[0].parse_arg(argname)
-                assert parsearg is not None
+                if parsearg is None:
+                    parsearg = """
+                        if (!PyArg_Parse(%s, "{format_units}:{name}", {parse_arguments})) {{
+                            goto exit;
+                        }}
+                        """ % argname
                 parser_definition = parser_body(parser_prototype,
                                                 normalize_snippet(parsearg, indent=4))
 
@@ -857,26 +862,58 @@ class CLanguage(Language):
 
                 flags = "METH_FASTCALL"
                 parser_prototype = parser_prototype_fastcall
-
-                parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                    if (!_PyArg_ParseStack(args, nargs, "{format_units}:{name}",
-                        {parse_arguments})) {{
-                        goto exit;
-                    }}
-                    """, indent=4))
+                nargs = 'nargs'
+                argname_fmt = 'args[%d]'
             else:
                 # positional-only, but no option groups
                 # we only need one call to PyArg_ParseTuple
 
                 flags = "METH_VARARGS"
                 parser_prototype = parser_prototype_varargs
+                nargs = 'PyTuple_GET_SIZE(args)'
+                argname_fmt = 'PyTuple_GET_ITEM(args, %d)'
 
-                parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                    if (!PyArg_ParseTuple(args, "{format_units}:{name}",
-                        {parse_arguments})) {{
+            parser_code = []
+            has_optional = False
+            for i, converter in enumerate(converters):
+                parsearg = converter.parse_arg(argname_fmt % i);
+                if parsearg is None:
+                    #print('Cannot convert %s %r for %s' % (converter.__class__.__name__, converter.format_unit, converter.name), file=sys.stderr)
+                    parser_code = None
+                    break
+                if has_optional or converter.default is not unspecified:
+                    has_optional = True
+                    parser_code.append(normalize_snippet("""
+                        if (%s < %d) {{
+                            goto skip_optional;
+                        }}
+                        """, indent=4) % (nargs, i + 1))
+                parser_code.append(normalize_snippet(parsearg, indent=4))
+
+            if parser_code is not None:
+                parser_code.insert(0, normalize_snippet("""
+                    if (!_PyArg_CheckPositional("{name}", %s, {unpack_min}, {unpack_max})) {{
                         goto exit;
                     }}
-                    """, indent=4))
+                    """ % nargs, indent=4))
+                if has_optional:
+                    parser_code.append("skip_optional:")
+            else:
+                if not new_or_init:
+                    parser_code = [normalize_snippet("""
+                        if (!_PyArg_ParseStack(args, nargs, "{format_units}:{name}",
+                            {parse_arguments})) {{
+                            goto exit;
+                        }}
+                        """, indent=4)]
+                else:
+                    parser_code = [normalize_snippet("""
+                        if (!PyArg_ParseTuple(args, "{format_units}:{name}",
+                            {parse_arguments})) {{
+                            goto exit;
+                        }}
+                        """, indent=4)]
+            parser_definition = parser_body(parser_prototype, *parser_code)
 
         elif not new_or_init:
             flags = "METH_FASTCALL|METH_KEYWORDS"
@@ -2564,11 +2601,12 @@ class CConverter(metaclass=CConverterAutoRegister):
                 {paramname} = {cast}{argname};
                 """.format(argname=argname, paramname=self.name,
                            subclass_of=self.subclass_of, cast=cast)
-        return """
-            if (!PyArg_Parse(%s, "{format_units}:{name}", {parse_arguments})) {{
-                goto exit;
-            }}
-            """ % argname
+        if self.format_unit == 'O':
+            cast = '(%s)' % self.type if self.type != 'PyObject *' else ''
+            return """
+                {paramname} = {cast}{argname};
+                """.format(argname=argname, paramname=self.name, cast=cast)
+        return None
 
 type_checks = {
     '&PyLong_Type': ('PyLong_Check', 'int'),
@@ -2758,6 +2796,21 @@ class unsigned_short_converter(CConverter):
             self.format_unit = 'H'
         else:
             self.converter = '_PyLong_UnsignedShort_Converter'
+
+    def parse_arg(self, argname):
+        if self.format_unit == 'H':
+            return """
+                if (PyFloat_Check({argname})) {{{{
+                    PyErr_SetString(PyExc_TypeError,
+                                    "integer argument expected, got float" );
+                    goto exit;
+                }}}}
+                {paramname} = (unsigned short)PyLong_AsUnsignedLongMask({argname});
+                if ({paramname} == (unsigned short)-1 && PyErr_Occurred()) {{{{
+                    goto exit;
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
 
 @add_legacy_c_converter('C', accept={str})
 class int_converter(CConverter):
@@ -3107,6 +3160,27 @@ class str_converter(CConverter):
                 }}}}
                 if (strlen({paramname}) != (size_t){paramname}_length) {{{{
                     PyErr_SetString(PyExc_ValueError, "embedded null character");
+                    goto exit;
+                }}}}
+                """.format(argname=argname, paramname=self.name)
+        if self.format_unit == 'z':
+            return """
+                if ({argname} == NULL) {{{{
+                    {paramname} = NULL;
+                }}}}
+                else if (PyUnicode_Check({argname})) {{{{
+                    Py_ssize_t {paramname}_length;
+                    {paramname} = PyUnicode_AsUTF8AndSize({argname}, &{paramname}_length);
+                    if ({paramname} == NULL) {{{{
+                        goto exit;
+                    }}}}
+                    if (strlen({paramname}) != (size_t){paramname}_length) {{{{
+                        PyErr_SetString(PyExc_ValueError, "embedded null character");
+                        goto exit;
+                    }}}}
+                }}}}
+                else {{{{
+                    _PyArg_BadArgument("{{name}}", "str or None", {argname});
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name)

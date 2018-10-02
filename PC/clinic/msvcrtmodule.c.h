@@ -50,8 +50,34 @@ msvcrt_locking(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int mode;
     long nbytes;
 
-    if (!_PyArg_ParseStack(args, nargs, "iil:locking",
-        &fd, &mode, &nbytes)) {
+    if (!_PyArg_CheckPositional("locking", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    mode = _PyLong_AsInt(args[1]);
+    if (mode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    nbytes = PyLong_AsLong(args[2]);
+    if (nbytes == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = msvcrt_locking_impl(module, fd, mode, nbytes);
@@ -85,8 +111,25 @@ msvcrt_setmode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int flags;
     long _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:setmode",
-        &fd, &flags)) {
+    if (!_PyArg_CheckPositional("setmode", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flags = _PyLong_AsInt(args[1]);
+    if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = msvcrt_setmode_impl(module, fd, flags);
@@ -515,8 +558,25 @@ msvcrt_CrtSetReportMode(PyObject *module, PyObject *const *args, Py_ssize_t narg
     int mode;
     long _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:CrtSetReportMode",
-        &type, &mode)) {
+    if (!_PyArg_CheckPositional("CrtSetReportMode", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    type = _PyLong_AsInt(args[0]);
+    if (type == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    mode = _PyLong_AsInt(args[1]);
+    if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = msvcrt_CrtSetReportMode_impl(module, type, mode);
@@ -619,4 +679,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=2530b4ff248563b4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ca92fa3da8d9af81 input=a9049054013a1b77]*/

@@ -420,10 +420,31 @@ _elementtree_Element_insert(ElementObject *self, PyObject *const *args, Py_ssize
     Py_ssize_t index;
     PyObject *subelement;
 
-    if (!_PyArg_ParseStack(args, nargs, "nO!:insert",
-        &index, &Element_Type, &subelement)) {
+    if (!_PyArg_CheckPositional("insert", nargs, 2, 2)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        index = ival;
+    }
+    if (!PyObject_TypeCheck(args[1], &Element_Type)) {
+        _PyArg_BadArgument("insert", (&Element_Type)->tp_name, args[1]);
+        goto exit;
+    }
+    subelement = args[1];
     return_value = _elementtree_Element_insert_impl(self, index, subelement);
 
 exit:
@@ -723,4 +744,4 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=398640585689c5ed input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e83d23e9db8a5139 input=a9049054013a1b77]*/

@@ -252,8 +252,17 @@ _lzma__decode_filter_properties(PyObject *module, PyObject *const *args, Py_ssiz
     lzma_vli filter_id;
     Py_buffer encoded_props = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, "O&y*:_decode_filter_properties",
-        lzma_vli_converter, &filter_id, &encoded_props)) {
+    if (!_PyArg_CheckPositional("_decode_filter_properties", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!lzma_vli_converter(args[0], &filter_id)) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &encoded_props, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&encoded_props, 'C')) {
+        _PyArg_BadArgument("_decode_filter_properties", "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = _lzma__decode_filter_properties_impl(module, filter_id, &encoded_props);
@@ -266,4 +275,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=df061bfc2067a90a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6b284a92b9059807 input=a9049054013a1b77]*/

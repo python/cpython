@@ -279,8 +279,33 @@ float___set_format__(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs
     const char *typestr;
     const char *fmt;
 
-    if (!_PyArg_ParseStack(args, nargs, "ss:__set_format__",
-        &typestr, &fmt)) {
+    if (!_PyArg_CheckPositional("__set_format__", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("__set_format__", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t typestr_length;
+    typestr = PyUnicode_AsUTF8AndSize(args[0], &typestr_length);
+    if (typestr == NULL) {
+        goto exit;
+    }
+    if (strlen(typestr) != (size_t)typestr_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("__set_format__", "str", args[1]);
+        goto exit;
+    }
+    Py_ssize_t fmt_length;
+    fmt = PyUnicode_AsUTF8AndSize(args[1], &fmt_length);
+    if (fmt == NULL) {
+        goto exit;
+    }
+    if (strlen(fmt) != (size_t)fmt_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = float___set_format___impl(type, typestr, fmt);
@@ -320,4 +345,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e8f8be828462d58b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f0a938f71ecebb58 input=a9049054013a1b77]*/
