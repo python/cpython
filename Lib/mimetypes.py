@@ -436,7 +436,7 @@ def _default_mime_types():
         '.jpe'    : 'image/jpeg',
         '.jpeg'   : 'image/jpeg',
         '.jpg'    : 'image/jpeg',
-        '.js'     : 'application/javascript',
+        '.js'     : 'text/javascript',
         '.json'   : 'application/json',
         '.ksh'    : 'text/plain',
         '.latex'  : 'application/x-latex',

@@ -1,0 +1,3 @@
+Change mimetype for file extension ``.js`` to ``test/javascript``. This is currently the recommended mimetype in the whatwg HTML spec
+
+https://html.spec.whatwg.org/multipage/scripting.html#scriptingLanguages:javascript-mime-type
