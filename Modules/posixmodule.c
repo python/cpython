@@ -5926,6 +5926,7 @@ os_sched_getscheduler_impl(PyObject *module, pid_t pid)
 }
 #endif /* HAVE_SCHED_SETSCHEDULER */
 
+
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
 /*[clinic input]
 class os.sched_param "PyObject *" "&SchedParamType"
