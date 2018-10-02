@@ -29,6 +29,9 @@ reserved.
 See the end of this file for further copyright and license information.
 
 .. contents::
+About Python
+-------------------
+Python is an interpreted high-level programming language for general-purpose programming.It is one of the easiest and simplest languages to learn and is currently in popular demand.
 
 General Information
 -------------------
