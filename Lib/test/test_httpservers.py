@@ -13,6 +13,7 @@ import sys
 import re
 import base64
 import ntpath
+import platform
 import shutil
 import email.message
 import email.utils
@@ -29,6 +30,10 @@ from io import BytesIO
 import unittest
 from test import support
 
+# Some OS accept trailingSlash as part of a filename
+# https://bugs.python.org/issue34711#msg325532 mentions Windows sometimes accepts a trailingSlash
+# so more work could be done
+trailingSlashOK = platform.system() in ('AIX')
 
 class NoLogRequestHandler:
     def log_message(self, *args):
@@ -417,9 +422,10 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         #constructs the path relative to the root directory of the HTTPServer
         response = self.request(self.base_url + '/test')
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
-        # check for trailing "/" which should return 404. See Issue17324
+        # check for trailing "/" which might return 404. See Issue17324 and Issue34711
         response = self.request(self.base_url + '/test/')
-        self.check_status_and_reason(response, HTTPStatus.NOT_FOUND)
+        checkSlash = HTTPStatus.NOT_FOUND if not trailingSlashOK else HTTPStatus.OK
+        self.check_status_and_reason(response, checkSlash)
         response = self.request(self.base_url + '/')
         self.check_status_and_reason(response, HTTPStatus.OK)
         response = self.request(self.base_url)
@@ -520,7 +526,8 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         response = self.request(self.tempdir_name + '/test')
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
         response = self.request(self.tempdir_name + '/test/')
-        self.check_status_and_reason(response, HTTPStatus.NOT_FOUND)
+        checkSlash = HTTPStatus.NOT_FOUND if not trailingSlashOK else HTTPStatus.OK
+        self.check_status_and_reason(response, checkSlash)
         response = self.request(self.tempdir_name + '/')
         self.check_status_and_reason(response, HTTPStatus.OK)
         response = self.request(self.tempdir_name)
