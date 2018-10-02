@@ -404,7 +404,7 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     spec->basicsize = sizeof(PyStructSequence) - sizeof(PyObject *);
     spec->itemsize = sizeof(PyObject *);
     spec->flags = Py_TPFLAGS_DEFAULT;
-    spec->slots = PyMem_NEW(PyType_Slot, 6);
+    spec->slots = PyMem_NEW(PyType_Slot, 7);
 
     spec->slots[0].slot = Py_tp_dealloc;
     spec->slots[0].pfunc = (destructor)structseq_dealloc;
@@ -439,7 +439,7 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     if (initialize_structseq_dict(desc, ((PyTypeObject *)type)->tp_dict) < 0)
         return NULL;
 
-    return type;
+    return (PyTypeObject*)type;
 }
 
 int _PyStructSequence_Init(void)
