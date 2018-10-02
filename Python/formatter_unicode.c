@@ -28,16 +28,17 @@ unknown_presentation_type(Py_UCS4 presentation_type,
 }
 
 static void
-invalid_comma_type(Py_UCS4 presentation_type)
+invalid_thousands_separator_type(char specifier, Py_UCS4 presentation_type)
 {
+    assert(specifier == ',' || specifier == '_');
     if (presentation_type > 32 && presentation_type < 128)
         PyErr_Format(PyExc_ValueError,
-                     "Cannot specify ',' with '%c'.",
-                     (char)presentation_type);
+                     "Cannot specify '%c' with '%c'.",
+                     specifier, (char)presentation_type);
     else
         PyErr_Format(PyExc_ValueError,
-                     "Cannot specify ',' with '\\x%x'.",
-                     (unsigned int)presentation_type);
+                     "Cannot specify '%c' with '\\x%x'.",
+                     specifier, (unsigned int)presentation_type);
 }
 
 static void
@@ -117,8 +118,8 @@ is_sign_element(Py_UCS4 c)
 /* Locale type codes. LT_NO_LOCALE must be zero. */
 enum LocaleType {
     LT_NO_LOCALE = 0,
-    LT_DEFAULT_LOCALE,
-    LT_UNDERSCORE_LOCALE,
+    LT_DEFAULT_LOCALE = ',',
+    LT_UNDERSCORE_LOCALE = '_',
     LT_UNDER_FOUR_LOCALE,
     LT_CURRENT_LOCALE
 };
@@ -314,7 +315,7 @@ parse_internal_render_format_spec(PyObject *format_spec,
             }
             /* fall through */
         default:
-            invalid_comma_type(format->type);
+            invalid_thousands_separator_type(format->thousands_separators, format->type);
             return 0;
         }
     }
