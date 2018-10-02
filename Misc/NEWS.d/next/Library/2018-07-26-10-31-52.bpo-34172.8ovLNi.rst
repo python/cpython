@@ -1,3 +1,1 @@
-Fixed a circular reference issue inside the multiprocessing.Pool
-implementation that caused a resource leak when not closing/terminating the
-pool before deleting it.
+Fix a reference issue inside multiprocessing.Pool that caused the pool to remain alive if it was deleted without being closed or terminated explicitly.
