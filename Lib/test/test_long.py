@@ -699,6 +699,9 @@ class LongTest(unittest.TestCase):
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, '_,d')
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, ',_d')
 
+        self.assertRaisesRegex(ValueError, "Cannot specify ',' with 's'", format, 3, ',s')
+        self.assertRaisesRegex(ValueError, "Cannot specify '_' with 's'", format, 3, '_s')
+
         # ensure that only int and float type specifiers work
         for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +
                             [chr(x) for x in range(ord('A'), ord('Z')+1)]):
