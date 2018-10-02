@@ -1,2 +1,0 @@
-On systems that open() a regular file with a trailing slash as ENOTDIR
-patch by Michael Felt
