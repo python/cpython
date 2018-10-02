@@ -944,7 +944,7 @@ Test cases
    +---------------------------------------------------------+--------------------------------------+------------+
 
    .. method:: assertRaises(exception, callable, *args, **kwds)
-               assertRaises(exception, msg=None)
+               assertRaises(exception, *, msg=None)
 
       Test that an exception is raised when *callable* is called with any
       positional or keyword arguments that are also passed to
