@@ -2064,7 +2064,7 @@ exit:
 
 #endif /* defined(HAVE_SCHED_H) && defined(HAVE_SCHED_SETSCHEDULER) */
 
-#if defined(HAVE_SCHED_H) && (defined(HAVE_SCHED_SETSCHEDULER) || defined(HAVE_SCHED_SETPARAM))
+#if defined(HAVE_SCHED_H) && (defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM))
 
 PyDoc_STRVAR(os_sched_param__doc__,
 "sched_param(sched_priority)\n"
@@ -2096,7 +2096,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SCHED_H) && (defined(HAVE_SCHED_SETSCHEDULER) || defined(HAVE_SCHED_SETPARAM)) */
+#endif /* defined(HAVE_SCHED_H) && (defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)) */
 
 #if defined(HAVE_SCHED_H) && defined(HAVE_SCHED_SETSCHEDULER)
 
@@ -6757,4 +6757,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=40cac0135f846202 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1603fddefffa1fb9 input=a9049054013a1b77]*/
