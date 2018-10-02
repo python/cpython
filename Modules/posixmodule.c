@@ -1942,7 +1942,7 @@ static PyTypeObject WaitidResultType;
 static int initialized;
 static PyTypeObject StatResultType;
 static PyTypeObject StatVFSResultType;
-#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
+#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
 static PyTypeObject SchedParamType;
 #endif
 static newfunc structseq_new;
@@ -5160,8 +5160,10 @@ enum posix_spawn_file_actions_identifier {
     POSIX_SPAWN_DUP2
 };
 
+#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
 static int
 convert_sched_param(PyObject *param, struct sched_param *res);
+#endif
 
 static int
 parse_posix_spawn_flags(PyObject *setpgroup, int resetids, PyObject *setsigmask,
@@ -5925,7 +5927,7 @@ os_sched_getscheduler_impl(PyObject *module, pid_t pid)
 #endif /* HAVE_SCHED_SETSCHEDULER */
 
 
-#if defined(HAVE_SCHED_SETSCHEDULER) || defined(HAVE_SCHED_SETPARAM)
+#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
 /*[clinic input]
 class os.sched_param "PyObject *" "&SchedParamType"
 
@@ -5986,7 +5988,7 @@ convert_sched_param(PyObject *param, struct sched_param *res)
     res->sched_priority = Py_SAFE_DOWNCAST(priority, long, int);
     return 1;
 }
-#endif /* defined(HAVE_SCHED_SETSCHEDULER) || defined(HAVE_SCHED_SETPARAM) */
+#endif /* defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM) */
 
 
 #ifdef HAVE_SCHED_SETSCHEDULER
@@ -13925,7 +13927,7 @@ INITFUNC(void)
 #  endif
 #endif
 
-#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
+#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
         sched_param_desc.name = MODNAME ".sched_param";
         if (PyStructSequence_InitType2(&SchedParamType, &sched_param_desc) < 0)
             return NULL;
