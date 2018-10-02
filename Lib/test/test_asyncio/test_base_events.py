@@ -482,7 +482,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             pass
 
         async def foo(delay):
-            await asyncio.sleep(delay, loop=self.loop)
+            await asyncio.sleep(delay)
 
         def throw():
             raise ShowStopper
@@ -579,7 +579,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         @asyncio.coroutine
         def zero_error_coro():
-            yield from asyncio.sleep(0.01, loop=self.loop)
+            yield from asyncio.sleep(0.01)
             1/0
 
         # Test Future.__del__
