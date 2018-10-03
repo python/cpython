@@ -1,2 +1,0 @@
-Fix test_httpservers for AIX (trailingSlashOK)
-patch by aixtools
