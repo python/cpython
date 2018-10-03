@@ -750,6 +750,11 @@ class BaseEventLoop(events.AbstractEventLoop):
                 executor = concurrent.futures.ThreadPoolExecutor()
                 self._default_executor = executor
 
+        if args:
+            runner = functools.partial(func, *args)
+        else:
+            runner = func
+
         if retain_context:
             if not isinstance(executor, concurrent.futures.ThreadPoolExecutor):
                 raise RuntimeError(
@@ -758,17 +763,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             if context is None:
                 context = contextvars.copy_context()
 
-            if args:
-                runner = functools.partial(func, *args)
-            else:
-                runner = func
-
             runner = functools.partial(context.run, runner)
-        else:
-            if args:
-                runner = functools.partial(func, *args)
-            else:
-                runner = func
 
         return futures.wrap_future(executor.submit(runner), loop=self)
 
