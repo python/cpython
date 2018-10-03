@@ -448,7 +448,7 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     result = PyBytes_FromStringAndSize(p, len);
     PyMem_Free(p);
     *p_result = result;
-    return str;
+    return result != NULL ? str : NULL;
 }
 
 static PyObject *
