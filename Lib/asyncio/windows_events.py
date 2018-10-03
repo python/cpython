@@ -511,7 +511,8 @@ class IocpProactor:
             try:
                 return ov.getresult()
             except OSError as exc:
-                if exc.winerror == _overlapped.ERROR_NETNAME_DELETED:
+                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+                                    _overlapped.ERROR_OPERATION_ABORTED):
                     raise ConnectionResetError(*exc.args)
                 else:
                     raise
@@ -572,7 +573,6 @@ class IocpProactor:
             # need to register any IOCP operation
             _overlapped.WSAConnect(conn.fileno(), address)
             fut = self._loop.create_future()
-
             fut.set_result(None)
             return fut
 

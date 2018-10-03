@@ -926,9 +926,6 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         tr._protocol.error_received = mock.Mock()
         tr._loop_reading()
         tr._protocol.error_received.assert_called_with(err)
-        tr._fatal_error.assert_called_with(
-                            err,
-                            'Fatal error reading from UDP endpoint')
         close_transport(tr)
 
     def test_datagram_loop_writing_aborted(self):
@@ -940,9 +937,6 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         tr._buffer.appendleft((b'Hello', ('127.0.0.1', 12068)))
         tr._loop_writing()
         tr._protocol.error_received.assert_called_with(err)
-        tr._fatal_error.assert_called_with(
-                            err,
-                            'Fatal error sending UDP datagram')
         close_transport(tr)
 
 
