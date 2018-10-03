@@ -2559,7 +2559,7 @@ class CConverter(metaclass=CConverterAutoRegister):
                     """.format(argname=argname, paramname=self.name,
                                typecheck=typecheck, typename=typename, cast=cast)
             return """
-                if (!PyType_IsSubtype({argname}->ob_type, {subclass_of})) {{{{
+                if (!PyObject_TypeCheck({argname}, {subclass_of})) {{{{
                     _PyErr_BadArgument("{{name}}", ({subclass_of})->tp_name, {argname});
                     goto exit;
                 }}}}

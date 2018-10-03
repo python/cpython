@@ -19,7 +19,7 @@ _elementtree_Element_append(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *subelement;
 
-    if (!PyType_IsSubtype(arg->ob_type, &Element_Type)) {
+    if (!PyObject_TypeCheck(arg, &Element_Type)) {
         _PyErr_BadArgument("append", (&Element_Type)->tp_name, arg);
         goto exit;
     }
@@ -511,7 +511,7 @@ _elementtree_Element_remove(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *subelement;
 
-    if (!PyType_IsSubtype(arg->ob_type, &Element_Type)) {
+    if (!PyObject_TypeCheck(arg, &Element_Type)) {
         _PyErr_BadArgument("remove", (&Element_Type)->tp_name, arg);
         goto exit;
     }
@@ -723,4 +723,4 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1298466aa02cf6fd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=76b86767d951d8d0 input=a9049054013a1b77]*/
