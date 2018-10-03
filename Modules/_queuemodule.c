@@ -8,7 +8,7 @@ class _queue.SimpleQueue "simplequeueobject *" "&PySimpleQueueType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=cf49af81bcbbbea6]*/
 
-extern PyTypeObject PySimpleQueueType;  /* forward decl */
+static PyTypeObject PySimpleQueueType;  /* forward decl */
 
 static PyObject *EmptyError;
 
@@ -306,10 +306,10 @@ static PyMethodDef simplequeue_methods[] = {
 };
 
 
-PyTypeObject PySimpleQueueType = {
+static PyTypeObject PySimpleQueueType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_queue.SimpleQueue",               /*tp_name*/
-    sizeof(simplequeueobject),          /*tp_size*/
+    sizeof(simplequeueobject),          /*tp_basicsize*/
     0,                                  /*tp_itemsize*/
     /* methods */
     (destructor)simplequeue_dealloc,    /*tp_dealloc*/

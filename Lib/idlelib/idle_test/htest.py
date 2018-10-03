@@ -80,11 +80,14 @@ AboutDialog_spec = {
            "are correctly displayed.\n [Close] to exit.",
     }
 
+# TODO implement ^\; adding '<Control-Key-\\>' to function does not work.
 _calltip_window_spec = {
     'file': 'calltip_w',
     'kwds': {},
     'msg': "Typing '(' should display a calltip.\n"
            "Typing ') should hide the calltip.\n"
+           "So should moving cursor out of argument area.\n"
+           "Force-open-calltip does not work here.\n"
     }
 
 _module_browser_spec = {
@@ -160,7 +163,7 @@ _grep_dialog_spec = {
     'msg': "Click the 'Show GrepDialog' button.\n"
            "Test the various 'Find-in-files' functions.\n"
            "The results should be displayed in a new '*Output*' window.\n"
-           "'Right-click'->'Goto file/line' anywhere in the search results "
+           "'Right-click'->'Go to file/line' anywhere in the search results "
            "should open that file \nin a new EditorWindow."
     }
 

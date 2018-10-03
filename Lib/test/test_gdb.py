@@ -206,6 +206,15 @@ class DebuggerTests(unittest.TestCase):
         for line in errlines:
             if not line:
                 continue
+            # bpo34007: Sometimes some versions of the shared libraries that
+            # are part of the traceback are compiled in optimised mode and the
+            # Program Counter (PC) is not present, not allowing gdb to walk the
+            # frames back. When this happens, the Python bindings of gdb raise
+            # an exception, making the test impossible to succeed.
+            if "PC not saved" in line:
+                raise unittest.SkipTest("gdb cannot walk the frame object"
+                                        " because the Program Counter is"
+                                        " not present")
             if not line.startswith(ignore_patterns):
                 unexpected_errlines.append(line)
 
@@ -312,7 +321,20 @@ class PrettyPrintTests(DebuggerTests):
 
     def test_strings(self):
         'Verify the pretty-printing of unicode strings'
-        encoding = locale.getpreferredencoding()
+        # We cannot simply call locale.getpreferredencoding() here,
+        # as GDB might have been linked against a different version
+        # of Python with a different encoding and coercion policy
+        # with respect to PEP 538 and PEP 540.
+        out, err = run_gdb(
+            '--eval-command',
+            'python import locale; print(locale.getpreferredencoding())')
+
+        encoding = out.rstrip()
+        if err or not encoding:
+            raise RuntimeError(
+                f'unable to determine the preferred encoding '
+                f'of embedded Python in GDB: {err}')
+
         def check_repr(text):
             try:
                 text.encode(encoding)

@@ -1520,7 +1520,6 @@ class POSIXProcessTestCase(BaseTestCase):
             # string and instead capture the exception that we want to see
             # below for comparison.
             desired_exception = e
-            desired_exception.strerror += ': ' + repr(self._nonexistent_dir)
         else:
             self.fail("chdir to nonexistent directory %s succeeded." %
                       self._nonexistent_dir)
@@ -1537,6 +1536,7 @@ class POSIXProcessTestCase(BaseTestCase):
             # it up to the parent process as the correct exception.
             self.assertEqual(desired_exception.errno, e.errno)
             self.assertEqual(desired_exception.strerror, e.strerror)
+            self.assertEqual(desired_exception.filename, e.filename)
         else:
             self.fail("Expected OSError: %s" % desired_exception)
 
@@ -1551,6 +1551,7 @@ class POSIXProcessTestCase(BaseTestCase):
             # it up to the parent process as the correct exception.
             self.assertEqual(desired_exception.errno, e.errno)
             self.assertEqual(desired_exception.strerror, e.strerror)
+            self.assertEqual(desired_exception.filename, e.filename)
         else:
             self.fail("Expected OSError: %s" % desired_exception)
 
@@ -1564,6 +1565,7 @@ class POSIXProcessTestCase(BaseTestCase):
             # it up to the parent process as the correct exception.
             self.assertEqual(desired_exception.errno, e.errno)
             self.assertEqual(desired_exception.strerror, e.strerror)
+            self.assertEqual(desired_exception.filename, e.filename)
         else:
             self.fail("Expected OSError: %s" % desired_exception)
 
@@ -2228,15 +2230,9 @@ class POSIXProcessTestCase(BaseTestCase):
             env = os.environ.copy()
             env[key] = value
             # Use C locale to get ASCII for the locale encoding to force
-            # surrogate-escaping of \xFF in the child process; otherwise it can
-            # be decoded as-is if the default locale is latin-1.
+            # surrogate-escaping of \xFF in the child process
             env['LC_ALL'] = 'C'
-            if sys.platform.startswith("aix"):
-                # On AIX, the C locale uses the Latin1 encoding
-                decoded_value = encoded_value.decode("latin1", "surrogateescape")
-            else:
-                # On other UNIXes, the C locale uses the ASCII encoding
-                decoded_value = value
+            decoded_value = value
             stdout = subprocess.check_output(
                 [sys.executable, "-c", script],
                 env=env)
@@ -2535,6 +2531,36 @@ class POSIXProcessTestCase(BaseTestCase):
         self.assertEqual(os.get_inheritable(inheritable), True)
         self.assertEqual(os.get_inheritable(non_inheritable), False)
 
+
+    # bpo-32270: Ensure that descriptors specified in pass_fds
+    # are inherited even if they are used in redirections.
+    # Contributed by @izbyshev.
+    def test_pass_fds_redirected(self):
+        """Regression test for https://bugs.python.org/issue32270."""
+        fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
+        pass_fds = []
+        for _ in range(2):
+            fd = os.open(os.devnull, os.O_RDWR)
+            self.addCleanup(os.close, fd)
+            pass_fds.append(fd)
+
+        stdout_r, stdout_w = os.pipe()
+        self.addCleanup(os.close, stdout_r)
+        self.addCleanup(os.close, stdout_w)
+        pass_fds.insert(1, stdout_w)
+
+        with subprocess.Popen([sys.executable, fd_status],
+                              stdin=pass_fds[0],
+                              stdout=pass_fds[1],
+                              stderr=pass_fds[2],
+                              close_fds=True,
+                              pass_fds=pass_fds):
+            output = os.read(stdout_r, 1024)
+        fds = {int(num) for num in output.split(b',')}
+
+        self.assertEqual(fds, {0, 1, 2} | frozenset(pass_fds), f"output={output!a}")
+
+
     def test_stdout_stdin_are_single_inout_fd(self):
         with io.open(os.devnull, "r+") as inout:
             p = subprocess.Popen([sys.executable, "-c", "import sys; sys.exit(0)"],
@@ -2821,6 +2847,33 @@ class Win32ProcessTestCase(BaseTestCase):
         # ignored
         subprocess.call([sys.executable, "-c", "import sys; sys.exit(0)"],
                         startupinfo=startupinfo)
+
+    def test_startupinfo_copy(self):
+        # bpo-34044: Popen must not modify input STARTUPINFO structure
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags = subprocess.STARTF_USESHOWWINDOW
+        startupinfo.wShowWindow = subprocess.SW_HIDE
+
+        # Call Popen() twice with the same startupinfo object to make sure
+        # that it's not modified
+        for _ in range(2):
+            cmd = [sys.executable, "-c", "pass"]
+            with open(os.devnull, 'w') as null:
+                proc = subprocess.Popen(cmd,
+                                        stdout=null,
+                                        stderr=subprocess.STDOUT,
+                                        startupinfo=startupinfo)
+                with proc:
+                    proc.communicate()
+                self.assertEqual(proc.returncode, 0)
+
+            self.assertEqual(startupinfo.dwFlags,
+                             subprocess.STARTF_USESHOWWINDOW)
+            self.assertIsNone(startupinfo.hStdInput)
+            self.assertIsNone(startupinfo.hStdOutput)
+            self.assertIsNone(startupinfo.hStdError)
+            self.assertEqual(startupinfo.wShowWindow, subprocess.SW_HIDE)
+            self.assertEqual(startupinfo.lpAttributeList, {"handle_list": []})
 
     def test_creationflags(self):
         # creationflags argument

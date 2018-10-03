@@ -20,6 +20,7 @@ import logging
 import struct
 import operator
 import weakref
+import warnings
 import test.support
 import test.support.script_helper
 from test import support
@@ -29,9 +30,6 @@ from test import support
 _multiprocessing = test.support.import_module('_multiprocessing')
 # Skip tests if sem_open implementation is broken.
 test.support.import_module('multiprocessing.synchronize')
-# import threading after _multiprocessing to raise a more relevant error
-# message: "No module named _multiprocessing". _multiprocessing is not compiled
-# without thread support.
 import threading
 
 import multiprocessing.connection
@@ -651,13 +649,17 @@ class _TestProcess(BaseTestCase):
         from multiprocessing.forkserver import _forkserver
         _forkserver.ensure_running()
 
+        # First process sleeps 500 ms
+        delay = 0.5
+
         evt = self.Event()
-        proc = self.Process(target=self._sleep_and_set_event, args=(evt, 1.0))
+        proc = self.Process(target=self._sleep_and_set_event, args=(evt, delay))
         proc.start()
 
         pid = _forkserver._forkserver_pid
         os.kill(pid, signum)
-        time.sleep(1.0)  # give it time to die
+        # give time to the fork server to die and time to proc to complete
+        time.sleep(delay * 2.0)
 
         evt2 = self.Event()
         proc2 = self.Process(target=self._sleep_and_set_event, args=(evt2,))
@@ -1035,9 +1037,10 @@ class _TestQueue(BaseTestCase):
         start = time.time()
         self.assertRaises(pyqueue.Empty, q.get, True, 0.200)
         delta = time.time() - start
-        # Tolerate a delta of 50 ms because of the bad clock resolution on
-        # Windows (usually 15.6 ms)
-        self.assertGreaterEqual(delta, 0.150)
+        # bpo-30317: Tolerate a delta of 100 ms because of the bad clock
+        # resolution on Windows (usually 15.6 ms). x86 Windows7 3.x once
+        # failed because the delta was only 135.8 ms.
+        self.assertGreaterEqual(delta, 0.100)
         close_queue(q)
 
     def test_queue_feeder_donot_stop_onexc(self):
@@ -2074,6 +2077,16 @@ class _TestContainers(BaseTestCase):
         a.append('hello')
         self.assertEqual(f[0][:], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'hello'])
 
+    def test_list_iter(self):
+        a = self.list(list(range(10)))
+        it = iter(a)
+        self.assertEqual(list(it), list(range(10)))
+        self.assertEqual(list(it), [])  # exhausted
+        # list modified during iteration
+        it = iter(a)
+        a[0] = 100
+        self.assertEqual(next(it), 100)
+
     def test_list_proxy_in_list(self):
         a = self.list([self.list(range(3)) for _i in range(3)])
         self.assertEqual([inner[:] for inner in a], [[0, 1, 2]] * 3)
@@ -2103,6 +2116,19 @@ class _TestContainers(BaseTestCase):
         self.assertEqual(sorted(d.keys()), indices)
         self.assertEqual(sorted(d.values()), [chr(i) for i in indices])
         self.assertEqual(sorted(d.items()), [(i, chr(i)) for i in indices])
+
+    def test_dict_iter(self):
+        d = self.dict()
+        indices = list(range(65, 70))
+        for i in indices:
+            d[i] = chr(i)
+        it = iter(d)
+        self.assertEqual(list(it), indices)
+        self.assertEqual(list(it), [])  # exhausted
+        # dictionary changed size during iteration
+        it = iter(d)
+        d.clear()
+        self.assertRaises(RuntimeError, next, it)
 
     def test_dict_proxy_nested(self):
         pets = self.dict(ferrets=2, hamsters=4)
@@ -2351,10 +2377,10 @@ class _TestPool(BaseTestCase):
         self.assertRaises(SayWhenError, it.__next__)
 
     def test_imap_unordered(self):
-        it = self.pool.imap_unordered(sqr, list(range(1000)))
-        self.assertEqual(sorted(it), list(map(sqr, list(range(1000)))))
+        it = self.pool.imap_unordered(sqr, list(range(10)))
+        self.assertEqual(sorted(it), list(map(sqr, list(range(10)))))
 
-        it = self.pool.imap_unordered(sqr, list(range(1000)), chunksize=53)
+        it = self.pool.imap_unordered(sqr, list(range(1000)), chunksize=100)
         self.assertEqual(sorted(it), list(map(sqr, list(range(1000)))))
 
     def test_imap_unordered_handle_iterable_exception(self):
@@ -2523,6 +2549,12 @@ class _TestPool(BaseTestCase):
         # they were released too.
         self.assertEqual(CountedObject.n_instances, 0)
 
+    def test_del_pool(self):
+        p = self.Pool(1)
+        wr = weakref.ref(p)
+        del p
+        gc.collect()
+        self.assertIsNone(wr())
 
 def raising():
     raise KeyError("key")
@@ -4512,17 +4544,19 @@ class TestSemaphoreTracker(unittest.TestCase):
         # bpo-31310: if the semaphore tracker process has died, it should
         # be restarted implicitly.
         from multiprocessing.semaphore_tracker import _semaphore_tracker
-        _semaphore_tracker.ensure_running()
         pid = _semaphore_tracker._pid
+        if pid is not None:
+            os.kill(pid, signal.SIGKILL)
+            os.waitpid(pid, 0)
+        with warnings.catch_warnings(record=True) as all_warn:
+            _semaphore_tracker.ensure_running()
+        pid = _semaphore_tracker._pid
+
         os.kill(pid, signum)
         time.sleep(1.0)  # give it time to die
 
         ctx = multiprocessing.get_context("spawn")
-        with contextlib.ExitStack() as stack:
-            if should_die:
-                stack.enter_context(self.assertWarnsRegex(
-                    UserWarning,
-                    "semaphore_tracker: process died"))
+        with warnings.catch_warnings(record=True) as all_warn:
             sem = ctx.Semaphore()
             sem.acquire()
             sem.release()
@@ -4532,10 +4566,22 @@ class TestSemaphoreTracker(unittest.TestCase):
             del sem
             gc.collect()
             self.assertIsNone(wr())
+            if should_die:
+                self.assertEqual(len(all_warn), 1)
+                the_warn = all_warn[0]
+                issubclass(the_warn.category, UserWarning)
+                self.assertTrue("semaphore_tracker: process died"
+                                in str(the_warn.message))
+            else:
+                self.assertEqual(len(all_warn), 0)
 
     def test_semaphore_tracker_sigint(self):
         # Catchable signal (ignored by semaphore tracker)
         self.check_semaphore_tracker_death(signal.SIGINT, False)
+
+    def test_semaphore_tracker_sigterm(self):
+        # Catchable signal (ignored by semaphore tracker)
+        self.check_semaphore_tracker_death(signal.SIGTERM, False)
 
     def test_semaphore_tracker_sigkill(self):
         # Uncatchable signal.
@@ -4578,6 +4624,12 @@ class TestSimpleQueue(unittest.TestCase):
 
         proc.join()
 
+
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        # Just make sure names in blacklist are excluded
+        support.check__all__(self, multiprocessing, extra=multiprocessing.__all__,
+                             blacklist=['SUBDEBUG', 'SUBWARNING'])
 #
 # Mixins
 #

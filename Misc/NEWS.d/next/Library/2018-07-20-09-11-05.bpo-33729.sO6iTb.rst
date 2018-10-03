@@ -1,0 +1,1 @@
+Fixed issues with arguments parsing in :mod:`hashlib`.

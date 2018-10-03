@@ -721,9 +721,8 @@ existing processes to perform this function.)
 includes a working socket receiver which can be used as a starting point for you
 to adapt in your own applications.
 
-If you are using a recent version of Python which includes the
-:mod:`multiprocessing` module, you could write your own handler which uses the
-:class:`~multiprocessing.Lock` class from this module to serialize access to the
+You could also write your own handler which uses the :class:`~multiprocessing.Lock`
+class from the :mod:`multiprocessing` module to serialize access to the
 file from your processes. The existing :class:`FileHandler` and subclasses do
 not make use of :mod:`multiprocessing` at present, though they may do so in the
 future. Note that at present, the :mod:`multiprocessing` module does not provide
@@ -1456,12 +1455,18 @@ works::
         which then get dispatched, by the logging system, to the handlers
         configured for those loggers.
         """
+
         def handle(self, record):
-            logger = logging.getLogger(record.name)
-            # The process name is transformed just to show that it's the listener
-            # doing the logging to files and console
-            record.processName = '%s (for %s)' % (current_process().name, record.processName)
-            logger.handle(record)
+            if record.name == "root":
+                logger = logging.getLogger()
+            else:
+                logger = logging.getLogger(record.name)
+
+            if logger.isEnabledFor(record.levelno):
+                # The process name is transformed just to show that it's the listener
+                # doing the logging to files and console
+                record.processName = '%s (for %s)' % (current_process().name, record.processName)
+                logger.handle(record)
 
     def listener_process(q, stop_event, config):
         """
@@ -1526,22 +1531,16 @@ works::
         # The main process gets a simple configuration which prints to the console.
         config_initial = {
             'version': 1,
-            'formatters': {
-                'detailed': {
-                    'class': 'logging.Formatter',
-                    'format': '%(asctime)s %(name)-15s %(levelname)-8s %(processName)-10s %(message)s'
-                }
-            },
             'handlers': {
                 'console': {
                     'class': 'logging.StreamHandler',
-                    'level': 'INFO',
-                },
+                    'level': 'INFO'
+                }
             },
             'root': {
-                'level': 'DEBUG',
-                'handlers': ['console']
-            },
+                'handlers': ['console'],
+                'level': 'DEBUG'
+            }
         }
         # The worker process configuration is just a QueueHandler attached to the
         # root logger, which allows all messages to be sent to the queue.
@@ -1554,13 +1553,13 @@ works::
             'handlers': {
                 'queue': {
                     'class': 'logging.handlers.QueueHandler',
-                    'queue': q,
-                },
+                    'queue': q
+                }
             },
             'root': {
-                'level': 'DEBUG',
-                'handlers': ['queue']
-            },
+                'handlers': ['queue'],
+                'level': 'DEBUG'
+            }
         }
         # The listener process configuration shows that the full flexibility of
         # logging configuration is available to dispatch events to handlers however
@@ -1584,28 +1583,28 @@ works::
             'handlers': {
                 'console': {
                     'class': 'logging.StreamHandler',
-                    'level': 'INFO',
                     'formatter': 'simple',
+                    'level': 'INFO'
                 },
                 'file': {
                     'class': 'logging.FileHandler',
                     'filename': 'mplog.log',
                     'mode': 'w',
-                    'formatter': 'detailed',
+                    'formatter': 'detailed'
                 },
                 'foofile': {
                     'class': 'logging.FileHandler',
                     'filename': 'mplog-foo.log',
                     'mode': 'w',
-                    'formatter': 'detailed',
+                    'formatter': 'detailed'
                 },
                 'errors': {
                     'class': 'logging.FileHandler',
                     'filename': 'mplog-errors.log',
                     'mode': 'w',
-                    'level': 'ERROR',
                     'formatter': 'detailed',
-                },
+                    'level': 'ERROR'
+                }
             },
             'loggers': {
                 'foo': {
@@ -1613,9 +1612,9 @@ works::
                 }
             },
             'root': {
-                'level': 'DEBUG',
-                'handlers': ['console', 'file', 'errors']
-            },
+                'handlers': ['console', 'file', 'errors'],
+                'level': 'DEBUG'
+            }
         }
         # Log some initial events, just to show that logging in the parent works
         # normally.

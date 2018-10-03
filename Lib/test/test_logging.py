@@ -35,6 +35,7 @@ import os
 import queue
 import random
 import re
+import signal
 import socket
 import struct
 import sys
@@ -666,6 +667,72 @@ class HandlerTest(BaseTest):
                 if os.path.exists(fn):
                     os.unlink(fn)
 
+    # The implementation relies on os.register_at_fork existing, but we test
+    # based on os.fork existing because that is what users and this test use.
+    # This helps ensure that when fork exists (the important concept) that the
+    # register_at_fork mechanism is also present and used.
+    @unittest.skipIf(not hasattr(os, 'fork'), 'Test requires os.fork().')
+    def test_post_fork_child_no_deadlock(self):
+        """Ensure forked child logging locks are not held; bpo-6721."""
+        refed_h = logging.Handler()
+        refed_h.name = 'because we need at least one for this test'
+        self.assertGreater(len(logging._handlers), 0)
+
+        locks_held__ready_to_fork = threading.Event()
+        fork_happened__release_locks_and_end_thread = threading.Event()
+
+        def lock_holder_thread_fn():
+            logging._acquireLock()
+            try:
+                refed_h.acquire()
+                try:
+                    # Tell the main thread to do the fork.
+                    locks_held__ready_to_fork.set()
+
+                    # If the deadlock bug exists, the fork will happen
+                    # without dealing with the locks we hold, deadlocking
+                    # the child.
+
+                    # Wait for a successful fork or an unreasonable amount of
+                    # time before releasing our locks.  To avoid a timing based
+                    # test we'd need communication from os.fork() as to when it
+                    # has actually happened.  Given this is a regression test
+                    # for a fixed issue, potentially less reliably detecting
+                    # regression via timing is acceptable for simplicity.
+                    # The test will always take at least this long. :(
+                    fork_happened__release_locks_and_end_thread.wait(0.5)
+                finally:
+                    refed_h.release()
+            finally:
+                logging._releaseLock()
+
+        lock_holder_thread = threading.Thread(
+                target=lock_holder_thread_fn,
+                name='test_post_fork_child_no_deadlock lock holder')
+        lock_holder_thread.start()
+
+        locks_held__ready_to_fork.wait()
+        pid = os.fork()
+        if pid == 0:  # Child.
+            logging.error(r'Child process did not deadlock. \o/')
+            os._exit(0)
+        else:  # Parent.
+            fork_happened__release_locks_and_end_thread.set()
+            lock_holder_thread.join()
+            start_time = time.monotonic()
+            while True:
+                waited_pid, status = os.waitpid(pid, os.WNOHANG)
+                if waited_pid == pid:
+                    break  # child process exited.
+                if time.monotonic() - start_time > 7:
+                    break  # so long? implies child deadlock.
+                time.sleep(0.05)
+            if waited_pid != pid:
+                os.kill(pid, signal.SIGKILL)
+                waited_pid, status = os.waitpid(pid, 0)
+                self.fail("child process deadlocked.")
+            self.assertEqual(status, 0, msg="child process error")
+
 
 class BadStream(object):
     def write(self, data):
@@ -971,7 +1038,8 @@ if hasattr(socket, "AF_UNIX"):
 # - end of server_helper section
 
 class SMTPHandlerTest(BaseTest):
-    TIMEOUT = 8.0
+    # bpo-14314, bpo-19665, bpo-34092: don't wait forever, timeout of 1 minute
+    TIMEOUT = 60.0
 
     def test_basic(self):
         sockmap = {}
@@ -986,7 +1054,7 @@ class SMTPHandlerTest(BaseTest):
         r = logging.makeLogRecord({'msg': 'Hello \u2713'})
         self.handled = threading.Event()
         h.handle(r)
-        self.handled.wait(self.TIMEOUT)  # 14314: don't wait forever
+        self.handled.wait(self.TIMEOUT)
         server.stop()
         self.assertTrue(self.handled.is_set())
         self.assertEqual(len(self.messages), 1)
@@ -1089,6 +1157,7 @@ class ConfigFileTest(BaseTest):
 
     """Reading logging config from a .ini-style config file."""
 
+    check_no_resource_warning = support.check_no_resource_warning
     expected_log_pat = r"^(\w+) \+\+ (\w+)$"
 
     # config0 is a standard configuration.
@@ -1297,6 +1366,27 @@ class ConfigFileTest(BaseTest):
     datefmt=
     """
 
+    # config 8, check for resource warning
+    config8 = r"""
+    [loggers]
+    keys=root
+
+    [handlers]
+    keys=file
+
+    [formatters]
+    keys=
+
+    [logger_root]
+    level=DEBUG
+    handlers=file
+
+    [handler_file]
+    class=FileHandler
+    level=DEBUG
+    args=("{tempfile}",)
+    """
+
     disable_test = """
     [loggers]
     keys=root
@@ -1441,6 +1531,29 @@ class ConfigFileTest(BaseTest):
             ], stream=output)
             # Original logger output is empty.
             self.assert_log_lines([])
+
+    def test_config8_ok(self):
+
+        def cleanup(h1, fn):
+            h1.close()
+            os.remove(fn)
+
+        with self.check_no_resource_warning():
+            fd, fn = tempfile.mkstemp(".log", "test_logging-X-")
+            os.close(fd)
+
+            # Replace single backslash with double backslash in windows
+            # to avoid unicode error during string formatting
+            if os.name == "nt":
+                fn = fn.replace("\\", "\\\\")
+
+            config8 = self.config8.format(tempfile=fn)
+
+            self.apply_config(config8)
+            self.apply_config(config8)
+
+        handler = logging.root.handlers[0]
+        self.addCleanup(cleanup, handler, fn)
 
     def test_logger_disabling(self):
         self.apply_config(self.disable_test)
@@ -2022,6 +2135,7 @@ class ConfigDictTest(BaseTest):
 
     """Reading logging config from a dictionary."""
 
+    check_no_resource_warning = support.check_no_resource_warning
     expected_log_pat = r"^(\w+) \+\+ (\w+)$"
 
     # config0 is a standard configuration.
@@ -2896,6 +3010,35 @@ class ConfigDictTest(BaseTest):
             logging.warning('Exclamation')
             self.assertTrue(output.getvalue().endswith('Exclamation!\n'))
 
+    def test_config15_ok(self):
+
+        def cleanup(h1, fn):
+            h1.close()
+            os.remove(fn)
+
+        with self.check_no_resource_warning():
+            fd, fn = tempfile.mkstemp(".log", "test_logging-X-")
+            os.close(fd)
+
+            config = {
+                "version": 1,
+                "handlers": {
+                    "file": {
+                        "class": "logging.FileHandler",
+                        "filename": fn
+                    }
+                },
+                "root": {
+                    "handlers": ["file"]
+                }
+            }
+
+            self.apply_config(config)
+            self.apply_config(config)
+
+        handler = logging.root.handlers[0]
+        self.addCleanup(cleanup, handler, fn)
+
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
         # Ask for a randomly assigned port (by using port 0)
@@ -3202,6 +3345,21 @@ class QueueHandlerTest(BaseTest):
         self.assertFalse(handler.matches(levelno=logging.WARNING, message='4'))
         self.assertFalse(handler.matches(levelno=logging.ERROR, message='5'))
         self.assertTrue(handler.matches(levelno=logging.CRITICAL, message='6'))
+        handler.close()
+
+    @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
+                         'logging.handlers.QueueListener required for this test')
+    def test_queue_listener_with_StreamHandler(self):
+        # Test that traceback only appends once (bpo-34334).
+        listener = logging.handlers.QueueListener(self.queue, self.root_hdlr)
+        listener.start()
+        try:
+            1 / 0
+        except ZeroDivisionError as e:
+            exc = e
+            self.que_logger.exception(self.next_message(), exc_info=exc)
+        listener.stop()
+        self.assertEqual(self.stream.getvalue().strip().count('Traceback'), 1)
 
 if hasattr(logging.handlers, 'QueueListener'):
     import multiprocessing

@@ -44,7 +44,8 @@ are always available.  They are listed here in alphabetical order.
 
    Return the absolute value of a number.  The argument may be an
    integer or a floating point number.  If the argument is a complex number, its
-   magnitude is returned.
+   magnitude is returned. If *x* defines :meth:`__abs__`,
+   ``abs(x)`` returns ``x.__abs__()``.
 
 
 .. function:: all(iterable)
@@ -112,6 +113,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. index:: pair: Boolean; type
 
+   .. versionchanged:: 3.7
+      *x* is now a positional-only parameter.
 
 .. function:: breakpoint(*args, **kws)
 
@@ -240,8 +243,8 @@ are always available.  They are listed here in alphabetical order.
    interactive statement (in the latter case, expression statements that
    evaluate to something other than ``None`` will be printed).
 
-   The optional arguments *flags* and *dont_inherit* control which future
-   statements (see :pep:`236`) affect the compilation of *source*.  If neither
+   The optional arguments *flags* and *dont_inherit* control which :ref:`future
+   statements <future>` affect the compilation of *source*.  If neither
    is present (or both are zero) the code is compiled with those future
    statements that are in effect in the code that is calling :func:`compile`.  If the
    *flags* argument is given and *dont_inherit* is not (or is zero) then the
@@ -434,8 +437,10 @@ are always available.  They are listed here in alphabetical order.
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
    dictionaries as global and local namespace.  If the *globals* dictionary is
-   present and lacks '__builtins__', the current globals are copied into *globals*
-   before *expression* is parsed.  This means that *expression* normally has full
+   present and does not contain a value for the key ``__builtins__``, a
+   reference to the dictionary of the built-in module :mod:`builtins` is
+   inserted under that key before *expression* is parsed.
+   This means that *expression* normally has full
    access to the standard :mod:`builtins` module and restricted environments are
    propagated.  If the *locals* dictionary is omitted it defaults to the *globals*
    dictionary.  If both dictionaries are omitted, the expression is executed in the
@@ -574,6 +579,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.6
       Grouping digits with underscores as in code literals is allowed.
+
+   .. versionchanged:: 3.7
+      *x* is now a positional-only parameter.
 
 
 .. index::
@@ -726,7 +734,7 @@ are always available.  They are listed here in alphabetical order.
    to provide elaborate line editing and history features.
 
 
-.. class:: int(x=0)
+.. class:: int([x])
            int(x, base=10)
 
    Return an integer object constructed from a number or string *x*, or return
@@ -759,6 +767,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.6
       Grouping digits with underscores as in code literals is allowed.
+
+   .. versionchanged:: 3.7
+      *x* is now a positional-only parameter.
 
 
 .. function:: isinstance(object, classinfo)
@@ -868,6 +879,9 @@ are always available.  They are listed here in alphabetical order.
    .. versionadded:: 3.4
       The *default* keyword-only argument.
 
+   .. versionchanged:: 3.8
+      The *key* can be ``None``.
+
 
 .. _func-memoryview:
 .. function:: memoryview(obj)
@@ -901,6 +915,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionadded:: 3.4
       The *default* keyword-only argument.
+
+   .. versionchanged:: 3.8
+      The *key* can be ``None``.
 
 
 .. function:: next(iterator[, default])
@@ -1470,6 +1487,9 @@ are always available.  They are listed here in alphabetical order.
    ``''.join(sequence)``.  To add floating point values with extended precision,
    see :func:`math.fsum`\.  To concatenate a series of iterables, consider using
    :func:`itertools.chain`.
+
+   .. versionchanged:: 3.8
+      The *start* parameter can be specified as a keyword argument.
 
 .. function:: super([type[, object-or-type]])
 

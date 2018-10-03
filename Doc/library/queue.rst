@@ -11,9 +11,7 @@
 The :mod:`queue` module implements multi-producer, multi-consumer queues.
 It is especially useful in threaded programming when information must be
 exchanged safely between multiple threads.  The :class:`Queue` class in this
-module implements all the required locking semantics.  It depends on the
-availability of thread support in Python; see the :mod:`threading`
-module.
+module implements all the required locking semantics.
 
 The module implements three types of queue, which differ only in the order in
 which the entries are retrieved.  In a :abbr:`FIFO (first-in, first-out)`

@@ -954,7 +954,12 @@ def getsourcelines(object):
     object = unwrap(object)
     lines, lnum = findsource(object)
 
-    if ismodule(object):
+    if istraceback(object):
+        object = object.tb_frame
+
+    # for module or frame that corresponds to module, return all source lines
+    if (ismodule(object) or
+        (isframe(object) and object.f_code.co_name == "<module>")):
         return lines, 0
     else:
         return getblock(lines[lnum:]), lnum + 1
@@ -2000,14 +2005,8 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             except NameError:
                 raise RuntimeError()
 
-        if isinstance(value, str):
-            return ast.Str(value)
-        if isinstance(value, (int, float)):
-            return ast.Num(value)
-        if isinstance(value, bytes):
-            return ast.Bytes(value)
-        if value in (True, False, None):
-            return ast.NameConstant(value)
+        if isinstance(value, (str, int, float, bytes, bool, type(None))):
+            return ast.Constant(value)
         raise RuntimeError()
 
     class RewriteSymbolics(ast.NodeTransformer):

@@ -13,6 +13,7 @@ import concurrent.futures
 import contextvars
 import functools
 import inspect
+import itertools
 import types
 import warnings
 import weakref
@@ -20,8 +21,14 @@ import weakref
 from . import base_tasks
 from . import coroutines
 from . import events
+from . import exceptions
 from . import futures
 from .coroutines import coroutine
+
+# Helper to generate new task names
+# This uses itertools.count() instead of a "+= 1" operation because the latter
+# is not thread safe. See bpo-11866 for a longer explanation.
+_task_name_counter = itertools.count(1).__next__
 
 
 def current_task(loop=None):
@@ -46,6 +53,16 @@ def _all_tasks_compat(loop=None):
     if loop is None:
         loop = events.get_event_loop()
     return {t for t in _all_tasks if futures._get_loop(t) is loop}
+
+
+def _set_task_name(task, name):
+    if name is not None:
+        try:
+            set_name = task.set_name
+        except AttributeError:
+            pass
+        else:
+            set_name(name)
 
 
 class Task(futures._PyFuture):  # Inherit Python Task implementation
@@ -94,7 +111,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                       stacklevel=2)
         return _all_tasks_compat(loop)
 
-    def __init__(self, coro, *, loop=None):
+    def __init__(self, coro, *, loop=None, name=None):
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
@@ -103,6 +120,11 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             # prevent logging for pending task in __del__
             self._log_destroy_pending = False
             raise TypeError(f"a coroutine was expected, got {coro!r}")
+
+        if name is None:
+            self._name = f'Task-{_task_name_counter()}'
+        else:
+            self._name = str(name)
 
         self._must_cancel = False
         self._fut_waiter = None
@@ -125,6 +147,12 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
     def _repr_info(self):
         return base_tasks._task_repr_info(self)
+
+    def get_name(self):
+        return self._name
+
+    def set_name(self, value):
+        self._name = str(value)
 
     def set_result(self, result):
         raise RuntimeError('Task does not support set_result operation')
@@ -201,11 +229,11 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
     def __step(self, exc=None):
         if self.done():
-            raise futures.InvalidStateError(
+            raise exceptions.InvalidStateError(
                 f'_step(): already done: {self!r}, {exc!r}')
         if self._must_cancel:
-            if not isinstance(exc, futures.CancelledError):
-                exc = futures.CancelledError()
+            if not isinstance(exc, exceptions.CancelledError):
+                exc = exceptions.CancelledError()
             self._must_cancel = False
         coro = self._coro
         self._fut_waiter = None
@@ -223,10 +251,10 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             if self._must_cancel:
                 # Task is cancelled right before coro stops.
                 self._must_cancel = False
-                super().set_exception(futures.CancelledError())
+                super().set_exception(exceptions.CancelledError())
             else:
                 super().set_result(exc.value)
-        except futures.CancelledError:
+        except exceptions.CancelledError:
             super().cancel()  # I.e., Future.cancel(self).
         except Exception as exc:
             super().set_exception(exc)
@@ -312,13 +340,15 @@ else:
     Task = _CTask = _asyncio.Task
 
 
-def create_task(coro):
+def create_task(coro, *, name=None):
     """Schedule the execution of a coroutine object in a spawn task.
 
     Return a Task object.
     """
     loop = events.get_running_loop()
-    return loop.create_task(coro)
+    task = loop.create_task(coro)
+    _set_task_name(task, name)
+    return task
 
 
 # wait() and as_completed() similar to those in PEP 3148.
@@ -352,7 +382,11 @@ async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
         raise ValueError(f'Invalid return_when value: {return_when}')
 
     if loop is None:
-        loop = events.get_event_loop()
+        loop = events.get_running_loop()
+    else:
+        warnings.warn("The loop argument is deprecated and scheduled for "
+                      "removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
 
     fs = {ensure_future(f, loop=loop) for f in set(fs)}
 
@@ -378,7 +412,11 @@ async def wait_for(fut, timeout, *, loop=None):
     This function is a coroutine.
     """
     if loop is None:
-        loop = events.get_event_loop()
+        loop = events.get_running_loop()
+    else:
+        warnings.warn("The loop argument is deprecated and scheduled for "
+                      "removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
 
     if timeout is None:
         return await fut
@@ -390,7 +428,7 @@ async def wait_for(fut, timeout, *, loop=None):
             return fut.result()
 
         fut.cancel()
-        raise futures.TimeoutError()
+        raise exceptions.TimeoutError()
 
     waiter = loop.create_future()
     timeout_handle = loop.call_later(timeout, _release_waiter, waiter)
@@ -403,7 +441,7 @@ async def wait_for(fut, timeout, *, loop=None):
         # wait until the future completes or the timeout
         try:
             await waiter
-        except futures.CancelledError:
+        except exceptions.CancelledError:
             fut.remove_done_callback(cb)
             fut.cancel()
             raise
@@ -416,7 +454,7 @@ async def wait_for(fut, timeout, *, loop=None):
             # after wait_for() returns.
             # See https://bugs.python.org/issue32751
             await _cancel_and_wait(fut, loop=loop)
-            raise futures.TimeoutError()
+            raise exceptions.TimeoutError()
     finally:
         timeout_handle.cancel()
 
@@ -525,7 +563,7 @@ def as_completed(fs, *, loop=None, timeout=None):
         f = await done.get()
         if f is None:
             # Dummy value from _on_timeout().
-            raise futures.TimeoutError
+            raise exceptions.TimeoutError
         return f.result()  # May raise f.exception().
 
     for f in todo:
@@ -555,7 +593,12 @@ async def sleep(delay, result=None, *, loop=None):
         return result
 
     if loop is None:
-        loop = events.get_event_loop()
+        loop = events.get_running_loop()
+    else:
+        warnings.warn("The loop argument is deprecated and scheduled for "
+                      "removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
+
     future = loop.create_future()
     h = loop.call_later(delay,
                         futures._set_result_unless_cancelled,
@@ -672,7 +715,7 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
                 # Check if 'fut' is cancelled first, as
                 # 'fut.exception()' will *raise* a CancelledError
                 # instead of returning it.
-                exc = futures.CancelledError()
+                exc = exceptions.CancelledError()
                 outer.set_exception(exc)
                 return
             else:
@@ -691,7 +734,7 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
                     # Check if 'fut' is cancelled first, as
                     # 'fut.exception()' will *raise* a CancelledError
                     # instead of returning it.
-                    res = futures.CancelledError()
+                    res = exceptions.CancelledError()
                 else:
                     res = fut.exception()
                     if res is None:
@@ -702,7 +745,7 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
                 # If gather is being cancelled we must propagate the
                 # cancellation regardless of *return_exceptions* argument.
                 # See issue 32684.
-                outer.set_exception(futures.CancelledError())
+                outer.set_exception(exceptions.CancelledError())
             else:
                 outer.set_result(results)
 

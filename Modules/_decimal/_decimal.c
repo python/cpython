@@ -122,7 +122,7 @@ incr_false(void)
 }
 
 
-static PyContextVar *current_context_var;
+static PyObject *current_context_var;
 
 /* Template for creating new thread contexts, calling Context() without
  * arguments and initializing the module_context on first access. */
@@ -1500,7 +1500,7 @@ init_current_context(void)
     }
     CTX(tl_context)->status = 0;
 
-    PyContextToken *tok = PyContextVar_Set(current_context_var, tl_context);
+    PyObject *tok = PyContextVar_Set(current_context_var, tl_context);
     if (tok == NULL) {
         Py_DECREF(tl_context);
         return NULL;
@@ -1561,7 +1561,7 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
         Py_INCREF(v);
     }
 
-    PyContextToken *tok = PyContextVar_Set(current_context_var, v);
+    PyObject *tok = PyContextVar_Set(current_context_var, v);
     Py_DECREF(v);
     if (tok == NULL) {
         return NULL;

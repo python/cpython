@@ -119,32 +119,32 @@ from _ssl import (
 from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
 
 
-_IntEnum._convert(
+_IntEnum._convert_(
     '_SSLMethod', __name__,
     lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
     source=_ssl)
 
-_IntFlag._convert(
+_IntFlag._convert_(
     'Options', __name__,
     lambda name: name.startswith('OP_'),
     source=_ssl)
 
-_IntEnum._convert(
+_IntEnum._convert_(
     'AlertDescription', __name__,
     lambda name: name.startswith('ALERT_DESCRIPTION_'),
     source=_ssl)
 
-_IntEnum._convert(
+_IntEnum._convert_(
     'SSLErrorNumber', __name__,
     lambda name: name.startswith('SSL_ERROR_'),
     source=_ssl)
 
-_IntFlag._convert(
+_IntFlag._convert_(
     'VerifyFlags', __name__,
     lambda name: name.startswith('VERIFY_'),
     source=_ssl)
 
-_IntEnum._convert(
+_IntEnum._convert_(
     'VerifyMode', __name__,
     lambda name: name.startswith('CERT_'),
     source=_ssl)
@@ -777,6 +777,9 @@ class SSLObject:
         current SSL channel. """
         return self._sslobj.version()
 
+    def verify_client_post_handshake(self):
+        return self._sslobj.verify_client_post_handshake()
+
 
 class SSLSocket(socket):
     """This class implements a subtype of socket.socket that wraps
@@ -1091,6 +1094,12 @@ class SSLSocket(socket):
             s = self._sslobj.shutdown()
             self._sslobj = None
             return s
+        else:
+            raise ValueError("No SSL wrapper around " + str(self))
+
+    def verify_client_post_handshake(self):
+        if self._sslobj:
+            return self._sslobj.verify_client_post_handshake()
         else:
             raise ValueError("No SSL wrapper around " + str(self))
 

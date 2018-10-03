@@ -74,6 +74,7 @@
       *nextTokPtr = ptr; \
       return XML_TOK_INVALID; \
     } \
+    /* fall through */ \
   case BT_NMSTRT: \
   case BT_HEX: \
   case BT_DIGIT: \
@@ -102,6 +103,7 @@
       *nextTokPtr = ptr; \
       return XML_TOK_INVALID; \
     } \
+    /* fall through */ \
   case BT_NMSTRT: \
   case BT_HEX: \
     ptr += MINBPC(enc); \
@@ -602,7 +604,7 @@ PREFIX(scanAtts)(const ENCODING *enc, const char *ptr, const char *end,
           return XML_TOK_INVALID;
         }
       }
-    /* fall through */
+      /* fall through */
     case BT_EQUALS:
       {
         int open;
@@ -1442,6 +1444,7 @@ PREFIX(isPublicId)(const ENCODING *enc, const char *ptr, const char *end,
     case BT_NMSTRT:
       if (!(BYTE_TO_ASCII(enc, ptr) & ~0x7f))
         break;
+      /* fall through */
     default:
       switch (BYTE_TO_ASCII(enc, ptr)) {
       case 0x24: /* $ */
@@ -1659,8 +1662,8 @@ PREFIX(nameMatchesAscii)(const ENCODING *UNUSED_P(enc), const char *ptr1,
 {
   for (; *ptr2; ptr1 += MINBPC(enc), ptr2++) {
     if (end1 - ptr1 < MINBPC(enc)) {
-      /* This line cannot be executed.  THe incoming data has already
-       * been tokenized once, so imcomplete characters like this have
+      /* This line cannot be executed.  The incoming data has already
+       * been tokenized once, so incomplete characters like this have
        * already been eliminated from the input.  Retaining the
        * paranoia check is still valuable, however.
        */

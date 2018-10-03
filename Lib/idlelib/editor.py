@@ -2,9 +2,7 @@ import importlib.abc
 import importlib.util
 import os
 import platform
-import re
 import string
-import sys
 import tokenize
 import traceback
 import webbrowser
@@ -50,7 +48,6 @@ class EditorWindow(object):
     from idlelib.undo import UndoDelegator
     from idlelib.iomenu import IOBinding, encoding
     from idlelib import mainmenu
-    from tkinter import Toplevel, EventType
     from idlelib.statusbar import MultiStatusBar
     from idlelib.autocomplete import AutoComplete
     from idlelib.autoexpand import AutoExpand
@@ -59,6 +56,7 @@ class EditorWindow(object):
     from idlelib.paragraph import FormatParagraph
     from idlelib.parenmatch import ParenMatch
     from idlelib.rstrip import Rstrip
+    from idlelib.squeezer import Squeezer
     from idlelib.zoomheight import ZoomHeight
 
     filesystemencoding = sys.getfilesystemencoding()  # for file names
@@ -319,6 +317,9 @@ class EditorWindow(object):
         text.bind("<<zoom-height>>", self.ZoomHeight(self).zoom_height_event)
         text.bind("<<toggle-code-context>>",
                   self.CodeContext(self).toggle_code_context_event)
+        squeezer = self.Squeezer(self)
+        text.bind("<<squeeze-current-text>>",
+                  squeezer.squeeze_current_text_event)
 
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so diplayable in Tk."""
@@ -457,12 +458,19 @@ class EditorWindow(object):
         return 'break'
 
     def mousescroll(self, event):
-        "Handle scroll wheel."
-        up = {EventType.MouseWheel: event.delta >= 0 == darwin,
+        """Handle scrollwheel event.
+
+        For wheel up, event.delta = 120*n on Windows, -1*n on darwin,
+        where n can be > 1 if one scrolls fast.  Flicking the wheel
+        generates up to maybe 20 events with n up to 10 or more 1.
+        Macs use wheel down (delta = 1*n) to scroll up, so positive
+        delta means to scroll up on both systems.
+
+        X-11 sends Control-Button-4 event instead.
+        """
+        up = {EventType.MouseWheel: event.delta > 0,
               EventType.Button: event.num == 4}
-        lines = 5
-        if up[event.type]:
-            lines = -lines
+        lines = -5 if up[event.type] else 5
         self.text.yview_scroll(lines, 'units')
         return 'break'
 
@@ -1701,7 +1709,11 @@ def _editor_window(parent):  # htest #
         filename = None
     macosx.setupApp(root, None)
     edit = EditorWindow(root=root, filename=filename)
-    edit.text.bind("<<close-all-windows>>", edit.close_event)
+    text = edit.text
+    text['height'] = 10
+    for i in range(20):
+        text.insert('insert', '  '*i + str(i) + '\n')
+    # text.bind("<<close-all-windows>>", edit.close_event)
     # Does not stop error, neither does following
     # edit.text.bind("<<close-window>>", edit.close_event)
 

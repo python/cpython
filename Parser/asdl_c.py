@@ -855,17 +855,6 @@ static PyObject* ast2obj_int(long b)
 
 /* Conversion Python -> AST */
 
-static int obj2ast_singleton(PyObject *obj, PyObject** out, PyArena* arena)
-{
-    if (obj != Py_None && obj != Py_True && obj != Py_False) {
-        PyErr_SetString(PyExc_ValueError,
-                        "AST singleton must be True, False, or None");
-        return 1;
-    }
-    *out = obj;
-    return 0;
-}
-
 static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
 {
     if (obj == Py_None)
@@ -883,13 +872,11 @@ static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
 
 static int obj2ast_constant(PyObject* obj, PyObject** out, PyArena* arena)
 {
-    if (obj) {
-        if (PyArena_AddPyObject(arena, obj) < 0) {
-            *out = NULL;
-            return -1;
-        }
-        Py_INCREF(obj);
+    if (PyArena_AddPyObject(arena, obj) < 0) {
+        *out = NULL;
+        return -1;
     }
+    Py_INCREF(obj);
     *out = obj;
     return 0;
 }
@@ -898,24 +885,6 @@ static int obj2ast_identifier(PyObject* obj, PyObject** out, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && obj != Py_None) {
         PyErr_SetString(PyExc_TypeError, "AST identifier must be of type str");
-        return 1;
-    }
-    return obj2ast_object(obj, out, arena);
-}
-
-static int obj2ast_string(PyObject* obj, PyObject** out, PyArena* arena)
-{
-    if (!PyUnicode_CheckExact(obj) && !PyBytes_CheckExact(obj)) {
-        PyErr_SetString(PyExc_TypeError, "AST string must be of type str");
-        return 1;
-    }
-    return obj2ast_object(obj, out, arena);
-}
-
-static int obj2ast_bytes(PyObject* obj, PyObject** out, PyArena* arena)
-{
-    if (!PyBytes_CheckExact(obj)) {
-        PyErr_SetString(PyExc_TypeError, "AST bytes must be of type bytes");
         return 1;
     }
     return obj2ast_object(obj, out, arena);
