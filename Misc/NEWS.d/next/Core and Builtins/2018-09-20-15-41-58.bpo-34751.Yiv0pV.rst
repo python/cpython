@@ -1,0 +1,1 @@
+Improved hash function for tuples to make collisions less likely.

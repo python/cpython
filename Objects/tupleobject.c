@@ -333,38 +333,56 @@ error:
     return NULL;
 }
 
-/* The addend 82520, was selected from the range(0, 1000000) for
-   generating the greatest number of prime multipliers for tuples
-   up to length eight:
 
-     1082527, 1165049, 1082531, 1165057, 1247581, 1330103, 1082533,
-     1330111, 1412633, 1165069, 1247599, 1495177, 1577699
+/* Hash for tuples. The structure is that of a standard FNV-1a hash.
+   We are not using the usual FNV multiplier: testing has shown that
+   the many 0 bits tend to create sporadic collisions.
+
+   We compute the hash with unsigned variables for well-defined
+   overflow behavior.
 
    Tests have shown that it's not worth to cache the hash value, see
-   issue #9685.
+   https://bugs.python.org/issue9685
 */
-
 static Py_hash_t
 tuplehash(PyTupleObject *v)
 {
-    Py_uhash_t x;  /* Unsigned for defined overflow behavior. */
-    Py_hash_t y;
-    Py_ssize_t len = Py_SIZE(v);
-    PyObject **p;
-    Py_uhash_t mult = _PyHASH_MULTIPLIER;
-    x = 0x345678UL;
-    p = v->ob_item;
-    while (--len >= 0) {
-        y = PyObject_Hash(*p++);
-        if (y == -1)
+    /* Arbitrary starting value, any non-zero value would work.
+       The starting value is meant to:
+       - provide a class signature: this value should be specific to
+         tuples to make hashes of tuples different from other classes.
+       - encode the length of the tuple: thanks to the non-zero
+         starting value and a good choice of multiplier, the hashes of
+         all-zero tuples (0,) *  N are all different.
+    */
+    Py_uhash_t x = 3430008;
+    Py_uhash_t MUL = _PyHASH_MULTIPLIER2, ERR = -1;
+    Py_ssize_t i, len = Py_SIZE(v);
+    PyObject **item = v->ob_item;
+    for (i = 0; i < len; i++) {
+        Py_uhash_t y = PyObject_Hash(item[i]);
+        if (y == ERR) {
             return -1;
-        x = (x ^ y) * mult;
-        /* the cast might truncate len; that doesn't change hash stability */
-        mult += (Py_hash_t)(82520UL + len + len);
+        }
+        /* We modify the hash of the items slightly to solve two problems:
+           - it fixes hash collisions for nested tuples like (a, (b, c))
+           - it works around a weakness of the FNV hash algorithm due to
+             x ^ -2 == -x for odd x.
+             See https://bugs.python.org/issue34751 for details.
+           Note that this operation is a permutation, so it cannot introduce
+           additional collisions. */
+        y ^= 2 * y;
+
+        /* This is the FNV-1a hash operation */
+        x = (x ^ y) * MUL;
     }
-    x += 97531UL;
-    if (x == (Py_uhash_t)-1)
-        x = -2;
+    /* This final addition is only kept for historical reasons, it does
+       not serve any known purpose. */
+    x += 97531;
+
+    if (x == ERR) {
+        return -2;
+    }
     return x;
 }
 
