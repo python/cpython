@@ -1,0 +1,1 @@
+Fix self-cancellation in C implementation of asyncio.Task
