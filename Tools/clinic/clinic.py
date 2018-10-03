@@ -3254,6 +3254,10 @@ class Py_buffer_converter(CConverter):
                 if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_SIMPLE) != 0) {{{{
                     goto exit;
                 }}}}
+                if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
+                    _PyErr_BadArgument("{{name}}", "contiguous buffer", {argname});
+                    goto exit;
+                }}}}
                 """.format(argname=argname, paramname=self.name)
         elif self.format_unit == 's*':
             return """
@@ -3269,12 +3273,15 @@ class Py_buffer_converter(CConverter):
                     if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_SIMPLE) != 0) {{{{
                         goto exit;
                     }}}}
+                    if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
+                        _PyErr_BadArgument("{{name}}", "contiguous buffer", {argname});
+                        goto exit;
+                    }}}}
                 }}}}
                 """.format(argname=argname, paramname=self.name)
         elif self.format_unit == 'w*':
             return """
                 if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_WRITABLE) < 0) {{{{
-                    _PyErr_BadArgument("{{name}}", "read-write bytes-like object", {argname});
                     goto exit;
                 }}}}
                 if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{

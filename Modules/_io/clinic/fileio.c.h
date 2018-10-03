@@ -157,7 +157,6 @@ _io_FileIO_readinto(fileio *self, PyObject *arg)
     Py_buffer buffer = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
-        _PyErr_BadArgument("readinto", "read-write bytes-like object", arg);
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
@@ -251,6 +250,10 @@ _io_FileIO_write(fileio *self, PyObject *arg)
     Py_buffer b = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&b, 'C')) {
+        _PyErr_BadArgument("write", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io_FileIO_write_impl(self, &b);
@@ -378,4 +381,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=5165002e37eaed24 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=13ff9ef76ca044d0 input=a9049054013a1b77]*/

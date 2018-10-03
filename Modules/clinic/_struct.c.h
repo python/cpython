@@ -60,6 +60,10 @@ Struct_unpack(PyStructObject *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+        _PyErr_BadArgument("unpack", "contiguous buffer", arg);
+        goto exit;
+    }
     return_value = Struct_unpack_impl(self, &buffer);
 
 exit:
@@ -303,4 +307,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=0146256f8e2a8111 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f94c0e7c109769bf input=a9049054013a1b77]*/

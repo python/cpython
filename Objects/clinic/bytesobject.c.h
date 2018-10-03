@@ -69,6 +69,10 @@ bytes_partition(PyBytesObject *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &sep, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&sep, 'C')) {
+        _PyErr_BadArgument("partition", "contiguous buffer", arg);
+        goto exit;
+    }
     return_value = bytes_partition_impl(self, &sep);
 
 exit:
@@ -106,6 +110,10 @@ bytes_rpartition(PyBytesObject *self, PyObject *arg)
     Py_buffer sep = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &sep, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&sep, 'C')) {
+        _PyErr_BadArgument("rpartition", "contiguous buffer", arg);
         goto exit;
     }
     return_value = bytes_rpartition_impl(self, &sep);
@@ -504,4 +512,4 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2e94e4974041a0de input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fe1cc91bff458fc4 input=a9049054013a1b77]*/

@@ -157,7 +157,6 @@ _io__WindowsConsoleIO_readinto(winconsoleio *self, PyObject *arg)
     Py_buffer buffer = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
-        _PyErr_BadArgument("readinto", "read-write bytes-like object", arg);
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
@@ -263,6 +262,10 @@ _io__WindowsConsoleIO_write(winconsoleio *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&b, 'C')) {
+        _PyErr_BadArgument("write", "contiguous buffer", arg);
+        goto exit;
+    }
     return_value = _io__WindowsConsoleIO_write_impl(self, &b);
 
 exit:
@@ -333,4 +336,4 @@ _io__WindowsConsoleIO_isatty(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=06e4655bbabff31c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=21005cb3b728c616 input=a9049054013a1b77]*/

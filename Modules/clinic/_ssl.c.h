@@ -214,6 +214,10 @@ _ssl__SSLSocket_write(PySSLSocket *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&b, 'C')) {
+        _PyErr_BadArgument("write", "contiguous buffer", arg);
+        goto exit;
+    }
     return_value = _ssl__SSLSocket_write_impl(self, &b);
 
 exit:
@@ -461,6 +465,10 @@ _ssl__SSLContext__set_npn_protocols(PySSLContext *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &protos, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    if (!PyBuffer_IsContiguous(&protos, 'C')) {
+        _PyErr_BadArgument("_set_npn_protocols", "contiguous buffer", arg);
+        goto exit;
+    }
     return_value = _ssl__SSLContext__set_npn_protocols_impl(self, &protos);
 
 exit:
@@ -491,6 +499,10 @@ _ssl__SSLContext__set_alpn_protocols(PySSLContext *self, PyObject *arg)
     Py_buffer protos = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &protos, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&protos, 'C')) {
+        _PyErr_BadArgument("_set_alpn_protocols", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _ssl__SSLContext__set_alpn_protocols_impl(self, &protos);
@@ -834,6 +846,10 @@ _ssl_MemoryBIO_write(PySSLMemoryBIO *self, PyObject *arg)
     Py_buffer b = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&b, 'C')) {
+        _PyErr_BadArgument("write", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _ssl_MemoryBIO_write_impl(self, &b);
@@ -1221,4 +1237,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=025093131871337b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=04822db8eb19d598 input=a9049054013a1b77]*/

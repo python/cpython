@@ -290,6 +290,10 @@ array_array_fromstring(arrayobject *self, PyObject *arg)
         if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
             goto exit;
         }
+        if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+            _PyErr_BadArgument("fromstring", "contiguous buffer", arg);
+            goto exit;
+        }
     }
     return_value = array_array_fromstring_impl(self, &buffer);
 
@@ -321,6 +325,10 @@ array_array_frombytes(arrayobject *self, PyObject *arg)
     Py_buffer buffer = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+        _PyErr_BadArgument("frombytes", "contiguous buffer", arg);
         goto exit;
     }
     return_value = array_array_frombytes_impl(self, &buffer);
@@ -515,4 +523,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=0511ce14db117155 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c0132c5f307724a2 input=a9049054013a1b77]*/
