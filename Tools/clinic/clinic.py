@@ -3282,6 +3282,8 @@ class Py_buffer_converter(CConverter):
         elif self.format_unit == 'w*':
             return """
                 if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_WRITABLE) < 0) {{{{
+                    PyErr_Clear();
+                    _PyErr_BadArgument("{{name}}", "read-write bytes-like object", {argname});
                     goto exit;
                 }}}}
                 if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
