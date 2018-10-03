@@ -391,8 +391,8 @@ Larry
         }
 
         with self.assertRaises(ValueError):
-            form = cgi.FieldStorage(
-                fp=BytesIO(data.encode('ascii')),
+            cgi.FieldStorage(
+                fp=BytesIO(data.encode()),
                 environ=environ,
                 max_num_fields=10,
             )
@@ -403,13 +403,9 @@ Content-Disposition: form-data; name="a"
 
 a
 ---123
-Content-Disposition: form-data; name="a"
+Content-Type: application/x-www-form-urlencoded
 
-a
----123
-Content-Disposition: form-data; name="a"
-
-a
+a=a&a=a
 ---123--
 """
         environ = {
@@ -419,12 +415,20 @@ a
             'REQUEST_METHOD':   'POST',
         }
 
+        # 2 GET entities
+        # 2 top level POST entities
+        # 2 entities within the second POST entity
         with self.assertRaises(ValueError):
-            form = cgi.FieldStorage(
-                fp=BytesIO(data.encode('ascii')),
+            cgi.FieldStorage(
+                fp=BytesIO(data.encode()),
                 environ=environ,
-                max_num_fields=4,
+                max_num_fields=5,
             )
+        cgi.FieldStorage(
+            fp=BytesIO(data.encode()),
+            environ=environ,
+            max_num_fields=6,
+        )
 
     def testQSAndFormData(self):
         data = """---123
