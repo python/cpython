@@ -326,10 +326,10 @@ msvcrt_putch(PyObject *module, PyObject *arg)
     char char_value;
 
     if (PyBytes_Check(arg) && PyBytes_GET_SIZE(arg) == 1) {
-        char = PyBytes_AS_STRING(arg)[0];
+        char_value = PyBytes_AS_STRING(arg)[0];
     }
     else if (PyByteArray_Check(arg) && PyByteArray_GET_SIZE(arg) == 1) {
-        char = PyByteArray_AS_STRING(arg)[0];
+        char_value = PyByteArray_AS_STRING(arg)[0];
     }
     else {
         _PyErr_BadArgument("putch", "a byte string of length 1", arg);
@@ -400,10 +400,10 @@ msvcrt_ungetch(PyObject *module, PyObject *arg)
     char char_value;
 
     if (PyBytes_Check(arg) && PyBytes_GET_SIZE(arg) == 1) {
-        char = PyBytes_AS_STRING(arg)[0];
+        char_value = PyBytes_AS_STRING(arg)[0];
     }
     else if (PyByteArray_Check(arg) && PyByteArray_GET_SIZE(arg) == 1) {
-        char = PyByteArray_AS_STRING(arg)[0];
+        char_value = PyByteArray_AS_STRING(arg)[0];
     }
     else {
         _PyErr_BadArgument("ungetch", "a byte string of length 1", arg);
@@ -619,4 +619,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=a9221c4517723257 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7879144fe65b3ed5 input=a9049054013a1b77]*/

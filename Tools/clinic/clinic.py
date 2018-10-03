@@ -2344,7 +2344,7 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     # keep in sync with self_converter.__init__!
     def __init__(self, name, py_name, function, default=unspecified, *, c_default=None, py_default=None, annotation=unspecified, **kwargs):
-        self.name = name
+        self.name = ensure_legal_c_identifier(name)
         self.py_name = py_name
 
         if default is not unspecified:
@@ -2381,8 +2381,7 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     def _render_self(self, parameter, data):
         self.parameter = parameter
-        original_name = self.name
-        name = ensure_legal_c_identifier(original_name)
+        name = self.name
 
         # impl_arguments
         s = ("&" if self.impl_by_reference else "") + name
@@ -2397,8 +2396,7 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     def _render_non_self(self, parameter, data):
         self.parameter = parameter
-        original_name = self.name
-        name = ensure_legal_c_identifier(original_name)
+        name = self.name
 
         # declarations
         d = self.declaration()
@@ -2447,7 +2445,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """Computes the name of the associated "length" variable."""
         if not self.length:
             return None
-        return ensure_legal_c_identifier(self.name) + "_length"
+        return self.name + "_length"
 
     # Why is this one broken out separately?
     # For "positional-only" function parsing,
@@ -2463,8 +2461,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         elif self.subclass_of:
             list.append(self.subclass_of)
 
-        legal_name = ensure_legal_c_identifier(self.name)
-        s = ("&" if self.parse_by_reference else "") + legal_name
+        s = ("&" if self.parse_by_reference else "") + self.name
         list.append(s)
 
         if self.length:
@@ -2485,7 +2482,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             prototype.append(" ")
         if by_reference:
             prototype.append('*')
-        prototype.append(ensure_legal_c_identifier(self.name))
+        prototype.append(self.name)
         return "".join(prototype)
 
     def declaration(self):
@@ -3102,7 +3099,7 @@ class str_converter(CConverter):
 
     def cleanup(self):
         if self.encoding:
-            name = ensure_legal_c_identifier(self.name)
+            name = self.name
             return "".join(["if (", name, ") {\n   PyMem_FREE(", name, ");\n}\n"])
 
     def parse_arg(self, argname):
@@ -3245,7 +3242,7 @@ class Py_buffer_converter(CConverter):
         self.format_unit = format_unit
 
     def cleanup(self):
-        name = ensure_legal_c_identifier(self.name)
+        name = self.name
         return "".join(["if (", name, ".obj) {\n   PyBuffer_Release(&", name, ");\n}\n"])
 
     def parse_arg(self, argname):
