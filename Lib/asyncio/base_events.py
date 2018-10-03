@@ -739,7 +739,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._write_to_self()
         return handle
 
-    def run_in_executor(self, executor, func, *args, context=None):
+    def run_in_executor(self, executor, func, *args, context=None,
+                        retain_context=False):
         self._check_closed()
         if self._debug:
             self._check_callback(func, 'run_in_executor')
@@ -749,14 +750,27 @@ class BaseEventLoop(events.AbstractEventLoop):
                 executor = concurrent.futures.ThreadPoolExecutor()
                 self._default_executor = executor
 
-        if context is None:
-            context = contextvars.copy_context()
+        if retain_context:
+            if not isinstance(executor, concurrent.futures.ThreadPoolExecutor):
+                raise RuntimeError(
+                    'retain_context=True supports only ThreadPoolExecutor')
 
-        if args:
-            func = functools.partial(func, *args)
+            if context is None:
+                context = contextvars.copy_context()
 
-        return futures.wrap_future(
-            executor.submit(context.run, func), loop=self)
+            if args:
+                runner = functools.partial(func, *args)
+            else:
+                runner = func
+
+            runner = functools.partial(context.run, runner)
+        else:
+            if args:
+                runner = functools.partial(func, *args)
+            else:
+                runner = func
+
+        return futures.wrap_future(executor.submit(runner), loop=self)
 
     def set_default_executor(self, executor):
         if not isinstance(executor, concurrent.futures.ThreadPoolExecutor):

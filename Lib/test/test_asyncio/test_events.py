@@ -382,7 +382,7 @@ class EventLoopTestsMixin:
             self.assertEqual(res, 'foo')
             return res
 
-        f = self.loop.run_in_executor(None, run)
+        f = self.loop.run_in_executor(None, run, retain_context=True)
         res = self.loop.run_until_complete(f)
         self.assertEqual(res, 'foo')
 
@@ -393,7 +393,7 @@ class EventLoopTestsMixin:
         def run():
             return foo_ctx.get()
 
-        f = self.loop.run_in_executor(None, run)
+        f = self.loop.run_in_executor(None, run, retain_context=True)
         res = self.loop.run_until_complete(f)
         self.assertEqual(res, 'bar')
 
@@ -402,7 +402,8 @@ class EventLoopTestsMixin:
             return foo_ctx.get()
 
         context = contextvars.copy_context()
-        f = self.loop.run_in_executor(None, run, context=context)
+        f = self.loop.run_in_executor(None, run, context=context,
+                                      retain_context=True)
         res = self.loop.run_until_complete(f)
         self.assertEqual(res, 'bar')
 
@@ -411,9 +412,20 @@ class EventLoopTestsMixin:
             return (arg, foo_ctx.get())
 
         context = contextvars.copy_context()
-        f = self.loop.run_in_executor(None, run, 'yo', context=context)
+        f = self.loop.run_in_executor(None, run, 'yo', context=context,
+                                      retain_context=True)
         res = self.loop.run_until_complete(f)
         self.assertEqual(res, ('yo', 'bar'))
+
+    def test_run_in_executor_context_subprocess(self):
+        def run(arg):
+            pass
+
+        pool = concurrent.futures.ProcessPoolExecutor()
+        context = contextvars.copy_context()
+        with self.assertRaises(RuntimeError):
+            self.loop.run_in_executor(pool, run, retain_context=True)
+        pool.shutdown()
 
     def test_reader_callback(self):
         r, w = socket.socketpair()
