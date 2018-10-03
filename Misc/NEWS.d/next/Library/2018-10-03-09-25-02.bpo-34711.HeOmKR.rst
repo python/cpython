@@ -1,0 +1,3 @@
+Reject as HTTPStatus.NOT_FOUND if path.endswith("/") and not a directory
+See also issue17324
+Patch by aixtools
