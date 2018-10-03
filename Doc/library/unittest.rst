@@ -965,7 +965,7 @@ Test cases
 
 
    .. method:: assertRaisesRegex(exception, regex, callable, *args, **kwds)
-               assertRaisesRegex(exception, regex, msg=None)
+               assertRaisesRegex(exception, regex, *, msg=None)
 
       Like :meth:`assertRaises` but also tests that *regex* matches
       on the string representation of the raised exception.  *regex* may be
@@ -991,7 +991,7 @@ Test cases
 
 
    .. method:: assertWarns(warning, callable, *args, **kwds)
-               assertWarns(warning, msg=None)
+               assertWarns(warning, *, msg=None)
 
       Test that a warning is triggered when *callable* is called with any
       positional or keyword arguments that are also passed to
@@ -1032,7 +1032,7 @@ Test cases
 
 
    .. method:: assertWarnsRegex(warning, regex, callable, *args, **kwds)
-               assertWarnsRegex(warning, regex, msg=None)
+               assertWarnsRegex(warning, regex, *, msg=None)
 
       Like :meth:`assertWarns` but also tests that *regex* matches on the
       message of the triggered warning.  *regex* may be a regular expression
