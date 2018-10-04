@@ -649,7 +649,6 @@ DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
 DTRACE
-LDLAST
 TCLTK_LIBS
 TCLTK_INCLUDES
 LIBFFI_INCLUDEDIR
@@ -10291,8 +10290,6 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_dbmliborder" >&5
 $as_echo "$with_dbmliborder" >&6; }
-
-
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
