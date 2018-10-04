@@ -3163,7 +3163,13 @@ class ConfigDictTest(BaseTest):
         ], pat=r"^[\w.]+ -> (\w+): (\d+)$")
 
     def test_out_of_order(self):
-        self.apply_config(self.out_of_order)
+        self.assertRaises(ValueError, self.apply_config, self.out_of_order)
+
+    def test_out_of_order_with_dollar_style(self):
+        config = self.out_of_order.copy()
+        config['formatters']['mySimpleFormatter']['format'] = "${asctime} (${name}) ${levelname}: ${message}"
+
+        self.apply_config(config)
         handler = logging.getLogger('mymodule').handlers[0]
         self.assertIsInstance(handler.target, logging.Handler)
         self.assertIsInstance(handler.formatter._style,
@@ -3491,14 +3497,17 @@ class FormatterTest(unittest.TestCase):
         f = logging.Formatter('${%(message)s}')
         self.assertEqual(f.format(r), '${Message with 2 placeholders}')
         f = logging.Formatter('%(random)s')
-        self.assertRaises(KeyError, f.format, r)
+        self.assertRaises(ValueError, f.format, r)
         self.assertFalse(f.usesTime())
         f = logging.Formatter('%(asctime)s')
         self.assertTrue(f.usesTime())
         f = logging.Formatter('%(asctime)-15s')
         self.assertTrue(f.usesTime())
-        f = logging.Formatter('asctime')
-        self.assertFalse(f.usesTime())
+        f = logging.Formatter('%(asctime) - 15s')
+        self.assertTrue(f.usesTime())
+        # Testing ValueError raised from mismatching format
+        self.assertRaises(ValueError, logging.Formatter, '{asctime}')
+        self.assertRaises(ValueError, logging.Formatter, '${message}')
 
     def test_braces(self):
         # Test {}-formatting
@@ -3506,7 +3515,8 @@ class FormatterTest(unittest.TestCase):
         f = logging.Formatter('$%{message}%$', style='{')
         self.assertEqual(f.format(r), '$%Message with 2 placeholders%$')
         f = logging.Formatter('{random}', style='{')
-        self.assertRaises(KeyError, f.format, r)
+        self.assertRaises(ValueError, f.format, r)
+        f = logging.Formatter("{message}", style='{')
         self.assertFalse(f.usesTime())
         f = logging.Formatter('{asctime}', style='{')
         self.assertTrue(f.usesTime())
@@ -3514,27 +3524,28 @@ class FormatterTest(unittest.TestCase):
         self.assertTrue(f.usesTime())
         f = logging.Formatter('{asctime:15}', style='{')
         self.assertTrue(f.usesTime())
-        f = logging.Formatter('asctime', style='{')
-        self.assertFalse(f.usesTime())
+        # Testing ValueError raised from mismatching format
+        self.assertRaises(ValueError, logging.Formatter, '%(asctime)s', style='{')
 
     def test_dollars(self):
         # Test $-formatting
         r = self.get_record()
-        f = logging.Formatter('$message', style='$')
+        f = logging.Formatter('${message}', style='$')
         self.assertEqual(f.format(r), 'Message with 2 placeholders')
         f = logging.Formatter('$$%${message}%$$', style='$')
         self.assertEqual(f.format(r), '$%Message with 2 placeholders%$')
         f = logging.Formatter('${random}', style='$')
-        self.assertRaises(KeyError, f.format, r)
+        self.assertRaises(ValueError, f.format, r)
         self.assertFalse(f.usesTime())
         f = logging.Formatter('${asctime}', style='$')
         self.assertTrue(f.usesTime())
-        f = logging.Formatter('${asctime', style='$')
+        f = logging.Formatter('${message}', style='$')
         self.assertFalse(f.usesTime())
-        f = logging.Formatter('$asctime', style='$')
+        f = logging.Formatter('${asctime}--', style='$')
         self.assertTrue(f.usesTime())
-        f = logging.Formatter('asctime', style='$')
-        self.assertFalse(f.usesTime())
+        # Testing ValueError raised from mismatching format
+        self.assertRaises(ValueError, logging.Formatter, '{asctime}', style='$')
+        self.assertRaises(ValueError, logging.Formatter, '%(asctime)s', style='$')
 
     def test_invalid_style(self):
         self.assertRaises(ValueError, logging.Formatter, None, None, 'x')
@@ -4000,10 +4011,10 @@ class BasicConfigTest(unittest.TestCase):
         self.assertEqual(handler.stream, stream)
 
     def test_format(self):
-        logging.basicConfig(format='foo')
+        logging.basicConfig(format='%(asctime)s - %(message)s')
 
         formatter = logging.root.handlers[0].formatter
-        self.assertEqual(formatter._style._fmt, 'foo')
+        self.assertEqual(formatter._style._fmt, '%(asctime)s - %(message)s')
 
     def test_datefmt(self):
         logging.basicConfig(datefmt='bar')
@@ -4032,11 +4043,11 @@ class BasicConfigTest(unittest.TestCase):
         handlers = [logging.StreamHandler()]
         stream = sys.stderr
         assertRaises(ValueError, logging.basicConfig, filename='test.log',
-                                                     stream=stream)
+                                                      stream=stream)
         assertRaises(ValueError, logging.basicConfig, filename='test.log',
-                                                     handlers=handlers)
+                                                      handlers=handlers)
         assertRaises(ValueError, logging.basicConfig, stream=stream,
-                                                     handlers=handlers)
+                                                      handlers=handlers)
         # Issue 23207: test for invalid kwargs
         assertRaises(ValueError, logging.basicConfig, loglevel=logging.INFO)
         # Should pop both filename and filemode even if filename is None

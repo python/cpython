@@ -23,9 +23,12 @@ Copyright (C) 2001-2017 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, os, time, io, traceback, warnings, weakref, collections.abc
+import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
 
 from string import Template
+
+from contextlib import contextmanager
+
 
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'FATAL', 'FileHandler', 'Filter', 'Formatter', 'Handler', 'INFO',
@@ -413,10 +416,10 @@ def makeLogRecord(dict):
     rv.__dict__.update(dict)
     return rv
 
+
 #---------------------------------------------------------------------------
 #   Formatter classes and functions
 #---------------------------------------------------------------------------
-
 class PercentStyle(object):
 
     default_format = '%(message)s'
@@ -426,11 +429,32 @@ class PercentStyle(object):
     def __init__(self, fmt):
         self._fmt = fmt or self.default_format
 
+    @contextmanager
+    def _verifyFields(self):
+        """
+        Verify if fields passed into XXXStyle.
+        """
+        try:
+            yield
+        except KeyError as e:
+            raise ValueError("Invalid formatting field %s" % e)
+
     def usesTime(self):
         return self._fmt.find(self.asctime_search) >= 0
 
+    def validate(self):
+        self._validateFormat(r'(\%\([^%()]+\)[\s\d-]*[\w]+)')
+
+    def _validateFormat(self, expression):
+        matches = re.search(expression, self._fmt)
+        if matches is None:
+            raise ValueError('Invalid format %(fmt)s for %(style)s style'
+                             % {"fmt": self._fmt, "style": self.default_format[0]})
+
     def format(self, record):
-        return self._fmt % record.__dict__
+        with self._verifyFields():
+            return self._fmt % record.__dict__
+
 
 class StrFormatStyle(PercentStyle):
     default_format = '{message}'
@@ -438,7 +462,11 @@ class StrFormatStyle(PercentStyle):
     asctime_search = '{asctime'
 
     def format(self, record):
-        return self._fmt.format(**record.__dict__)
+        with self._verifyFields():
+            return self._fmt.format(**record.__dict__)
+
+    def validate(self):
+        self._validateFormat(r'(\{[^{}]+\})')
 
 
 class StringTemplateStyle(PercentStyle):
@@ -455,7 +483,13 @@ class StringTemplateStyle(PercentStyle):
         return fmt.find('$asctime') >= 0 or fmt.find(self.asctime_format) >= 0
 
     def format(self, record):
-        return self._tpl.substitute(**record.__dict__)
+        with self._verifyFields():
+            return self._tpl.substitute(**record.__dict__)
+
+    def validate(self):
+        with self._verifyFields():
+            self._validateFormat(r'(\$\{[^${}]+\})')
+
 
 BASIC_FORMAT = "%(levelname)s:%(name)s:%(message)s"
 
@@ -530,6 +564,8 @@ class Formatter(object):
             raise ValueError('Style must be one of: %s' % ','.join(
                              _STYLES.keys()))
         self._style = _STYLES[style][0](fmt)
+        self._style.validate()
+
         self._fmt = self._style._fmt
         self.datefmt = datefmt
 
