@@ -63,6 +63,25 @@ class TestCgitb(unittest.TestCase):
         self.assertNotIn('<p>', out)
         self.assertNotIn('</p>', out)
 
+    def test_exception_text(self):
+        # Issue 27165: Exclude callables from exception details
+        try:
+            raise Exception("text foo")
+        except Exception as e:
+            exc_text = cgitb.text(sys.exc_info())
+            print(exc_text)
+            self.assertNotIn('__init__', exc_text)
+            self.assertNotIn('__reduce__', exc_text)
+
+    def test_exception_html(self):
+        # Issue 27165: Exclude callables from exception details
+        try:
+            raise Exception("html foo")
+        except Exception as e:
+            exc_html = cgitb.html(sys.exc_info())
+            print(exc_html)
+            self.assertNotIn('__init__', exc_html)
+            self.assertNotIn('__reduce__', exc_html)
 
 if __name__ == "__main__":
     unittest.main()
