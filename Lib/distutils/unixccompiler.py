@@ -84,19 +84,22 @@ class UnixCCompiler(CCompiler):
 
     def preprocess(self, source, output_file=None, macros=None,
                    include_dirs=None, extra_preargs=None, extra_postargs=None):
+        import shutil
         fixed_args = self._fix_compile_args(None, macros, include_dirs)
         ignore, macros, include_dirs = fixed_args
         pp_opts = gen_preprocess_options(macros, include_dirs)
         pp_args = self.preprocessor + pp_opts
+        _is_xlc = shutil.which(self.preprocessor[0]).startswith("/usr/vac")
 
         # IBM compiler xlc requires '-C' to include comments in cpp output
-        pp_gcc = self._is_gcc(self.preprocessor)
-        if not pp_gcc and sys.platform[:3] == 'aix':
-            pp_args.append('-C')
         # IBM compiler xlc: -E output is ONLY to stdout - i.e., -o is not supported
-        if output_file:
-            if pp_gcc or sys.platform[:3] != 'aix':
-                pp_args.extend(['-o', output_file])
+        if _is_xlc:
+            pp_args.append('-C')
+        if output_file and not _is_xlc:
+            pp_args.extend(['-o', output_file])
+        elif _is_xlc:
+                raise TypeError("%s cannot redirect stdout to file %s" %
+                      (self.preprocessor[0], output_file))
         if extra_preargs:
             pp_args[:0] = extra_preargs
         if extra_postargs:

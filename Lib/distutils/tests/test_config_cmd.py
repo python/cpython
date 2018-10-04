@@ -39,18 +39,17 @@ class ConfigTestCase(support.LoggingSilencer,
 
     @unittest.skipIf(sys.platform == 'win32', "can't test on Windows")
     def test_search_cpp(self):
+        import shutil
         cmd = missing_compiler_executable(['preprocessor'])
         if cmd is not None:
             self.skipTest('The %r command is not found' % cmd)
         pkg_dir, dist = self.create_dist()
         cmd = config(dist)
-        # XLC (cc, xlc, xlC, etc) does not accept "-o to redirect the output of -E"
-        # redirected output is needed to perform cmd.search_cpp()
-        if sys.platform[:3] == "aix":
-            cppcompiler = cmd.check_compiler()
-            cpp_cmd = cppcompiler.preprocessor[0]
-            if not cpp_cmd.startswith("g"):
-                self.skipTest('The command %s does not support arguments "-E -o"' % cpp_cmd)
+        cmd._check_compiler()
+        compiler = cmd.compiler
+        is_xlc = shutil.which(compiler.preprocessor[0]).startswith("/usr/vac")
+        if is_xlc:
+            self.skipTest('xlc: The -E option overrides the -P, -o, and -qsyntaxonly options')
 
         # simple pattern searches
         match = cmd.search_cpp(pattern='xxx', body='/* xxx */')
