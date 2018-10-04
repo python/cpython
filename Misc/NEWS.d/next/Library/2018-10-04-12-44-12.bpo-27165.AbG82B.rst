@@ -1,0 +1,1 @@
+cgitb skips callable exception fields when creating exception description, both in HTML and text format
