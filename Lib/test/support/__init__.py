@@ -2725,7 +2725,7 @@ def missing_compiler_executable(cmd_names=[]):
         if cmd_names:
             assert cmd is not None, \
                     "the '%s' executable is not configured" % name
-        elif not cmd or cmd is None:
+        elif cmd is None:
             continue
         if spawn.find_executable(cmd[0]) is None:
             return cmd[0]
