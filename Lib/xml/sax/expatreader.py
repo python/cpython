@@ -177,7 +177,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         elif name == property_xml_string:
             if self._parser:
                 if hasattr(self._parser, "GetInputContext"):
-                    return self._parser.GetInputContext()
+                    return self._parser.GetInputContext().decode()
                 else:
                     raise SAXNotRecognizedException(
                         "This version of expat does not support getting"
