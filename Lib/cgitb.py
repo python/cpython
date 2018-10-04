@@ -174,7 +174,9 @@ function calls leading up to the error, in the order they occurred.</p>'''
                                 pydoc.html.escape(str(evalue)))]
     for name in dir(evalue):
         if name[:1] == '_': continue
-        value = pydoc.html.repr(getattr(evalue, name))
+        attr_val = getattr(evalue, name)
+        if callable(attr_val): continue
+        value = pydoc.html.repr(attr_val)
         exception.append('\n<br>%s%s&nbsp;=\n%s' % (indent, name, value))
 
     return head + ''.join(frames) + ''.join(exception) + '''
@@ -244,7 +246,9 @@ function calls leading up to the error, in the order they occurred.
 
     exception = ['%s: %s' % (str(etype), str(evalue))]
     for name in dir(evalue):
-        value = pydoc.text.repr(getattr(evalue, name))
+        attr_val = getattr(evalue, name)
+        if callable(attr_val): continue
+        value = pydoc.text.repr(attr_val)
         exception.append('\n%s%s = %s' % (" "*4, name, value))
 
     return head + ''.join(frames) + ''.join(exception) + '''
