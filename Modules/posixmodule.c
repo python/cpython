@@ -30,6 +30,7 @@
 #ifndef MS_WINDOWS
 #include "posixmodule.h"
 #else
+#include <shlwapi.h>
 #include "winreparse.h"
 #endif
 #include "internal/pystate.h"
@@ -7657,23 +7658,47 @@ check_CreateSymbolicLink(void)
     return Py_CreateSymbolicLinkW != NULL;
 }
 
+static int _PPathCchRemoveFileSpec_Initialized = 0;
+typedef HRESULT(__stdcall *PPathCchRemoveFileSpec)(PWSTR pszPath, size_t cchPath);
+static PPathCchRemoveFileSpec _PPathCchRemoveFileSpec;
+
 /* Remove the last portion of the path - return 0 on success */
 static int
 _dirnameW(WCHAR *path)
 {
     WCHAR *ptr;
-    size_t length = wcsnlen_s(path, MAX_PATH);
-    if (length == MAX_PATH) {
-        return -1;
+    size_t length = wcslen(path);
+
+    if (!_PPathCchRemoveFileSpec_Initialized) {
+        HMODULE pathapi = LoadLibraryW(L"api-ms-win-core-path-l1-1-0.dll");
+        if (pathapi) {
+            _PPathCchRemoveFileSpec = (PPathCchRemoveFileSpec)GetProcAddress(pathapi, "PathCchRemoveFileSpec");
+        }
+        else {
+            _PPathCchRemoveFileSpec = NULL;
+        }
+        _PPathCchRemoveFileSpec_Initialized = 1;
     }
 
-    /* walk the path from the end until a backslash is encountered */
-    for(ptr = path + length; ptr != path; ptr--) {
-        if (*ptr == L'\\' || *ptr == L'/') {
-            break;
+    if (_PPathCchRemoveFileSpec) {
+        if (FAILED(_PPathCchRemoveFileSpec(path, length))) {
+            Py_FatalError("Error removing path element in _dirnameW");
         }
     }
-    *ptr = 0;
+    else {
+        if (length >= MAX_PATH) {
+            return -1;
+        }
+
+        /* walk the path from the end until a backslash is encountered */
+        for (ptr = path + length; ptr != path; ptr--) {
+            if (*ptr == L'\\' || *ptr == L'/') {
+                break;
+            }
+        }
+        *ptr = 0;
+    }
+
     return 0;
 }
 
