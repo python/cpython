@@ -131,6 +131,27 @@ class ImplementationDetail(Directive):
         return [pnode]
 
 
+# Support for documenting platform availability
+
+class Availability(Directive):
+
+    has_content = False
+    required_arguments = 1
+    optional_arguments = 0
+    final_argument_whitespace = True
+    has_content = False
+
+    def run(self):
+        pnode = nodes.paragraph(classes=['availability'])
+        n, m = self.state.inline_text(':ref:`Availability <availability>`: ',
+                                      self.lineno)
+        pnode.extend(n + m)
+        n, m = self.state.inline_text(self.arguments[0], self.lineno)
+        pnode.extend(n + m)
+        pnode += nodes.Text('.', '.')
+        return [pnode]
+
+
 # Support for documenting decorators
 
 class PyDecoratorMixin(object):
@@ -401,6 +422,7 @@ def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
+    app.add_directive('availability', Availability)
     app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
     app.add_builder(suspicious.CheckSuspiciousMarkupBuilder)
