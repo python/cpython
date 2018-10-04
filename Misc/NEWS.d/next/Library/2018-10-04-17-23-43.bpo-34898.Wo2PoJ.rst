@@ -1,0 +1,1 @@
+Add `mtime` argument to `gzip.compress` for reproducible output.
