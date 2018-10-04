@@ -113,7 +113,7 @@ def run_until(loop, pred, timeout=30):
             timeout = deadline - time.time()
             if timeout <= 0:
                 raise futures.TimeoutError()
-        loop.run_until_complete(tasks.sleep(0.001, loop=loop))
+        loop.run_until_complete(tasks.sleep(0.001))
 
 
 def run_once(loop):
