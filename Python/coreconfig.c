@@ -295,6 +295,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(_install_importlib);
     COPY_ATTR(allocator);
     COPY_ATTR(dev_mode);
+    COPY_ATTR(noopt_mode);
     COPY_ATTR(faulthandler);
     COPY_ATTR(tracemalloc);
     COPY_ATTR(import_time);
@@ -944,6 +945,10 @@ config_read_complex_options(_PyCoreConfig *config)
         _PyCoreConfig_GetEnv(config, "PYTHONDEVMODE"))
     {
         config->dev_mode = 1;
+    }
+    if (config_get_xoption(config, L"noopt"))
+    {
+        config->noopt_mode = 1;
     }
 
     _PyInitError err;

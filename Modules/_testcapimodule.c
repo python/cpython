@@ -4687,6 +4687,8 @@ get_coreconfig(PyObject *self, PyObject *Py_UNUSED(args))
              FROM_STRING(config->allocator));
     SET_ITEM("dev_mode",
              PyLong_FromLong(config->dev_mode));
+    SET_ITEM("noopt_mode",
+             PyLong_FromLong(config->noopt_mode));
     SET_ITEM("faulthandler",
              PyLong_FromLong(config->faulthandler));
     SET_ITEM("tracemalloc",

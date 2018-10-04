@@ -49,6 +49,7 @@ typedef struct {
 
     const char *allocator;  /* Memory allocator: PYTHONMALLOC */
     int dev_mode;           /* PYTHONDEVMODE, -X dev */
+    int noopt_mode;         /* -X noopt */
 
     /* Enable faulthandler?
        Set to 1 by -X faulthandler and PYTHONFAULTHANDLER. -1 means unset. */

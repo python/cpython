@@ -320,6 +320,7 @@ dump_config(void)
     printf("allocator = %s\n", config->allocator);
 
     printf("dev_mode = %i\n", config->dev_mode);
+    printf("noopt_mode = %i\n", config->noopt_mode);
     printf("faulthandler = %i\n", config->faulthandler);
     printf("tracemalloc = %i\n", config->tracemalloc);
     printf("import_time = %i\n", config->import_time);

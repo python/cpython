@@ -27,6 +27,7 @@
 #include "node.h"
 #include "ast.h"
 #include "code.h"
+#include "internal/pystate.h"
 #include "symtable.h"
 #include "opcode.h"
 #include "wordcode_helpers.h"
@@ -158,6 +159,7 @@ struct compiler {
     PyCompilerFlags *c_flags;
 
     int c_optimize;              /* optimization level */
+    int c_noopt;
     int c_interactive;           /* true if in interactive mode */
     int c_nestlevel;
 
@@ -300,6 +302,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     PyCodeObject *co = NULL;
     PyCompilerFlags local_flags;
     int merged;
+    const _PyCoreConfig *conf = &_PyInterpreterState_GET_UNSAFE()->core_config;
 
     if (!__doc__) {
         __doc__ = PyUnicode_InternFromString("__doc__");
@@ -330,8 +333,14 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_optimize = (optimize == -1) ? Py_OptimizeFlag : optimize;
     c.c_nestlevel = 0;
 
-    if (!_PyAST_Optimize(mod, arena, c.c_optimize)) {
-        goto finally;
+    if (conf->noopt_mode) {
+        c.c_noopt = 1;
+    }
+    else {
+        c.c_noopt = 0;
+        if (!_PyAST_Optimize(mod, arena, c.c_optimize)) {
+            goto finally;
+        }
     }
 
     c.c_st = PySymtable_BuildObject(mod, filename, c.c_future);
@@ -2478,7 +2487,11 @@ static int
 compiler_while(struct compiler *c, stmt_ty s)
 {
     basicblock *loop, *orelse, *end, *anchor = NULL;
-    int constant = expr_constant(s->v.While.test);
+
+    int constant = -1;
+    if (!c->c_noopt) {
+        constant = expr_constant(s->v.While.test);
+    }
 
     if (constant == 0) {
         if (s->v.While.orelse)
@@ -5387,9 +5400,15 @@ makecode(struct compiler *c, struct assembler *a)
     if (flags < 0)
         goto error;
 
-    bytecode = PyCode_Optimize(a->a_bytecode, consts, names, a->a_lnotab);
-    if (!bytecode)
-        goto error;
+    if (!c->c_noopt) {
+        bytecode = PyCode_Optimize(a->a_bytecode, consts, names, a->a_lnotab);
+        if (!bytecode)
+            goto error;
+    }
+    else {
+        bytecode = a->a_bytecode;
+        Py_INCREF(bytecode);
+    }
 
     tmp = PyList_AsTuple(consts); /* PyCode_New requires a tuple */
     if (!tmp)
