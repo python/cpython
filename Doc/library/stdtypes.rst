@@ -475,7 +475,7 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.1
 
-.. method:: int.to_bytes(length, byteorder, \*, signed=False)
+.. method:: int.to_bytes(length, byteorder=None, \*, signed=False)
 
     Return an array of bytes representing an integer.
 
@@ -496,9 +496,8 @@ class`. In addition, it provides a few more methods:
     The *byteorder* argument determines the byte order used to represent the
     integer.  If *byteorder* is ``"big"``, the most significant byte is at the
     beginning of the byte array.  If *byteorder* is ``"little"``, the most
-    significant byte is at the end of the byte array.  To request the native
-    byte order of the host system, use :data:`sys.byteorder` as the byte order
-    value.
+    significant byte is at the end of the byte array.  If *byteorder* is
+    ``None``, the native byte order of the host system is used.
 
     The *signed* argument determines whether two's complement is used to
     represent the integer.  If *signed* is ``False`` and a negative integer is
@@ -507,7 +506,7 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.2
 
-.. classmethod:: int.from_bytes(bytes, byteorder, \*, signed=False)
+.. classmethod:: int.from_bytes(bytes, byteorder=None, \*, signed=False)
 
     Return the integer represented by the given array of bytes.
 
@@ -528,9 +527,8 @@ class`. In addition, it provides a few more methods:
     The *byteorder* argument determines the byte order used to represent the
     integer.  If *byteorder* is ``"big"``, the most significant byte is at the
     beginning of the byte array.  If *byteorder* is ``"little"``, the most
-    significant byte is at the end of the byte array.  To request the native
-    byte order of the host system, use :data:`sys.byteorder` as the byte order
-    value.
+    significant byte is at the end of the byte array.  If *byteorder* is
+    ``None``, the native byte order of the host system is used.
 
     The *signed* argument indicates whether two's complement is used to
     represent the integer.

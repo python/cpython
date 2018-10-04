@@ -147,7 +147,7 @@ int_as_integer_ratio(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(int_to_bytes__doc__,
-"to_bytes($self, /, length, byteorder, *, signed=False)\n"
+"to_bytes($self, /, length, byteorder=None, *, signed=False)\n"
 "--\n"
 "\n"
 "Return an array of bytes representing an integer.\n"
@@ -159,8 +159,8 @@ PyDoc_STRVAR(int_to_bytes__doc__,
 "    The byte order used to represent the integer.  If byteorder is \'big\',\n"
 "    the most significant byte is at the beginning of the byte array.  If\n"
 "    byteorder is \'little\', the most significant byte is at the end of the\n"
-"    byte array.  To request the native byte order of the host system, use\n"
-"    `sys.byteorder\' as the byte order value.\n"
+"    byte array.  If byteorder is None, the native byte order of the host\n"
+"    system is used.\n"
 "  signed\n"
 "    Determines whether two\'s complement is used to represent the integer.\n"
 "    If signed is False and a negative integer is given, an OverflowError\n"
@@ -178,9 +178,9 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"length", "byteorder", "signed", NULL};
-    static _PyArg_Parser _parser = {"nU|$p:to_bytes", _keywords, 0};
+    static _PyArg_Parser _parser = {"n|U$p:to_bytes", _keywords, 0};
     Py_ssize_t length;
-    PyObject *byteorder;
+    PyObject *byteorder = Py_None;
     int is_signed = 0;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
@@ -194,7 +194,7 @@ exit:
 }
 
 PyDoc_STRVAR(int_from_bytes__doc__,
-"from_bytes($type, /, bytes, byteorder, *, signed=False)\n"
+"from_bytes($type, /, bytes, byteorder=None, *, signed=False)\n"
 "--\n"
 "\n"
 "Return the integer represented by the given array of bytes.\n"
@@ -208,8 +208,8 @@ PyDoc_STRVAR(int_from_bytes__doc__,
 "    The byte order used to represent the integer.  If byteorder is \'big\',\n"
 "    the most significant byte is at the beginning of the byte array.  If\n"
 "    byteorder is \'little\', the most significant byte is at the end of the\n"
-"    byte array.  To request the native byte order of the host system, use\n"
-"    `sys.byteorder\' as the byte order value.\n"
+"    byte array.  If byteorder is None, the native byte order of the host\n"
+"    system is used.\n"
 "  signed\n"
 "    Indicates whether two\'s complement is used to represent the integer.");
 
@@ -225,9 +225,9 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"bytes", "byteorder", "signed", NULL};
-    static _PyArg_Parser _parser = {"OU|$p:from_bytes", _keywords, 0};
+    static _PyArg_Parser _parser = {"O|U$p:from_bytes", _keywords, 0};
     PyObject *bytes_obj;
-    PyObject *byteorder;
+    PyObject *byteorder = Py_None;
     int is_signed = 0;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
@@ -239,4 +239,4 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6d5e92d7dc803751 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4f2a70a91633519b input=a9049054013a1b77]*/
