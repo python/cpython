@@ -188,7 +188,7 @@ static int compiler_visit_slice(struct compiler *, slice_ty,
                                 expr_context_ty);
 
 static int inplace_binop(struct compiler *, operator_ty);
-static int expr_constant(expr_ty);
+static int expr_constant(struct compiler *, expr_ty);
 
 static int compiler_with(struct compiler *, stmt_ty, int);
 static int compiler_async_with(struct compiler *, stmt_ty, int);
@@ -2374,7 +2374,7 @@ compiler_if(struct compiler *c, stmt_ty s)
     if (end == NULL)
         return 0;
 
-    constant = expr_constant(s->v.If.test);
+    constant = expr_constant(c, s->v.If.test);
     /* constant = 0: "if 0"
      * constant = 1: "if 1", "if 2", ...
      * constant = -1: rest */
@@ -2488,10 +2488,7 @@ compiler_while(struct compiler *c, stmt_ty s)
 {
     basicblock *loop, *orelse, *end, *anchor = NULL;
 
-    int constant = -1;
-    if (!c->c_noopt) {
-        constant = expr_constant(s->v.While.test);
-    }
+    int constant = expr_constant(c, s->v.While.test);
 
     if (constant == 0) {
         if (s->v.While.orelse)
@@ -4218,8 +4215,11 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
  */
 
 static int
-expr_constant(expr_ty e)
+expr_constant(struct compiler *c, expr_ty e)
 {
+    if (c->c_noopt) {
+        return -1;
+    }
     if (e->kind == Constant_kind) {
         return PyObject_IsTrue(e->v.Constant.value);
     }
