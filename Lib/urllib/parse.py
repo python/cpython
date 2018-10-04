@@ -649,7 +649,7 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
         encoding and errors: specify how to decode percent-encoded sequences
             into Unicode characters, as accepted by the bytes.decode() method.
 
-        max_num_fields: Integer. If set, then throws an ValueError if there
+        max_num_fields: Integer. If set, then throws a ValueError if there
             are more than n fields read by parse_qsl().
 
         Returns a dictionary.
@@ -692,7 +692,7 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         encoding and errors: specify how to decode percent-encoded sequences
             into Unicode characters, as accepted by the bytes.decode() method.
 
-        max_num_fields: Integer. If set, then throws an ValueError
+        max_num_fields: Integer. If set, then throws a ValueError
             if there are more than n fields read by parse_qsl().
 
         Returns a list, as G-d intended.
