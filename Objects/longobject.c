@@ -5402,6 +5402,9 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
         (unsigned char *)PyBytes_AS_STRING(bytes), Py_SIZE(bytes),
         little_endian, is_signed);
     Py_DECREF(bytes);
+    if (long_obj == NULL) {
+        return NULL;
+    }
 
     if (type != &PyLong_Type) {
         Py_SETREF(long_obj, PyObject_CallFunctionObjArgs((PyObject *)type,
