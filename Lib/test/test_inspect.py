@@ -851,7 +851,7 @@ class TestClassesAndFunctions(unittest.TestCase):
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
-    def test_getfullagrspec_builtin_func(self):
+    def test_getfullargspec_builtin_func(self):
         import _testcapi
         builtin = _testcapi.docstring_with_signature_with_defaults
         spec = inspect.getfullargspec(builtin)
@@ -860,7 +860,7 @@ class TestClassesAndFunctions(unittest.TestCase):
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
-    def test_getfullagrspec_builtin_func_no_signature(self):
+    def test_getfullargspec_builtin_func_no_signature(self):
         import _testcapi
         builtin = _testcapi.docstring_no_signature
         with self.assertRaises(TypeError):
