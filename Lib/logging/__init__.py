@@ -425,54 +425,45 @@ class PercentStyle(object):
     default_format = '%(message)s'
     asctime_format = '%(asctime)s'
     asctime_search = '%(asctime)'
+    validation_pattern = r'(\%\([^%()]+\)[\s\d-]*[\w]+)'
 
     def __init__(self, fmt):
         self._fmt = fmt or self.default_format
 
-    @contextmanager
-    def _verifyFields(self):
-        """
-        Verify if fields passed into XXXStyle.
-        """
-        try:
-            yield
-        except KeyError as e:
-            raise ValueError("Invalid formatting field %s" % e)
 
     def usesTime(self):
         return self._fmt.find(self.asctime_search) >= 0
 
     def validate(self):
-        self._validateFormat(r'(\%\([^%()]+\)[\s\d-]*[\w]+)')
-
-    def _validateFormat(self, expression):
-        matches = re.search(expression, self._fmt)
-        if matches is None:
+        if not re.search(self.validation_pattern, self._fmt):
             raise ValueError('Invalid format %(fmt)s for %(style)s style'
                              % {"fmt": self._fmt, "style": self.default_format[0]})
 
+    def _format(self, record):
+        return self._fmt % record.__dict__
+
     def format(self, record):
-        with self._verifyFields():
-            return self._fmt % record.__dict__
+        try:
+            return self._format(record)
+        except KeyError as e:
+            raise ValueError("Invalid formatting field %s" % e)
 
 
 class StrFormatStyle(PercentStyle):
     default_format = '{message}'
     asctime_format = '{asctime}'
     asctime_search = '{asctime'
+    validation_pattern = r'(\{[^{}]+\})'
 
-    def format(self, record):
-        with self._verifyFields():
-            return self._fmt.format(**record.__dict__)
-
-    def validate(self):
-        self._validateFormat(r'(\{[^{}]+\})')
+    def _format(self, record):
+        return self._fmt.format(**record.__dict__)
 
 
 class StringTemplateStyle(PercentStyle):
     default_format = '${message}'
     asctime_format = '${asctime}'
     asctime_search = '${asctime}'
+    validation_pattern = r'(\$\{[^${}]+\})'
 
     def __init__(self, fmt):
         self._fmt = fmt or self.default_format
@@ -482,13 +473,8 @@ class StringTemplateStyle(PercentStyle):
         fmt = self._fmt
         return fmt.find('$asctime') >= 0 or fmt.find(self.asctime_format) >= 0
 
-    def format(self, record):
-        with self._verifyFields():
-            return self._tpl.substitute(**record.__dict__)
-
-    def validate(self):
-        with self._verifyFields():
-            self._validateFormat(r'(\$\{[^${}]+\})')
+    def _format(self, record):
+        return self._tpl.substitute(**record.__dict__)
 
 
 BASIC_FORMAT = "%(levelname)s:%(name)s:%(message)s"
