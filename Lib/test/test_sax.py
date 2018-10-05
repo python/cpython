@@ -1316,33 +1316,44 @@ class XmlReaderTest(XmlTestBase):
 #
 #   Sax parser property tests
 #
+#   Currently only tests the condition reported in issue bpo-6686
+#
 # ===========================================================================
 
-class PropertyContentHandler(ContentHandler):
+class PropertyContentHandler(XMLGenerator):
     def __init__(self, test_harness, reader, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        test_harness.result = StringIO()
+        super().__init__(test_harness.result, *args,
+                         encoding='UTF-8', **kwargs)
         self.test_harness = test_harness
         self.reader = reader
 
-    def startElement(self, name, attr):  # @UnusedVariable
+    def startElement(self, name, attr):
         property_ = self.reader.getProperty(property_xml_string)
         self.test_harness.assertIsInstance(property_, str)
+        super().startElement(name, attr)
 
 
 class SaxPropertyTest(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.result = None
+
     def test_xml_str_str(self):
         reader = create_parser()
         reader.setContentHandler(PropertyContentHandler(self, reader))
-        reader.feed('<?xml version="1.0" encoding="UTF-8"?>')
-        reader.feed('<test>Hi there</test>')
-        reader.close()
+        input_\
+            = '<?xml version="1.0" encoding="UTF-8"?>\n<test>Hi there</test>'
+        reader.parse(StringIO(input_))
+        self.assertEqual(input_, self.result.getvalue())
 
     def test_xml_str_bytes(self):
         reader = create_parser()
         reader.setContentHandler(PropertyContentHandler(self, reader))
-        reader.feed(b'<?xml version="1.0" encoding="UTF-8"?>')
-        reader.feed(b'<test>Hi there</test>')
-        reader.close()
+        input_\
+            = b'<?xml version="1.0" encoding="UTF-8"?>\n<test>Hi there</test>'
+        reader.parse(BytesIO(input_))
+        self.assertEqual(input_.decode(), self.result.getvalue())
 
 
 def test_main():
