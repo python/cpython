@@ -102,9 +102,8 @@ extern "C" {
 #endif
 
 
-#if !defined(PREFIX) || !defined(EXEC_PREFIX) || !defined(VERSION) || \
-    !defined(VPATH) || !defined(EXE_SUFFIX)
-#error "PREFIX, EXEC_PREFIX, VERSION, VPATH, and EXE_SUFFIX must be constant defined"
+#if !defined(PREFIX) || !defined(EXEC_PREFIX) || !defined(VERSION) || !defined(VPATH)
+#error "PREFIX, EXEC_PREFIX, VERSION, and VPATH must be constant defined"
 #endif
 
 #ifndef LANDMARK
@@ -301,19 +300,18 @@ absolutize(wchar_t *path)
 /* add_exe_suffix requires that progpath be allocated at least
    MAXPATHLEN + 1 bytes.
 */
+
+#ifndef EXE_SUFFIX
+#define EXE_SUFFIX L".exe"
+#endif
+
 static void
 add_exe_suffix(wchar_t *progpath)
 {
-    wchar_t *_suffix = Py_DecodeLocale(EXE_SUFFIX, NULL);
-    if (_suffix == NULL) {
-        Py_FatalError("Unable to decode suffix variables in getpath.c: "
-                      "memory error");
-    }
-
     /* Check for already have an executable suffix */
     size_t n = wcslen(progpath);
-    size_t s = wcslen(_suffix);
-    if (wcsncasecmp(_suffix, progpath+n-s, s) != 0) {
+    size_t s = wcslen(EXE_SUFFIX);
+    if (wcsncasecmp(EXE_SUFFIX, progpath+n-s, s) != 0) {
         if (n + s > MAXPATHLEN) {
             Py_FatalError("progpath overflow in getpath.c's add_exe_suffix()");
         }
@@ -321,7 +319,7 @@ add_exe_suffix(wchar_t *progpath)
         wchar_t orig[MAXPATHLEN+1];
         wcsncpy(orig, progpath, MAXPATHLEN);
 
-        wcsncpy(progpath+n, _suffix, s);
+        wcsncpy(progpath+n, EXE_SUFFIX, s);
         progpath[n+s] = '\0';
 
         if (!isxfile(progpath)) {
@@ -329,7 +327,6 @@ add_exe_suffix(wchar_t *progpath)
             wcsncpy(progpath, orig, MAXPATHLEN);
         }
     }
-    PyMem_RawFree(_suffix);
 }
 #endif
 
@@ -649,7 +646,7 @@ calculate_program_full_path(const _PyCoreConfig *core_config,
      * sys.executable to return the name of a directory under the same
      * path (bpo-28441).
      */
-    if (EXE_SUFFIX[0] != '\0' && program_full_path[0] != '\0')
+    if (program_full_path[0] != '\0')
         add_exe_suffix(program_full_path);
 #endif
 
