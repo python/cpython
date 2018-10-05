@@ -841,7 +841,7 @@ Other constructors, all class methods:
   Return a :class:`datetime` corresponding to a *date_string* in one of the
   formats emitted by :meth:`date.isoformat` and :meth:`datetime.isoformat`.
   Specifically, this function supports strings in the format(s)
-  ``YYYY-MM-DD[*HH[:MM[:SS[.mmm[mmm]]]][+HH:MM[:SS[.ffffff]]]]``,
+  ``YYYY-MM-DD[*HH[:MM[:SS[.fff[fff]]]][+HH:MM[:SS[.ffffff]]]]``,
   where ``*`` can match any single character.
 
   .. caution::
@@ -1215,13 +1215,13 @@ Instance methods:
 .. method:: datetime.isoformat(sep='T', timespec='auto')
 
    Return a string representing the date and time in ISO 8601 format,
-   YYYY-MM-DDTHH:MM:SS.mmmmmm or, if :attr:`microsecond` is 0,
+   YYYY-MM-DDTHH:MM:SS.ffffff or, if :attr:`microsecond` is 0,
    YYYY-MM-DDTHH:MM:SS
 
-   If :meth:`utcoffset` does not return ``None``, a 6-character string is
-   appended, giving the UTC offset in (signed) hours and minutes:
-   YYYY-MM-DDTHH:MM:SS.mmmmmm+HH:MM or, if :attr:`microsecond` is 0
-   YYYY-MM-DDTHH:MM:SS+HH:MM
+   If :meth:`utcoffset` does not return ``None``, a string is
+   appended, giving the UTC offset:
+   YYYY-MM-DDTHH:MM:SS.ffffff+HH:MM[:SS[.ffffff]] or, if :attr:`microsecond`
+   is 0 YYYY-MM-DDTHH:MM:SS+HH:MM[:SS[.ffffff]].
 
    The optional argument *sep* (default ``'T'``) is a one-character separator,
    placed between the date and time portions of the result.  For example,
@@ -1245,7 +1245,7 @@ Instance methods:
      in HH:MM:SS format.
    - ``'milliseconds'``: Include full time, but truncate fractional second
      part to milliseconds. HH:MM:SS.sss format.
-   - ``'microseconds'``: Include full time in HH:MM:SS.mmmmmm format.
+   - ``'microseconds'``: Include full time in HH:MM:SS.ffffff format.
 
    .. note::
 
@@ -1522,7 +1522,7 @@ Other constructor:
 
   Return a :class:`time` corresponding to a *time_string* in one of the
   formats emitted by :meth:`time.isoformat`. Specifically, this function supports
-  strings in the format(s) ``HH[:MM[:SS[.mmm[mmm]]]][+HH:MM[:SS[.ffffff]]]``.
+  strings in the format(s) ``HH[:MM[:SS[.fff[fff]]]][+HH:MM[:SS[.ffffff]]]``.
 
   .. caution::
 
@@ -1548,10 +1548,10 @@ Instance methods:
 
 .. method:: time.isoformat(timespec='auto')
 
-   Return a string representing the time in ISO 8601 format, HH:MM:SS.mmmmmm or, if
+   Return a string representing the time in ISO 8601 format, HH:MM:SS.ffffff or, if
    :attr:`microsecond` is 0, HH:MM:SS If :meth:`utcoffset` does not return ``None``, a
-   6-character string is appended, giving the UTC offset in (signed) hours and
-   minutes: HH:MM:SS.mmmmmm+HH:MM or, if self.microsecond is 0, HH:MM:SS+HH:MM
+   string is appended, giving the UTC offset: HH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]
+   or, if self.microsecond is 0, HH:MM:SS+HH:MM[:SS[.ffffff]].
 
    The optional argument *timespec* specifies the number of additional
    components of the time to include (the default is ``'auto'``).
@@ -1565,7 +1565,7 @@ Instance methods:
      in HH:MM:SS format.
    - ``'milliseconds'``: Include full time, but truncate fractional second
      part to milliseconds. HH:MM:SS.sss format.
-   - ``'microseconds'``: Include full time in HH:MM:SS.mmmmmm format.
+   - ``'microseconds'``: Include full time in HH:MM:SS.ffffff format.
 
    .. note::
 
@@ -2091,9 +2091,10 @@ format codes.
 |           | number, zero-padded on the     | 999999                 |       |
 |           | left.                          |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%z``    | UTC offset in the form         | (empty), +0000, -0400, | \(6)  |
-|           | ±HHMM[SS] (empty string if the | +1030                  |       |
-|           | object is naive).              |                        |       |
+| ``%z``    | UTC offset in the form         | (empty), +0000,        | \(6)  |
+|           | ±HHMM[SS[.ffffff]] (empty      | -0400, +1030,          |       |
+|           | string if the object is        | +063415,               |       |
+|           | naive).                        | -030712.345216         |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%Z``    | Time zone name (empty string   | (empty), UTC, EST, CST |       |
 |           | if the object is naive).       |                        |       |
@@ -2206,12 +2207,12 @@ Notes:
 
    ``%z``
       :meth:`utcoffset` is transformed into a string of the form
-      ±HHMM[SS[.uuuuuu]], where HH is a 2-digit string giving the number of UTC
-      offset hours, and MM is a 2-digit string giving the number of UTC offset
+      ±HHMM[SS[.ffffff]], where HH is a 2-digit string giving the number of UTC
+      offset hours, MM is a 2-digit string giving the number of UTC offset
       minutes, SS is a 2-digit string giving the number of UTC offset
-      seconds and uuuuuu is a 2-digit string giving the number of UTC
-      offset microseconds.  The uuuuuu part is omitted when the offset is a
-      whole number of minutes and both the uuuuuu and the SS parts are omitted
+      seconds and ffffff is a 6-digit string giving the number of UTC
+      offset microseconds.  The ffffff part is omitted when the offset is a
+      whole number of seconds and both the ffffff and the SS part is omitted
       when the offset is a whole number of minutes.  For example, if
       :meth:`utcoffset` returns ``timedelta(hours=-3, minutes=-30)``, ``%z`` is
       replaced with the string ``'-0330'``.
