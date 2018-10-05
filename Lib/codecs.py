@@ -10,6 +10,9 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 import builtins
 import sys
 
+# The re module is imported lazily, see below
+re = None
+
 ### Registry and builtin stateless codec functions
 
 try:
@@ -506,7 +509,7 @@ class StreamReader(Codec):
                 if firstline:
                     newchars, decodedbytes = \
                         self.decode(data[:exc.start], self.errors)
-                    lines = newchars.splitlines(keepends=True)
+                    lines = split_lines_keep_ends(newchars)
                     if len(lines)<=1:
                         raise
                 else:
@@ -548,7 +551,7 @@ class StreamReader(Codec):
                 self.charbuffer = self.linebuffer[0]
                 self.linebuffer = None
             if not keepends:
-                line = line.splitlines(keepends=False)[0]
+                line = first_line_without_end(line)
             return line
 
         readsize = size or 72
@@ -565,7 +568,7 @@ class StreamReader(Codec):
                     data += self.read(size=1, chars=1)
 
             line += data
-            lines = line.splitlines(keepends=True)
+            lines = split_lines_keep_ends(line)
             if lines:
                 if len(lines) > 1:
                     # More than one line result; the first line is a full line
@@ -581,10 +584,10 @@ class StreamReader(Codec):
                         # only one remaining line, put it back into charbuffer
                         self.charbuffer = lines[0] + self.charbuffer
                     if not keepends:
-                        line = line.splitlines(keepends=False)[0]
+                        line = first_line_without_end(line)
                     break
                 line0withend = lines[0]
-                line0withoutend = lines[0].splitlines(keepends=False)[0]
+                line0withoutend = first_line_without_end(lines[0])
                 if line0withend != line0withoutend: # We really have a line end
                     # Put the rest back together and keep it until the next call
                     self.charbuffer = self._empty_charbuffer.join(lines[1:]) + \
@@ -597,7 +600,7 @@ class StreamReader(Codec):
             # we didn't get anything or this was our only try
             if not data or size is not None:
                 if line and not keepends:
-                    line = line.splitlines(keepends=False)[0]
+                    line = first_line_without_end(line)
                 break
             if readsize < 8000:
                 readsize *= 2
@@ -616,7 +619,10 @@ class StreamReader(Codec):
 
         """
         data = self.read()
-        return data.splitlines(keepends)
+        if keepends:
+            return split_lines_keep_ends(data)
+        else:
+            return split_lines_no_keep_ends(data)
 
     def reset(self):
 
@@ -819,7 +825,7 @@ class StreamRecoder:
 
         data = self.reader.read()
         data, bytesencoded = self.encode(data, self.errors)
-        return data.splitlines(keepends=True)
+        return split_lines_keep_ends(data)
 
     def __next__(self):
 
@@ -1078,6 +1084,44 @@ def make_encoding_map(decoding_map):
         else:
             m[v] = None
     return m
+
+### Helpers for splitting lines
+# Regular expressions are used for splitting lines only on CR, LF and CRLF as
+# in io streams since str.splitlines() splits lines using Unicode line ends.
+
+# Lazy importing re and compiling regular expressions.
+# They are needed only when use codecs streams. The codecs module itself
+# is imported at startup time and should keep lightweight.
+def init_re():
+    global re, newline_re, after_newline_re, no_newline_re
+    import re
+    newline_re = re.compile(r'\n|\r\n?')
+    after_newline_re = re.compile(r'(?<=\n)|(?<=\r)(?!\n)')
+    no_newline_re = re.compile(r'[^\n\r]*')
+
+def split_lines_no_keep_ends(s):
+    if isinstance(s, str):
+        if re is None:
+            init_re()
+        return newline_re.split(s)
+    else:
+        return s.splitlines()
+
+def split_lines_keep_ends(s):
+    if isinstance(s, str):
+        if re is None:
+            init_re()
+        return after_newline_re.split(s)
+    else:
+        return s.splitlines(keepends=True)
+
+def first_line_without_end(s):
+    if isinstance(s, str):
+        if re is None:
+            init_re()
+        return no_newline_re.match(s).group()
+    else:
+        return s.splitlines()[0]
 
 ### error handlers
 
