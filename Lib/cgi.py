@@ -352,7 +352,7 @@ class FieldStorage:
             for the page sending the form (content-type : meta http-equiv or
             header)
 
-        max_num_fields: Integer. If set, then __init__ throws a ValueError
+        max_num_fields: int. If set, then __init__ throws a ValueError
             if there are more than n fields read by parse_qsl().
 
         """
