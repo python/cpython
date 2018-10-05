@@ -646,8 +646,9 @@ calculate_program_full_path(const _PyCoreConfig *core_config,
      * sys.executable to return the name of a directory under the same
      * path (bpo-28441).
      */
-    if (program_full_path[0] != '\0')
+    if (program_full_path[0] != '\0') {
         add_exe_suffix(program_full_path);
+    }
 #endif
 
     config->program_full_path = _PyMem_RawWcsdup(program_full_path);
