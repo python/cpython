@@ -1,4 +1,5 @@
-The compiler will emit a syntax warning when the ``is`` or ``is not``
-operator is used with a literal (except singletons ``None``, ``False``,
-``True`` and ``...``). If :exc:`SyntaxWarning` is raised as error, it will
-be replaced with a :exc:`SyntaxError`.
+The compiler now produces a :exc:`SyntaxWarning` when identity checks
+(``is`` and ``is not``) are used with certain types of literals
+(e.g. strings, ints).  These can often work by accident in CPython,
+but are not guaranteed by the language spec.  The warning advises users
+to use equality tests (``==`` and ``!=``) instead.
