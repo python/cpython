@@ -13,7 +13,8 @@ except SAXReaderNotAvailable:
 from xml.sax.saxutils import XMLGenerator, escape, unescape, quoteattr, \
                              XMLFilterBase, prepare_input_source
 from xml.sax.expatreader import create_parser
-from xml.sax.handler import feature_namespaces, feature_external_ges
+from xml.sax.handler import feature_namespaces, feature_external_ges,\
+    property_xml_string
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from io import BytesIO, StringIO
 import codecs
@@ -1311,6 +1312,39 @@ class XmlReaderTest(XmlTestBase):
         self.assertEqual(attrs.getQNameByName((ns_uri, "attr")), "ns:attr")
 
 
+# ===========================================================================
+#
+#   Sax parser property tests
+#
+# ===========================================================================
+
+class PropertyContentHandler(ContentHandler):
+    def __init__(self, test_harness, reader, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.test_harness = test_harness
+        self.reader = reader
+
+    def startElement(self, name, attr):  # @UnusedVariable
+        property_ = self.reader.getProperty(property_xml_string)
+        self.test_harness.assertIsInstance(property_, str)
+
+
+class SaxPropertyTest(unittest.TestCase):
+    def test_xml_str_str(self):
+        reader = create_parser()
+        reader.setContentHandler(PropertyContentHandler(self, reader))
+        reader.feed('<?xml version="1.0" encoding="UTF-8"?>')
+        reader.feed('<test>Hi there</test>')
+        reader.close()
+
+    def test_xml_str_bytes(self):
+        reader = create_parser()
+        reader.setContentHandler(PropertyContentHandler(self, reader))
+        reader.feed(b'<?xml version="1.0" encoding="UTF-8"?>')
+        reader.feed(b'<test>Hi there</test>')
+        reader.close()
+
+
 def test_main():
     run_unittest(MakeParserTest,
                  ParseTest,
@@ -1323,7 +1357,9 @@ def test_main():
                  StreamReaderWriterXmlgenTest,
                  ExpatReaderTest,
                  ErrorReportingTest,
-                 XmlReaderTest)
+                 XmlReaderTest,
+                 SaxPropertyTest)
+
 
 if __name__ == "__main__":
     test_main()
