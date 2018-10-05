@@ -64,7 +64,7 @@ jobs:
   condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
 
   pool:
-    vmImage: vs2017-win2017
+    vmImage: vs2017-win2016
 
   strategy:
     matrix:
