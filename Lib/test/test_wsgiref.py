@@ -788,6 +788,18 @@ class HandlerTests(TestCase):
             b"Hello, world!",
             written)
 
+    def testConnectionAbortedError(self):
+        class AbortingWriter:
+            def write(self, b):
+                raise ConnectionAbortedError()
+
+            def flush(self):
+                pass
+
+        environ = {"SERVER_PROTOCOL": "HTTP/1.0"}
+        h = SimpleHandler(BytesIO(), AbortingWriter(), sys.stderr, environ)
+        h.run(hello_app)
+
 
 if __name__ == "__main__":
     unittest.main()
