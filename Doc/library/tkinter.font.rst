@@ -33,10 +33,13 @@ The different font weights and slants are:
        | *name* - unique font name
        | *exists* - self points to existing named font if true
 
-    allowed keyword options (ignored if *font* is specified):
+    additional keyword options (ignored if *font* is specified):
 
        | *family* - font family i.e. Courier, Times
-       | *size* - font size (pt)
+       | *size* - font size
+       |     If *size* is positive it is interpreted as size in points.
+       |     If *size* is a negative number its absolute value is treated as
+             as size in pixels.
        | *weight* - font emphasis {NORMAL, BOLD}
        | *slant* - {ROMAN, ITALIC}
        | *underline* - font underlining (0 - none, 1 - underline)
