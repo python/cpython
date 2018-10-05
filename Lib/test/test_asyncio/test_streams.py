@@ -560,7 +560,7 @@ class StreamTests(test_utils.TestCase):
         t1 = asyncio.Task(stream.readline(), loop=self.loop)
         t2 = asyncio.Task(set_err(), loop=self.loop)
 
-        self.loop.run_until_complete(asyncio.wait([t1, t2], loop=self.loop))
+        self.loop.run_until_complete(asyncio.wait([t1, t2]))
 
         self.assertRaises(ValueError, t1.result)
 
