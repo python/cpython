@@ -5302,7 +5302,7 @@ long_from_bytes(PyTypeObject *type, PyObject *args, PyObject *kwds)
         little_endian, is_signed);
     Py_DECREF(bytes);
 
-    if (type != &PyLong_Type) {
+    if (long_obj != NULL && type != &PyLong_Type) {
         Py_SETREF(long_obj, PyObject_CallFunctionObjArgs((PyObject *)type,
                                                          long_obj, NULL));
     }
