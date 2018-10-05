@@ -1623,7 +1623,7 @@ a class variable and should not be set on instances of that class.
 <https://github.com/python/typing/pull/280>`_.)
 
 A new :const:`~typing.TYPE_CHECKING` constant that is assumed to be
-``True`` by the static type chekers, but is ``False`` at runtime.
+``True`` by the static type checkers, but is ``False`` at runtime.
 (Contributed by Guido van Rossum in `Github #230
 <https://github.com/python/typing/issues/230>`_.)
 
