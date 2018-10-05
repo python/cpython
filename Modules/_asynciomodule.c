@@ -2714,7 +2714,7 @@ set_exception:
         if (task->task_must_cancel) {
             PyObject *r;
             int is_true;
-            r = _PyObject_CallMethodId(fut, &PyId_cancel, NULL);
+            r = _PyObject_CallMethodId(result, &PyId_cancel, NULL);
             if (r == NULL) {
                 return NULL;
             }
