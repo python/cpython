@@ -775,12 +775,12 @@ config_read_unconditional_env_vars(_PyCoreConfig *config)
         */
         const char *env = getenv("PYTHONCOERCECLOCALE");
         if (env) {
-                if (strcmp(env, "warn") == 0) {
-                    config->warn_on_c_locale = 1;
-                } else {
-                    config->warn_on_c_locale = 0;
-                }
+            if (strcmp(env, "warn") == 0) {
+                config->warn_on_c_locale = 1;
+            } else {
+                config->warn_on_c_locale = 0;
             }
+        }
     }
 
     return _Py_INIT_OK();

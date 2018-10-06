@@ -1284,8 +1284,17 @@ pymain_read_conf_impl(_PyMain *pymain, _PyCoreConfig *config,
 }
 
 
-/* Read the configuration and initialize the LC_CTYPE locale:
-   enable UTF-8 mode (PEP 540) and/or coerce the C locale (PEP 538). */
+/* Read the configuration.
+ *
+ * Initially processes command line and environment variables based on the
+ * active LC_CTYPE locale encoding, but will clear and reprocess them as UTF-8
+ * if the initial processing indicates that UTF-8 mode should be enabled.
+ *
+ * This works because the settings to enable/disable UTF-8 mode are all 7-bit
+ * ASCII text, and text encodings that actually get used in practice as locale
+ * encodings are sufficiently compatible with ASCII to always give the same
+ * UTF-8 mode setting regardless of the active locale encoding.
+ */
 static int
 pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
                  _PyCmdline *cmdline)
@@ -1733,7 +1742,6 @@ pymain_init(_PyMain *pymain, PyInterpreterState **interp_p)
     pymain_clear_config(config);
     config = &interp->core_config;
 
-
     if (pymain_init_python_main(pymain, config, interp) < 0) {
         _Py_FatalInitError(pymain->err);
     }
@@ -1796,27 +1804,27 @@ _Py_UnixMain(int argc, char **argv)
         */
     _Py_SetLocaleFromEnv(LC_CTYPE);
     if (_Py_LegacyLocaleDetected()) {
-            /* We ignore the Python -E and -I flags here, as the CLI needs to sort out
-             * the locale settings *before* we try to do anything with the command
-             * line arguments. For cross-platform debugging purposes, we also need
-             * to give end users a way to force even scripts that are otherwise
-             * isolated from their environment to use the legacy ASCII-centric C
-             * locale (otherwise a user on platform with a valid coercion target,
-             * like Fedora, can't readily debug a script that runs with -I or -E
-             * on a platform without a valid coercion target, like CentOS 7).
-             *
-             * Ignoring -E and -I is safe from a security perspective, as we only use
-             * the setting to turn *off* the implicit locale coercion, and anyone with
-             * access to the process environment already has the ability to set
-             * `LC_ALL=C` to override the C level locale settings anyway.
-             */
-            const char *coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
-            if (coerce_c_locale == NULL || strncmp(coerce_c_locale, "0", 2) != 0) {
-                _Py_CoerceLegacyLocale(
-                    &pymain.locale_coercion_target,
-                    &pymain.locale_coercion_warning
-                );
-            }
+        /* We ignore the Python -E and -I flags here, as the CLI needs to sort out
+         * the locale settings *before* we try to do anything with the command
+         * line arguments. For cross-platform debugging purposes, we also need
+         * to give end users a way to force even scripts that are otherwise
+         * isolated from their environment to use the legacy ASCII-centric C
+         * locale (otherwise a user on platform with a valid coercion target,
+         * like Fedora, can't readily debug a script that runs with -I or -E
+         * on a platform without a valid coercion target, like CentOS 7).
+         *
+         * Ignoring -E and -I is safe from a security perspective, as we only use
+         * the setting to turn *off* the implicit locale coercion, and anyone with
+         * access to the process environment already has the ability to set
+         * `LC_ALL=C` to override the C level locale settings anyway.
+         */
+        const char *coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
+        if (coerce_c_locale == NULL || strncmp(coerce_c_locale, "0", 2) != 0) {
+            _Py_CoerceLegacyLocale(
+                &pymain.locale_coercion_target,
+                &pymain.locale_coercion_warning
+            );
+        }
     }
 
 

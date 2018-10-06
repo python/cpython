@@ -272,6 +272,10 @@ initexternalimport(PyInterpreterState *interp)
 int
 _Py_LegacyLocaleDetected(void)
 {
+    /* This API is expected to be called before the Python runtime is
+     * initialised, so it needs to be very conservative as to which other APIs
+     * it calls, and which process resources it attempts to access.
+     */
 #ifndef MS_WINDOWS
     /* On non-Windows systems, the ASCII-based C locale is considered a legacy
      * locale that we don't trust to be accurate.
@@ -281,7 +285,7 @@ _Py_LegacyLocaleDetected(void)
      */
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
     return ctype_loc != NULL &&
-           (strcmp(ctype_loc, "C") == 0 || strcmp(ctype_loc, "C") == 0);
+           (strcmp(ctype_loc, "C") == 0 || strcmp(ctype_loc, "POSIX") == 0);
 #else
     /* Windows uses code pages instead of locales, so no locale is legacy */
     return 0;
@@ -356,6 +360,10 @@ int
 _Py_CoerceLegacyLocale(const char **coercion_target,
                        const char **coercion_warning)
 {
+    /* This API is expected to be called before the Python runtime is
+     * initialised, so it needs to be very conservative as to which other APIs
+     * it calls, and which process resources it attempts to access.
+     */
     int locale_was_coerced = 0;
     if (coercion_target != NULL) {
         *coercion_target = NULL;
