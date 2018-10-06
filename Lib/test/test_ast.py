@@ -124,6 +124,12 @@ exec_tests = [
     "{*{1, 2}, 3}",
     # Asynchronous comprehensions
     "async def f():\n [i async for b in c]",
+    # Decorated FunctionDef
+    "@deco1\n@deco2()\ndef f(): pass",
+    # Decorated AsyncFunctionDef
+    "@deco1\n@deco2()\nasync def f(): pass",
+    # Decorated ClassDef
+    "@deco1\n@deco2()\nclass C: pass",
 ]
 
 # These are compiled through "single"
@@ -203,13 +209,16 @@ class AST_Tests(unittest.TestCase):
             return
         if isinstance(ast_node, (ast.expr, ast.stmt, ast.excepthandler)):
             node_pos = (ast_node.lineno, ast_node.col_offset)
-            self.assertTrue(node_pos >= parent_pos)
+            self.assertGreaterEqual(node_pos, parent_pos)
             parent_pos = (ast_node.lineno, ast_node.col_offset)
         for name in ast_node._fields:
             value = getattr(ast_node, name)
             if isinstance(value, list):
+                first_pos = parent_pos
+                if value and name == 'decorator_list':
+                    first_pos = (value[0].lineno, value[0].col_offset)
                 for child in value:
-                    self._assertTrueorder(child, parent_pos)
+                    self._assertTrueorder(child, first_pos)
             elif value is not None:
                 self._assertTrueorder(value, parent_pos)
 
@@ -1285,6 +1294,9 @@ exec_results = [
 ('Module', [('Expr', (1, 0), ('Dict', (1, 0), [None, ('Constant', (1, 10), 2)], [('Dict', (1, 3), [('Constant', (1, 4), 1)], [('Constant', (1, 6), 2)]), ('Constant', (1, 12), 3)]))]),
 ('Module', [('Expr', (1, 0), ('Set', (1, 0), [('Starred', (1, 1), ('Set', (1, 2), [('Constant', (1, 3), 1), ('Constant', (1, 6), 2)]), ('Load',)), ('Constant', (1, 10), 3)]))]),
 ('Module', [('AsyncFunctionDef', (1, 0), 'f', ('arguments', [], None, [], [], None, []), [('Expr', (2, 1), ('ListComp', (2, 2), ('Name', (2, 2), 'i', ('Load',)), [('comprehension', ('Name', (2, 14), 'b', ('Store',)), ('Name', (2, 19), 'c', ('Load',)), [], 1)]))], [], None)]),
+('Module', [('FunctionDef', (3, 0), 'f', ('arguments', [], None, [], [], None, []), [('Pass', (3, 9))], [('Name', (1, 1), 'deco1', ('Load',)), ('Call', (2, 0), ('Name', (2, 1), 'deco2', ('Load',)), [], [])], None)]),
+('Module', [('AsyncFunctionDef', (3, 0), 'f', ('arguments', [], None, [], [], None, []), [('Pass', (3, 15))], [('Name', (1, 1), 'deco1', ('Load',)), ('Call', (2, 0), ('Name', (2, 1), 'deco2', ('Load',)), [], [])], None)]),
+('Module', [('ClassDef', (3, 0), 'C', [], [], [('Pass', (3, 9))], [('Name', (1, 1), 'deco1', ('Load',)), ('Call', (2, 0), ('Name', (2, 1), 'deco2', ('Load',)), [], [])])]),
 ]
 single_results = [
 ('Interactive', [('Expr', (1, 0), ('BinOp', (1, 0), ('Constant', (1, 0), 1), ('Add',), ('Constant', (1, 2), 2)))]),

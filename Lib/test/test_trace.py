@@ -75,6 +75,19 @@ def traced_caller_list_comprehension():
     mylist = [traced_doubler(i) for i in range(k)]
     return mylist
 
+def traced_decorated_function():
+    def decorator1(f):
+        return f
+    def decorator_fabric():
+        def decorator2(f):
+            return f
+        return decorator2
+    @decorator1
+    @decorator_fabric()
+    def func():
+        pass
+    func()
+
 
 class TracedClass(object):
     def __init__(self, x):
@@ -172,6 +185,24 @@ class TestLineCounts(unittest.TestCase):
         }
         self.assertEqual(self.tracer.results().counts, expected)
 
+    def test_traced_decorated_function(self):
+        self.tracer.runfunc(traced_decorated_function)
+
+        firstlineno = get_firstlineno(traced_decorated_function)
+        expected = {
+            (self.my_py_filename, firstlineno + 1): 1,
+            (self.my_py_filename, firstlineno + 2): 1,
+            (self.my_py_filename, firstlineno + 3): 1,
+            (self.my_py_filename, firstlineno + 4): 1,
+            (self.my_py_filename, firstlineno + 5): 1,
+            (self.my_py_filename, firstlineno + 6): 1,
+            (self.my_py_filename, firstlineno + 7): 1,
+            (self.my_py_filename, firstlineno + 8): 1,
+            (self.my_py_filename, firstlineno + 9): 1,
+            (self.my_py_filename, firstlineno + 10): 1,
+            (self.my_py_filename, firstlineno + 11): 1,
+        }
+        self.assertEqual(self.tracer.results().counts, expected)
 
     def test_linear_methods(self):
         # XXX todo: later add 'static_method_linear' and 'class_method_linear'
@@ -188,6 +219,7 @@ class TestLineCounts(unittest.TestCase):
                 (self.my_py_filename, firstlineno + 1): 1,
             }
             self.assertEqual(tracer.results().counts, expected)
+
 
 class TestRunExecCounts(unittest.TestCase):
     """A simple sanity test of line-counting, via runctx (exec)"""
@@ -262,6 +294,18 @@ class TestFuncs(unittest.TestCase):
             self.filemod + ('traced_func_linear',): 1,
         }
         self.assertEqual(self.tracer.results().calledfuncs, expected)
+
+    def test_traced_decorated_function(self):
+        self.tracer.runfunc(traced_decorated_function)
+
+        expected = {
+            self.filemod + ('traced_decorated_function',): 1,
+            self.filemod + ('decorator_fabric',): 1,
+            self.filemod + ('decorator2',): 1,
+            self.filemod + ('decorator1',): 1,
+            self.filemod + ('func',): 1,
+        }
+        self.assertEqual(self.tracer.results().calledfuncs, expected, self.tracer.results().calledfuncs)
 
 
 class TestCallers(unittest.TestCase):
