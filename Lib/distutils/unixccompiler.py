@@ -98,8 +98,8 @@ class UnixCCompiler(CCompiler):
         if output_file and not _is_xlc:
             pp_args.extend(['-o', output_file])
         elif _is_xlc:
-                raise TypeError("%s cannot redirect stdout to file %s" %
-                      (self.preprocessor[0], output_file))
+            raise TypeError("%s cannot redirect stdout to file %s" %
+                  (self.preprocessor[0], output_file))
         if extra_preargs:
             pp_args[:0] = extra_preargs
         if extra_postargs:
