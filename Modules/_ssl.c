@@ -273,7 +273,7 @@ SSL_SESSION_get_ticket_lifetime_hint(const SSL_SESSION *s)
      #error "Py_SSL_DEFAULT_CIPHERS 0 needs Py_SSL_DEFAULT_CIPHER_STRING"
   #endif
 #elif PY_SSL_DEFAULT_CIPHERS == 1
-/* Python custom selection of sensible ciper suites
+/* Python custom selection of sensible cipher suites
  * DEFAULT: OpenSSL's default cipher list. Since 1.0.2 the list is in sensible order.
  * !aNULL:!eNULL: really no NULL ciphers
  * !MD5:!3DES:!DES:!RC4:!IDEA:!SEED: no weak or broken algorithms on old OpenSSL versions.
