@@ -486,7 +486,7 @@ class EnumMeta(type):
                     if base is object:
                         continue
                     elif '__new__' in base.__dict__:
-                        if issubclass(base, Enum) and not hasattr(base, '__new_member__'):
+                        if issubclass(base, Enum):
                             continue
                         return base
 
@@ -499,7 +499,6 @@ class EnumMeta(type):
         member_type = _find_data_type(bases) or object
         if first_enum._member_names_:
             raise TypeError("Cannot extend enumerations")
-
         return member_type, first_enum
 
     @staticmethod
@@ -545,7 +544,6 @@ class EnumMeta(type):
             use_args = False
         else:
             use_args = True
-
         return __new__, save_new, use_args
 
 
