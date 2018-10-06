@@ -591,7 +591,7 @@ def _exec(spec, module):
             if spec.loader is None:
                 if spec.submodule_search_locations is None:
                     raise ImportError('missing loader', name=spec.name)
-                # namespace package
+                # Namespace package.
                 _init_module_attrs(spec, module, override=True)
             else:
                 _init_module_attrs(spec, module, override=True)
@@ -603,6 +603,8 @@ def _exec(spec, module):
                 else:
                     spec.loader.exec_module(module)
         finally:
+            # Update the order of insertion into sys.modules for module
+            # clean-up at shutdown.
             module = sys.modules.pop(spec.name)
             sys.modules[spec.name] = module
     return module
@@ -648,7 +650,7 @@ def _load_backward_compatible(spec):
 def _load_unlocked(spec):
     # A helper for direct use by the import system.
     if spec.loader is not None:
-        # not a namespace package
+        # Not a namespace package.
         if not hasattr(spec.loader, 'exec_module'):
             return _load_backward_compatible(spec)
 
@@ -656,7 +658,7 @@ def _load_unlocked(spec):
 
     # This must be done before putting the module in sys.modules
     # (otherwise an optimization shortcut in import.c becomes
-    # wrong)
+    # wrong).
     spec._initializing = True
     try:
         sys.modules[spec.name] = module
