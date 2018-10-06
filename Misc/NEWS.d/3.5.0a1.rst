@@ -76,7 +76,7 @@ NotImplemented.  Original patch by Martin Panter.
 .. section: Core and Builtins
 
 Fixed a crash in str.decode() when error handler returned replacement string
-longer than mailformed input data.
+longer than malformed input data.
 
 ..
 
