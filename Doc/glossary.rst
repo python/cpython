@@ -221,6 +221,14 @@ Glossary
       statement by defining :meth:`__enter__` and :meth:`__exit__` methods.
       See :pep:`343`.
 
+    context variable
+      A variable which can have different values depending on it's context.
+      This is similar to TLS(Thread Local Storage) in which each execution
+      thread may have a different value for a variable. In case of context
+      variable, there may be sevaral contexts in one execution thread and it is
+      used to keep track of variables in concurrent asynchronous tasks.
+      See `https://docs.python.org/3/library/contextvars.html`.
+
    contiguous
       .. index:: C-contiguous, Fortran contiguous
 
