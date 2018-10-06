@@ -376,8 +376,9 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
             else if (PyUnicode_Check(s)) {
                 PyObject *t;
                 t = PyUnicode_AsEncodedString(s, "utf-8", "backslashreplace");
-                if (t == NULL)
-                    ret = 0;
+                if (t == NULL) {
+                    ret = -1;
+                }
                 else {
                     fwrite(PyBytes_AS_STRING(t), 1,
                            PyBytes_GET_SIZE(t), fp);
