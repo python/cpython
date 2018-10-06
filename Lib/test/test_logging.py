@@ -3503,11 +3503,8 @@ class FormatterTest(unittest.TestCase):
         self.assertTrue(f.usesTime())
         f = logging.Formatter('%(asctime)-15s')
         self.assertTrue(f.usesTime())
-        f = logging.Formatter('%(asctime) - 15s')
+        f = logging.Formatter('%(asctime)#15s')
         self.assertTrue(f.usesTime())
-        # Testing ValueError raised from mismatching format
-        self.assertRaises(ValueError, logging.Formatter, '{asctime}')
-        self.assertRaises(ValueError, logging.Formatter, '${message}')
 
     def test_braces(self):
         # Test {}-formatting
@@ -3524,8 +3521,6 @@ class FormatterTest(unittest.TestCase):
         self.assertTrue(f.usesTime())
         f = logging.Formatter('{asctime:15}', style='{')
         self.assertTrue(f.usesTime())
-        # Testing ValueError raised from mismatching format
-        self.assertRaises(ValueError, logging.Formatter, '%(asctime)s', style='{')
 
     def test_dollars(self):
         # Test $-formatting
@@ -3543,7 +3538,32 @@ class FormatterTest(unittest.TestCase):
         self.assertFalse(f.usesTime())
         f = logging.Formatter('${asctime}--', style='$')
         self.assertTrue(f.usesTime())
-        # Testing ValueError raised from mismatching format
+
+    def test_format_validate(self):
+        f = logging.Formatter("%(asctime)-15s - %(message) 5s - %(process)03d - %(module)")
+        self.assertEqual(f._fmt, "%(asctime)-15s - %(message) 5s - %(process)03d - %(module)")
+        f = logging.Formatter("$%{message}%$ - {asctime!a:15} - {customfield['key']} - {process:.2f} - {custom.f:.4f}",
+                              style="{")
+        self.assertEqual(f._fmt,
+                         "$%{message}%$ - {asctime!a:15} - {customfield['key']} - {process:.2f} - {custom.f:.4f}")
+        f = logging.Formatter("${asctime} - $message", style="$")
+        self.assertEqual(f._fmt, "${asctime} - $message")
+
+        # Testing when ValueError being raised from incorrect format
+        # Percentage Style
+        self.assertRaises(ValueError, logging.Formatter, "%(asctime) - 15s")
+        self.assertRaises(ValueError, logging.Formatter, "%(asctime)Z")
+        self.assertRaises(ValueError, logging.Formatter, "%(asctime)b")
+        self.assertRaises(ValueError, logging.Formatter, "%(asctime)*")
+        self.assertRaises(ValueError, logging.Formatter, "%(asctime)_")
+        self.assertRaises(ValueError, logging.Formatter, '{asctime}')
+        self.assertRaises(ValueError, logging.Formatter, '${message}')
+
+        # StrFormat Style
+        self.assertRaises(ValueError, logging.Formatter, "{name-thing}", style="{")
+        self.assertRaises(ValueError, logging.Formatter, '%(asctime)s', style='{')
+
+        # Dollar style
         self.assertRaises(ValueError, logging.Formatter, '{asctime}', style='$')
         self.assertRaises(ValueError, logging.Formatter, '%(asctime)s', style='$')
 

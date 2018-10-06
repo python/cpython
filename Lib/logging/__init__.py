@@ -425,11 +425,10 @@ class PercentStyle(object):
     default_format = '%(message)s'
     asctime_format = '%(asctime)s'
     asctime_search = '%(asctime)'
-    validation_pattern = r'(\%\([^%()]+\)[\s\d-]*[\w]+)'
+    validation_pattern = r'(\%\([^%()]+\)[#|0|\-|\s|+]?[\d]*[d|i|o|u|x|X|e|E|f|E|g|G|C|r|s|a|%]{1})'
 
     def __init__(self, fmt):
         self._fmt = fmt or self.default_format
-
 
     def usesTime(self):
         return self._fmt.find(self.asctime_search) >= 0
@@ -453,7 +452,7 @@ class StrFormatStyle(PercentStyle):
     default_format = '{message}'
     asctime_format = '{asctime}'
     asctime_search = '{asctime'
-    validation_pattern = r'(\{[^{}]+\})'
+    validation_pattern = r'(\{[^{}-]+\})'
 
     def _format(self, record):
         return self._fmt.format(**record.__dict__)
@@ -463,7 +462,7 @@ class StringTemplateStyle(PercentStyle):
     default_format = '${message}'
     asctime_format = '${asctime}'
     asctime_search = '${asctime}'
-    validation_pattern = r'(\$\{[^${}]+\})'
+    validation_pattern = r'(\$\{?[\w]+\}?)'
 
     def __init__(self, fmt):
         self._fmt = fmt or self.default_format
