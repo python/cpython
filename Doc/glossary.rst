@@ -227,7 +227,7 @@ Glossary
       thread may have a different value for a variable. In case of context
       variable, there may be sevaral contexts in one execution thread and it is
       used to keep track of variables in concurrent asynchronous tasks.
-      See :pep:`567`.
+      See `https://docs.python.org/3/library/contextvars.html`.
 
    contiguous
       .. index:: C-contiguous, Fortran contiguous
