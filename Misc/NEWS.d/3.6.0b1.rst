@@ -958,7 +958,7 @@ attack (CVE-2016-2183).
 .. nonce: WI70Tc
 .. section: Library
 
-Add ChaCha20 Poly1305 to ssl module's default ciper list. (Required OpenSSL
+Add ChaCha20 Poly1305 to ssl module's default cipher list. (Required OpenSSL
 1.1.0 or LibreSSL).
 
 ..

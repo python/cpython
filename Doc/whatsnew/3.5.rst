@@ -2471,7 +2471,7 @@ Changes in the Python API
   parameter to help control the ``opt-`` tag. Because of this, the
   *debug_override* parameter of the function is now deprecated. `.pyo` files
   are also no longer supported as a file argument to the Python interpreter and
-  thus serve no purpose when distributed on their own (i.e. sourcless code
+  thus serve no purpose when distributed on their own (i.e. sourceless code
   distribution). Due to the fact that the magic number for bytecode has changed
   in Python 3.5, all old `.pyo` files from previous versions of Python are
   invalid regardless of this PEP.

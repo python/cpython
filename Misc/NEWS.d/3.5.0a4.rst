@@ -482,7 +482,7 @@ sqlite3.Row now supports slice indexing.
 .. nonce: 89RHm-
 .. section: Library
 
-Fixed 2to3 and 3to2 compatible pickle mappings.  Fixed ambigious reverse
+Fixed 2to3 and 3to2 compatible pickle mappings.  Fixed ambiguous reverse
 mappings.  Added many new mappings.  Import mapping is no longer applied to
 modules already mapped with full name mapping.
 

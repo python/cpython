@@ -1355,7 +1355,7 @@ feature.  Instances must be created with :class:`~ssl.SSLContext` methods
 OpenSSL 1.1 APIs for setting the minimum and maximum TLS protocol version are
 available as :attr:`SSLContext.minimum_version <ssl.SSLContext.minimum_version>`
 and :attr:`SSLContext.maximum_version <ssl.SSLContext.maximum_version>`.
-Supported protocols are indicated by serveral new flags, such as
+Supported protocols are indicated by several new flags, such as
 :data:`~ssl.HAS_TLSv1_1`.
 (Contributed by Christian Heimes in :issue:`32609`.)
 
@@ -2023,7 +2023,7 @@ Use :mod:`threading` instead.
 socket
 ------
 
-The silent argument value trunctation in :func:`socket.htons` and
+The silent argument value truncation in :func:`socket.htons` and
 :func:`socket.ntohs` has been deprecated.  In future versions of Python,
 if the passed argument is larger than 16 bits, an exception will be raised.
 (Contributed by Oren Milman in :issue:`28332`.)
