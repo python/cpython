@@ -4742,7 +4742,7 @@ test_pyobject_fastcallkeywords(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_TypeError, "kwnames must be None or a tuple");
         return NULL;
     }
-    return _PyObject_FastCallKeywords(func, stack, nargs, kwnames);
+    return PyObject_VectorCallWithCallable(func, stack, nargs, kwnames);
 }
 
 

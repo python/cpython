@@ -46,6 +46,7 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
     op->m_self = self;
     Py_XINCREF(module);
     op->m_module = module;
+    op->vectorcall = &_PyCFunction_FastCallKeywords;
     _PyObject_GC_TRACK(op);
     return (PyObject *)op;
 }
@@ -278,7 +279,8 @@ PyTypeObject PyCFunction_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+    Py_TPFLAGS_HAVE_VECTORCALL,                 /* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)meth_traverse,                /* tp_traverse */
     0,                                          /* tp_clear */
@@ -291,6 +293,7 @@ PyTypeObject PyCFunction_Type = {
     meth_getsets,                               /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
+    .tp_vectorcall_offset = offsetof(PyCFunctionObject, vectorcall),
 };
 
 /* Clear out the free list */

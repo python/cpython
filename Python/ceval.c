@@ -4806,10 +4806,9 @@ if (tstate->use_tracing && tstate->c_profilefunc) { \
     x = call; \
     }
 
-/* Issue #29227: Inline call_function() into _PyEval_EvalFrameDefault()
-   to reduce the stack consumption. */
-Py_LOCAL_INLINE(PyObject *) _Py_HOT_FUNCTION
-call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
+
+static PyObject *
+trace_call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
 {
     PyObject **pfunc = (*pp_stack) - oparg - 1;
     PyObject *func = *pfunc;
@@ -4817,15 +4816,14 @@ call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyO
     Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
     Py_ssize_t nargs = oparg - nkwargs;
     PyObject **stack = (*pp_stack) - nargs - nkwargs;
-
-    /* Always dispatch PyCFunction first, because these are
-       presumed to be the most frequent callable object.
-    */
-    if (PyCFunction_Check(func)) {
+    if (!tstate->use_tracing) {
+        x = _Py_VectorCall(func, stack, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
+    }
+    else if (PyCFunction_Check(func)) {
         C_TRACE(x, _PyCFunction_FastCallKeywords(func, stack, nargs, kwnames));
     }
     else if (Py_TYPE(func) == &PyMethodDescr_Type) {
-        if (nargs > 0 && tstate->use_tracing) {
+        if (nargs > 0) {
             /* We need to create a temporary bound method as argument
                for profiling.
 
@@ -4846,35 +4844,11 @@ call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyO
             }
         }
         else {
-            x = _PyMethodDescr_FastCallKeywords(func, stack, nargs, kwnames);
+            x = PyObject_VectorCallWithCallable(func, stack, nargs, kwnames);
         }
     }
     else {
-        if (PyMethod_Check(func) && PyMethod_GET_SELF(func) != NULL) {
-            /* Optimize access to bound methods. Reuse the Python stack
-               to pass 'self' as the first argument, replace 'func'
-               with 'self'. It avoids the creation of a new temporary tuple
-               for arguments (to replace func with self) when the method uses
-               FASTCALL. */
-            PyObject *self = PyMethod_GET_SELF(func);
-            Py_INCREF(self);
-            func = PyMethod_GET_FUNCTION(func);
-            Py_INCREF(func);
-            Py_SETREF(*pfunc, self);
-            nargs++;
-            stack--;
-        }
-        else {
-            Py_INCREF(func);
-        }
-
-        if (PyFunction_Check(func)) {
-            x = _PyFunction_FastCallKeywords(func, stack, nargs, kwnames);
-        }
-        else {
-            x = _PyObject_FastCallKeywords(func, stack, nargs, kwnames);
-        }
-        Py_DECREF(func);
+        x = PyObject_VectorCallWithCallable(func, stack, nargs, kwnames);
     }
 
     assert((x != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -4886,6 +4860,29 @@ call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyO
     }
 
     return x;
+}
+
+/* Issue #29227: Inline call_function() into _PyEval_EvalFrameDefault()
+   to reduce the stack consumption. */
+Py_LOCAL_INLINE(PyObject *) _Py_HOT_FUNCTION
+call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
+{
+    PyObject **pfunc = (*pp_stack) - oparg - 1;
+    PyObject *func = *pfunc;
+    PyObject *x, *w;
+    Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
+    Py_ssize_t nargs = oparg - nkwargs;
+    PyObject **stack = (*pp_stack) - nargs - nkwargs;
+    if (!tstate->use_tracing) {
+        x = _Py_VectorCall(func, stack, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
+        /* Clear the stack of the function object. */
+        while ((*pp_stack) > pfunc) {
+            w = EXT_POP(*pp_stack);
+            Py_DECREF(w);
+        }
+        return x;
+    }
+    return trace_call_function(tstate, pp_stack, oparg, kwnames);
 }
 
 static PyObject *

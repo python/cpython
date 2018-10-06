@@ -55,6 +55,10 @@ typedef struct bufferinfo {
 typedef int (*getbufferproc)(PyObject *, Py_buffer *, int);
 typedef void (*releasebufferproc)(PyObject *, Py_buffer *);
 
+typedef PyObject *(*vectorcall_func)
+    (PyObject *callable, PyObject *const *stack,
+     Py_ssize_t nargs, PyObject *kwnames);
+
 /* Maximum number of dimensions */
 #define PyBUF_MAX_NDIM 64
 
@@ -182,7 +186,7 @@ typedef struct _typeobject {
     /* Methods to implement standard operations */
 
     destructor tp_dealloc;
-    printfunc tp_print;
+    vectorcall_func tp_vectorcall;
     getattrfunc tp_getattr;
     setattrfunc tp_setattr;
     PyAsyncMethods *tp_as_async; /* formerly known as tp_compare (Python 2)
@@ -254,6 +258,7 @@ typedef struct _typeobject {
     unsigned int tp_version_tag;
 
     destructor tp_finalize;
+    uint32_t tp_vectorcall_offset;
 
 #ifdef COUNT_ALLOCS
     /* these must be last and never explicitly initialized */

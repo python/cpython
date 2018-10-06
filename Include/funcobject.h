@@ -7,6 +7,7 @@
 extern "C" {
 #endif
 
+
 /* Function objects and code objects should not be confused with each other:
  *
  * Function objects are created by the execution of the 'def' statement.
@@ -32,6 +33,7 @@ typedef struct {
     PyObject *func_module;      /* The __module__ attribute, can be anything */
     PyObject *func_annotations; /* Annotations, a dict or NULL */
     PyObject *func_qualname;    /* The qualified name */
+    vectorcall_func vector_call;
 
     /* Invariant:
      *     func_closure contains the bindings for func_code->co_freevars, so

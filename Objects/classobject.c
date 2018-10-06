@@ -40,6 +40,47 @@ PyMethod_Self(PyObject *im)
     return ((PyMethodObject *)im)->im_self;
 }
 
+/* Vector call for bound-methods */
+static PyObject *
+method_vector_call(PyObject *method, PyObject *const *stack,
+                Py_ssize_t nargs, PyObject *kwnames)
+{
+    assert(Py_TYPE(method) == &PyMethod_Type);
+    PyObject *self, *func, *result;
+    self = PyMethod_GET_SELF(method);
+    func = PyMethod_GET_FUNCTION(method);
+    
+    if (nargs & PY_VECTORCALL_ARGUMENTS_OFFSET) {
+        nargs = (nargs&~PY_VECTORCALL_ARGUMENTS_OFFSET)+1;
+        /* PY_VECTORCALL_ARGUMENTS_OFFSET is set, so we are allowed to mutate the vector */
+        PyObject **args = (PyObject**)stack-1;
+        PyObject *tmp = args[0];
+        args[0] = self;
+        result = _Py_VectorCall(func, args, nargs, kwnames);
+        args[0] = tmp;
+    }
+    else {
+        Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
+        PyObject **newstack;
+        Py_ssize_t totalargs = nargs+nkwargs;
+        newstack = PyMem_Malloc((totalargs+1) * sizeof(PyObject *));
+        if (newstack == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        /* use borrowed references */
+        newstack[0] = self;
+        if (totalargs > 0) {
+            memcpy(&newstack[1], stack, totalargs * sizeof(PyObject *));
+        }
+        result = _Py_VectorCall(func, newstack, nargs+1, kwnames);
+        PyMem_Free(newstack);
+    }
+    return result;
+}
+
+
+
 /* Method objects are used for bound instance methods returned by
    instancename.methodname. ClassName.methodname returns an ordinary
    function.
@@ -69,6 +110,7 @@ PyMethod_New(PyObject *func, PyObject *self)
     im->im_func = func;
     Py_XINCREF(self);
     im->im_self = self;
+    im->vector_call = method_vector_call;
     _PyObject_GC_TRACK(im);
     return (PyObject *)im;
 }
@@ -323,7 +365,8 @@ PyTypeObject PyMethod_Type = {
     method_getattro,                            /* tp_getattro */
     PyObject_GenericSetAttr,                    /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+    Py_TPFLAGS_HAVE_VECTORCALL,                 /* tp_flags */
     method_doc,                                 /* tp_doc */
     (traverseproc)method_traverse,              /* tp_traverse */
     0,                                          /* tp_clear */
@@ -342,6 +385,7 @@ PyTypeObject PyMethod_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     method_new,                                 /* tp_new */
+    .tp_vectorcall_offset = offsetof(PyMethodObject, vector_call),
 };
 
 /* Clear out the free list */

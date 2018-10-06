@@ -272,6 +272,7 @@ _PyMethodDescr_FastCallKeywords(PyObject *descrobj,
     PyMethodDescrObject *descr = (PyMethodDescrObject *)descrobj;
     PyObject *self, *result;
 
+    nargs &= ~PY_VECTORCALL_ARGUMENTS_OFFSET;
     /* Make sure that the first argument is acceptable as 'self' */
     if (nargs < 1) {
         PyErr_Format(PyExc_TypeError,
@@ -557,6 +558,7 @@ PyTypeObject PyMethodDescr_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+    Py_TPFLAGS_HAVE_VECTORCALL |
     Py_TPFLAGS_METHOD_DESCRIPTOR,               /* tp_flags */
     0,                                          /* tp_doc */
     descr_traverse,                             /* tp_traverse */
@@ -572,6 +574,7 @@ PyTypeObject PyMethodDescr_Type = {
     0,                                          /* tp_dict */
     (descrgetfunc)method_get,                   /* tp_descr_get */
     0,                                          /* tp_descr_set */
+    .tp_vectorcall_offset = offsetof(PyMethodDescrObject, vector_call),
 };
 
 /* This is for METH_CLASS in C, not for "f = classmethod(f)" in Python! */
@@ -752,8 +755,10 @@ PyDescr_NewMethod(PyTypeObject *type, PyMethodDef *method)
 
     descr = (PyMethodDescrObject *)descr_new(&PyMethodDescr_Type,
                                              type, method->ml_name);
-    if (descr != NULL)
+    if (descr != NULL) {
         descr->d_method = method;
+        descr->vector_call = &_PyMethodDescr_FastCallKeywords;
+    }
     return (PyObject *)descr;
 }
 

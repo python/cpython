@@ -416,7 +416,7 @@ sys_audit(PyObject *self, PyObject *const *args, Py_ssize_t argc)
 
 
 static PyObject *
-sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
+sys_breakpointhook(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *keywords)
 {
     assert(!PyErr_Occurred());
     char *envar = Py_GETENV("PYTHONBREAKPOINT");
@@ -481,7 +481,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         return NULL;
     }
     PyMem_RawFree(envar);
-    PyObject *retval = _PyObject_FastCallKeywords(hook, args, nargs, keywords);
+    PyObject *retval = PyObject_VectorCallWithCallable(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
 

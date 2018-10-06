@@ -53,6 +53,7 @@ typedef struct {
 typedef struct {
     PyDescr_COMMON;
     PyMethodDef *d_method;
+    vectorcall_func vector_call;
 } PyMethodDescrObject;
 
 typedef struct {
