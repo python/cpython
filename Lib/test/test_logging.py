@@ -3562,6 +3562,10 @@ class FormatterTest(unittest.TestCase):
         # StrFormat Style
         self.assertRaises(ValueError, logging.Formatter, "{name-thing}", style="{")
         self.assertRaises(ValueError, logging.Formatter, '%(asctime)s', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{asctime!Z:15}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{asctime!aa:15}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{process:.2ff}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{process:.2Z}', style='{')
 
         # Dollar style
         self.assertRaises(ValueError, logging.Formatter, '{asctime}', style='$')

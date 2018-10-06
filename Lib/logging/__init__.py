@@ -452,7 +452,8 @@ class StrFormatStyle(PercentStyle):
     default_format = '{message}'
     asctime_format = '{asctime}'
     asctime_search = '{asctime'
-    validation_pattern = r'(\{[^{!}-]+(![r|s|a]+)?(:[\d]*)?\})'
+    validation_pattern = r'(\{[^{!:}-]+(![r|s|a]{1})?(:[.]*[<|>|=]?[+|-|\s]?[\d]' \
+                         r'*[b|c|d|e|E|f|F|g|G|n|o|s|x|X|%]{0,1})?\})'
 
     def _format(self, record):
         return self._fmt.format(**record.__dict__)
