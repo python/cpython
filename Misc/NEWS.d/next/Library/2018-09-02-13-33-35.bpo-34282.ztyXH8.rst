@@ -1,0 +1,1 @@
+Fix enum members getting shadowed by parent attributes.
