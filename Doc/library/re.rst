@@ -204,7 +204,7 @@ The special characters are:
      Standard #18`_ might be added in the future.  This would change the
      syntax, so to facilitate this change a :exc:`FutureWarning` will be raised
      in ambiguous cases for the time being.
-     That include sets starting with a literal ``'['`` or containing literal
+     That includes sets starting with a literal ``'['`` or containing literal
      character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  To
      avoid a warning escape them with a backslash.
 
