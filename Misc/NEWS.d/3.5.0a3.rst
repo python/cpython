@@ -239,7 +239,7 @@ Added support for writing ZIP files to unseekable streams.
 .. nonce: pX2qrx
 .. section: Library
 
-Increase impalib's MAXLINE to accommodate modern mailbox sizes.
+Increase imaplib's MAXLINE to accommodate modern mailbox sizes.
 
 ..
 

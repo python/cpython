@@ -36,7 +36,7 @@ already gets entropy from the OS to set the expat secret using
 Fix urllib.parse.splithost() to correctly parse fragments. For example,
 ``splithost('//127.0.0.1#@evil.com/')`` now correctly returns the
 ``127.0.0.1`` host, instead of treating ``@evil.com`` as the host in an
-authentification (``login@host``).
+authentication (``login@host``).
 
 ..
 

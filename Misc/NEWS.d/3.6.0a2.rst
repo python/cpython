@@ -126,7 +126,7 @@ work at runtime anyway.
 .. nonce: ffzxpX
 .. section: Library
 
-Generated names for Tkinter widgets are now more meanful and recognizirable.
+Generated names for Tkinter widgets are now more meaningful and recognizable.
 
 ..
 
@@ -516,7 +516,7 @@ are added to cover changes.
 
 IDLE requires tk 8.5 and availability ttk widgets. Delete now unneeded tk
 version tests and code for older versions. Add test for IDLE syntax
-colorizoer.
+colorizer.
 
 ..
 
@@ -534,7 +534,7 @@ idlelib.macosx.isXyzTk functions initialize as needed.
 .. nonce: t7ckly
 .. section: IDLE
 
-move Aqua unbinding code, which enable context menus, to maxosx.
+move Aqua unbinding code, which enable context menus, to macosx.
 
 ..
 

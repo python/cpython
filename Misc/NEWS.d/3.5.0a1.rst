@@ -75,8 +75,8 @@ NotImplemented.  Original patch by Martin Panter.
 .. nonce: HQelge
 .. section: Core and Builtins
 
-Fixed a crash in str.decode() when error handler returned replacment string
-longer than mailformed input data.
+Fixed a crash in str.decode() when error handler returned replacement string
+longer than malformed input data.
 
 ..
 
@@ -998,7 +998,7 @@ written in the standard.
 .. nonce: 9-UJRs
 .. section: Library
 
-In the disutils' check command, fix parsing of reST with code or code-block
+In the distutils' check command, fix parsing of reST with code or code-block
 directives.
 
 ..
@@ -2877,7 +2877,7 @@ closed socket. repr(socket.socket) already works fine.
 .. nonce: nkBNci
 .. section: Library
 
-Reprs of most Python implemened classes now contain actual class name
+Reprs of most Python implemented classes now contain actual class name
 instead of hardcoded one.
 
 ..
@@ -3036,7 +3036,7 @@ by Phil Elson.
 
 os.read() now uses a :c:func:`Py_ssize_t` type instead of :c:type:`int` for
 the size to support reading more than 2 GB at once. On Windows, the size is
-truncted to INT_MAX. As any call to os.read(), the OS may read less bytes
+truncated to INT_MAX. As any call to os.read(), the OS may read less bytes
 than the number of requested bytes.
 
 ..

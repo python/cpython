@@ -517,7 +517,7 @@ LF. Patch by Dong-hee Na.
 .. section: Library
 
 multiprocessing.Queue.get() with a timeout now polls its reader in
-non-blocking mode if it succeeded to aquire the lock but the acquire took
+non-blocking mode if it succeeded to acquire the lock but the acquire took
 longer than the timeout.
 
 ..
@@ -818,7 +818,7 @@ IDLE - make tests pass with zzdummy extension disabled by default.
 Document how IDLE runs tkinter programs. IDLE calls tcl/tk update in the
 background in order to make live
 
-interaction and experimentatin with tkinter applications much easier.
+interaction and experimentation with tkinter applications much easier.
 
 ..
 
@@ -837,7 +837,7 @@ not the same as deleting and inserting because int('') will fail.
 .. nonce: 50Jp_Q
 .. section: IDLE
 
-Rearrange IDLE condigdialog GenPage into Window, Editor, and Help sections.
+Rearrange IDLE configdialog GenPage into Window, Editor, and Help sections.
 
 ..
 
