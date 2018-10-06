@@ -19,7 +19,7 @@ The different font weights and slants are:
           ITALIC
           ROMAN
 
-.. class:: Font(root=None, font=None, name=None, exists=False, options)
+.. class:: Font(root=None, font=None, name=None, exists=False, **options)
 
    The :class:`Font` class represents a named font. *Font* instances are given
    unique names and can be specified by their family, size, and style
