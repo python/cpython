@@ -760,7 +760,7 @@ Warnings
 even a single character doesn't match, the test fails.  This will probably
 surprise you a few times, as you learn exactly what Python does and doesn't
 guarantee about output.  For example, before Python 3.6, when printing a dict,
-Python did not guarantee that the key-value pairs was printed in any
+Python did not guarantee that the key-value pairs were printed in any
 particular order, so a test like ::
 
    >>> foo()
