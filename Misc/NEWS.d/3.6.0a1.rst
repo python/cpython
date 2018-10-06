@@ -2684,7 +2684,7 @@ pickletools.dis() now outputs implicit memo index for the MEMOIZE opcode.
 .. nonce: ebqGy-
 .. section: Library
 
-Add an optional newline paramer to binascii.b2a_base64(). base64.b64encode()
+Add an optional newline parameter to binascii.b2a_base64(). base64.b64encode()
 uses it to avoid a memory copy.
 
 ..
@@ -3938,4 +3938,4 @@ programming bugs.
 
 ValueError is now raised instead of TypeError on buffer overflow in parsing
 "es#" and "et#" format units.  SystemError is now raised instead of
-TypeError on programmical error in parsing format string.
+TypeError on programmatical error in parsing format string.
