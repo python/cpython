@@ -1,0 +1,2 @@
+Ensure that :c:func:`PyObject_Print` always returns ``-1`` on error.  Patch
+by Zackery Spytz.
