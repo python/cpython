@@ -53,9 +53,14 @@ bisect_right(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t index;
     static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:bisect_right",
-        keywords, &list, &item, &lo, &hi))
-        return NULL;
+    if (kw==NULL && PyTuple_GET_SIZE(args)==2) {
+        list = PyTuple_GET_ITEM(args, 0);
+        item = PyTuple_GET_ITEM(args, 1);
+    } else {
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:bisect_right",
+                                         keywords, &list, &item, &lo, &hi))
+            return NULL;
+    }
     index = internal_bisect_right(list, item, lo, hi);
     if (index < 0)
         return NULL;
