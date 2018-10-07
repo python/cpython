@@ -49,7 +49,7 @@ Constructors for container types must conform to two rules:
 .. c:function:: TYPE* PyObject_GC_Resize(TYPE, PyVarObject *op, Py_ssize_t newsize)
 
    Resize an object allocated by :c:func:`PyObject_NewVar`.  Returns the
-   resized object or *NULL* on failure.
+   resized object or *NULL* on failure.  *op* must not be tracked by the collector yet.
 
 
 .. c:function:: void PyObject_GC_Track(PyObject *op)

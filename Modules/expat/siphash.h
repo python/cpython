@@ -11,6 +11,12 @@
  * --------------------------------------------------------------------------
  * HISTORY:
  *
+ * 2018-07-08  (Anton Maklakov)
+ *   - Add "fall through" markers for GCC's -Wimplicit-fallthrough
+ *
+ * 2017-11-03  (Sebastian Pipping)
+ *   - Hide sip_tobin and sip_binof unless SIPHASH_TOBIN macro is defined
+ *
  * 2017-07-25  (Vadim Zeitlin)
  *   - Fix use of SIPHASH_MAIN macro
  *
@@ -151,12 +157,16 @@ static struct sipkey *sip_tokey(struct sipkey *key, const void *src) {
 } /* sip_tokey() */
 
 
+#ifdef SIPHASH_TOBIN
+
 #define sip_binof(v) sip_tobin((unsigned char[8]){ 0 }, (v))
 
 static void *sip_tobin(void *dst, uint64_t u64) {
 	SIP_U64TO8_LE((unsigned char *)dst, u64);
 	return dst;
 } /* sip_tobin() */
+
+#endif  /* SIPHASH_TOBIN */
 
 
 static void sip_round(struct siphash *H, const int rounds) {
@@ -231,12 +241,19 @@ static uint64_t sip24_final(struct siphash *H) {
 
 	switch (left) {
 	case 7: b |= (uint64_t)H->buf[6] << 48;
+		/* fall through */
 	case 6: b |= (uint64_t)H->buf[5] << 40;
+		/* fall through */
 	case 5: b |= (uint64_t)H->buf[4] << 32;
+		/* fall through */
 	case 4: b |= (uint64_t)H->buf[3] << 24;
+		/* fall through */
 	case 3: b |= (uint64_t)H->buf[2] << 16;
+		/* fall through */
 	case 2: b |= (uint64_t)H->buf[1] << 8;
+		/* fall through */
 	case 1: b |= (uint64_t)H->buf[0] << 0;
+		/* fall through */
 	case 0: break;
 	}
 

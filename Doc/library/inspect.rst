@@ -247,9 +247,10 @@ attributes:
 
 .. function:: getmembers(object[, predicate])
 
-   Return all the members of an object in a list of (name, value) pairs sorted by
-   name.  If the optional *predicate* argument is supplied, only members for which
-   the predicate returns a true value are included.
+   Return all the members of an object in a list of ``(name, value)``
+   pairs sorted by name. If the optional *predicate* argument—which will be
+   called with the ``value`` object of each member—is supplied, only members
+   for which the predicate returns a true value are included.
 
    .. note::
 
@@ -556,7 +557,7 @@ function.
       >>> sig.parameters['b'].annotation
       <class 'int'>
 
-   Accepts a wide range of python callables, from plain functions and classes to
+   Accepts a wide range of Python callables, from plain functions and classes to
    :func:`functools.partial` objects.
 
    Raises :exc:`ValueError` if no signature can be provided, and
@@ -750,6 +751,25 @@ function.
          ...                        param.default is param.empty):
          ...         print('Parameter:', param)
          Parameter: c
+
+   .. attribute:: Parameter.kind.description
+
+      Describes a enum value of Parameter.kind.
+
+      .. versionadded:: 3.8
+
+      Example: print all descriptions of arguments::
+
+         >>> def foo(a, b, *, c, d=10):
+         ...     pass
+
+         >>> sig = signature(foo)
+         >>> for param in sig.parameters.values():
+         ...     print(param.kind.description)
+         positional or keyword
+         positional or keyword
+         keyword-only
+         keyword-only
 
    .. method:: Parameter.replace(*[, name][, kind][, default][, annotation])
 

@@ -1429,8 +1429,7 @@ static PyObject *
 _elementtree_Element_getiterator_impl(ElementObject *self, PyObject *tag)
 /*[clinic end generated code: output=cb69ff4a3742dfa1 input=500da1a03f7b9e28]*/
 {
-    /* Change for a DeprecationWarning in 1.4 */
-    if (PyErr_WarnEx(PyExc_PendingDeprecationWarning,
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "This method will be removed in future versions.  "
                      "Use 'tree.iter()' or 'list(tree.iter())' instead.",
                      1) < 0) {
@@ -2770,12 +2769,6 @@ typedef struct {
 
 } XMLParserObject;
 
-static PyObject*
-_elementtree_XMLParser_doctype(XMLParserObject *self, PyObject *const *args, Py_ssize_t nargs);
-static PyObject *
-_elementtree_XMLParser_doctype_impl(XMLParserObject *self, PyObject *name,
-                                    PyObject *pubid, PyObject *system);
-
 /* helpers */
 
 LOCAL(PyObject*)
@@ -3139,10 +3132,9 @@ expat_start_doctype_handler(XMLParserObject *self,
                             const XML_Char *pubid,
                             int has_internal_subset)
 {
-    PyObject *self_pyobj = (PyObject *)self;
+    _Py_IDENTIFIER(doctype);
     PyObject *doctype_name_obj, *sysid_obj, *pubid_obj;
-    PyObject *parser_doctype = NULL;
-    PyObject *res = NULL;
+    PyObject *res;
 
     if (PyErr_Occurred())
         return;
@@ -3179,33 +3171,16 @@ expat_start_doctype_handler(XMLParserObject *self,
         res = PyObject_CallFunctionObjArgs(self->handle_doctype,
                                            doctype_name_obj, pubid_obj,
                                            sysid_obj, NULL);
-        Py_CLEAR(res);
+        Py_XDECREF(res);
     }
-    else {
-        /* Now see if the parser itself has a doctype method. If yes and it's
-         * a custom method, call it but warn about deprecation. If it's only
-         * the vanilla XMLParser method, do nothing.
-         */
-        parser_doctype = PyObject_GetAttrString(self_pyobj, "doctype");
-        if (parser_doctype &&
-            !(PyCFunction_Check(parser_doctype) &&
-              PyCFunction_GET_SELF(parser_doctype) == self_pyobj &&
-              PyCFunction_GET_FUNCTION(parser_doctype) ==
-                    (PyCFunction) _elementtree_XMLParser_doctype)) {
-            res = _elementtree_XMLParser_doctype_impl(self, doctype_name_obj,
-                                                      pubid_obj, sysid_obj);
-            if (!res)
-                goto clear;
-            Py_DECREF(res);
-            res = PyObject_CallFunctionObjArgs(parser_doctype,
-                                               doctype_name_obj, pubid_obj,
-                                               sysid_obj, NULL);
-            Py_CLEAR(res);
-        }
+    else if (_PyObject_LookupAttrId((PyObject *)self, &PyId_doctype, &res) > 0) {
+        (void)PyErr_WarnEx(PyExc_RuntimeWarning,
+                "The doctype() method of XMLParser is ignored.  "
+                "Define doctype() method on the TreeBuilder target.",
+                1);
+        Py_DECREF(res);
     }
 
-clear:
-    Py_XDECREF(parser_doctype);
     Py_DECREF(doctype_name_obj);
     Py_DECREF(pubid_obj);
     Py_DECREF(sysid_obj);
@@ -3269,25 +3244,17 @@ ignore_attribute_error(PyObject *value)
 /*[clinic input]
 _elementtree.XMLParser.__init__
 
-    html: object = NULL
+    *
     target: object = NULL
     encoding: str(accept={str, NoneType}) = NULL
 
 [clinic start generated code]*/
 
 static int
-_elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
-                                     PyObject *target, const char *encoding)
-/*[clinic end generated code: output=d6a16c63dda54441 input=155bc5695baafffd]*/
+_elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
+                                     const char *encoding)
+/*[clinic end generated code: output=3ae45ec6cdf344e4 input=96288fcba916cfce]*/
 {
-    if (html != NULL) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "The html argument of XMLParser() is deprecated",
-                         1) < 0) {
-            return -1;
-        }
-    }
-
     self->entity = PyDict_New();
     if (!self->entity)
         return -1;
@@ -3304,6 +3271,11 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
         Py_CLEAR(self->names);
         PyErr_NoMemory();
         return -1;
+    }
+    /* expat < 2.1.0 has no XML_SetHashSalt() */
+    if (EXPAT(SetHashSalt) != NULL) {
+        EXPAT(SetHashSalt)(self->parser,
+                           (unsigned long)_Py_HashSecret.expat.hashsalt);
     }
 
     if (target) {
@@ -3616,30 +3588,6 @@ _elementtree_XMLParser__parse_whole(XMLParserObject *self, PyObject *file)
 }
 
 /*[clinic input]
-_elementtree.XMLParser.doctype
-
-    name: object
-    pubid: object
-    system: object
-    /
-
-[clinic start generated code]*/
-
-static PyObject *
-_elementtree_XMLParser_doctype_impl(XMLParserObject *self, PyObject *name,
-                                    PyObject *pubid, PyObject *system)
-/*[clinic end generated code: output=10fb50c2afded88d input=84050276cca045e1]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "This method of XMLParser is deprecated.  Define"
-                     " doctype() method on the TreeBuilder target.",
-                     1) < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-/*[clinic input]
 _elementtree.XMLParser._setevents
 
     events_queue: object
@@ -3737,29 +3685,24 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
     Py_RETURN_NONE;
 }
 
-static PyObject*
-xmlparser_getattro(XMLParserObject* self, PyObject* nameobj)
-{
-    if (PyUnicode_Check(nameobj)) {
-        PyObject* res;
-        if (_PyUnicode_EqualToASCIIString(nameobj, "entity"))
-            res = self->entity;
-        else if (_PyUnicode_EqualToASCIIString(nameobj, "target"))
-            res = self->target;
-        else if (_PyUnicode_EqualToASCIIString(nameobj, "version")) {
-            return PyUnicode_FromFormat(
-                "Expat %d.%d.%d", XML_MAJOR_VERSION,
-                XML_MINOR_VERSION, XML_MICRO_VERSION);
-        }
-        else
-            goto generic;
+static PyMemberDef xmlparser_members[] = {
+    {"entity", T_OBJECT, offsetof(XMLParserObject, entity), READONLY, NULL},
+    {"target", T_OBJECT, offsetof(XMLParserObject, target), READONLY, NULL},
+    {NULL}
+};
 
-        Py_INCREF(res);
-        return res;
-    }
-  generic:
-    return PyObject_GenericGetAttr((PyObject*) self, nameobj);
+static PyObject*
+xmlparser_version_getter(XMLParserObject *self, void *closure)
+{
+    return PyUnicode_FromFormat(
+        "Expat %d.%d.%d", XML_MAJOR_VERSION,
+        XML_MINOR_VERSION, XML_MICRO_VERSION);
 }
+
+static PyGetSetDef xmlparser_getsetlist[] = {
+    {"version", (getter)xmlparser_version_getter, NULL, NULL},
+    {NULL},
+};
 
 #include "clinic/_elementtree.c.h"
 
@@ -3923,7 +3866,6 @@ static PyMethodDef xmlparser_methods[] = {
     _ELEMENTTREE_XMLPARSER_CLOSE_METHODDEF
     _ELEMENTTREE_XMLPARSER__PARSE_WHOLE_METHODDEF
     _ELEMENTTREE_XMLPARSER__SETEVENTS_METHODDEF
-    _ELEMENTTREE_XMLPARSER_DOCTYPE_METHODDEF
     {NULL, NULL}
 };
 
@@ -3943,7 +3885,7 @@ static PyTypeObject XMLParser_Type = {
     0,                                              /* tp_hash */
     0,                                              /* tp_call */
     0,                                              /* tp_str */
-    (getattrofunc)xmlparser_getattro,               /* tp_getattro */
+    0,                                              /* tp_getattro */
     0,                                              /* tp_setattro */
     0,                                              /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
@@ -3956,8 +3898,8 @@ static PyTypeObject XMLParser_Type = {
     0,                                              /* tp_iter */
     0,                                              /* tp_iternext */
     xmlparser_methods,                              /* tp_methods */
-    0,                                              /* tp_members */
-    0,                                              /* tp_getset */
+    xmlparser_members,                              /* tp_members */
+    xmlparser_getsetlist,                           /* tp_getset */
     0,                                              /* tp_base */
     0,                                              /* tp_dict */
     0,                                              /* tp_descr_get */

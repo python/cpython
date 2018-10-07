@@ -721,9 +721,8 @@ existing processes to perform this function.)
 includes a working socket receiver which can be used as a starting point for you
 to adapt in your own applications.
 
-If you are using a recent version of Python which includes the
-:mod:`multiprocessing` module, you could write your own handler which uses the
-:class:`~multiprocessing.Lock` class from this module to serialize access to the
+You could also write your own handler which uses the :class:`~multiprocessing.Lock`
+class from the :mod:`multiprocessing` module to serialize access to the
 file from your processes. The existing :class:`FileHandler` and subclasses do
 not make use of :mod:`multiprocessing` at present, though they may do so in the
 future. Note that at present, the :mod:`multiprocessing` module does not provide
@@ -1456,12 +1455,18 @@ works::
         which then get dispatched, by the logging system, to the handlers
         configured for those loggers.
         """
+
         def handle(self, record):
-            logger = logging.getLogger(record.name)
-            # The process name is transformed just to show that it's the listener
-            # doing the logging to files and console
-            record.processName = '%s (for %s)' % (current_process().name, record.processName)
-            logger.handle(record)
+            if record.name == "root":
+                logger = logging.getLogger()
+            else:
+                logger = logging.getLogger(record.name)
+
+            if logger.isEnabledFor(record.levelno):
+                # The process name is transformed just to show that it's the listener
+                # doing the logging to files and console
+                record.processName = '%s (for %s)' % (current_process().name, record.processName)
+                logger.handle(record)
 
     def listener_process(q, stop_event, config):
         """
@@ -1526,22 +1531,16 @@ works::
         # The main process gets a simple configuration which prints to the console.
         config_initial = {
             'version': 1,
-            'formatters': {
-                'detailed': {
-                    'class': 'logging.Formatter',
-                    'format': '%(asctime)s %(name)-15s %(levelname)-8s %(processName)-10s %(message)s'
-                }
-            },
             'handlers': {
                 'console': {
                     'class': 'logging.StreamHandler',
-                    'level': 'INFO',
-                },
+                    'level': 'INFO'
+                }
             },
             'root': {
-                'level': 'DEBUG',
-                'handlers': ['console']
-            },
+                'handlers': ['console'],
+                'level': 'DEBUG'
+            }
         }
         # The worker process configuration is just a QueueHandler attached to the
         # root logger, which allows all messages to be sent to the queue.
@@ -1554,13 +1553,13 @@ works::
             'handlers': {
                 'queue': {
                     'class': 'logging.handlers.QueueHandler',
-                    'queue': q,
-                },
+                    'queue': q
+                }
             },
             'root': {
-                'level': 'DEBUG',
-                'handlers': ['queue']
-            },
+                'handlers': ['queue'],
+                'level': 'DEBUG'
+            }
         }
         # The listener process configuration shows that the full flexibility of
         # logging configuration is available to dispatch events to handlers however
@@ -1584,28 +1583,28 @@ works::
             'handlers': {
                 'console': {
                     'class': 'logging.StreamHandler',
-                    'level': 'INFO',
                     'formatter': 'simple',
+                    'level': 'INFO'
                 },
                 'file': {
                     'class': 'logging.FileHandler',
                     'filename': 'mplog.log',
                     'mode': 'w',
-                    'formatter': 'detailed',
+                    'formatter': 'detailed'
                 },
                 'foofile': {
                     'class': 'logging.FileHandler',
                     'filename': 'mplog-foo.log',
                     'mode': 'w',
-                    'formatter': 'detailed',
+                    'formatter': 'detailed'
                 },
                 'errors': {
                     'class': 'logging.FileHandler',
                     'filename': 'mplog-errors.log',
                     'mode': 'w',
-                    'level': 'ERROR',
                     'formatter': 'detailed',
-                },
+                    'level': 'ERROR'
+                }
             },
             'loggers': {
                 'foo': {
@@ -1613,9 +1612,9 @@ works::
                 }
             },
             'root': {
-                'level': 'DEBUG',
-                'handlers': ['console', 'file', 'errors']
-            },
+                'handlers': ['console', 'file', 'errors'],
+                'level': 'DEBUG'
+            }
         }
         # Log some initial events, just to show that logging in the parent works
         # normally.
@@ -1652,11 +1651,11 @@ works::
 Inserting a BOM into messages sent to a SysLogHandler
 -----------------------------------------------------
 
-`RFC 5424 <https://tools.ietf.org/html/rfc5424>`_ requires that a
+:rfc:`5424` requires that a
 Unicode message be sent to a syslog daemon as a set of bytes which have the
 following structure: an optional pure-ASCII component, followed by a UTF-8 Byte
-Order Mark (BOM), followed by Unicode encoded using UTF-8. (See the `relevant
-section of the specification <https://tools.ietf.org/html/rfc5424#section-6>`_.)
+Order Mark (BOM), followed by Unicode encoded using UTF-8. (See the
+:rfc:`relevant section of the specification <5424#section-6>`.)
 
 In Python 3.1, code was added to
 :class:`~logging.handlers.SysLogHandler` to insert a BOM into the message, but
@@ -1666,7 +1665,7 @@ appear before it.
 
 As this behaviour is broken, the incorrect BOM insertion code is being removed
 from Python 3.2.4 and later. However, it is not being replaced, and if you
-want to produce RFC 5424-compliant messages which include a BOM, an optional
+want to produce :rfc:`5424`-compliant messages which include a BOM, an optional
 pure-ASCII sequence before it and arbitrary Unicode after it, encoded using
 UTF-8, then you need to do the following:
 
@@ -1689,7 +1688,7 @@ UTF-8, then you need to do the following:
 
 The formatted message *will* be encoded using UTF-8 encoding by
 ``SysLogHandler``. If you follow the above rules, you should be able to produce
-RFC 5424-compliant messages. If you don't, logging may not complain, but your
+:rfc:`5424`-compliant messages. If you don't, logging may not complain, but your
 messages will not be RFC 5424-compliant, and your syslog daemon may complain.
 
 

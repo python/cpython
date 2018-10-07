@@ -133,7 +133,7 @@ Legacy API:
 .. seealso::
 
    Module :mod:`smtplib`
-      SMTP (Simple Mail Transport Protcol) client
+      SMTP (Simple Mail Transport Protocol) client
 
    Module :mod:`poplib`
       POP (Post Office Protocol) client

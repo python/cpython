@@ -457,7 +457,7 @@ We define a single method, :meth:`Custom.name()`, that outputs the objects name 
 concatenation of the first and last names. ::
 
    static PyObject *
-   Custom_name(CustomObject *self)
+   Custom_name(CustomObject *self, PyObject *Py_UNUSED(ignored))
    {
        if (self->first == NULL) {
            PyErr_SetString(PyExc_AttributeError, "first");

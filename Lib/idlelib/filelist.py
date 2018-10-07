@@ -1,7 +1,7 @@
-import os
+"idlelib.filelist"
 
-from tkinter import *
-import tkinter.messagebox as tkMessageBox
+import os
+from tkinter import messagebox as tkMessageBox
 
 
 class FileList:
@@ -111,7 +111,8 @@ class FileList:
         return os.path.normpath(filename)
 
 
-def _test():
+def _test():  # TODO check and convert to htest
+    from tkinter import Tk
     from idlelib.editor import fixwordbreaks
     from idlelib.run import fix_scaling
     import sys
@@ -120,13 +121,12 @@ def _test():
     fixwordbreaks(root)
     root.withdraw()
     flist = FileList(root)
-    if sys.argv[1:]:
-        for filename in sys.argv[1:]:
-            flist.open(filename)
-    else:
-        flist.new()
+    flist.new()
     if flist.inversedict:
         root.mainloop()
 
 if __name__ == '__main__':
-    _test()
+    from unittest import main
+    main('idlelib.idle_test.test_filelist', verbosity=2)
+
+#    _test()

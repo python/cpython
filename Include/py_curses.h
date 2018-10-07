@@ -91,65 +91,6 @@ static void **PyCurses_API;
 static const char catchall_ERR[]  = "curses function returned ERR";
 static const char catchall_NULL[] = "curses function returned NULL";
 
-/* Function Prototype Macros - They are ugly but very, very useful. ;-)
-
-   X - function name
-   TYPE - parameter Type
-   ERGSTR - format string for construction of the return value
-   PARSESTR - format string for argument parsing
-   */
-
-#define NoArgNoReturnFunction(X) \
-static PyObject *PyCurses_ ## X (PyObject *self) \
-{ \
-  PyCursesInitialised \
-  return PyCursesCheckERR(X(), # X); }
-
-#define NoArgOrFlagNoReturnFunction(X) \
-static PyObject *PyCurses_ ## X (PyObject *self, PyObject *args) \
-{ \
-  int flag = 0; \
-  PyCursesInitialised \
-  switch(PyTuple_Size(args)) { \
-  case 0: \
-    return PyCursesCheckERR(X(), # X); \
-  case 1: \
-    if (!PyArg_ParseTuple(args, "i;True(1) or False(0)", &flag)) return NULL; \
-    if (flag) return PyCursesCheckERR(X(), # X); \
-    else return PyCursesCheckERR(no ## X (), # X); \
-  default: \
-    PyErr_SetString(PyExc_TypeError, # X " requires 0 or 1 arguments"); \
-    return NULL; } }
-
-#define NoArgReturnIntFunction(X) \
-static PyObject *PyCurses_ ## X (PyObject *self) \
-{ \
- PyCursesInitialised \
- return PyLong_FromLong((long) X()); }
-
-
-#define NoArgReturnStringFunction(X) \
-static PyObject *PyCurses_ ## X (PyObject *self) \
-{ \
-  PyCursesInitialised \
-  return PyBytes_FromString(X()); }
-
-#define NoArgTrueFalseFunction(X) \
-static PyObject *PyCurses_ ## X (PyObject *self) \
-{ \
-  PyCursesInitialised \
-  if (X () == FALSE) { \
-    Py_RETURN_FALSE; \
-  } \
-  Py_RETURN_TRUE; }
-
-#define NoArgNoReturnVoidFunction(X) \
-static PyObject *PyCurses_ ## X (PyObject *self) \
-{ \
-  PyCursesInitialised \
-  X(); \
-  Py_RETURN_NONE; }
-
 #ifdef __cplusplus
 }
 #endif

@@ -442,13 +442,14 @@ PyAPI_FUNC(PyObject *) PyObject_GetItem(PyObject *o, PyObject *key);
    This is the equivalent of the Python statement: o[key]=v. */
 PyAPI_FUNC(int) PyObject_SetItem(PyObject *o, PyObject *key, PyObject *v);
 
-/* Remove the mapping for object, key, from the object 'o'.
+/* Remove the mapping for the string 'key' from the object 'o'.
    Returns -1 on failure.
 
    This is equivalent to the Python statement: del o[key]. */
 PyAPI_FUNC(int) PyObject_DelItemString(PyObject *o, const char *key);
 
-/* Delete the mapping for key from object 'o'. Returns -1 on failure.
+/* Delete the mapping for the object 'key' from the object 'o'.
+   Returns -1 on failure.
 
    This is the equivalent of the Python statement: del o[key]. */
 PyAPI_FUNC(int) PyObject_DelItem(PyObject *o, PyObject *key);
@@ -589,9 +590,15 @@ PyAPI_FUNC(PyObject *) PyObject_Format(PyObject *obj,
    returns itself. */
 PyAPI_FUNC(PyObject *) PyObject_GetIter(PyObject *);
 
+/* Returns 1 if the object 'obj' provides iterator protocols, and 0 otherwise.
+
+   This function always succeeds. */
+PyAPI_FUNC(int) PyIter_Check(PyObject *);
+#ifndef Py_LIMITED_API
 #define PyIter_Check(obj) \
     ((obj)->ob_type->tp_iternext != NULL && \
      (obj)->ob_type->tp_iternext != &_PyObject_NextNotImplemented)
+#endif
 
 /* Takes an iterator object and calls its tp_iternext slot,
    returning the next value.
@@ -709,9 +716,14 @@ PyAPI_FUNC(PyObject *) PyNumber_Xor(PyObject *o1, PyObject *o2);
    This is the equivalent of the Python expression: o1 | o2. */
 PyAPI_FUNC(PyObject *) PyNumber_Or(PyObject *o1, PyObject *o2);
 
+/* Returns 1 if obj is an index integer (has the nb_index slot of the
+   tp_as_number structure filled in), and 0 otherwise. */
+PyAPI_FUNC(int) PyIndex_Check(PyObject *);
+#ifndef Py_LIMITED_API
 #define PyIndex_Check(obj)                              \
     ((obj)->ob_type->tp_as_number != NULL &&            \
      (obj)->ob_type->tp_as_number->nb_index != NULL)
+#endif
 
 /* Returns the object 'o' converted to a Python int, or NULL with an exception
    raised on failure. */
@@ -920,8 +932,10 @@ PyAPI_FUNC(PyObject *) PySequence_Fast(PyObject *o, const char* m);
 
 /* Assume tp_as_sequence and sq_item exist and that 'i' does not
    need to be corrected for a negative index. */
+#ifndef Py_LIMITED_API
 #define PySequence_ITEM(o, i)\
     ( Py_TYPE(o)->tp_as_sequence->sq_item(o, i) )
+#endif
 
 /* Return a pointer to the underlying item array for
    an object retured by PySequence_Fast */
@@ -1005,8 +1019,7 @@ PyAPI_FUNC(PyObject *) PySequence_InPlaceRepeat(PyObject *o, Py_ssize_t count);
 PyAPI_FUNC(int) PyMapping_Check(PyObject *o);
 
 /* Returns the number of keys in mapping object 'o' on success, and -1 on
-  failure. For objects that do not provide sequence protocol, this is
-  equivalent to the Python expression: len(o). */
+  failure. This is equivalent to the Python expression: len(o). */
 PyAPI_FUNC(Py_ssize_t) PyMapping_Size(PyObject *o);
 
 /* For DLL compatibility */
@@ -1019,7 +1032,7 @@ PyAPI_FUNC(Py_ssize_t) PyMapping_Length(PyObject *o);
 
    int PyMapping_DelItemString(PyObject *o, const char *key);
 
-   Remove the mapping for object 'key' from the mapping 'o'. Returns -1 on
+   Remove the mapping for the string 'key' from the mapping 'o'. Returns -1 on
    failure.
 
    This is equivalent to the Python statement: del o[key]. */
@@ -1029,7 +1042,7 @@ PyAPI_FUNC(Py_ssize_t) PyMapping_Length(PyObject *o);
 
    int PyMapping_DelItem(PyObject *o, PyObject *key);
 
-   Remove the mapping for object 'key' from the mapping object 'o'.
+   Remove the mapping for the object 'key' from the mapping object 'o'.
    Returns -1 on failure.
 
    This is equivalent to the Python statement: del o[key]. */
@@ -1063,13 +1076,13 @@ PyAPI_FUNC(PyObject *) PyMapping_Values(PyObject *o);
    NULL. */
 PyAPI_FUNC(PyObject *) PyMapping_Items(PyObject *o);
 
-/* Return element of o corresponding to the object, key, or NULL on failure.
+/* Return element of 'o' corresponding to the string 'key' or NULL on failure.
 
    This is the equivalent of the Python expression: o[key]. */
 PyAPI_FUNC(PyObject *) PyMapping_GetItemString(PyObject *o,
                                                const char *key);
 
-/* Map the object 'key' to the value 'v' in the mapping 'o'.
+/* Map the string 'key' to the value 'v' in the mapping 'o'.
    Returns -1 on failure.
 
    This is the equivalent of the Python statement: o[key]=v. */

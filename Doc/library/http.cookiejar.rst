@@ -88,7 +88,7 @@ The following classes are provided:
    :class:`DefaultCookiePolicy` objects.
 
    :class:`DefaultCookiePolicy` implements the standard accept / reject rules for
-   Netscape and RFC 2965 cookies.  By default, RFC 2109 cookies (ie. cookies
+   Netscape and :rfc:`2965` cookies.  By default, :rfc:`2109` cookies (ie. cookies
    received in a :mailheader:`Set-Cookie` header with a version cookie-attribute of
    1) are treated according to the RFC 2965 rules.  However, if RFC 2965 handling
    is turned off or :attr:`rfc2109_as_netscape` is ``True``, RFC 2109 cookies are
@@ -100,7 +100,7 @@ The following classes are provided:
 
 .. class:: Cookie()
 
-   This class represents Netscape, RFC 2109 and RFC 2965 cookies.  It is not
+   This class represents Netscape, :rfc:`2109` and :rfc:`2965` cookies.  It is not
    expected that users of :mod:`http.cookiejar` construct their own :class:`Cookie`
    instances.  Instead, if necessary, call :meth:`make_cookies` on a
    :class:`CookieJar` instance.
@@ -123,14 +123,14 @@ The following classes are provided:
       the one sketched out in ``cookie_spec.html``.
 
    :rfc:`2109` - HTTP State Management Mechanism
-      Obsoleted by RFC 2965. Uses :mailheader:`Set-Cookie` with version=1.
+      Obsoleted by :rfc:`2965`. Uses :mailheader:`Set-Cookie` with version=1.
 
    :rfc:`2965` - HTTP State Management Mechanism
       The Netscape protocol with the bugs fixed.  Uses :mailheader:`Set-Cookie2` in
       place of :mailheader:`Set-Cookie`.  Not widely used.
 
    http://kristol.org/cookie/errata.html
-      Unfinished errata to RFC 2965.
+      Unfinished errata to :rfc:`2965`.
 
    :rfc:`2964` - Use of HTTP State Management
 
@@ -320,7 +320,7 @@ writing.
 
    .. note::
 
-      This loses information about RFC 2965 cookies, and also about newer or
+      This loses information about :rfc:`2965` cookies, and also about newer or
       non-standard cookie-attributes such as ``port``.
 
    .. warning::
@@ -410,13 +410,13 @@ be assigned to.
 
 .. attribute:: CookiePolicy.rfc2965
 
-   Implement RFC 2965 protocol.
+   Implement :rfc:`2965` protocol.
 
 
 .. attribute:: CookiePolicy.hide_cookie2
 
    Don't add :mailheader:`Cookie2` header to requests (the presence of this header
-   indicates to the server that we understand RFC 2965 cookies).
+   indicates to the server that we understand :rfc:`2965` cookies).
 
 The most useful way to define a :class:`CookiePolicy` class is by subclassing
 from :class:`DefaultCookiePolicy` and overriding some or all of the methods
@@ -431,7 +431,7 @@ DefaultCookiePolicy Objects
 
 Implements the standard rules for accepting and returning cookies.
 
-Both RFC 2965 and Netscape cookies are covered.  RFC 2965 handling is switched
+Both :rfc:`2965` and Netscape cookies are covered.  RFC 2965 handling is switched
 off by default.
 
 The easiest way to provide your own policy is to override this class and call
@@ -510,11 +510,11 @@ all be assigned to.
 
 .. attribute:: DefaultCookiePolicy.rfc2109_as_netscape
 
-   If true, request that the :class:`CookieJar` instance downgrade RFC 2109 cookies
+   If true, request that the :class:`CookieJar` instance downgrade :rfc:`2109` cookies
    (ie. cookies received in a :mailheader:`Set-Cookie` header with a version
    cookie-attribute of 1) to Netscape cookies by setting the version attribute of
    the :class:`Cookie` instance to 0.  The default value is :const:`None`, in which
-   case RFC 2109 cookies are downgraded if and only if RFC 2965 handling is turned
+   case RFC 2109 cookies are downgraded if and only if :rfc:`2965` handling is turned
    off.  Therefore, RFC 2109 cookies are downgraded by default.
 
 
@@ -527,11 +527,11 @@ General strictness switches:
    and isn't guaranteed to work!
 
 
-RFC 2965 protocol strictness switches:
+:rfc:`2965` protocol strictness switches:
 
 .. attribute:: DefaultCookiePolicy.strict_rfc2965_unverifiable
 
-   Follow RFC 2965 rules on unverifiable transactions (usually, an unverifiable
+   Follow :rfc:`2965` rules on unverifiable transactions (usually, an unverifiable
    transaction is one resulting from a redirect or a request for an image hosted on
    another site).  If this is false, cookies are *never* blocked on the basis of
    verifiability
@@ -541,7 +541,7 @@ Netscape protocol strictness switches:
 
 .. attribute:: DefaultCookiePolicy.strict_ns_unverifiable
 
-   Apply RFC 2965 rules on unverifiable transactions even to Netscape cookies.
+   Apply :rfc:`2965` rules on unverifiable transactions even to Netscape cookies.
 
 
 .. attribute:: DefaultCookiePolicy.strict_ns_domain
@@ -581,7 +581,7 @@ both flags are set).
 
 .. attribute:: DefaultCookiePolicy.DomainRFC2965Match
 
-   When setting cookies, require a full RFC 2965 domain-match.
+   When setting cookies, require a full :rfc:`2965` domain-match.
 
 The following attributes are provided for convenience, and are the most useful
 combinations of the above flags:
@@ -605,7 +605,7 @@ Cookie Objects
 standard cookie-attributes specified in the various cookie standards.  The
 correspondence is not one-to-one, because there are complicated rules for
 assigning default values, because the ``max-age`` and ``expires``
-cookie-attributes contain equivalent information, and because RFC 2109 cookies
+cookie-attributes contain equivalent information, and because :rfc:`2109` cookies
 may be 'downgraded' by :mod:`http.cookiejar` from version 1 to version 0 (Netscape)
 cookies.
 
@@ -616,8 +616,8 @@ internal consistency, so you should know what you're doing if you do that.
 
 .. attribute:: Cookie.version
 
-   Integer or :const:`None`.  Netscape cookies have :attr:`version` 0. RFC 2965 and
-   RFC 2109 cookies have a ``version`` cookie-attribute of 1.  However, note that
+   Integer or :const:`None`.  Netscape cookies have :attr:`version` 0. :rfc:`2965` and
+   :rfc:`2109` cookies have a ``version`` cookie-attribute of 1.  However, note that
    :mod:`http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in which
    case :attr:`version` is 0.
 
@@ -673,7 +673,7 @@ internal consistency, so you should know what you're doing if you do that.
 
 .. attribute:: Cookie.rfc2109
 
-   ``True`` if this cookie was received as an RFC 2109 cookie (ie. the cookie
+   ``True`` if this cookie was received as an :rfc:`2109` cookie (ie. the cookie
    arrived in a :mailheader:`Set-Cookie` header, and the value of the Version
    cookie-attribute in that header was 1).  This attribute is provided because
    :mod:`http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in
@@ -745,7 +745,7 @@ cookies (assumes Unix/Netscape convention for location of the cookies file)::
    r = opener.open("http://example.com/")
 
 The next example illustrates the use of :class:`DefaultCookiePolicy`. Turn on
-RFC 2965 cookies, be more strict about domains when setting and returning
+:rfc:`2965` cookies, be more strict about domains when setting and returning
 Netscape cookies, and block some domains from setting cookies or having them
 returned::
 

@@ -1,0 +1,4 @@
+The warnings module now finds the Python file associated with a warning from
+the code object, rather than the frame's global namespace. This is
+consistent with how tracebacks and pdb find filenames, and should work
+better for dynamically executed code.

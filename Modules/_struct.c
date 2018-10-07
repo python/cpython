@@ -1629,7 +1629,7 @@ unpackiter_traverse(unpackiterobject *self, visitproc visit, void *arg)
 }
 
 static PyObject *
-unpackiter_len(unpackiterobject *self)
+unpackiter_len(unpackiterobject *self, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t len;
     if (self->so == NULL)

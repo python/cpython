@@ -126,7 +126,7 @@ BaseException_repr(PyBaseExceptionObject *self)
 
 /* Pickling support */
 static PyObject *
-BaseException_reduce(PyBaseExceptionObject *self)
+BaseException_reduce(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ignored))
 {
     if (self->args && self->dict)
         return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
@@ -342,6 +342,13 @@ PyException_SetContext(PyObject *self, PyObject *context)
     Py_XSETREF(((PyBaseExceptionObject *)self)->context, context);
 }
 
+#undef PyExceptionClass_Name
+
+const char *
+PyExceptionClass_Name(PyObject *ob)
+{
+    return ((PyTypeObject*)ob)->tp_name;
+}
 
 static struct PyMemberDef BaseException_members[] = {
     {"__suppress_context__", T_BOOL,
@@ -713,7 +720,7 @@ ImportError_getstate(PyImportErrorObject *self)
 
 /* Pickling support */
 static PyObject *
-ImportError_reduce(PyImportErrorObject *self)
+ImportError_reduce(PyImportErrorObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *res;
     PyObject *args;
@@ -1123,7 +1130,7 @@ OSError_str(PyOSErrorObject *self)
 }
 
 static PyObject *
-OSError_reduce(PyOSErrorObject *self)
+OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *args = self->args;
     PyObject *res = NULL, *tmp;

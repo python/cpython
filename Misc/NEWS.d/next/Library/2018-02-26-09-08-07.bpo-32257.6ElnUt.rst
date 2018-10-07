@@ -1,0 +1,2 @@
+The ssl module now contains OP_NO_RENEGOTIATION constant, available with
+OpenSSL 1.1.0h or 1.1.1.

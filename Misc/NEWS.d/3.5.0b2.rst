@@ -1,5 +1,5 @@
 .. bpo: 24284
-.. date: 7868
+.. date: 9208
 .. nonce: NvtEnc
 .. release date: 2015-05-31
 .. section: Core and Builtins
@@ -10,7 +10,7 @@ when finding the empty string and the indexes are completely out of range.
 ..
 
 .. bpo: 24115
-.. date: 7867
+.. date: 9207
 .. nonce: y9e_MO
 .. section: Core and Builtins
 
@@ -21,7 +21,7 @@ errors correctly.
 ..
 
 .. bpo: 24328
-.. date: 7866
+.. date: 9206
 .. nonce: 5gL8or
 .. section: Core and Builtins
 
@@ -30,7 +30,7 @@ Fix importing one character extension modules.
 ..
 
 .. bpo: 11205
-.. date: 7865
+.. date: 9205
 .. nonce: bikrRP
 .. section: Core and Builtins
 
@@ -39,7 +39,7 @@ In dictionary displays, evaluate the key before the value.
 ..
 
 .. bpo: 24285
-.. date: 7864
+.. date: 9204
 .. nonce: wvJumr
 .. section: Core and Builtins
 
@@ -49,7 +49,7 @@ packages. Patch by Petr Viktorin.
 ..
 
 .. bpo: 23247
-.. date: 7863
+.. date: 9203
 .. nonce: nN-K74
 .. section: Library
 
@@ -58,7 +58,7 @@ Fix a crash in the StreamWriter.reset() of CJK codecs.
 ..
 
 .. bpo: 24270
-.. date: 7862
+.. date: 9202
 .. nonce: M2rJNs
 .. section: Library
 
@@ -68,7 +68,7 @@ by Chris Barker and Tal Einat.
 ..
 
 .. bpo: 5633
-.. date: 7861
+.. date: 9201
 .. nonce: JNzKZq
 .. section: Library
 
@@ -77,7 +77,7 @@ Fixed timeit when the statement is a string and the setup is not.
 ..
 
 .. bpo: 24326
-.. date: 7860
+.. date: 9200
 .. nonce: 4t_6Gy
 .. section: Library
 
@@ -87,7 +87,7 @@ David Moore.
 ..
 
 .. bpo: 16991
-.. date: 7859
+.. date: 9199
 .. nonce: 19_Zmj
 .. section: Library
 
@@ -96,7 +96,7 @@ Add a C implementation of OrderedDict.
 ..
 
 .. bpo: 23934
-.. date: 7858
+.. date: 9198
 .. nonce: esb-45
 .. section: Library
 
