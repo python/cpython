@@ -8,7 +8,7 @@ Converted to C by Dmitry Vasiliev (dima at hlabs.spb.ru).
 
 _Py_IDENTIFIER(insert);
 
-static Py_ssize_t
+static inline Py_ssize_t
 internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi)
 {
     PyObject *litem;
@@ -88,9 +88,14 @@ insort_right(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t index;
     static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:insort_right",
-        keywords, &list, &item, &lo, &hi))
-        return NULL;
+    if (kw==NULL && PyTuple_GET_SIZE(args)==2) {
+        list = PyTuple_GET_ITEM(args, 0);
+        item = PyTuple_GET_ITEM(args, 1);
+    } else {
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:insort_right",
+                                         keywords, &list, &item, &lo, &hi))
+            return NULL;
+    }
     index = internal_bisect_right(list, item, lo, hi);
     if (index < 0)
         return NULL;
@@ -117,7 +122,7 @@ If x is already in a, insert it to the right of the rightmost x.\n\
 Optional args lo (default 0) and hi (default len(a)) bound the\n\
 slice of a to be searched.\n");
 
-static Py_ssize_t
+static inline Py_ssize_t
 internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi)
 {
     PyObject *litem;
@@ -162,9 +167,14 @@ bisect_left(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t index;
     static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:bisect_left",
-        keywords, &list, &item, &lo, &hi))
-        return NULL;
+    if (kw==NULL && PyTuple_GET_SIZE(args)==2) {
+        list = PyTuple_GET_ITEM(args, 0);
+        item = PyTuple_GET_ITEM(args, 1);
+    } else {
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:bisect_left",
+                                         keywords, &list, &item, &lo, &hi))
+            return NULL;
+    }
     index = internal_bisect_left(list, item, lo, hi);
     if (index < 0)
         return NULL;
@@ -192,9 +202,14 @@ insort_left(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t index;
     static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:insort_left",
-        keywords, &list, &item, &lo, &hi))
-        return NULL;
+    if (kw==NULL && PyTuple_GET_SIZE(args)==2) {
+        list = PyTuple_GET_ITEM(args, 0);
+        item = PyTuple_GET_ITEM(args, 1);
+    } else {
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:insort_left",
+                                         keywords, &list, &item, &lo, &hi))
+            return NULL;
+    }
     index = internal_bisect_left(list, item, lo, hi);
     if (index < 0)
         return NULL;
