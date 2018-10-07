@@ -64,10 +64,8 @@ extern "C" {
 #define RARROW          51
 #define ELLIPSIS        52
 #define OP              53
-#define AWAIT           54
-#define ASYNC           55
-#define ERRORTOKEN      56
-#define N_TOKENS        60
+#define ERRORTOKEN      54
+#define N_TOKENS        58
 #define NT_OFFSET       256
 
 /* Special definitions for cooperation with parser */
