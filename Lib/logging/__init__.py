@@ -433,8 +433,8 @@ class PercentStyle(object):
 
     def validate(self):
         if not self.validation_pattern.search(self._fmt):
-            raise ValueError('Invalid format %(fmt)s for %(style)s style'
-                             % {"fmt": self._fmt, "style": self.default_format[0]})
+            raise ValueError('Invalid format %s for %s style'
+                             % (self._fmt, self.default_format[0]))
 
     def _format(self, record):
         return self._fmt % record.__dict__
