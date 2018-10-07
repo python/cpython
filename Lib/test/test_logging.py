@@ -3540,24 +3540,44 @@ class FormatterTest(unittest.TestCase):
         self.assertTrue(f.usesTime())
 
     def test_format_validate(self):
-        f = logging.Formatter("%(asctime)-15s - %(message) 5s - %(process)03d - %(module)")
-        self.assertEqual(f._fmt, "%(asctime)-15s - %(message) 5s - %(process)03d - %(module)")
-        f = logging.Formatter("$%{message}%$ - {asctime!a:15} - {customfield['key']} - {process:.2f} - {custom.f:.4f}",
-                              style="{")
-        self.assertEqual(f._fmt,
-                         "$%{message}%$ - {asctime!a:15} - {customfield['key']} - {process:.2f} - {custom.f:.4f}")
+        # Check correct formatting
+        # Percentage style
+        f = logging.Formatter("%(levelname)-15s - %(message) 5s - %(process)03d - %(module) - %(asctime)*.3s")
+        self.assertEqual(f._fmt, "%(levelname)-15s - %(message) 5s - %(process)03d - %(module) - %(asctime)*.3s")
+        f = logging.Formatter("%(asctime)*s - %(asctime)*.3s - %(process)-34.33o")
+        self.assertEqual(f._fmt, "%(asctime)*s - %(asctime)*.3s - %(process)-34.33o")
+        f = logging.Formatter("%(process)#+027.23X")
+        self.assertEqual(f._fmt, "%(process)#+027.23X")
+        f = logging.Formatter("%(foo)#.*g")
+        self.assertEqual(f._fmt, "%(foo)#.*g")
+
+        # StrFormat Style
+        f = logging.Formatter("$%{message}%$ - {asctime!a:15} - {customfield['key']}", style="{")
+        self.assertEqual(f._fmt, "$%{message}%$ - {asctime!a:15} - {customfield['key']}")
+        f = logging.Formatter("{process:.2f} - {custom.f:.4f}", style="{")
+        self.assertEqual(f._fmt, "{process:.2f} - {custom.f:.4f}")
+        f = logging.Formatter("{customfield!s:#<30}", style="{")
+        self.assertEqual(f._fmt, "{customfield!s:#<30}")
+        f = logging.Formatter("{message!r}", style="{")
+        self.assertEqual(f._fmt, "{message!r}")
+        f = logging.Formatter("{process!s:<#30,12f}- {custom:=+#30,.1d} - {module:^30}", style="{")
+        self.assertEqual(f._fmt, "{process!s:<#30,12f}- {custom:=+#30,.1d} - {module:^30}")
+
+        # Dollar style
         f = logging.Formatter("${asctime} - $message", style="$")
         self.assertEqual(f._fmt, "${asctime} - $message")
 
         # Testing when ValueError being raised from incorrect format
         # Percentage Style
-        self.assertRaises(ValueError, logging.Formatter, "%(asctime) - 15s")
         self.assertRaises(ValueError, logging.Formatter, "%(asctime)Z")
         self.assertRaises(ValueError, logging.Formatter, "%(asctime)b")
         self.assertRaises(ValueError, logging.Formatter, "%(asctime)*")
+        self.assertRaises(ValueError, logging.Formatter, "%(asctime)*3s")
         self.assertRaises(ValueError, logging.Formatter, "%(asctime)_")
         self.assertRaises(ValueError, logging.Formatter, '{asctime}')
         self.assertRaises(ValueError, logging.Formatter, '${message}')
+        self.assertRaises(ValueError, logging.Formatter, '%(foo)#12.3*f')  # with both * and decimal number as precision
+        self.assertRaises(ValueError, logging.Formatter, '%(foo)0*.8*f')
 
         # StrFormat Style
         self.assertRaises(ValueError, logging.Formatter, "{name-thing}", style="{")
@@ -3566,10 +3586,13 @@ class FormatterTest(unittest.TestCase):
         self.assertRaises(ValueError, logging.Formatter, '{asctime!aa:15}', style='{')
         self.assertRaises(ValueError, logging.Formatter, '{process:.2ff}', style='{')
         self.assertRaises(ValueError, logging.Formatter, '{process:.2Z}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{process!s:<##30,12g}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{process!s:<#30#,12g}', style='{')
 
         # Dollar style
         self.assertRaises(ValueError, logging.Formatter, '{asctime}', style='$')
         self.assertRaises(ValueError, logging.Formatter, '%(asctime)s', style='$')
+        self.assertRaises(ValueError, logging.Formatter, '${asctime', style='$')
 
     def test_invalid_style(self):
         self.assertRaises(ValueError, logging.Formatter, None, None, 'x')

@@ -27,8 +27,6 @@ import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
 
 from string import Template
 
-from contextlib import contextmanager
-
 
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'FATAL', 'FileHandler', 'Filter', 'Formatter', 'Handler', 'INFO',
@@ -425,7 +423,7 @@ class PercentStyle(object):
     default_format = '%(message)s'
     asctime_format = '%(asctime)s'
     asctime_search = '%(asctime)'
-    validation_pattern = r'(\%\([^%()]+\)[#|0|\-|\s|+]?[\d]*[d|i|o|u|x|X|e|E|f|E|g|G|C|r|s|a|%]{1})'
+    validation_pattern = re.compile(r'%\(\w+\)[#0+ -]*(\*|\d+)?(\.(\*|\d+))?[diouxefgcrsa%]', re.I)
 
     def __init__(self, fmt):
         self._fmt = fmt or self.default_format
@@ -434,7 +432,7 @@ class PercentStyle(object):
         return self._fmt.find(self.asctime_search) >= 0
 
     def validate(self):
-        if not re.search(self.validation_pattern, self._fmt):
+        if not self.validation_pattern.search(self._fmt):
             raise ValueError('Invalid format %(fmt)s for %(style)s style'
                              % {"fmt": self._fmt, "style": self.default_format[0]})
 
@@ -445,15 +443,15 @@ class PercentStyle(object):
         try:
             return self._format(record)
         except KeyError as e:
-            raise ValueError("Invalid formatting field %s" % e)
+            raise ValueError('Formatting field not found in record: %s' % e)
 
 
 class StrFormatStyle(PercentStyle):
     default_format = '{message}'
     asctime_format = '{asctime}'
     asctime_search = '{asctime'
-    validation_pattern = r'(\{[^{!:}-]+(![r|s|a]{1})?(:[.]*[<|>|=]?[+|-|\s]?[\d]' \
-                         r'*[b|c|d|e|E|f|F|g|G|n|o|s|x|X|%]{0,1})?\})'
+    validation_pattern = re.compile(r'\{[^{!:}-]+(![rsa])?(:(.)?[<>=]?[+ -]?[#0]?[\d]*,?[\.\d]*)?[bcdefgnosx%]?\}',
+                                    re.I)
 
     def _format(self, record):
         return self._fmt.format(**record.__dict__)
@@ -463,7 +461,7 @@ class StringTemplateStyle(PercentStyle):
     default_format = '${message}'
     asctime_format = '${asctime}'
     asctime_search = '${asctime}'
-    validation_pattern = r'(\$\{?[\w]+\}?)'
+    validation_pattern = re.compile(r'\$(([\w]+)|(\{[\w]+(:?\})))', re.I)
 
     def __init__(self, fmt):
         self._fmt = fmt or self.default_format
