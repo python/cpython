@@ -367,7 +367,7 @@ class GNUTranslations(NullTranslations):
 
         # Now put all messages from the .mo file buffer into the catalog
         # dictionary.
-        for i in range(0, msgcount):
+        for i in range(msgcount):
             mlen, moff = unpack(ii, buf[masteridx:masteridx+8])
             mend = moff + mlen
             tlen, toff = unpack(ii, buf[transidx:transidx+8])
@@ -471,7 +471,7 @@ class GNUTranslations(NullTranslations):
 
 
 # Locate a .mo file using the gettext strategy
-def find(domain, localedir=None, languages=None, all=False):
+def find(domain, localedir=None, languages=None, all_=False):
     # Get some reasonable defaults for arguments that were not supplied
     if localedir is None:
         localedir = _default_localedir
@@ -491,16 +491,13 @@ def find(domain, localedir=None, languages=None, all=False):
             if nelang not in nelangs:
                 nelangs.append(nelang)
     # select a language
-    if all:
-        result = []
-    else:
-        result = None
+    result = [] if all_ else None
     for lang in nelangs:
         if lang == 'C':
             break
         mofile = os.path.join(localedir, lang, 'LC_MESSAGES', '%s.mo' % domain)
         if os.path.exists(mofile):
-            if all:
+            if all_:
                 result.append(mofile)
             else:
                 return mofile
@@ -515,7 +512,7 @@ def translation(domain, localedir=None, languages=None,
                 class_=None, fallback=False, codeset=None):
     if class_ is None:
         class_ = GNUTranslations
-    mofiles = find(domain, localedir, languages, all=True)
+    mofiles = find(domain, localedir, languages, all_=True)
     if not mofiles:
         if fallback:
             return NullTranslations()
