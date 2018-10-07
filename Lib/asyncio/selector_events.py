@@ -484,14 +484,14 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             # becomes writable to be notified when the connection succeed or
             # fails.
             fut.add_done_callback(
-                functools.partial(self._sock_connect_done, fd))
+                functools.partial(self._sock_write_done, fd))
             self.add_writer(fd, self._sock_connect_cb, fut, sock, address)
         except Exception as exc:
             fut.set_exception(exc)
         else:
             fut.set_result(None)
 
-    def _sock_connect_done(self, fd, fut):
+    def _sock_write_done(self, fd, fut):
         self.remove_writer(fd)
 
     def _sock_connect_cb(self, fut, sock, address):
