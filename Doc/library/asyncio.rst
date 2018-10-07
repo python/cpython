@@ -88,6 +88,7 @@ Additionally, there are **low-level** APIs for
    :caption: Guides and Tutorials
    :maxdepth: 1
 
+   asyncio-tutorial/index.rst
    asyncio-api-index.rst
    asyncio-llapi-index.rst
    asyncio-dev.rst
