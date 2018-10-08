@@ -1,0 +1,1 @@
+Associate ``.mjs`` file extension with ``application/javascript`` MIME Type.
