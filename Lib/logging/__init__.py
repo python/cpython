@@ -432,6 +432,7 @@ class PercentStyle(object):
         return self._fmt.find(self.asctime_search) >= 0
 
     def validate(self):
+        """Validate the input format, ensure it matches the correct style"""
         if not self.validation_pattern.search(self._fmt):
             raise ValueError('Invalid format %s for %s style'
                              % (self._fmt, self.default_format[0]))
