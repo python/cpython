@@ -381,8 +381,8 @@ PyDoc_STRVAR(unicode_isidentifier__doc__,
 "\n"
 "Return True if the string is a valid Python identifier, False otherwise.\n"
 "\n"
-"Use keyword.iskeyword() to test for reserved identifiers such as \"def\" and\n"
-"\"class\".");
+"Call keyword.iskeyword(s) to test whether string s is a reserved identifier,\n"
+"such as \"def\" or \"class");
 
 #define UNICODE_ISIDENTIFIER_METHODDEF    \
     {"isidentifier", (PyCFunction)unicode_isidentifier, METH_NOARGS, unicode_isidentifier__doc__},
@@ -951,4 +951,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=561c88c912b8fe3b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c9476bf19f13c286 input=a9049054013a1b77]*/
