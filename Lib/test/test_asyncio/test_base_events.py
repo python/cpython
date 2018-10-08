@@ -917,12 +917,12 @@ class BaseEventLoopTests(test_utils.TestCase):
 
     async def leave_unfinalized_asyncgen(self):
         # The following should create an async generator, iterate
-        # it partially, and leave it to be garbage collected 
+        # it partially, and leave it to be garbage collected
         # in the future.
-        status = {'started': False, 
+        status = {'started': False,
                   'stopped': False,
                   'finalized': False}
-        
+
         async def agen():
             status['started'] = True
             try:
