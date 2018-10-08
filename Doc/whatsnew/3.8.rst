@@ -174,7 +174,8 @@ Added methods :meth:`~tkinter.Spinbox.selection_from`,
 :meth:`~tkinter.Spinbox.selection_present`,
 :meth:`~tkinter.Spinbox.selection_range` and
 :meth:`~tkinter.Spinbox.selection_to`
-in the :class:`tkinter.Spinbox` class (Contributed by Juliette Monsel).
+in the :class:`tkinter.Spinbox` class.
+(Contributed by Juliette Monsel in :issue:`34829`.)
 
 venv
 ----
