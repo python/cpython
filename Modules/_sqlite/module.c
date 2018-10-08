@@ -334,9 +334,8 @@ static PyObject *pysqlite_cache_deprecated_new(PyTypeObject *type, PyObject *arg
 {
     pysqlite_Cache *self;
 
-    /* print deprecation warning */
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "Cache object has been deprecated",
+                     "Cache object has been deprecated, it won't be exposed in Python 3.9",
                      1))
         return NULL;
 
@@ -362,9 +361,8 @@ static PyObject *pysqlite_statement_deprecated_new(PyTypeObject *type, PyObject 
 {
     pysqlite_Statement *self;
 
-    /* print deprecation warning */
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "Statement object has been deprecated",
+                     "Statement object has been deprecated, it won't be exposed in Python 3.9",
                      1))
         return NULL;
 
@@ -376,7 +374,7 @@ static PyObject *pysqlite_statement_deprecated_new(PyTypeObject *type, PyObject 
     return (PyObject *)self;
 }
 
-/* classes for statement and cache deprecation */
+
 static PyTypeObject pysqlite_CacheDeprecatedType = {
         PyVarObject_HEAD_INIT(NULL, 0)
         MODULE_NAME ".CacheDeprecated",                 /* tp_name */
@@ -434,7 +432,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     Py_INCREF(&pysqlite_CursorType);
     PyModule_AddObject(module, "Cursor", (PyObject*) &pysqlite_CursorType);
     Py_INCREF(&pysqlite_StatementDeprecatedType);
-    PyModule_AddObject(module, "Statement", (PyObject*)&pysqlite_StatementDeprecatedType);
+    PyModule_AddObject(module, "Statement", (PyObject*) &pysqlite_StatementDeprecatedType);
     Py_INCREF(&pysqlite_CacheDeprecatedType);
     PyModule_AddObject(module, "Cache", (PyObject*) &pysqlite_CacheDeprecatedType);
     Py_INCREF(&pysqlite_PrepareProtocolType);
