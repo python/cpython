@@ -428,23 +428,32 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
-        fut = self.create_future()
-        if data:
-            self._sock_sendall(fut, None, sock, data)
-        else:
-            fut.set_result(None)
-        return await fut
-
-    def _sock_sendall(self, fut, registered_fd, sock, data):
-        if registered_fd is not None:
-            self.remove_writer(registered_fd)
-        if fut.cancelled():
-            return
-
         try:
             n = sock.send(data)
         except (BlockingIOError, InterruptedError):
             n = 0
+
+        if n == len(data):
+            # all data sent
+            return
+        else:
+            data = bytearray(memoryview(data)[n:])
+
+        fut = self.create_future()
+        fd = sock.fileno()
+        fut.add_done_callback(
+            functools.partial(self._sock_write_done, fd))
+        self.add_writer(fd, self._sock_sendall, fut, sock, data)
+        return await fut
+
+    def _sock_sendall(self, fut, sock, data):
+        if fut.cancelled():
+            # Future cancellation can be scheduled on previous loop iteration
+            return
+        try:
+            n = sock.send(data)
+        except (BlockingIOError, InterruptedError):
+            return
         except Exception as exc:
             fut.set_exception(exc)
             return
@@ -452,10 +461,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         if n == len(data):
             fut.set_result(None)
         else:
-            if n:
-                data = data[n:]
-            fd = sock.fileno()
-            self.add_writer(fd, self._sock_sendall, fut, fd, sock, data)
+            del data[:n]
 
     async def sock_connect(self, sock, address):
         """Connect to a remote socket at address.
