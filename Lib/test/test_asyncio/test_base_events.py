@@ -926,6 +926,54 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.run_forever()
         self.loop._selector.select.assert_called_once_with(0)
 
+    async def leave_unfinalized_asyncgen(self):
+        # The following should create an async generator, iterate
+        # it partially, and leave it to be garbage collected 
+        # in the future.
+        status = {'started': False, 
+                  'stopped': False,
+                  'finalized': False}
+        
+        async def agen():
+            status['started'] = True
+            try:
+                for item in ['ZERO', 'ONE', 'TWO', 'THREE', 'FOUR']:
+                    yield item
+            finally:
+                status['finalized'] = True
+
+        ag = agen()
+        ai = ag.__aiter__()
+
+        async def iter_one():
+            try:
+                item = await ai.__anext__()
+            except StopAsyncIteration:
+                return
+            if item == 'THREE':
+                status['stopped'] = True
+                return
+            asyncio.create_task(iter_one())
+
+        asyncio.create_task(iter_one())
+        return status
+
+    def test__asyncgen_finalizer_hook_by_gc(self):
+        # Test for activation of _asyncgen_finalizer_hook when an
+        # async generator is garbage collected.
+        self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
+        with support.disable_gc():
+            status = self.loop.run_until_complete(self.leave_unfinalized_asyncgen())
+            while not status['stopped']:
+                test_utils.run_briefly(self.loop)
+            self.assertTrue(status['started'])
+            self.assertTrue(status['stopped'])
+            self.assertFalse(status['finalized'])
+            support.gc_collect()
+            test_utils.run_briefly(self.loop)
+            self.assertTrue(status['finalized'])
+
 
 class MyProto(asyncio.Protocol):
     done = None
