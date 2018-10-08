@@ -1,0 +1,3 @@
+
+Deprecate :mod:`sqlite3` ``Cache`` and ``Statement`` classes.
+Patch by Aviv Palivoda

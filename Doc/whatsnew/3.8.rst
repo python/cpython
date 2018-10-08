@@ -267,6 +267,9 @@ Deprecated
   versions. :class:`~ast.Constant` should be used instead.
   (Contributed by Serhiy Storchaka in :issue:`32892`.)
 
+* :mod:`sqlite3` classes ``Cache`` and ``Statement``
+  are considered deprecated and will be removed in future Python.
+  (Contributed by Aviv Palivoda in :issue:`30262`.)
 
 Removed
 =======
