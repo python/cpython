@@ -53,10 +53,11 @@ bisect_right(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t index;
     static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-    if (kw==NULL && PyTuple_GET_SIZE(args)==2) {
+    if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
         item = PyTuple_GET_ITEM(args, 1);
-    } else {
+    }
+    else {
         if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:bisect_right",
                                          keywords, &list, &item, &lo, &hi))
             return NULL;
@@ -88,10 +89,11 @@ insort_right(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t index;
     static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-    if (kw==NULL && PyTuple_GET_SIZE(args)==2) {
+    if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
         item = PyTuple_GET_ITEM(args, 1);
-    } else {
+    }
+    else {
         if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:insort_right",
                                          keywords, &list, &item, &lo, &hi))
             return NULL;
@@ -102,7 +104,8 @@ insort_right(PyObject *self, PyObject *args, PyObject *kw)
     if (PyList_CheckExact(list)) {
         if (PyList_Insert(list, index, item) < 0)
             return NULL;
-    } else {
+    }
+    else {
         result = _PyObject_CallMethodId(list, &PyId_insert, "nO", index, item);
         if (result == NULL)
             return NULL;
@@ -167,10 +170,11 @@ bisect_left(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t index;
     static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-    if (kw==NULL && PyTuple_GET_SIZE(args)==2) {
+    if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
         item = PyTuple_GET_ITEM(args, 1);
-    } else {
+    }
+    else {
         if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:bisect_left",
                                          keywords, &list, &item, &lo, &hi))
             return NULL;
@@ -202,7 +206,7 @@ insort_left(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t index;
     static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-    if (kw==NULL && PyTuple_GET_SIZE(args)==2) {
+    if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
         item = PyTuple_GET_ITEM(args, 1);
     } else {
