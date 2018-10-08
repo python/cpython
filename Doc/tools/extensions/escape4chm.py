@@ -35,3 +35,5 @@ def setup(app):
     # `html-page-context` event emitted when the HTML builder has
     # created a context dictionary to render a template with.
     app.connect('html-page-context', escape_for_chm)
+
+    return {'version': '1.0', 'parallel_read_safe': True}
