@@ -7800,6 +7800,9 @@ PyInit__socket(void)
 #ifdef  TCP_INFO
     PyModule_AddIntMacro(m, TCP_INFO);
 #endif
+#ifdef  TCP_KEEPALIVE
+    PyModule_AddIntMacro(m, TCP_KEEPALIVE);
+#endif
 #ifdef  TCP_QUICKACK
     PyModule_AddIntMacro(m, TCP_QUICKACK);
 #endif
