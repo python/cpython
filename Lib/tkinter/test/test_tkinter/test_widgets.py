@@ -474,6 +474,21 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         self.assertRaises(TypeError, widget.bbox)
         self.assertRaises(TypeError, widget.bbox, 0, 1)
 
+    def test_selection_methods(self):
+        widget = self.create()
+        widget.insert(0, '12345')
+        self.assertFalse(widget.selection_present())
+        widget.selection_range(0, 'end')
+        self.assertEqual(widget.selection_get(), '12345')
+        self.assertTrue(widget.selection_present())
+        widget.selection_from(1)
+        widget.selection_to(2)
+        self.assertEqual(widget.selection_get(), '2')
+        widget.selection_range(3, 4)
+        self.assertEqual(widget.selection_get(), '4')
+        widget.selection_clear()
+        self.assertFalse(widget.selection_present())
+
 
 @add_standard_options(StandardOptionsTests)
 class TextTest(AbstractWidgetTest, unittest.TestCase):
