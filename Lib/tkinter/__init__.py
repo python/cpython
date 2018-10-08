@@ -3737,8 +3737,11 @@ class Spinbox(Widget, XView):
 
     def selection(self, *args):
         """Internal function."""
-        return self._getints(
-            self.tk.call((self._w, 'selection') + args)) or ()
+        result = self.tk.call((self._w, 'selection') + args)
+        if result == "":
+            return ()
+        else:
+            return result
 
     def selection_adjust(self, index):
         """Locate the end of the selection nearest to the character
