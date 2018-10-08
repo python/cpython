@@ -524,34 +524,6 @@ class EventLoopTestsMixin:
                 lambda: MyProto(loop=self.loop), httpd.address)
             self._basetest_create_connection(conn_fut, check_sockname)
 
-    def test_create_connection_sock(self):
-        with test_utils.run_test_server() as httpd:
-            sock = None
-            infos = self.loop.run_until_complete(
-                self.loop.getaddrinfo(
-                    *httpd.address, type=socket.SOCK_STREAM))
-            for family, type, proto, cname, address in infos:
-                try:
-                    sock = socket.socket(family=family, type=type, proto=proto)
-                    sock.setblocking(False)
-                    self.loop.run_until_complete(
-                        self.loop.sock_connect(sock, address))
-                except:
-                    pass
-                else:
-                    break
-            else:
-                assert False, 'Can not create socket.'
-
-            f = self.loop.create_connection(
-                lambda: MyProto(loop=self.loop), sock=sock)
-            tr, pr = self.loop.run_until_complete(f)
-            self.assertIsInstance(tr, asyncio.Transport)
-            self.assertIsInstance(pr, asyncio.Protocol)
-            self.loop.run_until_complete(pr.done)
-            self.assertGreater(pr.nbytes, 0)
-            tr.close()
-
     def check_ssl_extra_info(self, client, check_sockname=True,
                              peername=None, peercert={}):
         if check_sockname:
