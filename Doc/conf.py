@@ -14,7 +14,7 @@ sys.path.append(os.path.abspath('includes'))
 # ---------------------
 
 extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
-              'pyspecific', 'c_annotations']
+              'pyspecific', 'c_annotations', 'escape4chm']
 
 # General substitutions.
 project = 'Python'
