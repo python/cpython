@@ -130,7 +130,7 @@ def _type_check(arg, msg, is_argument=True):
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
-    if (isinstance(arg, _SpecialForm) and arg is not Any or
+    if (isinstance(arg, _SpecialForm) and arg not in (Any, NoReturn) or
             arg in (Generic, _Protocol)):
         raise TypeError(f"Plain {arg} is not valid as type argument")
     if isinstance(arg, (type, TypeVar, ForwardRef)):
