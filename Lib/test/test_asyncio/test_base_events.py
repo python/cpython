@@ -916,13 +916,11 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop._selector.select.assert_called_once_with(0)
 
     async def leave_unfinalized_asyncgen(self):
-        # The following should create an async generator, iterate
-        # it partially, and leave it to be garbage collected.
-        # This depends on implementation details of the garbage
-        # collector, and may stop working in future versions of
-        # cpython or in other implementations. In that case,
-        # the tests below on async generator finalization may
-        # break as well.
+        # Create an async generator, iterate it partially, and leave it
+        # to be garbage collected.
+        # Used in async generator finalization tests.
+        # Depends on implementation details of garbage collector. Changes
+        # in gc may break this function.
         status = {'started': False,
                   'stopped': False,
                   'finalized': False}
