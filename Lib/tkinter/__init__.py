@@ -2589,6 +2589,15 @@ class Canvas(Widget, XView, YView):
     def move(self, *args):
         """Move an item TAGORID given in ARGS."""
         self.tk.call((self._w, 'move') + args)
+    def moveto(self, tagOrId, xPos, yPos):
+        """Move the items given by TAGORID in the canvas coordinate
+        space so that the first coordinate pair of the bottommost
+        item with tag TAGORID is located at position (XPOS,YPOS).
+        XPOS and YPOS may be the empty string, in which case the
+        corresponding coordinate will be unchanged. All items matching
+        TAGORID remain in the same positions relative to each other.
+        """
+        self.tk.call(self._w, 'moveto', tagOrId, xPos, yPos)
     def postscript(self, cnf={}, **kw):
         """Print the contents of the canvas to a postscript
         file. Valid options: colormap, colormode, file, fontmap,
