@@ -977,6 +977,24 @@ class BaseEventLoopTests(test_utils.TestCase):
             test_utils.run_briefly(self.loop)
             self.assertTrue(status['finalized'])
 
+    def test_asyncgen_finalization_by_gc_in_other_thread(self):
+        # Python issue 34769: If garbage collector runs in another
+        # thread, async generators will not finalize in debug
+        # mode.
+        self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
+        self.loop.set_debug(True)
+        with support.disable_gc():
+            status = self.loop.run_until_complete(self.leave_unfinalized_asyncgen())
+            while not status['stopped']:
+                test_utils.run_briefly(self.loop)
+            self.assertTrue(status['started'])
+            self.assertTrue(status['stopped'])
+            self.assertFalse(status['finalized'])
+            self.loop.run_in_executor(None, support.gc_collect)
+            test_utils.run_briefly(self.loop)
+            self.assertTrue(status['finalized'])
+
 
 class MyProto(asyncio.Protocol):
     done = None
