@@ -7668,7 +7668,6 @@ static PPathCchRemoveFileSpec _PPathCchRemoveFileSpec;
 static int
 _dirnameW(WCHAR *path)
 {
-    WCHAR *ptr;
     size_t length = wcslen(path);
 
     if (!_PPathCchRemoveFileSpec_Initialized) {
@@ -7728,8 +7727,8 @@ static int
 _check_dirW(LPCWSTR src, LPCWSTR dest)
 {
     WIN32_FILE_ATTRIBUTE_DATA src_info;
-    WCHAR dest_parent = NULL;
-    WCHAR src_resolved = NULL;
+    WCHAR *dest_parent = NULL;
+    WCHAR *src_resolved = NULL;
     size_t dest_len;
     size_t src_len;
     DWORD result = 0;
