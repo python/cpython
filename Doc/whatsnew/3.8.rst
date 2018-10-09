@@ -167,6 +167,16 @@ Added :attr:`SSLContext.post_handshake_auth` to enable and
 post-handshake authentication.
 (Contributed by Christian Heimes in :issue:`34670`.)
 
+tkinter
+-------
+
+Added methods :meth:`~tkinter.Spinbox.selection_from`,
+:meth:`~tkinter.Spinbox.selection_present`,
+:meth:`~tkinter.Spinbox.selection_range` and
+:meth:`~tkinter.Spinbox.selection_to`
+in the :class:`tkinter.Spinbox` class.
+(Contributed by Juliette Monsel in :issue:`34829`.)
+
 venv
 ----
 

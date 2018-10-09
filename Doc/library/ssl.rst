@@ -2658,7 +2658,7 @@ of TLS/SSL.  Some new TLS 1.3 features are not yet available.
 - TLS 1.3 uses a disjunct set of cipher suites. All AES-GCM and
   ChaCha20 cipher suites are enabled by default.  The method
   :meth:`SSLContext.set_ciphers` cannot enable or disable any TLS 1.3
-  ciphers yet, but :meth:`SSLContext.get_cipers` returns them.
+  ciphers yet, but :meth:`SSLContext.get_ciphers` returns them.
 - Session tickets are no longer sent as part of the initial handshake and
   are handled differently.  :attr:`SSLSocket.session` and :class:`SSLSession`
   are not compatible with TLS 1.3.

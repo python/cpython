@@ -3685,29 +3685,24 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
     Py_RETURN_NONE;
 }
 
-static PyObject*
-xmlparser_getattro(XMLParserObject* self, PyObject* nameobj)
-{
-    if (PyUnicode_Check(nameobj)) {
-        PyObject* res;
-        if (_PyUnicode_EqualToASCIIString(nameobj, "entity"))
-            res = self->entity;
-        else if (_PyUnicode_EqualToASCIIString(nameobj, "target"))
-            res = self->target;
-        else if (_PyUnicode_EqualToASCIIString(nameobj, "version")) {
-            return PyUnicode_FromFormat(
-                "Expat %d.%d.%d", XML_MAJOR_VERSION,
-                XML_MINOR_VERSION, XML_MICRO_VERSION);
-        }
-        else
-            goto generic;
+static PyMemberDef xmlparser_members[] = {
+    {"entity", T_OBJECT, offsetof(XMLParserObject, entity), READONLY, NULL},
+    {"target", T_OBJECT, offsetof(XMLParserObject, target), READONLY, NULL},
+    {NULL}
+};
 
-        Py_INCREF(res);
-        return res;
-    }
-  generic:
-    return PyObject_GenericGetAttr((PyObject*) self, nameobj);
+static PyObject*
+xmlparser_version_getter(XMLParserObject *self, void *closure)
+{
+    return PyUnicode_FromFormat(
+        "Expat %d.%d.%d", XML_MAJOR_VERSION,
+        XML_MINOR_VERSION, XML_MICRO_VERSION);
 }
+
+static PyGetSetDef xmlparser_getsetlist[] = {
+    {"version", (getter)xmlparser_version_getter, NULL, NULL},
+    {NULL},
+};
 
 #include "clinic/_elementtree.c.h"
 
@@ -3890,7 +3885,7 @@ static PyTypeObject XMLParser_Type = {
     0,                                              /* tp_hash */
     0,                                              /* tp_call */
     0,                                              /* tp_str */
-    (getattrofunc)xmlparser_getattro,               /* tp_getattro */
+    0,                                              /* tp_getattro */
     0,                                              /* tp_setattro */
     0,                                              /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
@@ -3903,8 +3898,8 @@ static PyTypeObject XMLParser_Type = {
     0,                                              /* tp_iter */
     0,                                              /* tp_iternext */
     xmlparser_methods,                              /* tp_methods */
-    0,                                              /* tp_members */
-    0,                                              /* tp_getset */
+    xmlparser_members,                              /* tp_members */
+    xmlparser_getsetlist,                           /* tp_getset */
     0,                                              /* tp_base */
     0,                                              /* tp_dict */
     0,                                              /* tp_descr_get */
