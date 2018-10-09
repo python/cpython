@@ -532,18 +532,17 @@ def decompress(data):
         return f.read()
 
 
-def _test():
-    # Act like gzip; with -d, act like gunzip.
-    # The input file is not deleted, however, nor are any other gzip
-    # options or features supported.
-    args = sys.argv[1:]
-    decompress = args and args[0] == "-d"
-    if decompress:
-        args = args[1:]
-    if not args:
-        args = ["-"]
-    for arg in args:
-        if decompress:
+def main():
+    from argparse import ArgumentParser
+    parser = ArgumentParser(description=
+        "A simple command line interface for the gzip module: act like gzip, "
+        "but do not delete the input file.")
+    parser.add_argument("-d", "--decompress", action="store_true",
+                        help="act like gunzip instead of gzip")
+    parser.add_argument("args", nargs="*", default=["-"], metavar='file')
+    args = parser.parse_args()
+    for arg in args.args:
+        if args.decompress:
             if arg == "-":
                 f = GzipFile(filename="", mode="rb", fileobj=sys.stdin.buffer)
                 g = sys.stdout.buffer
@@ -571,4 +570,4 @@ def _test():
             f.close()
 
 if __name__ == '__main__':
-    _test()
+    main()
