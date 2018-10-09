@@ -602,6 +602,13 @@ class NonConnectingTests(unittest.TestCase):
         self.assertRaises(OSError, smtplib.SMTP,
                           "localhost:bogus")
 
+    def testSockAttributeExists(self):
+        # check that sock attribute is present outside of a connect() call
+        # (regression test, the previous behavior raised an
+        #  AttributeError: 'SMTP' object has no attribute 'sock')
+        with smtplib.SMTP() as smtp:
+            self.assertIsNone(smtp.sock)
+
 
 class DefaultArgumentsTests(unittest.TestCase):
 
