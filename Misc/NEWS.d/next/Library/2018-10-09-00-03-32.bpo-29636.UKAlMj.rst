@@ -1,0 +1,2 @@
+Added ability to pass through `indent` and `ensure_ascii` options in
+`json.tool` command-line interface.

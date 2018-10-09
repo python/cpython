@@ -714,6 +714,18 @@ Command line options
 
    .. versionadded:: 3.5
 
+.. cmdoption:: --indent
+
+   Specify a string or integer to use as the indent, see :func:`json.dumps` for more information.
+
+   .. versionadded:: 3.8
+
+.. cmdoption:: --no-ensure-ascii
+
+   Disable escaping of non-ascii characters, see :func:`json.dumps` for more information.
+
+   .. versionadded:: 3.8
+
 .. cmdoption:: -h, --help
 
    Show the help message.

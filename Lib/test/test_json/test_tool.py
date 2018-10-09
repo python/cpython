@@ -105,3 +105,33 @@ class TestTool(unittest.TestCase):
         self.assertEqual(out.splitlines(),
                          self.expect_without_sort_keys.encode().splitlines())
         self.assertEqual(err, b'')
+
+    def test_custom_indent_int(self):
+        infile = support.TESTFN
+        with open(infile, "w") as f:
+            self.addCleanup(os.remove, infile)
+            f.write('{"key":"val"}')
+        rc, out, err = assert_python_ok('-m', 'json.tool', '--indent=3', infile)
+        self.assertEqual(out.splitlines(),
+                         [b'{', b'   "key": "val"', b"}"])
+        self.assertEqual(err, b'')
+
+    def test_custom_indent_str(self):
+        infile = support.TESTFN
+        with open(infile, "w") as f:
+            self.addCleanup(os.remove, infile)
+            f.write('{"key":"val"}')
+        rc, out, err = assert_python_ok('-m', 'json.tool', '--indent', '\t', infile)
+        self.assertEqual(out.splitlines(),
+                         [b'{', b'\t"key": "val"', b"}"])
+        self.assertEqual(err, b'')
+
+    def test_non_ascii(self):
+        infile = support.TESTFN
+        with open(infile, "w", encoding='utf-8') as f:
+            self.addCleanup(os.remove, infile)
+            f.write('{"key":"💩"}')
+        rc, out, err = assert_python_ok('-m', 'json.tool', '--no-ensure-ascii', infile)
+        self.assertEqual(out.splitlines(),
+                         [b'{', b'    "key": "\xf0\x9f\x92\xa9"', b"}"])
+        self.assertEqual(err, b'')
