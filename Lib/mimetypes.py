@@ -94,8 +94,8 @@ class MimeTypes:
         if ext not in exts:
             exts.append(ext)
 
-    def guess_type(self, url, strict=True):
-        """Guess the type of a file based on its URL.
+    def guess_type(self, url_or_path, strict=True):
+        """Guess the type of a file which can either be a url or an os.PathLike object.
 
         Return value is a tuple (type, encoding) where type is None if
         the type can't be guessed (no or unknown suffix) or a string
@@ -113,6 +113,10 @@ class MimeTypes:
         Optional `strict' argument when False adds a bunch of commonly found,
         but non-standard types.
         """
+        url = url_or_path
+        if isinstance(url_or_path, os.PathLike):
+            url = os.fspath(url)
+
         scheme, url = urllib.parse._splittype(url)
         if scheme == 'data':
             # syntax of data URLs:

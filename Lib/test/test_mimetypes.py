@@ -3,6 +3,7 @@ import locale
 import mimetypes
 import sys
 import unittest
+import pathlib
 
 from test import support
 
@@ -76,6 +77,23 @@ class MimeTypesTestCase(unittest.TestCase):
         exts = mimes.guess_all_extensions('application/vnd.geocube+xml',
                                           strict=True)
         self.assertEqual(exts, ['.g3', '.g\xb3'])
+
+    def test_path_like_ob(self):
+        eq = self.assertEqual
+
+        filename = "LICENSE.txt"
+        filepath = pathlib.Path(filename)
+        filepath_with_abs_dir = pathlib.Path('/dir/'+filename)
+        filepath_relative = pathlib.Path('../dir/'+filename)
+        path_dir = pathlib.Path('./')
+
+        expected = self.db.guess_type(filename)
+
+        eq(self.db.guess_type(filepath), expected)
+        eq(self.db.guess_type(
+            filepath_with_abs_dir), expected)
+        eq(self.db.guess_type(filepath_relative), expected)
+        eq(self.db.guess_type(path_dir), (None, None))
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
