@@ -285,16 +285,20 @@ def _set_result_unless_cancelled(fut, result):
     fut.set_result(result)
 
 
-def _convert_future_exc(exc):
+def _convert_future_exc(exc, to):
     exc_class = type(exc)
-    if exc_class is concurrent.futures.CancelledError:
-        return exceptions.CancelledError(*exc.args)
-    elif exc_class is concurrent.futures.TimeoutError:
-        return exceptions.TimeoutError(*exc.args)
-    elif exc_class is concurrent.futures.InvalidStateError:
-        return exceptions.InvalidStateError(*exc.args)
+    if to == concurrent.futures.Future:
+        exc_map = {exceptions.CancelledError: concurrent.futures.CancelledError,
+                   exceptions.TimeoutError: concurrent.futures.TimeoutError,
+                   exceptions.InvalidStateError: concurrent.futures.InvalidStateError}
+    elif to == Future:
+        exc_map = {concurrent.futures.CancelledError: exceptions.CancelledError,
+                   concurrent.futures.TimeoutError: exceptions.TimeoutError,
+                   concurrent.futures.InvalidStateError: exceptions.InvalidStateError}
     else:
-        return exc
+        exc_map = {}
+    exc_new_class = exc_map.get(exc_class, None)
+    return exc_new_class(*exc.args) if exc_new_class is not None else exc
 
 
 def _copy_future_state(source, dest):
@@ -317,7 +321,7 @@ def _copy_future_state(source, dest):
 
     exception = source.exception()
     if exception is not None:
-        dest.set_exception(_convert_future_exc(exception))
+        dest.set_exception(_convert_future_exc(exception, type(dest)))
     else:
         result = source.result()
         dest.set_result(result)
@@ -359,6 +363,7 @@ def _chain_future(source, destination):
 
     destination.add_done_callback(_call_set_state)
     source.add_done_callback(_call_set_state)
+
 
 def wrap_future(future, *, loop=None):
     """Wrap concurrent.futures.Future object."""
