@@ -917,8 +917,12 @@ class BaseEventLoopTests(test_utils.TestCase):
 
     async def leave_unfinalized_asyncgen(self):
         # The following should create an async generator, iterate
-        # it partially, and leave it to be garbage collected
-        # in the future.
+        # it partially, and leave it to be garbage collected.
+        # This depends on implementation details of the garbage
+        # collector, and may stop working in future versions of
+        # cpython or in other implementations. In that case,
+        # the tests below on async generator finalization may
+        # break as well.
         status = {'started': False,
                   'stopped': False,
                   'finalized': False}
@@ -947,9 +951,8 @@ class BaseEventLoopTests(test_utils.TestCase):
         asyncio.create_task(iter_one())
         return status
 
-    def test__asyncgen_finalizer_hook_by_gc(self):
-        # Test for activation of _asyncgen_finalizer_hook when an
-        # async generator is garbage collected.
+    def test_asyncgen_finalization_by_gc(self):
+        # Async generators should be finalized when garbage collected.
         self.loop._process_events = mock.Mock()
         self.loop._write_to_self = mock.Mock()
         with support.disable_gc():
