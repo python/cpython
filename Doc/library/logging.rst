@@ -545,7 +545,7 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
       The *style* parameter was added.
 
    .. versionchanged:: 3.8
-      Incorrect or mismatch style and ftm will raise a ``ValueError``. For
+      Incorrect or mismatch style and fmt will raise a ``ValueError``. For
       example: ``logging.Formatter('%(asctime)s - %(message)s', style='{')``.
 
    .. method:: format(record)

@@ -26,6 +26,7 @@ To use, simply 'import logging' and log away!
 import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
 
 from string import Template
+from string import Formatter as StrFormatter
 
 
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
@@ -434,8 +435,13 @@ class PercentStyle(object):
     def validate(self):
         """Validate the input format, ensure it matches the correct style"""
         if not self.validation_pattern.search(self._fmt):
-            raise ValueError('Invalid format %s for %s style'
-                             % (self._fmt, self.default_format[0]))
+            self._invalid_raise()
+
+    def _invalid_raise(self, additional_message=None):
+        msg = 'Invalid format %s for %s style' % (self._fmt, self.default_format[0])
+        if additional_message:
+            msg = "%s, %s" % (msg, additional_message)
+        raise ValueError(msg)
 
     def _format(self, record):
         return self._fmt % record.__dict__
@@ -451,18 +457,36 @@ class StrFormatStyle(PercentStyle):
     default_format = '{message}'
     asctime_format = '{asctime}'
     asctime_search = '{asctime'
-    validation_pattern = re.compile(r'\{[^{!:}-]+(![rsa])?(:(.)?[<>=]?[+ -]?[#0]?[\d]*,?[\.\d]*)?[bcdefgnosx%]?\}',
-                                    re.I)
+    # This is only for validating the format_spec
+    validation_pattern = re.compile(r"^((.)?[<>=]?[+ -]?[#0]?[\d]*,?[\.\d]*)?[bcdefgnosx%]?$", re.I)
 
     def _format(self, record):
         return self._fmt.format(**record.__dict__)
+
+    def validate(self):
+        """Validate the input format, ensure it is the correct string formatting style"""
+        try:
+            fields = []
+            for _, field_name, spec, conversion in StrFormatter().parse(self._fmt):
+
+                if field_name and "-" not in field_name:
+                    if conversion and conversion not in "rsa":
+                        raise ValueError("invalid conversion %s for field %s" % (conversion, field_name))
+                    if spec and not self.validation_pattern.search(spec):
+                        raise ValueError("invalid spec %s for %s" % (spec[-1], field_name))
+
+                    fields.append(field_name)
+            if not fields:
+                raise ValueError("No fields found for format %s" % self._fmt)
+        except ValueError as e:
+            self._invalid_raise(e)
 
 
 class StringTemplateStyle(PercentStyle):
     default_format = '${message}'
     asctime_format = '${asctime}'
     asctime_search = '${asctime}'
-    validation_pattern = re.compile(r'\$(([\w]+)|(\{[\w]+(:?\})))', re.I)
+    validation_pattern = re.compile(r'\$(\w+|\{\w+\})', re.I)
 
     def __init__(self, fmt):
         self._fmt = fmt or self.default_format
