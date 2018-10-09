@@ -1713,7 +1713,7 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     /* If this is a property subclass, put __doc__ in dict of the subclass
        instance as well, otherwise it gets shadowed by __doc__ in the
        class's dict. */
-    if (Py_IS_TYPE(self, &PyProperty_Type)) {
+    if (Py_IS_TYPE(self, &PyProperty_Type) && self->prop_doc != NULL) {
         int err = _PyObject_SetAttrId((PyObject *)self, &PyId___doc__,
                                       self->prop_doc);
         if (err < 0) {
