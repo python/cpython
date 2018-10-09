@@ -26,12 +26,12 @@ the module has not been initialized, they will call :func:`init` if they rely on
 the information :func:`init` sets up.
 
 
-.. function:: guess_type(url, strict=True)
+.. function:: guess_type(url_or_path, strict=True)
 
    .. index:: pair: MIME; headers
 
-   Guess the type of a file based on its filename or URL, given by *url*.  The
-   return value is a tuple ``(type, encoding)`` where *type* is ``None`` if the
+   Guess the type of a file based on its filename/URL or by its path (any :class:`os.PathLike`).
+   The return value is a tuple ``(type, encoding)`` where *type* is ``None`` if the
    type can't be guessed (missing or unknown suffix) or a string of the form
    ``'type/subtype'``, usable for a MIME :mailheader:`content-type` header.
 
@@ -48,6 +48,9 @@ the information :func:`init` sets up.
    When *strict* is ``True`` (the default), only the IANA types are supported; when
    *strict* is ``False``, some additional non-standard but commonly used MIME types
    are also recognized.
+
+   .. versionchanged:: 3.8
+      Added support for url being a :term:`path-like object`.
 
 
 .. function:: guess_all_extensions(type, strict=True)
