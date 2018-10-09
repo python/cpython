@@ -79,8 +79,6 @@ class MimeTypesTestCase(unittest.TestCase):
         self.assertEqual(exts, ['.g3', '.g\xb3'])
 
     def test_path_like_ob(self):
-        eq = self.assertEqual
-
         filename = "LICENSE.txt"
         filepath = pathlib.Path(filename)
         filepath_with_abs_dir = pathlib.Path('/dir/'+filename)
@@ -89,11 +87,11 @@ class MimeTypesTestCase(unittest.TestCase):
 
         expected = self.db.guess_type(filename)
 
-        eq(self.db.guess_type(filepath), expected)
-        eq(self.db.guess_type(
+        self.assertEqual(self.db.guess_type(filepath), expected)
+        self.assertEqual(self.db.guess_type(
             filepath_with_abs_dir), expected)
-        eq(self.db.guess_type(filepath_relative), expected)
-        eq(self.db.guess_type(path_dir), (None, None))
+        self.assertEqual(self.db.guess_type(filepath_relative), expected)
+        self.assertEqual(self.db.guess_type(path_dir), (None, None))
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
