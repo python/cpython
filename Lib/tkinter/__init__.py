@@ -2392,6 +2392,7 @@ class Button(Widget):
 
 class Canvas(Widget, XView, YView):
     """Canvas widget to display graphical elements like lines or text."""
+
     def __init__(self, master=None, cnf={}, **kw):
         """Construct a canvas widget with the parent MASTER.
 
@@ -2403,46 +2404,57 @@ class Canvas(Widget, XView, YView):
         state, takefocus, width, xscrollcommand, xscrollincrement,
         yscrollcommand, yscrollincrement."""
         Widget.__init__(self, master, 'canvas', cnf, kw)
+
     def addtag(self, *args):
         """Internal function."""
         self.tk.call((self._w, 'addtag') + args)
+
     def addtag_above(self, newtag, tagOrId):
         """Add tag NEWTAG to all items above TAGORID."""
         self.addtag(newtag, 'above', tagOrId)
+
     def addtag_all(self, newtag):
         """Add tag NEWTAG to all items."""
         self.addtag(newtag, 'all')
+
     def addtag_below(self, newtag, tagOrId):
         """Add tag NEWTAG to all items below TAGORID."""
         self.addtag(newtag, 'below', tagOrId)
+
     def addtag_closest(self, newtag, x, y, halo=None, start=None):
         """Add tag NEWTAG to item which is closest to pixel at X, Y.
         If several match take the top-most.
         All items closer than HALO are considered overlapping (all are
         closests). If START is specified the next below this tag is taken."""
         self.addtag(newtag, 'closest', x, y, halo, start)
+
     def addtag_enclosed(self, newtag, x1, y1, x2, y2):
         """Add tag NEWTAG to all items in the rectangle defined
         by X1,Y1,X2,Y2."""
         self.addtag(newtag, 'enclosed', x1, y1, x2, y2)
+
     def addtag_overlapping(self, newtag, x1, y1, x2, y2):
         """Add tag NEWTAG to all items which overlap the rectangle
         defined by X1,Y1,X2,Y2."""
         self.addtag(newtag, 'overlapping', x1, y1, x2, y2)
+
     def addtag_withtag(self, newtag, tagOrId):
         """Add tag NEWTAG to all items with TAGORID."""
         self.addtag(newtag, 'withtag', tagOrId)
+
     def bbox(self, *args):
         """Return a tuple of X1,Y1,X2,Y2 coordinates for a rectangle
         which encloses all items with tags specified as arguments."""
         return self._getints(
             self.tk.call((self._w, 'bbox') + args)) or None
+
     def tag_unbind(self, tagOrId, sequence, funcid=None):
         """Unbind for all items with TAGORID for event SEQUENCE  the
         function identified with FUNCID."""
         self.tk.call(self._w, 'bind', tagOrId, sequence, '')
         if funcid:
             self.deletecommand(funcid)
+
     def tag_bind(self, tagOrId, sequence=None, func=None, add=None):
         """Bind to all items with TAGORID at event SEQUENCE a call to function FUNC.
 
@@ -2451,22 +2463,26 @@ class Canvas(Widget, XView, YView):
         replace the previous function. See bind for the return value."""
         return self._bind((self._w, 'bind', tagOrId),
                   sequence, func, add)
+
     def canvasx(self, screenx, gridspacing=None):
         """Return the canvas x coordinate of pixel position SCREENX rounded
         to nearest multiple of GRIDSPACING units."""
         return self.tk.getdouble(self.tk.call(
             self._w, 'canvasx', screenx, gridspacing))
+
     def canvasy(self, screeny, gridspacing=None):
         """Return the canvas y coordinate of pixel position SCREENY rounded
         to nearest multiple of GRIDSPACING units."""
         return self.tk.getdouble(self.tk.call(
             self._w, 'canvasy', screeny, gridspacing))
+
     def coords(self, *args):
         """Return a list of coordinates for the item given in ARGS."""
         # XXX Should use _flatten on args
         return [self.tk.getdouble(x) for x in
                            self.tk.splitlist(
                    self.tk.call((self._w, 'coords') + args))]
+
     def _create(self, itemType, args, kw): # Args: (val, val, ..., cnf={})
         """Internal function."""
         args = _flatten(args)
@@ -2478,96 +2494,123 @@ class Canvas(Widget, XView, YView):
         return self.tk.getint(self.tk.call(
             self._w, 'create', itemType,
             *(args + self._options(cnf, kw))))
+
     def create_arc(self, *args, **kw):
         """Create arc shaped region with coordinates x1,y1,x2,y2."""
         return self._create('arc', args, kw)
+
     def create_bitmap(self, *args, **kw):
         """Create bitmap with coordinates x1,y1."""
         return self._create('bitmap', args, kw)
+
     def create_image(self, *args, **kw):
         """Create image item with coordinates x1,y1."""
         return self._create('image', args, kw)
+
     def create_line(self, *args, **kw):
         """Create line with coordinates x1,y1,...,xn,yn."""
         return self._create('line', args, kw)
+
     def create_oval(self, *args, **kw):
         """Create oval with coordinates x1,y1,x2,y2."""
         return self._create('oval', args, kw)
+
     def create_polygon(self, *args, **kw):
         """Create polygon with coordinates x1,y1,...,xn,yn."""
         return self._create('polygon', args, kw)
+
     def create_rectangle(self, *args, **kw):
         """Create rectangle with coordinates x1,y1,x2,y2."""
         return self._create('rectangle', args, kw)
+
     def create_text(self, *args, **kw):
         """Create text with coordinates x1,y1."""
         return self._create('text', args, kw)
+
     def create_window(self, *args, **kw):
         """Create window with coordinates x1,y1,x2,y2."""
         return self._create('window', args, kw)
+
     def dchars(self, *args):
         """Delete characters of text items identified by tag or id in ARGS (possibly
         several times) from FIRST to LAST character (including)."""
         self.tk.call((self._w, 'dchars') + args)
+
     def delete(self, *args):
         """Delete items identified by all tag or ids contained in ARGS."""
         self.tk.call((self._w, 'delete') + args)
+
     def dtag(self, *args):
         """Delete tag or id given as last arguments in ARGS from items
         identified by first argument in ARGS."""
         self.tk.call((self._w, 'dtag') + args)
+
     def find(self, *args):
         """Internal function."""
         return self._getints(
             self.tk.call((self._w, 'find') + args)) or ()
+
     def find_above(self, tagOrId):
         """Return items above TAGORID."""
         return self.find('above', tagOrId)
+
     def find_all(self):
         """Return all items."""
         return self.find('all')
+
     def find_below(self, tagOrId):
         """Return all items below TAGORID."""
         return self.find('below', tagOrId)
+
     def find_closest(self, x, y, halo=None, start=None):
         """Return item which is closest to pixel at X, Y.
         If several match take the top-most.
         All items closer than HALO are considered overlapping (all are
         closest). If START is specified the next below this tag is taken."""
         return self.find('closest', x, y, halo, start)
+
     def find_enclosed(self, x1, y1, x2, y2):
         """Return all items in rectangle defined
         by X1,Y1,X2,Y2."""
         return self.find('enclosed', x1, y1, x2, y2)
+
     def find_overlapping(self, x1, y1, x2, y2):
         """Return all items which overlap the rectangle
         defined by X1,Y1,X2,Y2."""
         return self.find('overlapping', x1, y1, x2, y2)
+
     def find_withtag(self, tagOrId):
         """Return all items with TAGORID."""
         return self.find('withtag', tagOrId)
+
     def focus(self, *args):
         """Set focus to the first item specified in ARGS."""
         return self.tk.call((self._w, 'focus') + args)
+
     def gettags(self, *args):
         """Return tags associated with the first item specified in ARGS."""
         return self.tk.splitlist(
             self.tk.call((self._w, 'gettags') + args))
+
     def icursor(self, *args):
         """Set cursor at position POS in the item identified by TAGORID.
         In ARGS TAGORID must be first."""
         self.tk.call((self._w, 'icursor') + args)
+
     def index(self, *args):
         """Return position of cursor as integer in item specified in ARGS."""
         return self.tk.getint(self.tk.call((self._w, 'index') + args))
+
     def insert(self, *args):
         """Insert TEXT in item TAGORID at position POS. ARGS must
         be TAGORID POS TEXT."""
         self.tk.call((self._w, 'insert') + args)
+
     def itemcget(self, tagOrId, option):
         """Return the resource value for an OPTION for item TAGORID."""
         return self.tk.call(
             (self._w, 'itemcget') + (tagOrId, '-'+option))
+
     def itemconfigure(self, tagOrId, cnf=None, **kw):
         """Configure resources of an item TAGORID.
 
@@ -2577,6 +2620,7 @@ class Canvas(Widget, XView, YView):
         """
         return self._configure(('itemconfigure', tagOrId), cnf, kw)
     itemconfig = itemconfigure
+
     # lower, tkraise/lift hide Misc.lower, Misc.tkraise/lift,
     # so the preferred name for them is tag_lower, tag_raise
     # (similar to tag_bind, and similar to the Text widget);
@@ -2586,18 +2630,20 @@ class Canvas(Widget, XView, YView):
         (optional below another item)."""
         self.tk.call((self._w, 'lower') + args)
     lower = tag_lower
+
     def move(self, *args):
         """Move an item TAGORID given in ARGS."""
         self.tk.call((self._w, 'move') + args)
-    def moveto(self, tagOrId, xPos, yPos):
+
+    def moveto(self, tagOrId, x='', y=''):
         """Move the items given by TAGORID in the canvas coordinate
         space so that the first coordinate pair of the bottommost
-        item with tag TAGORID is located at position (XPOS,YPOS).
-        XPOS and YPOS may be the empty string, in which case the
+        item with tag TAGORID is located at position (X,Y).
+        X and Y may be the empty string, in which case the
         corresponding coordinate will be unchanged. All items matching
-        TAGORID remain in the same positions relative to each other.
-        """
-        self.tk.call(self._w, 'moveto', tagOrId, xPos, yPos)
+        TAGORID remain in the same positions relative to each other."""
+        self.tk.call(self._w, 'moveto', tagOrId, x, y)
+
     def postscript(self, cnf={}, **kw):
         """Print the contents of the canvas to a postscript
         file. Valid options: colormap, colormode, file, fontmap,
@@ -2605,40 +2651,51 @@ class Canvas(Widget, XView, YView):
         rotate, width, x, y."""
         return self.tk.call((self._w, 'postscript') +
                     self._options(cnf, kw))
+
     def tag_raise(self, *args):
         """Raise an item TAGORID given in ARGS
         (optional above another item)."""
         self.tk.call((self._w, 'raise') + args)
     lift = tkraise = tag_raise
+
     def scale(self, *args):
         """Scale item TAGORID with XORIGIN, YORIGIN, XSCALE, YSCALE."""
         self.tk.call((self._w, 'scale') + args)
+
     def scan_mark(self, x, y):
         """Remember the current X, Y coordinates."""
         self.tk.call(self._w, 'scan', 'mark', x, y)
+
     def scan_dragto(self, x, y, gain=10):
         """Adjust the view of the canvas to GAIN times the
         difference between X and Y and the coordinates given in
         scan_mark."""
         self.tk.call(self._w, 'scan', 'dragto', x, y, gain)
+
     def select_adjust(self, tagOrId, index):
         """Adjust the end of the selection near the cursor of an item TAGORID to index."""
         self.tk.call(self._w, 'select', 'adjust', tagOrId, index)
+
     def select_clear(self):
         """Clear the selection if it is in this widget."""
         self.tk.call(self._w, 'select', 'clear')
+
     def select_from(self, tagOrId, index):
         """Set the fixed end of a selection in item TAGORID to INDEX."""
         self.tk.call(self._w, 'select', 'from', tagOrId, index)
+
     def select_item(self):
         """Return the item which has the selection."""
         return self.tk.call(self._w, 'select', 'item') or None
+
     def select_to(self, tagOrId, index):
         """Set the variable end of a selection in item TAGORID to INDEX."""
         self.tk.call(self._w, 'select', 'to', tagOrId, index)
+
     def type(self, tagOrId):
         """Return the type of the item TAGORID."""
         return self.tk.call(self._w, 'type', tagOrId) or None
+
 
 class Checkbutton(Widget):
     """Checkbutton widget which is either in on- or off-state."""
