@@ -2,7 +2,7 @@ import sys
 import unittest
 
 from . import data01
-from . import zipdata02
+from . import zipdata01, zipdata02
 from . import util
 from importlib import resources, import_module
 
@@ -108,6 +108,10 @@ class ResourceFromZipsTest(util.ZipSetupBase, unittest.TestCase):
         self.assertEqual(
             set(resources.contents('ziptestdata.two')),
             {'__init__.py', 'resource2.txt'})
+
+
+class SubdirectoryResourceFromZipsTest(util.ZipSetupBase, unittest.TestCase):
+    ZIP_MODULE = zipdata01                          # type: ignore
 
     def test_is_submodule_resource(self):
         submodule = import_module('ziptestdata.subdirectory')

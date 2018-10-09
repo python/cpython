@@ -1038,38 +1038,35 @@ wrapper_dealloc(wrapperobject *wp)
 static PyObject *
 wrapper_richcompare(PyObject *a, PyObject *b, int op)
 {
-    PyWrapperDescrObject *a_descr, *b_descr;
+    wrapperobject *wa, *wb;
+    int eq;
 
     assert(a != NULL && b != NULL);
 
     /* both arguments should be wrapperobjects */
-    if (!Wrapper_Check(a) || !Wrapper_Check(b)) {
+    if ((op != Py_EQ && op != Py_NE)
+        || !Wrapper_Check(a) || !Wrapper_Check(b))
+    {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    /* compare by descriptor address; if the descriptors are the same,
-       compare by the objects they're bound to */
-    a_descr = ((wrapperobject *)a)->descr;
-    b_descr = ((wrapperobject *)b)->descr;
-    if (a_descr == b_descr) {
-        a = ((wrapperobject *)a)->self;
-        b = ((wrapperobject *)b)->self;
-        return PyObject_RichCompare(a, b, op);
+    wa = (wrapperobject *)a;
+    wb = (wrapperobject *)b;
+    eq = (wa->descr == wb->descr && wa->self == wb->self);
+    if (eq == (op == Py_EQ)) {
+        Py_RETURN_TRUE;
     }
-
-    Py_RETURN_RICHCOMPARE(a_descr, b_descr, op);
+    else {
+        Py_RETURN_FALSE;
+    }
 }
 
 static Py_hash_t
 wrapper_hash(wrapperobject *wp)
 {
     Py_hash_t x, y;
-    x = _Py_HashPointer(wp->descr);
-    if (x == -1)
-        return -1;
-    y = PyObject_Hash(wp->self);
-    if (y == -1)
-        return -1;
+    x = _Py_HashPointer(wp->self);
+    y = _Py_HashPointer(wp->descr);
     x = x ^ y;
     if (x == -1)
         x = -2;
@@ -1334,42 +1331,19 @@ property_dealloc(PyObject *self)
 static PyObject *
 property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
-    static PyObject * volatile cached_args = NULL;
-    PyObject *args;
-    PyObject *ret;
-    propertyobject *gs = (propertyobject *)self;
-
     if (obj == NULL || obj == Py_None) {
         Py_INCREF(self);
         return self;
     }
+
+    propertyobject *gs = (propertyobject *)self;
     if (gs->prop_get == NULL) {
         PyErr_SetString(PyExc_AttributeError, "unreadable attribute");
         return NULL;
     }
-    args = cached_args;
-    cached_args = NULL;
-    if (!args) {
-        args = PyTuple_New(1);
-        if (!args)
-            return NULL;
-        _PyObject_GC_UNTRACK(args);
-    }
-    Py_INCREF(obj);
-    PyTuple_SET_ITEM(args, 0, obj);
-    ret = PyObject_Call(gs->prop_get, args, NULL);
-    if (cached_args == NULL && Py_REFCNT(args) == 1) {
-        assert(PyTuple_GET_SIZE(args) == 1);
-        assert(PyTuple_GET_ITEM(args, 0) == obj);
-        cached_args = args;
-        Py_DECREF(obj);
-    }
-    else {
-        assert(Py_REFCNT(args) >= 1);
-        _PyObject_GC_TRACK(args);
-        Py_DECREF(args);
-    }
-    return ret;
+
+    PyObject *args[1] = {obj};
+    return _PyObject_FastCall(gs->prop_get, args, 1);
 }
 
 static int

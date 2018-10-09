@@ -11,7 +11,7 @@ import warnings
 import tkinter  # Tcl, deletions, messagebox if startup fails
 
 from idlelib import autocomplete  # AutoComplete, fetch_encodings
-from idlelib import calltips  # CallTips
+from idlelib import calltip  # Calltip
 from idlelib import debugger_r  # start_debugger
 from idlelib import debugobj_r  # remote_object_tree_item
 from idlelib import iomenu  # encoding
@@ -462,7 +462,7 @@ class Executive(object):
     def __init__(self, rpchandler):
         self.rpchandler = rpchandler
         self.locals = __main__.__dict__
-        self.calltip = calltips.CallTips()
+        self.calltip = calltip.Calltip()
         self.autocomplete = autocomplete.AutoComplete()
 
     def runcode(self, code):

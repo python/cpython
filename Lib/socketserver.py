@@ -655,7 +655,7 @@ class ThreadingMixIn:
         t = threading.Thread(target = self.process_request_thread,
                              args = (request, client_address))
         t.daemon = self.daemon_threads
-        if not t.daemon:
+        if not t.daemon and self.block_on_close:
             if self._threads is None:
                 self._threads = []
             self._threads.append(t)

@@ -12,6 +12,7 @@ import unittest
 from test import support
 from test.support import script_helper
 
+
 interpreters = support.import_module('_xxsubinterpreters')
 
 
@@ -823,23 +824,12 @@ class RunStringTests(TestBase):
 
             expected = 'spam spam spam spam spam'
             script = dedent(f"""
-                # (inspired by Lib/test/test_fork.py)
                 import os
-                pid = os.fork()
-                if pid == 0:  # child
+                try:
+                    os.fork()
+                except RuntimeError:
                     with open('{file.name}', 'w') as out:
                         out.write('{expected}')
-                    # Kill the unittest runner in the child process.
-                    os._exit(1)
-                else:
-                    SHORT_SLEEP = 0.1
-                    import time
-                    for _ in range(10):
-                        spid, status = os.waitpid(pid, os.WNOHANG)
-                        if spid == pid:
-                            break
-                        time.sleep(SHORT_SLEEP)
-                    assert(spid == pid)
                 """)
             interpreters.run_string(self.id, script)
 
@@ -1315,6 +1305,10 @@ class ChannelTests(TestBase):
         self.assertEqual(obj, b'spam')
         self.assertEqual(out.strip(), 'send')
 
+    # XXX For now there is no high-level channel into which the
+    # sent channel ID can be converted...
+    # Note: this test caused crashes on some buildbots (bpo-33615).
+    @unittest.skip('disabled until high-level channels exist')
     def test_run_string_arg_resolved(self):
         cid = interpreters.channel_create()
         cid = interpreters._channel_id(cid, _resolve=True)
@@ -1322,10 +1316,8 @@ class ChannelTests(TestBase):
 
         out = _run_output(interp, dedent("""
             import _xxsubinterpreters as _interpreters
-            print(chan.end)
-            _interpreters.channel_send(chan, b'spam')
-            #print(chan.id.end)
-            #_interpreters.channel_send(chan.id, b'spam')
+            print(chan.id.end)
+            _interpreters.channel_send(chan.id, b'spam')
             """),
             dict(chan=cid.send))
         obj = interpreters.channel_recv(cid)

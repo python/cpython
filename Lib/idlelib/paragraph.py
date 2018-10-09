@@ -190,6 +190,5 @@ def get_comment_header(line):
 
 
 if __name__ == "__main__":
-    import unittest
-    unittest.main('idlelib.idle_test.test_paragraph',
-            verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_paragraph', verbosity=2, exit=False)

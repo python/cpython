@@ -474,7 +474,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             })
             body = content.encode('UTF-8', 'replace')
             self.send_header("Content-Type", self.error_content_type)
-            self.send_header('Content-Length', int(len(body)))
+            self.send_header('Content-Length', str(len(body)))
         self.end_headers()
 
         if self.command != 'HEAD' and body:

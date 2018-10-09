@@ -308,7 +308,7 @@ Module-level decorators, classes, and functions
 
    Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
 
-.. function:: astuple(*, tuple_factory=tuple)
+.. function:: astuple(instance, *, tuple_factory=tuple)
 
    Converts the dataclass ``instance`` to a tuple (by using the
    factory function ``tuple_factory``).  Each dataclass is converted
@@ -447,7 +447,7 @@ parameters to the generated :meth:`__init__` method, and are passed to
 the optional :meth:`__post_init__` method.  They are not otherwise used
 by dataclasses.
 
-For example, suppose a field will be initialzed from a database, if a
+For example, suppose a field will be initialized from a database, if a
 value is not provided when creating the class::
 
   @dataclass
@@ -532,7 +532,7 @@ Mutable default values
      class C:
          x = []
          def add(self, element):
-             self.x += element
+             self.x.append(element)
 
      o1 = C()
      o2 = C()

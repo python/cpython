@@ -163,6 +163,13 @@ class PyCoroutineMixin(object):
         return ret
 
 
+class PyAwaitableMixin(object):
+    def handle_signature(self, sig, signode):
+        ret = super(PyAwaitableMixin, self).handle_signature(sig, signode)
+        signode.insert(0, addnodes.desc_annotation('awaitable ', 'awaitable '))
+        return ret
+
+
 class PyCoroutineFunction(PyCoroutineMixin, PyModulelevel):
     def run(self):
         self.name = 'py:function'
@@ -170,6 +177,18 @@ class PyCoroutineFunction(PyCoroutineMixin, PyModulelevel):
 
 
 class PyCoroutineMethod(PyCoroutineMixin, PyClassmember):
+    def run(self):
+        self.name = 'py:method'
+        return PyClassmember.run(self)
+
+
+class PyAwaitableFunction(PyAwaitableMixin, PyClassmember):
+    def run(self):
+        self.name = 'py:function'
+        return PyClassmember.run(self)
+
+
+class PyAwaitableMethod(PyAwaitableMixin, PyClassmember):
     def run(self):
         self.name = 'py:method'
         return PyClassmember.run(self)
@@ -394,6 +413,8 @@ def setup(app):
     app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)
     app.add_directive_to_domain('py', 'coroutinemethod', PyCoroutineMethod)
+    app.add_directive_to_domain('py', 'awaitablefunction', PyAwaitableFunction)
+    app.add_directive_to_domain('py', 'awaitablemethod', PyAwaitableMethod)
     app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
     app.add_directive('miscnews', MiscNews)
     return {'version': '1.0', 'parallel_read_safe': True}

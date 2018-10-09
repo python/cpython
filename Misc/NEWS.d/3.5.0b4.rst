@@ -1,5 +1,5 @@
 .. bpo: 23573
-.. date: 7923
+.. date: 9263
 .. nonce: HdJPs7
 .. release date: 2015-07-26
 .. section: Core and Builtins
@@ -10,7 +10,7 @@ argument on Linux.
 ..
 
 .. bpo: 24569
-.. date: 7922
+.. date: 9262
 .. nonce: bqh6PQ
 .. section: Core and Builtins
 
@@ -19,7 +19,7 @@ Make PEP 448 dictionary evaluation more consistent.
 ..
 
 .. bpo: 24583
-.. date: 7921
+.. date: 9261
 .. nonce: Ooq0Tn
 .. section: Core and Builtins
 
@@ -28,7 +28,7 @@ Fix crash when set is mutated while being updated.
 ..
 
 .. bpo: 24407
-.. date: 7920
+.. date: 9260
 .. nonce: GmCBB3
 .. section: Core and Builtins
 
@@ -37,7 +37,7 @@ Fix crash when dict is mutated while being updated.
 ..
 
 .. bpo: 24619
-.. date: 7919
+.. date: 9259
 .. nonce: cnfZGo
 .. section: Core and Builtins
 
@@ -47,7 +47,7 @@ possible to have one-line 'async def foo(): await ..' functions.
 ..
 
 .. bpo: 24687
-.. date: 7918
+.. date: 9258
 .. nonce: 0UaXFe
 .. section: Core and Builtins
 
@@ -56,7 +56,7 @@ Plug refleak on SyntaxError in function parameters annotations.
 ..
 
 .. bpo: 15944
-.. date: 7917
+.. date: 9257
 .. nonce: 4GuwqX
 .. section: Core and Builtins
 
@@ -66,7 +66,7 @@ Panter.
 ..
 
 .. bpo: 23441
-.. date: 7916
+.. date: 9256
 .. nonce: JXt2Yt
 .. section: Library
 
@@ -76,7 +76,7 @@ completions for an empty word.  Initial patch by Martin Sekera.
 ..
 
 .. bpo: 24683
-.. date: 7915
+.. date: 9255
 .. nonce: aJdWEv
 .. section: Library
 
@@ -86,7 +86,7 @@ type.
 ..
 
 .. bpo: 21697
-.. date: 7914
+.. date: 9254
 .. nonce: jpATha
 .. section: Library
 
@@ -96,7 +96,7 @@ directories.  Patch by Eduardo Seabra and Thomas Kluyver.
 ..
 
 .. bpo: 14373
-.. date: 7913
+.. date: 9253
 .. nonce: Je0yDg
 .. section: Library
 
@@ -106,7 +106,7 @@ lru_cache (C implementation).
 ..
 
 .. bpo: 24695
-.. date: 7912
+.. date: 9252
 .. nonce: QjZzFb
 .. section: Library
 
@@ -116,7 +116,7 @@ we shouldn't print a traceback header like described in the documentation.
 ..
 
 .. bpo: 24620
-.. date: 7911
+.. date: 9251
 .. nonce: rrnxB-
 .. section: Library
 
@@ -125,7 +125,7 @@ Random.setstate() now validates the value of state last element.
 ..
 
 .. bpo: 22485
-.. date: 7910
+.. date: 9250
 .. nonce: HvJf6T
 .. section: Library
 
@@ -135,7 +135,7 @@ on nested functions.
 ..
 
 .. bpo: 22153
-.. date: 7909
+.. date: 9249
 .. nonce: 6n6yld
 .. section: Library
 
@@ -144,7 +144,7 @@ Improve unittest docs. Patch from Martin Panter and evilzero.
 ..
 
 .. bpo: 24580
-.. date: 7908
+.. date: 9248
 .. nonce: AGi4Gm
 .. section: Library
 
@@ -154,7 +154,7 @@ forbidden as well as numeric group references.
 ..
 
 .. bpo: 24206
-.. date: 7907
+.. date: 9247
 .. nonce: ffkVHH
 .. section: Library
 
@@ -163,7 +163,7 @@ Fixed __eq__ and __ne__ methods of inspect classes.
 ..
 
 .. bpo: 24631
-.. date: 7906
+.. date: 9246
 .. nonce: uljPxM
 .. section: Library
 
@@ -172,7 +172,7 @@ Fixed regression in the timeit module with multiline setup.
 ..
 
 .. bpo: 18622
-.. date: 7905
+.. date: 9245
 .. nonce: i6nCCW
 .. section: Library
 
@@ -182,7 +182,7 @@ Nicola Palumbo and Laurent De Buyst.
 ..
 
 .. bpo: 23661
-.. date: 7904
+.. date: 9244
 .. nonce: 5VHJmh
 .. section: Library
 
@@ -192,7 +192,7 @@ regression vs Python 3.4. Patch from Ignacio Rossi
 ..
 
 .. bpo: 24608
-.. date: 7903
+.. date: 9243
 .. nonce: 0TndL0
 .. section: Library
 
@@ -201,7 +201,7 @@ chunk.Chunk.read() now always returns bytes, not str.
 ..
 
 .. bpo: 18684
-.. date: 7902
+.. date: 9242
 .. nonce: S2es0F
 .. section: Library
 
@@ -210,7 +210,7 @@ Fixed reading out of the buffer in the re module.
 ..
 
 .. bpo: 24259
-.. date: 7901
+.. date: 9241
 .. nonce: vMAi1A
 .. section: Library
 
@@ -220,17 +220,17 @@ segment.
 ..
 
 .. bpo: 15014
-.. date: 7900
+.. date: 9240
 .. nonce: hwXwCH
 .. section: Library
 
-SMTP.auth() and SMTP.login() now support RFC 4954's optional
-initial-response argument to the SMTP AUTH command.
+SMTP.auth() and SMTP.login() now support RFC 4954's optional initial-
+response argument to the SMTP AUTH command.
 
 ..
 
 .. bpo: 24669
-.. date: 7899
+.. date: 9239
 .. nonce: kFThK0
 .. section: Library
 
@@ -239,7 +239,7 @@ Fix inspect.getsource() for 'async def' functions. Patch by Kai Groner.
 ..
 
 .. bpo: 24688
-.. date: 7898
+.. date: 9238
 .. nonce: -yWfcO
 .. section: Library
 
@@ -248,7 +248,7 @@ ast.get_docstring() for 'async def' functions.
 ..
 
 .. bpo: 24603
-.. date: 7897
+.. date: 9237
 .. nonce: PyHyF5
 .. section: Build
 

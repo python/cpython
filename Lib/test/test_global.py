@@ -24,7 +24,7 @@ def wrong1():
     global a
     global b
 """
-        check_syntax_error(self, prog_text_1, lineno=4, offset=4)
+        check_syntax_error(self, prog_text_1, lineno=4, offset=5)
 
     def test2(self):
         prog_text_2 = """\
@@ -32,7 +32,7 @@ def wrong2():
     print(x)
     global x
 """
-        check_syntax_error(self, prog_text_2, lineno=3, offset=4)
+        check_syntax_error(self, prog_text_2, lineno=3, offset=5)
 
     def test3(self):
         prog_text_3 = """\
@@ -41,7 +41,7 @@ def wrong3():
     x = 2
     global x
 """
-        check_syntax_error(self, prog_text_3, lineno=4, offset=4)
+        check_syntax_error(self, prog_text_3, lineno=4, offset=5)
 
     def test4(self):
         prog_text_4 = """\

@@ -1,5 +1,5 @@
 .. bpo: 24305
-.. date: 7962
+.. date: 9302
 .. nonce: QeF4A8
 .. release date: 2015-09-07
 .. section: Core and Builtins
@@ -10,7 +10,7 @@ warnings.warn(stacklevel=) parameter.
 ..
 
 .. bpo: 24912
-.. date: 7961
+.. date: 9301
 .. nonce: ubSi5J
 .. section: Core and Builtins
 
@@ -19,7 +19,7 @@ Prevent __class__ assignment to immutable built-in objects.
 ..
 
 .. bpo: 24975
-.. date: 7960
+.. date: 9300
 .. nonce: 2gLdfN
 .. section: Core and Builtins
 
@@ -28,7 +28,7 @@ Fix AST compilation for PEP 448 syntax.
 ..
 
 .. bpo: 24917
-.. date: 7959
+.. date: 9299
 .. nonce: xaQocz
 .. section: Library
 
@@ -37,7 +37,7 @@ time_strftime() buffer over-read.
 ..
 
 .. bpo: 24748
-.. date: 7958
+.. date: 9298
 .. nonce: 83NuO8
 .. section: Library
 
@@ -49,7 +49,7 @@ Viktorin.
 ..
 
 .. bpo: 24635
-.. date: 7957
+.. date: 9297
 .. nonce: EiJPPf
 .. section: Library
 
@@ -59,7 +59,7 @@ True once, then False on subsequent calls.
 ..
 
 .. bpo: 24989
-.. date: 7956
+.. date: 9296
 .. nonce: 9BJLiy
 .. section: Library
 
@@ -69,7 +69,7 @@ size.  Based on patch by John Leitch.
 ..
 
 .. bpo: 24913
-.. date: 7955
+.. date: 9295
 .. nonce: p2ZAJ4
 .. section: Library
 

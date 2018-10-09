@@ -636,7 +636,7 @@ if closing the file from another thread.
 
 Formally deprecated aifc.openfp, sunau.openfp, and wave.openfp. Since change
 7bc817d5ba917528e8bd07ec461c635291e7b06a in 1993, openfp in each of the
-three modules had been pointing to that module's open funciton as a matter
+three modules had been pointing to that module's open function as a matter
 of backwards compatibility, though it had been both untested and
 undocumented.
 
@@ -809,7 +809,7 @@ Fixed building the curses module on NetBSD.
 .. nonce: bjhre9
 .. section: Library
 
-added required constants to subprocess module for setting priotity on
+added required constants to subprocess module for setting priority on
 windows
 
 ..
@@ -1217,7 +1217,7 @@ Add HTTP/2 status code 421 (Misdirected Request) to
 .. nonce: 91mhWm
 .. section: Documentation
 
-Added asyncio.BaseEventLoop.connect_accepted_socket versionaddded marker.
+Added asyncio.BaseEventLoop.connect_accepted_socket versionadded marker.
 
 ..
 
@@ -1494,7 +1494,7 @@ Cheryl Sabella.
 .. nonce: VuSA_e
 .. section: IDLE
 
-IDLE -- Restrict shell prompt manipulaton to the shell. Editor and output
+IDLE -- Restrict shell prompt manipulation to the shell. Editor and output
 windows only see an empty last prompt line.  This simplifies the code and
 fixes a minor bug when newline is inserted. Sys.ps1, if present, is read on
 Shell start-up, but is not set or changed.
@@ -1566,9 +1566,6 @@ and Subversion are no longer used to develop CPython.
 .. section: Tools/Demos
 
 Make redemo work with Python 3.6 and newer versions.
-
-In Python 3.6, flags like re.DOTALL became members of an enum.IntFlag so
-usages like ``getattr(re, 'DOTALL')`` are invalid.
 
 Also, remove the ``LOCALE`` option since it doesn't work with string
 patterns in Python 3.

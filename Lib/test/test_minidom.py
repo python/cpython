@@ -325,7 +325,7 @@ class MinidomTest(unittest.TestCase):
         node = child.getAttributeNode("spam")
         self.assertRaises(xml.dom.NotFoundErr, child.removeAttributeNode,
             None)
-        child.removeAttributeNode(node)
+        self.assertIs(node, child.removeAttributeNode(node))
         self.confirm(len(child.attributes) == 0
                 and child.getAttributeNode("spam") is None)
         dom2 = Document()

@@ -61,7 +61,7 @@ def _stringify(value):
     if isinstance(value, (list, tuple)):
         if len(value) == 1:
             value = _stringify(value[0])
-            if value[0] == '{':
+            if _magic_re.search(value):
                 value = '{%s}' % value
         else:
             value = '{%s}' % _join(value)
@@ -72,7 +72,10 @@ def _stringify(value):
         elif _magic_re.search(value):
             # add '\' before special characters and spaces
             value = _magic_re.sub(r'\\\1', value)
+            value = value.replace('\n', r'\n')
             value = _space_re.sub(r'\\\1', value)
+            if value[0] == '"':
+                value = '\\' + value
         elif value[0] == '"' or _space_re.search(value):
             value = '{%s}' % value
     return value
@@ -3766,6 +3769,24 @@ class Spinbox(Widget, XView):
         displayed depressed
         """
         return self.selection("element", element)
+
+    def selection_from(self, index):
+        """Set the fixed end of a selection to INDEX."""
+        self.selection('from', index)
+
+    def selection_present(self):
+        """Return True if there are characters selected in the spinbox, False
+        otherwise."""
+        return self.tk.getboolean(
+            self.tk.call(self._w, 'selection', 'present'))
+
+    def selection_range(self, start, end):
+        """Set the selection from START to END (not included)."""
+        self.selection('range', start, end)
+
+    def selection_to(self, index):
+        """Set the variable end of a selection to INDEX."""
+        self.selection('to', index)
 
 ###########################################################################
 

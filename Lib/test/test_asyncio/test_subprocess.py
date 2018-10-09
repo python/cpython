@@ -23,6 +23,11 @@ PROGRAM_CAT = [
               'data = sys.stdin.buffer.read()',
               'sys.stdout.buffer.write(data)'))]
 
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class TestSubprocessTransport(base_subprocess.BaseSubprocessTransport):
     def _start(self, *args, **kwargs):
         self._proc = mock.Mock()
@@ -121,7 +126,7 @@ class SubprocessMixin:
             return (exitcode, data)
 
         task = run(b'some data')
-        task = asyncio.wait_for(task, 60.0, loop=self.loop)
+        task = asyncio.wait_for(task, 60.0)
         exitcode, stdout = self.loop.run_until_complete(task)
         self.assertEqual(exitcode, 0)
         self.assertEqual(stdout, b'some data')
@@ -139,7 +144,7 @@ class SubprocessMixin:
             return proc.returncode, stdout
 
         task = run(b'some data')
-        task = asyncio.wait_for(task, 60.0, loop=self.loop)
+        task = asyncio.wait_for(task, 60.0)
         exitcode, stdout = self.loop.run_until_complete(task)
         self.assertEqual(exitcode, 0)
         self.assertEqual(stdout, b'some data')
@@ -228,7 +233,7 @@ class SubprocessMixin:
         proc, large_data = self.prepare_broken_pipe_test()
 
         async def write_stdin(proc, data):
-            await asyncio.sleep(0.5, loop=self.loop)
+            await asyncio.sleep(0.5)
             proc.stdin.write(data)
             await proc.stdin.drain()
 
@@ -499,7 +504,7 @@ class SubprocessMixin:
             while True:
                 data = await process.stdout.read(65536)
                 if data:
-                    await asyncio.sleep(0.3, loop=self.loop)
+                    await asyncio.sleep(0.3)
                 else:
                     break
 

@@ -126,13 +126,6 @@ static PyObject *DefaultHandler;
 static PyObject *IgnoreHandler;
 static PyObject *IntHandler;
 
-/* On Solaris 8, gcc will produce a warning that the function
-   declaration is not a prototype. This is caused by the definition of
-   SIG_DFL as (void (*)())0; the correct declaration would have been
-   (void (*)(int))0. */
-
-static PyOS_sighandler_t old_siginthandler = SIG_DFL;
-
 #ifdef MS_WINDOWS
 static HANDLE sigint_event = NULL;
 #endif
@@ -537,9 +530,27 @@ signal_strsignal_impl(PyObject *module, int signalnum)
         return NULL;
     }
 
-#ifdef MS_WINDOWS
-    /* Custom redefinition of POSIX signals allowed on Windows */
+#ifndef HAVE_STRSIGNAL
     switch (signalnum) {
+        /* Though being a UNIX, HP-UX does not provide strsignal(3). */
+#ifndef MS_WINDOWS
+        case SIGHUP:
+            res = "Hangup";
+            break;
+        case SIGALRM:
+            res = "Alarm clock";
+            break;
+        case SIGPIPE:
+            res = "Broken pipe";
+            break;
+        case SIGQUIT:
+            res = "Quit";
+            break;
+        case SIGCHLD:
+            res = "Child exited";
+            break;
+#endif
+        /* Custom redefinition of POSIX signals allowed on Windows. */
         case SIGINT:
             res = "Interrupt";
             break;
@@ -1336,7 +1347,7 @@ PyInit__signal(void)
         /* Install default int handler */
         Py_INCREF(IntHandler);
         Py_SETREF(Handlers[SIGINT].func, IntHandler);
-        old_siginthandler = PyOS_setsig(SIGINT, signal_handler);
+        PyOS_setsig(SIGINT, signal_handler);
     }
 
 #ifdef SIGHUP
@@ -1542,14 +1553,11 @@ finisignal(void)
     int i;
     PyObject *func;
 
-    PyOS_setsig(SIGINT, old_siginthandler);
-    old_siginthandler = SIG_DFL;
-
     for (i = 1; i < NSIG; i++) {
         func = Handlers[i].func;
         _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
         Handlers[i].func = NULL;
-        if (i != SIGINT && func != NULL && func != Py_None &&
+        if (func != NULL && func != Py_None &&
             func != DefaultHandler && func != IgnoreHandler)
             PyOS_setsig(i, SIG_DFL);
         Py_XDECREF(func);

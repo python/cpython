@@ -1,7 +1,5 @@
-''' Test idlelib.config_key.
+"Test config_key, coverage 75%"
 
-Coverage: 56% from creating and closing dialog.
-'''
 from idlelib import config_key
 from test.support import requires
 import sys

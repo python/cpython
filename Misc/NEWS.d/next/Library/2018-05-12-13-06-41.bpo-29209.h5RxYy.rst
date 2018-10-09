@@ -1,0 +1,6 @@
+Removed the ``doctype()`` method and the *html* parameter of the constructor
+of :class:`~xml.etree.ElementTree.XMLParser`.  The ``doctype()`` method
+defined in a subclass will no longer be called.  Deprecated methods
+``getchildren()`` and ``getiterator()`` in the :mod:`~xml.etree.ElementTree`
+module emit now a :exc:`DeprecationWarning` instead of
+:exc:`PendingDeprecationWarning`.

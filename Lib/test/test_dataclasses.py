@@ -6,6 +6,7 @@ from dataclasses import *
 
 import pickle
 import inspect
+import builtins
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
@@ -191,6 +192,55 @@ class TestCase(unittest.TestCase):
         sig = inspect.signature(C.__init__)
         first = next(iter(sig.parameters))
         self.assertEqual('self', first)
+
+    def test_field_named_object(self):
+        @dataclass
+        class C:
+            object: str
+        c = C('foo')
+        self.assertEqual(c.object, 'foo')
+
+    def test_field_named_object_frozen(self):
+        @dataclass(frozen=True)
+        class C:
+            object: str
+        c = C('foo')
+        self.assertEqual(c.object, 'foo')
+
+    def test_field_named_like_builtin(self):
+        # Attribute names can shadow built-in names
+        # since code generation is used.
+        # Ensure that this is not happening.
+        exclusions = {'None', 'True', 'False'}
+        builtins_names = sorted(
+            b for b in builtins.__dict__.keys()
+            if not b.startswith('__') and b not in exclusions
+        )
+        attributes = [(name, str) for name in builtins_names]
+        C = make_dataclass('C', attributes)
+
+        c = C(*[name for name in builtins_names])
+
+        for name in builtins_names:
+            self.assertEqual(getattr(c, name), name)
+
+    def test_field_named_like_builtin_frozen(self):
+        # Attribute names can shadow built-in names
+        # since code generation is used.
+        # Ensure that this is not happening
+        # for frozen data classes.
+        exclusions = {'None', 'True', 'False'}
+        builtins_names = sorted(
+            b for b in builtins.__dict__.keys()
+            if not b.startswith('__') and b not in exclusions
+        )
+        attributes = [(name, str) for name in builtins_names]
+        C = make_dataclass('C', attributes, frozen=True)
+
+        c = C(*[name for name in builtins_names])
+
+        for name in builtins_names:
+            self.assertEqual(getattr(c, name), name)
 
     def test_0_field_compare(self):
         # Ensure that order=False is the default.
@@ -1379,6 +1429,70 @@ class TestCase(unittest.TestCase):
         self.assertEqual(d, OrderedDict([('x', 42), ('y', 2)]))
         self.assertIs(type(d), OrderedDict)
 
+    def test_helper_asdict_namedtuple(self):
+        T = namedtuple('T', 'a b c')
+        @dataclass
+        class C:
+            x: str
+            y: T
+        c = C('outer', T(1, C('inner', T(11, 12, 13)), 2))
+
+        d = asdict(c)
+        self.assertEqual(d, {'x': 'outer',
+                             'y': T(1,
+                                    {'x': 'inner',
+                                     'y': T(11, 12, 13)},
+                                    2),
+                             }
+                         )
+
+        # Now with a dict_factory.  OrderedDict is convenient, but
+        # since it compares to dicts, we also need to have separate
+        # assertIs tests.
+        d = asdict(c, dict_factory=OrderedDict)
+        self.assertEqual(d, {'x': 'outer',
+                             'y': T(1,
+                                    {'x': 'inner',
+                                     'y': T(11, 12, 13)},
+                                    2),
+                             }
+                         )
+
+        # Make sure that the returned dicts are actuall OrderedDicts.
+        self.assertIs(type(d), OrderedDict)
+        self.assertIs(type(d['y'][1]), OrderedDict)
+
+    def test_helper_asdict_namedtuple_key(self):
+        # Ensure that a field that contains a dict which has a
+        # namedtuple as a key works with asdict().
+
+        @dataclass
+        class C:
+            f: dict
+        T = namedtuple('T', 'a')
+
+        c = C({T('an a'): 0})
+
+        self.assertEqual(asdict(c), {'f': {T(a='an a'): 0}})
+
+    def test_helper_asdict_namedtuple_derived(self):
+        class T(namedtuple('Tbase', 'a')):
+            def my_a(self):
+                return self.a
+
+        @dataclass
+        class C:
+            f: T
+
+        t = T(6)
+        c = C(t)
+
+        d = asdict(c)
+        self.assertEqual(d, {'f': T(a=6)})
+        # Make sure that t has been copied, not used directly.
+        self.assertIsNot(d['f'], t)
+        self.assertEqual(d['f'].my_a(), 6)
+
     def test_helper_astuple(self):
         # Basic tests for astuple(), it should return a new tuple.
         @dataclass
@@ -1490,6 +1604,21 @@ class TestCase(unittest.TestCase):
         t = astuple(c, tuple_factory=nt)
         self.assertEqual(t, NT(42, 2))
         self.assertIs(type(t), NT)
+
+    def test_helper_astuple_namedtuple(self):
+        T = namedtuple('T', 'a b c')
+        @dataclass
+        class C:
+            x: str
+            y: T
+        c = C('outer', T(1, C('inner', T(11, 12, 13)), 2))
+
+        t = astuple(c)
+        self.assertEqual(t, ('outer', T(1, ('inner', (11, 12, 13)), 2)))
+
+        # Now, using a tuple_factory.  list is convenient here.
+        t = astuple(c, tuple_factory=list)
+        self.assertEqual(t, ['outer', T(1, ['inner', T(11, 12, 13)], 2)])
 
     def test_dynamic_class_creation(self):
         cls_dict = {'__annotations__': {'x': int, 'y': int},
@@ -1711,91 +1840,6 @@ class TestCase(unittest.TestCase):
         self.assertEqual(Alias[int](1, 2).x, 1)
         # Check MRO resolution.
         self.assertEqual(Child.__mro__, (Child, Parent, Generic, object))
-
-    def test_helper_replace(self):
-        @dataclass(frozen=True)
-        class C:
-            x: int
-            y: int
-
-        c = C(1, 2)
-        c1 = replace(c, x=3)
-        self.assertEqual(c1.x, 3)
-        self.assertEqual(c1.y, 2)
-
-    def test_helper_replace_frozen(self):
-        @dataclass(frozen=True)
-        class C:
-            x: int
-            y: int
-            z: int = field(init=False, default=10)
-            t: int = field(init=False, default=100)
-
-        c = C(1, 2)
-        c1 = replace(c, x=3)
-        self.assertEqual((c.x, c.y, c.z, c.t), (1, 2, 10, 100))
-        self.assertEqual((c1.x, c1.y, c1.z, c1.t), (3, 2, 10, 100))
-
-
-        with self.assertRaisesRegex(ValueError, 'init=False'):
-            replace(c, x=3, z=20, t=50)
-        with self.assertRaisesRegex(ValueError, 'init=False'):
-            replace(c, z=20)
-            replace(c, x=3, z=20, t=50)
-
-        # Make sure the result is still frozen.
-        with self.assertRaisesRegex(FrozenInstanceError, "cannot assign to field 'x'"):
-            c1.x = 3
-
-        # Make sure we can't replace an attribute that doesn't exist,
-        #  if we're also replacing one that does exist.  Test this
-        #  here, because setting attributes on frozen instances is
-        #  handled slightly differently from non-frozen ones.
-        with self.assertRaisesRegex(TypeError, r"__init__\(\) got an unexpected "
-                                             "keyword argument 'a'"):
-            c1 = replace(c, x=20, a=5)
-
-    def test_helper_replace_invalid_field_name(self):
-        @dataclass(frozen=True)
-        class C:
-            x: int
-            y: int
-
-        c = C(1, 2)
-        with self.assertRaisesRegex(TypeError, r"__init__\(\) got an unexpected "
-                                    "keyword argument 'z'"):
-            c1 = replace(c, z=3)
-
-    def test_helper_replace_invalid_object(self):
-        @dataclass(frozen=True)
-        class C:
-            x: int
-            y: int
-
-        with self.assertRaisesRegex(TypeError, 'dataclass instance'):
-            replace(C, x=3)
-
-        with self.assertRaisesRegex(TypeError, 'dataclass instance'):
-            replace(0, x=3)
-
-    def test_helper_replace_no_init(self):
-        @dataclass
-        class C:
-            x: int
-            y: int = field(init=False, default=10)
-
-        c = C(1)
-        c.y = 20
-
-        # Make sure y gets the default value.
-        c1 = replace(c, x=5)
-        self.assertEqual((c1.x, c1.y), (5, 10))
-
-        # Trying to replace y is an error.
-        with self.assertRaisesRegex(ValueError, 'init=False'):
-            replace(c, x=2, y=30)
-            with self.assertRaisesRegex(ValueError, 'init=False'):
-                replace(c, y=30)
 
     def test_dataclassses_pickleable(self):
         global P, Q, R
@@ -2051,7 +2095,7 @@ class TestRepr(unittest.TestCase):
         @dataclass(repr=False)
         class C:
             x: int
-        self.assertIn('test_dataclasses.TestRepr.test_no_repr.<locals>.C object at',
+        self.assertIn(f'{__name__}.TestRepr.test_no_repr.<locals>.C object at',
                       repr(C(3)))
 
         # Test a class with a __repr__ and repr=False.
@@ -2798,10 +2842,10 @@ class TestStringAnnotations(unittest.TestCase):
                 self.assertEqual(C(10).x, 10)
 
     def test_classvar_module_level_import(self):
-        from . import dataclass_module_1
-        from . import dataclass_module_1_str
-        from . import dataclass_module_2
-        from . import dataclass_module_2_str
+        from test import dataclass_module_1
+        from test import dataclass_module_1_str
+        from test import dataclass_module_2
+        from test import dataclass_module_2_str
 
         for m in (dataclass_module_1, dataclass_module_1_str,
                   dataclass_module_2, dataclass_module_2_str,
@@ -3002,6 +3046,142 @@ class TestMakeDataclass(unittest.TestCase):
             with self.subTest(classname=classname):
                 C = make_dataclass(classname, ['a', 'b'])
                 self.assertEqual(C.__name__, classname)
+
+class TestReplace(unittest.TestCase):
+    def test(self):
+        @dataclass(frozen=True)
+        class C:
+            x: int
+            y: int
+
+        c = C(1, 2)
+        c1 = replace(c, x=3)
+        self.assertEqual(c1.x, 3)
+        self.assertEqual(c1.y, 2)
+
+    def test_frozen(self):
+        @dataclass(frozen=True)
+        class C:
+            x: int
+            y: int
+            z: int = field(init=False, default=10)
+            t: int = field(init=False, default=100)
+
+        c = C(1, 2)
+        c1 = replace(c, x=3)
+        self.assertEqual((c.x, c.y, c.z, c.t), (1, 2, 10, 100))
+        self.assertEqual((c1.x, c1.y, c1.z, c1.t), (3, 2, 10, 100))
+
+
+        with self.assertRaisesRegex(ValueError, 'init=False'):
+            replace(c, x=3, z=20, t=50)
+        with self.assertRaisesRegex(ValueError, 'init=False'):
+            replace(c, z=20)
+            replace(c, x=3, z=20, t=50)
+
+        # Make sure the result is still frozen.
+        with self.assertRaisesRegex(FrozenInstanceError, "cannot assign to field 'x'"):
+            c1.x = 3
+
+        # Make sure we can't replace an attribute that doesn't exist,
+        #  if we're also replacing one that does exist.  Test this
+        #  here, because setting attributes on frozen instances is
+        #  handled slightly differently from non-frozen ones.
+        with self.assertRaisesRegex(TypeError, r"__init__\(\) got an unexpected "
+                                             "keyword argument 'a'"):
+            c1 = replace(c, x=20, a=5)
+
+    def test_invalid_field_name(self):
+        @dataclass(frozen=True)
+        class C:
+            x: int
+            y: int
+
+        c = C(1, 2)
+        with self.assertRaisesRegex(TypeError, r"__init__\(\) got an unexpected "
+                                    "keyword argument 'z'"):
+            c1 = replace(c, z=3)
+
+    def test_invalid_object(self):
+        @dataclass(frozen=True)
+        class C:
+            x: int
+            y: int
+
+        with self.assertRaisesRegex(TypeError, 'dataclass instance'):
+            replace(C, x=3)
+
+        with self.assertRaisesRegex(TypeError, 'dataclass instance'):
+            replace(0, x=3)
+
+    def test_no_init(self):
+        @dataclass
+        class C:
+            x: int
+            y: int = field(init=False, default=10)
+
+        c = C(1)
+        c.y = 20
+
+        # Make sure y gets the default value.
+        c1 = replace(c, x=5)
+        self.assertEqual((c1.x, c1.y), (5, 10))
+
+        # Trying to replace y is an error.
+        with self.assertRaisesRegex(ValueError, 'init=False'):
+            replace(c, x=2, y=30)
+
+        with self.assertRaisesRegex(ValueError, 'init=False'):
+            replace(c, y=30)
+
+    def test_classvar(self):
+        @dataclass
+        class C:
+            x: int
+            y: ClassVar[int] = 1000
+
+        c = C(1)
+        d = C(2)
+
+        self.assertIs(c.y, d.y)
+        self.assertEqual(c.y, 1000)
+
+        # Trying to replace y is an error: can't replace ClassVars.
+        with self.assertRaisesRegex(TypeError, r"__init__\(\) got an "
+                                    "unexpected keyword argument 'y'"):
+            replace(c, y=30)
+
+        replace(c, x=5)
+
+    def test_initvar_is_specified(self):
+        @dataclass
+        class C:
+            x: int
+            y: InitVar[int]
+
+            def __post_init__(self, y):
+                self.x *= y
+
+        c = C(1, 10)
+        self.assertEqual(c.x, 10)
+        with self.assertRaisesRegex(ValueError, r"InitVar 'y' must be "
+                                    "specified with replace()"):
+            replace(c, x=3)
+        c = replace(c, x=3, y=5)
+        self.assertEqual(c.x, 15)
+    ## def test_initvar(self):
+    ##     @dataclass
+    ##     class C:
+    ##         x: int
+    ##         y: InitVar[int]
+
+    ##     c = C(1, 10)
+    ##     d = C(2, 20)
+
+    ##     # In our case, replacing an InitVar is a no-op
+    ##     self.assertEqual(c, replace(c, y=5))
+
+    ##     replace(c, x=5)
 
 
 if __name__ == '__main__':

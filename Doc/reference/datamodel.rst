@@ -768,7 +768,7 @@ Custom classes
 
    When a class attribute reference (for class :class:`C`, say) would yield a
    class method object, it is transformed into an instance method object whose
-   :attr:`__self__` attributes is :class:`C`.  When it would yield a static
+   :attr:`__self__` attribute is :class:`C`.  When it would yield a static
    method object, it is transformed into the object wrapped by the static method
    object. See section :ref:`descriptors` for another way in which attributes
    retrieved from a class may differ from those actually contained in its
@@ -1059,9 +1059,9 @@ Internal types
       trace (towards the frame where the exception occurred), or ``None`` if
       there is no next level.
 
-    .. versionchanged:: 3.7
-       Traceback objects can now be explicitly instantiated from Python code,
-       and the ``tb_next`` attribute of existing instances can be updated.
+      .. versionchanged:: 3.7
+         Traceback objects can now be explicitly instantiated from Python code,
+         and the ``tb_next`` attribute of existing instances can be updated.
 
    Slice objects
       .. index:: builtin: slice

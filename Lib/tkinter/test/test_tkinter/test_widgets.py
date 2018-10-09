@@ -377,6 +377,31 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         self.checkCommandParam(widget, 'validatecommand')
         self.checkCommandParam(widget, 'vcmd')
 
+    def test_selection_methods(self):
+        widget = self.create()
+        widget.insert(0, '12345')
+        self.assertFalse(widget.selection_present())
+        widget.selection_range(0, 'end')
+        self.assertEqual(widget.selection_get(), '12345')
+        self.assertTrue(widget.selection_present())
+        widget.selection_from(1)
+        widget.selection_to(2)
+        self.assertEqual(widget.selection_get(), '2')
+        widget.selection_range(3, 4)
+        self.assertEqual(widget.selection_get(), '4')
+        widget.selection_clear()
+        self.assertFalse(widget.selection_present())
+        widget.selection_range(0, 'end')
+        widget.selection_adjust(4)
+        self.assertEqual(widget.selection_get(), '1234')
+        widget.selection_adjust(1)
+        self.assertEqual(widget.selection_get(), '234')
+        widget.selection_adjust(5)
+        self.assertEqual(widget.selection_get(), '2345')
+        widget.selection_adjust(0)
+        self.assertEqual(widget.selection_get(), '12345')
+        widget.selection_adjust(0)
+
 
 @add_standard_options(StandardOptionsTests)
 class SpinboxTest(EntryTest, unittest.TestCase):
@@ -473,6 +498,31 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         self.assertRaises(tkinter.TclError, widget.bbox, None)
         self.assertRaises(TypeError, widget.bbox)
         self.assertRaises(TypeError, widget.bbox, 0, 1)
+
+    def test_selection_methods(self):
+        widget = self.create()
+        widget.insert(0, '12345')
+        self.assertFalse(widget.selection_present())
+        widget.selection_range(0, 'end')
+        self.assertEqual(widget.selection_get(), '12345')
+        self.assertTrue(widget.selection_present())
+        widget.selection_from(1)
+        widget.selection_to(2)
+        self.assertEqual(widget.selection_get(), '2')
+        widget.selection_range(3, 4)
+        self.assertEqual(widget.selection_get(), '4')
+        widget.selection_clear()
+        self.assertFalse(widget.selection_present())
+        widget.selection_range(0, 'end')
+        widget.selection_adjust(4)
+        self.assertEqual(widget.selection_get(), '1234')
+        widget.selection_adjust(1)
+        self.assertEqual(widget.selection_get(), '234')
+        widget.selection_adjust(5)
+        self.assertEqual(widget.selection_get(), '2345')
+        widget.selection_adjust(0)
+        self.assertEqual(widget.selection_get(), '12345')
+        widget.selection_adjust(0)
 
 
 @add_standard_options(StandardOptionsTests)
@@ -703,7 +753,7 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
         'disabledforeground', 'exportselection',
         'font', 'foreground', 'height',
         'highlightbackground', 'highlightcolor', 'highlightthickness',
-        'listvariable', 'relief',
+        'justify', 'listvariable', 'relief',
         'selectbackground', 'selectborderwidth', 'selectforeground',
         'selectmode', 'setgrid', 'state',
         'takefocus', 'width', 'xscrollcommand', 'yscrollcommand',
@@ -716,6 +766,8 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
         widget = self.create()
         self.checkEnumParam(widget, 'activestyle',
                             'dotbox', 'none', 'underline')
+
+    test_justify = requires_tcl(8, 6, 5)(StandardOptionsTests.test_justify)
 
     def test_listvariable(self):
         widget = self.create()
@@ -951,7 +1003,9 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'background', 'borderwidth', 'cursor',
         'handlepad', 'handlesize', 'height',
-        'opaqueresize', 'orient', 'relief',
+        'opaqueresize', 'orient',
+        'proxybackground', 'proxyborderwidth', 'proxyrelief',
+        'relief',
         'sashcursor', 'sashpad', 'sashrelief', 'sashwidth',
         'showhandle', 'width',
     )
@@ -977,6 +1031,23 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
     def test_opaqueresize(self):
         widget = self.create()
         self.checkBooleanParam(widget, 'opaqueresize')
+
+    @requires_tcl(8, 6, 5)
+    def test_proxybackground(self):
+        widget = self.create()
+        self.checkColorParam(widget, 'proxybackground')
+
+    @requires_tcl(8, 6, 5)
+    def test_proxyborderwidth(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'proxyborderwidth',
+                              0, 1.3, 2.9, 6, -2, '10p',
+                              conv=noconv)
+
+    @requires_tcl(8, 6, 5)
+    def test_proxyrelief(self):
+        widget = self.create()
+        self.checkReliefParam(widget, 'proxyrelief')
 
     def test_sashcursor(self):
         widget = self.create()

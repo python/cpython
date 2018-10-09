@@ -73,8 +73,8 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True):
     # critical section
     logging._acquireLock()
     try:
-        logging._handlers.clear()
-        del logging._handlerList[:]
+        _clearExistingHandlers()
+
         # Handlers add themselves to logging._handlers
         handlers = _install_handlers(cp, formatters)
         _install_loggers(cp, handlers, disable_existing_loggers)
@@ -264,6 +264,14 @@ def _install_loggers(cp, handlers, disable_existing):
     #    elif disable_existing_loggers:
     #        logger.disabled = 1
     _handle_existing_loggers(existing, child_loggers, disable_existing)
+
+
+def _clearExistingHandlers():
+    """Clear and close existing handlers"""
+    logging._handlers.clear()
+    logging.shutdown(logging._handlerList[:])
+    del logging._handlerList[:]
+
 
 IDENTIFIER = re.compile('^[a-z_][a-z0-9_]*$', re.I)
 
@@ -524,8 +532,7 @@ class DictConfigurator(BaseConfigurator):
             else:
                 disable_existing = config.pop('disable_existing_loggers', True)
 
-                logging._handlers.clear()
-                del logging._handlerList[:]
+                _clearExistingHandlers()
 
                 # Do formatters first - they don't refer to anything else
                 formatters = config.get('formatters', EMPTY_DICT)

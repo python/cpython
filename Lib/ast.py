@@ -48,10 +48,8 @@ def literal_eval(node_or_string):
         node_or_string = node_or_string.body
     def _convert_num(node):
         if isinstance(node, Constant):
-            if isinstance(node.value, (int, float, complex)):
+            if type(node.value) in (int, float, complex):
                 return node.value
-        elif isinstance(node, Num):
-            return node.n
         raise ValueError('malformed node or string: ' + repr(node))
     def _convert_signed_num(node):
         if isinstance(node, UnaryOp) and isinstance(node.op, (UAdd, USub)):
@@ -64,10 +62,6 @@ def literal_eval(node_or_string):
     def _convert(node):
         if isinstance(node, Constant):
             return node.value
-        elif isinstance(node, (Str, Bytes)):
-            return node.s
-        elif isinstance(node, Num):
-            return node.n
         elif isinstance(node, Tuple):
             return tuple(map(_convert, node.elts))
         elif isinstance(node, List):
@@ -77,8 +71,6 @@ def literal_eval(node_or_string):
         elif isinstance(node, Dict):
             return dict(zip(map(_convert, node.keys),
                             map(_convert, node.values)))
-        elif isinstance(node, NameConstant):
-            return node.value
         elif isinstance(node, BinOp) and isinstance(node.op, (Add, Sub)):
             left = _convert_signed_num(node.left)
             right = _convert_num(node.right)
@@ -206,7 +198,7 @@ def get_docstring(node, clean=True):
     """
     if not isinstance(node, (AsyncFunctionDef, FunctionDef, ClassDef, Module)):
         raise TypeError("%r can't have docstrings" % node.__class__.__name__)
-    if not node.body:
+    if not(node.body and isinstance(node.body[0], Expr)):
         return None
     node = node.body[0].value
     if isinstance(node, Str):
@@ -215,7 +207,7 @@ def get_docstring(node, clean=True):
         text = node.value
     else:
         return None
-    if clean and text:
+    if clean:
         import inspect
         text = inspect.cleandoc(text)
     return text
@@ -329,3 +321,66 @@ class NodeTransformer(NodeVisitor):
                 else:
                     setattr(node, field, new_node)
         return node
+
+
+# The following code is for backward compatibility.
+# It will be removed in future.
+
+def _getter(self):
+    return self.value
+
+def _setter(self, value):
+    self.value = value
+
+Constant.n = property(_getter, _setter)
+Constant.s = property(_getter, _setter)
+
+class _ABC(type):
+
+    def __instancecheck__(cls, inst):
+        if not isinstance(inst, Constant):
+            return False
+        if cls in _const_types:
+            try:
+                value = inst.value
+            except AttributeError:
+                return False
+            else:
+                return type(value) in _const_types[cls]
+        return type.__instancecheck__(cls, inst)
+
+def _new(cls, *args, **kwargs):
+    if cls in _const_types:
+        return Constant(*args, **kwargs)
+    return Constant.__new__(cls, *args, **kwargs)
+
+class Num(Constant, metaclass=_ABC):
+    _fields = ('n',)
+    __new__ = _new
+
+class Str(Constant, metaclass=_ABC):
+    _fields = ('s',)
+    __new__ = _new
+
+class Bytes(Constant, metaclass=_ABC):
+    _fields = ('s',)
+    __new__ = _new
+
+class NameConstant(Constant, metaclass=_ABC):
+    __new__ = _new
+
+class Ellipsis(Constant, metaclass=_ABC):
+    _fields = ()
+
+    def __new__(cls, *args, **kwargs):
+        if cls is Ellipsis:
+            return Constant(..., *args, **kwargs)
+        return Constant.__new__(cls, *args, **kwargs)
+
+_const_types = {
+    Num: (int, float, complex),
+    Str: (str,),
+    Bytes: (bytes,),
+    NameConstant: (type(None), bool),
+    Ellipsis: (type(...),),
+}

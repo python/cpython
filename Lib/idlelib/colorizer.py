@@ -31,11 +31,12 @@ def make_pat():
 prog = re.compile(make_pat(), re.S)
 idprog = re.compile(r"\s+(\w+)", re.S)
 
-def color_config(text):  # Called from htest, Editor, and Turtle Demo.
-    '''Set color opitons of Text widget.
+def color_config(text):
+    """Set color options of Text widget.
 
-    Should be called whenever ColorDelegator is called.
-    '''
+    If ColorDelegator is used, this should be called first.
+    """
+    # Called from htest, TextFrame, Editor, and Turtledemo.
     # Not automatic because ColorDelegator does not know 'text'.
     theme = idleConf.CurrentTheme()
     normal_colors = idleConf.GetHighlight(theme, 'normal')
@@ -49,6 +50,7 @@ def color_config(text):  # Called from htest, Editor, and Turtle Demo.
         selectbackground=select_colors['background'],
         inactiveselectbackground=select_colors['background'],  # new in 8.5
     )
+
 
 class ColorDelegator(Delegator):
 
@@ -285,10 +287,10 @@ def _color_delegator(parent):  # htest #
     d = ColorDelegator()
     p.insertfilter(d)
 
+
 if __name__ == "__main__":
-    import unittest
-    unittest.main('idlelib.idle_test.test_colorizer',
-                  verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_colorizer', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(_color_delegator)

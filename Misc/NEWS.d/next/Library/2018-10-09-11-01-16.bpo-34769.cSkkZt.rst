@@ -1,0 +1,2 @@
+Fix for async generators not finalizing when event loop is in debug mode and
+garbage collector runs in another thread.

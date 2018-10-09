@@ -390,7 +390,7 @@ error_at_directive(PySTEntryObject *ste, PyObject *name)
         if (PyUnicode_Compare(PyTuple_GET_ITEM(data, 0), name) == 0) {
             PyErr_SyntaxLocationObject(ste->ste_table->st_filename,
                                        PyLong_AsLong(PyTuple_GET_ITEM(data, 1)),
-                                       PyLong_AsLong(PyTuple_GET_ITEM(data, 2)));
+                                       PyLong_AsLong(PyTuple_GET_ITEM(data, 2)) + 1);
 
             return 0;
         }
@@ -990,7 +990,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag)
             PyErr_Format(PyExc_SyntaxError, DUPLICATE_ARGUMENT, name);
             PyErr_SyntaxLocationObject(st->st_filename,
                                        st->st_cur->ste_lineno,
-                                       st->st_cur->ste_col_offset);
+                                       st->st_cur->ste_col_offset + 1);
             goto error;
         }
         val |= flag;
@@ -1179,7 +1179,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                              e_name->v.Name.id);
                 PyErr_SyntaxLocationObject(st->st_filename,
                                            s->lineno,
-                                           s->col_offset);
+                                           s->col_offset + 1);
                 VISIT_QUIT(st, 0);
             }
             if (s->v.AnnAssign.simple &&
@@ -1274,7 +1274,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                              msg, name);
                 PyErr_SyntaxLocationObject(st->st_filename,
                                            s->lineno,
-                                           s->col_offset);
+                                           s->col_offset + 1);
                 VISIT_QUIT(st, 0);
             }
             if (!symtable_add_def(st, name, DEF_GLOBAL))
@@ -1306,7 +1306,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                 PyErr_Format(PyExc_SyntaxError, msg, name);
                 PyErr_SyntaxLocationObject(st->st_filename,
                                            s->lineno,
-                                           s->col_offset);
+                                           s->col_offset + 1);
                 VISIT_QUIT(st, 0);
             }
             if (!symtable_add_def(st, name, DEF_NONLOCAL))
@@ -1461,11 +1461,6 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT_SEQ(st, expr, e->v.JoinedStr.values);
         break;
     case Constant_kind:
-    case Num_kind:
-    case Str_kind:
-    case Bytes_kind:
-    case Ellipsis_kind:
-    case NameConstant_kind:
         /* Nothing to do here. */
         break;
     /* The following exprs can be assignment targets. */
@@ -1645,7 +1640,7 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
             int lineno = st->st_cur->ste_lineno;
             int col_offset = st->st_cur->ste_col_offset;
             PyErr_SetString(PyExc_SyntaxError, IMPORT_STAR_WARNING);
-            PyErr_SyntaxLocationObject(st->st_filename, lineno, col_offset);
+            PyErr_SyntaxLocationObject(st->st_filename, lineno, col_offset + 1);
             Py_DECREF(store_name);
             return 0;
         }
@@ -1736,7 +1731,7 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
             "'yield' inside generator expression");
         PyErr_SyntaxLocationObject(st->st_filename,
                                    st->st_cur->ste_lineno,
-                                   st->st_cur->ste_col_offset);
+                                   st->st_cur->ste_col_offset + 1);
         symtable_exit_block(st, (void *)e);
         return 0;
     }

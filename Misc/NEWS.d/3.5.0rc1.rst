@@ -1,5 +1,5 @@
 .. bpo: 24667
-.. date: 7948
+.. date: 9288
 .. nonce: tdwszf
 .. release date: 2015-08-09
 .. section: Core and Builtins
@@ -9,7 +9,7 @@ Resize odict in all cases that the underlying dict resizes.
 ..
 
 .. bpo: 24824
-.. date: 7947
+.. date: 9287
 .. nonce: Eoc4lq
 .. section: Library
 
@@ -19,7 +19,7 @@ pydoc.
 ..
 
 .. bpo: 24634
-.. date: 7946
+.. date: 9286
 .. nonce: 7bnVgr
 .. section: Library
 
@@ -28,7 +28,7 @@ Importing uuid should not try to load libc on Windows
 ..
 
 .. bpo: 24798
-.. date: 7945
+.. date: 9285
 .. nonce: zDXL5R
 .. section: Library
 
@@ -37,7 +37,7 @@ _msvccompiler.py doesn't properly support manifests
 ..
 
 .. bpo: 4395
-.. date: 7944
+.. date: 9284
 .. nonce: JpT0k7
 .. section: Library
 
@@ -47,7 +47,7 @@ Panter.
 ..
 
 .. bpo: 23973
-.. date: 7943
+.. date: 9283
 .. nonce: wT59Vh
 .. section: Library
 
@@ -56,7 +56,7 @@ Update typing.py from GitHub repo.
 ..
 
 .. bpo: 23004
-.. date: 7942
+.. date: 9282
 .. nonce: xswcPm
 .. section: Library
 
@@ -66,7 +66,7 @@ bytes.  Initial patch by Aaron Hill.
 ..
 
 .. bpo: 23888
-.. date: 7941
+.. date: 9281
 .. nonce: 7gw4oO
 .. section: Library
 
@@ -75,7 +75,7 @@ Handle fractional time in cookie expiry. Patch by ssh.
 ..
 
 .. bpo: 23652
-.. date: 7940
+.. date: 9280
 .. nonce: DKQ_7t
 .. section: Library
 
@@ -86,7 +86,7 @@ Matt Frank.
 ..
 
 .. bpo: 22932
-.. date: 7939
+.. date: 9279
 .. nonce: mPclSJ
 .. section: Library
 
@@ -95,7 +95,7 @@ Fix timezones in email.utils.formatdate. Patch from Dmitry Shachnev.
 ..
 
 .. bpo: 23779
-.. date: 7938
+.. date: 9278
 .. nonce: ET4JJP
 .. section: Library
 
@@ -105,7 +105,7 @@ Holmquist.
 ..
 
 .. bpo: 23319
-.. date: 7937
+.. date: 9277
 .. nonce: FXyUH-
 .. section: Library
 
@@ -115,7 +115,7 @@ Matthieu Gautier.
 ..
 
 .. bpo: 23254
-.. date: 7936
+.. date: 9276
 .. nonce: zNiy1X
 .. section: Library
 
@@ -125,7 +125,7 @@ Panter.
 ..
 
 .. bpo: 19450
-.. date: 7935
+.. date: 9275
 .. nonce: VG7T-L
 .. section: Library
 
@@ -134,7 +134,7 @@ Update Windows and OS X installer builds to use SQLite 3.8.11.
 ..
 
 .. bpo: 17527
-.. date: 7934
+.. date: 9274
 .. nonce: ve9fyw
 .. section: Library
 
@@ -143,7 +143,7 @@ Add PATCH to wsgiref.validator. Patch from Luca Sbardella.
 ..
 
 .. bpo: 24791
-.. date: 7933
+.. date: 9273
 .. nonce: Ok-3nA
 .. section: Library
 
@@ -152,7 +152,7 @@ Fix grammar regression for call syntax: 'g(\*a or b)'.
 ..
 
 .. bpo: 23672
-.. date: 7932
+.. date: 9272
 .. nonce: 8td2se
 .. section: IDLE
 
@@ -162,7 +162,7 @@ Sanad Zaki Rizvi.
 ..
 
 .. bpo: 24745
-.. date: 7931
+.. date: 9271
 .. nonce: edbziT
 .. section: IDLE
 
@@ -174,7 +174,7 @@ entries from [Editor Window].  Patch by Mark Roseman.
 ..
 
 .. bpo: 21192
-.. date: 7930
+.. date: 9270
 .. nonce: CdbipH
 .. section: IDLE
 
@@ -184,7 +184,7 @@ print false prompts. Original patch by Adnan Umer.
 ..
 
 .. bpo: 13884
-.. date: 7929
+.. date: 9269
 .. nonce: vVcO1E
 .. section: IDLE
 
@@ -193,7 +193,7 @@ Idle menus. Remove tearoff lines. Patch by Roger Serwy.
 ..
 
 .. bpo: 24129
-.. date: 7928
+.. date: 9268
 .. nonce: Imr54z
 .. section: Documentation
 
@@ -205,7 +205,7 @@ for function namespaces. Patch by Ivan Levkivskyi.
 ..
 
 .. bpo: 20769
-.. date: 7927
+.. date: 9267
 .. nonce: ZUc9z9
 .. section: Documentation
 
@@ -214,7 +214,7 @@ Improve reload() docs. Patch by Dorian Pula.
 ..
 
 .. bpo: 23589
-.. date: 7926
+.. date: 9266
 .. nonce: rjU421
 .. section: Documentation
 
@@ -223,7 +223,7 @@ Remove duplicate sentence from the FAQ.  Patch by Yongzhi Pan.
 ..
 
 .. bpo: 24729
-.. date: 7925
+.. date: 9265
 .. nonce: PH3A9p
 .. section: Documentation
 
@@ -233,7 +233,7 @@ open function.
 ..
 
 .. bpo: 24751
-.. date: 7924
+.. date: 9264
 .. nonce: pL2pbj
 .. section: Tests
 
