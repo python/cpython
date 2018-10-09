@@ -991,7 +991,8 @@ class BaseEventLoopTests(test_utils.TestCase):
             self.assertTrue(status['started'])
             self.assertTrue(status['stopped'])
             self.assertFalse(status['finalized'])
-            self.loop.run_in_executor(None, support.gc_collect)
+            self.loop.run_until_complete(
+                self.loop.run_in_executor(None, support.gc_collect))
             test_utils.run_briefly(self.loop)
             self.assertTrue(status['finalized'])
 
