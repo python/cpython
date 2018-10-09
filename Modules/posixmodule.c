@@ -7727,47 +7727,22 @@ static int
 _check_dirW(LPCWSTR src, LPCWSTR dest)
 {
     WIN32_FILE_ATTRIBUTE_DATA src_info;
-    WCHAR *dest_parent = NULL;
-    WCHAR *src_resolved = NULL;
-    size_t dest_len;
-    size_t src_len;
-    DWORD result = 0;
-
-    dest_len = wcslen(dest);
-    dest_parent = PyMem_New(wchar_t, dest_len + 1);
-    if (dest_parent == NULL) {
-        goto cleanup;
-    }
+    WCHAR dest_parent[MAX_PATH];
+    WCHAR src_resolved[MAX_PATH] = L"";
 
     /* dest_parent = os.path.dirname(dest) */
-    if (wcscpy_s(dest_parent, dest_len + 1, dest) ||
+    if (wcscpy_s(dest_parent, MAX_PATH, dest) ||
         _dirnameW(dest_parent)) {
-        goto cleanup;
+        return 0;
     }
-
-    src_len = wcslen(src);
-    src_resolved = PyMem_New(wchar_t, src_len + dest_len + 1);
-    if (src_resolved == NULL) {
-        goto cleanup;
-    }
-
     /* src_resolved = os.path.join(dest_parent, src) */
     if (_joinW(src_resolved, dest_parent, src)) {
-        goto cleanup;
+        return 0;
     }
-    result = (
+    return (
         GetFileAttributesExW(src_resolved, GetFileExInfoStandard, &src_info)
         && src_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY
-    );
-
-cleanup:
-    if (dest_parent != NULL) {
-        PyMem_Free(dest_parent);
-    }
-    if (src_resolved != NULL) {
-        PyMem_Free(src_resolved);
-    }
-    return result;
+        );
 }
 #endif
 
