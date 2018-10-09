@@ -798,6 +798,19 @@ class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
         m.set_content(content_manager=cm)
         self.assertNotIn('MIME-Version', m)
 
+    def test_string_payload_with_multipart_content_type(self):
+        m = message_from_string(textwrap.dedent("""\
+            Subject: Ayons asperges pour le
+            From: Le Pew <pepe@example.com>
+            To: Penelope Pussycat <penelope@example.com>
+            MIME-Version: 1.0
+            Content-Type: multipart/mixed; charset="utf-8"
+
+            sample text
+            """), policy=policy.default)
+        with self.assertRaises(TypeError) as ar:
+            next(m.iter_attachments())
+
 
 if __name__ == '__main__':
     unittest.main()
