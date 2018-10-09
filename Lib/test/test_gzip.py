@@ -700,22 +700,28 @@ class TestCommandLine(unittest.TestCase):
                 out, err = proc.communicate(bytes_io.getvalue())
 
         self.assertEqual(err, b'')
-        self.assertNotEqual(out, b'')
+        self.assertEqual(out, self.data)
 
     @create_and_remove_directory(TEMPDIR)
     def test_decompress_infile_outfile(self):
         gzipname = os.path.join(TEMPDIR, 'testgzip.gz')
+        self.assertFalse(os.path.exists(gzipname))
 
         with gzip.open(gzipname, mode='wb') as fp:
             fp.write(self.data)
         rc, out, err = assert_python_ok('-m', 'gzip', '-d', gzipname)
+
+        with open(os.path.join(TEMPDIR, "testgzip"), "rb") as gunziped:
+            self.assertEqual(gunziped.read(), self.data)
+
+        self.assertTrue(os.path.exists(gzipname))
         self.assertEqual(rc, 0)
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
     def test_decompress_infile_outfile_error(self):
         rc, out, err = assert_python_ok('-m', 'gzip', '-d', 'thisisatest.out')
-        self.assertTrue(out.startswith(b"filename doesn't end in .gz:"))
+        self.assertIn(b"filename doesn't end in .gz:", out)
         self.assertEqual(rc, 0)
         self.assertEqual(err, b'')
 
@@ -726,7 +732,7 @@ class TestCommandLine(unittest.TestCase):
             out, err = proc.communicate(self.data)
 
         self.assertEqual(err, b'')
-        self.assertNotEqual(out, b'')
+        self.assertEqual(out[:2], b"\x1f\x8b")
 
     @create_and_remove_directory(TEMPDIR)
     def test_compress_infile_outfile(self):
