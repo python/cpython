@@ -60,8 +60,12 @@ def cet_protection():
     if not cflags:
         return False
     flags = cflags.split()
+    # True if "-mcet -fcf-protection" options are found, but false
+    # if "-fcf-protection=none" or "-fcf-protection=return" is found.
     return (('-mcet' in flags)
-            and any(flag.startswith('-fcf-protection') for flag in flags))
+            and any((flag.startswith('-fcf-protection')
+                     and not flag.endswith(("=none", "=return")))
+                    for flag in flags))
 
 # Control-flow enforcement technology
 CET_PROTECTION = cet_protection()
