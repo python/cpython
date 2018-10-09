@@ -276,8 +276,11 @@ Sleeping
    If *result* is provided, it is returned to the caller
    when the coroutine completes.
 
+   ``sleep()`` always suspends the current task, allowing other tasks
+   to run.
+
    The *loop* argument is deprecated and scheduled for removal
-   in Python 4.0.
+   in Python 3.10.
 
    .. _asyncio_example_sleep:
 
@@ -435,7 +438,7 @@ Timeouts
    If the wait is cancelled, the future *aw* is also cancelled.
 
    The *loop* argument is deprecated and scheduled for removal
-   in Python 4.0.
+   in Python 3.10.
 
    .. _asyncio_example_waitfor:
 
@@ -472,16 +475,22 @@ Waiting Primitives
                             return_when=ALL_COMPLETED)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   sequence concurrently and block until the condition specified
+   set concurrently and block until the condition specified
    by *return_when*.
 
    If any awaitable in *aws* is a coroutine, it is automatically
-   scheduled as a Task.
+   scheduled as a Task.  Passing coroutines objects to
+   ``wait()`` directly is deprecated as it leads to
+   :ref:`confusing behavior <asyncio_example_wait_coroutine>`.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
+   Usage::
+
+        done, pending = await asyncio.wait(aws)
+
    The *loop* argument is deprecated and scheduled for removal
-   in Python 4.0.
+   in Python 3.10.
 
    *timeout* (a float or int), if specified, can be used to control
    the maximum number of seconds to wait before returning.
@@ -514,9 +523,35 @@ Waiting Primitives
    Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
    futures when a timeout occurs.
 
-   Usage::
+   .. _asyncio_example_wait_coroutine:
+   .. note::
 
-        done, pending = await asyncio.wait(aws)
+      ``wait()`` schedules coroutines as Tasks automatically and later
+      returns those implicitly created Task objects in ``(done, pending)``
+      sets.  Therefore the following code won't work as expected::
+
+          async def foo():
+              return 42
+
+          coro = foo()
+          done, pending = await asyncio.wait({coro})
+
+          if coro in done:
+              # This branch will never be run!
+
+      Here is how the above snippet can be fixed::
+
+          async def foo():
+              return 42
+
+          task = asyncio.create_task(foo())
+          done, pending = await asyncio.wait({task})
+
+          if task in done:
+              # Everything will work as expected now.
+
+      Passing coroutine objects to ``wait()`` directly is
+      deprecated.
 
 
 .. function:: as_completed(aws, \*, loop=None, timeout=None)
@@ -856,7 +891,7 @@ Generator-based Coroutines
 .. note::
 
    Support for generator-based coroutines is **deprecated** and
-   is scheduled for removal in Python 4.0.
+   is scheduled for removal in Python 3.10.
 
 Generator-based coroutines predate async/await syntax.  They are
 Python generators that use ``yield from`` expressions to await
@@ -882,7 +917,7 @@ enforced.
             await old_style_coroutine()
 
     This decorator is **deprecated** and is scheduled for removal in
-    Python 4.0.
+    Python 3.10.
 
     This decorator should not be used for :keyword:`async def`
     coroutines.
@@ -892,8 +927,7 @@ enforced.
    Return ``True`` if *obj* is a :ref:`coroutine object <coroutine>`.
 
    This method is different from :func:`inspect.iscoroutine` because
-   it returns ``True`` for generator-based coroutines decorated with
-   :func:`@coroutine <coroutine>`.
+   it returns ``True`` for generator-based coroutines.
 
 .. function:: iscoroutinefunction(func)
 

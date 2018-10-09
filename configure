@@ -649,7 +649,6 @@ DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
 DTRACE
-LDLAST
 TCLTK_LIBS
 TCLTK_INCLUDES
 LIBFFI_INCLUDEDIR
@@ -8023,6 +8022,28 @@ fi
 done
 
 
+# On Linux, qrtr.h requires asm/types.h
+for ac_header in linux/qrtr.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "linux/qrtr.h" "ac_cv_header_linux_qrtr_h" "
+#ifdef HAVE_ASM_TYPES_H
+#include <asm/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+
+"
+if test "x$ac_cv_header_linux_qrtr_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LINUX_QRTR_H 1
+_ACEOF
+
+fi
+
+done
+
+
 for ac_header in linux/vm_sockets.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "linux/vm_sockets.h" "ac_cv_header_linux_vm_sockets_h" "
@@ -10269,8 +10290,6 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_dbmliborder" >&5
 $as_echo "$with_dbmliborder" >&6; }
-
-
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.

@@ -30,9 +30,6 @@ from test import support
 _multiprocessing = test.support.import_module('_multiprocessing')
 # Skip tests if sem_open implementation is broken.
 test.support.import_module('multiprocessing.synchronize')
-# import threading after _multiprocessing to raise a more relevant error
-# message: "No module named _multiprocessing". _multiprocessing is not compiled
-# without thread support.
 import threading
 
 import multiprocessing.connection
@@ -2552,6 +2549,12 @@ class _TestPool(BaseTestCase):
         # they were released too.
         self.assertEqual(CountedObject.n_instances, 0)
 
+    def test_del_pool(self):
+        p = self.Pool(1)
+        wr = weakref.ref(p)
+        del p
+        gc.collect()
+        self.assertIsNone(wr())
 
 def raising():
     raise KeyError("key")
