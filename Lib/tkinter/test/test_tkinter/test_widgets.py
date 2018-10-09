@@ -745,6 +745,7 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         self.checkPixelsParam(widget, 'yscrollincrement',
                               10, 0, 11.2, 13.6, -10, '0.1i')
 
+    @requires_tcl(8, 6)
     def test_moveto(self):
         widget = self.create()
         i1 = widget.create_rectangle(1, 1, 20, 20, tags='group')
