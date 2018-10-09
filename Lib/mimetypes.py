@@ -113,10 +113,7 @@ class MimeTypes:
         Optional `strict' argument when False adds a bunch of commonly found,
         but non-standard types.
         """
-        url = url_or_path
-        if isinstance(url_or_path, os.PathLike):
-            url = os.fspath(url)
-
+        url = os.fspath(url_or_path)
         scheme, url = urllib.parse._splittype(url)
         if scheme == 'data':
             # syntax of data URLs:
