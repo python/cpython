@@ -539,7 +539,7 @@ def main():
         "but do not delete the input file.")
     parser.add_argument("-d", "--decompress", action="store_true",
                         help="act like gunzip instead of gzip")
-    parser.add_argument("args", nargs="*", default=["-"])
+    parser.add_argument("args", nargs="*", default=["-"], metavar='file')
     args = parser.parse_args()
     for arg in args.args:
         if args.decompress:
