@@ -7663,13 +7663,14 @@ typedef HRESULT(__stdcall *PPathCchRemoveFileSpec)(PWSTR pszPath, size_t cchPath
 static PPathCchRemoveFileSpec _PPathCchRemoveFileSpec;
 
 /* Remove the last portion of the path - return 0 on success */
-static void
+static int
 _dirnameW(WCHAR *path)
 {
     WCHAR *ptr;
     size_t length = wcslen(path);
 
     if (!_PPathCchRemoveFileSpec_Initialized) {
+        Py_BEGIN_ALLOW_THREADS
         HMODULE pathapi = LoadLibraryW(L"api-ms-win-core-path-l1-1-0.dll");
         if (pathapi) {
             _PPathCchRemoveFileSpec = (PPathCchRemoveFileSpec)GetProcAddress(pathapi, "PathCchRemoveFileSpec");
@@ -7678,16 +7679,19 @@ _dirnameW(WCHAR *path)
             _PPathCchRemoveFileSpec = NULL;
         }
         _PPathCchRemoveFileSpec_Initialized = 1;
+        Py_END_ALLOW_THREADS
     }
 
     if (_PPathCchRemoveFileSpec) {
         if (FAILED(_PPathCchRemoveFileSpec(path, length))) {
-            Py_FatalError("Error removing path element in _dirnameW");
+            return -1;
         }
     }
     else {
         PathRemoveFileSpecW(path);
     }
+
+    return 0;
 }
 
 /* Is this path absolute? */
@@ -7735,11 +7739,10 @@ _check_dirW(LPCWSTR src, LPCWSTR dest)
     }
 
     /* dest_parent = os.path.dirname(dest) */
-    if (wcscpy_s(dest_parent, dest_len + 1, dest)) {
+    if (wcscpy_s(dest_parent, dest_len + 1, dest) ||
+        _dirnameW(dest_parent)) {
         goto cleanup;
     }
-
-    _dirnameW(dest_parent);
 
     src_len = wcslen(src);
     src_resolved = PyMem_New(wchar_t, src_len + dest_len + 1);
@@ -10134,10 +10137,11 @@ os__getdiskusage_impl(PyObject *module, path_t *path)
 
             wcscpy_s(dir_path, path->length + 1, path->wide);
 
-            _dirnameW(dir_path);
-            Py_BEGIN_ALLOW_THREADS
-            retval = GetDiskFreeSpaceExW(dir_path, &_, &total, &free);
-            Py_END_ALLOW_THREADS
+            if (_dirnameW(dir_path) != -1) {
+                Py_BEGIN_ALLOW_THREADS
+                retval = GetDiskFreeSpaceExW(dir_path, &_, &total, &free);
+                Py_END_ALLOW_THREADS
+            }
 
             /* Record the last error in case it's modified by PyMem_Free. */
             err = GetLastError();
