@@ -368,10 +368,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     def _asyncgen_finalizer_hook(self, agen):
         self._asyncgens.discard(agen)
         if not self.is_closed():
-            self.create_task(agen.aclose())
-            # Wake up the loop if the finalizer was called from
-            # a different thread.
-            self._write_to_self()
+            self.call_soon_threadsafe(self.create_task, agen.aclose())
 
     def _asyncgen_firstiter_hook(self, agen):
         if self._asyncgens_shutdown_called:
