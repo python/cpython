@@ -419,6 +419,10 @@ def makeLogRecord(dict):
 #---------------------------------------------------------------------------
 #   Formatter classes and functions
 #---------------------------------------------------------------------------
+_str_formatter = StrFormatter()
+del StrFormatter
+
+
 class PercentStyle(object):
 
     default_format = '%(message)s'
@@ -438,7 +442,7 @@ class PercentStyle(object):
             self._invalid_raise()
 
     def _invalid_raise(self, additional_message=None):
-        msg = 'Invalid format %s for %s style' % (self._fmt, self.default_format[0])
+        msg = "Invalid format '%s' for '%s' style" % (self._fmt, self.default_format[0])
         if additional_message:
             msg = "%s, %s" % (msg, additional_message)
         raise ValueError(msg)
@@ -458,28 +462,37 @@ class StrFormatStyle(PercentStyle):
     asctime_format = '{asctime}'
     asctime_search = '{asctime'
     # This is only for validating the format_spec
-    validation_pattern = re.compile(r"^((.)?[<>=]?[+ -]?[#0]?[\d]*,?[\.\d]*)?[bcdefgnosx%]?$", re.I)
+    validation_pattern = re.compile(r"^(.?[<>=^]?[+ -]?#?0?[\d]*,?(\.[\d]*)?)?[bcdefgnosx%]?$", re.I)
+    spec_fmt_pattern = re.compile(r"(?<=(?<!\{)\{)[^{}]*(?=\}(?!\}))")
 
     def _format(self, record):
         return self._fmt.format(**record.__dict__)
 
-    def validate(self):
-        """Validate the input format, ensure it is the correct string formatting style"""
+    def _validate(self, fmt):
         try:
             fields = []
-            for _, field_name, spec, conversion in StrFormatter().parse(self._fmt):
+            for _, field_name, spec, conversion in _str_formatter.parse(fmt):
 
-                if field_name and "-" not in field_name:
+                if field_name:
+                    if "-" in field_name:
+                        raise ValueError("Invalid field name '%s', cannot have '-' in field name")
                     if conversion and conversion not in "rsa":
-                        raise ValueError("invalid conversion %s for field %s" % (conversion, field_name))
-                    if spec and not self.validation_pattern.search(spec):
-                        raise ValueError("invalid spec %s for %s" % (spec[-1], field_name))
+                        raise ValueError("invalid conversion '%s' for '%s' field" % (conversion, field_name))
+                    if spec:
+                        if self.spec_fmt_pattern.search(spec):
+                            return self._validate(spec)
+                        elif not self.validation_pattern.search(spec):
+                            raise ValueError("invalid spec %s for '%s' field" % (spec[-1], field_name))
 
                     fields.append(field_name)
             if not fields:
-                raise ValueError("No fields found for format %s" % self._fmt)
+                raise ValueError("no fields found")
         except ValueError as e:
             self._invalid_raise(e)
+
+    def validate(self):
+        """Validate the input format, ensure it is the correct string formatting style"""
+        self._validate(self._fmt)
 
 
 class StringTemplateStyle(PercentStyle):
