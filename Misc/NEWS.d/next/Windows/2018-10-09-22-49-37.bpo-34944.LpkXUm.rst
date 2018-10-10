@@ -1,0 +1,2 @@
+On Windows, shutil.disk_usage now accepts paths greater than MAX_PATH in
+length.
