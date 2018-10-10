@@ -215,7 +215,7 @@ Command Line Interface
 ----------------------
 
 The :mod:`gzip` module provides a simple command line interface to compress or
-uncompress files.
+decompress files.
 
 Once executed the :mod:`gzip` module keeps the input file(s).
 
@@ -236,7 +236,7 @@ Command line options
 
 .. cmdoption:: -d, --decompress
 
-   Uncompress the given file
+   Decompress the given file
 
    .. code-block:: shell-session
 
