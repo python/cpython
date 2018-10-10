@@ -944,9 +944,9 @@ class BaseEventLoopTests(test_utils.TestCase):
             if item == 'THREE':
                 status['stopped'] = True
                 return
-            asyncio.create_task(iter_one())
+            self.loop.create_task(iter_one())
 
-        asyncio.create_task(iter_one())
+        self.loop.create_task(iter_one())
         return status
 
     def test_asyncgen_finalization_by_gc(self):
