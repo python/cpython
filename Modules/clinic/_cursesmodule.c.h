@@ -2905,7 +2905,7 @@ _curses_mousemask(PyObject *module, PyObject *arg)
     unsigned long newmask;
 
     if (!PyLong_Check(arg)) {
-        _PyErr_BadArgument("mousemask", "int", arg);
+        _PyArg_BadArgument("mousemask", "int", arg);
         goto exit;
     }
     newmask = PyLong_AsUnsignedLongMask(arg);
@@ -3676,7 +3676,7 @@ _curses_tigetflag(PyObject *module, PyObject *arg)
     const char *capname;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("tigetflag", "str", arg);
+        _PyArg_BadArgument("tigetflag", "str", arg);
         goto exit;
     }
     Py_ssize_t capname_length;
@@ -3719,7 +3719,7 @@ _curses_tigetnum(PyObject *module, PyObject *arg)
     const char *capname;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("tigetnum", "str", arg);
+        _PyArg_BadArgument("tigetnum", "str", arg);
         goto exit;
     }
     Py_ssize_t capname_length;
@@ -3762,7 +3762,7 @@ _curses_tigetstr(PyObject *module, PyObject *arg)
     const char *capname;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("tigetstr", "str", arg);
+        _PyArg_BadArgument("tigetstr", "str", arg);
         goto exit;
     }
     Py_ssize_t capname_length;
@@ -4044,4 +4044,4 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=1b2e540e958e7b39 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=203e418aba0a4d24 input=a9049054013a1b77]*/

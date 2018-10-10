@@ -66,6 +66,8 @@ PyAPI_FUNC(int) _PyArg_NoPositional(const char *funcname, PyObject *args);
 #define _PyArg_NoPositional(funcname, args) \
     ((args) == NULL || _PyArg_NoPositional((funcname), (args)))
 
+PyAPI_FUNC(void) _PyArg_BadArgument(const char *, const char *, PyObject *);
+
 #endif
 
 PyAPI_FUNC(PyObject *) Py_VaBuildValue(const char *, va_list);

@@ -940,7 +940,7 @@ unicode___format__(PyObject *self, PyObject *arg)
     PyObject *format_spec;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("__format__", "str", arg);
+        _PyArg_BadArgument("__format__", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -970,4 +970,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=62668b7844853cbc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2bfb6586c7a356a6 input=a9049054013a1b77]*/

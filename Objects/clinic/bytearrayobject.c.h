@@ -641,7 +641,7 @@ bytearray_fromhex(PyTypeObject *type, PyObject *arg)
     PyObject *string;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("fromhex", "str", arg);
+        _PyArg_BadArgument("fromhex", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -717,4 +717,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=a87780f626353f2a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cbee200606cfa260 input=a9049054013a1b77]*/

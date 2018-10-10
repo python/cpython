@@ -25,7 +25,7 @@ spwd_getspnam(PyObject *module, PyObject *arg_)
     PyObject *arg;
 
     if (!PyUnicode_Check(arg_)) {
-        _PyErr_BadArgument("getspnam", "str", arg_);
+        _PyArg_BadArgument("getspnam", "str", arg_);
         goto exit;
     }
     if (PyUnicode_READY(arg_) == -1) {
@@ -71,4 +71,4 @@ spwd_getspall(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SPWD_GETSPALL_METHODDEF
     #define SPWD_GETSPALL_METHODDEF
 #endif /* !defined(SPWD_GETSPALL_METHODDEF) */
-/*[clinic end generated code: output=5ca83a760da2a640 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=44a7c196d4b48f4e input=a9049054013a1b77]*/

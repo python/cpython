@@ -298,11 +298,11 @@ _io_BytesIO_readinto(bytesio *self, PyObject *arg)
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
-        _PyErr_BadArgument("readinto", "read-write bytes-like object", arg);
+        _PyArg_BadArgument("readinto", "read-write bytes-like object", arg);
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyErr_BadArgument("readinto", "contiguous buffer", arg);
+        _PyArg_BadArgument("readinto", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io_BytesIO_readinto_impl(self, &buffer);
@@ -450,4 +450,4 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dac44db36ab1c27b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7f6d14b680dc2ae1 input=a9049054013a1b77]*/

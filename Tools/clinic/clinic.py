@@ -2549,7 +2549,7 @@ class CConverter(metaclass=CConverterAutoRegister):
                 typecheck, typename = type_checks[self.subclass_of]
                 return """
                     if (!{typecheck}({argname})) {{{{
-                        _PyErr_BadArgument("{{name}}", "{typename}", {argname});
+                        _PyArg_BadArgument("{{name}}", "{typename}", {argname});
                         goto exit;
                     }}}}
                     {paramname} = {cast}{argname};
@@ -2557,7 +2557,7 @@ class CConverter(metaclass=CConverterAutoRegister):
                                typecheck=typecheck, typename=typename, cast=cast)
             return """
                 if (!PyObject_TypeCheck({argname}, {subclass_of})) {{{{
-                    _PyErr_BadArgument("{{name}}", ({subclass_of})->tp_name, {argname});
+                    _PyArg_BadArgument("{{name}}", ({subclass_of})->tp_name, {argname});
                     goto exit;
                 }}}}
                 {paramname} = {cast}{argname};
@@ -2654,7 +2654,7 @@ class char_converter(CConverter):
                     {paramname} = PyByteArray_AS_STRING({argname})[0];
                 }}}}
                 else {{{{
-                    _PyErr_BadArgument("{{name}}", "a byte string of length 1", {argname});
+                    _PyArg_BadArgument("{{name}}", "a byte string of length 1", {argname});
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name)
@@ -2799,14 +2799,14 @@ class int_converter(CConverter):
         elif self.format_unit == 'C':
             return """
                 if (!PyUnicode_Check({argname})) {{{{
-                    _PyErr_BadArgument("{{name}}", "a unicode character", {argname});
+                    _PyArg_BadArgument("{{name}}", "a unicode character", {argname});
                     goto exit;
                 }}}}
                 if (PyUnicode_READY({argname})) {{{{
                     goto exit;
                 }}}}
                 if (PyUnicode_GET_LENGTH({argname}) != 1) {{{{
-                    _PyErr_BadArgument("{{name}}", "a unicode character", {argname});
+                    _PyArg_BadArgument("{{name}}", "a unicode character", {argname});
                     goto exit;
                 }}}}
                 {paramname} = PyUnicode_READ_CHAR({argname}, 0);
@@ -2875,7 +2875,7 @@ class unsigned_long_converter(CConverter):
         if self.format_unit == 'k':
             return """
                 if (!PyLong_Check({argname})) {{{{
-                    _PyErr_BadArgument("{{name}}", "int", {argname});
+                    _PyArg_BadArgument("{{name}}", "int", {argname});
                     goto exit;
                 }}}}
                 {paramname} = PyLong_AsUnsignedLongMask({argname});
@@ -2918,7 +2918,7 @@ class unsigned_long_long_converter(CConverter):
         if self.format_unit == 'K':
             return """
                 if (!PyLong_Check({argname})) {{{{
-                    _PyErr_BadArgument("{{name}}", "int", {argname});
+                    _PyArg_BadArgument("{{name}}", "int", {argname});
                     goto exit;
                 }}}}
                 {paramname} = PyLong_AsUnsignedLongLongMask({argname});
@@ -3106,7 +3106,7 @@ class str_converter(CConverter):
         if self.format_unit == 's':
             return """
                 if (!PyUnicode_Check({argname})) {{{{
-                    _PyErr_BadArgument("{{name}}", "str", {argname});
+                    _PyArg_BadArgument("{{name}}", "str", {argname});
                     goto exit;
                 }}}}
                 Py_ssize_t {paramname}_length;
@@ -3188,7 +3188,7 @@ class unicode_converter(CConverter):
         if self.format_unit == 'U':
             return """
                 if (!PyUnicode_Check({argname})) {{{{
-                    _PyErr_BadArgument("{{name}}", "str", {argname});
+                    _PyArg_BadArgument("{{name}}", "str", {argname});
                     goto exit;
                 }}}}
                 if (PyUnicode_READY({argname}) == -1) {{{{
@@ -3252,7 +3252,7 @@ class Py_buffer_converter(CConverter):
                     goto exit;
                 }}}}
                 if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
-                    _PyErr_BadArgument("{{name}}", "contiguous buffer", {argname});
+                    _PyArg_BadArgument("{{name}}", "contiguous buffer", {argname});
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name)
@@ -3271,7 +3271,7 @@ class Py_buffer_converter(CConverter):
                         goto exit;
                     }}}}
                     if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
-                        _PyErr_BadArgument("{{name}}", "contiguous buffer", {argname});
+                        _PyArg_BadArgument("{{name}}", "contiguous buffer", {argname});
                         goto exit;
                     }}}}
                 }}}}
@@ -3280,11 +3280,11 @@ class Py_buffer_converter(CConverter):
             return """
                 if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_WRITABLE) < 0) {{{{
                     PyErr_Clear();
-                    _PyErr_BadArgument("{{name}}", "read-write bytes-like object", {argname});
+                    _PyArg_BadArgument("{{name}}", "read-write bytes-like object", {argname});
                     goto exit;
                 }}}}
                 if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
-                    _PyErr_BadArgument("{{name}}", "contiguous buffer", {argname});
+                    _PyArg_BadArgument("{{name}}", "contiguous buffer", {argname});
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name)

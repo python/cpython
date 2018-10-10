@@ -189,7 +189,7 @@ binascii_rlecode_hqx(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyErr_BadArgument("rlecode_hqx", "contiguous buffer", arg);
+        _PyArg_BadArgument("rlecode_hqx", "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_rlecode_hqx_impl(module, &data);
@@ -225,7 +225,7 @@ binascii_b2a_hqx(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyErr_BadArgument("b2a_hqx", "contiguous buffer", arg);
+        _PyArg_BadArgument("b2a_hqx", "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_b2a_hqx_impl(module, &data);
@@ -261,7 +261,7 @@ binascii_rledecode_hqx(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyErr_BadArgument("rledecode_hqx", "contiguous buffer", arg);
+        _PyArg_BadArgument("rledecode_hqx", "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_rledecode_hqx_impl(module, &data);
@@ -378,7 +378,7 @@ binascii_b2a_hex(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyErr_BadArgument("b2a_hex", "contiguous buffer", arg);
+        _PyArg_BadArgument("b2a_hex", "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_b2a_hex_impl(module, &data);
@@ -416,7 +416,7 @@ binascii_hexlify(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyErr_BadArgument("hexlify", "contiguous buffer", arg);
+        _PyArg_BadArgument("hexlify", "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_hexlify_impl(module, &data);
@@ -574,4 +574,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=38f78ed2292ba663 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f594ead86b27cd4f input=a9049054013a1b77]*/

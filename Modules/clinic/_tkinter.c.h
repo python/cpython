@@ -20,7 +20,7 @@ _tkinter_tkapp_eval(TkappObject *self, PyObject *arg)
     const char *script;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("eval", "str", arg);
+        _PyArg_BadArgument("eval", "str", arg);
         goto exit;
     }
     Py_ssize_t script_length;
@@ -56,7 +56,7 @@ _tkinter_tkapp_evalfile(TkappObject *self, PyObject *arg)
     const char *fileName;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("evalfile", "str", arg);
+        _PyArg_BadArgument("evalfile", "str", arg);
         goto exit;
     }
     Py_ssize_t fileName_length;
@@ -92,7 +92,7 @@ _tkinter_tkapp_record(TkappObject *self, PyObject *arg)
     const char *script;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("record", "str", arg);
+        _PyArg_BadArgument("record", "str", arg);
         goto exit;
     }
     Py_ssize_t script_length;
@@ -128,7 +128,7 @@ _tkinter_tkapp_adderrorinfo(TkappObject *self, PyObject *arg)
     const char *msg;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("adderrorinfo", "str", arg);
+        _PyArg_BadArgument("adderrorinfo", "str", arg);
         goto exit;
     }
     Py_ssize_t msg_length;
@@ -188,7 +188,7 @@ _tkinter_tkapp_exprstring(TkappObject *self, PyObject *arg)
     const char *s;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("exprstring", "str", arg);
+        _PyArg_BadArgument("exprstring", "str", arg);
         goto exit;
     }
     Py_ssize_t s_length;
@@ -224,7 +224,7 @@ _tkinter_tkapp_exprlong(TkappObject *self, PyObject *arg)
     const char *s;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("exprlong", "str", arg);
+        _PyArg_BadArgument("exprlong", "str", arg);
         goto exit;
     }
     Py_ssize_t s_length;
@@ -260,7 +260,7 @@ _tkinter_tkapp_exprdouble(TkappObject *self, PyObject *arg)
     const char *s;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("exprdouble", "str", arg);
+        _PyArg_BadArgument("exprdouble", "str", arg);
         goto exit;
     }
     Py_ssize_t s_length;
@@ -296,7 +296,7 @@ _tkinter_tkapp_exprboolean(TkappObject *self, PyObject *arg)
     const char *s;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("exprboolean", "str", arg);
+        _PyArg_BadArgument("exprboolean", "str", arg);
         goto exit;
     }
     Py_ssize_t s_length;
@@ -377,7 +377,7 @@ _tkinter_tkapp_deletecommand(TkappObject *self, PyObject *arg)
     const char *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("deletecommand", "str", arg);
+        _PyArg_BadArgument("deletecommand", "str", arg);
         goto exit;
     }
     Py_ssize_t name_length;
@@ -734,4 +734,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=4daa043a7c7dae3f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=add2c5f40d6b8492 input=a9049054013a1b77]*/

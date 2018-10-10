@@ -144,7 +144,7 @@ _imp_init_frozen(PyObject *module, PyObject *arg)
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("init_frozen", "str", arg);
+        _PyArg_BadArgument("init_frozen", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -176,7 +176,7 @@ _imp_get_frozen_object(PyObject *module, PyObject *arg)
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("get_frozen_object", "str", arg);
+        _PyArg_BadArgument("get_frozen_object", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -208,7 +208,7 @@ _imp_is_frozen_package(PyObject *module, PyObject *arg)
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("is_frozen_package", "str", arg);
+        _PyArg_BadArgument("is_frozen_package", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -240,7 +240,7 @@ _imp_is_builtin(PyObject *module, PyObject *arg)
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("is_builtin", "str", arg);
+        _PyArg_BadArgument("is_builtin", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -272,7 +272,7 @@ _imp_is_frozen(PyObject *module, PyObject *arg)
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("is_frozen", "str", arg);
+        _PyArg_BadArgument("is_frozen", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -421,4 +421,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=741be40f3626be80 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b1145dac79e576b4 input=a9049054013a1b77]*/

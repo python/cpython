@@ -70,7 +70,7 @@ bytes_partition(PyBytesObject *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&sep, 'C')) {
-        _PyErr_BadArgument("partition", "contiguous buffer", arg);
+        _PyArg_BadArgument("partition", "contiguous buffer", arg);
         goto exit;
     }
     return_value = bytes_partition_impl(self, &sep);
@@ -113,7 +113,7 @@ bytes_rpartition(PyBytesObject *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&sep, 'C')) {
-        _PyErr_BadArgument("rpartition", "contiguous buffer", arg);
+        _PyArg_BadArgument("rpartition", "contiguous buffer", arg);
         goto exit;
     }
     return_value = bytes_rpartition_impl(self, &sep);
@@ -500,7 +500,7 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
     PyObject *string;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("fromhex", "str", arg);
+        _PyArg_BadArgument("fromhex", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -512,4 +512,4 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fe1cc91bff458fc4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=27617058922911d9 input=a9049054013a1b77]*/

@@ -34,7 +34,7 @@ _codecs_lookup(PyObject *module, PyObject *arg)
     const char *encoding;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("lookup", "str", arg);
+        _PyArg_BadArgument("lookup", "str", arg);
         goto exit;
     }
     Py_ssize_t encoding_length;
@@ -149,7 +149,7 @@ _codecs__forget_codec(PyObject *module, PyObject *arg)
     const char *encoding;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("_forget_codec", "str", arg);
+        _PyArg_BadArgument("_forget_codec", "str", arg);
         goto exit;
     }
     Py_ssize_t encoding_length;
@@ -1363,7 +1363,7 @@ _codecs_charmap_build(PyObject *module, PyObject *arg)
     PyObject *map;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("charmap_build", "str", arg);
+        _PyArg_BadArgument("charmap_build", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -1530,7 +1530,7 @@ _codecs_lookup_error(PyObject *module, PyObject *arg)
     const char *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("lookup_error", "str", arg);
+        _PyArg_BadArgument("lookup_error", "str", arg);
         goto exit;
     }
     Py_ssize_t name_length;
@@ -1571,4 +1571,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=dc81b815382ff8ec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=154ec9c0764ad342 input=a9049054013a1b77]*/

@@ -219,7 +219,7 @@ zlib_Compress_compress(compobject *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyErr_BadArgument("compress", "contiguous buffer", arg);
+        _PyArg_BadArgument("compress", "contiguous buffer", arg);
         goto exit;
     }
     return_value = zlib_Compress_compress_impl(self, &data);
@@ -557,4 +557,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=d8c0f5de49db483d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5069e38d678fcf71 input=a9049054013a1b77]*/

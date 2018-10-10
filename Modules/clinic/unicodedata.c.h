@@ -122,14 +122,14 @@ unicodedata_UCD_category(PyObject *self, PyObject *arg)
     int chr;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("category", "a unicode character", arg);
+        _PyArg_BadArgument("category", "a unicode character", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg)) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        _PyErr_BadArgument("category", "a unicode character", arg);
+        _PyArg_BadArgument("category", "a unicode character", arg);
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(arg, 0);
@@ -160,14 +160,14 @@ unicodedata_UCD_bidirectional(PyObject *self, PyObject *arg)
     int chr;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("bidirectional", "a unicode character", arg);
+        _PyArg_BadArgument("bidirectional", "a unicode character", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg)) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        _PyErr_BadArgument("bidirectional", "a unicode character", arg);
+        _PyArg_BadArgument("bidirectional", "a unicode character", arg);
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(arg, 0);
@@ -199,14 +199,14 @@ unicodedata_UCD_combining(PyObject *self, PyObject *arg)
     int _return_value;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("combining", "a unicode character", arg);
+        _PyArg_BadArgument("combining", "a unicode character", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg)) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        _PyErr_BadArgument("combining", "a unicode character", arg);
+        _PyArg_BadArgument("combining", "a unicode character", arg);
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(arg, 0);
@@ -243,14 +243,14 @@ unicodedata_UCD_mirrored(PyObject *self, PyObject *arg)
     int _return_value;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("mirrored", "a unicode character", arg);
+        _PyArg_BadArgument("mirrored", "a unicode character", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg)) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        _PyErr_BadArgument("mirrored", "a unicode character", arg);
+        _PyArg_BadArgument("mirrored", "a unicode character", arg);
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(arg, 0);
@@ -283,14 +283,14 @@ unicodedata_UCD_east_asian_width(PyObject *self, PyObject *arg)
     int chr;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("east_asian_width", "a unicode character", arg);
+        _PyArg_BadArgument("east_asian_width", "a unicode character", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg)) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        _PyErr_BadArgument("east_asian_width", "a unicode character", arg);
+        _PyArg_BadArgument("east_asian_width", "a unicode character", arg);
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(arg, 0);
@@ -321,14 +321,14 @@ unicodedata_UCD_decomposition(PyObject *self, PyObject *arg)
     int chr;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("decomposition", "a unicode character", arg);
+        _PyArg_BadArgument("decomposition", "a unicode character", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg)) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        _PyErr_BadArgument("decomposition", "a unicode character", arg);
+        _PyArg_BadArgument("decomposition", "a unicode character", arg);
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(arg, 0);
@@ -433,4 +433,4 @@ unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c651b90985e4dba9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d2e6d0b8886f1e5 input=a9049054013a1b77]*/

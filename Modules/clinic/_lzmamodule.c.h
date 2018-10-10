@@ -29,7 +29,7 @@ _lzma_LZMACompressor_compress(Compressor *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyErr_BadArgument("compress", "contiguous buffer", arg);
+        _PyArg_BadArgument("compress", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _lzma_LZMACompressor_compress_impl(self, &data);
@@ -266,4 +266,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=88e7f62fed7df8b2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=805ab131a870cc56 input=a9049054013a1b77]*/

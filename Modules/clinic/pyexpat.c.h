@@ -62,7 +62,7 @@ pyexpat_xmlparser_SetBase(xmlparseobject *self, PyObject *arg)
     const char *base;
 
     if (!PyUnicode_Check(arg)) {
-        _PyErr_BadArgument("SetBase", "str", arg);
+        _PyArg_BadArgument("SetBase", "str", arg);
         goto exit;
     }
     Py_ssize_t base_length;
@@ -311,4 +311,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=ff798c1598e06b4f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=62402bbfe06be882 input=a9049054013a1b77]*/
