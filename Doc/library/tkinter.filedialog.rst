@@ -49,8 +49,7 @@ caller.
 
 .. function:: asksaveasfile(mode="w", **options)
 
-   Create a :class:`SaveAs` dialog and return a file object opened in write-
-   only mode.
+   Create a :class:`SaveAs` dialog and return a file object opened in write-only mode.
 
 .. function:: askopenfilename(**options)
               askopenfilenames(**options)

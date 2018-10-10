@@ -10,7 +10,7 @@
 --------------
 
 .. note:: This is experimental and due to be deprecated when it is replaced
-   with the Tk DND
+   with the Tk DND.
 
 The :mod:`tkinter.dnd` module provides drag-and-drop support for objects within
 a single application, within the same window or between windows. To enable an
@@ -37,27 +37,27 @@ Selection of a target object occurs as follows:
 .. class:: DndHandler(source, event)
 
    The *DndHandler* class handles drag-and-drop events tracking Motion and
-   ButtonRelease events on the root of the event widget
+   ButtonRelease events on the root of the event widget.
 
    .. method:: cancel(event=None)
 
-      Cancel the drag-and-drop process
+      Cancel the drag-and-drop process.
 
    .. method:: finish(event, commit=0)
 
-      Execute end of drag-and-drop functions
+      Execute end of drag-and-drop functions.
 
    .. method:: on_motion(event)
 
-      Inspect area below mouse for target objects while drag is performed
+      Inspect area below mouse for target objects while drag is performed.
 
    .. method:: on_release(event)
 
-      Signal end of drag when the release pattern is triggered
+      Signal end of drag when the release pattern is triggered.
 
 .. function:: dnd_start(source, event)
 
-   Factory function for drag-and-drop process
+   Factory function for drag-and-drop process.
 
 .. seealso::
 
