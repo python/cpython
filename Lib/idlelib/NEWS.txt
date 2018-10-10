@@ -240,7 +240,7 @@ To see the example in action, enable it on options extensions tab.
 
 bpo-31421: Document how IDLE runs tkinter programs.
 IDLE calls tcl/tk update in the background in order to make live
-interaction and experimentatin with tkinter applications much easier.
+interaction and experimentation with tkinter applications much easier.
 
 bpo-31414: Fix tk entry box tests by deleting first.
 Adding to an int entry is not the same as deleting and inserting
@@ -488,7 +488,7 @@ Released on 2016-12-23
   -w option but without -jn.  Fix warning from test_config.
 
 - Issue #27621: Put query response validation error messages in the query
-  box itself instead of in a separate massagebox.  Redo tests to match.
+  box itself instead of in a separate messagebox.  Redo tests to match.
   Add Mac OSX refinements.  Original patch by Mark Roseman.
 
 - Issue #27620: Escape key now closes Query box as cancelled.
@@ -554,7 +554,7 @@ Released on 2016-12-23
 
 - Issue #27239: idlelib.macosx.isXyzTk functions initialize as needed.
 
-- Issue #27262: move Aqua unbinding code, which enable context menus, to maxosx.
+- Issue #27262: move Aqua unbinding code, which enable context menus, to macosx.
 
 - Issue #24759: Make clear in idlelib.idle_test.__init__ that the directory
   is a private implementation of test.test_idle and tool for maintainers.
