@@ -1,0 +1,15 @@
+# This config is for integration of code checkers and other external tools.
+#
+# There are currently no checkers configured by default because none are
+# included in the stdlib or bundled by default with the python.org installers.
+# This is intentional and not likely to change.
+#
+# Format for configuring a "checker", by mock example:
+#
+# [MockCheckerName]
+# enabled = true
+# name = MockChecker
+# command = mock_checker # should be found in PATH or be an absolute path
+# additional = # additional arguments to be passed to the checker command
+# reload_source = false # set to true if the checker may alter file contents
+# show_result = true # whether to show the checker output in a separate window

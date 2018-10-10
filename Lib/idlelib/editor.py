@@ -52,6 +52,7 @@ class EditorWindow(object):
     from idlelib.autocomplete import AutoComplete
     from idlelib.autoexpand import AutoExpand
     from idlelib.calltip import Calltip
+    from idlelib.checkers import Checkers
     from idlelib.codecontext import CodeContext
     from idlelib.paragraph import FormatParagraph
     from idlelib.parenmatch import ParenMatch
@@ -305,9 +306,9 @@ class EditorWindow(object):
         parenmatch = self.ParenMatch(self)
         text.bind("<<flash-paren>>", parenmatch.flash_paren_event)
         text.bind("<<paren-closed>>", parenmatch.paren_closed_event)
-        scriptbinding = ScriptBinding(self)
-        text.bind("<<check-module>>", scriptbinding.check_module_event)
-        text.bind("<<run-module>>", scriptbinding.run_module_event)
+        self.scriptbinding = ScriptBinding(self)
+        text.bind("<<check-module>>", self.scriptbinding.check_module_event)
+        text.bind("<<run-module>>", self.scriptbinding.run_module_event)
         text.bind("<<do-rstrip>>", self.Rstrip(self).do_rstrip)
         ctip = self.Calltip(self)
         text.bind("<<try-open-calltip>>", ctip.try_open_calltip_event)
@@ -320,6 +321,7 @@ class EditorWindow(object):
         squeezer = self.Squeezer(self)
         text.bind("<<squeeze-current-text>>",
                   squeezer.squeeze_current_text_event)
+        self.Checkers(self)
 
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so diplayable in Tk."""
@@ -433,6 +435,10 @@ class EditorWindow(object):
         self.menudict['file'].insert_cascade(3, label='Recent Files',
                                              underline=0,
                                              menu=self.recent_files_menu)
+        if 'run' in self.menudict:
+            self.checkers_menu = Menu(self.menubar, tearoff=0)
+            self.menudict['run'].insert_cascade(3, label='Code Checkers',
+                                                menu=self.checkers_menu)
         self.base_helpmenu_length = self.menudict['help'].index(END)
         self.reset_help_menu_entries()
 

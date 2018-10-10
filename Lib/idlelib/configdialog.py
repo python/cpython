@@ -27,6 +27,7 @@ from idlelib import macosx
 from idlelib.query import SectionName, HelpSource
 from idlelib.textview import view_text
 from idlelib.autocomplete import AutoComplete
+from idlelib.checkers import Checkers, CHECKER_PARAMS, get_checker_config
 from idlelib.codecontext import CodeContext
 from idlelib.parenmatch import ParenMatch
 from idlelib.paragraph import FormatParagraph
@@ -111,11 +112,13 @@ class ConfigDialog(Toplevel):
         self.fontpage = FontPage(note, self.highpage)
         self.keyspage = KeysPage(note)
         self.genpage = GenPage(note)
+        self.chckpage = CheckersPage(note)
         self.extpage = self.create_page_extensions()
         note.add(self.fontpage, text='Fonts/Tabs')
         note.add(self.highpage, text='Highlights')
         note.add(self.keyspage, text=' Keys ')
         note.add(self.genpage, text=' General ')
+        note.add(self.chckpage, text=' Checkers ')
         note.add(self.extpage, text='Extensions')
         note.enable_traversal()
         note.pack(side=TOP, expand=TRUE, fill=BOTH)
@@ -2120,6 +2123,342 @@ class GenPage(Frame):
             changes.add_option(
                     'main', 'HelpFiles', str(num),
                     ';'.join(self.user_helplist[num-1][:2]))
+
+
+class CheckersPage(Frame):
+
+    def __init__(self, master):
+        super().__init__(master)
+
+        self.current_checker = None
+
+        self.create_page_checkers()
+        self.load_checkers_cfg()
+
+    def create_page_checkers(self):
+        """Return frame of widgets for Checkers tab.
+
+        This code is generic - it works for any and all IDLE extensions.
+
+        IDLE extensions save their configuration options using idleConf.
+        This code reads the current configuration using idleConf, supplies a
+        GUI interface to change the configuration values, and saves the
+        changes using idleConf.
+
+        Not all changes take effect immediately - some may require restarting IDLE.
+        This depends on each extension's implementation.
+
+        All values are treated as text, and it is up to the user to supply
+        reasonable values. The only exception to this are the 'enable*' options,
+        which are boolean, and can be toggled with a True/False button.
+
+        Methods:
+            load_checkers_cfg:
+            checker_selected: Handle selection from list.
+            create_checker_frame: Hold widgets for one checker.
+            set_extension_value: Set in userCfg['extensions'].
+            save_all_changed_checkers: Call checkers page Save().
+        """
+        # Create widgets - a listbox shows all available checkers, with
+        # buttons to add/edit/remove a checker on the right.
+        frame_checkerlist = Frame(self)
+        frame_checkerlist_buttons = Frame(frame_checkerlist)
+        self.checkerlist = Listbox(
+            frame_checkerlist, height=5, takefocus=True,
+            exportselection=FALSE)
+        scroll_checkerlist = Scrollbar(frame_checkerlist)
+        scroll_checkerlist['command'] = self.checkerlist.yview
+        self.checkerlist['yscrollcommand'] = scroll_checkerlist.set
+        self.checkerlist.bind('<ButtonRelease-1>', self.set_edit_delete_state)
+        self.button_checkerlist_edit = Button(
+            frame_checkerlist_buttons, text='Edit', state='disabled',
+            width=8, command=self.checkerlist_item_edit)
+        self.button_checkerlist_add = Button(
+            frame_checkerlist_buttons, text='Add',
+            width=8, command=self.checkerlist_item_add)
+        self.button_checkerlist_remove = Button(
+            frame_checkerlist_buttons, text='Remove', state='disabled',
+            width=8, command=self.checkerlist_item_remove)
+
+        # Pack widgets
+        frame_checkerlist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
+        frame_checkerlist.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        scroll_checkerlist.pack(side=RIGHT, anchor=W, fill=Y)
+        self.checkerlist.pack(side=LEFT, anchor=E, expand=TRUE, fill=BOTH)
+        self.button_checkerlist_edit.pack(side=TOP, anchor=W, pady=5)
+        self.button_checkerlist_add.pack(side=TOP, anchor=W)
+        self.button_checkerlist_remove.pack(side=TOP, anchor=W, pady=5)
+
+    def checkerlist_item_add(self, event=None):
+        """Handle add button for the help list.
+
+        Query for name and location of new help sources and add
+        them to the list.
+        """
+        def callback(new_checker_name):
+            if new_checker_name:
+                self.checkerlist.insert(END, new_checker_name)
+        ConfigCheckerDialog(self, callback)
+
+    def checkerlist_item_edit(self, event=None):
+        """Handle edit button for the help list.
+
+        Query with existing help source information and update
+        config if the values are changed.
+        """
+        item_index = self.checkerlist.curselection()
+        checker_name = self.checkerlist.get(item_index)
+
+        def callback(new_checker_name):
+            if new_checker_name and new_checker_name != checker_name:
+                self.checkerlist.delete(item_index)
+                self.checkerlist.insert(item_index, new_checker_name)
+                self.checkerlist.select_set(item_index)
+                self.set_edit_delete_state()
+        ConfigCheckerDialog(self, callback, checker_name)
+
+    def checkerlist_item_remove(self, event=None):
+        """Handle remove button for the help list.
+
+        Delete the help list item from config.
+        """
+        item_index = self.checkerlist.curselection()
+        checker_name = self.checkerlist.get(item_index)
+        deleted = self.delete_checker_config(checker_name)
+        if deleted:
+            self.checkerlist.delete(item_index)
+            self.set_edit_delete_state()  # Selected will be un-selected
+
+    def delete_checker_config(self, checker_name):
+        """Delete a checker's section from the user config.
+
+        Returns:
+            * True if the section was actually deleted
+            * False if the section wasn't found in the config
+            * None if the section is found in the default config,
+                and therefore can't be deleted
+        """
+        # Since each checker is a section in a config file,
+        # it is impossible to remove/rename a checker if it
+        # exists in the (read-only) default config.
+        if idleConf.defaultCfg['checkers'].has_section(checker_name):
+            return None
+
+        if idleConf.userCfg['checkers'].has_section(checker_name):
+            idleConf.userCfg['checkers'].remove_section(checker_name)
+            idleConf.userCfg['checkers'].Save()
+            return True
+
+        return False
+
+    def set_edit_delete_state(self, event=None):
+        """Toggle the state for the add & delete buttons based on list entries."""
+        enable = (
+            self.checkerlist.size() >= 0 and
+            self.checkerlist.curselection()
+        )
+        new_state = ('!disabled' if enable else 'disabled',)
+        self.button_checkerlist_edit.state(new_state)
+        self.button_checkerlist_remove.state(new_state)
+
+    def load_checkers_cfg(self):
+        """Fill self.checkers with data from the default and user configs."""
+        checker_names = sorted(
+            set(idleConf.GetSectionList('default', 'checkers')) |
+            set(idleConf.GetSectionList('user', 'checkers'))
+        )
+        self.checkerlist.delete(0, END)
+        for checker_name in checker_names:
+            self.checkerlist.insert(END, checker_name)
+
+    def get_checker_names(self):
+        return self.checkerlist.get(0, END)
+
+
+class ConfigCheckerDialog(Toplevel):
+
+    def __init__(self, page, callback, checker_name=None):
+        super().__init__(page)
+        self.existing_checker_names = page.get_checker_names()
+        self.callback = callback
+
+        if checker_name is None:
+            checker_data = {
+                name: (default or '') if type_ == 'str' else default
+                for name, type_, default, warn_on_default
+                in CHECKER_PARAMS
+            }
+        else:
+            checker_data = get_checker_config(checker_name)
+        self.orig_checker_data = checker_data
+
+        self.vars = {}
+        for name, type_, *_ in CHECKER_PARAMS:
+            var_cls = {'bool': BooleanVar, 'str': StringVar}[type_]
+            self.vars[name] = var = var_cls(self)
+            var.set(checker_data[name])
+
+        self.vars['call_string'] = StringVar(self)
+        self.update_call_string()
+        self.vars['command'].trace('w', self.update_call_string)
+        self.vars['additional'].trace('w', self.update_call_string)
+
+        self.grab_set()
+        self.resizable(width=False, height=False)
+        self.create_widgets()
+
+    def create_widgets(self):
+        parent = self.master
+        self.configure(borderwidth=5)
+        if self.orig_checker_data['name']:
+            title = 'Edit {} checker'.format(self.orig_checker_data['name'])
+        else:
+            title = 'Config new checker'
+        self.wm_title(title)
+        self.geometry('+%d+%d' % (parent.winfo_rootx() + 30,
+                                  parent.winfo_rooty() + 30))
+        self.transient(parent)
+        self.focus_set()
+        # frames creation
+        optionsFrame = Frame(self)
+        buttonFrame = Frame(self)
+
+        # optionsFrame
+        nameLabel = Label(optionsFrame, text='Name of Checker')
+        commandLabel = Label(optionsFrame, text='Command')
+        additionalLabel = Label(optionsFrame, text='Additional Args')
+        currentCallStringLabel = Label(optionsFrame,
+                                          text='Call Command string')
+
+        self.nameEntry = Entry(optionsFrame, textvariable=self.vars['name'],
+                               width=40)
+        name = self.orig_checker_data['name']
+        if idleConf.defaultCfg['checkers'].has_section(name):
+            self.nameEntry.config(state='readonly')
+        self.commandEntry = Entry(optionsFrame,
+                                  textvariable=self.vars['command'],
+                                  width=40)
+        self.additionalEntry = Entry(optionsFrame,
+                                     textvariable=self.vars['additional'],
+                                     width=40)
+        reload_sourceCheckbutton = Checkbutton(
+            optionsFrame,
+            variable=self.vars['reload_source'],
+            text='Reload file?')
+        showResultCheckbutton = Checkbutton(optionsFrame,
+                                            variable=self.vars['show_result'],
+                                            text='Show result after run?')
+        self.currentCallStringEntry = Entry(
+            optionsFrame,
+            state='readonly',
+            textvariable=self.vars['call_string'],
+            width=40)
+        enabledCheckbutton = Checkbutton(optionsFrame,
+                                         variable=self.vars['enabled'],
+                                         text='Enable Checker?')
+
+        # buttonFrame
+        okButton = Button(buttonFrame, text='Ok', command=self.ok)
+        cancelButton = Button(buttonFrame, text='Cancel', command=self.cancel)
+
+        # frames packing
+        optionsFrame.pack()
+        buttonFrame.pack()
+        # optionsFrame packing
+        nameLabel.pack()
+        self.nameEntry.pack()
+        commandLabel.pack()
+        self.commandEntry.pack()
+        additionalLabel.pack()
+        self.additionalEntry.pack()
+        reload_sourceCheckbutton.pack()
+        showResultCheckbutton.pack()
+        currentCallStringLabel.pack()
+        self.currentCallStringEntry.pack()
+        enabledCheckbutton.pack()
+        # buttonFrame packing
+        okButton.pack(side=LEFT)
+        cancelButton.pack()
+
+    def update_call_string(self, *args):
+
+        command = self.vars['command'].get()
+        additional = self.vars['additional'].get()
+        if command:
+            if additional:
+                command += ' ' + additional
+            call_string = ' '.join([command, '<filename>'])
+        else:
+            call_string = ''
+        self.vars['call_string'].set(call_string)
+
+    def is_name_ok(self):
+        name = self.vars['name'].get().strip()
+        if not name:
+            messagebox.showerror(title='Name Error',
+                                 message='No name specified', parent=self)
+            return False
+        return True
+
+    def is_command_ok(self):
+        command = self.vars['command'].get()
+        if command.strip() == '':
+            message = ('No command specified.'
+                       '\nCommand is name or full path'
+                       ' to the program that IDLE has to execute')
+            messagebox.showerror(title='Command Error',
+                                 message=message, parent=self)
+            return False
+        return True
+
+    def ok(self, event=None):
+        is_ok = self.is_name_ok() and self.is_command_ok()
+        if is_ok:
+            checker_name = self.vars['name'].get().strip()
+            orig_name = self.orig_checker_data['name']
+            if checker_name != orig_name:
+                if checker_name in self.existing_checker_names:
+                    message = f'A checker named {checker_name} already exists'
+                    messagebox.showerror(title='Name Already Exists',
+                                         message=message, parent=self)
+                    return False
+
+                if orig_name:
+                    deleted = self.master.delete_checker_config(orig_name)
+                    if deleted is None:
+                        # Since each checker is a section in a config file,
+                        # it is impossible to remove/rename a checker if it
+                        # exists in the (read-only) default config.
+                        message = \
+                            'Cannot rename checkers from default configuration'
+                        messagebox.showerror(title='Cannot rename checker',
+                                             message=message, parent=self)
+                        return
+
+                idleConf.userCfg['checkers'].add_section(checker_name)
+                idleConf.userCfg['checkers'].Save()
+
+            def setopt(opt_name, value):
+                if not isinstance(value, str):
+                    value = str(value)
+                return idleConf.SetOption('checkers', checker_name,
+                                          opt_name, value)
+            setopt('enabled', self.vars['enabled'].get())
+            setopt('command', self.vars['command'].get())
+            setopt('additional', self.vars['additional'].get())
+            setopt('reload_source', self.vars['reload_source'].get())
+            setopt('show_result', self.vars['show_result'].get())
+
+            idleConf.userCfg['checkers'].Save()
+            Checkers.reload()
+            self.callback(checker_name)
+            self.close()
+
+    def cancel(self, event=None):
+        self.close()
+
+    def close(self, event=None):
+        self.destroy()
 
 
 class VarTrace:
