@@ -1,0 +1,2 @@
+print("i dont like ",end="")
+print("newlines")
