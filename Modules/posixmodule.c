@@ -7705,21 +7705,21 @@ _is_absW(const WCHAR *path)
 
 /* join root and rest with a backslash - return 0 on success */
 static int
-_joinW(WCHAR *dest_path, const WCHAR *root, const WCHAR *rest)
+_joinW(WCHAR *dest_path, size_t dest_len, const WCHAR *root, const WCHAR *rest)
 {
     if (_is_absW(rest)) {
-        return wcscpy_s(dest_path, MAX_PATH, rest);
+        return wcscpy_s(dest_path, dest_len, rest);
     }
 
-    if (wcscpy_s(dest_path, MAX_PATH, root)) {
+    if (wcscpy_s(dest_path, dest_len, root)) {
         return -1;
     }
 
-    if (dest_path[0] && wcscat_s(dest_path, MAX_PATH, L"\\")) {
+    if (dest_path[0] && wcscat_s(dest_path, dest_len, L"\\")) {
         return -1;
     }
 
-    return wcscat_s(dest_path, MAX_PATH, rest);
+    return wcscat_s(dest_path, dest_len, rest);
 }
 
 /* Return True if the path at src relative to dest is a directory */
@@ -7727,22 +7727,50 @@ static int
 _check_dirW(LPCWSTR src, LPCWSTR dest)
 {
     WIN32_FILE_ATTRIBUTE_DATA src_info;
-    WCHAR dest_parent[MAX_PATH];
-    WCHAR src_resolved[MAX_PATH] = L"";
+    WCHAR *dest_parent = NULL;
+    WCHAR *src_resolved = NULL;
+    size_t dest_len;
+    size_t src_len;
+    size_t res_len;
+    DWORD result = 0;
+
+    dest_len = wcslen(dest);
+    dest_parent = PyMem_New(wchar_t, dest_len + 1);
+    if (dest_parent == NULL) {
+        goto cleanup;
+    }
 
     /* dest_parent = os.path.dirname(dest) */
-    if (wcscpy_s(dest_parent, MAX_PATH, dest) ||
+    if (wcscpy_s(dest_parent, dest_len + 1, dest) ||
         _dirnameW(dest_parent)) {
-        return 0;
+        goto cleanup;
     }
-    /* src_resolved = os.path.join(dest_parent, src) */
-    if (_joinW(src_resolved, dest_parent, src)) {
-        return 0;
+
+    src_len = wcslen(src);
+    res_len = src_len + dest_len + 1;
+    src_resolved = PyMem_New(wchar_t, res_len);
+    if (src_resolved == NULL) {
+        goto cleanup;
     }
-    return (
+
+    if (_joinW(src_resolved, res_len, dest_parent, src)) {
+        goto cleanup;
+    }
+
+    result = (
         GetFileAttributesExW(src_resolved, GetFileExInfoStandard, &src_info)
         && src_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY
         );
+
+cleanup:
+
+    if (dest_parent != NULL) {
+        PyMem_Free(dest_parent);
+    }
+    if (src_resolved != NULL) {
+        PyMem_Free(src_resolved);
+    }
+    return result;
 }
 #endif
 
@@ -7796,10 +7824,10 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
 
 #ifdef MS_WINDOWS
 
-    Py_BEGIN_ALLOW_THREADS
-    _Py_BEGIN_SUPPRESS_IPH
     /* if src is a directory, ensure target_is_directory==1 */
     target_is_directory |= _check_dirW(src->wide, dst->wide);
+    Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     result = Py_CreateSymbolicLinkW(dst->wide, src->wide,
                                     target_is_directory);
     _Py_END_SUPPRESS_IPH
