@@ -423,10 +423,18 @@ list_contains(PyListObject *a, PyObject *el)
     return cmp;
 }
 
+static inline int
+valid_index(Py_ssize_t i, Py_ssize_t limit)
+{
+    /* The cast to size_t lets us use just a single comparison
+       to check whether i is in the range: 0 <= i < limit */
+    return (size_t) i < (size_t) limit;
+}
+
 static PyObject *
 list_item(PyListObject *a, Py_ssize_t i)
 {
-    if (i < 0 || i >= Py_SIZE(a)) {
+    if (!valid_index(i, Py_SIZE(a))) {
         if (indexerr == NULL) {
             indexerr = PyUnicode_FromString(
                 "list index out of range");
