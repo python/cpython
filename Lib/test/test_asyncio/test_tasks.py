@@ -3125,6 +3125,9 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
         self.loop = asyncio.new_event_loop()
         self.set_event_loop(self.loop) # Will cleanup properly
 
+    def tearDown(self):
+        self.loop.stop()
+
     @asyncio.coroutine
     def add(self, a, b, fail=False, cancel=False):
         """Wait 0.05 second and return a + b."""
