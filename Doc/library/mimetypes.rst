@@ -26,11 +26,13 @@ the module has not been initialized, they will call :func:`init` if they rely on
 the information :func:`init` sets up.
 
 
-.. function:: guess_type(url_or_path, strict=True)
+.. function:: guess_type(url, strict=True)
 
    .. index:: pair: MIME; headers
 
-   Guess the type of a file based on its filename/URL or by its path (any :class:`os.PathLike`).
+   Guess the type of a file based on its filename, path or URL, given by *url*.
+   URL can be a string or a :term:`path-like object`.
+
    The return value is a tuple ``(type, encoding)`` where *type* is ``None`` if the
    type can't be guessed (missing or unknown suffix) or a string of the form
    ``'type/subtype'``, usable for a MIME :mailheader:`content-type` header.
