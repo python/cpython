@@ -46,8 +46,17 @@ This can be achieved from the :ref:`python-interface` with::
 
 
 Note however that :mod:`timeit` will automatically determine the number of
-repetitions only when the command-line interface is used.  In the
-:ref:`timeit-examples` section you can find more advanced examples.
+repetitions only when the command-line interface is used.
+
+:mod:`timeit` also takes a callable for the statement and setup parameters::
+
+   >>> timeit.timeit(lambda: "-".join(map(str, range(100))), number=10000)
+   0.19665591977536678
+   >>> import time
+   >>> timeit.timeit(lambda: "-".join(map(str, range(100))), setup=lambda: time.sleep(1), number=10000)
+   0.19662280194461346
+
+In the :ref:`timeit-examples` section you can find more advanced examples.
 
 
 .. _python-interface:
