@@ -93,6 +93,14 @@ class MimeTypesTestCase(unittest.TestCase):
         self.assertEqual(self.db.guess_type(filepath_relative), expected)
         self.assertEqual(self.db.guess_type(path_dir), (None, None))
 
+    def test_keywords_args_api(self):
+        self.assertEqual(self.db.guess_type(
+            url="foo.html", strict=True), ("text/html", None))
+        self.assertEqual(self.db.guess_all_extensions(
+            type='image/jpg', strict=True), [])
+        self.assertEqual(self.db.guess_extension(
+            type='image/jpg', strict=False), '.jpg')
+
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
 class Win32MimeTypesTestCase(unittest.TestCase):
