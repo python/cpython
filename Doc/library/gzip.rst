@@ -219,7 +219,7 @@ decompress files.
 
 Once executed the :mod:`gzip` module keeps the input file(s).
 
-.. versionadded:: 3.8
+.. versionchanged:: 3.8
 
    Add a new command line interface with a usage.
 
