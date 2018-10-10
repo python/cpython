@@ -4548,8 +4548,8 @@ class TestSemaphoreTracker(unittest.TestCase):
         if pid is not None:
             os.kill(pid, signal.SIGKILL)
             os.waitpid(pid, 0)
-        with warnings.catch_warnings(record=True) as all_warn:
-            warnings.simplefilter("always")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
             _semaphore_tracker.ensure_running()
         pid = _semaphore_tracker._pid
 
