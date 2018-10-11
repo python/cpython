@@ -625,8 +625,10 @@ update_symbols(PyObject *symbols, PyObject *scopes,
         return 0;
 
     itr = PyObject_GetIter(free);
-    if (!itr)
-        goto error;
+    if (itr == NULL) {
+        Py_DECREF(v_free);
+        return 0;
+    }
 
     while ((name = PyIter_Next(itr))) {
         v = PyDict_GetItem(symbols, name);
