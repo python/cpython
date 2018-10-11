@@ -67,7 +67,7 @@ matrix:
         - cd Doc
         - python -m pip install sphinx blurb python-docs-theme
       script:
-        - xvfb-run make doctest SPHINXOPTS="-q -W -j4"
+        - xvfb-run make doctest SPHINXOPTS="-q -j4"
     - os: osx
       language: c
       compiler: clang
