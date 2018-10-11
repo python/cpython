@@ -139,7 +139,6 @@ class Availability(Directive):
     required_arguments = 1
     optional_arguments = 0
     final_argument_whitespace = True
-    has_content = False
 
     def run(self):
         pnode = nodes.paragraph(classes=['availability'])

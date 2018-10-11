@@ -1108,7 +1108,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Combine the functionality of :func:`os.readv` and :func:`os.pread`.
 
    .. availability:: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
-   OpenBSD 2.7 and newer. Using flags requires Linux 4.6 or newer.
+      OpenBSD 2.7 and newer. Using flags requires Linux 4.6 or newer
 
    .. versionadded:: 3.7
 
@@ -1123,7 +1123,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    If no bytes were read, it will return ``-1`` and set errno to
    :data:`errno.EAGAIN`.
 
-   .. availability:: Linux 4.14 and newer.
+   .. availability:: Linux 4.14 and newer
 
    .. versionadded:: 3.7
 
@@ -1176,7 +1176,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Combine the functionality of :func:`os.writev` and :func:`os.pwrite`.
 
    .. availability:: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
-   OpenBSD 2.7 and newer. Using flags requires Linux 4.7 or newer.
+      OpenBSD 2.7 and newer. Using flags requires Linux 4.7 or newer
 
    .. versionadded:: 3.7
 
@@ -3551,10 +3551,10 @@ written in Python, such as a mail server's external command delivery program.
       L = ['cp', 'index.html', '/dev/null']
       os.spawnvpe(os.P_WAIT, 'cp', L, os.environ)
 
-   .. availability:: Unix, Windows  :func:`spawnlp`, :func:`spawnlpe`, :func:`spawnvp`
-   and :func:`spawnvpe` are not available on Windows.  :func:`spawnle` and
-   :func:`spawnve` are not thread-safe on Windows; we advise you to use the
-   :mod:`subprocess` module instead.
+   .. availability:: Unix, Windows.  :func:`spawnlp`, :func:`spawnlpe`, :func:`spawnvp`
+      and :func:`spawnvpe` are not available on Windows.  :func:`spawnle` and
+      :func:`spawnve` are not thread-safe on Windows; we advise you to use the
+      :mod:`subprocess` module instead
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
