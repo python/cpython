@@ -164,6 +164,8 @@ The module defines the following items:
    the :class:`GzipFile` constructor above.
 
    .. versionadded:: 3.2
+   .. versionchanged:: 3.8
+      Added *mtime* argument
 
 .. function:: decompress(data)
 
