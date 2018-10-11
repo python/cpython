@@ -96,7 +96,7 @@ that don't exist on the spec will fail with an :exc:`AttributeError`.
 
 The :func:`patch` decorator / context manager makes it easy to mock classes or
 objects in a module under test. The object you specify will be replaced with a
-mock (or other object) during the test and restored when the test ends: ::
+mock (or other object) during the test and restored when the test ends::
 
     >>> from unittest.mock import patch
     >>> @patch('module.ClassName2')
@@ -1023,7 +1023,7 @@ the "parenting" if for some reason you don't want it to happen.
 
 Mocks created for you by :func:`patch` are automatically given names. To
 attach mocks that have names to a parent you use the :meth:`~Mock.attach_mock`
-method: ::
+method::
 
     >>> thing1 = object()
     >>> thing2 = object()
@@ -1139,7 +1139,7 @@ patch
     available for alternate use-cases.
 
 :func:`patch` as function decorator, creating the mock for you and passing it into
-the decorated function: ::
+the decorated function::
 
     >>> @patch('__main__.SomeClass')
     ... def function(normal_argument, mock_class):
@@ -1157,7 +1157,7 @@ If the class is instantiated multiple times you could use
 can set the *return_value* to be anything you want.
 
 To configure return values on methods of *instances* on the patched class
-you must do this on the :attr:`return_value`. For example: ::
+you must do this on the :attr:`return_value`. For example::
 
     >>> class Class:
     ...     def method(self):
@@ -1182,7 +1182,7 @@ return value of the created mock will have the same spec. ::
 
 The *new_callable* argument is useful where you want to use an alternative
 class to the default :class:`MagicMock` for the created mock. For example, if
-you wanted a :class:`NonCallableMock` to be used: ::
+you wanted a :class:`NonCallableMock` to be used::
 
     >>> thing = object()
     >>> with patch('__main__.thing', new_callable=NonCallableMock) as mock_thing:
@@ -1193,7 +1193,7 @@ you wanted a :class:`NonCallableMock` to be used: ::
       ...
     TypeError: 'NonCallableMock' object is not callable
 
-Another use case might be to replace an object with an :class:`io.StringIO` instance: ::
+Another use case might be to replace an object with an :class:`io.StringIO` instance::
 
     >>> from io import StringIO
     >>> def foo():
@@ -1209,7 +1209,7 @@ Another use case might be to replace an object with an :class:`io.StringIO` inst
 When :func:`patch` is creating a mock for you, it is common that the first thing
 you need to do is to configure the mock. Some of that configuration can be done
 in the call to patch. Any arbitrary keywords you pass into the call will be
-used to set attributes on the created mock: ::
+used to set attributes on the created mock::
 
     >>> patcher = patch('__main__.thing', first='one', second='two')
     >>> mock_thing = patcher.start()
@@ -1222,7 +1222,7 @@ As well as attributes on the created mock attributes, like the
 :attr:`~Mock.return_value` and :attr:`~Mock.side_effect`, of child mocks can
 also be configured. These aren't syntactically valid to pass in directly as
 keyword arguments, but a dictionary with these as keys can still be expanded
-into a :func:`patch` call using ``**``: ::
+into a :func:`patch` call using ``**``::
 
     >>> config = {'method.return_value': 3, 'other.side_effect': KeyError}
     >>> patcher = patch('__main__.thing', **config)
@@ -1394,7 +1394,7 @@ then the created mocks are passed into the decorated function by keyword. ::
     >>> test_function()
 
 :func:`patch.multiple` can be nested with other ``patch`` decorators, but put arguments
-passed by keyword *after* any of the standard arguments created by :func:`patch`: ::
+passed by keyword *after* any of the standard arguments created by :func:`patch`::
 
     >>> @patch('sys.exit')
     ... @patch.multiple('__main__', thing=DEFAULT, other=DEFAULT)
@@ -1406,7 +1406,7 @@ passed by keyword *after* any of the standard arguments created by :func:`patch`
     >>> test_function()
 
 If :func:`patch.multiple` is used as a context manager, the value returned by the
-context manger is a dictionary where created mocks are keyed by name: ::
+context manger is a dictionary where created mocks are keyed by name::
 
     >>> with patch.multiple('__main__', thing=DEFAULT, other=DEFAULT) as values:
     ...     assert 'other' in repr(values['other'])
@@ -1444,7 +1444,7 @@ the call to ``patcher.start``. ::
 
 
 A typical use case for this might be for doing multiple patches in the ``setUp``
-method of a :class:`TestCase`: ::
+method of a :class:`TestCase`::
 
     >>> class MyTest(unittest.TestCase):
     ...     def setUp(self):
@@ -1468,7 +1468,7 @@ method of a :class:`TestCase`: ::
     If you use this technique you must ensure that the patching is "undone" by
     calling ``stop``. This can be fiddlier than you might think, because if an
     exception is raised in the ``setUp`` then ``tearDown`` is not called.
-    :meth:`unittest.TestCase.addCleanup` makes this easier: ::
+    :meth:`unittest.TestCase.addCleanup` makes this easier::
 
         >>> class MyTest(unittest.TestCase):
         ...     def setUp(self):
@@ -1496,7 +1496,7 @@ It is also possible to stop all patches which have been started by using
 patch builtins
 ~~~~~~~~~~~~~~
 You can patch any builtins within a module. The following example patches
-builtin :func:`ord`: ::
+builtin :func:`ord`::
 
     >>> @patch('__main__.ord')
     ... def test(mock_ord):
@@ -1516,7 +1516,7 @@ start with ``'test'`` as being test methods. This is the same way that the
 :class:`unittest.TestLoader` finds test methods by default.
 
 It is possible that you want to use a different prefix for your tests. You can
-inform the patchers of the different prefix by setting ``patch.TEST_PREFIX``: ::
+inform the patchers of the different prefix by setting ``patch.TEST_PREFIX``::
 
     >>> patch.TEST_PREFIX = 'foo'
     >>> value = 3
@@ -2157,7 +2157,7 @@ enough that a helper function is useful. ::
     >>> handle = m()
     >>> handle.write.assert_called_once_with('some stuff')
 
-And for reading files: ::
+And for reading files::
 
     >>> with patch('__main__.open', mock_open(read_data='bibble')) as m:
     ...     with open('foo') as h:
@@ -2250,7 +2250,7 @@ accessed) you can use it with very complex or deeply nested objects (like
 modules that import modules that import modules) without a big performance
 hit.
 
-Here's an example of it in use: ::
+Here's an example of it in use::
 
     >>> from urllib import request
     >>> patcher = patch('__main__.request', autospec=True)
@@ -2262,7 +2262,7 @@ Here's an example of it in use: ::
 
 You can see that :class:`request.Request` has a spec. :class:`request.Request` takes two
 arguments in the constructor (one of which is *self*). Here's what happens if
-we try to call it incorrectly: ::
+we try to call it incorrectly::
 
     >>> req = request.Request()
     Traceback (most recent call last):
@@ -2270,7 +2270,7 @@ we try to call it incorrectly: ::
     TypeError: <lambda>() takes at least 2 arguments (1 given)
 
 The spec also applies to instantiated classes (i.e. the return value of
-specced mocks): ::
+specced mocks)::
 
     >>> req = request.Request('foo')
     >>> req
@@ -2278,7 +2278,7 @@ specced mocks): ::
 
 :class:`Request` objects are not callable, so the return value of instantiating our
 mocked out :class:`request.Request` is a non-callable mock. With the spec in place
-any typos in our asserts will raise the correct error: ::
+any typos in our asserts will raise the correct error::
 
     >>> req.add_header('spam', 'eggs')
     <MagicMock name='request.Request().add_header()' id='...'>
@@ -2330,7 +2330,7 @@ There are a few different ways of resolving this problem. The easiest, but
 not necessarily the least annoying, way is to simply set the required
 attributes on the mock after creation. Just because *autospec* doesn't allow
 you to fetch attributes that don't exist on the spec it doesn't prevent you
-setting them: ::
+setting them::
 
     >>> with patch('__main__.Something', autospec=True):
     ...   thing = Something()
@@ -2381,7 +2381,7 @@ spec rather than the class. The other is to create a subclass of the
 production class and add the defaults to the subclass without affecting the
 production class. Both of these require you to use an alternative object as
 the spec. Thankfully :func:`patch` supports this - you can simply pass the
-alternative object as the *autospec* argument: ::
+alternative object as the *autospec* argument::
 
     >>> class Something:
     ...   def __init__(self):

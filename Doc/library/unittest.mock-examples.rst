@@ -334,7 +334,7 @@ whatever) to be replaced with. 'patch.object' takes an object and the name of
 the attribute you would like patched, plus optionally the value to patch it
 with.
 
-``patch.object``: ::
+``patch.object``::
 
     >>> original = SomeClass.attribute
     >>> @patch.object(SomeClass, 'attribute', sentinel.attribute)
@@ -361,7 +361,7 @@ instead of :func:`patch.object`:
     >>> mock.assert_called_with('filename', 'r')
     >>> assert handle == sentinel.file_handle, "incorrect file handle returned"
 
-The module name can be 'dotted', in the form ``package.module`` if needed: ::
+The module name can be 'dotted', in the form ``package.module`` if needed::
 
     >>> @patch('package.module.ClassName.attribute', sentinel.attribute)
     ... def test():
@@ -393,7 +393,7 @@ passed into the test function / method:
     ...
     >>> MyTest('test_something').test_something()
 
-You can stack up multiple patch decorators using this pattern: ::
+You can stack up multiple patch decorators using this pattern::
 
     >>> class MyTest(unittest.TestCase):
     ...     @patch('package.module.ClassName1')
@@ -507,7 +507,7 @@ method to directly set the return value for us::
    >>> mock_backend.configure_mock(**config)
 
 With these we monkey patch the "mock backend" in place and can make the real
-call: ::
+call::
 
    >>> something.backend = mock_backend
    >>> something.method()
@@ -515,7 +515,7 @@ call: ::
 Using :attr:`~Mock.mock_calls` we can check the chained call with a single
 assert. A chained call is several calls in one line of code, so there will be
 several entries in ``mock_calls``. We can use :meth:`call.call_list` to create
-this list of calls for us: ::
+this list of calls for us::
 
    >>> chained = call.get_endpoint('foobar').create_call('spam', 'eggs').start_call()
    >>> call_list = chained.call_list()
@@ -612,7 +612,7 @@ is to apply the patch decorators to every method. This can feel like unnecessary
 repetition. For Python 2.6 or more recent you can use :func:`patch` (in all its
 various forms) as a class decorator. This applies the patches to all test
 methods on the class. A test method is identified by methods whose names start
-with ``test``: ::
+with ``test``::
 
     >>> @patch('mymodule.SomeClass')
     ... class MyTest(unittest.TestCase):
@@ -651,7 +651,7 @@ These allow you to move the patching into your ``setUp`` and ``tearDown`` method
 If you use this technique you must ensure that the patching is "undone" by
 calling ``stop``. This can be fiddlier than you might think, because if an
 exception is raised in the setUp then tearDown is not called.
-:meth:`unittest.TestCase.addCleanup` makes this easier: ::
+:meth:`unittest.TestCase.addCleanup` makes this easier::
 
     >>> class MyTest(unittest.TestCase):
     ...     def setUp(self):
@@ -766,7 +766,7 @@ defined in 'mymodule'::
         val.clear()
 
 When we try to test that ``grob`` calls ``frob`` with the correct argument look
-what happens: ::
+what happens::
 
     >>> with patch('mymodule.frob') as mock_frob:
     ...     val = {6}
@@ -867,7 +867,7 @@ Nesting Patches
 
 Using patch as a context manager is nice, but if you do multiple patches you
 can end up with nested with statements indenting further and further to the
-right: ::
+right::
 
     >>> class MyTest(unittest.TestCase):
     ...
@@ -886,7 +886,7 @@ right: ::
 With unittest ``cleanup`` functions and the :ref:`start-and-stop` we can
 achieve the same effect without the nested indentation. A simple helper
 method, ``create_patch``, puts the patch in place and returns the created mock
-for us: ::
+for us::
 
     >>> class MyTest(unittest.TestCase):
     ...

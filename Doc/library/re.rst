@@ -1234,7 +1234,7 @@ Checking for a Pair
 ^^^^^^^^^^^^^^^^^^^
 
 In this example, we'll use the following helper function to display match
-objects a little more gracefully: ::
+objects a little more gracefully::
 
    def displaymatch(match):
        if match is None:
@@ -1267,7 +1267,7 @@ To match this with a regular expression, one could use backreferences as such::
    "<Match: '354aa', groups=('a',)>"
 
 To find out what card the pair consists of, one could use the
-:meth:`~Match.group` method of the match object in the following manner: ::
+:meth:`~Match.group` method of the match object in the following manner::
 
    >>> pair = re.compile(r".*(.).*\1")
    >>> pair.match("717ak").group(1)
