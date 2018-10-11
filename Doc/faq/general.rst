@@ -306,17 +306,18 @@ usually around 18 months between major releases.
 
 The developers issue "bugfix" releases of older versions, so the stability of
 existing releases gradually improves.  Bugfix releases, indicated by a third
-component of the version number (e.g. 2.5.3, 2.6.2), are managed for stability;
+component of the version number (e.g. 3.5.3, 3.6.2), are managed for stability;
 only fixes for known problems are included in a bugfix release, and it's
 guaranteed that interfaces will remain the same throughout a series of bugfix
 releases.
 
 The latest stable releases can always be found on the `Python download page
-<https://www.python.org/downloads/>`_.  There are two recommended production-ready
-versions at this point in time, because at the moment there are two branches of
-stable releases: 2.x and 3.x.  Python 3.x may be less useful than 2.x, since
-currently there is more third party software available for Python 2 than for
-Python 3.  Python 2 code will generally not run unchanged in Python 3.
+<https://www.python.org/downloads/>`_.  The recommended production-ready version
+at this times is Python 3.x. Although Python 2.x is the historical version of
+the language, it will not be maintained after January 1, 2020.
+Python 2.x was known for having more third-party libraries available, however,
+by the time of this writing, most of the widely used libraries support Python 3.x,
+and some are even dropping the Python 2.x support.
 
 
 How many people are using Python?
