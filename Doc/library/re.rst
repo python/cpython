@@ -825,6 +825,7 @@ form.
    This is useful if you want to match an arbitrary literal string that may
    have regular expression metacharacters in it.  For example::
 
+      >>> import string
       >>> print(re.escape('python.exe'))
       python\.exe
 
@@ -1236,12 +1237,10 @@ Checking for a Pair
 In this example, we'll use the following helper function to display match
 objects a little more gracefully:
 
-.. testcode::
-
-   def displaymatch(match):
-       if match is None:
-           return None
-       return '<Match: %r, groups=%r>' % (match.group(), match.groups())
+   >>> def displaymatch(match):
+   ...     if match is None:
+   ...         return None
+   ...     return '<Match: %r, groups=%r>' % (match.group(), match.groups())
 
 Suppose you are writing a poker program where a player's hand is represented as
 a 5-character string with each character representing a card, "a" for ace, "k"
@@ -1271,8 +1270,7 @@ To match this with a regular expression, one could use backreferences as such::
 To find out what card the pair consists of, one could use the
 :meth:`~Match.group` method of the match object in the following manner:
 
-.. doctest::
-
+   >>> pair = re.compile(r".*(.).*\1")
    >>> pair.match("717ak").group(1)
    '7'
 

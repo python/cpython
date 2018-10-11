@@ -4,7 +4,7 @@
 #
 
 # You can set these variables from the command line.
-PYTHON       = python3
+PYTHON       = ../python
 VENVDIR      = ./venv
 SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
 BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
