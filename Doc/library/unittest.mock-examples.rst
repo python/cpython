@@ -115,14 +115,14 @@ mock. The ``Foo`` instance is the result of calling the mock, so it is configure
 by modifying the mock :attr:`~Mock.return_value`. ::
 
    >>> def some_function():
-   ... instance = module.Foo()
-   ... return instance.method()
+   ...     instance = module.Foo()
+   ...     return instance.method()
    ...
    >>> with patch('module.Foo') as mock:
-   ... instance = mock.return_value
-   ... instance.method.return_value = 'the result'
-   ... result = some_function()
-   ... assert result == 'the result'
+   ...     instance = mock.return_value
+   ...     instance.method.return_value = 'the result'
+   ...     result = some_function()
+   ...     assert result == 'the result'
 
 
 Naming your mocks
