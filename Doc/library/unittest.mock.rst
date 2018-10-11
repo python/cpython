@@ -2421,7 +2421,7 @@ Sealing mocks
         >>> mock.submock.attribute1 = 2
         >>> mock.not_submock = mock.Mock()
         >>> seal(mock)
-        >>> mock.submock.attribute2  # This will raise AttributeError
-        >>> mock.not_submock.attribute2  # This won't raise
+        >>> mock.submock.attribute2  # This will raise AttributeError.
+        >>> mock.not_submock.attribute2  # This won't raise.
 
     .. versionadded:: 3.7
