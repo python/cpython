@@ -328,7 +328,7 @@ Random generation
    See http://egd.sourceforge.net/ or http://prngd.sourceforge.net/ for sources
    of entropy-gathering daemons.
 
-   .. availability:: not available with LibreSSL and OpenSSL > 1.1.0
+   .. availability:: not available with LibreSSL and OpenSSL > 1.1.0.
 
 .. function:: RAND_add(bytes, entropy)
 
@@ -461,7 +461,7 @@ Certificate handling
    * :attr:`openssl_capath` - hard coded path to a capath directory
 
    .. availability:: LibreSSL ignores the environment vars
-     :attr:`openssl_cafile_env` and :attr:`openssl_capath_env`
+     :attr:`openssl_cafile_env` and :attr:`openssl_capath_env`.
 
    .. versionadded:: 3.4
 
@@ -484,7 +484,7 @@ Certificate handling
       [(b'data...', 'x509_asn', {'1.3.6.1.5.5.7.3.1', '1.3.6.1.5.5.7.3.2'}),
        (b'data...', 'x509_asn', True)]
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.4
 
@@ -499,7 +499,7 @@ Certificate handling
    :const:`x509_asn` for X.509 ASN.1 data or :const:`pkcs_7_asn` for
    PKCS#7 ASN.1 data.
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.4
 
@@ -1610,7 +1610,7 @@ to speed up repeated connections from the same clients.
          'strength_bits': 128,
          'symmetric': 'aes-128-gcm'}]
 
-   .. availability:: OpenSSL 1.0.2+
+   .. availability:: OpenSSL 1.0.2+.
 
    .. versionadded:: 3.6
 

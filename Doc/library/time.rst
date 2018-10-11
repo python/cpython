@@ -171,7 +171,7 @@ Functions
       undefined behavior, such as segmentation fault.
 
    .. availability:: Unix (see the man page for :manpage:`pthread_getcpuclockid(3)` for
-      further information)
+      further information).
 
    .. versionadded:: 3.7
 
@@ -180,7 +180,7 @@ Functions
    Return the resolution (precision) of the specified clock *clk_id*.  Refer to
    :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -190,7 +190,7 @@ Functions
    Return the time of the specified clock *clk_id*.  Refer to
    :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -199,7 +199,7 @@ Functions
 
    Similar to :func:`clock_gettime` but return time as nanoseconds.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -209,7 +209,7 @@ Functions
    Set the time of the specified clock *clk_id*.  Currently,
    :data:`CLOCK_REALTIME` is the only accepted value for *clk_id*.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -218,7 +218,7 @@ Functions
 
    Similar to :func:`clock_settime` but set time with nanoseconds.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -647,7 +647,7 @@ Functions
    nonzero if there is a time, past, present or future when daylight saving time
    applies).
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. note::
 
@@ -743,7 +743,7 @@ These constants are used as parameters for :func:`clock_getres` and
    have  discontinuities if the time is changed using ``settimeofday()`` or
    similar.
 
-   .. availability:: Linux 2.6.39 or later
+   .. availability:: Linux 2.6.39 or later.
 
    .. versionadded:: 3.7
 
@@ -754,7 +754,7 @@ These constants are used as parameters for :func:`clock_getres` and
    hardware source, and may give close to nanosecond resolution.
    ``CLOCK_HIGHRES`` is the nonadjustable, high-resolution clock.
 
-   .. availability:: Solaris
+   .. availability:: Solaris.
 
    .. versionadded:: 3.3
 
@@ -764,7 +764,7 @@ These constants are used as parameters for :func:`clock_getres` and
    Clock that cannot be set and represents monotonic time since some unspecified
    starting point.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -783,7 +783,7 @@ These constants are used as parameters for :func:`clock_getres` and
 
    High-resolution per-process timer from the CPU.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -792,7 +792,7 @@ These constants are used as parameters for :func:`clock_getres` and
 
    High-resolution per-process timer from the CPU.
 
-   .. availability:: FreeBSD, NetBSD 7 or later, OpenBSD
+   .. availability:: FreeBSD, NetBSD 7 or later, OpenBSD.
 
    .. versionadded:: 3.7
 
@@ -812,7 +812,7 @@ These constants are used as parameters for :func:`clock_getres` and
    suspended, providing accurate uptime measurement, both absolute and
    interval.
 
-   .. availability:: FreeBSD, OpenBSD 5.5 or later
+   .. availability:: FreeBSD, OpenBSD 5.5 or later.
 
    .. versionadded:: 3.7
 
@@ -825,7 +825,7 @@ The following constant is the only parameter that can be sent to
    System-wide real-time clock.  Setting this clock requires appropriate
    privileges.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 

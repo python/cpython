@@ -101,7 +101,7 @@ This module defines the following functions:
    information (4 KiB pages are common; using multiples of 4096 for the stack size is
    the suggested approach in the absence of more specific information).
 
-   .. availability:: Windows, systems with POSIX threads
+   .. availability:: Windows, systems with POSIX threads.
 
 
 This module also defines the following constant:

@@ -147,7 +147,6 @@ class Availability(Directive):
         pnode.extend(n + m)
         n, m = self.state.inline_text(self.arguments[0], self.lineno)
         pnode.extend(n + m)
-        pnode += nodes.Text('.', '.')
         return [pnode]
 
 

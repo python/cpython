@@ -27,4 +27,3 @@ but they are available on most other systems as well.  Here's an overview:
    platform.rst
    errno.rst
    ctypes.rst
-

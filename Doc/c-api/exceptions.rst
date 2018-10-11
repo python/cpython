@@ -188,7 +188,7 @@ NULL pointer for use in a ``return`` statement.
    :c:func:`FormatMessage`), and then calls ``PyErr_SetObject(PyExc_WindowsError,
    object)``. This function always returns *NULL*.
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErr(PyObject *type, int ierr)
@@ -196,7 +196,7 @@ NULL pointer for use in a ``return`` statement.
    Similar to :c:func:`PyErr_SetFromWindowsErr`, with an additional parameter
    specifying the exception type to be raised.
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetFromWindowsErrWithFilename(int ierr, const char *filename)
@@ -205,7 +205,7 @@ NULL pointer for use in a ``return`` statement.
    filename is given as a C string.  *filename* is decoded from the filesystem
    encoding (:func:`os.fsdecode`).
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilenameObject(PyObject *type, int ierr, PyObject *filename)
@@ -213,7 +213,7 @@ NULL pointer for use in a ``return`` statement.
    Similar to :c:func:`PyErr_SetFromWindowsErrWithFilenameObject`, with an
    additional parameter specifying the exception type to be raised.
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilenameObjects(PyObject *type, int ierr, PyObject *filename, PyObject *filename2)
@@ -221,7 +221,7 @@ NULL pointer for use in a ``return`` statement.
    Similar to :c:func:`PyErr_SetExcFromWindowsErrWithFilenameObject`,
    but accepts a second filename object.
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.4
 
@@ -231,7 +231,7 @@ NULL pointer for use in a ``return`` statement.
    Similar to :c:func:`PyErr_SetFromWindowsErrWithFilename`, with an additional
    parameter specifying the exception type to be raised.
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)

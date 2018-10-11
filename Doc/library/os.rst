@@ -96,7 +96,7 @@ process and user.
 
    Return the filename corresponding to the controlling terminal of the process.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: environ
@@ -226,7 +226,7 @@ process and user.
    and ``'surrogateescape'`` error handler. Use :func:`os.getenvb` if you
    would like to use a different encoding.
 
-   .. availability:: most flavors of Unix, Windows
+   .. availability:: most flavors of Unix, Windows.
 
 
 .. function:: getenvb(key, default=None)
@@ -237,7 +237,7 @@ process and user.
    :func:`getenvb` is only available if :data:`supports_bytes_environ`
    is True.
 
-   .. availability:: most flavors of Unix
+   .. availability:: most flavors of Unix.
 
    .. versionadded:: 3.2
 
@@ -258,7 +258,7 @@ process and user.
    Return the effective group id of the current process.  This corresponds to the
    "set id" bit on the file being executed in the current process.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: geteuid()
@@ -267,7 +267,7 @@ process and user.
 
    Return the current process's effective user id.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: getgid()
@@ -276,7 +276,7 @@ process and user.
 
    Return the real group id of the current process.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: getgrouplist(user, group)
@@ -285,7 +285,7 @@ process and user.
    list, it is included; typically, *group* is specified as the group ID
    field from the password record for *user*.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -294,7 +294,7 @@ process and user.
 
    Return list of supplemental group ids associated with the current process.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. note::
 
@@ -322,7 +322,7 @@ process and user.
    falls back to ``pwd.getpwuid(os.getuid())[0]`` to get the login name of the
    current real user id.
 
-   .. availability:: Unix, Windows
+   .. availability:: Unix, Windows.
 
 
 .. function:: getpgid(pid)
@@ -330,7 +330,7 @@ process and user.
    Return the process group id of the process with process id *pid*. If *pid* is 0,
    the process group id of the current process is returned.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 .. function:: getpgrp()
 
@@ -338,7 +338,7 @@ process and user.
 
    Return the id of the current process group.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: getpid()
@@ -356,7 +356,7 @@ process and user.
    the id returned is the one of the init process (1), on Windows it is still
    the same id, which may be already reused by another process.
 
-   .. availability:: Unix, Windows
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
       Added support for Windows.
@@ -374,7 +374,7 @@ process and user.
    (respectively) the calling process, the process group of the calling process,
    or the real user ID of the calling process.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -385,7 +385,7 @@ process and user.
 
    Parameters for the :func:`getpriority` and :func:`setpriority` functions.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -395,7 +395,7 @@ process and user.
    Return a tuple (ruid, euid, suid) denoting the current process's
    real, effective, and saved user ids.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.2
 
@@ -405,7 +405,7 @@ process and user.
    Return a tuple (rgid, egid, sgid) denoting the current process's
    real, effective, and saved group ids.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.2
 
@@ -416,7 +416,7 @@ process and user.
 
    Return the current process's real user id.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: initgroups(username, gid)
@@ -425,7 +425,7 @@ process and user.
    the groups of which the specified username is a member, plus the specified
    group id.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.2
 
@@ -438,7 +438,7 @@ process and user.
    changes to the environment affect subprocesses started with :func:`os.system`,
    :func:`popen` or :func:`fork` and :func:`execv`.
 
-   .. availability:: most flavors of Unix, Windows
+   .. availability:: most flavors of Unix, Windows.
 
    .. note::
 
@@ -455,21 +455,21 @@ process and user.
 
    Set the current process's effective group id.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: seteuid(euid)
 
    Set the current process's effective user id.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: setgid(gid)
 
    Set the current process' group id.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: setgroups(groups)
@@ -478,7 +478,7 @@ process and user.
    *groups*. *groups* must be a sequence, and each element must be an integer
    identifying a group. This operation is typically available only to the superuser.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. note:: On Mac OS X, the length of *groups* may not exceed the
       system-defined maximum number of effective group ids, typically 16.
@@ -490,7 +490,7 @@ process and user.
    Call the system call :c:func:`setpgrp` or ``setpgrp(0, 0)`` depending on
    which version is implemented (if any).  See the Unix manual for the semantics.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: setpgid(pid, pgrp)
@@ -499,7 +499,7 @@ process and user.
    process with id *pid* to the process group with id *pgrp*.  See the Unix manual
    for the semantics.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: setpriority(which, who, priority)
@@ -516,7 +516,7 @@ process and user.
    *priority* is a value in the range -20 to 19. The default priority is 0;
    lower priorities cause more favorable scheduling.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -525,14 +525,14 @@ process and user.
 
    Set the current process's real and effective group ids.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: setresgid(rgid, egid, sgid)
 
    Set the current process's real, effective, and saved group ids.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.2
 
@@ -541,7 +541,7 @@ process and user.
 
    Set the current process's real, effective, and saved user ids.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.2
 
@@ -550,21 +550,21 @@ process and user.
 
    Set the current process's real and effective user ids.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: getsid(pid)
 
    Call the system call :c:func:`getsid`.  See the Unix manual for the semantics.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: setsid()
 
    Call the system call :c:func:`setsid`.  See the Unix manual for the semantics.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: setuid(uid)
@@ -573,7 +573,7 @@ process and user.
 
    Set the current process's user id.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. placed in this section since it relates to errno.... a little weak
@@ -622,7 +622,7 @@ process and user.
    :func:`socket.gethostname`  or even
    ``socket.gethostbyaddr(socket.gethostname())``.
 
-   .. availability:: recent flavors of Unix
+   .. availability:: recent flavors of Unix.
 
    .. versionchanged:: 3.3
       Return type changed from a tuple to a tuple-like object
@@ -642,7 +642,7 @@ process and user.
    calls to :func:`unsetenv` don't update ``os.environ``, so it is actually
    preferable to delete items of ``os.environ``.
 
-   .. availability:: most flavors of Unix, Windows
+   .. availability:: most flavors of Unix, Windows.
 
 
 .. _os-newstreams:
@@ -745,7 +745,7 @@ as internal buffering of data.
    docs for :func:`chmod` for possible values of *mode*.  As of Python 3.3, this
    is equivalent to ``os.chmod(fd, mode)``.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: fchown(fd, uid, gid)
@@ -755,7 +755,7 @@ as internal buffering of data.
    :func:`chown`.  As of Python 3.3, this is equivalent to ``os.chown(fd, uid,
    gid)``.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: fdatasync(fd)
@@ -763,7 +763,7 @@ as internal buffering of data.
    Force write of file with filedescriptor *fd* to disk. Does not force update of
    metadata.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. note::
       This function is not available on MacOS.
@@ -786,7 +786,7 @@ as internal buffering of data.
 
    As of Python 3.3, this is equivalent to ``os.pathconf(fd, name)``.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: fstat(fd)
@@ -807,7 +807,7 @@ as internal buffering of data.
    file descriptor *fd*, like :func:`statvfs`.  As of Python 3.3, this is
    equivalent to ``os.statvfs(fd)``.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: fsync(fd)
@@ -819,7 +819,7 @@ as internal buffering of data.
    ``f.flush()``, and then do ``os.fsync(f.fileno())``, to ensure that all internal
    buffers associated with *f* are written to disk.
 
-   .. availability:: Unix, Windows
+   .. availability:: Unix, Windows.
 
 
 .. function:: ftruncate(fd, length)
@@ -828,7 +828,7 @@ as internal buffering of data.
    most *length* bytes in size.  As of Python 3.3, this is equivalent to
    ``os.truncate(fd, length)``.
 
-   .. availability:: Unix, Windows
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.5
       Added support for Windows
@@ -840,7 +840,7 @@ as internal buffering of data.
 
    See also :func:`set_blocking` and :meth:`socket.socket.setblocking`.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.5
 
@@ -858,7 +858,7 @@ as internal buffering of data.
    :data:`F_ULOCK` or :data:`F_TEST`.
    *len* specifies the section of the file to lock.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -870,7 +870,7 @@ as internal buffering of data.
 
    Flags that specify what action :func:`lockf` will take.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -1002,7 +1002,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    descriptors are :ref:`non-inheritable <fd_inheritance>`. For a (slightly) more
    portable approach, use the :mod:`pty` module.
 
-   .. availability:: some flavors of Unix
+   .. availability:: some flavors of Unix.
 
    .. versionchanged:: 3.4
       The new file descriptors are now non-inheritable.
@@ -1014,7 +1014,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    reading and writing, respectively. The new file descriptor is
    :ref:`non-inheritable <fd_inheritance>`.
 
-   .. availability:: Unix, Windows
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.4
       The new file descriptors are now non-inheritable.
@@ -1028,7 +1028,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Return a pair of file descriptors ``(r, w)`` usable for reading and writing,
    respectively.
 
-   .. availability:: some flavors of Unix
+   .. availability:: some flavors of Unix.
 
    .. versionadded:: 3.3
 
@@ -1038,7 +1038,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Ensures that enough disk space is allocated for the file specified by *fd*
    starting from *offset* and continuing for *len* bytes.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -1053,7 +1053,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    :data:`POSIX_FADV_RANDOM`, :data:`POSIX_FADV_NOREUSE`,
    :data:`POSIX_FADV_WILLNEED` or :data:`POSIX_FADV_DONTNEED`.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -1068,7 +1068,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Flags that can be used in *advice* in :func:`posix_fadvise` that specify
    the access pattern that is likely to be used.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -1081,7 +1081,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Return a bytestring containing the bytes read. If the end of the file
    referred to by *fd* has been reached, an empty bytes object is returned.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -1108,7 +1108,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Combine the functionality of :func:`os.readv` and :func:`os.pread`.
 
    .. availability:: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
-      OpenBSD 2.7 and newer. Using flags requires Linux 4.6 or newer
+      OpenBSD 2.7 and newer. Using flags requires Linux 4.6 or newer.
 
    .. versionadded:: 3.7
 
@@ -1123,7 +1123,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    If no bytes were read, it will return ``-1`` and set errno to
    :data:`errno.EAGAIN`.
 
-   .. availability:: Linux 4.14 and newer
+   .. availability:: Linux 4.14 and newer.
 
    .. versionadded:: 3.7
 
@@ -1137,7 +1137,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Currently, on Linux, this feature is usable only on a file descriptor opened
    using the :data:`O_DIRECT` flag.
 
-   .. availability:: Linux 4.6 and newer
+   .. availability:: Linux 4.6 and newer.
 
    .. versionadded:: 3.7
 
@@ -1149,7 +1149,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    Return the number of bytes actually written.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -1176,7 +1176,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Combine the functionality of :func:`os.writev` and :func:`os.pwrite`.
 
    .. availability:: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
-      OpenBSD 2.7 and newer. Using flags requires Linux 4.7 or newer
+      OpenBSD 2.7 and newer. Using flags requires Linux 4.7 or newer.
 
    .. versionadded:: 3.7
 
@@ -1186,7 +1186,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Provide a per-write equivalent of the :data:`O_DSYNC` ``open(2)`` flag. This
    flag effect applies only to the data range written by the system call.
 
-   .. availability:: Linux 4.7 and newer
+   .. availability:: Linux 4.7 and newer.
 
    .. versionadded:: 3.7
 
@@ -1196,7 +1196,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Provide a per-write equivalent of the :data:`O_SYNC` ``open(2)`` flag. This
    flag effect applies only to the data range written by the system call.
 
-   .. availability:: Linux 4.7 and newer
+   .. availability:: Linux 4.7 and newer.
 
    .. versionadded:: 3.7
 
@@ -1248,7 +1248,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Cross-platform applications should not use *headers*, *trailers* and *flags*
    arguments.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. note::
 
@@ -1265,7 +1265,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    See also :func:`get_blocking` and :meth:`socket.socket.setblocking`.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.5
 
@@ -1277,7 +1277,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Parameters to the :func:`sendfile` function, if the implementation supports
    them.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -1295,7 +1295,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    The operating system may set a limit (:func:`sysconf` value
    ``'SC_IOV_MAX'``) on the number of buffers that can be used.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -1305,7 +1305,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Return the process group associated with the terminal given by *fd* (an open
    file descriptor as returned by :func:`os.open`).
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: tcsetpgrp(fd, pg)
@@ -1313,7 +1313,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Set the process group associated with the terminal given by *fd* (an open file
    descriptor as returned by :func:`os.open`) to *pg*.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: ttyname(fd)
@@ -1322,7 +1322,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    file descriptor *fd*.  If *fd* is not associated with a terminal device, an
    exception is raised.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: write(fd, str)
@@ -1357,7 +1357,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    The operating system may set a limit (:func:`sysconf` value
    ``'SC_IOV_MAX'``) on the number of buffers that can be used.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -1384,7 +1384,7 @@ Querying the size of a terminal
    should normally be used, ``os.get_terminal_size`` is the low-level
    implementation.
 
-   .. availability:: Unix, Windows
+   .. availability:: Unix, Windows.
 
 .. class:: terminal_size
 
@@ -1433,13 +1433,13 @@ streams are closed, and inheritable handles are only inherited if the
 
    Get the "inheritable" flag of the specified handle (a boolean).
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
 .. function:: set_handle_inheritable(handle, inheritable)
 
    Set the "inheritable" flag of the specified handle.
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
 
 .. _os-file-dir:
@@ -1594,7 +1594,7 @@ features:
 
    This function can support :ref:`not following symlinks <follow_symlinks>`.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
       The *follow_symlinks* argument.
@@ -1659,7 +1659,7 @@ features:
    See :func:`shutil.chown` for a higher-level function that accepts names in
    addition to numeric ids.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
       Added support for specifying an open file descriptor for *path*,
@@ -1673,7 +1673,7 @@ features:
 
    Change the root directory of the current process to *path*.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -1685,7 +1685,7 @@ features:
    descriptor *fd*.  The descriptor must refer to an opened directory, not an
    open file.  As of Python 3.3, this is equivalent to ``os.chdir(fd)``.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: getcwd()
@@ -1704,7 +1704,7 @@ features:
    not follow symbolic links.  As of Python 3.3, this is equivalent to
    ``os.chflags(path, flags, follow_symlinks=False)``.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -1717,7 +1717,7 @@ features:
    for possible values of *mode*.  As of Python 3.3, this is equivalent to
    ``os.chmod(path, mode, follow_symlinks=False)``.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -1728,7 +1728,7 @@ features:
    function will not follow symbolic links.  As of Python 3.3, this is equivalent
    to ``os.chown(path, uid, gid, follow_symlinks=False)``.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -1742,7 +1742,7 @@ features:
    supply :ref:`paths relative to directory descriptors <dir_fd>`, and :ref:`not
    following symlinks <follow_symlinks>`.
 
-   .. availability:: Unix, Windows
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
       Added Windows support.
@@ -1900,7 +1900,7 @@ features:
    FIFO for reading, and the client opens it for writing.  Note that :func:`mkfifo`
    doesn't open the FIFO --- it just creates the rendezvous point.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
       The *dir_fd* argument.
@@ -1922,7 +1922,7 @@ features:
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
       The *dir_fd* argument.
@@ -1966,7 +1966,7 @@ features:
    This function can support :ref:`specifying a file descriptor
    <path_fd>`.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -1978,7 +1978,7 @@ features:
    the integer values defined for those names by the host operating system.  This
    can be used to determine the set of names known to the system.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: readlink(path, *, dir_fd=None)
@@ -1996,7 +1996,7 @@ features:
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
-   .. availability:: Unix, Windows
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
       Added support for Windows 6.0 (Vista) symbolic links.
@@ -2587,7 +2587,7 @@ features:
 
    This function can support :ref:`specifying a file descriptor <path_fd>`.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionchanged:: 3.2
       The :const:`ST_RDONLY` and :const:`ST_NOSUID` constants were added.
@@ -2717,7 +2717,7 @@ features:
       :exc:`OSError` is raised when the function is called by an unprivileged
       user.
 
-   .. availability:: Unix, Windows
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
       Added support for Windows 6.0 (Vista) symbolic links.
@@ -2734,7 +2734,7 @@ features:
 
    Force write of everything to disk.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -2746,7 +2746,7 @@ features:
 
    This function can support :ref:`specifying a file descriptor <path_fd>`.
 
-   .. availability:: Unix, Windows
+   .. availability:: Unix, Windows.
 
    .. versionadded:: 3.3
 
@@ -2953,7 +2953,7 @@ features:
           for name in dirs:
               os.rmdir(name, dir_fd=rootfd)
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -3130,7 +3130,7 @@ to be ignored.
    you can check whether or not it is available using :data:`os.supports_fd`.
    If it is unavailable, using it will raise a :exc:`NotImplementedError`.
 
-   .. availability:: Unix, Windows
+   .. availability:: Unix, Windows.
 
    .. versionadded:: 3.3
       Added support for specifying an open file descriptor for *path*
@@ -3164,7 +3164,7 @@ written in Python, such as a mail server's external command delivery program.
 
    Exit code that means no error occurred.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: EX_USAGE
@@ -3172,49 +3172,49 @@ written in Python, such as a mail server's external command delivery program.
    Exit code that means the command was used incorrectly, such as when the wrong
    number of arguments are given.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: EX_DATAERR
 
    Exit code that means the input data was incorrect.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: EX_NOINPUT
 
    Exit code that means an input file did not exist or was not readable.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: EX_NOUSER
 
    Exit code that means a specified user did not exist.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: EX_NOHOST
 
    Exit code that means a specified host did not exist.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: EX_UNAVAILABLE
 
    Exit code that means that a required service is unavailable.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: EX_SOFTWARE
 
    Exit code that means an internal software error was detected.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: EX_OSERR
@@ -3222,7 +3222,7 @@ written in Python, such as a mail server's external command delivery program.
    Exit code that means an operating system error was detected, such as the
    inability to fork or create a pipe.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: EX_OSFILE
@@ -3230,21 +3230,21 @@ written in Python, such as a mail server's external command delivery program.
    Exit code that means some system file did not exist, could not be opened, or had
    some other kind of error.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: EX_CANTCREAT
 
    Exit code that means a user specified output file could not be created.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: EX_IOERR
 
    Exit code that means that an error occurred while doing I/O on some file.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: EX_TEMPFAIL
@@ -3253,7 +3253,7 @@ written in Python, such as a mail server's external command delivery program.
    that may not really be an error, such as a network connection that couldn't be
    made during a retryable operation.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: EX_PROTOCOL
@@ -3261,7 +3261,7 @@ written in Python, such as a mail server's external command delivery program.
    Exit code that means that a protocol exchange was illegal, invalid, or not
    understood.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: EX_NOPERM
@@ -3269,21 +3269,21 @@ written in Python, such as a mail server's external command delivery program.
    Exit code that means that there were insufficient permissions to perform the
    operation (but not intended for file system problems).
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: EX_CONFIG
 
    Exit code that means that some kind of configuration error occurred.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: EX_NOTFOUND
 
    Exit code that means something like "an entry was not found".
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: fork()
@@ -3298,7 +3298,7 @@ written in Python, such as a mail server's external command delivery program.
 
       See :mod:`ssl` for applications that use the SSL module with fork().
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: forkpty()
@@ -3309,7 +3309,7 @@ written in Python, such as a mail server's external command delivery program.
    master end of the pseudo-terminal.  For a more portable approach, use the
    :mod:`pty` module.  If an error occurs :exc:`OSError` is raised.
 
-   .. availability:: some flavors of Unix
+   .. availability:: some flavors of Unix.
 
 
 .. function:: kill(pid, sig)
@@ -3343,14 +3343,14 @@ written in Python, such as a mail server's external command delivery program.
 
    Send the signal *sig* to the process group *pgid*.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: nice(increment)
 
    Add *increment* to the process's "niceness".  Return the new niceness.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: plock(op)
@@ -3358,7 +3358,7 @@ written in Python, such as a mail server's external command delivery program.
    Lock program segments into memory.  The value of *op* (defined in
    ``<sys/lock.h>``) determines which segments are locked.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: popen(cmd, mode='r', buffering=-1)
@@ -3487,7 +3487,7 @@ written in Python, such as a mail server's external command delivery program.
 
    There is no way to unregister a function.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -3554,7 +3554,7 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix, Windows.  :func:`spawnlp`, :func:`spawnlpe`, :func:`spawnvp`
       and :func:`spawnvpe` are not available on Windows.  :func:`spawnle` and
       :func:`spawnve` are not thread-safe on Windows; we advise you to use the
-      :mod:`subprocess` module instead
+      :mod:`subprocess` module instead.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -3568,7 +3568,7 @@ written in Python, such as a mail server's external command delivery program.
    will return as soon as the new process has been created, with the process id as
    the return value.
 
-   .. availability:: Unix, Windows
+   .. availability:: Unix, Windows.
 
 
 .. data:: P_WAIT
@@ -3579,7 +3579,7 @@ written in Python, such as a mail server's external command delivery program.
    of the process the run is successful, or ``-signal`` if a signal kills the
    process.
 
-   .. availability:: Unix, Windows
+   .. availability:: Unix, Windows.
 
 
 .. data:: P_DETACH
@@ -3591,7 +3591,7 @@ written in Python, such as a mail server's external command delivery program.
    console of the calling process. If :const:`P_OVERLAY` is used, the current
    process will be replaced; the :func:`spawn\* <spawnl>` function will not return.
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
 
 .. function:: startfile(path[, operation])
@@ -3620,7 +3620,7 @@ written in Python, such as a mail server's external command delivery program.
    function is not resolved until this function is first called.  If the function
    cannot be resolved, :exc:`NotImplementedError` will be raised.
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
 
 .. function:: system(command)
@@ -3647,7 +3647,7 @@ written in Python, such as a mail server's external command delivery program.
    to using this function.  See the :ref:`subprocess-replacements` section in
    the :mod:`subprocess` documentation for some helpful recipes.
 
-   .. availability:: Unix, Windows
+   .. availability:: Unix, Windows.
 
 
 .. function:: times()
@@ -3670,7 +3670,7 @@ written in Python, such as a mail server's external command delivery program.
    On Windows, only :attr:`user` and :attr:`system` are known; the other
    attributes are zero.
 
-   .. availability:: Unix, Windows
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.3
       Return type changed from a tuple to a tuple-like object
@@ -3685,7 +3685,7 @@ written in Python, such as a mail server's external command delivery program.
    number is zero); the high bit of the low byte is set if a core file was
    produced.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 .. function:: waitid(idtype, id, options)
 
@@ -3700,7 +3700,7 @@ written in Python, such as a mail server's external command delivery program.
    :attr:`si_code` or ``None`` if :data:`WNOHANG` is specified and there are no
    children in a waitable state.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -3711,7 +3711,7 @@ written in Python, such as a mail server's external command delivery program.
    These are the possible values for *idtype* in :func:`waitid`. They affect
    how *id* is interpreted.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -3722,7 +3722,7 @@ written in Python, such as a mail server's external command delivery program.
    Flags that can be used in *options* in :func:`waitid` that specify what
    child signal to wait for.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -3735,7 +3735,7 @@ written in Python, such as a mail server's external command delivery program.
    These are the possible values for :attr:`si_code` in the result returned by
    :func:`waitid`.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -3782,7 +3782,7 @@ written in Python, such as a mail server's external command delivery program.
    option argument is the same as that provided to :func:`waitpid` and
    :func:`wait4`.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: wait4(pid, options)
@@ -3793,7 +3793,7 @@ written in Python, such as a mail server's external command delivery program.
    resource usage information.  The arguments to :func:`wait4` are the same
    as those provided to :func:`waitpid`.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: WNOHANG
@@ -3801,7 +3801,7 @@ written in Python, such as a mail server's external command delivery program.
    The option for :func:`waitpid` to return immediately if no child process status
    is available immediately. The function returns ``(0, 0)`` in this case.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: WCONTINUED
@@ -3809,7 +3809,7 @@ written in Python, such as a mail server's external command delivery program.
    This option causes child processes to be reported if they have been continued
    from a job control stop since their status was last reported.
 
-   .. availability:: some Unix systems
+   .. availability:: some Unix systems.
 
 
 .. data:: WUNTRACED
@@ -3817,7 +3817,7 @@ written in Python, such as a mail server's external command delivery program.
    This option causes child processes to be reported if they have been stopped but
    their current state has not been reported since they were stopped.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 The following functions take a process status code as returned by
@@ -3829,7 +3829,7 @@ used to determine the disposition of a process.
    Return ``True`` if a core dump was generated for the process, otherwise
    return ``False``.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: WIFCONTINUED(status)
@@ -3837,7 +3837,7 @@ used to determine the disposition of a process.
    Return ``True`` if the process has been continued from a job control stop,
    otherwise return ``False``.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: WIFSTOPPED(status)
@@ -3845,7 +3845,7 @@ used to determine the disposition of a process.
    Return ``True`` if the process has been stopped, otherwise return
    ``False``.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: WIFSIGNALED(status)
@@ -3853,7 +3853,7 @@ used to determine the disposition of a process.
    Return ``True`` if the process exited due to a signal, otherwise return
    ``False``.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: WIFEXITED(status)
@@ -3861,7 +3861,7 @@ used to determine the disposition of a process.
    Return ``True`` if the process exited using the :manpage:`exit(2)` system call,
    otherwise return ``False``.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: WEXITSTATUS(status)
@@ -3869,21 +3869,21 @@ used to determine the disposition of a process.
    If ``WIFEXITED(status)`` is true, return the integer parameter to the
    :manpage:`exit(2)` system call.  Otherwise, the return value is meaningless.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: WSTOPSIG(status)
 
    Return the signal which caused the process to stop.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: WTERMSIG(status)
 
    Return the signal which caused the process to exit.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 Interface to the scheduler
@@ -4029,7 +4029,7 @@ Miscellaneous System Information
    included in ``confstr_names``, an :exc:`OSError` is raised with
    :const:`errno.EINVAL` for the error number.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: confstr_names
@@ -4038,7 +4038,7 @@ Miscellaneous System Information
    defined for those names by the host operating system. This can be used to
    determine the set of names known to the system.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: cpu_count()
@@ -4059,7 +4059,7 @@ Miscellaneous System Information
    1, 5, and 15 minutes or raises :exc:`OSError` if the load average was
    unobtainable.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: sysconf(name)
@@ -4069,7 +4069,7 @@ Miscellaneous System Information
    the *name* parameter for :func:`confstr` apply here as well; the dictionary that
    provides information on the known names is given by ``sysconf_names``.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. data:: sysconf_names
@@ -4078,7 +4078,7 @@ Miscellaneous System Information
    defined for those names by the host operating system. This can be used to
    determine the set of names known to the system.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 The following data values are used to support path manipulation operations.  These
 are defined for all platforms.
@@ -4190,7 +4190,7 @@ Random numbers
    See also the `Linux getrandom() manual page
    <http://man7.org/linux/man-pages/man2/getrandom.2.html>`_.
 
-   .. availability:: Linux 3.17 and newer
+   .. availability:: Linux 3.17 and newer.
 
    .. versionadded:: 3.6
 

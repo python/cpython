@@ -275,7 +275,7 @@ any that have been added to the map during asynchronous service) is closed.
    :c:func:`fileno` method, that method will be called and passed to the
    :class:`file_wrapper` constructor.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 .. class:: file_wrapper()
 
@@ -284,7 +284,7 @@ any that have been added to the map during asynchronous service) is closed.
    of the file_wrapper.  This class implements sufficient methods to emulate a
    socket for use by the :class:`file_dispatcher` class.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. _asyncore-example-1:

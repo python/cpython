@@ -163,7 +163,7 @@ always available.
 
    Integer specifying the handle of the Python DLL.
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
 
 .. function:: displayhook(value)
@@ -475,7 +475,7 @@ always available.
 
    Return the build time API version of Android as an integer.
 
-   .. availability:: Android
+   .. availability:: Android.
 
    .. versionadded:: 3.7
 
@@ -501,7 +501,7 @@ always available.
    found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
    :data:`os.RTLD_LAZY`).
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: getfilesystemencoding()
@@ -669,7 +669,7 @@ always available.
    is being emulated for the process. It is intended for use in logging rather
    than for feature detection.
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
    .. versionchanged:: 3.2
       Changed to a named tuple and added *service_pack_minor*,
@@ -1094,7 +1094,7 @@ always available.
    can be found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
    :data:`os.RTLD_LAZY`).
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 .. function:: setprofile(profilefunc)
 
@@ -1340,7 +1340,7 @@ always available.
    This is equivalent to defining the :envvar:`PYTHONLEGACYWINDOWSFSENCODING`
    environment variable before launching Python.
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.6
       See :pep:`529` for more details.
@@ -1488,7 +1488,7 @@ always available.
    module for informational purposes; modifying this value has no effect on the
    registry keys used by Python.
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
 
 .. data:: _xoptions

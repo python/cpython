@@ -510,7 +510,7 @@ Opening network connections
    See the documentation of the :meth:`loop.create_connection` method
    for information about arguments to this method.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -630,7 +630,7 @@ Creating network servers
    See the documentation of the :meth:`loop.create_server` method
    for information about arguments to this method.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -979,7 +979,7 @@ Unix signals
    Return ``True`` if the signal handler was removed, or ``False`` if
    no handler was set for the given signal.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 .. seealso::
 
@@ -1423,14 +1423,14 @@ on all platforms.
       asyncio.set_event_loop(loop)
 
 
-   .. availability:: Unix, Windows
+   .. availability:: Unix, Windows.
 
 
 .. class:: ProactorEventLoop
 
    An event loop for Windows that uses "I/O Completion Ports" (IOCP).
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
    .. seealso::
 

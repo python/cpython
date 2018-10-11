@@ -106,7 +106,7 @@ The variables defined in the :mod:`signal` module are:
    The signal corresponding to the :kbd:`Ctrl+C` keystroke event. This signal can
    only be used with :func:`os.kill`.
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.2
 
@@ -116,7 +116,7 @@ The variables defined in the :mod:`signal` module are:
    The signal corresponding to the :kbd:`Ctrl+Break` keystroke event. This signal can
    only be used with :func:`os.kill`.
 
-   .. availability:: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.2
 
@@ -195,7 +195,7 @@ The :mod:`signal` module defines the following functions:
    canceled.  If the return value is zero, no alarm is currently scheduled.  (See
    the Unix man page :manpage:`alarm(2)`.)
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: getsignal(signalnum)
@@ -255,7 +255,7 @@ The :mod:`signal` module defines the following functions:
    performed; this can be used to check if the target thread is still running.
 
    .. availability:: Unix (see the man page :manpage:`pthread_kill(3)` for further
-      information)
+      information).
 
    See also :func:`os.kill`.
 
@@ -313,14 +313,14 @@ The :mod:`signal` module defines the following functions:
    Attempting to pass an invalid interval timer will cause an
    :exc:`ItimerError`.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: getitimer(which)
 
    Returns current value of a given interval timer specified by *which*.
 
-   .. availability:: Unix
+   .. availability:: Unix.
 
 
 .. function:: set_wakeup_fd(fd, *, warn_on_full_buffer=True)
@@ -373,7 +373,7 @@ The :mod:`signal` module defines the following functions:
    system calls will be interrupted.  Returns nothing.
 
    .. availability:: Unix (see the man page :manpage:`siginterrupt(3)`
-      for further information)
+      for further information).
 
    Note that installing a signal handler with :func:`signal` will reset the
    restart behaviour to interruptible by implicitly calling
