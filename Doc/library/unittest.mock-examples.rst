@@ -114,15 +114,15 @@ and calls a method on it. The call to :func:`patch` replaces the class ``Foo`` w
 mock. The ``Foo`` instance is the result of calling the mock, so it is configured
 by modifying the mock :attr:`~Mock.return_value`. ::
 
-   >>> def some_function():
-   ...     instance = module.Foo()
-   ...     return instance.method()
-   ...
-   >>> with patch('module.Foo') as mock:
-   ...     instance = mock.return_value
-   ...     instance.method.return_value = 'the result'
-   ...     result = some_function()
-   ...     assert result == 'the result'
+    >>> def some_function():
+    ...     instance = module.Foo()
+    ...     return instance.method()
+    ...
+    >>> with patch('module.Foo') as mock:
+    ...     instance = mock.return_value
+    ...     instance.method.return_value = 'the result'
+    ...     result = some_function()
+    ...     assert result == 'the result'
 
 
 Naming your mocks
@@ -500,26 +500,26 @@ response object for it. To set the response as the return value for that final
 We can do that in a slightly nicer way using the :meth:`~Mock.configure_mock`
 method to directly set the return value for us::
 
-   >>> something = Something()
-   >>> mock_response = Mock(spec=open)
-   >>> mock_backend = Mock()
-   >>> config = {'get_endpoint.return_value.create_call.return_value.start_call.return_value': mock_response}
-   >>> mock_backend.configure_mock(**config)
+    >>> something = Something()
+    >>> mock_response = Mock(spec=open)
+    >>> mock_backend = Mock()
+    >>> config = {'get_endpoint.return_value.create_call.return_value.start_call.return_value': mock_response}
+    >>> mock_backend.configure_mock(**config)
 
 With these we monkey patch the "mock backend" in place and can make the real
 call::
 
-   >>> something.backend = mock_backend
-   >>> something.method()
+    >>> something.backend = mock_backend
+    >>> something.method()
 
 Using :attr:`~Mock.mock_calls` we can check the chained call with a single
 assert. A chained call is several calls in one line of code, so there will be
 several entries in ``mock_calls``. We can use :meth:`call.call_list` to create
 this list of calls for us::
 
-   >>> chained = call.get_endpoint('foobar').create_call('spam', 'eggs').start_call()
-   >>> call_list = chained.call_list()
-   >>> assert mock_backend.mock_calls == call_list
+    >>> chained = call.get_endpoint('foobar').create_call('spam', 'eggs').start_call()
+    >>> call_list = chained.call_list()
+    >>> assert mock_backend.mock_calls == call_list
 
 
 Partial mocking
@@ -540,13 +540,13 @@ attribute on the mock date class is then set to a lambda function that returns
 a real date. When the mock date class is called a real date will be
 constructed and returned by ``side_effect``. ::
 
-   >>> from datetime import date
-   >>> with patch('mymodule.date') as mock_date:
-   ...     mock_date.today.return_value = date(2010, 10, 8)
-   ...     mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
-   ...
-   ...     assert mymodule.date.today() == date(2010, 10, 8)
-   ...     assert mymodule.date(2009, 6, 8) == date(2009, 6, 8)
+    >>> from datetime import date
+    >>> with patch('mymodule.date') as mock_date:
+    ...     mock_date.today.return_value = date(2010, 10, 8)
+    ...     mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+    ...
+    ...     assert mymodule.date.today() == date(2010, 10, 8)
+    ...     assert mymodule.date(2009, 6, 8) == date(2009, 6, 8)
 
 Note that we don't patch :class:`datetime.date` globally, we patch ``date`` in the
 module that *uses* it. See :ref:`where to patch <where-to-patch>`.
@@ -1125,43 +1125,43 @@ arbitrary attribute of a mock creates a child mock, we can create our separate
 mocks from a parent one. Calls to those child mock will then all be recorded,
 in order, in the ``mock_calls`` of the parent:
 
-   >>> manager = Mock()
-   >>> mock_foo = manager.foo
-   >>> mock_bar = manager.bar
+    >>> manager = Mock()
+    >>> mock_foo = manager.foo
+    >>> mock_bar = manager.bar
 
-   >>> mock_foo.something()
-   <Mock name='mock.foo.something()' id='...'>
-   >>> mock_bar.other.thing()
-   <Mock name='mock.bar.other.thing()' id='...'>
+    >>> mock_foo.something()
+    <Mock name='mock.foo.something()' id='...'>
+    >>> mock_bar.other.thing()
+    <Mock name='mock.bar.other.thing()' id='...'>
 
-   >>> manager.mock_calls
-   [call.foo.something(), call.bar.other.thing()]
+    >>> manager.mock_calls
+    [call.foo.something(), call.bar.other.thing()]
 
 We can then assert about the calls, including the order, by comparing with
 the ``mock_calls`` attribute on the manager mock:
 
-   >>> expected_calls = [call.foo.something(), call.bar.other.thing()]
-   >>> manager.mock_calls == expected_calls
-   True
+    >>> expected_calls = [call.foo.something(), call.bar.other.thing()]
+    >>> manager.mock_calls == expected_calls
+    True
 
 If ``patch`` is creating, and putting in place, your mocks then you can attach
 them to a manager mock using the :meth:`~Mock.attach_mock` method. After
 attaching calls will be recorded in ``mock_calls`` of the manager. ::
 
-   >>> manager = MagicMock()
-   >>> with patch('mymodule.Class1') as MockClass1:
-   ...     with patch('mymodule.Class2') as MockClass2:
-   ...         manager.attach_mock(MockClass1, 'MockClass1')
-   ...         manager.attach_mock(MockClass2, 'MockClass2')
-   ...         MockClass1().foo()
-   ...         MockClass2().bar()
-   <MagicMock name='mock.MockClass1().foo()' id='...'>
-   <MagicMock name='mock.MockClass2().bar()' id='...'>
-   >>> manager.mock_calls
-   [call.MockClass1(),
-   call.MockClass1().foo(),
-   call.MockClass2(),
-   call.MockClass2().bar()]
+    >>> manager = MagicMock()
+    >>> with patch('mymodule.Class1') as MockClass1:
+    ...     with patch('mymodule.Class2') as MockClass2:
+    ...         manager.attach_mock(MockClass1, 'MockClass1')
+    ...         manager.attach_mock(MockClass2, 'MockClass2')
+    ...         MockClass1().foo()
+    ...         MockClass2().bar()
+    <MagicMock name='mock.MockClass1().foo()' id='...'>
+    <MagicMock name='mock.MockClass2().bar()' id='...'>
+    >>> manager.mock_calls
+    [call.MockClass1(),
+    call.MockClass1().foo(),
+    call.MockClass2(),
+    call.MockClass2().bar()]
 
 If many calls have been made, but you're only interested in a particular
 sequence of them then an alternative is to use the
