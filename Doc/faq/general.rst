@@ -314,10 +314,11 @@ releases.
 The latest stable releases can always be found on the `Python download page
 <https://www.python.org/downloads/>`_.  There are two production-ready version
 of Python: 2.x and 3.x, but the recommended one at this times is Python 3.x.
-Although Python 2.x is the historical version of the language, it will not be
-maintained after January 1, 2020. Python 2.x was known for having more third-party
-libraries available, however, by the time of this writing, most of the widely used
-libraries support Python 3.x, and some are even dropping the Python 2.x support.
+Although Python 2.x is the historical version of the language, `it will not be
+maintained after January 1, 2020 <https://www.python.org/dev/peps/pep-0373/>`_.
+Python 2.x was known for having more third-party libraries available, however,
+by the time of this writing, most of the widely used libraries support Python 3.x,
+ and some are even dropping the Python 2.x support.
 
 
 How many people are using Python?
