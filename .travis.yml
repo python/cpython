@@ -54,7 +54,7 @@ matrix:
         # Sphinx is pinned so that new versions that introduce new warnings won't suddenly cause build failures.
         # (Updating the version is fine as long as no warnings are raised by doing so.)
         # The theme used by the docs is stored seperately, so we need to install that as well.
-        - python -m pip install sphinx~=1.6.1 blurb python-docs-theme
+        - python -m pip install sphinx blurb python-docs-theme
       script:
         - make check suspicious html SPHINXOPTS="-q -W -j4"
     - os: osx
@@ -85,6 +85,8 @@ matrix:
       script:
         # Skip tests that re-run the entire test suite.
         - xvfb-run ./venv/bin/python -m coverage run --pylib -m test --fail-env-changed -uall,-cpu -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn -x test_concurrent_futures
+        - xvfb-run make PYTHON=../python SPHINXOPTS="-j4" -C Doc/ venv doctest
+
       after_script:  # Probably should be after_success once test suite updated to run under coverage.py.
         # Make the `coverage` command available to Codecov w/ a version of Python that can parse all source files.
         - source ./venv/bin/activate
