@@ -368,10 +368,6 @@ class ShareableTypeTests(unittest.TestCase):
 
                 self.assertIs(type(got), type(obj))
                 self.assertEqual(got, obj)
-# Traceback (most recent call last):
-#   File "/data/prj/python/git/python3-3.8/Lib/test/test__xxsubinterpreters.py", line 370, in _assert_values
-#     self.assertEqual(got, obj)
-# AssertionError: 4294967295 != -1
                 # XXX Check the following in the channel tests?
                 #self.assertIsNot(got, obj)
 
