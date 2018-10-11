@@ -249,7 +249,7 @@ class Pool(object):
                                             self._outqueue,
                                             self._initializer,
                                             self._initargs,
-                                            self._exp
+                                            self._expect_initret,
                                             self._maxtasksperchild,
                                             self._wrap_exception)
 
