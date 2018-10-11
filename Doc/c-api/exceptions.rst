@@ -229,7 +229,9 @@ NULL pointer for use in a ``return`` statement.
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilename(PyObject *type, int ierr, const char *filename)
 
    Similar to :c:func:`PyErr_SetFromWindowsErrWithFilename`, with an additional
-   parameter specifying the exception type to be raised. .. availability:: Windows.
+   parameter specifying the exception type to be raised.
+
+   .. availability:: Windows
 
 
 .. c:function:: PyObject* PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
