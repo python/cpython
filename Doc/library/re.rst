@@ -825,7 +825,6 @@ form.
    This is useful if you want to match an arbitrary literal string that may
    have regular expression metacharacters in it.  For example::
 
-      >>> import string
       >>> print(re.escape('python.exe'))
       python\.exe
 
@@ -1375,15 +1374,14 @@ easily read and modified by Python as demonstrated in the following example that
 creates a phonebook.
 
 First, here is the input.  Normally it may come from a file, here we are using
-triple-quoted string syntax::
+triple-quoted string syntax
 
-   >>> text = """Ross McFluff: 834.345.1254 155 Elm Street
-   ...
-   ... Ronald Heathmore: 892.345.3428 436 Finley Avenue
-   ... Frank Burger: 925.541.7625 662 South Dogwood Way
-   ...
-   ...
-   ... Heather Albrecht: 548.326.4584 919 Park Place"""
+.. testcode::
+
+   text = """Ross McFluff: 834.345.1254 155 Elm Street
+   Ronald Heathmore: 892.345.3428 436 Finley Avenue
+   Frank Burger: 925.541.7625 662 South Dogwood Way
+   Heather Albrecht: 548.326.4584 919 Park Place"""
 
 The entries are separated by one or more newlines. Now we convert the string
 into a list with each nonempty line having its own entry:
