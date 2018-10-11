@@ -1426,7 +1426,12 @@ _str_shared(PyObject *obj, _PyCrossInterpreterData *data)
 static PyObject *
 _new_long_object(_PyCrossInterpreterData *data)
 {
+#if ( ULONG_MAX == UINT_MAX )
+    return PyLong_FromLongLong((int32_t)(data->data));
+#else
     return PyLong_FromLongLong((int64_t)(data->data));
+#endif
+
 }
 
 static int

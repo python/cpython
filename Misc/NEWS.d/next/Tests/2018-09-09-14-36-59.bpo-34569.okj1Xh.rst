@@ -1,2 +1,3 @@
-For AIX, when (sys.maxsize < 2**31) skip value (-1) in `test__xxsubinterpreters.py.ShareableTypeTests._assert_values`
+fix pystate.c/ _new_long_object() so that a 32-bit signed object is returned
+when ULONG_MAX==UINT_MAX
 patch by Michael Felt
