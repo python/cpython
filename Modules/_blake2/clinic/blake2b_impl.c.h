@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(py_blake2b_new__doc__,
-"blake2b(string=None, *, digest_size=_blake2b.blake2b.MAX_DIGEST_SIZE,\n"
-"        key=None, salt=None, person=None, fanout=1, depth=1,\n"
-"        leaf_size=None, node_offset=None, node_depth=0, inner_size=0,\n"
-"        last_node=False)\n"
+"blake2b(data=b\'\', /, *, digest_size=_blake2.blake2b.MAX_DIGEST_SIZE,\n"
+"        key=b\'\', salt=b\'\', person=b\'\', fanout=1, depth=1, leaf_size=0,\n"
+"        node_offset=0, node_depth=0, inner_size=0, last_node=False)\n"
 "--\n"
 "\n"
 "Return a new BLAKE2b hash object.");
@@ -22,7 +21,7 @@ static PyObject *
 py_blake2b_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"string", "digest_size", "key", "salt", "person", "fanout", "depth", "leaf_size", "node_offset", "node_depth", "inner_size", "last_node", NULL};
+    static const char * const _keywords[] = {"", "digest_size", "key", "salt", "person", "fanout", "depth", "leaf_size", "node_offset", "node_depth", "inner_size", "last_node", NULL};
     static _PyArg_Parser _parser = {"|O$iy*y*y*iiOOiip:blake2b", _keywords, 0};
     PyObject *data = NULL;
     int digest_size = BLAKE2B_OUTBYTES;
@@ -60,66 +59,66 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_blake2b_blake2b_copy__doc__,
+PyDoc_STRVAR(_blake2_blake2b_copy__doc__,
 "copy($self, /)\n"
 "--\n"
 "\n"
 "Return a copy of the hash object.");
 
-#define _BLAKE2B_BLAKE2B_COPY_METHODDEF    \
-    {"copy", (PyCFunction)_blake2b_blake2b_copy, METH_NOARGS, _blake2b_blake2b_copy__doc__},
+#define _BLAKE2_BLAKE2B_COPY_METHODDEF    \
+    {"copy", (PyCFunction)_blake2_blake2b_copy, METH_NOARGS, _blake2_blake2b_copy__doc__},
 
 static PyObject *
-_blake2b_blake2b_copy_impl(BLAKE2bObject *self);
+_blake2_blake2b_copy_impl(BLAKE2bObject *self);
 
 static PyObject *
-_blake2b_blake2b_copy(BLAKE2bObject *self, PyObject *Py_UNUSED(ignored))
+_blake2_blake2b_copy(BLAKE2bObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _blake2b_blake2b_copy_impl(self);
+    return _blake2_blake2b_copy_impl(self);
 }
 
-PyDoc_STRVAR(_blake2b_blake2b_update__doc__,
-"update($self, obj, /)\n"
+PyDoc_STRVAR(_blake2_blake2b_update__doc__,
+"update($self, data, /)\n"
 "--\n"
 "\n"
-"Update this hash object\'s state with the provided string.");
+"Update this hash object\'s state with the provided bytes-like object.");
 
-#define _BLAKE2B_BLAKE2B_UPDATE_METHODDEF    \
-    {"update", (PyCFunction)_blake2b_blake2b_update, METH_O, _blake2b_blake2b_update__doc__},
+#define _BLAKE2_BLAKE2B_UPDATE_METHODDEF    \
+    {"update", (PyCFunction)_blake2_blake2b_update, METH_O, _blake2_blake2b_update__doc__},
 
-PyDoc_STRVAR(_blake2b_blake2b_digest__doc__,
+PyDoc_STRVAR(_blake2_blake2b_digest__doc__,
 "digest($self, /)\n"
 "--\n"
 "\n"
-"Return the digest value as a string of binary data.");
+"Return the digest value as a bytes object.");
 
-#define _BLAKE2B_BLAKE2B_DIGEST_METHODDEF    \
-    {"digest", (PyCFunction)_blake2b_blake2b_digest, METH_NOARGS, _blake2b_blake2b_digest__doc__},
-
-static PyObject *
-_blake2b_blake2b_digest_impl(BLAKE2bObject *self);
+#define _BLAKE2_BLAKE2B_DIGEST_METHODDEF    \
+    {"digest", (PyCFunction)_blake2_blake2b_digest, METH_NOARGS, _blake2_blake2b_digest__doc__},
 
 static PyObject *
-_blake2b_blake2b_digest(BLAKE2bObject *self, PyObject *Py_UNUSED(ignored))
+_blake2_blake2b_digest_impl(BLAKE2bObject *self);
+
+static PyObject *
+_blake2_blake2b_digest(BLAKE2bObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _blake2b_blake2b_digest_impl(self);
+    return _blake2_blake2b_digest_impl(self);
 }
 
-PyDoc_STRVAR(_blake2b_blake2b_hexdigest__doc__,
+PyDoc_STRVAR(_blake2_blake2b_hexdigest__doc__,
 "hexdigest($self, /)\n"
 "--\n"
 "\n"
 "Return the digest value as a string of hexadecimal digits.");
 
-#define _BLAKE2B_BLAKE2B_HEXDIGEST_METHODDEF    \
-    {"hexdigest", (PyCFunction)_blake2b_blake2b_hexdigest, METH_NOARGS, _blake2b_blake2b_hexdigest__doc__},
+#define _BLAKE2_BLAKE2B_HEXDIGEST_METHODDEF    \
+    {"hexdigest", (PyCFunction)_blake2_blake2b_hexdigest, METH_NOARGS, _blake2_blake2b_hexdigest__doc__},
 
 static PyObject *
-_blake2b_blake2b_hexdigest_impl(BLAKE2bObject *self);
+_blake2_blake2b_hexdigest_impl(BLAKE2bObject *self);
 
 static PyObject *
-_blake2b_blake2b_hexdigest(BLAKE2bObject *self, PyObject *Py_UNUSED(ignored))
+_blake2_blake2b_hexdigest(BLAKE2bObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _blake2b_blake2b_hexdigest_impl(self);
+    return _blake2_blake2b_hexdigest_impl(self);
 }
-/*[clinic end generated code: output=535a54852c98e51c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0eb559f418fc0a21 input=a9049054013a1b77]*/

@@ -740,6 +740,10 @@ pbkdf2_hmac(PyObject *self, PyObject *args, PyObject *kwdict)
 #if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(OPENSSL_NO_SCRYPT) && !defined(LIBRESSL_VERSION_NUMBER)
 #define PY_SCRYPT 1
 
+/* XXX: Parameters salt, n, r and p should be required keyword-only parameters.
+   They are optional in the Argument Clinic declaration only due to a
+   limitation of PyArg_ParseTupleAndKeywords. */
+
 /*[clinic input]
 _hashlib.scrypt
 
