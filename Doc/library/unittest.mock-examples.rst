@@ -632,7 +632,7 @@ with ``test``: ::
     'something'
 
 An alternative way of managing patches is to use the :ref:`start-and-stop`.
-These allow you to move the patching into your ``setUp`` and ``tearDown`` methods. 
+These allow you to move the patching into your ``setUp`` and ``tearDown`` methods.
 ::
 
     >>> class MyTest(unittest.TestCase):
