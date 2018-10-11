@@ -760,7 +760,7 @@ Warnings
 even a single character doesn't match, the test fails.  This will probably
 surprise you a few times, as you learn exactly what Python does and doesn't
 guarantee about output.  For example, when printing a set, Python doesn't
-guarantee that the key is printed in any particular order, so a test like ::
+guarantee that the element is printed in any particular order, so a test like ::
 
    >>> foo()
    {"Hermione", "Harry"}
