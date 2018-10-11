@@ -466,6 +466,7 @@ pymain_free(_PyMain *pymain)
        remain valid after Py_Finalize(), since
        Py_Initialize()-Py_Finalize() can be called multiple times. */
     _PyPathConfig_ClearGlobal();
+    _Py_ClearStandardStreamEncoding();
 
     /* Force the allocator used by pymain_read_conf() */
     PyMemAllocatorEx old_alloc;
@@ -950,18 +951,18 @@ pymain_init_stdio(_PyMain *pymain, _PyCoreConfig *config)
 
 
 static void
-pymain_header(_PyMain *pymain)
+pymain_header(_PyMain *pymain, const _PyCoreConfig *config)
 {
-    if (Py_QuietFlag) {
+    if (config->quiet) {
         return;
     }
 
-    if (!Py_VerboseFlag && (RUN_CODE(pymain) || !pymain->stdin_is_interactive)) {
+    if (!config->verbose && (RUN_CODE(pymain) || !pymain->stdin_is_interactive)) {
         return;
     }
 
     fprintf(stderr, "Python %s on %s\n", Py_GetVersion(), Py_GetPlatform());
-    if (!Py_NoSiteFlag) {
+    if (config->site_import) {
         fprintf(stderr, "%s\n", COPYRIGHT);
     }
 }
@@ -1017,8 +1018,8 @@ pymain_init_core_argv(_PyMain *pymain, _PyCoreConfig *config, _PyCmdline *cmdlin
 }
 
 
-static PyObject*
-wstrlist_as_pylist(int len, wchar_t **list)
+PyObject*
+_Py_wstrlist_as_pylist(int len, wchar_t **list)
 {
     assert(list != NULL || len < 1);
 
@@ -1040,12 +1041,12 @@ wstrlist_as_pylist(int len, wchar_t **list)
 
 
 static void
-pymain_import_readline(_PyMain *pymain)
+pymain_import_readline(_PyMain *pymain, const _PyCoreConfig *config)
 {
-    if (Py_IsolatedFlag) {
+    if (config->isolated) {
         return;
     }
-    if (!Py_InspectFlag && RUN_CODE(pymain)) {
+    if (!config->inspect && RUN_CODE(pymain)) {
         return;
     }
     if (!isatty(fileno(stdin))) {
@@ -1262,7 +1263,6 @@ pymain_read_conf_impl(_PyMain *pymain, _PyCoreConfig *config,
         return -1;
     }
 
-    assert(config->use_environment >= 0);
     if (config->use_environment) {
         err = cmdline_init_env_warnoptions(pymain, config, cmdline);
         if (_Py_INIT_FAILED(err)) {
@@ -1280,25 +1280,18 @@ pymain_read_conf_impl(_PyMain *pymain, _PyCoreConfig *config,
 }
 
 
-/* Read the configuration, but initialize also the LC_CTYPE locale:
-   enable UTF-8 mode (PEP 540) and/or coerce the C locale (PEP 538) */
+/* Read the configuration and initialize the LC_CTYPE locale:
+   enable UTF-8 mode (PEP 540) and/or coerce the C locale (PEP 538). */
 static int
 pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
                  _PyCmdline *cmdline)
 {
+    int init_utf8_mode = Py_UTF8Mode;
+#ifdef MS_WINDOWS
+    int init_legacy_encoding = Py_LegacyWindowsFSEncodingFlag;
+#endif
     _PyCoreConfig save_config = _PyCoreConfig_INIT;
-    char *oldloc = NULL;
     int res = -1;
-
-    oldloc = _PyMem_RawStrdup(setlocale(LC_ALL, NULL));
-    if (oldloc == NULL) {
-        pymain->err = _Py_INIT_NO_MEMORY();
-        goto done;
-    }
-
-    /* Reconfigure the locale to the default for this process */
-    _Py_SetLocaleFromEnv(LC_ALL);
-
     int locale_coerced = 0;
     int loops = 0;
 
@@ -1306,6 +1299,9 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
         pymain->err = _Py_INIT_NO_MEMORY();
         goto done;
     }
+
+    /* Set LC_CTYPE to the user preferred locale */
+    _Py_SetLocaleFromEnv(LC_CTYPE);
 
     while (1) {
         int utf8_mode = config->utf8_mode;
@@ -1318,6 +1314,13 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
                                        "reading the configuration");
             goto done;
         }
+
+        /* bpo-34207: Py_DecodeLocale() and Py_EncodeLocale() depend
+           on Py_UTF8Mode and Py_LegacyWindowsFSEncodingFlag. */
+        Py_UTF8Mode = config->utf8_mode;
+#ifdef MS_WINDOWS
+        Py_LegacyWindowsFSEncodingFlag = config->legacy_windows_fs_encoding;
+#endif
 
         if (pymain_init_cmdline_argv(pymain, config, cmdline) < 0) {
             goto done;
@@ -1339,9 +1342,9 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
          * See the documentation of the PYTHONCOERCECLOCALE setting for more
          * details.
          */
-        if (config->coerce_c_locale == 1 && !locale_coerced) {
+        if (config->coerce_c_locale && !locale_coerced) {
             locale_coerced = 1;
-            _Py_CoerceLegacyLocale(config);
+            _Py_CoerceLegacyLocale(config->coerce_c_locale_warn);
             encoding_changed = 1;
         }
 
@@ -1364,6 +1367,7 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
         /* Reset the configuration before reading again the configuration,
            just keep UTF-8 Mode value. */
         int new_utf8_mode = config->utf8_mode;
+        int new_coerce_c_locale = config->coerce_c_locale;
         if (_PyCoreConfig_Copy(config, &save_config) < 0) {
             pymain->err = _Py_INIT_NO_MEMORY();
             goto done;
@@ -1371,6 +1375,7 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
         pymain_clear_cmdline(pymain, cmdline);
         memset(cmdline, 0, sizeof(*cmdline));
         config->utf8_mode = new_utf8_mode;
+        config->coerce_c_locale = new_coerce_c_locale;
 
         /* The encoding changed: read again the configuration
            with the new encoding */
@@ -1379,10 +1384,10 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
 
 done:
     _PyCoreConfig_Clear(&save_config);
-    if (oldloc != NULL) {
-        setlocale(LC_ALL, oldloc);
-        PyMem_RawFree(oldloc);
-    }
+    Py_UTF8Mode = init_utf8_mode ;
+#ifdef MS_WINDOWS
+    Py_LegacyWindowsFSEncodingFlag = init_legacy_encoding;
+#endif
     return res;
 }
 
@@ -1485,7 +1490,7 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
 #define COPY_WSTRLIST(ATTR, LEN, LIST) \
     do { \
         if (ATTR == NULL) { \
-            ATTR = wstrlist_as_pylist(LEN, LIST); \
+            ATTR = _Py_wstrlist_as_pylist(LEN, LIST); \
             if (ATTR == NULL) { \
                 return _Py_INIT_NO_MEMORY(); \
             } \
@@ -1585,8 +1590,8 @@ pymain_run_python(_PyMain *pymain, PyInterpreterState *interp)
 
     PyCompilerFlags cf = {.cf_flags = 0};
 
-    pymain_header(pymain);
-    pymain_import_readline(pymain);
+    pymain_header(pymain, config);
+    pymain_import_readline(pymain, config);
 
     if (pymain->command) {
         pymain->status = pymain_run_command(pymain->command, &cf);

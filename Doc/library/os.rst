@@ -3394,13 +3394,16 @@ written in Python, such as a mail server's external command delivery program.
    subprocesses.
 
 
-.. function:: posix_spawn(path, argv, env, file_actions=None)
+.. function:: posix_spawn(path, argv, env, *, file_actions=None, \
+                          setpgroup=None, resetids=False, setsigmask=(), \
+                          setsigdef=(), scheduler=None)
 
    Wraps the :c:func:`posix_spawn` C library API for use from Python.
 
    Most users should use :func:`subprocess.run` instead of :func:`posix_spawn`.
 
-   The *path*, *args*, and *env* arguments are similar to :func:`execve`.
+   The positional-only arguments *path*, *args*, and *env* are similar to
+   :func:`execve`.
 
    The *file_actions* argument may be a sequence of tuples describing actions
    to take on specific file descriptors in the child process between the C
@@ -3431,6 +3434,36 @@ written in Python, such as a mail server's external command delivery program.
    :c:func:`posix_spawn_file_actions_addclose`, and
    :c:func:`posix_spawn_file_actions_adddup2` API calls used to prepare
    for the :c:func:`posix_spawn` call itself.
+
+   The *setpgroup* argument will set the process group of the child to the value
+   specified. If the value specified is 0, the child's process group ID will be
+   made the same as its process ID. If the value of *setpgroup* is not set, the
+   child will inherit the parent's process group ID. This argument corresponds
+   to the C library :c:data:`POSIX_SPAWN_SETPGROUP` flag.
+
+   If the *resetids* argument is ``True`` it will reset the effective UID and
+   GID of the child to the real UID and GID of the parent process. If the
+   argument is ``False``, then the child retains the effective UID and GID of
+   the parent. In either case, if the set-user-ID and set-group-ID permission
+   bits are enabled on the executable file, their effect will override the
+   setting of the effective UID and GID. This argument corresponds to the C
+   library :c:data:`POSIX_SPAWN_RESETIDS` flag.
+
+   The *setsigmask* argument will set the signal mask to the signal set
+   specified. If the parameter is not used, then the child inherits the
+   parent's signal mask. This argument corresponds to the C library
+   :c:data:`POSIX_SPAWN_SETSIGMASK` flag.
+
+   The *sigdef* argument will reset the disposition of all signals in the set
+   specified. This argument corresponds to the C library
+   :c:data:`POSIX_SPAWN_SETSIGDEF` flag.
+
+   The *scheduler* argument must be a tuple containing the (optional) scheduler
+   policy and an instance of :class:`sched_param` with the scheduler parameters.
+   A value of ``None`` in the place of the scheduler policy indicates that is
+   not being provided. This argument is a combination of the C library
+   :c:data:`POSIX_SPAWN_SETSCHEDPARAM` and :c:data:`POSIX_SPAWN_SETSCHEDULER`
+   flags.
 
    .. versionadded:: 3.7
 

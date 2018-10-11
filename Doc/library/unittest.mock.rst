@@ -98,7 +98,7 @@ mock (or other object) during the test and restored when the test ends:
 .. note::
 
    When you nest patch decorators the mocks are passed in to the decorated
-   function in the same order they applied (the normal *python* order that
+   function in the same order they applied (the normal *Python* order that
    decorators are applied). This means from the bottom up, so in the example
    above the mock for ``module.ClassName1`` is passed in first.
 
@@ -2094,6 +2094,10 @@ mock_open
 
    .. versionchanged:: 3.5
       *read_data* is now reset on each call to the *mock*.
+
+   .. versionchanged:: 3.8
+      Added :meth:`__iter__` to implementation so that iteration (such as in for
+      loops) correctly consumes *read_data*.
 
 Using :func:`open` as a context manager is a great way to ensure your file handles
 are closed properly and is becoming common::

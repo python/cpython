@@ -173,10 +173,32 @@ created.  Socket addresses are represented as follows:
 
   .. versionadded:: 3.7
 
-- Certain other address families (:const:`AF_PACKET`, :const:`AF_CAN`)
-  support specific representations.
+- :const:`AF_PACKET` is a low-level interface directly to network devices.
+  The packets are represented by the tuple
+  ``(ifname, proto[, pkttype[, hatype[, addr]]])`` where:
 
-  .. XXX document them!
+  - *ifname* - String specifying the device name.
+  - *proto* - An in network-byte-order integer specifying the Ethernet
+    protocol number.
+  - *pkttype* - Optional integer specifying the packet type:
+
+    - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
+    - ``PACKET_BROADCAST`` - Physical-layer broadcast packet.
+    - ``PACKET_MULTIHOST`` - Packet sent to a physical-layer multicast address.
+    - ``PACKET_OTHERHOST`` - Packet to some other host that has been caught by
+      a device driver in promiscuous mode.
+    - ``PACKET_OUTGOING`` - Packet originating from the local host that is
+      looped back to a packet socket.
+  - *hatype* - Optional integer specifying the ARP hardware address type.
+  - *addr* - Optional bytes-like object specifying the hardware physical
+    address, whose interpretation depends on the device.
+
+- :const:`AF_QIPCRTR` is a Linux-only socket based interface for communicating
+  with services running on co-processors in Qualcomm platforms. The address
+  family is represented as a ``(node, port)`` tuple where the *node* and *port*
+  are non-negative integers.
+
+  .. versionadded:: 3.8
 
 If you use a hostname in the *host* portion of IPv4/v6 socket address, the
 program may show a nondeterministic behavior, as Python uses the first address
@@ -376,6 +398,16 @@ Constants
    .. versionadded:: 3.7
 
 
+.. data:: AF_PACKET
+          PF_PACKET
+          PACKET_*
+
+   Many constants of these forms, documented in the Linux documentation, are
+   also defined in the socket module.
+
+   Availability: Linux >= 2.2.
+
+
 .. data:: AF_RDS
           PF_RDS
           SOL_RDS
@@ -456,6 +488,13 @@ Constants
    :const:`HCI_DATA_DIR` are not available for FreeBSD, NetBSD, or
    DragonFlyBSD.
 
+.. data:: AF_QIPCRTR
+
+   Constant for Qualcomm's IPC router protocol, used to communicate with
+   service providing remote processors.
+
+   Availability: Linux >= 4.7.
+
 Functions
 ^^^^^^^^^
 
@@ -469,12 +508,12 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    Create a new socket using the given address family, socket type and protocol
    number.  The address family should be :const:`AF_INET` (the default),
-   :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN` or :const:`AF_RDS`. The
-   socket type should be :const:`SOCK_STREAM` (the default),
-   :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other ``SOCK_``
-   constants. The protocol number is usually zero and may be omitted or in the
-   case where the address family is :const:`AF_CAN` the protocol should be one
-   of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`
+   :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN`, :const:`AF_PACKET`,
+   or :const:`AF_RDS`. The socket type should be :const:`SOCK_STREAM` (the
+   default), :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other
+   ``SOCK_`` constants. The protocol number is usually zero and may be omitted
+   or in the case where the address family is :const:`AF_CAN` the protocol
+   should be one of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`.
 
    If *fileno* is specified, the values for *family*, *type*, and *proto* are
    auto-detected from the specified file descriptor.  Auto-detection can be

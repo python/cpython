@@ -530,9 +530,27 @@ signal_strsignal_impl(PyObject *module, int signalnum)
         return NULL;
     }
 
-#ifdef MS_WINDOWS
-    /* Custom redefinition of POSIX signals allowed on Windows */
+#ifndef HAVE_STRSIGNAL
     switch (signalnum) {
+        /* Though being a UNIX, HP-UX does not provide strsignal(3). */
+#ifndef MS_WINDOWS
+        case SIGHUP:
+            res = "Hangup";
+            break;
+        case SIGALRM:
+            res = "Alarm clock";
+            break;
+        case SIGPIPE:
+            res = "Broken pipe";
+            break;
+        case SIGQUIT:
+            res = "Quit";
+            break;
+        case SIGCHLD:
+            res = "Child exited";
+            break;
+#endif
+        /* Custom redefinition of POSIX signals allowed on Windows. */
         case SIGINT:
             res = "Interrupt";
             break;

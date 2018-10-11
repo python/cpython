@@ -3,6 +3,31 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-1529353: Output over N lines (50 by default) is squeezed down to a button.
+N can be changed in the PyShell section of the General page of the
+Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
+right clicking on the output.  Squeezed output can be expanded in place
+by double-clicking the button or into the clipboard or a separate window
+by right-clicking the button.
+
+bpo-34548: Use configured color theme for read-only text views.
+
+bpo-33839: Refactor ToolTip and CallTip classes; add documentation
+and tests.
+
+bpo-34047: Fix mouse wheel scrolling direction on macOS.
+
+bpo-34275: Make calltips always visible on Mac.
+Patch by Kevin Walzer.
+
+bpo-34120: Fix freezing after closing some dialogs on Mac.
+This is one of multiple regressions from using newer tcl/tk.
+
+bpo-33975: Avoid small type when running htests.
+Since part of the purpose of human-viewed tests is to determine that
+widgets look right, it is important that they look the same for
+testing as when running IDLE.
+
 bpo-33905: Add test for idlelib.stackview.StackBrowser.
 
 bpo-33924: Change mainmenu.menudefs key 'windows' to 'window'.
@@ -197,7 +222,7 @@ To see the example in action, enable it on options extensions tab.
 
 bpo-31421: Document how IDLE runs tkinter programs.
 IDLE calls tcl/tk update in the background in order to make live
-interaction and experimentatin with tkinter applications much easier.
+interaction and experimentation with tkinter applications much easier.
 
 bpo-31414: Fix tk entry box tests by deleting first.
 Adding to an int entry is not the same as deleting and inserting
@@ -435,7 +460,7 @@ Released on 2016-12-23
   -w option but without -jn.  Fix warning from test_config.
 
 - Issue #27621: Put query response validation error messages in the query
-  box itself instead of in a separate massagebox.  Redo tests to match.
+  box itself instead of in a separate messagebox.  Redo tests to match.
   Add Mac OSX refinements.  Original patch by Mark Roseman.
 
 - Issue #27620: Escape key now closes Query box as cancelled.
@@ -501,7 +526,7 @@ Released on 2016-12-23
 
 - Issue #27239: idlelib.macosx.isXyzTk functions initialize as needed.
 
-- Issue #27262: move Aqua unbinding code, which enable context menus, to maxosx.
+- Issue #27262: move Aqua unbinding code, which enable context menus, to macosx.
 
 - Issue #24759: Make clear in idlelib.idle_test.__init__ that the directory
   is a private implementation of test.test_idle and tool for maintainers.

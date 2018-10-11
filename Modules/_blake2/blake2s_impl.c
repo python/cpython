@@ -398,7 +398,7 @@ py_blake2s_dealloc(PyObject *self)
 PyTypeObject PyBlake2_BLAKE2sType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_blake2.blake2s",        /* tp_name            */
-    sizeof(BLAKE2sObject),    /* tp_size            */
+    sizeof(BLAKE2sObject),    /* tp_basicsize       */
     0,                        /* tp_itemsize        */
     py_blake2s_dealloc,       /* tp_dealloc         */
     0,                        /* tp_print           */

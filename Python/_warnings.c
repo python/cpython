@@ -1004,7 +1004,7 @@ PyErr_WarnEx(PyObject *category, const char *text, Py_ssize_t stack_level)
 
 #undef PyErr_Warn
 
-PyAPI_FUNC(int)
+int
 PyErr_Warn(PyObject *category, const char *text)
 {
     return PyErr_WarnEx(category, text, 1);

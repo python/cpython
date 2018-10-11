@@ -575,11 +575,11 @@ range_repr(rangeobject *r)
     Py_ssize_t istep;
 
     /* Check for special case values for printing.  We don't always
-       need the step value.  We don't care about errors
-       (it means overflow), so clear the errors. */
+       need the step value.  We don't care about overflow. */
     istep = PyNumber_AsSsize_t(r->step, NULL);
-    if (istep != 1 || (istep == -1 && PyErr_Occurred())) {
-        PyErr_Clear();
+    if (istep == -1 && PyErr_Occurred()) {
+        assert(!PyErr_ExceptionMatches(PyExc_OverflowError));
+        return NULL;
     }
 
     if (istep == 1)

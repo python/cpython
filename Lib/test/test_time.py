@@ -19,7 +19,7 @@ except ImportError:
 # Max year is only limited by the size of C int.
 SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
 TIME_MAXYEAR = (1 << 8 * SIZEOF_INT - 1) - 1
-TIME_MINYEAR = -TIME_MAXYEAR - 1
+TIME_MINYEAR = -TIME_MAXYEAR - 1 + 1900
 
 SEC_TO_US = 10 ** 6
 US_TO_NS = 10 ** 3
@@ -703,9 +703,9 @@ class _Test4dYear:
         self.assertEqual(func(9999), fmt % 9999)
 
     def test_large_year(self):
-        self.assertEqual(self.yearstr(12345), '12345')
-        self.assertEqual(self.yearstr(123456789), '123456789')
-        self.assertEqual(self.yearstr(TIME_MAXYEAR), str(TIME_MAXYEAR))
+        self.assertEqual(self.yearstr(12345).lstrip('+'), '12345')
+        self.assertEqual(self.yearstr(123456789).lstrip('+'), '123456789')
+        self.assertEqual(self.yearstr(TIME_MAXYEAR).lstrip('+'), str(TIME_MAXYEAR))
         self.assertRaises(OverflowError, self.yearstr, TIME_MAXYEAR + 1)
 
     def test_negative(self):
@@ -714,12 +714,11 @@ class _Test4dYear:
         self.assertEqual(self.yearstr(-123456), '-123456')
         self.assertEqual(self.yearstr(-123456789), str(-123456789))
         self.assertEqual(self.yearstr(-1234567890), str(-1234567890))
-        self.assertEqual(self.yearstr(TIME_MINYEAR + 1900), str(TIME_MINYEAR + 1900))
-        # Issue #13312: it may return wrong value for year < TIME_MINYEAR + 1900
-        # Skip the value test, but check that no error is raised
-        self.yearstr(TIME_MINYEAR)
-        # self.assertEqual(self.yearstr(TIME_MINYEAR), str(TIME_MINYEAR))
+        self.assertEqual(self.yearstr(TIME_MINYEAR), str(TIME_MINYEAR))
+        # Modules/timemodule.c checks for underflow
         self.assertRaises(OverflowError, self.yearstr, TIME_MINYEAR - 1)
+        with self.assertRaises(OverflowError):
+            self.yearstr(-TIME_MAXYEAR - 1)
 
 
 class TestAsctime4dyear(_TestAsctimeYear, _Test4dYear, unittest.TestCase):

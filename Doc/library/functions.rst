@@ -113,6 +113,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. index:: pair: Boolean; type
 
+   .. versionchanged:: 3.7
+      *x* is now a positional-only parameter.
 
 .. function:: breakpoint(*args, **kws)
 
@@ -578,6 +580,9 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.6
       Grouping digits with underscores as in code literals is allowed.
 
+   .. versionchanged:: 3.7
+      *x* is now a positional-only parameter.
+
 
 .. index::
    single: __format__
@@ -729,7 +734,7 @@ are always available.  They are listed here in alphabetical order.
    to provide elaborate line editing and history features.
 
 
-.. class:: int(x=0)
+.. class:: int([x])
            int(x, base=10)
 
    Return an integer object constructed from a number or string *x*, or return
@@ -762,6 +767,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.6
       Grouping digits with underscores as in code literals is allowed.
+
+   .. versionchanged:: 3.7
+      *x* is now a positional-only parameter.
 
 
 .. function:: isinstance(object, classinfo)
@@ -1479,6 +1487,9 @@ are always available.  They are listed here in alphabetical order.
    ``''.join(sequence)``.  To add floating point values with extended precision,
    see :func:`math.fsum`\.  To concatenate a series of iterables, consider using
    :func:`itertools.chain`.
+
+   .. versionchanged:: 3.8
+      The *start* parameter can be specified as a keyword argument.
 
 .. function:: super([type[, object-or-type]])
 

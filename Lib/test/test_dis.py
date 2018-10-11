@@ -124,7 +124,8 @@ dis_bug708901 = """\
               2 LOAD_CONST               1 (1)
 
 %3d           4 LOAD_CONST               2 (10)
-              6 CALL_FUNCTION            2
+
+%3d           6 CALL_FUNCTION            2
               8 GET_ITER
         >>   10 FOR_ITER                 4 (to 16)
              12 STORE_FAST               0 (res)
@@ -134,6 +135,7 @@ dis_bug708901 = """\
              18 RETURN_VALUE
 """ % (bug708901.__code__.co_firstlineno + 1,
        bug708901.__code__.co_firstlineno + 2,
+       bug708901.__code__.co_firstlineno + 1,
        bug708901.__code__.co_firstlineno + 3)
 
 
@@ -154,7 +156,8 @@ dis_bug1333982 = """\
              16 CALL_FUNCTION            1
 
 %3d          18 LOAD_CONST               4 (1)
-             20 BINARY_ADD
+
+%3d          20 BINARY_ADD
              22 CALL_FUNCTION            1
              24 RAISE_VARARGS            1
 
@@ -164,6 +167,7 @@ dis_bug1333982 = """\
        __file__,
        bug1333982.__code__.co_firstlineno + 1,
        bug1333982.__code__.co_firstlineno + 2,
+       bug1333982.__code__.co_firstlineno + 1,
        bug1333982.__code__.co_firstlineno + 3)
 
 _BIG_LINENO_FORMAT = """\

@@ -15,7 +15,7 @@ _copy_raw_string(PyObject *strobj)
         return NULL;
     }
     char *copied = PyMem_Malloc(strlen(str)+1);
-    if (str == NULL) {
+    if (copied == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
@@ -1764,7 +1764,7 @@ PyDoc_STRVAR(channelid_doc,
 static PyTypeObject ChannelIDtype = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "_xxsubinterpreters.ChannelID", /* tp_name */
-    sizeof(channelid),              /* tp_size */
+    sizeof(channelid),              /* tp_basicsize */
     0,                              /* tp_itemsize */
     (destructor)channelid_dealloc,  /* tp_dealloc */
     0,                              /* tp_print */
@@ -2173,7 +2173,7 @@ PyDoc_STRVAR(interpid_doc,
 static PyTypeObject InterpreterIDtype = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "interpreters.InterpreterID",   /* tp_name */
-    sizeof(interpid),               /* tp_size */
+    sizeof(interpid),               /* tp_basicsize */
     0,                              /* tp_itemsize */
     (destructor)interpid_dealloc,   /* tp_dealloc */
     0,                              /* tp_print */

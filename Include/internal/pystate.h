@@ -218,6 +218,7 @@ PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
 /* Other */
 
 PyAPI_FUNC(_PyInitError) _PyInterpreterState_Enable(_PyRuntimeState *);
+PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(void);
 
 #ifdef __cplusplus
 }
