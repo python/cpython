@@ -191,7 +191,7 @@ The Mock Class
 
 .. testsetup::
 
-    from unittest.mock import Mock
+    from unittest.mock import Mock, call, sentinel, DEFAULT
 
 :class:`Mock` is a flexible mock object intended to replace the use of stubs and
 test doubles throughout your code. Mocks are callable and create attributes as
