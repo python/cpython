@@ -47,6 +47,9 @@ Quick Guide
         def method(self, a, b, c):
             pass
 
+    class SomeClass:
+        pass
+
 :class:`Mock` and :class:`MagicMock` objects create all attributes and
 methods as you access them and store details of how they have been used. You
 can configure them, to specify return values or limit what attributes are
