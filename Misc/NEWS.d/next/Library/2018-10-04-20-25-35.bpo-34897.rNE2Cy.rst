@@ -1,3 +1,4 @@
-Fix Lib/distutils/ccompiler.py def set_executables() so that {key:value} when
-the value to be assigned is equivalent to NULL is set to {key:None}
+Fix Lib/distutils/ccompiler.py def set_executables() so that when
+the value to be assigned is equivalent to NULL or len(value) = 0
+set to None
 patch by aixtools
