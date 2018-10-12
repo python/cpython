@@ -10,6 +10,7 @@
 
 from tkinter import *
 
+
 class Dialog:
 
     command  = None
