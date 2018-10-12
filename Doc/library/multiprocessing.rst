@@ -621,18 +621,19 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    Example usage of some of the methods of :class:`Process`:
 
    .. doctest::
+      :options: +ELLIPSIS
 
        >>> import multiprocessing, time, signal
        >>> p = multiprocessing.Process(target=time.sleep, args=(1000,))
        >>> print(p, p.is_alive())
-       <Process(Process-1, initial)> False
+       <Process(..., initial)> False
        >>> p.start()
        >>> print(p, p.is_alive())
-       <Process(Process-1, started)> True
+       <Process(..., started)> True
        >>> p.terminate()
        >>> time.sleep(0.1)
        >>> print(p, p.is_alive())
-       <Process(Process-1, stopped[SIGTERM])> False
+       <Process(..., stopped[SIGTERM])> False
        >>> p.exitcode == -signal.SIGTERM
        True
 
