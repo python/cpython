@@ -472,7 +472,7 @@ def forget(modname):
         # It doesn't matter if they exist or not, unlink all possible
         # combinations of PEP 3147/488 and legacy pyc files.
         unlink(source + 'c')
-        for opt in ('', 1, 2):
+        for opt in sys.implementation.opt_levels:
             unlink(importlib.util.cache_from_source(source, optimization=opt))
 
 # Check whether a gui is actually available

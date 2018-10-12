@@ -736,6 +736,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertTrue(hasattr(sys.implementation, 'version'))
         self.assertTrue(hasattr(sys.implementation, 'hexversion'))
         self.assertTrue(hasattr(sys.implementation, 'cache_tag'))
+        self.assertTrue(hasattr(sys.implementation, 'opt_levels'))
 
         version = sys.implementation.version
         self.assertEqual(version[:2], (version.major, version.minor))

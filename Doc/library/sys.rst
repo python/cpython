@@ -814,6 +814,11 @@ always available.
    ``cache_tag`` is set to ``None``, it indicates that module caching should
    be disabled.
 
+   *opt_levels* is a tuple containing the available compiler-supported
+   optimization levels.  See :pep:`488` for more information.
+
+   .. versionadded:: 3.8
+
    :data:`sys.implementation` may contain additional attributes specific to
    the Python implementation.  These non-standard attributes must start with
    an underscore, and are not described here.  Regardless of its contents,

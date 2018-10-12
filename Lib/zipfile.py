@@ -2034,63 +2034,44 @@ class PyZipFile(ZipFile):
                 return False
             return True
 
+        def _check_cache(pycache, file):
+            return (os.path.isfile(pycache) and
+                    os.stat(pycache).st_mtime >= os.stat(file).st_mtime)
+
         file_py  = pathname + ".py"
         file_pyc = pathname + ".pyc"
-        pycache_opt0 = importlib.util.cache_from_source(file_py, optimization='')
-        pycache_opt1 = importlib.util.cache_from_source(file_py, optimization=1)
-        pycache_opt2 = importlib.util.cache_from_source(file_py, optimization=2)
+
+        pycache_opt = [importlib.util.cache_from_source(file_py, optimization=opt)
+                       for opt in sys.implementation.opt_levels]
         if self._optimize == -1:
             # legacy mode: use whatever file is present
-            if (os.path.isfile(file_pyc) and
-                  os.stat(file_pyc).st_mtime >= os.stat(file_py).st_mtime):
+            if _check_cache(file_pyc, file_py):
                 # Use .pyc file.
                 arcname = fname = file_pyc
-            elif (os.path.isfile(pycache_opt0) and
-                  os.stat(pycache_opt0).st_mtime >= os.stat(file_py).st_mtime):
-                # Use the __pycache__/*.pyc file, but write it to the legacy pyc
-                # file name in the archive.
-                fname = pycache_opt0
-                arcname = file_pyc
-            elif (os.path.isfile(pycache_opt1) and
-                  os.stat(pycache_opt1).st_mtime >= os.stat(file_py).st_mtime):
-                # Use the __pycache__/*.pyc file, but write it to the legacy pyc
-                # file name in the archive.
-                fname = pycache_opt1
-                arcname = file_pyc
-            elif (os.path.isfile(pycache_opt2) and
-                  os.stat(pycache_opt2).st_mtime >= os.stat(file_py).st_mtime):
-                # Use the __pycache__/*.pyc file, but write it to the legacy pyc
-                # file name in the archive.
-                fname = pycache_opt2
-                arcname = file_pyc
             else:
-                # Compile py into PEP 3147 pyc file.
-                if _compile(file_py):
-                    if sys.flags.optimize == 0:
-                        fname = pycache_opt0
-                    elif sys.flags.optimize == 1:
-                        fname = pycache_opt1
-                    else:
-                        fname = pycache_opt2
-                    arcname = file_pyc
+                for pycache in pycache_opt:
+                    if _check_cache(pycache, file_py):
+                        # Use the __pycache__/*.pyc file, but write it to the legacy pyc
+                        # file name in the archive.
+                        fname = pycache
+                        arcname = file_pyc
+                        break
                 else:
-                    fname = arcname = file_py
+                    # Compile py into PEP 3147 pyc file.
+                    if _compile(file_py):
+                        fname = pycache_opt[sys.flags.optimize]
+                        arcname = file_pyc
+                    else:
+                        fname = arcname = file_py
         else:
             # new mode: use given optimization level
-            if self._optimize == 0:
-                fname = pycache_opt0
-                arcname = file_pyc
-            else:
-                arcname = file_pyc
-                if self._optimize == 1:
-                    fname = pycache_opt1
-                elif self._optimize == 2:
-                    fname = pycache_opt2
-                else:
-                    msg = "invalid value for 'optimize': {!r}".format(self._optimize)
-                    raise ValueError(msg)
-            if not (os.path.isfile(fname) and
-                    os.stat(fname).st_mtime >= os.stat(file_py).st_mtime):
+            arcname = file_pyc
+            try:
+                fname = pycache_opt[self._optimize]
+            except IndexError:
+                msg = "invalid value for 'optimize': {!r}".format(self._optimize)
+                raise ValueError(msg)
+            if not _check_cache(fname, file_py):
                 if not _compile(file_py, optimize=self._optimize):
                     fname = arcname = file_py
         archivename = os.path.split(arcname)[1]
