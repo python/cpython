@@ -177,6 +177,10 @@ Added methods :meth:`~tkinter.Spinbox.selection_from`,
 in the :class:`tkinter.Spinbox` class.
 (Contributed by Juliette Monsel in :issue:`34829`.)
 
+Added method :meth:`~tkinter.Canvas.moveto`
+in the :class:`tkinter.Canvas` class.
+(Contributed by Juliette Monsel in :issue:`23831`.)
+
 venv
 ----
 
