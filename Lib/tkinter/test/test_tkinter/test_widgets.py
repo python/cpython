@@ -745,6 +745,29 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         self.checkPixelsParam(widget, 'yscrollincrement',
                               10, 0, 11.2, 13.6, -10, '0.1i')
 
+    @requires_tcl(8, 6)
+    def test_moveto(self):
+        widget = self.create()
+        i1 = widget.create_rectangle(1, 1, 20, 20, tags='group')
+        i2 = widget.create_rectangle(30, 30, 50, 70, tags='group')
+        x1, y1, _, _ = widget.bbox(i1)
+        x2, y2, _, _ = widget.bbox(i2)
+        widget.moveto('group', 200, 100)
+        x1_2, y1_2, _, _ = widget.bbox(i1)
+        x2_2, y2_2, _, _ = widget.bbox(i2)
+        self.assertEqual(x1_2, 200)
+        self.assertEqual(y1_2, 100)
+        self.assertEqual(x2 - x1, x2_2 - x1_2)
+        self.assertEqual(y2 - y1, y2_2 - y1_2)
+        widget.tag_lower(i2, i1)
+        widget.moveto('group', y=50)
+        x1_3, y1_3, _, _ = widget.bbox(i1)
+        x2_3, y2_3, _, _ = widget.bbox(i2)
+        self.assertEqual(y2_3, 50)
+        self.assertEqual(x2_3, x2_2)
+        self.assertEqual(x2_2 - x1_2, x2_3 - x1_3)
+        self.assertEqual(y2_2 - y1_2, y2_3 - y1_3)
+
 
 @add_standard_options(IntegerSizeTests, StandardOptionsTests)
 class ListboxTest(AbstractWidgetTest, unittest.TestCase):
