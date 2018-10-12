@@ -765,7 +765,7 @@ guarantee that the element is printed in any particular order, so a test like ::
    >>> foo()
    {"Hermione", "Harry"}
 
-was vulnerable!  One workaround is to do ::
+is vulnerable!  One workaround is to do ::
 
    >>> foo() == {"Hermione", "Harry"}
    True
