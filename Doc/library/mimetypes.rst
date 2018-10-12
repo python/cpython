@@ -255,7 +255,9 @@ than one MIME-type database; it provides an interface similar to the one of the
 
    .. method:: MimeTypes.read_windows_registry(strict=True)
 
-      Load MIME type information from the Windows registry.  Availability: Windows.
+      Load MIME type information from the Windows registry.
+
+      .. availability:: Windows.
 
       If *strict* is ``True``, information will be added to the list of standard
       types, else to the list of non-standard types.

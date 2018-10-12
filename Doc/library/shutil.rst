@@ -323,7 +323,7 @@ Directory and files operations
 
    .. versionadded:: 3.3
 
-   Availability: Unix, Windows.
+   .. availability:: Unix, Windows.
 
 .. function:: chown(path, user=None, group=None)
 
@@ -334,7 +334,7 @@ Directory and files operations
 
    See also :func:`os.chown`, the underlying function.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
