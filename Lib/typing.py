@@ -1409,12 +1409,13 @@ class NamedTuple(metaclass=NamedTupleMeta):
                             " can be provided to NamedTuple, not both")
         return _make_nmtuple(typename, fields)
 
+class NewType:
 
-def NewType(name, tp):
-    """NewType creates simple unique types with almost zero
-    runtime overhead. NewType(name, tp) is considered a subtype of tp
-    by static type checkers. At runtime, NewType(name, tp) returns
-    a dummy function that simply returns its argument. Usage::
+    """NewType creates simple unique types with almost zero runtime
+    overhead. `NewType(name, tp)` is considered a subtype of `tp`
+    by static type checkers. At runtime, NewType(name, tp) creates
+    a callable instance that simply returns its argument when called.
+    Usage::
 
         UserId = NewType('UserId', int)
 
@@ -1429,17 +1430,29 @@ def NewType(name, tp):
         num = UserId(5) + 1     # type: int
     """
 
-    def new_type(x):
-        return x
+    __slots__ = ('__name__', '__qualname__', '__supertype__')
 
-    new_type.__name__ = name
-    new_type.__supertype__ = tp
-    return new_type
+    def __init__(self, name, tp):
+        self.__name__ = self.__qualname__ = name
+        self.__supertype__ = tp
 
+    @staticmethod
+    def __call__(arg):
+        return arg
+
+    def __repr__(self):
+        """ NewType reprs are in the form:
+           “NewTyprClassName<typename:supertypename>”
+        """
+        return f"{type(self).__name__}<" \
+               f"{self.__qualname__}:" \
+               f"{self.__supertype__.__name__}>"
+
+    def __hash__(self):
+        return hash((self.__name__, self.__supertype__))
 
 # Python-version-specific alias (Python 2: unicode; Python 3: str)
 Text = str
-
 
 # Constant that's True when type checking, but False here.
 TYPE_CHECKING = False

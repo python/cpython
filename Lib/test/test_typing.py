@@ -2414,6 +2414,25 @@ class NewTypeTests(BaseTestCase):
         self.assertIsInstance(UserName('Joe'), str)
         self.assertEqual(UserId(5) + 1, 6)
 
+    def test_definitions(self):
+        UserId = NewType('UserId', int)
+        UserName = NewType('UserName', str)
+        self.assertEqual(UserId.__name__, 'UserId')
+        self.assertEqual(UserId.__qualname__, 'UserId')
+        self.assertIs(UserId.__supertype__, int)
+        self.assertIsInstance(UserId, NewType)
+        self.assertEqual(UserName.__name__, 'UserName')
+        self.assertEqual(UserName.__qualname__, 'UserName')
+        self.assertIs(UserName.__supertype__, str)
+        self.assertIsInstance(UserName, NewType)
+        self.assertNotEqual(hash(UserId), hash(UserName))
+
+    def test_repr(self):
+        UserId = NewType('UserId', int)
+        UserName = NewType('UserName', str)
+        self.assertEqual(repr(UserId), "NewType<UserId:int>")
+        self.assertEqual(repr(UserName), "NewType<UserName:str>")
+
     def test_errors(self):
         UserId = NewType('UserId', int)
         UserName = NewType('UserName', str)

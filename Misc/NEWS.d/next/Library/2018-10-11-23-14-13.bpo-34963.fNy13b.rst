@@ -1,0 +1,3 @@
+Updated the `typing.NewType(…)` function to create real callable types –
+This allows the generated types to furnish a real __repr__ function, while
+retaining the same behavior (specifically, the near-zero runtime overhead).
