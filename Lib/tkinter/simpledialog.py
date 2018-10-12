@@ -28,6 +28,7 @@ from tkinter import messagebox
 
 import tkinter # used at _QueryDialog for tkinter._default_root
 
+
 class SimpleDialog:
 
     def __init__(self, master,
@@ -119,7 +120,6 @@ class Dialog(Toplevel):
     '''
 
     def __init__(self, parent, title = None):
-
         '''Initialize a dialog.
 
         Arguments:
@@ -324,8 +324,10 @@ class _QueryDialog(Dialog):
 
 class _QueryInteger(_QueryDialog):
     errormessage = "Not an integer."
+
     def getresult(self):
         return self.getint(self.entry.get())
+
 
 def askinteger(title, prompt, **kw):
     '''get an integer from the user
@@ -341,10 +343,13 @@ def askinteger(title, prompt, **kw):
     d = _QueryInteger(title, prompt, **kw)
     return d.result
 
+
 class _QueryFloat(_QueryDialog):
     errormessage = "Not a floating point value."
+
     def getresult(self):
         return self.getdouble(self.entry.get())
+
 
 def askfloat(title, prompt, **kw):
     '''get a float from the user
@@ -359,6 +364,7 @@ def askfloat(title, prompt, **kw):
     '''
     d = _QueryFloat(title, prompt, **kw)
     return d.result
+
 
 class _QueryString(_QueryDialog):
     def __init__(self, *args, **kw):
@@ -378,6 +384,7 @@ class _QueryString(_QueryDialog):
     def getresult(self):
         return self.entry.get()
 
+
 def askstring(title, prompt, **kw):
     '''get a string from the user
 
@@ -391,7 +398,6 @@ def askstring(title, prompt, **kw):
     '''
     d = _QueryString(title, prompt, **kw)
     return d.result
-
 
 
 if __name__ == '__main__':
