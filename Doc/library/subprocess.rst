@@ -1330,7 +1330,7 @@ handling consistency are valid for these functions.
       >>> subprocess.getstatusoutput('/bin/kill $$')
       (-15, '')
 
-   Availability: POSIX & Windows
+   .. availability:: POSIX & Windows.
 
    .. versionchanged:: 3.3.4
       Windows support was added.
@@ -1350,7 +1350,7 @@ handling consistency are valid for these functions.
       >>> subprocess.getoutput('ls /bin/ls')
       '/bin/ls'
 
-   Availability: POSIX & Windows
+   .. availability:: POSIX & Windows.
 
    .. versionchanged:: 3.3.4
       Windows support added

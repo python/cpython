@@ -351,7 +351,7 @@ Directory and files operations
    .. versionchanged:: 3.8
      On Windows, *path* can now be a file or directory.
 
-   Availability: Unix, Windows.
+   .. availability:: Unix, Windows.
 
 .. function:: chown(path, user=None, group=None)
 
@@ -362,7 +362,7 @@ Directory and files operations
 
    See also :func:`os.chown`, the underlying function.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 

@@ -107,7 +107,7 @@ asyncio ships with the following built-in policies:
    An alternative event loop policy that uses the
    :class:`SelectorEventLoop` event loop implementation.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
 
 .. class:: WindowsProactorEventLoopPolicy
@@ -115,7 +115,7 @@ asyncio ships with the following built-in policies:
    An alternative event loop policy that uses the
    :class:`ProactorEventLoop` event loop implementation.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
 
 Process Watchers

@@ -171,7 +171,9 @@ The module defines the following:
    :func:`poll` or another interface in this module.  This doesn't apply
    to other kind of file-like objects such as sockets.
 
-   This value is guaranteed by POSIX to be at least 512.  Availability: Unix.
+   This value is guaranteed by POSIX to be at least 512.
+
+   .. availability:: Unix
 
    .. versionadded:: 3.2
 
