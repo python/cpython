@@ -2906,7 +2906,7 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
      */
     static PyObject *print_prefix = NULL;
     static PyObject *exec_prefix = NULL;
-    Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text);
+    Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text), match;
     int kind = PyUnicode_KIND(self->text);
     void *data = PyUnicode_DATA(self->text);
 
@@ -2929,9 +2929,12 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
             return -1;
         }
     }
-    if (PyUnicode_Tailmatch(self->text, print_prefix,
-                            start, text_len, -1)) {
-
+    match = PyUnicode_Tailmatch(self->text, print_prefix,
+                                start, text_len, -1);
+    if (match == -1) {
+        return -1;
+    }
+    if (match) {
         return _set_legacy_print_statement_msg(self, start);
     }
 
@@ -2942,10 +2945,17 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
             return -1;
         }
     }
-    if (PyUnicode_Tailmatch(self->text, exec_prefix,
-                            start, text_len, -1)) {
-        Py_XSETREF(self->msg,
-                  PyUnicode_FromString("Missing parentheses in call to 'exec'"));
+    match = PyUnicode_Tailmatch(self->text, exec_prefix, start, text_len, -1);
+    if (match == -1) {
+        return -1;
+    }
+    if (match) {
+        PyObject *msg = PyUnicode_FromString("Missing parentheses in call "
+                                             "to 'exec'");
+        if (msg == NULL) {
+            return -1;
+        }
+        Py_XSETREF(self->msg, msg);
         return 1;
     }
     /* Fall back to the default error message */
