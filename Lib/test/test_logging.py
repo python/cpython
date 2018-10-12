@@ -3570,16 +3570,34 @@ class FormatterTest(unittest.TestCase):
         self.assertEqual(f._fmt, "{customfield!s:#<30}")
         f = logging.Formatter("{message!r}", style="{")
         self.assertEqual(f._fmt, "{message!r}")
+        f = logging.Formatter("{message!s}", style="{")
+        self.assertEqual(f._fmt, "{message!s}")
+        f = logging.Formatter("{message!a}", style="{")
+        self.assertEqual(f._fmt, "{message!a}")
+        f = logging.Formatter("{process!r:4.2}", style="{")
+        self.assertEqual(f._fmt, "{process!r:4.2}")
         f = logging.Formatter("{process!s:<#30,.12f}- {custom:=+#30,.1d} - {module:^30}", style="{")
         self.assertEqual(f._fmt, "{process!s:<#30,.12f}- {custom:=+#30,.1d} - {module:^30}")
-        f = logging.Formatter("{process!s:{w},{p}}", style="{")
-        self.assertEqual(f._fmt, "{process!s:{w},{p}}")
-        # f = logging.Formatter("{process!s:{{w}},{{p})}", style="{")
-        # self.assertEqual(f._fmt, "{process!s:{{w}},{{p}}}")
+        f = logging.Formatter("{process!s:{w},.{p}}", style="{")
+        self.assertEqual(f._fmt, "{process!s:{w},.{p}}")
+        f = logging.Formatter("{foo:12.{p}}", style="{")
+        self.assertEqual(f._fmt, "{foo:12.{p}}")
+        f = logging.Formatter("{foo:{w}.6}", style="{")
+        self.assertEqual(f._fmt, "{foo:{w}.6}")
+        f = logging.Formatter("{foo[0].bar[1].baz}", style="{")
+        self.assertEqual(f._fmt, "{foo[0].bar[1].baz}")
+        f = logging.Formatter("{foo[k1].bar[k2].baz}", style="{")
+        self.assertEqual(f._fmt, "{foo[k1].bar[k2].baz}")
+        f = logging.Formatter("{12[k1].bar[k2].baz}", style="{")
+        self.assertEqual(f._fmt, "{12[k1].bar[k2].baz}")
 
         # Dollar style
         f = logging.Formatter("${asctime} - $message", style="$")
         self.assertEqual(f._fmt, "${asctime} - $message")
+        f = logging.Formatter("$bar $$", style="$")
+        self.assertEqual(f._fmt, "$bar $$")
+        f = logging.Formatter("$bar $$$$", style="$")
+        self.assertEqual(f._fmt, "$bar $$$$")  # this would print two $($$)
 
         # Testing when ValueError being raised from incorrect format
         # Percentage Style
@@ -3597,30 +3615,30 @@ class FormatterTest(unittest.TestCase):
         # Testing failure for '-' in field name
         self.assert_error_message(
             ValueError,
-            "Invalid format '{name-thing}' for '{' style, Invalid field 'name-thing', cannot have '-' in field name",
+            "invalid field name/expression: 'name-thing'",
             logging.Formatter, "{name-thing}", style="{"
         )
         # Testing failure for style mismatch
         self.assert_error_message(
             ValueError,
-            "Invalid format '{name-thing}' for '{' style, no fields found",
+            "invalid format: no fields",
             logging.Formatter, '%(asctime)s', style='{'
         )
         # Testing failure for invalid conversion
         self.assert_error_message(
             ValueError,
-            "Invalid format '{asctime!Z:15}' for '{' style, invalid conversion 'Z' for 'asctime' field"
+            "invalid conversion: 'Z'"
         )
         self.assertRaises(ValueError, logging.Formatter, '{asctime!s:#30,15f}', style='{')
         self.assert_error_message(
             ValueError,
-            "Invalid format '{asctime!aa:15}' for '{' style, expected ':' after conversion specifier",
+            "invalid format: expected ':' after conversion specifier",
             logging.Formatter, '{asctime!aa:15}', style='{'
         )
         # Testing failure for invalid spec
         self.assert_error_message(
             ValueError,
-            "Invalid format '{asctime!Z:15}' for '{' style, invalid spect '.2ff' for 'process' field",
+            "bad specifier: '.2ff'",
             logging.Formatter, '{process:.2ff}', style='{'
         )
         self.assertRaises(ValueError, logging.Formatter, '{process:.2Z}', style='{')
@@ -3630,18 +3648,55 @@ class FormatterTest(unittest.TestCase):
         # Testing failure for mismatch braces
         self.assert_error_message(
             ValueError,
-            "Invalid format '{process' for '{' style, unmatched '{' in format spec",
+            "invalid format: unmatched '{' in format spec",
             logging.Formatter, '{process', style='{'
         )
         self.assert_error_message(
             ValueError,
-            "Invalid format 'process}' for '{' style, unmatched '{' in format spec",
+            "invalid format: unmatched '{' in format spec",
             logging.Formatter, 'process}', style='{'
         )
+        self.assertRaises(ValueError, logging.Formatter, '{{foo!r:4.2}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{{foo!r:4.2}}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{foo/bar}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{foo:{{w}}.{{p}}}}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{foo!X:{{w}}.{{p}}}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{foo!a:random}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{foo!a:ran{dom}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{foo!a:ran{d}om}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{foo.!a:d}', style='{')
 
         # Dollar style
-        self.assertRaises(ValueError, logging.Formatter, '{asctime}', style='$')
+        # Testing failure for mismatch bare $
+        self.assert_error_message(
+            ValueError,
+            "invalid format: bare \'$\' not allowed",
+            logging.Formatter, '$bar $$$', style='$'
+        )
+        self.assert_error_message(
+            ValueError,
+            "invalid format: bare \'$\' not allowed",
+            logging.Formatter, 'bar $', style='$'
+        )
+        self.assert_error_message(
+            ValueError,
+            "invalid format: bare \'$\' not allowed",
+            logging.Formatter, 'foo $.', style='$'
+        )
+        # Testing failure for mismatch style
+        self.assert_error_message(
+            ValueError,
+            "invalid format: no fields",
+            logging.Formatter, '{asctime}', style='$'
+        )
         self.assertRaises(ValueError, logging.Formatter, '%(asctime)s', style='$')
+
+        # Testing failure for incorrect fields
+        self.assert_error_message(
+            ValueError,
+            "invalid format: no fields",
+            logging.Formatter, 'foo', style='$'
+        )
         self.assertRaises(ValueError, logging.Formatter, '${asctime', style='$')
 
     def test_invalid_style(self):
@@ -3705,6 +3760,7 @@ class ExceptionTest(BaseTest):
                                             'deliberate mistake'))
         self.assertTrue(r.stack_info.startswith('Stack (most recent '
                                               'call last):\n'))
+        print(r.stack_info)
         self.assertTrue(r.stack_info.endswith('logging.exception(\'failed\', '
                                             'stack_info=True)'))
 
