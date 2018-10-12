@@ -234,6 +234,25 @@ Command line options
 
    If *file* is not specified, read from :attr:`sys.stdin`.
 
+.. cmdoption:: -1, --fast
+
+   Indicates the fastest compression method (less compression)
+
+   .. code-block:: shell-session
+
+      $ python -m gzip -1 file
+      $ python -m gzip --fast file
+
+.. cmdoption:: -9, --best
+
+   Indicates the slowest compression method (best compression).
+   This is the default method if you do not specify any flag.
+
+   .. code-block:: shell-session
+
+      $ python -m gzip -9 file
+      $ python -m gzip --best file
+
 .. cmdoption:: -d, --decompress
 
    Decompress the given file

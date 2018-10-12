@@ -17,7 +17,11 @@ FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
 
 READ, WRITE = 1, 2
 
-def open(filename, mode="rb", compresslevel=9,
+COMPRESS_LEVEL_FAST = 1
+COMPRESS_LEVEL_BEST = 9
+
+
+def open(filename, mode="rb", compresslevel=COMPRESS_LEVEL_BEST,
          encoding=None, errors=None, newline=None):
     """Open a gzip-compressed file in binary or text mode.
 
@@ -121,7 +125,7 @@ class GzipFile(_compression.BaseStream):
     myfileobj = None
 
     def __init__(self, filename=None, mode=None,
-                 compresslevel=9, fileobj=None, mtime=None):
+                 compresslevel=COMPRESS_LEVEL_BEST, fileobj=None, mtime=None):
         """Constructor for the GzipFile class.
 
         At least one of fileobj and filename must be given a
@@ -515,7 +519,7 @@ class _GzipReader(_compression.DecompressReader):
         super()._rewind()
         self._new_member = True
 
-def compress(data, compresslevel=9):
+def compress(data, compresslevel=COMPRESS_LEVEL_BEST):
     """Compress data in one shot and return the compressed string.
     Optional argument is the compression level, in range of 0-9.
     """
@@ -539,12 +543,22 @@ def main():
         "but do not delete the input file.")
     parser.add_argument("-d", "--decompress", action="store_true",
                         help="act like gunzip instead of gzip")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-1', '--fast', action='store_true', help='compress faster')
+    group.add_argument('-9', '--best', action='store_true', help='compress bester')
+
     parser.add_argument("args", nargs="*", default=["-"], metavar='file')
     args = parser.parse_args()
+
+    compresslevel = COMPRESS_LEVEL_BEST
+    if args.fast:
+        compresslevel = COMPRESS_LEVEL_FAST 
+
     for arg in args.args:
         if args.decompress:
             if arg == "-":
-                f = GzipFile(filename="", mode="rb", fileobj=sys.stdin.buffer)
+                f = GzipFile(filename="", mode="rb", fileobj=sys.stdin.buffer,
+                             compresslevel=compresslevel)
                 g = sys.stdout.buffer
             else:
                 if arg[-3:] != ".gz":
@@ -555,7 +569,8 @@ def main():
         else:
             if arg == "-":
                 f = sys.stdin.buffer
-                g = GzipFile(filename="", mode="wb", fileobj=sys.stdout.buffer)
+                g = GzipFile(filename="", mode="wb", fileobj=sys.stdout.buffer,
+                             compresslevel=compresslevel)
             else:
                 f = builtins.open(arg, "rb")
                 g = open(arg + ".gz", "wb")

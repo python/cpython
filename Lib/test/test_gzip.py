@@ -12,7 +12,7 @@ import unittest
 from subprocess import PIPE, Popen
 from test import support
 from test.support import _4G, bigmemtest
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok, assert_python_failure
 
 gzip = support.import_module('gzip')
 
@@ -687,6 +687,19 @@ def create_and_remove_directory(directory):
     return decorator
 
 
+def add_compress_level_flag(*compress_levels):
+    def decorator(function):
+        @functools.wraps(function)
+        def wrapper(*args, **kwargs):
+            self = args[0]
+            for compress_level in compress_levels:
+                with self.subTest(compress_level=compress_level):
+                    kwargs.update(compress_level=compress_level)
+                    function(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 class TestCommandLine(unittest.TestCase):
     data = b'This is a simple test with gzip'
 
@@ -749,6 +762,30 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
+
+    @add_compress_level_flag('-1', '--fast', '-9', '--best')
+    @create_and_remove_directory(TEMPDIR)
+    def test_compress_infile_outfile(self, compress_level):
+        local_testgzip = os.path.join(TEMPDIR, 'testgzip')
+        gzipname = local_testgzip + '.gz'
+        self.assertFalse(os.path.exists(gzipname))
+
+        with open(local_testgzip, 'wb') as fp:
+            fp.write(self.data)
+
+        rc, out, err = assert_python_ok('-m', 'gzip', compress_level, local_testgzip)
+
+        self.assertTrue(os.path.exists(gzipname))
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+
+    def test_compress_fast_best_are_exclusive(self):
+        rc, out, err = assert_python_failure('-m', 'gzip', '-1', '-9')
+        self.assertIn(b"error: argument -9/--best: not allowed with argument -1/--fast", err)
+        self.assertGreater(rc, 0)
+        self.assertEqual(out, b'')
 
 
 def test_main(verbose=None):
