@@ -30,12 +30,13 @@ from idlelib.autocomplete import AutoComplete
 from idlelib.codecontext import CodeContext
 from idlelib.parenmatch import ParenMatch
 from idlelib.paragraph import FormatParagraph
+from idlelib.searchbar import SearchBar
 from idlelib.squeezer import Squeezer
 
 changes = ConfigChanges()
 # Reload changed options in the following classes.
 reloadables = (AutoComplete, CodeContext, ParenMatch, FormatParagraph,
-               Squeezer)
+               SearchBar, Squeezer)
 
 
 class ConfigDialog(Toplevel):
@@ -1819,6 +1820,9 @@ class GenPage(Frame):
                 frame_context: Frame
                     context_title: Label
                     (*)context_int: Entry - context_lines
+            frame_search: LabelFrame
+                frame_incremental_search: Frame
+                    (*)incremental_search_on: Checkbutton - incremental_search
             frame_shell: LabelFrame
                 frame_auto_squeeze_min_lines: Frame
                     auto_squeeze_min_lines_title: Label
@@ -1848,6 +1852,9 @@ class GenPage(Frame):
         self.paren_bell = tracers.add(
                 BooleanVar(self), ('extensions', 'ParenMatch', 'bell'))
 
+        self.incremental_search = tracers.add(
+                BooleanVar(self), ('main', 'Search', 'is-incremental'))
+
         self.auto_squeeze_min_lines = tracers.add(
                 StringVar(self), ('main', 'PyShell', 'auto-squeeze-min-lines'))
 
@@ -1864,6 +1871,8 @@ class GenPage(Frame):
                                   text=' Window Preferences')
         frame_editor = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                   text=' Editor Preferences')
+        frame_search = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                  text=' Search Preferences')
         frame_shell = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                  text=' Shell Preferences')
         frame_help = LabelFrame(self, borderwidth=2, relief=GROOVE,
@@ -1929,6 +1938,14 @@ class GenPage(Frame):
         self.context_int = Entry(
                 frame_context, textvariable=self.context_lines, width=3)
 
+        # Frame_search.
+        frame_incremental_search = Frame(frame_search, borderwidth=0)
+        self.incremental_search_on = Checkbutton(
+            frame_incremental_search,
+            text='Incremental Search (as-you-type)',
+            variable=self.incremental_search,
+        )
+
         # Frame_shell.
         frame_auto_squeeze_min_lines = Frame(frame_shell, borderwidth=0)
         auto_squeeze_min_lines_title = Label(frame_auto_squeeze_min_lines,
@@ -1961,6 +1978,7 @@ class GenPage(Frame):
         # Body.
         frame_window.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_editor.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        frame_search.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_shell.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         # frame_run.
@@ -2002,6 +2020,10 @@ class GenPage(Frame):
         context_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.context_int.pack(side=TOP, padx=5, pady=5)
 
+        # frame_incremental_search
+        frame_incremental_search.pack(side=TOP, padx=5, pady=0, fill=X)
+        self.incremental_search_on.pack(side=LEFT, padx=5, pady=5)
+
         # frame_auto_squeeze_min_lines
         frame_auto_squeeze_min_lines.pack(side=TOP, padx=5, pady=0, fill=X)
         auto_squeeze_min_lines_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
@@ -2041,6 +2063,10 @@ class GenPage(Frame):
                 'extensions', 'FormatParagraph', 'max-width', type='int'))
         self.context_lines.set(idleConf.GetOption(
                 'extensions', 'CodeContext', 'maxlines', type='int'))
+
+        # Set variables for search.
+        self.incremental_search.set(idleConf.GetOption(
+                'main', 'Search', 'is-incremental', type='bool'))
 
         # Set variables for shell windows.
         self.auto_squeeze_min_lines.set(idleConf.GetOption(

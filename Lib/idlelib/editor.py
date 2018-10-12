@@ -21,8 +21,6 @@ from idlelib import macosx
 from idlelib.multicall import MultiCallCreator
 from idlelib import pyparse
 from idlelib import query
-from idlelib import replace
-from idlelib import search
 from idlelib import window
 
 # The default tab setting for a Text widget, in average-width characters.
@@ -56,6 +54,7 @@ class EditorWindow(object):
     from idlelib.paragraph import FormatParagraph
     from idlelib.parenmatch import ParenMatch
     from idlelib.rstrip import Rstrip
+    from idlelib.searchbar import SearchBar
     from idlelib.squeezer import Squeezer
     from idlelib.zoomheight import ZoomHeight
 
@@ -161,11 +160,7 @@ class EditorWindow(object):
         text.bind("<<do-nothing>>", lambda event: "break")
         text.bind("<<select-all>>", self.select_all)
         text.bind("<<remove-selection>>", self.remove_selection)
-        text.bind("<<find>>", self.find_event)
-        text.bind("<<find-again>>", self.find_again_event)
         text.bind("<<find-in-files>>", self.find_in_files_event)
-        text.bind("<<find-selection>>", self.find_selection_event)
-        text.bind("<<replace>>", self.replace_event)
         text.bind("<<goto-line>>", self.goto_line_event)
         text.bind("<<smart-backspace>>",self.smart_backspace_event)
         text.bind("<<newline-and-indent>>",self.newline_and_indent_event)
@@ -317,6 +312,11 @@ class EditorWindow(object):
         text.bind("<<zoom-height>>", self.ZoomHeight(self).zoom_height_event)
         text.bind("<<toggle-code-context>>",
                   self.CodeContext(self).toggle_code_context_event)
+        searchbar = self.SearchBar(self)
+        text.bind("<<find>>", searchbar.search_event)
+        text.bind("<<find-again>>", searchbar.search_again_event)
+        text.bind("<<find-selection>>", searchbar.search_selection_event)
+        text.bind("<<replace>>", searchbar.replace_event)
         squeezer = self.Squeezer(self)
         text.bind("<<squeeze-current-text>>",
                   squeezer.squeeze_current_text_event)
@@ -627,24 +627,8 @@ class EditorWindow(object):
         self.text.event_generate('<Meta-d>')
         return "break"
 
-    def find_event(self, event):
-        search.find(self.text)
-        return "break"
-
-    def find_again_event(self, event):
-        search.find_again(self.text)
-        return "break"
-
-    def find_selection_event(self, event):
-        search.find_selection(self.text)
-        return "break"
-
     def find_in_files_event(self, event):
         grep.grep(self.text, self.io, self.flist)
-        return "break"
-
-    def replace_event(self, event):
-        replace.replace(self.text)
         return "break"
 
     def goto_line_event(self, event):

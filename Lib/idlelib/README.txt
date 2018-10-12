@@ -67,15 +67,15 @@ pyparse.py        # Give information on code indentation
 pyshell.py        # Start IDLE, manage shell, complete editor window
 query.py          # Query user for information
 redirector.py     # Intercept widget subcommands (for percolator) (nim).
-replace.py        # Search and replace pattern in text.
 rpc.py            # Commuicate between idle and user processes (nim).
 rstrip.py         # Strip trailing whitespace.
 run.py            # Manage user code execution subprocess.
 runscript.py      # Check and run user code.
 scrolledlist.py   # Define scrolledlist widget for IDLE (nim).
-search.py         # Search for pattern in text.
+searchbar.py      # Search for pattern in text.
 searchbase.py     # Define base for search, replace, and grep dialogs.
 searchengine.py   # Define engine for all 3 search dialogs.
+squeezer.py       # "Squeeze" shell outputs and errors.
 stackviewer.py    # View stack after exception.
 statusbar.py      # Define status bar for windows (nim).
 tabbedpages.py    # Define tabbed pages widget (nim).
@@ -83,6 +83,7 @@ textview.py       # Define read-only text widget (nim).
 tree.py           # Define tree widger, used in browsers (nim).
 undo.py           # Manage undo stack.
 windows.py        # Manage window list and define listed top level.
+windowsearchengine.py # Per-window search engine.
 zoomheight.py     # Zoom window to full height of screen.
 
 Configuration
@@ -148,11 +149,11 @@ Edit
   Paste            # eEW.past
   Select All       # eEW.select_all (+ see eEW.remove_selection)
   ---              # Next 5 items use searchengine; dialogs use searchbase
-  Find             # eEW.find_event, search.SearchDialog.find
-  Find Again       # eEW.find_again_event, sSD.find_again
-  Find Selection   # eEW.find_selection_event, sSD.find_selection
+  Find             # searchbar.FindBar.show_event
+  Find Again       # searchbar.FindBar.search_again_event
+  Find Selection   # searchbar.FindBar.search_selection_event
   Find in Files... # eEW.find_in_files_event, grep
-  Replace...       # eEW.replace_event, replace.ReplaceDialog.replace
+  Replace...       # searchbar.ReplaceBar.show_event
   Go to Line       # eEW.goto_line_event
   Show Completions # autocomplete extension and autocompleteWidow (&HP)
   Expand Word      # autoexpand extension

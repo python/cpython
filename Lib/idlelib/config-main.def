@@ -89,3 +89,6 @@ name2=
 cyclic=1
 
 [HelpFiles]
+
+[Search]
+is-incremental= 1
