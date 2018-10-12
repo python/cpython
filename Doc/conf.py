@@ -16,6 +16,13 @@ sys.path.append(os.path.abspath('includes'))
 extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
               'pyspecific', 'c_annotations', 'escape4chm']
 
+
+doctest_global_setup = '''
+try:
+    import _tkinter
+except ImportError:
+    _tkinter = None
+'''
 # General substitutions.
 project = 'Python'
 copyright = '2001-%s, Python Software Foundation' % time.strftime('%Y')

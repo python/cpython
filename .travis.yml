@@ -53,8 +53,8 @@ matrix:
         - cd Doc
         # Sphinx is pinned so that new versions that introduce new warnings won't suddenly cause build failures.
         # (Updating the version is fine as long as no warnings are raised by doing so.)
-        # The theme used by the docs is stored seperately, so we need to install that as well.
-        - python -m pip install sphinx~=1.6.1 blurb python-docs-theme
+        # The theme used by the docs is stored separately, so we need to install that as well.
+        - python -m pip install sphinx blurb python-docs-theme
       script:
         - make check suspicious html SPHINXOPTS="-q -W -j4"
     - os: osx
@@ -155,8 +155,14 @@ script:
   # Check that all symbols exported by libpython start with "Py" or "_Py"
   - make smelly
   # `-r -w` implicitly provided through `make buildbottest`.
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then XVFB_RUN=xvfb-run; fi; $XVFB_RUN make buildbottest TESTOPTS="-j4 -uall,-cpu"
-
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      XVFB_RUN=xvfb-run;
+    fi
+    $XVFB_RUN make buildbottest TESTOPTS="-j4 -uall,-cpu"
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      $XVFB_RUN make PYTHON=../python SPHINXOPTS="-q -W -j4" -C Doc/ venv doctest
+    fi
 notifications:
   email: false
   webhooks:
