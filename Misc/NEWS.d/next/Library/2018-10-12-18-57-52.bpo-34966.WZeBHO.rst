@@ -1,0 +1,2 @@
+:mod:`pydoc` now supports aliases to inherited methods, not just to defined
+in the end class.
