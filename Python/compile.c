@@ -2670,8 +2670,9 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
             cleanup_end = compiler_new_block(c);
             cleanup_body = compiler_new_block(c);
-            if (!(cleanup_end || cleanup_body))
+            if (cleanup_end == NULL || cleanup_body == NULL) {
                 return 0;
+            }
 
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             ADDOP(c, POP_TOP);
