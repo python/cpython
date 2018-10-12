@@ -1234,9 +1234,7 @@ Checking for a Pair
 ^^^^^^^^^^^^^^^^^^^
 
 In this example, we'll use the following helper function to display match
-objects a little more gracefully:
-
-.. testcode::
+objects a little more gracefully::
 
    def displaymatch(match):
        if match is None:
@@ -1269,10 +1267,9 @@ To match this with a regular expression, one could use backreferences as such::
    "<Match: '354aa', groups=('a',)>"
 
 To find out what card the pair consists of, one could use the
-:meth:`~Match.group` method of the match object in the following manner:
+:meth:`~Match.group` method of the match object in the following manner::
 
-.. doctest::
-
+   >>> pair = re.compile(r".*(.).*\1")
    >>> pair.match("717ak").group(1)
    '7'
 
@@ -1377,7 +1374,9 @@ easily read and modified by Python as demonstrated in the following example that
 creates a phonebook.
 
 First, here is the input.  Normally it may come from a file, here we are using
-triple-quoted string syntax::
+triple-quoted string syntax
+
+.. doctest::
 
    >>> text = """Ross McFluff: 834.345.1254 155 Elm Street
    ...
