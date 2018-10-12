@@ -173,7 +173,7 @@ The module defines the following:
 
    This value is guaranteed by POSIX to be at least 512.
 
-   ..availability:: Unix
+   .. availability:: Unix
 
    .. versionadded:: 3.2
 
