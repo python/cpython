@@ -544,7 +544,7 @@ def main():
         "but do not delete the input file.")
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--fast', action='store_true', help='compress faster')
-    group.add_argument('--best', action='store_true', help='compress bester')
+    group.add_argument('--best', action='store_true', help='compress better')
     group.add_argument("-d", "--decompress", action="store_true",
                         help="act like gunzip instead of gzip")
 
