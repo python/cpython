@@ -3760,7 +3760,6 @@ class ExceptionTest(BaseTest):
                                             'deliberate mistake'))
         self.assertTrue(r.stack_info.startswith('Stack (most recent '
                                               'call last):\n'))
-        print(r.stack_info)
         self.assertTrue(r.stack_info.endswith('logging.exception(\'failed\', '
                                             'stack_info=True)'))
 
