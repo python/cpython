@@ -33,6 +33,7 @@ from asyncio import events
 from asyncio import proactor_events
 from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
+from test.ssl_servers import make_https_server
 from test import support
 
 
@@ -613,6 +614,68 @@ class EventLoopTestsMixin:
                 *httpd.address)
             self._test_create_ssl_connection(httpd, create_connection,
                                              peername=httpd.address)
+
+    @unittest.skipIf(ssl is None, 'No ssl module')
+    def test_create_ssl_connection_with_session(self):
+        server_context = test_utils.simple_server_sslcontext()
+        server = make_https_server(self, context=server_context)
+
+        client_context = test_utils.simple_client_sslcontext()
+        # TODO: sessions aren't compatible with TLSv1.3 yet
+        client_context.options |= ssl.OP_NO_TLSv1_3
+
+        def new_conn(*, session=None):
+            create_connection = functools.partial(
+                self.loop.create_connection,
+                lambda: MyProto(loop=self.loop),
+                'localhost', server.port)
+            conn_fut = create_connection(ssl=client_context, ssl_session=session)
+            tr, pr = self.loop.run_until_complete(conn_fut)
+            self.loop.run_until_complete(pr.done)
+            sslobj = tr.get_extra_info('ssl_object')
+            stats = {
+                'session': sslobj.session,
+                'session_reused': sslobj.session_reused,
+            }
+            tr.close()
+            return stats
+
+        # first connection without session
+        stats = new_conn()
+        session = stats['session']
+        self.assertTrue(session.id)
+        self.assertGreater(session.time, 0)
+        self.assertGreater(session.timeout, 0)
+        self.assertTrue(session.has_ticket)
+        if ssl.OPENSSL_VERSION_INFO > (1, 0, 1):
+            self.assertGreater(session.ticket_lifetime_hint, 0)
+        self.assertFalse(stats['session_reused'])
+
+        # reuse session
+        stats = new_conn(session=session)
+        self.assertTrue(stats['session_reused'])
+        session2 = stats['session']
+        self.assertEqual(session2.id, session.id)
+        self.assertEqual(session2, session)
+        self.assertIsNot(session2, session)
+        self.assertGreaterEqual(session2.time, session.time)
+        self.assertGreaterEqual(session2.timeout, session.timeout)
+
+        # another one without session
+        stats = new_conn()
+        self.assertFalse(stats['session_reused'])
+        session3 = stats['session']
+        self.assertNotEqual(session3.id, session.id)
+        self.assertNotEqual(session3, session)
+
+        # reuse session again
+        stats = new_conn(session=session)
+        self.assertTrue(stats['session_reused'])
+        session4 = stats['session']
+        self.assertEqual(session4.id, session.id)
+        self.assertEqual(session4, session)
+        self.assertGreaterEqual(session4.time, session.time)
+        self.assertGreaterEqual(session4.timeout, session.timeout)
 
     @support.skip_unless_bind_unix_socket
     @unittest.skipIf(ssl is None, 'No ssl module')

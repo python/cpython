@@ -432,7 +432,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             *, server_side=False, server_hostname=None,
             extra=None, server=None,
             ssl_handshake_timeout=None,
-            call_connection_made=True):
+            call_connection_made=True,
+            ssl_session=None):
         """Create SSL transport."""
         raise NotImplementedError
 
@@ -866,7 +867,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             *, ssl=None, family=0,
             proto=0, flags=0, sock=None,
             local_addr=None, server_hostname=None,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            ssl_session=None):
         """Connect to a TCP server.
 
         Create a streaming transport connection to a given Internet host and
@@ -900,6 +902,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         if ssl_handshake_timeout is not None and not ssl:
             raise ValueError(
                 'ssl_handshake_timeout is only meaningful with ssl')
+
+        if ssl_session is not None and not ssl:
+            raise ValueError('ssl_session is only meaningful with ssl')
 
         if host is not None or port is not None:
             if sock is not None:
@@ -984,7 +989,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname,
-            ssl_handshake_timeout=ssl_handshake_timeout)
+            ssl_handshake_timeout=ssl_handshake_timeout,
+            ssl_session=ssl_session)
         if self._debug:
             # Get the socket from the transport because SSL transport closes
             # the old socket and creates a new SSL socket
@@ -996,7 +1002,8 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def _create_connection_transport(
             self, sock, protocol_factory, ssl,
             server_hostname, server_side=False,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            ssl_session=None):
 
         sock.setblocking(False)
 
@@ -1007,7 +1014,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             transport = self._make_ssl_transport(
                 sock, protocol, sslcontext, waiter,
                 server_side=server_side, server_hostname=server_hostname,
-                ssl_handshake_timeout=ssl_handshake_timeout)
+                ssl_handshake_timeout=ssl_handshake_timeout,
+                ssl_session=ssl_session)
         else:
             transport = self._make_socket_transport(sock, protocol, waiter)
 

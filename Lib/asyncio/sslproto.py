@@ -53,7 +53,7 @@ class _SSLPipe(object):
 
     max_size = 256 * 1024   # Buffer size passed to read()
 
-    def __init__(self, context, server_side, server_hostname=None):
+    def __init__(self, context, server_side, server_hostname=None, session=None):
         """
         The *context* argument specifies the ssl.SSLContext to use.
 
@@ -67,6 +67,7 @@ class _SSLPipe(object):
         self._context = context
         self._server_side = server_side
         self._server_hostname = server_hostname
+        self._session = session
         self._state = _UNWRAPPED
         self._incoming = ssl.MemoryBIO()
         self._outgoing = ssl.MemoryBIO()
@@ -117,7 +118,8 @@ class _SSLPipe(object):
         self._sslobj = self._context.wrap_bio(
             self._incoming, self._outgoing,
             server_side=self._server_side,
-            server_hostname=self._server_hostname)
+            server_hostname=self._server_hostname,
+            session=self._session)
         self._state = _DO_HANDSHAKE
         self._handshake_cb = callback
         ssldata, appdata = self.feed_ssldata(b'', only_handshake=True)
@@ -412,7 +414,8 @@ class SSLProtocol(protocols.Protocol):
     def __init__(self, loop, app_protocol, sslcontext, waiter,
                  server_side=False, server_hostname=None,
                  call_connection_made=True,
-                 ssl_handshake_timeout=None):
+                 ssl_handshake_timeout=None,
+                 ssl_session=None):
         if ssl is None:
             raise RuntimeError('stdlib ssl module not available')
 
@@ -433,9 +436,10 @@ class SSLProtocol(protocols.Protocol):
         else:
             self._server_hostname = None
         self._sslcontext = sslcontext
+        self._ssl_session = ssl_session
         # SSL-specific extra info. More info are set when the handshake
         # completes.
-        self._extra = dict(sslcontext=sslcontext)
+        self._extra = dict(sslcontext=sslcontext, ssl_session=ssl_session)
 
         # App data write buffering
         self._write_backlog = collections.deque()
@@ -478,7 +482,8 @@ class SSLProtocol(protocols.Protocol):
         self._transport = transport
         self._sslpipe = _SSLPipe(self._sslcontext,
                                  self._server_side,
-                                 self._server_hostname)
+                                 self._server_hostname,
+                                 self._ssl_session)
         self._start_handshake()
 
     def connection_lost(self, exc):
