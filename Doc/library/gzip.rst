@@ -222,6 +222,8 @@ Once executed the :mod:`gzip` module keeps the input file(s).
 .. versionchanged:: 3.8
 
    Add a new command line interface with a usage.
+   By default, when you will execute the CLI, the default compression level is 6,
+   it's a good tradeoff between the best and fast compression methods.
 
 Command line options
 ^^^^^^^^^^^^^^^^^^^^

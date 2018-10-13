@@ -18,6 +18,7 @@ FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
 READ, WRITE = 1, 2
 
 COMPRESS_LEVEL_FAST = 1
+COMPRESS_LEVEL_TRADEOFF = 6
 COMPRESS_LEVEL_BEST = 9
 
 
@@ -550,9 +551,11 @@ def main():
     parser.add_argument("args", nargs="*", default=["-"], metavar='file')
     args = parser.parse_args()
 
-    compresslevel = COMPRESS_LEVEL_BEST
+    compresslevel = COMPRESS_LEVEL_TRADEOFF
     if args.fast:
         compresslevel = COMPRESS_LEVEL_FAST
+    elif args.best:
+        compresslevel = COMPRESS_LEVEL_BEST
 
     for arg in args.args:
         if args.decompress:
