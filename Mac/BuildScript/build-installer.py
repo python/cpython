@@ -242,62 +242,28 @@ def library_recipes():
                   "TCL_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tcl8.6'%(getVersion())),
                   },
               ),
+          dict(
+              name="Tk 8.6.8",
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk8.6.8-src.tar.gz",
+              checksum='5e0faecba458ee1386078fb228d008ba',
+              patches=[
+                  "tk868_on_10_8_10_9.patch",
+                   ],
+              buildDir="unix",
+              configure_pre=[
+                    '--enable-aqua',
+                    '--enable-shared',
+                    '--enable-threads',
+                    '--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib'%(getVersion(),),
+              ],
+              useLDFlags=False,
+              install='make TCL_LIBRARY=%(TCL_LIBRARY)s TK_LIBRARY=%(TK_LIBRARY)s && make install TCL_LIBRARY=%(TCL_LIBRARY)s TK_LIBRARY=%(TK_LIBRARY)s DESTDIR=%(DESTDIR)s'%{
+                  "DESTDIR": shellQuote(os.path.join(WORKDIR, 'libraries')),
+                  "TCL_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tcl8.6'%(getVersion())),
+                  "TK_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tk8.6'%(getVersion())),
+                  },
+                ),
         ])
-
-        # temporary workaround in 3.7.1 for addressing bpo-34370:
-        #   use development snapshot of Tk 8.6 branch (post 8.6.8) to pick up
-        #   potential fixes for various scrolling problems seen with 8.6.8.
-        #   However, the snapshot fails to build on 10.6.  For the moment,
-        #   continue to build the 3.7.x 10.6 variant with the standard
-        #   8.6.6 branch.
-        if getDeptargetTuple() < (10, 9):
-            result.extend([
-              dict(
-                  name="Tk 8.6.8",
-                  url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk8.6.8-src.tar.gz",
-                  checksum='5e0faecba458ee1386078fb228d008ba',
-                  patches=[
-                      "tk868_on_10_8_10_9.patch",
-                       ],
-                  buildDir="unix",
-                  configure_pre=[
-                        '--enable-aqua',
-                        '--enable-shared',
-                        '--enable-threads',
-                        '--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib'%(getVersion(),),
-                  ],
-                  useLDFlags=False,
-                  install='make TCL_LIBRARY=%(TCL_LIBRARY)s TK_LIBRARY=%(TK_LIBRARY)s && make install TCL_LIBRARY=%(TCL_LIBRARY)s TK_LIBRARY=%(TK_LIBRARY)s DESTDIR=%(DESTDIR)s'%{
-                      "DESTDIR": shellQuote(os.path.join(WORKDIR, 'libraries')),
-                      "TCL_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tcl8.6'%(getVersion())),
-                      "TK_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tk8.6'%(getVersion())),
-                      },
-                    ),
-            ])
-        else:
-            result.extend([
-              dict(
-                  name="Tk 8.6.8+",
-                  url="http://core.tcl.tk/tk/tarball/16fdad9d/tk-16fdad9d.tar.gz",
-                  checksum='b8e0df69021924e8392f03d506252bdb',
-                  patches=[
-                      "tk868_on_10_8_10_9.patch",
-                       ],
-                  buildDir="unix",
-                  configure_pre=[
-                        '--enable-aqua',
-                        '--enable-shared',
-                        '--enable-threads',
-                        '--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib'%(getVersion(),),
-                  ],
-                  useLDFlags=False,
-                  install='make TCL_LIBRARY=%(TCL_LIBRARY)s TK_LIBRARY=%(TK_LIBRARY)s && make install TCL_LIBRARY=%(TCL_LIBRARY)s TK_LIBRARY=%(TK_LIBRARY)s DESTDIR=%(DESTDIR)s'%{
-                      "DESTDIR": shellQuote(os.path.join(WORKDIR, 'libraries')),
-                      "TCL_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tcl8.6'%(getVersion())),
-                      "TK_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tk8.6'%(getVersion())),
-                      },
-                    ),
-            ])
 
     if PYTHON_3:
         result.extend([

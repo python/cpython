@@ -1,0 +1,159 @@
+.. bpo: 34879
+.. date: 2018-10-02-22-55-11
+.. nonce: 7VNH2a
+.. release date: 2018-10-13
+.. section: Core and Builtins
+
+Fix a possible null pointer dereference in bytesobject.c.  Patch by Zackery
+Spytz.
+
+..
+
+.. bpo: 34854
+.. date: 2018-09-30-19-27-13
+.. nonce: 6TKTcB
+.. section: Core and Builtins
+
+Fixed a crash in compiling string annotations containing a lambda with a
+keyword-only argument that doesn't have a default value.
+
+..
+
+.. bpo: 34320
+.. date: 2018-08-02-22-34-59
+.. nonce: hNshAA
+.. section: Core and Builtins
+
+Fix ``dict(od)`` didn't copy iteration order of OrderedDict.
+
+..
+
+.. bpo: 34769
+.. date: 2018-10-09-11-01-16
+.. nonce: cSkkZt
+.. section: Library
+
+Fix for async generators not finalizing when event loop is in debug mode and
+garbage collector runs in another thread.
+
+..
+
+.. bpo: 34922
+.. date: 2018-10-07-21-18-52
+.. nonce: 37IdsA
+.. section: Library
+
+Fixed integer overflow in the :meth:`~hashlib.shake.digest()` and
+:meth:`~hashlib.shake.hexdigest()` methods for the SHAKE algorithm in the
+:mod:`hashlib` module.
+
+..
+
+.. bpo: 34900
+.. date: 2018-10-05-05-55-53
+.. nonce: 8RNiFu
+.. section: Library
+
+Fixed :meth:`unittest.TestCase.debug` when used to call test methods with
+subtests.  Patch by Bruno Oliveira.
+
+..
+
+.. bpo: 34871
+.. date: 2018-10-04-18-46-54
+.. nonce: t3X-dB
+.. section: Library
+
+Fix inspect module polluted ``sys.modules`` when parsing
+``__text_signature__`` of callable.
+
+..
+
+.. bpo: 34872
+.. date: 2018-10-02-19-36-34
+.. nonce: yWZRhI
+.. section: Library
+
+Fix self-cancellation in C implementation of asyncio.Task
+
+..
+
+.. bpo: 34819
+.. date: 2018-09-27-09-45-00
+.. nonce: 9ZaFyO
+.. section: Library
+
+Use a monotonic clock to compute timeouts in :meth:`Executor.map` and
+:func:`as_completed`, in order to prevent timeouts from deviating when the
+system clock is adjusted.
+
+..
+
+.. bpo: 34334
+.. date: 2018-09-25-08-42-34
+.. nonce: rSPBW9
+.. section: Library
+
+In :class:`QueueHandler`, clear `exc_text` from :class:`LogRecord` to
+prevent traceback from being written twice.
+
+..
+
+.. bpo: 6721
+.. date: 2018-09-13-10-09-19
+.. nonce: ZUL_F3
+.. section: Library
+
+Acquire the logging module's commonly used internal locks while fork()ing to
+avoid deadlocks in the child process.
+
+..
+
+.. bpo: 34172
+.. date: 2018-07-26-10-31-52
+.. nonce: 8ovLNi
+.. section: Library
+
+Fix a reference issue inside multiprocessing.Pool that caused the pool to
+remain alive if it was deleted without being closed or terminated
+explicitly.
+
+..
+
+.. bpo: 32174
+.. date: 2018-10-08-19-15-28
+.. nonce: YO9CYm
+.. section: Documentation
+
+chm document displays non-ASCII charaters properly on some MBCS Windows
+systems.
+
+..
+
+.. bpo: 32962
+.. date: 2018-05-10-16-59-15
+.. nonce: S-rcIN
+.. section: Tests
+
+Fixed test_gdb when Python is compiled with flags -mcet -fcf-protection -O0.
+
+..
+
+.. bpo: 34370
+.. date: 2018-10-12-22-43-02
+.. nonce: kTJas4
+.. section: macOS
+
+Revert to using the released Tk 8.6.8 with macOS installers instead of the
+Tk 8.6.x development snapshot used with 3.7.1rc1 and 3.6.7rc1. The snapshot
+introduced at least one significant regression (bpo-34927).
+
+..
+
+.. bpo: 34910
+.. date: 2018-10-05-17-06-49
+.. nonce: tSFrls
+.. section: C API
+
+Ensure that :c:func:`PyObject_Print` always returns ``-1`` on error.  Patch
+by Zackery Spytz.

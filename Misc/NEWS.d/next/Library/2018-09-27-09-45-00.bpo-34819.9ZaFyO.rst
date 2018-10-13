@@ -1,1 +1,0 @@
-Use a monotonic clock to compute timeouts in :meth:`Executor.map` and :func:`as_completed`, in order to prevent timeouts from deviating when the system clock is adjusted.
