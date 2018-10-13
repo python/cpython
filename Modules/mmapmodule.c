@@ -682,6 +682,58 @@ mmap__exit__method(PyObject *self, PyObject *args)
     return _PyObject_CallMethodId(self, &PyId_close, NULL);
 }
 
+static PyObject *
+mmap__repr__method(PyObject *self)
+{
+    Py_ssize_t num_bytes = PY_SSIZE_T_MAX, remaining;
+    PyObject *repr;
+    mmap_object *m_obj;
+    m_obj = (mmap_object *) self;
+    const char *reprfmt;
+    const char *access_str;
+    
+    switch (m_obj->access)
+    {
+        case ACCESS_DEFAULT: 
+            access_str = "ACCESS_DEFAULT";
+            break;
+    
+        case ACCESS_READ:
+            access_str = "ACCESS_READ";
+            break;
+        
+        case ACCESS_WRITE:
+            access_str = "ACCESS_WRITE";
+            break;
+        case ACCESS_COPY:
+            access_str = "ACCESS_COPY";
+            break;
+        default:
+            PyErr_SetString(PyExc_IOError, "Unknown access mode for mmap object.");
+            return NULL;
+    }
+
+    if (m_obj -> data == NULL)
+    {
+        reprfmt = "<%s is_closed=True fileno=%d access=%s>";
+        repr = PyUnicode_FromFormat(reprfmt, self->ob_type->tp_name, m_obj->fd, access_str);
+    }
+    else {
+        reprfmt = "<%s is_closed=False fileno=%d access=%s length=%s offset=%s entire_contents=%s>";
+        PyObject *entire_contents;
+        entire_contents = PyBytes_FromStringAndSize(&m_obj->data, m_obj->size);
+        repr = PyUnicode_FromFormat(reprfmt, 
+                                    self->ob_type->tp_name, 
+                                    m_obj->fd, 
+                                    access_str, 
+                                    PyLong_FromSize_t(m_obj->size), 
+                                    PyLong_FromSize_t(m_obj->pos), 
+                                    entire_contents);
+    }    
+
+    return repr;
+}
+
 #ifdef MS_WINDOWS
 static PyObject *
 mmap__sizeof__method(mmap_object *self, void *unused)
