@@ -35,6 +35,7 @@ static PyBytesObject *nullstring;
 /* Forward declaration */
 Py_LOCAL_INLINE(Py_ssize_t) _PyBytesWriter_GetSize(_PyBytesWriter *writer,
                                                    char *str);
+static PyObject *_PyBytes_FromArray(PyObject **, Py_ssize_t);
 
 /*
    For PyBytes_FromString(), the parameter `str' points to a null-terminated
@@ -2612,6 +2613,17 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
 
+    if (Py_REFCNT(x) < 2) {
+        PyErr_Format(PyExc_SystemError,
+                     "bad refcont for %.100s in bytes(): %zd",
+                     x->ob_type->tp_name, Py_REFCNT(x));
+        return NULL;
+    }
+
+    if (PyList_CheckExact(x) && Py_REFCNT(x) == 2) {
+        return _PyBytes_FromArray(_PyList_ITEMS(x), PyList_GET_SIZE(x));
+    }
+
     return PyBytes_FromObject(x);
 }
 
@@ -2639,49 +2651,39 @@ fail:
     return NULL;
 }
 
-#define _PyBytes_FROM_LIST_BODY(x, GET_ITEM)                                \
-    do {                                                                    \
-        PyObject *bytes;                                                    \
-        Py_ssize_t i;                                                       \
-        Py_ssize_t value;                                                   \
-        char *str;                                                          \
-        PyObject *item;                                                     \
-                                                                            \
-        bytes = PyBytes_FromStringAndSize(NULL, Py_SIZE(x));                \
-        if (bytes == NULL)                                                  \
-            return NULL;                                                    \
-        str = ((PyBytesObject *)bytes)->ob_sval;                            \
-                                                                            \
-        for (i = 0; i < Py_SIZE(x); i++) {                                  \
-            item = GET_ITEM((x), i);                                        \
-            value = PyNumber_AsSsize_t(item, NULL);                         \
-            if (value == -1 && PyErr_Occurred())                            \
-                goto error;                                                 \
-                                                                            \
-            if (value < 0 || value >= 256) {                                \
-                PyErr_SetString(PyExc_ValueError,                           \
-                                "bytes must be in range(0, 256)");          \
-                goto error;                                                 \
-            }                                                               \
-            *str++ = (char) value;                                          \
-        }                                                                   \
-        return bytes;                                                       \
-                                                                            \
-    error:                                                                  \
-        Py_DECREF(bytes);                                                   \
-        return NULL;                                                        \
-    } while (0)
-
-static PyObject*
-_PyBytes_FromList(PyObject *x)
+/* Implied that the size and the content of the array can't be
+   changed while iterate it and convert items to C integers
+   (i.e. for a tuple and a list that doesn't have outher references). */
+static PyObject *
+_PyBytes_FromArray(PyObject **items, Py_ssize_t size)
 {
-    _PyBytes_FROM_LIST_BODY(x, PyList_GET_ITEM);
-}
+    PyObject *bytes;
+    Py_ssize_t i;
+    Py_ssize_t value;
+    char *str;
 
-static PyObject*
-_PyBytes_FromTuple(PyObject *x)
-{
-    _PyBytes_FROM_LIST_BODY(x, PyTuple_GET_ITEM);
+    bytes = PyBytes_FromStringAndSize(NULL, size);
+    if (bytes == NULL)
+        return NULL;
+    str = ((PyBytesObject *)bytes)->ob_sval;
+
+    for (i = 0; i < size; i++) {
+        value = PyNumber_AsSsize_t(items[i], NULL);
+        if (value == -1 && PyErr_Occurred())
+            goto error;
+
+        if (value < 0 || value >= 256) {
+            PyErr_SetString(PyExc_ValueError,
+                            "bytes must be in range(0, 256)");
+            goto error;
+        }
+        *str++ = (char) value;
+    }
+    return bytes;
+
+  error:
+    Py_DECREF(bytes);
+    return NULL;
 }
 
 static PyObject *
@@ -2765,11 +2767,11 @@ PyBytes_FromObject(PyObject *x)
     if (PyObject_CheckBuffer(x))
         return _PyBytes_FromBuffer(x);
 
-    if (PyList_CheckExact(x))
-        return _PyBytes_FromList(x);
-
     if (PyTuple_CheckExact(x))
-        return _PyBytes_FromTuple(x);
+        return _PyBytes_FromArray(&PyTuple_GET_ITEM(x, 0), PyTuple_GET_SIZE(x));
+
+    if (PyList_CheckExact(x) && Py_REFCNT(x) == 1)
+        return _PyBytes_FromArray(_PyList_ITEMS(x), PyList_GET_SIZE(x));
 
     if (!PyUnicode_Check(x)) {
         it = PyObject_GetIter(x);
