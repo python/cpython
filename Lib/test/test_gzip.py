@@ -763,7 +763,7 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
-    @add_compress_level_flag('-1', '--fast', '-9', '--best')
+    @add_compress_level_flag('--fast', '--best')
     @create_and_remove_directory(TEMPDIR)
     def test_compress_infile_outfile(self, compress_level):
         local_testgzip = os.path.join(TEMPDIR, 'testgzip')
@@ -781,14 +781,14 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(err, b'')
 
     def test_compress_fast_best_are_exclusive(self):
-        rc, out, err = assert_python_failure('-m', 'gzip', '-1', '-9')
-        self.assertIn(b"error: argument -9/--best: not allowed with argument -1/--fast", err)
+        rc, out, err = assert_python_failure('-m', 'gzip', '--fast', '--best')
+        self.assertIn(b"error: argument --best: not allowed with argument --fast", err)
         self.assertGreater(rc, 0)
         self.assertEqual(out, b'')
 
     def test_decompress_cannot_have_flags_compression(self):
-        rc, out, err = assert_python_failure('-m', 'gzip', '-1', '-d')
-        self.assertIn(b'error: argument -d/--decompress: not allowed with argument -1/--fast', err)
+        rc, out, err = assert_python_failure('-m', 'gzip', '--fast', '-d')
+        self.assertIn(b'error: argument -d/--decompress: not allowed with argument --fast', err)
         self.assertGreater(rc, 0)
         self.assertEqual(out, b'')
 

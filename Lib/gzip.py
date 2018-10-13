@@ -543,8 +543,8 @@ def main():
         "A simple command line interface for the gzip module: act like gzip, "
         "but do not delete the input file.")
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('-1', '--fast', action='store_true', help='compress faster')
-    group.add_argument('-9', '--best', action='store_true', help='compress bester')
+    group.add_argument('--fast', action='store_true', help='compress faster')
+    group.add_argument('--best', action='store_true', help='compress bester')
     group.add_argument("-d", "--decompress", action="store_true",
                         help="act like gunzip instead of gzip")
 
