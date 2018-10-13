@@ -2675,7 +2675,7 @@ list___init___impl(PyListObject *self, PyObject *iterable)
         (void)_list_clear(self);
     }
     if (iterable != NULL) {
-        Py_ssize_t iter_len = PyObject_LengthHint(iterable, 0);
+        Py_ssize_t iter_len = PyObject_Length(iterable);
         if (iter_len == -1){
             PyErr_Clear();
         }
