@@ -33,6 +33,7 @@ import struct
 import sys
 import threading
 import traceback
+from inspect import signature
 
 from socketserver import ThreadingTCPServer, StreamRequestHandler
 
@@ -666,12 +667,28 @@ class DictConfigurator(BaseConfigurator):
             dfmt = config.get('datefmt', None)
             style = config.get('style', '%')
             cname = config.get('class', None)
+            validate = config.get('validate', True)
             if not cname:
                 c = logging.Formatter
+                result = c(fmt, dfmt, style, validate)
             else:
                 c = _resolve(cname)
-            result = c(fmt, dfmt, style)
+                if self._has_validate_param(config, c):
+                    result = c(fmt, dfmt, style, validate)
+                else:
+                    result = c(fmt, dfmt, style)
         return result
+
+    def _has_validate_param(self, config, formatter_callable):
+        """Check if formatter callable has validate parameter"""
+        params = signature(formatter_callable).parameters
+        if not isinstance(formatter_callable, logging.Formatter) or \
+                not params.get('validate') or params.get("kwargs"):
+            if config.get('validate'):
+                raise TypeError('%r has not validate in parameters' % formatter_callable)
+
+            return False
+        return True
 
     def configure_filter(self, config):
         """Configure a filter from a dictionary."""

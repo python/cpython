@@ -2125,6 +2125,10 @@ class WarningsTest(BaseTest):
 def formatFunc(format, datefmt=None):
     return logging.Formatter(format, datefmt)
 
+class myCustomFormatter:
+    def __init__(self, fmt, datefmt=None):
+        pass
+
 def handlerFunc():
     return logging.StreamHandler()
 
@@ -2765,6 +2769,114 @@ class ConfigDictTest(BaseTest):
         }
     }
 
+    # Configuration with custom logging.Formatter subclass as '()' key and 'validate' set to False
+    custom_formatter_class_validate = {
+        'version': 1,
+        'formatters': {
+            'form1': {
+                '()': __name__ + '.ExceptionFormatter',
+                'format': '%(levelname)s:%(name)s:%(message)s',
+                'validate': False,
+            },
+        },
+        'handlers' : {
+            'hand1' : {
+                'class': 'logging.StreamHandler',
+                'formatter': 'form1',
+                'level': 'NOTSET',
+                'stream': 'ext://sys.stdout',
+            },
+        },
+        "loggers": {
+            "my_test_logger_custom_formatter": {
+                "level": "DEBUG",
+                "handlers": ["hand1"],
+                "propagate": "true"
+            }
+        }
+    }
+
+    # Configuration with custom logging.Formatter subclass as 'class' key and 'validate' set to False
+    custom_formatter_class_validate2 = {
+        'version': 1,
+        'formatters': {
+            'form1': {
+                'class': __name__ + '.ExceptionFormatter',
+                'format': '%(levelname)s:%(name)s:%(message)s',
+                'validate': False,
+            },
+        },
+        'handlers' : {
+            'hand1' : {
+                'class': 'logging.StreamHandler',
+                'formatter': 'form1',
+                'level': 'NOTSET',
+                'stream': 'ext://sys.stdout',
+            },
+        },
+        "loggers": {
+            "my_test_logger_custom_formatter": {
+                "level": "DEBUG",
+                "handlers": ["hand1"],
+                "propagate": "true"
+            }
+        }
+    }
+
+    # Configuration with custom class that is not inherited from logging.Formatter
+    custom_formatter_class_validate3 = {
+        'version': 1,
+        'formatters': {
+            'form1': {
+                'class': __name__ + '.myCustomFormatter',
+                'format': '%(levelname)s:%(name)s:%(message)s',
+                'validate': False,
+            },
+        },
+        'handlers' : {
+            'hand1' : {
+                'class': 'logging.StreamHandler',
+                'formatter': 'form1',
+                'level': 'NOTSET',
+                'stream': 'ext://sys.stdout',
+            },
+        },
+        "loggers": {
+            "my_test_logger_custom_formatter": {
+                "level": "DEBUG",
+                "handlers": ["hand1"],
+                "propagate": "true"
+            }
+        }
+    }
+
+    # Configuration with custom function and 'validate' set to False
+    custom_formatter_with_function = {
+        'version': 1,
+        'formatters': {
+            'form1': {
+                '()': formatFunc,
+                'format': '%(levelname)s:%(name)s:%(message)s',
+                'validate': False,
+            },
+        },
+        'handlers' : {
+            'hand1' : {
+                'class': 'logging.StreamHandler',
+                'formatter': 'form1',
+                'level': 'NOTSET',
+                'stream': 'ext://sys.stdout',
+            },
+        },
+        "loggers": {
+            "my_test_logger_custom_formatter": {
+                "level": "DEBUG",
+                "handlers": ["hand1"],
+                "propagate": "true"
+            }
+        }
+    }
+
     def apply_config(self, conf):
         logging.config.dictConfig(conf)
 
@@ -3174,6 +3286,31 @@ class ConfigDictTest(BaseTest):
         self.assertIsInstance(handler.target, logging.Handler)
         self.assertIsInstance(handler.formatter._style,
                               logging.StringTemplateStyle)
+
+    def test_custom_formatter_class_with_validate(self):
+        self.apply_config(self.custom_formatter_class_validate)
+        handler = logging.getLogger("my_test_logger_custom_formatter").handlers[0]
+        self.assertIsInstance(handler.formatter, ExceptionFormatter)
+
+    def test_custom_formatter_class_with_validate2(self):
+        self.apply_config(self.custom_formatter_class_validate2)
+        handler = logging.getLogger("my_test_logger_custom_formatter").handlers[0]
+        self.assertIsInstance(handler.formatter, ExceptionFormatter)
+
+    def test_custom_formatter_class_with_validate2_with_wrong_fmt(self):
+        config = self.custom_formatter_class_validate.copy()
+        config['formatters']['form1']['style'] = "$"
+
+        # Exception should not be raise as we have configured 'validate' to False
+        self.apply_config(config)
+        handler = logging.getLogger("my_test_logger_custom_formatter").handlers[0]
+        self.assertIsInstance(handler.formatter, ExceptionFormatter)
+    
+    def test_custom_formatter_class_with_validate3(self):
+        self.assertRaises(ValueError, self.apply_config, self.custom_formatter_class_validate3)
+        
+    def test_custom_formatter_function_with_validate(self):
+        self.assertRaises(ValueError, self.apply_config, self.custom_formatter_with_function)
 
     def test_baseconfig(self):
         d = {
