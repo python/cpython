@@ -1314,7 +1314,27 @@ main_loop:
         case TARGET(BINARY_SUBSCR): {
             PyObject *sub = POP();
             PyObject *container = TOP();
-            PyObject *res = PyObject_GetItem(container, sub);
+
+            int slow_path = 1;
+            PyObject *res;
+            if (PyList_CheckExact(container) && PyLong_CheckExact(sub)) {
+                /* INLINE: list[int] */
+                Py_ssize_t i = PyLong_AsSsize_t(sub);
+                Py_ssize_t list_size = PyList_GET_SIZE(container);
+                if (i < 0) {
+                    i += list_size;
+                }
+                if (i >= 0 && i < list_size) {
+                    res = PyList_GET_ITEM(container, i);
+                    Py_INCREF(res);
+                    slow_path = 0;
+                }
+            }
+
+            if (slow_path) {
+                res = PyObject_GetItem(container, sub);
+            }
+
             Py_DECREF(container);
             Py_DECREF(sub);
             SET_TOP(res);
