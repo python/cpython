@@ -28,6 +28,7 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`PyMem_SetupDebugHooks`
   * :c:func:`PyObject_SetArenaAllocator`
   * :c:func:`Py_SetPath`
+  * :c:func:`Py_SetProgramFullPath`
   * :c:func:`Py_SetProgramName`
   * :c:func:`Py_SetPythonHome`
   * :c:func:`Py_SetStandardStreamEncoding`
@@ -225,6 +226,7 @@ Initializing and finalizing the interpreter
 .. c:function:: void Py_Initialize()
 
    .. index::
+      single: Py_SetProgramFullPath()
       single: Py_SetProgramName()
       single: PyEval_InitThreads()
       single: modules (in module sys)
@@ -355,9 +357,8 @@ Process-wide parameters
    This is used by :c:func:`Py_GetPath` and some other functions below to find
    the Python run-time libraries relative to the interpreter executable.  The
    default value is ``'python'``.  The argument should point to a
-   zero-terminated wide character string in static storage whose contents will not
-   change for the duration of the program's execution.  No code in the Python
-   interpreter will change the contents of this storage.
+   zero-terminated wide character string.  After this function returns, the string
+   may be modified or freed.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
    :c:type:`wchar_*` string.
@@ -420,6 +421,26 @@ Process-wide parameters
    platform.
 
 
+.. c:function:: void Py_SetProgramFullPath(const wchar_t *full_path)
+
+   .. index::
+      single: Py_Initialize()
+      single: main()
+      single: Py_GetPath()
+
+   This function should be called before :c:func:`Py_Initialize` is called for
+   the first time, if it is called at all.  It tells the interpreter the full
+   path to itself for cases where this cannot be inferred correctly.  When this
+   function has been called, ``sys.executable`` will return it directly instead
+   of calculating the path another way.
+   After this function returns, the string may be modified or freed.
+
+   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
+   :c:type:`wchar_*` string.
+
+   .. versionadded:: 3.8
+
+
 .. c:function:: wchar_t* Py_GetProgramFullPath()
 
    .. index::
@@ -427,10 +448,11 @@ Process-wide parameters
       single: executable (in module sys)
 
    Return the full program name of the Python executable; this is  computed as a
-   side-effect of deriving the default module search path  from the program name
-   (set by :c:func:`Py_SetProgramName` above). The returned string points into
-   static storage; the caller should not modify its value.  The value is available
-   to Python code as ``sys.executable``.
+   side-effect of deriving the default module search path from the program name
+   (set by :c:func:`Py_SetProgramName` above), or set directly by
+   :c:func:`Py_SetProgramFullPath`. The returned string points into static
+   storage; the caller should not modify its value.  The value is available to
+   Python code as ``sys.executable``.
 
 
 .. c:function:: wchar_t* Py_GetPath()

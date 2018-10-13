@@ -251,6 +251,8 @@ Build and C API Changes
 
   (Contributed by Antoine Pitrou in :issue:`32430`.)
 
+* ``sys.executable`` can now be directly overridden when embedding by calling
+  :c:func:`Py_SetProgramFullPath` before initializing Python.
 
 Deprecated
 ==========

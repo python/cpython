@@ -982,6 +982,10 @@ done:
     if (config->prefix == NULL) {
         return _Py_INIT_NO_MEMORY();
     }
+    config->exec_prefix = _PyMem_RawWcsdup(prefix);
+    if (config->exec_prefix == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
 
     return _Py_INIT_OK();
 }
