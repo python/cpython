@@ -44,7 +44,7 @@ def all_tasks(loop=None):
         loop = events.get_running_loop()
     # NB: set(_all_tasks) is required to protect
     # from https://bugs.python.org/issue34970 bug
-    return {t for t in set(_all_tasks)
+    return {t for t in list(_all_tasks)
             if futures._get_loop(t) is loop and not t.done()}
 
 
@@ -56,7 +56,7 @@ def _all_tasks_compat(loop=None):
         loop = events.get_event_loop()
     # NB: set(_all_tasks) is required to protect
     # from https://bugs.python.org/issue34970 bug
-    return {t for t in set(_all_tasks) if futures._get_loop(t) is loop}
+    return {t for t in list(_all_tasks) if futures._get_loop(t) is loop}
 
 
 def _set_task_name(task, name):
