@@ -542,11 +542,11 @@ def main():
     parser = ArgumentParser(description=
         "A simple command line interface for the gzip module: act like gzip, "
         "but do not delete the input file.")
-    parser.add_argument("-d", "--decompress", action="store_true",
-                        help="act like gunzip instead of gzip")
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-1', '--fast', action='store_true', help='compress faster')
     group.add_argument('-9', '--best', action='store_true', help='compress bester')
+    group.add_argument("-d", "--decompress", action="store_true",
+                        help="act like gunzip instead of gzip")
 
     parser.add_argument("args", nargs="*", default=["-"], metavar='file')
     args = parser.parse_args()
@@ -560,8 +560,7 @@ def main():
     for arg in args.args:
         if args.decompress:
             if arg == "-":
-                f = GzipFile(filename="", mode="rb", fileobj=sys.stdin.buffer,
-                             compresslevel=compresslevel)
+                f = GzipFile(filename="", mode="rb", fileobj=sys.stdin.buffer)
                 g = sys.stdout.buffer
             else:
                 if arg[-3:] != ".gz":

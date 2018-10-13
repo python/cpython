@@ -780,10 +780,15 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
-
     def test_compress_fast_best_are_exclusive(self):
         rc, out, err = assert_python_failure('-m', 'gzip', '-1', '-9')
         self.assertIn(b"error: argument -9/--best: not allowed with argument -1/--fast", err)
+        self.assertGreater(rc, 0)
+        self.assertEqual(out, b'')
+
+    def test_decompress_cannot_have_flags_compression(self):
+        rc, out, err = assert_python_failure('-m', 'gzip', '-1', '-d')
+        self.assertIn(b'error: argument -d/--decompress: not allowed with argument -1/--fast', err)
         self.assertGreater(rc, 0)
         self.assertEqual(out, b'')
 
