@@ -552,7 +552,7 @@ def main():
 
     compresslevel = COMPRESS_LEVEL_BEST
     if args.fast:
-        compresslevel = COMPRESS_LEVEL_FAST 
+        compresslevel = COMPRESS_LEVEL_FAST
 
     for arg in args.args:
         if args.decompress:
