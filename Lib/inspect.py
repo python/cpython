@@ -1988,7 +1988,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
         module = sys.modules.get(module_name, None)
         if module:
             module_dict = module.__dict__
-    sys_module_dict = sys.modules
+    sys_module_dict = sys.modules.copy()
 
     def parse_name(node):
         assert isinstance(node, ast.arg)
@@ -2005,14 +2005,8 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             except NameError:
                 raise RuntimeError()
 
-        if isinstance(value, str):
-            return ast.Str(value)
-        if isinstance(value, (int, float)):
-            return ast.Num(value)
-        if isinstance(value, bytes):
-            return ast.Bytes(value)
-        if value in (True, False, None):
-            return ast.NameConstant(value)
+        if isinstance(value, (str, int, float, bytes, bool, type(None))):
+            return ast.Constant(value)
         raise RuntimeError()
 
     class RewriteSymbolics(ast.NodeTransformer):

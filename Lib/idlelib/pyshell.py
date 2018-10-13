@@ -856,6 +856,10 @@ class PyShell(OutputWindow):
         ("help", "_Help"),
     ]
 
+    # Extend right-click context menu
+    rmenu_specs = OutputWindow.rmenu_specs + [
+        ("Squeeze", "<<squeeze-current-text>>"),
+    ]
 
     # New classes
     from idlelib.history import History

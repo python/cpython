@@ -6,8 +6,22 @@
 
 --------------
 
+.. sidebar:: Hello World!
+
+   ::
+
+       import asyncio
+
+       async def main():
+           print('Hello ...')
+           await asyncio.sleep(1)
+           print('... World!')
+
+       # Python 3.7+
+       asyncio.run(main())
+
 asyncio is a library to write **concurrent** code using
-**async/await** syntax.
+the **async/await** syntax.
 
 asyncio is used as a foundation for multiple Python asynchronous
 frameworks that provide high-performance network and web-servers,
@@ -29,7 +43,8 @@ asyncio provides a set of **high-level** APIs to:
 
 * :ref:`synchronize <asyncio-sync>` concurrent code;
 
-as well as **low-level** APIs for *library and framework developers* to:
+Additionally, there are **low-level** APIs for
+*library and framework developers* to:
 
 * create and manage :ref:`event loops <asyncio-event-loop>`, which
   provide asynchronous APIs for :meth:`networking <loop.create_server>`,
@@ -43,12 +58,13 @@ as well as **low-level** APIs for *library and framework developers* to:
   with async/await syntax.
 
 
-Reference
----------
+.. We use the "rubric" directive here to avoid creating
+   the "Reference" subsection in the TOC.
 
-.. rubric:: High-level APIs
+.. rubric:: Reference
 
 .. toctree::
+   :caption: High-level APIs
    :maxdepth: 1
 
    asyncio-task.rst
@@ -58,9 +74,8 @@ Reference
    asyncio-queue.rst
    asyncio-exceptions.rst
 
-.. rubric:: Low-level APIs
-
 .. toctree::
+   :caption: Low-level APIs
    :maxdepth: 1
 
    asyncio-eventloop.rst
@@ -69,10 +84,10 @@ Reference
    asyncio-policy.rst
    asyncio-platforms.rst
 
-.. rubric:: Guides and Tutorials
-
 .. toctree::
+   :caption: Guides and Tutorials
    :maxdepth: 1
 
    asyncio-api-index.rst
+   asyncio-llapi-index.rst
    asyncio-dev.rst

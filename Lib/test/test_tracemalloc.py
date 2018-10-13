@@ -936,7 +936,7 @@ class TestCAPI(unittest.TestCase):
             return None
 
     def track(self, release_gil=False, nframe=1):
-        frames = get_frames(nframe, 2)
+        frames = get_frames(nframe, 1)
         _testcapi.tracemalloc_track(self.domain, self.ptr, self.size,
                                     release_gil)
         return frames

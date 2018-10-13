@@ -6,7 +6,7 @@
 Developing with asyncio
 =======================
 
-Asynchronous programming is different from classical "sequential"
+Asynchronous programming is different from classic "sequential"
 programming.
 
 This page lists common mistakes and traps and explains how
@@ -21,19 +21,17 @@ Debug Mode
 By default asyncio runs in production mode.  In order to ease
 the development asyncio has a *debug mode*.
 
-To enable debugging for an application:
+There are several ways to enable asyncio debug mode:
 
-* Enable the debug mode globally by setting the environment variable
-  :envvar:`PYTHONASYNCIODEBUG` to ``1``.
+* Setting the :envvar:`PYTHONASYNCIODEBUG` environment variable to ``1``.
 
-* Alternatively, the debug mode can be enabled by using the ``-X dev``
-  command line option for Python (see the :option:`-X` option).
+* Using the :option:`-X` ``dev`` Python command line option.
 
-* Yet another way to enable the debug mode is by calling
-  :meth:`loop.set_debug` or by passing ``debug=True`` to
-  :func:`asyncio.run`.
+* Passing ``debug=True`` to :func:`asyncio.run`.
 
-In addition to enabling debug mode, consider also:
+* Calling :meth:`loop.set_debug`.
+
+In addition to enabling the debug mode, consider also:
 
 * setting the log level of the :ref:`asyncio logger <asyncio-logger>` to
   :py:data:`logging.DEBUG`, for example the following snippet of code
@@ -43,25 +41,25 @@ In addition to enabling debug mode, consider also:
 
 * configuring the :mod:`warnings` module to display
   :exc:`ResourceWarning` warnings.  One way of doing that is by
-  using the ``-Wdefault`` command line option.
+  using the :option:`-W` ``default`` command line option.
 
 
-In asyncio debug mode the following checks are performed:
+When the debug mode is enabled:
 
-* Log :ref:`coroutines that were not awaited
-  <asyncio-coroutine-not-scheduled>`; this mitigates the "forgotten
-  await" pitfall.
+* asyncio checks for :ref:`coroutines that were not awaited
+  <asyncio-coroutine-not-scheduled>` and logs them; this mitigates
+  the "forgotten await" pitfall.
 
 * Many non-treadsafe asyncio APIs (such as :meth:`loop.call_soon` and
   :meth:`loop.call_at` methods) raise an exception if they are called
   from a wrong thread.
 
-* Log the execution time of the IO selector if it takes too long to
-  perform an IO operation.
+* The execution time of the I/O selector is logged if it takes too long to
+  perform an I/O operation.
 
-* Log callbacks taking longer than 100 ms to be executed.  The
-  :attr:`loop.slow_callback_duration` attribute is the minimum
-  duration in seconds of "slow" callbacks.
+* Callbacks taking longer than 100ms are logged.  The
+  :attr:`loop.slow_callback_duration` attribute can be used to set the
+  minimum execution duration in seconds that is considered "slow".
 
 
 .. _asyncio-multithreading:
@@ -134,7 +132,7 @@ Logging
 asyncio uses the :mod:`logging` module and all logging is performed
 via the ``"asyncio"`` logger.
 
-The default log level is :py:data:`logging.INFO`, which can easily be
+The default log level is :py:data:`logging.INFO`, which can be easily
 adjusted::
 
    logging.getLogger("asyncio").setLevel(logging.WARNING)
@@ -142,12 +140,13 @@ adjusted::
 
 .. _asyncio-coroutine-not-scheduled:
 
-Detect never awaited coroutines
+Detect never-awaited coroutines
 ===============================
 
-When a coroutine is called (e.g. ``coro()`` instead of ``await coro()``)
-the call is not wrapped with :meth:`asyncio.create_task`, the execution
-of the coroutine object will never be scheduled.  For example::
+When a coroutine function is called, but not awaited
+(e.g. ``coro()`` instead of ``await coro()``)
+or the coroutine is not scheduled with :meth:`asyncio.create_task`, asyncio
+will emit a :exc:`RuntimeWarning`::
 
     import asyncio
 
@@ -184,8 +183,8 @@ The usual fix is to either await the coroutine or call the
         await test()
 
 
-Detect never consumed exceptions
-================================
+Detect never-retrieved exceptions
+=================================
 
 If a :meth:`Future.set_exception` is called but the Future object is
 never awaited on, the exception would never be propagated to the
