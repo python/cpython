@@ -92,6 +92,7 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 #define DEF_FREE_CLASS 2<<5    /* free variable from class's method */
 #define DEF_IMPORT 2<<6        /* assignment occurred via import */
 #define DEF_ANNOT 2<<7         /* this name is annotated */
+#define DEF_GLOBAL_TOP 2<<8    /* global name in module symbols*/
 
 #define DEF_BOUND (DEF_LOCAL | DEF_PARAM | DEF_IMPORT)
 

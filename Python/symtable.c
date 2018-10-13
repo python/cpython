@@ -1017,7 +1017,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag)
         if ((o = PyDict_GetItem(st->st_global, mangled))) {
             val |= PyLong_AS_LONG(o);
         }
-        o = PyLong_FromLong(val);
+        o = PyLong_FromLong(val | DEF_GLOBAL_TOP);
         if (o == NULL)
             goto error;
         if (PyDict_SetItem(st->st_global, mangled, o) < 0) {
@@ -1174,8 +1174,9 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             if (cur < 0) {
                 VISIT_QUIT(st, 0);
             }
-            if ((cur & (DEF_GLOBAL | DEF_NONLOCAL))
-                && s->v.AnnAssign.simple) {
+            if (((cur & DEF_NONLOCAL) |
+                 ((cur & DEF_GLOBAL) && !(cur & DEF_GLOBAL_TOP))
+                ) && s->v.AnnAssign.simple) {
                 PyErr_Format(PyExc_SyntaxError,
                              cur & DEF_GLOBAL ? GLOBAL_ANNOT : NONLOCAL_ANNOT,
                              e_name->v.Name.id);
