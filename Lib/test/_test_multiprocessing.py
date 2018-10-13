@@ -1120,9 +1120,10 @@ class _TestQueue(BaseTestCase):
     def test_closed_queue_put_get_exceptions(self):
         for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
             q.close()
-            for meth, args in (q.put, ('foo',)), (q.get, ()):
-                with self.assertRaisesRegex(ValueError, 'is closed'):
-                    meth(*args)
+            with self.assertRaisesRegex(ValueError, 'is closed'):
+                q.put('foo')
+            with self.assertRaisesRegex(ValueError, 'is closed'):
+                q.get()
 #
 #
 #
