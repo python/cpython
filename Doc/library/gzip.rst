@@ -238,7 +238,7 @@ Command line options
 
 .. cmdoption:: --fast
 
-   Indicates the fastest compression method (less compression)
+   Indicates the fastest compression method (less compression).
 
    .. code-block:: shell-session
 
@@ -255,7 +255,7 @@ Command line options
 
 .. cmdoption:: -d, --decompress
 
-   Decompress the given file
+   Decompress the given file.
 
    .. code-block:: shell-session
 
