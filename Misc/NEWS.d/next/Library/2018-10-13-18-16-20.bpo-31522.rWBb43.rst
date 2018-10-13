@@ -1,0 +1,1 @@
+In `mailbox._mboxMMDF.get_string`, pass *from_* parameter to ``get_bytes``.
