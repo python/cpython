@@ -239,9 +239,9 @@ def library_recipes():
                   },
               ),
           dict(
-              name="Tk 8.6.8+",
-              url="http://core.tcl.tk/tk/tarball/16fdad9d/tk-16fdad9d.tar.gz",
-              checksum='b8e0df69021924e8392f03d506252bdb',
+              name="Tk 8.6.8",
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk8.6.8-src.tar.gz",
+              checksum='5e0faecba458ee1386078fb228d008ba',
               patches=[
                   "tk868_on_10_8_10_9.patch",
                    ],
