@@ -1,3 +1,0 @@
-Revert to using the released Tk 8.6.8 with macOS installers instead of the
-Tk 8.6.x development snapshot used with 3.7.1rc1 and 3.6.7rc1. The snapshot
-introduced at least one significant regression (bpo-34927).
