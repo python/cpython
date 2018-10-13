@@ -35,7 +35,9 @@ def all_tasks(loop=None):
     """Return a set of all tasks for the loop."""
     if loop is None:
         loop = events.get_running_loop()
-    return {t for t in _all_tasks
+    # NB: set(_all_tasks) is required to protect
+    # from https://bugs.python.org/issue34970 bug
+    return {t for t in list(_all_tasks)
             if futures._get_loop(t) is loop and not t.done()}
 
 
@@ -45,7 +47,9 @@ def _all_tasks_compat(loop=None):
     # method.
     if loop is None:
         loop = events.get_event_loop()
-    return {t for t in _all_tasks if futures._get_loop(t) is loop}
+    # NB: set(_all_tasks) is required to protect
+    # from https://bugs.python.org/issue34970 bug
+    return {t for t in list(_all_tasks) if futures._get_loop(t) is loop}
 
 
 class Task(futures._PyFuture):  # Inherit Python Task implementation
