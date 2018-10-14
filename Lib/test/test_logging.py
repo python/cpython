@@ -3305,10 +3305,10 @@ class ConfigDictTest(BaseTest):
         self.apply_config(config)
         handler = logging.getLogger("my_test_logger_custom_formatter").handlers[0]
         self.assertIsInstance(handler.formatter, ExceptionFormatter)
-    
+
     def test_custom_formatter_class_with_validate3(self):
         self.assertRaises(ValueError, self.apply_config, self.custom_formatter_class_validate3)
-        
+
     def test_custom_formatter_function_with_validate(self):
         self.assertRaises(ValueError, self.apply_config, self.custom_formatter_with_function)
 
