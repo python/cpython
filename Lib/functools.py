@@ -16,7 +16,15 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
 try:
     from _functools import reduce
 except ImportError:
-    pass
+    def reduce(function, iterable, initializer=None):
+        it = iter(iterable)
+        if initializer is None:
+            value = next(it)
+        else:
+            value = initializer
+        for element in it:
+            value = function(value, element)
+        return value
 from abc import get_cache_token
 from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()

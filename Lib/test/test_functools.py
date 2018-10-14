@@ -746,7 +746,6 @@ class TestWraps(TestUpdateWrapper):
         self.assertEqual(wrapper.attr, 'This is a different test')
         self.assertEqual(wrapper.dict_attr, f.dict_attr)
 
-@unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestReduce(unittest.TestCase):
     if c_functools:
         func = c_functools.reduce
