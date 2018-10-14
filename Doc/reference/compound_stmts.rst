@@ -707,16 +707,16 @@ Coroutine function definition
    keyword: await
 
 Execution of Python coroutines can be suspended and resumed at many points
-(see :term:`coroutine`).  In the body of a coroutine, any ``await`` and
+(see :term:`coroutine`).  In the body of a coroutine function, any ``await`` and
 ``async`` identifiers become reserved keywords; :keyword:`await` expressions,
 :keyword:`async for` and :keyword:`async with` can only be used in
-coroutine bodies.
+coroutine function bodies.
 
 Functions defined with ``async def`` syntax are always coroutine functions,
 even if they do not contain ``await`` or ``async`` keywords.
 
-It is a :exc:`SyntaxError` to use ``yield from`` expressions in
-``async def`` coroutines.
+It is a :exc:`SyntaxError` to use a ``yield from`` expression inside an
+``async def`` statement.
 
 An example of a coroutine function::
 
@@ -765,8 +765,8 @@ Is semantically equivalent to::
 
 See also :meth:`__aiter__` and :meth:`__anext__` for details.
 
-It is a :exc:`SyntaxError` to use an ``async for`` statement outside of a
-coroutine.
+It is a :exc:`SyntaxError` to use an ``async for`` statement outside an
+``async def`` statement.
 
 
 .. index:: statement: async with
@@ -803,8 +803,8 @@ Is semantically equivalent to::
 
 See also :meth:`__aenter__` and :meth:`__aexit__` for details.
 
-It is a :exc:`SyntaxError` to use an ``async with`` statement outside of a
-coroutine.
+It is a :exc:`SyntaxError` to use an ``async with`` statement outside an
+``async def`` statement.
 
 .. seealso::
 
