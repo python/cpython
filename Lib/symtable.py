@@ -1,7 +1,7 @@
 """Interface to the compiler's internal symbol tables"""
 
 import _symtable
-from _symtable import (USE, DEF_GLOBAL, DEF_LOCAL, DEF_PARAM,
+from _symtable import (USE, DEF_GLOBAL, DEF_NONLOCAL, DEF_LOCAL, DEF_PARAM,
      DEF_IMPORT, DEF_BOUND, DEF_ANNOT, SCOPE_OFF, SCOPE_MASK, FREE,
      LOCAL, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT, CELL)
 
@@ -183,6 +183,9 @@ class Symbol(object):
 
     def is_global(self):
         return bool(self.__scope in (GLOBAL_IMPLICIT, GLOBAL_EXPLICIT))
+
+    def is_nonlocal(self):
+        return bool(self.__flags & DEF_NONLOCAL)
 
     def is_declared_global(self):
         return bool(self.__scope == GLOBAL_EXPLICIT)
