@@ -715,8 +715,7 @@ coroutine bodies.
 Functions defined with ``async def`` syntax are always coroutine functions,
 even if they do not contain ``await`` or ``async`` keywords.
 
-It is a :exc:`SyntaxError` to use ``yield from`` expressions in
-``async def`` coroutines.
+It is a :exc:`SyntaxError` to use ``yield from`` expressions in coroutines.
 
 An example of a coroutine function::
 
