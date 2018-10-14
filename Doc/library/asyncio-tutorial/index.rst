@@ -20,5 +20,6 @@ primarily on the "high-level" API, as described in the
    async-functions.rst
    running-async-functions.rst
    asyncio-cookbook.rst
-   case-study-cli.rst
-   case-study-gui.rst
+   case-study-chat-server.rst
+   case-study-chat-client-cli.rst
+   case-study-chat-client-gui.rst

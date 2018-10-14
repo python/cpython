@@ -1,5 +1,5 @@
-What Does Async Mean?
-=====================
+What Does "Async" Mean?
+=======================
 
 Let's make a function that communicates over the network:
 
@@ -54,6 +54,9 @@ code is also going to **wait** sequentially. This is, quite literally,
 a waste of time. What we would really like to do here is wait for the
 all the replies *concurrently*, i.e., at the same time.
 
+Preemptive Concurrency
+----------------------
+
 Operating systems like Windows, Mac and Linux, and others, understand
 this problem deeply. If you're reading this on a computer or even your
 mobile, there will be tens or hundreds of processes running at the same
@@ -68,21 +71,33 @@ from the operating system.  But more than that, there is another tricky
 problem about *how* the operating system knows when to allocate
 execution time between each process. The answer: it doesn't! This means
 that the operating system can decide when to give processor time to each
-process.
+process. Your code, and therefore you, will not know when these switches
+occur. This is called "preemption". From
+`Wikipedia <https://en.wikipedia.org/wiki/Preemption_(computing)>`_:
+*In computing, preemption is the act of temporarily interrupting a
+task being carried out by a computer system, without requiring
+its cooperation, and with the intention of resuming the task
+at a later time*.
 
-And this means that you will never be sure of when each of your processes
-is actually running, relative to each other. This is quite safe because
+This means that you will never be sure of when each of your processes
+is *actually* executing on a CPU. This is quite safe because
 processes are isolated from each other; however, **threads** are not
 isolated from each other. In fact, the primary feature of threads over
 processes is that multiple threads within a single process can
-access the same memory. And this is where all the problems appear.
+access the same memory. And this is where all the problems begin.
 
-So: we can also run the ``greet()`` function in multiple threads, and then
+Jumping back to our code sample further up: we may also choose to run the
+``greet()`` function in multiple threads; and then
 they will also wait for replies concurrently. However, now you have
-two threads that is allowed to access the same objects, with no control over
-how execution will be transferred between the two threads. This
+two threads that are allowed to access the same objects in memory,
+with no control over
+how execution will be transferred between the two threads (unless you
+use the synchronization primitives in the ``threading`` module) . This
 situation can result in *race conditions* in how objects are modified,
 and these bugs can be very difficult to debug.
+
+Cooperative Concurrency
+-----------------------
 
 This is where "async" programming comes in. It provides a way to manage
 multiple socket connections all in a single thread; and the best part

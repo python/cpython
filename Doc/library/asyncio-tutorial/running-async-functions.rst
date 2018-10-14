@@ -1,4 +1,4 @@
-Executing async functions
+Executing Async Functions
 =========================
 
 TODO
