@@ -645,7 +645,7 @@ PyDoc_STRVAR(count_doc,
 "rangeobject.count(value) -> integer -- return number of occurrences of value");
 
 PyDoc_STRVAR(index_doc,
-"rangeobject.index(value, [start, [stop]]) -> integer -- return index of value.\n"
+"rangeobject.index(value) -> integer -- return index of value.\n"
 "Raise ValueError if the value is not present.");
 
 static PyMethodDef range_methods[] = {
