@@ -160,7 +160,7 @@ The module defines the following items:
 .. function:: compress(data, compresslevel=9, mtime=None)
 
    Compress the *data*, returning a :class:`bytes` object containing
-   the compressed data.  *compresslevel* and *mtime* has the same meaning as in
+   the compressed data.  *compresslevel* and *mtime* have the same meaning as in
    the :class:`GzipFile` constructor above.
 
    .. versionadded:: 3.2
