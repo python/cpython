@@ -7,7 +7,6 @@ import unittest
 import sys
 # testing import *
 from sys import *
-import textwrap
 
 # different import patterns to check that __annotations__ does not interfere
 # with import machinery
@@ -302,12 +301,6 @@ class GrammarTests(unittest.TestCase):
         [list][0]: type
         my_lst[one()-1]: int = 5
         self.assertEqual(my_lst, [5])
-        exec(textwrap.dedent("""
-            def f():
-                global x
-                x = 1
-            x:int = 3
-            """))
 
     def test_var_annot_syntax_errors(self):
         # parser pass
