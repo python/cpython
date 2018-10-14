@@ -1,0 +1,3 @@
+:class:`bytes` and :class:`bytearray` constructors no longer convert
+unexpected exceptions (e.g. :exc:`MemoryError` and :exc:`KeyboardInterrupt`)
+to :exc:`TypeError`.
