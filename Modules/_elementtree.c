@@ -204,6 +204,8 @@ typedef struct {
 
 
 #define Element_CheckExact(op) (Py_TYPE(op) == &Element_Type)
+#define Element_Check(op) PyObject_TypeCheck(op, &Element_Type)
+
 
 /* -------------------------------------------------------------------- */
 /* Element constructors and destructor */
@@ -1132,7 +1134,7 @@ _elementtree_Element_extend(ElementObject *self, PyObject *elements)
     for (i = 0; i < PySequence_Fast_GET_SIZE(seq); i++) {
         PyObject* element = PySequence_Fast_GET_ITEM(seq, i);
         Py_INCREF(element);
-        if (!PyObject_TypeCheck(element, (PyTypeObject *)&Element_Type)) {
+        if (!Element_Check(element)) {
             PyErr_Format(
                 PyExc_TypeError,
                 "expected an Element, not \"%.200s\"",
@@ -1184,7 +1186,7 @@ _elementtree_Element_find_impl(ElementObject *self, PyObject *path,
     for (i = 0; i < self->extra->length; i++) {
         PyObject* item = self->extra->children[i];
         int rc;
-        if (!Element_CheckExact(item))
+        if (!Element_Check(item))
             continue;
         Py_INCREF(item);
         rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, path, Py_EQ);
@@ -1229,14 +1231,14 @@ _elementtree_Element_findtext_impl(ElementObject *self, PyObject *path,
     }
 
     for (i = 0; i < self->extra->length; i++) {
-        ElementObject* item = (ElementObject*) self->extra->children[i];
+        PyObject *item = self->extra->children[i];
         int rc;
-        if (!Element_CheckExact(item))
+        if (!Element_Check(item))
             continue;
         Py_INCREF(item);
-        rc = PyObject_RichCompareBool(item->tag, path, Py_EQ);
+        rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, path, Py_EQ);
         if (rc > 0) {
-            PyObject* text = element_get_text(item);
+            PyObject* text = element_get_text((ElementObject*)item);
             if (text == Py_None) {
                 Py_DECREF(item);
                 return PyUnicode_New(0, 0);
@@ -1269,13 +1271,12 @@ _elementtree_Element_findall_impl(ElementObject *self, PyObject *path,
 {
     Py_ssize_t i;
     PyObject* out;
-    PyObject* tag = path;
     elementtreestate *st = ET_STATE_GLOBAL;
 
-    if (checkpath(tag) || namespaces != Py_None) {
+    if (checkpath(path) || namespaces != Py_None) {
         _Py_IDENTIFIER(findall);
         return _PyObject_CallMethodIdObjArgs(
-            st->elementpath_obj, &PyId_findall, self, tag, namespaces, NULL
+            st->elementpath_obj, &PyId_findall, self, path, namespaces, NULL
             );
     }
 
@@ -1289,10 +1290,10 @@ _elementtree_Element_findall_impl(ElementObject *self, PyObject *path,
     for (i = 0; i < self->extra->length; i++) {
         PyObject* item = self->extra->children[i];
         int rc;
-        if (!Element_CheckExact(item))
+        if (!Element_Check(item))
             continue;
         Py_INCREF(item);
-        rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, tag, Py_EQ);
+        rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, path, Py_EQ);
         if (rc != 0 && (rc < 0 || PyList_Append(out, item) < 0)) {
             Py_DECREF(item);
             Py_DECREF(out);
@@ -2173,7 +2174,7 @@ elementiter_next(ElementIterObject *it)
                 continue;
             }
 
-            if (!PyObject_TypeCheck(extra->children[child_index], &Element_Type)) {
+            if (!Element_Check(extra->children[child_index])) {
                 PyErr_Format(PyExc_AttributeError,
                              "'%.100s' object has no attribute 'iter'",
                              Py_TYPE(extra->children[child_index])->tp_name);
