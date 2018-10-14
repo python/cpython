@@ -126,7 +126,7 @@ class BaseBytesTest:
         a = self.type2test(b"\x01\x02\x03")
         self.assertEqual(a, b"\x01\x02\x03")
 
-        # Issues #29159 and 34974.
+        # Issues #29159 and #34974.
         # Fallback when __index__ raises a TypeError
         class B(bytes):
             def __index__(self):
@@ -191,6 +191,7 @@ class BaseBytesTest:
             def __index__(self):
                 1/0
         self.assertRaises(ZeroDivisionError, self.type2test, BadInt())
+        self.assertRaises(ZeroDivisionError, self.type2test, [BadInt()])
 
         class BadIterable:
             def __iter__(self):

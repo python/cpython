@@ -41,7 +41,6 @@ _getbytevalue(PyObject* arg, int *value)
     } else {
         PyObject *index = PyNumber_Index(arg);
         if (index == NULL) {
-            PyErr_Format(PyExc_TypeError, "an integer is required");
             *value = -1;
             return 0;
         }
