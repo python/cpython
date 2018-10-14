@@ -103,6 +103,8 @@ class SymtableTest(unittest.TestCase):
     def test_nonlocal(self):
         self.assertFalse(self.spam.lookup("some_var").is_nonlocal())
         self.assertTrue(self.other_internal.lookup("some_var").is_nonlocal())
+        expected = ("some_var",)
+        self.assertEqual(self.other_internal.get_nonlocals(), expected)
 
     def test_local(self):
         self.assertTrue(self.spam.lookup("x").is_local())

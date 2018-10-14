@@ -117,6 +117,7 @@ class Function(SymbolTable):
     __locals = None
     __frees = None
     __globals = None
+    __nonlocals = None
 
     def __idents_matching(self, test_func):
         return tuple(ident for ident in self.get_identifiers()
@@ -140,6 +141,11 @@ class Function(SymbolTable):
             test = lambda x:((x >> SCOPE_OFF) & SCOPE_MASK) in glob
             self.__globals = self.__idents_matching(test)
         return self.__globals
+
+    def get_nonlocals(self):
+        if self.__nonlocals is None:
+            self.__nonlocals = self.__idents_matching(lambda x:x & DEF_NONLOCAL)
+        return self.__nonlocals
 
     def get_frees(self):
         if self.__frees is None:
