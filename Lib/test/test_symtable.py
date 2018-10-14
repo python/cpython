@@ -151,8 +151,12 @@ class SymtableTest(unittest.TestCase):
 
         # Test that annotations for nonlocals are valid after the
         # variable is declared as nonlocal.
-        st6 = symtable.symtable('def g():\n    x=2\n    def f():\n'
-                                '        nonlocal x\n    x:int', 'test', 'exec')
+        st6 = symtable.symtable('def g():\n'
+                                '    x = 2\n'
+                                '    def f():\n'
+                                '        nonlocal x\n'
+                                '    x: int',
+                                'test', 'exec')
 
     def test_imported(self):
         self.assertTrue(self.top.lookup("sys").is_imported())
