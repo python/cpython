@@ -375,6 +375,10 @@ the *new_callable* argument to :func:`patch`.
             >>> calls = [call(4), call(2), call(3)]
             >>> mock.assert_has_calls(calls, any_order=True)
 
+        If you pass empty list of calls, then it does not raise an exception.
+
+            >>> mock.assert_has_calls([])
+
     .. method:: assert_not_called()
 
         Assert the mock was never called.
