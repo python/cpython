@@ -126,8 +126,8 @@ class BaseBytesTest:
         a = self.type2test(b"\x01\x02\x03")
         self.assertEqual(a, b"\x01\x02\x03")
 
-        # http://bugs.python.org/issue29159
-        # Fallback when __index__ raises exception other than OverflowError
+        # Issues #29159 and #34974.
+        # Fallback when __index__ raises a TypeError
         class B(bytes):
             def __index__(self):
                 raise TypeError
@@ -183,6 +183,20 @@ class BaseBytesTest:
             bytearray(size - 4)
         except (OverflowError, MemoryError):
             pass
+
+    def test_constructor_exceptions(self):
+        # Issue #34974: bytes and bytearray constructors replace unexpected
+        # exceptions.
+        class BadInt:
+            def __index__(self):
+                1/0
+        self.assertRaises(ZeroDivisionError, self.type2test, BadInt())
+        self.assertRaises(ZeroDivisionError, self.type2test, [BadInt()])
+
+        class BadIterable:
+            def __iter__(self):
+                1/0
+        self.assertRaises(ZeroDivisionError, self.type2test, BadIterable())
 
     def test_compare(self):
         b1 = self.type2test([1, 2, 3])

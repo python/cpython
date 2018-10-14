@@ -41,7 +41,6 @@ _getbytevalue(PyObject* arg, int *value)
     } else {
         PyObject *index = PyNumber_Index(arg);
         if (index == NULL) {
-            PyErr_Format(PyExc_TypeError, "an integer is required");
             *value = -1;
             return 0;
         }
@@ -821,7 +820,7 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     if (PyIndex_Check(arg)) {
         count = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
         if (count == -1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_OverflowError))
+            if (!PyErr_ExceptionMatches(PyExc_TypeError))
                 return -1;
             PyErr_Clear();  /* fall through */
         }
