@@ -765,8 +765,8 @@ Is semantically equivalent to::
 
 See also :meth:`__aiter__` and :meth:`__anext__` for details.
 
-It is a :exc:`SyntaxError` to use ``async for`` statement outside of an
-:keyword:`async def` function.
+It is a :exc:`SyntaxError` to use an ``async for`` statement outside of a
+coroutine.
 
 
 .. index:: statement: async with
@@ -803,8 +803,8 @@ Is semantically equivalent to::
 
 See also :meth:`__aenter__` and :meth:`__aexit__` for details.
 
-It is a :exc:`SyntaxError` to use ``async with`` statement outside of an
-:keyword:`async def` function.
+It is a :exc:`SyntaxError` to use an ``async with`` statement outside of a
+coroutine.
 
 .. seealso::
 
