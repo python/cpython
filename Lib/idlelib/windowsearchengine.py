@@ -117,7 +117,7 @@ class RegexpSearchEngine(object):
             prev = start
             start_idx = "%d.%d" % (line,
                                    start - (rfind("\n", 0, start) + 1))
-            tag_add("findmark", start_idx, start_idx + "+%dc"%(end-start))
+            tag_add("findmark", start_idx, start_idx + "+%dc" % (end - start))
 
     def search_range(self, range_, backward=False):
         """Check whether the regular expression matches the text in the given
@@ -141,9 +141,9 @@ class RegexpSearchEngine(object):
 
         text = self.text_widget.get(start, end)
 
-        matches = list(self.regexp.finditer(text))
+        matches = self.regexp.finditer(text)
         if backward:
-            matches.reverse()
+            matches = reversed(list(matches))
         for match in matches:
             # Skip matches not in the given range. This would be caused by the
             # addition of one character before and/or after the given range
@@ -219,7 +219,7 @@ class RegexpSearchEngine(object):
                     hit = self.search_range(tag_range, backward=True)
                     if hit:
                         return hit
-                    index = next[0]
+                    index = tag_range[0]
                 else:
                     if not wrap:
                         break
