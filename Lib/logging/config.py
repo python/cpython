@@ -33,7 +33,6 @@ import struct
 import sys
 import threading
 import traceback
-from inspect import signature
 
 from socketserver import ThreadingTCPServer, StreamRequestHandler
 
@@ -667,28 +666,27 @@ class DictConfigurator(BaseConfigurator):
             dfmt = config.get('datefmt', None)
             style = config.get('style', '%')
             cname = config.get('class', None)
-            validate = config.get('validate', True)
+
             if not cname:
                 c = logging.Formatter
-                result = c(fmt, dfmt, style, validate)
             else:
                 c = _resolve(cname)
-                if self._has_validate_param(config, c):
-                    result = c(fmt, dfmt, style, validate)
-                else:
-                    result = c(fmt, dfmt, style)
+
+            # Identifying if we need to pass in the validate parameter to the formatter
+            # - The default in logging.Formatter is True, so we won't need to pass in
+            #   if "validate" key is not in the config
+            use_validate = False
+            if config.get("validate"):
+                use_validate = True
+
+            # A TypeError would be raised if "validate" key is passed in with a formatter callable
+            # that does not accept "validate" as a parameter
+            if use_validate:
+                result = c(fmt, dfmt, style, config["validate"])
+            else:
+                result = c(fmt, dfmt, style)
+
         return result
-
-    def _has_validate_param(self, config, formatter_callable):
-        """Check if formatter callable has validate parameter"""
-        params = signature(formatter_callable).parameters
-        if not isinstance(formatter_callable, logging.Formatter) or \
-                not params.get('validate') or params.get("kwargs"):
-            if config.get('validate'):
-                raise TypeError('%r has not validate in parameters' % formatter_callable)
-
-            return False
-        return True
 
     def configure_filter(self, config):
         """Configure a filter from a dictionary."""
