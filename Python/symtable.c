@@ -1175,6 +1175,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                 VISIT_QUIT(st, 0);
             }
             if ((cur & (DEF_GLOBAL | DEF_NONLOCAL))
+                && (st->st_cur->ste_symbols != st->st_global)
                 && s->v.AnnAssign.simple) {
                 PyErr_Format(PyExc_SyntaxError,
                              cur & DEF_GLOBAL ? GLOBAL_ANNOT : NONLOCAL_ANNOT,
