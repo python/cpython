@@ -59,6 +59,11 @@ for k, v in dis.COMPILER_FLAG_NAMES.items():
 # See Include/object.h
 TPFLAGS_IS_ABSTRACT = 1 << 20
 
+def _unwrap_partial(func):
+    while isinstance(func, functools.partial):
+        func = func.func
+    return func
+
 # ----------------------------------------------------------- type-checking
 def ismodule(object):
     """Return true if the object is a module.
@@ -173,8 +178,7 @@ def isgeneratorfunction(obj):
 
     Generator function objects provide the same attributes as functions.
     See help(isfunction) for a list of attributes."""
-    while isinstance(obj, functools.partial):
-        obj = obj.func
+    obj = _unwrap_partial(obj)
     return bool((isfunction(obj) or ismethod(obj)) and
                 obj.__code__.co_flags & CO_GENERATOR)
 
@@ -183,8 +187,7 @@ def iscoroutinefunction(obj):
 
     Coroutine functions are defined with "async def" syntax.
     """
-    while isinstance(obj, functools.partial):
-        obj = obj.func
+    obj = _unwrap_partial(obj)
     return bool(((isfunction(obj) or ismethod(obj)) and
                 obj.__code__.co_flags & CO_COROUTINE))
 
@@ -194,8 +197,7 @@ def isasyncgenfunction(obj):
     Asynchronous generator functions are defined with "async def"
     syntax and have "yield" expressions in their body.
     """
-    while isinstance(obj, functools.partial):
-        obj = obj.func
+    obj = _unwrap_partial(obj)
     return bool((isfunction(obj) or ismethod(obj)) and
                 obj.__code__.co_flags & CO_ASYNC_GENERATOR)
 
