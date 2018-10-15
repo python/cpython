@@ -1,0 +1,2 @@
+Compute GITBRANCH, GITVERSION and GITTAG at the compile time for the
+sysconfig module.
