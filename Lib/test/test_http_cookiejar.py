@@ -984,6 +984,61 @@ class CookieTests(unittest.TestCase):
                     c._cookies["www.acme.com"]["/"]["foo2"].secure,
                     "secure cookie registered non-secure")
 
+    def test_secure_block(self):
+        pol = DefaultCookiePolicy()
+        c = CookieJar(policy=pol)
+
+        headers = ["Set-Cookie: session=narf; secure; path=/"]
+        req = urllib.request.Request("https://www.acme.com/")
+        res = FakeResponse(headers, "https://www.acme.com/")
+        c.extract_cookies(res, req)
+        self.assertEqual(len(c), 1)
+
+        req = urllib.request.Request("https://www.acme.com/")
+        c.add_cookie_header(req)
+        self.assertTrue(req.has_header("Cookie"))
+
+        req = urllib.request.Request("http://www.acme.com/")
+        c.add_cookie_header(req)
+        self.assertFalse(req.has_header("Cookie"))
+
+        # secure websocket protocol
+        req = urllib.request.Request("wss://www.acme.com/")
+        c.add_cookie_header(req)
+        self.assertTrue(req.has_header("Cookie"))
+
+        # non-secure websocket protocol
+        req = urllib.request.Request("ws://www.acme.com/")
+        c.add_cookie_header(req)
+        self.assertFalse(req.has_header("Cookie"))
+
+    def test_custom_secure_protocols(self):
+        pol = DefaultCookiePolicy(secure_protocols=["foos"])
+        c = CookieJar(policy=pol)
+
+        headers = ["Set-Cookie: session=narf; secure; path=/"]
+        req = urllib.request.Request("https://www.acme.com/")
+        res = FakeResponse(headers, "https://www.acme.com/")
+        c.extract_cookies(res, req)
+        self.assertEqual(len(c), 1)
+
+        # test https removed from secure protocol list
+        req = urllib.request.Request("https://www.acme.com/")
+        c.add_cookie_header(req)
+        self.assertFalse(req.has_header("Cookie"))
+
+        req = urllib.request.Request("http://www.acme.com/")
+        c.add_cookie_header(req)
+        self.assertFalse(req.has_header("Cookie"))
+
+        req = urllib.request.Request("foos://www.acme.com/")
+        c.add_cookie_header(req)
+        self.assertTrue(req.has_header("Cookie"))
+
+        req = urllib.request.Request("foo://www.acme.com/")
+        c.add_cookie_header(req)
+        self.assertFalse(req.has_header("Cookie"))
+
     def test_quote_cookie_value(self):
         c = CookieJar(policy=DefaultCookiePolicy(rfc2965=True))
         interact_2965(c, "http://www.acme.com/", r'foo=\b"a"r; Version=1')

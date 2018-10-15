@@ -273,7 +273,7 @@ SSL_SESSION_get_ticket_lifetime_hint(const SSL_SESSION *s)
      #error "Py_SSL_DEFAULT_CIPHERS 0 needs Py_SSL_DEFAULT_CIPHER_STRING"
   #endif
 #elif PY_SSL_DEFAULT_CIPHERS == 1
-/* Python custom selection of sensible ciper suites
+/* Python custom selection of sensible cipher suites
  * DEFAULT: OpenSSL's default cipher list. Since 1.0.2 the list is in sensible order.
  * !aNULL:!eNULL: really no NULL ciphers
  * !MD5:!3DES:!DES:!RC4:!IDEA:!SEED: no weak or broken algorithms on old OpenSSL versions.
@@ -4710,10 +4710,15 @@ _ssl_MemoryBIO_read_impl(PySSLMemoryBIO *self, int len)
         return result;
 
     nbytes = BIO_read(self->bio, PyBytes_AS_STRING(result), len);
-    /* There should never be any short reads but check anyway. */
-    if ((nbytes < len) && (_PyBytes_Resize(&result, len) < 0)) {
+    if (nbytes < 0) {
         Py_DECREF(result);
+        _setSSLError(NULL, 0, __FILE__, __LINE__);
         return NULL;
+    }
+
+    /* There should never be any short reads but check anyway. */
+    if (nbytes < len) {
+        _PyBytes_Resize(&result, nbytes);
     }
 
     return result;

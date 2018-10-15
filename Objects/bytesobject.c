@@ -2596,7 +2596,7 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (PyIndex_Check(x)) {
         size = PyNumber_AsSsize_t(x, PyExc_OverflowError);
         if (size == -1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_OverflowError))
+            if (!PyErr_ExceptionMatches(PyExc_TypeError))
                 return NULL;
             PyErr_Clear();  /* fall through */
         }
@@ -2777,6 +2777,9 @@ PyBytes_FromObject(PyObject *x)
             result = _PyBytes_FromIterator(it, x);
             Py_DECREF(it);
             return result;
+        }
+        if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
+            return NULL;
         }
     }
 
