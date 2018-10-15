@@ -1320,17 +1320,20 @@ class XmlReaderTest(XmlTestBase):
 #
 # ===========================================================================
 
-class PropertyContentHandler(XMLGenerator):
-    def __init__(self, test_harness, reader, *args, **kwargs):
-        test_harness.result = StringIO()
-        super().__init__(test_harness.result, *args,
-                         encoding='UTF-8', **kwargs)
+class PropertyContentHandler(ContentHandler):
+    def __init__(self, test_harness, reader, test, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.test_harness = test_harness
         self.reader = reader
+        self.test_data = test
 
     def startElement(self, name, attr):
         property_ = self.reader.getProperty(property_xml_string)
         self.test_harness.assertIsInstance(property_, str)
+        if self.test_harness.test_data is not None:
+            self.test_harness\
+                .assertEqual(property_,
+                             self.test_data[1][1])
         super().startElement(name, attr)
 
 
@@ -1338,22 +1341,43 @@ class SaxPropertyTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.result = None
+        self.test_data = [['ascii', ['Hello']],
+                          ['utf-8', ['abc˦']],
+                          ['iso-8859-1', ['ghiéñ']],
+                          ['utf-16', ['˦def']],
+                          ['utf-16_be', ['jk˦l']],
+                          ['utf_16_le', ['mno˦']]]
+        for t in self.test_data:
+            d = '<test>{}</test>\n'.format(t[1][0])
+            t[1].append(d)
 
-    def test_xml_str_str(self):
-        reader = create_parser()
-        reader.setContentHandler(PropertyContentHandler(self, reader))
-        input_\
-            = '<?xml version="1.0" encoding="UTF-8"?>\n<test>Hi there</test>'
-        reader.parse(StringIO(input_))
-        self.assertEqual(input_, self.result.getvalue())
+    def test_property_xml_string_from_bytes(self):
+        for prolog in (True, False):
+            for t in self.test_data:
+                reader = create_parser()
+                reader.setContentHandler(PropertyContentHandler(self,
+                                                                reader,
+                                                                t))
+                source = InputSource()
+                data = b''
+                if prolog:
+                    data += b'<?xml version="1.0" encoding="'
+                    data += '{}'.format(t[0]).encode(encoding='ascii')
+                    data += b'"?>\n'
+                data += t[1][1].encode(t[0])
+                source.setByteStream(BytesIO(data))
+                if not prolog:
+                    source.setEncoding(t[0])
+                reader.parse(source)
 
-    def test_xml_str_bytes(self):
+    def test_property_xml_str_from_str(self):
+        self.test_data = None
         reader = create_parser()
-        reader.setContentHandler(PropertyContentHandler(self, reader))
-        input_\
-            = b'<?xml version="1.0" encoding="UTF-8"?>\n<test>Hi there</test>'
-        reader.parse(BytesIO(input_))
-        self.assertEqual(input_.decode(), self.result.getvalue())
+        reader.setContentHandler(PropertyContentHandler(self,
+                                                        reader,
+                                                        None))
+        in_  = '<?xml version="1.0" encoding="UTF-8"?>\n<test>Hi there</test>'
+        reader.parse(StringIO(in_))
 
 
 def test_main():
