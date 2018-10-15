@@ -173,16 +173,22 @@ def isgeneratorfunction(object):
 
     Generator function objects provide the same attributes as functions.
     See help(isfunction) for a list of attributes."""
-    return bool((isfunction(object) or ismethod(object)) and
+    is_generator_function = bool((isfunction(object) or ismethod(object)) and
                 object.__code__.co_flags & CO_GENERATOR)
+    is_partial_generator = bool((isinstance(object, functools.partial) and
+                object.func.__code__.co_flags & CO_GENERATOR))
+    return is_generator_function or is_partial_generator
 
 def iscoroutinefunction(object):
     """Return true if the object is a coroutine function.
 
     Coroutine functions are defined with "async def" syntax.
     """
-    return bool((isfunction(object) or ismethod(object)) and
-                object.__code__.co_flags & CO_COROUTINE)
+    is_coroutine_function = bool(((isfunction(object) or ismethod(object)) and
+                object.__code__.co_flags & CO_COROUTINE))
+    is_partial_coroutine = bool((isinstance(object, functools.partial) and
+                object.func.__code__.co_flags & CO_COROUTINE))
+    return is_coroutine_function or is_partial_coroutine
 
 def isasyncgenfunction(object):
     """Return true if the object is an asynchronous generator function.
@@ -190,8 +196,12 @@ def isasyncgenfunction(object):
     Asynchronous generator functions are defined with "async def"
     syntax and have "yield" expressions in their body.
     """
-    return bool((isfunction(object) or ismethod(object)) and
+    is_async_gen_function = bool((isfunction(object) or ismethod(object)) and
                 object.__code__.co_flags & CO_ASYNC_GENERATOR)
+    is_partial_async_gen = bool((isinstance(object, functools.partial) and
+                object.func.__code__.co_flags & CO_ASYNC_GENERATOR))
+    return is_async_gen_function or is_partial_async_gen
+
 
 def isasyncgen(object):
     """Return true if the object is an asynchronous generator."""
