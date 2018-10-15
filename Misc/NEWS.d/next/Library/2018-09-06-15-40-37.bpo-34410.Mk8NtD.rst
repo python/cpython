@@ -1,0 +1,1 @@
+``itertools.tee()`` fix it can segfault interpreter when wrapped iterator releases GIL.
