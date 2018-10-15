@@ -601,17 +601,7 @@ class TestCase(object):
         outcome = _Outcome(result)
         try:
             self._outcome = outcome
-
-            with outcome.testPartExecutor(self):
-                self.setUp()
-            if outcome.success:
-                outcome.expecting_failure = expecting_failure
-                with outcome.testPartExecutor(self, isTest=True):
-                    testMethod()
-                outcome.expecting_failure = False
-                with outcome.testPartExecutor(self):
-                    self.tearDown()
-
+            self._runTest(testMethod, outcome, expecting_failure)
             self.doCleanups()
             for test, reason in outcome.skipped:
                 self._addSkip(result, test, reason)
@@ -656,6 +646,18 @@ class TestCase(object):
 
     def __call__(self, *args, **kwds):
         return self.run(*args, **kwds)
+
+    def _runTest(self, testMethod, outcome, expecting_failure):
+        """Run the test and collect errors into a TestResult"""
+        with outcome.testPartExecutor(self):
+            self.setUp()
+        if outcome.success:
+            outcome.expecting_failure = expecting_failure
+            with outcome.testPartExecutor(self, isTest=True):
+                testMethod()
+            outcome.expecting_failure = False
+            with outcome.testPartExecutor(self):
+                self.tearDown()
 
     def debug(self):
         """Run the test without collecting errors in a TestResult"""
