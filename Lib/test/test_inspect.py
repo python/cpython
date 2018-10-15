@@ -2,7 +2,6 @@ import builtins
 import collections
 import datetime
 import functools
-from functools import partial
 import importlib
 import inspect
 import io
@@ -175,35 +174,40 @@ class TestPredicates(IsTestBase):
             inspect.iscoroutinefunction(gen_coroutine_function_example))
         self.assertFalse(
             inspect.iscoroutinefunction(
-                partial(partial(gen_coroutine_function_example))))
+                functools.partial(functools.partial(
+                    gen_coroutine_function_example))))
         self.assertFalse(inspect.iscoroutine(gen_coro))
 
         self.assertTrue(
             inspect.isgeneratorfunction(gen_coroutine_function_example))
         self.assertTrue(
             inspect.isgeneratorfunction(
-                partial(partial(gen_coroutine_function_example))))
+                functools.partial(functools.partial(
+                    gen_coroutine_function_example))))
         self.assertTrue(inspect.isgenerator(gen_coro))
 
         self.assertTrue(
             inspect.iscoroutinefunction(coroutine_function_example))
         self.assertTrue(
             inspect.iscoroutinefunction(
-                partial(partial(coroutine_function_example))))
+                functools.partial(functools.partial(
+                    coroutine_function_example))))
         self.assertTrue(inspect.iscoroutine(coro))
 
         self.assertFalse(
             inspect.isgeneratorfunction(coroutine_function_example))
         self.assertFalse(
             inspect.isgeneratorfunction(
-                partial(partial(coroutine_function_example))))
+                functools.partial(functools.partial(
+                    coroutine_function_example))))
         self.assertFalse(inspect.isgenerator(coro))
 
         self.assertTrue(
             inspect.isasyncgenfunction(async_generator_function_example))
         self.assertTrue(
             inspect.isasyncgenfunction(
-                partial(partial(async_generator_function_example))))
+                functools.partial(functools.partial(
+                    async_generator_function_example))))
         self.assertTrue(inspect.isasyncgen(async_gen_coro))
 
         coro.close(); gen_coro.close(); # silence warnings
