@@ -174,7 +174,7 @@ def isgeneratorfunction(obj):
     Generator function objects provide the same attributes as functions.
     See help(isfunction) for a list of attributes."""
     while isinstance(obj, functools.partial):
-            obj = obj.func
+        obj = obj.func
     return bool((isfunction(obj) or ismethod(obj)) and
                 obj.__code__.co_flags & CO_GENERATOR)
 
@@ -195,7 +195,7 @@ def isasyncgenfunction(obj):
     syntax and have "yield" expressions in their body.
     """
     while isinstance(obj, functools.partial):
-            obj = obj.func
+        obj = obj.func
     return bool((isfunction(obj) or ismethod(obj)) and
                 obj.__code__.co_flags & CO_ASYNC_GENERATOR)
 
