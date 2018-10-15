@@ -3840,6 +3840,9 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
 
         if (obj != NULL) {
             obj_class = get_class(obj);
+            if (obj_class == NULL) {
+                return -1;
+            }
             p = obj_class != cls;    /* true iff a problem */
             Py_DECREF(obj_class);
             if (p) {
