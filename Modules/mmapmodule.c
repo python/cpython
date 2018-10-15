@@ -694,16 +694,15 @@ mmap__repr__method(PyObject *self)
 
     Py_ssize_t size = m_obj->size;
 
-    switch (m_obj->access)
-    {
-        case ACCESS_DEFAULT: 
+    switch (m_obj->access) {
+        case ACCESS_DEFAULT:
             access_str = "ACCESS_DEFAULT";
             break;
-    
+
         case ACCESS_READ:
             access_str = "ACCESS_READ";
             break;
-        
+
         case ACCESS_WRITE:
             access_str = "ACCESS_WRITE";
             break;
@@ -717,13 +716,11 @@ mmap__repr__method(PyObject *self)
             return NULL;
     }
 
-    if (m_obj -> data == NULL)
-    {
+    if (m_obj -> data == NULL) {
         reprfmt = "<%s is_closed=True fileno=%d access=%s>";
         repr = PyUnicode_FromFormat(reprfmt, self->ob_type->tp_name, m_obj->fd, access_str);
     }
-    else 
-    {
+    else {
         const char* tp_name;
         int fd;
         tp_name = self->ob_type->tp_name;
@@ -734,21 +731,20 @@ mmap__repr__method(PyObject *self)
             reprfmt = "<%s is_closed=False fileno=%d access=%s length=%R offset=%R entire_contents=%R>";
             PyObject *entire_contents;
             entire_contents = PyBytes_FromStringAndSize(&m_obj->data, size);
-            repr = PyUnicode_FromFormat(reprfmt, tp_name, fd, access_str, 
-                                        PyLong_FromSize_t(m_obj->size), 
-                                        PyLong_FromSize_t(m_obj->pos), 
+            repr = PyUnicode_FromFormat(reprfmt, tp_name, fd, access_str,
+                                        PyLong_FromSize_t(m_obj->size),
+                                        PyLong_FromSize_t(m_obj->pos),
                                         entire_contents);
         }
-        else
-        {
+        else {
             reprfmt = "<%s is_closed=False fileno=%d access=%s length=%R offset=%R entire_contents=%R ... %R>";
-            repr = PyUnicode_FromFormat(reprfmt, tp_name, fd, access_str, 
-                                        PyLong_FromSize_t(m_obj->size), 
-                                        PyLong_FromSize_t(m_obj->pos), 
+            repr = PyUnicode_FromFormat(reprfmt, tp_name, fd, access_str,
+                                        PyLong_FromSize_t(m_obj->size),
+                                        PyLong_FromSize_t(m_obj->pos),
                                         PyBytes_FromStringAndSize(&m_obj->data, 50),
                                         PyBytes_FromStringAndSize(&m_obj->data + size - 50, 50));
         }
-    }    
+    }
 
     return repr;
 }
