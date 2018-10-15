@@ -672,17 +672,10 @@ class DictConfigurator(BaseConfigurator):
             else:
                 c = _resolve(cname)
 
-            # Identifying if we need to pass in the validate parameter to the formatter
-            # - The default in logging.Formatter is True, so we won't need to pass in
-            #   if "validate" key is not in the config
-            use_validate = False
-            if config.get("validate"):
-                use_validate = True
-
             # A TypeError would be raised if "validate" key is passed in with a formatter callable
             # that does not accept "validate" as a parameter
-            if use_validate:
-                result = c(fmt, dfmt, style, config["validate"])
+            if 'validate' in config:  # if user hasn't mentioned it, the default will be fine
+                result = c(fmt, dfmt, style, config['validate'])
             else:
                 result = c(fmt, dfmt, style)
 
