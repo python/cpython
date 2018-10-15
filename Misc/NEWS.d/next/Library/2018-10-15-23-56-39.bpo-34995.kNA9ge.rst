@@ -1,0 +1,1 @@
+Maintain wrapped method's __isabstractmethod__ in functools.cached_property
