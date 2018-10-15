@@ -54,7 +54,7 @@ class CompileallTestsBase:
         with open(self.bc_path, 'rb') as file:
             data = file.read(12)
         mtime = int(os.stat(self.source_path).st_mtime)
-        compare = struct.pack('<4sll', importlib.util.MAGIC_NUMBER, 0, mtime)
+        compare = struct.pack('<4slL', importlib.util.MAGIC_NUMBER, 0, mtime)
         return data, compare
 
     @unittest.skipUnless(hasattr(os, 'stat'), 'test needs os.stat()')
@@ -76,7 +76,7 @@ class CompileallTestsBase:
 
     def test_mtime(self):
         # Test a change in mtime leads to a new .pyc.
-        self.recreation_check(struct.pack('<4sll', importlib.util.MAGIC_NUMBER,
+        self.recreation_check(struct.pack('<4slL', importlib.util.MAGIC_NUMBER,
                                           0, 1))
 
     def test_magic_number(self):
