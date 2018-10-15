@@ -666,11 +666,19 @@ class DictConfigurator(BaseConfigurator):
             dfmt = config.get('datefmt', None)
             style = config.get('style', '%')
             cname = config.get('class', None)
+
             if not cname:
                 c = logging.Formatter
             else:
                 c = _resolve(cname)
-            result = c(fmt, dfmt, style)
+
+            # A TypeError would be raised if "validate" key is passed in with a formatter callable
+            # that does not accept "validate" as a parameter
+            if 'validate' in config:  # if user hasn't mentioned it, the default will be fine
+                result = c(fmt, dfmt, style, config['validate'])
+            else:
+                result = c(fmt, dfmt, style)
+
         return result
 
     def configure_filter(self, config):

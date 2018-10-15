@@ -2125,6 +2125,10 @@ class WarningsTest(BaseTest):
 def formatFunc(format, datefmt=None):
     return logging.Formatter(format, datefmt)
 
+class myCustomFormatter:
+    def __init__(self, fmt, datefmt=None):
+        pass
+
 def handlerFunc():
     return logging.StreamHandler()
 
@@ -2765,6 +2769,114 @@ class ConfigDictTest(BaseTest):
         }
     }
 
+    # Configuration with custom logging.Formatter subclass as '()' key and 'validate' set to False
+    custom_formatter_class_validate = {
+        'version': 1,
+        'formatters': {
+            'form1': {
+                '()': __name__ + '.ExceptionFormatter',
+                'format': '%(levelname)s:%(name)s:%(message)s',
+                'validate': False,
+            },
+        },
+        'handlers' : {
+            'hand1' : {
+                'class': 'logging.StreamHandler',
+                'formatter': 'form1',
+                'level': 'NOTSET',
+                'stream': 'ext://sys.stdout',
+            },
+        },
+        "loggers": {
+            "my_test_logger_custom_formatter": {
+                "level": "DEBUG",
+                "handlers": ["hand1"],
+                "propagate": "true"
+            }
+        }
+    }
+
+    # Configuration with custom logging.Formatter subclass as 'class' key and 'validate' set to False
+    custom_formatter_class_validate2 = {
+        'version': 1,
+        'formatters': {
+            'form1': {
+                'class': __name__ + '.ExceptionFormatter',
+                'format': '%(levelname)s:%(name)s:%(message)s',
+                'validate': False,
+            },
+        },
+        'handlers' : {
+            'hand1' : {
+                'class': 'logging.StreamHandler',
+                'formatter': 'form1',
+                'level': 'NOTSET',
+                'stream': 'ext://sys.stdout',
+            },
+        },
+        "loggers": {
+            "my_test_logger_custom_formatter": {
+                "level": "DEBUG",
+                "handlers": ["hand1"],
+                "propagate": "true"
+            }
+        }
+    }
+
+    # Configuration with custom class that is not inherited from logging.Formatter
+    custom_formatter_class_validate3 = {
+        'version': 1,
+        'formatters': {
+            'form1': {
+                'class': __name__ + '.myCustomFormatter',
+                'format': '%(levelname)s:%(name)s:%(message)s',
+                'validate': False,
+            },
+        },
+        'handlers' : {
+            'hand1' : {
+                'class': 'logging.StreamHandler',
+                'formatter': 'form1',
+                'level': 'NOTSET',
+                'stream': 'ext://sys.stdout',
+            },
+        },
+        "loggers": {
+            "my_test_logger_custom_formatter": {
+                "level": "DEBUG",
+                "handlers": ["hand1"],
+                "propagate": "true"
+            }
+        }
+    }
+
+    # Configuration with custom function and 'validate' set to False
+    custom_formatter_with_function = {
+        'version': 1,
+        'formatters': {
+            'form1': {
+                '()': formatFunc,
+                'format': '%(levelname)s:%(name)s:%(message)s',
+                'validate': False,
+            },
+        },
+        'handlers' : {
+            'hand1' : {
+                'class': 'logging.StreamHandler',
+                'formatter': 'form1',
+                'level': 'NOTSET',
+                'stream': 'ext://sys.stdout',
+            },
+        },
+        "loggers": {
+            "my_test_logger_custom_formatter": {
+                "level": "DEBUG",
+                "handlers": ["hand1"],
+                "propagate": "true"
+            }
+        }
+    }
+
     def apply_config(self, conf):
         logging.config.dictConfig(conf)
 
@@ -3163,11 +3275,42 @@ class ConfigDictTest(BaseTest):
         ], pat=r"^[\w.]+ -> (\w+): (\d+)$")
 
     def test_out_of_order(self):
-        self.apply_config(self.out_of_order)
+        self.assertRaises(ValueError, self.apply_config, self.out_of_order)
+
+    def test_out_of_order_with_dollar_style(self):
+        config = self.out_of_order.copy()
+        config['formatters']['mySimpleFormatter']['format'] = "${asctime} (${name}) ${levelname}: ${message}"
+
+        self.apply_config(config)
         handler = logging.getLogger('mymodule').handlers[0]
         self.assertIsInstance(handler.target, logging.Handler)
         self.assertIsInstance(handler.formatter._style,
                               logging.StringTemplateStyle)
+
+    def test_custom_formatter_class_with_validate(self):
+        self.apply_config(self.custom_formatter_class_validate)
+        handler = logging.getLogger("my_test_logger_custom_formatter").handlers[0]
+        self.assertIsInstance(handler.formatter, ExceptionFormatter)
+
+    def test_custom_formatter_class_with_validate2(self):
+        self.apply_config(self.custom_formatter_class_validate2)
+        handler = logging.getLogger("my_test_logger_custom_formatter").handlers[0]
+        self.assertIsInstance(handler.formatter, ExceptionFormatter)
+
+    def test_custom_formatter_class_with_validate2_with_wrong_fmt(self):
+        config = self.custom_formatter_class_validate.copy()
+        config['formatters']['form1']['style'] = "$"
+
+        # Exception should not be raise as we have configured 'validate' to False
+        self.apply_config(config)
+        handler = logging.getLogger("my_test_logger_custom_formatter").handlers[0]
+        self.assertIsInstance(handler.formatter, ExceptionFormatter)
+
+    def test_custom_formatter_class_with_validate3(self):
+        self.assertRaises(ValueError, self.apply_config, self.custom_formatter_class_validate3)
+
+    def test_custom_formatter_function_with_validate(self):
+        self.assertRaises(ValueError, self.apply_config, self.custom_formatter_with_function)
 
     def test_baseconfig(self):
         d = {
@@ -3485,20 +3628,26 @@ class FormatterTest(unittest.TestCase):
             result.update(self.variants[name])
         return logging.makeLogRecord(result)
 
+    def assert_error_message(self, exception, message, *args, **kwargs):
+        try:
+            self.assertRaises(exception, *args, **kwargs)
+        except exception as e:
+            self.assertEqual(message, e.message)
+
     def test_percent(self):
         # Test %-formatting
         r = self.get_record()
         f = logging.Formatter('${%(message)s}')
         self.assertEqual(f.format(r), '${Message with 2 placeholders}')
         f = logging.Formatter('%(random)s')
-        self.assertRaises(KeyError, f.format, r)
+        self.assertRaises(ValueError, f.format, r)
         self.assertFalse(f.usesTime())
         f = logging.Formatter('%(asctime)s')
         self.assertTrue(f.usesTime())
         f = logging.Formatter('%(asctime)-15s')
         self.assertTrue(f.usesTime())
-        f = logging.Formatter('asctime')
-        self.assertFalse(f.usesTime())
+        f = logging.Formatter('%(asctime)#15s')
+        self.assertTrue(f.usesTime())
 
     def test_braces(self):
         # Test {}-formatting
@@ -3506,7 +3655,8 @@ class FormatterTest(unittest.TestCase):
         f = logging.Formatter('$%{message}%$', style='{')
         self.assertEqual(f.format(r), '$%Message with 2 placeholders%$')
         f = logging.Formatter('{random}', style='{')
-        self.assertRaises(KeyError, f.format, r)
+        self.assertRaises(ValueError, f.format, r)
+        f = logging.Formatter("{message}", style='{')
         self.assertFalse(f.usesTime())
         f = logging.Formatter('{asctime}', style='{')
         self.assertTrue(f.usesTime())
@@ -3514,27 +3664,177 @@ class FormatterTest(unittest.TestCase):
         self.assertTrue(f.usesTime())
         f = logging.Formatter('{asctime:15}', style='{')
         self.assertTrue(f.usesTime())
-        f = logging.Formatter('asctime', style='{')
-        self.assertFalse(f.usesTime())
 
     def test_dollars(self):
         # Test $-formatting
         r = self.get_record()
+        f = logging.Formatter('${message}', style='$')
+        self.assertEqual(f.format(r), 'Message with 2 placeholders')
         f = logging.Formatter('$message', style='$')
         self.assertEqual(f.format(r), 'Message with 2 placeholders')
         f = logging.Formatter('$$%${message}%$$', style='$')
         self.assertEqual(f.format(r), '$%Message with 2 placeholders%$')
         f = logging.Formatter('${random}', style='$')
-        self.assertRaises(KeyError, f.format, r)
+        self.assertRaises(ValueError, f.format, r)
         self.assertFalse(f.usesTime())
         f = logging.Formatter('${asctime}', style='$')
         self.assertTrue(f.usesTime())
-        f = logging.Formatter('${asctime', style='$')
-        self.assertFalse(f.usesTime())
         f = logging.Formatter('$asctime', style='$')
         self.assertTrue(f.usesTime())
-        f = logging.Formatter('asctime', style='$')
+        f = logging.Formatter('${message}', style='$')
         self.assertFalse(f.usesTime())
+        f = logging.Formatter('${asctime}--', style='$')
+        self.assertTrue(f.usesTime())
+
+    def test_format_validate(self):
+        # Check correct formatting
+        # Percentage style
+        f = logging.Formatter("%(levelname)-15s - %(message) 5s - %(process)03d - %(module) - %(asctime)*.3s")
+        self.assertEqual(f._fmt, "%(levelname)-15s - %(message) 5s - %(process)03d - %(module) - %(asctime)*.3s")
+        f = logging.Formatter("%(asctime)*s - %(asctime)*.3s - %(process)-34.33o")
+        self.assertEqual(f._fmt, "%(asctime)*s - %(asctime)*.3s - %(process)-34.33o")
+        f = logging.Formatter("%(process)#+027.23X")
+        self.assertEqual(f._fmt, "%(process)#+027.23X")
+        f = logging.Formatter("%(foo)#.*g")
+        self.assertEqual(f._fmt, "%(foo)#.*g")
+
+        # StrFormat Style
+        f = logging.Formatter("$%{message}%$ - {asctime!a:15} - {customfield['key']}", style="{")
+        self.assertEqual(f._fmt, "$%{message}%$ - {asctime!a:15} - {customfield['key']}")
+        f = logging.Formatter("{process:.2f} - {custom.f:.4f}", style="{")
+        self.assertEqual(f._fmt, "{process:.2f} - {custom.f:.4f}")
+        f = logging.Formatter("{customfield!s:#<30}", style="{")
+        self.assertEqual(f._fmt, "{customfield!s:#<30}")
+        f = logging.Formatter("{message!r}", style="{")
+        self.assertEqual(f._fmt, "{message!r}")
+        f = logging.Formatter("{message!s}", style="{")
+        self.assertEqual(f._fmt, "{message!s}")
+        f = logging.Formatter("{message!a}", style="{")
+        self.assertEqual(f._fmt, "{message!a}")
+        f = logging.Formatter("{process!r:4.2}", style="{")
+        self.assertEqual(f._fmt, "{process!r:4.2}")
+        f = logging.Formatter("{process!s:<#30,.12f}- {custom:=+#30,.1d} - {module:^30}", style="{")
+        self.assertEqual(f._fmt, "{process!s:<#30,.12f}- {custom:=+#30,.1d} - {module:^30}")
+        f = logging.Formatter("{process!s:{w},.{p}}", style="{")
+        self.assertEqual(f._fmt, "{process!s:{w},.{p}}")
+        f = logging.Formatter("{foo:12.{p}}", style="{")
+        self.assertEqual(f._fmt, "{foo:12.{p}}")
+        f = logging.Formatter("{foo:{w}.6}", style="{")
+        self.assertEqual(f._fmt, "{foo:{w}.6}")
+        f = logging.Formatter("{foo[0].bar[1].baz}", style="{")
+        self.assertEqual(f._fmt, "{foo[0].bar[1].baz}")
+        f = logging.Formatter("{foo[k1].bar[k2].baz}", style="{")
+        self.assertEqual(f._fmt, "{foo[k1].bar[k2].baz}")
+        f = logging.Formatter("{12[k1].bar[k2].baz}", style="{")
+        self.assertEqual(f._fmt, "{12[k1].bar[k2].baz}")
+
+        # Dollar style
+        f = logging.Formatter("${asctime} - $message", style="$")
+        self.assertEqual(f._fmt, "${asctime} - $message")
+        f = logging.Formatter("$bar $$", style="$")
+        self.assertEqual(f._fmt, "$bar $$")
+        f = logging.Formatter("$bar $$$$", style="$")
+        self.assertEqual(f._fmt, "$bar $$$$")  # this would print two $($$)
+
+        # Testing when ValueError being raised from incorrect format
+        # Percentage Style
+        self.assertRaises(ValueError, logging.Formatter, "%(asctime)Z")
+        self.assertRaises(ValueError, logging.Formatter, "%(asctime)b")
+        self.assertRaises(ValueError, logging.Formatter, "%(asctime)*")
+        self.assertRaises(ValueError, logging.Formatter, "%(asctime)*3s")
+        self.assertRaises(ValueError, logging.Formatter, "%(asctime)_")
+        self.assertRaises(ValueError, logging.Formatter, '{asctime}')
+        self.assertRaises(ValueError, logging.Formatter, '${message}')
+        self.assertRaises(ValueError, logging.Formatter, '%(foo)#12.3*f')  # with both * and decimal number as precision
+        self.assertRaises(ValueError, logging.Formatter, '%(foo)0*.8*f')
+
+        # StrFormat Style
+        # Testing failure for '-' in field name
+        self.assert_error_message(
+            ValueError,
+            "invalid field name/expression: 'name-thing'",
+            logging.Formatter, "{name-thing}", style="{"
+        )
+        # Testing failure for style mismatch
+        self.assert_error_message(
+            ValueError,
+            "invalid format: no fields",
+            logging.Formatter, '%(asctime)s', style='{'
+        )
+        # Testing failure for invalid conversion
+        self.assert_error_message(
+            ValueError,
+            "invalid conversion: 'Z'"
+        )
+        self.assertRaises(ValueError, logging.Formatter, '{asctime!s:#30,15f}', style='{')
+        self.assert_error_message(
+            ValueError,
+            "invalid format: expected ':' after conversion specifier",
+            logging.Formatter, '{asctime!aa:15}', style='{'
+        )
+        # Testing failure for invalid spec
+        self.assert_error_message(
+            ValueError,
+            "bad specifier: '.2ff'",
+            logging.Formatter, '{process:.2ff}', style='{'
+        )
+        self.assertRaises(ValueError, logging.Formatter, '{process:.2Z}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{process!s:<##30,12g}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{process!s:<#30#,12g}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{process!s:{{w}},{{p}}}', style='{')
+        # Testing failure for mismatch braces
+        self.assert_error_message(
+            ValueError,
+            "invalid format: unmatched '{' in format spec",
+            logging.Formatter, '{process', style='{'
+        )
+        self.assert_error_message(
+            ValueError,
+            "invalid format: unmatched '{' in format spec",
+            logging.Formatter, 'process}', style='{'
+        )
+        self.assertRaises(ValueError, logging.Formatter, '{{foo!r:4.2}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{{foo!r:4.2}}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{foo/bar}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{foo:{{w}}.{{p}}}}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{foo!X:{{w}}.{{p}}}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{foo!a:random}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{foo!a:ran{dom}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{foo!a:ran{d}om}', style='{')
+        self.assertRaises(ValueError, logging.Formatter, '{foo.!a:d}', style='{')
+
+        # Dollar style
+        # Testing failure for mismatch bare $
+        self.assert_error_message(
+            ValueError,
+            "invalid format: bare \'$\' not allowed",
+            logging.Formatter, '$bar $$$', style='$'
+        )
+        self.assert_error_message(
+            ValueError,
+            "invalid format: bare \'$\' not allowed",
+            logging.Formatter, 'bar $', style='$'
+        )
+        self.assert_error_message(
+            ValueError,
+            "invalid format: bare \'$\' not allowed",
+            logging.Formatter, 'foo $.', style='$'
+        )
+        # Testing failure for mismatch style
+        self.assert_error_message(
+            ValueError,
+            "invalid format: no fields",
+            logging.Formatter, '{asctime}', style='$'
+        )
+        self.assertRaises(ValueError, logging.Formatter, '%(asctime)s', style='$')
+
+        # Testing failure for incorrect fields
+        self.assert_error_message(
+            ValueError,
+            "invalid format: no fields",
+            logging.Formatter, 'foo', style='$'
+        )
+        self.assertRaises(ValueError, logging.Formatter, '${asctime', style='$')
 
     def test_invalid_style(self):
         self.assertRaises(ValueError, logging.Formatter, None, None, 'x')
@@ -4000,10 +4300,10 @@ class BasicConfigTest(unittest.TestCase):
         self.assertEqual(handler.stream, stream)
 
     def test_format(self):
-        logging.basicConfig(format='foo')
+        logging.basicConfig(format='%(asctime)s - %(message)s')
 
         formatter = logging.root.handlers[0].formatter
-        self.assertEqual(formatter._style._fmt, 'foo')
+        self.assertEqual(formatter._style._fmt, '%(asctime)s - %(message)s')
 
     def test_datefmt(self):
         logging.basicConfig(datefmt='bar')
@@ -4032,11 +4332,11 @@ class BasicConfigTest(unittest.TestCase):
         handlers = [logging.StreamHandler()]
         stream = sys.stderr
         assertRaises(ValueError, logging.basicConfig, filename='test.log',
-                                                     stream=stream)
+                                                      stream=stream)
         assertRaises(ValueError, logging.basicConfig, filename='test.log',
-                                                     handlers=handlers)
+                                                      handlers=handlers)
         assertRaises(ValueError, logging.basicConfig, stream=stream,
-                                                     handlers=handlers)
+                                                      handlers=handlers)
         # Issue 23207: test for invalid kwargs
         assertRaises(ValueError, logging.basicConfig, loglevel=logging.INFO)
         # Should pop both filename and filemode even if filename is None

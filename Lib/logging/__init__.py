@@ -23,9 +23,11 @@ Copyright (C) 2001-2017 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, os, time, io, traceback, warnings, weakref, collections.abc
+import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
 
 from string import Template
+from string import Formatter as StrFormatter
+
 
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'FATAL', 'FileHandler', 'Filter', 'Formatter', 'Handler', 'INFO',
@@ -413,15 +415,20 @@ def makeLogRecord(dict):
     rv.__dict__.update(dict)
     return rv
 
+
 #---------------------------------------------------------------------------
 #   Formatter classes and functions
 #---------------------------------------------------------------------------
+_str_formatter = StrFormatter()
+del StrFormatter
+
 
 class PercentStyle(object):
 
     default_format = '%(message)s'
     asctime_format = '%(asctime)s'
     asctime_search = '%(asctime)'
+    validation_pattern = re.compile(r'%\(\w+\)[#0+ -]*(\*|\d+)?(\.(\*|\d+))?[diouxefgcrsa%]', re.I)
 
     def __init__(self, fmt):
         self._fmt = fmt or self.default_format
@@ -429,16 +436,49 @@ class PercentStyle(object):
     def usesTime(self):
         return self._fmt.find(self.asctime_search) >= 0
 
-    def format(self, record):
+    def validate(self):
+        """Validate the input format, ensure it matches the correct style"""
+        if not self.validation_pattern.search(self._fmt):
+            raise ValueError("Invalid format '%s' for '%s' style" % (self._fmt, self.default_format[0]))
+
+    def _format(self, record):
         return self._fmt % record.__dict__
+
+    def format(self, record):
+        try:
+            return self._format(record)
+        except KeyError as e:
+            raise ValueError('Formatting field not found in record: %s' % e)
+
 
 class StrFormatStyle(PercentStyle):
     default_format = '{message}'
     asctime_format = '{asctime}'
     asctime_search = '{asctime'
 
-    def format(self, record):
+    fmt_spec = re.compile(r'^(.?[<>=^])?[+ -]?#?0?(\d+|{\w+})?[,_]?(\.(\d+|{\w+}))?[bcdefgnosx%]?$', re.I)
+    field_spec = re.compile(r'^(\d+|\w+)(\.\w+|\[[^]]+\])*$')
+
+    def _format(self, record):
         return self._fmt.format(**record.__dict__)
+
+    def validate(self):
+        """Validate the input format, ensure it is the correct string formatting style"""
+        fields = set()
+        try:
+            for _, fieldname, spec, conversion in _str_formatter.parse(self._fmt):
+                if fieldname:
+                    if not self.field_spec.match(fieldname):
+                        raise ValueError('invalid field name/expression: %r' % fieldname)
+                    fields.add(fieldname)
+                if conversion and conversion not in 'rsa':
+                    raise ValueError('invalid conversion: %r' % conversion)
+                if spec and not self.fmt_spec.match(spec):
+                    raise ValueError('bad specifier: %r' % spec)
+        except ValueError as e:
+            raise ValueError('invalid format: %s' % e)
+        if not fields:
+            raise ValueError('invalid format: no fields')
 
 
 class StringTemplateStyle(PercentStyle):
@@ -454,8 +494,23 @@ class StringTemplateStyle(PercentStyle):
         fmt = self._fmt
         return fmt.find('$asctime') >= 0 or fmt.find(self.asctime_format) >= 0
 
-    def format(self, record):
+    def validate(self):
+        pattern = Template.pattern
+        fields = set()
+        for m in pattern.finditer(self._fmt):
+            d = m.groupdict()
+            if d['named']:
+                fields.add(d['named'])
+            elif d['braced']:
+                fields.add(d['braced'])
+            elif m.group(0) == '$':
+                raise ValueError('invalid format: bare \'$\' not allowed')
+        if not fields:
+            raise ValueError('invalid format: no fields')
+
+    def _format(self, record):
         return self._tpl.substitute(**record.__dict__)
+
 
 BASIC_FORMAT = "%(levelname)s:%(name)s:%(message)s"
 
@@ -510,7 +565,7 @@ class Formatter(object):
 
     converter = time.localtime
 
-    def __init__(self, fmt=None, datefmt=None, style='%'):
+    def __init__(self, fmt=None, datefmt=None, style='%', validate=True):
         """
         Initialize the formatter with specified format strings.
 
@@ -530,6 +585,9 @@ class Formatter(object):
             raise ValueError('Style must be one of: %s' % ','.join(
                              _STYLES.keys()))
         self._style = _STYLES[style][0](fmt)
+        if validate:
+            self._style.validate()
+
         self._fmt = self._style._fmt
         self.datefmt = datefmt
 
