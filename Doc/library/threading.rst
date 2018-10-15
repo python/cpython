@@ -100,7 +100,8 @@ This module defines the following functions:
    memory page size - platform documentation should be referred to for more
    information (4 KiB pages are common; using multiples of 4096 for the stack size is
    the suggested approach in the absence of more specific information).
-   Availability: Windows, systems with POSIX threads.
+
+   .. availability:: Windows, systems with POSIX threads.
 
 
 This module also defines the following constant:
