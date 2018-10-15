@@ -226,6 +226,11 @@ otherwise, the context is used to determine what to instantiate.
   (with defaults of ``None``) and these are used to construct a
   :class:`~logging.Formatter` instance.
 
+  .. versionchanged:: 3.8
+     a ``validate`` key (with default of ``True``) can be added into
+     the ``formatters`` section of the configuring dict, this is to
+     validate the format.
+
 * *filters* - the corresponding value will be a dict in which each key
   is a filter id and each value is a dict describing how to configure
   the corresponding Filter instance.
