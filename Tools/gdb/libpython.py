@@ -954,8 +954,8 @@ class PyFrameObjectPtr(PyObjectPtr):
         lineno = self.current_line_num()
         if lineno is None:
             return '(failed to get frame line number)'
-        filename = self.filename()
 
+        filename = self.filename()
         try:
             with open(os_fsencode(filename), 'r') as fp:
                 lines = fp.readlines()
