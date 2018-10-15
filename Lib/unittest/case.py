@@ -81,6 +81,16 @@ class _Outcome(object):
             self.success = self.success and old_success
 
 
+class _IgnoredOutcome(object):
+    def __init__(self, result=None):
+        self.expecting_failure = None
+        self.success = True
+
+    @contextlib.contextmanager
+    def testPartExecutor(self, test_case, isTest=False):
+        yield
+
+
 def _id(obj):
     return obj
 
@@ -661,12 +671,9 @@ class TestCase(object):
 
     def debug(self):
         """Run the test without collecting errors in a TestResult"""
-        self.setUp()
-        getattr(self, self._testMethodName)()
-        self.tearDown()
-        while self._cleanups:
-            function, args, kwargs = self._cleanups.pop(-1)
-            function(*args, **kwargs)
+        self._runTest(getattr(self, self._testMethodName),
+                      _IgnoredOutcome(), None)
+        self.doCleanups()
 
     def skipTest(self, reason):
         """Skip this test."""
