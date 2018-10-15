@@ -2478,6 +2478,16 @@ class TestCachedProperty(unittest.TestCase):
     def test_doc(self):
         self.assertEqual(CachedCostItem.cost.__doc__, "The cost of the item.")
 
+    def test_isabstractmethod(self):
+        class AbstractExpensiveCalculator(abc.ABC):
+            @functools.cached_property
+            @abc.abstractmethod
+            def calculate(self):
+                pass
+
+        with self.assertRaises(TypeError):
+            AbstractExpensiveCalculator()
+
 
 if __name__ == '__main__':
     unittest.main()

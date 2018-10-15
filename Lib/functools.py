@@ -882,6 +882,7 @@ class cached_property:
         self.func = func
         self.attrname = None
         self.__doc__ = func.__doc__
+        self.__isabstractmethod__ = getattr(func, '__isabstractmethod__', False)
         self.lock = RLock()
 
     def __set_name__(self, owner, name):
