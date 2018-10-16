@@ -619,7 +619,7 @@ Options:
             help="blow up with probability PROB [default: %default]")
         self.parser.set_defaults(prob=u"ol\u00E9!")
         expected_help = self.help_prefix + \
-            "  -p PROB, --prob=PROB  blow up with probability PROB [default: ol\xc3\xa9!]\n"
+            u"  -p PROB, --prob=PROB  blow up with probability PROB [default: ol\u00E9!]\n"
         self.assertHelp(self.parser, expected_help)
 
     def test_alt_expand(self):
