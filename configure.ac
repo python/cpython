@@ -2970,7 +2970,6 @@ case "$ac_sys_system" in
           fi
          ;;
 esac
-AC_SUBST(LDLAST)
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
