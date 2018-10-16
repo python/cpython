@@ -238,7 +238,7 @@ in the top-level :mod:`email` package namespace.
 
    Return a message object structure from a :term:`bytes-like object`.  This is
    equivalent to ``BytesParser().parsebytes(s)``.  Optional *_class* and
-   *strict* are interpreted as with the :class:`~email.parser.BytesParser` class
+   *policy* are interpreted as with the :class:`~email.parser.BytesParser` class
    constructor.
 
    .. versionadded:: 3.2
