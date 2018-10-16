@@ -1442,7 +1442,8 @@ class NewType:
 
     def __repr__(self):
         """ NewType reprs are in the form:
-           “NewTyprClassName<typename:supertypename>”
+           “NewTClassName<typename:supertypename>”, e.g.:
+           `NewType<UserId:int>`
         """
         return f"{type(self).__name__}<" \
                f"{self.__qualname__}:" \
