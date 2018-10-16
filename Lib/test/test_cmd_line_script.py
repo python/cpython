@@ -633,19 +633,16 @@ class CmdLineTest(unittest.TestCase):
     def test_nonexisting_script(self):
         # bpo-34783: "./python script.py" must not crash
         # if the script file doesn't exist.
+        # (Skip test for macOS framework builds because sys.excutable name
+        #  is not the actual Python executable file name.
         script = 'nonexistingscript.py'
         self.assertFalse(os.path.exists(script))
-        # Only test the base name, since the error message can use
-        # a relative path, whereas sys.executable can be an asolution path.
-        program = os.path.basename(sys.executable)
 
         proc = spawn_python(script, text=True,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
         out, err = proc.communicate()
-        # "./python" must be in the error message:
-        # "./python: can't open file (...)"
-        self.assertIn(program, err)
+        self.assertIn(": can't open file ", err)
         self.assertNotEqual(proc.returncode, 0)
 
 
