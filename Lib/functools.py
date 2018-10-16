@@ -16,13 +16,32 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
 try:
     from _functools import reduce
 except ImportError:
-    def reduce(function, iterable, initializer=None):
-        it = iter(iterable)
-        if initializer is None:
-            value = next(it)
+    # fallback implementation in case C module is unavailable
+    _initial_missing = object()
+    def reduce(function, iterable, initializer=_initial_missing):
+        """reduce(function, sequence[, initial]) -> value
+
+            Apply a function of two arguments cumulatively to the items of a sequence,
+            from left to right, so as to reduce the sequence to a single value.
+            For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates
+            ((((1+2)+3)+4)+5).  If initial is present, it is placed before the items
+            of the sequence in the calculation, and serves as a default when the
+            sequence is empty.
+        """
+        try:
+            iterable = iter(iterable)
+        except TypeError as err:
+            raise TypeError('reduce() arg 2 must support iteration')
+
+        if initializer is _initial_missing:
+            try:
+                value = next(iterable)
+            except StopIteration:
+                raise TypeError("reduce() of empty sequence with no initial value")
         else:
             value = initializer
-        for element in it:
+
+        for element in iterable:
             value = function(value, element)
         return value
 from abc import get_cache_token
