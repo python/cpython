@@ -1281,6 +1281,27 @@ fi],
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
+      AC_SUBST(LLVM_AR)
+      AC_PATH_TARGET_TOOL(LLVM_AR, llvm-ar, '', ${llvm_path})
+      AC_SUBST(LLVM_AR_FOUND)
+      if test -n "${LLVM_AR}" -a -x "${LLVM_AR}"
+      then
+        LLVM_AR_FOUND="found"
+      else
+        LLVM_AR_FOUND="not-found"
+      fi
+      if test "$ac_sys_system" = "Darwin" -a "${LLVM_AR_FOUND}" = "not-found"
+      then
+        found_llvm_ar=`/usr/bin/xcrun -find llvm-ar 2>/dev/null`
+        if test -n "${found_llvm_ar}"
+        then
+          LLVM_AR='/usr/bin/xcrun llvm-ar'
+          LLVM_AR_FOUND=found
+          AC_MSG_NOTICE([llvm-ar found via xcrun: ${LLVM_AR}])
+        fi
+      fi
+      LLVM_AR_ERR=no
+      AR="${LLVM_AR}"
       case $ac_sys_system in
         Darwin*)
           # Any changes made here should be reflected in the GCC+Darwin case below
@@ -1310,7 +1331,7 @@ if test "$Py_LTO" = 'true' ; then
       LTOFLAGS="$LTOFLAGS -g"
   fi
 
-  CFLAGS="$CFLAGS $LTOFLAGS"
+  BASECFLAGS="$BASECFLAGS $LTOFLAGS"
   LDFLAGS="$LDFLAGS $LTOFLAGS"
 fi
 
