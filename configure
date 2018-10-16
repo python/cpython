@@ -6390,6 +6390,26 @@ else
   DEF_MAKE_RULE="all"
 fi
 
+# Make llvm-relatec checks work on systems where llvm tools are not installed with their
+# normal names in the default $PATH (ie: Ubuntu).  They exist under the
+# non-suffixed name in their versioned llvm directory.
+
+llvm_bin_dir=''
+llvm_path="${PATH}"
+if test "${CC}" = "clang"
+then
+  clang_bin=`which clang`
+  # Some systems install clang elsewhere as a symlink to the real path
+  # which is where the related llvm tools are located.
+  if test -L "${clang_bin}"
+  then
+    clang_dir=`dirname "${clang_bin}"`
+    clang_bin=`readlink "${clang_bin}"`
+    llvm_bin_dir="${clang_dir}/"`dirname "${clang_bin}"`
+    llvm_path="${llvm_path}${PATH_SEPARATOR}${llvm_bin_dir}"
+  fi
+fi
+
 # Enable LTO flags
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-lto" >&5
 $as_echo_n "checking for --with-lto... " >&6; }
@@ -6564,7 +6584,13 @@ fi
 $as_echo "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
         fi
       fi
-      LLVM_AR_ERR=no
+      if test $LLVM_AR_FOUND = not-found
+      then
+        LLVM_PROFR_ERR=yes
+        as_fn_error $? "llvm-ar is required for a --with-lto build with clang but could not be found." "$LINENO" 5
+      else
+        LLVM_AR_ERR=no
+      fi
       AR="${LLVM_AR}"
       case $ac_sys_system in
         Darwin*)
@@ -6605,24 +6631,6 @@ fi
 
 
 
-# Make this work on systems where llvm tools are not installed with their
-# normal names in the default $PATH (ie: Ubuntu).  They exist under the
-# non-suffixed name in their versioned llvm directory.
-llvm_bin_dir=''
-llvm_path="${PATH}"
-if test "${CC}" = "clang"
-then
-  clang_bin=`which clang`
-  # Some systems install clang elsewhere as a symlink to the real path
-  # which is where the related llvm tools are located.
-  if test -L "${clang_bin}"
-  then
-    clang_dir=`dirname "${clang_bin}"`
-    clang_bin=`readlink "${clang_bin}"`
-    llvm_bin_dir="${clang_dir}/"`dirname "${clang_bin}"`
-    llvm_path="${llvm_path}${PATH_SEPARATOR}${llvm_bin_dir}"
-  fi
-fi
 
 # Extract the first word of "$target_alias-llvm-profdata", so it can be a program name with args.
 set dummy $target_alias-llvm-profdata; ac_word=$2
