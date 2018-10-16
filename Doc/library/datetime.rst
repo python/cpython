@@ -629,7 +629,7 @@ Instance methods:
 
    Same as :meth:`.date.strftime`. This makes it possible to specify a format
    string for a :class:`.date` object in :ref:`formatted string
-   literals <f-strings>` and when using :meth:`str.format`. For a
+   literals <f-strings>` and when using :func:`format`. For a
    complete list of formatting directives, see
    :ref:`strftime-strptime-behavior`.
 
