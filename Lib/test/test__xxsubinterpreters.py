@@ -8,7 +8,6 @@ from textwrap import dedent, indent
 import threading
 import time
 import unittest
-import platform
 
 from test import support
 from test.support import script_helper
@@ -366,8 +365,8 @@ class ShareableTypeTests(unittest.TestCase):
                 interpreters.channel_send(self.cid, obj)
                 got = interpreters.channel_recv(self.cid)
 
-                self.assertIs(type(got), type(obj))
                 self.assertEqual(got, obj)
+                self.assertIs(type(got), type(obj))
                 # XXX Check the following in the channel tests?
                 #self.assertIsNot(got, obj)
 
