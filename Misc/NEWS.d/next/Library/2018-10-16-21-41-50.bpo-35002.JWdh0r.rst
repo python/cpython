@@ -1,0 +1,5 @@
+In python3.6, before os.Pathlike was introduced.
+configparser.ConfigParser.read() throws an error when a single `PosixPath`
+object was passed, however a list of `PosixPath` is allowed. I have added an
+additional condition in ConfigParser.read() so that passing a single
+`PosixPath` will not throw an error

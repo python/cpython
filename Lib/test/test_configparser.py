@@ -6,6 +6,7 @@ import pathlib
 import textwrap
 import unittest
 import warnings
+from pathlib import Path
 
 from test import support
 
@@ -739,6 +740,21 @@ boolean {0[0]} NO
         cf = self.newconfig()
         parsed_files = cf.read([])
         self.assertEqual(parsed_files, [])
+
+    def test_read_with_pathlib_path(self):
+        if self.delimiters[0] != '=':
+            self.skipTest('incompatible format')
+        file_path1 = Path(support.findfile("cfgparser.1"))
+        # Passing in a single PosixPath object to ConfigParser.read()
+        cf = self.newconfig()
+        parsed_files = cf.read(file_path1)
+        self.assertEqual(parsed_files, [file_path1])
+        self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
+        # Passing in a list of PosixPath objects to ConfigParser.read()
+        cf = self.newconfig()
+        parsed_files = cf.read([file_path1, file_path1])
+        self.assertEqual(parsed_files, [file_path1, file_path1])
+        self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
 
     # shared by subclasses
     def get_interpolation_config(self):
