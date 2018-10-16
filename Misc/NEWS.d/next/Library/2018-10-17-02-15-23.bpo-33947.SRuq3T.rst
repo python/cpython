@@ -1,0 +1,1 @@
+dataclasses no longer raise RecursionError in __repr__
