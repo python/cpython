@@ -140,6 +140,7 @@ ConfigParser -- responsible for parsing a list of
 
 from collections.abc import MutableMapping
 from collections import OrderedDict as _default_dict, ChainMap as _ChainMap
+from collections import Iterable
 import functools
 import io
 import itertools
@@ -687,7 +688,7 @@ class RawConfigParser(MutableMapping):
 
         Return list of successfully read files.
         """
-        if isinstance(filenames, str):
+        if isinstance(filenames, str) or not isinstance(filenames, Iterable):
             filenames = [filenames]
         read_ok = []
         for filename in filenames:
