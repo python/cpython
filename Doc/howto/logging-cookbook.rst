@@ -2548,3 +2548,164 @@ In this case, the message #5 printed to ``stdout`` doesn't appear, as expected.
 Of course, the approach described here can be generalised, for example to attach
 logging filters temporarily. Note that the above code works in Python 2 as well
 as Python 3.
+
+
+.. _starter-template:
+
+A CLI application starter template
+----------------------------------
+
+Here's an example which shows how you can:
+
+* Use a logging level based on command-line arguments
+* Dispatch to multiple subcommands in separate files, all logging at the same
+  level in a consistent way
+* Make use of simple, minimal configuration
+
+Suppose we have a command-line application whose job is to stop, start or
+restart some services. This could be organised for the purposes of illustration
+as a file ``app.py`` that is the main script for the application, with individual
+commands implemented in ``start.py``, ``stop.py`` and ``restart.py``. Suppose
+further that we want to control the verbosity of the application via a
+command-line argument, defaulting to ``logging.INFO``. Here's one way that
+``app.py`` could be written::
+
+    import argparse
+    import importlib
+    import logging
+    import os
+    import sys
+
+    def main(args=None):
+        scriptname = os.path.basename(__file__)
+        parser = argparse.ArgumentParser(scriptname)
+        levels = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
+        parser.add_argument('--log-level', default='INFO', choices=levels)
+        subparsers = parser.add_subparsers(dest='command',
+                                           help='Available commands:')
+        start_cmd = subparsers.add_parser('start', help='Start a service')
+        start_cmd.add_argument('name', metavar='NAME',
+                               help='Name of service to start')
+        stop_cmd = subparsers.add_parser('stop',
+                                         help='Stop one or more services')
+        stop_cmd.add_argument('names', metavar='NAME', nargs='+',
+                              help='Name of service to stop')
+        restart_cmd = subparsers.add_parser('restart',
+                                            help='Restart one or more services')
+        restart_cmd.add_argument('names', metavar='NAME', nargs='+',
+                                 help='Name of service to restart')
+        options = parser.parse_args()
+        # the code to dispatch commands could all be in this file. For the purposes
+        # of illustration only, we implement each command in a separate module.
+        try:
+            mod = importlib.import_module(options.command)
+            cmd = getattr(mod, 'command')
+        except (ImportError, AttributeError):
+            print('Unable to find the code for command \'%s\'' % options.command)
+            return 1
+        # Could get fancy here and load configuration from file or dictionary
+        logging.basicConfig(level=options.log_level,
+                            format='%(levelname)s %(name)s %(message)s')
+        cmd(options)
+
+    if __name__ == '__main__':
+        sys.exit(main())
+
+And the ``start``, ``stop`` and ``restart`` commands can be implemented in
+separate modules, like so for starting::
+
+    # start.py
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    def command(options):
+        logger.debug('About to start %s', options.name)
+        # actually do the command processing here ...
+        logger.info('Started the \'%s\' service.', options.name)
+
+and thus for stopping::
+
+    # stop.py
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    def command(options):
+        n = len(options.names)
+        if n == 1:
+            plural = ''
+            services = '\'%s\'' % options.names[0]
+        else:
+            plural = 's'
+            services = ', '.join('\'%s\'' % name for name in options.names)
+            i = services.rfind(', ')
+            services = services[:i] + ' and ' + services[i + 2:]
+        logger.debug('About to stop %s', services)
+        # actually do the command processing here ...
+        logger.info('Stopped the %s service%s.', services, plural)
+
+and similarly for restarting::
+
+    # restart.py
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    def command(options):
+        n = len(options.names)
+        if n == 1:
+            plural = ''
+            services = '\'%s\'' % options.names[0]
+        else:
+            plural = 's'
+            services = ', '.join('\'%s\'' % name for name in options.names)
+            i = services.rfind(', ')
+            services = services[:i] + ' and ' + services[i + 2:]
+        logger.debug('About to restart %s', services)
+        # actually do the command processing here ...
+        logger.info('Restarted the %s service%s.', services, plural)
+
+If we run this application with the default log level, we get output like this:
+
+.. code-block:: shell-session
+
+    $ python app.py start foo
+    INFO start Started the 'foo' service.
+
+    $ python app.py stop foo bar
+    INFO stop Stopped the 'foo' and 'bar' services.
+
+    $ python app.py restart foo bar baz
+    INFO restart Restarted the 'foo', 'bar' and 'baz' services.
+
+The first word is the logging level, and the second word is the module or
+package name of the place where the event was logged.
+
+If we change the logging level, then we can change the information sent to the
+log. For example, if we want more information:
+
+.. code-block:: shell-session
+
+    $ python app.py --log-level DEBUG start foo
+    DEBUG start About to start foo
+    INFO start Started the 'foo' service.
+
+    $ python app.py --log-level DEBUG stop foo bar
+    DEBUG stop About to stop 'foo' and 'bar'
+    INFO stop Stopped the 'foo' and 'bar' services.
+
+    $ python app.py --log-level DEBUG restart foo bar baz
+    DEBUG restart About to restart 'foo', 'bar' and 'baz'
+    INFO restart Restarted the 'foo', 'bar' and 'baz' services.
+
+And if we want less:
+
+.. code-block:: shell-session
+
+    $ python app.py --log-level WARNING start foo
+    $ python app.py --log-level WARNING stop foo bar
+    $ python app.py --log-level WARNING restart foo bar baz
+
+In this case, the commands don't print anything to the console, since nothing
+at ``WARNING`` level or above is logged by them.
