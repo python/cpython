@@ -136,7 +136,7 @@ class Pool(object):
     Process = Process
 
     def __init__(self, processes=None, initializer=None, initargs=(),
-                 maxtasksperchild=None):
+                 maxtasksperchild=None, name='Process-Pool'):
         self._setup_queues()
         self._taskqueue = Queue.Queue()
         self._cache = {}
@@ -161,6 +161,7 @@ class Pool(object):
         self._repopulate_pool()
 
         self._worker_handler = threading.Thread(
+            name='{}-Worker-Handler'.format(self._name),
             target=Pool._handle_workers,
             args=(self._cache, self._processes, self._pool, self.Process,
                   self._inqueue, self._outqueue, self._initializer,
@@ -172,6 +173,7 @@ class Pool(object):
 
 
         self._task_handler = threading.Thread(
+            name='{}-Task-Handler'.format(self._name),
             target=Pool._handle_tasks,
             args=(self._taskqueue, self._quick_put, self._outqueue,
                   self._pool, self._cache)
@@ -181,6 +183,7 @@ class Pool(object):
         self._task_handler.start()
 
         self._result_handler = threading.Thread(
+            name='{}-Result-Handler'.format(self._name),
             target=Pool._handle_results,
             args=(self._outqueue, self._quick_get, self._cache)
             )
@@ -226,7 +229,8 @@ class Pool(object):
         for use after reaping workers which have exited.
         """
         for i in range(processes - len(pool)):
-            w = Process(target=worker,
+            w = self.Process(name='{}-Worker-{}'.format(self._name, i),
+                        target=worker,
                         args=(inqueue, outqueue,
                               initializer,
                               initargs, maxtasksperchild)
@@ -746,8 +750,8 @@ class ThreadPool(Pool):
 
     from .dummy import Process
 
-    def __init__(self, processes=None, initializer=None, initargs=()):
-        Pool.__init__(self, processes, initializer, initargs)
+    def __init__(self, processes=None, initializer=None, initargs=(), name='Thread-Pool'):
+        Pool.__init__(self, processes, initializer, initargs, name=name)
 
     def _setup_queues(self):
         self._inqueue = Queue.Queue()
