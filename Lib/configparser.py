@@ -689,7 +689,7 @@ class RawConfigParser(MutableMapping):
 
         Return list of successfully read files.
         """
-        if isinstance(filenames, (str, os.PathLike)) or not isinstance(filenames, Iterable):
+        if isinstance(filenames, str) or not isinstance(filenames, Iterable):
             filenames = [filenames]
         read_ok = []
         for filename in filenames:
