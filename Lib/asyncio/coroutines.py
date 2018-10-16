@@ -107,14 +107,12 @@ def coroutine(func):
     If the coroutine is not yielded from before it is destroyed,
     an error message is logged.
     """
-    if (inspect.iscoroutinefunction(func)
-            and not isinstance(func, functools.partial)):
+    if inspect.iscoroutinefunction(func):
         # In Python 3.5 that's all we need to do for coroutines
         # defined with "async def".
         return func
 
-    if (inspect.isgeneratorfunction(func)
-            and not isinstance (func, functools.partial)):
+    if inspect.isgeneratorfunction(func):
         coro = func
     else:
         @functools.wraps(func)
