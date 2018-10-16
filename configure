@@ -649,7 +649,6 @@ DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
 DTRACE
-LDMAXDATA
 TCLTK_LIBS
 TCLTK_INCLUDES
 LIBFFI_INCLUDEDIR
@@ -10278,24 +10277,6 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_dbmliborder" >&5
 $as_echo "$with_dbmliborder" >&6; }
-
-# checks for AIX memory model
-# If 32-bit set default datasegment to 1 GByte (4 * 256MB Segments)
-case "$ac_sys_system" in
-	AIX*)
-          if test -z "$OBJECT_MODE"
-          then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: 'Specify AIX MAXDATA as 1GB (0x40000000)'" >&5
-$as_echo "$as_me: 'Specify AIX MAXDATA as 1GB (0x40000000)'" >&6;}
-            if test "$GCC" != "yes"
-            then LDMAXDATA='-bmaxdata:0x40000000'
-            else LDMAXDATA='-Wl,-bmaxdata:0x40000000'
-            fi
-
-          fi
-         ;;
-esac
-
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
