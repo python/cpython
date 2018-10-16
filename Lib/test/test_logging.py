@@ -25,6 +25,7 @@ import logging.config
 
 import codecs
 import configparser
+import copy
 import datetime
 import pathlib
 import pickle
@@ -3278,7 +3279,7 @@ class ConfigDictTest(BaseTest):
         self.assertRaises(ValueError, self.apply_config, self.out_of_order)
 
     def test_out_of_order_with_dollar_style(self):
-        config = self.out_of_order.copy()
+        config = copy.deepcopy(self.out_of_order)
         config['formatters']['mySimpleFormatter']['format'] = "${asctime} (${name}) ${levelname}: ${message}"
 
         self.apply_config(config)
