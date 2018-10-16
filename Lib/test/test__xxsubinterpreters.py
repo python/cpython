@@ -366,8 +366,8 @@ class ShareableTypeTests(unittest.TestCase):
                 interpreters.channel_send(self.cid, obj)
                 got = interpreters.channel_recv(self.cid)
 
-                self.assertEqual(got, obj)
                 self.assertIs(type(got), type(obj))
+                self.assertEqual(got, obj)
                 # XXX Check the following in the channel tests?
                 #self.assertIsNot(got, obj)
 
@@ -392,15 +392,7 @@ class ShareableTypeTests(unittest.TestCase):
                             for i in range(-1, 258))
 
     def test_int(self):
-        # bpo-34569 - this only allows the test to pass
-        # AIX returns MAX_UINT32 rather than -1 when 32-bit
-        # this value is stored in the low-order 32-bits of a 64-bit void
-        # Note: code works fine in 64-bit mode!
-        is32bit = sys.maxsize < 2**31
-        if platform.system() == 'AIX' and is32bit:
-            self._assert_values(range(0, 258))
-        else:
-            self._assert_values(range(-1, 258))
+        self._assert_values(range(-1, 258))
 
 
 ##################################
