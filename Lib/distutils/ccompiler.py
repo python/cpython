@@ -148,7 +148,11 @@ class CCompiler:
             if key not in self.executables:
                 raise ValueError("unknown executable '%s' for class %s" %
                       (key, self.__class__.__name__))
-            self.set_executable(key, kwargs[key])
+            if kwargs[key]:
+                v = kwargs[key] if len(kwargs[key].strip()) else None
+            else:
+                v = None
+            self.set_executable(key, v)
 
     def set_executable(self, key, value):
         if isinstance(value, str):
