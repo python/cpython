@@ -2564,11 +2564,11 @@ Here's an example which shows how you can:
 
 Suppose we have a command-line application whose job is to stop, start or
 restart some services. This could be organised for the purposes of illustration
-as a file `app.py` that is the main script for the application, with individual
-commands implemented in `start.py`, `stop.py` and `restart.py`. Suppose further
-that we want to control the verbosity of the application via a command-line
-argument, defaulting to `logging.INFO`. Here's one way `app.py` could be
-written::
+as a file ``app.py`` that is the main script for the application, with individual
+commands implemented in ``start.py``, ``stop.py`` and ``restart.py``. Suppose
+further that we want to control the verbosity of the application via a
+command-line argument, defaulting to ``logging.INFO``. Here's one way that
+``app.py`` could be written::
 
     import argparse
     import importlib
@@ -2611,8 +2611,8 @@ written::
     if __name__ == '__main__':
         sys.exit(main())
 
-And the `start`, `stop` and `restart` commands can be implemented in separate
-modules, like so for starting::
+And the ``start``, ``stop`` and ``restart`` commands can be implemented in
+separate modules, like so for starting::
 
     # start.py
     import logging
@@ -2708,4 +2708,4 @@ And if we want less:
     $ python app.py --log-level WARNING restart foo bar baz
 
 In this case, the commands don't print anything to the console, since nothing
-at `WARNING` level or above is logged by them.
+at ``WARNING`` level or above is logged by them.
