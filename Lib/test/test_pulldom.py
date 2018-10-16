@@ -53,9 +53,9 @@ class PullDOMTestCase(unittest.TestCase):
         self.assertEqual("html", node.tagName)
         self.assertEqual(2, len(node.attributes))
         self.assertEqual(node.attributes.getNamedItem("xmlns:xdc").value,
-              "http://www.xml.com/books")
+                         "http://www.xml.com/books")
         evt, node = next(items)
-        self.assertEqual(pulldom.CHARACTERS, evt) # Line break
+        self.assertEqual(pulldom.CHARACTERS, evt)  # Line break
         evt, node = next(items)
         # XXX - A comment should be reported here!
         # self.assertEqual(pulldom.COMMENT, evt)
@@ -99,8 +99,8 @@ class PullDOMTestCase(unittest.TestCase):
         evt, node = next(items)
         self.assertEqual(pulldom.END_ELEMENT, evt)
         # XXX No END_DOCUMENT item is ever obtained:
-        #evt, node = next(items)
-        #self.assertEqual(pulldom.END_DOCUMENT, evt)
+        # evt, node = next(items)
+        # self.assertEqual(pulldom.END_DOCUMENT, evt)
 
     def test_expandItem(self):
         """Ensure expandItem works as expected."""
@@ -118,14 +118,15 @@ class PullDOMTestCase(unittest.TestCase):
             if evt == pulldom.START_ELEMENT:
                 break
         self.assertEqual("hr", node.tagName,
-            "expandNode did not leave DOMEventStream in the correct state.")
+                         "expandNode did not leave DOMEventStream"
+                         " in the correct state.")
         # Attempt to expand a standalone element:
         items.expandNode(node)
         self.assertEqual(next(items)[0], pulldom.CHARACTERS)
         evt, node = next(items)
         self.assertEqual(node.tagName, "p")
         items.expandNode(node)
-        next(items) # Skip character data
+        next(items)  # Skip character data
         evt, node = next(items)
         self.assertEqual(node.tagName, "html")
         with self.assertRaises(StopIteration):
@@ -181,7 +182,6 @@ class ThoroughTestCase(unittest.TestCase):
         """Test some of the hard-to-reach parts of PullDOM."""
         self._test_thorough(pulldom.parse(None, parser=SAXExerciser()))
 
-    @unittest.expectedFailure
     def test_sax2dom_fail(self):
         """SAX2DOM can"t handle a PI before the root element."""
         pd = SAX2DOMTestHelper(None, SAXExerciser(), 12)
@@ -205,10 +205,10 @@ class ThoroughTestCase(unittest.TestCase):
             evt, node = next(pd)
             self.assertEqual(pulldom.COMMENT, evt)
             self.assertEqual("a comment", node.data)
-            evt, node = next(pd)
-            self.assertEqual(pulldom.PROCESSING_INSTRUCTION, evt)
-            self.assertEqual("target", node.target)
-            self.assertEqual("data", node.data)
+        evt, node = next(pd)
+        self.assertEqual(pulldom.PROCESSING_INSTRUCTION, evt)
+        self.assertEqual("target", node.target)
+        self.assertEqual("data", node.data)
 
         evt, node = next(pd)
         self.assertEqual(pulldom.START_ELEMENT, evt)
@@ -280,6 +280,7 @@ class SAX2DOMExerciser(SAXExerciser):
     def parse(self, _):
         h = self._handler
         h.startDocument()
+        h.processingInstruction("target", "data")
         h.startElement("html", AttributesImpl({}))
         h.comment("a comment")
         h.processingInstruction("target", "data")
@@ -292,7 +293,6 @@ class SAX2DOMExerciser(SAXExerciser):
 
 class SAX2DOMTestHelper(pulldom.DOMEventStream):
     """Allows us to drive SAX2DOM from a DOMEventStream."""
-
     def reset(self):
         self.pulldom = pulldom.SAX2DOM()
         # This content handler relies on namespace support

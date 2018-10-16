@@ -10,11 +10,12 @@ PROCESSING_INSTRUCTION = "PROCESSING_INSTRUCTION"
 IGNORABLE_WHITESPACE = "IGNORABLE_WHITESPACE"
 CHARACTERS = "CHARACTERS"
 
+
 class PullDOM(xml.sax.ContentHandler):
     _locator = None
     document = None
 
-    def __init__(self, documentFactory=None):
+    def __init__(self, documentFactory=None, handle_sax=False):
         from xml.dom import XML_NAMESPACE
         self.documentFactory = documentFactory
         self.firstEvent = [None, None]
@@ -29,6 +30,7 @@ class PullDOM(xml.sax.ContentHandler):
         self._ns_contexts = [{XML_NAMESPACE:'xml'}] # contains uri -> prefix dicts
         self._current_context = self._ns_contexts[-1]
         self.pending_events = []
+        self.handle_sax = handle_sax
 
     def pop(self):
         result = self.elementStack[-1]
@@ -172,14 +174,17 @@ class PullDOM(xml.sax.ContentHandler):
         # Put everything we have seen so far into the document
         for e in self.pending_events:
             if e[0][0] == PROCESSING_INSTRUCTION:
-                _,target,data = e[0]
-                n = self.document.createProcessingInstruction(target, data)
+                _, target, data = e[0]
+                n = self.document.createProcessingInstruction(target,
+                                                              data)
                 e[0] = (PROCESSING_INSTRUCTION, n)
+                if self.handle_sax:
+                    node.appendChild(n)
             elif e[0][0] == COMMENT:
                 n = self.document.createComment(e[0][1])
                 e[0] = (COMMENT, n)
             else:
-                raise AssertionError("Unknown pending event ",e[0][0])
+                raise AssertionError("Unknown pending event ", e[0][0])
             self.lastEvent[1] = e
             self.lastEvent = e
         self.pending_events = None
@@ -293,40 +298,45 @@ class DOMEventStream:
         self.parser = None
         self.stream = None
 
-class SAX2DOM(PullDOM):
 
-    def startElementNS(self, name, tagName , attrs):
-        PullDOM.startElementNS(self, name, tagName, attrs)
+class SAX2DOM(PullDOM):
+    def __init__(self, documentFactory=None, handle_sax=True):
+        super().__init__(documentFactory, handle_sax)
+
+    def startElementNS(self, name, tagName, attrs):
+        super().startElementNS(name, tagName, attrs)
         curNode = self.elementStack[-1]
         parentNode = self.elementStack[-2]
         parentNode.appendChild(curNode)
 
     def startElement(self, name, attrs):
-        PullDOM.startElement(self, name, attrs)
+        super().startElement(name, attrs)
         curNode = self.elementStack[-1]
         parentNode = self.elementStack[-2]
         parentNode.appendChild(curNode)
 
     def processingInstruction(self, target, data):
-        PullDOM.processingInstruction(self, target, data)
-        node = self.lastEvent[0][1]
-        parentNode = self.elementStack[-1]
-        parentNode.appendChild(node)
+        super().processingInstruction(target, data)
+        if self.lastEvent[0] is not None:
+            node = self.lastEvent[0][1]
+            parentNode = self.elementStack[-1]
+            parentNode.appendChild(node)
 
     def ignorableWhitespace(self, chars):
-        PullDOM.ignorableWhitespace(self, chars)
+        super().ignorableWhitespace(chars)
         node = self.lastEvent[0][1]
         parentNode = self.elementStack[-1]
         parentNode.appendChild(node)
 
     def characters(self, chars):
-        PullDOM.characters(self, chars)
+        super().characters(chars)
         node = self.lastEvent[0][1]
         parentNode = self.elementStack[-1]
         parentNode.appendChild(node)
 
 
 default_bufsize = (2 ** 14) - 20
+
 
 def parse(stream_or_string, parser=None, bufsize=None):
     if bufsize is None:
@@ -338,6 +348,7 @@ def parse(stream_or_string, parser=None, bufsize=None):
     if not parser:
         parser = xml.sax.make_parser()
     return DOMEventStream(stream, parser, bufsize)
+
 
 def parseString(string, parser=None):
     from io import StringIO
