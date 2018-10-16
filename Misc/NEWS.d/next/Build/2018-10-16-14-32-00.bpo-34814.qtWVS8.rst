@@ -1,0 +1,1 @@
+On Unix, C extensions are no longer linked to libpython.
