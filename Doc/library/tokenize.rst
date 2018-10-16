@@ -16,8 +16,9 @@ implemented in Python.  The scanner in this module returns comments as tokens
 as well, making it useful for implementing "pretty-printers," including
 colorizers for on-screen displays.
 
-To simplify token stream handling, all :ref:`operators` and :ref:`delimiters`
-tokens are returned using the generic :data:`token.OP` token type.  The exact
+To simplify token stream handling, all :ref:`operator <operators>` and
+:ref:`delimiter <delimiters>` tokens and :data:`Ellipsis` are returned using
+the generic :data:`~token.OP` token type.  The exact
 type can be determined by checking the ``exact_type`` property on the
 :term:`named tuple` returned from :func:`tokenize.tokenize`.
 
@@ -236,7 +237,7 @@ will be tokenized to the following output where the first column is the range
 of the line/column coordinates where the token is found, the second column is
 the name of the token, and the final column is the value of the token (if any)
 
-.. code-block:: sh
+.. code-block:: shell-session
 
     $ python -m tokenize hello.py
     0,0-0,0:            ENCODING       'utf-8'
@@ -262,7 +263,7 @@ the name of the token, and the final column is the value of the token (if any)
 
 The exact token type names can be displayed using the ``-e`` option:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
     $ python -m tokenize -e hello.py
     0,0-0,0:            ENCODING       'utf-8'

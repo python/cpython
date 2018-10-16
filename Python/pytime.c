@@ -84,12 +84,19 @@ _PyTime_Round(double x, _PyTime_round_t round)
     volatile double d;
 
     d = x;
-    if (round == _PyTime_ROUND_HALF_EVEN)
+    if (round == _PyTime_ROUND_HALF_EVEN){
         d = _PyTime_RoundHalfEven(d);
-    else if (round == _PyTime_ROUND_CEILING)
+    }
+    else if (round == _PyTime_ROUND_CEILING){
         d = ceil(d);
-    else
+    }
+    else if (round == _PyTime_ROUND_FLOOR) {
         d = floor(d);
+    }
+    else {
+        assert(round == _PyTime_ROUND_UP);
+        d = (d >= 0.0) ? ceil(d) : floor(d);
+    }
     return d;
 }
 
@@ -97,7 +104,7 @@ static int
 _PyTime_DoubleToDenominator(double d, time_t *sec, long *numerator,
                             double denominator, _PyTime_round_t round)
 {
-    double intpart, err;
+    double intpart;
     /* volatile avoids optimization changing how numbers are rounded */
     volatile double floatpart;
 
@@ -115,14 +122,13 @@ _PyTime_DoubleToDenominator(double d, time_t *sec, long *numerator,
     }
     assert(0.0 <= floatpart && floatpart < denominator);
 
-    *sec = (time_t)intpart;
-    *numerator = (long)floatpart;
-
-    err = intpart - (double)*sec;
-    if (err <= -1.0 || err >= 1.0) {
+    if (!_Py_InIntegralTypeRange(time_t, intpart)) {
         error_time_t_overflow();
         return -1;
     }
+    *sec = (time_t)intpart;
+    *numerator = (long)floatpart;
+
     return 0;
 }
 
@@ -134,6 +140,11 @@ _PyTime_ObjectToDenominator(PyObject *obj, time_t *sec, long *numerator,
 
     if (PyFloat_Check(obj)) {
         double d = PyFloat_AsDouble(obj);
+        if (Py_IS_NAN(d)) {
+            *numerator = 0;
+            PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
+            return -1;
+        }
         return _PyTime_DoubleToDenominator(d, sec, numerator,
                                            denominator, round);
     }
@@ -150,20 +161,24 @@ int
 _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
 {
     if (PyFloat_Check(obj)) {
-        double intpart, err;
+        double intpart;
         /* volatile avoids optimization changing how numbers are rounded */
         volatile double d;
 
         d = PyFloat_AsDouble(obj);
+        if (Py_IS_NAN(d)) {
+            PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
+            return -1;
+        }
+
         d = _PyTime_Round(d, round);
         (void)modf(d, &intpart);
 
-        *sec = (time_t)intpart;
-        err = intpart - (double)*sec;
-        if (err <= -1.0 || err >= 1.0) {
+        if (!_Py_InIntegralTypeRange(time_t, intpart)) {
             error_time_t_overflow();
             return -1;
         }
+        *sec = (time_t)intpart;
         return 0;
     }
     else {
@@ -180,7 +195,9 @@ _PyTime_ObjectToTimespec(PyObject *obj, time_t *sec, long *nsec,
 {
     int res;
     res = _PyTime_ObjectToDenominator(obj, sec, nsec, 1e9, round);
-    assert(0 <= *nsec && *nsec < SEC_TO_NS);
+    if (res == 0) {
+        assert(0 <= *nsec && *nsec < SEC_TO_NS);
+    }
     return res;
 }
 
@@ -190,7 +207,9 @@ _PyTime_ObjectToTimeval(PyObject *obj, time_t *sec, long *usec,
 {
     int res;
     res = _PyTime_ObjectToDenominator(obj, sec, usec, 1e6, round);
-    assert(0 <= *usec && *usec < SEC_TO_US);
+    if (res == 0) {
+        assert(0 <= *usec && *usec < SEC_TO_US);
+    }
     return res;
 }
 
@@ -276,7 +295,6 @@ static int
 _PyTime_FromFloatObject(_PyTime_t *t, double value, _PyTime_round_t round,
                         long unit_to_ns)
 {
-    double err;
     /* volatile avoids optimization changing how numbers are rounded */
     volatile double d;
 
@@ -285,12 +303,11 @@ _PyTime_FromFloatObject(_PyTime_t *t, double value, _PyTime_round_t round,
     d *= (double)unit_to_ns;
     d = _PyTime_Round(d, round);
 
-    *t = (_PyTime_t)d;
-    err = d - (double)*t;
-    if (fabs(err) >= 1.0) {
+    if (!_Py_InIntegralTypeRange(_PyTime_t, d)) {
         _PyTime_overflow();
         return -1;
     }
+    *t = (_PyTime_t)d;
     return 0;
 }
 
@@ -301,6 +318,10 @@ _PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round,
     if (PyFloat_Check(obj)) {
         double d;
         d = PyFloat_AsDouble(obj);
+        if (Py_IS_NAN(d)) {
+            PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
+            return -1;
+        }
         return _PyTime_FromFloatObject(t, d, round, unit_to_ns);
     }
     else {
@@ -381,16 +402,29 @@ _PyTime_Divide(const _PyTime_t t, const _PyTime_t k,
         return x;
     }
     else if (round == _PyTime_ROUND_CEILING) {
-        if (t >= 0)
+        if (t >= 0){
             return (t + k - 1) / k;
-        else
+        }
+        else{
             return t / k;
+        }
+    }
+    else if (round == _PyTime_ROUND_FLOOR){
+        if (t >= 0) {
+            return t / k;
+        }
+        else{
+            return (t - (k - 1)) / k;
+        }
     }
     else {
-        if (t >= 0)
-            return t / k;
-        else
+        assert(round == _PyTime_ROUND_UP);
+        if (t >= 0) {
+            return (t + k - 1) / k;
+        }
+        else {
             return (t - (k - 1)) / k;
+        }
     }
 }
 

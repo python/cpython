@@ -98,7 +98,7 @@ In general, universal builds depend on specific features provided by the
 Apple-supplied compilers and other build tools included in Apple's Xcode
 development tools.  You should install Xcode and the command line tools
 component appropriate for the OS X release you are running on.  See the
-Python Developer's Guide (http://docs.python.org/devguide/setup.html)
+Python Developer's Guide (https://devguide.python.org/setup/)
 for more information.
 
 2.1 Flavors of universal binaries
@@ -355,4 +355,4 @@ Resources
 
   *  http://www.python.org/community/sigs/current/pythonmac-sig/
 
-  *  http://docs.python.org/devguide/
+  *  https://devguide.python.org/

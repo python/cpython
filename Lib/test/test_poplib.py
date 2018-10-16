@@ -217,11 +217,12 @@ class DummyPOP3Server(asyncore.dispatcher, threading.Thread):
     def run(self):
         self.active = True
         self.__flag.set()
-        while self.active and asyncore.socket_map:
-            self.active_lock.acquire()
-            asyncore.loop(timeout=0.1, count=1)
-            self.active_lock.release()
-        asyncore.close_all(ignore_all=True)
+        try:
+            while self.active and asyncore.socket_map:
+                with self.active_lock:
+                    asyncore.loop(timeout=0.1, count=1)
+        finally:
+            asyncore.close_all(ignore_all=True)
 
     def stop(self):
         assert self.active
@@ -254,6 +255,8 @@ class TestPOP3Class(TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server = None
 
     def test_getwelcome(self):
         self.assertEqual(self.client.getwelcome(),
@@ -301,8 +304,18 @@ class TestPOP3Class(TestCase):
     def test_rpop(self):
         self.assertOK(self.client.rpop('foo'))
 
-    def test_apop(self):
+    def test_apop_normal(self):
         self.assertOK(self.client.apop('foo', 'dummypassword'))
+
+    def test_apop_REDOS(self):
+        # Replace welcome with very long evil welcome.
+        # NB The upper bound on welcome length is currently 2048.
+        # At this length, evil input makes each apop call take
+        # on the order of milliseconds instead of microseconds.
+        evil_welcome = b'+OK' + (b'<' * 1000000)
+        with test_support.swap_attr(self.client, 'welcome', evil_welcome):
+            # The evil welcome is invalid, so apop should throw.
+            self.assertRaises(poplib.error_proto, self.client.apop, 'a', 'kb')
 
     def test_top(self):
         expected =  (b'+OK 116 bytes',
@@ -350,7 +363,7 @@ class TestPOP3Class(TestCase):
     @requires_ssl
     def test_stls_context(self):
         expected = b'+OK Begin TLS negotiation'
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
         ctx.load_verify_locations(CAFILE)
         ctx.verify_mode = ssl.CERT_REQUIRED
         ctx.check_hostname = True
@@ -390,7 +403,7 @@ class TestPOP3_SSLClass(TestPOP3Class):
         self.assertIn('POP3_SSL', poplib.__all__)
 
     def test_context(self):
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
         self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
                             self.server.port, keyfile=CERTFILE, context=ctx)
         self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
@@ -436,6 +449,8 @@ class TestPOP3_TLSClass(TestPOP3Class):
                 # this exception
                 self.client.close()
         self.server.stop()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server = None
 
     def test_stls(self):
         self.assertRaises(poplib.error_proto, self.client.stls)
@@ -461,7 +476,8 @@ class TestTimeouts(TestCase):
 
     def tearDown(self):
         self.thread.join()
-        del self.thread  # Clear out any dangling Thread objects.
+        # Explicitly clear the attribute to prevent dangling thread
+        self.thread = None
 
     def server(self, evt, serv):
         serv.listen()
@@ -483,7 +499,7 @@ class TestTimeouts(TestCase):
         finally:
             socket.setdefaulttimeout(None)
         self.assertEqual(pop.sock.gettimeout(), 30)
-        pop.sock.close()
+        pop.close()
 
     def testTimeoutNone(self):
         self.assertIsNone(socket.getdefaulttimeout())
@@ -493,12 +509,12 @@ class TestTimeouts(TestCase):
         finally:
             socket.setdefaulttimeout(None)
         self.assertIsNone(pop.sock.gettimeout())
-        pop.sock.close()
+        pop.close()
 
     def testTimeoutValue(self):
         pop = poplib.POP3(HOST, self.port, timeout=30)
         self.assertEqual(pop.sock.gettimeout(), 30)
-        pop.sock.close()
+        pop.close()
 
 
 def test_main():

@@ -167,6 +167,13 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
         Py_DECREF(bases);
         return NULL;
     }
+    if (!PyMapping_Check(ns)) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s.__prepare__() must return a mapping, not %.200s",
+                     isclass ? ((PyTypeObject *)meta)->tp_name : "<metaclass>",
+                     Py_TYPE(ns)->tp_name);
+        goto error;
+    }
     cell = PyEval_EvalCodeEx(PyFunction_GET_CODE(func), PyFunction_GET_GLOBALS(func), ns,
                              NULL, 0, NULL, 0, NULL, 0, NULL,
                              PyFunction_GET_CLOSURE(func));
@@ -236,7 +243,7 @@ PyDoc_STRVAR(import_doc,
 "__import__(name, globals=None, locals=None, fromlist=(), level=0) -> module\n\
 \n\
 Import a module. Because this function is meant for use by the Python\n\
-interpreter and not for general use it is better to use\n\
+interpreter and not for general use, it is better to use\n\
 importlib.import_module() to programmatically import a module.\n\
 \n\
 The globals argument is only used to determine the context;\n\
@@ -245,8 +252,8 @@ should be a list of names to emulate ``from name import ...'', or an\n\
 empty list to emulate ``import name''.\n\
 When importing a module from a package, note that __import__('A.B', ...)\n\
 returns package A when fromlist is empty, but its submodule B when\n\
-fromlist is not empty.  Level is used to determine whether to perform \n\
-absolute or relative imports. 0 is absolute while a positive number\n\
+fromlist is not empty.  The level argument is used to determine whether to\n\
+perform absolute or relative imports: 0 is absolute, while a positive number\n\
 is the number of parent directories to search relative to the current module.");
 
 
@@ -588,12 +595,14 @@ format as builtin_format
 
 Return value.__format__(format_spec)
 
-format_spec defaults to the empty string
+format_spec defaults to the empty string.
+See the Format Specification Mini-Language section of help('FORMATTING') for
+details.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_format_impl(PyObject *module, PyObject *value, PyObject *format_spec)
-/*[clinic end generated code: output=2f40bdfa4954b077 input=6325e751a1b29b86]*/
+/*[clinic end generated code: output=2f40bdfa4954b077 input=88339c93ea522b33]*/
 {
     return PyObject_Format(value, format_spec);
 }
@@ -1927,12 +1936,15 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         PyObject *result;
         size_t len;
 
+        /* stdin is a text stream, so it must have an encoding. */
         stdin_encoding = _PyObject_GetAttrId(fin, &PyId_encoding);
         stdin_errors = _PyObject_GetAttrId(fin, &PyId_errors);
-        if (!stdin_encoding || !stdin_errors)
-            /* stdin is a text stream, so it must have an
-               encoding. */
+        if (!stdin_encoding || !stdin_errors ||
+                !PyUnicode_Check(stdin_encoding) ||
+                !PyUnicode_Check(stdin_errors)) {
+            tty = 0;
             goto _readline_errors;
+        }
         stdin_encoding_str = PyUnicode_AsUTF8(stdin_encoding);
         stdin_errors_str = PyUnicode_AsUTF8(stdin_errors);
         if (!stdin_encoding_str || !stdin_errors_str)
@@ -1948,8 +1960,12 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
             PyObject *stringpo;
             stdout_encoding = _PyObject_GetAttrId(fout, &PyId_encoding);
             stdout_errors = _PyObject_GetAttrId(fout, &PyId_errors);
-            if (!stdout_encoding || !stdout_errors)
+            if (!stdout_encoding || !stdout_errors ||
+                    !PyUnicode_Check(stdout_encoding) ||
+                    !PyUnicode_Check(stdout_errors)) {
+                tty = 0;
                 goto _readline_errors;
+            }
             stdout_encoding_str = PyUnicode_AsUTF8(stdout_encoding);
             stdout_errors_str = PyUnicode_AsUTF8(stdout_errors);
             if (!stdout_encoding_str || !stdout_errors_str)
@@ -2003,13 +2019,17 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         Py_XDECREF(po);
         PyMem_FREE(s);
         return result;
+
     _readline_errors:
         Py_XDECREF(stdin_encoding);
         Py_XDECREF(stdout_encoding);
         Py_XDECREF(stdin_errors);
         Py_XDECREF(stdout_errors);
         Py_XDECREF(po);
-        return NULL;
+        if (tty)
+            return NULL;
+
+        PyErr_Clear();
     }
 
     /* Fallback if we're not interactive */
@@ -2107,7 +2127,7 @@ reverse flag can be set to request the result in descending order.
 [end disabled clinic input]*/
 
 PyDoc_STRVAR(builtin_sorted__doc__,
-"sorted($module, iterable, key=None, reverse=False)\n"
+"sorted($module, iterable, /, *, key=None, reverse=False)\n"
 "--\n"
 "\n"
 "Return a new list containing all items from the iterable in ascending order.\n"
@@ -2123,7 +2143,7 @@ builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *newlist, *v, *seq, *keyfunc=NULL, **newargs;
     PyObject *callable;
-    static char *kwlist[] = {"iterable", "key", "reverse", 0};
+    static char *kwlist[] = {"", "key", "reverse", 0};
     int reverse;
     Py_ssize_t nargs;
 
@@ -2142,6 +2162,7 @@ builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    assert(PyTuple_GET_SIZE(args) >= 1);
     newargs = &PyTuple_GET_ITEM(args, 1);
     nargs = PyTuple_GET_SIZE(args) - 1;
     v = _PyObject_FastCallDict(callable, newargs, nargs, kwds);
@@ -2322,6 +2343,11 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 }
             }
             result = PyFloat_FromDouble(f_result);
+            if (result == NULL) {
+                Py_DECREF(item);
+                Py_DECREF(iter);
+                return NULL;
+            }
             temp = PyNumber_Add(result, item);
             Py_DECREF(result);
             Py_DECREF(item);

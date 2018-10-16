@@ -5,6 +5,8 @@
 Base Event Loop
 ===============
 
+**Source code:** :source:`Lib/asyncio/events.py`
+
 The event loop is the central execution device provided by :mod:`asyncio`.
 It provides multiple facilities, including:
 
@@ -387,6 +389,9 @@ Creating connections
    See :ref:`UDP echo client protocol <asyncio-udp-echo-client-protocol>` and
    :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
 
+   .. versionchanged:: 3.4.4
+      The *family*, *proto*, *flags*, *reuse_address*, *reuse_port,
+      *allow_broadcast*, and *sock* parameters were added.
 
 .. coroutinemethod:: AbstractEventLoop.create_unix_connection(protocol_factory, path, \*, ssl=None, sock=None, server_hostname=None)
 
@@ -497,6 +502,9 @@ Creating listening connections
 
    This method is a :ref:`coroutine <coroutine>`.  When completed, the
    coroutine returns a ``(transport, protocol)`` pair.
+
+   .. versionadded:: 3.5.3
+
 
 Watch file descriptors
 ----------------------

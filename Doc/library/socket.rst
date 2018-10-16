@@ -70,6 +70,13 @@ created.  Socket addresses are represented as follows:
   notation like ``'daring.cwi.nl'`` or an IPv4 address like ``'100.50.200.5'``,
   and *port* is an integer.
 
+  - For IPv4 addresses, two special forms are accepted instead of a host
+    address: ``''`` represents :const:`INADDR_ANY`, which is used to bind to all
+    interfaces, and the string ``'<broadcast>'`` represents
+    :const:`INADDR_BROADCAST`.  This behavior is not compatible with IPv6,
+    therefore, you may want to avoid these if you intend to support IPv6 with your
+    Python programs.
+
 - For :const:`AF_INET6` address family, a four-tuple ``(host, port, flowinfo,
   scopeid)`` is used, where *flowinfo* and *scopeid* represent the ``sin6_flowinfo``
   and ``sin6_scope_id`` members in :const:`struct sockaddr_in6` in C.  For
@@ -149,16 +156,25 @@ created.  Socket addresses are represented as follows:
 
   .. versionadded:: 3.6
 
-- Certain other address families (:const:`AF_PACKET`, :const:`AF_CAN`)
-  support specific representations.
+- :const:`AF_PACKET` is a low-level interface directly to network devices.
+  The packets are represented by the tuple
+  ``(ifname, proto[, pkttype[, hatype[, addr]]])`` where:
 
-  .. XXX document them!
+  - *ifname* - String specifying the device name.
+  - *proto* - An in network-byte-order integer specifying the Ethernet
+    protocol number.
+  - *pkttype* - Optional integer specifying the packet type:
 
-For IPv4 addresses, two special forms are accepted instead of a host address:
-the empty string represents :const:`INADDR_ANY`, and the string
-``'<broadcast>'`` represents :const:`INADDR_BROADCAST`.  This behavior is not
-compatible with IPv6, therefore, you may want to avoid these if you intend
-to support IPv6 with your Python programs.
+    - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
+    - ``PACKET_BROADCAST`` - Physical-layer broadcast packet.
+    - ``PACKET_MULTIHOST`` - Packet sent to a physical-layer multicast address.
+    - ``PACKET_OTHERHOST`` - Packet to some other host that has been caught by
+      a device driver in promiscuous mode.
+    - ``PACKET_OUTGOING`` - Packet originating from the local host that is
+      looped back to a packet socket.
+  - *hatype* - Optional integer specifying the ARP hardware address type.
+  - *addr* - Optional bytes-like object specifying the hardware physical
+    address, whose interpretation depends on the device.
 
 If you use a hostname in the *host* portion of IPv4/v6 socket address, the
 program may show a nondeterministic behavior, as Python uses the first address
@@ -300,8 +316,12 @@ Constants
    provided.
 
    .. versionchanged:: 3.6
-      ``SO_DOMAIN``, ``SO_PROTOCOL``, ``SO_PEERSEC``, ``SO_PASSSEC``
-      were added.
+      ``SO_DOMAIN``, ``SO_PROTOCOL``, ``SO_PEERSEC``, ``SO_PASSSEC``,
+      ``TCP_USER_TIMEOUT``, ``TCP_CONGESTION`` were added.
+
+   .. versionchanged:: 3.6.5
+      On Windows, ``TCP_FASTOPEN``, ``TCP_KEEPCNT`` appear if run-time Windows
+      supports.
 
 .. data:: AF_CAN
           PF_CAN
@@ -337,6 +357,17 @@ Constants
    Availability: Linux >= 3.6.
 
    .. versionadded:: 3.5
+
+
+.. data:: AF_PACKET
+          PF_PACKET
+          PACKET_*
+
+   Many constants of these forms, documented in the Linux documentation, are
+   also defined in the socket module.
+
+   Availability: Linux >= 2.2.
+
 
 .. data:: AF_RDS
           PF_RDS
@@ -419,16 +450,16 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    Create a new socket using the given address family, socket type and protocol
    number.  The address family should be :const:`AF_INET` (the default),
-   :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN` or :const:`AF_RDS`. The
-   socket type should be :const:`SOCK_STREAM` (the default),
-   :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other ``SOCK_``
-   constants. The protocol number is usually zero and may be omitted or in the
-   case where the address family is :const:`AF_CAN` the protocol should be one
-   of :const:`CAN_RAW` or :const:`CAN_BCM`.  If *fileno* is specified, the other
-   arguments are ignored, causing the socket with the specified file descriptor
-   to return.  Unlike :func:`socket.fromfd`, *fileno* will return the same
-   socket and not a duplicate. This may help close a detached socket using
-   :meth:`socket.close()`.
+   :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN`, :const:`AF_PACKET`, or
+   :const:`AF_RDS`. The socket type should be :const:`SOCK_STREAM` (the
+   default), :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other
+   ``SOCK_`` constants. The protocol number is usually zero and may be omitted
+   or in the case where the address family is :const:`AF_CAN` the protocol
+   should be one of :const:`CAN_RAW` or :const:`CAN_BCM`.  If *fileno* is
+   specified, the other arguments are ignored, causing the socket with the
+   specified file descriptor to return.  Unlike :func:`socket.fromfd`, *fileno*
+   will return the same socket and not a duplicate. This may help close a
+   detached socket using :meth:`socket.close()`.
 
    The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
 
@@ -1342,8 +1373,8 @@ to sockets.
    to transmit as opposed to sending the file until EOF is reached. File
    position is updated on return or also in case of error in which case
    :meth:`file.tell() <io.IOBase.tell>` can be used to figure out the number of
-   bytes which were sent. The socket must be of :const:`SOCK_STREAM` type. Non-
-   blocking sockets are not supported.
+   bytes which were sent. The socket must be of :const:`SOCK_STREAM` type.
+   Non-blocking sockets are not supported.
 
    .. versionadded:: 3.5
 

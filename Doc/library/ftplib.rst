@@ -235,7 +235,7 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
    Retrieve a file in binary transfer mode.  *cmd* should be an appropriate
    ``RETR`` command: ``'RETR filename'``. The *callback* function is called for
-   each block of data received, with a single string argument giving the data
+   each block of data received, with a single bytes argument giving the data
    block. The optional *blocksize* argument specifies the maximum chunk size to
    read on the low-level socket object created to do the actual transfer (which
    will also be the largest size of the data blocks passed to *callback*).  A
@@ -255,9 +255,9 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    prints the line to ``sys.stdout``.
 
 
-.. method:: FTP.set_pasv(boolean)
+.. method:: FTP.set_pasv(val)
 
-   Enable "passive" mode if *boolean* is true, other disable passive mode.
+   Enable "passive" mode if *val* is true, otherwise disable passive mode.
    Passive mode is on by default.
 
 
@@ -295,7 +295,7 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    If optional *rest* is given, a ``REST`` command is sent to the server, passing
    *rest* as an argument.  *rest* is usually a byte offset into the requested file,
    telling the server to restart sending the file's bytes at the requested offset,
-   skipping over the initial bytes.  Note however that RFC 959 requires only that
+   skipping over the initial bytes.  Note however that :rfc:`959` requires only that
    *rest* be a string containing characters in the printable range from ASCII code
    33 to ASCII code 126.  The :meth:`transfercmd` method, therefore, converts
    *rest* to a string, but no check is performed on the string's contents.  If the

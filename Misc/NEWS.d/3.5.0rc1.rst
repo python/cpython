@@ -1,0 +1,241 @@
+.. bpo: 24667
+.. date: 8248
+.. nonce: tdwszf
+.. release date: 2015-08-09
+.. section: Core and Builtins
+
+Resize odict in all cases that the underlying dict resizes.
+
+..
+
+.. bpo: 24824
+.. date: 8247
+.. nonce: Eoc4lq
+.. section: Library
+
+Signatures of codecs.encode() and codecs.decode() now are compatible with
+pydoc.
+
+..
+
+.. bpo: 24634
+.. date: 8246
+.. nonce: 7bnVgr
+.. section: Library
+
+Importing uuid should not try to load libc on Windows
+
+..
+
+.. bpo: 24798
+.. date: 8245
+.. nonce: zDXL5R
+.. section: Library
+
+_msvccompiler.py doesn't properly support manifests
+
+..
+
+.. bpo: 4395
+.. date: 8244
+.. nonce: JpT0k7
+.. section: Library
+
+Better testing and documentation of binary operators. Patch by Martin
+Panter.
+
+..
+
+.. bpo: 23973
+.. date: 8243
+.. nonce: wT59Vh
+.. section: Library
+
+Update typing.py from GitHub repo.
+
+..
+
+.. bpo: 23004
+.. date: 8242
+.. nonce: xswcPm
+.. section: Library
+
+mock_open() now reads binary data correctly when the type of read_data is
+bytes.  Initial patch by Aaron Hill.
+
+..
+
+.. bpo: 23888
+.. date: 8241
+.. nonce: 7gw4oO
+.. section: Library
+
+Handle fractional time in cookie expiry. Patch by ssh.
+
+..
+
+.. bpo: 23652
+.. date: 8240
+.. nonce: DKQ_7t
+.. section: Library
+
+Make it possible to compile the select module against the libc headers from
+the Linux Standard Base, which do not include some EPOLL macros.  Patch by
+Matt Frank.
+
+..
+
+.. bpo: 22932
+.. date: 8239
+.. nonce: mPclSJ
+.. section: Library
+
+Fix timezones in email.utils.formatdate. Patch from Dmitry Shachnev.
+
+..
+
+.. bpo: 23779
+.. date: 8238
+.. nonce: ET4JJP
+.. section: Library
+
+imaplib raises TypeError if authenticator tries to abort. Patch from Craig
+Holmquist.
+
+..
+
+.. bpo: 23319
+.. date: 8237
+.. nonce: FXyUH-
+.. section: Library
+
+Fix ctypes.BigEndianStructure, swap correctly bytes. Patch written by
+Matthieu Gautier.
+
+..
+
+.. bpo: 23254
+.. date: 8236
+.. nonce: zNiy1X
+.. section: Library
+
+Document how to close the TCPServer listening socket. Patch from Martin
+Panter.
+
+..
+
+.. bpo: 19450
+.. date: 8235
+.. nonce: VG7T-L
+.. section: Library
+
+Update Windows and OS X installer builds to use SQLite 3.8.11.
+
+..
+
+.. bpo: 17527
+.. date: 8234
+.. nonce: ve9fyw
+.. section: Library
+
+Add PATCH to wsgiref.validator. Patch from Luca Sbardella.
+
+..
+
+.. bpo: 24791
+.. date: 8233
+.. nonce: Ok-3nA
+.. section: Library
+
+Fix grammar regression for call syntax: 'g(\*a or b)'.
+
+..
+
+.. bpo: 23672
+.. date: 8232
+.. nonce: 8td2se
+.. section: IDLE
+
+Allow Idle to edit and run files with astral chars in name. Patch by Mohd
+Sanad Zaki Rizvi.
+
+..
+
+.. bpo: 24745
+.. date: 8231
+.. nonce: edbziT
+.. section: IDLE
+
+Idle editor default font. Switch from Courier to platform-sensitive
+TkFixedFont.  This should not affect current customized font selections.  If
+there is a problem, edit $HOME/.idlerc/config-main.cfg and remove 'fontxxx'
+entries from [Editor Window].  Patch by Mark Roseman.
+
+..
+
+.. bpo: 21192
+.. date: 8230
+.. nonce: CdbipH
+.. section: IDLE
+
+Idle editor. When a file is run, put its name in the restart bar. Do not
+print false prompts. Original patch by Adnan Umer.
+
+..
+
+.. bpo: 13884
+.. date: 8229
+.. nonce: vVcO1E
+.. section: IDLE
+
+Idle menus. Remove tearoff lines. Patch by Roger Serwy.
+
+..
+
+.. bpo: 24129
+.. date: 8228
+.. nonce: Imr54z
+.. section: Documentation
+
+Clarify the reference documentation for name resolution. This includes
+removing the assumption that readers will be familiar with the name
+resolution scheme Python used prior to the introduction of lexical scoping
+for function namespaces. Patch by Ivan Levkivskyi.
+
+..
+
+.. bpo: 20769
+.. date: 8227
+.. nonce: ZUc9z9
+.. section: Documentation
+
+Improve reload() docs. Patch by Dorian Pula.
+
+..
+
+.. bpo: 23589
+.. date: 8226
+.. nonce: rjU421
+.. section: Documentation
+
+Remove duplicate sentence from the FAQ.  Patch by Yongzhi Pan.
+
+..
+
+.. bpo: 24729
+.. date: 8225
+.. nonce: PH3A9p
+.. section: Documentation
+
+Correct IO tutorial to match implementation regarding encoding parameter to
+open function.
+
+..
+
+.. bpo: 24751
+.. date: 8224
+.. nonce: pL2pbj
+.. section: Tests
+
+When running regrtest with the ``-w`` command line option, a test run is no
+longer marked as a failure if all tests succeed when re-run.

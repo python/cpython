@@ -1,6 +1,7 @@
 """Utilities for with-statement contexts.  See PEP 343."""
 import abc
 import sys
+import _collections_abc
 from collections import deque
 from functools import wraps
 
@@ -25,9 +26,7 @@ class AbstractContextManager(abc.ABC):
     @classmethod
     def __subclasshook__(cls, C):
         if cls is AbstractContextManager:
-            if (any("__enter__" in B.__dict__ for B in C.__mro__) and
-                any("__exit__" in B.__dict__ for B in C.__mro__)):
-                return True
+            return _collections_abc._check_methods(C, "__enter__", "__exit__")
         return NotImplemented
 
 
@@ -88,7 +87,7 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
             try:
                 next(self.gen)
             except StopIteration:
-                return
+                return False
             else:
                 raise RuntimeError("generator didn't stop")
         else:
@@ -98,20 +97,19 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
                 value = type()
             try:
                 self.gen.throw(type, value, traceback)
-                raise RuntimeError("generator didn't stop after throw()")
             except StopIteration as exc:
                 # Suppress StopIteration *unless* it's the same exception that
                 # was passed to throw().  This prevents a StopIteration
                 # raised inside the "with" statement from being suppressed.
                 return exc is not value
             except RuntimeError as exc:
-                # Don't re-raise the passed in exception. (issue27112)
+                # Don't re-raise the passed in exception. (issue27122)
                 if exc is value:
                     return False
                 # Likewise, avoid suppressing if a StopIteration exception
                 # was passed to throw() and later wrapped into a RuntimeError
                 # (see PEP 479).
-                if exc.__cause__ is value:
+                if type is StopIteration and exc.__cause__ is value:
                     return False
                 raise
             except:
@@ -122,8 +120,10 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
                 # fixes the impedance mismatch between the throw() protocol
                 # and the __exit__() protocol.
                 #
-                if sys.exc_info()[1] is not value:
-                    raise
+                if sys.exc_info()[1] is value:
+                    return False
+                raise
+            raise RuntimeError("generator didn't stop after throw()")
 
 
 def contextmanager(func):

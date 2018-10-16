@@ -156,29 +156,29 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                  extra=None, server=None):
         super().__init__(loop, sock, protocol, waiter, extra, server)
         self._paused = False
+        self._reschedule_on_resume = False
         self._loop.call_soon(self._loop_reading)
 
     def pause_reading(self):
-        if self._closing:
-            raise RuntimeError('Cannot pause_reading() when closing')
-        if self._paused:
-            raise RuntimeError('Already paused')
+        if self._closing or self._paused:
+            return
         self._paused = True
         if self._loop.get_debug():
             logger.debug("%r pauses reading", self)
 
     def resume_reading(self):
-        if not self._paused:
-            raise RuntimeError('Not paused')
-        self._paused = False
-        if self._closing:
+        if self._closing or not self._paused:
             return
-        self._loop.call_soon(self._loop_reading, self._read_fut)
+        self._paused = False
+        if self._reschedule_on_resume:
+            self._loop.call_soon(self._loop_reading, self._read_fut)
+            self._reschedule_on_resume = False
         if self._loop.get_debug():
             logger.debug("%r resumes reading", self)
 
     def _loop_reading(self, fut=None):
         if self._paused:
+            self._reschedule_on_resume = True
             return
         data = None
 
@@ -232,8 +232,9 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
 
     def write(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError('data argument must be byte-ish (%r)',
-                            type(data))
+            msg = ("data argument must be a bytes-like object, not '%s'" %
+                   type(data).__name__)
+            raise TypeError(msg)
         if self._eof_written:
             raise RuntimeError('write_eof() already called')
 

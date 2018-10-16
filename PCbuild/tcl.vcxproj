@@ -63,7 +63,7 @@
   <PropertyGroup>
     <TclOpts>msvcrt</TclOpts>
     <TclOpts Condition="$(Configuration) == 'Debug'">symbols,msvcrt</TclOpts>
-    <TclDirs>INSTALLDIR="$(OutDir.TrimEnd(`\`))" INSTALL_DIR="$(OutDir.TrimEnd(`\`))"</TclDirs>
+    <TclDirs>BUILDDIRTOP="$(BuildDirTop)" INSTALLDIR="$(OutDir.TrimEnd(`\`))" INSTALL_DIR="$(OutDir.TrimEnd(`\`))"</TclDirs>
     <DebugFlags Condition="'$(Configuration)' == 'Debug'">DEBUGFLAGS="-wd4456 -wd4457 -wd4458 -wd4459 -wd4996"</DebugFlags>
     <NMakeBuildCommandLine>setlocal
 @(ExpectedOutputs->'if not exist "%(FullPath)" goto build','

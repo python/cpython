@@ -76,31 +76,44 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Lib\importlib\_bootstrap.py" />
+    <None Include="..\Lib\importlib\_bootstrap.py">
+      <IntFile>$(IntDir)importlib.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\importlib.h</OutFile>
+    </None>
+    <None Include="..\Lib\importlib\_bootstrap_external.py">
+      <IntFile>$(IntDir)importlib_external.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\importlib_external.h</OutFile>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-  <Target Name="RebuildImportLib" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Debug' or $(Configuration) == 'Release'">
-    <Exec Command='"$(TargetPath)" "$(PySourcePath)Lib\importlib\_bootstrap.py" "$(IntDir)importlib.g.h"' />
+  <Target Name="_RebuildImportLib">
+    <Exec Command='"$(TargetPath)" "%(None.FullPath)" "%(None.IntFile)"' />
     
     <PropertyGroup>
-      <_OldContent Condition="Exists('$(PySourcePath)Python\importlib.h')">$([System.IO.File]::ReadAllText('$(PySourcePath)Python\importlib.h').Replace(`&#x0D;&#x0A;`, `&#x0A;`))</_OldContent>
-      <_NewContent Condition="Exists('$(IntDir)importlib.g.h')">$([System.IO.File]::ReadAllText('$(IntDir)importlib.g.h').Replace(`&#x0D;&#x0A;`, `&#x0A;`))</_NewContent>
+      <_OldContent Condition="Exists($(OutTargetPath))"></_OldContent>
+      <_NewContent Condition="Exists($(IntTargetPath))">$([System.IO.File]::ReadAllText($(IntTargetPath)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))</_NewContent>
     </PropertyGroup>
     
-    <Copy SourceFiles="$(IntDir)importlib.g.h"
-          DestinationFiles="$(PySourcePath)Python\importlib.h"
-          Condition="Exists('$(IntDir)importlib.g.h') and '$(_OldContent)' != '$(_NewContent)'" />
+    <Copy SourceFiles="%(None.IntFile)"
+          DestinationFiles="%(None.OutFile)"
+          Condition="!Exists(%(None.OutFile)) or (Exists(%(None.IntFile)) and '$([System.IO.File]::ReadAllText(%(None.OutFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))' != '$([System.IO.File]::ReadAllText(%(None.IntFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))')">
+      <Output TaskParameter="CopiedFiles" ItemName="_Updated" />
+    </Copy>
     
-    <Warning Text="importlib.h has been updated. You will need to rebuild pythoncore to see the changes."
-             Condition="Exists('$(IntDir)importlib.g.h') and '$(_OldContent)' != '$(_NewContent)' and $(Configuration) == 'Debug'" />
-    <Error Text="importlib.h has been updated. You will need to rebuild pythoncore to see the changes."
-           Condition="Exists('$(IntDir)importlib.g.h') and '$(_OldContent)' != '$(_NewContent)' and $(Configuration) == 'Release'" />
+    <Warning Text="@(_Updated->'%(Filename)%(Extension)',', ') updated. You will need to rebuild pythoncore to see the changes."
+             Condition="'@(_Updated)' != '' and $(Configuration) == 'Debug'" />
+    <Error Text="@(_Updated->'%(Filename)%(Extension)',', ') updated. You will need to rebuild pythoncore to see the changes."
+           Condition="'@(_Updated)' != '' and $(Configuration) == 'Release'" />
+  </Target>
+  <Target Name="RebuildImportLib" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Debug' or $(Configuration) == 'Release'"
+          DependsOnTargets="_RebuildImportLib">
   </Target>
   <Target Name="_CleanImportLib" BeforeTargets="CoreClean">
     <ItemGroup>
       <Clean Include="$(IntDir)importlib.g.h" />
+      <Clean Include="$(IntDir)importlib_external.g.h" />
     </ItemGroup>
   </Target>
 </Project>

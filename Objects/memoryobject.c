@@ -221,7 +221,7 @@ PyTypeObject _PyManagedBuffer_Type = {
 
 
 PyDoc_STRVAR(memory_doc,
-"memoryview($module, object)\n--\n\
+"memoryview(object)\n--\n\
 \n\
 Create a new memoryview object which references the given object.");
 
@@ -2285,10 +2285,10 @@ init_slice(Py_buffer *base, PyObject *key, int dim)
 {
     Py_ssize_t start, stop, step, slicelength;
 
-    if (PySlice_GetIndicesEx(key, base->shape[dim],
-                             &start, &stop, &step, &slicelength) < 0) {
+    if (PySlice_Unpack(key, &start, &stop, &step) < 0) {
         return -1;
     }
+    slicelength = PySlice_AdjustIndices(base->shape[dim], &start, &stop, step);
 
 
     if (base->suboffsets == NULL || dim == 0) {

@@ -1,5 +1,5 @@
-:mod:`uuid` --- UUID objects according to RFC 4122
-==================================================
+:mod:`uuid` --- UUID objects according to :rfc:`4122`
+=====================================================
 
 .. module:: uuid
    :synopsis: UUID objects (universally unique identifiers) according to RFC 4122
@@ -23,12 +23,13 @@ random UUID.
 .. class:: UUID(hex=None, bytes=None, bytes_le=None, fields=None, int=None, version=None)
 
    Create a UUID from either a string of 32 hexadecimal digits, a string of 16
-   bytes as the *bytes* argument, a string of 16 bytes in little-endian order as
-   the *bytes_le* argument, a tuple of six integers (32-bit *time_low*, 16-bit
-   *time_mid*, 16-bit *time_hi_version*, 8-bit *clock_seq_hi_variant*, 8-bit
-   *clock_seq_low*, 48-bit *node*) as the *fields* argument, or a single 128-bit
-   integer as the *int* argument.  When a string of hex digits is given, curly
-   braces, hyphens, and a URN prefix are all optional.  For example, these
+   bytes in big-endian order as the *bytes* argument, a string of 16 bytes in
+   little-endian order as the *bytes_le* argument, a tuple of six integers
+   (32-bit *time_low*, 16-bit *time_mid*, 16-bit *time_hi_version*,
+   8-bit *clock_seq_hi_variant*, 8-bit *clock_seq_low*, 48-bit *node*) as the
+   *fields* argument, or a single 128-bit integer as the *int* argument.
+   When a string of hex digits is given, curly braces, hyphens,
+   and a URN prefix are all optional.  For example, these
    expressions all yield the same UUID::
 
       UUID('{12345678-1234-5678-1234-567812345678}')
@@ -42,9 +43,16 @@ random UUID.
 
    Exactly one of *hex*, *bytes*, *bytes_le*, *fields*, or *int* must be given.
    The *version* argument is optional; if given, the resulting UUID will have its
-   variant and version number set according to RFC 4122, overriding bits in the
+   variant and version number set according to :rfc:`4122`, overriding bits in the
    given *hex*, *bytes*, *bytes_le*, *fields*, or *int*.
 
+   Comparison of UUID objects are made by way of comparing their
+   :attr:`UUID.int` attributes.  Comparison with a non-UUID object
+   raises a :exc:`TypeError`.
+
+   ``str(uuid)`` returns a string in the form
+   ``12345678-1234-5678-1234-567812345678`` where the 32 hexadecimal digits
+   represent the UUID.
 
 :class:`UUID` instances have these read-only attributes:
 
@@ -98,13 +106,13 @@ random UUID.
 
 .. attribute:: UUID.urn
 
-   The UUID as a URN as specified in RFC 4122.
+   The UUID as a URN as specified in :rfc:`4122`.
 
 
 .. attribute:: UUID.variant
 
    The UUID variant, which determines the internal layout of the UUID. This will be
-   one of the integer constants :const:`RESERVED_NCS`, :const:`RFC_4122`,
+   one of the constants :const:`RESERVED_NCS`, :const:`RFC_4122`,
    :const:`RESERVED_MICROSOFT`, or :const:`RESERVED_FUTURE`.
 
 
@@ -121,7 +129,7 @@ The :mod:`uuid` module defines the following functions:
    Get the hardware address as a 48-bit positive integer.  The first time this
    runs, it may launch a separate program, which could be quite slow.  If all
    attempts to obtain the hardware address fail, we choose a random 48-bit number
-   with its eighth bit set to 1 as recommended in RFC 4122.  "Hardware address"
+   with its eighth bit set to 1 as recommended in :rfc:`4122`.  "Hardware address"
    means the MAC address of a network interface, and on a machine with multiple
    network interfaces the MAC address of any one of them may be returned.
 

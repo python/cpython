@@ -153,7 +153,7 @@ Directory and files operations
    is true and *src* is a symbolic link, *dst* will be a copy of
    the file *src* refers to.
 
-   :func:`copy` copies the file data and the file's permission
+   :func:`~shutil.copy` copies the file data and the file's permission
    mode (see :func:`os.chmod`).  Other metadata, like the
    file's creation and modification times, is not preserved.
    To preserve all file metadata from the original, use
@@ -302,7 +302,7 @@ Directory and files operations
    *src* and *dst*, and will be used to copy *src* to *dest* if
    :func:`os.rename` cannot be used.  If the source is a directory,
    :func:`copytree` is called, passing it the :func:`copy_function`. The
-   default *copy_function* is :func:`copy2`.  Using :func:`copy` as the
+   default *copy_function* is :func:`copy2`.  Using :func:`~shutil.copy` as the
    *copy_function* allows the move to succeed when it is not possible to also
    copy the metadata, at the expense of not copying any of the metadata.
 
@@ -318,7 +318,8 @@ Directory and files operations
 
    Return disk usage statistics about the given path as a :term:`named tuple`
    with the attributes *total*, *used* and *free*, which are the amount of
-   total, used and free space, in bytes.
+   total, used and free space, in bytes.  On Windows, *path* must be a
+   directory; on Unix, it can be a file or directory.
 
    .. versionadded:: 3.3
 
@@ -458,6 +459,10 @@ Archiving operations
 
 .. versionadded:: 3.2
 
+.. versionchanged:: 3.5
+    Added support for the *xztar* format.
+
+
 High-level utilities to create and read compressed and archived files are also
 provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
@@ -467,8 +472,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    *base_name* is the name of the file to create, including the path, minus
    any format-specific extension. *format* is the archive format: one of
-   "zip", "tar", "bztar" (if the :mod:`bz2` module is available), "xztar"
-   (if the :mod:`lzma` module is available) or "gztar".
+   "zip" (if the :mod:`zlib` module is available), "tar", "gztar" (if the
+   :mod:`zlib` module is available), "bztar" (if the :mod:`bz2` module is
+   available), or "xztar" (if the :mod:`lzma` module is available).
 
    *root_dir* is a directory that will be the root directory of the
    archive; for example, we typically chdir into *root_dir* before creating the
@@ -491,9 +497,6 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    The *verbose* argument is unused and deprecated.
 
-   .. versionchanged:: 3.5
-      Added support for the *xztar* format.
-
 
 .. function:: get_archive_formats()
 
@@ -502,11 +505,11 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    By default :mod:`shutil` provides these formats:
 
-   - *gztar*: gzip'ed tar-file
-   - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available.)
-   - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available.)
-   - *tar*: uncompressed tar file
-   - *zip*: ZIP file
+   - *zip*: ZIP file (if the :mod:`zlib` module is available).
+   - *tar*: uncompressed tar file.
+   - *gztar*: gzip'ed tar-file (if the :mod:`zlib` module is available).
+   - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available).
+   - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available).
 
    You can register new formats or provide your own archiver for any existing
    formats, by using :func:`register_archive_format`.
@@ -541,11 +544,12 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    *extract_dir* is the name of the target directory where the archive is
    unpacked. If not provided, the current working directory is used.
 
-   *format* is the archive format: one of "zip", "tar", or "gztar". Or any
-   other format registered with :func:`register_unpack_format`. If not
-   provided, :func:`unpack_archive` will use the archive file name extension
-   and see if an unpacker was registered for that extension. In case none is
-   found, a :exc:`ValueError` is raised.
+   *format* is the archive format: one of "zip", "tar", "gztar", "bztar", or
+   "xztar".  Or any other format registered with
+   :func:`register_unpack_format`.  If not provided, :func:`unpack_archive`
+   will use the archive file name extension and see if an unpacker was
+   registered for that extension.  In case none is found,
+   a :exc:`ValueError` is raised.
 
 
 .. function:: register_unpack_format(name, extensions, function[, extra_args[, description]])
@@ -578,11 +582,12 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    By default :mod:`shutil` provides these formats:
 
-   - *gztar*: gzip'ed tar-file
-   - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available.)
-   - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available.)
-   - *tar*: uncompressed tar file
-   - *zip*: ZIP file
+   - *zip*: ZIP file (unpacking compressed files works only if the corresponding
+     module is available).
+   - *tar*: uncompressed tar file.
+   - *gztar*: gzip'ed tar-file (if the :mod:`zlib` module is available).
+   - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available).
+   - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available).
 
    You can register new formats or provide your own unpacker for any existing
    formats, by using :func:`register_unpack_format`.
@@ -621,8 +626,6 @@ The resulting archive contains:
 Querying the size of the output terminal
 ----------------------------------------
 
-.. versionadded:: 3.3
-
 .. function:: get_terminal_size(fallback=(columns, lines))
 
    Get the size of the terminal window.
@@ -645,6 +648,8 @@ Querying the size of the output terminal
 
    See also: The Single UNIX Specification, Version 2,
    `Other Environment Variables`_.
+
+   .. versionadded:: 3.3
 
 .. _`Other Environment Variables`:
    http://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html#tag_002_003

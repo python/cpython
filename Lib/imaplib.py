@@ -79,6 +79,7 @@ Commands = {
         'LOGIN':        ('NONAUTH',),
         'LOGOUT':       ('NONAUTH', 'AUTH', 'SELECTED', 'LOGOUT'),
         'LSUB':         ('AUTH', 'SELECTED'),
+        'MOVE':         ('SELECTED',),
         'NAMESPACE':    ('AUTH', 'SELECTED'),
         'NOOP':         ('NONAUTH', 'AUTH', 'SELECTED', 'LOGOUT'),
         'PARTIAL':      ('SELECTED',),                                  # NB: obsolete
@@ -281,7 +282,11 @@ class IMAP4:
 
 
     def _create_socket(self):
-        return socket.create_connection((self.host, self.port))
+        # Default value of IMAP4.host is '', but socket.getaddrinfo()
+        # (which is used by socket.create_connection()) expects None
+        # as a default value for host.
+        host = None if not self.host else self.host
+        return socket.create_connection((host, self.port))
 
     def open(self, host = '', port = IMAP4_PORT):
         """Setup connection to remote server on "host:port"
@@ -318,9 +323,12 @@ class IMAP4:
         self.file.close()
         try:
             self.sock.shutdown(socket.SHUT_RDWR)
-        except OSError as e:
-            # The server might already have closed the connection
-            if e.errno != errno.ENOTCONN:
+        except OSError as exc:
+            # The server might already have closed the connection.
+            # On Windows, this may result in WSAEINVAL (error 10022):
+            # An invalid operation was attempted.
+            if (exc.errno != errno.ENOTCONN
+               and getattr(exc, 'winerror', 0) != 10022):
                 raise
         finally:
             self.sock.close()
@@ -419,7 +427,7 @@ class IMAP4:
         self.literal = _Authenticator(authobject).process
         typ, dat = self._simple_command('AUTHENTICATE', mech)
         if typ != 'OK':
-            raise self.error(dat[-1])
+            raise self.error(dat[-1].decode('utf-8', 'replace'))
         self.state = 'AUTH'
         return typ, dat
 

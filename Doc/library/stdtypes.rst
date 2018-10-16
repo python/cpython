@@ -39,31 +39,26 @@ Truth Value Testing
    single: false
 
 Any object can be tested for truth value, for use in an :keyword:`if` or
-:keyword:`while` condition or as operand of the Boolean operations below. The
-following values are considered false:
-
-  .. index:: single: None (Built-in object)
-
-* ``None``
-
-  .. index:: single: False (Built-in object)
-
-* ``False``
-
-* zero of any numeric type, for example, ``0``, ``0.0``, ``0j``.
-
-* any empty sequence, for example, ``''``, ``()``, ``[]``.
-
-* any empty mapping, for example, ``{}``.
-
-* instances of user-defined classes, if the class defines a :meth:`__bool__` or
-  :meth:`__len__` method, when that method returns the integer zero or
-  :class:`bool` value ``False``. [1]_
+:keyword:`while` condition or as operand of the Boolean operations below.
 
 .. index:: single: true
 
-All other values are considered true --- so objects of many types are always
-true.
+By default, an object is considered true unless its class defines either a
+:meth:`__bool__` method that returns ``False`` or a :meth:`__len__` method that
+returns zero, when called with the object. [1]_  Here are most of the built-in
+objects considered false:
+
+  .. index::
+     single: None (Built-in object)
+     single: False (Built-in object)
+
+* constants defined to be false: ``None`` and ``False``.
+
+* zero of any numeric type: ``0``, ``0.0``, ``0j``, ``Decimal(0)``,
+  ``Fraction(0, 1)``
+
+* empty sequences and collections: ``''``, ``()``, ``[]``, ``{}``, ``set()``,
+  ``range(0)``
 
 .. index::
    operator: or
@@ -108,11 +103,11 @@ Notes:
 
 (1)
    This is a short-circuit operator, so it only evaluates the second
-   argument if the first one is :const:`False`.
+   argument if the first one is false.
 
 (2)
    This is a short-circuit operator, so it only evaluates the second
-   argument if the first one is :const:`True`.
+   argument if the first one is true.
 
 (3)
    ``not`` has a lower priority than non-Boolean operators, so ``not a == b`` is
@@ -202,8 +197,8 @@ exception.
    operator: not in
 
 Two more operations with the same syntactic priority, :keyword:`in` and
-:keyword:`not in`, are supported only by sequence types (below).
-
+:keyword:`not in`, are supported by types that are :term:`iterable` or
+implement the :meth:`__contains__` method.
 
 .. _typesnumeric:
 
@@ -354,7 +349,7 @@ Notes:
    The numeric literals accepted include the digits ``0`` to ``9`` or any
    Unicode equivalent (code points with the ``Nd`` property).
 
-   See http://www.unicode.org/Public/8.0.0/ucd/extracted/DerivedNumericType.txt
+   See http://www.unicode.org/Public/9.0.0/ucd/extracted/DerivedNumericType.txt
    for a complete list of code points with the ``Nd`` property.
 
 
@@ -387,21 +382,23 @@ modules.
 .. _bitstring-ops:
 
 Bitwise Operations on Integer Types
---------------------------------------
+-----------------------------------
 
 .. index::
    triple: operations on; integer; types
    pair: bitwise; operations
    pair: shifting; operations
    pair: masking; operations
+   operator: |
    operator: ^
    operator: &
    operator: <<
    operator: >>
+   operator: ~
 
-Bitwise operations only make sense for integers.  Negative numbers are treated
-as their 2's complement value (this assumes that there are enough bits so that
-no overflow occurs during the operation).
+Bitwise operations only make sense for integers. The result of bitwise
+operations is calculated as though carried out in two's complement with an
+infinite number of sign bits.
 
 The priorities of the binary bitwise operations are all lower than the numeric
 operations and higher than the comparisons; the unary operation ``~`` has the
@@ -412,13 +409,13 @@ This table lists the bitwise operations sorted in ascending priority:
 +------------+--------------------------------+----------+
 | Operation  | Result                         | Notes    |
 +============+================================+==========+
-| ``x | y``  | bitwise :dfn:`or` of *x* and   |          |
+| ``x | y``  | bitwise :dfn:`or` of *x* and   | \(4)     |
 |            | *y*                            |          |
 +------------+--------------------------------+----------+
-| ``x ^ y``  | bitwise :dfn:`exclusive or` of |          |
+| ``x ^ y``  | bitwise :dfn:`exclusive or` of | \(4)     |
 |            | *x* and *y*                    |          |
 +------------+--------------------------------+----------+
-| ``x & y``  | bitwise :dfn:`and` of *x* and  |          |
+| ``x & y``  | bitwise :dfn:`and` of *x* and  | \(4)     |
 |            | *y*                            |          |
 +------------+--------------------------------+----------+
 | ``x << n`` | *x* shifted left by *n* bits   | (1)(2)   |
@@ -440,6 +437,12 @@ Notes:
 (3)
    A right shift by *n* bits is equivalent to division by ``pow(2, n)`` without
    overflow check.
+
+(4)
+   Performing these calculations with at least one extra sign extension bit in
+   a finite two's complement representation (a working bit-width of
+   ``1 + max(x.bit_length(), y.bit_length()`` or more) is sufficient to get the
+   same result as if there were an infinite number of sign bits.
 
 
 Additional Methods on Integer Types
@@ -829,7 +832,7 @@ restrictions imposed by *s*.
 
 The ``in`` and ``not in`` operations have the same priorities as the
 comparison operations. The ``+`` (concatenation) and ``*`` (repetition)
-operations have the same priority as the corresponding numeric operations.
+operations have the same priority as the corresponding numeric operations. [3]_
 
 .. index::
    triple: operations on; sequence; types
@@ -927,7 +930,7 @@ Notes:
    :ref:`faq-multidimensional-list`.
 
 (3)
-   If *i* or *j* is negative, the index is relative to the end of the string:
+   If *i* or *j* is negative, the index is relative to the end of sequence *s*:
    ``len(s) + i`` or ``len(s) + j`` is substituted.  But note that ``-0`` is
    still ``0``.
 
@@ -942,8 +945,10 @@ Notes:
    The slice of *s* from *i* to *j* with step *k* is defined as the sequence of
    items with index  ``x = i + n*k`` such that ``0 <= n < (j-i)/k``.  In other words,
    the indices are ``i``, ``i+k``, ``i+2*k``, ``i+3*k`` and so on, stopping when
-   *j* is reached (but never including *j*).  If *i* or *j* is greater than
-   ``len(s)``, use ``len(s)``.  If *i* or *j* are omitted or ``None``, they become
+   *j* is reached (but never including *j*).  When *k* is positive,
+   *i* and *j* are reduced to ``len(s)`` if they are greater.
+   When *k* is negative, *i* and *j* are reduced to ``len(s) - 1`` if
+   they are greater.  If *i* or *j* are omitted or ``None``, they become
    "end" values (which end depends on the sign of *k*).  Note, *k* cannot be zero.
    If *k* is ``None``, it is treated like ``1``.
 
@@ -974,9 +979,9 @@ Notes:
 
 (8)
    ``index`` raises :exc:`ValueError` when *x* is not found in *s*.
-   When supported, the additional arguments to the index method allow
-   efficient searching of subsections of the sequence. Passing the extra
-   arguments is roughly equivalent to using ``s[i:j].index(x)``, only
+   Not all implementations support passing the additional arguments *i* and *j*.
+   These arguments allow efficient searching of subsections of the sequence. Passing
+   the extra arguments is roughly equivalent to using ``s[i:j].index(x)``, only
    without copying any data and with the returned index being relative to
    the start of the sequence rather than the start of the slice.
 
@@ -1060,10 +1065,10 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 |                              | sequence (same as              |                     |
 |                              | ``s[len(s):len(s)] = [x]``)    |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.clear()``                | removes all items from ``s``   | \(5)                |
+| ``s.clear()``                | removes all items from *s*     | \(5)                |
 |                              | (same as ``del s[:]``)         |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.copy()``                 | creates a shallow copy of ``s``| \(5)                |
+| ``s.copy()``                 | creates a shallow copy of *s*  | \(5)                |
 |                              | (same as ``s[:]``)             |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.extend(t)`` or           | extends *s* with the           |                     |
@@ -1157,7 +1162,7 @@ application).
    :ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
    following additional method:
 
-   .. method:: list.sort(*, key=None, reverse=None)
+   .. method:: list.sort(*, key=None, reverse=False)
 
       This method sorts the list in place, using only ``<`` comparisons
       between items. Exceptions are not suppressed - if any comparison operations
@@ -1366,7 +1371,7 @@ objects that compare equal might have different :attr:`~range.start`,
 .. seealso::
 
    * The `linspace recipe <http://code.activestate.com/recipes/579000/>`_
-     shows how to implement a lazy version of range that suitable for floating
+     shows how to implement a lazy version of range suitable for floating
      point applications.
 
 .. index::
@@ -1600,6 +1605,21 @@ expression support in the :mod:`re` module).
    See :ref:`formatstrings` for a description of the various formatting options
    that can be specified in format strings.
 
+   .. note::
+      When formatting a number (:class:`int`, :class:`float`, :class:`complex`,
+      :class:`decimal.Decimal` and subclasses) with the ``n`` type
+      (ex: ``'{:n}'.format(1234)``), the function temporarily sets the
+      ``LC_CTYPE`` locale to the ``LC_NUMERIC`` locale to decode
+      ``decimal_point`` and ``thousands_sep`` fields of :c:func:`localeconv` if
+      they are non-ASCII or longer than 1 byte, and the ``LC_NUMERIC`` locale is
+      different than the ``LC_CTYPE`` locale.  This temporary change affects
+      other threads.
+
+   .. versionchanged:: 3.6.5
+      When formatting a number with the ``n`` type, the function sets
+      temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC`` locale in some
+      cases.
+
 
 .. method:: str.format_map(mapping)
 
@@ -1644,18 +1664,20 @@ expression support in the :mod:`re` module).
 
    Return true if all characters in the string are decimal
    characters and there is at least one character, false
-   otherwise. Decimal characters are those from general category "Nd". This category
-   includes digit characters, and all characters
-   that can be used to form decimal-radix numbers, e.g. U+0660,
-   ARABIC-INDIC DIGIT ZERO.
+   otherwise. Decimal characters are those that can be used to form
+   numbers in base 10, e.g. U+0660, ARABIC-INDIC DIGIT
+   ZERO.  Formally a decimal character is a character in the Unicode
+   General Category "Nd".
 
 
 .. method:: str.isdigit()
 
    Return true if all characters in the string are digits and there is at least one
    character, false otherwise.  Digits include decimal characters and digits that need
-   special handling, such as the compatibility superscript digits.  Formally, a digit
-   is a character that has the property value Numeric_Type=Digit or Numeric_Type=Decimal.
+   special handling, such as the compatibility superscript digits.
+   This covers digits which cannot be used to form numbers in base 10,
+   like the Kharosthi numbers.  Formally, a digit is a character that has the
+   property value Numeric_Type=Digit or Numeric_Type=Decimal.
 
 
 .. method:: str.isidentifier()
@@ -1715,10 +1737,10 @@ expression support in the :mod:`re` module).
 
 .. method:: str.join(iterable)
 
-   Return a string which is the concatenation of the strings in the
-   :term:`iterable` *iterable*.  A :exc:`TypeError` will be raised if there are
-   any non-string values in *iterable*, including :class:`bytes` objects.  The
-   separator between elements is the string providing this method.
+   Return a string which is the concatenation of the strings in *iterable*.
+   A :exc:`TypeError` will be raised if there are any non-string values in
+   *iterable*, including :class:`bytes` objects.  The separator between
+   elements is the string providing this method.
 
 
 .. method:: str.ljust(width[, fillchar])
@@ -2027,7 +2049,7 @@ expression support in the :mod:`re` module).
 .. method:: str.upper()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   uppercase.  Note that ``str.upper().isupper()`` might be ``False`` if ``s``
+   uppercase.  Note that ``s.upper().isupper()`` might be ``False`` if ``s``
    contains uncased characters or if the Unicode category of the resulting
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
@@ -2158,7 +2180,7 @@ The conversion types are:
 +------------+-----------------------------------------------------+-------+
 | ``'o'``    | Signed octal value.                                 | \(1)  |
 +------------+-----------------------------------------------------+-------+
-| ``'u'``    | Obsolete type -- it is identical to ``'d'``.        | \(7)  |
+| ``'u'``    | Obsolete type -- it is identical to ``'d'``.        | \(6)  |
 +------------+-----------------------------------------------------+-------+
 | ``'x'``    | Signed hexadecimal (lowercase).                     | \(2)  |
 +------------+-----------------------------------------------------+-------+
@@ -2199,15 +2221,12 @@ The conversion types are:
 Notes:
 
 (1)
-   The alternate form causes a leading zero (``'0'``) to be inserted between
-   left-hand padding and the formatting of the number if the leading character
-   of the result is not already a zero.
+   The alternate form causes a leading octal specifier (``'0o'``) to be
+   inserted before the first digit.
 
 (2)
    The alternate form causes a leading ``'0x'`` or ``'0X'`` (depending on whether
-   the ``'x'`` or ``'X'`` format was used) to be inserted between left-hand padding
-   and the formatting of the number if the leading character of the result is not
-   already a zero.
+   the ``'x'`` or ``'X'`` format was used) to be inserted before the first digit.
 
 (3)
    The alternate form causes the result to always contain a decimal point, even if
@@ -2226,8 +2245,7 @@ Notes:
 (5)
    If precision is ``N``, the output is truncated to ``N`` characters.
 
-
-(7)
+(6)
    See :pep:`237`.
 
 Since Python strings have an explicit length, ``%s`` conversions do not assume
@@ -2264,8 +2282,8 @@ The :mod:`array` module supports efficient storage of basic data types like
 
 .. _typebytes:
 
-Bytes
------
+Bytes Objects
+-------------
 
 .. index:: object: bytes
 
@@ -2274,65 +2292,67 @@ binary protocols are based on the ASCII text encoding, bytes objects offer
 several methods that are only valid when working with ASCII compatible
 data and are closely related to string objects in a variety of other ways.
 
-Firstly, the syntax for bytes literals is largely the same as that for string
-literals, except that a ``b`` prefix is added:
+.. class:: bytes([source[, encoding[, errors]]])
 
-* Single quotes: ``b'still allows embedded "double" quotes'``
-* Double quotes: ``b"still allows embedded 'single' quotes"``.
-* Triple quoted: ``b'''3 single quotes'''``, ``b"""3 double quotes"""``
+   Firstly, the syntax for bytes literals is largely the same as that for string
+   literals, except that a ``b`` prefix is added:
 
-Only ASCII characters are permitted in bytes literals (regardless of the
-declared source code encoding). Any binary values over 127 must be entered
-into bytes literals using the appropriate escape sequence.
+   * Single quotes: ``b'still allows embedded "double" quotes'``
+   * Double quotes: ``b"still allows embedded 'single' quotes"``.
+   * Triple quoted: ``b'''3 single quotes'''``, ``b"""3 double quotes"""``
 
-As with string literals, bytes literals may also use a ``r`` prefix to disable
-processing of escape sequences. See :ref:`strings` for more about the various
-forms of bytes literal, including supported escape sequences.
+   Only ASCII characters are permitted in bytes literals (regardless of the
+   declared source code encoding). Any binary values over 127 must be entered
+   into bytes literals using the appropriate escape sequence.
 
-While bytes literals and representations are based on ASCII text, bytes
-objects actually behave like immutable sequences of integers, with each
-value in the sequence restricted such that ``0 <= x < 256`` (attempts to
-violate this restriction will trigger :exc:`ValueError`. This is done
-deliberately to emphasise that while many binary formats include ASCII based
-elements and can be usefully manipulated with some text-oriented algorithms,
-this is not generally the case for arbitrary binary data (blindly applying
-text processing algorithms to binary data formats that are not ASCII
-compatible will usually lead to data corruption).
+   As with string literals, bytes literals may also use a ``r`` prefix to disable
+   processing of escape sequences. See :ref:`strings` for more about the various
+   forms of bytes literal, including supported escape sequences.
 
-In addition to the literal forms, bytes objects can be created in a number of
-other ways:
+   While bytes literals and representations are based on ASCII text, bytes
+   objects actually behave like immutable sequences of integers, with each
+   value in the sequence restricted such that ``0 <= x < 256`` (attempts to
+   violate this restriction will trigger :exc:`ValueError`). This is done
+   deliberately to emphasise that while many binary formats include ASCII based
+   elements and can be usefully manipulated with some text-oriented algorithms,
+   this is not generally the case for arbitrary binary data (blindly applying
+   text processing algorithms to binary data formats that are not ASCII
+   compatible will usually lead to data corruption).
 
-* A zero-filled bytes object of a specified length: ``bytes(10)``
-* From an iterable of integers: ``bytes(range(20))``
-* Copying existing binary data via the buffer protocol:  ``bytes(obj)``
+   In addition to the literal forms, bytes objects can be created in a number of
+   other ways:
 
-Also see the :ref:`bytes <func-bytes>` built-in.
+   * A zero-filled bytes object of a specified length: ``bytes(10)``
+   * From an iterable of integers: ``bytes(range(20))``
+   * Copying existing binary data via the buffer protocol:  ``bytes(obj)``
 
-Since 2 hexadecimal digits correspond precisely to a single byte, hexadecimal
-numbers are a commonly used format for describing binary data. Accordingly,
-the bytes type has an additional class method to read data in that format:
+   Also see the :ref:`bytes <func-bytes>` built-in.
 
-.. classmethod:: bytes.fromhex(string)
+   Since 2 hexadecimal digits correspond precisely to a single byte, hexadecimal
+   numbers are a commonly used format for describing binary data. Accordingly,
+   the bytes type has an additional class method to read data in that format:
 
-   This :class:`bytes` class method returns a bytes object, decoding the
-   given string object.  The string must contain two hexadecimal digits per
-   byte, with ASCII spaces being ignored.
+   .. classmethod:: fromhex(string)
 
-   >>> bytes.fromhex('2Ef0 F1f2  ')
-   b'.\xf0\xf1\xf2'
+      This :class:`bytes` class method returns a bytes object, decoding the
+      given string object.  The string must contain two hexadecimal digits per
+      byte, with ASCII whitespace being ignored.
 
-A reverse conversion function exists to transform a bytes object into its
-hexadecimal representation.
+      >>> bytes.fromhex('2Ef0 F1f2  ')
+      b'.\xf0\xf1\xf2'
 
-.. method:: bytes.hex()
+   A reverse conversion function exists to transform a bytes object into its
+   hexadecimal representation.
 
-   Return a string object containing two hexadecimal digits for each
-   byte in the instance.
+   .. method:: hex()
 
-   >>> b'\xf0\xf1\xf2'.hex()
-   'f0f1f2'
+      Return a string object containing two hexadecimal digits for each
+      byte in the instance.
 
-   .. versionadded:: 3.5
+      >>> b'\xf0\xf1\xf2'.hex()
+      'f0f1f2'
+
+      .. versionadded:: 3.5
 
 Since bytes objects are sequences of integers (akin to a tuple), for a bytes
 object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be a bytes
@@ -2362,45 +2382,49 @@ Bytearray Objects
 .. index:: object: bytearray
 
 :class:`bytearray` objects are a mutable counterpart to :class:`bytes`
-objects. There is no dedicated literal syntax for bytearray objects, instead
-they are always created by calling the constructor:
+objects.
 
-* Creating an empty instance: ``bytearray()``
-* Creating a zero-filled instance with a given length: ``bytearray(10)``
-* From an iterable of integers: ``bytearray(range(20))``
-* Copying existing binary data via the buffer protocol:  ``bytearray(b'Hi!')``
+.. class:: bytearray([source[, encoding[, errors]]])
 
-As bytearray objects are mutable, they support the
-:ref:`mutable <typesseq-mutable>` sequence operations in addition to the
-common bytes and bytearray operations described in :ref:`bytes-methods`.
+   There is no dedicated literal syntax for bytearray objects, instead
+   they are always created by calling the constructor:
 
-Also see the :ref:`bytearray <func-bytearray>` built-in.
+   * Creating an empty instance: ``bytearray()``
+   * Creating a zero-filled instance with a given length: ``bytearray(10)``
+   * From an iterable of integers: ``bytearray(range(20))``
+   * Copying existing binary data via the buffer protocol:  ``bytearray(b'Hi!')``
 
-Since 2 hexadecimal digits correspond precisely to a single byte, hexadecimal
-numbers are a commonly used format for describing binary data. Accordingly,
-the bytearray type has an additional class method to read data in that format:
+   As bytearray objects are mutable, they support the
+   :ref:`mutable <typesseq-mutable>` sequence operations in addition to the
+   common bytes and bytearray operations described in :ref:`bytes-methods`.
 
-.. classmethod:: bytearray.fromhex(string)
+   Also see the :ref:`bytearray <func-bytearray>` built-in.
 
-   This :class:`bytearray` class method returns bytearray object, decoding
-   the given string object.  The string must contain two hexadecimal digits
-   per byte, with ASCII spaces being ignored.
+   Since 2 hexadecimal digits correspond precisely to a single byte, hexadecimal
+   numbers are a commonly used format for describing binary data. Accordingly,
+   the bytearray type has an additional class method to read data in that format:
 
-   >>> bytearray.fromhex('2Ef0 F1f2  ')
-   bytearray(b'.\xf0\xf1\xf2')
+   .. classmethod:: fromhex(string)
 
-A reverse conversion function exists to transform a bytearray object into its
-hexadecimal representation.
+      This :class:`bytearray` class method returns bytearray object, decoding
+      the given string object.  The string must contain two hexadecimal digits
+      per byte, with ASCII whitespace being ignored.
 
-.. method:: bytearray.hex()
+      >>> bytearray.fromhex('2Ef0 F1f2  ')
+      bytearray(b'.\xf0\xf1\xf2')
 
-   Return a string object containing two hexadecimal digits for each
-   byte in the instance.
+   A reverse conversion function exists to transform a bytearray object into its
+   hexadecimal representation.
 
-   >>> bytearray(b'\xf0\xf1\xf2').hex()
-   'f0f1f2'
+   .. method:: hex()
 
-   .. versionadded:: 3.5
+      Return a string object containing two hexadecimal digits for each
+      byte in the instance.
+
+      >>> bytearray(b'\xf0\xf1\xf2').hex()
+      'f0f1f2'
+
+      .. versionadded:: 3.5
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
@@ -2539,11 +2563,11 @@ arbitrary binary data.
             bytearray.join(iterable)
 
    Return a bytes or bytearray object which is the concatenation of the
-   binary data sequences in the :term:`iterable` *iterable*.  A
-   :exc:`TypeError` will be raised if there are any values in *iterable*
-   that are not :term:`bytes-like objects <bytes-like object>`, including
-   :class:`str` objects.  The separator between elements is the contents
-   of the bytes or bytearray object providing this method.
+   binary data sequences in *iterable*.  A :exc:`TypeError` will be raised
+   if there are any values in *iterable* that are not :term:`bytes-like
+   objects <bytes-like object>`, including :class:`str` objects.  The
+   separator between elements is the contents of the bytes or
+   bytearray object providing this method.
 
 
 .. staticmethod:: bytes.maketrans(from, to)
@@ -2561,8 +2585,9 @@ arbitrary binary data.
             bytearray.partition(sep)
 
    Split the sequence at the first occurrence of *sep*, and return a 3-tuple
-   containing the part before the separator, the separator, and the part
-   after the separator.  If the separator is not found, return a 3-tuple
+   containing the part before the separator, the separator itself or its
+   bytearray copy, and the part after the separator.
+   If the separator is not found, return a 3-tuple
    containing a copy of the original sequence, followed by two empty bytes or
    bytearray objects.
 
@@ -2617,8 +2642,9 @@ arbitrary binary data.
             bytearray.rpartition(sep)
 
    Split the sequence at the last occurrence of *sep*, and return a 3-tuple
-   containing the part before the separator, the separator, and the part
-   after the separator.  If the separator is not found, return a 3-tuple
+   containing the part before the separator, the separator itself or its
+   bytearray copy, and the part after the separator.
+   If the separator is not found, return a 3-tuple
    containing a copy of the original sequence, followed by two empty bytes or
    bytearray objects.
 
@@ -3303,15 +3329,12 @@ The conversion types are:
 Notes:
 
 (1)
-   The alternate form causes a leading zero (``'0'``) to be inserted between
-   left-hand padding and the formatting of the number if the leading character
-   of the result is not already a zero.
+   The alternate form causes a leading octal specifier (``'0o'``) to be
+   inserted before the first digit.
 
 (2)
    The alternate form causes a leading ``'0x'`` or ``'0X'`` (depending on whether
-   the ``'x'`` or ``'X'`` format was used) to be inserted between left-hand padding
-   and the formatting of the number if the leading character of the result is not
-   already a zero.
+   the ``'x'`` or ``'X'`` format was used) to be inserted before the first digit.
 
 (3)
    The alternate form causes the result to always contain a decimal point, even if
@@ -3344,7 +3367,10 @@ Notes:
    The bytearray version of this method does *not* operate in place - it
    always produces a new object, even if no changes were made.
 
-.. seealso:: :pep:`461`.
+.. seealso::
+
+   :pep:`461` - Adding % formatting to bytes and bytearray
+
 .. versionadded:: 3.5
 
 .. _typememoryview:
@@ -3985,9 +4011,7 @@ The constructors for both classes work the same:
 
    Note, the *elem* argument to the :meth:`__contains__`, :meth:`remove`, and
    :meth:`discard` methods may be a set.  To support searching for an equivalent
-   frozenset, the *elem* set is temporarily mutated during the search and then
-   restored.  During the search, the *elem* set should not be read or mutated
-   since it does not have a meaningful value.
+   frozenset, a temporary one is created from *elem*.
 
 
 .. _typesmapping:

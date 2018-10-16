@@ -232,11 +232,6 @@ class shlex:
                             break   # emit current token
                         else:
                             continue
-                elif self.posix and nextchar in self.quotes:
-                    self.state = nextchar
-                elif self.posix and nextchar in self.escape:
-                    escapedstate = 'a'
-                    self.state = nextchar
                 elif self.state == 'c':
                     if nextchar in self.punctuation_chars:
                         self.token += nextchar
@@ -245,6 +240,11 @@ class shlex:
                             self._pushback_chars.append(nextchar)
                         self.state = ' '
                         break
+                elif self.posix and nextchar in self.quotes:
+                    self.state = nextchar
+                elif self.posix and nextchar in self.escape:
+                    escapedstate = 'a'
+                    self.state = nextchar
                 elif (nextchar in self.wordchars or nextchar in self.quotes
                       or self.whitespace_split):
                     self.token += nextchar

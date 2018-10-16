@@ -114,6 +114,31 @@ class AsyncGenTest(unittest.TestCase):
         def async_iterate(g):
             res = []
             while True:
+                an = g.__anext__()
+                try:
+                    while True:
+                        try:
+                            an.__next__()
+                        except StopIteration as ex:
+                            if ex.args:
+                                res.append(ex.args[0])
+                                break
+                            else:
+                                res.append('EMPTY StopIteration')
+                                break
+                        except StopAsyncIteration:
+                            raise
+                        except Exception as ex:
+                            res.append(str(type(ex)))
+                            break
+                except StopAsyncIteration:
+                    res.append('STOP')
+                    break
+            return res
+
+        def async_iterate(g):
+            res = []
+            while True:
                 try:
                     g.__anext__().__next__()
                 except StopAsyncIteration:
@@ -299,6 +324,37 @@ class AsyncGenTest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError,
                                     "non-None value .* async generator"):
             gen().__anext__().send(100)
+
+    def test_async_gen_exception_11(self):
+        def sync_gen():
+            yield 10
+            yield 20
+
+        def sync_gen_wrapper():
+            yield 1
+            sg = sync_gen()
+            sg.send(None)
+            try:
+                sg.throw(GeneratorExit())
+            except GeneratorExit:
+                yield 2
+            yield 3
+
+        async def async_gen():
+            yield 10
+            yield 20
+
+        async def async_gen_wrapper():
+            yield 1
+            asg = async_gen()
+            await asg.asend(None)
+            try:
+                await asg.athrow(GeneratorExit())
+            except GeneratorExit:
+                yield 2
+            yield 3
+
+        self.compare_generators(sync_gen_wrapper(), async_gen_wrapper())
 
     def test_async_gen_api_01(self):
         async def gen():

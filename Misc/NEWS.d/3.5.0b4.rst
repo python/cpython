@@ -1,0 +1,255 @@
+.. bpo: 23573
+.. date: 8223
+.. nonce: HdJPs7
+.. release date: 2015-07-26
+.. section: Core and Builtins
+
+Restored optimization of bytes.rfind() and bytearray.rfind() for single-byte
+argument on Linux.
+
+..
+
+.. bpo: 24569
+.. date: 8222
+.. nonce: bqh6PQ
+.. section: Core and Builtins
+
+Make PEP 448 dictionary evaluation more consistent.
+
+..
+
+.. bpo: 24583
+.. date: 8221
+.. nonce: Ooq0Tn
+.. section: Core and Builtins
+
+Fix crash when set is mutated while being updated.
+
+..
+
+.. bpo: 24407
+.. date: 8220
+.. nonce: GmCBB3
+.. section: Core and Builtins
+
+Fix crash when dict is mutated while being updated.
+
+..
+
+.. bpo: 24619
+.. date: 8219
+.. nonce: cnfZGo
+.. section: Core and Builtins
+
+New approach for tokenizing async/await. As a consequence, it is now
+possible to have one-line 'async def foo(): await ..' functions.
+
+..
+
+.. bpo: 24687
+.. date: 8218
+.. nonce: 0UaXFe
+.. section: Core and Builtins
+
+Plug refleak on SyntaxError in function parameters annotations.
+
+..
+
+.. bpo: 15944
+.. date: 8217
+.. nonce: 4GuwqX
+.. section: Core and Builtins
+
+memoryview: Allow arbitrary formats when casting to bytes. Patch by Martin
+Panter.
+
+..
+
+.. bpo: 23441
+.. date: 8216
+.. nonce: JXt2Yt
+.. section: Library
+
+rcompleter now prints a tab character instead of displaying possible
+completions for an empty word.  Initial patch by Martin Sekera.
+
+..
+
+.. bpo: 24683
+.. date: 8215
+.. nonce: aJdWEv
+.. section: Library
+
+Fixed crashes in _json functions called with arguments of inappropriate
+type.
+
+..
+
+.. bpo: 21697
+.. date: 8214
+.. nonce: jpATha
+.. section: Library
+
+shutil.copytree() now correctly handles symbolic links that point to
+directories.  Patch by Eduardo Seabra and Thomas Kluyver.
+
+..
+
+.. bpo: 14373
+.. date: 8213
+.. nonce: Je0yDg
+.. section: Library
+
+Fixed segmentation fault when gc.collect() is called during constructing
+lru_cache (C implementation).
+
+..
+
+.. bpo: 24695
+.. date: 8212
+.. nonce: QjZzFb
+.. section: Library
+
+Fix a regression in traceback.print_exception().  If exc_traceback is None
+we shouldn't print a traceback header like described in the documentation.
+
+..
+
+.. bpo: 24620
+.. date: 8211
+.. nonce: rrnxB-
+.. section: Library
+
+Random.setstate() now validates the value of state last element.
+
+..
+
+.. bpo: 22485
+.. date: 8210
+.. nonce: HvJf6T
+.. section: Library
+
+Fixed an issue that caused `inspect.getsource` to return incorrect results
+on nested functions.
+
+..
+
+.. bpo: 22153
+.. date: 8209
+.. nonce: 6n6yld
+.. section: Library
+
+Improve unittest docs. Patch from Martin Panter and evilzero.
+
+..
+
+.. bpo: 24580
+.. date: 8208
+.. nonce: AGi4Gm
+.. section: Library
+
+Symbolic group references to open group in re patterns now are explicitly
+forbidden as well as numeric group references.
+
+..
+
+.. bpo: 24206
+.. date: 8207
+.. nonce: ffkVHH
+.. section: Library
+
+Fixed __eq__ and __ne__ methods of inspect classes.
+
+..
+
+.. bpo: 24631
+.. date: 8206
+.. nonce: uljPxM
+.. section: Library
+
+Fixed regression in the timeit module with multiline setup.
+
+..
+
+.. bpo: 18622
+.. date: 8205
+.. nonce: i6nCCW
+.. section: Library
+
+unittest.mock.mock_open().reset_mock would recurse infinitely. Patch from
+Nicola Palumbo and Laurent De Buyst.
+
+..
+
+.. bpo: 23661
+.. date: 8204
+.. nonce: 5VHJmh
+.. section: Library
+
+unittest.mock side_effects can now be exceptions again. This was a
+regression vs Python 3.4. Patch from Ignacio Rossi
+
+..
+
+.. bpo: 24608
+.. date: 8203
+.. nonce: 0TndL0
+.. section: Library
+
+chunk.Chunk.read() now always returns bytes, not str.
+
+..
+
+.. bpo: 18684
+.. date: 8202
+.. nonce: S2es0F
+.. section: Library
+
+Fixed reading out of the buffer in the re module.
+
+..
+
+.. bpo: 24259
+.. date: 8201
+.. nonce: vMAi1A
+.. section: Library
+
+tarfile now raises a ReadError if an archive is truncated inside a data
+segment.
+
+..
+
+.. bpo: 15014
+.. date: 8200
+.. nonce: hwXwCH
+.. section: Library
+
+SMTP.auth() and SMTP.login() now support RFC 4954's optional
+initial-response argument to the SMTP AUTH command.
+
+..
+
+.. bpo: 24669
+.. date: 8199
+.. nonce: kFThK0
+.. section: Library
+
+Fix inspect.getsource() for 'async def' functions. Patch by Kai Groner.
+
+..
+
+.. bpo: 24688
+.. date: 8198
+.. nonce: -yWfcO
+.. section: Library
+
+ast.get_docstring() for 'async def' functions.
+
+..
+
+.. bpo: 24603
+.. date: 8197
+.. nonce: PyHyF5
+.. section: Build
+
+Update Windows builds and OS X 10.5 installer to use OpenSSL 1.0.2d.

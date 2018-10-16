@@ -16,6 +16,14 @@
 
 This module defines classes for implementing HTTP servers (Web servers).
 
+Security Considerations
+-----------------------
+
+http.server is meant for demo purposes and does not implement the stringent
+security checks needed of real HTTP server. We do not recommend
+using this module directly in production.
+
+
 One class, :class:`HTTPServer`, is a :class:`socketserver.TCPServer` subclass.
 It creates and listens at the HTTP socket, dispatching the requests to a
 handler.  Code to create and run the server looks like this::
@@ -105,7 +113,8 @@ of which this module provides three different variants:
 
       Contains the output stream for writing a response back to the
       client. Proper adherence to the HTTP protocol must be used when writing to
-      this stream.
+      this stream in order to achieve successful interoperation with HTTP
+      clients.
 
       .. versionchanged:: 3.6
          This is an :class:`io.BufferedIOBase` stream.

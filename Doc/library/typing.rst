@@ -8,6 +8,13 @@
 
 **Source code:** :source:`Lib/typing.py`
 
+.. note::
+
+   The typing module has been included in the standard library on a
+   :term:`provisional basis <provisional api>`. New features might
+   be added and API may change even between minor releases if deemed
+   necessary by the core developers.
+
 --------------
 
 This module supports type hints as specified by :pep:`484` and :pep:`526`.
@@ -104,8 +111,7 @@ More precisely, the expression ``some_value is Derived(some_value)`` is always
 true at runtime.
 
 This also means that it is not possible to create a subtype of ``Derived``
-since it is an identity function at runtime, not an actual type. Similarly, it
-is not possible to create another :func:`NewType` based on a ``Derived`` type::
+since it is an identity function at runtime, not an actual type::
 
    from typing import NewType
 
@@ -114,8 +120,15 @@ is not possible to create another :func:`NewType` based on a ``Derived`` type::
    # Fails at runtime and does not typecheck
    class AdminUserId(UserId): pass
 
-   # Also does not typecheck
+However, it is possible to create a :func:`NewType` based on a 'derived' ``NewType``::
+
+   from typing import NewType
+
+   UserId = NewType('UserId', int)
+
    ProUserId = NewType('ProUserId', UserId)
+
+and typechecking for ``ProUserId`` will work as expected.
 
 See :pep:`484` for more details.
 
@@ -132,6 +145,8 @@ See :pep:`484` for more details.
    value of type ``Original`` cannot be used in places where a value of type
    ``Derived`` is expected. This is useful when you want to prevent logic
    errors with minimal runtime cost.
+
+.. versionadded:: 3.5.2
 
 Callable
 --------
@@ -154,6 +169,8 @@ It is possible to declare the return type of a callable without specifying
 the call signature by substituting a literal ellipsis
 for the list of arguments in the type hint: ``Callable[..., ReturnType]``.
 
+.. _generics:
+
 Generics
 --------
 
@@ -168,7 +185,7 @@ subscription to denote expected types for container elements.
    def notify_by_email(employees: Sequence[Employee],
                        overrides: Mapping[str, str]) -> None: ...
 
-Generics can be parametrized by using a new factory available in typing
+Generics can be parameterized by using a new factory available in typing
 called :class:`TypeVar`.
 
 ::
@@ -299,7 +316,7 @@ comparable for equality.
 
 
 The :data:`Any` type
----------------------
+--------------------
 
 A special kind of type is :data:`Any`. A static type checker will treat
 every type as being compatible with :data:`Any` and :data:`Any` as being
@@ -473,13 +490,16 @@ The module defines the following classes, functions and decorators:
    required to handle this particular case may change in future revisions of
    :pep:`484`.
 
-   The only legal parameters for :class:`Type` are classes, unions of classes, and
-   :data:`Any`. For example::
+   The only legal parameters for :class:`Type` are classes, :data:`Any`,
+   :ref:`type variables <generics>`, and unions of any of these types.
+   For example::
 
       def new_non_team_user(user_class: Type[Union[BaseUser, ProUser]]): ...
 
    ``Type[Any]`` is equivalent to ``Type`` which in turn is equivalent
    to ``type``, which is the root of Python's metaclass hierarchy.
+
+   .. versionadded:: 3.5.2
 
 .. class:: Iterable(Generic[T_co])
 
@@ -500,6 +520,14 @@ The module defines the following classes, functions and decorators:
 .. class:: SupportsFloat
 
     An ABC with one abstract method ``__float__``.
+
+.. class:: SupportsComplex
+
+    An ABC with one abstract method ``__complex__``.
+
+.. class:: SupportsBytes
+
+    An ABC with one abstract method ``__bytes__``.
 
 .. class:: SupportsAbs
 
@@ -562,6 +590,12 @@ The module defines the following classes, functions and decorators:
 
    As a shorthand for this type, :class:`bytes` can be used to
    annotate arguments of any of the types mentioned above.
+
+.. class:: Deque(deque, MutableSequence[T])
+
+   A generic version of :class:`collections.deque`.
+
+   .. versionadded:: 3.6.1
 
 .. class:: List(list, MutableSequence[T])
 
@@ -627,11 +661,18 @@ The module defines the following classes, functions and decorators:
 
 .. class:: AsyncIterator(AsyncIterable[T_co])
 
-  A generic version of :class:`collections.abc.AsyncIterator`.
+   A generic version of :class:`collections.abc.AsyncIterator`.
 
 .. class:: ContextManager(Generic[T_co])
 
    A generic version of :class:`contextlib.AbstractContextManager`.
+
+   .. versionadded:: 3.6
+
+.. class:: AsyncContextManager(Generic[T_co])
+
+   An ABC with async abstract :meth:`__aenter__` and :meth:`__aexit__`
+   methods.
 
    .. versionadded:: 3.6
 
@@ -645,7 +686,21 @@ The module defines the following classes, functions and decorators:
 
 .. class:: DefaultDict(collections.defaultdict, MutableMapping[KT, VT])
 
-   A generic version of :class:`collections.defaultdict`
+   A generic version of :class:`collections.defaultdict`.
+
+   .. versionadded:: 3.5.2
+
+.. class:: Counter(collections.Counter, Dict[T, int])
+
+   A generic version of :class:`collections.Counter`.
+
+   .. versionadded:: 3.6.1
+
+.. class:: ChainMap(collections.ChainMap, MutableMapping[KT, VT])
+
+   A generic version of :class:`collections.ChainMap`.
+
+   .. versionadded:: 3.6.1
 
 .. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
 
@@ -678,6 +733,39 @@ The module defines the following classes, functions and decorators:
               yield start
               start += 1
 
+.. class:: AsyncGenerator(AsyncIterator[T_co], Generic[T_co, T_contra])
+
+   An async generator can be annotated by the generic type
+   ``AsyncGenerator[YieldType, SendType]``. For example::
+
+      async def echo_round() -> AsyncGenerator[int, float]:
+          sent = yield 0
+          while sent >= 0.0:
+              rounded = await round(sent)
+              sent = yield rounded
+
+   Unlike normal generators, async generators cannot return a value, so there
+   is no ``ReturnType`` type parameter. As with :class:`Generator`, the
+   ``SendType`` behaves contravariantly.
+
+   If your generator will only yield values, set the ``SendType`` to
+   ``None``::
+
+      async def infinite_stream(start: int) -> AsyncGenerator[int, None]:
+          while True:
+              yield start
+              start = await increment(start)
+
+   Alternatively, annotate your generator as having a return type of
+   either ``AsyncIterable[YieldType]`` or ``AsyncIterator[YieldType]``::
+
+      async def infinite_stream(start: int) -> AsyncIterator[int]:
+          while True:
+              yield start
+              start = await increment(start)
+
+   .. versionadded:: 3.5.4
+
 .. class:: Text
 
    ``Text`` is an alias for ``str``. It is provided to supply a forward
@@ -690,14 +778,19 @@ The module defines the following classes, functions and decorators:
        def add_unicode_checkmark(text: Text) -> Text:
            return text + u' \u2713'
 
+   .. versionadded:: 3.5.2
+
 .. class:: io
 
    Wrapper namespace for I/O stream types.
 
-   This defines the generic type ``IO[AnyStr]`` and aliases ``TextIO``
-   and ``BinaryIO`` for respectively ``IO[str]`` and ``IO[bytes]``.
-   These representing the types of I/O streams such as returned by
+   This defines the generic type ``IO[AnyStr]`` and subclasses ``TextIO``
+   and ``BinaryIO``, deriving from ``IO[str]`` and ``IO[bytes]``,
+   respectively. These represent the types of I/O streams such as returned by
    :func:`open`.
+
+   These types are also accessible directly as ``typing.IO``,
+   ``typing.TextIO``, and ``typing.BinaryIO``.
 
 .. class:: re
 
@@ -709,6 +802,9 @@ The module defines the following classes, functions and decorators:
    are generic in ``AnyStr`` and can be made specific by writing
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
    ``Match[bytes]``.
+
+   These types are also accessible directly as ``typing.Pattern``
+   and ``typing.Match``.
 
 .. class:: NamedTuple
 
@@ -724,10 +820,31 @@ The module defines the following classes, functions and decorators:
 
        Employee = collections.namedtuple('Employee', ['name', 'id'])
 
-   The resulting class has one extra attribute: ``_field_types``,
-   giving a dict mapping field names to types.  (The field names
-   are in the ``_fields`` attribute, which is part of the namedtuple
-   API.)
+   To give a field a default value, you can assign to it in the class body::
+
+      class Employee(NamedTuple):
+          name: str
+          id: int = 3
+
+      employee = Employee('Guido')
+      assert employee.id == 3
+
+   Fields with a default value must come after any fields without a default.
+
+   The resulting class has two extra attributes: ``_field_types``,
+   giving a dict mapping field names to types, and ``_field_defaults``, a dict
+   mapping field names to default values.  (The field names are in the
+   ``_fields`` attribute, which is part of the namedtuple API.)
+
+   ``NamedTuple`` subclasses can also have docstrings and methods::
+
+      class Employee(NamedTuple):
+          """Represents an employee."""
+          name: str
+          id: int = 3
+
+          def __repr__(self) -> str:
+              return f'<Employee {self.name}, id={self.id}>'
 
    Backward-compatible usage::
 
@@ -735,6 +852,9 @@ The module defines the following classes, functions and decorators:
 
    .. versionchanged:: 3.6
       Added support for :pep:`526` variable annotation syntax.
+
+   .. versionchanged:: 3.6.1
+      Added support for default values, methods, and docstrings.
 
 .. function:: NewType(typ)
 
@@ -744,6 +864,8 @@ The module defines the following classes, functions and decorators:
 
       UserId = NewType('UserId', int)
       first_user = UserId(1)
+
+   .. versionadded:: 3.5.2
 
 .. function:: cast(typ, val)
 
@@ -795,17 +917,17 @@ The module defines the following classes, functions and decorators:
 
    See :pep:`484` for details and comparison with other typing semantics.
 
-.. decorator:: no_type_check(arg)
+.. decorator:: no_type_check
 
    Decorator to indicate that annotations are not type hints.
 
-   The argument must be a class or function; if it is a class, it
+   This works as class or function :term:`decorator`.  With a class, it
    applies recursively to all methods defined in that class (but not
    to methods defined in its superclasses or subclasses).
 
    This mutates the function(s) in place.
 
-.. decorator:: no_type_check_decorator(decorator)
+.. decorator:: no_type_check_decorator
 
    Decorator to give another decorator the :func:`no_type_check` effect.
 
@@ -818,6 +940,18 @@ The module defines the following classes, functions and decorators:
 
    * Every type is compatible with :data:`Any`.
    * :data:`Any` is compatible with every type.
+
+.. data:: NoReturn
+
+   Special type indicating that a function never returns.
+   For example::
+
+      from typing import NoReturn
+
+      def stop() -> NoReturn:
+          raise RuntimeError('no way')
+
+   .. versionadded:: 3.6.5
 
 .. data:: Union
 
@@ -843,7 +977,7 @@ The module defines the following classes, functions and decorators:
 
        Union[int, str] == Union[str, int]
 
-   * When a class and its subclass are present, the former is skipped, e.g.::
+   * When a class and its subclass are present, the latter is skipped, e.g.::
 
        Union[int, object] == object
 
@@ -861,10 +995,18 @@ The module defines the following classes, functions and decorators:
 
    Note that this is not the same concept as an optional argument,
    which is one that has a default.  An optional argument with a
-   default needn't use the ``Optional`` qualifier on its type
-   annotation (although it is inferred if the default is ``None``).
-   A mandatory argument may still have an ``Optional`` type if an
-   explicit value of ``None`` is allowed.
+   default does not require the ``Optional`` qualifier on its type
+   annotation just because it is optional. For example::
+
+      def foo(arg: int = 0) -> None:
+          ...
+
+   On the other hand, if an explicit value of ``None`` is allowed, the
+   use of ``Optional`` is appropriate, whether the argument is optional
+   or not. For example::
+
+      def foo(arg: Optional[int] = None) -> None:
+          ...
 
 .. data:: Tuple
 
@@ -912,9 +1054,9 @@ The module defines the following classes, functions and decorators:
 
    :data:`ClassVar` is not a class itself, and should not
    be used with :func:`isinstance` or :func:`issubclass`.
-   Note that :data:`ClassVar` does not change Python runtime behavior;
-   it can be used by 3rd party type checkers, so that the following
-   code might flagged as an error by those::
+   :data:`ClassVar` does not change Python runtime behavior, but
+   it can be used by third-party type checkers. For example, a type checker
+   might flag the following code as an error::
 
       enterprise_d = Starship(3000)
       enterprise_d.stats = {} # Error, setting class variable on instance
@@ -945,5 +1087,12 @@ The module defines the following classes, functions and decorators:
       if TYPE_CHECKING:
           import expensive_mod
 
-      def fun():
-          local_var: expensive_mod.some_type = other_fun()
+      def fun(arg: 'expensive_mod.SomeType') -> None:
+          local_var: expensive_mod.AnotherType = other_fun()
+
+   Note that the first type annotation must be enclosed in quotes, making it a
+   "forward reference", to hide the ``expensive_mod`` reference from the
+   interpreter runtime.  Type annotations for local variables are not
+   evaluated, so the second annotation does not need to be enclosed in quotes.
+
+   .. versionadded:: 3.5.2

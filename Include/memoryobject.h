@@ -21,8 +21,10 @@ PyAPI_DATA(PyTypeObject) PyMemoryView_Type;
 #endif
 
 PyAPI_FUNC(PyObject *) PyMemoryView_FromObject(PyObject *base);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(PyObject *) PyMemoryView_FromMemory(char *mem, Py_ssize_t size,
                                                int flags);
+#endif
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) PyMemoryView_FromBuffer(Py_buffer *info);
 #endif

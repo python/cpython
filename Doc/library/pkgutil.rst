@@ -224,4 +224,6 @@ support.
 
    If the package cannot be located or loaded, or it uses a :term:`loader`
    which does not support :meth:`get_data <importlib.abc.ResourceLoader.get_data>`,
-   then ``None`` is returned.
+   then ``None`` is returned.  In particular, the :term:`loader` for
+   :term:`namespace packages <namespace package>` does not support
+   :meth:`get_data <importlib.abc.ResourceLoader.get_data>`.

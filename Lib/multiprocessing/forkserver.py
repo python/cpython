@@ -33,6 +33,7 @@ class ForkServer(object):
     def __init__(self):
         self._forkserver_address = None
         self._forkserver_alive_fd = None
+        self._forkserver_pid = None
         self._inherited_fds = None
         self._lock = threading.Lock()
         self._preload_modules = ['__main__']
@@ -89,8 +90,17 @@ class ForkServer(object):
         '''
         with self._lock:
             semaphore_tracker.ensure_running()
-            if self._forkserver_alive_fd is not None:
-                return
+            if self._forkserver_pid is not None:
+                # forkserver was launched before, is it still running?
+                pid, status = os.waitpid(self._forkserver_pid, os.WNOHANG)
+                if not pid:
+                    # still alive
+                    return
+                # dead, launch it again
+                os.close(self._forkserver_alive_fd)
+                self._forkserver_address = None
+                self._forkserver_alive_fd = None
+                self._forkserver_pid = None
 
             cmd = ('from multiprocessing.forkserver import main; ' +
                    'main(%d, %d, %r, **%r)')
@@ -127,6 +137,7 @@ class ForkServer(object):
                     os.close(alive_r)
                 self._forkserver_address = address
                 self._forkserver_alive_fd = alive_w
+                self._forkserver_pid = pid
 
 #
 #
@@ -149,8 +160,15 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
 
     util._close_stdin()
 
-    # ignoring SIGCHLD means no need to reap zombie processes
-    handler = signal.signal(signal.SIGCHLD, signal.SIG_IGN)
+    handlers = {
+        # no need to reap zombie processes;
+        signal.SIGCHLD: signal.SIG_IGN,
+        # protect the process from ^C
+        signal.SIGINT: signal.SIG_IGN,
+        }
+    old_handlers = {sig: signal.signal(sig, val)
+                    for (sig, val) in handlers.items()}
+
     with socket.socket(socket.AF_UNIX, fileno=listener_fd) as listener, \
          selectors.DefaultSelector() as selector:
         _forkserver._forkserver_address = listener.getsockname()
@@ -175,7 +193,7 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                     code = 1
                     if os.fork() == 0:
                         try:
-                            _serve_one(s, listener, alive_r, handler)
+                            _serve_one(s, listener, alive_r, old_handlers)
                         except Exception:
                             sys.excepthook(*sys.exc_info())
                             sys.stderr.flush()
@@ -186,11 +204,12 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                 if e.errno != errno.ECONNABORTED:
                     raise
 
-def _serve_one(s, listener, alive_r, handler):
-    # close unnecessary stuff and reset SIGCHLD handler
+def _serve_one(s, listener, alive_r, handlers):
+    # close unnecessary stuff and reset signal handlers
     listener.close()
     os.close(alive_r)
-    signal.signal(signal.SIGCHLD, handler)
+    for sig, val in handlers.items():
+        signal.signal(sig, val)
 
     # receive fds from parent process
     fds = reduction.recvfds(s, MAXFDS_TO_SEND + 1)

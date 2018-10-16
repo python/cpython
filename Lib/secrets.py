@@ -26,6 +26,8 @@ choice = _sysrand.choice
 
 def randbelow(exclusive_upper_bound):
     """Return a random int in the range [0, n)."""
+    if exclusive_upper_bound <= 0:
+        raise ValueError("Upper bound must be positive.")
     return _sysrand._randbelow(exclusive_upper_bound)
 
 DEFAULT_ENTROPY = 32  # number of bytes to return by default

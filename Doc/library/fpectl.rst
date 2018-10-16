@@ -89,7 +89,7 @@ The following example demonstrates how to start up and test operation of the
    >>> import math
    >>> math.exp(1000)
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    FloatingPointError: in math_1
 
 

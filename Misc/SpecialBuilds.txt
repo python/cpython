@@ -218,7 +218,7 @@ Compile in support for Low Level TRACE-ing of the main interpreter loop.
 
 When this preprocessor symbol is defined, before PyEval_EvalFrame executes a
 frame's code it checks the frame's global namespace for a variable
-"__lltrace__".  If such a variable is found, mounds of information about what
+"__ltrace__".  If such a variable is found, mounds of information about what
 the interpreter is doing are sprayed to stdout, such as every opcode and opcode
 argument and values pushed onto and popped off the value stack.
 

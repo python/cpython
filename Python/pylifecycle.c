@@ -88,7 +88,7 @@ int Py_BytesWarningFlag; /* Warn on str(bytes) and str(buffer) */
 int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c: deprecated */
 int Py_FrozenFlag; /* Needed by getpath.c */
 int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
-int Py_DontWriteBytecodeFlag; /* Suppress writing bytecode files (*.py[co]) */
+int Py_DontWriteBytecodeFlag; /* Suppress writing bytecode files (*.pyc) */
 int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
 int Py_UnbufferedStdioFlag = 0; /* Unbuffered binary std{in,out,err} */
 int Py_HashRandomizationFlag = 0; /* for -R and PYTHONHASHSEED */
@@ -330,10 +330,6 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
         Py_OptimizeFlag = add_flag(Py_OptimizeFlag, p);
     if ((p = Py_GETENV("PYTHONDONTWRITEBYTECODE")) && *p != '\0')
         Py_DontWriteBytecodeFlag = add_flag(Py_DontWriteBytecodeFlag, p);
-    /* The variable is only tested for existence here; _PyRandom_Init will
-       check its value further. */
-    if ((p = Py_GETENV("PYTHONHASHSEED")) && *p != '\0')
-        Py_HashRandomizationFlag = add_flag(Py_HashRandomizationFlag, p);
 #ifdef MS_WINDOWS
     if ((p = Py_GETENV("PYTHONLEGACYWINDOWSFSENCODING")) && *p != '\0')
         Py_LegacyWindowsFSEncodingFlag = add_flag(Py_LegacyWindowsFSEncodingFlag, p);
@@ -1044,6 +1040,14 @@ initsite(void)
 static int
 is_valid_fd(int fd)
 {
+#ifdef __APPLE__
+    /* bpo-30225: On macOS Tiger, when stdout is redirected to a pipe
+       and the other side of the pipe is closed, dup(1) succeed, whereas
+       fstat(1, &st) fails with EBADF. Prefer fstat() over dup() to detect
+       such error. */
+    struct stat st;
+    return (fstat(fd, &st) == 0);
+#else
     int fd2;
     if (fd < 0)
         return 0;
@@ -1056,6 +1060,7 @@ is_valid_fd(int fd)
         close(fd2);
     _Py_END_SUPPRESS_IPH
     return fd2 >= 0;
+#endif
 }
 
 /* returns Py_None if the fd is not valid */

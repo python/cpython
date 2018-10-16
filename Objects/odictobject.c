@@ -67,7 +67,7 @@ Linked-List API
 As noted, the linked-list implemented here does not have all the bells and
 whistles.  However, we recognize that the implementation may need to
 change to accommodate performance improvements or extra functionality.  To
-that end, We use a simple API to interact with the linked-list.  Here's a
+that end, we use a simple API to interact with the linked-list.  Here's a
 summary of the methods/macros:
 
 Node info:
@@ -444,7 +444,7 @@ Potential Optimizations
   - Set node->key to NULL to indicate the node is not-in-use.
   - Add _odict_EXISTS()?
   - How to maintain consistency across resizes?  Existing node pointers
-    would be invalidate after a resize, which is particularly problematic
+    would be invalidated after a resize, which is particularly problematic
     for the iterators.
 * Use a more stream-lined implementation of update() and, likely indirectly,
   __init__().
@@ -875,8 +875,7 @@ odict_eq(PyObject *a, PyObject *b)
 
 PyDoc_STRVAR(odict_init__doc__,
 "Initialize an ordered dictionary.  The signature is the same as\n\
-        regular dictionaries, but keyword arguments are not recommended because\n\
-        their insertion order is arbitrary.\n\
+        regular dictionaries.  Keyword argument order is preserved.\n\
 \n\
         ");
 
@@ -1155,10 +1154,12 @@ _odict_popkey(PyObject *od, PyObject *key, PyObject *failobj)
 /* popitem() */
 
 PyDoc_STRVAR(odict_popitem__doc__,
-"od.popitem() -> (k, v), return and remove a (key, value) pair.\n\
-        Pairs are returned in LIFO order if last is true or FIFO order if false.\n\
-\n\
-        ");
+"popitem($self, /, last=True)\n"
+"--\n"
+"\n"
+"Remove and return a (key, value) pair from the dictionary.\n"
+"\n"
+"Pairs are returned in LIFO order if last is true or FIFO order if false.");
 
 static PyObject *
 odict_popitem(PyObject *od, PyObject *args, PyObject *kwargs)
@@ -2231,7 +2232,7 @@ odictvalues_new(PyObject *od)
 
 
 /* ----------------------------------------------
-   MutableMappping implementations
+   MutableMapping implementations
 
 Mapping:
 

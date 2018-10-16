@@ -156,7 +156,9 @@ The :command:`register` and :command:`upload` commands both check for the
 existence of a :file:`.pypirc` file at the location :file:`$HOME/.pypirc`.
 If this file exists, the command uses the username, password, and repository
 URL configured in the file.  The format of a :file:`.pypirc` file is as
-follows::
+follows:
+
+.. code-block:: ini
 
     [distutils]
     index-servers =
@@ -173,13 +175,15 @@ name of all sections describing a repository.
 Each section describing a repository defines three variables:
 
 - *repository*, that defines the url of the PyPI server. Defaults to
-    ``https://www.python.org/pypi``.
+    ``https://upload.pypi.org/legacy/``.
 - *username*, which is the registered username on the PyPI server.
 - *password*, that will be used to authenticate. If omitted the user
     will be prompt to type it when needed.
 
 If you want to define another server a new section can be created and
-listed in the *index-servers* variable::
+listed in the *index-servers* variable:
+
+.. code-block:: ini
 
     [distutils]
     index-servers =
@@ -246,4 +250,4 @@ without warnings does not guarantee that PyPI will convert the content
 successfully.
 
 
-.. _Python Package Index (PyPI): https://pypi.python.org/pypi
+.. _Python Package Index (PyPI): https://pypi.org

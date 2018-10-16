@@ -190,7 +190,7 @@ Since Python 3.6, in an :keyword:`async def` function, an :keyword:`async for`
 clause may be used to iterate over a :term:`asynchronous iterator`.
 A comprehension in an :keyword:`async def` function may consist of either a
 :keyword:`for` or :keyword:`async for` clause following the leading
-expression, may contan additonal :keyword:`for` or :keyword:`async for`
+expression, may contain additional :keyword:`for` or :keyword:`async for`
 clauses, and may also use :keyword:`await` expressions.
 If a comprehension contains either :keyword:`async for` clauses
 or :keyword:`await` expressions it is called an
@@ -636,7 +636,7 @@ which are used to control the execution of a generator function.
    without yielding another value, an :exc:`StopAsyncIteration` exception is
    raised by the awaitable.
    If the generator function does not catch the passed-in exception, or
-   raises a different exception, then when the awaitalbe is run that exception
+   raises a different exception, then when the awaitable is run that exception
    propagates to the caller of the awaitable.
 
 .. index:: exception: GeneratorExit
@@ -730,7 +730,7 @@ whose value is one of the keys of the mapping, and the subscription selects the
 value in the mapping that corresponds to that key.  (The expression list is a
 tuple except if it has exactly one item.)
 
-If the primary is a sequence, the expression (list) must evaluate to an integer
+If the primary is a sequence, the expression list must evaluate to an integer
 or a slice (as discussed in the following section).
 
 The formal syntax makes no special provision for negative indices in
@@ -827,7 +827,7 @@ series of :term:`arguments <argument>`:
    starred_and_keywords: ("*" `expression` | `keyword_item`)
                 : ("," "*" `expression` | "," `keyword_item`)*
    keywords_arguments: (`keyword_item` | "**" `expression`)
-                : ("," `keyword_item` | "**" `expression`)*
+                : ("," `keyword_item` | "," "**" `expression`)*
    keyword_item: `identifier` "=" `expression`
 
 An optional trailing comma may be present after the positional and keyword arguments
@@ -905,7 +905,7 @@ keyword arguments (and any ``**expression`` arguments -- see below).  So::
    2 1
    >>> f(a=1, *(2,))
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    TypeError: f() got multiple values for keyword argument 'a'
    >>> f(1, *(2,))
    1 2
@@ -1013,7 +1013,7 @@ The power operator binds more tightly than unary operators on its left; it binds
 less tightly than unary operators on its right.  The syntax is:
 
 .. productionlist::
-   power: ( `await_expr` | `primary` ) ["**" `u_expr`]
+   power: (`await_expr` | `primary`) ["**" `u_expr`]
 
 Thus, in an unparenthesized sequence of power and unary operators, the operators
 are evaluated from right to left (this does not constrain the evaluation order
@@ -1085,7 +1085,7 @@ operators and one for additive operators:
 
 .. productionlist::
    m_expr: `u_expr` | `m_expr` "*" `u_expr` | `m_expr` "@" `m_expr` |
-         : `m_expr` "//" `u_expr`| `m_expr` "/" `u_expr` |
+         : `m_expr` "//" `u_expr` | `m_expr` "/" `u_expr` |
          : `m_expr` "%" `u_expr`
    a_expr: `m_expr` | `a_expr` "+" `m_expr` | `a_expr` "-" `m_expr`
 
@@ -1097,7 +1097,9 @@ the other must be a sequence. In the former case, the numbers are converted to a
 common type and then multiplied together.  In the latter case, sequence
 repetition is performed; a negative repetition factor yields an empty sequence.
 
-.. index:: single: matrix multiplication
+.. index::
+   single: matrix multiplication
+   operator: @
 
 The ``@`` (at) operator is intended to be used for matrix multiplication.  No
 builtin Python types implement this operator.
@@ -1163,7 +1165,7 @@ Shifting operations
 The shifting operations have lower priority than the arithmetic operations:
 
 .. productionlist::
-   shift_expr: `a_expr` | `shift_expr` ( "<<" | ">>" ) `a_expr`
+   shift_expr: `a_expr` | `shift_expr` ("<<" | ">>") `a_expr`
 
 These operators accept integers as arguments.  They shift the first argument to
 the left or right by the number of bits given by the second argument.
@@ -1228,7 +1230,7 @@ C, expressions like ``a < b < c`` have the interpretation that is conventional
 in mathematics:
 
 .. productionlist::
-   comparison: `or_expr` ( `comp_operator` `or_expr` )*
+   comparison: `or_expr` (`comp_operator` `or_expr`)*
    comp_operator: "<" | ">" | "==" | ">=" | "<=" | "!="
                 : | "is" ["not"] | ["not"] "in"
 
@@ -1317,7 +1319,7 @@ built-in types.
 * Sequences (instances of :class:`tuple`, :class:`list`, or :class:`range`) can
   be compared only within each of their types, with the restriction that ranges
   do not support order comparison.  Equality comparison across these types
-  results in unequality, and ordering comparison across these types raises
+  results in inequality, and ordering comparison across these types raises
   :exc:`TypeError`.
 
   Sequences compare lexicographically using comparison of corresponding
@@ -1355,7 +1357,7 @@ built-in types.
     true).
 
 * Mappings (instances of :class:`dict`) compare equal if and only if they have
-  equal `(key, value)` pairs. Equality comparison of the keys and elements
+  equal `(key, value)` pairs. Equality comparison of the keys and values
   enforces reflexivity.
 
   Order comparisons (``<``, ``>``, ``<=``, and ``>=``) raise :exc:`TypeError`.
@@ -1415,6 +1417,10 @@ some consistency rules, if possible:
   sequences, but not to sets or mappings). See also the
   :func:`~functools.total_ordering` decorator.
 
+* The :func:`hash` result should be consistent with equality.
+  Objects that are equal should either have the same hash value,
+  or be marked as unhashable.
+
 Python does not enforce these consistency rules. In fact, the not-a-number
 values are an example for not following these rules.
 
@@ -1427,28 +1433,29 @@ Membership test operations
 --------------------------
 
 The operators :keyword:`in` and :keyword:`not in` test for membership.  ``x in
-s`` evaluates to true if *x* is a member of *s*, and false otherwise.  ``x not
-in s`` returns the negation of ``x in s``.  All built-in sequences and set types
-support this as well as dictionary, for which :keyword:`in` tests whether the
-dictionary has a given key. For container types such as list, tuple, set,
-frozenset, dict, or collections.deque, the expression ``x in y`` is equivalent
+s`` evaluates to ``True`` if *x* is a member of *s*, and ``False`` otherwise.
+``x not in s`` returns the negation of ``x in s``.  All built-in sequences and
+set types support this as well as dictionary, for which :keyword:`in` tests
+whether the dictionary has a given key. For container types such as list, tuple,
+set, frozenset, dict, or collections.deque, the expression ``x in y`` is equivalent
 to ``any(x is e or x == e for e in y)``.
 
-For the string and bytes types, ``x in y`` is true if and only if *x* is a
+For the string and bytes types, ``x in y`` is ``True`` if and only if *x* is a
 substring of *y*.  An equivalent test is ``y.find(x) != -1``.  Empty strings are
 always considered to be a substring of any other string, so ``"" in "abc"`` will
 return ``True``.
 
 For user-defined classes which define the :meth:`__contains__` method, ``x in
-y`` is true if and only if ``y.__contains__(x)`` is true.
+y`` returns ``True`` if ``y.__contains__(x)`` returns a true value, and
+``False`` otherwise.
 
 For user-defined classes which do not define :meth:`__contains__` but do define
-:meth:`__iter__`, ``x in y`` is true if some value ``z`` with ``x == z`` is
+:meth:`__iter__`, ``x in y`` is ``True`` if some value ``z`` with ``x == z`` is
 produced while iterating over ``y``.  If an exception is raised during the
 iteration, it is as if :keyword:`in` raised that exception.
 
 Lastly, the old-style iteration protocol is tried: if a class defines
-:meth:`__getitem__`, ``x in y`` is true if and only if there is a non-negative
+:meth:`__getitem__`, ``x in y`` is ``True`` if and only if there is a non-negative
 integer index *i* such that ``x == y[i]``, and all lower integer indices do not
 raise :exc:`IndexError` exception.  (If any other exception is raised, it is as
 if :keyword:`in` raised that exception).
@@ -1566,12 +1573,12 @@ Lambdas
    lambda_expr_nocond: "lambda" [`parameter_list`]: `expression_nocond`
 
 Lambda expressions (sometimes called lambda forms) are used to create anonymous
-functions. The expression ``lambda arguments: expression`` yields a function
+functions. The expression ``lambda parameters: expression`` yields a function
 object.  The unnamed object behaves like a function object defined with:
 
 .. code-block:: none
 
-   def <lambda>(arguments):
+   def <lambda>(parameters):
        return expression
 
 See section :ref:`function` for the syntax of parameter lists.  Note that
@@ -1587,9 +1594,9 @@ Expression lists
 .. index:: pair: expression; list
 
 .. productionlist::
-   expression_list: `expression` ( "," `expression` )* [","]
-   starred_list: `starred_item` ( "," `starred_item` )* [","]
-   starred_expression: `expression` | ( `starred_item` "," )* [`starred_item`]
+   expression_list: `expression` ("," `expression`)* [","]
+   starred_list: `starred_item` ("," `starred_item`)* [","]
+   starred_expression: `expression` | (`starred_item` ",")* [`starred_item`]
    starred_item: `expression` | "*" `or_expr`
 
 .. index:: object: tuple
@@ -1687,8 +1694,8 @@ precedence and have a left-to-right chaining feature as described in the
 | ``+``, ``-``                                  | Addition and subtraction            |
 +-----------------------------------------------+-------------------------------------+
 | ``*``, ``@``, ``/``, ``//``, ``%``            | Multiplication, matrix              |
-|                                               | multiplication division,            |
-|                                               | remainder [#]_                      |
+|                                               | multiplication, division, floor     |
+|                                               | division, remainder [#]_            |
 +-----------------------------------------------+-------------------------------------+
 | ``+x``, ``-x``, ``~x``                        | Positive, negative, bitwise NOT     |
 +-----------------------------------------------+-------------------------------------+

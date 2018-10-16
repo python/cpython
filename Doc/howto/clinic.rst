@@ -1,3 +1,5 @@
+.. highlightlang:: c
+
 **********************
 Argument Clinic How-To
 **********************
@@ -20,8 +22,8 @@ Argument Clinic How-To
   compatibility for future versions.  In other words: if you
   maintain an external C extension for CPython, you're welcome
   to experiment with Argument Clinic in your own code.  But the
-  version of Argument Clinic that ships with CPython 3.5 *could*
-  be totally incompatible and break all your code.
+  version of Argument Clinic that ships with the next version
+  of CPython *could* be totally incompatible and break all your code.
 
 The Goals Of Argument Clinic
 ============================
@@ -78,17 +80,23 @@ Basic Concepts And Usage
 ========================
 
 Argument Clinic ships with CPython; you'll find it in ``Tools/clinic/clinic.py``.
-If you run that script, specifying a C file as an argument::
+If you run that script, specifying a C file as an argument:
 
-    % python3 Tools/clinic/clinic.py foo.c
+.. code-block:: shell-session
+
+    $ python3 Tools/clinic/clinic.py foo.c
 
 Argument Clinic will scan over the file looking for lines that
-look exactly like this::
+look exactly like this:
+
+.. code-block:: none
 
     /*[clinic input]
 
 When it finds one, it reads everything up to a line that looks
-exactly like this::
+exactly like this:
+
+.. code-block:: none
 
     [clinic start generated code]*/
 
@@ -99,7 +107,9 @@ lines, are collectively called an Argument Clinic "block".
 When Argument Clinic parses one of these blocks, it
 generates output.  This output is rewritten into the C file
 immediately after the block, followed by a comment containing a checksum.
-The Argument Clinic block now looks like this::
+The Argument Clinic block now looks like this:
+
+.. code-block:: none
 
     /*[clinic input]
     ... clinic input goes here ...
@@ -257,12 +267,16 @@ Let's dive in!
    should get its own line.  All the parameter lines should be
    indented from the function name and the docstring.
 
-   The general form of these parameter lines is as follows::
+   The general form of these parameter lines is as follows:
+
+   .. code-block:: none
 
        name_of_parameter: converter
 
    If the parameter has a default value, add that after the
-   converter::
+   converter:
+
+   .. code-block:: none
 
        name_of_parameter: converter = default_value
 
@@ -375,15 +389,10 @@ Let's dive in!
         Write a pickled representation of obj to the open file.
         [clinic start generated code]*/
 
-12. Save and close the file, then run ``Tools/clinic/clinic.py`` on it.
-    With luck everything worked and your block now has output!  Reopen
-    the file in your text editor to see::
-
-       /*[clinic input]
-       module _pickle
-       class _pickle.Pickler "PicklerObject *" "&Pickler_Type"
-       [clinic start generated code]*/
-       /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+12. Save and close the file, then run ``Tools/clinic/clinic.py`` on
+    it.  With luck everything worked---your block now has output, and
+    a ``.c.h`` file has been generated! Reopen the file in your
+    text editor to see::
 
        /*[clinic input]
        _pickle.Pickler.dump
@@ -395,17 +404,19 @@ Let's dive in!
        Write a pickled representation of obj to the open file.
        [clinic start generated code]*/
 
-       PyDoc_STRVAR(_pickle_Pickler_dump__doc__,
-       "Write a pickled representation of obj to the open file.\n"
-       "\n"
-       ...
        static PyObject *
-       _pickle_Pickler_dump_impl(PicklerObject *self, PyObject *obj)
-       /*[clinic end generated code: checksum=3bd30745bf206a48f8b576a1da3d90f55a0a4187]*/
+       _pickle_Pickler_dump(PicklerObject *self, PyObject *obj)
+       /*[clinic end generated code: output=87ecad1261e02ac7 input=552eb1c0f52260d9]*/
 
     Obviously, if Argument Clinic didn't produce any output, it's because
     it found an error in your input.  Keep fixing your errors and retrying
     until Argument Clinic processes your file without complaint.
+
+    For readability, most of the glue code has been generated to a ``.c.h``
+    file.  You'll need to include that in your original ``.c`` file,
+    typically right after the clinic module block::
+
+       #include "clinic/_pickle.c.h"
 
 13. Double-check that the argument-parsing code Argument Clinic generated
     looks basically the same as the existing code.
@@ -918,13 +929,17 @@ Parameter default values
 ------------------------
 
 Default values for parameters can be any of a number of values.
-At their simplest, they can be string, int, or float literals::
+At their simplest, they can be string, int, or float literals:
+
+.. code-block:: none
 
     foo: str = "abc"
     bar: int = 123
     bat: float = 45.6
 
-They can also use any of Python's built-in constants::
+They can also use any of Python's built-in constants:
+
+.. code-block:: none
 
     yep:  bool = True
     nope: bool = False
@@ -952,7 +967,9 @@ It can be an entire expression, using math operators and looking up attributes
 on objects.  However, this support isn't exactly simple, because of some
 non-obvious semantics.
 
-Consider the following example::
+Consider the following example:
+
+.. code-block:: none
 
     foo: Py_ssize_t = sys.maxsize - 1
 
@@ -963,7 +980,9 @@ runtime, when the user asks for the function's signature.
 
 What namespace is available when the expression is evaluated?  It's evaluated
 in the context of the module the builtin came from.  So, if your module has an
-attribute called "``max_widgets``", you may simply use it::
+attribute called "``max_widgets``", you may simply use it:
+
+.. code-block:: none
 
     foo: Py_ssize_t = max_widgets
 
@@ -975,7 +994,9 @@ it's best to restrict yourself to modules that are preloaded by Python itself.)
 Evaluating default values only at runtime means Argument Clinic can't compute
 the correct equivalent C default value.  So you need to tell it explicitly.
 When you use an expression, you must also specify the equivalent expression
-in C, using the ``c_default`` parameter to the converter::
+in C, using the ``c_default`` parameter to the converter:
+
+.. code-block:: none
 
     foo: Py_ssize_t(c_default="PY_SSIZE_T_MAX - 1") = sys.maxsize - 1
 
@@ -1027,7 +1048,9 @@ that value, and an error has been set (``PyErr_Occurred()`` returns a true
 value), then the generated code will propagate the error.  Otherwise it will
 encode the value you return like normal.
 
-Currently Argument Clinic supports only a few return converters::
+Currently Argument Clinic supports only a few return converters:
+
+.. code-block:: none
 
     bool
     int
@@ -1350,7 +1373,9 @@ Let's start with defining some terminology:
   A field, in this context, is a subsection of Clinic's output.
   For example, the ``#define`` for the ``PyMethodDef`` structure
   is a field, called ``methoddef_define``.  Clinic has seven
-  different fields it can output per function definition::
+  different fields it can output per function definition:
+
+  .. code-block:: none
 
       docstring_prototype
       docstring_definition
@@ -1398,8 +1423,8 @@ Let's start with defining some terminology:
 
   ``two-pass``
     A buffer like ``buffer``.  However, a two-pass buffer can only
-    be written once, and it prints out all text sent to it during
-    all of processing, even from Clinic blocks *after* the
+    be dumped once, and it prints out all text sent to it during
+    all processing, even from Clinic blocks *after* the dumping point.
 
   ``suppress``
     The text is suppressed—thrown away.
@@ -1407,7 +1432,9 @@ Let's start with defining some terminology:
 
 Clinic defines five new directives that let you reconfigure its output.
 
-The first new directive is ``dump``::
+The first new directive is ``dump``:
+
+.. code-block:: none
 
    dump <destination>
 
@@ -1416,7 +1443,9 @@ the current block, and empties it.  This only works with ``buffer`` and
 ``two-pass`` destinations.
 
 The second new directive is ``output``.  The most basic form of ``output``
-is like this::
+is like this:
+
+.. code-block:: none
 
     output <field> <destination>
 
@@ -1424,7 +1453,9 @@ This tells Clinic to output *field* to *destination*.  ``output`` also
 supports a special meta-destination, called ``everything``, which tells
 Clinic to output *all* fields to that *destination*.
 
-``output`` has a number of other functions::
+``output`` has a number of other functions:
+
+.. code-block:: none
 
     output push
     output pop
@@ -1462,7 +1493,7 @@ preset configurations, as follows:
     The default filename is ``"{dirname}/clinic/{basename}.h"``.
 
   ``buffer``
-    Save up all most of the output from Clinic, to be written into
+    Save up most of the output from Clinic, to be written into
     your file near the end.  For Python files implementing modules
     or builtin types, it's recommended that you dump the buffer
     just above the static structures for your module or
@@ -1499,7 +1530,9 @@ preset configurations, as follows:
     Suppresses the ``impl_prototype``, write the ``docstring_definition``
     and ``parser_definition`` to ``buffer``, write everything else to ``block``.
 
-The third new directive is ``destination``::
+The third new directive is ``destination``:
+
+.. code-block:: none
 
     destination <name> <command> [...]
 
@@ -1507,7 +1540,9 @@ This performs an operation on the destination named ``name``.
 
 There are two defined subcommands: ``new`` and ``clear``.
 
-The ``new`` subcommand works like this::
+The ``new`` subcommand works like this:
+
+.. code-block:: none
 
     destination <name> new <type>
 
@@ -1555,7 +1590,9 @@ There are five destination types:
         A two-pass buffer, like the "two-pass" builtin destination above.
 
 
-The ``clear`` subcommand works like this::
+The ``clear`` subcommand works like this:
+
+.. code-block:: none
 
     destination <name> clear
 
@@ -1563,7 +1600,9 @@ It removes all the accumulated text up to this point in the destination.
 (I don't know what you'd need this for, but I thought maybe it'd be
 useful while someone's experimenting.)
 
-The fourth new directive is ``set``::
+The fourth new directive is ``set``:
+
+.. code-block:: none
 
     set line_prefix "string"
     set line_suffix "string"
@@ -1581,7 +1620,9 @@ Both of these support two format strings:
     Turns into the string ``*/``, the end-comment text sequence for C files.
 
 The final new directive is one you shouldn't need to use directly,
-called ``preserve``::
+called ``preserve``:
+
+.. code-block:: none
 
     preserve
 
@@ -1606,7 +1647,9 @@ code probably looks like this::
     #endif /* HAVE_FUNCTIONNAME */
 
 And then in the ``PyMethodDef`` structure at the bottom the existing code
-will have::
+will have:
+
+.. code-block:: none
 
     #ifdef HAVE_FUNCTIONNAME
     {'functionname', ... },
@@ -1627,7 +1670,9 @@ like so::
     #endif /* HAVE_FUNCTIONNAME */
 
 Then, remove those three lines from the ``PyMethodDef`` structure,
-replacing them with the macro Argument Clinic generated::
+replacing them with the macro Argument Clinic generated:
+
+.. code-block:: none
 
     MODULE_FUNCTIONNAME_METHODDEF
 
@@ -1656,7 +1701,9 @@ extra code when using the "block" output preset?  It can't go in the output bloc
 because that could be deactivated by the ``#ifdef``.  (That's the whole point!)
 
 In this situation, Argument Clinic writes the extra code to the "buffer" destination.
-This may mean that you get a complaint from Argument Clinic::
+This may mean that you get a complaint from Argument Clinic:
+
+.. code-block:: none
 
     Warning in file "Modules/posixmodule.c" on line 12357:
     Destination buffer 'buffer' not empty at end of file, emptying.
@@ -1676,7 +1723,9 @@ wouldn't make any sense to the Python interpreter.  But using Argument Clinic
 to run Python blocks lets you use Python as a Python preprocessor!
 
 Since Python comments are different from C comments, Argument Clinic
-blocks embedded in Python files look slightly different.  They look like this::
+blocks embedded in Python files look slightly different.  They look like this:
+
+.. code-block:: python3
 
     #/*[python input]
     #print("def foo(): pass")

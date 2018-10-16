@@ -440,7 +440,7 @@ The :mod:`test.support` module defines the following functions:
    otherwise.
 
 
-.. decorator:: skip_unless_symlink()
+.. decorator:: skip_unless_symlink
 
    A decorator for running tests that require support for symbolic links.
 
@@ -570,7 +570,8 @@ The :mod:`test.support` module defines the following functions:
       def load_tests(*args):
           return load_package_tests(os.path.dirname(__file__), *args)
 
-.. function:: detect_api_mismatch(ref_api, other_api, *, ignore=()):
+
+.. function:: detect_api_mismatch(ref_api, other_api, *, ignore=())
 
    Returns the set of attributes, functions or methods of *ref_api* not
    found on *other_api*, except for a defined list of items to be
@@ -676,3 +677,10 @@ The :mod:`test.support` module defines the following classes:
 
    Class used to record warnings for unit tests. See documentation of
    :func:`check_warnings` above for more details.
+
+
+.. class:: FakePath(path)
+
+   Simple :term:`path-like object`.  It implements the :meth:`__fspath__`
+   method which just returns the *path* argument.  If *path* is an exception,
+   it will be raised in :meth:`!__fspath__`.

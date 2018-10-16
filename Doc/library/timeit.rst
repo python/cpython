@@ -25,7 +25,7 @@ Basic Examples
 The following example shows how the :ref:`timeit-command-line-interface`
 can be used to compare three different expressions:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 -m timeit '"-".join(str(n) for n in range(100))'
    10000 loops, best of 3: 30.2 usec per loop
@@ -134,21 +134,21 @@ The module defines three convenience functions and a public class:
             timeit.Timer('for i in range(10): oct(i)', 'gc.enable()').timeit()
 
 
-    .. method:: Timer.autorange(callback=None)
+   .. method:: Timer.autorange(callback=None)
 
-       Automatically determine how many times to call :meth:`.timeit`.
+      Automatically determine how many times to call :meth:`.timeit`.
 
-       This is a convenience function that calls :meth:`.timeit` repeatedly
-       so that the total time >= 0.2 second, returning the eventual
-       (number of loops, time taken for that number of loops). It calls
-       :meth:`.timeit` with *number* set to successive powers of ten (10,
-       100, 1000, ...) up to a maximum of one billion, until the time taken
-       is at least 0.2 second, or the maximum is reached.
+      This is a convenience function that calls :meth:`.timeit` repeatedly
+      so that the total time >= 0.2 second, returning the eventual
+      (number of loops, time taken for that number of loops). It calls
+      :meth:`.timeit` with *number* set to successive powers of ten (10,
+      100, 1000, ...) up to a maximum of one billion, until the time taken
+      is at least 0.2 second, or the maximum is reached.
 
-        If *callback* is given and is not ``None``, it will be called after
-        each trial with two arguments: ``callback(number, time_taken)``.
+      If *callback* is given and is not ``None``, it will be called after
+      each trial with two arguments: ``callback(number, time_taken)``.
 
-        .. versionadded:: 3.6
+      .. versionadded:: 3.6
 
 
    .. method:: Timer.repeat(repeat=3, number=1000000)
@@ -273,7 +273,7 @@ Examples
 
 It is possible to provide a setup statement that is executed only once at the beginning:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python -m timeit -s 'text = "sample string"; char = "g"'  'char in text'
    10000000 loops, best of 3: 0.0877 usec per loop
@@ -302,7 +302,7 @@ The following examples show how to time expressions that contain multiple lines.
 Here we compare the cost of using :func:`hasattr` vs. :keyword:`try`/:keyword:`except`
 to test for missing and present object attributes:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python -m timeit 'try:' '  str.__bool__' 'except AttributeError:' '  pass'
    100000 loops, best of 3: 15.7 usec per loop

@@ -10,6 +10,7 @@ import os
 import os.path
 import errno
 import functools
+import pathlib
 import subprocess
 from contextlib import ExitStack
 from shutil import (make_archive,
@@ -19,22 +20,12 @@ from shutil import (make_archive,
                     unregister_unpack_format, get_unpack_formats,
                     SameFileError)
 import tarfile
+import zipfile
 import warnings
+import pathlib
 
 from test import support
-from test.support import TESTFN, check_warnings, captured_stdout, requires_zlib
-
-try:
-    import bz2
-    BZ2_SUPPORTED = True
-except ImportError:
-    BZ2_SUPPORTED = False
-
-try:
-    import lzma
-    LZMA_SUPPORTED = True
-except ImportError:
-    LZMA_SUPPORTED = False
+from test.support import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
 
@@ -44,12 +35,6 @@ try:
     UID_GID_SUPPORT = True
 except ImportError:
     UID_GID_SUPPORT = False
-
-try:
-    import zipfile
-    ZIP_SUPPORT = True
-except ImportError:
-    ZIP_SUPPORT = shutil.which('zip')
 
 def _fake_rename(*args, **kwargs):
     # Pretend the destination path is on a different filesystem.
@@ -795,7 +780,10 @@ class TestShutil(unittest.TestCase):
         try:
             with open(src, 'w') as f:
                 f.write('cheddar')
-            os.link(src, dst)
+            try:
+                os.link(src, dst)
+            except PermissionError as e:
+                self.skipTest('os.link(): %s' % e)
             self.assertRaises(shutil.SameFileError, shutil.copyfile, src, dst)
             with open(src, 'r') as f:
                 self.assertEqual(f.read(), 'cheddar')
@@ -840,7 +828,10 @@ class TestShutil(unittest.TestCase):
     # Issue #3002: copyfile and copytree block indefinitely on named pipes
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
     def test_copyfile_named_pipe(self):
-        os.mkfifo(TESTFN)
+        try:
+            os.mkfifo(TESTFN)
+        except PermissionError as e:
+            self.skipTest('os.mkfifo(): %s' % e)
         try:
             self.assertRaises(shutil.SpecialFileError,
                                 shutil.copyfile, TESTFN, TESTFN2)
@@ -857,7 +848,10 @@ class TestShutil(unittest.TestCase):
             subdir = os.path.join(TESTFN, "subdir")
             os.mkdir(subdir)
             pipe = os.path.join(subdir, "mypipe")
-            os.mkfifo(pipe)
+            try:
+                os.mkfifo(pipe)
+            except PermissionError as e:
+                self.skipTest('os.mkfifo(): %s' % e)
             try:
                 shutil.copytree(TESTFN, TESTFN2)
             except shutil.Error as e:
@@ -962,7 +956,7 @@ class TestShutil(unittest.TestCase):
             self.assertEqual(getattr(file1_stat, 'st_flags'),
                              getattr(file2_stat, 'st_flags'))
 
-    @requires_zlib
+    @support.requires_zlib
     def test_make_tarball(self):
         # creating something to tar
         root_dir, base_dir = self._create_files('')
@@ -1018,7 +1012,7 @@ class TestShutil(unittest.TestCase):
             write_file((root_dir, 'outer'), 'xxx')
         return root_dir, base_dir
 
-    @requires_zlib
+    @support.requires_zlib
     @unittest.skipUnless(shutil.which('tar'),
                          'Need the tar command to run')
     def test_tarfile_vs_tar(self):
@@ -1051,8 +1045,7 @@ class TestShutil(unittest.TestCase):
         self.assertEqual(tarball, base_name + '.tar')
         self.assertTrue(os.path.isfile(tarball))
 
-    @requires_zlib
-    @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
+    @support.requires_zlib
     def test_make_zipfile(self):
         # creating something to zip
         root_dir, base_dir = self._create_files()
@@ -1089,8 +1082,7 @@ class TestShutil(unittest.TestCase):
                     ['dist/', 'dist/sub/', 'dist/sub2/',
                      'dist/file1', 'dist/file2', 'dist/sub/file3'])
 
-    @requires_zlib
-    @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
+    @support.requires_zlib
     @unittest.skipUnless(shutil.which('zip'),
                          'Need the zip command to run')
     def test_zipfile_vs_zip(self):
@@ -1116,8 +1108,7 @@ class TestShutil(unittest.TestCase):
             names2 = zf.namelist()
         self.assertEqual(sorted(names), sorted(names2))
 
-    @requires_zlib
-    @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
+    @support.requires_zlib
     @unittest.skipUnless(shutil.which('unzip'),
                          'Need the unzip command to run')
     def test_unzip_zipfile(self):
@@ -1136,6 +1127,8 @@ class TestShutil(unittest.TestCase):
                 subprocess.check_output(zip_cmd, stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as exc:
                 details = exc.output.decode(errors="replace")
+                if 'unrecognized option: t' in details:
+                    self.skipTest("unzip doesn't support -t")
                 msg = "{}\n\n**Unzip Output**\n{}"
                 self.fail(msg.format(exc, details))
 
@@ -1144,7 +1137,7 @@ class TestShutil(unittest.TestCase):
         base_name = os.path.join(tmpdir, 'archive')
         self.assertRaises(ValueError, make_archive, base_name, 'xxx')
 
-    @requires_zlib
+    @support.requires_zlib
     def test_make_archive_owner_group(self):
         # testing make_archive with owner and group, with various combinations
         # this works even if there's not gid/uid support
@@ -1172,7 +1165,7 @@ class TestShutil(unittest.TestCase):
         self.assertTrue(os.path.isfile(res))
 
 
-    @requires_zlib
+    @support.requires_zlib
     @unittest.skipUnless(UID_GID_SUPPORT, "Requires grp and pwd support")
     def test_tarfile_root_owner(self):
         root_dir, base_dir = self._create_files()
@@ -1217,7 +1210,7 @@ class TestShutil(unittest.TestCase):
             self.assertEqual(make_archive('test', 'tar'), 'test.tar')
             self.assertTrue(os.path.isfile('test.tar'))
 
-    @requires_zlib
+    @support.requires_zlib
     def test_make_zipfile_in_curdir(self):
         # Issue #21280
         root_dir = self.mkdtemp()
@@ -1241,32 +1234,50 @@ class TestShutil(unittest.TestCase):
         formats = [name for name, params in get_archive_formats()]
         self.assertNotIn('xxx', formats)
 
-    @requires_zlib
-    def test_unpack_archive(self):
-        formats = ['tar', 'gztar', 'zip']
-        if BZ2_SUPPORTED:
-            formats.append('bztar')
-        if LZMA_SUPPORTED:
-            formats.append('xztar')
+    def check_unpack_archive(self, format):
+        self.check_unpack_archive_with_converter(format, lambda path: path)
+        self.check_unpack_archive_with_converter(format, pathlib.Path)
+        self.check_unpack_archive_with_converter(format, FakePath)
 
+    def check_unpack_archive_with_converter(self, format, converter):
         root_dir, base_dir = self._create_files()
         expected = rlistdir(root_dir)
         expected.remove('outer')
-        for format in formats:
-            base_name = os.path.join(self.mkdtemp(), 'archive')
-            filename = make_archive(base_name, format, root_dir, base_dir)
 
-            # let's try to unpack it now
-            tmpdir2 = self.mkdtemp()
-            unpack_archive(filename, tmpdir2)
-            self.assertEqual(rlistdir(tmpdir2), expected)
+        base_name = os.path.join(self.mkdtemp(), 'archive')
+        filename = make_archive(base_name, format, root_dir, base_dir)
 
-            # and again, this time with the format specified
-            tmpdir3 = self.mkdtemp()
-            unpack_archive(filename, tmpdir3, format=format)
-            self.assertEqual(rlistdir(tmpdir3), expected)
+        # let's try to unpack it now
+        tmpdir2 = self.mkdtemp()
+        unpack_archive(filename, tmpdir2)
+        self.assertEqual(rlistdir(tmpdir2), expected)
+
+        # and again, this time with the format specified
+        tmpdir3 = self.mkdtemp()
+        unpack_archive(filename, tmpdir3, format=format)
+        self.assertEqual(rlistdir(tmpdir3), expected)
+
         self.assertRaises(shutil.ReadError, unpack_archive, TESTFN)
         self.assertRaises(ValueError, unpack_archive, TESTFN, format='xxx')
+
+    def test_unpack_archive_tar(self):
+        self.check_unpack_archive('tar')
+
+    @support.requires_zlib
+    def test_unpack_archive_gztar(self):
+        self.check_unpack_archive('gztar')
+
+    @support.requires_bz2
+    def test_unpack_archive_bztar(self):
+        self.check_unpack_archive('bztar')
+
+    @support.requires_lzma
+    def test_unpack_archive_xztar(self):
+        self.check_unpack_archive('xztar')
+
+    @support.requires_zlib
+    def test_unpack_archive_zip(self):
+        self.check_unpack_archive('zip')
 
     def test_unpack_registry(self):
 
@@ -1297,7 +1308,7 @@ class TestShutil(unittest.TestCase):
     @unittest.skipUnless(hasattr(shutil, 'disk_usage'),
                          "disk_usage not available on this platform")
     def test_disk_usage(self):
-        usage = shutil.disk_usage(os.getcwd())
+        usage = shutil.disk_usage(os.path.dirname(__file__))
         self.assertGreater(usage.total, 0)
         self.assertGreater(usage.used, 0)
         self.assertGreaterEqual(usage.free, 0)

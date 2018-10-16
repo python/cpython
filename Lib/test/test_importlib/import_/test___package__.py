@@ -81,7 +81,7 @@ class Using__package__:
 
     def test_bad__package__(self):
         globals = {'__package__': '<not real>'}
-        with self.assertRaises(SystemError):
+        with self.assertRaises(ModuleNotFoundError):
             self.__import__('', globals, {}, ['relimport'], 1)
 
     def test_bunk__package__(self):

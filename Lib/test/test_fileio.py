@@ -9,7 +9,8 @@ from array import array
 from weakref import proxy
 from functools import wraps
 
-from test.support import TESTFN, check_warnings, run_unittest, make_bad_fd, cpython_only
+from test.support import (TESTFN, TESTFN_UNICODE, check_warnings, run_unittest,
+                          make_bad_fd, cpython_only, swap_attr)
 from collections import UserList
 
 import _io  # C implementation of io
@@ -174,6 +175,12 @@ class AutoFileTests:
                                  (self.modulename, f.name, f.mode))
         finally:
             os.close(fd)
+
+    def testRecursiveRepr(self):
+        # Issue #25455
+        with swap_attr(self.f, 'name', self.f):
+            with self.assertRaises(RuntimeError):
+                repr(self.f)  # Should not crash
 
     def testErrors(self):
         f = self.f
@@ -431,6 +438,23 @@ class OtherFileTests:
                 self.assertEqual(f.read(), b"abc")
         finally:
             os.unlink(TESTFN)
+
+    @unittest.skipIf(sys.getfilesystemencoding() != 'utf-8',
+                     "test only works for utf-8 filesystems")
+    def testUtf8BytesOpen(self):
+        # Opening a UTF-8 bytes filename
+        try:
+            fn = TESTFN_UNICODE.encode("utf-8")
+        except UnicodeEncodeError:
+            self.skipTest('could not encode %r to utf-8' % TESTFN_UNICODE)
+        f = self.FileIO(fn, "w")
+        try:
+            f.write(b"abc")
+            f.close()
+            with open(TESTFN_UNICODE, "rb") as f:
+                self.assertEqual(f.read(), b"abc")
+        finally:
+            os.unlink(TESTFN_UNICODE)
 
     def testConstructorHandlesNULChars(self):
         fn_with_NUL = 'foo\0bar'

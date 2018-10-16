@@ -25,7 +25,7 @@ menudefs = [
    ('_New File', '<<open-new-window>>'),
    ('_Open...', '<<open-window-from-file>>'),
    ('Open _Module...', '<<open-module>>'),
-   ('Class _Browser', '<<open-class-browser>>'),
+   ('Module _Browser', '<<open-class-browser>>'),
    ('_Path Browser', '<<open-path-browser>>'),
    None,
    ('_Save', '<<save-window>>'),
@@ -36,7 +36,8 @@ menudefs = [
    None,
    ('_Close', '<<close-window>>'),
    ('E_xit', '<<close-all-windows>>'),
-  ]),
+   ]),
+
  ('edit', [
    ('_Undo', '<<undo>>'),
    ('_Redo', '<<redo>>'),
@@ -52,8 +53,13 @@ menudefs = [
    ('Find in Files...', '<<find-in-files>>'),
    ('R_eplace...', '<<replace>>'),
    ('Go to _Line', '<<goto-line>>'),
-  ]),
-('format', [
+   ('S_how Completions', '<<force-open-completions>>'),
+   ('E_xpand Word', '<<expand-word>>'),
+   ('Show C_all Tip', '<<force-open-calltip>>'),
+   ('Show Surrounding P_arens', '<<flash-paren>>'),
+   ]),
+
+ ('format', [
    ('_Indent Region', '<<indent-region>>'),
    ('_Dedent Region', '<<dedent-region>>'),
    ('Comment _Out Region', '<<comment-region>>'),
@@ -62,26 +68,39 @@ menudefs = [
    ('Untabify Region', '<<untabify-region>>'),
    ('Toggle Tabs', '<<toggle-tabs>>'),
    ('New Indent Width', '<<change-indentwidth>>'),
+   ('F_ormat Paragraph', '<<format-paragraph>>'),
+   ('S_trip Trailing Whitespace', '<<do-rstrip>>'),
    ]),
+
  ('run', [
    ('Python Shell', '<<open-python-shell>>'),
+   ('C_heck Module', '<<check-module>>'),
+   ('R_un Module', '<<run-module>>'),
    ]),
+
  ('shell', [
    ('_View Last Restart', '<<view-restart>>'),
    ('_Restart Shell', '<<restart-shell>>'),
    None,
    ('_Interrupt Execution', '<<interrupt-execution>>'),
    ]),
+
  ('debug', [
    ('_Go to File/Line', '<<goto-file-line>>'),
    ('!_Debugger', '<<toggle-debugger>>'),
    ('_Stack Viewer', '<<open-stack-viewer>>'),
    ('!_Auto-open Stack Viewer', '<<toggle-jit-stack-viewer>>'),
    ]),
+
  ('options', [
    ('Configure _IDLE', '<<open-config-dialog>>'),
-   None,
+   ('_Code Context', '<<toggle-code-context>>'),
    ]),
+
+ ('window', [
+   ('Zoom Height', '<<zoom-height>>'),
+   ]),
+
  ('help', [
    ('_About IDLE', '<<about-idle>>'),
    None,
@@ -94,3 +113,7 @@ if find_spec('turtledemo'):
     menudefs[-1][1].append(('Turtle Demo', '<<open-turtle-demo>>'))
 
 default_keydefs = idleConf.GetCurrentKeySet()
+
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_mainmenu', verbosity=2)

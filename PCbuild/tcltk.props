@@ -37,6 +37,7 @@
     <BuildDirTop>Release</BuildDirTop>
     <BuildDirTop Condition="$(Configuration) == 'Debug'">Debug</BuildDirTop>
     <BuildDirTop Condition="$(TclMachine) != 'IX86'">$(BuildDirTop)_$(TclMachine)</BuildDirTop>
+    <BuildDirTop Condition="$(PlatformToolset) == 'v141'">$(BuildDirTop)_VC13</BuildDirTop>
     <BuildDirTop Condition="$(PlatformToolset) == 'v140'">$(BuildDirTop)_VC13</BuildDirTop>
     <BuildDirTop Condition="$(PlatformToolset) == 'v120'">$(BuildDirTop)_VC12</BuildDirTop>
     <BuildDirTop Condition="$(PlatformToolset) == 'v110'">$(BuildDirTop)_VC11</BuildDirTop>

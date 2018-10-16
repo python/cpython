@@ -111,7 +111,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
 
     if (timeout_obj
         && _PyTime_FromSecondsObject(timeout,
-                                     timeout_obj, _PyTime_ROUND_CEILING) < 0)
+                                     timeout_obj, _PyTime_ROUND_TIMEOUT) < 0)
         return -1;
 
     if (!blocking && *timeout != unset_timeout ) {
@@ -129,7 +129,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
     else if (*timeout != unset_timeout) {
         _PyTime_t microseconds;
 
-        microseconds = _PyTime_AsMicroseconds(*timeout, _PyTime_ROUND_CEILING);
+        microseconds = _PyTime_AsMicroseconds(*timeout, _PyTime_ROUND_TIMEOUT);
         if (microseconds >= PY_TIMEOUT_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "timeout value is too large");
@@ -234,7 +234,7 @@ static PyMethodDef lock_methods[] = {
 static PyTypeObject Locktype = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "_thread.lock",                     /*tp_name*/
-    sizeof(lockobject),                 /*tp_size*/
+    sizeof(lockobject),                 /*tp_basicsize*/
     0,                                  /*tp_itemsize*/
     /* methods */
     (destructor)lock_dealloc,           /*tp_dealloc*/
@@ -495,7 +495,7 @@ static PyMethodDef rlock_methods[] = {
 static PyTypeObject RLocktype = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "_thread.RLock",                    /*tp_name*/
-    sizeof(rlockobject),                /*tp_size*/
+    sizeof(rlockobject),                /*tp_basicsize*/
     0,                                  /*tp_itemsize*/
     /* methods */
     (destructor)rlock_dealloc,          /*tp_dealloc*/

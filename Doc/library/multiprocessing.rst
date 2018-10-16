@@ -135,7 +135,7 @@ start a *semaphore tracker* process which tracks the unlinked named
 semaphores created by processes of the program.  When all processes
 have exited the semaphore tracker unlinks any remaining semaphores.
 Usually there should be none, but if a process was killed by a signal
-there may some "leaked" semaphores.  (Unlinking the named semaphores
+there may be some "leaked" semaphores.  (Unlinking the named semaphores
 is a serious matter since the system allows only a limited number, and
 they will not be automatically unlinked until the next reboot.)
 
@@ -179,7 +179,7 @@ program. ::
 
 Note that objects related to one context may not be compatible with
 processes for a different context.  In particular, locks created using
-the *fork* context cannot be passed to a processes started using the
+the *fork* context cannot be passed to processes started using the
 *spawn* or *forkserver* start methods.
 
 A library which wants to use a particular start method should probably
@@ -719,8 +719,9 @@ For an example of the usage of queues for interprocess communication see
 
 .. function:: Pipe([duplex])
 
-   Returns a pair ``(conn1, conn2)`` of :class:`Connection` objects representing
-   the ends of a pipe.
+   Returns a pair ``(conn1, conn2)`` of
+   :class:`~multiprocessing.connection.Connection` objects representing the
+   ends of a pipe.
 
    If *duplex* is ``True`` (the default) then the pipe is bidirectional.  If
    *duplex* is ``False`` then the pipe is unidirectional: ``conn1`` can only be
@@ -1005,10 +1006,13 @@ Miscellaneous
 Connection Objects
 ~~~~~~~~~~~~~~~~~~
 
+.. currentmodule:: multiprocessing.connection
+
 Connection objects allow the sending and receiving of picklable objects or
 strings.  They can be thought of as message oriented connected sockets.
 
-Connection objects are usually created using :func:`Pipe` -- see also
+Connection objects are usually created using
+:func:`Pipe <multiprocessing.Pipe>` -- see also
 :ref:`multiprocessing-listeners-clients`.
 
 .. class:: Connection
@@ -1024,7 +1028,7 @@ Connection objects are usually created using :func:`Pipe` -- see also
    .. method:: recv()
 
       Return an object sent from the other end of the connection using
-      :meth:`send`.  Blocks until there its something to receive.  Raises
+      :meth:`send`.  Blocks until there is something to receive.  Raises
       :exc:`EOFError` if there is nothing left to receive
       and the other end was closed.
 
@@ -1142,6 +1146,8 @@ For example:
 
 Synchronization primitives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: multiprocessing
 
 Generally synchronization primitives are not as necessary in a multiprocess
 program as they are in a multithreaded program.  See the documentation for
@@ -1821,8 +1827,8 @@ Running the following commands creates a server for a single shared queue which
 remote clients can access::
 
    >>> from multiprocessing.managers import BaseManager
-   >>> import queue
-   >>> queue = queue.Queue()
+   >>> from queue import Queue
+   >>> queue = Queue()
    >>> class QueueManager(BaseManager): pass
    >>> QueueManager.register('get_queue', callable=lambda:queue)
    >>> m = QueueManager(address=('', 50000), authkey=b'abracadabra')
@@ -2165,7 +2171,7 @@ with the :class:`Pool` class.
 
       .. versionadded:: 3.3
 
-   .. method:: starmap_async(func, iterable[, chunksize[, callback[, error_back]]])
+   .. method:: starmap_async(func, iterable[, chunksize[, callback[, error_callback]]])
 
       A combination of :meth:`starmap` and :meth:`map_async` that iterates over
       *iterable* of iterables and calls *func* with the iterables unpacked.
@@ -2253,7 +2259,7 @@ Listeners and Clients
    :synopsis: API for dealing with sockets.
 
 Usually message passing between processes is done using queues or by using
-:class:`~multiprocessing.Connection` objects returned by
+:class:`~Connection` objects returned by
 :func:`~multiprocessing.Pipe`.
 
 However, the :mod:`multiprocessing.connection` module allows some extra
@@ -2280,23 +2286,22 @@ multiple connections at the same time.
    If a welcome message is not received, then
    :exc:`~multiprocessing.AuthenticationError` is raised.
 
-.. function:: Client(address[, family[, authenticate[, authkey]]])
+.. function:: Client(address[, family[, authkey]])
 
    Attempt to set up a connection to the listener which is using address
-   *address*, returning a :class:`~multiprocessing.Connection`.
+   *address*, returning a :class:`~Connection`.
 
    The type of the connection is determined by *family* argument, but this can
    generally be omitted since it can usually be inferred from the format of
    *address*. (See :ref:`multiprocessing-address-formats`)
 
-   If *authenticate* is ``True`` or *authkey* is a byte string then digest
-   authentication is used.  The key used for authentication will be either
-   *authkey* or ``current_process().authkey`` if *authkey* is ``None``.
-   If authentication fails then
-   :exc:`~multiprocessing.AuthenticationError` is raised.  See
-   :ref:`multiprocessing-auth-keys`.
+   If *authkey* is given and not None, it should be a byte string and will be
+   used as the secret key for an HMAC-based authentication challenge. No
+   authentication is done if *authkey* is None.
+   :exc:`~multiprocessing.AuthenticationError` is raised if authentication fails.
+   See :ref:`multiprocessing-auth-keys`.
 
-.. class:: Listener([address[, family[, backlog[, authenticate[, authkey]]]]])
+.. class:: Listener([address[, family[, backlog[, authkey]]]])
 
    A wrapper for a bound socket or Windows named pipe which is 'listening' for
    connections.
@@ -2325,24 +2330,17 @@ multiple connections at the same time.
    to the :meth:`~socket.socket.listen` method of the socket once it has been
    bound.
 
-   If *authenticate* is ``True`` (``False`` by default) or *authkey* is not
-   ``None`` then digest authentication is used.
-
-   If *authkey* is a byte string then it will be used as the
-   authentication key; otherwise it must be ``None``.
-
-   If *authkey* is ``None`` and *authenticate* is ``True`` then
-   ``current_process().authkey`` is used as the authentication key.  If
-   *authkey* is ``None`` and *authenticate* is ``False`` then no
-   authentication is done.  If authentication fails then
-   :exc:`~multiprocessing.AuthenticationError` is raised.
+   If *authkey* is given and not None, it should be a byte string and will be
+   used as the secret key for an HMAC-based authentication challenge. No
+   authentication is done if *authkey* is None.
+   :exc:`~multiprocessing.AuthenticationError` is raised if authentication fails.
    See :ref:`multiprocessing-auth-keys`.
 
    .. method:: accept()
 
       Accept a connection on the bound socket or named pipe of the listener
-      object and return a :class:`~multiprocessing.Connection` object.  If
-      authentication is attempted and fails, then
+      object and return a :class:`~Connection` object.
+      If authentication is attempted and fails, then
       :exc:`~multiprocessing.AuthenticationError` is raised.
 
    .. method:: close()
@@ -2378,7 +2376,7 @@ multiple connections at the same time.
    For both Unix and Windows, an object can appear in *object_list* if
    it is
 
-   * a readable :class:`~multiprocessing.Connection` object;
+   * a readable :class:`~multiprocessing.connection.Connection` object;
    * a connected and readable :class:`socket.socket` object; or
    * the :attr:`~multiprocessing.Process.sentinel` attribute of a
      :class:`~multiprocessing.Process` object.
@@ -2501,10 +2499,10 @@ an ``'AF_PIPE'`` address rather than an ``'AF_UNIX'`` address.
 Authentication keys
 ~~~~~~~~~~~~~~~~~~~
 
-When one uses :meth:`Connection.recv <multiprocessing.Connection.recv>`, the
+When one uses :meth:`Connection.recv <Connection.recv>`, the
 data received is automatically
-unpickled.  Unfortunately unpickling data from an untrusted source is a security
-risk.  Therefore :class:`Listener` and :func:`Client` use the :mod:`hmac` module
+unpickled. Unfortunately unpickling data from an untrusted source is a security
+risk. Therefore :class:`Listener` and :func:`Client` use the :mod:`hmac` module
 to provide digest authentication.
 
 An authentication key is a byte string which can be thought of as a

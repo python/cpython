@@ -10,6 +10,9 @@ Integer Objects
 
 All integers are implemented as "long" integer objects of arbitrary size.
 
+On error, most ``PyLong_As*`` APIs return ``(return type)-1`` which cannot be
+distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
+
 .. c:type:: PyLongObject
 
    This subtype of :c:type:`PyObject` represents a Python integer object.
@@ -85,13 +88,12 @@ All integers are implemented as "long" integer objects of arbitrary size.
    Return a new :c:type:`PyLongObject` based on the string value in *str*, which
    is interpreted according to the radix in *base*.  If *pend* is non-*NULL*,
    *\*pend* will point to the first character in *str* which follows the
-   representation of the number.  If *base* is ``0``, the radix will be
-   determined based on the leading characters of *str*: if *str* starts with
-   ``'0x'`` or ``'0X'``, radix 16 will be used; if *str* starts with ``'0o'`` or
-   ``'0O'``, radix 8 will be used; if *str* starts with ``'0b'`` or ``'0B'``,
-   radix 2 will be used; otherwise radix 10 will be used.  If *base* is not
-   ``0``, it must be between ``2`` and ``36``, inclusive.  Leading spaces are
-   ignored.  If there are no digits, :exc:`ValueError` will be raised.
+   representation of the number.  If *base* is ``0``, *str* is interpreted using
+   the :ref:`integers` definition; in this case, leading zeros in a
+   non-zero decimal number raises a :exc:`ValueError`. If *base* is not ``0``,
+   it must be between ``2`` and ``36``, inclusive.  Leading spaces and single
+   underscores after a base specifier and between digits are ignored.  If there
+   are no digits, :exc:`ValueError` will be raised.
 
 
 .. c:function:: PyObject* PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
@@ -135,6 +137,8 @@ All integers are implemented as "long" integer objects of arbitrary size.
    Raise :exc:`OverflowError` if the value of *obj* is out of range for a
    :c:type:`long`.
 
+   Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+
 
 .. c:function:: long PyLong_AsLongAndOverflow(PyObject *obj, int *overflow)
 
@@ -146,6 +150,8 @@ All integers are implemented as "long" integer objects of arbitrary size.
    :const:`LONG_MIN`, set *\*overflow* to ``1`` or ``-1``, respectively, and
    return ``-1``; otherwise, set *\*overflow* to ``0``.  If any other exception
    occurs set *\*overflow* to ``0`` and return ``-1`` as usual.
+
+   Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
 .. c:function:: long long PyLong_AsLongLong(PyObject *obj)
@@ -160,6 +166,8 @@ All integers are implemented as "long" integer objects of arbitrary size.
    Raise :exc:`OverflowError` if the value of *obj* is out of range for a
    :c:type:`long`.
 
+   Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+
 
 .. c:function:: long long PyLong_AsLongLongAndOverflow(PyObject *obj, int *overflow)
 
@@ -171,6 +179,8 @@ All integers are implemented as "long" integer objects of arbitrary size.
    :const:`PY_LLONG_MIN`, set *\*overflow* to ``1`` or ``-1``, respectively,
    and return ``-1``; otherwise, set *\*overflow* to ``0``.  If any other
    exception occurs set *\*overflow* to ``0`` and return ``-1`` as usual.
+
+   Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    .. versionadded:: 3.2
 
@@ -187,6 +197,8 @@ All integers are implemented as "long" integer objects of arbitrary size.
    Raise :exc:`OverflowError` if the value of *pylong* is out of range for a
    :c:type:`Py_ssize_t`.
 
+   Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+
 
 .. c:function:: unsigned long PyLong_AsUnsignedLong(PyObject *pylong)
 
@@ -200,14 +212,24 @@ All integers are implemented as "long" integer objects of arbitrary size.
    Raise :exc:`OverflowError` if the value of *pylong* is out of range for a
    :c:type:`unsigned long`.
 
+   Returns ``(unsigned long)-1`` on error.
+   Use :c:func:`PyErr_Occurred` to disambiguate.
+
 
 .. c:function:: size_t PyLong_AsSize_t(PyObject *pylong)
+
+   .. index::
+      single: SIZE_MAX
+      single: OverflowError (built-in exception)
 
    Return a C :c:type:`size_t` representation of *pylong*.  *pylong* must be
    an instance of :c:type:`PyLongObject`.
 
    Raise :exc:`OverflowError` if the value of *pylong* is out of range for a
    :c:type:`size_t`.
+
+   Returns ``(size_t)-1`` on error.
+   Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
 .. c:function:: unsigned long long PyLong_AsUnsignedLongLong(PyObject *pylong)
@@ -220,6 +242,9 @@ All integers are implemented as "long" integer objects of arbitrary size.
 
    Raise :exc:`OverflowError` if the value of *pylong* is out of range for an
    :c:type:`unsigned long long`.
+
+   Returns ``(unsigned long long)-1`` on error.
+   Use :c:func:`PyErr_Occurred` to disambiguate.
 
    .. versionchanged:: 3.1
       A negative *pylong* now raises :exc:`OverflowError`, not :exc:`TypeError`.
@@ -234,6 +259,8 @@ All integers are implemented as "long" integer objects of arbitrary size.
    If the value of *obj* is out of range for an :c:type:`unsigned long`,
    return the reduction of that value modulo ``ULONG_MAX + 1``.
 
+   Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+
 
 .. c:function:: unsigned long long PyLong_AsUnsignedLongLongMask(PyObject *obj)
 
@@ -244,6 +271,8 @@ All integers are implemented as "long" integer objects of arbitrary size.
    If the value of *obj* is out of range for an :c:type:`unsigned long long`,
    return the reduction of that value modulo ``PY_ULLONG_MAX + 1``.
 
+   Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+
 
 .. c:function:: double PyLong_AsDouble(PyObject *pylong)
 
@@ -253,6 +282,8 @@ All integers are implemented as "long" integer objects of arbitrary size.
    Raise :exc:`OverflowError` if the value of *pylong* is out of range for a
    :c:type:`double`.
 
+   Returns ``-1.0`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+
 
 .. c:function:: void* PyLong_AsVoidPtr(PyObject *pylong)
 
@@ -260,3 +291,5 @@ All integers are implemented as "long" integer objects of arbitrary size.
    If *pylong* cannot be converted, an :exc:`OverflowError` will be raised.  This
    is only assured to produce a usable :c:type:`void` pointer for values created
    with :c:func:`PyLong_FromVoidPtr`.
+
+   Returns *NULL* on error.  Use :c:func:`PyErr_Occurred` to disambiguate.

@@ -166,8 +166,8 @@ Extension types can easily be made to support weak references; see
       performed by the program during iteration may cause items in the
       dictionary to vanish "by magic" (as a side effect of garbage collection).
 
-:class:`WeakKeyDictionary` objects have the following additional methods.  These
-expose the internal references directly.  The references are not guaranteed to
+:class:`WeakKeyDictionary` objects have an additional method that
+exposes the internal references directly.  The references are not guaranteed to
 be "live" at the time they are used, so the result of calling the references
 needs to be checked before being used.  This can be used to avoid creating
 references that will cause the garbage collector to keep the keys around longer
@@ -192,9 +192,9 @@ than needed.
       by the program during iteration may cause items in the dictionary to vanish "by
       magic" (as a side effect of garbage collection).
 
-:class:`WeakValueDictionary` objects have the following additional methods.
-These method have the same issues as the and :meth:`keyrefs` method of
-:class:`WeakKeyDictionary` objects.
+:class:`WeakValueDictionary` objects have an additional method that has the
+same issues as the :meth:`keyrefs` method of :class:`WeakKeyDictionary`
+objects.
 
 
 .. method:: WeakValueDictionary.valuerefs()

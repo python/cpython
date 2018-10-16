@@ -2,7 +2,7 @@ import os
 import sys
 import textwrap
 import unittest
-import subprocess
+from subprocess import Popen, PIPE
 from test import support
 from test.support.script_helper import assert_python_ok
 
@@ -61,12 +61,11 @@ class TestTool(unittest.TestCase):
     """)
 
     def test_stdin_stdout(self):
-        with subprocess.Popen(
-                (sys.executable, '-m', 'json.tool'),
-                stdin=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+        args = sys.executable, '-m', 'json.tool'
+        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
             out, err = proc.communicate(self.data.encode())
         self.assertEqual(out.splitlines(), self.expect.encode().splitlines())
-        self.assertEqual(err, None)
+        self.assertEqual(err, b'')
 
     def _create_infile(self):
         infile = support.TESTFN

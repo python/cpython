@@ -1227,7 +1227,7 @@ _PyObject_Alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
 
     _Py_AllocatedBlocks++;
 
-    assert(nelem <= PY_SSIZE_T_MAX / elsize);
+    assert(elsize == 0 || nelem <= PY_SSIZE_T_MAX / elsize);
     nbytes = nelem * elsize;
 
 #ifdef WITH_VALGRIND
@@ -1914,7 +1914,7 @@ static void *
 _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 {
     debug_alloc_api_t *api = (debug_alloc_api_t *)ctx;
-    uint8_t *q = (uint8_t *)p, *oldq;
+    uint8_t *q = (uint8_t *)p;
     uint8_t *tail;
     size_t total;       /* nbytes + 4*SST */
     size_t original_nbytes;
@@ -1931,19 +1931,10 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
         /* overflow:  can't represent total as a Py_ssize_t */
         return NULL;
 
-    /* Resize and add decorations. We may get a new pointer here, in which
-     * case we didn't get the chance to mark the old memory with DEADBYTE,
-     * but we live with that.
-     */
-    oldq = q;
+    /* Resize and add decorations. */
     q = (uint8_t *)api->alloc.realloc(api->alloc.ctx, q - 2*SST, total);
     if (q == NULL)
         return NULL;
-
-    if (q == oldq && nbytes < original_nbytes) {
-        /* shrinking:  mark old extra memory dead */
-        memset(q + nbytes, DEADBYTE, original_nbytes - nbytes);
-    }
 
     write_size_t(q, nbytes);
     assert(q[SST] == (uint8_t)api->api_id);

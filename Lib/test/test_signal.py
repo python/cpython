@@ -3,11 +3,13 @@ from test import support
 from contextlib import closing
 import enum
 import gc
+import os
 import pickle
+import random
 import select
 import signal
 import socket
-import struct
+import statistics
 import subprocess
 import traceback
 import sys, os, time, errno
@@ -368,7 +370,6 @@ class WakeupSocketSignalTests(unittest.TestCase):
         signal.signal(signum, handler)
 
         read, write = socket.socketpair()
-        read.setblocking(False)
         write.setblocking(False)
         signal.set_wakeup_fd(write.fileno())
 
@@ -609,6 +610,15 @@ class ItimerTest(unittest.TestCase):
         # profiling itimer should be (0.0, 0.0) now
         self.assertEqual(signal.getitimer(self.itimer), (0.0, 0.0))
         # and the handler should have been called
+        self.assertEqual(self.hndl_called, True)
+
+    def test_setitimer_tiny(self):
+        # bpo-30807: C setitimer() takes a microsecond-resolution interval.
+        # Check that float -> timeval conversion doesn't round
+        # the interval down to zero, which would disable the timer.
+        self.itimer = signal.ITIMER_REAL
+        signal.setitimer(self.itimer, 1e-6)
+        time.sleep(1)
         self.assertEqual(self.hndl_called, True)
 
 
@@ -944,6 +954,135 @@ class PendingSignalsTests(unittest.TestCase):
             if exitcode != 3:
                 raise Exception("Child error (exit code %s): %s" %
                                 (exitcode, stdout))
+
+
+class StressTest(unittest.TestCase):
+    """
+    Stress signal delivery, especially when a signal arrives in
+    the middle of recomputing the signal state or executing
+    previously tripped signal handlers.
+    """
+
+    def setsig(self, signum, handler):
+        old_handler = signal.signal(signum, handler)
+        self.addCleanup(signal.signal, signum, old_handler)
+
+    def measure_itimer_resolution(self):
+        N = 20
+        times = []
+
+        def handler(signum=None, frame=None):
+            if len(times) < N:
+                times.append(time.perf_counter())
+                # 1 µs is the smallest possible timer interval,
+                # we want to measure what the concrete duration
+                # will be on this platform
+                signal.setitimer(signal.ITIMER_REAL, 1e-6)
+
+        self.addCleanup(signal.setitimer, signal.ITIMER_REAL, 0)
+        self.setsig(signal.SIGALRM, handler)
+        handler()
+        while len(times) < N:
+            time.sleep(1e-3)
+
+        durations = [times[i+1] - times[i] for i in range(len(times) - 1)]
+        med = statistics.median(durations)
+        if support.verbose:
+            print("detected median itimer() resolution: %.6f s." % (med,))
+        return med
+
+    def decide_itimer_count(self):
+        # Some systems have poor setitimer() resolution (for example
+        # measured around 20 ms. on FreeBSD 9), so decide on a reasonable
+        # number of sequential timers based on that.
+        reso = self.measure_itimer_resolution()
+        if reso <= 1e-4:
+            return 10000
+        elif reso <= 1e-2:
+            return 100
+        else:
+            self.skipTest("detected itimer resolution (%.3f s.) too high "
+                          "(> 10 ms.) on this platform (or system too busy)"
+                          % (reso,))
+
+    @unittest.skipUnless(hasattr(signal, "setitimer"),
+                         "test needs setitimer()")
+    def test_stress_delivery_dependent(self):
+        """
+        This test uses dependent signal handlers.
+        """
+        N = self.decide_itimer_count()
+        sigs = []
+
+        def first_handler(signum, frame):
+            # 1e-6 is the minimum non-zero value for `setitimer()`.
+            # Choose a random delay so as to improve chances of
+            # triggering a race condition.  Ideally the signal is received
+            # when inside critical signal-handling routines such as
+            # Py_MakePendingCalls().
+            signal.setitimer(signal.ITIMER_REAL, 1e-6 + random.random() * 1e-5)
+
+        def second_handler(signum=None, frame=None):
+            sigs.append(signum)
+
+        # Here on Linux, SIGPROF > SIGALRM > SIGUSR1.  By using both
+        # ascending and descending sequences (SIGUSR1 then SIGALRM,
+        # SIGPROF then SIGALRM), we maximize chances of hitting a bug.
+        self.setsig(signal.SIGPROF, first_handler)
+        self.setsig(signal.SIGUSR1, first_handler)
+        self.setsig(signal.SIGALRM, second_handler)  # for ITIMER_REAL
+
+        expected_sigs = 0
+        deadline = time.time() + 15.0
+
+        while expected_sigs < N:
+            os.kill(os.getpid(), signal.SIGPROF)
+            expected_sigs += 1
+            # Wait for handlers to run to avoid signal coalescing
+            while len(sigs) < expected_sigs and time.time() < deadline:
+                time.sleep(1e-5)
+
+            os.kill(os.getpid(), signal.SIGUSR1)
+            expected_sigs += 1
+            while len(sigs) < expected_sigs and time.time() < deadline:
+                time.sleep(1e-5)
+
+        # All ITIMER_REAL signals should have been delivered to the
+        # Python handler
+        self.assertEqual(len(sigs), N, "Some signals were lost")
+
+    @unittest.skipUnless(hasattr(signal, "setitimer"),
+                         "test needs setitimer()")
+    def test_stress_delivery_simultaneous(self):
+        """
+        This test uses simultaneous signal handlers.
+        """
+        N = self.decide_itimer_count()
+        sigs = []
+
+        def handler(signum, frame):
+            sigs.append(signum)
+
+        self.setsig(signal.SIGUSR1, handler)
+        self.setsig(signal.SIGALRM, handler)  # for ITIMER_REAL
+
+        expected_sigs = 0
+        deadline = time.time() + 15.0
+
+        while expected_sigs < N:
+            # Hopefully the SIGALRM will be received somewhere during
+            # initial processing of SIGUSR1.
+            signal.setitimer(signal.ITIMER_REAL, 1e-6 + random.random() * 1e-5)
+            os.kill(os.getpid(), signal.SIGUSR1)
+
+            expected_sigs += 2
+            # Wait for handlers to run to avoid signal coalescing
+            while len(sigs) < expected_sigs and time.time() < deadline:
+                time.sleep(1e-5)
+
+        # All ITIMER_REAL signals should have been delivered to the
+        # Python handler
+        self.assertEqual(len(sigs), N, "Some signals were lost")
 
 
 def tearDownModule():

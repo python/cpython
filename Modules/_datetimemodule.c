@@ -120,6 +120,8 @@ static PyTypeObject PyDateTime_TimeType;
 static PyTypeObject PyDateTime_TZInfoType;
 static PyTypeObject PyDateTime_TimeZoneType;
 
+static int check_tzinfo_subclass(PyObject *p);
+
 _Py_IDENTIFIER(as_integer_ratio);
 _Py_IDENTIFIER(fromutc);
 _Py_IDENTIFIER(isoformat);
@@ -400,8 +402,7 @@ check_date_args(int year, int month, int day)
 {
 
     if (year < MINYEAR || year > MAXYEAR) {
-        PyErr_SetString(PyExc_ValueError,
-                        "year is out of range");
+        PyErr_Format(PyExc_ValueError, "year %i is out of range", year);
         return -1;
     }
     if (month < 1 || month > 12) {
@@ -672,6 +673,10 @@ new_date_ex(int year, int month, int day, PyTypeObject *type)
 {
     PyDateTime_Date *self;
 
+    if (check_date_args(year, month, day) < 0) {
+        return NULL;
+    }
+
     self = (PyDateTime_Date *) (type->tp_alloc(type, 0));
     if (self != NULL)
         set_date_fields(self, year, month, day);
@@ -688,6 +693,16 @@ new_datetime_ex2(int year, int month, int day, int hour, int minute,
 {
     PyDateTime_DateTime *self;
     char aware = tzinfo != Py_None;
+
+    if (check_date_args(year, month, day) < 0) {
+        return NULL;
+    }
+    if (check_time_args(hour, minute, second, usecond, fold) < 0) {
+        return NULL;
+    }
+    if (check_tzinfo_subclass(tzinfo) < 0) {
+        return NULL;
+    }
 
     self = (PyDateTime_DateTime *) (type->tp_alloc(type, aware));
     if (self != NULL) {
@@ -725,6 +740,13 @@ new_time_ex2(int hour, int minute, int second, int usecond,
 {
     PyDateTime_Time *self;
     char aware = tzinfo != Py_None;
+
+    if (check_time_args(hour, minute, second, usecond, fold) < 0) {
+        return NULL;
+    }
+    if (check_tzinfo_subclass(tzinfo) < 0) {
+        return NULL;
+    }
 
     self = (PyDateTime_Time *) (type->tp_alloc(type, aware));
     if (self != NULL) {
@@ -1511,6 +1533,7 @@ delta_to_microseconds(PyDateTime_Delta *self)
     if (x2 == NULL)
         goto Done;
     result = PyNumber_Add(x1, x2);
+    assert(result == NULL || PyLong_CheckExact(result));
 
 Done:
     Py_XDECREF(x1);
@@ -1533,6 +1556,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     PyObject *num = NULL;
     PyObject *result = NULL;
 
+    assert(PyLong_CheckExact(pyus));
     tuple = PyNumber_Divmod(pyus, us_per_second);
     if (tuple == NULL)
         goto Done;
@@ -1625,6 +1649,33 @@ multiply_int_timedelta(PyObject *intobj, PyDateTime_Delta *delta)
 }
 
 static PyObject *
+get_float_as_integer_ratio(PyObject *floatobj)
+{
+    PyObject *ratio;
+
+    assert(floatobj && PyFloat_Check(floatobj));
+    ratio = _PyObject_CallMethodId(floatobj, &PyId_as_integer_ratio, NULL);
+    if (ratio == NULL) {
+        return NULL;
+    }
+    if (!PyTuple_Check(ratio)) {
+        PyErr_Format(PyExc_TypeError,
+                     "unexpected return type from as_integer_ratio(): "
+                     "expected tuple, got '%.200s'",
+                     Py_TYPE(ratio)->tp_name);
+        Py_DECREF(ratio);
+        return NULL;
+    }
+    if (PyTuple_Size(ratio) != 2) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_integer_ratio() must return a 2-tuple");
+        Py_DECREF(ratio);
+        return NULL;
+    }
+    return ratio;
+}
+
+static PyObject *
 multiply_float_timedelta(PyObject *floatobj, PyDateTime_Delta *delta)
 {
     PyObject *result = NULL;
@@ -1634,9 +1685,10 @@ multiply_float_timedelta(PyObject *floatobj, PyDateTime_Delta *delta)
     pyus_in = delta_to_microseconds(delta);
     if (pyus_in == NULL)
         return NULL;
-    ratio = _PyObject_CallMethodId(floatobj, &PyId_as_integer_ratio, NULL);
-    if (ratio == NULL)
+    ratio = get_float_as_integer_ratio(floatobj);
+    if (ratio == NULL) {
         goto error;
+    }
     temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, 0));
     Py_DECREF(pyus_in);
     pyus_in = NULL;
@@ -1732,9 +1784,10 @@ truedivide_timedelta_float(PyDateTime_Delta *delta, PyObject *f)
     pyus_in = delta_to_microseconds(delta);
     if (pyus_in == NULL)
         return NULL;
-    ratio = _PyObject_CallMethodId(f, &PyId_as_integer_ratio, NULL);
-    if (ratio == NULL)
+    ratio = get_float_as_integer_ratio(f);
+    if (ratio == NULL) {
         goto error;
+    }
     temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, 1));
     Py_DECREF(pyus_in);
     pyus_in = NULL;
@@ -2057,11 +2110,13 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
     assert(num != NULL);
 
     if (PyLong_Check(num)) {
-        prod = PyNumber_Multiply(num, factor);
+        prod = PyNumber_Multiply(factor, num);
         if (prod == NULL)
             return NULL;
+        assert(PyLong_CheckExact(prod));
         sum = PyNumber_Add(sofar, prod);
         Py_DECREF(prod);
+        assert(sum == NULL || PyLong_CheckExact(sum));
         return sum;
     }
 
@@ -2104,7 +2159,7 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
          * fractional part requires float arithmetic, and may
          * lose a little info.
          */
-        assert(PyLong_Check(factor));
+        assert(PyLong_CheckExact(factor));
         dnum = PyLong_AsDouble(factor);
 
         dnum *= fracpart;
@@ -2119,6 +2174,7 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
         Py_DECREF(sum);
         Py_DECREF(x);
         *leftover += fracpart;
+        assert(y == NULL || PyLong_CheckExact(y));
         return y;
     }
 
@@ -2500,8 +2556,6 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     if (PyArg_ParseTupleAndKeywords(args, kw, "iii", date_kws,
                                     &year, &month, &day)) {
-        if (check_date_args(year, month, day) < 0)
-            return NULL;
         self = new_date_ex(year, month, day, type);
     }
     return self;
@@ -3103,7 +3157,7 @@ Inconsistent:
     PyErr_SetString(PyExc_ValueError, "fromutc: tz.dst() gave"
                     "inconsistent results; cannot convert");
 
-    /* fall thru to failure */
+    /* fall through to failure */
 Fail:
     Py_XDECREF(off);
     Py_XDECREF(dst);
@@ -3586,10 +3640,6 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO$i", time_kws,
                                     &hour, &minute, &second, &usecond,
                                     &tzinfo, &fold)) {
-        if (check_time_args(hour, minute, second, usecond, fold) < 0)
-            return NULL;
-        if (check_tzinfo_subclass(tzinfo) < 0)
-            return NULL;
         self = new_time_ex2(hour, minute, second, usecond, tzinfo, fold,
                             type);
     }
@@ -3843,11 +3893,11 @@ time_hash(PyDateTime_Time *self)
 {
     if (self->hashcode == -1) {
         PyObject *offset, *self0;
-        if (DATE_GET_FOLD(self)) {
-            self0 = new_time_ex2(DATE_GET_HOUR(self),
-                                 DATE_GET_MINUTE(self),
-                                 DATE_GET_SECOND(self),
-                                 DATE_GET_MICROSECOND(self),
+        if (TIME_GET_FOLD(self)) {
+            self0 = new_time_ex2(TIME_GET_HOUR(self),
+                                 TIME_GET_MINUTE(self),
+                                 TIME_GET_SECOND(self),
+                                 TIME_GET_MICROSECOND(self),
                                  HASTZINFO(self) ? self->tzinfo : Py_None,
                                  0, Py_TYPE(self));
             if (self0 == NULL)
@@ -3910,16 +3960,16 @@ time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
                                       time_kws,
                                       &hh, &mm, &ss, &us, &tzinfo, &fold))
         return NULL;
+    if (fold != 0 && fold != 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "fold must be either 0 or 1");
+        return NULL;
+    }
     tuple = Py_BuildValue("iiiiO", hh, mm, ss, us, tzinfo);
     if (tuple == NULL)
         return NULL;
     clone = time_new(Py_TYPE(self), tuple, NULL);
     if (clone != NULL) {
-        if (fold != 0 && fold != 1) {
-            PyErr_SetString(PyExc_ValueError,
-                            "fold must be either 0 or 1");
-            return NULL;
-        }
         TIME_SET_FOLD(clone, fold);
     }
     Py_DECREF(tuple);
@@ -4176,12 +4226,6 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (PyArg_ParseTupleAndKeywords(args, kw, "iii|iiiiO$i", datetime_kws,
                                     &year, &month, &day, &hour, &minute,
                                     &second, &usecond, &tzinfo, &fold)) {
-        if (check_date_args(year, month, day) < 0)
-            return NULL;
-        if (check_time_args(hour, minute, second, usecond, fold) < 0)
-            return NULL;
-        if (check_tzinfo_subclass(tzinfo) < 0)
-            return NULL;
         self = new_datetime_ex2(year, month, day,
                                 hour, minute, second, usecond,
                                 tzinfo, fold, type);
@@ -4203,7 +4247,15 @@ static long long
 utc_to_seconds(int year, int month, int day,
                int hour, int minute, int second)
 {
-    long long ordinal = ymd_to_ord(year, month, day);
+    long long ordinal;
+
+    /* ymd_to_ord() doesn't support year <= 0 */
+    if (year < MINYEAR || year > MAXYEAR) {
+        PyErr_Format(PyExc_ValueError, "year %i is out of range", year);
+        return -1;
+    }
+
+    ordinal = ymd_to_ord(year, month, day);
     return ((ordinal * 24 + hour) * 60 + minute) * 60 + second;
 }
 
@@ -4219,7 +4271,6 @@ local(long long u)
         "timestamp out of range for platform time_t");
         return -1;
     }
-    /* XXX: add bounds checking */
     if (_PyTime_localtime(t, &local_time) != 0)
         return -1;
     return utc_to_seconds(local_time.tm_year + 1900,
@@ -4257,7 +4308,23 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us,
      */
     second = Py_MIN(59, tm.tm_sec);
 
-    if (tzinfo == Py_None && f == _PyTime_localtime) {
+    /* local timezone requires to compute fold */
+    if (tzinfo == Py_None && f == _PyTime_localtime
+    /* On Windows, passing a negative value to local results
+     * in an OSError because localtime_s on Windows does
+     * not support negative timestamps. Unfortunately this
+     * means that fold detection for time values between
+     * 0 and max_fold_seconds will result in an identical
+     * error since we subtract max_fold_seconds to detect a
+     * fold. However, since we know there haven't been any
+     * folds in the interval [0, max_fold_seconds) in any
+     * timezone, we can hackily just forego fold detection
+     * for this time range.
+     */
+#ifdef MS_WINDOWS
+        && (timet - max_fold_seconds > 0)
+#endif
+        ) {
         long long probe_seconds, result_seconds, transition;
 
         result_seconds = utc_to_seconds(year, month, day,
@@ -4516,12 +4583,13 @@ add_datetime_timedelta(PyDateTime_DateTime *date, PyDateTime_Delta *delta,
 
     assert(factor == 1 || factor == -1);
     if (normalize_datetime(&year, &month, &day,
-                           &hour, &minute, &second, &microsecond) < 0)
+                           &hour, &minute, &second, &microsecond) < 0) {
         return NULL;
-    else
-        return new_datetime(year, month, day,
-                            hour, minute, second, microsecond,
-                            HASTZINFO(date) ? date->tzinfo : Py_None, 0);
+    }
+
+    return new_datetime(year, month, day,
+                        hour, minute, second, microsecond,
+                        HASTZINFO(date) ? date->tzinfo : Py_None, 0);
 }
 
 static PyObject *
@@ -5000,17 +5068,16 @@ datetime_replace(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
                                       &y, &m, &d, &hh, &mm, &ss, &us,
                                       &tzinfo, &fold))
         return NULL;
+    if (fold != 0 && fold != 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "fold must be either 0 or 1");
+        return NULL;
+    }
     tuple = Py_BuildValue("iiiiiiiO", y, m, d, hh, mm, ss, us, tzinfo);
     if (tuple == NULL)
         return NULL;
     clone = datetime_new(Py_TYPE(self), tuple, NULL);
-
     if (clone != NULL) {
-        if (fold != 0 && fold != 1) {
-            PyErr_SetString(PyExc_ValueError,
-                            "fold must be either 0 or 1");
-            return NULL;
-        }
         DATE_SET_FOLD(clone, fold);
     }
     Py_DECREF(tuple);
@@ -5149,6 +5216,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
         return NULL;
 
     if (!HASTZINFO(self) || self->tzinfo == Py_None) {
+  naive:
         self_tzinfo = local_timezone_from_local(self);
         if (self_tzinfo == NULL)
             return NULL;
@@ -5169,6 +5237,16 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     Py_DECREF(self_tzinfo);
     if (offset == NULL)
         return NULL;
+    else if(offset == Py_None) {
+        Py_DECREF(offset);
+        goto naive;
+    }
+    else if (!PyDelta_Check(offset)) {
+        Py_DECREF(offset);
+        PyErr_Format(PyExc_TypeError, "utcoffset() returned %.200s,"
+                     " expected timedelta or None", Py_TYPE(offset)->tp_name);
+        return NULL;
+    }
     /* result = self - offset */
     result = (PyDateTime_DateTime *)add_datetime_timedelta(self,
                                        (PyDateTime_Delta *)offset, -1);

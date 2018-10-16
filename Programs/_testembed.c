@@ -1,4 +1,5 @@
 #include <Python.h>
+#include "pythread.h"
 #include <stdio.h>
 
 /*********************************************************
@@ -33,7 +34,7 @@ static void print_subinterp(void)
     );
 }
 
-static void test_repeated_init_and_subinterpreters(void)
+static int test_repeated_init_and_subinterpreters(void)
 {
     PyThreadState *mainstate, *substate;
 #ifdef WITH_THREAD
@@ -70,6 +71,7 @@ static void test_repeated_init_and_subinterpreters(void)
         PyEval_RestoreThread(mainstate);
         Py_Finalize();
     }
+    return 0;
 }
 
 /*****************************************************
@@ -103,7 +105,7 @@ static void check_stdio_details(const char *encoding, const char * errors)
     Py_Finalize();
 }
 
-static void test_forced_io_encoding(void)
+static int test_forced_io_encoding(void)
 {
     /* Check various combinations */
     printf("--- Use defaults ---\n");
@@ -122,19 +124,75 @@ static void test_forced_io_encoding(void)
         printf("Unexpected success calling Py_SetStandardStreamEncoding");
     }
     Py_Finalize();
+    return 0;
 }
 
-/* Different embedding tests */
+
+/*********************************************************
+ * Test parts of the C-API that work before initialization
+ *********************************************************/
+
+static int test_pre_initialization_api(void)
+{
+    /* Leading "./" ensures getpath.c can still find the standard library */
+    wchar_t *program = Py_DecodeLocale("./spam", NULL);
+    if (program == NULL) {
+        fprintf(stderr, "Fatal error: cannot decode program name\n");
+        return 1;
+    }
+    Py_SetProgramName(program);
+
+    Py_Initialize();
+    Py_Finalize();
+
+    PyMem_RawFree(program);
+    return 0;
+}
+
+
+/* *********************************************************
+ * List of test cases and the function that implements it.
+ *
+ * Names are compared case-sensitively with the first
+ * argument. If no match is found, or no first argument was
+ * provided, the names of all test cases are printed and
+ * the exit code will be -1.
+ *
+ * The int returned from test functions is used as the exit
+ * code, and test_capi treats all non-zero exit codes as a
+ * failed test.
+ *********************************************************/
+struct TestCase
+{
+    const char *name;
+    int (*func)(void);
+};
+
+static struct TestCase TestCases[] = {
+    { "forced_io_encoding", test_forced_io_encoding },
+    { "repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters },
+    { "pre_initialization_api", test_pre_initialization_api },
+    { NULL, NULL }
+};
+
 int main(int argc, char *argv[])
 {
-
-    /* TODO: Check the argument string to allow for more test cases */
     if (argc > 1) {
-        /* For now: assume "forced_io_encoding */
-        test_forced_io_encoding();
-    } else {
-        /* Run the original embedding test case by default */
-        test_repeated_init_and_subinterpreters();
+        for (struct TestCase *tc = TestCases; tc && tc->name; tc++) {
+            if (strcmp(argv[1], tc->name) == 0)
+                return (*tc->func)();
+        }
     }
-    return 0;
+
+    /* No match found, or no test name provided, so display usage */
+    printf("Python " PY_VERSION " _testembed executable for embedded interpreter tests\n"
+           "Normally executed via 'EmbeddingTests' in Lib/test/test_capi.py\n\n"
+           "Usage: %s TESTNAME\n\nAll available tests:\n", argv[0]);
+    for (struct TestCase *tc = TestCases; tc && tc->name; tc++) {
+        printf("  %s\n", tc->name);
+    }
+
+    /* Non-zero exit code will cause test_capi.py tests to fail.
+       This is intentional. */
+    return -1;
 }

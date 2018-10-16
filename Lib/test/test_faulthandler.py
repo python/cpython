@@ -755,6 +755,62 @@ class FaultHandlerTests(unittest.TestCase):
                 3,
                 name)
 
+    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    def test_ignore_exception(self):
+        for exc_code in (
+            0xE06D7363,   # MSC exception ("Emsc")
+            0xE0434352,   # COM Callable Runtime exception ("ECCR")
+        ):
+            code = f"""
+                    import faulthandler
+                    faulthandler.enable()
+                    faulthandler._raise_exception({exc_code})
+                    """
+            code = dedent(code)
+            output, exitcode = self.get_output(code)
+            self.assertEqual(output, [])
+            self.assertEqual(exitcode, exc_code)
+
+    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    def test_raise_nonfatal_exception(self):
+        # These exceptions are not strictly errors. Letting
+        # faulthandler display the traceback when they are
+        # raised is likely to result in noise. However, they
+        # may still terminate the process if there is no
+        # handler installed for them (which there typically
+        # is, e.g. for debug messages).
+        for exc in (
+            0x00000000,
+            0x34567890,
+            0x40000000,
+            0x40001000,
+            0x70000000,
+            0x7FFFFFFF,
+        ):
+            output, exitcode = self.get_output(f"""
+                import faulthandler
+                faulthandler.enable()
+                faulthandler._raise_exception(0x{exc:x})
+                """
+            )
+            self.assertEqual(output, [])
+            # On Windows older than 7 SP1, the actual exception code has
+            # bit 29 cleared.
+            self.assertIn(exitcode,
+                          (exc, exc & ~0x10000000))
+
+    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    def test_disable_windows_exc_handler(self):
+        code = dedent("""
+            import faulthandler
+            faulthandler.enable()
+            faulthandler.disable()
+            code = faulthandler._EXCEPTION_ACCESS_VIOLATION
+            faulthandler._raise_exception(code)
+        """)
+        output, exitcode = self.get_output(code)
+        self.assertEqual(output, [])
+        self.assertEqual(exitcode, 0xC0000005)
 
 
 if __name__ == "__main__":

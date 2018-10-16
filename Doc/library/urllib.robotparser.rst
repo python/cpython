@@ -69,10 +69,10 @@ structure of :file:`robots.txt` files, see http://www.robotstxt.org/orig.html.
    .. method:: request_rate(useragent)
 
       Returns the contents of the ``Request-rate`` parameter from
-      ``robots.txt`` in the form of a :func:`~collections.namedtuple`
-      ``(requests, seconds)``.  If there is no such parameter or it doesn't
-      apply to the *useragent* specified or the ``robots.txt`` entry for this
-      parameter has invalid syntax, return ``None``.
+      ``robots.txt`` as a :term:`named tuple` ``RequestRate(requests, seconds)``.
+      If there is no such parameter or it doesn't apply to the *useragent*
+      specified or the ``robots.txt`` entry for this parameter has invalid
+      syntax, return ``None``.
 
       .. versionadded:: 3.6
 

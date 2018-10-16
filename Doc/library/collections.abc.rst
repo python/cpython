@@ -107,7 +107,12 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 .. class:: Iterable
 
    ABC for classes that provide the :meth:`__iter__` method.
-   See also the definition of :term:`iterable`.
+
+   Checking ``isinstance(obj, Iterable)`` detects classes that are registered
+   as :class:`Iterable` or that have an :meth:`__iter__` method, but it does
+   not detect classes that iterate with the :meth:`__getitem__` method.
+   The only reliable way to determine whether an object is :term:`iterable`
+   is to call ``iter(obj)``.
 
 .. class:: Collection
 

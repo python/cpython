@@ -1668,7 +1668,7 @@ _tkinter_tkapp_record_impl(TkappObject *self, const char *script)
 }
 
 /*[clinic input]
-_tkinter.tkapp.adderrinfo
+_tkinter.tkapp.adderrorinfo
 
     msg: str
     /
@@ -1676,8 +1676,8 @@ _tkinter.tkapp.adderrinfo
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_tkapp_adderrinfo_impl(TkappObject *self, const char *msg)
-/*[clinic end generated code: output=0e222ee2050eb357 input=4971399317d4c136]*/
+_tkinter_tkapp_adderrorinfo_impl(TkappObject *self, const char *msg)
+/*[clinic end generated code: output=52162eaca2ee53cb input=f4b37aec7c7e8c77]*/
 {
     CHECK_STRING_LENGTH(msg);
     CHECK_TCL_APPARTMENT;
@@ -2291,7 +2291,11 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
     if (!PyArg_Parse(arg, "et:splitlist", "utf-8", &list))
         return NULL;
 
-    CHECK_STRING_LENGTH(list);
+    if (strlen(list) >= INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "string is too long");
+        PyMem_Free(list);
+        return NULL;
+    }
     if (Tcl_SplitList(Tkapp_Interp(self), list,
                       &argc, &argv) == TCL_ERROR)  {
         PyMem_Free(list);
@@ -2362,7 +2366,11 @@ _tkinter_tkapp_split(TkappObject *self, PyObject *arg)
 
     if (!PyArg_Parse(arg, "et:split", "utf-8", &list))
         return NULL;
-    CHECK_STRING_LENGTH(list);
+    if (strlen(list) >= INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "string is too long");
+        PyMem_Free(list);
+        return NULL;
+    }
     v = Split(list);
     PyMem_Free(list);
     return v;
@@ -3304,7 +3312,7 @@ static PyMethodDef Tkapp_methods[] =
     _TKINTER_TKAPP_EVAL_METHODDEF
     _TKINTER_TKAPP_EVALFILE_METHODDEF
     _TKINTER_TKAPP_RECORD_METHODDEF
-    _TKINTER_TKAPP_ADDERRINFO_METHODDEF
+    _TKINTER_TKAPP_ADDERRORINFO_METHODDEF
     {"setvar",                 Tkapp_SetVar, METH_VARARGS},
     {"globalsetvar",       Tkapp_GlobalSetVar, METH_VARARGS},
     {"getvar",       Tkapp_GetVar, METH_VARARGS},
@@ -3615,7 +3623,7 @@ PyInit__tkinter(void)
                     return NULL;
                 }
                 if (str_path != NULL) {
-                    wcs_path = PyUnicode_AsWideCharString(str_path, NULL);
+                    wcs_path = _PyUnicode_AsWideCharString(str_path);
                     if (wcs_path == NULL) {
                         return NULL;
                     }

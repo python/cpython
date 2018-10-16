@@ -151,11 +151,12 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
 
     if ((bytes = PyUnicode_EncodeFSDefault(name)) == NULL)
         return NULL;
+    /* check for embedded null bytes */
     if (PyBytes_AsStringAndSize(bytes, &name_chars, NULL) == -1)
         goto out;
 
     if ((p = getgrnam(name_chars)) == NULL) {
-        PyErr_Format(PyExc_KeyError, "getgrnam(): name not found: %s", name_chars);
+        PyErr_Format(PyExc_KeyError, "getgrnam(): name not found: %S", name);
         goto out;
     }
     retval = mkgrent(p);

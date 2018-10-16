@@ -322,7 +322,7 @@ class HTTPResponse(io.BufferedIOBase):
 
         if self.debuglevel > 0:
             for hdr in self.headers:
-                print("header:", hdr, end=" ")
+                print("header:", hdr + ":", self.headers.get(hdr))
 
         # are we using the chunked-style of transfer encoding?
         tr_enc = self.headers.get("transfer-encoding")
@@ -540,7 +540,7 @@ class HTTPResponse(io.BufferedIOBase):
         chunk_left = self.chunk_left
         if not chunk_left: # Can be 0 or None
             if chunk_left is not None:
-                # We are at the end of chunk. dicard chunk end
+                # We are at the end of chunk, discard chunk end
                 self._safe_read(2)  # toss the CRLF at the end of the chunk
             try:
                 chunk_left = self._read_next_chunk_size()

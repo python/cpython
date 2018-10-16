@@ -809,6 +809,21 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
     PyObject *result = binary_op1(v, w, op_slot);
     if (result == Py_NotImplemented) {
         Py_DECREF(result);
+
+        if (op_slot == NB_SLOT(nb_rshift) &&
+            PyCFunction_Check(v) &&
+            strcmp(((PyCFunctionObject *)v)->m_ml->ml_name, "print") == 0)
+        {
+            PyErr_Format(PyExc_TypeError,
+                "unsupported operand type(s) for %.100s: "
+                "'%.100s' and '%.100s'. Did you mean \"print(<message>, "
+                "file=<output_stream>)\"?",
+                op_name,
+                v->ob_type->tp_name,
+                w->ob_type->tp_name);
+            return NULL;
+        }
+
         return binop_type_error(v, w, op_name);
     }
     return result;
@@ -1462,7 +1477,7 @@ PySequence_Check(PyObject *s)
 {
     if (PyDict_Check(s))
         return 0;
-    return s != NULL && s->ob_type->tp_as_sequence &&
+    return s->ob_type->tp_as_sequence &&
         s->ob_type->tp_as_sequence->sq_item != NULL;
 }
 
@@ -2325,7 +2340,7 @@ exit:
     return result;
 }
 
-/* Positional arguments are obj followed args. */
+/* Positional arguments are obj followed by args. */
 PyObject *
 _PyObject_Call_Prepend(PyObject *func,
                        PyObject *obj, PyObject *args, PyObject *kwargs)
@@ -2389,9 +2404,9 @@ _PyStack_AsDict(PyObject **values, PyObject *kwnames)
     return kwdict;
 }
 
-PyObject **
+int
 _PyStack_UnpackDict(PyObject **args, Py_ssize_t nargs, PyObject *kwargs,
-                    PyObject **p_kwnames, PyObject *func)
+                    PyObject ***p_stack, PyObject **p_kwnames)
 {
     PyObject **stack, **kwstack;
     Py_ssize_t nkwargs;
@@ -2402,27 +2417,27 @@ _PyStack_UnpackDict(PyObject **args, Py_ssize_t nargs, PyObject *kwargs,
     assert(nargs >= 0);
     assert(kwargs == NULL || PyDict_CheckExact(kwargs));
 
-    nkwargs = (kwargs != NULL) ? PyDict_Size(kwargs) : 0;
-    if (!nkwargs) {
+    if (kwargs == NULL || (nkwargs = PyDict_Size(kwargs)) == 0) {
+        *p_stack = args;
         *p_kwnames = NULL;
-        return args;
+        return 0;
     }
 
     if ((size_t)nargs > PY_SSIZE_T_MAX / sizeof(stack[0]) - (size_t)nkwargs) {
         PyErr_NoMemory();
-        return NULL;
+        return -1;
     }
 
     stack = PyMem_Malloc((nargs + nkwargs) * sizeof(stack[0]));
     if (stack == NULL) {
         PyErr_NoMemory();
-        return NULL;
+        return -1;
     }
 
     kwnames = PyTuple_New(nkwargs);
     if (kwnames == NULL) {
         PyMem_Free(stack);
-        return NULL;
+        return -1;
     }
 
     /* Copy position arguments (borrowed references) */
@@ -2441,8 +2456,9 @@ _PyStack_UnpackDict(PyObject **args, Py_ssize_t nargs, PyObject *kwargs,
         i++;
     }
 
+    *p_stack = stack;
     *p_kwnames = kwnames;
-    return stack;
+    return 0;
 }
 
 PyObject *
@@ -3192,8 +3208,8 @@ _PySequence_BytesToCharpArray(PyObject* self)
             array[i] = NULL;
             goto fail;
         }
-        data = PyBytes_AsString(item);
-        if (data == NULL) {
+        /* check for embedded null bytes */
+        if (PyBytes_AsStringAndSize(item, &data, NULL) < 0) {
             /* NULL terminate before freeing. */
             array[i] = NULL;
             goto fail;

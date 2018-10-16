@@ -64,6 +64,9 @@ static void format_exc_unbound(PyCodeObject *co, int oparg);
 static PyObject * unicode_concatenate(PyObject *, PyObject *,
                                       PyFrameObject *, const _Py_CODEUNIT *);
 static PyObject * special_lookup(PyObject *, _Py_Identifier *);
+static int check_args_iterable(PyObject *func, PyObject *vararg);
+static void format_kwargs_mapping_error(PyObject *func, PyObject *kwargs);
+static void format_awaitable_error(PyTypeObject *, int);
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
@@ -195,6 +198,15 @@ PyEval_GetCallStats(PyObject *self)
     do { pending_async_exc = 0; COMPUTE_EVAL_BREAKER(); } while (0)
 
 
+/* This single variable consolidates all requests to break out of the fast path
+   in the eval loop. */
+static _Py_atomic_int eval_breaker = {0};
+/* Request for running pending calls. */
+static _Py_atomic_int pendingcalls_to_do = {0};
+/* Request for looking at the `async_exc` field of the current thread state.
+   Guarded by the GIL. */
+static int pending_async_exc = 0;
+
 #ifdef WITH_THREAD
 
 #ifdef HAVE_ERRNO_H
@@ -204,16 +216,8 @@ PyEval_GetCallStats(PyObject *self)
 
 static PyThread_type_lock pending_lock = 0; /* for pending calls */
 static long main_thread = 0;
-/* This single variable consolidates all requests to break out of the fast path
-   in the eval loop. */
-static _Py_atomic_int eval_breaker = {0};
 /* Request for dropping the GIL */
 static _Py_atomic_int gil_drop_request = {0};
-/* Request for running pending calls. */
-static _Py_atomic_int pendingcalls_to_do = {0};
-/* Request for looking at the `async_exc` field of the current thread state.
-   Guarded by the GIL. */
-static int pending_async_exc = 0;
 
 #include "ceval_gil.h"
 
@@ -326,9 +330,6 @@ PyEval_ReInitThreads(void)
     _PyThreadState_DeleteExcept(current_tstate);
 }
 
-#else
-static _Py_atomic_int eval_breaker = {0};
-static int pending_async_exc = 0;
 #endif /* WITH_THREAD */
 
 /* This function is used to signal that async exceptions are waiting to be
@@ -403,6 +404,15 @@ PyEval_RestoreThread(PyThreadState *tstate)
 #endif
 */
 
+void
+_PyEval_SignalReceived(void)
+{
+    /* bpo-30703: Function called when the C signal handler of Python gets a
+       signal. We cannot queue a callback using Py_AddPendingCall() since
+       that function is not async-signal-safe. */
+    SIGNAL_PENDING_CALLS();
+}
+
 #ifdef WITH_THREAD
 
 /* The WITH_THREAD implementation is thread-safe.  It allows
@@ -467,6 +477,8 @@ Py_MakePendingCalls(void)
     int i;
     int r = 0;
 
+    assert(PyGILState_Check());
+
     if (!pending_lock) {
         /* initial allocation of the lock */
         pending_lock = PyThread_allocate_lock();
@@ -481,6 +493,16 @@ Py_MakePendingCalls(void)
     if (busy)
         return 0;
     busy = 1;
+    /* unsignal before starting to call callbacks, so that any callback
+       added in-between re-signals */
+    UNSIGNAL_PENDING_CALLS();
+
+    /* Python signal handler doesn't really queue a callback: it only signals
+       that a signal was received, see _PyEval_SignalReceived(). */
+    if (PyErr_CheckSignals() < 0) {
+        goto error;
+    }
+
     /* perform a bounded number of calls, in case of recursion */
     for (i=0; i<NPENDINGCALLS; i++) {
         int j;
@@ -497,20 +519,23 @@ Py_MakePendingCalls(void)
             arg = pendingcalls[j].arg;
             pendingfirst = (j + 1) % NPENDINGCALLS;
         }
-        if (pendingfirst != pendinglast)
-            SIGNAL_PENDING_CALLS();
-        else
-            UNSIGNAL_PENDING_CALLS();
         PyThread_release_lock(pending_lock);
         /* having released the lock, perform the callback */
         if (func == NULL)
             break;
         r = func(arg);
-        if (r)
-            break;
+        if (r) {
+            goto error;
+        }
     }
+
     busy = 0;
     return r;
+
+error:
+    busy = 0;
+    SIGNAL_PENDING_CALLS(); /* We're not done yet */
+    return -1;
 }
 
 #else /* if ! defined WITH_THREAD */
@@ -545,7 +570,6 @@ static struct {
 } pendingcalls[NPENDINGCALLS];
 static volatile int pendingfirst = 0;
 static volatile int pendinglast = 0;
-static _Py_atomic_int pendingcalls_to_do = {0};
 
 int
 Py_AddPendingCall(int (*func)(void *), void *arg)
@@ -579,7 +603,16 @@ Py_MakePendingCalls(void)
     if (busy)
         return 0;
     busy = 1;
+
+    /* unsignal before starting to call callbacks, so that any callback
+       added in-between re-signals */
     UNSIGNAL_PENDING_CALLS();
+    /* Python signal handler doesn't really queue a callback: it only signals
+       that a signal was received, see _PyEval_SignalReceived(). */
+    if (PyErr_CheckSignals() < 0) {
+        goto error;
+    }
+
     for (;;) {
         int i;
         int (*func)(void *);
@@ -591,13 +624,16 @@ Py_MakePendingCalls(void)
         arg = pendingcalls[i].arg;
         pendingfirst = (i + 1) % NPENDINGCALLS;
         if (func(arg) < 0) {
-            busy = 0;
-            SIGNAL_PENDING_CALLS(); /* We're not done yet */
-            return -1;
+            goto error;
         }
     }
     busy = 0;
     return 0;
+
+error:
+    busy = 0;
+    SIGNAL_PENDING_CALLS(); /* We're not done yet */
+    return -1;
 }
 
 #endif /* WITH_THREAD */
@@ -1119,9 +1155,27 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
            Py_MakePendingCalls() above. */
 
         if (_Py_atomic_load_relaxed(&eval_breaker)) {
-            if (_Py_OPCODE(*next_instr) == SETUP_FINALLY) {
-                /* Make the last opcode before
-                   a try: finally: block uninterruptible. */
+            opcode = _Py_OPCODE(*next_instr);
+            if (opcode == SETUP_FINALLY ||
+                opcode == SETUP_WITH ||
+                opcode == BEFORE_ASYNC_WITH ||
+                opcode == YIELD_FROM) {
+                /* Few cases where we skip running signal handlers and other
+                   pending calls:
+                   - If we're about to enter the 'with:'. It will prevent
+                     emitting a resource warning in the common idiom
+                     'with open(path) as file:'.
+                   - If we're about to enter the 'async with:'.
+                   - If we're about to enter the 'try:' of a try/finally (not
+                     *very* useful, but might help in some cases and it's
+                     traditional)
+                   - If we're resuming a chain of nested 'yield from' or
+                     'await' calls, then each frame is parked with YIELD_FROM
+                     as its next opcode. If the user hit control-C we want to
+                     wait until we've reached the innermost frame before
+                     running the signal handler and raising KeyboardInterrupt
+                     (see bpo-30039).
+                */
                 goto fast_next_opcode;
             }
             if (_Py_atomic_load_relaxed(&pendingcalls_to_do)) {
@@ -1409,9 +1463,15 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         TARGET(BINARY_MODULO) {
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
-            PyObject *res = PyUnicode_CheckExact(dividend) ?
-                PyUnicode_Format(dividend, divisor) :
-                PyNumber_Remainder(dividend, divisor);
+            PyObject *res;
+            if (PyUnicode_CheckExact(dividend) && (
+                  !PyUnicode_Check(divisor) || PyUnicode_CheckExact(divisor))) {
+              // fast path; string formatting, but not if the RHS is a str subclass
+              // (see issue28598)
+              res = PyUnicode_Format(dividend, divisor);
+            } else {
+              res = PyNumber_Remainder(dividend, divisor);
+            }
             Py_DECREF(divisor);
             Py_DECREF(dividend);
             SET_TOP(res);
@@ -1823,9 +1883,11 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             switch (oparg) {
             case 2:
                 cause = POP(); /* cause */
+                /* fall through */
             case 1:
                 exc = POP(); /* exc */
-            case 0: /* Fallthrough */
+                /* fall through */
+            case 0:
                 if (do_raise(exc, cause)) {
                     why = WHY_EXCEPTION;
                     goto fast_block_end;
@@ -1898,13 +1960,13 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
             awaitable = _PyCoro_GetAwaitableIter(iter);
             if (awaitable == NULL) {
-                SET_TOP(NULL);
-                PyErr_Format(
+                _PyErr_FormatFromCause(
                     PyExc_TypeError,
                     "'async for' received an invalid object "
                     "from __aiter__: %.100s",
                     Py_TYPE(iter)->tp_name);
 
+                SET_TOP(NULL);
                 Py_DECREF(iter);
                 goto error;
             } else {
@@ -1963,7 +2025,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
                 awaitable = _PyCoro_GetAwaitableIter(next_iter);
                 if (awaitable == NULL) {
-                    PyErr_Format(
+                    _PyErr_FormatFromCause(
                         PyExc_TypeError,
                         "'async for' received an invalid object "
                         "from __anext__: %.100s",
@@ -1985,6 +2047,11 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         TARGET(GET_AWAITABLE) {
             PyObject *iterable = TOP();
             PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
+
+            if (iter == NULL) {
+                format_awaitable_error(Py_TYPE(iterable),
+                                       _Py_OPCODE(next_instr[-2]));
+            }
 
             Py_DECREF(iterable);
 
@@ -2528,14 +2595,9 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 none_val = _PyList_Extend((PyListObject *)sum, PEEK(i));
                 if (none_val == NULL) {
                     if (opcode == BUILD_TUPLE_UNPACK_WITH_CALL &&
-                        PyErr_ExceptionMatches(PyExc_TypeError)) {
-                        PyObject *func = PEEK(1 + oparg);
-                        PyErr_Format(PyExc_TypeError,
-                                "%.200s%.200s argument after * "
-                                "must be an iterable, not %.200s",
-                                PyEval_GetFuncName(func),
-                                PyEval_GetFuncDesc(func),
-                                PEEK(i)->ob_type->tp_name);
+                        PyErr_ExceptionMatches(PyExc_TypeError))
+                    {
+                        check_args_iterable(PEEK(1 + oparg), PEEK(i));
                     }
                     Py_DECREF(sum);
                     goto error;
@@ -2748,12 +2810,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 if (_PyDict_MergeEx(sum, arg, 2) < 0) {
                     PyObject *func = PEEK(2 + oparg);
                     if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                        PyErr_Format(PyExc_TypeError,
-                                "%.200s%.200s argument after ** "
-                                "must be a mapping, not %.200s",
-                                PyEval_GetFuncName(func),
-                                PyEval_GetFuncDesc(func),
-                                arg->ob_type->tp_name);
+                        format_kwargs_mapping_error(func, arg);
                     }
                     else if (PyErr_ExceptionMatches(PyExc_KeyError)) {
                         PyObject *exc, *val, *tb;
@@ -2851,13 +2908,16 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         TARGET(IMPORT_STAR) {
             PyObject *from = POP(), *locals;
             int err;
-            if (PyFrame_FastToLocalsWithError(f) < 0)
+            if (PyFrame_FastToLocalsWithError(f) < 0) {
+                Py_DECREF(from);
                 goto error;
+            }
 
             locals = f->f_locals;
             if (locals == NULL) {
                 PyErr_SetString(PyExc_SystemError,
                     "no locals found during 'import *'");
+                Py_DECREF(from);
                 goto error;
             }
             err = import_all_from(locals, from);
@@ -3317,13 +3377,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                          * is not a mapping.
                          */
                         if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                            func = SECOND();
-                            PyErr_Format(PyExc_TypeError,
-                                         "%.200s%.200s argument after ** "
-                                         "must be a mapping, not %.200s",
-                                         PyEval_GetFuncName(func),
-                                         PyEval_GetFuncDesc(func),
-                                         kwargs->ob_type->tp_name);
+                            format_kwargs_mapping_error(SECOND(), kwargs);
                         }
                         Py_DECREF(kwargs);
                         goto error;
@@ -3336,14 +3390,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             callargs = POP();
             func = TOP();
             if (!PyTuple_CheckExact(callargs)) {
-                if (Py_TYPE(callargs)->tp_iter == NULL &&
-                        !PySequence_Check(callargs)) {
-                    PyErr_Format(PyExc_TypeError,
-                                 "%.200s%.200s argument after * "
-                                 "must be an iterable, not %.200s",
-                                 PyEval_GetFuncName(func),
-                                 PyEval_GetFuncDesc(func),
-                                 callargs->ob_type->tp_name);
+                if (check_args_iterable(func, callargs) < 0) {
                     Py_DECREF(callargs);
                     goto error;
                 }
@@ -3848,7 +3895,7 @@ too_many_positional(PyCodeObject *co, Py_ssize_t given, Py_ssize_t defcount,
 }
 
 /* This is gonna seem *real weird*, but if you put some other code between
-   PyEval_EvalFrame() and PyEval_EvalCodeEx() you will need to adjust
+   PyEval_EvalFrame() and _PyEval_EvalFrameDefault() you will need to adjust
    the test in the if statements in Misc/gdbinit (pystack and pystackv). */
 
 static PyObject *
@@ -4139,7 +4186,8 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
 {
     return _PyEval_EvalCodeWithName(_co, globals, locals,
                                     args, argcount,
-                                    kws, kws + 1, kwcount, 2,
+                                    kws, kws != NULL ? kws + 1 : NULL,
+                                    kwcount, 2,
                                     defs, defcount,
                                     kwdefs, closure,
                                     NULL, NULL);
@@ -4690,11 +4738,7 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *args, PyObject *kwargs)
     assert(!PyErr_Occurred());
 #endif
 
-    if (args == NULL) {
-        return _PyObject_FastCallDict(func, NULL, 0, kwargs);
-    }
-
-    if (!PyTuple_Check(args)) {
+    if (args != NULL && !PyTuple_Check(args)) {
         PyErr_SetString(PyExc_TypeError,
                         "argument list must be a tuple");
         return NULL;
@@ -4706,7 +4750,12 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    return PyObject_Call(func, args, kwargs);
+    if (args == NULL) {
+        return _PyObject_FastCallDict(func, NULL, 0, kwargs);
+    }
+    else {
+        return PyObject_Call(func, args, kwargs);
+    }
 }
 
 const char *
@@ -5020,7 +5069,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 
     result = _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
                                       args, nargs,
-                                      k, k + 1, nk, 2,
+                                      k, k != NULL ? k + 1 : NULL, nk, 2,
                                       d, nd, kwdefs,
                                       closure, name, qualname);
     Py_XDECREF(kwtuple);
@@ -5061,17 +5110,13 @@ do_call_core(PyObject *func, PyObject *callargs, PyObject *kwdict)
 /* Extract a slice index from a PyLong or an object with the
    nb_index slot defined, and store in *pi.
    Silently reduce values larger than PY_SSIZE_T_MAX to PY_SSIZE_T_MAX,
-   and silently boost values less than -PY_SSIZE_T_MAX-1 to -PY_SSIZE_T_MAX-1.
+   and silently boost values less than PY_SSIZE_T_MIN to PY_SSIZE_T_MIN.
    Return 0 on error, 1 on success.
-*/
-/* Note:  If v is NULL, return success without storing into *pi.  This
-   is because_PyEval_SliceIndex() is called by apply_slice(), which can be
-   called by the SLICE opcode with v and/or w equal to NULL.
 */
 int
 _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 {
-    if (v != NULL) {
+    if (v != Py_None) {
         Py_ssize_t x;
         if (PyIndex_Check(v)) {
             x = PyNumber_AsSsize_t(v, NULL);
@@ -5088,6 +5133,26 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
     }
     return 1;
 }
+
+int
+_PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
+{
+    Py_ssize_t x;
+    if (PyIndex_Check(v)) {
+        x = PyNumber_AsSsize_t(v, NULL);
+        if (x == -1 && PyErr_Occurred())
+            return 0;
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError,
+                        "slice indices must be integers or "
+                        "have an __index__ method");
+        return 0;
+    }
+    *pi = x;
+    return 1;
+}
+
 
 #define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
                          "BaseException is not allowed"
@@ -5202,6 +5267,10 @@ import_from(PyObject *v, PyObject *name)
     if (pkgname == NULL) {
         goto error;
     }
+    if (!PyUnicode_Check(pkgname)) {
+        Py_CLEAR(pkgname);
+        goto error;
+    }
     fullmodname = PyUnicode_FromFormat("%U.%U", pkgname, name);
     Py_DECREF(pkgname);
     if (fullmodname == NULL) {
@@ -5257,13 +5326,16 @@ import_all_from(PyObject *locals, PyObject *v)
                 PyErr_Clear();
             break;
         }
-        if (skip_leading_underscores &&
-            PyUnicode_Check(name) &&
-            PyUnicode_READY(name) != -1 &&
-            PyUnicode_READ_CHAR(name, 0) == '_')
-        {
-            Py_DECREF(name);
-            continue;
+        if (skip_leading_underscores && PyUnicode_Check(name)) {
+            if (PyUnicode_READY(name) == -1) {
+                Py_DECREF(name);
+                err = -1;
+                break;
+            }
+            if (PyUnicode_READ_CHAR(name, 0) == '_') {
+                Py_DECREF(name);
+                continue;
+            }
         }
         value = PyObject_GetAttr(v, name);
         if (value == NULL)
@@ -5279,6 +5351,32 @@ import_all_from(PyObject *locals, PyObject *v)
     }
     Py_DECREF(all);
     return err;
+}
+
+static int
+check_args_iterable(PyObject *func, PyObject *args)
+{
+    if (args->ob_type->tp_iter == NULL && !PySequence_Check(args)) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s%.200s argument after * "
+                     "must be an iterable, not %.200s",
+                     PyEval_GetFuncName(func),
+                     PyEval_GetFuncDesc(func),
+                     args->ob_type->tp_name);
+        return -1;
+    }
+    return 0;
+}
+
+static void
+format_kwargs_mapping_error(PyObject *func, PyObject *kwargs)
+{
+    PyErr_Format(PyExc_TypeError,
+                 "%.200s%.200s argument after ** "
+                 "must be a mapping, not %.200s",
+                 PyEval_GetFuncName(func),
+                 PyEval_GetFuncDesc(func),
+                 kwargs->ob_type->tp_name);
 }
 
 static void
@@ -5315,6 +5413,25 @@ format_exc_unbound(PyCodeObject *co, int oparg)
                                 PyTuple_GET_SIZE(co->co_cellvars));
         format_exc_check_arg(PyExc_NameError,
                              UNBOUNDFREE_ERROR_MSG, name);
+    }
+}
+
+static void
+format_awaitable_error(PyTypeObject *type, int prevopcode)
+{
+    if (type->tp_as_async == NULL || type->tp_as_async->am_await == NULL) {
+        if (prevopcode == BEFORE_ASYNC_WITH) {
+            PyErr_Format(PyExc_TypeError,
+                         "'async with' received an object from __aenter__ "
+                         "that does not implement __await__: %.100s",
+                         type->tp_name);
+        }
+        else if (prevopcode == WITH_CLEANUP_START) {
+            PyErr_Format(PyExc_TypeError,
+                         "'async with' received an object from __aexit__ "
+                         "that does not implement __await__: %.100s",
+                         type->tp_name);
+        }
     }
 }
 
@@ -5416,14 +5533,14 @@ _Py_GetDXProfile(PyObject *self, PyObject *args)
 Py_ssize_t
 _PyEval_RequestCodeExtraIndex(freefunc free)
 {
-    PyThreadState *tstate = PyThreadState_Get();
+    __PyCodeExtraState *state = __PyCodeExtraState_Get();
     Py_ssize_t new_index;
 
-    if (tstate->co_extra_user_count == MAX_CO_EXTRA_USERS - 1) {
+    if (state->co_extra_user_count == MAX_CO_EXTRA_USERS - 1) {
         return -1;
     }
-    new_index = tstate->co_extra_user_count++;
-    tstate->co_extra_freefuncs[new_index] = free;
+    new_index = state->co_extra_user_count++;
+    state->co_extra_freefuncs[new_index] = free;
     return new_index;
 }
 

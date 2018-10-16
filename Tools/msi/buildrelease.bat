@@ -29,6 +29,7 @@ set DOWNLOAD_URL=https://www.python.org/ftp/python/{version}/{arch}{releasename}
 
 set D=%~dp0
 set PCBUILD=%D%..\..\PCBuild\
+if "%Py_OutDir%"=="" set Py_OutDir=%PCBUILD%
 set EXTERNALS=%D%..\..\externals\windows-installer\
 
 set BUILDX86=
@@ -65,17 +66,16 @@ if "%1" NEQ "" echo Invalid option: "%1" && exit /B 1
 
 if not defined BUILDX86 if not defined BUILDX64 (set BUILDX86=1) && (set BUILDX64=1)
 
-if not exist "%HG%" where hg > "%TEMP%\hg.loc" 2> nul && set /P HG= < "%TEMP%\hg.loc" & del "%TEMP%\hg.loc"
-if not exist "%HG%" echo Cannot find Mercurial on PATH && exit /B 1
+if not exist "%GIT%" where git > "%TEMP%\git.loc" 2> nul && set /P GIT= < "%TEMP%\git.loc" & del "%TEMP%\git.loc"
+if not exist "%GIT%" echo Cannot find Git on PATH && exit /B 1
 
 call "%D%get_externals.bat"
+call "%PCBUILD%find_msbuild.bat" %MSBUILD%
+if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
 
 :builddoc
 if "%SKIPBUILD%" EQU "1" goto skipdoc
 if "%SKIPDOC%" EQU "1" goto skipdoc
-
-if not defined PYTHON where py -q || echo Cannot find py on path and PYTHON is not set. && exit /B 1
-if not defined SPHINXBUILD where sphinx-build -q || echo Cannot find sphinx-build on path and SPHINXBUILD is not set. && exit /B 1
 
 call "%D%..\..\doc\make.bat" htmlhelp
 if errorlevel 1 goto :eof
@@ -111,12 +111,12 @@ exit /B 0
 
 if "%1" EQU "x86" (
     set PGO=
-    set BUILD=%PCBUILD%win32\
+    set BUILD=%Py_OutDir%win32\
     set BUILD_PLAT=Win32
     set OUTDIR_PLAT=win32
     set OBJDIR_PLAT=x86
 ) else (
-    set BUILD=%PCBUILD%amd64\
+    set BUILD=%Py_OutDir%amd64\
     set PGO=%~2
     set BUILD_PLAT=x64
     set OUTDIR_PLAT=amd64
@@ -165,28 +165,27 @@ if not "%SKIPBUILD%" EQU "1" (
     @echo off
 )
 
-call "%PCBUILD%env.bat"
 if "%OUTDIR_PLAT%" EQU "win32" (
-    msbuild "%D%launcher\launcher.wixproj" /p:Platform=x86 %CERTOPTS% /p:ReleaseUri=%RELEASE_URI%
+    %MSBUILD% "%D%launcher\launcher.wixproj" /p:Platform=x86 %CERTOPTS% /p:ReleaseUri=%RELEASE_URI%
     if errorlevel 1 exit /B
-) else if not exist "%PCBUILD%win32\en-us\launcher.msi" (
-    msbuild "%D%launcher\launcher.wixproj" /p:Platform=x86 %CERTOPTS% /p:ReleaseUri=%RELEASE_URI%
+) else if not exist "%Py_OutDir%win32\en-us\launcher.msi" (
+    %MSBUILD% "%D%launcher\launcher.wixproj" /p:Platform=x86 %CERTOPTS% /p:ReleaseUri=%RELEASE_URI%
     if errorlevel 1 exit /B
 )
 
 set BUILDOPTS=/p:Platform=%1 /p:BuildForRelease=true /p:DownloadUrl=%DOWNLOAD_URL% /p:DownloadUrlBase=%DOWNLOAD_URL_BASE% /p:ReleaseUri=%RELEASE_URI%
-msbuild "%D%bundle\releaselocal.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=true
+%MSBUILD% "%D%bundle\releaselocal.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=true
 if errorlevel 1 exit /B
-msbuild "%D%bundle\releaseweb.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=false
+%MSBUILD% "%D%bundle\releaseweb.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=false
 if errorlevel 1 exit /B
 
 if defined BUILDZIP (
-    msbuild "%D%make_zip.proj" /t:Build %BUILDOPTS% %CERTOPTS% /p:OutputPath="%BUILD%en-us"
+    %MSBUILD% "%D%make_zip.proj" /t:Build %BUILDOPTS% %CERTOPTS% /p:OutputPath="%BUILD%en-us"
     if errorlevel 1 exit /B
 )
 
 if defined BUILDNUGET (
-    msbuild "%D%..\nuget\make_pkg.proj" /t:Build /p:Configuration=Release /p:Platform=%1 /p:OutputPath="%BUILD%en-us"
+    %MSBUILD% "%D%..\nuget\make_pkg.proj" /t:Build /p:Configuration=Release /p:Platform=%1 /p:OutputPath="%BUILD%en-us"
     if errorlevel 1 exit /B
 )
 

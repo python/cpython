@@ -20,10 +20,21 @@ static PyMemberDef module_members[] = {
     {0}
 };
 
+
+/* Helper for sanity check for traverse not handling m_state == NULL
+ * Issue #32374 */
+#ifdef Py_DEBUG
+static int
+bad_traverse_test(PyObject *self, void *arg) {
+    assert(self != NULL);
+    return 0;
+}
+#endif
+
 PyTypeObject PyModuleDef_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "moduledef",                                /* tp_name */
-    sizeof(struct PyModuleDef),                 /* tp_size */
+    sizeof(struct PyModuleDef),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
 };
 
@@ -338,6 +349,16 @@ PyModule_FromDefAndSpec2(struct PyModuleDef* def, PyObject *spec, int module_api
         }
     }
 
+    /* Sanity check for traverse not handling m_state == NULL
+     * This doesn't catch all possible cases, but in many cases it should
+     * make many cases of invalid code crash or raise Valgrind issues
+     * sooner than they would otherwise.
+     * Issue #32374 */
+#ifdef Py_DEBUG
+    if (def->m_traverse != NULL) {
+        def->m_traverse(m, bad_traverse_test, NULL);
+    }
+#endif
     Py_DECREF(nameobj);
     return m;
 
@@ -667,13 +688,10 @@ module_getattro(PyModuleObject *m, PyObject *name)
     if (m->md_dict) {
         _Py_IDENTIFIER(__name__);
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
-        if (mod_name) {
+        if (mod_name && PyUnicode_Check(mod_name)) {
             PyErr_Format(PyExc_AttributeError,
                         "module '%U' has no attribute '%U'", mod_name, name);
             return NULL;
-        }
-        else if (PyErr_Occurred()) {
-            PyErr_Clear();
         }
     }
     PyErr_Format(PyExc_AttributeError,
@@ -743,7 +761,7 @@ The name must be a string; the optional doc argument can have any type.");
 PyTypeObject PyModule_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "module",                                   /* tp_name */
-    sizeof(PyModuleObject),                     /* tp_size */
+    sizeof(PyModuleObject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)module_dealloc,                 /* tp_dealloc */
     0,                                          /* tp_print */

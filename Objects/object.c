@@ -387,8 +387,9 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
             else if (PyUnicode_Check(s)) {
                 PyObject *t;
                 t = PyUnicode_AsEncodedString(s, "utf-8", "backslashreplace");
-                if (t == NULL)
-                    ret = 0;
+                if (t == NULL) {
+                    ret = -1;
+                }
                 else {
                     fwrite(PyBytes_AS_STRING(t), 1,
                            PyBytes_GET_SIZE(t), fp);
@@ -482,7 +483,12 @@ PyObject_Repr(PyObject *v)
     assert(!PyErr_Occurred());
 #endif
 
+    /* It is possible for a type to have a tp_repr representation that loops
+       infinitely. */
+    if (Py_EnterRecursiveCall(" while getting the repr of an object"))
+        return NULL;
     res = (*v->ob_type->tp_repr)(v);
+    Py_LeaveRecursiveCall();
     if (res == NULL)
         return NULL;
     if (!PyUnicode_Check(res)) {

@@ -373,6 +373,10 @@ class LongTest(unittest.TestCase):
         for base in invalid_bases:
             self.assertRaises(ValueError, int, '42', base)
 
+        # Invalid unicode string
+        # See bpo-34087
+        self.assertRaises(ValueError, int, '\u3053\u3093\u306b\u3061\u306f')
+
 
     def test_conversion(self):
 
@@ -694,6 +698,9 @@ class LongTest(unittest.TestCase):
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, ',_')
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, '_,d')
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, ',_d')
+
+        self.assertRaisesRegex(ValueError, "Cannot specify ',' with 's'", format, 3, ',s')
+        self.assertRaisesRegex(ValueError, "Cannot specify '_' with 's'", format, 3, '_s')
 
         # ensure that only int and float type specifiers work
         for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +

@@ -1347,15 +1347,17 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     if (should_auto_add_history && n > 0) {
         const char *line;
         int length = _py_get_history_length();
-        if (length > 0)
+        if (length > 0) {
+            HIST_ENTRY *hist_ent;
 #ifdef __APPLE__
             if (using_libedit_emulation) {
                 /* handle older 0-based or newer 1-based indexing */
-                line = (const char *)history_get(length + libedit_history_start - 1)->line;
+                hist_ent = history_get(length + libedit_history_start - 1);
             } else
 #endif /* __APPLE__ */
-            line = (const char *)history_get(length)->line;
-        else
+                hist_ent = history_get(length);
+            line = hist_ent ? hist_ent->line : "";
+        } else
             line = "";
         if (strcmp(p, line))
             add_history(p);

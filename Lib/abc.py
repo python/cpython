@@ -129,8 +129,8 @@ class ABCMeta(type):
     #       external code.
     _abc_invalidation_counter = 0
 
-    def __new__(mcls, name, bases, namespace):
-        cls = super().__new__(mcls, name, bases, namespace)
+    def __new__(mcls, name, bases, namespace, **kwargs):
+        cls = super().__new__(mcls, name, bases, namespace, **kwargs)
         # Compute set of abstract method names
         abstracts = {name
                      for name, value in namespace.items()
@@ -170,9 +170,11 @@ class ABCMeta(type):
         """Debug helper to print the ABC registry."""
         print("Class: %s.%s" % (cls.__module__, cls.__qualname__), file=file)
         print("Inv.counter: %s" % ABCMeta._abc_invalidation_counter, file=file)
-        for name in sorted(cls.__dict__.keys()):
+        for name in sorted(cls.__dict__):
             if name.startswith("_abc_"):
                 value = getattr(cls, name)
+                if isinstance(value, WeakSet):
+                    value = set(value)
                 print("%s: %r" % (name, value), file=file)
 
     def __instancecheck__(cls, instance):

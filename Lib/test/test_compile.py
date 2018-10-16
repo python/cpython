@@ -6,7 +6,7 @@ import _ast
 import tempfile
 import types
 from test import support
-from test.support import script_helper
+from test.support import script_helper, FakePath
 
 class TestSpecifics(unittest.TestCase):
 
@@ -35,6 +35,7 @@ class TestSpecifics(unittest.TestCase):
         import builtins
         prev = builtins.__debug__
         setattr(builtins, '__debug__', 'sure')
+        self.assertEqual(__debug__, prev)
         setattr(builtins, '__debug__', prev)
 
     def test_argument_handling(self):
@@ -637,6 +638,7 @@ if 1:
             f1 = ns['f1']
             f2 = ns['f2']
             self.assertIsNot(f1.__code__, f2.__code__)
+            self.assertNotEqual(f1.__code__, f2.__code__)
             self.check_constant(f1, const1)
             self.check_constant(f2, const2)
             self.assertEqual(repr(f1()), repr(const1))
@@ -645,6 +647,8 @@ if 1:
         check_different_constants(0, 0.0)
         check_different_constants(+0.0, -0.0)
         check_different_constants((0,), (0.0,))
+        check_different_constants('a', b'a')
+        check_different_constants(('a',), (b'a',))
 
         # check_different_constants() cannot be used because repr(-0j) is
         # '(-0-0j)', but when '(-0-0j)' is evaluated to 0j: we loose the sign.
@@ -666,13 +670,7 @@ if 1:
 
     def test_path_like_objects(self):
         # An implicit test for PyUnicode_FSDecoder().
-        class PathLike:
-            def __init__(self, path):
-                self._path = path
-            def __fspath__(self):
-                return self._path
-
-        compile("42", PathLike("test_compile_pathlike"), "single")
+        compile("42", FakePath("test_compile_pathlike"), "single")
 
 
 class TestStackSize(unittest.TestCase):

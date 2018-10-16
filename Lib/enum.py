@@ -1,7 +1,7 @@
 import sys
 from types import MappingProxyType, DynamicClassAttribute
 from functools import reduce
-from operator import or_ as _or_, and_ as _and_, xor, neg
+from operator import or_ as _or_
 
 # try _collections first to reduce startup cost
 try:
@@ -155,9 +155,11 @@ class EnumMeta(type):
         enum_class._member_map_ = OrderedDict()      # name->value map
         enum_class._member_type_ = member_type
 
-        # save attributes from super classes so we know if we can take
-        # the shortcut of storing members in the class dict
-        base_attributes = {a for b in enum_class.mro() for a in b.__dict__}
+        # save DynamicClassAttribute attributes from super classes so we know
+        # if we can take the shortcut of storing members in the class dict
+        dynamic_attributes = {k for c in enum_class.mro()
+                              for k, v in c.__dict__.items()
+                              if isinstance(v, DynamicClassAttribute)}
 
         # Reverse value->name map for hashable values.
         enum_class._value2member_map_ = {}
@@ -217,7 +219,7 @@ class EnumMeta(type):
                 enum_class._member_names_.append(member_name)
             # performance boost for any member that would not shadow
             # a DynamicClassAttribute
-            if member_name not in base_attributes:
+            if member_name not in dynamic_attributes:
                 setattr(enum_class, member_name, enum_member)
             # now add to _member_map_
             enum_class._member_map_[member_name] = enum_member
@@ -361,7 +363,7 @@ class EnumMeta(type):
             raise AttributeError('Cannot reassign members.')
         super().__setattr__(name, value)
 
-    def _create_(cls, class_name, names=None, *, module=None, qualname=None, type=None, start=1):
+    def _create_(cls, class_name, names, *, module=None, qualname=None, type=None, start=1):
         """Convenience method to create a new Enum class.
 
         `names` can be:
@@ -381,7 +383,7 @@ class EnumMeta(type):
         # special processing needed for names?
         if isinstance(names, str):
             names = names.replace(',', ' ').split()
-        if isinstance(names, (tuple, list)) and isinstance(names[0], str):
+        if isinstance(names, (tuple, list)) and names and isinstance(names[0], str):
             original_names, names = names, []
             last_values = []
             for count, name in enumerate(original_names):
@@ -690,7 +692,9 @@ class Flag(Enum):
             pseudo_member = object.__new__(cls)
             pseudo_member._name_ = None
             pseudo_member._value_ = value
-            cls._value2member_map_[value] = pseudo_member
+            # use setdefault in case another thread already created a composite
+            # with this value
+            pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
         return pseudo_member
 
     def __contains__(self, other):
@@ -785,7 +789,9 @@ class IntFlag(int, Flag):
                 pseudo_member = int.__new__(cls, value)
                 pseudo_member._name_ = None
                 pseudo_member._value_ = value
-                cls._value2member_map_[value] = pseudo_member
+                # use setdefault in case another thread already created a composite
+                # with this value
+                pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
         return pseudo_member
 
     def __or__(self, other):
@@ -835,18 +841,21 @@ def _decompose(flag, value):
     # _decompose is only called if the value is not named
     not_covered = value
     negative = value < 0
+    # issue29167: wrap accesses to _value2member_map_ in a list to avoid race
+    #             conditions between iterating over it and having more psuedo-
+    #             members added to it
     if negative:
         # only check for named flags
         flags_to_check = [
                 (m, v)
-                for v, m in flag._value2member_map_.items()
+                for v, m in list(flag._value2member_map_.items())
                 if m.name is not None
                 ]
     else:
         # check for named flags and powers-of-two flags
         flags_to_check = [
                 (m, v)
-                for v, m in flag._value2member_map_.items()
+                for v, m in list(flag._value2member_map_.items())
                 if m.name is not None or _power_of_two(v)
                 ]
     members = []

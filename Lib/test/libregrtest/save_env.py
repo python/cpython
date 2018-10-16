@@ -268,7 +268,13 @@ class saved_test_environment:
     def __exit__(self, exc_type, exc_val, exc_tb):
         saved_values = self.saved_values
         del self.saved_values
-        support.gc_collect()  # Some resources use weak references
+
+        # Some resources use weak references
+        support.gc_collect()
+
+        # Read support.environment_altered, set by support helper functions
+        self.changed |= support.environment_altered
+
         for name, get, restore in self.resource_info():
             current = get()
             original = saved_values.pop(name)
@@ -279,7 +285,6 @@ class saved_test_environment:
                 if not self.quiet and not self.pgo:
                     print(f"Warning -- {name} was modified by {self.testname}",
                           file=sys.stderr, flush=True)
-                    if self.verbose > 1:
-                        print(f"  Before: {original}\n  After:  {current} ",
-                              file=sys.stderr, flush=True)
+                    print(f"  Before: {original}\n  After:  {current} ",
+                          file=sys.stderr, flush=True)
         return False

@@ -232,7 +232,7 @@ have adopted Sphinx as their documentation tool.
 
 .. seealso::
 
-   `Documenting Python <https://docs.python.org/devguide/documenting.html>`__
+   `Documenting Python <https://devguide.python.org/documenting/>`__
        Describes how to write for Python's documentation.
 
    `Sphinx <http://sphinx-doc.org/>`__
@@ -290,8 +290,8 @@ be used with the ':keyword:`with`' statement. File objects are one example::
            ... more processing code ...
 
 After this statement has executed, the file object in *f* will have been
-automatically closed, even if the :keyword:`for` loop raised an exception part-
-way through the block.
+automatically closed, even if the :keyword:`for` loop raised an exception
+part-way through the block.
 
 .. note::
 
@@ -2611,7 +2611,7 @@ changes, or look through the Subversion logs for all the details.
 
 * The XML-RPC :class:`SimpleXMLRPCServer` and :class:`DocXMLRPCServer`
   classes can now be prevented from immediately opening and binding to
-  their socket by passing True as the ``bind_and_activate``
+  their socket by passing ``False`` as the *bind_and_activate*
   constructor parameter.  This can be used to modify the instance's
   :attr:`allow_reuse_address` attribute before calling the
   :meth:`server_bind` and :meth:`server_activate` methods to

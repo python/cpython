@@ -722,21 +722,44 @@ getenvironment(PyObject* environment)
         return NULL;
     }
 
-    envsize = PyMapping_Length(environment);
-
     keys = PyMapping_Keys(environment);
+    if (!keys) {
+        return NULL;
+    }
     values = PyMapping_Values(environment);
-    if (!keys || !values)
+    if (!values) {
         goto error;
+    }
+
+    envsize = PySequence_Fast_GET_SIZE(keys);
+    if (PySequence_Fast_GET_SIZE(values) != envsize) {
+        PyErr_SetString(PyExc_RuntimeError,
+            "environment changed size during iteration");
+        goto error;
+    }
 
     totalsize = 1; /* trailing null character */
     for (i = 0; i < envsize; i++) {
-        PyObject* key = PyList_GET_ITEM(keys, i);
-        PyObject* value = PyList_GET_ITEM(values, i);
+        PyObject* key = PySequence_Fast_GET_ITEM(keys, i);
+        PyObject* value = PySequence_Fast_GET_ITEM(values, i);
 
         if (! PyUnicode_Check(key) || ! PyUnicode_Check(value)) {
             PyErr_SetString(PyExc_TypeError,
                 "environment can only contain strings");
+            goto error;
+        }
+        if (PyUnicode_FindChar(key, '\0', 0, PyUnicode_GET_LENGTH(key), 1) != -1 ||
+            PyUnicode_FindChar(value, '\0', 0, PyUnicode_GET_LENGTH(value), 1) != -1)
+        {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto error;
+        }
+        /* Search from index 1 because on Windows starting '=' is allowed for
+           defining hidden environment variables. */
+        if (PyUnicode_GET_LENGTH(key) == 0 ||
+            PyUnicode_FindChar(key, '=', 1, PyUnicode_GET_LENGTH(key), 1) != -1)
+        {
+            PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
             goto error;
         }
         if (totalsize > PY_SSIZE_T_MAX - PyUnicode_GET_LENGTH(key) - 1) {
@@ -760,8 +783,8 @@ getenvironment(PyObject* environment)
     end = buffer + totalsize;
 
     for (i = 0; i < envsize; i++) {
-        PyObject* key = PyList_GET_ITEM(keys, i);
-        PyObject* value = PyList_GET_ITEM(values, i);
+        PyObject* key = PySequence_Fast_GET_ITEM(keys, i);
+        PyObject* value = PySequence_Fast_GET_ITEM(values, i);
         if (!PyUnicode_AsUCS4(key, p, end - p, 0))
             goto error;
         p += PyUnicode_GET_LENGTH(key);
@@ -841,12 +864,13 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
 
     if (env_mapping != Py_None) {
         environment = getenvironment(env_mapping);
-        if (! environment)
+        if (environment == NULL) {
             return NULL;
+        }
+        /* contains embedded null characters */
         wenvironment = PyUnicode_AsUnicode(environment);
-        if (wenvironment == NULL)
-        {
-            Py_XDECREF(environment);
+        if (wenvironment == NULL) {
+            Py_DECREF(environment);
             return NULL;
         }
     }
@@ -1143,7 +1167,7 @@ _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
         }
         if (_PyBytes_Resize(&buf, nread))
             return NULL;
-        return Py_BuildValue("Nii", buf, navail, nleft);
+        return Py_BuildValue("NII", buf, navail, nleft);
     }
     else {
         Py_BEGIN_ALLOW_THREADS
@@ -1152,7 +1176,7 @@ _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
         if (!ret) {
             return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
         }
-        return Py_BuildValue("ii", navail, nleft);
+        return Py_BuildValue("II", navail, nleft);
     }
 }
 
@@ -1160,14 +1184,14 @@ _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
 _winapi.ReadFile
 
     handle: HANDLE
-    size: int
+    size: DWORD
     overlapped as use_overlapped: int(c_default='0') = False
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_ReadFile_impl(PyObject *module, HANDLE handle, int size,
+_winapi_ReadFile_impl(PyObject *module, HANDLE handle, DWORD size,
                       int use_overlapped)
-/*[clinic end generated code: output=492029ca98161d84 input=8dd810194e86ac7d]*/
+/*[clinic end generated code: output=d3d5b44a8201b944 input=1b7d0ed0de1e50bc]*/
 {
     DWORD nread;
     PyObject *buf;

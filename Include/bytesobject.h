@@ -74,11 +74,13 @@ PyAPI_FUNC(PyObject*) _PyBytes_FromHex(
 PyAPI_FUNC(PyObject *) PyBytes_DecodeEscape(const char *, Py_ssize_t,
 						   const char *, Py_ssize_t,
 						   const char *);
+#ifndef Py_LIMITED_API
 /* Helper for PyBytes_DecodeEscape that detects invalid escape chars. */
 PyAPI_FUNC(PyObject *) _PyBytes_DecodeEscape(const char *, Py_ssize_t,
                                              const char *, Py_ssize_t,
                                              const char *,
                                              const char **);
+#endif
 
 /* Macro, trading safety for speed */
 #ifndef Py_LIMITED_API

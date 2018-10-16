@@ -7,6 +7,11 @@ from enum import Enum, IntEnum, EnumMeta, Flag, IntFlag, unique, auto
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
+try:
+    import threading
+except ImportError:
+    threading = None
+
 
 # for pickle tests
 try:
@@ -1501,6 +1506,23 @@ class TestEnum(unittest.TestCase):
             yellow = 6
         self.assertEqual(MoreColor.magenta.hex(), '5 hexlified!')
 
+    def test_subclass_duplicate_name(self):
+        class Base(Enum):
+            def test(self):
+                pass
+        class Test(Base):
+            test = 1
+        self.assertIs(type(Test.test), Test)
+
+    def test_subclass_duplicate_name_dynamic(self):
+        from types import DynamicClassAttribute
+        class Base(Enum):
+            @DynamicClassAttribute
+            def test(self):
+                return 'dynamic'
+        class Test(Base):
+            test = 1
+        self.assertEqual(Test.test.test, 'dynamic')
 
     def test_no_duplicates(self):
         class UniqueEnum(Enum):
@@ -1983,6 +2005,45 @@ class TestFlag(unittest.TestCase):
             d = 6
         self.assertEqual(repr(Bizarre(7)), '<Bizarre.d|c|b: 7>')
 
+    @unittest.skipUnless(threading, 'Threading required for this test.')
+    @support.reap_threads
+    def test_unique_composite(self):
+        # override __eq__ to be identity only
+        class TestFlag(Flag):
+            one = auto()
+            two = auto()
+            three = auto()
+            four = auto()
+            five = auto()
+            six = auto()
+            seven = auto()
+            eight = auto()
+            def __eq__(self, other):
+                return self is other
+            def __hash__(self):
+                return hash(self._value_)
+        # have multiple threads competing to complete the composite members
+        seen = set()
+        failed = False
+        def cycle_enum():
+            nonlocal failed
+            try:
+                for i in range(256):
+                    seen.add(TestFlag(i))
+            except Exception:
+                failed = True
+        threads = [
+                threading.Thread(target=cycle_enum)
+                for _ in range(8)
+                ]
+        with support.start_threads(threads):
+            pass
+        # check that only 248 members were created
+        self.assertFalse(
+                failed,
+                'at least one thread failed while creating composite members')
+        self.assertEqual(256, len(seen), 'too many composite members created')
+
 
 class TestIntFlag(unittest.TestCase):
     """Tests of the IntFlags."""
@@ -2247,6 +2308,26 @@ class TestIntFlag(unittest.TestCase):
             self.assertIs(type(e), Perm)
 
 
+    def test_programatic_function_from_empty_list(self):
+        Perm = enum.IntFlag('Perm', [])
+        lst = list(Perm)
+        self.assertEqual(len(lst), len(Perm))
+        self.assertEqual(len(Perm), 0, Perm)
+        Thing = enum.Enum('Thing', [])
+        lst = list(Thing)
+        self.assertEqual(len(lst), len(Thing))
+        self.assertEqual(len(Thing), 0, Thing)
+
+
+    def test_programatic_function_from_empty_tuple(self):
+        Perm = enum.IntFlag('Perm', ())
+        lst = list(Perm)
+        self.assertEqual(len(lst), len(Perm))
+        self.assertEqual(len(Perm), 0, Perm)
+        Thing = enum.Enum('Thing', ())
+        self.assertEqual(len(lst), len(Thing))
+        self.assertEqual(len(Thing), 0, Thing)
+
     def test_containment(self):
         Perm = self.Perm
         R, W, X = Perm
@@ -2274,6 +2355,46 @@ class TestIntFlag(unittest.TestCase):
         Open = self.Open
         for f in Open:
             self.assertEqual(bool(f.value), bool(f))
+
+    @unittest.skipUnless(threading, 'Threading required for this test.')
+    @support.reap_threads
+    def test_unique_composite(self):
+        # override __eq__ to be identity only
+        class TestFlag(IntFlag):
+            one = auto()
+            two = auto()
+            three = auto()
+            four = auto()
+            five = auto()
+            six = auto()
+            seven = auto()
+            eight = auto()
+            def __eq__(self, other):
+                return self is other
+            def __hash__(self):
+                return hash(self._value_)
+        # have multiple threads competing to complete the composite members
+        seen = set()
+        failed = False
+        def cycle_enum():
+            nonlocal failed
+            try:
+                for i in range(256):
+                    seen.add(TestFlag(i))
+            except Exception:
+                failed = True
+        threads = [
+                threading.Thread(target=cycle_enum)
+                for _ in range(8)
+                ]
+        with support.start_threads(threads):
+            pass
+        # check that only 248 members were created
+        self.assertFalse(
+                failed,
+                'at least one thread failed while creating composite members')
+        self.assertEqual(256, len(seen), 'too many composite members created')
+
 
 class TestUnique(unittest.TestCase):
 
@@ -2484,7 +2605,8 @@ CONVERT_TEST_NAME_F = 5
 class TestIntEnumConvert(unittest.TestCase):
     def test_convert_value_lookup_priority(self):
         test_type = enum.IntEnum._convert(
-                'UnittestConvert', 'test.test_enum',
+                'UnittestConvert',
+                ('test.test_enum', '__main__')[__name__=='__main__'],
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
         # We don't want the reverse lookup value to vary when there are
         # multiple possible names for a given value.  It should always
@@ -2493,7 +2615,8 @@ class TestIntEnumConvert(unittest.TestCase):
 
     def test_convert(self):
         test_type = enum.IntEnum._convert(
-                'UnittestConvert', 'test.test_enum',
+                'UnittestConvert',
+                ('test.test_enum', '__main__')[__name__=='__main__'],
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
         # Ensure that test_type has all of the desired names and values.
         self.assertEqual(test_type.CONVERT_TEST_NAME_F,

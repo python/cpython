@@ -951,7 +951,7 @@ New :class:`~collections.abc.Awaitable`, :class:`~collections.abc.Coroutine`,
 (Contributed by Yury Selivanov in :issue:`24184`.)
 
 For earlier Python versions, a backport of the new ABCs is available in an
-external `PyPI package <https://pypi.python.org/pypi/backports_abc>`_.
+external `PyPI package <https://pypi.org/project/backports_abc>`_.
 
 
 compileall
@@ -2327,11 +2327,12 @@ The :func:`inspect.getargspec` function is deprecated and scheduled to be
 removed in Python 3.6.  (See :issue:`20438` for details.)
 
 The :mod:`inspect` :func:`~inspect.getfullargspec`,
-:func:`~inspect.getargvalues`, :func:`~inspect.getcallargs`,
-:func:`~inspect.getargvalues`, :func:`~inspect.formatargspec`, and
-:func:`~inspect.formatargvalues` functions are deprecated in favor of
-the :func:`inspect.signature` API.
-(Contributed by Yury Selivanov in :issue:`20438`.)
+:func:`~inspect.getcallargs`, and :func:`~inspect.formatargspec` functions are
+deprecated in favor of the :func:`inspect.signature` API. (Contributed by Yury
+Selivanov in :issue:`20438`.)
+
+:func:`~inspect.getargvalues` and :func:`~inspect.formatargvalues` functions
+were inadvertently marked as deprecated with the release of Python 3.5.0.
 
 Use of :const:`re.LOCALE` flag with str patterns or :const:`re.ASCII` is now
 deprecated.  (Contributed by Serhiy Storchaka in :issue:`22407`.)
@@ -2470,7 +2471,7 @@ Changes in the Python API
   parameter to help control the ``opt-`` tag. Because of this, the
   *debug_override* parameter of the function is now deprecated. `.pyo` files
   are also no longer supported as a file argument to the Python interpreter and
-  thus serve no purpose when distributed on their own (i.e. sourcless code
+  thus serve no purpose when distributed on their own (i.e. sourceless code
   distribution). Due to the fact that the magic number for bytecode has changed
   in Python 3.5, all old `.pyo` files from previous versions of Python are
   invalid regardless of this PEP.
@@ -2534,4 +2535,40 @@ Changes in the C API
   :c:type:`PyTypeObject` was replaced with a
   :c:member:`tp_as_async` slot.  Refer to :ref:`coro-objects` for
   new types, structures and functions.
+
+
+Notable changes in Python 3.5.4
+===============================
+
+New ``make regen-all`` build target
+-----------------------------------
+
+To simplify cross-compilation, and to ensure that CPython can reliably be
+compiled without requiring an existing version of Python to already be
+available, the autotools-based build system no longer attempts to implicitly
+recompile generated files based on file modification times.
+
+Instead, a new ``make regen-all`` command has been added to force regeneration
+of these files when desired (e.g. after an initial version of Python has
+already been built based on the pregenerated versions).
+
+More selective regeneration targets are also defined - see
+:source:`Makefile.pre.in` for details.
+
+(Contributed by Victor Stinner in :issue:`23404`.)
+
+.. versionadded:: 3.5.4
+
+
+Removal of ``make touch`` build target
+--------------------------------------
+
+The ``make touch`` build target previously used to request implicit regeneration
+of generated files by updating their modification times has been removed.
+
+It has been replaced by the new ``make regen-all`` target.
+
+(Contributed by Victor Stinner in :issue:`23404`.)
+
+.. versionchanged:: 3.5.4
 

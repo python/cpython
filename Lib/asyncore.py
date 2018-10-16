@@ -619,8 +619,9 @@ if os.name == 'posix':
         def close(self):
             if self.fd < 0:
                 return
-            os.close(self.fd)
+            fd = self.fd
             self.fd = -1
+            os.close(fd)
 
         def fileno(self):
             return self.fd

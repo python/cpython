@@ -57,7 +57,7 @@ class BaseWinregTests(unittest.TestCase):
 
     def delete_tree(self, root, subkey):
         try:
-            hkey = OpenKey(root, subkey, KEY_ALL_ACCESS)
+            hkey = OpenKey(root, subkey, 0, KEY_ALL_ACCESS)
         except OSError:
             # subkey does not exist
             return
@@ -368,6 +368,18 @@ class LocalWinregTests(BaseWinregTests):
         finally:
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
+    def test_read_string_containing_null(self):
+        # Test for issue 25778: REG_SZ should not contain null characters
+        try:
+            with CreateKey(HKEY_CURRENT_USER, test_key_name) as ck:
+                self.assertNotEqual(ck.handle, 0)
+                test_val = "A string\x00 with a null"
+                SetValueEx(ck, "test_name", 0, REG_SZ, test_val)
+                ret_val, ret_type = QueryValueEx(ck, "test_name")
+                self.assertEqual(ret_type, REG_SZ)
+                self.assertEqual(ret_val, "A string")
+        finally:
+            DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
 
 @unittest.skipUnless(REMOTE_NAME, "Skipping remote registry tests")

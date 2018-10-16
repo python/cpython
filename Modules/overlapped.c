@@ -1151,7 +1151,7 @@ ConnectPipe(OverlappedObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "U",  &AddressObj))
         return NULL;
 
-    Address = PyUnicode_AsWideCharString(AddressObj, NULL);
+    Address = _PyUnicode_AsWideCharString(AddressObj);
     if (Address == NULL)
         return NULL;
 

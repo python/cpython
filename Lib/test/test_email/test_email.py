@@ -11,6 +11,7 @@ import textwrap
 from io import StringIO, BytesIO
 from itertools import chain
 from random import choice
+from socket import getfqdn
 try:
     from threading import Thread
 except ImportError:
@@ -3313,6 +3314,17 @@ multipart/report
         self.assertEqual(
             email.utils.make_msgid(domain='testdomain-string')[-19:],
             '@testdomain-string>')
+
+    def test_make_msgid_idstring(self):
+        self.assertEqual(
+            email.utils.make_msgid(idstring='test-idstring',
+                domain='testdomain-string')[-33:],
+            '.test-idstring@testdomain-string>')
+
+    def test_make_msgid_default_domain(self):
+        self.assertTrue(
+            email.utils.make_msgid().endswith(
+                '@' + getfqdn() + '>'))
 
     def test_Generator_linend(self):
         # Issue 14645.

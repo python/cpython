@@ -384,6 +384,15 @@ Misuse of the nonlocal and global statement can lead to a few unique syntax erro
      ...
    SyntaxError: name 'x' is used prior to nonlocal declaration
 
+   >>> def f():
+   ...     x = 1
+   ...     def g():
+   ...         x = 2
+   ...         nonlocal x
+   Traceback (most recent call last):
+     ...
+   SyntaxError: name 'x' is assigned to before nonlocal declaration
+
    >>> def f(x):
    ...     nonlocal x
    Traceback (most recent call last):
@@ -409,24 +418,7 @@ From SF bug #1705365
      ...
    SyntaxError: nonlocal declaration not allowed at module level
 
-TODO(jhylton): Figure out how to test SyntaxWarning with doctest.
-
-##   >>> def f(x):
-##   ...     def f():
-##   ...         print(x)
-##   ...         nonlocal x
-##   Traceback (most recent call last):
-##     ...
-##   SyntaxWarning: name 'x' is assigned to before nonlocal declaration
-
-##   >>> def f():
-##   ...     x = 1
-##   ...     nonlocal x
-##   Traceback (most recent call last):
-##     ...
-##   SyntaxWarning: name 'x' is assigned to before nonlocal declaration
-
- From https://bugs.python.org/issue25973
+From https://bugs.python.org/issue25973
    >>> class A:
    ...     def f(self):
    ...         nonlocal __x
@@ -544,7 +536,7 @@ from test import support
 class SyntaxTestCase(unittest.TestCase):
 
     def _check_error(self, code, errtext,
-                     filename="<testcase>", mode="exec", subclass=None):
+                     filename="<testcase>", mode="exec", subclass=None, lineno=None, offset=None):
         """Check that compiling code raises SyntaxError with errtext.
 
         errtest is a regular expression that must be present in the
@@ -559,6 +551,11 @@ class SyntaxTestCase(unittest.TestCase):
             mo = re.search(errtext, str(err))
             if mo is None:
                 self.fail("SyntaxError did not contain '%r'" % (errtext,))
+            self.assertEqual(err.filename, filename)
+            if lineno is not None:
+                self.assertEqual(err.lineno, lineno)
+            if offset is not None:
+                self.assertEqual(err.offset, offset)
         else:
             self.fail("compile() did not raise SyntaxError")
 
@@ -569,7 +566,7 @@ class SyntaxTestCase(unittest.TestCase):
         self._check_error("del f()", "delete")
 
     def test_global_err_then_warn(self):
-        # Bug tickler:  The SyntaxError raised for one global statement
+        # Bug #763201:  The SyntaxError raised for one global statement
         # shouldn't be clobbered by a SyntaxWarning issued for a later one.
         source = """if 1:
             def error(a):
@@ -603,12 +600,12 @@ class SyntaxTestCase(unittest.TestCase):
                           "positional argument follows keyword argument")
 
     def test_kwargs_last2(self):
-        self._check_error("int(**{base: 10}, '2')",
+        self._check_error("int(**{'base': 10}, '2')",
                           "positional argument follows "
                           "keyword argument unpacking")
 
     def test_kwargs_last3(self):
-        self._check_error("int(**{base: 10}, *['2'])",
+        self._check_error("int(**{'base': 10}, *['2'])",
                           "iterable argument unpacking follows "
                           "keyword argument unpacking")
 

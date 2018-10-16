@@ -39,6 +39,11 @@ def interpreter_requires_environment():
     """
     global __cached_interp_requires_environment
     if __cached_interp_requires_environment is None:
+        # If PYTHONHOME is set, assume that we need it
+        if 'PYTHONHOME' in os.environ:
+            __cached_interp_requires_environment = True
+            return True
+
         # Try running an interpreter with -E to see if it works or not.
         try:
             subprocess.check_call([sys.executable, '-E',
@@ -70,17 +75,28 @@ def run_python_until_end(*args, **env_vars):
     elif not env_vars and not env_required:
         # ignore Python environment variables
         cmd_line.append('-E')
-    # Need to preserve the original environment, for in-place testing of
-    # shared library builds.
-    env = os.environ.copy()
-    # set TERM='' unless the TERM environment variable is passed explicitly
-    # see issues #11390 and #18300
-    if 'TERM' not in env_vars:
-        env['TERM'] = ''
+
     # But a special flag that can be set to override -- in this case, the
     # caller is responsible to pass the full environment.
     if env_vars.pop('__cleanenv', None):
         env = {}
+        if sys.platform == 'win32':
+            # Windows requires at least the SYSTEMROOT environment variable to
+            # start Python.
+            env['SYSTEMROOT'] = os.environ['SYSTEMROOT']
+
+        # Other interesting environment variables, not copied currently:
+        # COMSPEC, HOME, PATH, TEMP, TMPDIR, TMP.
+    else:
+        # Need to preserve the original environment, for in-place testing of
+        # shared library builds.
+        env = os.environ.copy()
+
+    # set TERM='' unless the TERM environment variable is passed explicitly
+    # see issues #11390 and #18300
+    if 'TERM' not in env_vars:
+        env['TERM'] = ''
+
     env.update(env_vars)
     cmd_line.extend(args)
     proc = subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
@@ -154,7 +170,9 @@ def spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     kw is extra keyword args to pass to subprocess.Popen. Returns a Popen
     object.
     """
-    cmd_line = [sys.executable, '-E']
+    cmd_line = [sys.executable]
+    if not interpreter_requires_environment():
+        cmd_line.append('-E')
     cmd_line.extend(args)
     # Under Fedora (?), GNU readline can output junk on stderr when initialized,
     # depending on the TERM setting.  Setting TERM=vt100 is supposed to disable

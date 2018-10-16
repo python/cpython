@@ -202,9 +202,9 @@ The grammar for a replacement field is as follows:
    .. productionlist:: sf
       replacement_field: "{" [`field_name`] ["!" `conversion`] [":" `format_spec`] "}"
       field_name: arg_name ("." `attribute_name` | "[" `element_index` "]")*
-      arg_name: [`identifier` | `integer`]
+      arg_name: [`identifier` | `digit`+]
       attribute_name: `identifier`
-      element_index: `integer` | `index_string`
+      element_index: `digit`+ | `index_string`
       index_string: <any source character except "]"> +
       conversion: "r" | "s" | "a"
       format_spec: <described in the next section>
@@ -231,8 +231,11 @@ attribute using :func:`getattr`, while an expression of the form ``'[index]'``
 does an index lookup using :func:`__getitem__`.
 
 .. versionchanged:: 3.1
-   The positional argument specifiers can be omitted, so ``'{} {}'`` is
-   equivalent to ``'{0} {1}'``.
+   The positional argument specifiers can be omitted for :meth:`str.format`,
+   so ``'{} {}'.format(a, b)`` is equivalent to ``'{0} {1}'.format(a, b)``.
+
+.. versionchanged:: 3.4
+   The positional argument specifiers can be omitted for :class:`Formatter`.
 
 Some simple format string examples::
 
@@ -304,9 +307,9 @@ The general form of a *standard format specifier* is:
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
-   width: `integer`
+   width: `digit`+
    grouping_option: "_" | ","
-   precision: `integer`
+   precision: `digit`+
    type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
 
 If a valid *align* value is specified, it can be preceded by a *fill*
@@ -461,11 +464,11 @@ The available presentation types for floating point and decimal values are:
    | ``'E'`` | Exponent notation. Same as ``'e'`` except it uses an     |
    |         | upper case 'E' as the separator character.               |
    +---------+----------------------------------------------------------+
-   | ``'f'`` | Fixed point. Displays the number as a fixed-point        |
-   |         | number.  The default precision is ``6``.                 |
+   | ``'f'`` | Fixed-point notation. Displays the number as a           |
+   |         | fixed-point number.  The default precision is ``6``.     |
    +---------+----------------------------------------------------------+
-   | ``'F'`` | Fixed point. Same as ``'f'``, but converts ``nan`` to    |
-   |         | ``NAN`` and ``inf`` to ``INF``.                          |
+   | ``'F'`` | Fixed-point notation. Same as ``'f'``, but converts      |
+   |         | ``nan`` to  ``NAN`` and ``inf`` to ``INF``.              |
    +---------+----------------------------------------------------------+
    | ``'g'`` | General format.  For a given precision ``p >= 1``,       |
    |         | this rounds the number to ``p`` significant digits and   |
@@ -746,8 +749,18 @@ to parse template strings.  To do this, you can override these class attributes:
 
 * *idpattern* -- This is the regular expression describing the pattern for
   non-braced placeholders (the braces will be added automatically as
-  appropriate).  The default value is the regular expression
-  ``[_a-z][_a-z0-9]*``.
+  appropriate). The default value is the regular expression
+  ``(?-i:[_a-zA-Z][_a-zA-Z0-9]*)``.
+
+  .. note::
+
+     Since default *flags* is ``re.IGNORECASE``, pattern ``[a-z]`` can match
+     with some non-ASCII characters. That's why we use local ``-i`` flag here.
+
+     While *flags* is kept to ``re.IGNORECASE`` for backward compatibility,
+     you can override it to ``0`` or ``re.IGNORECASE | re.ASCII`` when
+     subclassing.
+
 
 * *flags* -- The regular expression flags that will be applied when compiling
   the regular expression used for recognizing substitutions.  The default value

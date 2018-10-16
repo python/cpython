@@ -146,7 +146,7 @@ The :mod:`csv` module defines the following functions:
 
 The :mod:`csv` module defines the following classes:
 
-.. class:: DictReader(csvfile, fieldnames=None, restkey=None, restval=None, \
+.. class:: DictReader(f, fieldnames=None, restkey=None, restval=None, \
                       dialect='excel', *args, **kwds)
 
    Create an object that operates like a regular reader but maps the
@@ -154,7 +154,7 @@ The :mod:`csv` module defines the following classes:
    whose keys are given by the optional *fieldnames* parameter.
 
    The *fieldnames* parameter is a :term:`sequence`.  If *fieldnames* is
-   omitted, the values in the first row of the *csvfile* will be used as the
+   omitted, the values in the first row of file *f* will be used as the
    fieldnames.  Regardless of how the fieldnames are determined, the ordered
    dictionary preserves their original ordering.
 
@@ -172,7 +172,7 @@ The :mod:`csv` module defines the following classes:
    A short usage example::
 
        >>> import csv
-       >>> with open('names.csv') as csvfile:
+       >>> with open('names.csv', newline='') as csvfile:
        ...     reader = csv.DictReader(csvfile)
        ...     for row in reader:
        ...         print(row['first_name'], row['last_name'])
@@ -184,14 +184,14 @@ The :mod:`csv` module defines the following classes:
        OrderedDict([('first_name', 'John'), ('last_name', 'Cleese')])
 
 
-.. class:: DictWriter(csvfile, fieldnames, restval='', extrasaction='raise', \
+.. class:: DictWriter(f, fieldnames, restval='', extrasaction='raise', \
                       dialect='excel', *args, **kwds)
 
    Create an object which operates like a regular writer but maps dictionaries
    onto output rows.  The *fieldnames* parameter is a :mod:`sequence
    <collections.abc>` of keys that identify the order in which values in the
-   dictionary passed to the :meth:`writerow` method are written to the
-   *csvfile*.  The optional *restval* parameter specifies the value to be
+   dictionary passed to the :meth:`writerow` method are written to file
+   *f*.  The optional *restval* parameter specifies the value to be
    written if the dictionary is missing a key in *fieldnames*.  If the
    dictionary passed to the :meth:`writerow` method contains a key not found in
    *fieldnames*, the optional *extrasaction* parameter indicates what action to
@@ -205,13 +205,13 @@ The :mod:`csv` module defines the following classes:
    Note that unlike the :class:`DictReader` class, the *fieldnames* parameter
    of the :class:`DictWriter` is not optional.  Since Python's :class:`dict`
    objects are not ordered, there is not enough information available to deduce
-   the order in which the row should be written to the *csvfile*.
+   the order in which the row should be written to file *f*.
 
    A short usage example::
 
        import csv
 
-       with open('names.csv', 'w') as csvfile:
+       with open('names.csv', 'w', newline='') as csvfile:
            fieldnames = ['first_name', 'last_name']
            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -270,7 +270,7 @@ The :mod:`csv` module defines the following classes:
 
 An example for :class:`Sniffer` use::
 
-   with open('example.csv') as csvfile:
+   with open('example.csv', newline='') as csvfile:
        dialect = csv.Sniffer().sniff(csvfile.read(1024))
        csvfile.seek(0)
        reader = csv.reader(csvfile, dialect)
@@ -401,8 +401,10 @@ Reader objects (:class:`DictReader` instances and objects returned by the
 
 .. method:: csvreader.__next__()
 
-   Return the next row of the reader's iterable object as a list, parsed according
-   to the current dialect.  Usually you should call this as ``next(reader)``.
+   Return the next row of the reader's iterable object as a list (if the object
+   was returned from :func:`reader`) or a dict (if it is a :class:`DictReader`
+   instance), parsed according to the current dialect.  Usually you should call
+   this as ``next(reader)``.
 
 
 Reader objects have the following public attributes:
@@ -450,8 +452,9 @@ read CSV files (assuming they support complex numbers at all).
 
 .. method:: csvwriter.writerows(rows)
 
-   Write all the *rows* parameters (a list of *row* objects as described above) to
-   the writer's file object, formatted according to the current dialect.
+   Write all elements in *rows* (an iterable of *row* objects as described
+   above) to the writer's file object, formatted according to the current
+   dialect.
 
 Writer objects have the following public attribute:
 

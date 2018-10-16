@@ -6,6 +6,8 @@
 Streams (coroutine based API)
 +++++++++++++++++++++++++++++
 
+**Source code:** :source:`Lib/asyncio/streams.py`
+
 Stream functions
 ================
 
@@ -86,9 +88,11 @@ Stream functions
 StreamReader
 ============
 
-.. class:: StreamReader(limit=None, loop=None)
+.. class:: StreamReader(limit=_DEFAULT_LIMIT, loop=None)
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
+
+   The *limit* argument's default value is set to _DEFAULT_LIMIT which is 2**16 (64 KiB)
 
    .. method:: exception()
 

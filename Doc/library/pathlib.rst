@@ -555,7 +555,8 @@ Pure paths provide the following methods and properties:
 .. method:: PurePath.with_suffix(suffix)
 
    Return a new path with the :attr:`suffix` changed.  If the original path
-   doesn't have a suffix, the new *suffix* is appended instead::
+   doesn't have a suffix, the new *suffix* is appended instead.  If the
+   *suffix* is an empty string, the original suffix is removed::
 
       >>> p = PureWindowsPath('c:/Downloads/pathlib.tar.gz')
       >>> p.with_suffix('.bz2')
@@ -563,6 +564,9 @@ Pure paths provide the following methods and properties:
       >>> p = PureWindowsPath('README')
       >>> p.with_suffix('.txt')
       PureWindowsPath('README.txt')
+      >>> p = PureWindowsPath('README.txt')
+      >>> p.with_suffix('')
+      PureWindowsPath('README')
 
 
 .. _concrete-paths:
@@ -893,7 +897,8 @@ call fails (for example because the path doesn't exist):
       >>> p.read_text()
       'Text file contents'
 
-   The optional parameters have the same meaning as in :func:`open`.
+   The file is opened and then closed. The optional parameters have the same
+   meaning as in :func:`open`.
 
    .. versionadded:: 3.5
 

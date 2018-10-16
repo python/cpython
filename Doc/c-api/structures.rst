@@ -150,9 +150,8 @@ specific C type of the *self* object.
 The :attr:`ml_flags` field is a bitfield which can include the following flags.
 The individual flags indicate either a calling convention or a binding
 convention.  Of the calling convention flags, only :const:`METH_VARARGS` and
-:const:`METH_KEYWORDS` can be combined (but note that :const:`METH_KEYWORDS`
-alone is equivalent to ``METH_VARARGS | METH_KEYWORDS``). Any of the calling
-convention flags can be combined with a binding flag.
+:const:`METH_KEYWORDS` can be combined. Any of the calling convention flags
+can be combined with a binding flag.
 
 
 .. data:: METH_VARARGS
@@ -169,7 +168,7 @@ convention flags can be combined with a binding flag.
 
    Methods with these flags must be of type :c:type:`PyCFunctionWithKeywords`.
    The function expects three parameters: *self*, *args*, and a dictionary of
-   all the keyword arguments.  The flag is typically combined with
+   all the keyword arguments.  The flag must be combined with
    :const:`METH_VARARGS`, and the parameters are typically processed using
    :c:func:`PyArg_ParseTupleAndKeywords`.
 
@@ -242,7 +241,7 @@ definition with the same method name.
    +==================+=============+===============================+
    | :attr:`name`     | char \*     | name of the member            |
    +------------------+-------------+-------------------------------+
-   | :attr:`type`     | int         | the type of the member in the |
+   | :attr:`!type`    | int         | the type of the member in the |
    |                  |             | C struct                      |
    +------------------+-------------+-------------------------------+
    | :attr:`offset`   | Py_ssize_t  | the offset in bytes that the  |
@@ -257,7 +256,7 @@ definition with the same method name.
    |                  |             | docstring                     |
    +------------------+-------------+-------------------------------+
 
-   :attr:`type` can be one of many ``T_`` macros corresponding to various C
+   :attr:`!type` can be one of many ``T_`` macros corresponding to various C
    types.  When the member is accessed in Python, it will be converted to the
    equivalent Python type.
 
@@ -295,3 +294,43 @@ definition with the same method name.
    read-only access.  Using :c:macro:`T_STRING` for :attr:`type` implies
    :c:macro:`READONLY`.  Only :c:macro:`T_OBJECT` and :c:macro:`T_OBJECT_EX`
    members can be deleted.  (They are set to *NULL*).
+
+
+.. c:type:: PyGetSetDef
+
+   Structure to define property-like access for a type. See also description of
+   the :c:member:`PyTypeObject.tp_getset` slot.
+
+   +-------------+------------------+-----------------------------------+
+   | Field       | C Type           | Meaning                           |
+   +=============+==================+===================================+
+   | name        | char \*          | attribute name                    |
+   +-------------+------------------+-----------------------------------+
+   | get         | getter           | C Function to get the attribute   |
+   +-------------+------------------+-----------------------------------+
+   | set         | setter           | optional C function to set or     |
+   |             |                  | delete the attribute, if omitted  |
+   |             |                  | the attribute is readonly         |
+   +-------------+------------------+-----------------------------------+
+   | doc         | char \*          | optional docstring                |
+   +-------------+------------------+-----------------------------------+
+   | closure     | void \*          | optional function pointer,        |
+   |             |                  | providing additional data for     |
+   |             |                  | getter and setter                 |
+   +-------------+------------------+-----------------------------------+
+
+   The ``get`` function takes one :c:type:`PyObject\*` parameter (the
+   instance) and a function pointer (the associated ``closure``)::
+
+      typedef PyObject *(*getter)(PyObject *, void *);
+
+   It should return a new reference on success or *NULL* with a set exception
+   on failure.
+
+   ``set`` functions take two :c:type:`PyObject\*` parameters (the instance and
+   the value to be set) and a function pointer (the associated ``closure``)::
+
+      typedef int (*setter)(PyObject *, PyObject *, void *);
+
+   In case the attribute should be deleted the second parameter is *NULL*.
+   Should return ``0`` on success or ``-1`` with a set exception on failure.

@@ -18,6 +18,11 @@ import textwrap
 
 import unittest
 from test import support, mock_socket
+from unittest.mock import Mock
+
+HOST = "localhost"
+HOSTv4 = "127.0.0.1"
+HOSTv6 = "::1"
 
 try:
     import threading
@@ -569,6 +574,33 @@ class NonConnectingTests(unittest.TestCase):
                           "localhost:bogus")
 
 
+class DefaultArgumentsTests(unittest.TestCase):
+
+    def setUp(self):
+        self.msg = EmailMessage()
+        self.msg['From'] = 'Páolo <főo@bar.com>'
+        self.smtp = smtplib.SMTP()
+        self.smtp.ehlo = Mock(return_value=(200, 'OK'))
+        self.smtp.has_extn, self.smtp.sendmail = Mock(), Mock()
+
+    def testSendMessage(self):
+        expected_mail_options = ('SMTPUTF8', 'BODY=8BITMIME')
+        self.smtp.send_message(self.msg)
+        self.smtp.send_message(self.msg)
+        self.assertEqual(self.smtp.sendmail.call_args_list[0][0][3],
+                         expected_mail_options)
+        self.assertEqual(self.smtp.sendmail.call_args_list[1][0][3],
+                         expected_mail_options)
+
+    def testSendMessageWithMailOptions(self):
+        mail_options = ['STARTTLS']
+        expected_mail_options = ('STARTTLS', 'SMTPUTF8', 'BODY=8BITMIME')
+        self.smtp.send_message(self.msg, None, None, mail_options)
+        self.assertEqual(mail_options, ['STARTTLS'])
+        self.assertEqual(self.smtp.sendmail.call_args_list[0][0][3],
+                         expected_mail_options)
+
+
 # test response of client to a non-successful HELO message
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class BadHELOServerTests(unittest.TestCase):
@@ -604,7 +636,9 @@ class TooLongLineTests(unittest.TestCase):
         self.sock.settimeout(15)
         self.port = support.bind_port(self.sock)
         servargs = (self.evt, self.respdata, self.sock)
-        threading.Thread(target=server, args=servargs).start()
+        thread = threading.Thread(target=server, args=servargs)
+        thread.start()
+        self.addCleanup(thread.join)
         self.evt.wait()
         self.evt.clear()
 
@@ -816,6 +850,7 @@ class SimSMTPServer(smtpd.SMTPServer):
 
     def __init__(self, *args, **kw):
         self._extra_features = []
+        self._addresses = {}
         smtpd.SMTPServer.__init__(self, *args, **kw)
 
     def handle_accepted(self, conn, addr):
@@ -824,7 +859,8 @@ class SimSMTPServer(smtpd.SMTPServer):
             decode_data=self._decode_data)
 
     def process_message(self, peer, mailfrom, rcpttos, data):
-        pass
+        self._addresses['from'] = mailfrom
+        self._addresses['tos'] = rcpttos
 
     def add_feature(self, feature):
         self._extra_features.append(feature)
@@ -1064,6 +1100,34 @@ class SMTPSimTests(unittest.TestCase):
         self.assertRaises(UnicodeEncodeError, smtp.sendmail, 'Alice', 'Böb', '')
         self.assertRaises(UnicodeEncodeError, smtp.mail, 'Älice')
 
+    def test_send_message_error_on_non_ascii_addrs_if_no_smtputf8(self):
+        # This test is located here and not in the SMTPUTF8SimTests
+        # class because it needs a "regular" SMTP server to work
+        msg = EmailMessage()
+        msg['From'] = "Páolo <főo@bar.com>"
+        msg['To'] = 'Dinsdale'
+        msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost', timeout=3)
+        self.addCleanup(smtp.close)
+        with self.assertRaises(smtplib.SMTPNotSupportedError):
+            smtp.send_message(msg)
+
+    def test_name_field_not_included_in_envelop_addresses(self):
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost', timeout=3
+        )
+        self.addCleanup(smtp.close)
+
+        message = EmailMessage()
+        message['From'] = email.utils.formataddr(('Michaël', 'michael@example.com'))
+        message['To'] = email.utils.formataddr(('René', 'rene@example.com'))
+
+        self.assertDictEqual(smtp.send_message(message), {})
+
+        self.assertEqual(self.serv._addresses['from'], 'michael@example.com')
+        self.assertEqual(self.serv._addresses['tos'], ['rene@example.com'])
+
 
 class SimSMTPUTF8Server(SimSMTPServer):
 
@@ -1194,17 +1258,6 @@ class SMTPUTF8SimTests(unittest.TestCase):
         self.assertIn('SMTPUTF8', self.serv.last_mail_options)
         self.assertEqual(self.serv.last_rcpt_options, [])
 
-    def test_send_message_error_on_non_ascii_addrs_if_no_smtputf8(self):
-        msg = EmailMessage()
-        msg['From'] = "Páolo <főo@bar.com>"
-        msg['To'] = 'Dinsdale'
-        msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
-        smtp = smtplib.SMTP(
-            HOST, self.port, local_hostname='localhost', timeout=3)
-        self.addCleanup(smtp.close)
-        self.assertRaises(smtplib.SMTPNotSupportedError,
-                          smtp.send_message(msg))
-
 
 EXPECTED_RESPONSE = encode_base64(b'\0psu\0doesnotexist', eol='')
 
@@ -1273,18 +1326,5 @@ class SMTPAUTHInitialResponseSimTests(unittest.TestCase):
         self.assertEqual(code, 235)
 
 
-@support.reap_threads
-def test_main(verbose=None):
-    support.run_unittest(
-        BadHELOServerTests,
-        DebuggingServerTests,
-        GeneralTests,
-        NonConnectingTests,
-        SMTPAUTHInitialResponseSimTests,
-        SMTPSimTests,
-        TooLongLineTests,
-        )
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

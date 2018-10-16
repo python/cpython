@@ -30,7 +30,9 @@ spellings such as 'coöperate'.)
 
 For a while people just wrote programs that didn't display accents.
 In the mid-1980s an Apple II BASIC program written by a French speaker
-might have lines like these::
+might have lines like these:
+
+.. code-block:: basic
 
    PRINT "MISE A JOUR TERMINEE"
    PRINT "PARAMETRES ENREGISTRES"
@@ -43,9 +45,9 @@ hold values ranging from 0 to 255.  ASCII codes only went up to 127, so some
 machines assigned values between 128 and 255 to accented characters.  Different
 machines had different codes, however, which led to problems exchanging files.
 Eventually various commonly used sets of values for the 128--255 range emerged.
-Some were true standards, defined by the International Standards Organization,
-and some were *de facto* conventions that were invented by one company or
-another and managed to catch on.
+Some were true standards, defined by the International Organization for
+Standardization, and some were *de facto* conventions that were invented by one
+company or another and managed to catch on.
 
 255 characters aren't very many.  For example, you can't fit both the accented
 characters used in Western Europe and the Cyrillic alphabet used for Russian
@@ -463,7 +465,7 @@ The string in this example has the number 57 written in both Thai and
 Arabic numerals::
 
    import re
-   p = re.compile('\d+')
+   p = re.compile(r'\d+')
 
    s = "Over \u0e55\u0e57 57 flavours"
    m = p.search(s)

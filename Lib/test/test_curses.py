@@ -15,7 +15,7 @@ import sys
 import tempfile
 import unittest
 
-from test.support import requires, import_module, verbose
+from test.support import requires, import_module, verbose, SaveSignals
 
 # Optionally test curses module.  This currently requires that the
 # 'curses' resource be given on the regrtest command line using the -u
@@ -25,8 +25,12 @@ requires('curses')
 
 # If either of these don't exist, skip the tests.
 curses = import_module('curses')
-import_module('curses.panel')
 import_module('curses.ascii')
+import_module('curses.textpad')
+try:
+    import curses.panel
+except ImportError:
+    pass
 
 def requires_curses_func(name):
     return unittest.skipUnless(hasattr(curses, name),
@@ -62,6 +66,8 @@ class TestCurses(unittest.TestCase):
             del cls.tmp
 
     def setUp(self):
+        self.save_signals = SaveSignals()
+        self.save_signals.save()
         if verbose:
             # just to make the test output a little more readable
             print()
@@ -71,6 +77,7 @@ class TestCurses(unittest.TestCase):
     def tearDown(self):
         curses.resetty()
         curses.endwin()
+        self.save_signals.restore()
 
     def test_window_funcs(self):
         "Test the methods of windows"
@@ -80,12 +87,12 @@ class TestCurses(unittest.TestCase):
         win2 = curses.newwin(15,15, 5,5)
 
         for meth in [stdscr.addch, stdscr.addstr]:
-            for args in [('a'), ('a', curses.A_BOLD),
+            for args in [('a',), ('a', curses.A_BOLD),
                          (4,4, 'a'), (5,5, 'a', curses.A_BOLD)]:
                 with self.subTest(meth=meth.__qualname__, args=args):
                     meth(*args)
 
-        for meth in [stdscr.box, stdscr.clear, stdscr.clrtobot,
+        for meth in [stdscr.clear, stdscr.clrtobot,
                      stdscr.clrtoeol, stdscr.cursyncup, stdscr.delch,
                      stdscr.deleteln, stdscr.erase, stdscr.getbegyx,
                      stdscr.getbkgd, stdscr.getkey, stdscr.getmaxyx,
@@ -119,6 +126,13 @@ class TestCurses(unittest.TestCase):
             win.border(65, 66, 67, 68,
                        69, [], 71, 72)
 
+        win.box(65, 67)
+        win.box('!', '_')
+        win.box(b':', b'~')
+        self.assertRaises(TypeError, win.box, 65, 66, 67)
+        self.assertRaises(TypeError, win.box, 65)
+        win.box()
+
         stdscr.clearok(1)
 
         win4 = stdscr.derwin(2,2)
@@ -134,7 +148,9 @@ class TestCurses(unittest.TestCase):
 
         stdscr.idcok(1)
         stdscr.idlok(1)
-        stdscr.immedok(1)
+        if hasattr(stdscr, 'immedok'):
+            stdscr.immedok(1)
+            stdscr.immedok(0)
         stdscr.insch('c')
         stdscr.insdelln(1)
         stdscr.insnstr('abc', 3)
@@ -168,45 +184,60 @@ class TestCurses(unittest.TestCase):
         stdscr.setscrreg(10,15)
         win3 = stdscr.subwin(10,10)
         win3 = stdscr.subwin(10,10, 5,5)
-        stdscr.syncok(1)
+        if hasattr(stdscr, 'syncok') and not sys.platform.startswith("sunos"):
+            stdscr.syncok(1)
         stdscr.timeout(5)
         stdscr.touchline(5,5)
         stdscr.touchline(5,5,0)
         stdscr.vline('a', 3)
         stdscr.vline('a', 3, curses.A_STANDOUT)
-        stdscr.chgat(5, 2, 3, curses.A_BLINK)
-        stdscr.chgat(3, curses.A_BOLD)
-        stdscr.chgat(5, 8, curses.A_UNDERLINE)
-        stdscr.chgat(curses.A_BLINK)
+        if hasattr(stdscr, 'chgat'):
+            stdscr.chgat(5, 2, 3, curses.A_BLINK)
+            stdscr.chgat(3, curses.A_BOLD)
+            stdscr.chgat(5, 8, curses.A_UNDERLINE)
+            stdscr.chgat(curses.A_BLINK)
         stdscr.refresh()
 
         stdscr.vline(1,1, 'a', 3)
         stdscr.vline(1,1, 'a', 3, curses.A_STANDOUT)
 
-        if hasattr(curses, 'resize'):
-            stdscr.resize()
-        if hasattr(curses, 'enclose'):
-            stdscr.enclose()
+        if hasattr(stdscr, 'resize'):
+            stdscr.resize(25, 80)
+        if hasattr(stdscr, 'enclose'):
+            stdscr.enclose(10, 10)
 
         self.assertRaises(ValueError, stdscr.getstr, -400)
         self.assertRaises(ValueError, stdscr.getstr, 2, 3, -400)
         self.assertRaises(ValueError, stdscr.instr, -2)
         self.assertRaises(ValueError, stdscr.instr, 2, 3, -2)
 
+    def test_embedded_null_chars(self):
+        # reject embedded null bytes and characters
+        stdscr = self.stdscr
+        for arg in ['a', b'a']:
+            with self.subTest(arg=arg):
+                self.assertRaises(ValueError, stdscr.addstr, 'a\0')
+                self.assertRaises(ValueError, stdscr.addnstr, 'a\0', 1)
+                self.assertRaises(ValueError, stdscr.insstr, 'a\0')
+                self.assertRaises(ValueError, stdscr.insnstr, 'a\0', 1)
 
     def test_module_funcs(self):
         "Test module-level functions"
         for func in [curses.baudrate, curses.beep, curses.can_change_color,
                      curses.cbreak, curses.def_prog_mode, curses.doupdate,
-                     curses.filter, curses.flash, curses.flushinp,
+                     curses.flash, curses.flushinp,
                      curses.has_colors, curses.has_ic, curses.has_il,
                      curses.isendwin, curses.killchar, curses.longname,
                      curses.nocbreak, curses.noecho, curses.nonl,
                      curses.noqiflush, curses.noraw,
                      curses.reset_prog_mode, curses.termattrs,
-                     curses.termname, curses.erasechar, curses.getsyx]:
+                     curses.termname, curses.erasechar]:
             with self.subTest(func=func.__qualname__):
                 func()
+        if hasattr(curses, 'filter'):
+            curses.filter()
+        if hasattr(curses, 'getsyx'):
+            curses.getsyx()
 
         # Functions that actually need arguments
         if curses.tigetstr("cnorm"):
@@ -230,20 +261,23 @@ class TestCurses(unittest.TestCase):
         curses.putp(b'abc')
         curses.qiflush()
         curses.raw() ; curses.raw(1)
-        curses.setsyx(5,5)
+        if hasattr(curses, 'setsyx'):
+            curses.setsyx(5,5)
         curses.tigetflag('hc')
         curses.tigetnum('co')
         curses.tigetstr('cr')
         curses.tparm(b'cr')
-        curses.typeahead(sys.__stdin__.fileno())
+        if hasattr(curses, 'typeahead'):
+            curses.typeahead(sys.__stdin__.fileno())
         curses.unctrl('a')
         curses.ungetch('a')
-        curses.use_env(1)
+        if hasattr(curses, 'use_env'):
+            curses.use_env(1)
 
     # Functions only available on a few platforms
     def test_colors_funcs(self):
         if not curses.has_colors():
-            self.skip('requires colors support')
+            self.skipTest('requires colors support')
         curses.start_color()
         curses.init_pair(2, 1,1)
         curses.color_content(1)
@@ -266,12 +300,13 @@ class TestCurses(unittest.TestCase):
     def test_getmouse(self):
         (availmask, oldmask) = curses.mousemask(curses.BUTTON1_PRESSED)
         if availmask == 0:
-            self.skip('mouse stuff not available')
+            self.skipTest('mouse stuff not available')
         curses.mouseinterval(10)
         # just verify these don't cause errors
         curses.ungetmouse(0, 0, 0, 0, curses.BUTTON1_PRESSED)
         m = curses.getmouse()
 
+    @requires_curses_func('panel')
     def test_userptr_without_set(self):
         w = curses.newwin(10, 10)
         p = curses.panel.new_panel(w)
@@ -280,6 +315,7 @@ class TestCurses(unittest.TestCase):
                                msg='userptr should fail since not set'):
             p.userptr()
 
+    @requires_curses_func('panel')
     def test_userptr_memory_leak(self):
         w = curses.newwin(10, 10)
         p = curses.panel.new_panel(w)
@@ -292,16 +328,20 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(sys.getrefcount(obj), nrefs,
                          "set_userptr leaked references")
 
+    @requires_curses_func('panel')
     def test_userptr_segfault(self):
-        panel = curses.panel.new_panel(self.stdscr)
+        w = curses.newwin(10, 10)
+        panel = curses.panel.new_panel(w)
         class A:
             def __del__(self):
                 panel.set_userptr(None)
         panel.set_userptr(A())
         panel.set_userptr(None)
 
+    @requires_curses_func('panel')
     def test_new_curses_panel(self):
-        panel = curses.panel.new_panel(self.stdscr)
+        w = curses.newwin(10, 10)
+        panel = curses.panel.new_panel(w)
         self.assertRaises(TypeError, type(panel))
 
     @requires_curses_func('is_term_resized')
@@ -328,6 +368,9 @@ class TestCurses(unittest.TestCase):
         self.stdscr.getkey()
 
     @requires_curses_func('unget_wch')
+    # XXX Remove the decorator when ncurses on OpenBSD be updated
+    @unittest.skipIf(sys.platform.startswith("openbsd"),
+                     "OpenBSD's curses (v.5.7) has bugs")
     def test_unget_wch(self):
         stdscr = self.stdscr
         encoding = stdscr.encoding
@@ -392,6 +435,16 @@ class TestCurses(unittest.TestCase):
         human_readable_signature = stdscr.addch.__doc__.split("\n")[0]
         self.assertIn("[y, x,]", human_readable_signature)
 
+    def test_issue13051(self):
+        stdscr = self.stdscr
+        if not hasattr(stdscr, 'resize'):
+            raise unittest.SkipTest('requires curses.window.resize')
+        box = curses.textpad.Textbox(stdscr, insert_mode=True)
+        lines, cols = stdscr.getmaxyx()
+        stdscr.resize(lines-2, cols-2)
+        # this may cause infinite recursion, leading to a RuntimeError
+        box._insert_printable_char('a')
+
 
 class MiscTests(unittest.TestCase):
 
@@ -435,6 +488,25 @@ class TestAscii(unittest.TestCase):
             check(curses.ascii.isprint, 32 <= i <= 126)
             check(curses.ascii.ispunct, c in string.punctuation)
             check(curses.ascii.isxdigit, c in string.hexdigits)
+
+        for i in (-2, -1, 256, sys.maxunicode, sys.maxunicode+1):
+            self.assertFalse(curses.ascii.isalnum(i))
+            self.assertFalse(curses.ascii.isalpha(i))
+            self.assertFalse(curses.ascii.isdigit(i))
+            self.assertFalse(curses.ascii.islower(i))
+            self.assertFalse(curses.ascii.isspace(i))
+            self.assertFalse(curses.ascii.isupper(i))
+
+            self.assertFalse(curses.ascii.isascii(i))
+            self.assertFalse(curses.ascii.isctrl(i))
+            self.assertFalse(curses.ascii.iscntrl(i))
+            self.assertFalse(curses.ascii.isblank(i))
+            self.assertFalse(curses.ascii.isgraph(i))
+            self.assertFalse(curses.ascii.isprint(i))
+            self.assertFalse(curses.ascii.ispunct(i))
+            self.assertFalse(curses.ascii.isxdigit(i))
+
+        self.assertFalse(curses.ascii.ismeta(-1))
 
     def test_ascii(self):
         ascii = curses.ascii.ascii

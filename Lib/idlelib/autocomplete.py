@@ -1,7 +1,7 @@
-"""autocomplete.py - An IDLE extension for automatically completing names.
+"""Complete either attribute names or file names.
 
-This extension can complete either attribute names or file names. It can pop
-a window with all available names, for the user to select from.
+Either on demand or after a user-selected delay after a key character,
+pop up a list of candidates.
 """
 import os
 import string
@@ -27,18 +27,9 @@ if os.altsep:  # e.g. '/' on Windows...
 
 class AutoComplete:
 
-    menudefs = [
-        ('edit', [
-            ("Show Completions", "<<force-open-completions>>"),
-        ])
-    ]
-
-    popupwait = idleConf.GetOption("extensions", "AutoComplete",
-                                   "popupwait", type="int", default=0)
-
     def __init__(self, editwin=None):
         self.editwin = editwin
-        if editwin is not None:  # not in subprocess or test
+        if editwin is not None:   # not in subprocess or test
             self.text = editwin.text
             self.autocompletewindow = None
             # id of delayed call, and the index of the text insert when
@@ -46,6 +37,11 @@ class AutoComplete:
             # None, there is no delayed call.
             self._delayed_completion_id = None
             self._delayed_completion_index = None
+
+    @classmethod
+    def reload(cls):
+        cls.popupwait = idleConf.GetOption(
+            "extensions", "AutoComplete", "popupwait", type="int", default=0)
 
     def _make_autocomplete_window(self):
         return autocomplete_w.AutoCompleteWindow(self.text)
@@ -60,6 +56,7 @@ class AutoComplete:
         if a function call is needed.
         """
         self.open_completions(True, False, True)
+        return "break"
 
     def try_open_completions_event(self, event):
         """Happens when it would be nice to open a completion list, but not
@@ -226,6 +223,8 @@ class AutoComplete:
         namespace.update(__main__.__dict__)
         return eval(name, namespace)
 
+
+AutoComplete.reload()
 
 if __name__ == '__main__':
     from unittest import main

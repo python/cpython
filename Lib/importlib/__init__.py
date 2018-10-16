@@ -136,7 +136,7 @@ def reload(module):
 
     """
     if not module or not isinstance(module, types.ModuleType):
-        raise TypeError("reload() argument must be module")
+        raise TypeError("reload() argument must be a module")
     try:
         name = module.__spec__.name
     except AttributeError:

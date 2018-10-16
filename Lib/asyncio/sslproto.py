@@ -294,11 +294,10 @@ class _SSLPipe(object):
 class _SSLProtocolTransport(transports._FlowControlMixin,
                             transports.Transport):
 
-    def __init__(self, loop, ssl_protocol, app_protocol):
+    def __init__(self, loop, ssl_protocol):
         self._loop = loop
         # SSLProtocol instance
         self._ssl_protocol = ssl_protocol
-        self._app_protocol = app_protocol
         self._closed = False
 
     def get_extra_info(self, name, default=None):
@@ -306,10 +305,10 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         return self._ssl_protocol._get_extra_info(name, default)
 
     def set_protocol(self, protocol):
-        self._app_protocol = protocol
+        self._ssl_protocol._app_protocol = protocol
 
     def get_protocol(self):
-        return self._app_protocol
+        return self._ssl_protocol._app_protocol
 
     def is_closing(self):
         return self._closed
@@ -436,8 +435,7 @@ class SSLProtocol(protocols.Protocol):
         self._waiter = waiter
         self._loop = loop
         self._app_protocol = app_protocol
-        self._app_transport = _SSLProtocolTransport(self._loop,
-                                                    self, self._app_protocol)
+        self._app_transport = _SSLProtocolTransport(self._loop, self)
         # _SSLPipe instance (None until the connection is made)
         self._sslpipe = None
         self._session_established = False
@@ -499,6 +497,10 @@ class SSLProtocol(protocols.Protocol):
 
         The argument is a bytes object.
         """
+        if self._sslpipe is None:
+            # transport closing, sslpipe is destroyed
+            return
+
         try:
             ssldata, appdata = self._sslpipe.feed_ssldata(data)
         except ssl.SSLError as e:
@@ -543,14 +545,19 @@ class SSLProtocol(protocols.Protocol):
     def _get_extra_info(self, name, default=None):
         if name in self._extra:
             return self._extra[name]
-        else:
+        elif self._transport is not None:
             return self._transport.get_extra_info(name, default)
+        else:
+            return default
 
     def _start_shutdown(self):
         if self._in_shutdown:
             return
-        self._in_shutdown = True
-        self._write_appdata(b'')
+        if self._in_handshake:
+            self._abort()
+        else:
+            self._in_shutdown = True
+            self._write_appdata(b'')
 
     def _write_appdata(self, data):
         self._write_backlog.append((data, 0))
@@ -567,7 +574,7 @@ class SSLProtocol(protocols.Protocol):
         # (b'', 1) is a special value in _process_write_backlog() to do
         # the SSL handshake
         self._write_backlog.append((b'', 1))
-        self._loop.call_soon(self._process_write_backlog)
+        self._process_write_backlog()
 
     def _on_handshake_complete(self, handshake_exc):
         self._in_handshake = False
@@ -623,7 +630,7 @@ class SSLProtocol(protocols.Protocol):
 
     def _process_write_backlog(self):
         # Try to make progress on the write backlog.
-        if self._transport is None:
+        if self._transport is None or self._sslpipe is None:
             return
 
         try:
@@ -681,12 +688,14 @@ class SSLProtocol(protocols.Protocol):
             self._transport._force_close(exc)
 
     def _finalize(self):
+        self._sslpipe = None
+
         if self._transport is not None:
             self._transport.close()
 
     def _abort(self):
-        if self._transport is not None:
-            try:
+        try:
+            if self._transport is not None:
                 self._transport.abort()
-            finally:
-                self._finalize()
+        finally:
+            self._finalize()

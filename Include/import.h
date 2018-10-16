@@ -9,9 +9,9 @@ extern "C" {
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyImportZip_Init(void);
-#endif /* !Py_LIMITED_API */
 
 PyMODINIT_FUNC PyInit_imp(void);
+#endif /* !Py_LIMITED_API */
 PyAPI_FUNC(long) PyImport_GetMagicNumber(void);
 PyAPI_FUNC(const char *) PyImport_GetMagicTag(void);
 PyAPI_FUNC(PyObject *) PyImport_ExecCodeModule(
@@ -29,16 +29,20 @@ PyAPI_FUNC(PyObject *) PyImport_ExecCodeModuleWithPathnames(
     const char *pathname,       /* decoded from the filesystem encoding */
     const char *cpathname       /* decoded from the filesystem encoding */
     );
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(PyObject *) PyImport_ExecCodeModuleObject(
     PyObject *name,
     PyObject *co,
     PyObject *pathname,
     PyObject *cpathname
     );
+#endif
 PyAPI_FUNC(PyObject *) PyImport_GetModuleDict(void);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(PyObject *) PyImport_AddModuleObject(
     PyObject *name
     );
+#endif
 PyAPI_FUNC(PyObject *) PyImport_AddModule(
     const char *name            /* UTF-8 encoded string */
     );
@@ -55,6 +59,7 @@ PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevel(
     PyObject *fromlist,
     int level
     );
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevelObject(
     PyObject *name,
     PyObject *globals,
@@ -62,6 +67,7 @@ PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevelObject(
     PyObject *fromlist,
     int level
     );
+#endif
 
 #define PyImport_ImportModuleEx(n, g, l, f) \
     PyImport_ImportModuleLevel(n, g, l, f, 0)
@@ -70,9 +76,11 @@ PyAPI_FUNC(PyObject *) PyImport_GetImporter(PyObject *path);
 PyAPI_FUNC(PyObject *) PyImport_Import(PyObject *name);
 PyAPI_FUNC(PyObject *) PyImport_ReloadModule(PyObject *m);
 PyAPI_FUNC(void) PyImport_Cleanup(void);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(int) PyImport_ImportFrozenModuleObject(
     PyObject *name
     );
+#endif
 PyAPI_FUNC(int) PyImport_ImportFrozenModule(
     const char *name            /* UTF-8 encoded string */
     );

@@ -4,6 +4,7 @@
 #include "Python.h"
 
 #include <ctype.h>
+#include <float.h>
 
 
 #ifdef __cplusplus
@@ -1770,7 +1771,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
             }
         }
 
-        /* We are into optional args, skip thru to any remaining
+        /* We are into optional args, skip through to any remaining
          * keyword args */
         msg = skipitem(&format, p_va, flags);
         if (msg) {
@@ -2129,7 +2130,7 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
             return cleanreturn(1, &freelist);
         }
 
-        /* We are into optional args, skip thru to any remaining
+        /* We are into optional args, skip through to any remaining
          * keyword args */
         msg = skipitem(&format, p_va, flags);
         assert(msg == NULL);
@@ -2259,8 +2260,8 @@ skipitem(const char **p_format, va_list *p_va, int flags)
                 /* after 'e', only 's' and 't' is allowed */
                 goto err;
             format++;
-            /* explicit fallthrough to string cases */
         }
+        /* fall through */
 
     case 's': /* string */
     case 'z': /* string or None */
@@ -2280,7 +2281,9 @@ skipitem(const char **p_format, va_list *p_va, int flags)
                         (void) va_arg(*p_va, int *);
                 }
                 format++;
-            } else if ((c == 's' || c == 'z' || c == 'y') && *format == '*') {
+            } else if ((c == 's' || c == 'z' || c == 'y' || c == 'w')
+                       && *format == '*')
+            {
                 format++;
             }
             break;

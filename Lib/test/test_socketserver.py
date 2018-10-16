@@ -48,11 +48,11 @@ def receive(sock, n, timeout=20):
 if HAVE_UNIX_SOCKETS and HAVE_FORKING:
     class ForkingUnixStreamServer(socketserver.ForkingMixIn,
                                   socketserver.UnixStreamServer):
-        pass
+        _block_on_close = True
 
     class ForkingUnixDatagramServer(socketserver.ForkingMixIn,
                                     socketserver.UnixDatagramServer):
-        pass
+        _block_on_close = True
 
 
 @contextlib.contextmanager
@@ -62,10 +62,14 @@ def simple_subprocess(testcase):
     if pid == 0:
         # Don't raise an exception; it would be caught by the test harness.
         os._exit(72)
-    yield None
-    pid2, status = os.waitpid(pid, 0)
-    testcase.assertEqual(pid2, pid)
-    testcase.assertEqual(72 << 8, status)
+    try:
+        yield None
+    except:
+        raise
+    finally:
+        pid2, status = os.waitpid(pid, 0)
+        testcase.assertEqual(pid2, pid)
+        testcase.assertEqual(72 << 8, status)
 
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
@@ -101,6 +105,8 @@ class SocketServerTest(unittest.TestCase):
 
     def make_server(self, addr, svrcls, hdlrbase):
         class MyServer(svrcls):
+            _block_on_close = True
+
             def handle_error(self, request, client_address):
                 self.close_request(request)
                 raise
@@ -144,6 +150,10 @@ class SocketServerTest(unittest.TestCase):
         t.join()
         server.server_close()
         self.assertEqual(-1, server.socket.fileno())
+        if HAVE_FORKING and isinstance(server, socketserver.ForkingMixIn):
+            # bpo-31151: Check that ForkingMixIn.server_close() waits until
+            # all children completed
+            self.assertFalse(server.active_children)
         if verbose: print("done")
 
     def stream_examine(self, proto, addr):
@@ -292,6 +302,7 @@ class ErrorHandlerTest(unittest.TestCase):
 
     def tearDown(self):
         test.support.unlink(test.support.TESTFN)
+        reap_children()
 
     def test_sync_handled(self):
         BaseErrorTestServer(ValueError)
@@ -329,6 +340,8 @@ class ErrorHandlerTest(unittest.TestCase):
 
 
 class BaseErrorTestServer(socketserver.TCPServer):
+    _block_on_close = True
+
     def __init__(self, exception):
         self.exception = exception
         super().__init__((HOST, 0), BadHandler)
@@ -371,10 +384,7 @@ class ThreadingErrorTestServer(socketserver.ThreadingMixIn,
 
 if HAVE_FORKING:
     class ForkingErrorTestServer(socketserver.ForkingMixIn, BaseErrorTestServer):
-        def wait_done(self):
-            [child] = self.active_children
-            os.waitpid(child, 0)
-            self.active_children.clear()
+        _block_on_close = True
 
 
 class SocketWriterTest(unittest.TestCase):

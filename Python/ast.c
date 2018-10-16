@@ -8,6 +8,7 @@
 #include "node.h"
 #include "ast.h"
 #include "token.h"
+#include "pythonrun.h"
 
 #include <assert.h>
 
@@ -588,7 +589,6 @@ struct compiling {
     PyArena *c_arena; /* Arena for allocating memory. */
     PyObject *c_filename; /* filename */
     PyObject *c_normalize; /* Normalization function from unicodedata. */
-    PyObject *c_normalize_args; /* Normalization argument tuple. */
 };
 
 static asdl_seq *seq_for_testlist(struct compiling *, const node *);
@@ -623,12 +623,6 @@ init_normalization(struct compiling *c)
     Py_DECREF(m);
     if (!c->c_normalize)
         return 0;
-    c->c_normalize_args = Py_BuildValue("(sN)", "NFKC", Py_None);
-    if (!c->c_normalize_args) {
-        Py_CLEAR(c->c_normalize);
-        return 0;
-    }
-    PyTuple_SET_ITEM(c->c_normalize_args, 1, NULL);
     return 1;
 }
 
@@ -644,15 +638,29 @@ new_identifier(const char *n, struct compiling *c)
        identifier; if so, normalize to NFKC. */
     if (!PyUnicode_IS_ASCII(id)) {
         PyObject *id2;
+        _Py_IDENTIFIER(NFKC);
         if (!c->c_normalize && !init_normalization(c)) {
             Py_DECREF(id);
             return NULL;
         }
-        PyTuple_SET_ITEM(c->c_normalize_args, 1, id);
-        id2 = PyObject_Call(c->c_normalize, c->c_normalize_args, NULL);
+        PyObject *form = _PyUnicode_FromId(&PyId_NFKC);
+        if (form == NULL) {
+            Py_DECREF(id);
+            return NULL;
+        }
+        PyObject *args[2] = {form, id};
+        id2 = _PyObject_FastCall(c->c_normalize, args, 2);
         Py_DECREF(id);
         if (!id2)
             return NULL;
+        if (!PyUnicode_Check(id2)) {
+            PyErr_Format(PyExc_TypeError,
+                         "unicodedata.normalize() must return a string, not "
+                         "%.200s",
+                         Py_TYPE(id2)->tp_name);
+            Py_DECREF(id2);
+            return NULL;
+        }
         id = id2;
     }
     PyUnicode_InternInPlace(&id);
@@ -772,7 +780,6 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
     /* borrowed reference */
     c.c_filename = filename;
     c.c_normalize = NULL;
-    c.c_normalize_args = NULL;
 
     if (TYPE(n) == encoding_decl)
         n = CHILD(n, 0);
@@ -865,8 +872,6 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
  out:
     if (c.c_normalize) {
         Py_DECREF(c.c_normalize);
-        PyTuple_SET_ITEM(c.c_normalize_args, 1, NULL);
-        Py_DECREF(c.c_normalize_args);
     }
     return res;
 }
@@ -1174,6 +1179,7 @@ ast_for_comp_op(struct compiling *c, const node *n)
                     return In;
                 if (strcmp(STR(n), "is") == 0)
                     return Is;
+                /* fall through */
             default:
                 PyErr_Format(PyExc_SystemError, "invalid comp_op: %s",
                              STR(n));
@@ -1188,6 +1194,7 @@ ast_for_comp_op(struct compiling *c, const node *n)
                     return NotIn;
                 if (strcmp(STR(CHILD(n, 0)), "is") == 0)
                     return IsNot;
+                /* fall through */
             default:
                 PyErr_Format(PyExc_SystemError, "invalid comp_op: %s %s",
                              STR(CHILD(n, 0)), STR(CHILD(n, 1)));
@@ -3148,6 +3155,7 @@ ast_for_flow_stmt(struct compiling *c, const node *n)
                 }
                 return Raise(expression, cause, LINENO(n), n->n_col_offset, c->c_arena);
             }
+            /* fall through */
         default:
             PyErr_Format(PyExc_SystemError,
                          "unexpected flow_stmt: %d", TYPE(ch));
@@ -3259,6 +3267,8 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
             break;
         case STAR:
             str = PyUnicode_InternFromString("*");
+            if (!str)
+                return NULL;
             if (PyArena_AddPyObject(c->c_arena, str) < 0) {
                 Py_DECREF(str);
                 return NULL;
@@ -4119,7 +4129,7 @@ decode_utf8(struct compiling *c, const char **sPtr, const char *end)
 
 static int
 warn_invalid_escape_sequence(struct compiling *c, const node *n,
-                             char first_invalid_escape_char)
+                             unsigned char first_invalid_escape_char)
 {
     PyObject *msg = PyUnicode_FromFormat("invalid escape sequence \\%c",
                                          first_invalid_escape_char);
@@ -4128,18 +4138,19 @@ warn_invalid_escape_sequence(struct compiling *c, const node *n,
     }
     if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg,
                                    c->c_filename, LINENO(n),
-                                   NULL, NULL) < 0 &&
-        PyErr_ExceptionMatches(PyExc_DeprecationWarning))
+                                   NULL, NULL) < 0)
     {
-        const char *s;
+        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+            const char *s;
 
-        /* Replace the DeprecationWarning exception with a SyntaxError
-           to get a more accurate error report */
-        PyErr_Clear();
+            /* Replace the DeprecationWarning exception with a SyntaxError
+               to get a more accurate error report */
+            PyErr_Clear();
 
-        s = PyUnicode_AsUTF8(msg);
-        if (s != NULL) {
-            ast_error(c, n, s);
+            s = PyUnicode_AsUTF8(msg);
+            if (s != NULL) {
+                ast_error(c, n, s);
+            }
         }
         Py_DECREF(msg);
         return -1;
@@ -4170,9 +4181,11 @@ decode_unicode_with_escapes(struct compiling *c, const node *n, const char *s,
     while (s < end) {
         if (*s == '\\') {
             *p++ = *s++;
-            if (*s & 0x80) {
+            if (s >= end || *s & 0x80) {
                 strcpy(p, "u005c");
                 p += 5;
+                if (s >= end)
+                    break;
             }
         }
         if (*s & 0x80) { /* XXX inefficient */
@@ -4238,6 +4251,55 @@ decode_bytes_with_escapes(struct compiling *c, const node *n, const char *s,
     return result;
 }
 
+/* Shift locations for the given node and all its children by adding `lineno`
+   and `col_offset` to existing locations. */
+static void fstring_shift_node_locations(node *n, int lineno, int col_offset)
+{
+    n->n_col_offset = n->n_col_offset + col_offset;
+    for (int i = 0; i < NCH(n); ++i) {
+        if (n->n_lineno && n->n_lineno < CHILD(n, i)->n_lineno) {
+            /* Shifting column offsets unnecessary if there's been newlines. */
+            col_offset = 0;
+        }
+        fstring_shift_node_locations(CHILD(n, i), lineno, col_offset);
+    }
+    n->n_lineno = n->n_lineno + lineno;
+}
+
+/* Fix locations for the given node and its children.
+
+   `parent` is the enclosing node.
+   `n` is the node which locations are going to be fixed relative to parent.
+   `expr_str` is the child node's string representation, incuding braces.
+*/
+static void
+fstring_fix_node_location(const node *parent, node *n, char *expr_str)
+{
+    char *substr = NULL;
+    char *start;
+    int lines = LINENO(parent) - 1;
+    int cols = parent->n_col_offset;
+    /* Find the full fstring to fix location information in `n`. */
+    while (parent && parent->n_type != STRING)
+        parent = parent->n_child;
+    if (parent && parent->n_str) {
+        substr = strstr(parent->n_str, expr_str);
+        if (substr) {
+            start = substr;
+            while (start > parent->n_str) {
+                if (start[0] == '\n')
+                    break;
+                start--;
+            }
+            cols += substr - start;
+            /* Fix lineno in mulitline strings. */
+            while ((substr = strchr(substr + 1, '\n')))
+                lines--;
+        }
+    }
+    fstring_shift_node_locations(n, lines, cols);
+}
+
 /* Compile this expression in to an expr_ty.  Add parens around the
    expression, in order to allow leading spaces in the expression. */
 static expr_ty
@@ -4245,49 +4307,34 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
                      struct compiling *c, const node *n)
 
 {
-    int all_whitespace = 1;
-    int kind;
-    void *data;
     PyCompilerFlags cf;
+    node *mod_n;
     mod_ty mod;
     char *str;
-    PyObject *o;
     Py_ssize_t len;
-    Py_ssize_t i;
+    const char *s;
 
     assert(expr_end >= expr_start);
     assert(*(expr_start-1) == '{');
     assert(*expr_end == '}' || *expr_end == '!' || *expr_end == ':');
 
-    /* We know there are no escapes here, because backslashes are not allowed,
-       and we know it's utf-8 encoded (per PEP 263).  But, in order to check
-       that each char is not whitespace, we need to decode it to unicode.
-       Which is unfortunate, but such is life. */
-
-    /* If the substring is all whitespace, it's an error.  We need to catch
-       this here, and not when we call PyParser_ASTFromString, because turning
-       the expression '' in to '()' would go from being invalid to valid. */
-    /* Note that this code says an empty string is all whitespace.  That's
-       important.  There's a test for it: f'{}'. */
-    o = PyUnicode_DecodeUTF8(expr_start, expr_end-expr_start, NULL);
-    if (o == NULL)
-        return NULL;
-    len = PyUnicode_GET_LENGTH(o);
-    kind = PyUnicode_KIND(o);
-    data = PyUnicode_DATA(o);
-    for (i = 0; i < len; i++) {
-        if (!Py_UNICODE_ISSPACE(PyUnicode_READ(kind, data, i))) {
-            all_whitespace = 0;
+    /* If the substring is all whitespace, it's an error.  We need to catch this
+       here, and not when we call PyParser_SimpleParseStringFlagsFilename,
+       because turning the expression '' in to '()' would go from being invalid
+       to valid. */
+    for (s = expr_start; s != expr_end; s++) {
+        char c = *s;
+        /* The Python parser ignores only the following whitespace
+           characters (\r already is converted to \n). */
+        if (!(c == ' ' || c == '\t' || c == '\n' || c == '\f')) {
             break;
         }
     }
-    Py_DECREF(o);
-    if (all_whitespace) {
+    if (s == expr_end) {
         ast_error(c, n, "f-string: empty expression not allowed");
         return NULL;
     }
 
-    /* Reuse len to be the length of the utf-8 input string. */
     len = expr_end - expr_start;
     /* Allocate 3 extra bytes: open paren, close paren, null byte. */
     str = PyMem_RawMalloc(len + 3);
@@ -4300,9 +4347,19 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
     str[len+2] = 0;
 
     cf.cf_flags = PyCF_ONLY_AST;
-    mod = PyParser_ASTFromString(str, "<fstring>",
-                                 Py_eval_input, &cf, c->c_arena);
+    mod_n = PyParser_SimpleParseStringFlagsFilename(str, "<fstring>",
+                                                    Py_eval_input, 0);
+    if (!mod_n) {
+        PyMem_RawFree(str);
+        return NULL;
+    }
+    /* Reuse str to find the correct column offset. */
+    str[0] = '{';
+    str[len+1] = '}';
+    fstring_fix_node_location(n, mod_n, str);
+    mod = PyAST_FromNode(mod_n, &cf, "<fstring>", c->c_arena);
     PyMem_RawFree(str);
+    PyNode_Free(mod_n);
     if (!mod)
         return NULL;
     return mod->v.Expression.body;
@@ -4325,30 +4382,37 @@ fstring_find_literal(const char **str, const char *end, int raw,
        brace (which isn't part of a unicode name escape such as
        "\N{EULER CONSTANT}"), or the end of the string. */
 
-    const char *literal_start = *str;
-    const char *literal_end;
-    int in_named_escape = 0;
+    const char *s = *str;
+    const char *literal_start = s;
     int result = 0;
 
     assert(*literal == NULL);
-    for (; *str < end; (*str)++) {
-        char ch = **str;
-        if (!in_named_escape && ch == '{' && (*str)-literal_start >= 2 &&
-            *(*str-2) == '\\' && *(*str-1) == 'N') {
-            in_named_escape = 1;
-        } else if (in_named_escape && ch == '}') {
-            in_named_escape = 0;
-        } else if (ch == '{' || ch == '}') {
+    while (s < end) {
+        char ch = *s++;
+        if (!raw && ch == '\\' && s < end) {
+            ch = *s++;
+            if (ch == 'N') {
+                if (s < end && *s++ == '{') {
+                    while (s < end && *s++ != '}') {
+                    }
+                    continue;
+                }
+                break;
+            }
+            if (ch == '{' && warn_invalid_escape_sequence(c, n, ch) < 0) {
+                return -1;
+            }
+        }
+        if (ch == '{' || ch == '}') {
             /* Check for doubled braces, but only at the top level. If
                we checked at every level, then f'{0:{3}}' would fail
                with the two closing braces. */
             if (recurse_lvl == 0) {
-                if (*str+1 < end && *(*str+1) == ch) {
+                if (s < end && *s == ch) {
                     /* We're going to tell the caller that the literal ends
                        here, but that they should continue scanning. But also
                        skip over the second brace when we resume scanning. */
-                    literal_end = *str+1;
-                    *str += 2;
+                    *str = s + 1;
                     result = 1;
                     goto done;
                 }
@@ -4356,6 +4420,7 @@ fstring_find_literal(const char **str, const char *end, int raw,
                 /* Where a single '{' is the start of a new expression, a
                    single '}' is not allowed. */
                 if (ch == '}') {
+                    *str = s - 1;
                     ast_error(c, n, "f-string: single '}' is not allowed");
                     return -1;
                 }
@@ -4363,21 +4428,22 @@ fstring_find_literal(const char **str, const char *end, int raw,
             /* We're either at a '{', which means we're starting another
                expression; or a '}', which means we're at the end of this
                f-string (for a nested format_spec). */
+            s--;
             break;
         }
     }
-    literal_end = *str;
-    assert(*str <= end);
-    assert(*str == end || **str == '{' || **str == '}');
+    *str = s;
+    assert(s <= end);
+    assert(s == end || *s == '{' || *s == '}');
 done:
-    if (literal_start != literal_end) {
+    if (literal_start != s) {
         if (raw)
             *literal = PyUnicode_DecodeUTF8Stateful(literal_start,
-                                                    literal_end-literal_start,
+                                                    s - literal_start,
                                                     NULL, NULL);
         else
             *literal = decode_unicode_with_escapes(c, n, literal_start,
-                                                   literal_end-literal_start);
+                                                   s - literal_start);
         if (!*literal)
             return -1;
     }
@@ -4789,6 +4855,7 @@ ExprList_Finish(ExprList *l, PyArena *arena)
 typedef struct {
     PyObject *last_str;
     ExprList expr_list;
+    int fmode;
 } FstringParser;
 
 #ifdef NDEBUG
@@ -4807,6 +4874,7 @@ static void
 FstringParser_Init(FstringParser *state)
 {
     state->last_str = NULL;
+    state->fmode = 0;
     ExprList_Init(&state->expr_list);
     FstringParser_check_invariants(state);
 }
@@ -4869,6 +4937,7 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
                             struct compiling *c, const node *n)
 {
     FstringParser_check_invariants(state);
+    state->fmode = 1;
 
     /* Parse the f-string. */
     while (1) {
@@ -4890,6 +4959,8 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
             /* Do nothing. Just leave last_str alone (and possibly
                NULL). */
         } else if (!state->last_str) {
+            /*  Note that the literal can be zero length, if the
+                input string is "\\\n" or "\\\r", among others. */
             state->last_str = literal;
             literal = NULL;
         } else {
@@ -4899,8 +4970,6 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
                 return -1;
             literal = NULL;
         }
-        assert(!state->last_str ||
-               PyUnicode_GET_LENGTH(state->last_str) != 0);
 
         /* We've dealt with the literal now. It can't be leaked on further
            errors. */
@@ -4960,7 +5029,8 @@ FstringParser_Finish(FstringParser *state, struct compiling *c,
 
     /* If we're just a constant string with no expressions, return
        that. */
-    if(state->expr_list.size == 0) {
+    if (!state->fmode) {
+        assert(!state->expr_list.size);
         if (!state->last_str) {
             /* Create a zero length string. */
             state->last_str = PyUnicode_FromStringAndSize(NULL, 0);
@@ -4983,11 +5053,6 @@ FstringParser_Finish(FstringParser *state, struct compiling *c,
     seq = ExprList_Finish(&state->expr_list, c->c_arena);
     if (!seq)
         goto error;
-
-    /* If there's only one expression, return it. Otherwise, we need
-       to join them together. */
-    if (seq->size == 1)
-        return seq->elements[0];
 
     return JoinedStr(seq, LINENO(n), n->n_col_offset, c->c_arena);
 

@@ -139,7 +139,7 @@ message body, instead setting the payload to the raw body.
 .. class:: BytesParser(_class=None, *, policy=policy.compat32)
 
    Create a :class:`BytesParser` instance.  The *_class* and *policy*
-   arguments have the same meaning and sematnics as the *_factory*
+   arguments have the same meaning and semantics as the *_factory*
    and *policy* arguments of :class:`BytesFeedParser`.
 
    Note: **The policy keyword should always be specified**; The default will
@@ -246,7 +246,7 @@ in the top-level :mod:`email` package namespace.
       Removed the *strict* argument.  Added the *policy* keyword.
 
 
-.. function:: message_from_binary_file(fp, _class=None, *,
+.. function:: message_from_binary_file(fp, _class=None, *, \
                                        policy=policy.compat32)
 
    Return a message object structure tree from an open binary :term:`file

@@ -57,7 +57,7 @@ if threading is not None:
         def setUp(self):
             try:
                 self.old_switchinterval = sys.getswitchinterval()
-                sys.setswitchinterval(0.000001)
+                support.setswitchinterval(0.000001)
             except AttributeError:
                 self.old_switchinterval = None
 

@@ -683,7 +683,7 @@ PyInit__io(void)
     /* UnsupportedOperation inherits from ValueError and IOError */
     state->unsupported_operation = PyObject_CallFunction(
         (PyObject *)&PyType_Type, "s(OO){}",
-        "UnsupportedOperation", PyExc_ValueError, PyExc_IOError);
+        "UnsupportedOperation", PyExc_OSError, PyExc_ValueError);
     if (state->unsupported_operation == NULL)
         goto fail;
     Py_INCREF(state->unsupported_operation);

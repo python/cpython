@@ -221,7 +221,8 @@ class ThreadedImportTests(unittest.TestCase):
                 import random
             t = threading.Thread(target=target)
             t.start()
-            t.join()"""
+            t.join()
+            t = None"""
         sys.path.insert(0, os.curdir)
         self.addCleanup(sys.path.remove, os.curdir)
         filename = TESTFN + ".py"
@@ -232,6 +233,7 @@ class ThreadedImportTests(unittest.TestCase):
         self.addCleanup(rmtree, '__pycache__')
         importlib.invalidate_caches()
         __import__(TESTFN)
+        del sys.modules[TESTFN]
 
 
 @reap_threads

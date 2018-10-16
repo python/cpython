@@ -3,6 +3,10 @@
 Tasks and coroutines
 ====================
 
+**Source code:** :source:`Lib/asyncio/tasks.py`
+
+**Source code:** :source:`Lib/asyncio/coroutines.py`
+
 .. _coroutine:
 
 Coroutines
@@ -136,17 +140,6 @@ using the :meth:`sleep` function::
     loop.run_until_complete(display_date(loop))
     loop.close()
 
-The same coroutine implemented using a generator::
-
-    @asyncio.coroutine
-    def display_date(loop):
-        end_time = loop.time() + 5.0
-        while True:
-            print(datetime.datetime.now())
-            if (loop.time() + 1.0) >= end_time:
-                break
-            yield from asyncio.sleep(1)
-
 .. seealso::
 
    The :ref:`display the current date with call_later()
@@ -223,7 +216,7 @@ Future
      raise an exception when the future isn't done yet.
 
    - Callbacks registered with :meth:`add_done_callback` are always called
-     via the event loop's :meth:`~AbstractEventLoop.call_soon_threadsafe`.
+     via the event loop's :meth:`~AbstractEventLoop.call_soon`.
 
    - This class is not compatible with the :func:`~concurrent.futures.wait` and
      :func:`~concurrent.futures.as_completed` functions in the
@@ -309,9 +302,8 @@ Example combining a :class:`Future` and a :ref:`coroutine function
 
     import asyncio
 
-    @asyncio.coroutine
-    def slow_operation(future):
-        yield from asyncio.sleep(1)
+    async def slow_operation(future):
+        await asyncio.sleep(1)
         future.set_result('Future is done!')
 
     loop = asyncio.get_event_loop()
@@ -341,9 +333,8 @@ flow::
 
     import asyncio
 
-    @asyncio.coroutine
-    def slow_operation(future):
-        yield from asyncio.sleep(1)
+    async def slow_operation(future):
+        await asyncio.sleep(1)
         future.set_result('Future is done!')
 
     def got_result(future):
@@ -472,21 +463,20 @@ Example executing 3 tasks (A, B, C) in parallel::
 
     import asyncio
 
-    @asyncio.coroutine
-    def factorial(name, number):
+    async def factorial(name, number):
         f = 1
         for i in range(2, number+1):
             print("Task %s: Compute factorial(%s)..." % (name, i))
-            yield from asyncio.sleep(1)
+            await asyncio.sleep(1)
             f *= i
         print("Task %s: factorial(%s) = %s" % (name, number, f))
 
     loop = asyncio.get_event_loop()
-    tasks = [
-        asyncio.ensure_future(factorial("A", 2)),
-        asyncio.ensure_future(factorial("B", 3)),
-        asyncio.ensure_future(factorial("C", 4))]
-    loop.run_until_complete(asyncio.gather(*tasks))
+    loop.run_until_complete(asyncio.gather(
+        factorial("A", 2),
+        factorial("B", 3),
+        factorial("C", 4),
+    ))
     loop.close()
 
 Output::
@@ -554,6 +544,11 @@ Task functions
 
    .. deprecated:: 3.4.4
 
+.. function:: wrap_future(future, \*, loop=None)
+
+   Wrap a :class:`concurrent.futures.Future` object in a :class:`Future`
+   object.
+
 .. function:: gather(\*coros_or_futures, loop=None, return_exceptions=False)
 
    Return a future aggregating results from the given coroutine objects or
@@ -572,6 +567,10 @@ Task functions
    treated as if it raised :exc:`~concurrent.futures.CancelledError` -- the
    outer Future is *not* cancelled in this case.  (This is to prevent the
    cancellation of one child to cause other children to be cancelled.)
+
+   .. versionchanged:: 3.6.6
+      If the *gather* itself is cancelled, the cancellation is propagated
+      regardless of *return_exceptions*.
 
 .. function:: iscoroutine(obj)
 
@@ -635,7 +634,7 @@ Task functions
 
    This function is a :ref:`coroutine <coroutine>`.
 
-.. function:: shield(arg, \*, loop=None)
+.. coroutinefunction:: shield(arg, \*, loop=None)
 
    Wait for a future, shielding it from cancellation.
 

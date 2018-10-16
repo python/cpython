@@ -7,6 +7,7 @@ __author__ = 'Brian Quinlan (brian@sweetapp.com)'
 
 import atexit
 from concurrent.futures import _base
+import itertools
 import queue
 import threading
 import weakref
@@ -53,8 +54,10 @@ class _WorkItem(object):
 
         try:
             result = self.fn(*self.args, **self.kwargs)
-        except BaseException as e:
-            self.future.set_exception(e)
+        except BaseException as exc:
+            self.future.set_exception(exc)
+            # Break a reference cycle with the exception 'exc'
+            self = None
         else:
             self.future.set_result(result)
 
@@ -81,6 +84,10 @@ def _worker(executor_reference, work_queue):
         _base.LOGGER.critical('Exception in worker', exc_info=True)
 
 class ThreadPoolExecutor(_base.Executor):
+
+    # Used to assign unique thread names when thread_name_prefix is not supplied.
+    _counter = itertools.count().__next__
+
     def __init__(self, max_workers=None, thread_name_prefix=''):
         """Initializes a new ThreadPoolExecutor instance.
 
@@ -101,7 +108,8 @@ class ThreadPoolExecutor(_base.Executor):
         self._threads = set()
         self._shutdown = False
         self._shutdown_lock = threading.Lock()
-        self._thread_name_prefix = thread_name_prefix
+        self._thread_name_prefix = (thread_name_prefix or
+                                    ("ThreadPoolExecutor-%d" % self._counter()))
 
     def submit(self, fn, *args, **kwargs):
         with self._shutdown_lock:

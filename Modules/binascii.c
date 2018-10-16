@@ -900,12 +900,12 @@ binascii.crc_hqx -> unsigned_int
     crc: unsigned_int(bitwise=True)
     /
 
-Compute hqx CRC incrementally.
+Compute CRC-CCITT incrementally.
 [clinic start generated code]*/
 
 static unsigned int
 binascii_crc_hqx_impl(PyObject *module, Py_buffer *data, unsigned int crc)
-/*[clinic end generated code: output=8ec2a78590d19170 input=add8c53712ccceda]*/
+/*[clinic end generated code: output=8ec2a78590d19170 input=f18240ff8c705b79]*/
 {
     const unsigned char *bin_data;
     Py_ssize_t len;

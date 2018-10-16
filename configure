@@ -668,6 +668,7 @@ OTHER_LIBTOOL_OPT
 UNIVERSAL_ARCH_FLAGS
 CFLAGS_NODIST
 BASECFLAGS
+CFLAGS_ALIASING
 OPT
 LLVM_PROF_FOUND
 target_os
@@ -749,9 +750,8 @@ UNIVERSALSDK
 CONFIG_ARGS
 SOVERSION
 VERSION
-GENERATED_COMMENT
 PYTHON_FOR_BUILD
-PYTHON_FOR_GEN
+PYTHON_FOR_REGEN
 host_os
 host_vendor
 host_cpu
@@ -760,10 +760,10 @@ build_os
 build_vendor
 build_cpu
 build
-HAS_HG
-HGBRANCH
-HGTAG
-HGVERSION
+HAS_GIT
+GITBRANCH
+GITTAG
+GITVERSION
 BASECPPFLAGS
 target_alias
 host_alias
@@ -784,6 +784,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -817,6 +818,7 @@ with_suffix
 enable_shared
 enable_profiling
 with_pydebug
+with_assertions
 enable_optimizations
 with_lto
 with_hash_algorithm
@@ -894,6 +896,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1146,6 +1149,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1283,7 +1295,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1436,6 +1448,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1476,8 +1489,8 @@ Optional Features:
                           Build (MacOSX|Darwin) framework
   --enable-shared         disable/enable building shared python library
   --enable-profiling      enable C-level code profiling
-  --enable-optimizations  Enable expensive optimizations (PGO, etc). Disabled
-                          by default.
+  --enable-optimizations  Enable expensive, stable optimizations (PGO, etc).
+                          Disabled by default.
   --enable-loadable-sqlite-extensions
                           support loadable extensions in _sqlite module
   --enable-ipv6           Enable ipv6 (with ipv4) support
@@ -1490,7 +1503,8 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-universal-archs=ARCH
                           select architectures for universal build ("32-bit",
-                          "64-bit", "3-way", "intel", "intel-32", or "all")
+                          "64-bit", "3-way", "intel", "intel-32", "intel-64",
+                          or "all")
   --with-framework-name=FRAMEWORK
                           specify an alternate name of the framework built
                           with --enable-framework
@@ -1501,6 +1515,7 @@ Optional Packages:
                           compiler
   --with-suffix=.exe      set executable suffix
   --with-pydebug          build with Py_DEBUG defined
+  --with-assertions       build with C assertions enabled
   --with-lto              Enable Link Time Optimization in PGO builds.
                           Disabled by default.
   --with-hash-algorithm=[fnv|siphash24]
@@ -2698,17 +2713,17 @@ fi
 
 
 
-if test -e $srcdir/.hg/dirstate
+if test -e $srcdir/.git
 then
-# Extract the first word of "hg", so it can be a program name with args.
-set dummy hg; ac_word=$2
+# Extract the first word of "git", so it can be a program name with args.
+set dummy git; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_HAS_HG+:} false; then :
+if ${ac_cv_prog_HAS_GIT+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test -n "$HAS_HG"; then
-  ac_cv_prog_HAS_HG="$HAS_HG" # Let the user override the test.
+  if test -n "$HAS_GIT"; then
+  ac_cv_prog_HAS_GIT="$HAS_GIT" # Let the user override the test.
 else
 as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
 for as_dir in $PATH
@@ -2717,7 +2732,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_HAS_HG="found"
+    ac_cv_prog_HAS_GIT="found"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -2725,13 +2740,13 @@ done
   done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_prog_HAS_HG" && ac_cv_prog_HAS_HG="not-found"
+  test -z "$ac_cv_prog_HAS_GIT" && ac_cv_prog_HAS_GIT="not-found"
 fi
 fi
-HAS_HG=$ac_cv_prog_HAS_HG
-if test -n "$HAS_HG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAS_HG" >&5
-$as_echo "$HAS_HG" >&6; }
+HAS_GIT=$ac_cv_prog_HAS_GIT
+if test -n "$HAS_GIT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAS_GIT" >&5
+$as_echo "$HAS_GIT" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -2739,17 +2754,17 @@ fi
 
 
 else
-HAS_HG=no-repository
+HAS_GIT=no-repository
 fi
-if test $HAS_HG = found
+if test $HAS_GIT = found
 then
-    HGVERSION="hg id -i \$(srcdir)"
-    HGTAG="hg id -t \$(srcdir)"
-    HGBRANCH="hg id -b \$(srcdir)"
+    GITVERSION="git --git-dir \$(srcdir)/.git rev-parse --short HEAD"
+    GITTAG="git --git-dir \$(srcdir)/.git describe --all --always --dirty"
+    GITBRANCH="git --git-dir \$(srcdir)/.git name-rev --name-only HEAD"
 else
-    HGVERSION=""
-    HGTAG=""
-    HGBRANCH=""
+    GITVERSION=""
+    GITTAG=""
+    GITBRANCH=""
 fi
 
 
@@ -2868,11 +2883,11 @@ do
 set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_PYTHON_FOR_GEN+:} false; then :
+if ${ac_cv_prog_PYTHON_FOR_REGEN+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test -n "$PYTHON_FOR_GEN"; then
-  ac_cv_prog_PYTHON_FOR_GEN="$PYTHON_FOR_GEN" # Let the user override the test.
+  if test -n "$PYTHON_FOR_REGEN"; then
+  ac_cv_prog_PYTHON_FOR_REGEN="$PYTHON_FOR_REGEN" # Let the user override the test.
 else
 as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
 for as_dir in $PATH
@@ -2881,7 +2896,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_PYTHON_FOR_GEN="$ac_prog"
+    ac_cv_prog_PYTHON_FOR_REGEN="$ac_prog"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -2891,25 +2906,20 @@ IFS=$as_save_IFS
 
 fi
 fi
-PYTHON_FOR_GEN=$ac_cv_prog_PYTHON_FOR_GEN
-if test -n "$PYTHON_FOR_GEN"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PYTHON_FOR_GEN" >&5
-$as_echo "$PYTHON_FOR_GEN" >&6; }
+PYTHON_FOR_REGEN=$ac_cv_prog_PYTHON_FOR_REGEN
+if test -n "$PYTHON_FOR_REGEN"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PYTHON_FOR_REGEN" >&5
+$as_echo "$PYTHON_FOR_REGEN" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
-  test -n "$PYTHON_FOR_GEN" && break
+  test -n "$PYTHON_FOR_REGEN" && break
 done
-test -n "$PYTHON_FOR_GEN" || PYTHON_FOR_GEN="not-found"
+test -n "$PYTHON_FOR_REGEN" || PYTHON_FOR_REGEN="python3"
 
-if test "$PYTHON_FOR_GEN" = not-found; then
-    PYTHON_FOR_GEN='@echo "Cannot generate $@, python not found !" && \
-    echo "To skip re-generation of $@ run <make touch> or <make -t $@>." && \
-    echo "Otherwise, set python in PATH and run configure or run <make PYTHON_FOR_GEN=python>." && false &&'
-fi
 
 
 if test "$cross_compiling" = yes; then
@@ -2930,15 +2940,11 @@ $as_echo_n "checking for python interpreter for cross build... " >&6; }
 $as_echo "$interp" >&6; }
 	PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$interp
     fi
-    # Used to comment out stuff for rebuilding generated files
-    GENERATED_COMMENT='#'
 elif test "$cross_compiling" = maybe; then
     as_fn_error $? "Cross compiling required --host=HOST-TUPLE and --build=ARCH" "$LINENO" 5
 else
     PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
-    GENERATED_COMMENT=''
 fi
-
 
 
 
@@ -3009,7 +3015,7 @@ if test "${enable_universalsdk+set}" = set; then :
   enableval=$enable_universalsdk;
 	case $enableval in
 	yes)
-		# Locate the best usable SDK, see Mac/README.txt for more
+		# Locate the best usable SDK, see Mac/README for more
 		# information
 		enableval="`/usr/bin/xcodebuild -version -sdk macosx Path 2>/dev/null`"
 		if ! ( echo $enableval | grep -E '\.sdk' 1>/dev/null )
@@ -3247,6 +3253,9 @@ then
        # a lot of different things including 'define_xopen_source'
        # in the case statement below.
 	case "$host" in
+	*-*-linux-android*)
+		ac_sys_system=Linux-android
+		;;
 	*-*-linux*)
 		ac_sys_system=Linux
 		;;
@@ -3530,7 +3539,7 @@ fi
 if test "$ac_sys_system" = "Darwin"
 then
 	# Compiler selection on MacOSX is more complicated than
-	# AC_PROG_CC can handle, see Mac/README.txt for more
+	# AC_PROG_CC can handle, see Mac/README for more
 	# information
 	if test -z "${CC}"
 	then
@@ -3540,14 +3549,14 @@ then
 		for as_dir in $PATH
 		do
 			IFS=$as_save_IFS
-			if test -x $as_dir/gcc; then
+			if test -x "${as_dir}/gcc"; then
 				if test -z "${found_gcc}"; then
-					found_gcc=$as_dir/gcc
+					found_gcc="${as_dir}/gcc"
 				fi
 			fi
-			if test -x $as_dir/clang; then
+			if test -x "${as_dir}/clang"; then
 				if test -z "${found_clang}"; then
-					found_clang=$as_dir/clang
+					found_clang="${as_dir}/clang"
 				fi
 			fi
 		done
@@ -5218,29 +5227,7 @@ cat >> conftest.c <<EOF
 #undef sparc
 #undef unix
 #if defined(__ANDROID__)
-# if defined(__x86_64__) && defined(__LP64__)
-        x86_64-linux-android
-# elif defined(__i386__)
-        i686-linux-android
-# elif defined(__aarch64__) && defined(__AARCH64EL__)
-#  if defined(__ILP32__)
-        aarch64_ilp32-linux-android
-#  else
-        aarch64-linux-android
-#  endif
-# elif defined(__ARM_EABI__) && defined(__ARMEL__)
-        arm-linux-androideabi
-# elif defined(__mips_hard_float) && defined(_MIPSEL)
-#  if _MIPS_SIM == _ABIO32
-        mipsel-linux-android
-#  elif _MIPS_SIM == _ABI64
-        mips64el-linux-android
-#  else
-#   error unknown platform triplet
-#  endif
-# else
-#   error unknown platform triplet
-# endif
+    # Android is not a multiarch system.
 #elif defined(__linux__)
 # if defined(__x86_64__) && defined(__LP64__)
         x86_64-linux-gnu
@@ -5662,14 +5649,16 @@ $as_echo_n "checking for the Android API level... " >&6; }
 cat >> conftest.c <<EOF
 #ifdef __ANDROID__
 #include <android/api-level.h>
-__ANDROID_API__
+android_api = __ANDROID_API__
+arm_arch = __ARM_ARCH
 #else
 #error not Android
 #endif
 EOF
 
 if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
-  ANDROID_API_LEVEL=`grep -v '^#' conftest.out | grep -v '^ *$'`
+  ANDROID_API_LEVEL=`sed -n -e '/__ANDROID_API__/d' -e 's/^android_api = //p' conftest.out`
+  _arm_arch=`sed -n -e '/__ARM_ARCH/d' -e 's/^arm_arch = //p' conftest.out`
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ANDROID_API_LEVEL" >&5
 $as_echo "$ANDROID_API_LEVEL" >&6; }
 
@@ -5677,6 +5666,15 @@ cat >>confdefs.h <<_ACEOF
 #define ANDROID_API_LEVEL $ANDROID_API_LEVEL
 _ACEOF
 
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the Android arm ABI" >&5
+$as_echo_n "checking for the Android arm ABI... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $_arm_arch" >&5
+$as_echo "$_arm_arch" >&6; }
+  if test "$_arm_arch" = 7; then
+    BASECFLAGS="${BASECFLAGS} -mfloat-abi=softfp -mfpu=vfpv3-d16"
+    LDFLAGS="${LDFLAGS} -march=armv7-a -Wl,--fix-cortex-a8"
+  fi
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: not Android" >&5
 $as_echo "not Android" >&6; }
@@ -6520,6 +6518,33 @@ $as_echo "no" >&6; }
 fi
 
 
+# Check for --with-assertions. Py_DEBUG implies assertions, but also changes
+# the ABI. This allows enabling assertions without changing the ABI.
+assertions='false'
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-assertions" >&5
+$as_echo_n "checking for --with-assertions... " >&6; }
+
+# Check whether --with-assertions was given.
+if test "${with_assertions+set}" = set; then :
+  withval=$with_assertions;
+if test "$withval" != no
+then
+  assertions='true'
+fi
+fi
+
+if test "$assertions" = 'true'; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+elif test "$Py_DEBUG" = 'true'; then
+  assertions='true'
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: implied by --with-pydebug" >&5
+$as_echo "implied by --with-pydebug" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
 # Enable optimization flags
 
 
@@ -6529,7 +6554,7 @@ $as_echo_n "checking for --enable-optimizations... " >&6; }
 # Check whether --enable-optimizations was given.
 if test "${enable_optimizations+set}" = set; then :
   enableval=$enable_optimizations;
-if test "$withval" != no
+if test "$enableval" != no
 then
   Py_OPT='true'
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -6605,6 +6630,13 @@ if test "$Py_LTO" = 'true' ; then
       esac
       ;;
   esac
+
+  if test "$ac_cv_prog_cc_g" = "yes"
+  then
+      # bpo-30345: Add -g to LDFLAGS when compiling with LTO
+      # to get debug symbols.
+      LTOFLAGS="$LTOFLAGS -g"
+  fi
 fi
 
 # Enable PGO flags.
@@ -6847,23 +6879,37 @@ esac
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 
+
 if test "${OPT-unset}" = "unset"
 then
     case $GCC in
     yes)
-        if test "$CC" != 'g++' ; then
-	    STRICT_PROTO="-Wstrict-prototypes"
-	fi
         # For gcc 4.x we need to use -fwrapv so lets check if its supported
         if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
            WRAP="-fwrapv"
         fi
 
-        # Clang also needs -fwrapv
         case $CC in
-            *clang*) WRAP="-fwrapv"
-            ;;
+            *clang*)
+                cc_is_clang=1
+                ;;
+            *)
+                if $CC --version 2>&1 | grep -q clang
+                then
+                    cc_is_clang=1
+                else
+                    cc_is_clang=
+                fi
         esac
+
+        if test -n "${cc_is_clang}"
+        then
+            # Clang also needs -fwrapv
+            WRAP="-fwrapv"
+            # bpo-30104: disable strict aliasing to compile correctly dtoa.c,
+            # see Makefile.pre.in for more information
+            CFLAGS_ALIASING="-fno-strict-aliasing"
+        fi
 
 	case $ac_cv_prog_cc_g in
 	yes)
@@ -6871,18 +6917,19 @@ then
 		# Optimization messes up debuggers, so turn it off for
 		# debug builds.
                 if "$CC" -v --help 2>/dev/null |grep -- -Og > /dev/null; then
-                    OPT="-g -Og -Wall $STRICT_PROTO"
+                    OPT="-g -Og -Wall"
                 else
-                    OPT="-g -O0 -Wall $STRICT_PROTO"
+                    OPT="-g -O0 -Wall"
                 fi
 	    else
-		OPT="-g $WRAP -O3 -Wall $STRICT_PROTO"
+		OPT="-g $WRAP -O3 -Wall"
 	    fi
 	    ;;
 	*)
-	    OPT="-O3 -Wall $STRICT_PROTO"
+	    OPT="-O3 -Wall"
 	    ;;
 	esac
+
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
 	    ;;
@@ -7153,6 +7200,47 @@ $as_echo "$ac_cv_disable_missing_field_initializers" >&6; }
       CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"
     fi
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn off $CC invalid function cast warning" >&5
+$as_echo_n "checking if we can turn off $CC invalid function cast warning... " >&6; }
+     ac_save_cc="$CC"
+     CC="$CC -Wcast-function-type -Werror"
+     if ${ac_cv_disable_cast_function_type+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+           ac_cv_disable_cast_function_type=yes
+
+else
+
+           ac_cv_disable_cast_function_type=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+     CC="$ac_save_cc"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_cast_function_type" >&5
+$as_echo "$ac_cv_disable_cast_function_type" >&6; }
+
+    if test $ac_cv_disable_cast_function_type = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-cast-function-type"
+    fi
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn on $CC mixed sign comparison warning" >&5
 $as_echo_n "checking if we can turn on $CC mixed sign comparison warning... " >&6; }
      ac_save_cc="$CC"
@@ -7250,6 +7338,47 @@ fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_unreachable_code_warning" >&5
 $as_echo "$ac_cv_enable_unreachable_code_warning" >&6; }
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn on $CC strict-prototypes warning" >&5
+$as_echo_n "checking if we can turn on $CC strict-prototypes warning... " >&6; }
+     ac_save_cc="$CC"
+     CC="$CC -Werror -Wstrict-prototypes"
+     if ${ac_cv_enable_enable_strict_prototypes_warning+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+       ac_cv_enable_strict_prototypes_warning=yes
+
+else
+
+       ac_cv_enable_strict_prototypes_warning=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+     CC="$ac_save_cc"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_strict_prototypes_warning" >&5
+$as_echo "$ac_cv_enable_strict_prototypes_warning" >&6; }
+
+    if test $ac_cv_enable_strict_prototypes_warning = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"
+    fi
+
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
     # the standard.
@@ -7313,6 +7442,11 @@ $as_echo "$CC" >&6; }
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
                ;;
+            intel-64)
+               UNIVERSAL_ARCH_FLAGS="-arch x86_64"
+               LIPO_32BIT_FLAGS=""
+               ARCH_RUN_32BIT="true"
+               ;;
             3-way)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
@@ -7323,11 +7457,14 @@ $as_echo "$CC" >&6; }
                ;;
             esac
 
-            CFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${CFLAGS}"
-            LDFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${LDFLAGS}"
             if test "${UNIVERSALSDK}" != "/"
             then
+                CFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${CFLAGS}"
+                LDFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${LDFLAGS}"
                 CPPFLAGS="-isysroot ${UNIVERSALSDK} ${CPPFLAGS}"
+            else
+                CFLAGS="${UNIVERSAL_ARCH_FLAGS} ${CFLAGS}"
+                LDFLAGS="${UNIVERSAL_ARCH_FLAGS} ${LDFLAGS}"
             fi
         fi
 
@@ -7409,7 +7546,7 @@ case "$CC" in
     ;;
 esac
 
-if test "$Py_DEBUG" = 'true'; then
+if test "$assertions" = 'true'; then
   :
 else
   OPT="-DNDEBUG $OPT"
@@ -7777,7 +7914,7 @@ $as_echo "#define STDC_HEADERS 1" >>confdefs.h
 
 fi
 
-for ac_header in asm/types.h conio.h direct.h dlfcn.h errno.h \
+for ac_header in asm/types.h crypt.h conio.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
 ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
 sched.h shadow.h signal.h stropts.h termios.h \
@@ -7785,12 +7922,12 @@ unistd.h utime.h \
 poll.h sys/devpoll.h sys/epoll.h sys/poll.h \
 sys/audioio.h sys/xattr.h sys/bsdtty.h sys/event.h sys/file.h sys/ioctl.h \
 sys/kern_control.h sys/loadavg.h sys/lock.h sys/mkdev.h sys/modem.h \
-sys/param.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
+sys/param.h sys/random.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
 sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
-sys/endian.h
+sys/endian.h sys/sysmacros.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -9303,6 +9440,7 @@ then
 		 then CCSHARED="-fPIC";
 		 else CCSHARED="+z";
 		 fi;;
+	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
 	BSD/OS*/4*) CCSHARED="-fpic";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
@@ -9336,6 +9474,7 @@ then
 	    LINKFORSHARED="-Wl,-E -Wl,+s";;
 #	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
 	BSD/OS/4*) LINKFORSHARED="-Xlinker -export-dynamic";;
+	Linux-android*) LINKFORSHARED="-pie -Xlinker -export-dynamic";;
 	Linux*|GNU*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
 	Darwin/*)
@@ -9703,8 +9842,11 @@ esac
 # check for systems that require aligned memory access
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking aligned memory access is required" >&5
 $as_echo_n "checking aligned memory access is required... " >&6; }
-if test "$cross_compiling" = yes; then :
-  aligned_required=yes
+if ${ac_cv_aligned_required+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  ac_cv_aligned_required=yes
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -9721,26 +9863,26 @@ int main()
         return 1;
     return 0;
 }
-
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-  aligned_required=no
+  ac_cv_aligned_required=no
 else
-  aligned_required=yes
+  ac_cv_aligned_required=yes
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
 
-if test "$aligned_required" = yes ; then
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_aligned_required" >&5
+$as_echo "$ac_cv_aligned_required" >&6; }
+if test "$ac_cv_aligned_required" = yes ; then
 
 $as_echo "#define HAVE_ALIGNED_REQUIRED 1" >>confdefs.h
 
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $aligned_required" >&5
-$as_echo "$aligned_required" >&6; }
-
 
 # str, bytes and memoryview hash algorithm
 
@@ -11220,8 +11362,7 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  futimens futimes gai_strerror getentropy \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
- if_nameindex \
- initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
+ initgroups kill killpg lchown linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise pread \
@@ -11247,6 +11388,23 @@ _ACEOF
 fi
 done
 
+
+# Force lchmod off for Linux. Linux disallows changing the mode of symbolic
+# links. Some libc implementations have a stub lchmod implementation that always
+# returns an error.
+if test "$MACHDEP" != linux; then
+  for ac_func in lchmod
+do :
+  ac_fn_c_check_func "$LINENO" "lchmod" "ac_cv_func_lchmod"
+if test "x$ac_cv_func_lchmod" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LCHMOD 1
+_ACEOF
+
+fi
+done
+
+fi
 
 ac_fn_c_check_decl "$LINENO" "dirfd" "ac_cv_have_decl_dirfd" "#include <sys/types.h>
        #include <dirent.h>
@@ -12661,6 +12819,80 @@ $as_echo "yes" >&6; }
 
 else
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+# On Android API level 24 with android-ndk-r13, if_nameindex() is available,
+# but the if_nameindex structure is not defined.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for if_nameindex" >&5
+$as_echo_n "checking for if_nameindex... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdio.h>
+#ifdef STDC_HEADERS
+# include <stdlib.h>
+# include <stddef.h>
+#else
+# ifdef HAVE_STDLIB_H
+#  include <stdlib.h>
+# endif
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
+#ifdef HAVE_NET_IF_H
+# include <net/if.h>
+#endif
+
+int
+main ()
+{
+struct if_nameindex *ni = if_nameindex(); int x = ni[0].if_index;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+$as_echo "#define HAVE_IF_NAMEINDEX 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+# Issue #28762: lockf() is available on Android API level 24, but the F_LOCK
+# macro is not defined in android-ndk-r13.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for lockf" >&5
+$as_echo_n "checking for lockf... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <unistd.h>
+int
+main ()
+{
+lockf(0, F_LOCK, 0);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+$as_echo "#define HAVE_LOCKF 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
@@ -15468,77 +15700,6 @@ $as_echo "#define HAVE_BROKEN_POLL 1" >>confdefs.h
 
 fi
 
-# Before we can test tzset, we need to check if struct tm has a tm_zone
-# (which is not required by ISO C or UNIX spec) and/or if we support
-# tzname[]
-ac_fn_c_check_member "$LINENO" "struct tm" "tm_zone" "ac_cv_member_struct_tm_tm_zone" "#include <sys/types.h>
-#include <$ac_cv_struct_tm>
-
-"
-if test "x$ac_cv_member_struct_tm_tm_zone" = xyes; then :
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_STRUCT_TM_TM_ZONE 1
-_ACEOF
-
-
-fi
-
-if test "$ac_cv_member_struct_tm_tm_zone" = yes; then
-
-$as_echo "#define HAVE_TM_ZONE 1" >>confdefs.h
-
-else
-  ac_fn_c_check_decl "$LINENO" "tzname" "ac_cv_have_decl_tzname" "#include <time.h>
-"
-if test "x$ac_cv_have_decl_tzname" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_TZNAME $ac_have_decl
-_ACEOF
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for tzname" >&5
-$as_echo_n "checking for tzname... " >&6; }
-if ${ac_cv_var_tzname+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <time.h>
-#if !HAVE_DECL_TZNAME
-extern char *tzname[];
-#endif
-
-int
-main ()
-{
-return tzname[0][0];
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_var_tzname=yes
-else
-  ac_cv_var_tzname=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_var_tzname" >&5
-$as_echo "$ac_cv_var_tzname" >&6; }
-  if test $ac_cv_var_tzname = yes; then
-
-$as_echo "#define HAVE_TZNAME 1" >>confdefs.h
-
-  fi
-fi
-
-
 # check tzset(3) exists and works like we expect it to
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working tzset()" >&5
 $as_echo_n "checking for working tzset()... " >&6; }
@@ -15712,7 +15873,9 @@ fi
 
 # first curses header check
 ac_save_cppflags="$CPPFLAGS"
-CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
+if test "$cross_compiling" = no; then
+  CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
+fi
 
 for ac_header in curses.h ncurses.h
 do :
@@ -15785,6 +15948,10 @@ $as_echo "#define MVWDELCH_IS_EXPRESSION 1" >>confdefs.h
 
 fi
 
+# Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
+# structs since version 5.7.  If the macro is defined as zero before including
+# [n]curses.h, ncurses will expose fields of the structs regardless of the
+# configuration.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether WINDOW has _flags" >&5
 $as_echo_n "checking whether WINDOW has _flags... " >&6; }
 if ${ac_cv_window_has_flags+:} false; then :
@@ -15792,7 +15959,10 @@ if ${ac_cv_window_has_flags+:} false; then :
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <curses.h>
+
+  #define NCURSES_OPAQUE 0
+  #include <curses.h>
+
 int
 main ()
 {
@@ -15822,6 +15992,36 @@ then
 $as_echo "#define WINDOW_HAS_FLAGS 1" >>confdefs.h
 
 fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for is_pad" >&5
+$as_echo_n "checking for is_pad... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <curses.h>
+int
+main ()
+{
+
+#ifndef is_pad
+void *x=is_pad
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_CURSES_IS_PAD 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for is_term_resized" >&5
 $as_echo_n "checking for is_term_resized... " >&6; }
@@ -15891,6 +16091,216 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
 $as_echo "#define HAVE_CURSES_RESIZETERM 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for immedok" >&5
+$as_echo_n "checking for immedok... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <curses.h>
+int
+main ()
+{
+
+#ifndef immedok
+void *x=immedok
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_CURSES_IMMEDOK 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for syncok" >&5
+$as_echo_n "checking for syncok... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <curses.h>
+int
+main ()
+{
+
+#ifndef syncok
+void *x=syncok
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_CURSES_SYNCOK 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for wchgat" >&5
+$as_echo_n "checking for wchgat... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <curses.h>
+int
+main ()
+{
+
+#ifndef wchgat
+void *x=wchgat
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_CURSES_WCHGAT 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for filter" >&5
+$as_echo_n "checking for filter... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <curses.h>
+int
+main ()
+{
+
+#ifndef filter
+void *x=filter
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_CURSES_FILTER 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for has_key" >&5
+$as_echo_n "checking for has_key... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <curses.h>
+int
+main ()
+{
+
+#ifndef has_key
+void *x=has_key
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_CURSES_HAS_KEY 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for typeahead" >&5
+$as_echo_n "checking for typeahead... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <curses.h>
+int
+main ()
+{
+
+#ifndef typeahead
+void *x=typeahead
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_CURSES_TYPEAHEAD 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for use_env" >&5
+$as_echo_n "checking for use_env... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <curses.h>
+int
+main ()
+{
+
+#ifndef use_env
+void *x=use_env
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_CURSES_USE_ENV 1" >>confdefs.h
 
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -16194,7 +16604,7 @@ do
 done
 
 
-SRCDIRS="Parser Grammar Objects Python Modules Mac Programs"
+SRCDIRS="Parser Objects Python Modules Programs"
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for build directories" >&5
 $as_echo_n "checking for build directories... " >&6; }
 for dir in $SRCDIRS; do
@@ -16344,7 +16754,6 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
     #include <stdatomic.h>
     atomic_int value = ATOMIC_VAR_INIT(1);
-    _Atomic void *py_atomic_address = (void*) &value;
     int main() {
       int loaded_value = atomic_load(&value);
       return 0;
@@ -17859,7 +18268,7 @@ mv config.c Modules
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&6
     echo "" >&6
-    echo "If you want a release build with all optimizations active (LTO, PGO, etc)," >&6
+    echo "If you want a release build with all stable optimizations active (PGO, etc)," >&6
     echo "please run ./configure --enable-optimizations" >&6
     echo "" >&6
     echo "" >&6

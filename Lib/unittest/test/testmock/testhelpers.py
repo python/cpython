@@ -1,3 +1,5 @@
+import time
+import types
 import unittest
 
 from unittest.mock import (
@@ -305,6 +307,11 @@ class CallTest(unittest.TestCase):
 
         other_args = _Call(((1, 2), {'a': 3}))
         self.assertEqual(args, other_args)
+
+    def test_call_with_name(self):
+        self.assertEqual(_Call((), 'foo')[0], 'foo')
+        self.assertEqual(_Call((('bar', 'barz'),),)[0], '')
+        self.assertEqual(_Call((('bar', 'barz'), {'hello': 'world'}),)[0], '')
 
 
 class SpecSignatureTest(unittest.TestCase):
@@ -849,6 +856,19 @@ class SpecSignatureTest(unittest.TestCase):
         check_data_descriptor(foo.slot)
         # plain data descriptor
         check_data_descriptor(foo.desc)
+
+
+    def test_autospec_on_bound_builtin_function(self):
+        meth = types.MethodType(time.ctime, time.time())
+        self.assertIsInstance(meth(), str)
+        mocked = create_autospec(meth)
+
+        # no signature, so no spec to check against
+        mocked()
+        mocked.assert_called_once_with()
+        mocked.reset_mock()
+        mocked(4, 5, 6)
+        mocked.assert_called_once_with(4, 5, 6)
 
 
 class TestCallList(unittest.TestCase):

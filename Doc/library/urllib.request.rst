@@ -170,15 +170,15 @@ The :mod:`urllib.request` module defines the following functions:
    If both lowercase and uppercase environment variables exist (and disagree),
    lowercase is preferred.
 
-    .. note::
+   .. note::
 
-       If the environment variable ``REQUEST_METHOD`` is set, which usually
-       indicates your script is running in a CGI environment, the environment
-       variable ``HTTP_PROXY`` (uppercase ``_PROXY``) will be ignored. This is
-       because that variable can be injected by a client using the "Proxy:" HTTP
-       header. If you need to use an HTTP proxy in a CGI environment, either use
-       ``ProxyHandler`` explicitly, or make sure the variable name is in
-       lowercase (or at least the ``_proxy`` suffix).
+      If the environment variable ``REQUEST_METHOD`` is set, which usually
+      indicates your script is running in a CGI environment, the environment
+      variable ``HTTP_PROXY`` (uppercase ``_PROXY``) will be ignored. This is
+      because that variable can be injected by a client using the "Proxy:" HTTP
+      header. If you need to use an HTTP proxy in a CGI environment, either use
+      ``ProxyHandler`` explicitly, or make sure the variable name is in
+      lowercase (or at least the ``_proxy`` suffix).
 
 
 The following classes are provided:
@@ -232,7 +232,7 @@ The following classes are provided:
    containing the image.
 
    *unverifiable* should indicate whether the request is unverifiable,
-   as defined by RFC 2965.  It defaults to ``False``.  An unverifiable
+   as defined by :rfc:`2965`.  It defaults to ``False``.  An unverifiable
    request is one whose URL the user did not have the option to
    approve.  For example, if the request is for an image in an HTML
    document, and the user had no option to approve the automatic
@@ -504,7 +504,7 @@ request.
 .. attribute:: Request.unverifiable
 
    boolean, indicates whether the request is unverifiable as defined
-   by RFC 2965.
+   by :rfc:`2965`.
 
 .. attribute:: Request.method
 
@@ -1125,7 +1125,7 @@ UnknownHandler Objects
 HTTPErrorProcessor Objects
 --------------------------
 
-.. method:: HTTPErrorProcessor.http_response()
+.. method:: HTTPErrorProcessor.http_response(request, response)
 
    Process HTTP error responses.
 
@@ -1137,7 +1137,7 @@ HTTPErrorProcessor Objects
    :exc:`~urllib.error.HTTPError` if no other handler handles the error.
 
 
-.. method:: HTTPErrorProcessor.https_response()
+.. method:: HTTPErrorProcessor.https_response(request, response)
 
    Process HTTPS error responses.
 
@@ -1339,9 +1339,9 @@ some point in the future.
 
    The second argument, if present, specifies the file location to copy to (if
    absent, the location will be a tempfile with a generated name). The third
-   argument, if present, is a hook function that will be called once on
+   argument, if present, is a callable that will be called once on
    establishment of the network connection and once after each block read
-   thereafter.  The hook will be passed three arguments; a count of blocks
+   thereafter.  The callable will be passed three arguments; a count of blocks
    transferred so far, a block size in bytes, and the total size of the file.  The
    third argument may be ``-1`` on older FTP servers which do not return a file
    size in response to a retrieval request.
@@ -1407,48 +1407,48 @@ some point in the future.
    :class:`URLopener` objects will raise an :exc:`OSError` exception if the server
    returns an error code.
 
-    .. method:: open(fullurl, data=None)
+   .. method:: open(fullurl, data=None)
 
-       Open *fullurl* using the appropriate protocol.  This method sets up cache and
-       proxy information, then calls the appropriate open method with its input
-       arguments.  If the scheme is not recognized, :meth:`open_unknown` is called.
-       The *data* argument has the same meaning as the *data* argument of
-       :func:`urlopen`.
-
-
-    .. method:: open_unknown(fullurl, data=None)
-
-       Overridable interface to open unknown URL types.
+      Open *fullurl* using the appropriate protocol.  This method sets up cache and
+      proxy information, then calls the appropriate open method with its input
+      arguments.  If the scheme is not recognized, :meth:`open_unknown` is called.
+      The *data* argument has the same meaning as the *data* argument of
+      :func:`urlopen`.
 
 
-    .. method:: retrieve(url, filename=None, reporthook=None, data=None)
+   .. method:: open_unknown(fullurl, data=None)
 
-       Retrieves the contents of *url* and places it in *filename*.  The return value
-       is a tuple consisting of a local filename and either an
-       :class:`email.message.Message` object containing the response headers (for remote
-       URLs) or ``None`` (for local URLs).  The caller must then open and read the
-       contents of *filename*.  If *filename* is not given and the URL refers to a
-       local file, the input filename is returned.  If the URL is non-local and
-       *filename* is not given, the filename is the output of :func:`tempfile.mktemp`
-       with a suffix that matches the suffix of the last path component of the input
-       URL.  If *reporthook* is given, it must be a function accepting three numeric
-       parameters: A chunk number, the maximum size chunks are read in and the total size of the download
-       (-1 if unknown).  It will be called once at the start and after each chunk of data is read from the
-       network.  *reporthook* is ignored for local URLs.
-
-       If the *url* uses the :file:`http:` scheme identifier, the optional *data*
-       argument may be given to specify a ``POST`` request (normally the request type
-       is ``GET``).  The *data* argument must in standard
-       :mimetype:`application/x-www-form-urlencoded` format; see the
-       :func:`urllib.parse.urlencode` function.
+      Overridable interface to open unknown URL types.
 
 
-    .. attribute:: version
+   .. method:: retrieve(url, filename=None, reporthook=None, data=None)
 
-       Variable that specifies the user agent of the opener object.  To get
-       :mod:`urllib` to tell servers that it is a particular user agent, set this in a
-       subclass as a class variable or in the constructor before calling the base
-       constructor.
+      Retrieves the contents of *url* and places it in *filename*.  The return value
+      is a tuple consisting of a local filename and either an
+      :class:`email.message.Message` object containing the response headers (for remote
+      URLs) or ``None`` (for local URLs).  The caller must then open and read the
+      contents of *filename*.  If *filename* is not given and the URL refers to a
+      local file, the input filename is returned.  If the URL is non-local and
+      *filename* is not given, the filename is the output of :func:`tempfile.mktemp`
+      with a suffix that matches the suffix of the last path component of the input
+      URL.  If *reporthook* is given, it must be a function accepting three numeric
+      parameters: A chunk number, the maximum size chunks are read in and the total size of the download
+      (-1 if unknown).  It will be called once at the start and after each chunk of data is read from the
+      network.  *reporthook* is ignored for local URLs.
+
+      If the *url* uses the :file:`http:` scheme identifier, the optional *data*
+      argument may be given to specify a ``POST`` request (normally the request type
+      is ``GET``).  The *data* argument must in standard
+      :mimetype:`application/x-www-form-urlencoded` format; see the
+      :func:`urllib.parse.urlencode` function.
+
+
+   .. attribute:: version
+
+      Variable that specifies the user agent of the opener object.  To get
+      :mod:`urllib` to tell servers that it is a particular user agent, set this in a
+      subclass as a class variable or in the constructor before calling the base
+      constructor.
 
 
 .. class:: FancyURLopener(...)

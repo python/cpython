@@ -2,9 +2,11 @@ Quick Start Guide
 -----------------
 
 1.  Install Microsoft Visual Studio 2015, any edition.
-2.  Install Subversion, and make sure 'svn.exe' is on your PATH.
-3.  Run "build.bat -e" to build Python in 32-bit Release configuration.
-4.  (Optional, but recommended) Run the test suite with "rt.bat -q".
+1a. Optionally install Python 3.6 or later.  If not installed,
+    get_externals.bat (build.bat -e) will download and use Python via
+    NuGet.
+2.  Run "build.bat -e" to build Python in 32-bit Release configuration.
+3.  (Optional, but recommended) Run the test suite with "rt.bat -q".
 
 
 Building Python using Microsoft Visual C++
@@ -30,12 +32,19 @@ Visual Studio Premium 2015
     Required for building Release configuration builds that make use of
     Profile Guided Optimization (PGO), on either platform.
 
-All you need to do to build is open the solution "pcbuild.sln" in Visual
-Studio, select the desired combination of configuration and platform,
+To build modules that depend on external libraries, you need to download
+(and, for some of them, build) those first. It's thus recommended to build
+from the command line once as specified below under "Getting External Sources"
+as that does this automatically.
+
+Then, to continue development, you can open the solution "pcbuild.sln" in
+Visual Studio, select the desired combination of configuration and platform,
 then build with "Build Solution".  You can also build from the command
 line using the "build.bat" script in this directory; see below for
 details.  The solution is configured to build the projects in the correct
 order.
+
+To build an installer package, refer to the README in the Tools/msi folder.
 
 The solution currently supports two platforms.  The Win32 platform is
 used to build standard x86-compatible 32-bit binaries, output into the
@@ -164,12 +173,11 @@ _bz2
     Homepage:
         http://www.bzip.org/
 _lzma
-    Python wrapper for the liblzma compression library, using pre-built
-    binaries of XZ Utils version 5.0.5
+    Python wrapper for version 5.2.2 of the liblzma compression library
     Homepage:
         http://tukaani.org/xz/
 _ssl
-    Python wrapper for version 1.0.2j of the OpenSSL secure sockets
+    Python wrapper for version 1.0.2o of the OpenSSL secure sockets
     library, which is built by ssl.vcxproj
     Homepage:
         http://www.openssl.org/
@@ -204,7 +212,7 @@ _ssl
     functionality to _ssl or _hashlib. They will not clean up their output
     with the normal Clean target; CleanAll should be used instead.
 _sqlite3
-    Wraps SQLite 3.14.2.0, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.21.0.0, which is itself built by sqlite3.vcxproj
     Homepage:
         http://www.sqlite.org/
 _tkinter
@@ -236,9 +244,16 @@ order to download the relevant source files for each project before they
 can be built.  However, a simple script is provided to make this as
 painless as possible, called "get_externals.bat" and located in this
 directory.  This script extracts all the external sub-projects from
-    http://svn.python.org/projects/external
-via Subversion (so you'll need svn.exe on your PATH) and places them
-in ..\externals (relative to this directory).
+    https://github.com/python/cpython-source-deps
+and
+    https://github.com/python/cpython-bin-deps
+via a Python script called "get_external.py", located in this directory.
+If Python 3.6 or later is not available via the "py.exe" launcher, the
+path or command to use for Python can be provided in the PYTHON_FOR_BUILD
+environment variable, or get_externals.bat will download the latest
+version of NuGet and use it to download the latest "pythonx86" package
+for use with get_external.py.  Everything downloaded by these scripts is
+stored in ..\externals (relative to this directory).
 
 It is also possible to download sources from each project's homepage,
 though you may have to change folder names or pass the names to MSBuild

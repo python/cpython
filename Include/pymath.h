@@ -187,14 +187,14 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
  * result.
  * Caution:
  *    This isn't reliable.  C99 no longer requires libm to set errno under
- *	  any exceptional condition, but does require +- HUGE_VAL return
- *	  values on overflow.  A 754 box *probably* maps HUGE_VAL to a
- *	  double infinity, and we're cool if that's so, unless the input
- *	  was an infinity and an infinity is the expected result.  A C89
- *	  system sets errno to ERANGE, so we check for that too.  We're
- *	  out of luck if a C99 754 box doesn't map HUGE_VAL to +Inf, or
- *	  if the returned result is a NaN, or if a C89 box returns HUGE_VAL
- *	  in non-overflow cases.
+ *        any exceptional condition, but does require +- HUGE_VAL return
+ *        values on overflow.  A 754 box *probably* maps HUGE_VAL to a
+ *        double infinity, and we're cool if that's so, unless the input
+ *        was an infinity and an infinity is the expected result.  A C89
+ *        system sets errno to ERANGE, so we check for that too.  We're
+ *        out of luck if a C99 754 box doesn't map HUGE_VAL to +Inf, or
+ *        if the returned result is a NaN, or if a C89 box returns HUGE_VAL
+ *        in non-overflow cases.
  *    X is evaluated more than once.
  * Some platforms have better way to spell this, so expect some #ifdef'ery.
  *
@@ -211,8 +211,20 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
 #define Py_OVERFLOWED(X) isinf(X)
 #else
 #define Py_OVERFLOWED(X) ((X) != 0.0 && (errno == ERANGE ||    \
-					 (X) == Py_HUGE_VAL || \
-					 (X) == -Py_HUGE_VAL))
+                                         (X) == Py_HUGE_VAL || \
+                                         (X) == -Py_HUGE_VAL))
 #endif
+
+/* Return whether integral type *type* is signed or not. */
+#define _Py_IntegralTypeSigned(type) ((type)(-1) < 0)
+/* Return the maximum value of integral type *type*. */
+#define _Py_IntegralTypeMax(type) ((_Py_IntegralTypeSigned(type)) ? (((((type)1 << (sizeof(type)*CHAR_BIT - 2)) - 1) << 1) + 1) : ~(type)0)
+/* Return the minimum value of integral type *type*. */
+#define _Py_IntegralTypeMin(type) ((_Py_IntegralTypeSigned(type)) ? -_Py_IntegralTypeMax(type) - 1 : 0)
+/* Check whether *v* is in the range of integral type *type*. This is most
+ * useful if *v* is floating-point, since demoting a floating-point *v* to an
+ * integral type that cannot represent *v*'s integral part is undefined
+ * behavior. */
+#define _Py_InIntegralTypeRange(type, v) (_Py_IntegralTypeMin(type) <= v && v <= _Py_IntegralTypeMax(type))
 
 #endif /* Py_PYMATH_H */

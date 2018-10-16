@@ -468,6 +468,12 @@ class DictTest(unittest.TestCase):
         d = {1: BadRepr()}
         self.assertRaises(Exc, repr, d)
 
+    def test_repr_deep(self):
+        d = {}
+        for i in range(sys.getrecursionlimit() + 100):
+            d = {1: d}
+        self.assertRaises(RecursionError, repr, d)
+
     def test_eq(self):
         self.assertEqual({}, {})
         self.assertEqual({1: 2}, {1: 2})
@@ -1004,7 +1010,7 @@ class DictTest(unittest.TestCase):
             self.assertEqual(dict(it), data)
 
     def test_valuesiterator_pickling(self):
-        for proto in range(pickle.HIGHEST_PROTOCOL):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             data = {1:"a", 2:"b", 3:"c"}
             # data.values() isn't picklable, only its iterator
             it = iter(data.values())
@@ -1084,6 +1090,122 @@ class DictTest(unittest.TestCase):
         support.check_free_after_iterating(self, lambda d: iter(d.keys()), dict)
         support.check_free_after_iterating(self, lambda d: iter(d.values()), dict)
         support.check_free_after_iterating(self, lambda d: iter(d.items()), dict)
+
+    def test_equal_operator_modifying_operand(self):
+        # test fix for seg fault reported in issue 27945 part 3.
+        class X():
+            def __del__(self):
+                dict_b.clear()
+
+            def __eq__(self, other):
+                dict_a.clear()
+                return True
+
+            def __hash__(self):
+                return 13
+
+        dict_a = {X(): 0}
+        dict_b = {X(): X()}
+        self.assertTrue(dict_a == dict_b)
+
+    def test_fromkeys_operator_modifying_dict_operand(self):
+        # test fix for seg fault reported in issue 27945 part 4a.
+        class X(int):
+            def __hash__(self):
+                return 13
+
+            def __eq__(self, other):
+                if len(d) > 1:
+                    d.clear()
+                return False
+
+        d = {}  # this is required to exist so that d can be constructed!
+        d = {X(1): 1, X(2): 2}
+        try:
+            dict.fromkeys(d)  # shouldn't crash
+        except RuntimeError:  # implementation defined
+            pass
+
+    def test_fromkeys_operator_modifying_set_operand(self):
+        # test fix for seg fault reported in issue 27945 part 4b.
+        class X(int):
+            def __hash__(self):
+                return 13
+
+            def __eq__(self, other):
+                if len(d) > 1:
+                    d.clear()
+                return False
+
+        d = {}  # this is required to exist so that d can be constructed!
+        d = {X(1), X(2)}
+        try:
+            dict.fromkeys(d)  # shouldn't crash
+        except RuntimeError:  # implementation defined
+            pass
+
+    def test_dictitems_contains_use_after_free(self):
+        class X:
+            def __eq__(self, other):
+                d.clear()
+                return NotImplemented
+
+        d = {0: set()}
+        (0, X()) in d.items()
+
+    def test_init_use_after_free(self):
+        class X:
+            def __hash__(self):
+                pair[:] = []
+                return 13
+
+        pair = [X(), 123]
+        dict([pair])
+
+    def test_oob_indexing_dictiter_iternextitem(self):
+        class X(int):
+            def __del__(self):
+                d.clear()
+
+        d = {i: X(i) for i in range(8)}
+
+        def iter_and_mutate():
+            for result in d.items():
+                if result[0] == 2:
+                    d[2] = None # free d[2] --> X(2).__del__ was called
+
+        self.assertRaises(RuntimeError, iter_and_mutate)
+
+    @support.cpython_only
+    def test_dict_copy_order(self):
+        # bpo-34320
+        od = collections.OrderedDict([('a', 1), ('b', 2)])
+        od.move_to_end('a')
+        expected = list(od.items())
+
+        copy = dict(od)
+        self.assertEqual(list(copy.items()), expected)
+
+        # dict subclass doesn't override __iter__
+        class CustomDict(dict):
+            pass
+
+        pairs = [('a', 1), ('b', 2), ('c', 3)]
+
+        d = CustomDict(pairs)
+        self.assertEqual(pairs, list(dict(d).items()))
+
+        class CustomReversedDict(dict):
+            def keys(self):
+                return reversed(list(dict.keys(self)))
+
+            __iter__ = keys
+
+            def items(self):
+                return reversed(dict.items(self))
+
+        d = CustomReversedDict(pairs)
+        self.assertEqual(pairs[::-1], list(dict(d).items()))
 
 
 class CAPITest(unittest.TestCase):

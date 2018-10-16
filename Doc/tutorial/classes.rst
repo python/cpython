@@ -4,6 +4,12 @@
 Classes
 *******
 
+Classes provide a means of bundling data and functionality together.  Creating
+a new class creates a new *type* of object, allowing new *instances* of that
+type to be made.  Each class instance can have attributes attached to it for
+maintaining its state.  Class instances can also have methods (defined by its
+class) for modifying its state.
+
 Compared with other programming languages, Python's class mechanism adds classes
 with a minimum of new syntax and semantics.  It is a mixture of the class
 mechanisms found in C++ and Modula-3.  Python classes provide all the standard
@@ -374,15 +380,15 @@ Surely Python raises an exception when a function that requires an argument is
 called without any --- even if the argument isn't actually used...
 
 Actually, you may have guessed the answer: the special thing about methods is
-that the object is passed as the first argument of the function.  In our
+that the instance object is passed as the first argument of the function.  In our
 example, the call ``x.f()`` is exactly equivalent to ``MyClass.f(x)``.  In
 general, calling a method with a list of *n* arguments is equivalent to calling
 the corresponding function with an argument list that is created by inserting
-the method's object before the first argument.
+the method's instance object before the first argument.
 
 If you still don't understand how methods work, a look at the implementation can
-perhaps clarify matters.  When an instance attribute is referenced that isn't a
-data attribute, its class is searched.  If the name denotes a valid class
+perhaps clarify matters.  When a non-data attribute of an instance is
+referenced, the instance's class is searched.  If the name denotes a valid class
 attribute that is a function object, a method object is created by packing
 (pointers to) the instance object and the function object just found together in
 an abstract object: this is the method object.  When the method object is called
@@ -784,7 +790,7 @@ using the :func:`next` built-in function; this example shows how it all works::
    'c'
    >>> next(it)
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
        next(it)
    StopIteration
 
@@ -870,9 +876,9 @@ Generator Expressions
 =====================
 
 Some simple generators can be coded succinctly as expressions using a syntax
-similar to list comprehensions but with parentheses instead of brackets.  These
-expressions are designed for situations where the generator is used right away
-by an enclosing function.  Generator expressions are more compact but less
+similar to list comprehensions but with parentheses instead of square brackets.
+These expressions are designed for situations where the generator is used right
+away by an enclosing function.  Generator expressions are more compact but less
 versatile than full generator definitions and tend to be more memory friendly
 than equivalent list comprehensions.
 
@@ -906,4 +912,3 @@ Examples::
    namespace; the name :attr:`~object.__dict__` is an attribute but not a global name.
    Obviously, using this violates the abstraction of namespace implementation, and
    should be restricted to things like post-mortem debuggers.
-

@@ -88,9 +88,12 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         if (kw == NULL) {
             pto->kw = PyDict_New();
         }
-        else {
+        else if (Py_REFCNT(kw) == 1) {
             Py_INCREF(kw);
             pto->kw = kw;
+        }
+        else {
+            pto->kw = PyDict_Copy(kw);
         }
     }
     else {
@@ -113,6 +116,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 static void
 partial_dealloc(partialobject *pto)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(pto);
     if (pto->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) pto);
@@ -247,8 +251,11 @@ partial_repr(partialobject *pto)
     /* Pack keyword arguments */
     assert (PyDict_Check(pto->kw));
     for (i = 0; PyDict_Next(pto->kw, &i, &key, &value);) {
-        Py_SETREF(arglist, PyUnicode_FromFormat("%U, %U=%R", arglist,
+        /* Prevent key.__str__ from deleting the value. */
+        Py_INCREF(value);
+        Py_SETREF(arglist, PyUnicode_FromFormat("%U, %S=%R", arglist,
                                                 key, value));
+        Py_DECREF(value);
         if (arglist == NULL)
             goto done;
     }
@@ -704,8 +711,8 @@ static PyTypeObject lru_cache_type;
 static PyObject *
 lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
 {
-    PyObject *key, *sorted_items;
-    Py_ssize_t key_size, pos, key_pos;
+    PyObject *key, *keyword, *value;
+    Py_ssize_t key_size, pos, key_pos, kwds_size;
 
     /* short path, key will match args anyway, which is a tuple */
     if (!typed && !kwds) {
@@ -713,28 +720,18 @@ lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
         return args;
     }
 
-    if (kwds && PyDict_Size(kwds) > 0) {
-        sorted_items = PyDict_Items(kwds);
-        if (!sorted_items)
-            return NULL;
-        if (PyList_Sort(sorted_items) < 0) {
-            Py_DECREF(sorted_items);
-            return NULL;
-        }
-    } else
-        sorted_items = NULL;
+    kwds_size = kwds ? PyDict_Size(kwds) : 0;
+    assert(kwds_size >= 0);
 
     key_size = PyTuple_GET_SIZE(args);
-    if (sorted_items)
-        key_size += PyList_GET_SIZE(sorted_items);
+    if (kwds_size)
+        key_size += kwds_size * 2 + 1;
     if (typed)
-        key_size *= 2;
-    if (sorted_items)
-        key_size++;
+        key_size += PyTuple_GET_SIZE(args) + kwds_size;
 
     key = PyTuple_New(key_size);
     if (key == NULL)
-        goto done;
+        return NULL;
 
     key_pos = 0;
     for (pos = 0; pos < PyTuple_GET_SIZE(args); ++pos) {
@@ -742,14 +739,16 @@ lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
         Py_INCREF(item);
         PyTuple_SET_ITEM(key, key_pos++, item);
     }
-    if (sorted_items) {
+    if (kwds_size) {
         Py_INCREF(kwd_mark);
         PyTuple_SET_ITEM(key, key_pos++, kwd_mark);
-        for (pos = 0; pos < PyList_GET_SIZE(sorted_items); ++pos) {
-            PyObject *item = PyList_GET_ITEM(sorted_items, pos);
-            Py_INCREF(item);
-            PyTuple_SET_ITEM(key, key_pos++, item);
+        for (pos = 0; PyDict_Next(kwds, &pos, &keyword, &value);) {
+            Py_INCREF(keyword);
+            PyTuple_SET_ITEM(key, key_pos++, keyword);
+            Py_INCREF(value);
+            PyTuple_SET_ITEM(key, key_pos++, value);
         }
+        assert(key_pos == PyTuple_GET_SIZE(args) + kwds_size * 2 + 1);
     }
     if (typed) {
         for (pos = 0; pos < PyTuple_GET_SIZE(args); ++pos) {
@@ -757,20 +756,15 @@ lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
             Py_INCREF(item);
             PyTuple_SET_ITEM(key, key_pos++, item);
         }
-        if (sorted_items) {
-            for (pos = 0; pos < PyList_GET_SIZE(sorted_items); ++pos) {
-                PyObject *tp_items = PyList_GET_ITEM(sorted_items, pos);
-                PyObject *item = (PyObject *)Py_TYPE(PyTuple_GET_ITEM(tp_items, 1));
+        if (kwds_size) {
+            for (pos = 0; PyDict_Next(kwds, &pos, &keyword, &value);) {
+                PyObject *item = (PyObject *)Py_TYPE(value);
                 Py_INCREF(item);
                 PyTuple_SET_ITEM(key, key_pos++, item);
             }
         }
     }
     assert(key_pos == key_size);
-
-done:
-    if (sorted_items)
-        Py_DECREF(sorted_items);
     return key;
 }
 
@@ -876,42 +870,56 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     }
     if (self->full && self->root.next != &self->root) {
         /* Use the oldest item to store the new key and result. */
-        PyObject *oldkey, *oldresult;
+        PyObject *oldkey, *oldresult, *popresult;
         /* Extricate the oldest item. */
         link = self->root.next;
         lru_cache_extricate_link(link);
         /* Remove it from the cache.
            The cache dict holds one reference to the link,
            and the linked list holds yet one reference to it. */
-        if (_PyDict_DelItem_KnownHash(self->cache, link->key,
-                                      link->hash) < 0) {
+        popresult = _PyDict_Pop_KnownHash(self->cache,
+                                          link->key, link->hash,
+                                          Py_None);
+        if (popresult == Py_None) {
+            /* Getting here means that this same key was added to the
+               cache while the lock was released.  Since the link
+               update is already done, we need only return the
+               computed result and update the count of misses. */
+            Py_DECREF(popresult);
+            Py_DECREF(link);
+            Py_DECREF(key);
+        }
+        else if (popresult == NULL) {
             lru_cache_append_link(self, link);
             Py_DECREF(key);
             Py_DECREF(result);
             return NULL;
         }
-        /* Keep a reference to the old key and old result to
-           prevent their ref counts from going to zero during the
-           update. That will prevent potentially arbitrary object
-           clean-up code (i.e. __del__) from running while we're
-           still adjusting the links. */
-        oldkey = link->key;
-        oldresult = link->result;
+        else {
+            Py_DECREF(popresult);
+            /* Keep a reference to the old key and old result to
+               prevent their ref counts from going to zero during the
+               update. That will prevent potentially arbitrary object
+               clean-up code (i.e. __del__) from running while we're
+               still adjusting the links. */
+            oldkey = link->key;
+            oldresult = link->result;
 
-        link->hash = hash;
-        link->key = key;
-        link->result = result;
-        if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
-                                      hash) < 0) {
-            Py_DECREF(link);
+            link->hash = hash;
+            link->key = key;
+            link->result = result;
+            if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
+                                          hash) < 0) {
+                Py_DECREF(link);
+                Py_DECREF(oldkey);
+                Py_DECREF(oldresult);
+                return NULL;
+            }
+            lru_cache_append_link(self, link);
+            Py_INCREF(result); /* for return */
             Py_DECREF(oldkey);
             Py_DECREF(oldresult);
-            return NULL;
         }
-        lru_cache_append_link(self, link);
-        Py_INCREF(result); /* for return */
-        Py_DECREF(oldkey);
-        Py_DECREF(oldresult);
     } else {
         /* Put result in a new link at the front of the queue. */
         link = (lru_list_elem *)PyObject_GC_New(lru_list_elem,
@@ -1031,7 +1039,11 @@ lru_cache_clear_list(lru_list_elem *link)
 static void
 lru_cache_dealloc(lru_cache_object *obj)
 {
-    lru_list_elem *list = lru_cache_unlink_list(obj);
+    lru_list_elem *list;
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(obj);
+
+    list = lru_cache_unlink_list(obj);
     Py_XDECREF(obj->maxsize_O);
     Py_XDECREF(obj->func);
     Py_XDECREF(obj->cache);

@@ -123,5 +123,10 @@ class CFuncPtrTestCase(unittest.TestCase):
         self.assertEqual(strtok(None, b"\n"), b"c")
         self.assertEqual(strtok(None, b"\n"), None)
 
+    def test_abstract(self):
+        from ctypes import _CFuncPtr
+
+        self.assertRaises(TypeError, _CFuncPtr, 13, "name", 42, "iid")
+
 if __name__ == '__main__':
     unittest.main()

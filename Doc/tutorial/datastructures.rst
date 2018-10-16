@@ -22,11 +22,11 @@ objects:
    Add an item to the end of the list.  Equivalent to ``a[len(a):] = [x]``.
 
 
-.. method:: list.extend(L)
+.. method:: list.extend(iterable)
    :noindex:
 
-   Extend the list by appending all the items in the given list.  Equivalent to
-   ``a[len(a):] = L``.
+   Extend the list by appending all the items from the iterable.  Equivalent to
+   ``a[len(a):] = iterable``.
 
 
 .. method:: list.insert(i, x)
@@ -68,7 +68,7 @@ objects:
 
    The optional arguments *start* and *end* are interpreted as in the slice
    notation and are used to limit the search to a particular subsequence of
-   *x*.  The returned index is computed relative to the beginning of the full
+   the list.  The returned index is computed relative to the beginning of the full
    sequence rather than the *start* argument.
 
 
@@ -261,7 +261,7 @@ it must be parenthesized. ::
    [(0, 0), (1, 1), (2, 4), (3, 9), (4, 16), (5, 25)]
    >>> # the tuple must be parenthesized, otherwise an error is raised
    >>> [x, x**2 for x in range(6)]
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
        [x, x**2 for x in range(6)]
                   ^
    SyntaxError: invalid syntax
@@ -466,7 +466,7 @@ Here is a brief demonstration::
    {'a', 'r', 'b', 'c', 'd'}
    >>> a - b                              # letters in a but not in b
    {'r', 'd', 'b'}
-   >>> a | b                              # letters in either a or b
+   >>> a | b                              # letters in a or b or both
    {'a', 'c', 'r', 'd', 'b', 'm', 'z', 'l'}
    >>> a & b                              # letters in both a and b
    {'a', 'c'}

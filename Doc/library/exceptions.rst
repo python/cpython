@@ -243,7 +243,7 @@ The following exceptions are the exceptions that are usually raised.
 
    .. note::
 
-      It should not be used to indicate that an operater or method is not
+      It should not be used to indicate that an operator or method is not
       meant to be supported at all -- in that case either leave the operator /
       method undefined or, if a subclass, set it to :data:`None`.
 
@@ -524,7 +524,7 @@ The following exceptions are the exceptions that are usually raised.
 
 .. exception:: ValueError
 
-   Raised when a built-in operation or function receives an argument that has the
+   Raised when an operation or function receives an argument that has the
    right type but an inappropriate value, and the situation is not described by a
    more precise exception such as :exc:`IndexError`.
 

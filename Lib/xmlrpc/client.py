@@ -1127,7 +1127,7 @@ class Transport:
     accept_gzip_encoding = True
 
     # if positive, encode request using gzip if it exceeds this threshold
-    # note that many server will get confused, so only use it if you know
+    # note that many servers will get confused, so only use it if you know
     # that they can decode such a request
     encode_threshold = None #None = don't encode
 
@@ -1258,7 +1258,7 @@ class Transport:
     # Send HTTP request.
     #
     # @param host Host descriptor (URL or (URL, x509 info) tuple).
-    # @param handler Targer RPC handler (a path relative to host)
+    # @param handler Target RPC handler (a path relative to host)
     # @param request_body The XML-RPC request body
     # @param debug Enable debugging if debug is true.
     # @return An HTTPConnection.

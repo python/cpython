@@ -434,18 +434,30 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
     def test_flushes(self):
         # Test flush() with the various options, using all the
         # different levels in order to provide more variations.
-        sync_opt = ['Z_NO_FLUSH', 'Z_SYNC_FLUSH', 'Z_FULL_FLUSH']
+        sync_opt = ['Z_NO_FLUSH', 'Z_SYNC_FLUSH', 'Z_FULL_FLUSH',
+                    'Z_PARTIAL_FLUSH']
+
+        ver = tuple(int(v) for v in zlib.ZLIB_RUNTIME_VERSION.split('.'))
+        # Z_BLOCK has a known failure prior to 1.2.5.3
+        if ver >= (1, 2, 5, 3):
+            sync_opt.append('Z_BLOCK')
+
         sync_opt = [getattr(zlib, opt) for opt in sync_opt
                     if hasattr(zlib, opt)]
         data = HAMLET_SCENE * 8
 
         for sync in sync_opt:
             for level in range(10):
-                obj = zlib.compressobj( level )
-                a = obj.compress( data[:3000] )
-                b = obj.flush( sync )
-                c = obj.compress( data[3000:] )
-                d = obj.flush()
+                try:
+                    obj = zlib.compressobj( level )
+                    a = obj.compress( data[:3000] )
+                    b = obj.flush( sync )
+                    c = obj.compress( data[3000:] )
+                    d = obj.flush()
+                except:
+                    print("Error for flush mode={}, level={}"
+                          .format(sync, level))
+                    raise
                 self.assertEqual(zlib.decompress(b''.join([a,b,c,d])),
                                  data, ("Decompress failed: flush "
                                         "mode=%i, level=%i") % (sync, level))
@@ -751,10 +763,15 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
     def test_wbits(self):
         # wbits=0 only supported since zlib v1.2.3.5
         # Register "1.2.3" as "1.2.3.0"
-        v = (zlib.ZLIB_RUNTIME_VERSION + ".0").split(".", 4)
-        supports_wbits_0 = int(v[0]) > 1 or int(v[0]) == 1 \
-            and (int(v[1]) > 2 or int(v[1]) == 2
-            and (int(v[2]) > 3 or int(v[2]) == 3 and int(v[3]) >= 5))
+        # or "1.2.0-linux","1.2.0.f","1.2.0.f-linux"
+        v = zlib.ZLIB_RUNTIME_VERSION.split('-', 1)[0].split('.')
+        if len(v) < 4:
+            v.append('0')
+        elif not v[-1].isnumeric():
+            v[-1] = '0'
+
+        v = tuple(map(int, v))
+        supports_wbits_0 = v >= (1, 2, 3, 5)
 
         co = zlib.compressobj(level=1, wbits=15)
         zlib15 = co.compress(HAMLET_SCENE) + co.flush()

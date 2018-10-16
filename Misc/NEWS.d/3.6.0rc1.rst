@@ -1,0 +1,122 @@
+.. bpo: 23722
+.. date: 9790
+.. nonce: e8BH5h
+.. release date: 2016-12-06
+.. section: Core and Builtins
+
+Rather than silently producing a class that doesn't support zero-argument
+``super()`` in methods, failing to pass the new ``__classcell__`` namespace
+entry up to ``type.__new__`` now results in a ``DeprecationWarning`` and a
+class that supports zero-argument ``super()``.
+
+..
+
+.. bpo: 28797
+.. date: 9789
+.. nonce: _A0_Z5
+.. section: Core and Builtins
+
+Modifying the class __dict__ inside the __set_name__ method of a descriptor
+that is used inside that class no longer prevents calling the __set_name__
+method of other descriptors.
+
+..
+
+.. bpo: 28782
+.. date: 9788
+.. nonce: foJV_E
+.. section: Core and Builtins
+
+Fix a bug in the implementation ``yield from`` when checking if the next
+instruction is YIELD_FROM. Regression introduced by WORDCODE (issue #26647).
+
+..
+
+.. bpo: 27030
+.. date: 9787
+.. nonce: 88FOrz
+.. section: Library
+
+Unknown escapes in re.sub() replacement template are allowed again.  But
+they still are deprecated and will be disabled in 3.7.
+
+..
+
+.. bpo: 28835
+.. date: 9786
+.. nonce: Fv7Dr1
+.. section: Library
+
+Fix a regression introduced in warnings.catch_warnings(): call
+warnings.showwarning() if it was overriden inside the context manager.
+
+..
+
+.. bpo: 27172
+.. date: 9785
+.. nonce: mVKfLT
+.. section: Library
+
+To assist with upgrades from 2.7, the previously documented deprecation of
+``inspect.getfullargspec()`` has been reversed. This decision may be
+revisited again after the Python 2.7 branch is no longer officially
+supported.
+
+..
+
+.. bpo: 26273
+.. date: 9784
+.. nonce: ilNIWN
+.. section: Library
+
+Add new :data:`socket.TCP_CONGESTION` (Linux 2.6.13) and
+:data:`socket.TCP_USER_TIMEOUT` (Linux 2.6.37) constants. Patch written by
+Omar Sandoval.
+
+..
+
+.. bpo: 24142
+.. date: 9783
+.. nonce: IrZnFs
+.. section: Library
+
+Reading a corrupt config file left configparser in an invalid state.
+Original patch by Florian Höch.
+
+..
+
+.. bpo: 28843
+.. date: 9782
+.. nonce: O7M0LE
+.. section: Library
+
+Fix asyncio C Task to handle exceptions __traceback__.
+
+..
+
+.. bpo: 28808
+.. date: 9781
+.. nonce: A03X6r
+.. section: C API
+
+PyUnicode_CompareWithASCIIString() now never raises exceptions.
+
+..
+
+.. bpo: 23722
+.. date: 9780
+.. nonce: 6HX6fk
+.. section: Documentation
+
+The data model reference and the porting section in the What's New guide now
+cover the additional ``__classcell__`` handling needed for custom
+metaclasses to fully support PEP 487 and zero-argument ``super()``.
+
+..
+
+.. bpo: 28023
+.. date: 9779
+.. nonce: 4gzSGp
+.. section: Tools/Demos
+
+Fix python-gdb.py didn't support new dict implementation.

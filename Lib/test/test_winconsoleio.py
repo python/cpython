@@ -2,8 +2,11 @@
 '''
 
 import io
-import unittest
+import os
 import sys
+import tempfile
+import unittest
+from test import support
 
 if sys.platform != 'win32':
     raise unittest.SkipTest("test only relevant on win32")
@@ -19,6 +22,18 @@ class WindowsConsoleIOTests(unittest.TestCase):
         self.assertFalse(issubclass(ConIO, io.TextIOBase))
 
     def test_open_fd(self):
+        self.assertRaisesRegex(ValueError,
+            "negative file descriptor", ConIO, -1)
+
+        fd, _ = tempfile.mkstemp()
+        try:
+            # Windows 10: "Cannot open non-console file"
+            # Earlier: "Cannot open console output buffer for reading"
+            self.assertRaisesRegex(ValueError,
+                "Cannot open (console|non-console file)", ConIO, fd)
+        finally:
+            os.close(fd)
+
         try:
             f = ConIO(0)
         except ValueError:
@@ -56,6 +71,8 @@ class WindowsConsoleIOTests(unittest.TestCase):
             f.close()
 
     def test_open_name(self):
+        self.assertRaises(ValueError, ConIO, sys.executable)
+
         f = ConIO("CON")
         self.assertTrue(f.readable())
         self.assertFalse(f.writable())
@@ -76,6 +93,37 @@ class WindowsConsoleIOTests(unittest.TestCase):
         self.assertIsNotNone(f.fileno())
         f.close()
         f.close()
+
+        f = open('C:/con', 'rb', buffering=0)
+        self.assertIsInstance(f, ConIO)
+        f.close()
+
+    @unittest.skipIf(sys.getwindowsversion()[:2] <= (6, 1),
+        "test does not work on Windows 7 and earlier")
+    def test_conin_conout_names(self):
+        f = open(r'\\.\conin$', 'rb', buffering=0)
+        self.assertIsInstance(f, ConIO)
+        f.close()
+
+        f = open('//?/conout$', 'wb', buffering=0)
+        self.assertIsInstance(f, ConIO)
+        f.close()
+
+    def test_conout_path(self):
+        temp_path = tempfile.mkdtemp()
+        self.addCleanup(support.rmtree, temp_path)
+
+        conout_path = os.path.join(temp_path, 'CONOUT$')
+
+        with open(conout_path, 'wb', buffering=0) as f:
+            if sys.getwindowsversion()[:2] > (6, 1):
+                self.assertIsInstance(f, ConIO)
+            else:
+                self.assertNotIsInstance(f, ConIO)
+
+    def test_write_empty_data(self):
+        with ConIO('CONOUT$', 'w') as f:
+            self.assertEqual(f.write(b''), 0)
 
     def assertStdinRoundTrip(self, text):
         stdin = open('CONIN$', 'r')

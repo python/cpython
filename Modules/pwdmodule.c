@@ -158,11 +158,12 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
 
     if ((bytes = PyUnicode_EncodeFSDefault(arg)) == NULL)
         return NULL;
+    /* check for embedded null bytes */
     if (PyBytes_AsStringAndSize(bytes, &name, NULL) == -1)
         goto out;
     if ((p = getpwnam(name)) == NULL) {
         PyErr_Format(PyExc_KeyError,
-                     "getpwnam(): name not found: %s", name);
+                     "getpwnam(): name not found: %S", arg);
         goto out;
     }
     retval = mkpwent(p);

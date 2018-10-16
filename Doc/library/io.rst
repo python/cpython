@@ -205,8 +205,8 @@ ABC                        Inherits            Stub Methods              Mixin M
                                                                          ``writable``, and ``writelines``
 :class:`RawIOBase`         :class:`IOBase`     ``readinto`` and          Inherited :class:`IOBase` methods, ``read``,
                                                ``write``                 and ``readall``
-:class:`BufferedIOBase`    :class:`IOBase`     ``detach``, ``read``,     Inherited :class:`IOBase` methods, ``readinto``
-                                               ``read1``, and ``write``
+:class:`BufferedIOBase`    :class:`IOBase`     ``detach``, ``read``,     Inherited :class:`IOBase` methods, ``readinto``,
+                                               ``read1``, and ``write``  and ``readinto1``
 :class:`TextIOBase`        :class:`IOBase`     ``detach``, ``read``,     Inherited :class:`IOBase` methods, ``encoding``,
                                                ``readline``, and         ``errors``, and ``newlines``
                                                ``write``
@@ -385,13 +385,16 @@ I/O Base Classes
    .. method:: read(size=-1)
 
       Read up to *size* bytes from the object and return them.  As a convenience,
-      if *size* is unspecified or -1, :meth:`readall` is called.  Otherwise,
-      only one system call is ever made.  Fewer than *size* bytes may be
-      returned if the operating system call returns fewer than *size* bytes.
+      if *size* is unspecified or -1, all bytes until EOF are returned.
+      Otherwise, only one system call is ever made.  Fewer than *size* bytes may
+      be returned if the operating system call returns fewer than *size* bytes.
 
       If 0 bytes are returned, and *size* was not 0, this indicates end of file.
       If the object is in non-blocking mode and no bytes are available,
       ``None`` is returned.
+
+      The default implementation defers to :meth:`readall` and
+      :meth:`readinto`.
 
    .. method:: readall()
 
@@ -787,7 +790,7 @@ Text I/O
 
       .. versionadded:: 3.1
 
-   .. method:: read(size)
+   .. method:: read(size=-1)
 
       Read and return at most *size* characters from the stream as a single
       :class:`str`.  If *size* is negative or ``None``, reads until EOF.
@@ -877,7 +880,7 @@ Text I/O
      characters written are translated to the given string.
 
    If *line_buffering* is ``True``, :meth:`flush` is implied when a call to
-   write contains a newline character.
+   write contains a newline character or a carriage return.
 
    If *write_through* is ``True``, calls to :meth:`write` are guaranteed
    not to be buffered: any data written on the :class:`TextIOWrapper`

@@ -467,4 +467,8 @@ exit:
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=3a4e2bfe750423a3 input=a9049054013a1b77]*/
+
+#ifndef ZLIB_DECOMPRESS_COPY_METHODDEF
+    #define ZLIB_DECOMPRESS_COPY_METHODDEF
+#endif /* !defined(ZLIB_DECOMPRESS_COPY_METHODDEF) */
+/*[clinic end generated code: output=497dad1132c962e2 input=a9049054013a1b77]*/

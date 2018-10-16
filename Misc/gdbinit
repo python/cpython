@@ -36,8 +36,8 @@ define pylocals
     set $_i = 0
     while $_i < f->f_code->co_nlocals
 	if f->f_localsplus + $_i != 0
-	    set $_names = co->co_varnames
-	    set $_name = _PyUnicode_AsString(PyTuple_GetItem($_names, $_i))
+	    set $_names = f->f_code->co_varnames
+	    set $_name = PyUnicode_AsUTF8(PyTuple_GetItem($_names, $_i))
 	    printf "%s:\n", $_name
             pyo f->f_localsplus[$_i]
 	end
@@ -76,8 +76,8 @@ define pyframev
 end
 
 define pyframe
-    set $__fn = _PyUnicode_AsString(co->co_filename)
-    set $__n = _PyUnicode_AsString(co->co_name)
+    set $__fn = PyUnicode_AsUTF8(f->f_code->co_filename)
+    set $__n = PyUnicode_AsUTF8(f->f_code->co_name)
     printf "%s (", $__fn
     lineno
     printf "): %s\n", $__n
@@ -102,7 +102,7 @@ end
 #end
 
 define printframe
-    if $pc > PyEval_EvalFrameEx && $pc < PyEval_EvalCodeEx
+    if $pc > PyEval_EvalFrameEx && $pc < _PyEval_EvalFrameDefault
 	pyframe
     else
         frame
@@ -129,7 +129,7 @@ end
 # print the entire Python call stack
 define pystack
     while $pc < Py_Main || $pc > Py_GetArgcArgv
-        if $pc > PyEval_EvalFrameEx && $pc < PyEval_EvalCodeEx
+        if $pc > PyEval_EvalFrameEx && $pc < _PyEval_EvalFrameDefault
 	    pyframe
         end
         up-silently 1
@@ -140,7 +140,7 @@ end
 # print the entire Python call stack - verbose mode
 define pystackv
     while $pc < Py_Main || $pc > Py_GetArgcArgv
-        if $pc > PyEval_EvalFrameEx && $pc < PyEval_EvalCodeEx
+        if $pc > PyEval_EvalFrameEx && $pc < _PyEval_EvalFrameDefault
 	    pyframev
         end
         up-silently 1

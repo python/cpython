@@ -31,7 +31,7 @@ static XxoObject *
 newXxoObject(PyObject *arg)
 {
     XxoObject *self;
-    self = PyObject_New(XxoObject, (PyTypeObject*)Xxo_Type);
+    self = PyObject_GC_New(XxoObject, (PyTypeObject*)Xxo_Type);
     if (self == NULL)
         return NULL;
     self->x_attr = NULL;
@@ -47,11 +47,10 @@ Xxo_traverse(XxoObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-static int
+static void
 Xxo_finalize(XxoObject *self)
 {
     Py_CLEAR(self->x_attr);
-    return 0;
 }
 
 static PyObject *

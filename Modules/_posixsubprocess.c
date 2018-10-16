@@ -111,13 +111,17 @@ _is_fdescfs_mounted_on_dev_fd(void)
 static int
 _sanity_check_python_fd_sequence(PyObject *fd_sequence)
 {
-    Py_ssize_t seq_idx, seq_len = PySequence_Length(fd_sequence);
+    Py_ssize_t seq_idx;
     long prev_fd = -1;
-    for (seq_idx = 0; seq_idx < seq_len; ++seq_idx) {
-        PyObject* py_fd = PySequence_Fast_GET_ITEM(fd_sequence, seq_idx);
-        long iter_fd = PyLong_AsLong(py_fd);
+    for (seq_idx = 0; seq_idx < PyTuple_GET_SIZE(fd_sequence); ++seq_idx) {
+        PyObject* py_fd = PyTuple_GET_ITEM(fd_sequence, seq_idx);
+        long iter_fd;
+        if (!PyLong_Check(py_fd)) {
+            return 1;
+        }
+        iter_fd = PyLong_AsLong(py_fd);
         if (iter_fd < 0 || iter_fd <= prev_fd || iter_fd > INT_MAX) {
-            /* Negative, overflow, not a Long, unsorted, too big for a fd. */
+            /* Negative, overflow, unsorted, too big for a fd. */
             return 1;
         }
         prev_fd = iter_fd;
@@ -132,13 +136,12 @@ _is_fd_in_sorted_fd_sequence(int fd, PyObject *fd_sequence)
 {
     /* Binary search. */
     Py_ssize_t search_min = 0;
-    Py_ssize_t search_max = PySequence_Length(fd_sequence) - 1;
+    Py_ssize_t search_max = PyTuple_GET_SIZE(fd_sequence) - 1;
     if (search_max < 0)
         return 0;
     do {
         long middle = (search_min + search_max) / 2;
-        long middle_fd = PyLong_AsLong(
-                PySequence_Fast_GET_ITEM(fd_sequence, middle));
+        long middle_fd = PyLong_AsLong(PyTuple_GET_ITEM(fd_sequence, middle));
         if (fd == middle_fd)
             return 1;
         if (fd > middle_fd)
@@ -154,9 +157,9 @@ make_inheritable(PyObject *py_fds_to_keep, int errpipe_write)
 {
     Py_ssize_t i, len;
 
-    len = PySequence_Length(py_fds_to_keep);
+    len = PyTuple_GET_SIZE(py_fds_to_keep);
     for (i = 0; i < len; ++i) {
-        PyObject* fdobj = PySequence_Fast_GET_ITEM(py_fds_to_keep, i);
+        PyObject* fdobj = PyTuple_GET_ITEM(py_fds_to_keep, i);
         long fd = PyLong_AsLong(fdobj);
         assert(!PyErr_Occurred());
         assert(0 <= fd && fd <= INT_MAX);
@@ -166,7 +169,7 @@ make_inheritable(PyObject *py_fds_to_keep, int errpipe_write)
                called. */
             continue;
         }
-        if (_Py_set_inheritable((int)fd, 1, NULL) < 0)
+        if (_Py_set_inheritable_async_safe((int)fd, 1, NULL) < 0)
             return -1;
     }
     return 0;
@@ -213,14 +216,13 @@ static void
 _close_fds_by_brute_force(long start_fd, PyObject *py_fds_to_keep)
 {
     long end_fd = safe_get_max_fd();
-    Py_ssize_t num_fds_to_keep = PySequence_Length(py_fds_to_keep);
+    Py_ssize_t num_fds_to_keep = PyTuple_GET_SIZE(py_fds_to_keep);
     Py_ssize_t keep_seq_idx;
     int fd_num;
     /* As py_fds_to_keep is sorted we can loop through the list closing
      * fds inbetween any in the keep list falling within our range. */
     for (keep_seq_idx = 0; keep_seq_idx < num_fds_to_keep; ++keep_seq_idx) {
-        PyObject* py_keep_fd = PySequence_Fast_GET_ITEM(py_fds_to_keep,
-                                                        keep_seq_idx);
+        PyObject* py_keep_fd = PyTuple_GET_ITEM(py_fds_to_keep, keep_seq_idx);
         int keep_fd = PyLong_AsLong(py_keep_fd);
         if (keep_fd < start_fd)
             continue;
@@ -306,7 +308,7 @@ _close_open_fds_safe(int start_fd, PyObject* py_fds_to_keep)
 
 
 /* Close all open file descriptors from start_fd and higher.
- * Do not close any in the sorted py_fds_to_keep list.
+ * Do not close any in the sorted py_fds_to_keep tuple.
  *
  * This function violates the strict use of async signal safe functions. :(
  * It calls opendir(), readdir() and closedir().  Of these, the one most
@@ -420,43 +422,47 @@ child_exec(char *const exec_array[],
 
     /* When duping fds, if there arises a situation where one of the fds is
        either 0, 1 or 2, it is possible that it is overwritten (#12607). */
-    if (c2pwrite == 0)
+    if (c2pwrite == 0) {
         POSIX_CALL(c2pwrite = dup(c2pwrite));
-    if (errwrite == 0 || errwrite == 1)
+        /* issue32270 */
+        if (_Py_set_inheritable_async_safe(c2pwrite, 0, NULL) < 0) {
+            goto error;
+        }
+    }
+    while (errwrite == 0 || errwrite == 1) {
         POSIX_CALL(errwrite = dup(errwrite));
+        /* issue32270 */
+        if (_Py_set_inheritable_async_safe(errwrite, 0, NULL) < 0) {
+            goto error;
+        }
+    }
 
     /* Dup fds for child.
        dup2() removes the CLOEXEC flag but we must do it ourselves if dup2()
        would be a no-op (issue #10806). */
     if (p2cread == 0) {
-        if (_Py_set_inheritable(p2cread, 1, NULL) < 0)
+        if (_Py_set_inheritable_async_safe(p2cread, 1, NULL) < 0)
             goto error;
     }
     else if (p2cread != -1)
         POSIX_CALL(dup2(p2cread, 0));  /* stdin */
 
     if (c2pwrite == 1) {
-        if (_Py_set_inheritable(c2pwrite, 1, NULL) < 0)
+        if (_Py_set_inheritable_async_safe(c2pwrite, 1, NULL) < 0)
             goto error;
     }
     else if (c2pwrite != -1)
         POSIX_CALL(dup2(c2pwrite, 1));  /* stdout */
 
     if (errwrite == 2) {
-        if (_Py_set_inheritable(errwrite, 1, NULL) < 0)
+        if (_Py_set_inheritable_async_safe(errwrite, 1, NULL) < 0)
             goto error;
     }
     else if (errwrite != -1)
         POSIX_CALL(dup2(errwrite, 2));  /* stderr */
 
-    /* Close pipe fds.  Make sure we don't close the same fd more than */
-    /* once, or standard fds. */
-    if (p2cread > 2)
-        POSIX_CALL(close(p2cread));
-    if (c2pwrite > 2 && c2pwrite != p2cread)
-        POSIX_CALL(close(c2pwrite));
-    if (errwrite != c2pwrite && errwrite != p2cread && errwrite > 2)
-        POSIX_CALL(close(errwrite));
+    /* We no longer manually close p2cread, c2pwrite, and errwrite here as
+     * _close_open_fds takes care when it is not already non-inheritable. */
 
     if (cwd)
         POSIX_CALL(chdir(cwd));
@@ -562,8 +568,9 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
 #endif
 
     if (!PyArg_ParseTuple(
-            args, "OOpOOOiiiiiiiiiiO:fork_exec",
-            &process_args, &executable_list, &close_fds, &py_fds_to_keep,
+            args, "OOpO!OOiiiiiiiiiiO:fork_exec",
+            &process_args, &executable_list,
+            &close_fds, &PyTuple_Type, &py_fds_to_keep,
             &cwd_obj, &env_list,
             &p2cread, &p2cwrite, &c2pread, &c2pwrite,
             &errread, &errwrite, &errpipe_read, &errpipe_write,
@@ -572,10 +579,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
 
     if (close_fds && errpipe_write < 3) {  /* precondition */
         PyErr_SetString(PyExc_ValueError, "errpipe_write must be >= 3");
-        return NULL;
-    }
-    if (PySequence_Length(py_fds_to_keep) < 0) {
-        PyErr_SetString(PyExc_ValueError, "cannot get length of fds_to_keep");
         return NULL;
     }
     if (_sanity_check_python_fd_sequence(py_fds_to_keep)) {
@@ -631,6 +634,10 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             goto cleanup;
         for (arg_num = 0; arg_num < num_args; ++arg_num) {
             PyObject *borrowed_arg, *converted_arg;
+            if (PySequence_Fast_GET_SIZE(fast_args) != num_args) {
+                PyErr_SetString(PyExc_RuntimeError, "args changed during iteration");
+                goto cleanup;
+            }
             borrowed_arg = PySequence_Fast_GET_ITEM(fast_args, arg_num);
             if (PyUnicode_FSConverter(borrowed_arg, &converted_arg) == 0)
                 goto cleanup;

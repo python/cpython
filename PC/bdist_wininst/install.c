@@ -154,7 +154,7 @@ HANDLE hBitmap;
 char *bitmap_bytes;
 
 static const char *REGISTRY_SUFFIX_6432 =
-#ifdef MS_WIN64
+#ifdef _WIN64
                                           "";
 #else
                                           "-32";

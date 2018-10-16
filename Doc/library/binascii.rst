@@ -77,7 +77,7 @@ The :mod:`binascii` module defines the following functions:
    *quotetabs* is present and true, all tabs and spaces will be encoded.   If the
    optional argument *istext* is present and true, newlines are not encoded but
    trailing whitespace will be encoded. If the optional argument *header* is
-   present and true, spaces will be encoded as underscores per RFC1522. If the
+   present and true, spaces will be encoded as underscores per :rfc:`1522`. If the
    optional argument *header* is present and false, newline characters will be
    encoded as well; otherwise linefeed conversion might corrupt the binary data
    stream.
@@ -116,8 +116,10 @@ The :mod:`binascii` module defines the following functions:
 
 .. function:: crc_hqx(data, value)
 
-   Compute the binhex4 crc value of *data*, starting with *value* as the
-   initial crc, and return the result.
+   Compute a 16-bit CRC value of *data*, starting with *value* as the
+   initial CRC, and return the result.  This uses the CRC-CCITT polynomial
+   *x*:sup:`16` + *x*:sup:`12` + *x*:sup:`5` + 1, often represented as
+   0x1021.  This CRC is used in the binhex4 format.
 
 
 .. function:: crc32(data[, value])

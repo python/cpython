@@ -236,7 +236,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
     entry->hash = hash;
     if ((size_t)so->fill*3 < mask*2)
         return 0;
-    return set_table_resize(so, so->used);
+    return set_table_resize(so, so->used>50000 ? so->used*2 : so->used*4);
 
   found_active:
     Py_DECREF(key);
@@ -304,7 +304,6 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     setentry small_copy[PySet_MINSIZE];
 
     assert(minused >= 0);
-    minused = (minused > 50000) ? minused * 2 : minused * 4;
 
     /* Find the smallest table size > minused. */
     /* XXX speed-up with intrinsics */
@@ -557,6 +556,7 @@ set_dealloc(PySetObject *so)
     setentry *entry;
     Py_ssize_t used = so->used;
 
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(so);
     Py_TRASHCAN_SAFE_BEGIN(so)
     if (so->weakreflist != NULL)
@@ -646,8 +646,8 @@ set_merge(PySetObject *so, PyObject *otherset)
      * that there will be no (or few) overlapping keys.
      */
     if ((so->fill + other->used)*3 >= so->mask*2) {
-       if (set_table_resize(so, so->used + other->used) != 0)
-           return -1;
+        if (set_table_resize(so, (so->used + other->used)*2) != 0)
+            return -1;
     }
     so_entry = so->table;
     other_entry = other->table;
@@ -790,6 +790,7 @@ frozenset_hash(PyObject *self)
     hash ^= ((Py_uhash_t)PySet_GET_SIZE(self) + 1) * 1927868237UL;
 
     /* Disperse patterns arising in nested frozensets */
+    hash ^= (hash >> 11) ^ (hash >> 25);
     hash = hash * 69069U + 907133923UL;
 
     /* -1 is reserved as an error code */
@@ -813,6 +814,8 @@ typedef struct {
 static void
 setiter_dealloc(setiterobject *si)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    _PyObject_GC_UNTRACK(si);
     Py_XDECREF(si->si_set);
     PyObject_GC_Del(si);
 }
@@ -990,7 +993,7 @@ set_update_internal(PySetObject *so, PyObject *other)
         if (dictsize < 0)
             return -1;
         if ((so->fill + dictsize)*3 >= so->mask*2) {
-            if (set_table_resize(so, so->used + dictsize) != 0)
+            if (set_table_resize(so, (so->used + dictsize)*2) != 0)
                 return -1;
         }
         while (_PyDict_Next(other, &pos, &key, &value, &hash)) {
@@ -1511,7 +1514,7 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
     /* If more than 1/4th are dummies, then resize them away. */
     if ((size_t)(so->fill - so->used) <= (size_t)so->mask / 4)
         return 0;
-    return set_table_resize(so, so->used);
+    return set_table_resize(so, so->used>50000 ? so->used*2 : so->used*4);
 }
 
 static PyObject *
@@ -1551,20 +1554,26 @@ set_difference(PySetObject *so, PyObject *other)
     PyObject *key;
     Py_hash_t hash;
     setentry *entry;
-    Py_ssize_t pos = 0;
+    Py_ssize_t pos = 0, other_size;
     int rv;
 
     if (PySet_GET_SIZE(so) == 0) {
         return set_copy(so);
     }
 
-    if (!PyAnySet_Check(other)  && !PyDict_CheckExact(other)) {
+    if (PyAnySet_Check(other)) {
+        other_size = PySet_GET_SIZE(other);
+    }
+    else if (PyDict_CheckExact(other)) {
+        other_size = PyDict_Size(other);
+    }
+    else {
         return set_copy_and_difference(so, other);
     }
 
     /* If len(so) much more than len(other), it's more efficient to simply copy
      * so and then iterate other looking for common elements. */
-    if ((PySet_GET_SIZE(so) >> 2) > PyObject_Size(other)) {
+    if ((PySet_GET_SIZE(so) >> 2) > other_size) {
         return set_copy_and_difference(so, other);
     }
 
@@ -1731,8 +1740,10 @@ set_symmetric_difference(PySetObject *so, PyObject *other)
     if (otherset == NULL)
         return NULL;
     rv = set_symmetric_difference_update(otherset, (PyObject *)so);
-    if (rv == NULL)
+    if (rv == NULL) {
+        Py_DECREF(otherset);
         return NULL;
+    }
     Py_DECREF(rv);
     return (PyObject *)otherset;
 }

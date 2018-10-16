@@ -9,6 +9,9 @@
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
@@ -227,12 +230,13 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
                          int closefd, PyObject *opener)
 /*[clinic end generated code: output=23413f68e6484bbd input=193164e293d6c097]*/
 {
-    const char *name = NULL;
-    PyObject *stringobj = NULL;
-    const char *s;
 #ifdef MS_WINDOWS
     Py_UNICODE *widename = NULL;
+#else
+    const char *name = NULL;
 #endif
+    PyObject *stringobj = NULL;
+    const char *s;
     int ret = 0;
     int rwa = 0, plus = 0;
     int flags = 0;
@@ -274,24 +278,20 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         PyErr_Clear();
     }
 
+    if (fd < 0) {
 #ifdef MS_WINDOWS
-    if (PyUnicode_Check(nameobj)) {
-        Py_ssize_t length;
-        widename = PyUnicode_AsUnicodeAndSize(nameobj, &length);
-        if (widename == NULL)
-            return -1;
-        if (wcslen(widename) != length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
+        if (!PyUnicode_FSDecoder(nameobj, &stringobj)) {
             return -1;
         }
-    } else
-#endif
-    if (fd < 0)
-    {
+        widename = PyUnicode_AsUnicode(stringobj);
+        if (widename == NULL)
+            return -1;
+#else
         if (!PyUnicode_FSConverter(nameobj, &stringobj)) {
             return -1;
         }
         name = PyBytes_AS_STRING(stringobj);
+#endif
     }
 
     s = mode;
@@ -383,11 +383,10 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
             do {
                 Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
-                if (widename != NULL)
-                    self->fd = _wopen(widename, flags, 0666);
-                else
+                self->fd = _wopen(widename, flags, 0666);
+#else
+                self->fd = open(name, flags, 0666);
 #endif
-                    self->fd = open(name, flags, 0666);
                 Py_END_ALLOW_THREADS
             } while (self->fd < 0 && errno == EINTR &&
                      !(async_err = PyErr_CheckSignals()));
@@ -692,10 +691,12 @@ _io_FileIO_readall_impl(fileio *self)
     Py_ssize_t bytes_read = 0;
     Py_ssize_t n;
     size_t bufsize;
+    int fstat_result;
 
     if (self->fd < 0)
         return err_closed();
 
+    Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
     pos = _lseeki64(self->fd, 0L, SEEK_CUR);
@@ -703,8 +704,10 @@ _io_FileIO_readall_impl(fileio *self)
     pos = lseek(self->fd, 0L, SEEK_CUR);
 #endif
     _Py_END_SUPPRESS_IPH
+    fstat_result = _Py_fstat_noraise(self->fd, &status);
+    Py_END_ALLOW_THREADS
 
-    if (_Py_fstat_noraise(self->fd, &status) == 0)
+    if (fstat_result == 0)
         end = status.st_size;
     else
         end = (Py_off_t)-1;
@@ -1082,9 +1085,19 @@ fileio_repr(fileio *self)
             self->fd, mode_string(self), self->closefd ? "True" : "False");
     }
     else {
-        res = PyUnicode_FromFormat(
-            "<_io.FileIO name=%R mode='%s' closefd=%s>",
-            nameobj, mode_string(self), self->closefd ? "True" : "False");
+        int status = Py_ReprEnter((PyObject *)self);
+        res = NULL;
+        if (status == 0) {
+            res = PyUnicode_FromFormat(
+                "<_io.FileIO name=%R mode='%s' closefd=%s>",
+                nameobj, mode_string(self), self->closefd ? "True" : "False");
+            Py_ReprLeave((PyObject *)self);
+        }
+        else if (status > 0) {
+            PyErr_Format(PyExc_RuntimeError,
+                         "reentrant call inside %s.__repr__",
+                         Py_TYPE(self)->tp_name);
+        }
         Py_DECREF(nameobj);
     }
     return res;

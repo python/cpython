@@ -408,7 +408,7 @@ Simple example::
 
    >>> [1, 2, 3].remove(42)
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    ValueError: list.remove(x): x not in list
 
 That doctest succeeds if :exc:`ValueError` is raised, with the ``list.remove(x):
@@ -432,7 +432,7 @@ multi-line detail::
 
    >>> raise ValueError('multi\n    line\ndetail')
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    ValueError: multi
        line
    detail
@@ -510,9 +510,9 @@ Option Flags
 
 A number of option flags control various aspects of doctest's behavior.
 Symbolic names for the flags are supplied as module constants, which can be
-or'ed together and passed to various functions.  The names can also be used in
-:ref:`doctest directives <doctest-directives>`, and may be passed to the
-doctest command line interface via the ``-o`` option.
+:ref:`bitwise ORed <bitwise>` together and passed to various functions.
+The names can also be used in :ref:`doctest directives <doctest-directives>`,
+and may be passed to the doctest command line interface via the ``-o`` option.
 
 .. versionadded:: 3.4
    The ``-o`` command line option.
@@ -591,7 +591,7 @@ doctest decides whether actual output matches an example's expected output:
 
       >>> (1, 2)[3] = 'moo'
       Traceback (most recent call last):
-        File "<stdin>", line 1, in ?
+        File "<stdin>", line 1, in <module>
       TypeError: object doesn't support item assignment
 
    passes under Python 2.3 and later Python versions with the flag specified,
@@ -877,8 +877,9 @@ and :ref:`doctest-simple-testfile`.
    nothing at the end.  In verbose mode, the summary is detailed, else the summary
    is very brief (in fact, empty if all tests passed).
 
-   Optional argument *optionflags* (default value 0) takes the bitwise-or of
-   option flags.  See section :ref:`doctest-options`.
+   Optional argument *optionflags* (default value 0) takes the
+   :ref:`bitwise OR <bitwise>` of option flags.
+   See section :ref:`doctest-options`.
 
    Optional argument *raise_on_error* defaults to false.  If true, an exception is
    raised upon the first failure or unexpected exception in an example.  This
@@ -1098,18 +1099,19 @@ reporting flags specific to :mod:`unittest` support, via this function:
 
    Set the :mod:`doctest` reporting flags to use.
 
-   Argument *flags* takes the bitwise-or of option flags.  See section
-   :ref:`doctest-options`.  Only "reporting flags" can be used.
+   Argument *flags* takes the :ref:`bitwise OR <bitwise>` of option flags.  See
+   section :ref:`doctest-options`.  Only "reporting flags" can be used.
 
    This is a module-global setting, and affects all future doctests run by module
    :mod:`unittest`:  the :meth:`runTest` method of :class:`DocTestCase` looks at
    the option flags specified for the test case when the :class:`DocTestCase`
    instance was constructed.  If no reporting flags were specified (which is the
    typical and expected case), :mod:`doctest`'s :mod:`unittest` reporting flags are
-   or'ed into the option flags, and the option flags so augmented are passed to the
-   :class:`DocTestRunner` instance created to run the doctest.  If any reporting
-   flags were specified when the :class:`DocTestCase` instance was constructed,
-   :mod:`doctest`'s :mod:`unittest` reporting flags are ignored.
+   :ref:`bitwise ORed <bitwise>` into the option flags, and the option flags
+   so augmented are passed to the :class:`DocTestRunner` instance created to
+   run the doctest.  If any reporting flags were specified when the
+   :class:`DocTestCase` instance was constructed, :mod:`doctest`'s
+   :mod:`unittest` reporting flags are ignored.
 
    The value of the :mod:`unittest` reporting flags in effect before the function
    was called is returned by the function.

@@ -985,10 +985,10 @@ sys_getwindowsversion(PyObject *self)
         }
         PyMem_RawFree(verblock);
     }
-    PyStructSequence_SET_ITEM(version, pos++, PyTuple_Pack(3,
-        PyLong_FromLong(realMajor),
-        PyLong_FromLong(realMinor),
-        PyLong_FromLong(realBuild)
+    PyStructSequence_SET_ITEM(version, pos++, Py_BuildValue("(kkk)",
+        realMajor,
+        realMinor,
+        realBuild
     ));
 
     if (PyErr_Occurred()) {
@@ -1942,9 +1942,9 @@ _PySys_Init(void)
                          PyUnicode_FromString(Py_GetVersion()));
     SET_SYS_FROM_STRING("hexversion",
                          PyLong_FromLong(PY_VERSION_HEX));
-    SET_SYS_FROM_STRING("_mercurial",
-                        Py_BuildValue("(szz)", "CPython", _Py_hgidentifier(),
-                                      _Py_hgversion()));
+    SET_SYS_FROM_STRING("_git",
+                        Py_BuildValue("(szz)", "CPython", _Py_gitidentifier(),
+                                      _Py_gitversion()));
     SET_SYS_FROM_STRING("dont_write_bytecode",
                          PyBool_FromLong(Py_DontWriteBytecodeFlag));
     SET_SYS_FROM_STRING("api_version",

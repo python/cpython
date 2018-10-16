@@ -24,7 +24,7 @@ import importlib
 import os
 from sys import executable, platform  # Platform is set for one test.
 
-from tkinter import Toplevel, StringVar, W, E, N, S
+from tkinter import Toplevel, StringVar, W, E, S
 from tkinter.ttk import Frame, Button, Entry, Label
 from tkinter import filedialog
 from tkinter.font import Font
@@ -142,6 +142,10 @@ class Query(Toplevel):
         "Set dialog result to None and destroy tk widget."
         self.result = None
         self.destroy()
+
+    def destroy(self):
+        self.grab_release()
+        super().destroy()
 
 
 class SectionName(Query):
@@ -301,8 +305,8 @@ class HelpSource(Query):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_query', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_query', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(Query, HelpSource)

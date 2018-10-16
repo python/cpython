@@ -148,6 +148,7 @@ class Task(futures.Future):
         terminates with a CancelledError exception (even if cancel()
         was not called).
         """
+        self._log_traceback = False
         if self.done():
             return False
         if self._fut_waiter is not None:
@@ -180,7 +181,12 @@ class Task(futures.Future):
             else:
                 result = coro.throw(exc)
         except StopIteration as exc:
-            self.set_result(exc.value)
+            if self._must_cancel:
+                # Task is cancelled right before coro stops.
+                self._must_cancel = False
+                self.set_exception(futures.CancelledError())
+            else:
+                self.set_result(exc.value)
         except futures.CancelledError:
             super().cancel()  # I.e., Future.cancel(self).
         except Exception as exc:
@@ -227,7 +233,7 @@ class Task(futures.Future):
                     self._step,
                     RuntimeError(
                         'yield was used instead of yield from for '
-                        'generator in task {!r} with {}'.format(
+                        'generator in task {!r} with {!r}'.format(
                             self, result)))
             else:
                 # Yielding something else is an error.
@@ -487,7 +493,8 @@ def async_(coro_or_future, *, loop=None):
     """
 
     warnings.warn("asyncio.async() function is deprecated, use ensure_future()",
-                  DeprecationWarning)
+                  DeprecationWarning,
+                  stacklevel=2)
 
     return ensure_future(coro_or_future, loop=loop)
 
@@ -516,7 +523,8 @@ def ensure_future(coro_or_future, *, loop=None):
     elif compat.PY35 and inspect.isawaitable(coro_or_future):
         return ensure_future(_wrap_awaitable(coro_or_future), loop=loop)
     else:
-        raise TypeError('A Future, a coroutine or an awaitable is required')
+        raise TypeError('An asyncio.Future, a coroutine or an awaitable is '
+                        'required')
 
 
 @coroutine
@@ -540,6 +548,7 @@ class _GatheringFuture(futures.Future):
     def __init__(self, children, *, loop=None):
         super().__init__(loop=loop)
         self._children = children
+        self._cancel_requested = False
 
     def cancel(self):
         if self.done():
@@ -548,6 +557,11 @@ class _GatheringFuture(futures.Future):
         for child in self._children:
             if child.cancel():
                 ret = True
+        if ret:
+            # If any child tasks were actually cancelled, we should
+            # propagate the cancellation request regardless of
+            # *return_exceptions* argument.  See issue 32684.
+            self._cancel_requested = True
         return ret
 
 
@@ -628,7 +642,10 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
         results[i] = res
         nfinished += 1
         if nfinished == nchildren:
-            outer.set_result(results)
+            if outer._cancel_requested:
+                outer.set_exception(futures.CancelledError())
+            else:
+                outer.set_result(results)
 
     for i, fut in enumerate(children):
         fut.add_done_callback(functools.partial(_done_callback, i))

@@ -11,6 +11,7 @@ test.support.import_module('threading')
 
 from test.support.script_helper import assert_python_ok
 
+import itertools
 import os
 import sys
 import threading
@@ -59,11 +60,26 @@ class MyObject(object):
         pass
 
 
+def make_dummy_object(_):
+    return MyObject()
+
+
+class BaseTestCase(unittest.TestCase):
+    def setUp(self):
+        self._thread_key = test.support.threading_setup()
+
+    def tearDown(self):
+        test.support.reap_children()
+        test.support.threading_cleanup(*self._thread_key)
+
+
 class ExecutorMixin:
     worker_count = 5
 
     def setUp(self):
-        self.t1 = time.time()
+        super().setUp()
+
+        self.t1 = time.monotonic()
         try:
             self.executor = self.executor_type(max_workers=self.worker_count)
         except NotImplementedError as e:
@@ -72,10 +88,14 @@ class ExecutorMixin:
 
     def tearDown(self):
         self.executor.shutdown(wait=True)
-        dt = time.time() - self.t1
+        self.executor = None
+
+        dt = time.monotonic() - self.t1
         if test.support.verbose:
             print("%.2fs" % dt, end=' ')
-        self.assertLess(dt, 60, "synchronization issue: test lasted too long")
+        self.assertLess(dt, 300, "synchronization issue: test lasted too long")
+
+        super().tearDown()
 
     def _prime_executor(self):
         # Make sure that the executor is ready to do work before running the
@@ -123,7 +143,7 @@ class ExecutorShutdownTest:
             f.result()
 
 
-class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, unittest.TestCase):
+class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase):
     def _prime_executor(self):
         pass
 
@@ -172,14 +192,13 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, unittest.Tes
         del executor
 
         for t in threads:
-            # We don't particularly care what the default name is, just that
-            # it has a default name implying that it is a ThreadPoolExecutor
-            # followed by what looks like a thread number.
-            self.assertRegex(t.name, r'^.*ThreadPoolExecutor.*_[0-4]$')
+            # Ensure that our default name is reasonably sane and unique when
+            # no thread_name_prefix was supplied.
+            self.assertRegex(t.name, r'ThreadPoolExecutor-\d+_[0-4]$')
             t.join()
 
 
-class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest, unittest.TestCase):
+class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest, BaseTestCase):
     def _prime_executor(self):
         pass
 
@@ -208,11 +227,14 @@ class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest, unittest.T
         list(executor.map(abs, range(-5, 5)))
         queue_management_thread = executor._queue_management_thread
         processes = executor._processes
+        call_queue = executor._call_queue
         del executor
 
         queue_management_thread.join()
         for p in processes.values():
             p.join()
+        call_queue.close()
+        call_queue.join_thread()
 
 
 class WaitTests:
@@ -316,7 +338,7 @@ class WaitTests:
         self.assertEqual(set([future2]), pending)
 
 
-class ThreadPoolWaitTests(ThreadPoolMixin, WaitTests, unittest.TestCase):
+class ThreadPoolWaitTests(ThreadPoolMixin, WaitTests, BaseTestCase):
 
     def test_pending_calls_race(self):
         # Issue #14406: multi-threaded race condition when waiting on all
@@ -334,7 +356,7 @@ class ThreadPoolWaitTests(ThreadPoolMixin, WaitTests, unittest.TestCase):
             sys.setswitchinterval(oldswitchinterval)
 
 
-class ProcessPoolWaitTests(ProcessPoolMixin, WaitTests, unittest.TestCase):
+class ProcessPoolWaitTests(ProcessPoolMixin, WaitTests, BaseTestCase):
     pass
 
 
@@ -378,16 +400,51 @@ class AsCompletedTests:
     def test_duplicate_futures(self):
         # Issue 20367. Duplicate futures should not raise exceptions or give
         # duplicate responses.
+        # Issue #31641: accept arbitrary iterables.
         future1 = self.executor.submit(time.sleep, 2)
-        completed = [f for f in futures.as_completed([future1,future1])]
+        completed = [
+            f for f in futures.as_completed(itertools.repeat(future1, 3))
+        ]
         self.assertEqual(len(completed), 1)
 
+    def test_free_reference_yielded_future(self):
+        # Issue #14406: Generator should not keep references
+        # to finished futures.
+        futures_list = [Future() for _ in range(8)]
+        futures_list.append(create_future(state=CANCELLED_AND_NOTIFIED))
+        futures_list.append(create_future(state=FINISHED, result=42))
 
-class ThreadPoolAsCompletedTests(ThreadPoolMixin, AsCompletedTests, unittest.TestCase):
+        with self.assertRaises(futures.TimeoutError):
+            for future in futures.as_completed(futures_list, timeout=0):
+                futures_list.remove(future)
+                wr = weakref.ref(future)
+                del future
+                self.assertIsNone(wr())
+
+        futures_list[0].set_result("test")
+        for future in futures.as_completed(futures_list):
+            futures_list.remove(future)
+            wr = weakref.ref(future)
+            del future
+            self.assertIsNone(wr())
+            if futures_list:
+                futures_list[0].set_result("test")
+
+    def test_correct_timeout_exception_msg(self):
+        futures_list = [CANCELLED_AND_NOTIFIED_FUTURE, PENDING_FUTURE,
+                        RUNNING_FUTURE, SUCCESSFUL_FUTURE]
+
+        with self.assertRaises(futures.TimeoutError) as cm:
+            list(futures.as_completed(futures_list, timeout=0))
+
+        self.assertEqual(str(cm.exception), '2 (of 4) futures unfinished')
+
+
+class ThreadPoolAsCompletedTests(ThreadPoolMixin, AsCompletedTests, BaseTestCase):
     pass
 
 
-class ProcessPoolAsCompletedTests(ProcessPoolMixin, AsCompletedTests, unittest.TestCase):
+class ProcessPoolAsCompletedTests(ProcessPoolMixin, AsCompletedTests, BaseTestCase):
     pass
 
 
@@ -405,6 +462,10 @@ class ExecutorTest:
     def test_map(self):
         self.assertEqual(
                 list(self.executor.map(pow, range(10), range(10))),
+                list(map(pow, range(10), range(10))))
+
+        self.assertEqual(
+                list(self.executor.map(pow, range(10), range(10), chunksize=3)),
                 list(map(pow, range(10), range(10))))
 
     def test_map_exception(self):
@@ -457,8 +518,16 @@ class ExecutorTest:
                                         "than 0"):
                 self.executor_type(max_workers=number)
 
+    def test_free_reference(self):
+        # Issue #14406: Result iterator should not keep an internal
+        # reference to result objects.
+        for obj in self.executor.map(make_dummy_object, range(10)):
+            wr = weakref.ref(obj)
+            del obj
+            self.assertIsNone(wr())
 
-class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, unittest.TestCase):
+
+class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
     def test_map_submits_without_iteration(self):
         """Tests verifying issue 11777."""
         finished = []
@@ -475,7 +544,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, unittest.TestCase):
                          (os.cpu_count() or 1) * 5)
 
 
-class ProcessPoolExecutorTest(ProcessPoolMixin, ExecutorTest, unittest.TestCase):
+class ProcessPoolExecutorTest(ProcessPoolMixin, ExecutorTest, BaseTestCase):
     def test_killed_child(self):
         # When a child process is abruptly terminated, the whole pool gets
         # "broken".
@@ -531,7 +600,7 @@ class ProcessPoolExecutorTest(ProcessPoolMixin, ExecutorTest, unittest.TestCase)
                       f1.getvalue())
 
 
-class FutureTests(unittest.TestCase):
+class FutureTests(BaseTestCase):
     def test_done_callback_with_result(self):
         callback_result = None
         def fn(callback_future):
@@ -711,6 +780,7 @@ class FutureTests(unittest.TestCase):
         t.start()
 
         self.assertEqual(f1.result(timeout=5), 42)
+        t.join()
 
     def test_result_with_cancel(self):
         # TODO(brian@sweetapp.com): This test is timing dependent.
@@ -724,6 +794,7 @@ class FutureTests(unittest.TestCase):
         t.start()
 
         self.assertRaises(futures.CancelledError, f1.result, timeout=5)
+        t.join()
 
     def test_exception_with_timeout(self):
         self.assertRaises(futures.TimeoutError,
@@ -752,6 +823,7 @@ class FutureTests(unittest.TestCase):
         t.start()
 
         self.assertTrue(isinstance(f1.exception(timeout=5), OSError))
+        t.join()
 
 @test.support.reap_threads
 def test_main():

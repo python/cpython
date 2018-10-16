@@ -1,0 +1,518 @@
+.. bpo: 23573
+.. date: 8002
+.. nonce: ZpM4D-
+.. release date: 2015-03-28
+.. section: Core and Builtins
+
+Increased performance of string search operations (str.find, str.index,
+str.count, the in operator, str.split, str.partition) with arguments of
+different kinds (UCS1, UCS2, UCS4).
+
+..
+
+.. bpo: 23753
+.. date: 8001
+.. nonce: CREjLC
+.. section: Core and Builtins
+
+Python doesn't support anymore platforms without stat() or fstat(), these
+functions are always required.
+
+..
+
+.. bpo: 23681
+.. date: 8000
+.. nonce: kh02TF
+.. section: Core and Builtins
+
+The -b option now affects comparisons of bytes with int.
+
+..
+
+.. bpo: 23632
+.. date: 7999
+.. nonce: UVdIZY
+.. section: Core and Builtins
+
+Memoryviews now allow tuple indexing (including for multi-dimensional
+memoryviews).
+
+..
+
+.. bpo: 23192
+.. date: 7998
+.. nonce: QKqdow
+.. section: Core and Builtins
+
+Fixed generator lambdas.  Patch by Bruno Cauet.
+
+..
+
+.. bpo: 23629
+.. date: 7997
+.. nonce: r9Mt2C
+.. section: Core and Builtins
+
+Fix the default __sizeof__ implementation for variable-sized objects.
+
+..
+
+.. bpo: 14260
+.. date: 7996
+.. nonce: b5M04V
+.. section: Library
+
+The groupindex attribute of regular expression pattern object now is
+non-modifiable mapping.
+
+..
+
+.. bpo: 23792
+.. date: 7995
+.. nonce: Kfm9-f
+.. section: Library
+
+Ignore KeyboardInterrupt when the pydoc pager is active. This mimics the
+behavior of the standard unix pagers, and prevents pipepager from shutting
+down while the pager itself is still running.
+
+..
+
+.. bpo: 23775
+.. date: 7994
+.. nonce: xKGrSQ
+.. section: Library
+
+pprint() of OrderedDict now outputs the same representation as repr().
+
+..
+
+.. bpo: 23765
+.. date: 7993
+.. nonce: 2ta_C4
+.. section: Library
+
+Removed IsBadStringPtr calls in ctypes
+
+..
+
+.. bpo: 22364
+.. date: 7992
+.. nonce: ejtoKl
+.. section: Library
+
+Improved some re error messages using regex for hints.
+
+..
+
+.. bpo: 23742
+.. date: 7991
+.. nonce: _EkAIa
+.. section: Library
+
+ntpath.expandvars() no longer loses unbalanced single quotes.
+
+..
+
+.. bpo: 21717
+.. date: 7990
+.. nonce: pKndpx
+.. section: Library
+
+The zipfile.ZipFile.open function now supports 'x' (exclusive creation)
+mode.
+
+..
+
+.. bpo: 21802
+.. date: 7989
+.. nonce: ygSM2A
+.. section: Library
+
+The reader in BufferedRWPair now is closed even when closing writer failed
+in BufferedRWPair.close().
+
+..
+
+.. bpo: 23622
+.. date: 7988
+.. nonce: 9-ZRqj
+.. section: Library
+
+Unknown escapes in regular expressions that consist of ``'\'`` and ASCII
+letter now raise a deprecation warning and will be forbidden in Python 3.6.
+
+..
+
+.. bpo: 23671
+.. date: 7987
+.. nonce: zWPm-a
+.. section: Library
+
+string.Template now allows specifying the "self" parameter as a keyword
+argument.  string.Formatter now allows specifying the "self" and the
+"format_string" parameters as keyword arguments.
+
+..
+
+.. bpo: 23502
+.. date: 7986
+.. nonce: AH20IQ
+.. section: Library
+
+The pprint module now supports mapping proxies.
+
+..
+
+.. bpo: 17530
+.. date: 7985
+.. nonce: PUp8rL
+.. section: Library
+
+pprint now wraps long bytes objects and bytearrays.
+
+..
+
+.. bpo: 22687
+.. date: 7984
+.. nonce: zEJPd9
+.. section: Library
+
+Fixed some corner cases in breaking words in tetxtwrap. Got rid of quadratic
+complexity in breaking long words.
+
+..
+
+.. bpo: 4727
+.. date: 7983
+.. nonce: iDQSpi
+.. section: Library
+
+The copy module now uses pickle protocol 4 (PEP 3154) and supports copying
+of instances of classes whose __new__ method takes keyword-only arguments.
+
+..
+
+.. bpo: 23491
+.. date: 7982
+.. nonce: P_WKrt
+.. section: Library
+
+Added a zipapp module to support creating executable zip file archives of
+Python code. Registered ".pyz" and ".pyzw" extensions on Windows for these
+archives (PEP 441).
+
+..
+
+.. bpo: 23657
+.. date: 7981
+.. nonce: y1OaV-
+.. section: Library
+
+Avoid explicit checks for str in zipapp, adding support for pathlib.Path
+objects as arguments.
+
+..
+
+.. bpo: 23688
+.. date: 7980
+.. nonce: d6LVy3
+.. section: Library
+
+Added support of arbitrary bytes-like objects and avoided unnecessary
+copying of memoryview in gzip.GzipFile.write(). Original patch by Wolfgang
+Maier.
+
+..
+
+.. bpo: 23252
+.. date: 7979
+.. nonce: Goi18g
+.. section: Library
+
+Added support for writing ZIP files to unseekable streams.
+
+..
+
+.. bpo: 23647
+.. date: 7978
+.. nonce: pX2qrx
+.. section: Library
+
+Increase imaplib's MAXLINE to accommodate modern mailbox sizes.
+
+..
+
+.. bpo: 23539
+.. date: 7977
+.. nonce: 5BVUim
+.. section: Library
+
+If body is None, http.client.HTTPConnection.request now sets Content-Length
+to 0 for PUT, POST, and PATCH headers to avoid 411 errors from some web
+servers.
+
+..
+
+.. bpo: 22351
+.. date: 7976
+.. nonce: agB8Y3
+.. section: Library
+
+The nntplib.NNTP constructor no longer leaves the connection and socket open
+until the garbage collector cleans them up.  Patch by Martin Panter.
+
+..
+
+.. bpo: 23704
+.. date: 7975
+.. nonce: LTyyxL
+.. section: Library
+
+collections.deque() objects now support methods for index(), insert(), and
+copy().  This allows deques to be registered as a MutableSequence and it
+improves their substitutability for lists.
+
+..
+
+.. bpo: 23715
+.. date: 7974
+.. nonce: Yap3tU
+.. section: Library
+
+:func:`signal.sigwaitinfo` and :func:`signal.sigtimedwait` are now retried
+when interrupted by a signal not in the *sigset* parameter, if the signal
+handler does not raise an exception. signal.sigtimedwait() recomputes the
+timeout with a monotonic clock when it is retried.
+
+..
+
+.. bpo: 23001
+.. date: 7973
+.. nonce: YSFnam
+.. section: Library
+
+Few functions in modules mmap, ossaudiodev, socket, ssl, and codecs, that
+accepted only read-only bytes-like object now accept writable bytes-like
+object too.
+
+..
+
+.. bpo: 23646
+.. date: 7972
+.. nonce: Tljc1S
+.. section: Library
+
+If time.sleep() is interrupted by a signal, the sleep is now retried with
+the recomputed delay, except if the signal handler raises an exception (PEP
+475).
+
+..
+
+.. bpo: 23136
+.. date: 7971
+.. nonce: 1bnpnb
+.. section: Library
+
+_strptime now uniformly handles all days in week 0, including Dec 30 of
+previous year.  Based on patch by Jim Carroll.
+
+..
+
+.. bpo: 23700
+.. date: 7970
+.. nonce: VfnWwi
+.. section: Library
+
+Iterator of NamedTemporaryFile now keeps a reference to NamedTemporaryFile
+instance.  Patch by Bohuslav Kabrda.
+
+..
+
+.. bpo: 22903
+.. date: 7969
+.. nonce: 2GjTHY
+.. section: Library
+
+The fake test case created by unittest.loader when it fails importing a test
+module is now picklable.
+
+..
+
+.. bpo: 22181
+.. date: 7968
+.. nonce: 7mnxea
+.. section: Library
+
+On Linux, os.urandom() now uses the new getrandom() syscall if available,
+syscall introduced in the Linux kernel 3.17. It is more reliable and more
+secure, because it avoids the need of a file descriptor and waits until the
+kernel has enough entropy.
+
+..
+
+.. bpo: 2211
+.. date: 7967
+.. nonce: 17Iz5U
+.. section: Library
+
+Updated the implementation of the http.cookies.Morsel class. Setting
+attributes key, value and coded_value directly now is deprecated. update()
+and setdefault() now transform and check keys.  Comparing for equality now
+takes into account attributes key, value and coded_value. copy() now returns
+a Morsel, not a dict.  repr() now contains all attributes. Optimized
+checking keys and quoting values.  Added new tests. Original patch by Demian
+Brecht.
+
+..
+
+.. bpo: 18983
+.. date: 7966
+.. nonce: vF4i2S
+.. section: Library
+
+Allow selection of output units in timeit. Patch by Julian Gindi.
+
+..
+
+.. bpo: 23631
+.. date: 7965
+.. nonce: GfSqNI
+.. section: Library
+
+Fix traceback.format_list when a traceback has been mutated.
+
+..
+
+.. bpo: 23568
+.. date: 7964
+.. nonce: ffzJc7
+.. section: Library
+
+Add rdivmod support to MagicMock() objects. Patch by Håkan Lövdahl.
+
+..
+
+.. bpo: 2052
+.. date: 7963
+.. nonce: ujNgna
+.. section: Library
+
+Add charset parameter to HtmlDiff.make_file().
+
+..
+
+.. bpo: 23668
+.. date: 7962
+.. nonce: nF_jnN
+.. section: Library
+
+Support os.truncate and os.ftruncate on Windows.
+
+..
+
+.. bpo: 23138
+.. date: 7961
+.. nonce: 4vMoMZ
+.. section: Library
+
+Fixed parsing cookies with absent keys or values in cookiejar. Patch by
+Demian Brecht.
+
+..
+
+.. bpo: 23051
+.. date: 7960
+.. nonce: Vi5tCZ
+.. section: Library
+
+multiprocessing.Pool methods imap() and imap_unordered() now handle
+exceptions raised by an iterator.  Patch by Alon Diamant and Davin Potts.
+
+..
+
+.. bpo: 23581
+.. date: 7959
+.. nonce: D4Lknl
+.. section: Library
+
+Add matmul support to MagicMock. Patch by Håkan Lövdahl.
+
+..
+
+.. bpo: 23566
+.. date: 7958
+.. nonce: F6LSyk
+.. section: Library
+
+enable(), register(), dump_traceback() and dump_traceback_later() functions
+of faulthandler now accept file descriptors. Patch by Wei Wu.
+
+..
+
+.. bpo: 22928
+.. date: 7957
+.. nonce: q2TmY0
+.. section: Library
+
+Disabled HTTP header injections in http.client. Original patch by Demian
+Brecht.
+
+..
+
+.. bpo: 23615
+.. date: 7956
+.. nonce: 5Kx9k5
+.. section: Library
+
+Modules bz2, tarfile and tokenize now can be reloaded with imp.reload().
+Patch by Thomas Kluyver.
+
+..
+
+.. bpo: 23605
+.. date: 7955
+.. nonce: JUOA_X
+.. section: Library
+
+os.walk() now calls os.scandir() instead of os.listdir(). The usage of
+os.scandir() reduces the number of calls to os.stat(). Initial patch written
+by Ben Hoyt.
+
+..
+
+.. bpo: 23585
+.. date: 7954
+.. nonce: DTIIoI
+.. section: Build
+
+make patchcheck will ensure the interpreter is built.
+
+..
+
+.. bpo: 23583
+.. date: 7953
+.. nonce: bY8AbM
+.. section: Tests
+
+Added tests for standard IO streams in IDLE.
+
+..
+
+.. bpo: 22289
+.. date: 7952
+.. nonce: ybGcC-
+.. section: Tests
+
+Prevent test_urllib2net failures due to ftp connection timeout.
+
+..
+
+.. bpo: 22826
+.. date: 7951
+.. nonce: 3bcoDL
+.. section: Tools/Demos
+
+The result of open() in Tools/freeze/bkfile.py is now better compatible with
+regular files (in particular it now supports the context management
+protocol).

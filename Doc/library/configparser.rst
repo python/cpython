@@ -34,8 +34,8 @@ can be customized by end users easily.
 .. seealso::
 
    Module :mod:`shlex`
-      Support for a creating Unix shell-like mini-languages which can be used
-      as an alternate format for application configuration files.
+      Support for creating Unix shell-like mini-languages which can be used as
+      an alternate format for application configuration files.
 
    Module :mod:`json`
       The json module implements a subset of JavaScript syntax which can also
@@ -982,14 +982,18 @@ ConfigParser Objects
 
    .. method:: read(filenames, encoding=None)
 
-      Attempt to read and parse a list of filenames, returning a list of
-      filenames which were successfully parsed.  If *filenames* is a string, it
-      is treated as a single filename.  If a file named in *filenames* cannot
-      be opened, that file will be ignored.  This is designed so that you can
-      specify a list of potential configuration file locations (for example,
-      the current directory, the user's home directory, and some system-wide
-      directory), and all existing configuration files in the list will be
-      read.  If none of the named files exist, the :class:`ConfigParser`
+      Attempt to read and parse an iterable of filenames, returning a list of
+      filenames which were successfully parsed.
+
+      If *filenames* is a string or :term:`path-like object`, it is treated as
+      a single filename.  If a file named in *filenames* cannot be opened, that
+      file will be ignored.  This is designed so that you can specify an
+      iterable of potential configuration file locations (for example, the
+      current directory, the user's home directory, and some system-wide
+      directory), and all existing configuration files in the iterable will be
+      read.
+
+      If none of the named files exist, the :class:`ConfigParser`
       instance will contain an empty dataset.  An application which requires
       initial values to be loaded from a file should load the required file or
       files using :meth:`read_file` before calling :meth:`read` for any
@@ -1005,6 +1009,9 @@ ConfigParser Objects
       .. versionadded:: 3.2
          The *encoding* parameter.  Previously, all files were read using the
          default encoding for :func:`open`.
+
+      .. versionadded:: 3.6.1
+         The *filenames* parameter accepts a :term:`path-like object`.
 
 
    .. method:: read_file(f, source=None)
@@ -1100,10 +1107,6 @@ ConfigParser Objects
       given *section*.  Optional arguments have the same meaning as for the
       :meth:`get` method.
 
-      .. versionchanged:: 3.2
-         Items present in *vars* no longer appear in the result.  The previous
-         behaviour mixed actual parser options with variables provided for
-         interpolation.
 
    .. method:: set(section, option, value)
 
@@ -1161,20 +1164,20 @@ ConfigParser Objects
          Use :meth:`read_file` instead.
 
       .. versionchanged:: 3.2
-         :meth:`readfp` now iterates on *f* instead of calling ``f.readline()``.
+         :meth:`readfp` now iterates on *fp* instead of calling ``fp.readline()``.
 
       For existing code calling :meth:`readfp` with arguments which don't
       support iteration, the following generator may be used as a wrapper
       around the file-like object::
 
-         def readline_generator(f):
-             line = f.readline()
+         def readline_generator(fp):
+             line = fp.readline()
              while line:
                  yield line
-                 line = f.readline()
+                 line = fp.readline()
 
-      Instead of ``parser.readfp(f)`` use
-      ``parser.read_file(readline_generator(f))``.
+      Instead of ``parser.readfp(fp)`` use
+      ``parser.read_file(readline_generator(fp))``.
 
 
 .. data:: MAX_INTERPOLATION_DEPTH

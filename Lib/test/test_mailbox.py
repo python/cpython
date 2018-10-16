@@ -746,7 +746,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
             hostname = hostname.replace(':', r'\072')
         pid = os.getpid()
         pattern = re.compile(r"(?P<time>\d+)\.M(?P<M>\d{1,6})P(?P<P>\d+)"
-                             r"Q(?P<Q>\d+)\.(?P<host>[^:/]+)")
+                             r"Q(?P<Q>\d+)\.(?P<host>[^:/]*)")
         previous_groups = None
         for x in range(repetitions):
             tmp_file = self._box._create_tmp()
@@ -2137,9 +2137,9 @@ class MaildirTestCase(unittest.TestCase):
             if mbox:
                 fp.write(FROM_)
             fp.write(DUMMY_MESSAGE)
-        if hasattr(os, "link"):
+        try:
             os.link(tmpname, newname)
-        else:
+        except (AttributeError, PermissionError):
             with open(newname, "w") as fp:
                 fp.write(DUMMY_MESSAGE)
         self._msgfiles.append(newname)

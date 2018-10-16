@@ -210,16 +210,19 @@ static PyObject *
 _io__IOBase_close_impl(PyObject *self)
 /*[clinic end generated code: output=63c6a6f57d783d6d input=f4494d5c31dbc6b7]*/
 {
-    PyObject *res;
+    PyObject *res, *exc, *val, *tb;
+    int rc;
 
     if (IS_CLOSED(self))
         Py_RETURN_NONE;
 
     res = PyObject_CallMethodObjArgs(self, _PyIO_str_flush, NULL);
 
-    if (_PyObject_SetAttrId(self, &PyId___IOBase_closed, Py_True) < 0) {
-        Py_XDECREF(res);
-        return NULL;
+    PyErr_Fetch(&exc, &val, &tb);
+    rc = _PyObject_SetAttrId(self, &PyId___IOBase_closed, Py_True);
+    _PyErr_ChainExceptions(exc, val, tb);
+    if (rc < 0) {
+        Py_CLEAR(res);
     }
 
     if (res == NULL)
@@ -625,7 +628,8 @@ iobase_iternext(PyObject *self)
     if (line == NULL)
         return NULL;
 
-    if (PyObject_Size(line) == 0) {
+    if (PyObject_Size(line) <= 0) {
+        /* Error or empty */
         Py_DECREF(line);
         return NULL;
     }
@@ -650,7 +654,7 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
 /*[clinic end generated code: output=2f50421677fa3dea input=1961c4a95e96e661]*/
 {
     Py_ssize_t length = 0;
-    PyObject *result;
+    PyObject *result, *it = NULL;
 
     result = PyList_New(0);
     if (result == NULL)
@@ -664,19 +668,23 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
         PyObject *ret = _PyObject_CallMethodId(result, &PyId_extend, "O", self);
 
         if (ret == NULL) {
-            Py_DECREF(result);
-            return NULL;
+            goto error;
         }
         Py_DECREF(ret);
         return result;
     }
 
+    it = PyObject_GetIter(self);
+    if (it == NULL) {
+        goto error;
+    }
+
     while (1) {
-        PyObject *line = PyIter_Next(self);
+        Py_ssize_t line_length;
+        PyObject *line = PyIter_Next(it);
         if (line == NULL) {
             if (PyErr_Occurred()) {
-                Py_DECREF(result);
-                return NULL;
+                goto error;
             }
             else
                 break; /* StopIteration raised */
@@ -684,16 +692,25 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
 
         if (PyList_Append(result, line) < 0) {
             Py_DECREF(line);
-            Py_DECREF(result);
-            return NULL;
+            goto error;
         }
-        length += PyObject_Size(line);
+        line_length = PyObject_Size(line);
         Py_DECREF(line);
-
-        if (length > hint)
+        if (line_length < 0) {
+            goto error;
+        }
+        if (line_length > hint - length)
             break;
+        length += line_length;
     }
+
+    Py_DECREF(it);
     return result;
+
+ error:
+    Py_XDECREF(it);
+    Py_DECREF(result);
+    return NULL;
 }
 
 /*[clinic input]

@@ -77,21 +77,22 @@ for Python allow you to write GTK+ 3 applications.  There is also a
 The older PyGtk bindings for the `Gtk+ 2 toolkit <http://www.gtk.org>`_ have
 been implemented by James Henstridge; see <http://www.pygtk.org>.
 
+Kivy
+----
+
+`Kivy <https://kivy.org/>`_ is a cross-platform GUI library supporting both
+desktop operating systems (Windows, macOS, Linux) and mobile devices (Android,
+iOS).  It is written in Python and Cython, and can use a range of windowing
+backends.
+
+Kivy is free and open source software distributed under the MIT license.
+
 FLTK
 ----
 
 Python bindings for `the FLTK toolkit <http://www.fltk.org>`_, a simple yet
 powerful and mature cross-platform windowing system, are available from `the
 PyFLTK project <http://pyfltk.sourceforge.net>`_.
-
-
-FOX
-----
-
-A wrapper for `the FOX toolkit <http://www.fox-toolkit.org/>`_ called `FXpy
-<http://fxpy.sourceforge.net/>`_ is available.  FOX supports both Unix variants
-and Windows.
-
 
 OpenGL
 ------

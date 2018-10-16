@@ -1043,7 +1043,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case CALL_FUNCTION_KW:
             return -oparg-1;
         case CALL_FUNCTION_EX:
-            return - ((oparg & 0x01) != 0) - ((oparg & 0x02) != 0);
+            return -1 - ((oparg & 0x01) != 0);
         case MAKE_FUNCTION:
             return -1 - ((oparg & 0x01) != 0) - ((oparg & 0x02) != 0) -
                 ((oparg & 0x04) != 0) - ((oparg & 0x08) != 0);
@@ -1343,13 +1343,15 @@ is_const(expr_ty e)
     case Ellipsis_kind:
     case NameConstant_kind:
         return 1;
+    case Name_kind:
+        return _PyUnicode_EqualToASCIIString(e->v.Name.id, "__debug__");
     default:
         return 0;
     }
 }
 
 static PyObject *
-get_const_value(expr_ty e)
+get_const_value(struct compiler *c, expr_ty e)
 {
     switch (e->kind) {
     case Constant_kind:
@@ -1364,6 +1366,9 @@ get_const_value(expr_ty e)
         return Py_Ellipsis;
     case NameConstant_kind:
         return e->v.NameConstant.value;
+    case Name_kind:
+        assert(_PyUnicode_EqualToASCIIString(e->v.Name.id, "__debug__"));
+        return c->c_optimize ? Py_False : Py_True;
     default:
         assert(!is_const(e));
         return NULL;
@@ -2184,7 +2189,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     _Py_IDENTIFIER(StopAsyncIteration);
 
     basicblock *try, *except, *end, *after_try, *try_cleanup,
-               *after_loop, *after_loop_else;
+               *after_loop_else;
 
     PyObject *stop_aiter_error = _PyUnicode_FromId(&PyId_StopAsyncIteration);
     if (stop_aiter_error == NULL) {
@@ -2196,14 +2201,14 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     end = compiler_new_block(c);
     after_try = compiler_new_block(c);
     try_cleanup = compiler_new_block(c);
-    after_loop = compiler_new_block(c);
     after_loop_else = compiler_new_block(c);
 
     if (try == NULL || except == NULL || end == NULL
-            || after_try == NULL || try_cleanup == NULL)
+            || after_try == NULL || try_cleanup == NULL
+            || after_loop_else == NULL)
         return 0;
 
-    ADDOP_JREL(c, SETUP_LOOP, after_loop);
+    ADDOP_JREL(c, SETUP_LOOP, end);
     if (!compiler_push_fblock(c, LOOP, try))
         return 0;
 
@@ -2232,28 +2237,21 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     ADDOP(c, DUP_TOP);
     ADDOP_O(c, LOAD_GLOBAL, stop_aiter_error, names);
     ADDOP_I(c, COMPARE_OP, PyCmp_EXC_MATCH);
-    ADDOP_JABS(c, POP_JUMP_IF_FALSE, try_cleanup);
-
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_EXCEPT); /* for SETUP_EXCEPT */
-    ADDOP(c, POP_BLOCK); /* for SETUP_LOOP */
-    ADDOP_JABS(c, JUMP_ABSOLUTE, after_loop_else);
-
-
-    compiler_use_next_block(c, try_cleanup);
+    ADDOP_JABS(c, POP_JUMP_IF_TRUE, try_cleanup);
     ADDOP(c, END_FINALLY);
 
     compiler_use_next_block(c, after_try);
     VISIT_SEQ(c, stmt, s->v.AsyncFor.body);
     ADDOP_JABS(c, JUMP_ABSOLUTE, try);
 
+    compiler_use_next_block(c, try_cleanup);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_EXCEPT); /* for SETUP_EXCEPT */
+    ADDOP(c, POP_TOP); /* for correct calculation of stack effect */
     ADDOP(c, POP_BLOCK); /* for SETUP_LOOP */
     compiler_pop_fblock(c, LOOP, try);
-
-    compiler_use_next_block(c, after_loop);
-    ADDOP_JABS(c, JUMP_ABSOLUTE, end);
 
     compiler_use_next_block(c, after_loop_else);
     VISIT_SEQ(c, stmt, s->v.For.orelse);
@@ -2494,8 +2492,9 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
             cleanup_end = compiler_new_block(c);
             cleanup_body = compiler_new_block(c);
-            if (!(cleanup_end || cleanup_body))
+            if (cleanup_end == NULL || cleanup_body == NULL) {
                 return 0;
+            }
 
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             ADDOP(c, POP_TOP);
@@ -2601,8 +2600,7 @@ compiler_import_as(struct compiler *c, identifier name, identifier asname)
                                        PyUnicode_GET_LENGTH(name));
             if (!attr)
                 return 0;
-            ADDOP_O(c, LOAD_ATTR, attr, names);
-            Py_DECREF(attr);
+            ADDOP_N(c, LOAD_ATTR, attr, names);
             pos = dot + 1;
         }
     }
@@ -2630,8 +2628,7 @@ compiler_import(struct compiler *c, stmt_ty s)
         if (level == NULL)
             return 0;
 
-        ADDOP_O(c, LOAD_CONST, level, consts);
-        Py_DECREF(level);
+        ADDOP_N(c, LOAD_CONST, level, consts);
         ADDOP_O(c, LOAD_CONST, Py_None, consts);
         ADDOP_NAME(c, IMPORT_NAME, alias->name, names);
 
@@ -2664,9 +2661,7 @@ static int
 compiler_from_import(struct compiler *c, stmt_ty s)
 {
     Py_ssize_t i, n = asdl_seq_LEN(s->v.ImportFrom.names);
-
-    PyObject *names = PyTuple_New(n);
-    PyObject *level;
+    PyObject *level, *names;
     static PyObject *empty_string;
 
     if (!empty_string) {
@@ -2675,14 +2670,15 @@ compiler_from_import(struct compiler *c, stmt_ty s)
             return 0;
     }
 
-    if (!names)
-        return 0;
-
     level = PyLong_FromLong(s->v.ImportFrom.level);
     if (!level) {
-        Py_DECREF(names);
         return 0;
     }
+    ADDOP_N(c, LOAD_CONST, level, consts);
+
+    names = PyTuple_New(n);
+    if (!names)
+        return 0;
 
     /* build up the names */
     for (i = 0; i < n; i++) {
@@ -2693,16 +2689,12 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 
     if (s->lineno > c->c_future->ff_lineno && s->v.ImportFrom.module &&
         _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__")) {
-        Py_DECREF(level);
         Py_DECREF(names);
         return compiler_error(c, "from __future__ imports must occur "
                               "at the beginning of the file");
     }
+    ADDOP_N(c, LOAD_CONST, names, consts);
 
-    ADDOP_O(c, LOAD_CONST, level, consts);
-    Py_DECREF(level);
-    ADDOP_O(c, LOAD_CONST, names, consts);
-    Py_DECREF(names);
     if (s->v.ImportFrom.module) {
         ADDOP_NAME(c, IMPORT_NAME, s->v.ImportFrom.module, names);
     }
@@ -2725,7 +2717,6 @@ compiler_from_import(struct compiler *c, stmt_ty s)
             store_name = alias->asname;
 
         if (!compiler_nameop(c, store_name, Store)) {
-            Py_DECREF(names);
             return 0;
         }
     }
@@ -3027,13 +3018,18 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     PyObject *mangled;
     /* XXX AugStore isn't used anywhere! */
 
-    mangled = _Py_Mangle(c->u->u_private, name);
-    if (!mangled)
-        return 0;
-
     assert(!_PyUnicode_EqualToASCIIString(name, "None") &&
            !_PyUnicode_EqualToASCIIString(name, "True") &&
            !_PyUnicode_EqualToASCIIString(name, "False"));
+
+    if (ctx == Load && _PyUnicode_EqualToASCIIString(name, "__debug__")) {
+        ADDOP_O(c, LOAD_CONST, c->c_optimize ? Py_False : Py_True, consts);
+        return 1;
+    }
+
+    mangled = _Py_Mangle(c->u->u_private, name);
+    if (!mangled)
+        return 0;
 
     op = 0;
     optype = OP_NAME;
@@ -3098,8 +3094,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
                             "param invalid for local variable");
             return 0;
         }
-        ADDOP_O(c, op, mangled, varnames);
-        Py_DECREF(mangled);
+        ADDOP_N(c, op, mangled, varnames);
         return 1;
     case OP_GLOBAL:
         switch (ctx) {
@@ -3298,7 +3293,7 @@ compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end
             return 0;
         }
         for (i = begin; i < end; i++) {
-            key = get_const_value((expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
+            key = get_const_value(c, (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
             Py_INCREF(key);
             PyTuple_SET_ITEM(keys, i - begin, key);
         }
@@ -3415,7 +3410,8 @@ static int
 compiler_joined_str(struct compiler *c, expr_ty e)
 {
     VISIT_SEQ(c, expr, e->v.JoinedStr.values);
-    ADDOP_I(c, BUILD_STRING, asdl_seq_LEN(e->v.JoinedStr.values));
+    if (asdl_seq_LEN(e->v.JoinedStr.values) != 1)
+        ADDOP_I(c, BUILD_STRING, asdl_seq_LEN(e->v.JoinedStr.values));
     return 1;
 }
 
@@ -3742,7 +3738,7 @@ compiler_async_comprehension_generator(struct compiler *c,
     _Py_IDENTIFIER(StopAsyncIteration);
 
     comprehension_ty gen;
-    basicblock *anchor, *skip, *if_cleanup, *try,
+    basicblock *if_cleanup, *try,
                *after_try, *except, *try_cleanup;
     Py_ssize_t i, n;
 
@@ -3753,15 +3749,13 @@ compiler_async_comprehension_generator(struct compiler *c,
 
     try = compiler_new_block(c);
     after_try = compiler_new_block(c);
-    try_cleanup = compiler_new_block(c);
     except = compiler_new_block(c);
-    skip = compiler_new_block(c);
     if_cleanup = compiler_new_block(c);
-    anchor = compiler_new_block(c);
+    try_cleanup = compiler_new_block(c);
 
-    if (skip == NULL || if_cleanup == NULL || anchor == NULL ||
+    if (if_cleanup == NULL ||
             try == NULL || after_try == NULL ||
-            except == NULL || after_try == NULL) {
+            except == NULL || try_cleanup == NULL) {
         return 0;
     }
 
@@ -3800,16 +3794,7 @@ compiler_async_comprehension_generator(struct compiler *c,
     ADDOP(c, DUP_TOP);
     ADDOP_O(c, LOAD_GLOBAL, stop_aiter_error, names);
     ADDOP_I(c, COMPARE_OP, PyCmp_EXC_MATCH);
-    ADDOP_JABS(c, POP_JUMP_IF_FALSE, try_cleanup);
-
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_EXCEPT); /* for SETUP_EXCEPT */
-    ADDOP_JABS(c, JUMP_ABSOLUTE, anchor);
-
-
-    compiler_use_next_block(c, try_cleanup);
+    ADDOP_JABS(c, POP_JUMP_IF_TRUE, try_cleanup);
     ADDOP(c, END_FINALLY);
 
     compiler_use_next_block(c, after_try);
@@ -3855,12 +3840,15 @@ compiler_async_comprehension_generator(struct compiler *c,
         default:
             return 0;
         }
-
-        compiler_use_next_block(c, skip);
     }
     compiler_use_next_block(c, if_cleanup);
     ADDOP_JABS(c, JUMP_ABSOLUTE, try);
-    compiler_use_next_block(c, anchor);
+
+    compiler_use_next_block(c, try_cleanup);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_EXCEPT); /* for SETUP_EXCEPT */
     ADDOP(c, POP_TOP);
 
     return 1;
@@ -4043,34 +4031,10 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
 static int
 expr_constant(struct compiler *c, expr_ty e)
 {
-    char *id;
-    switch (e->kind) {
-    case Ellipsis_kind:
-        return 1;
-    case Constant_kind:
-        return PyObject_IsTrue(e->v.Constant.value);
-    case Num_kind:
-        return PyObject_IsTrue(e->v.Num.n);
-    case Str_kind:
-        return PyObject_IsTrue(e->v.Str.s);
-    case Name_kind:
-        /* optimize away names that can't be reassigned */
-        id = PyUnicode_AsUTF8(e->v.Name.id);
-        if (id && strcmp(id, "__debug__") == 0)
-            return !c->c_optimize;
-        return -1;
-    case NameConstant_kind: {
-        PyObject *o = e->v.NameConstant.value;
-        if (o == Py_None)
-            return 0;
-        else if (o == Py_True)
-            return 1;
-        else if (o == Py_False)
-            return 0;
+    if (is_const(e)) {
+        return PyObject_IsTrue(get_const_value(c, e));
     }
-    default:
-        return -1;
-    }
+    return -1;
 }
 
 
@@ -4360,13 +4324,13 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         switch (e->v.Attribute.ctx) {
         case AugLoad:
             ADDOP(c, DUP_TOP);
-            /* Fall through to load */
+            /* Fall through */
         case Load:
             ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
             break;
         case AugStore:
             ADDOP(c, ROT_TWO);
-            /* Fall through to save */
+            /* Fall through */
         case Store:
             ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
             break;
@@ -4580,11 +4544,11 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
+            VISIT(c, expr, s->v.AnnAssign.annotation);
             mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
             if (!mangled) {
                 return 0;
             }
-            VISIT(c, expr, s->v.AnnAssign.annotation);
             /* ADDOP_N decrefs its argument */
             ADDOP_N(c, STORE_ANNOTATION, mangled, names);
         }
@@ -5168,7 +5132,6 @@ compute_code_flags(struct compiler *c)
 {
     PySTEntryObject *ste = c->u->u_ste;
     int flags = 0;
-    Py_ssize_t n;
     if (ste->ste_type == FunctionBlock) {
         flags |= CO_NEWLOCALS | CO_OPTIMIZED;
         if (ste->ste_nested)
@@ -5187,18 +5150,6 @@ compute_code_flags(struct compiler *c)
 
     /* (Only) inherit compilerflags in PyCF_MASK */
     flags |= (c->c_flags->cf_flags & PyCF_MASK);
-
-    n = PyDict_Size(c->u->u_freevars);
-    if (n < 0)
-        return -1;
-    if (n == 0) {
-        n = PyDict_Size(c->u->u_cellvars);
-        if (n < 0)
-            return -1;
-        if (n == 0) {
-            flags |= CO_NOFREE;
-        }
-    }
 
     return flags;
 }

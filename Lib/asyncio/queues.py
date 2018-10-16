@@ -167,6 +167,12 @@ class Queue:
                 yield from getter
             except:
                 getter.cancel()  # Just in case getter is not done yet.
+
+                try:
+                    self._getters.remove(getter)
+                except ValueError:
+                    pass
+
                 if not self.empty() and not getter.cancelled():
                     # We were woken up by put_nowait(), but can't take
                     # the call.  Wake up the next in line.

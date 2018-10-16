@@ -174,7 +174,7 @@ ArgumentParser objects
    * conflict_handler_ - The strategy for resolving conflicting optionals
      (usually unnecessary)
 
-   * add_help_ - Add a -h/--help option to the parser (default: ``True``)
+   * add_help_ - Add a ``-h/--help`` option to the parser (default: ``True``)
 
    * allow_abbrev_ - Allows long options to be abbreviated if the
      abbreviation is unambiguous. (default: ``True``)
@@ -211,7 +211,7 @@ The help for this program will display ``myprogram.py`` as the program name
     -h, --help  show this help message and exit
     --foo FOO   foo help
    $ cd ..
-   $ python subdir\myprogram.py --help
+   $ python subdir/myprogram.py --help
    usage: myprogram.py [-h] [--foo FOO]
 
    optional arguments:
@@ -426,7 +426,9 @@ should not be line-wrapped::
     -h, --help  show this help message and exit
 
 :class:`RawTextHelpFormatter` maintains whitespace for all sorts of help text,
-including argument descriptions.
+including argument descriptions. However, multiple new lines are replaced with
+one. If you wish to preserve multiple blank lines, add spaces between the
+newlines.
 
 :class:`ArgumentDefaultsHelpFormatter` automatically adds information about
 default values to each of the argument help messages::
@@ -710,7 +712,7 @@ be positional::
    Namespace(bar='BAR', foo='FOO')
    >>> parser.parse_args(['--foo', 'FOO'])
    usage: PROG [-h] [-f FOO] bar
-   PROG: error: too few arguments
+   PROG: error: the following arguments are required: bar
 
 
 action
@@ -896,7 +898,9 @@ values are:
      Namespace(foo=['a', 'b'])
      >>> parser.parse_args([])
      usage: PROG [-h] foo [foo ...]
-     PROG: error: too few arguments
+     PROG: error: the following arguments are required: foo
+
+.. _`argparse.REMAINDER`:
 
 * ``argparse.REMAINDER``.  All the remaining command-line arguments are gathered
   into a list.  This is commonly useful for command line utilities that dispatch
@@ -977,7 +981,7 @@ is used when no command-line argument was present::
 
 
 Providing ``default=argparse.SUPPRESS`` causes no attribute to be added if the
-command-line argument was not present.::
+command-line argument was not present::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('--foo', default=argparse.SUPPRESS)
@@ -1324,8 +1328,11 @@ The parse_args() method
    created and how they are assigned. See the documentation for
    :meth:`add_argument` for details.
 
-   By default, the argument strings are taken from :data:`sys.argv`, and a new empty
-   :class:`Namespace` object is created for the attributes.
+   * args_ - List of strings to parse.  The default is taken from
+     :data:`sys.argv`.
+
+   * namespace_ - An object to take the attributes.  The default is a new empty
+     :class:`Namespace` object.
 
 
 Option value syntax
@@ -1467,6 +1474,7 @@ unambiguous (the prefix matches a unique option)::
 An error is produced for arguments that could produce more than one options.
 This feature can be disabled by setting :ref:`allow_abbrev` to ``False``.
 
+.. _args:
 
 Beyond ``sys.argv``
 ^^^^^^^^^^^^^^^^^^^
@@ -1488,6 +1496,7 @@ interactive prompt::
    >>> parser.parse_args(['1', '2', '3', '4', '--sum'])
    Namespace(accumulate=<built-in function sum>, integers=[1, 2, 3, 4])
 
+.. _namespace:
 
 The Namespace object
 ^^^^^^^^^^^^^^^^^^^^
@@ -2008,7 +2017,12 @@ A partial upgrade path from :mod:`optparse` to :mod:`argparse`:
 * Replace ``(options, args) = parser.parse_args()`` with ``args =
   parser.parse_args()`` and add additional :meth:`ArgumentParser.add_argument`
   calls for the positional arguments. Keep in mind that what was previously
-  called ``options``, now in :mod:`argparse` context is called ``args``.
+  called ``options``, now in the :mod:`argparse` context is called ``args``.
+
+* Replace :meth:`optparse.OptionParser.disable_interspersed_args`
+  by setting ``nargs`` of a positional argument to `argparse.REMAINDER`_, or
+  use :meth:`~ArgumentParser.parse_known_args` to collect unparsed argument
+  strings in a separate list.
 
 * Replace callback actions and the ``callback_*`` keyword arguments with
   ``type`` or ``action`` arguments.

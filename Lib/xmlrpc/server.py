@@ -264,10 +264,14 @@ class SimpleXMLRPCDispatcher:
         except:
             # report exception back to server
             exc_type, exc_value, exc_tb = sys.exc_info()
-            response = dumps(
-                Fault(1, "%s:%s" % (exc_type, exc_value)),
-                encoding=self.encoding, allow_none=self.allow_none,
-                )
+            try:
+                response = dumps(
+                    Fault(1, "%s:%s" % (exc_type, exc_value)),
+                    encoding=self.encoding, allow_none=self.allow_none,
+                    )
+            finally:
+                # Break reference cycle
+                exc_type = exc_value = exc_tb = None
 
         return response.encode(self.encoding, 'xmlcharrefreplace')
 
@@ -359,10 +363,14 @@ class SimpleXMLRPCDispatcher:
                     )
             except:
                 exc_type, exc_value, exc_tb = sys.exc_info()
-                results.append(
-                    {'faultCode' : 1,
-                     'faultString' : "%s:%s" % (exc_type, exc_value)}
-                    )
+                try:
+                    results.append(
+                        {'faultCode' : 1,
+                         'faultString' : "%s:%s" % (exc_type, exc_value)}
+                        )
+                finally:
+                    # Break reference cycle
+                    exc_type = exc_value = exc_tb = None
         return results
 
     def _dispatch(self, method, params):
@@ -386,30 +394,35 @@ class SimpleXMLRPCDispatcher:
         not be called.
         """
 
-        func = None
         try:
-            # check to see if a matching function has been registered
+            # call the matching registered function
             func = self.funcs[method]
         except KeyError:
-            if self.instance is not None:
-                # check for a _dispatch method
-                if hasattr(self.instance, '_dispatch'):
-                    return self.instance._dispatch(method, params)
-                else:
-                    # call instance method directly
-                    try:
-                        func = resolve_dotted_attribute(
-                            self.instance,
-                            method,
-                            self.allow_dotted_names
-                            )
-                    except AttributeError:
-                        pass
-
-        if func is not None:
-            return func(*params)
+            pass
         else:
+            if func is not None:
+                return func(*params)
             raise Exception('method "%s" is not supported' % method)
+
+        if self.instance is not None:
+            if hasattr(self.instance, '_dispatch'):
+                # call the `_dispatch` method on the instance
+                return self.instance._dispatch(method, params)
+
+            # call the instance's method directly
+            try:
+                func = resolve_dotted_attribute(
+                    self.instance,
+                    method,
+                    self.allow_dotted_names
+                )
+            except AttributeError:
+                pass
+            else:
+                if func is not None:
+                    return func(*params)
+
+        raise Exception('method "%s" is not supported' % method)
 
 class SimpleXMLRPCRequestHandler(BaseHTTPRequestHandler):
     """Simple XML-RPC request handler class.
@@ -619,10 +632,14 @@ class MultiPathXMLRPCServer(SimpleXMLRPCServer):
             # (each dispatcher should have handled their own
             # exceptions)
             exc_type, exc_value = sys.exc_info()[:2]
-            response = dumps(
-                Fault(1, "%s:%s" % (exc_type, exc_value)),
-                encoding=self.encoding, allow_none=self.allow_none)
-            response = response.encode(self.encoding, 'xmlcharrefreplace')
+            try:
+                response = dumps(
+                    Fault(1, "%s:%s" % (exc_type, exc_value)),
+                    encoding=self.encoding, allow_none=self.allow_none)
+                response = response.encode(self.encoding, 'xmlcharrefreplace')
+            finally:
+                # Break reference cycle
+                exc_type = exc_value = None
         return response
 
 class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):

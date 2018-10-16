@@ -353,6 +353,69 @@ _Pickle_FastCall(PyObject *func, PyObject *obj)
 
 /*************************************************************************/
 
+/* Retrieve and deconstruct a method for avoiding a reference cycle
+   (pickler -> bound method of pickler -> pickler) */
+static int
+init_method_ref(PyObject *self, _Py_Identifier *name,
+                PyObject **method_func, PyObject **method_self)
+{
+    PyObject *func, *func2;
+
+    /* *method_func and *method_self should be consistent.  All refcount decrements
+       should be occurred after setting *method_self and *method_func. */
+    func = _PyObject_GetAttrId(self, name);
+    if (func == NULL) {
+        *method_self = NULL;
+        Py_CLEAR(*method_func);
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            return -1;
+        }
+        PyErr_Clear();
+        return 0;
+    }
+
+    if (PyMethod_Check(func) && PyMethod_GET_SELF(func) == self) {
+        /* Deconstruct a bound Python method */
+        func2 = PyMethod_GET_FUNCTION(func);
+        Py_INCREF(func2);
+        *method_self = self; /* borrowed */
+        Py_XSETREF(*method_func, func2);
+        Py_DECREF(func);
+        return 0;
+    }
+    else {
+        *method_self = NULL;
+        Py_XSETREF(*method_func, func);
+        return 0;
+    }
+}
+
+/* Bind a method if it was deconstructed */
+static PyObject *
+reconstruct_method(PyObject *func, PyObject *self)
+{
+    if (self) {
+        return PyMethod_New(func, self);
+    }
+    else {
+        Py_INCREF(func);
+        return func;
+    }
+}
+
+static PyObject *
+call_method(PyObject *func, PyObject *self, PyObject *obj)
+{
+    if (self) {
+        return PyObject_CallFunctionObjArgs(func, self, obj, NULL);
+    }
+    else {
+        return PyObject_CallFunctionObjArgs(func, obj, NULL);
+    }
+}
+
+/*************************************************************************/
+
 /* Internal data type used as the unpickling stack. */
 typedef struct {
     PyObject_VAR_HEAD
@@ -533,9 +596,9 @@ typedef struct {
 } PyMemoEntry;
 
 typedef struct {
-    Py_ssize_t mt_mask;
-    Py_ssize_t mt_used;
-    Py_ssize_t mt_allocated;
+    size_t mt_mask;
+    size_t mt_used;
+    size_t mt_allocated;
     PyMemoEntry *mt_table;
 } PyMemoTable;
 
@@ -545,6 +608,8 @@ typedef struct PicklerObject {
                                    objects to support self-referential objects
                                    pickling. */
     PyObject *pers_func;        /* persistent_id() method, can be NULL */
+    PyObject *pers_func_self;   /* borrowed reference to self if pers_func
+                                   is an unbound method, NULL otherwise */
     PyObject *dispatch_table;   /* private dispatch_table, can be NULL */
 
     PyObject *write;            /* write() method of the output stream. */
@@ -579,10 +644,12 @@ typedef struct UnpicklerObject {
     /* The unpickler memo is just an array of PyObject *s. Using a dict
        is unnecessary, since the keys are contiguous ints. */
     PyObject **memo;
-    Py_ssize_t memo_size;       /* Capacity of the memo array */
-    Py_ssize_t memo_len;        /* Number of objects in the memo */
+    size_t memo_size;       /* Capacity of the memo array */
+    size_t memo_len;        /* Number of objects in the memo */
 
     PyObject *pers_func;        /* persistent_load() method, can be NULL. */
+    PyObject *pers_func_self;   /* borrowed reference to self if pers_func
+                                   is an unbound method, NULL otherwise */
 
     Py_buffer buffer;
     char *input_buffer;
@@ -664,7 +731,6 @@ PyMemoTable_New(void)
 static PyMemoTable *
 PyMemoTable_Copy(PyMemoTable *self)
 {
-    Py_ssize_t i;
     PyMemoTable *new = PyMemoTable_New();
     if (new == NULL)
         return NULL;
@@ -681,7 +747,7 @@ PyMemoTable_Copy(PyMemoTable *self)
         PyErr_NoMemory();
         return NULL;
     }
-    for (i = 0; i < self->mt_allocated; i++) {
+    for (size_t i = 0; i < self->mt_allocated; i++) {
         Py_XINCREF(self->mt_table[i].me_key);
     }
     memcpy(new->mt_table, self->mt_table,
@@ -727,7 +793,7 @@ _PyMemoTable_Lookup(PyMemoTable *self, PyObject *key)
 {
     size_t i;
     size_t perturb;
-    size_t mask = (size_t)self->mt_mask;
+    size_t mask = self->mt_mask;
     PyMemoEntry *table = self->mt_table;
     PyMemoEntry *entry;
     Py_hash_t hash = (Py_hash_t)key >> 3;
@@ -749,21 +815,23 @@ _PyMemoTable_Lookup(PyMemoTable *self, PyObject *key)
 
 /* Returns -1 on failure, 0 on success. */
 static int
-_PyMemoTable_ResizeTable(PyMemoTable *self, Py_ssize_t min_size)
+_PyMemoTable_ResizeTable(PyMemoTable *self, size_t min_size)
 {
     PyMemoEntry *oldtable = NULL;
     PyMemoEntry *oldentry, *newentry;
-    Py_ssize_t new_size = MT_MINSIZE;
-    Py_ssize_t to_process;
+    size_t new_size = MT_MINSIZE;
+    size_t to_process;
 
     assert(min_size > 0);
 
-    /* Find the smallest valid table size >= min_size. */
-    while (new_size < min_size && new_size > 0)
-        new_size <<= 1;
-    if (new_size <= 0) {
+    if (min_size > PY_SSIZE_T_MAX) {
         PyErr_NoMemory();
         return -1;
+    }
+
+    /* Find the smallest valid table size >= min_size. */
+    while (new_size < min_size) {
+        new_size <<= 1;
     }
     /* new_size needs to be a power of two. */
     assert((new_size & (new_size - 1)) == 0);
@@ -837,10 +905,12 @@ PyMemoTable_Set(PyMemoTable *self, PyObject *key, Py_ssize_t value)
      * Very large memo tables (over 50K items) use doubling instead.
      * This may help applications with severe memory constraints.
      */
-    if (!(self->mt_used * 3 >= (self->mt_mask + 1) * 2))
+    if (SIZE_MAX / 3 >= self->mt_used && self->mt_used * 3 < self->mt_allocated * 2) {
         return 0;
-    return _PyMemoTable_ResizeTable(self,
-        (self->mt_used > 50000 ? 2 : 4) * self->mt_used);
+    }
+    // self->mt_used is always < PY_SSIZE_T_MAX, so this can't overflow.
+    size_t desired_size = (self->mt_used > 50000 ? 2 : 4) * self->mt_used;
+    return _PyMemoTable_ResizeTable(self, desired_size);
 }
 
 #undef MT_MINSIZE
@@ -1285,17 +1355,19 @@ _Unpickler_Readline(UnpicklerObject *self, char **result)
 /* Returns -1 (with an exception set) on failure, 0 on success. The memo array
    will be modified in place. */
 static int
-_Unpickler_ResizeMemoList(UnpicklerObject *self, Py_ssize_t new_size)
+_Unpickler_ResizeMemoList(UnpicklerObject *self, size_t new_size)
 {
-    Py_ssize_t i;
+    size_t i;
 
     assert(new_size > self->memo_size);
 
-    PyMem_RESIZE(self->memo, PyObject *, new_size);
-    if (self->memo == NULL) {
+    PyObject **memo_new = self->memo;
+    PyMem_RESIZE(memo_new, PyObject *, new_size);
+    if (memo_new == NULL) {
         PyErr_NoMemory();
         return -1;
     }
+    self->memo = memo_new;
     for (i = self->memo_size; i < new_size; i++)
         self->memo[i] = NULL;
     self->memo_size = new_size;
@@ -1304,9 +1376,9 @@ _Unpickler_ResizeMemoList(UnpicklerObject *self, Py_ssize_t new_size)
 
 /* Returns NULL if idx is out of bounds. */
 static PyObject *
-_Unpickler_MemoGet(UnpicklerObject *self, Py_ssize_t idx)
+_Unpickler_MemoGet(UnpicklerObject *self, size_t idx)
 {
-    if (idx < 0 || idx >= self->memo_size)
+    if (idx >= self->memo_size)
         return NULL;
 
     return self->memo[idx];
@@ -1315,7 +1387,7 @@ _Unpickler_MemoGet(UnpicklerObject *self, Py_ssize_t idx)
 /* Returns -1 (with an exception set) on failure, 0 on success.
    This takes its own reference to `value`. */
 static int
-_Unpickler_MemoPut(UnpicklerObject *self, Py_ssize_t idx, PyObject *value)
+_Unpickler_MemoPut(UnpicklerObject *self, size_t idx, PyObject *value)
 {
     PyObject *old_item;
 
@@ -1560,9 +1632,9 @@ memo_put(PicklerObject *self, PyObject *obj)
 }
 
 static PyObject *
-get_dotted_path(PyObject *obj, PyObject *name) {
+get_dotted_path(PyObject *obj, PyObject *name)
+{
     _Py_static_string(PyId_dot, ".");
-    _Py_static_string(PyId_locals, "<locals>");
     PyObject *dotted_path;
     Py_ssize_t i, n;
 
@@ -1573,12 +1645,7 @@ get_dotted_path(PyObject *obj, PyObject *name) {
     assert(n >= 1);
     for (i = 0; i < n; i++) {
         PyObject *subpath = PyList_GET_ITEM(dotted_path, i);
-        PyObject *result = PyUnicode_RichCompare(
-            subpath, _PyUnicode_FromId(&PyId_locals), Py_EQ);
-        int is_equal = (result == Py_True);
-        assert(PyBool_Check(result));
-        Py_DECREF(result);
-        if (is_equal) {
+        if (_PyUnicode_EqualToASCIIString(subpath, "<locals>")) {
             if (obj == NULL)
                 PyErr_Format(PyExc_AttributeError,
                              "Can't pickle local object %R", name);
@@ -1710,7 +1777,7 @@ whichmodule(PyObject *global, PyObject *dotted_path)
 
     /* If no module is found, use __main__. */
     module_name = _PyUnicode_FromId(&PyId___main__);
-    Py_INCREF(module_name);
+    Py_XINCREF(module_name);
     return module_name;
 }
 
@@ -1736,8 +1803,10 @@ fast_save_enter(PicklerObject *self, PyObject *obj)
             }
         }
         key = PyLong_FromVoidPtr(obj);
-        if (key == NULL)
+        if (key == NULL) {
+            self->fast_nesting = -1;
             return 0;
+        }
         if (PyDict_GetItemWithError(self->fast_memo, key)) {
             Py_DECREF(key);
             PyErr_Format(PyExc_ValueError,
@@ -1748,6 +1817,8 @@ fast_save_enter(PicklerObject *self, PyObject *obj)
             return 0;
         }
         if (PyErr_Occurred()) {
+            Py_DECREF(key);
+            self->fast_nesting = -1;
             return 0;
         }
         if (PyDict_SetItem(self->fast_memo, key, Py_None) < 0) {
@@ -3281,6 +3352,8 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
             PickleState *st = _Pickle_GetGlobalState();
             PyObject *reduce_value = Py_BuildValue("(O(OO))",
                                         st->getattr, parent, lastname);
+            if (reduce_value == NULL)
+                goto error;
             status = save_reduce(self, reduce_value, NULL);
             Py_DECREF(reduce_value);
             if (status < 0)
@@ -3402,7 +3475,7 @@ save_type(PicklerObject *self, PyObject *obj)
 }
 
 static int
-save_pers(PicklerObject *self, PyObject *obj, PyObject *func)
+save_pers(PicklerObject *self, PyObject *obj)
 {
     PyObject *pid = NULL;
     int status = 0;
@@ -3410,8 +3483,7 @@ save_pers(PicklerObject *self, PyObject *obj, PyObject *func)
     const char persid_op = PERSID;
     const char binpersid_op = BINPERSID;
 
-    Py_INCREF(obj);
-    pid = _Pickle_FastCall(func, obj);
+    pid = call_method(self->pers_func, self->pers_func_self, obj);
     if (pid == NULL)
         return -1;
 
@@ -3552,12 +3624,11 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
         }
         else if (PyUnicode_Check(name)) {
             _Py_IDENTIFIER(__newobj_ex__);
-            use_newobj_ex = PyUnicode_Compare(
-                    name, _PyUnicode_FromId(&PyId___newobj_ex__)) == 0;
+            use_newobj_ex = _PyUnicode_EqualToASCIIId(
+                    name, &PyId___newobj_ex__);
             if (!use_newobj_ex) {
                 _Py_IDENTIFIER(__newobj__);
-                use_newobj = PyUnicode_Compare(
-                        name, _PyUnicode_FromId(&PyId___newobj__)) == 0;
+                use_newobj = _PyUnicode_EqualToASCIIId(name, &PyId___newobj__);
             }
         }
         Py_XDECREF(name);
@@ -3790,7 +3861,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
              0   if it did nothing successfully;
              1   if a persistent id was saved.
          */
-        if ((status = save_pers(self, obj, self->pers_func)) != 0)
+        if ((status = save_pers(self, obj)) != 0)
             goto done;
     }
 
@@ -3997,9 +4068,10 @@ dump(PicklerObject *self, PyObject *obj)
     }
 
     if (save(self, obj, 0) < 0 ||
-        _Pickler_Write(self, &stop_op, 1) < 0)
+        _Pickler_Write(self, &stop_op, 1) < 0 ||
+        _Pickler_CommitFrame(self) < 0)
         return -1;
-
+    self->framing = 0;
     return 0;
 }
 
@@ -4204,19 +4276,20 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
     self->fast = 0;
     self->fast_nesting = 0;
     self->fast_memo = NULL;
-    self->pers_func = NULL;
-    if (_PyObject_HasAttrId((PyObject *)self, &PyId_persistent_id)) {
-        self->pers_func = _PyObject_GetAttrId((PyObject *)self,
-                                              &PyId_persistent_id);
-        if (self->pers_func == NULL)
-            return -1;
+
+    if (init_method_ref((PyObject *)self, &PyId_persistent_id,
+                        &self->pers_func, &self->pers_func_self) < 0)
+    {
+        return -1;
     }
-    self->dispatch_table = NULL;
-    if (_PyObject_HasAttrId((PyObject *)self, &PyId_dispatch_table)) {
-        self->dispatch_table = _PyObject_GetAttrId((PyObject *)self,
-                                                   &PyId_dispatch_table);
-        if (self->dispatch_table == NULL)
+
+    self->dispatch_table = _PyObject_GetAttrId((PyObject *)self,
+                                               &PyId_dispatch_table);
+    if (self->dispatch_table == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
             return -1;
+        }
+        PyErr_Clear();
     }
 
     return 0;
@@ -4258,14 +4331,13 @@ static PyObject *
 _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
 /*[clinic end generated code: output=bb83a919d29225ef input=b73043485ac30b36]*/
 {
-    Py_ssize_t i;
     PyMemoTable *memo;
     PyObject *new_memo = PyDict_New();
     if (new_memo == NULL)
         return NULL;
 
     memo = self->pickler->memo;
-    for (i = 0; i < memo->mt_allocated; ++i) {
+    for (size_t i = 0; i < memo->mt_allocated; ++i) {
         PyMemoEntry entry = memo->mt_table[i];
         if (entry.me_key != NULL) {
             int status;
@@ -4474,11 +4546,11 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj)
 static PyObject *
 Pickler_get_persid(PicklerObject *self)
 {
-    if (self->pers_func == NULL)
+    if (self->pers_func == NULL) {
         PyErr_SetString(PyExc_AttributeError, "persistent_id");
-    else
-        Py_INCREF(self->pers_func);
-    return self->pers_func;
+        return NULL;
+    }
+    return reconstruct_method(self->pers_func, self->pers_func_self);
 }
 
 static int
@@ -4495,6 +4567,7 @@ Pickler_set_persid(PicklerObject *self, PyObject *value)
         return -1;
     }
 
+    self->pers_func_self = NULL;
     Py_INCREF(value);
     Py_XSETREF(self->pers_func, value);
 
@@ -5171,22 +5244,24 @@ load_frozenset(UnpicklerObject *self)
 static PyObject *
 instantiate(PyObject *cls, PyObject *args)
 {
-    PyObject *result = NULL;
-    _Py_IDENTIFIER(__getinitargs__);
     /* Caller must assure args are a tuple.  Normally, args come from
        Pdata_poptuple which packs objects from the top of the stack
        into a newly created tuple. */
     assert(PyTuple_Check(args));
-    if (Py_SIZE(args) > 0 || !PyType_Check(cls) ||
-        _PyObject_HasAttrId(cls, &PyId___getinitargs__)) {
-        result = PyObject_CallObject(cls, args);
-    }
-    else {
+    if (!PyTuple_GET_SIZE(args) && PyType_Check(cls)) {
+        _Py_IDENTIFIER(__getinitargs__);
         _Py_IDENTIFIER(__new__);
-
-        result = _PyObject_CallMethodId(cls, &PyId___new__, "O", cls);
+        PyObject *func = _PyObject_GetAttrId(cls, &PyId___getinitargs__);
+        if (func == NULL) {
+            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                return NULL;
+            }
+            PyErr_Clear();
+            return _PyObject_CallMethodIdObjArgs(cls, &PyId___new__, cls, NULL);
+        }
+        Py_DECREF(func);
     }
-    return result;
+    return PyObject_CallObject(cls, args);
 }
 
 static int
@@ -5442,7 +5517,7 @@ load_stack_global(UnpicklerObject *self)
 static int
 load_persid(UnpicklerObject *self)
 {
-    PyObject *pid;
+    PyObject *pid, *obj;
     Py_ssize_t len;
     char *s;
 
@@ -5462,13 +5537,12 @@ load_persid(UnpicklerObject *self)
             return -1;
         }
 
-        /* This does not leak since _Pickle_FastCall() steals the reference
-           to pid first. */
-        pid = _Pickle_FastCall(self->pers_func, pid);
-        if (pid == NULL)
+        obj = call_method(self->pers_func, self->pers_func_self, pid);
+        Py_DECREF(pid);
+        if (obj == NULL)
             return -1;
 
-        PDATA_PUSH(self->stack, pid, -1);
+        PDATA_PUSH(self->stack, obj, -1);
         return 0;
     }
     else {
@@ -5483,20 +5557,19 @@ load_persid(UnpicklerObject *self)
 static int
 load_binpersid(UnpicklerObject *self)
 {
-    PyObject *pid;
+    PyObject *pid, *obj;
 
     if (self->pers_func) {
         PDATA_POP(self->stack, pid);
         if (pid == NULL)
             return -1;
 
-        /* This does not leak since _Pickle_FastCall() steals the
-           reference to pid first. */
-        pid = _Pickle_FastCall(self->pers_func, pid);
-        if (pid == NULL)
+        obj = call_method(self->pers_func, self->pers_func_self, pid);
+        Py_DECREF(pid);
+        if (obj == NULL)
             return -1;
 
-        PDATA_PUSH(self->stack, pid, -1);
+        PDATA_PUSH(self->stack, obj, -1);
         return 0;
     }
     else {
@@ -6128,11 +6201,10 @@ load_mark(UnpicklerObject *self)
             return -1;
         }
 
-        if (self->marks == NULL)
-            self->marks = PyMem_NEW(Py_ssize_t, alloc);
-        else
-            PyMem_RESIZE(self->marks, Py_ssize_t, alloc);
+        Py_ssize_t *marks_old = self->marks;
+        PyMem_RESIZE(self->marks, Py_ssize_t, alloc);
         if (self->marks == NULL) {
+            PyMem_FREE(marks_old);
             self->marks_size = 0;
             PyErr_NoMemory();
             return -1;
@@ -6632,22 +6704,16 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
         return -1;
 
     self->fix_imports = fix_imports;
-    if (self->fix_imports == -1)
-        return -1;
 
-    if (_PyObject_HasAttrId((PyObject *)self, &PyId_persistent_load)) {
-        self->pers_func = _PyObject_GetAttrId((PyObject *)self,
-                                              &PyId_persistent_load);
-        if (self->pers_func == NULL)
-            return 1;
-    }
-    else {
-        self->pers_func = NULL;
+    if (init_method_ref((PyObject *)self, &PyId_persistent_load,
+                        &self->pers_func, &self->pers_func_self) < 0)
+    {
+        return -1;
     }
 
     self->stack = (Pdata *)Pdata_New();
     if (self->stack == NULL)
-        return 1;
+        return -1;
 
     self->memo_size = 32;
     self->memo = _Unpickler_NewMemo(self->memo_size);
@@ -6700,7 +6766,7 @@ static PyObject *
 _pickle_UnpicklerMemoProxy_copy_impl(UnpicklerMemoProxyObject *self)
 /*[clinic end generated code: output=e12af7e9bc1e4c77 input=97769247ce032c1d]*/
 {
-    Py_ssize_t i;
+    size_t i;
     PyObject *new_memo = PyDict_New();
     if (new_memo == NULL)
         return NULL;
@@ -6851,8 +6917,7 @@ static int
 Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
 {
     PyObject **new_memo;
-    Py_ssize_t new_memo_size = 0;
-    Py_ssize_t i;
+    size_t new_memo_size = 0;
 
     if (obj == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -6869,7 +6934,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
         if (new_memo == NULL)
             return -1;
 
-        for (i = 0; i < new_memo_size; i++) {
+        for (size_t i = 0; i < new_memo_size; i++) {
             Py_XINCREF(unpickler->memo[i]);
             new_memo[i] = unpickler->memo[i];
         }
@@ -6917,8 +6982,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
 
   error:
     if (new_memo_size) {
-        i = new_memo_size;
-        while (--i >= 0) {
+        for (size_t i = new_memo_size - 1; i != SIZE_MAX; i--) {
             Py_XDECREF(new_memo[i]);
         }
         PyMem_FREE(new_memo);
@@ -6929,11 +6993,11 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
 static PyObject *
 Unpickler_get_persload(UnpicklerObject *self)
 {
-    if (self->pers_func == NULL)
+    if (self->pers_func == NULL) {
         PyErr_SetString(PyExc_AttributeError, "persistent_load");
-    else
-        Py_INCREF(self->pers_func);
-    return self->pers_func;
+        return NULL;
+    }
+    return reconstruct_method(self->pers_func, self->pers_func_self);
 }
 
 static int
@@ -6951,6 +7015,7 @@ Unpickler_set_persload(UnpicklerObject *self, PyObject *value)
         return -1;
     }
 
+    self->pers_func_self = NULL;
     Py_INCREF(value);
     Py_XSETREF(self->pers_func, value);
 

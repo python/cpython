@@ -164,6 +164,29 @@ _CD64_NUMBER_ENTRIES_TOTAL = 7
 _CD64_DIRECTORY_SIZE = 8
 _CD64_OFFSET_START_CENTDIR = 9
 
+_DD_SIGNATURE = 0x08074b50
+
+_EXTRA_FIELD_STRUCT = struct.Struct('<HH')
+
+def _strip_extra(extra, xids):
+    # Remove Extra Fields with specified IDs.
+    unpack = _EXTRA_FIELD_STRUCT.unpack
+    modified = False
+    buffer = []
+    start = i = 0
+    while i + 4 <= len(extra):
+        xid, xlen = unpack(extra[i : i + 4])
+        j = i + 4 + xlen
+        if xid in xids:
+            if i != start:
+                buffer.append(extra[start : i])
+            start = j
+            modified = True
+        i = j
+    if not modified:
+        return extra
+    return b''.join(buffer)
+
 def _check_zipfile(fp):
     try:
         if _EndRecData(fp):
@@ -479,6 +502,8 @@ class ZipInfo (object):
         this will be the same as filename, but without a drive letter and with
         leading path separators removed).
         """
+        if isinstance(filename, os.PathLike):
+            filename = os.fspath(filename)
         st = os.stat(filename)
         isdir = stat.S_ISDIR(st.st_mode)
         mtime = time.localtime(st.st_mtime)
@@ -979,6 +1004,8 @@ class _ZipWriteFile(io.BufferedIOBase):
         return True
 
     def write(self, data):
+        if self.closed:
+            raise ValueError('I/O operation on closed file.')
         nbytes = len(data)
         self._file_size += nbytes
         self._crc = crc32(data, self._crc)
@@ -989,6 +1016,8 @@ class _ZipWriteFile(io.BufferedIOBase):
         return nbytes
 
     def close(self):
+        if self.closed:
+            return
         super().close()
         # Flush any data from the compressor, and update header info
         if self._compressor:
@@ -1004,8 +1033,8 @@ class _ZipWriteFile(io.BufferedIOBase):
         # Write updated header info
         if self._zinfo.flag_bits & 0x08:
             # Write CRC and file sizes after the file data
-            fmt = '<LQQ' if self._zip64 else '<LLL'
-            self._fileobj.write(struct.pack(fmt, self._zinfo.CRC,
+            fmt = '<LLQQ' if self._zip64 else '<LLLL'
+            self._fileobj.write(struct.pack(fmt, _DD_SIGNATURE, self._zinfo.CRC,
                 self._zinfo.compress_size, self._zinfo.file_size))
             self._zipfile.start_dir = self._fileobj.tell()
         else:
@@ -1070,6 +1099,8 @@ class ZipFile:
         self._comment = b''
 
         # Check if we were passed a file-like object
+        if isinstance(file, os.PathLike):
+            file = os.fspath(file)
         if isinstance(file, str):
             # No, it's a filename
             self._filePassed = 0
@@ -1103,10 +1134,10 @@ class ZipFile:
                 # even if no files are added to the archive
                 self._didModify = True
                 try:
-                    self.start_dir = self._start_disk = self.fp.tell()
+                    self.start_dir = self.fp.tell()
                 except (AttributeError, OSError):
                     self.fp = _Tellable(self.fp)
-                    self.start_dir = self._start_disk = 0
+                    self.start_dir = 0
                     self._seekable = False
                 else:
                     # Some file-like objects can provide tell() but not seek()
@@ -1127,7 +1158,7 @@ class ZipFile:
                     # set the modified flag so central directory gets written
                     # even if no files are added to the archive
                     self._didModify = True
-                    self.start_dir = self._start_disk = self.fp.tell()
+                    self.start_dir = self.fp.tell()
             else:
                 raise ValueError("Mode must be 'r', 'w', 'x', or 'a'")
         except:
@@ -1171,18 +1202,17 @@ class ZipFile:
         offset_cd = endrec[_ECD_OFFSET]         # offset of central directory
         self._comment = endrec[_ECD_COMMENT]    # archive comment
 
-        # self._start_disk:  Position of the start of ZIP archive
-        # It is zero, unless ZIP was concatenated to another file
-        self._start_disk = endrec[_ECD_LOCATION] - size_cd - offset_cd
+        # "concat" is zero, unless zip was concatenated to another file
+        concat = endrec[_ECD_LOCATION] - size_cd - offset_cd
         if endrec[_ECD_SIGNATURE] == stringEndArchive64:
             # If Zip64 extension structures are present, account for them
-            self._start_disk -= (sizeEndCentDir64 + sizeEndCentDir64Locator)
+            concat -= (sizeEndCentDir64 + sizeEndCentDir64Locator)
 
         if self.debug > 2:
-            inferred = self._start_disk + offset_cd
-            print("given, inferred, offset", offset_cd, inferred, self._start_disk)
+            inferred = concat + offset_cd
+            print("given, inferred, offset", offset_cd, inferred, concat)
         # self.start_dir:  Position of start of central directory
-        self.start_dir = offset_cd + self._start_disk
+        self.start_dir = offset_cd + concat
         fp.seek(self.start_dir, 0)
         data = fp.read(size_cd)
         fp = io.BytesIO(data)
@@ -1222,7 +1252,7 @@ class ZipFile:
                             t>>11, (t>>5)&0x3F, (t&0x1F) * 2 )
 
             x._decodeExtra()
-            x.header_offset = x.header_offset + self._start_disk
+            x.header_offset = x.header_offset + concat
             self.filelist.append(x)
             self.NameToInfo[x.filename] = x
 
@@ -1469,11 +1499,10 @@ class ZipFile:
            as possible. `member' may be a filename or a ZipInfo object. You can
            specify a different directory using `path'.
         """
-        if not isinstance(member, ZipInfo):
-            member = self.getinfo(member)
-
         if path is None:
             path = os.getcwd()
+        else:
+            path = os.fspath(path)
 
         return self._extract_member(member, path, pwd)
 
@@ -1486,8 +1515,13 @@ class ZipFile:
         if members is None:
             members = self.namelist()
 
+        if path is None:
+            path = os.getcwd()
+        else:
+            path = os.fspath(path)
+
         for zipinfo in members:
-            self.extract(zipinfo, path, pwd)
+            self._extract_member(zipinfo, path, pwd)
 
     @classmethod
     def _sanitize_windows_name(cls, arcname, pathsep):
@@ -1508,6 +1542,9 @@ class ZipFile:
         """Extract the ZipInfo object 'member' to a physical
            file on the path targetpath.
         """
+        if not isinstance(member, ZipInfo):
+            member = self.getinfo(member)
+
         # build the destination pathname, replacing
         # forward slashes to platform specific separators.
         arcname = member.filename.replace('/', os.path.sep)
@@ -1686,15 +1723,17 @@ class ZipFile:
                 file_size = zinfo.file_size
                 compress_size = zinfo.compress_size
 
-            header_offset = zinfo.header_offset - self._start_disk
-            if header_offset > ZIP64_LIMIT:
-                extra.append(header_offset)
+            if zinfo.header_offset > ZIP64_LIMIT:
+                extra.append(zinfo.header_offset)
                 header_offset = 0xffffffff
+            else:
+                header_offset = zinfo.header_offset
 
             extra_data = zinfo.extra
             min_version = 0
             if extra:
                 # Append a ZIP64 field to the extra's
+                extra_data = _strip_extra(extra_data, (1,))
                 extra_data = struct.pack(
                     '<HH' + 'Q'*len(extra),
                     1, 8*len(extra), *extra) + extra_data
@@ -1736,7 +1775,7 @@ class ZipFile:
         # Write end-of-zip-archive record
         centDirCount = len(self.filelist)
         centDirSize = pos2 - self.start_dir
-        centDirOffset = self.start_dir - self._start_disk
+        centDirOffset = self.start_dir
         requires_zip64 = None
         if centDirCount > ZIP_FILECOUNT_LIMIT:
             requires_zip64 = "Files count"
@@ -1800,6 +1839,7 @@ class PyZipFile(ZipFile):
         If filterfunc(pathname) is given, it is called with every argument.
         When it is False, the file or directory is skipped.
         """
+        pathname = os.fspath(pathname)
         if filterfunc and not filterfunc(pathname):
             if self.debug:
                 label = 'path' if os.path.isdir(pathname) else 'file'

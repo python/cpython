@@ -87,19 +87,25 @@ enum_next_long(enumobject *en, PyObject* next_item)
 
     if (en->en_longindex == NULL) {
         en->en_longindex = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
-        if (en->en_longindex == NULL)
+        if (en->en_longindex == NULL) {
+            Py_DECREF(next_item);
             return NULL;
+        }
     }
     if (one == NULL) {
         one = PyLong_FromLong(1);
-        if (one == NULL)
+        if (one == NULL) {
+            Py_DECREF(next_item);
             return NULL;
+        }
     }
     next_index = en->en_longindex;
     assert(next_index != NULL);
     stepped_up = PyNumber_Add(next_index, one);
-    if (stepped_up == NULL)
+    if (stepped_up == NULL) {
+        Py_DECREF(next_item);
         return NULL;
+    }
     en->en_longindex = stepped_up;
 
     if (result->ob_refcnt == 1) {

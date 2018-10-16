@@ -10,23 +10,13 @@ Changing the current text line or leaving the cursor in a different
 place before requesting the next selection causes AutoExpand to reset
 its state.
 
-This is an extension file and there is only one instance of AutoExpand.
+There is only one instance of Autoexpand.
 '''
 import re
 import string
 
-###$ event <<expand-word>>
-###$ win <Alt-slash>
-###$ unix <Alt-slash>
 
 class AutoExpand:
-
-    menudefs = [
-        ('edit', [
-            ('E_xpand Word', '<<expand-word>>'),
-         ]),
-    ]
-
     wordchars = string.ascii_letters + string.digits + "_"
 
     def __init__(self, editwin):
@@ -100,6 +90,7 @@ class AutoExpand:
             i = i-1
         return line[i:]
 
+
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_autoexpand', verbosity=2)
+    from unittest import main
+    main('idlelib.idle_test.test_autoexpand', verbosity=2)

@@ -587,7 +587,7 @@ printed::
    ...
    Traceback (most recent call last):
      File "<stdin>", line 2, in <module>
-   ZeroDivisionError: int division or modulo by zero
+   ZeroDivisionError: division by zero
 
    The above exception was the direct cause of the following exception:
 
@@ -606,7 +606,7 @@ attached as the new exception's :attr:`__context__` attribute::
    ...
    Traceback (most recent call last):
      File "<stdin>", line 2, in <module>
-   ZeroDivisionError: int division or modulo by zero
+   ZeroDivisionError: division by zero
 
    During handling of the above exception, another exception occurred:
 
@@ -614,9 +614,27 @@ attached as the new exception's :attr:`__context__` attribute::
      File "<stdin>", line 4, in <module>
    RuntimeError: Something bad happened
 
+Exception chaining can be explicitly suppressed by specifying :const:`None` in
+the ``from`` clause::
+
+   >>> try:
+   ...     print(1 / 0)
+   ... except:
+   ...     raise RuntimeError("Something bad happened") from None
+   ...
+   Traceback (most recent call last):
+     File "<stdin>", line 4, in <module>
+   RuntimeError: Something bad happened
+
 Additional information on exceptions can be found in section :ref:`exceptions`,
 and information about handling exceptions is in section :ref:`try`.
 
+.. versionchanged:: 3.3
+    :const:`None` is now permitted as ``Y`` in ``raise X from Y``.
+
+.. versionadded:: 3.3
+    The ``__suppress_context__`` attribute to suppress automatic display of the
+    exception context.
 
 .. _break:
 
@@ -690,15 +708,14 @@ The :keyword:`import` statement
    keyword: from
 
 .. productionlist::
-   import_stmt: "import" `module` ["as" `name`] ( "," `module` ["as" `name`] )*
-              : | "from" `relative_module` "import" `identifier` ["as" `name`]
-              : ( "," `identifier` ["as" `name`] )*
-              : | "from" `relative_module` "import" "(" `identifier` ["as" `name`]
-              : ( "," `identifier` ["as" `name`] )* [","] ")"
+   import_stmt: "import" `module` ["as" `identifier`] ("," `module` ["as" `identifier`])*
+              : | "from" `relative_module` "import" `identifier` ["as" `identifier`]
+              : ("," `identifier` ["as" `identifier`])*
+              : | "from" `relative_module` "import" "(" `identifier` ["as" `identifier`]
+              : ("," `identifier` ["as" `identifier`])* [","] ")"
               : | "from" `module` "import" "*"
    module: (`identifier` ".")* `identifier`
    relative_module: "."* `module` | "."+
-   name: `identifier`
 
 The basic import statement (no :keyword:`from` clause) is executed in two
 steps:
@@ -820,12 +837,11 @@ features on a per-module basis before the release in which the feature becomes
 standard.
 
 .. productionlist:: *
-   future_statement: "from" "__future__" "import" feature ["as" name]
-                   : ("," feature ["as" name])*
-                   : | "from" "__future__" "import" "(" feature ["as" name]
-                   : ("," feature ["as" name])* [","] ")"
-   feature: identifier
-   name: identifier
+   future_stmt: "from" "__future__" "import" `feature` ["as" `identifier`]
+              : ("," `feature` ["as" `identifier`])*
+              : | "from" "__future__" "import" "(" `feature` ["as" `identifier`]
+              : ("," `feature` ["as" `identifier`])* [","] ")"
+   feature: `identifier`
 
 A future statement must appear near the top of the module.  The only lines that
 can appear before a future statement are:
@@ -913,7 +929,7 @@ annotation.
 
 .. impl-detail::
 
-   The current implementation does not enforce some of these restriction, but
+   The current implementation does not enforce some of these restrictions, but
    programs should not abuse this freedom, as future implementations may enforce
    them or silently change the meaning of the program.
 
@@ -922,7 +938,7 @@ annotation.
    builtin: eval
    builtin: compile
 
-**Programmer's note:** the :keyword:`global` is a directive to the parser.  It
+**Programmer's note:** :keyword:`global` is a directive to the parser.  It
 applies only to code parsed at the same time as the :keyword:`global` statement.
 In particular, a :keyword:`global` statement contained in a string or code
 object supplied to the built-in :func:`exec` function does not affect the code

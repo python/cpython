@@ -1,7 +1,3 @@
-# -*-mode: python; fill-column: 75; tab-width: 8 -*-
-#
-# $Id$
-#
 # Tix.py -- Tix widget wrappers.
 #
 #       For Tix, see http://tix.sourceforge.net

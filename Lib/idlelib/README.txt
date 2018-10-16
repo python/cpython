@@ -206,7 +206,7 @@ Window
   <open windows>   # windows
 
 Help
-  About IDLE       # eEW.about_dialog, help_about.AboutDialog 
+  About IDLE       # eEW.about_dialog, help_about.AboutDialog
   ---
   IDLE Help        # eEW.help_dialog, helpshow_idlehelp
   Python Doc       # eEW.python_docs
@@ -230,7 +230,7 @@ Help
 <No menu>
 Center Insert      # eEW.center_insert_event
 
-  
+
 CODE STYLE -- Generally PEP 8.
 
 import

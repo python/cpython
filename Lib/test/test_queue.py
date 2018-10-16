@@ -46,28 +46,27 @@ class _TriggerThread(threading.Thread):
 
 class BlockingTestMixin:
 
-    def tearDown(self):
-        self.t = None
-
     def do_blocking_test(self, block_func, block_args, trigger_func, trigger_args):
-        self.t = _TriggerThread(trigger_func, trigger_args)
-        self.t.start()
-        self.result = block_func(*block_args)
-        # If block_func returned before our thread made the call, we failed!
-        if not self.t.startedEvent.is_set():
-            self.fail("blocking function '%r' appeared not to block" %
-                      block_func)
-        self.t.join(10) # make sure the thread terminates
-        if self.t.is_alive():
-            self.fail("trigger function '%r' appeared to not return" %
-                      trigger_func)
-        return self.result
+        thread = _TriggerThread(trigger_func, trigger_args)
+        thread.start()
+        try:
+            self.result = block_func(*block_args)
+            # If block_func returned before our thread made the call, we failed!
+            if not thread.startedEvent.is_set():
+                self.fail("blocking function '%r' appeared not to block" %
+                          block_func)
+            return self.result
+        finally:
+            thread.join(10) # make sure the thread terminates
+            if thread.is_alive():
+                self.fail("trigger function '%r' appeared to not return" %
+                          trigger_func)
 
     # Call this instead if block_func is supposed to raise an exception.
     def do_exceptional_blocking_test(self,block_func, block_args, trigger_func,
                                    trigger_args, expected_exception_class):
-        self.t = _TriggerThread(trigger_func, trigger_args)
-        self.t.start()
+        thread = _TriggerThread(trigger_func, trigger_args)
+        thread.start()
         try:
             try:
                 block_func(*block_args)
@@ -77,11 +76,11 @@ class BlockingTestMixin:
                 self.fail("expected exception of kind %r" %
                                  expected_exception_class)
         finally:
-            self.t.join(10) # make sure the thread terminates
-            if self.t.is_alive():
+            thread.join(10) # make sure the thread terminates
+            if thread.is_alive():
                 self.fail("trigger function '%r' appeared to not return" %
                                  trigger_func)
-            if not self.t.startedEvent.is_set():
+            if not thread.startedEvent.is_set():
                 self.fail("trigger thread ended but event never set")
 
 
@@ -159,8 +158,11 @@ class BaseQueueTestMixin(BlockingTestMixin):
 
     def queue_join_test(self, q):
         self.cum = 0
+        threads = []
         for i in (0,1):
-            threading.Thread(target=self.worker, args=(q,)).start()
+            thread = threading.Thread(target=self.worker, args=(q,))
+            thread.start()
+            threads.append(thread)
         for i in range(100):
             q.put(i)
         q.join()
@@ -169,6 +171,8 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for i in (0,1):
             q.put(-1)         # instruct the threads to close
         q.join()                # verify that you can join twice
+        for thread in threads:
+            thread.join()
 
     def test_queue_task_done(self):
         # Test to make sure a queue task completed successfully.

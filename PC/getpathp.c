@@ -185,7 +185,7 @@ exists(wchar_t *filename)
    may extend 'filename' by one character.
 */
 static int
-ismodule(wchar_t *filename, int update_filename) /* Is module -- check for .pyc/.pyo too */
+ismodule(wchar_t *filename, int update_filename) /* Is module -- check for .pyc too */
 {
     size_t n;
 
@@ -196,7 +196,7 @@ ismodule(wchar_t *filename, int update_filename) /* Is module -- check for .pyc/
     n = wcsnlen_s(filename, MAXPATHLEN+1);
     if (n < MAXPATHLEN) {
         int exist = 0;
-        filename[n] = Py_OptimizeFlag ? L'o' : L'c';
+        filename[n] = L'c';
         filename[n + 1] = L'\0';
         exist = exists(filename);
         if (!update_filename)
@@ -238,6 +238,36 @@ join(wchar_t *buffer, const wchar_t *stuff)
     } else {
         if (!PathCombineW(buffer, buffer, stuff))
             Py_FatalError("buffer overflow in getpathp.c's join()");
+    }
+}
+
+static int _PathCchCanonicalizeEx_Initialized = 0;
+typedef HRESULT(__stdcall *PPathCchCanonicalizeEx) (PWSTR pszPathOut, size_t cchPathOut,
+    PCWSTR pszPathIn, unsigned long dwFlags);
+static PPathCchCanonicalizeEx _PathCchCanonicalizeEx;
+
+static void canonicalize(wchar_t *buffer, const wchar_t *path)
+{
+    if (_PathCchCanonicalizeEx_Initialized == 0) {
+        HMODULE pathapi = LoadLibraryW(L"api-ms-win-core-path-l1-1-0.dll");
+        if (pathapi) {
+            _PathCchCanonicalizeEx = (PPathCchCanonicalizeEx)GetProcAddress(pathapi, "PathCchCanonicalizeEx");
+        }
+        else {
+            _PathCchCanonicalizeEx = NULL;
+        }
+        _PathCchCanonicalizeEx_Initialized = 1;
+    }
+
+    if (_PathCchCanonicalizeEx) {
+        if (FAILED(_PathCchCanonicalizeEx(buffer, MAXPATHLEN + 1, path, 0))) {
+            Py_FatalError("buffer overflow in getpathp.c's canonicalize()");
+        }
+    }
+    else {
+        if (!PathCanonicalizeW(buffer, path)) {
+            Py_FatalError("buffer overflow in getpathp.c's canonicalize()");
+        }
     }
 }
 
@@ -431,6 +461,7 @@ static void
 get_progpath(void)
 {
     extern wchar_t *Py_GetProgramName(void);
+    wchar_t modulepath[MAXPATHLEN];
     wchar_t *path = _wgetenv(L"PATH");
     wchar_t *prog = Py_GetProgramName();
 
@@ -443,8 +474,10 @@ get_progpath(void)
 #else
     dllpath[0] = 0;
 #endif
-    if (GetModuleFileNameW(NULL, progpath, MAXPATHLEN))
+    if (GetModuleFileNameW(NULL, modulepath, MAXPATHLEN)) {
+        canonicalize(progpath, modulepath);
         return;
+    }
     if (prog == NULL || *prog == '\0')
         prog = L"python";
 
@@ -560,7 +593,7 @@ read_pth_file(const wchar_t *path, wchar_t *prefix, int *isolated, int *nosite)
         char *p = fgets(line, MAXPATHLEN + 1, sp_file);
         if (!p)
             break;
-        if (*p == '\0' || *p == '#')
+        if (*p == '\0' || *p == '\r' || *p == '\n' || *p == '#')
             continue;
         while (*++p) {
             if (*p == '\r' || *p == '\n') {

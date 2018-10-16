@@ -139,7 +139,10 @@ EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
             process = MUNCH_SIZE;
         else
             process = Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int);
-        EVP_DigestUpdate(self->ctx, (const void*)cp, process);
+        if (!EVP_DigestUpdate(self->ctx, (const void*)cp, process)) {
+            _setException(PyExc_ValueError);
+            break;
+        }
         len -= process;
         cp += process;
     }
@@ -209,7 +212,10 @@ EVP_digest(EVPobject *self, PyObject *unused)
         return _setException(PyExc_ValueError);
     }
     digest_size = EVP_MD_CTX_size(temp_ctx);
-    EVP_DigestFinal(temp_ctx, digest, NULL);
+    if (!EVP_DigestFinal(temp_ctx, digest, NULL)) {
+        _setException(PyExc_ValueError);
+        return NULL;
+    }
 
     retval = PyBytes_FromStringAndSize((const char *)digest, digest_size);
     EVP_MD_CTX_free(temp_ctx);
@@ -237,7 +243,10 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
         return _setException(PyExc_ValueError);
     }
     digest_size = EVP_MD_CTX_size(temp_ctx);
-    EVP_DigestFinal(temp_ctx, digest, NULL);
+    if (!EVP_DigestFinal(temp_ctx, digest, NULL)) {
+        _setException(PyExc_ValueError);
+        return NULL;
+    }
 
     EVP_MD_CTX_free(temp_ctx);
 
@@ -362,10 +371,15 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
             PyBuffer_Release(&view);
         return -1;
     }
-    EVP_DigestInit(self->ctx, digest);
+    if (!EVP_DigestInit(self->ctx, digest)) {
+        _setException(PyExc_ValueError);
+        if (data_obj)
+            PyBuffer_Release(&view);
+        return -1;
+    }
 
-    self->name = name_obj;
-    Py_INCREF(self->name);
+    Py_INCREF(name_obj);
+    Py_XSETREF(self->name, name_obj);
 
     if (data_obj) {
         if (view.len >= HASHLIB_GIL_MINSIZE) {
@@ -461,7 +475,11 @@ EVPnew(PyObject *name_obj,
     if (initial_ctx) {
         EVP_MD_CTX_copy(self->ctx, initial_ctx);
     } else {
-        EVP_DigestInit(self->ctx, digest);
+        if (!EVP_DigestInit(self->ctx, digest)) {
+            _setException(PyExc_ValueError);
+            Py_DECREF(self);
+            return NULL;
+        }
     }
 
     if (cp && len) {
@@ -722,6 +740,10 @@ pbkdf2_hmac(PyObject *self, PyObject *args, PyObject *kwdict)
 #if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(OPENSSL_NO_SCRYPT) && !defined(LIBRESSL_VERSION_NUMBER)
 #define PY_SCRYPT 1
 
+/* XXX: Parameters salt, n, r and p should be required keyword-only parameters.
+   They are optional in the Argument Clinic declaration only due to a
+   limitation of PyArg_ParseTupleAndKeywords. */
+
 /*[clinic input]
 _hashlib.scrypt
 
@@ -900,8 +922,10 @@ generate_hash_name_list(void)
  *  This macro generates constructor function definitions for specific
  *  hash algorithms.  These constructors are much faster than calling
  *  the generic one passing it a python string and are noticeably
- *  faster than calling a python new() wrapper.  Thats important for
+ *  faster than calling a python new() wrapper.  That is important for
  *  code that wants to make hashes of a bunch of small strings.
+ *  The first call will lazy-initialize, which reports an exception
+ *  if initialization fails.
  */
 #define GEN_CONSTRUCTOR(NAME)  \
     static PyObject * \
@@ -913,6 +937,17 @@ generate_hash_name_list(void)
      \
         if (!PyArg_ParseTuple(args, "|O:" #NAME , &data_obj)) { \
             return NULL; \
+        } \
+     \
+        if (CONST_new_ ## NAME ## _ctx_p == NULL) { \
+            EVP_MD_CTX *ctx_p = EVP_MD_CTX_new(); \
+            if (!EVP_get_digestbyname(#NAME) || \
+                !EVP_DigestInit(ctx_p, EVP_get_digestbyname(#NAME))) { \
+                _setException(PyExc_ValueError); \
+                EVP_MD_CTX_free(ctx_p); \
+                return NULL; \
+            } \
+            CONST_new_ ## NAME ## _ctx_p = ctx_p; \
         } \
      \
         if (data_obj) \
@@ -942,10 +977,6 @@ generate_hash_name_list(void)
 #define INIT_CONSTRUCTOR_CONSTANTS(NAME)  do { \
     if (CONST_ ## NAME ## _name_obj == NULL) { \
         CONST_ ## NAME ## _name_obj = PyUnicode_FromString(#NAME); \
-        if (EVP_get_digestbyname(#NAME)) { \
-            CONST_new_ ## NAME ## _ctx_p = EVP_MD_CTX_new(); \
-            EVP_DigestInit(CONST_new_ ## NAME ## _ctx_p, EVP_get_digestbyname(#NAME)); \
-        } \
     } \
 } while (0);
 
@@ -995,8 +1026,11 @@ PyInit__hashlib(void)
 {
     PyObject *m, *openssl_md_meth_names;
 
-    OpenSSL_add_all_digests();
+#ifndef OPENSSL_VERSION_1_1
+    /* Load all digest algorithms and initialize cpuid */
+    OPENSSL_add_all_algorithms_noconf();
     ERR_load_crypto_strings();
+#endif
 
     /* TODO build EVP_functions openssl_* entries dynamically based
      * on what hashes are supported rather than listing many

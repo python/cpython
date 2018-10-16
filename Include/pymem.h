@@ -101,7 +101,9 @@ PyAPI_FUNC(PyObject*) _PyTraceMalloc_GetTraceback(
 */
 
 PyAPI_FUNC(void *) PyMem_Malloc(size_t size);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 PyAPI_FUNC(void *) PyMem_Calloc(size_t nelem, size_t elsize);
+#endif
 PyAPI_FUNC(void *) PyMem_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_Free(void *ptr);
 

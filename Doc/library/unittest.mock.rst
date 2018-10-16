@@ -35,7 +35,7 @@ is based on the 'action -> assertion' pattern instead of 'record -> replay'
 used by many mocking frameworks.
 
 There is a backport of :mod:`unittest.mock` for earlier versions of Python,
-available as `mock on PyPI <https://pypi.python.org/pypi/mock>`_.
+available as `mock on PyPI <https://pypi.org/project/mock>`_.
 
 
 Quick Guide
@@ -303,14 +303,14 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: assert_called_once_with(*args, **kwargs)
 
-       Assert that the mock was called exactly once and with the specified
-       arguments.
+       Assert that the mock was called exactly once and that that call was
+       with the specified arguments.
 
             >>> mock = Mock(return_value=None)
             >>> mock('foo', bar='baz')
             >>> mock.assert_called_once_with('foo', bar='baz')
-            >>> mock('foo', bar='baz')
-            >>> mock.assert_called_once_with('foo', bar='baz')
+            >>> mock('other', bar='values')
+            >>> mock.assert_called_once_with('other', bar='values')
             Traceback (most recent call last):
               ...
             AssertionError: Expected 'mock' to be called once. Called 2 times.
@@ -322,7 +322,8 @@ the *new_callable* argument to :func:`patch`.
 
         The assert passes if the mock has *ever* been called, unlike
         :meth:`assert_called_with` and :meth:`assert_called_once_with` that
-        only pass if the call is the most recent one.
+        only pass if the call is the most recent one, and in the case of
+        :meth:`assert_called_once_with` it must also be the only call.
 
             >>> mock = Mock(return_value=None)
             >>> mock(1, 2, arg='thing')
@@ -1824,12 +1825,15 @@ sentinel
 
 .. data:: sentinel
 
-    The ``sentinel`` object provides a convenient way of providing unique
-    objects for your tests.
+   The ``sentinel`` object provides a convenient way of providing unique
+   objects for your tests.
 
-    Attributes are created on demand when you access them by name. Accessing
-    the same attribute will always return the same object. The objects
-    returned have a sensible repr so that test failure messages are readable.
+   Attributes are created on demand when you access them by name. Accessing
+   the same attribute will always return the same object. The objects
+   returned have a sensible repr so that test failure messages are readable.
+
+    The ``sentinel`` attributes don't preserve their identity when they are
+    :mod:`copied <copy>` or :mod:`pickled <pickle>`.
 
 Sometimes when testing you need to test that a specific object is passed as an
 argument to another method, or returned. It can be common to create named
@@ -2065,22 +2069,22 @@ mock_open
 
 .. function:: mock_open(mock=None, read_data=None)
 
-    A helper function to create a mock to replace the use of :func:`open`. It works
-    for :func:`open` called directly or used as a context manager.
+   A helper function to create a mock to replace the use of :func:`open`. It works
+   for :func:`open` called directly or used as a context manager.
 
-    The *mock* argument is the mock object to configure. If ``None`` (the
-    default) then a :class:`MagicMock` will be created for you, with the API limited
-    to methods or attributes available on standard file handles.
+   The *mock* argument is the mock object to configure. If ``None`` (the
+   default) then a :class:`MagicMock` will be created for you, with the API limited
+   to methods or attributes available on standard file handles.
 
-    *read_data* is a string for the :meth:`~io.IOBase.read`,
-    :meth:`~io.IOBase.readline`, and :meth:`~io.IOBase.readlines` methods
-    of the file handle to return.  Calls to those methods will take data from
-    *read_data* until it is depleted.  The mock of these methods is pretty
-    simplistic: every time the *mock* is called, the *read_data* is rewound to
-    the start.  If you need more control over the data that you are feeding to
-    the tested code you will need to customize this mock for yourself.  When that
-    is insufficient, one of the in-memory filesystem packages on `PyPI
-    <https://pypi.python.org/pypi>`_ can offer a realistic filesystem for testing.
+   *read_data* is a string for the :meth:`~io.IOBase.read`,
+   :meth:`~io.IOBase.readline`, and :meth:`~io.IOBase.readlines` methods
+   of the file handle to return.  Calls to those methods will take data from
+   *read_data* until it is depleted.  The mock of these methods is pretty
+   simplistic: every time the *mock* is called, the *read_data* is rewound to
+   the start.  If you need more control over the data that you are feeding to
+   the tested code you will need to customize this mock for yourself.  When that
+   is insufficient, one of the in-memory filesystem packages on `PyPI
+   <https://pypi.org>`_ can offer a realistic filesystem for testing.
 
    .. versionchanged:: 3.4
       Added :meth:`~io.IOBase.readline` and :meth:`~io.IOBase.readlines` support.

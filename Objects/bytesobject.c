@@ -446,7 +446,7 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     result = PyBytes_FromStringAndSize(p, len);
     PyMem_Free(p);
     *p_result = result;
-    return str;
+    return result != NULL ? str : NULL;
 }
 
 static PyObject *
@@ -528,6 +528,8 @@ byte_converter(PyObject *arg, char *p)
     return 0;
 }
 
+static PyObject *_PyBytes_FromBuffer(PyObject *x);
+
 static PyObject *
 format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
 {
@@ -564,8 +566,19 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
         *plen = PyBytes_GET_SIZE(result);
         return result;
     }
+    /* does it support buffer protocol? */
+    if (PyObject_CheckBuffer(v)) {
+        /* maybe we can avoid making a copy of the buffer object here? */
+        result = _PyBytes_FromBuffer(v);
+        if (result == NULL)
+            return NULL;
+        *pbuf = PyBytes_AS_STRING(result);
+        *plen = PyBytes_GET_SIZE(result);
+        return result;
+    }
     PyErr_Format(PyExc_TypeError,
-                 "%%b requires bytes, or an object that implements __bytes__, not '%.100s'",
+                 "%%b requires a bytes-like object, "
+                 "or an object that implements __bytes__, not '%.100s'",
                  Py_TYPE(v)->tp_name);
     return NULL;
 }
@@ -619,11 +632,11 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             Py_ssize_t len;
             char *pos;
 
-            pos = strchr(fmt + 1, '%');
+            pos = (char *)memchr(fmt + 1, '%', fmtcnt);
             if (pos != NULL)
                 len = pos - fmt;
             else
-                len = format_len - (fmt - format);
+                len = fmtcnt + 1;
             assert(len != 0);
 
             memcpy(res, fmt, len);
@@ -800,8 +813,8 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                     goto error;
             }
 
-            if (fmtcnt < 0) {
-                /* last writer: disable writer overallocation */
+            if (fmtcnt == 0) {
+                /* last write: disable writer overallocation */
                 writer.overallocate = 0;
             }
 
@@ -974,7 +987,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             /* Write the numeric prefix for "x", "X" and "o" formats
                if the alternate form is used.
                For example, write "0x" for the "%#x" format. */
-            if ((flags & F_ALT) && (c == 'x' || c == 'X')) {
+            if ((flags & F_ALT) && (c == 'o' || c == 'x' || c == 'X')) {
                 assert(pbuf[0] == '0');
                 assert(pbuf[1] == c);
                 if (fill != ' ') {
@@ -999,8 +1012,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             if (fill == ' ') {
                 if (sign)
                     *res++ = sign;
-                if ((flags & F_ALT) &&
-                    (c == 'x' || c == 'X')) {
+                if ((flags & F_ALT) && (c == 'o' || c == 'x' || c == 'X')) {
                     assert(pbuf[0] == '0');
                     assert(pbuf[1] == c);
                     *res++ = *pbuf++;
@@ -1034,7 +1046,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
 
         /* If overallocation was disabled, ensure that it was the last
            write. Otherwise, we missed an optimization */
-        assert(writer.overallocate || fmtcnt < 0 || use_bytearray);
+        assert(writer.overallocate || fmtcnt == 0 || use_bytearray);
     } /* until end */
 
     if (argidx < arglen && !dict) {
@@ -1243,7 +1255,7 @@ PyObject *PyBytes_DecodeEscape(const char *s,
     if (first_invalid_escape != NULL) {
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                              "invalid escape sequence '\\%c'",
-                             *first_invalid_escape) < 0) {
+                             (unsigned char)*first_invalid_escape) < 0) {
             Py_DECREF(result);
             return NULL;
         }
@@ -1426,7 +1438,7 @@ bytes_concat(PyObject *a, PyObject *b)
     if (PyObject_GetBuffer(a, &va, PyBUF_SIMPLE) != 0 ||
         PyObject_GetBuffer(b, &vb, PyBUF_SIMPLE) != 0) {
         PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
-                     Py_TYPE(a)->tp_name, Py_TYPE(b)->tp_name);
+                     Py_TYPE(b)->tp_name, Py_TYPE(a)->tp_name);
         goto done;
     }
 
@@ -1671,11 +1683,11 @@ bytes_subscript(PyBytesObject* self, PyObject* item)
         char* result_buf;
         PyObject* result;
 
-        if (PySlice_GetIndicesEx(item,
-                         PyBytes_GET_SIZE(self),
-                         &start, &stop, &step, &slicelength) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelength = PySlice_AdjustIndices(PyBytes_GET_SIZE(self), &start,
+                                            &stop, step);
 
         if (slicelength <= 0) {
             return PyBytes_FromStringAndSize("", 0);
@@ -1820,7 +1832,7 @@ bytes.rpartition
 
 Partition the bytes into three parts using the given separator.
 
-This will search for the separator sep in the bytes, starting and the end. If
+This will search for the separator sep in the bytes, starting at the end. If
 the separator is found, returns a 3-tuple containing the part before the
 separator, the separator itself, and the part after it.
 
@@ -1830,7 +1842,7 @@ objects and the original bytes object.
 
 static PyObject *
 bytes_rpartition_impl(PyBytesObject *self, Py_buffer *sep)
-/*[clinic end generated code: output=191b114cbb028e50 input=67f689e63a62d478]*/
+/*[clinic end generated code: output=191b114cbb028e50 input=d78db010c8cfdbe1]*/
 {
     return stringlib_rpartition(
         (PyObject*) self,
@@ -2594,16 +2606,20 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (PyIndex_Check(x)) {
         size = PyNumber_AsSsize_t(x, PyExc_OverflowError);
         if (size == -1 && PyErr_Occurred()) {
-            return NULL;
+            if (!PyErr_ExceptionMatches(PyExc_TypeError))
+                return NULL;
+            PyErr_Clear();  /* fall through */
         }
-        if (size < 0) {
-            PyErr_SetString(PyExc_ValueError, "negative count");
-            return NULL;
+        else {
+            if (size < 0) {
+                PyErr_SetString(PyExc_ValueError, "negative count");
+                return NULL;
+            }
+            new = _PyBytes_FromSize(size, 1);
+            if (new == NULL)
+                return NULL;
+            return new;
         }
-        new = _PyBytes_FromSize(size, 1);
-        if (new == NULL)
-            return NULL;
-        return new;
     }
 
     return PyBytes_FromObject(x);
@@ -2771,6 +2787,9 @@ PyBytes_FromObject(PyObject *x)
             result = _PyBytes_FromIterator(it, x);
             Py_DECREF(it);
             return result;
+        }
+        if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
+            return NULL;
         }
     }
 

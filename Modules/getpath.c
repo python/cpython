@@ -735,7 +735,7 @@ calculate_path(void)
     bufsz += wcslen(zip_path) + 1;
     bufsz += wcslen(exec_prefix) + 1;
 
-    buf = PyMem_New(wchar_t, bufsz);
+    buf = PyMem_RawMalloc(bufsz * sizeof(wchar_t));
     if (buf == NULL) {
         Py_FatalError(
             "Not enough memory for dynamic PYTHONPATH");

@@ -2,7 +2,7 @@
 
 /* ------------------------------------------------------------------
    The code in this module was based on a download from:
-      http://www.math.keio.ac.jp/~matumoto/MT2002/emt19937ar.html
+      http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html
 
    It was modified in 2002 by Raymond Hettinger as follows:
 
@@ -60,8 +60,8 @@
 
 
    Any feedback is very welcome.
-   http://www.math.keio.ac.jp/matumoto/emt.html
-   email: matumoto@math.keio.ac.jp
+   http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html
+   email: m-mat @ math.sci.hiroshima-u.ac.jp (remove space)
 */
 
 /* ---------------------------------------------------------------*/
@@ -245,7 +245,7 @@ random_seed(RandomObject *self, PyObject *args)
         return NULL;
 
      if (arg == NULL || arg == Py_None) {
-        if (random_seed_urandom(self) >= 0) {
+        if (random_seed_urandom(self) < 0) {
             PyErr_Clear();
 
             /* Reading system entropy failed, fall back on the worst entropy:
@@ -259,8 +259,11 @@ random_seed(RandomObject *self, PyObject *args)
      * So: if the arg is a PyLong, use its absolute value.
      * Otherwise use its hash value, cast to unsigned.
      */
-    if (PyLong_Check(arg))
-        n = PyNumber_Absolute(arg);
+    if (PyLong_Check(arg)) {
+        /* Calling int.__abs__() prevents calling arg.__abs__(), which might
+           return an invalid value. See issue #31478. */
+        n = PyLong_Type.tp_as_number->nb_absolute(arg);
+    }
     else {
         Py_hash_t hash = PyObject_Hash(arg);
         if (hash == -1)
@@ -348,6 +351,7 @@ random_setstate(RandomObject *self, PyObject *state)
     int i;
     unsigned long element;
     long index;
+    uint32_t new_state[N];
 
     if (!PyTuple_Check(state)) {
         PyErr_SetString(PyExc_TypeError,
@@ -364,7 +368,7 @@ random_setstate(RandomObject *self, PyObject *state)
         element = PyLong_AsUnsignedLong(PyTuple_GET_ITEM(state, i));
         if (element == (unsigned long)-1 && PyErr_Occurred())
             return NULL;
-        self->state[i] = (uint32_t)element;
+        new_state[i] = (uint32_t)element;
     }
 
     index = PyLong_AsLong(PyTuple_GET_ITEM(state, i));
@@ -375,6 +379,8 @@ random_setstate(RandomObject *self, PyObject *state)
         return NULL;
     }
     self->index = (int)index;
+    for (i = 0; i < N; i++)
+        self->state[i] = new_state[i];
 
     Py_INCREF(Py_None);
     return Py_None;

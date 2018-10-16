@@ -8,13 +8,13 @@
 
 
 /* struct module */
-PyObject *structmodule = NULL;
-PyObject *Struct = NULL;
-PyObject *calcsize = NULL;
+static PyObject *structmodule = NULL;
+static PyObject *Struct = NULL;
+static PyObject *calcsize = NULL;
 
 /* cache simple format string */
-static const char simple_fmt[] = "B";
-PyObject *simple_format = NULL;
+static const char *simple_fmt = "B";
+static PyObject *simple_format = NULL;
 #define SIMPLE_FORMAT(fmt) (fmt == NULL || strcmp(fmt, "B") == 0)
 #define FIX_FORMAT(fmt) (fmt == NULL ? "B" : fmt)
 
@@ -850,6 +850,7 @@ seq_as_ssize_array(PyObject *seq, Py_ssize_t len, int is_shape)
     Py_ssize_t *dest;
     Py_ssize_t x, i;
 
+    /* ndim = len <= ND_MAX_NDIM, so PyMem_New() is actually not needed. */
     dest = PyMem_New(Py_ssize_t, len);
     if (dest == NULL) {
         PyErr_NoMemory();
@@ -1714,10 +1715,10 @@ init_slice(Py_buffer *base, PyObject *key, int dim)
 {
     Py_ssize_t start, stop, step, slicelength;
 
-    if (PySlice_GetIndicesEx(key, base->shape[dim],
-                             &start, &stop, &step, &slicelength) < 0) {
+    if (PySlice_Unpack(key, &start, &stop, &step) < 0) {
         return -1;
     }
+    slicelength = PySlice_AdjustIndices(base->shape[dim], &start, &stop, step);
 
 
     if (base->suboffsets == NULL || dim == 0) {
@@ -1934,9 +1935,10 @@ slice_indices(PyObject *self, PyObject *args)
             "first argument must be a slice object");
         return NULL;
     }
-    if (PySlice_GetIndicesEx(key, len, &s[0], &s[1], &s[2], &s[3]) < 0) {
+    if (PySlice_Unpack(key, &s[0], &s[1], &s[2]) < 0) {
         return NULL;
     }
+    s[3] = PySlice_AdjustIndices(len, &s[0], &s[1], s[2]);
 
     ret = PyTuple_New(4);
     if (ret == NULL)

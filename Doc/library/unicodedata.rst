@@ -158,7 +158,7 @@ Examples:
    9
    >>> unicodedata.decimal('a')
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    ValueError: not a decimal
    >>> unicodedata.category('A')  # 'L'etter, 'u'ppercase
    'Lu'

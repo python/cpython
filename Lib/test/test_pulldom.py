@@ -3,6 +3,7 @@ import unittest
 import xml.sax
 
 from xml.sax.xmlreader import AttributesImpl
+from xml.sax.handler import feature_external_ges
 from xml.dom import pulldom
 
 from test.support import findfile
@@ -158,6 +159,12 @@ class PullDOMTestCase(unittest.TestCase):
         except StopIteration:
             self.fail(
                 "Ran out of events, but should have received END_DOCUMENT")
+
+    def test_external_ges_default(self):
+        parser = pulldom.parseString(SMALL_SAMPLE)
+        saxparser = parser.parser
+        ges = saxparser.getFeature(feature_external_ges)
+        self.assertEqual(ges, False)
 
 
 class ThoroughTestCase(unittest.TestCase):

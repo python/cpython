@@ -50,9 +50,13 @@ import copy
 import re
 
 try:
-    import grp, pwd
+    import pwd
 except ImportError:
-    grp = pwd = None
+    pwd = None
+try:
+    import grp
+except ImportError:
+    grp = None
 
 # os.symlink on Windows prior to 6.0 raises NotImplementedError
 symlink_exception = (AttributeError, NotImplementedError)
@@ -198,8 +202,9 @@ def itn(n, digits=8, format=DEFAULT_FORMAT):
     # base-256 representation. This allows values up to (256**(digits-1))-1.
     # A 0o200 byte indicates a positive number, a 0o377 byte a negative
     # number.
+    n = int(n)
     if 0 <= n < 8 ** (digits - 1):
-        s = bytes("%0*o" % (digits - 1, int(n)), "ascii") + NUL
+        s = bytes("%0*o" % (digits - 1, n), "ascii") + NUL
     elif format == GNU_FORMAT and -256 ** (digits - 1) <= n < 256 ** (digits - 1):
         if n >= 0:
             s = bytearray([0o200])
@@ -529,7 +534,7 @@ class _Stream:
                 if not buf:
                     break
                 t.append(buf)
-            buf = "".join(t)
+            buf = b"".join(t)
         else:
             buf = self._read(size)
         self.pos += len(buf)
@@ -542,6 +547,7 @@ class _Stream:
             return self.__read(size)
 
         c = len(self.dbuf)
+        t = [self.dbuf]
         while c < size:
             buf = self.__read(self.bufsize)
             if not buf:
@@ -550,26 +556,27 @@ class _Stream:
                 buf = self.cmp.decompress(buf)
             except self.exception:
                 raise ReadError("invalid compressed data")
-            self.dbuf += buf
+            t.append(buf)
             c += len(buf)
-        buf = self.dbuf[:size]
-        self.dbuf = self.dbuf[size:]
-        return buf
+        t = b"".join(t)
+        self.dbuf = t[size:]
+        return t[:size]
 
     def __read(self, size):
         """Return size bytes from stream. If internal buffer is empty,
            read another block from the stream.
         """
         c = len(self.buf)
+        t = [self.buf]
         while c < size:
             buf = self.fileobj.read(self.bufsize)
             if not buf:
                 break
-            self.buf += buf
+            t.append(buf)
             c += len(buf)
-        buf = self.buf[:size]
-        self.buf = self.buf[size:]
-        return buf
+        t = b"".join(t)
+        self.buf = t[size:]
+        return t[:size]
 # class _Stream
 
 class _StreamProxy(object):
@@ -1052,7 +1059,7 @@ class TarInfo(object):
 
         # The old GNU sparse format occupies some of the unused
         # space in the buffer for up to 4 sparse structures.
-        # Save the them for later processing in _proc_sparse().
+        # Save them for later processing in _proc_sparse().
         if obj.type == GNUTYPE_SPARSE:
             pos = 386
             structs = []
@@ -2219,22 +2226,25 @@ class TarFile(object):
 
     def chown(self, tarinfo, targetpath, numeric_owner):
         """Set owner of targetpath according to tarinfo. If numeric_owner
-           is True, use .gid/.uid instead of .gname/.uname.
+           is True, use .gid/.uid instead of .gname/.uname. If numeric_owner
+           is False, fall back to .gid/.uid when the search based on name
+           fails.
         """
-        if pwd and hasattr(os, "geteuid") and os.geteuid() == 0:
+        if hasattr(os, "geteuid") and os.geteuid() == 0:
             # We have to be root to do so.
-            if numeric_owner:
-                g = tarinfo.gid
-                u = tarinfo.uid
-            else:
+            g = tarinfo.gid
+            u = tarinfo.uid
+            if not numeric_owner:
                 try:
-                    g = grp.getgrnam(tarinfo.gname)[2]
+                    if grp:
+                        g = grp.getgrnam(tarinfo.gname)[2]
                 except KeyError:
-                    g = tarinfo.gid
+                    pass
                 try:
-                    u = pwd.getpwnam(tarinfo.uname)[2]
+                    if pwd:
+                        u = pwd.getpwnam(tarinfo.uname)[2]
                 except KeyError:
-                    u = tarinfo.uid
+                    pass
             try:
                 if tarinfo.issym() and hasattr(os, "lchown"):
                     os.lchown(targetpath, u, g)

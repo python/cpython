@@ -11,6 +11,7 @@ __all__ = ['AbstractEventLoopPolicy',
 
 import functools
 import inspect
+import os
 import reprlib
 import socket
 import subprocess
@@ -18,7 +19,8 @@ import sys
 import threading
 import traceback
 
-from asyncio import compat
+from . import compat
+from . import constants
 
 
 def _get_function_source(func):
@@ -56,10 +58,10 @@ def _format_callback(func, args, kwargs, suffix=''):
         suffix = _format_args_and_kwargs(args, kwargs) + suffix
         return _format_callback(func.func, func.args, func.keywords, suffix)
 
-    if hasattr(func, '__qualname__'):
-        func_repr = getattr(func, '__qualname__')
-    elif hasattr(func, '__name__'):
-        func_repr = getattr(func, '__name__')
+    if hasattr(func, '__qualname__') and func.__qualname__:
+        func_repr = func.__qualname__
+    elif hasattr(func, '__name__') and func.__name__:
+        func_repr = func.__name__
     else:
         func_repr = repr(func)
 
@@ -76,6 +78,23 @@ def _format_callback_source(func, args):
     return func_repr
 
 
+def extract_stack(f=None, limit=None):
+    """Replacement for traceback.extract_stack() that only does the
+    necessary work for asyncio debug mode.
+    """
+    if f is None:
+        f = sys._getframe().f_back
+    if limit is None:
+        # Limit the amount of work to a reasonable amount, as extract_stack()
+        # can be called for each coroutine and future in debug mode.
+        limit = constants.DEBUG_STACK_DEPTH
+    stack = traceback.StackSummary.extract(traceback.walk_stack(f),
+                                           limit=limit,
+                                           lookup_lines=False)
+    stack.reverse()
+    return stack
+
+
 class Handle:
     """Object returned by callback registration methods."""
 
@@ -89,7 +108,7 @@ class Handle:
         self._cancelled = False
         self._repr = None
         if self._loop.get_debug():
-            self._source_traceback = traceback.extract_stack(sys._getframe(1))
+            self._source_traceback = extract_stack(sys._getframe(1))
         else:
             self._source_traceback = None
 
@@ -610,7 +629,9 @@ _lock = threading.Lock()
 
 # A TLS for the running event loop, used by _get_running_loop.
 class _RunningLoop(threading.local):
-    _loop = None
+    loop_pid = (None, None)
+
+
 _running_loop = _RunningLoop()
 
 
@@ -620,7 +641,9 @@ def _get_running_loop():
     This is a low-level function intended to be used by event loops.
     This function is thread-specific.
     """
-    return _running_loop._loop
+    running_loop, pid = _running_loop.loop_pid
+    if running_loop is not None and pid == os.getpid():
+        return running_loop
 
 
 def _set_running_loop(loop):
@@ -629,7 +652,7 @@ def _set_running_loop(loop):
     This is a low-level function intended to be used by event loops.
     This function is thread-specific.
     """
-    _running_loop._loop = loop
+    _running_loop.loop_pid = (loop, os.getpid())
 
 
 def _init_event_loop_policy():

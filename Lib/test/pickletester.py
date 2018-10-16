@@ -2534,7 +2534,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
         f = open(TESTFN, "wb")
         try:
             f.close()
-            self.assertRaises(ValueError, pickle.dump, 123, f)
+            self.assertRaises(ValueError, self.dump, 123, f)
         finally:
             os.remove(TESTFN)
 
@@ -2543,16 +2543,16 @@ class AbstractPickleModuleTests(unittest.TestCase):
         f = open(TESTFN, "wb")
         try:
             f.close()
-            self.assertRaises(ValueError, pickle.dump, 123, f)
+            self.assertRaises(ValueError, self.dump, 123, f)
         finally:
             os.remove(TESTFN)
 
     def test_load_from_and_dump_to_file(self):
         stream = io.BytesIO()
         data = [123, {}, 124]
-        pickle.dump(data, stream)
+        self.dump(data, stream)
         stream.seek(0)
-        unpickled = pickle.load(stream)
+        unpickled = self.load(stream)
         self.assertEqual(unpickled, data)
 
     def test_highest_protocol(self):
@@ -2562,20 +2562,20 @@ class AbstractPickleModuleTests(unittest.TestCase):
     def test_callapi(self):
         f = io.BytesIO()
         # With and without keyword arguments
-        pickle.dump(123, f, -1)
-        pickle.dump(123, file=f, protocol=-1)
-        pickle.dumps(123, -1)
-        pickle.dumps(123, protocol=-1)
-        pickle.Pickler(f, -1)
-        pickle.Pickler(f, protocol=-1)
+        self.dump(123, f, -1)
+        self.dump(123, file=f, protocol=-1)
+        self.dumps(123, -1)
+        self.dumps(123, protocol=-1)
+        self.Pickler(f, -1)
+        self.Pickler(f, protocol=-1)
 
     def test_bad_init(self):
         # Test issue3664 (pickle can segfault from a badly initialized Pickler).
         # Override initialization without calling __init__() of the superclass.
-        class BadPickler(pickle.Pickler):
+        class BadPickler(self.Pickler):
             def __init__(self): pass
 
-        class BadUnpickler(pickle.Unpickler):
+        class BadUnpickler(self.Unpickler):
             def __init__(self): pass
 
         self.assertRaises(pickle.PicklingError, BadPickler().dump, 0)
@@ -2667,29 +2667,30 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         # object again, the third serialized form should be identical to the
         # first one we obtained.
         data = ["abcdefg", "abcdefg", 44]
-        f = io.BytesIO()
-        pickler = self.pickler_class(f)
+        for proto in protocols:
+            f = io.BytesIO()
+            pickler = self.pickler_class(f, proto)
 
-        pickler.dump(data)
-        first_pickled = f.getvalue()
+            pickler.dump(data)
+            first_pickled = f.getvalue()
 
-        # Reset BytesIO object.
-        f.seek(0)
-        f.truncate()
+            # Reset BytesIO object.
+            f.seek(0)
+            f.truncate()
 
-        pickler.dump(data)
-        second_pickled = f.getvalue()
+            pickler.dump(data)
+            second_pickled = f.getvalue()
 
-        # Reset the Pickler and BytesIO objects.
-        pickler.clear_memo()
-        f.seek(0)
-        f.truncate()
+            # Reset the Pickler and BytesIO objects.
+            pickler.clear_memo()
+            f.seek(0)
+            f.truncate()
 
-        pickler.dump(data)
-        third_pickled = f.getvalue()
+            pickler.dump(data)
+            third_pickled = f.getvalue()
 
-        self.assertNotEqual(first_pickled, second_pickled)
-        self.assertEqual(first_pickled, third_pickled)
+            self.assertNotEqual(first_pickled, second_pickled)
+            self.assertEqual(first_pickled, third_pickled)
 
     def test_priming_pickler_memo(self):
         # Verify that we can set the Pickler's memo attribute.

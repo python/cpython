@@ -45,4 +45,4 @@ unittestgui     A Tkinter based GUI test runner for unittest, with test
                 discovery.
 
 
-(*) A generic benchmark suite is maintained separately at http://hg.python.org/benchmarks/
+(*) A generic benchmark suite is maintained separately at https://github.com/python/performance

@@ -109,9 +109,10 @@ class Random(_random.Random):
         """
 
         if version == 1 and isinstance(a, (str, bytes)):
+            a = a.decode('latin-1') if isinstance(a, bytes) else a
             x = ord(a[0]) << 7 if a else 0
-            for c in a:
-                x = ((1000003 * x) ^ ord(c)) & 0xFFFFFFFFFFFFFFFF
+            for c in map(ord, a):
+                x = ((1000003 * x) ^ c) & 0xFFFFFFFFFFFFFFFF
             x ^= len(a)
             a = -2 if x == -1 else x
 
@@ -240,6 +241,8 @@ class Random(_random.Random):
                 "enough bits to choose from a population range this large.\n"
                 "To remove the range limitation, add a getrandbits() method.")
             return int(random() * n)
+        if n == 0:
+            raise ValueError("Boundary cannot be zero")
         rem = maxsize % n
         limit = (maxsize - rem) / maxsize   # int(limit * maxsize) % n == 0
         r = random()
@@ -254,7 +257,7 @@ class Random(_random.Random):
         try:
             i = self._randbelow(len(seq))
         except ValueError:
-            raise IndexError('Cannot choose from an empty sequence')
+            raise IndexError('Cannot choose from an empty sequence') from None
         return seq[i]
 
     def shuffle(self, x, random=None):
@@ -357,7 +360,9 @@ class Random(_random.Random):
             raise ValueError('The number of weights does not match the population')
         bisect = _bisect.bisect
         total = cum_weights[-1]
-        return [population[bisect(cum_weights, random() * total)] for i in range(k)]
+        hi = len(cum_weights) - 1
+        return [population[bisect(cum_weights, random() * total, 0, hi)]
+                for i in range(k)]
 
 ## -------------------- real-valued distributions  -------------------
 
