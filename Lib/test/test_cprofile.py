@@ -1,7 +1,9 @@
 """Test suite for the cProfile module."""
 
 import sys
+import unittest
 from test.support import run_unittest, TESTFN, unlink
+from test.support.script_helper import assert_python_failure
 
 # rip off all interesting stuff from test_profile
 import cProfile
@@ -36,8 +38,15 @@ class CProfileTest(ProfileTest):
             unlink(TESTFN)
 
 
+class TestCommandLine(unittest.TestCase):
+    def test_sort(self):
+        rc, out, err = assert_python_failure('-m', 'cProfile', '-s', 'demo')
+        self.assertGreater(rc, 0)
+        self.assertIn(b"option -s: invalid choice: 'demo'", err)
+
+
 def test_main():
-    run_unittest(CProfileTest)
+    run_unittest(CProfileTest, TestCommandLine)
 
 def main():
     if '-r' not in sys.argv:
