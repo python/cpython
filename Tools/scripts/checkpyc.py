@@ -51,10 +51,10 @@ def main():
                     print('Bad MAGIC word in ".pyc" file', end=' ')
                     print(repr(name_c))
                     continue
-                mtime = get_long(mtime_str) & 0xFFFF_FFFF
+                mtime = get_long(mtime_str)
                 if mtime in {0, -1}:
                     print('Bad ".pyc" file', repr(name_c))
-                elif mtime != st[ST_MTIME]:
+                elif mtime != (st[ST_MTIME] & 0xFFFF_FFFF):
                     print('Out-of-date ".pyc" file', end=' ')
                     print(repr(name_c))
 

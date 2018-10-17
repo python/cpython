@@ -40,7 +40,7 @@ def make_pyc(co, mtime, size):
         else:
             mtime = int(-0x100000000 + int(mtime))
     pyc = (importlib.util.MAGIC_NUMBER +
-        struct.pack("<iii", 0, int(mtime) & 0xFFFF_FFFF, size & 0xFFFF_FFFF) + data)
+        struct.pack("<iii", 0, int(mtime), size & 0xFFFF_FFFF) + data)
     return pyc
 
 def module_path_to_dotted_name(path):
