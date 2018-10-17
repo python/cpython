@@ -53,7 +53,7 @@ class CompileallTestsBase:
     def timestamp_metadata(self):
         with open(self.bc_path, 'rb') as file:
             data = file.read(12)
-        mtime = int(os.stat(self.source_path).st_mtime)
+        mtime = int(os.stat(self.source_path).st_mtime) & 0xFFFF_FFF
         compare = struct.pack('<4sLL', importlib.util.MAGIC_NUMBER, 0, mtime)
         return data, compare
 
