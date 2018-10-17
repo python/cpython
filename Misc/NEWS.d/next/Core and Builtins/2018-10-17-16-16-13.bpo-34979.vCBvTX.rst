@@ -1,0 +1,2 @@
+fix "SyntaxError: Non-UTF-8 code start with \xe8..." caused by function
+decoding_fgets

@@ -69,6 +69,20 @@ class MiscSourceEncodingTest(unittest.TestCase):
         self.assertEqual(sub.returncode, 0)
         self.assertNotIn(b'SyntaxError', err)
 
+    def test_issue34979(self):
+        # BUFSIZ is defined in <stdio.h>, it's platform independent.
+        # its maximum value may be 8192.
+        bufsiz = 8192
+        strlen = round((bufsiz - 1 - 5) / 3)
+        string = b'\xe6\xb5\x8b' * strlen
+        src = b's = "' + string +  b'"\nprint(s)'
+        with tempfile.TemporaryDirectory() as tmpd:
+            fn = os.path.join(tmpd, 'test.py')
+            with open(fn, 'wb') as fp:
+                fp.write(src)
+            res = script_helper.assert_python_ok(fn)
+        self.assertEqual(res.out.rstrip(), b'\xe6\xb5\x8b' * strlen)
+
     def test_error_message(self):
         compile(b'# -*- coding: iso-8859-15 -*-\n', 'dummy', 'exec')
         compile(b'\xef\xbb\xbf\n', 'dummy', 'exec')
