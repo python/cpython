@@ -45,7 +45,7 @@ class LargeFileTest:
             raise cls.failureException('File was not truncated by opening '
                                        'with mode "wb"')
 
-    # _pyio.FileIO.readall() uses a temporary bytearray then casted to bytes
+    # _pyio.FileIO.readall() uses a temporary bytearray then casted to bytes,
     # so memuse=2 is needed
     @bigmemtest(size=size, memuse=2, dry_run=False)
     def test_large_read(self, _size):
