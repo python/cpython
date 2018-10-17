@@ -141,7 +141,7 @@ def main():
     parser.add_option('-s', '--sort', dest="sort",
         help="Sort order when printing to stdout, based on pstats.Stats class",
         default=-1,
-        choices=list(pstats.Stats.sort_arg_dict_default.keys()))
+        choices=list(pstats.Stats.sort_arg_dict_default))
     parser.add_option('-m', dest="module", action="store_true",
         help="Profile a library module", default=False)
 
