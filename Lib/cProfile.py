@@ -124,6 +124,7 @@ def main():
     import os
     import sys
     import runpy
+    import pstats
     from optparse import OptionParser
     usage = "cProfile.py [-o output_file_path] [-s sort] [-m module | scriptfile] [arg] ..."
     parser = OptionParser(usage=usage)
@@ -132,7 +133,8 @@ def main():
         help="Save stats to <outfile>", default=None)
     parser.add_option('-s', '--sort', dest="sort",
         help="Sort order when printing to stdout, based on pstats.Stats class",
-        default=-1)
+        default=-1,
+        choices=sorted(pstats.Stats.sort_arg_dict_default))
     parser.add_option('-m', dest="module", action="store_true",
         help="Profile a library module", default=False)
 
