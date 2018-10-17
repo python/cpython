@@ -240,17 +240,18 @@ class Pool(object):
                                             self._outqueue, self._initializer,
                                             self._initargs,
                                             self._maxtasksperchild,
-                                            self._wrap_exception)
+                                            self._wrap_exception,
+                                            self._name)
 
     @staticmethod
     def _repopulate_pool_static(ctx, Process, processes, pool, inqueue,
                                 outqueue, initializer, initargs,
-                                maxtasksperchild, wrap_exception):
+                                maxtasksperchild, wrap_exception, name):
         """Bring the number of pool processes up to the specified number,
         for use after reaping workers which have exited.
         """
         for i in range(processes - len(pool)):
-            w = self.Process(name='{}-Worker-{}'.format(self._name, i),
+            w = self.Process(name='{}-Worker-{}'.format(name, i),
                         target=worker,
                         args=(inqueue, outqueue,
                               initializer,
