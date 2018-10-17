@@ -49,7 +49,7 @@ class LargeFileTest:
     def test_large_read(self, _size):
         # bpo-24658: Test that a read greater than 2GB does not fail.
         with self.open(TESTFN, "rb") as f:
-            self.assertEqual(len(f.read()), size)
+            self.assertEqual(len(f.read()), size + 1)
             self.assertEqual(f.tell(), size + 1)
 
     def test_osstat(self):
