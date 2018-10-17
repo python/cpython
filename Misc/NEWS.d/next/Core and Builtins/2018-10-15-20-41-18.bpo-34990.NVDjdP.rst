@@ -1,1 +1,1 @@
-Use an unsigned long for the timestamp for the .pyc file in compileall.py
+compileall now supports timestamps newer than year 2038
