@@ -195,16 +195,16 @@ class CompileallTestsBase:
         compileall.compile_dir(self.directory, quiet=True, workers=5)
         self.assertTrue(compile_file_mock.called)
 
-
-class CompileallTestsWithSourceEpoch(CompileallTestsBase,
-                                     unittest.TestCase,
-                                     metaclass=SourceDateEpochTestMeta,
-                                     source_date_epoch=True):
     def test_compile_all_2038(self):
         with open(self.source_path, 'r') as f:
             os.utime(f.name, (2147558400, 2147558400)) # Jan 20, 2038 as touch
         self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path)))
 
+class CompileallTestsWithSourceEpoch(CompileallTestsBase,
+                                     unittest.TestCase,
+                                     metaclass=SourceDateEpochTestMeta,
+                                     source_date_epoch=True):
+    pass
 
 class CompileallTestsWithoutSourceEpoch(CompileallTestsBase,
                                         unittest.TestCase,
