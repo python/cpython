@@ -82,15 +82,14 @@ PyAPI_FUNC(int) _Py_EncodeLocaleEx(
 PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
 
 #if defined(MS_WINDOWS) || defined(__APPLE__)
-/* On Windows, the count parameter of read() is an int.
- * macOS fails when reading or writing more than 2GB, see bpo-24658 */
+    /* On Windows, the count parameter of read() is an int.
+       macOS fails when reading or writing more than 2GB, see bpo-24658 */
 #   define _PY_READ_MAX  INT_MAX
 #   define _PY_WRITE_MAX INT_MAX
 #else
+    /* write() should truncate the input to PY_SSIZE_T_MAX bytes */
 #   define _PY_READ_MAX  PY_SSIZE_T_MAX
 #   define _PY_WRITE_MAX PY_SSIZE_T_MAX
-/* write() should truncate count to PY_SSIZE_T_MAX, but it's safer
- * to do it ourself to have a portable behaviour */
 #endif
 
 #ifdef MS_WINDOWS
