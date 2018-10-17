@@ -87,7 +87,8 @@ PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
 #   define _PY_READ_MAX  INT_MAX
 #   define _PY_WRITE_MAX INT_MAX
 #else
-    /* write() should truncate the input to PY_SSIZE_T_MAX bytes */
+    /* write() should truncate the input to PY_SSIZE_T_MAX bytes,
+       but it's safer to do it ourself to have a portable behaviour */
 #   define _PY_READ_MAX  PY_SSIZE_T_MAX
 #   define _PY_WRITE_MAX PY_SSIZE_T_MAX
 #endif
