@@ -2,6 +2,7 @@
 
 import sys
 from test.support import run_unittest, TESTFN, unlink
+import unittest
 
 # rip off all interesting stuff from test_profile
 import cProfile
@@ -76,9 +77,14 @@ class CProfileTest(ProfileTest):
         # profile shouldn't be set once we leave the with-block.
         self.assertIs(sys.getprofile(), None)
 
+class TestCommandLine(unittest.TestCase):
+    def test_sort(self):
+        rc, out, err = assert_python_failure('-m', 'cProfile', '-s', 'demo')
+        self.assertGreater(rc, 0)
+        self.assertIn(b"option -s: invalid choice: 'demo'", err)
 
 def test_main():
-    run_unittest(CProfileTest)
+    run_unittest(CProfileTest, TestCommandLine)
 
 def main():
     if '-r' not in sys.argv:
