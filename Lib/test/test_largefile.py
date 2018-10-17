@@ -10,7 +10,7 @@ import io  # C implementation of io
 import _pyio as pyio # Python implementation of io
 
 # size of file to create (>2 GiB; 2 GiB == 2,147,483,648 bytes)
-size = 2500000000
+size = 2_500_000_000
 
 class LargeFileTest:
     """Test that each file function works as expected for large
@@ -45,7 +45,7 @@ class LargeFileTest:
             raise cls.failureException('File was not truncated by opening '
                                        'with mode "wb"')
 
-    @bigmemtest(size=_2G, memuse=1)
+    @bigmemtest(size=size+1, memuse=1)
     def test_large_read(self, _size):
         # bpo-24658: Test that a read greater than 2GB does not fail.
         with self.open(TESTFN, "rb") as f:

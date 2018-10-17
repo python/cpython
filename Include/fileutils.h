@@ -90,6 +90,8 @@ PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
 #else
 #define _PY_READ_MAX  PY_SSIZE_T_MAX
 #define _PY_WRITE_MAX PY_SSIZE_T_MAX
+/* write() should truncate count to PY_SSIZE_T_MAX, but it's safer
+ * to do it ourself to have a portable behaviour */
 #endif
 
 #ifdef MS_WINDOWS
