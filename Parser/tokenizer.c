@@ -509,7 +509,7 @@ fp_setreadl(struct tok_state *tok, const char* enc)
     pos = ftell(tok->fp);
     if (pos == -1 ||
         lseek(fd, (off_t)(pos > 0 ? pos - 1 : pos), SEEK_SET) == (off_t)-1) {
-        PyErr_Format(PyExc_SyntaxError, "%d", errno);
+        PyErr_Format(PyExc_OSError, "%d", errno);
         return 0;
     }
 
