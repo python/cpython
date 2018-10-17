@@ -1018,20 +1018,26 @@ class TestDateOnly(unittest.TestCase):
         self.assertEqual(dt2, dt - days)
 
     def test_strptime_valid_format(self):
-        tests = [(('2004-12-01', '%Y-%m-%d'),
-                  date(2004, 12, 1)),
-                 (('2004', '%Y'), date(2004, 1, 1)),]
-        for (date_string, date_format), expected in tests:
-            self.assertEqual(expected, date.strptime(date_string, date_format))
+        tests = [
+            ('2004-12-01', '%Y-%m-%d', date(2004, 12, 1)),
+            ('2004', '%Y', date(2004, 1, 1)),
+        ]
+        for date_string, date_format, expected in tests:
+            with self.subTest(date_string=date_string,
+                              date_format=date_format,
+                              expected=expected):
+                self.assertEqual(expected, date.strptime(date_string, date_format))
 
     def test_strptime_invalid_format(self):
-        tests = [('2004-12-01 13:02:47.197',
-                  '%Y-%m-%d %H:%M:%S.%f'),
-                 ('01', '%M'),
-                 ('02', '%H'),]
-        for test in tests:
-            with self.assertRaises(ValueError):
-                date.strptime(test[0], test[1])
+        tests = [
+            ('2004-12-01 13:02:47.197', '%Y-%m-%d %H:%M:%S.%f'),
+            ('01', '%M'),
+            ('02', '%H'),
+        ]
+        for hour, format in tests:
+            with self.subTest(hour=hour, format=format):
+                with self.assertRaises(ValueError):
+                    date.strptime(hour, format)
 
 
 class SubclassDate(date):
