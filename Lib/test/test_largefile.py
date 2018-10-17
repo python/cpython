@@ -5,7 +5,7 @@ import os
 import stat
 import sys
 import unittest
-from test.support import TESTFN, requires, unlink
+from test.support import TESTFN, requires, unlink, bigmemtest, _2G
 import io  # C implementation of io
 import _pyio as pyio # Python implementation of io
 
