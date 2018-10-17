@@ -84,7 +84,7 @@ PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
 #if defined(MS_WINDOWS) || defined(__APPLE__)
     /* On Windows, the count parameter of read() is an int (bpo-9015, bpo-9611).
        On macOS 10.13, read() and write() with more than INT_MAX bytes
-       fails with EINVAL (bpo-24658). */
+       fail with EINVAL (bpo-24658). */
 #   define _PY_READ_MAX  INT_MAX
 #   define _PY_WRITE_MAX INT_MAX
 #else
