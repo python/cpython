@@ -784,8 +784,12 @@ _PyIO_trap_eintr(void)
         return 0;
     PyErr_Fetch(&typ, &val, &tb);
     PyErr_NormalizeException(&typ, &val, &tb);
+    assert(val != NULL);
+    if (!PyObject_TypeCheck(val, (PyTypeObject *)PyExc_OSError)) {
+        PyErr_Restore(typ, val, tb);
+        return 0;
+    }
     env_err = (PyOSErrorObject *) val;
-    assert(env_err != NULL);
     if (env_err->myerrno != NULL &&
         PyObject_RichCompareBool(env_err->myerrno, eintr_int, Py_EQ) > 0) {
         Py_DECREF(typ);
