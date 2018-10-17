@@ -3,8 +3,6 @@ SAX driver for the pyexpat C module.  This driver works with
 pyexpat.__version__ == '2.22'.
 """
 
-version = "0.20"
-
 from xml.sax._exceptions import *
 from xml.sax.handler import feature_validation, feature_namespaces
 from xml.sax.handler import feature_namespace_prefixes
@@ -26,6 +24,8 @@ else:
     if not hasattr(expat, "ParserCreate"):
         raise SAXReaderNotAvailable("expat not supported", None)
 from xml.sax import xmlreader, saxutils, handler
+
+version = "0.20"
 
 AttributesImpl = xmlreader.AttributesImpl
 AttributesNSImpl = xmlreader.AttributesNSImpl
@@ -177,7 +177,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         elif name == property_xml_string:
             if self._parser:
                 if hasattr(self._parser, "GetInputContext"):
-                    return self._parser.GetInputContext().decode()
+                    return self._parser.GetInputContext()
                 else:
                     raise SAXNotRecognizedException(
                         "This version of expat does not support getting"
@@ -266,12 +266,14 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             parser.EndCdataSectionHandler = None
             parser.StartDoctypeDeclHandler = None
             parser.EndDoctypeDeclHandler = None
+            parser.XmlDeclHandler = None
         else:
             parser.CommentHandler = lex.comment
             parser.StartCdataSectionHandler = lex.startCDATA
             parser.EndCdataSectionHandler = lex.endCDATA
             parser.StartDoctypeDeclHandler = self.start_doctype_decl
             parser.EndDoctypeDeclHandler = lex.endDTD
+            parser.XmlDeclHandler = lex.xml_decl_handler
 
     def reset(self):
         if self._namespaces:
