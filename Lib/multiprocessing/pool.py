@@ -251,8 +251,8 @@ class Pool(object):
         for use after reaping workers which have exited.
         """
         for i in range(processes - len(pool)):
-            w = self.Process(name='{}-Worker-{}'.format(name, i),
-                        target=worker,
+            w = Process(ctx, target=worker,
+			            name='{}-Worker-{}'.format(name, i),
                         args=(inqueue, outqueue,
                               initializer,
                               initargs, maxtasksperchild,
