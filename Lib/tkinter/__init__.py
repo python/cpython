@@ -3768,7 +3768,7 @@ class Spinbox(Widget, XView):
         If a spinbutton element is specified, it will be
         displayed depressed.
         """
-        return self.selection("element", element)
+        return self.tk.call(self._w, 'selection', 'element', element)
 
     def selection_from(self, index):
         """Set the fixed end of a selection to INDEX."""
