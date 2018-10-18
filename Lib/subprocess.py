@@ -724,7 +724,8 @@ class Popen(object):
         if self.text_mode:
             if bufsize == 1:
                 line_buffering = True
-                # line buffering is not supported in binary mode
+                # Use the default buffer size for the underlying binary streams
+                # since they don't support line buffering.
                 bufsize = -1
             else:
                 line_buffering = False
