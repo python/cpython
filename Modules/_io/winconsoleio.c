@@ -485,7 +485,9 @@ _io__WindowsConsoleIO_fileno_impl(winconsoleio *self)
         else
             self->fd = _open_osfhandle((intptr_t)self->handle, _O_RDONLY | _O_BINARY);
         _Py_END_SUPPRESS_IPH
+    }
 
+    if (self->fd < 0) {
         if (self->closehandle)
             CloseHandle(self->handle);
         self->handle = INVALID_HANDLE_VALUE;
