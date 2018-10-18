@@ -195,6 +195,7 @@ def test_main():
         suite.addTest(TestCase('test_osstat'))
         suite.addTest(TestCase('test_seek_read'))
         suite.addTest(TestCase('test_lseek'))
+        suite.addTest(TestCase('test_large_read'))
         with _open(TESTFN, 'wb') as f:
             if hasattr(f, 'truncate'):
                 suite.addTest(TestCase('test_truncate'))
