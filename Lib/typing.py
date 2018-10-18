@@ -1432,7 +1432,15 @@ def NewType(name, tp):
     def new_type(x):
         return x
 
+    new_type.__qualname__ = name
+    if '.' in name:
+        name = name.rpartition('.')[-1]
     new_type.__name__ = name
+    new_type.__name__ = name
+    try:
+        new_type.__module__ = sys._getframe(1).f_globals.get('__name__', '__main__')
+    except (AttributeError, ValueError):
+        pass
     new_type.__supertype__ = tp
     return new_type
 

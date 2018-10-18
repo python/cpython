@@ -2405,23 +2405,31 @@ class TypeTests(BaseTestCase):
         assert foo(None) is None
 
 
+UserId = NewType('UserId', int)
+
+
 class NewTypeTests(BaseTestCase):
+    UserName = NewType('NewTypeTests.UserName', str)
 
     def test_basic(self):
-        UserId = NewType('UserId', int)
-        UserName = NewType('UserName', str)
         self.assertIsInstance(UserId(5), int)
-        self.assertIsInstance(UserName('Joe'), str)
+        self.assertIsInstance(NewTypeTests.UserName('Joe'), str)
         self.assertEqual(UserId(5) + 1, 6)
 
     def test_errors(self):
-        UserId = NewType('UserId', int)
-        UserName = NewType('UserName', str)
         with self.assertRaises(TypeError):
             issubclass(UserId, int)
         with self.assertRaises(TypeError):
-            class D(UserName):
+            class D(UserId):
                 pass
+
+    def test_introspection(self):
+        UserName = NewTypeTests.UserName
+        self.assertEqual(UserName.__name__, 'UserName')
+        self.assertEqual(UserName.__qualname__, 'NewTypeTests.UserName')
+        self.assertEqual(UserName.__module__, __name__)
+        self.assertEqual(UserName.__supertype__, str)
+        self.assertIn('UserName', repr(UserName))
 
 
 class NamedTupleTests(BaseTestCase):
