@@ -233,10 +233,28 @@ create_extra(ElementObject* self, PyObject* attrib)
 }
 
 LOCAL(void)
-dealloc_extra(ElementObject* self)
+dealloc_extra(ElementObjectExtra *extra)
+{
+    Py_ssize_t i;
+
+    if (!extra)
+        return;
+
+    Py_DECREF(extra->attrib);
+
+    for (i = 0; i < extra->length; i++)
+        Py_DECREF(extra->children[i]);
+
+    if (extra->children != extra->_children)
+        PyObject_Free(extra->children);
+
+    PyObject_Free(extra);
+}
+
+LOCAL(void)
+clear_extra(ElementObject* self)
 {
     ElementObjectExtra *myextra;
-    Py_ssize_t i;
 
     if (!self->extra)
         return;
@@ -246,15 +264,7 @@ dealloc_extra(ElementObject* self)
     myextra = self->extra;
     self->extra = NULL;
 
-    Py_DECREF(myextra->attrib);
-
-    for (i = 0; i < myextra->length; i++)
-        Py_DECREF(myextra->children[i]);
-
-    if (myextra->children != myextra->_children)
-        PyObject_Free(myextra->children);
-
-    PyObject_Free(myextra);
+    dealloc_extra(myextra);
 }
 
 /* Convenience internal function to create new Element objects with the given
@@ -420,6 +430,7 @@ element_resize(ElementObject* self, Py_ssize_t extra)
     Py_ssize_t size;
     PyObject* *children;
 
+    assert(extra >= 0);
     /* make sure self->children can hold the given number of extra
        elements.  set an exception and return -1 if allocation failed */
 
@@ -624,7 +635,7 @@ element_gc_clear(ElementObject *self)
     /* After dropping all references from extra, it's no longer valid anyway,
      * so fully deallocate it.
     */
-    dealloc_extra(self);
+    clear_extra(self);
     return 0;
 }
 
@@ -676,7 +687,7 @@ static PyObject *
 _elementtree_Element_clear_impl(ElementObject *self)
 /*[clinic end generated code: output=8bcd7a51f94cfff6 input=3c719ff94bf45dd6]*/
 {
-    dealloc_extra(self);
+    clear_extra(self);
 
     Py_INCREF(Py_None);
     _set_joined_ptr(&self->text, Py_None);
@@ -710,6 +721,7 @@ _elementtree_Element___copy___impl(ElementObject *self)
     Py_INCREF(JOIN_OBJ(self->tail));
     _set_joined_ptr(&element->tail, self->tail);
 
+    assert(!element->extra || !element->extra->length);
     if (self->extra) {
         if (element_resize(element, self->extra->length) < 0) {
             Py_DECREF(element);
@@ -721,6 +733,7 @@ _elementtree_Element___copy___impl(ElementObject *self)
             element->extra->children[i] = self->extra->children[i];
         }
 
+        assert(!element->extra->length);
         element->extra->length = self->extra->length;
     }
 
@@ -783,6 +796,7 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
         goto error;
     _set_joined_ptr(&element->tail, JOIN_SET(tail, JOIN_GET(self->tail)));
 
+    assert(!element->extra || !element->extra->length);
     if (self->extra) {
         if (element_resize(element, self->extra->length) < 0)
             goto error;
@@ -796,6 +810,7 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
             element->extra->children[i] = child;
         }
 
+        assert(!element->extra->length);
         element->extra->length = self->extra->length;
     }
 
@@ -957,6 +972,7 @@ element_setstate_from_attributes(ElementObject *self,
                                  PyObject *children)
 {
     Py_ssize_t i, nchildren;
+    ElementObjectExtra *oldextra = NULL;
 
     if (!tag) {
         PyErr_SetString(PyExc_TypeError, "tag may not be NULL");
@@ -975,8 +991,9 @@ element_setstate_from_attributes(ElementObject *self,
     _set_joined_ptr(&self->tail, tail);
 
     /* Handle ATTRIB and CHILDREN. */
-    if (!children && !attrib)
+    if (!children && !attrib) {
         Py_RETURN_NONE;
+    }
 
     /* Compute 'nchildren'. */
     if (children) {
@@ -984,32 +1001,48 @@ element_setstate_from_attributes(ElementObject *self,
             PyErr_SetString(PyExc_TypeError, "'_children' is not a list");
             return NULL;
         }
-        nchildren = PyList_Size(children);
+        nchildren = PyList_GET_SIZE(children);
+
+        /* (Re-)allocate 'extra'.
+           Avoid DECREFs calling into this code again (cycles, etc.)
+         */
+        oldextra = self->extra;
+        self->extra = NULL;
+        if (element_resize(self, nchildren)) {
+            assert(!self->extra || !self->extra->length);
+            clear_extra(self);
+            self->extra = oldextra;
+            return NULL;
+        }
+        assert(self->extra);
+        assert(self->extra->allocated >= nchildren);
+        if (oldextra) {
+            assert(self->extra->attrib == Py_None);
+            self->extra->attrib = oldextra->attrib;
+            oldextra->attrib = Py_None;
+        }
+
+        /* Copy children */
+        for (i = 0; i < nchildren; i++) {
+            self->extra->children[i] = PyList_GET_ITEM(children, i);
+            Py_INCREF(self->extra->children[i]);
+        }
+
+        assert(!self->extra->length);
+        self->extra->length = nchildren;
     }
     else {
-        nchildren = 0;
+        if (element_resize(self, 0)) {
+            return NULL;
+        }
     }
-
-    /* Allocate 'extra'. */
-    if (element_resize(self, nchildren)) {
-        return NULL;
-    }
-    assert(self->extra && self->extra->allocated >= nchildren);
-
-    /* Copy children */
-    for (i = 0; i < nchildren; i++) {
-        self->extra->children[i] = PyList_GET_ITEM(children, i);
-        Py_INCREF(self->extra->children[i]);
-    }
-
-    self->extra->length = nchildren;
-    self->extra->allocated = nchildren;
 
     /* Stash attrib. */
     if (attrib) {
         Py_INCREF(attrib);
         Py_XSETREF(self->extra->attrib, attrib);
     }
+    dealloc_extra(oldextra);
 
     Py_RETURN_NONE;
 }

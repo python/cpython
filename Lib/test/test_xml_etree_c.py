@@ -117,6 +117,22 @@ class MiscTests(unittest.TestCase):
         elem.tail = X()
         elem.__setstate__({'tag': 42})  # shouldn't cause an assertion failure
 
+    def test_setstate_leaks(self):
+        # Test reference leaks
+        elem = cET.Element.__new__(cET.Element)
+        for i in range(100):
+            elem.__setstate__({'tag': 'foo', 'attrib': {'bar': 42},
+                               '_children': [cET.Element('child')],
+                               'text': 'text goes here',
+                               'tail': 'opposite of head'})
+
+        self.assertEqual(elem.tag, 'foo')
+        self.assertEqual(elem.text, 'text goes here')
+        self.assertEqual(elem.tail, 'opposite of head')
+        self.assertEqual(list(elem.attrib.items()), [('bar', 42)])
+        self.assertEqual(len(elem), 1)
+        self.assertEqual(elem[0].tag, 'child')
+
 
 @unittest.skipUnless(cET, 'requires _elementtree')
 class TestAliasWorking(unittest.TestCase):
