@@ -66,20 +66,20 @@ class TestGeneratorBase:
             "To: whom_it_may_concern@example.com\n"
             "From: nobody_you_want_to_know@example.com\n"
             "Subject: We the willing led by the unknowing are doing the "
-              "impossible for the ungrateful. We have done so much for "
-              "so long with so little we are now qualified to do anything "
-              "with nothing.\n"
-              "\n"
-              "None\n")
+            "impossible for the ungrateful. We have done so much for "
+            "so long with so little we are now qualified to do anything "
+            "with nothing.\n"
+            "\n"
+            "None\n")
     refold_all_expected[100] = (
             "To: whom_it_may_concern@example.com\n"
             "From: nobody_you_want_to_know@example.com\n"
             "Subject: We the willing led by the unknowing are doing the "
-                "impossible for the ungrateful. We have\n"
-              " done so much for so long with so little we are now qualified "
-                "to do anything with nothing.\n"
-              "\n"
-              "None\n")
+            "impossible for the ungrateful. We have\n"
+            " done so much for so long with so little we are now qualified "
+            "to do anything with nothing.\n"
+            "\n"
+            "None\n")
 
     length_params = [n for n in refold_long_expected]
 
@@ -233,7 +233,7 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
 
     def test_cte_type_7bit_handles_unknown_8bit(self):
         source = ("Subject: Maintenant je vous présente mon "
-                 "collègue\n\n").encode('utf-8')
+                  "collègue\n\n").encode('utf-8')
         expected = ('Subject: Maintenant je vous =?unknown-8bit?q?'
                     'pr=C3=A9sente_mon_coll=C3=A8gue?=\n\n').encode('ascii')
         msg = message_from_bytes(source)
@@ -254,7 +254,7 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
             oh là là, know what I mean, know what I mean?
             """).encode('latin1')
         msg = message_from_bytes(source)
-        expected =  textwrap.dedent("""\
+        expected = textwrap.dedent("""\
             From: foo@bar.com
             To: Dinsdale
             Subject: Nudge nudge, wink, wink
@@ -288,6 +288,27 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
             """).encode('utf-8').replace(b'\n', b'\r\n')
         s = io.BytesIO()
         g = BytesGenerator(s, policy=policy.SMTPUTF8)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_smtp_policy_non_ascii_character(self):
+        msg = EmailMessage()
+        msg['From'] = "Páolo <főo@bar.com>"
+        msg['To'] = 'Юзер Один <user1@example.com>'
+        msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
+        msg.set_content("Test")
+        expected = textwrap.dedent("""\
+                   From: =?utf-8?q?P=C3=A1olo?= <=?utf-8?q?f=C5=91o?=@bar.com>
+                   To: =?utf-8?b?0K7Qt9C10YAg0J7QtNC40L0=?= <user1@example.com>
+                   Subject: Nudge nudge, wink, wink =?utf-8?q?=E1=BD=A09?=
+                   Content-Type: text/plain; charset="utf-8"
+                   Content-Transfer-Encoding: 7bit
+                   MIME-Version: 1.0
+
+                   Test
+                   """).encode('utf-8').replace(b'\n', b'\r\n')
+        s = io.BytesIO()
+        g = BytesGenerator(s, policy=policy.SMTP)
         g.flatten(msg)
         self.assertEqual(s.getvalue(), expected)
 
