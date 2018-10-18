@@ -3750,7 +3750,7 @@ class Spinbox(Widget, XView):
         select to commands. If the selection isn't currently in
         the spinbox, then a new selection is created to include
         the characters between index and the most recent selection
-        anchor point, inclusive. Returns an empty tuple.
+        anchor point, inclusive.
         """
         return self.selection("adjust", index)
 
@@ -3758,7 +3758,7 @@ class Spinbox(Widget, XView):
         """Clear the selection
 
         If the selection isn't in this widget then the
-        command has no effect. Returns an empty tuple.
+        command has no effect.
         """
         return self.selection("clear")
 
