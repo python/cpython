@@ -893,8 +893,16 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         class BadInt(int):
             def __mul__(self, other):
                 return Prod()
+            def __rmul__(self, other):
+                return Prod()
+            def __floordiv__(self, other):
+                return Prod()
+            def __rfloordiv__(self, other):
+                return Prod()
 
         class Prod:
+            def __add__(self, other):
+                return Sum()
             def __radd__(self, other):
                 return Sum()
 
@@ -906,6 +914,9 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         timedelta(microseconds=BadInt(1))
         timedelta(hours=BadInt(1))
         timedelta(weeks=BadInt(1))
+        timedelta(1) * BadInt(1)
+        BadInt(1) * timedelta(1)
+        timedelta(1) // BadInt(1)
 
 
 #############################################################################

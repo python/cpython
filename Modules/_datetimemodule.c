@@ -1857,6 +1857,26 @@ Done:
 #define microseconds_to_delta(pymicros) \
     microseconds_to_delta_ex(pymicros, &PyDateTime_DeltaType)
 
+/* Don't use PyNumber_Multiply() because of possible
+   overridden operators in int subclasses. */
+static PyObject *
+integer_multiply(PyObject *a, PyObject *b)
+{
+    assert(PyLong_Check(a));
+    assert(PyLong_Check(b));
+    return PyLong_Type.tp_as_number->nb_multiply(a, b);
+}
+
+/* Don't use PyNumber_FloorDivide() because of possible
+   overridden operators in int subclasses. */
+static PyObject *
+integer_divide(PyObject *a, PyObject *b)
+{
+    assert(PyLong_Check(a));
+    assert(PyLong_Check(b));
+    return PyLong_Type.tp_as_number->nb_floor_divide(a, b);
+}
+
 static PyObject *
 multiply_int_timedelta(PyObject *intobj, PyDateTime_Delta *delta)
 {
@@ -1868,7 +1888,7 @@ multiply_int_timedelta(PyObject *intobj, PyDateTime_Delta *delta)
     if (pyus_in == NULL)
         return NULL;
 
-    pyus_out = PyNumber_Multiply(pyus_in, intobj);
+    pyus_out = integer_multiply(pyus_in, intobj);
     Py_DECREF(pyus_in);
     if (pyus_out == NULL)
         return NULL;
@@ -1949,7 +1969,7 @@ divide_timedelta_int(PyDateTime_Delta *delta, PyObject *intobj)
     if (pyus_in == NULL)
         return NULL;
 
-    pyus_out = PyNumber_FloorDivide(pyus_in, intobj);
+    pyus_out = integer_divide(pyus_in, intobj);
     Py_DECREF(pyus_in);
     if (pyus_out == NULL)
         return NULL;
@@ -2309,7 +2329,7 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
     assert(num != NULL);
 
     if (PyLong_Check(num)) {
-        prod = PyNumber_Multiply(factor, num);
+        prod = integer_multiply(num, factor);
         if (prod == NULL)
             return NULL;
         assert(PyLong_CheckExact(prod));
