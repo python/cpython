@@ -8,7 +8,7 @@ import stat
 import sys
 import unittest
 from test.test_support import run_unittest, TESTFN, verbose, requires, \
-                              unlink
+                              unlink, bigmemtest
 import io  # C implementation of io
 import _pyio as pyio # Python implementation of io
 
@@ -47,6 +47,15 @@ class LargeFileTest(unittest.TestCase):
             if verbose:
                 print('check file size with os.fstat')
             self.assertEqual(os.fstat(f.fileno())[stat.ST_SIZE], size+1)
+
+    # _pyio.FileIO.readall() uses a temporary bytearry then casted to bytes,
+    # so memuse=2 is needed
+    @bigmemtest(minsize=size, memuse=2)
+    def test_large_read(self, _size):
+        # bpo-24658: Test that a read greater than 2GB does not fail.
+        with self.open(TESTFN, "rb") as f:
+            self.assertEqual(len(f.read()), size + 1)
+            self.assertEqual(f.tell(), size + 1)
 
     def test_osstat(self):
         if verbose:
