@@ -1363,18 +1363,9 @@ _Py_read(int fd, void *buf, size_t count)
      * handler raised an exception. */
     assert(!PyErr_Occurred());
 
-#ifdef MS_WINDOWS
-    if (count > INT_MAX) {
-        /* On Windows, the count parameter of read() is an int */
-        count = INT_MAX;
+    if (count > _PY_READ_MAX) {
+        count = _PY_READ_MAX;
     }
-#else
-    if (count > PY_SSIZE_T_MAX) {
-        /* if count is greater than PY_SSIZE_T_MAX,
-         * read() result is undefined */
-        count = PY_SSIZE_T_MAX;
-    }
-#endif
 
     _Py_BEGIN_SUPPRESS_IPH
     do {
@@ -1425,15 +1416,10 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
            depending on heap usage). */
         count = 32767;
     }
-    else if (count > INT_MAX)
-        count = INT_MAX;
-#else
-    if (count > PY_SSIZE_T_MAX) {
-        /* write() should truncate count to PY_SSIZE_T_MAX, but it's safer
-         * to do it ourself to have a portable behaviour. */
-        count = PY_SSIZE_T_MAX;
-    }
 #endif
+    if (count > _PY_WRITE_MAX) {
+        count = _PY_WRITE_MAX;
+    }
 
     if (gil_held) {
         do {
