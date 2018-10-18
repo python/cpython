@@ -23,7 +23,6 @@ import _multiprocessing
 
 from . import connection
 from . import context
-_ForkingPickler = context.reduction.ForkingPickler
 
 from .util import debug, info, Finalize, register_after_fork, is_exiting
 
@@ -113,7 +112,7 @@ class Queue(object):
             finally:
                 self._rlock.release()
         # unserialize the data after having released the lock
-        return _ForkingPickler.loads(res)
+        return context.reduction.ForkingPickler.loads(res)
 
     def qsize(self):
         # Raises NotImplementedError on Mac OSX because of broken sem_getvalue()
@@ -236,7 +235,7 @@ class Queue(object):
                             return
 
                         # serialize the data before acquiring the lock
-                        obj = _ForkingPickler.dumps(obj)
+                        obj = context.reduction.ForkingPickler.dumps(obj)
                         if wacquire is None:
                             send_bytes(obj)
                         else:
@@ -355,11 +354,11 @@ class SimpleQueue(object):
         with self._rlock:
             res = self._reader.recv_bytes()
         # unserialize the data after having released the lock
-        return _ForkingPickler.loads(res)
+        return context.reduction.ForkingPickler.loads(res)
 
     def put(self, obj):
         # serialize the data before acquiring the lock
-        obj = _ForkingPickler.dumps(obj)
+        obj = context.reduction.ForkingPickler.dumps(obj)
         if self._wlock is None:
             # writes to a message oriented win32 pipe are atomic
             self._writer.send_bytes(obj)

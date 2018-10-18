@@ -23,8 +23,7 @@ import _multiprocessing
 from . import util
 
 from . import AuthenticationError, BufferTooShort
-from .context import reduction
-_ForkingPickler = reduction.ForkingPickler
+from . import context
 
 try:
     import _winapi
@@ -203,7 +202,7 @@ class _ConnectionBase:
         """Send a (picklable) object"""
         self._check_closed()
         self._check_writable()
-        self._send_bytes(_ForkingPickler.dumps(obj))
+        self._send_bytes(context.reduction.ForkingPickler.dumps(obj))
 
     def recv_bytes(self, maxlength=None):
         """
@@ -248,7 +247,7 @@ class _ConnectionBase:
         self._check_closed()
         self._check_readable()
         buf = self._recv_bytes()
-        return _ForkingPickler.loads(buf.getbuffer())
+        return context.reduction.ForkingPickler.loads(buf.getbuffer())
 
     def poll(self, timeout=0.0):
         """Whether there is any input available to be read"""
@@ -950,23 +949,23 @@ if sys.platform == 'win32':
     def rebuild_connection(ds, readable, writable):
         sock = ds.detach()
         return Connection(sock.detach(), readable, writable)
-    reduction.register(Connection, reduce_connection)
+    context.reduction.register(Connection, reduce_connection)
 
     def reduce_pipe_connection(conn):
         access = ((_winapi.FILE_GENERIC_READ if conn.readable else 0) |
                   (_winapi.FILE_GENERIC_WRITE if conn.writable else 0))
-        dh = reduction.DupHandle(conn.fileno(), access)
+        dh = context.reduction.DupHandle(conn.fileno(), access)
         return rebuild_pipe_connection, (dh, conn.readable, conn.writable)
     def rebuild_pipe_connection(dh, readable, writable):
         handle = dh.detach()
         return PipeConnection(handle, readable, writable)
-    reduction.register(PipeConnection, reduce_pipe_connection)
+    context.reduction.register(PipeConnection, reduce_pipe_connection)
 
 else:
     def reduce_connection(conn):
-        df = reduction.DupFd(conn.fileno())
+        df = context.reduction.DupFd(conn.fileno())
         return rebuild_connection, (df, conn.readable, conn.writable)
     def rebuild_connection(df, readable, writable):
         fd = df.detach()
         return Connection(fd, readable, writable)
-    reduction.register(Connection, reduce_connection)
+    context.reduction.register(Connection, reduce_connection)

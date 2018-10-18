@@ -34,6 +34,7 @@ _multiprocessing = test.support.import_module('_multiprocessing')
 test.support.import_module('multiprocessing.synchronize')
 import threading
 
+import multiprocessing
 import multiprocessing.connection
 import multiprocessing.dummy
 import multiprocessing.heap
@@ -5420,6 +5421,61 @@ class MiscTestCase(unittest.TestCase):
         # Just make sure names in blacklist are excluded
         support.check__all__(self, multiprocessing, extra=multiprocessing.__all__,
                              blacklist=['SUBDEBUG', 'SUBWARNING'])
+
+
+class _TestCustomReducer(BaseTestCase):
+
+    ALLOWED_TYPES = ('processes',)
+
+    def setUp(self):
+        self.original_reducer = multiprocessing.get_reducer()
+        self.spy = unittest.mock.MagicMock(spec_set=self.original_reducer,
+                                           wraps=self.original_reducer)
+        multiprocessing.set_reducer(self.spy)
+
+
+    def tearDown(self):
+        multiprocessing.set_reducer(self.original_reducer)
+
+    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
+    def test_connection_custom_reducer(self):
+        with self.connection.Listener() as l:
+            with self.connection.Client(l.address) as c:
+                with l.accept() as d:
+                    c.send(1729)
+                    self.assertEqual(d.recv(), 1729)
+
+        if self.TYPE == 'processes':
+            self.assertRaises(OSError, l.accept)
+
+        self.assertEqual(self.spy.ForkingPickler.dumps.call_count, 1)
+        self.assertEqual(self.spy.ForkingPickler.loads.call_count, 1)
+
+    @classmethod
+    def _put_and_get_in_queue(cls, queue, parent_can_continue):
+        parent_can_continue.set()
+        queue.put("Something")
+        queue.get()
+
+    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
+    def test_queue_custom_reducer(self):
+        queue = self.Queue()
+        parent_can_continue = self.Event()
+        p = self.Process(target=self._put_and_get_in_queue,
+            args=(queue, parent_can_continue))
+        p.daemon = True
+        p.start()
+        parent_can_continue.wait()
+        element = queue.get(timeout=TIMEOUT3)
+        self.assertEqual(element, "Something")
+        queue.put("Other_Something")
+        p.join(timeout=TIMEOUT3)
+        self.assertEqual(p.exitcode, 0)
+        self.assertEqual(element, "Something")
+        self.assertEqual(self.spy.ForkingPickler.dumps.call_count, 1)
+        self.assertEqual(self.spy.ForkingPickler.loads.call_count, 1)
+        close_queue(queue)
+
 #
 # Mixins
 #

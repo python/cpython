@@ -200,14 +200,12 @@ class BaseContext(object):
     def set_start_method(self, method, force=False):
         raise ValueError('cannot set start method of concrete context')
 
-    @property
-    def reducer(self):
+    def get_reducer(self):
         '''Controls how objects will be reduced to a form that can be
         shared with other processes.'''
         return globals().get('reduction')
 
-    @reducer.setter
-    def reducer(self, reduction):
+    def set_reducer(self, reduction):
         globals()['reduction'] = reduction
 
     def _check_available(self):

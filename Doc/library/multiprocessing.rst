@@ -1187,6 +1187,77 @@ For example:
     the data in the pipe is likely to become corrupted, because it may become
     impossible to be sure where the message boundaries lie.
 
+Custom Reduction
+~~~~~~~~~~~~~~~~
+
+.. currentmodule:: multiprocessing
+
+Several primitives of the :mod:`multiprocessing` module such as
+:class:`multiprocessing.Queue`, :class:`multiprocessing.connection.Listener` or
+:class:`multiprocessing.connection.Server` need to serialize and deserialize Python
+objects to communicate between processes. Sometimes is useful to control what
+serialization is to be used for the transport of data for supporting communication with
+different versions of Python, use more performant 3rd party tools or custom strategies.
+
+For this pourpose a set of hooks is available to provide alternate implementations of
+the reduction mechanism:
+
+.. currentmodule:: multiprocessing.reduction
+
+.. class:: AbstractReducer()
+
+   Abstract base class for use in implementing a Reduction class suitable for use
+   in replacing the standard reduction mechanism used in multiprocessing.
+
+   .. class:: ForkingPickler
+
+      A subclass of :class:`pickle.Pickler` to be used by multiprocessing.
+
+   .. function:: dump(obj, file, protocol=None)
+
+      Replacement for pickle.dump() to be used by multiprocessing.
+
+   .. function:: register(cls, type, reduce)
+
+      Register a reduce function for a type to be used by multiprocessing.
+
+.. currentmodule:: multiprocessing
+
+.. function:: set_reducer(reduction)
+
+   Sets a reduction class to be used for serialization and deserialization by the module
+   primitive internals. **reduction** must be a subclass of
+   :class:`multiprocessing.reduction.AbstractReducer`.
+
+.. function:: get_reducer()
+
+   Gets the current reduction class in use by the module's primitive internals.
+
+For example, substituting the reducer class to use the :mod:`pickle` protocol
+version 2 to be able to communicate with a Python 2.x programs.::
+
+   import multiprocessing
+   from multiprocessing.reduction import AbstractReducer, ForkingPickler
+   import pickle
+
+   class ForkingPickler2(ForkingPickler):
+       @classmethod
+       def dumps(cls, obj, pickle_protocol=2):
+           return super().dumps(obj, protocol=pickle_protocol)
+
+      loads = pickle.loads
+
+
+   def dump(obj, file, protocol=2):
+       return ForkingPickler2(file, protocol).dump(obj)
+
+
+   class Pickle2Reducer(AbstractReducer):
+       ForkingPickler = ForkingPickler2
+       register = ForkingPickler2.register
+       dump = dump
+
+   multiprocessing.set_reducer(Pickle2Reducer)
 
 Synchronization primitives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

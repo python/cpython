@@ -10,8 +10,9 @@ import warnings
 
 from . import connection
 from . import process
-from .context import reduction
 from . import resource_tracker
+from . import context
+from .context import reduction
 from . import spawn
 from . import util
 
@@ -72,7 +73,7 @@ class ForkServer(object):
                       resource_tracker.getfd()]
             allfds += fds
             try:
-                reduction.sendfds(client, allfds)
+                context.reduction.sendfds(client, allfds)
                 return parent_r, parent_w
             except:
                 os.close(parent_r)
@@ -240,7 +241,7 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                     # Incoming fork request
                     with listener.accept()[0] as s:
                         # Receive fds from client
-                        fds = reduction.recvfds(s, MAXFDS_TO_SEND + 1)
+                        fds = context.reduction.recvfds(s, MAXFDS_TO_SEND + 1)
                         if len(fds) > MAXFDS_TO_SEND:
                             raise RuntimeError(
                                 "Too many ({0:n}) fds to send".format(
