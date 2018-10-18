@@ -947,4 +947,17 @@ typedef struct fd_set {
 #define Py_ULL(x) Py_LL(x##U)
 #endif
 
+#if defined (MS_WINDOWS) || defined(__APPLE__)
+    /* On Windows, the count parameter of read() is an int (bpo-9015, bpo-9611).
+       On macOS 10.13, read() and write() with more than INT_MAX bytes
+       fail with EINVAL (bpo-24658). */
+#   define _PY_READ_MAX  INT_MAX
+#   define _PY_WRITE_MAX INT_MAX
+#else
+    /* write() should truncate the input to PY_SSIZE_T_MAX bytes,
+       but it's safer to do it ourself to have a portable behaviour */
+#   define _PY_READ_MAX  PY_SSIZE_T_MAX
+#   define _PY_WRITE_MAX PY_SSIZE_T_MAX
+#endif
+
 #endif /* Py_PYPORT_H */

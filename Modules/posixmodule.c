@@ -6805,6 +6805,9 @@ posix_read(PyObject *self, PyObject *args)
         return posix_error();
     }
     Py_BEGIN_ALLOW_THREADS
+    if (size > _PY_READ_MAX) {
+        size = _PY_READ_MAX;
+    }
     n = read(fd, PyString_AsString(buffer), size);
     Py_END_ALLOW_THREADS
     if (n < 0) {
@@ -6836,9 +6839,10 @@ posix_write(PyObject *self, PyObject *args)
     }
     len = pbuf.len;
     Py_BEGIN_ALLOW_THREADS
+    if (len > _PY_WRITE_MAX) {
+        len = _PY_WRITE_MAX;
+    }
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
-    if (len > INT_MAX)
-        len = INT_MAX;
     size = write(fd, pbuf.buf, (int)len);
 #else
     size = write(fd, pbuf.buf, len);

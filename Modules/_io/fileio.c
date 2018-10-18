@@ -37,19 +37,6 @@
 #include <windows.h>
 #endif
 
-#if defined (MS_WINDOWS) || defined(__APPLE__)
-    /* On Windows, the count parameter of read() is an int (bpo-9015, bpo-9611).
-       On macOS 10.13, read() and write() with more than INT_MAX bytes
-       fail with EINVAL (bpo-24658). */
-#   define _PY_READ_MAX  INT_MAX
-#   define _PY_WRITE_MAX INT_MAX
-#else
-    /* write() should truncate the input to PY_SSIZE_T_MAX bytes,
-       but it's safer to do it ourself to have a portable behaviour */
-#   define _PY_READ_MAX  PY_SSIZE_T_MAX
-#   define _PY_WRITE_MAX PY_SSIZE_T_MAX
-#endif
-
 #if BUFSIZ < (8*1024)
 #define SMALLCHUNK (8*1024)
 #elif (BUFSIZ >= (2 << 25))
@@ -528,9 +515,10 @@ fileio_readinto(fileio *self, PyObject *args)
         len = pbuf.len;
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
+        if (len > _PY_READ_MAX) {
+            len = _PY_READ_MAX;
+        }
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
-        if (len > INT_MAX)
-            len = INT_MAX;
         n = read(self->fd, pbuf.buf, (int)len);
 #else
         n = read(self->fd, pbuf.buf, len);
@@ -617,8 +605,9 @@ fileio_readall(fileio *self)
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
         n = newsize - total;
-        if (n > _PY_READ_MAX)
+        if (n > _PY_READ_MAX) {
             n = _PY_READ_MAX;
+        }
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
         n = read(self->fd,
                  PyBytes_AS_STRING(result) + total,
@@ -736,8 +725,9 @@ fileio_write(fileio *self, PyObject *args)
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
         len = pbuf.len;
-        if (len > _PY_WRITE_MAX)
+        if (len > _PY_WRITE_MAX) {
             len = _PY_WRITE_MAX;
+        }
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
         n = write(self->fd, pbuf.buf, (int)len);
 #else
