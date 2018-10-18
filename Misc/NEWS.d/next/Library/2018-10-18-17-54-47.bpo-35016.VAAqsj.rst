@@ -1,0 +1,1 @@
+Fix generate header in email message with non-ascii character in SMTP policy
