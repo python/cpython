@@ -1786,7 +1786,10 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     PyObject *num = NULL;
     PyObject *result = NULL;
 
-    assert(PyLong_CheckExact(pyus));
+    pyus = PyNumber_Long(pyus);
+    if (pyus == NULL) {
+        goto Done;
+    }
     tuple = PyNumber_Divmod(pyus, us_per_second);
     if (tuple == NULL)
         goto Done;
@@ -1849,6 +1852,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     result = new_delta_ex(d, s, us, 0, type);
 
 Done:
+    Py_XDECREF(pyus);
     Py_XDECREF(tuple);
     Py_XDECREF(num);
     return result;
@@ -1868,7 +1872,7 @@ multiply_int_timedelta(PyObject *intobj, PyDateTime_Delta *delta)
     if (pyus_in == NULL)
         return NULL;
 
-    pyus_out = PyNumber_Multiply(pyus_in, intobj);
+    pyus_out = PyNumber_Multiply(intobj, pyus_in);
     Py_DECREF(pyus_in);
     if (pyus_out == NULL)
         return NULL;
@@ -2309,13 +2313,11 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
     assert(num != NULL);
 
     if (PyLong_Check(num)) {
-        prod = PyNumber_Multiply(factor, num);
+        prod = PyNumber_Multiply(num, factor);
         if (prod == NULL)
             return NULL;
-        assert(PyLong_CheckExact(prod));
         sum = PyNumber_Add(sofar, prod);
         Py_DECREF(prod);
-        assert(sum == NULL || PyLong_CheckExact(sum));
         return sum;
     }
 
@@ -2373,7 +2375,6 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
         Py_DECREF(sum);
         Py_DECREF(x);
         *leftover += fracpart;
-        assert(y == NULL || PyLong_CheckExact(y));
         return y;
     }
 
