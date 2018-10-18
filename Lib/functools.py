@@ -31,13 +31,13 @@ except ImportError:
         try:
             iterable = iter(iterable)
         except TypeError as err:
-            raise TypeError('reduce() arg 2 must support iteration')
+            raise TypeError('reduce() arg 2 must support iteration') from None
 
         if initializer is _initial_missing:
             try:
                 value = next(iterable)
             except StopIteration:
-                raise TypeError("reduce() of empty sequence with no initial value")
+                raise TypeError("reduce() of empty sequence with no initial value") from None
         else:
             value = initializer
 
