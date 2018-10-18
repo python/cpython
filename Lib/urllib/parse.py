@@ -666,11 +666,6 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
     return parsed_result
 
 
-# Used for checking parse_qsl() with max_num_fields. Both & and ; are valid query
-# string delimiters.
-_QS_DELIMITER_RE = re.compile(r'[&;]')
-
-
 def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
               encoding='utf-8', errors='replace', max_num_fields=None):
     """Parse a query given as a string argument.
@@ -703,9 +698,9 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
     # is less than max_num_fields. This prevents a memory exhaustion DOS
     # attack via post bodies with many fields.
     if max_num_fields is not None:
-        for num_fields, _ in enumerate(_QS_DELIMITER_RE.finditer(qs), 2):
-            if max_num_fields < num_fields:
-                raise ValueError('Max number of fields exceeded')
+        num_fields = 1 + qs.count('&') + qs.count(';')
+        if max_num_fields < num_fields:
+            raise ValueError('Max number of fields exceeded')
 
     pairs = [s2 for s1 in qs.split('&') for s2 in s1.split(';')]
     r = []
