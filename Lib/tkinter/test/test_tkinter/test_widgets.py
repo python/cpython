@@ -522,6 +522,9 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         self.assertEqual(widget.selection_get(), '2345')
         widget.selection_adjust(0)
         self.assertEqual(widget.selection_get(), '12345')
+
+    def test_selection_element_methods(self):
+        widget = self.create()
         self.assertEqual(widget.selection_element(), "none")
         widget.selection_element("buttonup")
         self.assertEqual(widget.selection_element(), "buttonup")
