@@ -1,7 +1,8 @@
 import io
 import os
 
-from .context import reduction, set_spawning_popen
+from . import context
+from .context import set_spawning_popen
 from . import popen_fork
 from . import spawn
 from . import util
@@ -43,8 +44,8 @@ class Popen(popen_fork.Popen):
         fp = io.BytesIO()
         set_spawning_popen(self)
         try:
-            reduction.dump(prep_data, fp)
-            reduction.dump(process_obj, fp)
+            context.reduction.dump(prep_data, fp)
+            context.reduction.dump(process_obj, fp)
         finally:
             set_spawning_popen(None)
 

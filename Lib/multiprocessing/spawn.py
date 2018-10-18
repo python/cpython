@@ -15,7 +15,7 @@ import types
 
 from . import get_start_method, set_start_method
 from . import process
-from .context import reduction
+from . import context
 from . import util
 
 __all__ = ['_main', 'freeze_support', 'set_executable', 'get_executable',
@@ -104,8 +104,12 @@ def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
                 False, parent_pid)
         else:
             source_process = None
-        new_handle = reduction.duplicate(pipe_handle,
-                                         source_process=source_process)
+        try:
+            new_handle = context.reduction.duplicate(pipe_handle,
+                                             source_process=source_process)
+        finally:
+            if source_process is not None:
+                _winapi.CloseHandle(source_process)
         fd = msvcrt.open_osfhandle(new_handle, os.O_RDONLY)
         parent_sentinel = source_process
     else:
@@ -121,9 +125,9 @@ def _main(fd, parent_sentinel):
     with os.fdopen(fd, 'rb', closefd=True) as from_parent:
         process.current_process()._inheriting = True
         try:
-            preparation_data = reduction.pickle.load(from_parent)
+            preparation_data = context.reduction.pickle.load(from_parent)
             prepare(preparation_data)
-            self = reduction.pickle.load(from_parent)
+            self = context.reduction.pickle.load(from_parent)
         finally:
             del process.current_process()._inheriting
     return self._bootstrap(parent_sentinel)
