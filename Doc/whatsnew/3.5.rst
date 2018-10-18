@@ -777,18 +777,18 @@ all changes introduced in Python 3.5 have also been backported to Python 3.4.x.
 
 Notable changes in the :mod:`asyncio` module since Python 3.4.0:
 
-* New debugging APIs: :meth:`loop.set_debug() <asyncio.BaseEventLoop.set_debug>`
-  and :meth:`loop.get_debug() <asyncio.BaseEventLoop.get_debug>` methods.
+* New debugging APIs: :meth:`loop.set_debug() <asyncio.loop.set_debug>`
+  and :meth:`loop.get_debug() <asyncio.loop.get_debug>` methods.
   (Contributed by Victor Stinner.)
 
 * The proactor event loop now supports SSL.
   (Contributed by Antoine Pitrou and Victor Stinner in :issue:`22560`.)
 
-* A new :meth:`loop.is_closed() <asyncio.BaseEventLoop.is_closed>` method to
+* A new :meth:`loop.is_closed() <asyncio.loop.is_closed>` method to
   check if the event loop is closed.
   (Contributed by Victor Stinner in :issue:`21326`.)
 
-* A new :meth:`loop.create_task() <asyncio.BaseEventLoop.create_task>`
+* A new :meth:`loop.create_task() <asyncio.loop.create_task>`
   to conveniently create and schedule a new :class:`~asyncio.Task`
   for a coroutine.  The ``create_task`` method is also used by all
   asyncio functions that wrap coroutines into tasks, such as
@@ -805,10 +805,10 @@ Notable changes in the :mod:`asyncio` module since Python 3.4.0:
   (Contributed by Yury Selivanov.)
 
 * New :meth:`loop.set_task_factory()
-  <asyncio.AbstractEventLoop.set_task_factory>` and
-  :meth:`loop.get_task_factory() <asyncio.AbstractEventLoop.get_task_factory>`
+  <asyncio.loop.set_task_factory>` and
+  :meth:`loop.get_task_factory() <asyncio.loop.get_task_factory>`
   methods to customize the task factory that :meth:`loop.create_task()
-  <asyncio.BaseEventLoop.create_task>` method uses.  (Contributed by Yury
+  <asyncio.loop.create_task>` method uses.  (Contributed by Yury
   Selivanov.)
 
 * New :meth:`Queue.join() <asyncio.Queue.join>` and
@@ -822,7 +822,7 @@ Notable changes in the :mod:`asyncio` module since Python 3.4.0:
 Updates in 3.5.1:
 
 * The :func:`~asyncio.ensure_future` function and all functions that
-  use it, such as :meth:`loop.run_until_complete() <asyncio.BaseEventLoop.run_until_complete>`,
+  use it, such as :meth:`loop.run_until_complete() <asyncio.loop.run_until_complete>`,
   now accept all kinds of :term:`awaitable objects <awaitable>`.
   (Contributed by Yury Selivanov.)
 
@@ -834,20 +834,20 @@ Updates in 3.5.1:
   method to check if the transport is closing or closed.
   (Contributed by Yury Selivanov.)
 
-* The :meth:`loop.create_server() <asyncio.BaseEventLoop.create_server>`
+* The :meth:`loop.create_server() <asyncio.loop.create_server>`
   method can now accept a list of hosts.
   (Contributed by Yann Sionneau.)
 
 Updates in 3.5.2:
 
-* New :meth:`loop.create_future() <asyncio.BaseEventLoop.create_future>`
+* New :meth:`loop.create_future() <asyncio.loop.create_future>`
   method to create Future objects.  This allows alternative event
   loop implementations, such as
   `uvloop <https://github.com/MagicStack/uvloop>`_, to provide a faster
   :class:`asyncio.Future` implementation.
   (Contributed by Yury Selivanov.)
 
-* New :meth:`loop.get_exception_handler() <asyncio.BaseEventLoop.get_exception_handler>`
+* New :meth:`loop.get_exception_handler() <asyncio.loop.get_exception_handler>`
   method to get the current exception handler.
   (Contributed by Yury Selivanov.)
 
@@ -856,13 +856,13 @@ Updates in 3.5.2:
   sequence appears.
   (Contributed by Mark Korenberg.)
 
-* The :meth:`loop.create_connection() <asyncio.BaseEventLoop.create_connection>`
-  and :meth:`loop.create_server() <asyncio.BaseEventLoop.create_server>`
+* The :meth:`loop.create_connection() <asyncio.loop.create_connection>`
+  and :meth:`loop.create_server() <asyncio.loop.create_server>`
   methods are optimized to avoid calling the system ``getaddrinfo``
   function if the address is already resolved.
   (Contributed by A. Jesse Jiryu Davis.)
 
-* The :meth:`loop.sock_connect(sock, address) <asyncio.BaseEventLoop.sock_connect>`
+* The :meth:`loop.sock_connect(sock, address) <asyncio.loop.sock_connect>`
   no longer requires the *address* to be resolved prior to the call.
   (Contributed by A. Jesse Jiryu Davis.)
 
@@ -2471,7 +2471,7 @@ Changes in the Python API
   parameter to help control the ``opt-`` tag. Because of this, the
   *debug_override* parameter of the function is now deprecated. `.pyo` files
   are also no longer supported as a file argument to the Python interpreter and
-  thus serve no purpose when distributed on their own (i.e. sourcless code
+  thus serve no purpose when distributed on their own (i.e. sourceless code
   distribution). Due to the fact that the magic number for bytecode has changed
   in Python 3.5, all old `.pyo` files from previous versions of Python are
   invalid regardless of this PEP.

@@ -2603,12 +2603,13 @@ class short_converter(CConverter):
 class unsigned_short_converter(CConverter):
     type = 'unsigned short'
     default_type = int
-    format_unit = 'H'
     c_ignored_default = "0"
 
     def converter_init(self, *, bitwise=False):
-        if not bitwise:
-            fail("Unsigned shorts must be bitwise (for now).")
+        if bitwise:
+            self.format_unit = 'H'
+        else:
+            self.converter = '_PyLong_UnsignedShort_Converter'
 
 @add_legacy_c_converter('C', accept={str})
 class int_converter(CConverter):
@@ -2628,12 +2629,13 @@ class int_converter(CConverter):
 class unsigned_int_converter(CConverter):
     type = 'unsigned int'
     default_type = int
-    format_unit = 'I'
     c_ignored_default = "0"
 
     def converter_init(self, *, bitwise=False):
-        if not bitwise:
-            fail("Unsigned ints must be bitwise (for now).")
+        if bitwise:
+            self.format_unit = 'I'
+        else:
+            self.converter = '_PyLong_UnsignedInt_Converter'
 
 class long_converter(CConverter):
     type = 'long'
@@ -2644,12 +2646,13 @@ class long_converter(CConverter):
 class unsigned_long_converter(CConverter):
     type = 'unsigned long'
     default_type = int
-    format_unit = 'k'
     c_ignored_default = "0"
 
     def converter_init(self, *, bitwise=False):
-        if not bitwise:
-            fail("Unsigned longs must be bitwise (for now).")
+        if bitwise:
+            self.format_unit = 'k'
+        else:
+            self.converter = '_PyLong_UnsignedLong_Converter'
 
 class long_long_converter(CConverter):
     type = 'long long'
@@ -2660,13 +2663,13 @@ class long_long_converter(CConverter):
 class unsigned_long_long_converter(CConverter):
     type = 'unsigned long long'
     default_type = int
-    format_unit = 'K'
     c_ignored_default = "0"
 
     def converter_init(self, *, bitwise=False):
-        if not bitwise:
-            fail("Unsigned long long must be bitwise (for now).")
-
+        if bitwise:
+            self.format_unit = 'K'
+        else:
+            self.converter = '_PyLong_UnsignedLongLong_Converter'
 
 class Py_ssize_t_converter(CConverter):
     type = 'Py_ssize_t'
@@ -2692,6 +2695,11 @@ class slice_index_converter(CConverter):
             self.converter = '_PyEval_SliceIndex'
         else:
             fail("slice_index_converter: illegal 'accept' argument " + repr(accept))
+
+class size_t_converter(CConverter):
+    type = 'size_t'
+    converter = '_PyLong_Size_t_Converter'
+    c_ignored_default = "0"
 
 
 class float_converter(CConverter):
@@ -2779,7 +2787,7 @@ class str_converter(CConverter):
 
 #
 # This is the fourth or fifth rewrite of registering all the
-# crazy string converter format units.  Previous approaches hid
+# string converter format units.  Previous approaches hid
 # bugs--generally mismatches between the semantics of the format
 # unit and the arguments necessary to represent those semantics
 # properly.  Hopefully with this approach we'll get it 100% right.
@@ -3832,9 +3840,6 @@ class DSLParser:
                         # "starred": "a = [1, 2, 3]; *a"
                         visit_Starred = bad_node
 
-                        # allow ellipsis, for now
-                        # visit_Ellipsis = bad_node
-
                     blacklist = DetectBadNodes()
                     blacklist.visit(module)
                     bad = blacklist.bad
@@ -3860,10 +3865,15 @@ class DSLParser:
                     py_default = 'None'
                     c_default = "NULL"
                 elif (isinstance(expr, ast.BinOp) or
-                    (isinstance(expr, ast.UnaryOp) and not isinstance(expr.operand, ast.Num))):
+                    (isinstance(expr, ast.UnaryOp) and
+                     not (isinstance(expr.operand, ast.Num) or
+                          (hasattr(ast, 'Constant') and
+                           isinstance(expr.operand, ast.Constant) and
+                           type(expr.operand.value) in (int, float, complex)))
+                    )):
                     c_default = kwargs.get("c_default")
                     if not (isinstance(c_default, str) and c_default):
-                        fail("When you specify an expression (" + repr(default) + ") as your default value,\nyou MUST specify a valid c_default.")
+                        fail("When you specify an expression (" + repr(default) + ") as your default value,\nyou MUST specify a valid c_default." + ast.dump(expr))
                     py_default = default
                     value = unknown
                 elif isinstance(expr, ast.Attribute):
@@ -3938,6 +3948,11 @@ class DSLParser:
         self.function.parameters[parameter_name] = p
 
     def parse_converter(self, annotation):
+        if (hasattr(ast, 'Constant') and
+            isinstance(annotation, ast.Constant) and
+            type(annotation.value) is str):
+            return annotation.value, True, {}
+
         if isinstance(annotation, ast.Str):
             return annotation.s, True, {}
 

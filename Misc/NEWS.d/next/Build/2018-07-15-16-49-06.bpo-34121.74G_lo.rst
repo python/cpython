@@ -1,0 +1,1 @@
+Fix detection of C11 atomic support on clang.

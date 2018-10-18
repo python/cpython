@@ -328,7 +328,7 @@ Random generation
    See http://egd.sourceforge.net/ or http://prngd.sourceforge.net/ for sources
    of entropy-gathering daemons.
 
-   Availability: not available with LibreSSL and OpenSSL > 1.1.0
+   .. availability:: not available with LibreSSL and OpenSSL > 1.1.0.
 
 .. function:: RAND_add(bytes, entropy)
 
@@ -460,8 +460,8 @@ Certificate handling
    * :attr:`openssl_capath_env` - OpenSSL's environment key that points to a capath,
    * :attr:`openssl_capath` - hard coded path to a capath directory
 
-   Availability: LibreSSL ignores the environment vars
-   :attr:`openssl_cafile_env` and :attr:`openssl_capath_env`
+   .. availability:: LibreSSL ignores the environment vars
+     :attr:`openssl_cafile_env` and :attr:`openssl_capath_env`.
 
    .. versionadded:: 3.4
 
@@ -484,7 +484,7 @@ Certificate handling
       [(b'data...', 'x509_asn', {'1.3.6.1.5.5.7.3.1', '1.3.6.1.5.5.7.3.2'}),
        (b'data...', 'x509_asn', True)]
 
-   Availability: Windows.
+   .. availability:: Windows.
 
    .. versionadded:: 3.4
 
@@ -499,7 +499,7 @@ Certificate handling
    :const:`x509_asn` for X.509 ASN.1 data or :const:`pkcs_7_asn` for
    PKCS#7 ASN.1 data.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
    .. versionadded:: 3.4
 
@@ -1314,6 +1314,26 @@ SSL sockets also have the following additional methods and attributes:
    returned socket should always be used for further communication with the
    other side of the connection, rather than the original socket.
 
+.. method:: SSLSocket.verify_client_post_handshake()
+
+   Requests post-handshake authentication (PHA) from a TLS 1.3 client. PHA
+   can only be initiated for a TLS 1.3 connection from a server-side socket,
+   after the initial TLS handshake and with PHA enabled on both sides, see
+   :attr:`SSLContext.post_handshake_auth`.
+
+   The method does not perform a cert exchange immediately. The server-side
+   sends a CertificateRequest during the next write event and expects the
+   client to respond with a certificate on the next read event.
+
+   If any precondition isn't met (e.g. not TLS 1.3, PHA not enabled), an
+   :exc:`SSLError` is raised.
+
+   .. versionadded:: 3.8
+
+   .. note::
+      Only available with OpenSSL 1.1.1 and TLS 1.3 enabled. Without TLS 1.3
+      support, the method raises :exc:`NotImplementedError`.
+
 .. method:: SSLSocket.version()
 
    Return the actual SSL protocol version negotiated by the connection
@@ -1590,7 +1610,7 @@ to speed up repeated connections from the same clients.
          'strength_bits': 128,
          'symmetric': 'aes-128-gcm'}]
 
-   Availability: OpenSSL 1.0.2+
+   .. availability:: OpenSSL 1.0.2+.
 
    .. versionadded:: 3.6
 
@@ -1928,6 +1948,28 @@ to speed up repeated connections from the same clients.
 
          >>> ssl.create_default_context().options  # doctest: +SKIP
          <Options.OP_ALL|OP_NO_SSLv3|OP_NO_SSLv2|OP_NO_COMPRESSION: 2197947391>
+
+.. attribute:: SSLContext.post_handshake_auth
+
+   Enable TLS 1.3 post-handshake client authentication. Post-handshake auth
+   is disabled by default and a server can only request a TLS client
+   certificate during the initial handshake. When enabled, a server may
+   request a TLS client certificate at any time after the handshake.
+
+   When enabled on client-side sockets, the client signals the server that
+   it supports post-handshake authentication.
+
+   When enabled on server-side sockets, :attr:`SSLContext.verify_mode` must
+   be set to :data:`CERT_OPTIONAL` or :data:`CERT_REQUIRED`, too. The
+   actual client cert exchange is delayed until
+   :meth:`SSLSocket.verify_client_post_handshake` is called and some I/O is
+   performed.
+
+   .. versionadded:: 3.8
+
+   .. note::
+      Only available with OpenSSL 1.1.1 and TLS 1.3 enabled. Without TLS 1.3
+      support, the property value is None and can't be modified
 
 .. attribute:: SSLContext.protocol
 
@@ -2616,7 +2658,7 @@ of TLS/SSL.  Some new TLS 1.3 features are not yet available.
 - TLS 1.3 uses a disjunct set of cipher suites. All AES-GCM and
   ChaCha20 cipher suites are enabled by default.  The method
   :meth:`SSLContext.set_ciphers` cannot enable or disable any TLS 1.3
-  ciphers yet, but :meth:`SSLContext.get_cipers` returns them.
+  ciphers yet, but :meth:`SSLContext.get_ciphers` returns them.
 - Session tickets are no longer sent as part of the initial handshake and
   are handled differently.  :attr:`SSLSocket.session` and :class:`SSLSession`
   are not compatible with TLS 1.3.

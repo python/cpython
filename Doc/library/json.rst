@@ -188,6 +188,11 @@ Basic Usage
    .. versionchanged:: 3.6
       All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
+   .. note::
+
+      Unlike :mod:`pickle` and :mod:`marshal`, JSON is not a framed protocol,
+      so trying to serialize multiple objects with repeated calls to
+      :func:`dump` using the same *fp* will result in an invalid JSON file.
 
 .. function:: dumps(obj, *, skipkeys=False, ensure_ascii=True, \
                     check_circular=True, allow_nan=True, cls=None, \
@@ -197,12 +202,6 @@ Basic Usage
    Serialize *obj* to a JSON formatted :class:`str` using this :ref:`conversion
    table <py-to-json-table>`.  The arguments have the same meaning as in
    :func:`dump`.
-
-   .. note::
-
-      Unlike :mod:`pickle` and :mod:`marshal`, JSON is not a framed protocol,
-      so trying to serialize multiple objects with repeated calls to
-      :func:`dump` using the same *fp* will result in an invalid JSON file.
 
    .. note::
 

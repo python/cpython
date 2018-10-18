@@ -235,10 +235,12 @@ class GetKeysDialog(Toplevel):
             return
         if (self.advanced or self.KeysOK(keys)) and self.bind_ok(keys):
             self.result = keys
+        self.grab_release()
         self.destroy()
 
     def Cancel(self, event=None):
         self.result=''
+        self.grab_release()
         self.destroy()
 
     def KeysOK(self, keys):

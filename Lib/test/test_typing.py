@@ -651,9 +651,9 @@ class GenericTests(BaseTestCase):
 
     def test_repr(self):
         self.assertEqual(repr(SimpleMapping),
-                         "<class 'test.test_typing.SimpleMapping'>")
+                         f"<class '{__name__}.SimpleMapping'>")
         self.assertEqual(repr(MySimpleMapping),
-                         "<class 'test.test_typing.MySimpleMapping'>")
+                         f"<class '{__name__}.MySimpleMapping'>")
 
     def test_chain_repr(self):
         T = TypeVar('T')

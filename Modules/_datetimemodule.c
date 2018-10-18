@@ -23,8 +23,9 @@
 /*[clinic input]
 module datetime
 class datetime.datetime "PyDateTime_DateTime *" "&PyDateTime_DateTimeType"
+class datetime.date "PyDateTime_Date *" "&PyDateTime_DateType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=78142cb64b9e98bc]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=25138ad6a696b785]*/
 
 #include "clinic/_datetimemodule.c.h"
 
@@ -1290,8 +1291,11 @@ tzinfo_from_isoformat_results(int rv, int tzoffset, int tz_useconds) {
         }
 
         PyObject *delta = new_delta(0, tzoffset, tz_useconds, 1);
+        if (delta == NULL) {
+            return NULL;
+        }
         tzinfo = new_timezone(delta, NULL);
-        Py_XDECREF(delta);
+        Py_DECREF(delta);
     } else {
         tzinfo = Py_None;
         Py_INCREF(Py_None);
@@ -2785,9 +2789,8 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     return self;
 }
 
-/* Return new date from localtime(t). */
 static PyObject *
-date_local_from_object(PyObject *cls, PyObject *obj)
+date_fromtimestamp(PyObject *cls, PyObject *obj)
 {
     struct tm tm;
     time_t t;
@@ -2832,18 +2835,25 @@ date_today(PyObject *cls, PyObject *dummy)
     return result;
 }
 
-/* Return new date from given timestamp (Python timestamp -- a double). */
+/*[clinic input]
+@classmethod
+datetime.date.fromtimestamp
+
+    timestamp: object
+    /
+
+Create a date from a POSIX timestamp.
+
+The timestamp is a number, e.g. created via time.time(), that is interpreted
+as local time.
+[clinic start generated code]*/
+
 static PyObject *
-date_fromtimestamp(PyObject *cls, PyObject *args)
+datetime_date_fromtimestamp(PyTypeObject *type, PyObject *timestamp)
+/*[clinic end generated code: output=fd045fda58168869 input=eabb3fe7f40491fe]*/
 {
-    PyObject *timestamp;
-    PyObject *result = NULL;
-
-    if (PyArg_ParseTuple(args, "O:fromtimestamp", &timestamp))
-        result = date_local_from_object(cls, timestamp);
-    return result;
+    return date_fromtimestamp((PyObject *) type, timestamp);
 }
-
 
 /* Return new date from proleptic Gregorian ordinal.  Raises ValueError if
  * the ordinal is out of range.
@@ -2883,6 +2893,9 @@ date_fromisoformat(PyObject *cls, PyObject *dtstr) {
     Py_ssize_t len;
 
     const char * dt_ptr = PyUnicode_AsUTF8AndSize(dtstr, &len);
+    if (dt_ptr == NULL) {
+        goto invalid_string_error;
+    }
 
     int year = 0, month = 0, day = 0;
 
@@ -2894,12 +2907,15 @@ date_fromisoformat(PyObject *cls, PyObject *dtstr) {
     }
 
     if (rv < 0) {
-        PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %s",
-                     dt_ptr);
-        return NULL;
+        goto invalid_string_error;
     }
 
     return new_date_subclass_ex(year, month, day, cls);
+
+invalid_string_error:
+    PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R",
+                 dtstr);
+    return NULL;
 }
 
 
@@ -3184,11 +3200,7 @@ date_reduce(PyDateTime_Date *self, PyObject *arg)
 static PyMethodDef date_methods[] = {
 
     /* Class methods: */
-
-    {"fromtimestamp", (PyCFunction)date_fromtimestamp, METH_VARARGS |
-                                                       METH_CLASS,
-     PyDoc_STR("timestamp -> local date from a POSIX timestamp (like "
-               "time.time()).")},
+    DATETIME_DATE_FROMTIMESTAMP_METHODDEF
 
     {"fromordinal", (PyCFunction)date_fromordinal,      METH_VARARGS |
                                                     METH_CLASS,
@@ -4258,6 +4270,10 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
     Py_ssize_t len;
     const char *p = PyUnicode_AsUTF8AndSize(tstr, &len);
 
+    if (p == NULL) {
+        goto invalid_string_error;
+    }
+
     int hour = 0, minute = 0, second = 0, microsecond = 0;
     int tzoffset, tzimicrosecond = 0;
     int rv = parse_isoformat_time(p, len,
@@ -4265,8 +4281,7 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
                                   &tzoffset, &tzimicrosecond);
 
     if (rv < 0) {
-        PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %s", p);
-        return NULL;
+        goto invalid_string_error;
     }
 
     PyObject *tzinfo = tzinfo_from_isoformat_results(rv, tzoffset,
@@ -4286,6 +4301,10 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
 
     Py_DECREF(tzinfo);
     return t;
+
+invalid_string_error:
+    PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", tstr);
+    return NULL;
 }
 
 
@@ -4625,7 +4644,22 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us,
     second = Py_MIN(59, tm.tm_sec);
 
     /* local timezone requires to compute fold */
-    if (tzinfo == Py_None && f == _PyTime_localtime) {
+    if (tzinfo == Py_None && f == _PyTime_localtime
+    /* On Windows, passing a negative value to local results
+     * in an OSError because localtime_s on Windows does
+     * not support negative timestamps. Unfortunately this
+     * means that fold detection for time values between
+     * 0 and max_fold_seconds will result in an identical
+     * error since we subtract max_fold_seconds to detect a
+     * fold. However, since we know there haven't been any
+     * folds in the interval [0, max_fold_seconds) in any
+     * timezone, we can hackily just forego fold detection
+     * for this time range.
+     */
+#ifdef MS_WINDOWS
+        && (timet - max_fold_seconds > 0)
+#endif
+        ) {
         long long probe_seconds, result_seconds, transition;
 
         result_seconds = utc_to_seconds(year, month, day,
@@ -4825,6 +4859,33 @@ datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
+_sanitize_isoformat_str(PyObject *dtstr, int *needs_decref) {
+    // `fromisoformat` allows surrogate characters in exactly one position,
+    // the separator; to allow datetime_fromisoformat to make the simplifying
+    // assumption that all valid strings can be encoded in UTF-8, this function
+    // replaces any surrogate character separators with `T`.
+    Py_ssize_t len = PyUnicode_GetLength(dtstr);
+    *needs_decref = 0;
+    if (len <= 10 || !Py_UNICODE_IS_SURROGATE(PyUnicode_READ_CHAR(dtstr, 10))) {
+        return dtstr;
+    }
+
+    PyObject *str_out = PyUnicode_New(len, PyUnicode_MAX_CHAR_VALUE(dtstr));
+    if (str_out == NULL) {
+        return NULL;
+    }
+
+    if (PyUnicode_CopyCharacters(str_out, 0, dtstr, 0, len) == -1 ||
+            PyUnicode_WriteChar(str_out, 10, (Py_UCS4)'T')) {
+        Py_DECREF(str_out);
+        return NULL;
+    }
+
+    *needs_decref = 1;
+    return str_out;
+}
+
+static PyObject *
 datetime_fromisoformat(PyObject* cls, PyObject *dtstr) {
     assert(dtstr != NULL);
 
@@ -4833,9 +4894,20 @@ datetime_fromisoformat(PyObject* cls, PyObject *dtstr) {
         return NULL;
     }
 
+    int needs_decref = 0;
+    dtstr = _sanitize_isoformat_str(dtstr, &needs_decref);
+    if (dtstr == NULL) {
+        goto error;
+    }
+
     Py_ssize_t len;
     const char * dt_ptr = PyUnicode_AsUTF8AndSize(dtstr, &len);
-    const char * p = dt_ptr;
+
+    if (dt_ptr == NULL) {
+        goto invalid_string_error;
+    }
+
+    const char *p = dt_ptr;
 
     int year = 0, month = 0, day = 0;
     int hour = 0, minute = 0, second = 0, microsecond = 0;
@@ -4868,20 +4940,32 @@ datetime_fromisoformat(PyObject* cls, PyObject *dtstr) {
                                   &tzoffset, &tzusec);
     }
     if (rv < 0) {
-        PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %s", dt_ptr);
-        return NULL;
+        goto invalid_string_error;
     }
 
     PyObject* tzinfo = tzinfo_from_isoformat_results(rv, tzoffset, tzusec);
     if (tzinfo == NULL) {
-        return NULL;
+        goto error;
     }
 
     PyObject *dt = new_datetime_subclass_ex(year, month, day, hour, minute,
                                             second, microsecond, tzinfo, cls);
 
     Py_DECREF(tzinfo);
+    if (needs_decref) {
+        Py_DECREF(dtstr);
+    }
     return dt;
+
+invalid_string_error:
+    PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", dtstr);
+
+error:
+    if (needs_decref) {
+        Py_DECREF(dtstr);
+    }
+
+    return NULL;
 }
 
 

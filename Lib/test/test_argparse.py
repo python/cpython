@@ -23,9 +23,9 @@ class TestCase(unittest.TestCase):
     def setUp(self):
         # The tests assume that line wrapping occurs at 80 columns, but this
         # behaviour can be overridden by setting the COLUMNS environment
-        # variable.  To ensure that this assumption is true, unset COLUMNS.
+        # variable.  To ensure that this width is used, set COLUMNS to 80.
         env = support.EnvironmentVarGuard()
-        env.unset("COLUMNS")
+        env['COLUMNS'] = '80'
         self.addCleanup(env.__exit__)
 
 
@@ -1459,6 +1459,16 @@ class TestFileTypeRepr(TestCase):
         type = argparse.FileType('r', 1, errors='replace')
         self.assertEqual("FileType('r', 1, errors='replace')", repr(type))
 
+class StdStreamComparer:
+    def __init__(self, attr):
+        self.attr = attr
+
+    def __eq__(self, other):
+        return other == getattr(sys, self.attr)
+
+eq_stdin = StdStreamComparer('stdin')
+eq_stdout = StdStreamComparer('stdout')
+eq_stderr = StdStreamComparer('stderr')
 
 class RFile(object):
     seen = {}
@@ -1497,7 +1507,7 @@ class TestFileTypeR(TempDirMixin, ParserTestCase):
         ('foo', NS(x=None, spam=RFile('foo'))),
         ('-x foo bar', NS(x=RFile('foo'), spam=RFile('bar'))),
         ('bar -x foo', NS(x=RFile('foo'), spam=RFile('bar'))),
-        ('-x - -', NS(x=sys.stdin, spam=sys.stdin)),
+        ('-x - -', NS(x=eq_stdin, spam=eq_stdin)),
         ('readonly', NS(x=None, spam=RFile('readonly'))),
     ]
 
@@ -1537,7 +1547,7 @@ class TestFileTypeRB(TempDirMixin, ParserTestCase):
         ('foo', NS(x=None, spam=RFile('foo'))),
         ('-x foo bar', NS(x=RFile('foo'), spam=RFile('bar'))),
         ('bar -x foo', NS(x=RFile('foo'), spam=RFile('bar'))),
-        ('-x - -', NS(x=sys.stdin, spam=sys.stdin)),
+        ('-x - -', NS(x=eq_stdin, spam=eq_stdin)),
     ]
 
 
@@ -1576,7 +1586,7 @@ class TestFileTypeW(TempDirMixin, ParserTestCase):
         ('foo', NS(x=None, spam=WFile('foo'))),
         ('-x foo bar', NS(x=WFile('foo'), spam=WFile('bar'))),
         ('bar -x foo', NS(x=WFile('foo'), spam=WFile('bar'))),
-        ('-x - -', NS(x=sys.stdout, spam=sys.stdout)),
+        ('-x - -', NS(x=eq_stdout, spam=eq_stdout)),
     ]
 
 
@@ -1591,7 +1601,7 @@ class TestFileTypeWB(TempDirMixin, ParserTestCase):
         ('foo', NS(x=None, spam=WFile('foo'))),
         ('-x foo bar', NS(x=WFile('foo'), spam=WFile('bar'))),
         ('bar -x foo', NS(x=WFile('foo'), spam=WFile('bar'))),
-        ('-x - -', NS(x=sys.stdout, spam=sys.stdout)),
+        ('-x - -', NS(x=eq_stdout, spam=eq_stdout)),
     ]
 
 
@@ -5122,6 +5132,7 @@ class TestImportStar(TestCase):
 class TestWrappingMetavar(TestCase):
 
     def setUp(self):
+        super().setUp()
         self.parser = ErrorRaisingArgumentParser(
             'this_is_spammy_prog_with_a_long_name_sorry_about_the_name'
         )

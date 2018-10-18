@@ -12,6 +12,7 @@ import weakref
 from . import events
 from . import base_subprocess
 from . import futures
+from . import exceptions
 from . import proactor_events
 from . import selector_events
 from . import tasks
@@ -351,7 +352,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
                 elif self._debug:
                     logger.warning("Accept pipe failed on pipe %r",
                                    pipe, exc_info=True)
-            except futures.CancelledError:
+            except exceptions.CancelledError:
                 if pipe:
                     pipe.close()
             else:
@@ -497,7 +498,7 @@ class IocpProactor:
             # Coroutine closing the accept socket if the future is cancelled
             try:
                 await future
-            except futures.CancelledError:
+            except exceptions.CancelledError:
                 conn.close()
                 raise
 
@@ -810,4 +811,4 @@ class WindowsProactorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
     _loop_factory = ProactorEventLoop
 
 
-DefaultEventLoopPolicy = WindowsSelectorEventLoopPolicy
+DefaultEventLoopPolicy = WindowsProactorEventLoopPolicy

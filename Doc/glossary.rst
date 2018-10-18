@@ -123,10 +123,10 @@ Glossary
       :meth:`__aiter__` method.  Introduced by :pep:`492`.
 
    asynchronous iterator
-      An object that implements :meth:`__aiter__` and :meth:`__anext__`
+      An object that implements the :meth:`__aiter__` and :meth:`__anext__`
       methods.  ``__anext__`` must return an :term:`awaitable` object.
-      :keyword:`async for` resolves awaitable returned from asynchronous
-      iterator's :meth:`__anext__` method until it raises
+      :keyword:`async for` resolves the awaitables returned by an asynchronous
+      iterator's :meth:`__anext__` method until it raises a
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
 
    attribute
@@ -1012,7 +1012,7 @@ Glossary
 
    struct sequence
       A tuple with named elements. Struct sequences expose an interface similar
-      to :term:`named tuple` in that elements can either be accessed either by
+      to :term:`named tuple` in that elements can be accessed either by
       index or as an attribute. However, they do not have any of the named tuple
       methods like :meth:`~collections.somenamedtuple._make` or
       :meth:`~collections.somenamedtuple._asdict`. Examples of struct sequences

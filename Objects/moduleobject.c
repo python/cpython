@@ -35,7 +35,7 @@ bad_traverse_test(PyObject *self, void *arg) {
 PyTypeObject PyModuleDef_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "moduledef",                                /* tp_name */
-    sizeof(struct PyModuleDef),                 /* tp_size */
+    sizeof(struct PyModuleDef),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
 };
 
@@ -173,7 +173,7 @@ _add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions)
 PyObject *
 PyModule_Create2(struct PyModuleDef* module, int module_api_version)
 {
-    if (!_PyImport_IsInitialized(PyThreadState_GET()->interp))
+    if (!_PyImport_IsInitialized(_PyInterpreterState_Get()))
         Py_FatalError("Python import machinery not initialized");
     return _PyModule_CreateInitialized(module, module_api_version);
 }
@@ -693,8 +693,7 @@ module_dealloc(PyModuleObject *m)
 static PyObject *
 module_repr(PyModuleObject *m)
 {
-    PyThreadState *tstate = PyThreadState_GET();
-    PyInterpreterState *interp = tstate->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
 
     return PyObject_CallMethod(interp->importlib, "_module_repr", "O", m);
 }
@@ -791,7 +790,7 @@ static PyMethodDef module_methods[] = {
 PyTypeObject PyModule_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "module",                                   /* tp_name */
-    sizeof(PyModuleObject),                     /* tp_size */
+    sizeof(PyModuleObject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)module_dealloc,                 /* tp_dealloc */
     0,                                          /* tp_print */

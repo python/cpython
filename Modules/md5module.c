@@ -465,7 +465,7 @@ static PyGetSetDef MD5_getseters[] = {
 static PyTypeObject MD5type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_md5.md5",         /*tp_name*/
-    sizeof(MD5object),  /*tp_size*/
+    sizeof(MD5object),  /*tp_basicsize*/
     0,                  /*tp_itemsize*/
     /* methods */
     MD5_dealloc,        /*tp_dealloc*/

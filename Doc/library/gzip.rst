@@ -211,3 +211,38 @@ Example of how to GZIP compress a binary string::
       The basic data compression module needed to support the :program:`gzip` file
       format.
 
+Command Line Interface
+----------------------
+
+The :mod:`gzip` module provides a simple command line interface to compress or
+decompress files.
+
+Once executed the :mod:`gzip` module keeps the input file(s).
+
+.. versionchanged:: 3.8
+
+   Add a new command line interface with a usage.
+
+Command line options
+^^^^^^^^^^^^^^^^^^^^
+
+.. cmdoption:: file
+
+   .. code-block:: shell-session
+
+      $ python -m gzip file
+
+   If *file* is not specified, read from :attr:`sys.stdin`.
+
+.. cmdoption:: -d, --decompress
+
+   Decompress the given file
+
+   .. code-block:: shell-session
+
+      $ python -m gzip -d file.gz
+
+.. cmdoption:: -h, --help
+
+   Show the help message.
+

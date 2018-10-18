@@ -131,7 +131,7 @@ ZipFile Objects
 
 
 .. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
-                   compresslevel=None)
+                   compresslevel=None, *, strict_timestamps=True)
 
    Open a ZIP file, where *file* can be a path to a file (a string), a
    file-like object or a :term:`path-like object`.
@@ -169,6 +169,12 @@ ZipFile Objects
    When using :const:`ZIP_BZIP2` integers ``1`` through ``9`` are accepted
    (see :class:`bz2 <bz2.BZ2File>` for more information).
 
+   The *strict_timestamps* argument, when set to ``False``, allows to
+   zip files older than 1980-01-01 at the cost of setting the
+   timestamp to 1980-01-01.
+   Similar behavior occurs with files newer than 2107-12-31,
+   the timestamp is also set to the limit.
+
    If the file is created with mode ``'w'``, ``'x'`` or ``'a'`` and then
    :meth:`closed <close>` without adding any files to the archive, the appropriate
    ZIP structures for an empty archive will be written to the file.
@@ -202,6 +208,9 @@ ZipFile Objects
 
    .. versionchanged:: 3.7
       Add the *compresslevel* parameter.
+
+   .. versionadded:: 3.8
+      The *strict_timestamps* keyword-only argument
 
 
 .. method:: ZipFile.close()
@@ -540,7 +549,8 @@ information about a single member of the ZIP archive.
 There is one classmethod to make a :class:`ZipInfo` instance for a filesystem
 file:
 
-.. classmethod:: ZipInfo.from_file(filename, arcname=None)
+.. classmethod:: ZipInfo.from_file(filename, arcname=None, *, \
+                                   strict_timestamps=True)
 
    Construct a :class:`ZipInfo` instance for a file on the filesystem, in
    preparation for adding it to a zip file.
@@ -551,10 +561,19 @@ file:
    If *arcname* is not specified, the name will be the same as *filename*, but
    with any drive letter and leading path separators removed.
 
+   The *strict_timestamps* argument, when set to ``False``, allows to
+   zip files older than 1980-01-01 at the cost of setting the
+   timestamp to 1980-01-01.
+   Similar behavior occurs with files newer than 2107-12-31,
+   the timestamp is also set to the limit.
+
    .. versionadded:: 3.6
 
    .. versionchanged:: 3.6.2
       The *filename* parameter accepts a :term:`path-like object`.
+
+   .. versionadded:: 3.8
+      The *strict_timestamps* keyword-only argument
 
 
 Instances have the following methods and attributes:
