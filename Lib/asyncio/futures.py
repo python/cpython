@@ -1,22 +1,20 @@
 """A Future class similar to the one in PEP 3148."""
 
 __all__ = (
-    'CancelledError', 'TimeoutError', 'InvalidStateError',
     'Future', 'wrap_future', 'isfuture',
 )
 
 import concurrent.futures
+import contextvars
 import logging
 import sys
 
 from . import base_futures
 from . import events
+from . import exceptions
 from . import format_helpers
 
 
-CancelledError = base_futures.CancelledError
-InvalidStateError = base_futures.InvalidStateError
-TimeoutError = base_futures.TimeoutError
 isfuture = base_futures.isfuture
 
 
@@ -130,10 +128,10 @@ class Future:
         if self._state != _PENDING:
             return False
         self._state = _CANCELLED
-        self._schedule_callbacks()
+        self.__schedule_callbacks()
         return True
 
-    def _schedule_callbacks(self):
+    def __schedule_callbacks(self):
         """Internal: Ask the event loop to call all callbacks.
 
         The callbacks are scheduled to be called as soon as possible. Also
@@ -144,8 +142,8 @@ class Future:
             return
 
         self._callbacks[:] = []
-        for callback in callbacks:
-            self._loop.call_soon(callback, self)
+        for callback, ctx in callbacks:
+            self._loop.call_soon(callback, self, context=ctx)
 
     def cancelled(self):
         """Return True if the future was cancelled."""
@@ -169,9 +167,9 @@ class Future:
         the future is done and has an exception set, this exception is raised.
         """
         if self._state == _CANCELLED:
-            raise CancelledError
+            raise exceptions.CancelledError
         if self._state != _FINISHED:
-            raise InvalidStateError('Result is not ready.')
+            raise exceptions.InvalidStateError('Result is not ready.')
         self.__log_traceback = False
         if self._exception is not None:
             raise self._exception
@@ -186,13 +184,13 @@ class Future:
         InvalidStateError.
         """
         if self._state == _CANCELLED:
-            raise CancelledError
+            raise exceptions.CancelledError
         if self._state != _FINISHED:
-            raise InvalidStateError('Exception is not set.')
+            raise exceptions.InvalidStateError('Exception is not set.')
         self.__log_traceback = False
         return self._exception
 
-    def add_done_callback(self, fn):
+    def add_done_callback(self, fn, *, context=None):
         """Add a callback to be run when the future becomes done.
 
         The callback is called with a single argument - the future object. If
@@ -200,9 +198,11 @@ class Future:
         scheduled with call_soon.
         """
         if self._state != _PENDING:
-            self._loop.call_soon(fn, self)
+            self._loop.call_soon(fn, self, context=context)
         else:
-            self._callbacks.append(fn)
+            if context is None:
+                context = contextvars.copy_context()
+            self._callbacks.append((fn, context))
 
     # New method not in PEP 3148.
 
@@ -211,7 +211,9 @@ class Future:
 
         Returns the number of callbacks removed.
         """
-        filtered_callbacks = [f for f in self._callbacks if f != fn]
+        filtered_callbacks = [(f, ctx)
+                              for (f, ctx) in self._callbacks
+                              if f != fn]
         removed_count = len(self._callbacks) - len(filtered_callbacks)
         if removed_count:
             self._callbacks[:] = filtered_callbacks
@@ -226,10 +228,10 @@ class Future:
         InvalidStateError.
         """
         if self._state != _PENDING:
-            raise InvalidStateError('{}: {!r}'.format(self._state, self))
+            raise exceptions.InvalidStateError(f'{self._state}: {self!r}')
         self._result = result
         self._state = _FINISHED
-        self._schedule_callbacks()
+        self.__schedule_callbacks()
 
     def set_exception(self, exception):
         """Mark the future done and set an exception.
@@ -238,7 +240,7 @@ class Future:
         InvalidStateError.
         """
         if self._state != _PENDING:
-            raise InvalidStateError('{}: {!r}'.format(self._state, self))
+            raise exceptions.InvalidStateError(f'{self._state}: {self!r}')
         if isinstance(exception, type):
             exception = exception()
         if type(exception) is StopIteration:
@@ -246,7 +248,7 @@ class Future:
                             "and cannot be raised into a Future")
         self._exception = exception
         self._state = _FINISHED
-        self._schedule_callbacks()
+        self.__schedule_callbacks()
         self.__log_traceback = True
 
     def __await__(self):
@@ -283,6 +285,18 @@ def _set_result_unless_cancelled(fut, result):
     fut.set_result(result)
 
 
+def _convert_future_exc(exc):
+    exc_class = type(exc)
+    if exc_class is concurrent.futures.CancelledError:
+        return exceptions.CancelledError(*exc.args)
+    elif exc_class is concurrent.futures.TimeoutError:
+        return exceptions.TimeoutError(*exc.args)
+    elif exc_class is concurrent.futures.InvalidStateError:
+        return exceptions.InvalidStateError(*exc.args)
+    else:
+        return exc
+
+
 def _set_concurrent_future_state(concurrent, source):
     """Copy state from a future to a concurrent.futures.Future."""
     assert source.done()
@@ -292,7 +306,7 @@ def _set_concurrent_future_state(concurrent, source):
         return
     exception = source.exception()
     if exception is not None:
-        concurrent.set_exception(exception)
+        concurrent.set_exception(_convert_future_exc(exception))
     else:
         result = source.result()
         concurrent.set_result(result)
@@ -312,7 +326,7 @@ def _copy_future_state(source, dest):
     else:
         exception = source.exception()
         if exception is not None:
-            dest.set_exception(exception)
+            dest.set_exception(_convert_future_exc(exception))
         else:
             result = source.result()
             dest.set_result(result)
@@ -348,6 +362,9 @@ def _chain_future(source, destination):
                 source_loop.call_soon_threadsafe(source.cancel)
 
     def _call_set_state(source):
+        if (destination.cancelled() and
+                dest_loop is not None and dest_loop.is_closed()):
+            return
         if dest_loop is None or dest_loop is source_loop:
             _set_state(destination, source)
         else:

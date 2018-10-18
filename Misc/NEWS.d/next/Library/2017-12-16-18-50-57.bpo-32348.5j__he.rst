@@ -1,2 +1,0 @@
-Optimize asyncio.Future schedule/add/remove callback.  The optimization
-shows 3-6% performance improvements of async/await code.

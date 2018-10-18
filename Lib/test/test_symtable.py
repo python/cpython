@@ -144,6 +144,20 @@ class SymtableTest(unittest.TestCase):
         self.assertTrue(st4.lookup('x').is_local())
         self.assertFalse(st4.lookup('x').is_annotated())
 
+        # Test that annotations in the global scope are valid after the
+        # variable is declared as nonlocal.
+        st5 = symtable.symtable('global x\nx: int', 'test', 'exec')
+        self.assertTrue(st5.lookup("x").is_global())
+
+        # Test that annotations for nonlocals are valid after the
+        # variable is declared as nonlocal.
+        st6 = symtable.symtable('def g():\n'
+                                '    x = 2\n'
+                                '    def f():\n'
+                                '        nonlocal x\n'
+                                '    x: int',
+                                'test', 'exec')
+
     def test_imported(self):
         self.assertTrue(self.top.lookup("sys").is_imported())
 
@@ -169,7 +183,7 @@ class SymtableTest(unittest.TestCase):
             else:
                 self.fail("no SyntaxError for %r" % (brokencode,))
         checkfilename("def f(x): foo)(", 14)  # parse-time
-        checkfilename("def f(x): global x", 10)  # symtable-build-time
+        checkfilename("def f(x): global x", 11)  # symtable-build-time
         symtable.symtable("pass", b"spam", "exec")
         with self.assertWarns(DeprecationWarning), \
              self.assertRaises(TypeError):

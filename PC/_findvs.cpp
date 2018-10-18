@@ -12,10 +12,6 @@
 #include <Windows.h>
 #include <Strsafe.h>
 #include "external\include\Setup.Configuration.h"
-#pragma comment(lib, "ole32.lib")
-#pragma comment(lib, "oleaut32.lib")
-#pragma comment(lib, "version.lib")
-#pragma comment(lib, "Microsoft.VisualStudio.Setup.Configuration.Native.lib")
 
 #include <Python.h>
 
@@ -236,7 +232,7 @@ static int exec_findvs(PyObject *module)
     return 0; // success
 }
 
-PyDoc_STRVAR(findvs_doc, "The _findvs helper module");
+PyDoc_STRVAR(findvs_doc, "The _distutils_findvs helper module");
 
 static PyModuleDef_Slot findvs_slots[] = {
     { Py_mod_exec, exec_findvs },
@@ -245,7 +241,7 @@ static PyModuleDef_Slot findvs_slots[] = {
 
 static PyModuleDef findvs_def = {
     PyModuleDef_HEAD_INIT,
-    "_findvs",
+    "_distutils_findvs",
     findvs_doc,
     0,              // m_size
     NULL,           // m_methods
@@ -256,7 +252,7 @@ static PyModuleDef findvs_def = {
 };
 
 extern "C" {
-    PyMODINIT_FUNC PyInit__findvs(void)
+    PyMODINIT_FUNC PyInit__distutils_findvs(void)
     {
         return PyModuleDef_Init(&findvs_def);
     }

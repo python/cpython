@@ -1,20 +1,12 @@
-#include "pyconfig.h"
-#include "pyfpe.h"
-/*
- * The signal handler for SIGFPE is actually declared in an external
- * module fpectl, or as preferred by the user.  These variable
- * definitions are required in order to compile Python without
- * getting missing externals, but to actually handle SIGFPE requires
- * defining a handler and enabling generation of SIGFPE.
+/* These variables used to be used when Python was built with --with-fpectl,
+ * but support for that was dropped in 3.7. We continue to define them,
+ * though, because they may be referenced by extensions using the stable ABI.
  */
 
-#ifdef WANT_SIGFPE_HANDLER
-jmp_buf PyFPE_jbuf;
-int PyFPE_counter = 0;
-#endif
+#include "setjmp.h"
 
-/* Have this outside the above #ifdef, since some picky ANSI compilers issue a
-   warning when compiling an empty file. */
+jmp_buf PyFPE_jbuf;
+int PyFPE_counter;
 
 double
 PyFPE_dummy(void *dummy)

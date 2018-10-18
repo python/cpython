@@ -1,4 +1,0 @@
-Fix socket.settimeout() and socket.setblocking() to keep socket.type
-as is. Fix socket.socket() constructor to reset any bit flags applied to
-socket's type.  This change only affects OSes that have SOCK_NONBLOCK
-and/or SOCK_CLOEXEC.

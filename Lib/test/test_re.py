@@ -213,11 +213,6 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.sub(r'(\S)\s+(\S)', r'\1 \2', 'hello  there'),
                          'hello there')
 
-    def test_bug_462270(self):
-        # Test for empty sub() behaviour, see SF bug #462270
-        self.assertEqual(re.sub('x*', '-', 'abxd'), '-a-b-d-')
-        self.assertEqual(re.sub('x+', '-', 'abxd'), 'ab-d')
-
     def test_symbolic_groups(self):
         re.compile(r'(?P<a>x)(?P=a)(?(a)y)')
         re.compile(r'(?P<a1>x)(?P=a1)(?(a1)y)')
@@ -331,10 +326,10 @@ class ReTests(unittest.TestCase):
                          ['', 'a', '', '', 'c'])
 
         for sep, expected in [
-            (':*', ['', 'a', 'b', 'c', '']),
-            ('(?::*)', ['', 'a', 'b', 'c', '']),
-            ('(:*)', ['', ':', 'a', ':', 'b', '::', 'c', '', '']),
-            ('(:)*', ['', ':', 'a', ':', 'b', ':', 'c', None, '']),
+            (':*', ['', '', 'a', '', 'b', '', 'c', '']),
+            ('(?::*)', ['', '', 'a', '', 'b', '', 'c', '']),
+            ('(:*)', ['', ':', '', '', 'a', ':', '', '', 'b', '::', '', '', 'c', '', '']),
+            ('(:)*', ['', ':', '', None, 'a', ':', '', None, 'b', ':', '', None, 'c', None, '']),
         ]:
             with self.subTest(sep=sep):
                 self.assertTypedEqual(re.split(sep, ':a:b::c'), expected)
@@ -357,7 +352,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.split("(:+)", ":a:b::c", maxsplit=2),
                          ['', ':', 'a', ':', 'b::c'])
         self.assertEqual(re.split("(:*)", ":a:b::c", maxsplit=2),
-                         ['', ':', 'a', ':', 'b::c'])
+                         ['', ':', '', '', 'a:b::c'])
 
     def test_re_findall(self):
         self.assertEqual(re.findall(":+", "abc"), [])
@@ -698,6 +693,42 @@ class ReTests(unittest.TestCase):
         for c in 'ceghijklmopqyzABCEFGHIJKLMNOPQRTVXYZ':
             with self.subTest(c):
                 self.assertRaises(re.error, re.compile, '[\\%c]' % c)
+
+    def test_named_unicode_escapes(self):
+        # test individual Unicode named escapes
+        self.assertTrue(re.match(r'\N{LESS-THAN SIGN}', '<'))
+        self.assertTrue(re.match(r'\N{less-than sign}', '<'))
+        self.assertIsNone(re.match(r'\N{LESS-THAN SIGN}', '>'))
+        self.assertTrue(re.match(r'\N{SNAKE}', '\U0001f40d'))
+        self.assertTrue(re.match(r'\N{ARABIC LIGATURE UIGHUR KIRGHIZ YEH WITH '
+                                 r'HAMZA ABOVE WITH ALEF MAKSURA ISOLATED FORM}',
+                                 '\ufbf9'))
+        self.assertTrue(re.match(r'[\N{LESS-THAN SIGN}-\N{GREATER-THAN SIGN}]',
+                                 '='))
+        self.assertIsNone(re.match(r'[\N{LESS-THAN SIGN}-\N{GREATER-THAN SIGN}]',
+                                   ';'))
+
+        # test errors in \N{name} handling - only valid names should pass
+        self.checkPatternError(r'\N', 'missing {', 2)
+        self.checkPatternError(r'[\N]', 'missing {', 3)
+        self.checkPatternError(r'\N{', 'missing character name', 3)
+        self.checkPatternError(r'[\N{', 'missing character name', 4)
+        self.checkPatternError(r'\N{}', 'missing character name', 3)
+        self.checkPatternError(r'[\N{}]', 'missing character name', 4)
+        self.checkPatternError(r'\NSNAKE}', 'missing {', 2)
+        self.checkPatternError(r'[\NSNAKE}]', 'missing {', 3)
+        self.checkPatternError(r'\N{SNAKE',
+                               'missing }, unterminated name', 3)
+        self.checkPatternError(r'[\N{SNAKE]',
+                               'missing }, unterminated name', 4)
+        self.checkPatternError(r'[\N{SNAKE]}',
+                               "undefined character name 'SNAKE]'", 1)
+        self.checkPatternError(r'\N{SPAM}',
+                               "undefined character name 'SPAM'", 0)
+        self.checkPatternError(r'[\N{SPAM}]',
+                               "undefined character name 'SPAM'", 1)
+        self.checkPatternError(br'\N{LESS-THAN SIGN}', r'bad escape \N', 0)
+        self.checkPatternError(br'[\N{LESS-THAN SIGN}]', r'bad escape \N', 1)
 
     def test_string_boundaries(self):
         # See http://bugs.python.org/issue10713
@@ -1753,13 +1784,13 @@ class ReTests(unittest.TestCase):
     def test_zerowidth(self):
         # Issues 852532, 1647489, 3262, 25054.
         self.assertEqual(re.split(r"\b", "a::bc"), ['', 'a', '::', 'bc', ''])
-        self.assertEqual(re.split(r"\b|:+", "a::bc"), ['', 'a', '', 'bc', ''])
-        self.assertEqual(re.split(r"(?<!\w)(?=\w)|:+", "a::bc"), ['', 'a', 'bc'])
+        self.assertEqual(re.split(r"\b|:+", "a::bc"), ['', 'a', '', '', 'bc', ''])
+        self.assertEqual(re.split(r"(?<!\w)(?=\w)|:+", "a::bc"), ['', 'a', '', 'bc'])
         self.assertEqual(re.split(r"(?<=\w)(?!\w)|:+", "a::bc"), ['a', '', 'bc', ''])
 
         self.assertEqual(re.sub(r"\b", "-", "a::bc"), '-a-::-bc-')
-        self.assertEqual(re.sub(r"\b|:+", "-", "a::bc"), '-a--bc-')
-        self.assertEqual(re.sub(r"(\b|:+)", r"[\1]", "a::bc"), '[]a[][::]bc[]')
+        self.assertEqual(re.sub(r"\b|:+", "-", "a::bc"), '-a---bc-')
+        self.assertEqual(re.sub(r"(\b|:+)", r"[\1]", "a::bc"), '[]a[][::][]bc[]')
 
         self.assertEqual(re.findall(r"\b|:+", "a::bc"), ['', '', '::', '', ''])
         self.assertEqual(re.findall(r"\b|\w+", "a::bc"),

@@ -83,7 +83,7 @@ PyDoc_STRVAR(PyHKEY_doc,
 "the object is destroyed.  To guarantee cleanup, you can call either\n"
 "the Close() method on the PyHKEY, or the CloseKey() method.\n"
 "\n"
-"All functions which accept a handle object also accept an integer - \n"
+"All functions which accept a handle object also accept an integer --\n"
 "however, use of the handle object is encouraged.\n"
 "\n"
 "Functions:\n"

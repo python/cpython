@@ -296,6 +296,41 @@ absolutize(wchar_t *path)
 }
 
 
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+/* add_exe_suffix requires that progpath be allocated at least
+   MAXPATHLEN + 1 bytes.
+*/
+
+#ifndef EXE_SUFFIX
+#define EXE_SUFFIX L".exe"
+#endif
+
+static void
+add_exe_suffix(wchar_t *progpath)
+{
+    /* Check for already have an executable suffix */
+    size_t n = wcslen(progpath);
+    size_t s = wcslen(EXE_SUFFIX);
+    if (wcsncasecmp(EXE_SUFFIX, progpath+n-s, s) != 0) {
+        if (n + s > MAXPATHLEN) {
+            Py_FatalError("progpath overflow in getpath.c's add_exe_suffix()");
+        }
+        /* Save original path for revert */
+        wchar_t orig[MAXPATHLEN+1];
+        wcsncpy(orig, progpath, MAXPATHLEN);
+
+        wcsncpy(progpath+n, EXE_SUFFIX, s);
+        progpath[n+s] = '\0';
+
+        if (!isxfile(progpath)) {
+            /* Path that added suffix is invalid */
+            wcsncpy(progpath, orig, MAXPATHLEN);
+        }
+    }
+}
+#endif
+
+
 /* search_for_prefix requires that argv0_path be no more than MAXPATHLEN
    bytes long.
 */
@@ -322,7 +357,7 @@ search_for_prefix(const _PyCoreConfig *core_config,
     /* Check to see if argv[0] is in the build directory */
     wcsncpy(prefix, calculate->argv0_path, MAXPATHLEN);
     prefix[MAXPATHLEN] = L'\0';
-    joinpath(prefix, L"Modules/Setup");
+    joinpath(prefix, L"Modules/Setup.local");
     if (isfile(prefix)) {
         /* Check VPATH to see if argv0_path is in the build directory. */
         vpath = Py_DecodeLocale(VPATH, NULL);
@@ -372,7 +407,7 @@ calculate_prefix(const _PyCoreConfig *core_config,
 {
     calculate->prefix_found = search_for_prefix(core_config, calculate, prefix);
     if (!calculate->prefix_found) {
-        if (!Py_FrozenFlag) {
+        if (!core_config->_frozen) {
             fprintf(stderr,
                 "Could not find platform independent libraries <prefix>\n");
         }
@@ -449,8 +484,8 @@ search_for_exec_prefix(const _PyCoreConfig *core_config,
             n = fread(buf, 1, MAXPATHLEN, f);
             buf[n] = '\0';
             fclose(f);
-            rel_builddir_path = _Py_DecodeUTF8_surrogateescape(buf, n, NULL);
-            if (rel_builddir_path != NULL) {
+            rel_builddir_path = _Py_DecodeUTF8_surrogateescape(buf, n);
+            if (rel_builddir_path) {
                 wcsncpy(exec_prefix, calculate->argv0_path, MAXPATHLEN);
                 exec_prefix[MAXPATHLEN] = L'\0';
                 joinpath(exec_prefix, rel_builddir_path);
@@ -495,7 +530,7 @@ calculate_exec_prefix(const _PyCoreConfig *core_config,
                                                           calculate,
                                                           exec_prefix);
     if (!calculate->exec_prefix_found) {
-        if (!Py_FrozenFlag) {
+        if (!core_config->_frozen) {
             fprintf(stderr,
                 "Could not find platform dependent libraries <exec_prefix>\n");
         }
@@ -605,6 +640,16 @@ calculate_program_full_path(const _PyCoreConfig *core_config,
     if (program_full_path[0] != SEP && program_full_path[0] != '\0') {
         absolutize(program_full_path);
     }
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+    /* For these platforms it is necessary to ensure that the .exe suffix
+     * is appended to the filename, otherwise there is potential for
+     * sys.executable to return the name of a directory under the same
+     * path (bpo-28441).
+     */
+    if (program_full_path[0] != '\0') {
+        add_exe_suffix(program_full_path);
+    }
+#endif
 
     config->program_full_path = _PyMem_RawWcsdup(program_full_path);
     if (config->program_full_path == NULL) {
@@ -915,7 +960,7 @@ calculate_path_impl(const _PyCoreConfig *core_config,
     calculate_exec_prefix(core_config, calculate, exec_prefix);
 
     if ((!calculate->prefix_found || !calculate->exec_prefix_found) &&
-        !Py_FrozenFlag)
+        !core_config->_frozen)
     {
         fprintf(stderr,
                 "Consider setting $PYTHONHOME to <prefix>[:<exec_prefix>]\n");
@@ -946,7 +991,7 @@ calculate_path_impl(const _PyCoreConfig *core_config,
 
 
 _PyInitError
-_PyPathConfig_Calculate(_PyPathConfig *config, const _PyCoreConfig *core_config)
+_PyPathConfig_Calculate_impl(_PyPathConfig *config, const _PyCoreConfig *core_config)
 {
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));

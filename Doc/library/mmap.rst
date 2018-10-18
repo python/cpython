@@ -127,7 +127,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
 
    :class:`~mmap.mmap` can also be used as a context manager in a :keyword:`with`
-   statement.::
+   statement::
 
       import mmap
 
@@ -191,11 +191,13 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       changes to the given range of bytes will be flushed to disk; otherwise, the
       whole extent of the mapping is flushed.
 
-      **(Windows version)** A nonzero value returned indicates success; zero
-      indicates failure.
+      ``None`` is returned to indicate success.  An exception is raised when the
+      call failed.
 
-      **(Unix version)** A zero value is returned to indicate success. An
-      exception is raised when the call failed.
+      .. versionchanged:: 3.8
+         Previously, a nonzero value was returned on success; zero was returned
+         on error under Windows.  A zero value was returned on success; an
+         exception was raised on error under Unix.
 
 
    .. method:: move(dest, src, count)

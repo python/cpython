@@ -241,7 +241,7 @@ Supported operations:
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 - t3``               | Difference of *t2* and *t3*. Afterwards *t1*  |
 |                                | == *t2* - *t3* and *t2* == *t1* + *t3* are    |
-|                                | true. (1)                                     |
+|                                | true. (1)(6)                                  |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 * i or t1 = i * t2`` | Delta multiplied by an integer.               |
 |                                | Afterwards *t1* // i == *t2* is true,         |
@@ -316,6 +316,11 @@ Notes:
   datetime.timedelta(days=-1, seconds=68400)
   >>> print(_)
   -1 day, 19:00:00
+
+(6)
+   The expression ``t2 - t3`` will always be equal to the expression ``t2 + (-t3)`` except
+   when t3 is equal to ``timedelta.max``; in that case the former will produce a result
+   while the latter will overflow.
 
 In addition to the operations listed above :class:`timedelta` objects support
 certain additions and subtractions with :class:`date` and :class:`.datetime`
@@ -513,8 +518,6 @@ Notes:
    :const:`MINYEAR` or larger than :const:`MAXYEAR`.
 
 (2)
-   This isn't quite equivalent to date1 + (-timedelta), because -timedelta in
-   isolation can overflow in cases where date1 - timedelta does not.
    ``timedelta.seconds`` and ``timedelta.microseconds`` are ignored.
 
 (3)
@@ -523,10 +526,9 @@ Notes:
 
 (4)
    In other words, ``date1 < date2`` if and only if ``date1.toordinal() <
-   date2.toordinal()``. In order to stop comparison from falling back to the
-   default scheme of comparing object addresses, date comparison normally raises
-   :exc:`TypeError` if the other comparand isn't also a :class:`date` object.
-   However, ``NotImplemented`` is returned instead if the other comparand has a
+   date2.toordinal()``. Date comparison raises :exc:`TypeError` if
+   the other comparand isn't also a :class:`date` object. However,
+   ``NotImplemented`` is returned instead if the other comparand has a
    :meth:`timetuple` attribute.  This hook gives other kinds of date objects a
    chance at implementing mixed-type comparison. If not, when a :class:`date`
    object is compared to an object of a different type, :exc:`TypeError` is raised
@@ -839,7 +841,7 @@ Other constructors, all class methods:
   Return a :class:`datetime` corresponding to a *date_string* in one of the
   formats emitted by :meth:`date.isoformat` and :meth:`datetime.isoformat`.
   Specifically, this function supports strings in the format(s)
-  ``YYYY-MM-DD[*HH[:MM[:SS[.mmm[mmm]]]][+HH:MM[:SS[.ffffff]]]]``,
+  ``YYYY-MM-DD[*HH[:MM[:SS[.fff[fff]]]][+HH:MM[:SS[.ffffff]]]]``,
   where ``*`` can match any single character.
 
   .. caution::
@@ -961,8 +963,6 @@ Supported operations:
    Computes the datetime2 such that datetime2 + timedelta == datetime1. As for
    addition, the result has the same :attr:`~.datetime.tzinfo` attribute as the input
    datetime, and no time zone adjustments are done even if the input is aware.
-   This isn't quite equivalent to datetime1 + (-timedelta), because -timedelta
-   in isolation can overflow in cases where datetime1 - timedelta does not.
 
 (3)
    Subtraction of a :class:`.datetime` from a :class:`.datetime` is defined only if
@@ -1058,8 +1058,7 @@ Instance methods:
 
    If provided, *tz* must be an instance of a :class:`tzinfo` subclass, and its
    :meth:`utcoffset` and :meth:`dst` methods must not return ``None``.  If *self*
-   is naive (``self.tzinfo is None``), it is presumed to represent time in the
-   system timezone.
+   is naive, it is presumed to represent time in the system timezone.
 
    If called without arguments (or with ``tz=None``) the system local
    timezone is assumed for the target timezone.  The ``.tzinfo`` attribute of the converted
@@ -1216,13 +1215,13 @@ Instance methods:
 .. method:: datetime.isoformat(sep='T', timespec='auto')
 
    Return a string representing the date and time in ISO 8601 format,
-   YYYY-MM-DDTHH:MM:SS.mmmmmm or, if :attr:`microsecond` is 0,
+   YYYY-MM-DDTHH:MM:SS.ffffff or, if :attr:`microsecond` is 0,
    YYYY-MM-DDTHH:MM:SS
 
-   If :meth:`utcoffset` does not return ``None``, a 6-character string is
-   appended, giving the UTC offset in (signed) hours and minutes:
-   YYYY-MM-DDTHH:MM:SS.mmmmmm+HH:MM or, if :attr:`microsecond` is 0
-   YYYY-MM-DDTHH:MM:SS+HH:MM
+   If :meth:`utcoffset` does not return ``None``, a string is
+   appended, giving the UTC offset:
+   YYYY-MM-DDTHH:MM:SS.ffffff+HH:MM[:SS[.ffffff]] or, if :attr:`microsecond`
+   is 0 YYYY-MM-DDTHH:MM:SS+HH:MM[:SS[.ffffff]].
 
    The optional argument *sep* (default ``'T'``) is a one-character separator,
    placed between the date and time portions of the result.  For example,
@@ -1246,7 +1245,7 @@ Instance methods:
      in HH:MM:SS format.
    - ``'milliseconds'``: Include full time, but truncate fractional second
      part to milliseconds. HH:MM:SS.sss format.
-   - ``'microseconds'``: Include full time in HH:MM:SS.mmmmmm format.
+   - ``'microseconds'``: Include full time in HH:MM:SS.ffffff format.
 
    .. note::
 
@@ -1523,7 +1522,7 @@ Other constructor:
 
   Return a :class:`time` corresponding to a *time_string* in one of the
   formats emitted by :meth:`time.isoformat`. Specifically, this function supports
-  strings in the format(s) ``HH[:MM[:SS[.mmm[mmm]]]][+HH:MM[:SS[.ffffff]]]``.
+  strings in the format(s) ``HH[:MM[:SS[.fff[fff]]]][+HH:MM[:SS[.ffffff]]]``.
 
   .. caution::
 
@@ -1549,10 +1548,10 @@ Instance methods:
 
 .. method:: time.isoformat(timespec='auto')
 
-   Return a string representing the time in ISO 8601 format, HH:MM:SS.mmmmmm or, if
+   Return a string representing the time in ISO 8601 format, HH:MM:SS.ffffff or, if
    :attr:`microsecond` is 0, HH:MM:SS If :meth:`utcoffset` does not return ``None``, a
-   6-character string is appended, giving the UTC offset in (signed) hours and
-   minutes: HH:MM:SS.mmmmmm+HH:MM or, if self.microsecond is 0, HH:MM:SS+HH:MM
+   string is appended, giving the UTC offset: HH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]
+   or, if self.microsecond is 0, HH:MM:SS+HH:MM[:SS[.ffffff]].
 
    The optional argument *timespec* specifies the number of additional
    components of the time to include (the default is ``'auto'``).
@@ -1566,7 +1565,7 @@ Instance methods:
      in HH:MM:SS format.
    - ``'milliseconds'``: Include full time, but truncate fractional second
      part to milliseconds. HH:MM:SS.sss format.
-   - ``'microseconds'``: Include full time in HH:MM:SS.mmmmmm format.
+   - ``'microseconds'``: Include full time in HH:MM:SS.ffffff format.
 
    .. note::
 
@@ -2092,9 +2091,10 @@ format codes.
 |           | number, zero-padded on the     | 999999                 |       |
 |           | left.                          |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%z``    | UTC offset in the form         | (empty), +0000, -0400, | \(6)  |
-|           | ±HHMM[SS] (empty string if the | +1030                  |       |
-|           | object is naive).              |                        |       |
+| ``%z``    | UTC offset in the form         | (empty), +0000,        | \(6)  |
+|           | ±HHMM[SS[.ffffff]] (empty      | -0400, +1030,          |       |
+|           | string if the object is        | +063415,               |       |
+|           | naive).                        | -030712.345216         |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%Z``    | Time zone name (empty string   | (empty), UTC, EST, CST |       |
 |           | if the object is naive).       |                        |       |
@@ -2207,12 +2207,12 @@ Notes:
 
    ``%z``
       :meth:`utcoffset` is transformed into a string of the form
-      ±HHMM[SS[.uuuuuu]], where HH is a 2-digit string giving the number of UTC
-      offset hours, and MM is a 2-digit string giving the number of UTC offset
-      minutes, SS is a 2-digit string string giving the number of UTC offset
-      seconds and uuuuuu is a 2-digit string string giving the number of UTC
-      offset microseconds.  The uuuuuu part is omitted when the offset is a
-      whole number of minutes and both the uuuuuu and the SS parts are omitted
+      ±HHMM[SS[.ffffff]], where HH is a 2-digit string giving the number of UTC
+      offset hours, MM is a 2-digit string giving the number of UTC offset
+      minutes, SS is a 2-digit string giving the number of UTC offset
+      seconds and ffffff is a 6-digit string giving the number of UTC
+      offset microseconds.  The ffffff part is omitted when the offset is a
+      whole number of seconds and both the ffffff and the SS part is omitted
       when the offset is a whole number of minutes.  For example, if
       :meth:`utcoffset` returns ``timedelta(hours=-3, minutes=-30)``, ``%z`` is
       replaced with the string ``'-0330'``.

@@ -1,0 +1,2 @@
+The .editrc file in user's home directory is now processed correctly during
+the readline initialization through editline emulation on macOS.

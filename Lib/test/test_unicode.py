@@ -638,6 +638,11 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertFalse('\U0001F40D'.isalpha())
         self.assertFalse('\U0001F46F'.isalpha())
 
+    def test_isascii(self):
+        super().test_isascii()
+        self.assertFalse("\u20ac".isascii())
+        self.assertFalse("\U0010ffff".isascii())
+
     def test_isdecimal(self):
         self.checkequalnofix(False, '', 'isdecimal')
         self.checkequalnofix(False, 'a', 'isdecimal')
@@ -1624,6 +1629,10 @@ class UnicodeTest(string_tests.CommonTest,
             self.assertEqual(c.encode('ascii').decode('utf7'), c)
         for c in set_o:
             self.assertEqual(c.encode('ascii').decode('utf7'), c)
+
+        with self.assertRaisesRegex(UnicodeDecodeError,
+                                    'ill-formed sequence'):
+            b'+@'.decode('utf-7')
 
     def test_codecs_utf8(self):
         self.assertEqual(''.encode('utf-8'), b'')

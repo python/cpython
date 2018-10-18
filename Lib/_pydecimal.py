@@ -433,13 +433,11 @@ _rounding_modes = (ROUND_DOWN, ROUND_HALF_UP, ROUND_HALF_EVEN, ROUND_CEILING,
 # The getcontext() and setcontext() function manage access to a thread-local
 # current context.
 
-import threading
+import contextvars
 
-local = threading.local()
-if hasattr(local, '__decimal_context__'):
-    del local.__decimal_context__
+_current_context_var = contextvars.ContextVar('decimal_context')
 
-def getcontext(_local=local):
+def getcontext():
     """Returns this thread's context.
 
     If this thread does not yet have a context, returns
@@ -447,20 +445,20 @@ def getcontext(_local=local):
     New contexts are copies of DefaultContext.
     """
     try:
-        return _local.__decimal_context__
-    except AttributeError:
+        return _current_context_var.get()
+    except LookupError:
         context = Context()
-        _local.__decimal_context__ = context
+        _current_context_var.set(context)
         return context
 
-def setcontext(context, _local=local):
+def setcontext(context):
     """Set this thread's context to context."""
     if context in (DefaultContext, BasicContext, ExtendedContext):
         context = context.copy()
         context.clear_flags()
-    _local.__decimal_context__ = context
+    _current_context_var.set(context)
 
-del threading, local        # Don't contaminate the namespace
+del contextvars        # Don't contaminate the namespace
 
 def localcontext(ctx=None):
     """Return a context manager for a copy of the supplied context

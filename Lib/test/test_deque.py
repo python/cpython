@@ -288,6 +288,14 @@ class TestBasic(unittest.TestCase):
                     else:
                         self.assertEqual(d.index(element, start, stop), target)
 
+        # Test large start argument
+        d = deque(range(0, 10000, 10))
+        for step in range(100):
+            i = d.index(8500, 700)
+            self.assertEqual(d[i], 8500)
+            # Repeat test with a different internal offset
+            d.rotate()
+
     def test_index_bug_24913(self):
         d = deque('A' * 3)
         with self.assertRaises(ValueError):
@@ -891,6 +899,21 @@ class TestSubclass(unittest.TestCase):
         d2 = X([4,5,6])
         d1 == d2   # not clear if this is supposed to be True or False,
                    # but it used to give a SystemError
+
+    @support.cpython_only
+    def test_bug_31608(self):
+        # The interpreter used to crash in specific cases where a deque
+        # subclass returned a non-deque.
+        class X(deque):
+            pass
+        d = X()
+        def bad___new__(cls, *args, **kwargs):
+            return [42]
+        X.__new__ = bad___new__
+        with self.assertRaises(TypeError):
+            d * 42  # shouldn't crash
+        with self.assertRaises(TypeError):
+            d + deque([1, 2, 3])  # shouldn't crash
 
 
 class SubclassWithKwargs(deque):

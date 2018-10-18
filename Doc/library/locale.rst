@@ -147,6 +147,16 @@ The :mod:`locale` module defines the following exception and functions:
    | ``CHAR_MAX`` | Nothing is specified in this locale.    |
    +--------------+-----------------------------------------+
 
+   The function sets temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC``
+   locale to decode ``decimal_point`` and ``thousands_sep`` byte strings if
+   they are non-ASCII or longer than 1 byte, and the ``LC_NUMERIC`` locale is
+   different than the ``LC_CTYPE`` locale. This temporary change affects other
+   threads.
+
+   .. versionchanged:: 3.7
+      The function now sets temporarily the ``LC_CTYPE`` locale to the
+      ``LC_NUMERIC`` locale in some cases.
+
 
 .. function:: nl_langinfo(option)
 

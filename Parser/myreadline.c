@@ -17,7 +17,7 @@
 #endif /* MS_WINDOWS */
 
 
-PyThreadState* _PyOS_ReadlineTState;
+PyThreadState* _PyOS_ReadlineTState = NULL;
 
 #include "pythread.h"
 static PyThread_type_lock _PyOS_ReadlineLock = NULL;
@@ -109,14 +109,20 @@ _PyOS_WindowsConsoleReadline(HANDLE hStdIn)
     char *buf = NULL;
     int err = 0;
 
-    n_read = 0;
+    n_read = (DWORD)-1;
     total_read = 0;
     wbuf = wbuf_local;
     wbuflen = sizeof(wbuf_local) / sizeof(wbuf_local[0]) - 1;
     while (1) {
+        if (PyOS_InputHook != NULL) {
+            (void)(PyOS_InputHook)();
+        }
         if (!ReadConsoleW(hStdIn, &wbuf[total_read], wbuflen - total_read, &n_read, NULL)) {
             err = GetLastError();
             goto exit;
+        }
+        if (n_read == (DWORD)-1 && (err = GetLastError()) == ERROR_OPERATION_ABORTED) {
+            break;
         }
         if (n_read == 0) {
             int s;
@@ -284,7 +290,7 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 
    Note: Python expects in return a buffer allocated with PyMem_Malloc. */
 
-char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *);
+char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *) = NULL;
 
 
 /* Interface used by tokenizer.c and bltinmodule.c */

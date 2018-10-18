@@ -1,3 +1,0 @@
-2to3 and lib2to3 can now read pickled grammar files using pkgutil.get_data()
-rather than probing the filesystem. This lets 2to3 and lib2to3 work when run
-from a zipfile.

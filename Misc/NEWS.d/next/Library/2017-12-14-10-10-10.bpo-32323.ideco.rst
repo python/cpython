@@ -1,2 +1,0 @@
-:func:`urllib.parse.urlsplit()` does not convert zone-id (scope) to lower case
-for scoped IPv6 addresses in hostnames now.

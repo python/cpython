@@ -1,0 +1,2 @@
+Add an ``-n`` flag for ``Tools/scripts/pathfix.py`` to disable automatic
+backup creation (files with ``~`` suffix).

@@ -413,143 +413,6 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertNotEqual(pickle.load(f), id(builtins))
 
 
-# Bug #6012
-class Test6012(unittest.TestCase):
-    def test(self):
-        self.assertEqual(_testcapi.argparsing("Hello", "World"), 1)
-
-
-class SkipitemTest(unittest.TestCase):
-
-    def test_skipitem(self):
-        """
-        If this test failed, you probably added a new "format unit"
-        in Python/getargs.c, but neglected to update our poor friend
-        skipitem() in the same file.  (If so, shame on you!)
-
-        With a few exceptions**, this function brute-force tests all
-        printable ASCII*** characters (32 to 126 inclusive) as format units,
-        checking to see that PyArg_ParseTupleAndKeywords() return consistent
-        errors both when the unit is attempted to be used and when it is
-        skipped.  If the format unit doesn't exist, we'll get one of two
-        specific error messages (one for used, one for skipped); if it does
-        exist we *won't* get that error--we'll get either no error or some
-        other error.  If we get the specific "does not exist" error for one
-        test and not for the other, there's a mismatch, and the test fails.
-
-           ** Some format units have special funny semantics and it would
-              be difficult to accommodate them here.  Since these are all
-              well-established and properly skipped in skipitem() we can
-              get away with not testing them--this test is really intended
-              to catch *new* format units.
-
-          *** Python C source files must be ASCII.  Therefore it's impossible
-              to have non-ASCII format units.
-
-        """
-        empty_tuple = ()
-        tuple_1 = (0,)
-        dict_b = {'b':1}
-        keywords = ["a", "b"]
-
-        for i in range(32, 127):
-            c = chr(i)
-
-            # skip parentheses, the error reporting is inconsistent about them
-            # skip 'e', it's always a two-character code
-            # skip '|' and '$', they don't represent arguments anyway
-            if c in '()e|$':
-                continue
-
-            # test the format unit when not skipped
-            format = c + "i"
-            try:
-                _testcapi.parse_tuple_and_keywords(tuple_1, dict_b,
-                    format, keywords)
-                when_not_skipped = False
-            except SystemError as e:
-                s = "argument 1 (impossible<bad format char>)"
-                when_not_skipped = (str(e) == s)
-            except TypeError:
-                when_not_skipped = False
-
-            # test the format unit when skipped
-            optional_format = "|" + format
-            try:
-                _testcapi.parse_tuple_and_keywords(empty_tuple, dict_b,
-                    optional_format, keywords)
-                when_skipped = False
-            except SystemError as e:
-                s = "impossible<bad format char>: '{}'".format(format)
-                when_skipped = (str(e) == s)
-
-            message = ("test_skipitem_parity: "
-                "detected mismatch between convertsimple and skipitem "
-                "for format unit '{}' ({}), not skipped {}, skipped {}".format(
-                    c, i, when_skipped, when_not_skipped))
-            self.assertIs(when_skipped, when_not_skipped, message)
-
-    def test_parse_tuple_and_keywords(self):
-        # Test handling errors in the parse_tuple_and_keywords helper itself
-        self.assertRaises(TypeError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, 42, [])
-        self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, '', 42)
-        self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, '', [''] * 42)
-        self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, '', [42])
-
-    def test_bad_use(self):
-        # Test handling invalid format and keywords in
-        # PyArg_ParseTupleAndKeywords()
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (1,), {}, '||O', ['a'])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (1, 2), {}, '|O|O', ['a', 'b'])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (), {'a': 1}, '$$O', ['a'])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (), {'a': 1, 'b': 2}, '$O$O', ['a', 'b'])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (), {'a': 1}, '$|O', ['a'])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (), {'a': 1, 'b': 2}, '$O|O', ['a', 'b'])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (1,), {}, '|O', ['a', 'b'])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (1,), {}, '|OO', ['a'])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, '|$O', [''])
-        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, '|OO', ['a', ''])
-
-    def test_positional_only(self):
-        parse = _testcapi.parse_tuple_and_keywords
-
-        parse((1, 2, 3), {}, 'OOO', ['', '', 'a'])
-        parse((1, 2), {'a': 3}, 'OOO', ['', '', 'a'])
-        with self.assertRaisesRegex(TypeError,
-               r'function takes at least 2 positional arguments \(1 given\)'):
-            parse((1,), {'a': 3}, 'OOO', ['', '', 'a'])
-        parse((1,), {}, 'O|OO', ['', '', 'a'])
-        with self.assertRaisesRegex(TypeError,
-               r'function takes at least 1 positional arguments \(0 given\)'):
-            parse((), {}, 'O|OO', ['', '', 'a'])
-        parse((1, 2), {'a': 3}, 'OO$O', ['', '', 'a'])
-        with self.assertRaisesRegex(TypeError,
-               r'function takes exactly 2 positional arguments \(1 given\)'):
-            parse((1,), {'a': 3}, 'OO$O', ['', '', 'a'])
-        parse((1,), {}, 'O|O$O', ['', '', 'a'])
-        with self.assertRaisesRegex(TypeError,
-               r'function takes at least 1 positional arguments \(0 given\)'):
-            parse((), {}, 'O|O$O', ['', '', 'a'])
-        with self.assertRaisesRegex(SystemError, r'Empty parameter name after \$'):
-            parse((1,), {}, 'O|$OO', ['', '', 'a'])
-        with self.assertRaisesRegex(SystemError, 'Empty keyword'):
-            parse((1,), {}, 'O|OO', ['', 'a', ''])
-
-
 class TestThreadState(unittest.TestCase):
 
     @support.reap_threads
@@ -575,17 +438,9 @@ class TestThreadState(unittest.TestCase):
 
 
 class Test_testcapi(unittest.TestCase):
-    def test__testcapi(self):
-        if support.verbose:
-            print()
-        for name in dir(_testcapi):
-            if not name.startswith('test_'):
-                continue
-            with self.subTest("internal", name=name):
-                if support.verbose:
-                    print(f"  {name}", flush=True)
-                test = getattr(_testcapi, name)
-                test()
+    locals().update((name, getattr(_testcapi, name))
+                    for name in dir(_testcapi)
+                    if name.startswith('test_') and not name.endswith('_code'))
 
 
 class PyMemDebugTests(unittest.TestCase):

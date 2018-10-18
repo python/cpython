@@ -1,4 +1,3 @@
-
 /* Thread and interpreter state structures and their interfaces */
 
 
@@ -7,6 +6,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "pythread.h"
+#include "coreconfig.h"
 
 /* This limitation is for performance and simplicity. If needed it can be
 removed (with effort). */
@@ -23,53 +25,6 @@ typedef struct _is PyInterpreterState;
 #else
 typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
-
-typedef struct {
-    int install_signal_handlers;  /* Install signal handlers? -1 means unset */
-    int ignore_environment; /* -E */
-    int use_hash_seed;      /* PYTHONHASHSEED=x */
-    unsigned long hash_seed;
-    int _disable_importlib; /* Needed by freeze_importlib */
-    const char *allocator;  /* Memory allocator: _PyMem_SetupAllocators() */
-    int dev_mode;           /* -X dev */
-    int faulthandler;       /* -X faulthandler */
-    int tracemalloc;        /* -X tracemalloc=N */
-    int import_time;        /* -X importtime */
-    int show_ref_count;     /* -X showrefcount */
-    int show_alloc_count;   /* -X showalloccount */
-    int dump_refs;          /* PYTHONDUMPREFS */
-    int malloc_stats;       /* PYTHONMALLOCSTATS */
-    int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
-    int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
-    int utf8_mode;          /* -X utf8 or PYTHONUTF8 environment variable,
-                               -1 means unknown */
-
-    wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
-    wchar_t *home;          /* PYTHONHOME environment variable,
-                               see also Py_SetPythonHome(). */
-    wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
-
-    int argc;               /* Number of command line arguments,
-                               -1 means unset */
-    wchar_t **argv;         /* Command line arguments */
-    wchar_t *program;       /* argv[0] or "" */
-
-    int nxoption;           /* Number of -X options */
-    wchar_t **xoptions;     /* -X options */
-
-    int nwarnoption;        /* Number of warnings options */
-    wchar_t **warnoptions;  /* Warnings options */
-} _PyCoreConfig;
-
-#define _PyCoreConfig_INIT \
-    (_PyCoreConfig){ \
-        .install_signal_handlers = -1, \
-        .use_hash_seed = -1, \
-        .coerce_c_locale = -1, \
-        .utf8_mode = -1, \
-        .argc = -1}
-/* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
-
 /* Placeholders while working on the new configuration API
  *
  * See PEP 432 for final anticipated contents
@@ -85,6 +40,7 @@ typedef struct {
     PyObject *warnoptions;         /* sys.warnoptions list, can be NULL */
     PyObject *xoptions;            /* sys._xoptions dict, can be NULL */
     PyObject *module_search_path;  /* sys.path list */
+    PyObject *pycache_prefix;      /* sys.pycache_prefix str, can be NULL */
 } _PyMainInterpreterConfig;
 
 #define _PyMainInterpreterConfig_INIT \
@@ -97,6 +53,8 @@ typedef struct _is {
     struct _ts *tstate_head;
 
     int64_t id;
+    int64_t id_refcount;
+    PyThread_type_lock id_mutex;
 
     PyObject *modules;
     PyObject *modules_by_index;
@@ -143,6 +101,8 @@ typedef struct _is {
     /* AtExit module */
     void (*pyexitfunc)(PyObject *);
     PyObject *pyexitmodule;
+
+    uint64_t tstate_next_unique_id;
 } PyInterpreterState;
 #endif   /* !Py_LIMITED_API */
 
@@ -262,11 +222,19 @@ typedef struct _ts {
     void (*on_delete)(void *);
     void *on_delete_data;
 
+    int coroutine_origin_tracking_depth;
+
     PyObject *coroutine_wrapper;
     int in_coroutine_wrapper;
 
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;
+
+    PyObject *context;
+    uint64_t context_ver;
+
+    /* Unique thread state id. */
+    uint64_t id;
 
     /* XXX signal handlers should also be here */
 
@@ -277,6 +245,15 @@ typedef struct _ts {
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
+#if !defined(Py_LIMITED_API)
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
+#endif
+#ifdef Py_BUILD_CORE
+   /* Macro which should only be used for performance critical code.
+      Need "#include "internal/pystate.h". See also _PyInterpreterState_Get()
+      and _PyGILState_GetInterpreterStateUnsafe(). */
+#  define _PyInterpreterState_GET_UNSAFE() (PyThreadState_GET()->interp)
+#endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
 /* New in 3.7 */
 PyAPI_FUNC(int64_t) PyInterpreterState_GetID(PyInterpreterState *);
@@ -394,7 +371,9 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    GILState implementation.
 
    Return NULL before _PyGILState_Init() is called and after _PyGILState_Fini()
-   is called. */
+   is called.
+
+   See also _PyInterpreterState_Get() and _PyInterpreterState_GET_UNSAFE(). */
 PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
 #endif   /* !Py_LIMITED_API */
 

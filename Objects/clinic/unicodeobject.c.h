@@ -165,6 +165,27 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicode_isascii__doc__,
+"isascii($self, /)\n"
+"--\n"
+"\n"
+"Return True if all characters in the string are ASCII, False otherwise.\n"
+"\n"
+"ASCII characters have code points in the range U+0000-U+007F.\n"
+"Empty string is ASCII too.");
+
+#define UNICODE_ISASCII_METHODDEF    \
+    {"isascii", (PyCFunction)unicode_isascii, METH_NOARGS, unicode_isascii__doc__},
+
+static PyObject *
+unicode_isascii_impl(PyObject *self);
+
+static PyObject *
+unicode_isascii(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return unicode_isascii_impl(self);
+}
+
 PyDoc_STRVAR(unicode_islower__doc__,
 "islower($self, /)\n"
 "--\n"
@@ -360,8 +381,8 @@ PyDoc_STRVAR(unicode_isidentifier__doc__,
 "\n"
 "Return True if the string is a valid Python identifier, False otherwise.\n"
 "\n"
-"Use keyword.iskeyword() to test for reserved identifiers such as \"def\" and\n"
-"\"class\".");
+"Call keyword.iskeyword(s) to test whether string s is a reserved identifier,\n"
+"such as \"def\" or \"class\".");
 
 #define UNICODE_ISIDENTIFIER_METHODDEF    \
     {"isidentifier", (PyCFunction)unicode_isidentifier, METH_NOARGS, unicode_isidentifier__doc__},
@@ -930,4 +951,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=1ad4e81b68194264 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8bcd992b25733bcc input=a9049054013a1b77]*/

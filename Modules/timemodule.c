@@ -523,6 +523,10 @@ time_localtime(PyObject *self, PyObject *args)
 #endif
 }
 
+#if defined(__linux__) && !defined(__GLIBC__)
+static const char *utc_string = NULL;
+#endif
+
 PyDoc_STRVAR(localtime_doc,
 "localtime([seconds]) -> (tm_year,tm_mon,tm_mday,tm_hour,tm_min,\n\
                           tm_sec,tm_wday,tm_yday,tm_isdst)\n\
@@ -551,6 +555,12 @@ gettmarg(PyObject *args, struct tm *p, const char *format)
                           &p->tm_hour, &p->tm_min, &p->tm_sec,
                           &p->tm_wday, &p->tm_yday, &p->tm_isdst))
         return 0;
+
+    if (y < INT_MIN + 1900) {
+        PyErr_SetString(PyExc_OverflowError, "year out of range");
+        return 0;
+    }
+
     p->tm_year = y - 1900;
     p->tm_mon--;
     p->tm_wday = (p->tm_wday + 1) % 7;
@@ -559,11 +569,32 @@ gettmarg(PyObject *args, struct tm *p, const char *format)
     if (Py_TYPE(args) == &StructTimeType) {
         PyObject *item;
         item = PyTuple_GET_ITEM(args, 9);
-        p->tm_zone = item == Py_None ? NULL : (char*)PyUnicode_AsUTF8(item);
+        if (item != Py_None) {
+            p->tm_zone = PyUnicode_AsUTF8(item);
+            if (p->tm_zone == NULL) {
+                return 0;
+            }
+#if defined(__linux__) && !defined(__GLIBC__)
+            // Make an attempt to return the C library's own timezone strings to
+            // it. musl refuses to process a tm_zone field unless it produced
+            // it. See issue #34672.
+            if (utc_string && strcmp(p->tm_zone, utc_string) == 0) {
+                p->tm_zone = utc_string;
+            }
+            else if (tzname[0] && strcmp(p->tm_zone, tzname[0]) == 0) {
+                p->tm_zone = tzname[0];
+            }
+            else if (tzname[1] && strcmp(p->tm_zone, tzname[1]) == 0) {
+                p->tm_zone = tzname[1];
+            }
+#endif
+        }
         item = PyTuple_GET_ITEM(args, 10);
-        p->tm_gmtoff = item == Py_None ? 0 : PyLong_AsLong(item);
-        if (PyErr_Occurred())
-            return 0;
+        if (item != Py_None) {
+            p->tm_gmtoff = PyLong_AsLong(item);
+            if (PyErr_Occurred())
+                return 0;
+        }
     }
 #endif /* HAVE_STRUCT_TM_TM_ZONE */
     return 1;
@@ -770,6 +801,7 @@ time_strftime(PyObject *self, PyObject *args)
         if (outbuf[1] == L'y' && buf.tm_year < 0) {
             PyErr_SetString(PyExc_ValueError,
                             "format %y requires year >= 1900 on AIX");
+            PyMem_Free(format);
             return NULL;
         }
     }
@@ -809,8 +841,7 @@ time_strftime(PyObject *self, PyObject *args)
 #ifdef HAVE_WCSFTIME
             ret = PyUnicode_FromWideChar(outbuf, buflen);
 #else
-            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen,
-                                                "surrogateescape");
+            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen, "surrogateescape");
 #endif
             PyMem_Free(outbuf);
             break;
@@ -1193,11 +1224,13 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
             if (freq != -1) {
                 /* check that _PyTime_MulDiv(t, SEC_TO_NS, ticks_per_second)
                    cannot overflow below */
+#if LONG_MAX > _PyTime_MAX / SEC_TO_NS
                 if ((_PyTime_t)freq > _PyTime_MAX / SEC_TO_NS) {
                     PyErr_SetString(PyExc_OverflowError,
                                     "_SC_CLK_TCK is too large");
                     return -1;
                 }
+#endif
 
                 ticks_per_second = freq;
             }
@@ -1490,7 +1523,7 @@ PyDoc_STRVAR(get_clock_info_doc,
 \n\
 Get information of the specified clock.");
 
-#if !defined(HAVE_TZNAME) || defined(__GLIBC__) || defined(__CYGWIN__)
+#ifndef HAVE_DECL_TZNAME
 static void
 get_zone(char *zone, int n, struct tm *p)
 {
@@ -1511,7 +1544,7 @@ get_gmtoff(time_t t, struct tm *p)
     return timegm(p) - t;
 #endif
 }
-#endif /* !defined(HAVE_TZNAME) || defined(__GLIBC__) || defined(__CYGWIN__) */
+#endif // !HAVE_DECL_TZNAME
 
 static void
 PyInit_timezone(PyObject *m) {
@@ -1531,7 +1564,7 @@ PyInit_timezone(PyObject *m) {
 
     And I'm lazy and hate C so nyer.
      */
-#if defined(HAVE_TZNAME) && !defined(__GLIBC__) && !defined(__CYGWIN__)
+#ifdef HAVE_DECL_TZNAME
     PyObject *otz0, *otz1;
     tzset();
     PyModule_AddIntConstant(m, "timezone", timezone);
@@ -1542,54 +1575,52 @@ PyInit_timezone(PyObject *m) {
 #endif
     PyModule_AddIntConstant(m, "daylight", daylight);
     otz0 = PyUnicode_DecodeLocale(tzname[0], "surrogateescape");
-    otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
-    PyModule_AddObject(m, "tzname", Py_BuildValue("(NN)", otz0, otz1));
-#else /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
-    {
-#define YEAR ((time_t)((365 * 24 + 6) * 3600))
-        time_t t;
-        struct tm p;
-        long janzone, julyzone;
-        char janname[10], julyname[10];
-        t = (time((time_t *)0) / YEAR) * YEAR;
-        _PyTime_localtime(t, &p);
-        get_zone(janname, 9, &p);
-        janzone = -get_gmtoff(t, &p);
-        janname[9] = '\0';
-        t += YEAR/2;
-        _PyTime_localtime(t, &p);
-        get_zone(julyname, 9, &p);
-        julyzone = -get_gmtoff(t, &p);
-        julyname[9] = '\0';
-
-        if( janzone < julyzone ) {
-            /* DST is reversed in the southern hemisphere */
-            PyModule_AddIntConstant(m, "timezone", julyzone);
-            PyModule_AddIntConstant(m, "altzone", janzone);
-            PyModule_AddIntConstant(m, "daylight",
-                                    janzone != julyzone);
-            PyModule_AddObject(m, "tzname",
-                               Py_BuildValue("(zz)",
-                                             julyname, janname));
-        } else {
-            PyModule_AddIntConstant(m, "timezone", janzone);
-            PyModule_AddIntConstant(m, "altzone", julyzone);
-            PyModule_AddIntConstant(m, "daylight",
-                                    janzone != julyzone);
-            PyModule_AddObject(m, "tzname",
-                               Py_BuildValue("(zz)",
-                                             janname, julyname));
-        }
+    if (otz0 == NULL) {
+        return;
     }
-#ifdef __CYGWIN__
-    tzset();
-    PyModule_AddIntConstant(m, "timezone", _timezone);
-    PyModule_AddIntConstant(m, "altzone", _timezone-3600);
-    PyModule_AddIntConstant(m, "daylight", _daylight);
-    PyModule_AddObject(m, "tzname",
-                       Py_BuildValue("(zz)", _tzname[0], _tzname[1]));
-#endif /* __CYGWIN__ */
-#endif /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
+    otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
+    if (otz1 == NULL) {
+        Py_DECREF(otz0);
+        return;
+    }
+    PyObject *tzname_obj = Py_BuildValue("(NN)", otz0, otz1);
+    if (tzname_obj == NULL)
+        return;
+    PyModule_AddObject(m, "tzname", tzname_obj);
+#else // !HAVE_DECL_TZNAME
+    static const time_t YEAR = (365 * 24 + 6) * 3600;
+    time_t t;
+    struct tm p;
+    long janzone, julyzone;
+    char janname[10], julyname[10];
+    t = (time((time_t *)0) / YEAR) * YEAR;
+    _PyTime_localtime(t, &p);
+    get_zone(janname, 9, &p);
+    janzone = -get_gmtoff(t, &p);
+    janname[9] = '\0';
+    t += YEAR/2;
+    _PyTime_localtime(t, &p);
+    get_zone(julyname, 9, &p);
+    julyzone = -get_gmtoff(t, &p);
+    julyname[9] = '\0';
+
+    PyObject *tzname_obj;
+    if (janzone < julyzone) {
+        /* DST is reversed in the southern hemisphere */
+        PyModule_AddIntConstant(m, "timezone", julyzone);
+        PyModule_AddIntConstant(m, "altzone", janzone);
+        PyModule_AddIntConstant(m, "daylight", janzone != julyzone);
+        tzname_obj = Py_BuildValue("(zz)", julyname, janname);
+    } else {
+        PyModule_AddIntConstant(m, "timezone", janzone);
+        PyModule_AddIntConstant(m, "altzone", julyzone);
+        PyModule_AddIntConstant(m, "daylight", janzone != julyzone);
+        tzname_obj = Py_BuildValue("(zz)", janname, julyname);
+    }
+    if (tzname_obj == NULL)
+        return;
+    PyModule_AddObject(m, "tzname", tzname_obj);
+#endif // !HAVE_DECL_TZNAME
 }
 
 
@@ -1729,6 +1760,14 @@ PyInit_time(void)
     PyModule_AddIntConstant(m, "_STRUCT_TM_ITEMS", 11);
     PyModule_AddObject(m, "struct_time", (PyObject*) &StructTimeType);
     initialized = 1;
+
+#if defined(__linux__) && !defined(__GLIBC__)
+    struct tm tm;
+    const time_t zero = 0;
+    if (gmtime_r(&zero, &tm) != NULL)
+        utc_string = tm.tm_zone;
+#endif
+
     return m;
 }
 

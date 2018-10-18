@@ -35,8 +35,6 @@ def parse(source, filename='<unknown>', mode='exec'):
     return compile(source, filename, mode, PyCF_ONLY_AST)
 
 
-_NUM_TYPES = (int, float, complex)
-
 def literal_eval(node_or_string):
     """
     Safely evaluate an expression node or a string containing a Python
@@ -48,13 +46,22 @@ def literal_eval(node_or_string):
         node_or_string = parse(node_or_string, mode='eval')
     if isinstance(node_or_string, Expression):
         node_or_string = node_or_string.body
+    def _convert_num(node):
+        if isinstance(node, Constant):
+            if type(node.value) in (int, float, complex):
+                return node.value
+        raise ValueError('malformed node or string: ' + repr(node))
+    def _convert_signed_num(node):
+        if isinstance(node, UnaryOp) and isinstance(node.op, (UAdd, USub)):
+            operand = _convert_num(node.operand)
+            if isinstance(node.op, UAdd):
+                return + operand
+            else:
+                return - operand
+        return _convert_num(node)
     def _convert(node):
         if isinstance(node, Constant):
             return node.value
-        elif isinstance(node, (Str, Bytes)):
-            return node.s
-        elif isinstance(node, Num):
-            return node.n
         elif isinstance(node, Tuple):
             return tuple(map(_convert, node.elts))
         elif isinstance(node, List):
@@ -62,26 +69,17 @@ def literal_eval(node_or_string):
         elif isinstance(node, Set):
             return set(map(_convert, node.elts))
         elif isinstance(node, Dict):
-            return dict((_convert(k), _convert(v)) for k, v
-                        in zip(node.keys, node.values))
-        elif isinstance(node, NameConstant):
-            return node.value
-        elif isinstance(node, UnaryOp) and isinstance(node.op, (UAdd, USub)):
-            operand = _convert(node.operand)
-            if isinstance(operand, _NUM_TYPES):
-                if isinstance(node.op, UAdd):
-                    return + operand
-                else:
-                    return - operand
+            return dict(zip(map(_convert, node.keys),
+                            map(_convert, node.values)))
         elif isinstance(node, BinOp) and isinstance(node.op, (Add, Sub)):
-            left = _convert(node.left)
-            right = _convert(node.right)
-            if isinstance(left, _NUM_TYPES) and isinstance(right, _NUM_TYPES):
+            left = _convert_signed_num(node.left)
+            right = _convert_num(node.right)
+            if isinstance(left, (int, float)) and isinstance(right, complex):
                 if isinstance(node.op, Add):
                     return left + right
                 else:
                     return left - right
-        raise ValueError('malformed node or string: ' + repr(node))
+        return _convert_signed_num(node)
     return _convert(node_or_string)
 
 
@@ -200,8 +198,16 @@ def get_docstring(node, clean=True):
     """
     if not isinstance(node, (AsyncFunctionDef, FunctionDef, ClassDef, Module)):
         raise TypeError("%r can't have docstrings" % node.__class__.__name__)
-    text = node.docstring
-    if clean and text:
+    if not(node.body and isinstance(node.body[0], Expr)):
+        return None
+    node = node.body[0].value
+    if isinstance(node, Str):
+        text = node.s
+    elif isinstance(node, Constant) and isinstance(node.value, str):
+        text = node.value
+    else:
+        return None
+    if clean:
         import inspect
         text = inspect.cleandoc(text)
     return text
@@ -315,3 +321,66 @@ class NodeTransformer(NodeVisitor):
                 else:
                     setattr(node, field, new_node)
         return node
+
+
+# The following code is for backward compatibility.
+# It will be removed in future.
+
+def _getter(self):
+    return self.value
+
+def _setter(self, value):
+    self.value = value
+
+Constant.n = property(_getter, _setter)
+Constant.s = property(_getter, _setter)
+
+class _ABC(type):
+
+    def __instancecheck__(cls, inst):
+        if not isinstance(inst, Constant):
+            return False
+        if cls in _const_types:
+            try:
+                value = inst.value
+            except AttributeError:
+                return False
+            else:
+                return type(value) in _const_types[cls]
+        return type.__instancecheck__(cls, inst)
+
+def _new(cls, *args, **kwargs):
+    if cls in _const_types:
+        return Constant(*args, **kwargs)
+    return Constant.__new__(cls, *args, **kwargs)
+
+class Num(Constant, metaclass=_ABC):
+    _fields = ('n',)
+    __new__ = _new
+
+class Str(Constant, metaclass=_ABC):
+    _fields = ('s',)
+    __new__ = _new
+
+class Bytes(Constant, metaclass=_ABC):
+    _fields = ('s',)
+    __new__ = _new
+
+class NameConstant(Constant, metaclass=_ABC):
+    __new__ = _new
+
+class Ellipsis(Constant, metaclass=_ABC):
+    _fields = ()
+
+    def __new__(cls, *args, **kwargs):
+        if cls is Ellipsis:
+            return Constant(..., *args, **kwargs)
+        return Constant.__new__(cls, *args, **kwargs)
+
+_const_types = {
+    Num: (int, float, complex),
+    Str: (str,),
+    Bytes: (bytes,),
+    NameConstant: (type(None), bool),
+    Ellipsis: (type(...),),
+}

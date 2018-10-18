@@ -1,2 +1,0 @@
-Prevent Python crash from happening when Future._log_traceback is set to
-True manually.  Now it can only be set to False, or a ValueError is raised.

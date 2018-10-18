@@ -1,0 +1,1 @@
+Fix Task.__repr__ crash with Cython's bogus coroutines

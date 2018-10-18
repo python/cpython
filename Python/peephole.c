@@ -13,7 +13,7 @@
 #define UNCONDITIONAL_JUMP(op)  (op==JUMP_ABSOLUTE || op==JUMP_FORWARD)
 #define CONDITIONAL_JUMP(op) (op==POP_JUMP_IF_FALSE || op==POP_JUMP_IF_TRUE \
     || op==JUMP_IF_FALSE_OR_POP || op==JUMP_IF_TRUE_OR_POP)
-#define ABSOLUTE_JUMP(op) (op==JUMP_ABSOLUTE || op==CONTINUE_LOOP \
+#define ABSOLUTE_JUMP(op) (op==JUMP_ABSOLUTE \
     || op==POP_JUMP_IF_FALSE || op==POP_JUMP_IF_TRUE \
     || op==JUMP_IF_FALSE_OR_POP || op==JUMP_IF_TRUE_OR_POP)
 #define JUMPS_ON_TRUE(op) (op==POP_JUMP_IF_TRUE || op==JUMP_IF_TRUE_OR_POP)
@@ -185,12 +185,10 @@ markblocks(_Py_CODEUNIT *code, Py_ssize_t len)
             case POP_JUMP_IF_FALSE:
             case POP_JUMP_IF_TRUE:
             case JUMP_ABSOLUTE:
-            case CONTINUE_LOOP:
-            case SETUP_LOOP:
-            case SETUP_EXCEPT:
             case SETUP_FINALLY:
             case SETUP_WITH:
             case SETUP_ASYNC_WITH:
+            case CALL_FINALLY:
                 j = GETJUMPTGT(code, i);
                 assert(j < len);
                 blocks[j] = 1;
@@ -373,15 +371,8 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 /* Replace jumps to unconditional jumps */
             case POP_JUMP_IF_FALSE:
             case POP_JUMP_IF_TRUE:
-            case FOR_ITER:
             case JUMP_FORWARD:
             case JUMP_ABSOLUTE:
-            case CONTINUE_LOOP:
-            case SETUP_LOOP:
-            case SETUP_EXCEPT:
-            case SETUP_FINALLY:
-            case SETUP_WITH:
-            case SETUP_ASYNC_WITH:
                 h = GETJUMPTGT(codestr, i);
                 tgt = find_op(codestr, h);
                 /* Replace JUMP_* to a RETURN into just a RETURN */
@@ -407,7 +398,21 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 /* Remove unreachable ops after RETURN */
             case RETURN_VALUE:
                 h = i + 1;
-                while (h < codelen && ISBASICBLOCK(blocks, i, h)) {
+                /* END_FINALLY should be kept since it denotes the end of
+                   the 'finally' block in frame_setlineno() in frameobject.c.
+                   SETUP_FINALLY should be kept for balancing.
+                 */
+                while (h < codelen && ISBASICBLOCK(blocks, i, h) &&
+                       _Py_OPCODE(codestr[h]) != END_FINALLY)
+                {
+                    if (_Py_OPCODE(codestr[h]) == SETUP_FINALLY) {
+                        while (h > i + 1 &&
+                               _Py_OPCODE(codestr[h - 1]) == EXTENDED_ARG)
+                        {
+                            h--;
+                        }
+                        break;
+                    }
                     h++;
                 }
                 if (h > i + 1) {
@@ -452,7 +457,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case NOP:continue;
 
             case JUMP_ABSOLUTE:
-            case CONTINUE_LOOP:
             case POP_JUMP_IF_FALSE:
             case POP_JUMP_IF_TRUE:
             case JUMP_IF_FALSE_OR_POP:
@@ -462,11 +466,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
             case FOR_ITER:
             case JUMP_FORWARD:
-            case SETUP_LOOP:
-            case SETUP_EXCEPT:
             case SETUP_FINALLY:
             case SETUP_WITH:
             case SETUP_ASYNC_WITH:
+            case CALL_FINALLY:
                 j = blocks[j / sizeof(_Py_CODEUNIT) + i + 1] - blocks[i] - 1;
                 j *= sizeof(_Py_CODEUNIT);
                 break;

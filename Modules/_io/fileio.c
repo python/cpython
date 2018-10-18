@@ -791,11 +791,9 @@ _io_FileIO_read_impl(fileio *self, Py_ssize_t size)
     if (size < 0)
         return _io_FileIO_readall_impl(self);
 
-#ifdef MS_WINDOWS
-    /* On Windows, the count parameter of read() is an int */
-    if (size > INT_MAX)
-        size = INT_MAX;
-#endif
+    if (size > _PY_READ_MAX) {
+        size = _PY_READ_MAX;
+    }
 
     bytes = PyBytes_FromStringAndSize(NULL, size);
     if (bytes == NULL)
@@ -1073,12 +1071,10 @@ fileio_repr(fileio *self)
     if (self->fd < 0)
         return PyUnicode_FromFormat("<_io.FileIO [closed]>");
 
-    nameobj = _PyObject_GetAttrId((PyObject *) self, &PyId_name);
+    if (_PyObject_LookupAttrId((PyObject *) self, &PyId_name, &nameobj) < 0) {
+        return NULL;
+    }
     if (nameobj == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError))
-            PyErr_Clear();
-        else
-            return NULL;
         res = PyUnicode_FromFormat(
             "<_io.FileIO fd=%d mode='%s' closefd=%s>",
             self->fd, mode_string(self), self->closefd ? "True" : "False");
@@ -1125,7 +1121,7 @@ _io_FileIO_isatty_impl(fileio *self)
 }
 
 static PyObject *
-fileio_getstate(fileio *self)
+fileio_getstate(fileio *self, PyObject *Py_UNUSED(ignored))
 {
     PyErr_Format(PyExc_TypeError,
                  "cannot serialize '%s' object", Py_TYPE(self)->tp_name);

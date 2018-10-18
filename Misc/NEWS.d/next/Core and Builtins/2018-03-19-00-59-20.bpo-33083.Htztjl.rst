@@ -1,0 +1,2 @@
+``math.factorial`` no longer accepts arguments that are not int-like.
+Patch by Pablo Galindo.

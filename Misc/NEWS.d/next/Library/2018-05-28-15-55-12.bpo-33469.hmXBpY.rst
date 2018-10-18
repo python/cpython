@@ -1,0 +1,1 @@
+Fix RuntimeError after closing loop that used run_in_executor

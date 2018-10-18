@@ -746,7 +746,7 @@ class ItemsView(MappingView, Set):
 ItemsView.register(dict_items)
 
 
-class ValuesView(MappingView):
+class ValuesView(MappingView, Collection):
 
     __slots__ = ()
 
@@ -986,6 +986,8 @@ class MutableSequence(Sequence):
 
     def extend(self, values):
         'S.extend(iterable) -- extend sequence by appending elements from the iterable'
+        if values is self:
+            values = list(values)
         for v in values:
             self.append(v)
 

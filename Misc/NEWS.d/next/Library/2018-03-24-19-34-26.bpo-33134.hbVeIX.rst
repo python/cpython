@@ -1,0 +1,3 @@
+When computing dataclass's __hash__, use the lookup table to contain the
+function which returns the __hash__ value.  This is an improvement over
+looking up a string, and then testing that string to see what to do.
