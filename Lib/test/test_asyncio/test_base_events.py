@@ -5,6 +5,7 @@ import errno
 import logging
 import math
 import os
+import ipaddress
 import socket
 import sys
 import threading
@@ -1180,6 +1181,26 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             else:
                 raise
 
+    @unittest.skipUnless(hasattr(socket, 'AF_INET6'), 'no IPv6 support')
+    def test_create_server_ipaddr_ipv6(self):
+        async def main():
+            srv = await asyncio.start_server(
+                lambda: None, ipaddress.IPv6Address('::1'), 0, loop=self.loop)
+            try:
+                self.assertGreater(len(srv.sockets), 0)
+            finally:
+                srv.close()
+                await srv.wait_closed()
+
+        try:
+            self.loop.run_until_complete(main())
+        except OSError as ex:
+            if (hasattr(errno, 'EADDRNOTAVAIL') and
+                    ex.errno == errno.EADDRNOTAVAIL):
+                self.skipTest('failed to bind to ::1')
+            else:
+                raise
+
     def test_create_datagram_endpoint_wrong_sock(self):
         sock = socket.socket(socket.AF_INET)
         with sock:
@@ -1507,6 +1528,11 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
     def test_create_server_host_port_sock(self):
         fut = self.loop.create_server(
             MyProto, '0.0.0.0', 0, sock=object())
+        self.assertRaises(ValueError, self.loop.run_until_complete, fut)
+
+    def test_create_server_ipaddr_ipv4_host_port_sock(self):
+        fut = self.loop.create_server(
+            MyProto, ipaddress.IPv4Address('0.0.0.0'), 0, sock=object())
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
     def test_create_server_no_host_port_sock(self):

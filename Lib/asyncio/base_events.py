@@ -17,6 +17,7 @@ import collections
 import collections.abc
 import concurrent.futures
 import heapq
+import ipaddress
 import itertools
 import logging
 import os
@@ -1333,6 +1334,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                 hosts = [None]
             elif (isinstance(host, str) or
                   not isinstance(host, collections.abc.Iterable)):
+                if (isinstance(host, ipaddress.IPv4Address) or
+                   isinstance(host, ipaddress.IPv6Address)):
+                    host = host.exploded
                 hosts = [host]
             else:
                 hosts = host
