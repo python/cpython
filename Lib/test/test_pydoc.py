@@ -517,6 +517,7 @@ class PydocDocTest(unittest.TestCase):
         self.assertEqual(stripid("<type 'exceptions.Exception'>"),
                          "<type 'exceptions.Exception'>")
 
+    @unittest.skipIf(sys.platform == 'win32', "Different no of subclasses on win")
     def test_builtin_with_more_than_four_children(self):
         """Tests help on builtin object which have more than four child classes.
 
