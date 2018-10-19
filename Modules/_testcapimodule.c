@@ -4550,6 +4550,28 @@ new_hamt(PyObject *self, PyObject *args)
 }
 
 
+/* def bad_get(self, obj, cls):
+       cls()
+       return repr(self)
+*/
+static PyObject*
+bad_get(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    if (nargs != 3) {
+        PyErr_SetString(PyExc_TypeError, "bad_get requires exactly 3 arguments");
+        return NULL;
+    }
+
+    PyObject *res = PyObject_CallObject(args[2], NULL);
+    if (res == NULL) {
+        return NULL;
+    }
+    Py_DECREF(res);
+
+    return PyObject_Repr(args[0]);
+}
+
+
 static PyObject *
 encode_locale_ex(PyObject *self, PyObject *args)
 {
@@ -5017,6 +5039,7 @@ static PyMethodDef TestMethods[] = {
     {"get_mapping_items", get_mapping_items, METH_O},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {"hamt", new_hamt, METH_NOARGS},
+    {"bad_get", bad_get, METH_FASTCALL},
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
     {"get_coreconfig", get_coreconfig, METH_NOARGS},
