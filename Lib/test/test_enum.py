@@ -3,7 +3,6 @@ import inspect
 import pydoc
 import sys
 import unittest
-import sys
 import threading
 from collections import OrderedDict
 from enum import Enum, IntEnum, EnumMeta, Flag, IntFlag, unique, auto
@@ -12,10 +11,6 @@ from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
 from datetime import timedelta
 
-try:
-    import threading
-except ImportError:
-    threading = None
 
 # for pickle tests
 try:
