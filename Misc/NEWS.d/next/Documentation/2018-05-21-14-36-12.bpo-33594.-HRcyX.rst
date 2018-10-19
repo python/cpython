@@ -1,0 +1,3 @@
+Document ``getargspec``, ``from_function`` and ``from_builtin`` as
+deprecated in their respective docstring, and include version since
+deprecation in DeprecationWarning message.
