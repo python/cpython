@@ -213,8 +213,7 @@ The :mod:`functools` module defines the following functions:
 
       def partial(func, *args, **keywords):
           def newfunc(*fargs, **fkeywords):
-              newkeywords = keywords.copy()
-              newkeywords.update(fkeywords)
+              newkeywords = {**keywords, **fkeywords}
               return func(*args, *fargs, **newkeywords)
           newfunc.func = func
           newfunc.args = args
