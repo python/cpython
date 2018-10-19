@@ -3194,11 +3194,11 @@ class TestReplace(unittest.TestCase):
     def test_recursive_repr_indirection(self):
         @dataclass
         class C:
-            f: "C"
+            f: "D"
 
         @dataclass
         class D:
-            f: "D"
+            f: "C"
 
         c = C(None)
         d = D(None)
@@ -3211,15 +3211,15 @@ class TestReplace(unittest.TestCase):
     def test_recursive_repr_indirection_two(self):
         @dataclass
         class C:
-            f: "C"
-
-        @dataclass
-        class D:
             f: "D"
 
         @dataclass
-        class E:
+        class D:
             f: "E"
+
+        @dataclass
+        class E:
+            f: "C"
 
         c = C(None)
         d = D(None)
