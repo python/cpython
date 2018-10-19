@@ -1,5 +1,6 @@
 import math
 import unittest
+import os
 import sys
 from unittest.mock import Mock, MagicMock, _magics
 
@@ -291,6 +292,11 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(oct(mock), '0o1')
         self.assertEqual(hex(mock), '0x1')
         # how to test __sizeof__ ?
+
+
+    def test_magic_methods_fspath(self):
+        mock = MagicMock()
+        self.assertEqual(os.fspath(mock), mock.__fspath__())
 
 
     def test_magic_methods_and_spec(self):
