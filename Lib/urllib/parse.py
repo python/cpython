@@ -624,7 +624,7 @@ def unquote(string, encoding='utf-8', errors='replace'):
 
 
 def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
-             encoding='utf-8', errors='replace'):
+             encoding='utf-8', errors='replace', max_num_fields=None):
     """Parse a query given as a string argument.
 
         Arguments:
@@ -645,11 +645,15 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
         encoding and errors: specify how to decode percent-encoded sequences
             into Unicode characters, as accepted by the bytes.decode() method.
 
+        max_num_fields: int. If set, then throws a ValueError if there
+            are more than n fields read by parse_qsl().
+
         Returns a dictionary.
     """
     parsed_result = {}
     pairs = parse_qsl(qs, keep_blank_values, strict_parsing,
-                      encoding=encoding, errors=errors)
+                      encoding=encoding, errors=errors,
+                      max_num_fields=max_num_fields)
     for name, value in pairs:
         if name in parsed_result:
             parsed_result[name].append(value)
@@ -659,7 +663,7 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
 
 
 def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
-              encoding='utf-8', errors='replace'):
+              encoding='utf-8', errors='replace', max_num_fields=None):
     """Parse a query given as a string argument.
 
         Arguments:
@@ -679,9 +683,21 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         encoding and errors: specify how to decode percent-encoded sequences
             into Unicode characters, as accepted by the bytes.decode() method.
 
+        max_num_fields: int. If set, then throws a ValueError
+            if there are more than n fields read by parse_qsl().
+
         Returns a list, as G-d intended.
     """
     qs, _coerce_result = _coerce_args(qs)
+
+    # If max_num_fields is defined then check that the number of fields
+    # is less than max_num_fields. This prevents a memory exhaustion DOS
+    # attack via post bodies with many fields.
+    if max_num_fields is not None:
+        num_fields = 1 + qs.count('&') + qs.count(';')
+        if max_num_fields < num_fields:
+            raise ValueError('Max number of fields exceeded')
+
     pairs = [s2 for s1 in qs.split('&') for s2 in s1.split(';')]
     r = []
     for name_value in pairs:
