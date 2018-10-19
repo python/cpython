@@ -107,6 +107,12 @@ Other Language Changes
   and :keyword:`return` statements.
   (Contributed by David Cuthbert and Jordan Chapman in :issue:`32117`.)
 
+* A backslash-character pair that is not a valid escape sequence generates
+  a :exc:`DeprecationWarning` since Python 3.6. In Python 3.8 it generates
+  a :exc:`SyntaxWarning` instead.
+  (Contributed by Serhiy Storchaka in :issue:`32912`.)
+
+
 New Modules
 ===========
 
