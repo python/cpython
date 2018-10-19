@@ -3092,7 +3092,7 @@ main_loop:
                 /* There was an exception and a True return.
                  * We must manually unwind the EXCEPT_HANDLER block
                  * which was created when the exception was caught,
-                 * otherwise the stack will be in an inconsisten state.
+                 * otherwise the stack will be in an inconsistent state.
                  */
                 PyTryBlock *b = PyFrame_BlockPop(f);
                 assert(b->b_type == EXCEPT_HANDLER);
