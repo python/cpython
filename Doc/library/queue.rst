@@ -28,8 +28,8 @@ competing threads; however, they are not designed to handle reentrancy
 within a thread.
 
 In addition, the module implements a "simple"
-:abbr:`FIFO (first-in, first-out)` queue type where
-specific implementations can provide additional guarantees
+:abbr:`FIFO (first-in, first-out)` queue type, :class:`SimpleQueue`, whose
+specific implementation provides additional guarantees
 in exchange for the smaller functionality.
 
 The :mod:`queue` module defines the following classes and exceptions:
