@@ -24,7 +24,7 @@ PyDoc_STRVAR(SHA1Type_digest__doc__,
 "digest($self, /)\n"
 "--\n"
 "\n"
-"Return the digest value as a string of binary data.");
+"Return the digest value as a bytes object.");
 
 #define SHA1TYPE_DIGEST_METHODDEF    \
     {"digest", (PyCFunction)SHA1Type_digest, METH_NOARGS, SHA1Type_digest__doc__},
@@ -94,4 +94,4 @@ _sha1_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9ee2aec7bb2b9e72 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=81d2424c0585bfd4 input=a9049054013a1b77]*/
