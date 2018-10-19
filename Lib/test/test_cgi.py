@@ -381,6 +381,55 @@ Larry
         v = gen_result(data, environ)
         self.assertEqual(self._qs_result, v)
 
+    def test_max_num_fields(self):
+        # For application/x-www-form-urlencoded
+        data = '&'.join(['a=a']*11)
+        environ = {
+            'CONTENT_LENGTH': str(len(data)),
+            'CONTENT_TYPE': 'application/x-www-form-urlencoded',
+            'REQUEST_METHOD': 'POST',
+        }
+
+        with self.assertRaises(ValueError):
+            cgi.FieldStorage(
+                fp=BytesIO(data.encode()),
+                environ=environ,
+                max_num_fields=10,
+            )
+
+        # For multipart/form-data
+        data = """---123
+Content-Disposition: form-data; name="a"
+
+a
+---123
+Content-Type: application/x-www-form-urlencoded
+
+a=a&a=a
+---123--
+"""
+        environ = {
+            'CONTENT_LENGTH':   str(len(data)),
+            'CONTENT_TYPE':     'multipart/form-data; boundary=-123',
+            'QUERY_STRING':     'a=a&a=a',
+            'REQUEST_METHOD':   'POST',
+        }
+
+        # 2 GET entities
+        # 2 top level POST entities
+        # 2 entities within the second POST entity
+        with self.assertRaises(ValueError):
+            cgi.FieldStorage(
+                fp=BytesIO(data.encode()),
+                environ=environ,
+                max_num_fields=5,
+            )
+        cgi.FieldStorage(
+            fp=BytesIO(data.encode()),
+            environ=environ,
+            max_num_fields=6,
+        )
+
     def testQSAndFormData(self):
         data = """---123
 Content-Disposition: form-data; name="key2"
