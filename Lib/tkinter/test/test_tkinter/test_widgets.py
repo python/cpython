@@ -474,6 +474,14 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         self.assertRaises(TypeError, widget.bbox)
         self.assertRaises(TypeError, widget.bbox, 0, 1)
 
+    def test_selection_element(self):
+        widget = self.create()
+        self.assertEqual(widget.selection_element(), "none")
+        widget.selection_element("buttonup")
+        self.assertEqual(widget.selection_element(), "buttonup")
+        widget.selection_element("buttondown")
+        self.assertEqual(widget.selection_element(), "buttondown")
+
 
 @add_standard_options(StandardOptionsTests)
 class TextTest(AbstractWidgetTest, unittest.TestCase):
