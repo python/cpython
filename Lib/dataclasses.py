@@ -5,6 +5,9 @@ import types
 import inspect
 import keyword
 import builtins
+import functools
+import _thread
+
 
 __all__ = ['dataclass',
            'field',
@@ -337,6 +340,27 @@ def _tuple_str(obj_name, fields):
     return f'({",".join([f"{obj_name}.{f.name}" for f in fields])},)'
 
 
+# This function's logic is copied from "recursive_repr" function in
+# reprlib module to avoid dependency.
+def _recursive_repr(user_function):
+    # Decorator to make a repr function return "..." for a recursive
+    # call.
+    repr_running = set()
+
+    @functools.wraps(user_function)
+    def wrapper(self):
+        key = id(self), _thread.get_ident()
+        if key in repr_running:
+            return '...'
+        repr_running.add(key)
+        try:
+            result = user_function(self)
+        finally:
+            repr_running.discard(key)
+        return result
+    return wrapper
+
+
 def _create_fn(name, args, body, *, globals=None, locals=None,
                return_type=MISSING):
     # Note that we mutate locals when exec() is called.  Caller
@@ -497,12 +521,13 @@ def _init_fn(fields, frozen, has_post_init, self_name):
 
 
 def _repr_fn(fields):
-    return _create_fn('__repr__',
-                      ('self',),
-                      ['return self.__class__.__qualname__ + f"(' +
-                       ', '.join([f"{f.name}={{self.{f.name}!r}}"
-                                  for f in fields]) +
-                       ')"'])
+    fn = _create_fn('__repr__',
+                    ('self',),
+                    ['return self.__class__.__qualname__ + f"(' +
+                     ', '.join([f"{f.name}={{self.{f.name}!r}}"
+                                for f in fields]) +
+                     ')"'])
+    return _recursive_repr(fn)
 
 
 def _frozen_get_del_attr(cls, fields):
