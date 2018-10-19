@@ -361,12 +361,12 @@ MD5Type_copy_impl(MD5object *self)
 /*[clinic input]
 MD5Type.digest
 
-Return the digest value as a string of binary data.
+Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
 MD5Type_digest_impl(MD5object *self)
-/*[clinic end generated code: output=eb691dc4190a07ec input=7b96e65389412a34]*/
+/*[clinic end generated code: output=eb691dc4190a07ec input=bc0c4397c2994be6]*/
 {
     unsigned char digest[MD5_DIGESTSIZE];
     struct md5_state temp;
