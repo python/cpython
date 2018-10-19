@@ -504,7 +504,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
                     (void *)young);
             // relink gc_prev to prev element.
             _PyGCHead_SET_PREV(gc, prev);
-            // gc is not COLLECTING state aftere here.
+            // gc is not COLLECTING state after here.
             gc_clear_collecting(gc);
             prev = gc;
         }
