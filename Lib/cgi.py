@@ -618,6 +618,12 @@ class FieldStorage:
             first_line = self.fp.readline()
             self.bytes_read += len(first_line)
 
+        # Propagate max_num_fields into the sub class appropriately
+        max_num_fields = self.max_num_fields
+        sub_max_num_fields = self.max_num_fields
+        if max_num_fields is not None:
+            sub_max_num_fields -= len(self.list)
+
         while True:
             parser = FeedParser()
             hdr_text = b""
@@ -637,18 +643,13 @@ class FieldStorage:
             if 'content-length' in headers:
                 del headers['content-length']
 
-            # Propagate max_num_fields into the sub class appropriately
-            sub_max_num_fields = self.max_num_fields
-            if sub_max_num_fields is not None:
-                sub_max_num_fields -= len(self.list)
-
             part = klass(self.fp, headers, ib, environ, keep_blank_values,
                          strict_parsing,self.limit-self.bytes_read,
                          self.encoding, self.errors, sub_max_num_fields)
 
-            max_num_fields = self.max_num_fields
             if max_num_fields is not None and part.list:
                 max_num_fields -= len(part.list)
+                sub_max_num_fields -= len(part.list)
 
             self.bytes_read += part.bytes_read
             self.list.append(part)
