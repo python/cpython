@@ -480,10 +480,23 @@ element_resize(ElementObject* self, Py_ssize_t extra)
     return -1;
 }
 
+LOCAL(void)
+raise_type_error(PyObject *element)
+{
+    PyErr_Format(PyExc_TypeError,
+                 "expected an Element, not \"%.200s\"",
+                 Py_TYPE(element)->tp_name);
+}
+
 LOCAL(int)
 element_add_subelement(ElementObject* self, PyObject* element)
 {
     /* add a child element to a parent */
+
+    if (!Element_Check(element)) {
+        raise_type_error(element);
+        return -1;
+    }
 
     if (element_resize(self, 1) < 0)
         return -1;
@@ -803,7 +816,11 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 
         for (i = 0; i < self->extra->length; i++) {
             PyObject* child = deepcopy(self->extra->children[i], memo);
-            if (!child) {
+            if (!child || !Element_Check(child)) {
+                if (child) {
+                    raise_type_error(child);
+                    Py_DECREF(child);
+                }
                 element->extra->length = i;
                 goto error;
             }
@@ -1024,8 +1041,15 @@ element_setstate_from_attributes(ElementObject *self,
 
         /* Copy children */
         for (i = 0; i < nchildren; i++) {
-            self->extra->children[i] = PyList_GET_ITEM(children, i);
-            Py_INCREF(self->extra->children[i]);
+            PyObject *child = PyList_GET_ITEM(children, i);
+            if (!Element_Check(child)) {
+                raise_type_error(child);
+                self->extra->length = i;
+                dealloc_extra(oldextra);
+                return NULL;
+            }
+            Py_INCREF(child);
+            self->extra->children[i] = child;
         }
 
         assert(!self->extra->length);
@@ -1167,16 +1191,6 @@ _elementtree_Element_extend(ElementObject *self, PyObject *elements)
     for (i = 0; i < PySequence_Fast_GET_SIZE(seq); i++) {
         PyObject* element = PySequence_Fast_GET_ITEM(seq, i);
         Py_INCREF(element);
-        if (!Element_Check(element)) {
-            PyErr_Format(
-                PyExc_TypeError,
-                "expected an Element, not \"%.200s\"",
-                Py_TYPE(element)->tp_name);
-            Py_DECREF(seq);
-            Py_DECREF(element);
-            return NULL;
-        }
-
         if (element_add_subelement(self, element) < 0) {
             Py_DECREF(seq);
             Py_DECREF(element);
@@ -1219,8 +1233,7 @@ _elementtree_Element_find_impl(ElementObject *self, PyObject *path,
     for (i = 0; i < self->extra->length; i++) {
         PyObject* item = self->extra->children[i];
         int rc;
-        if (!Element_Check(item))
-            continue;
+        assert(Element_Check(item));
         Py_INCREF(item);
         rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, path, Py_EQ);
         if (rc > 0)
@@ -1266,8 +1279,7 @@ _elementtree_Element_findtext_impl(ElementObject *self, PyObject *path,
     for (i = 0; i < self->extra->length; i++) {
         PyObject *item = self->extra->children[i];
         int rc;
-        if (!Element_Check(item))
-            continue;
+        assert(Element_Check(item));
         Py_INCREF(item);
         rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, path, Py_EQ);
         if (rc > 0) {
@@ -1323,8 +1335,7 @@ _elementtree_Element_findall_impl(ElementObject *self, PyObject *path,
     for (i = 0; i < self->extra->length; i++) {
         PyObject* item = self->extra->children[i];
         int rc;
-        if (!Element_Check(item))
-            continue;
+        assert(Element_Check(item));
         Py_INCREF(item);
         rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, path, Py_EQ);
         if (rc != 0 && (rc < 0 || PyList_Append(out, item) < 0)) {
@@ -1736,6 +1747,10 @@ element_setitem(PyObject* self_, Py_ssize_t index, PyObject* item)
     old = self->extra->children[index];
 
     if (item) {
+        if (!Element_Check(item)) {
+            raise_type_error(item);
+            return -1;
+        }
         Py_INCREF(item);
         self->extra->children[index] = item;
     } else {
@@ -1925,6 +1940,15 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
         /* Resize before creating the recycle bin, to prevent refleaks. */
         if (newlen > slicelen) {
             if (element_resize(self, newlen - slicelen) < 0) {
+                Py_DECREF(seq);
+                return -1;
+            }
+        }
+
+        for (i = 0; i < newlen; i++) {
+            PyObject *element = PySequence_Fast_GET_ITEM(seq, i);
+            if (!Element_Check(element)) {
+                raise_type_error(element);
                 Py_DECREF(seq);
                 return -1;
             }
@@ -2207,12 +2231,7 @@ elementiter_next(ElementIterObject *it)
                 continue;
             }
 
-            if (!Element_Check(extra->children[child_index])) {
-                PyErr_Format(PyExc_AttributeError,
-                             "'%.100s' object has no attribute 'iter'",
-                             Py_TYPE(extra->children[child_index])->tp_name);
-                return NULL;
-            }
+            assert(Element_Check(extra->children[child_index]));
             elem = (ElementObject *)extra->children[child_index];
             item->child_index++;
             Py_INCREF(elem);
