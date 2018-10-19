@@ -241,7 +241,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     char rawmode[6], *m;
     int line_buffering, is_number;
-    long isatty;
+    long isatty = 0;
 
     PyObject *raw, *modeobj = NULL, *buffer, *wrapper, *result = NULL, *path_or_fd = NULL;
 
@@ -388,7 +388,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         goto error;
 
     /* buffering */
-    {
+    if (buffering < 0) {
         PyObject *res = _PyObject_CallMethodId(raw, &PyId_isatty, NULL);
         if (res == NULL)
             goto error;
@@ -398,7 +398,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
             goto error;
     }
 
-    if (buffering == 1 || (buffering < 0 && isatty)) {
+    if (buffering == 1 || isatty) {
         buffering = -1;
         line_buffering = 1;
     }
