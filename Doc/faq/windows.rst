@@ -23,18 +23,6 @@ This is not necessarily a straightforward question. If you are already familiar
 with running programs from the Windows command line then everything will seem
 obvious; otherwise, you might need a little more guidance.
 
-.. sidebar:: |Python Development on XP|_
-   :subtitle: `Python Development on XP`_
-
-   This series of screencasts aims to get you up and running with Python on
-   Windows XP.  The knowledge is distilled into 1.5 hours and will get you up
-   and running with the right Python distribution, coding in your choice of IDE,
-   and debugging and writing solid code with unit-tests.
-
-.. |Python Development on XP| image:: python-video-icon.png
-.. _`Python Development on XP`:
-   http://showmedo.com/videotutorials/series?name=pythonOzsvaldPyNewbieSeries
-
 Unless you use some sort of integrated development environment, you will end up
 *typing* Windows commands into what is variously referred to as a "DOS window"
 or "Command prompt window".  Usually you can create such a window from your
@@ -107,18 +95,6 @@ If the ``python`` command, instead of displaying the interpreter prompt ``>>>``,
 gives you a message like::
 
    'python' is not recognized as an internal or external command, operable program or batch file.
-
-.. sidebar:: |Adding Python to DOS Path|_
-   :subtitle: `Adding Python to DOS Path`_
-
-   Python is not added to the DOS path by default.  This screencast will walk
-   you through the steps to add the correct entry to the `System Path`, allowing
-   Python to be executed from the command-line by all users.
-
-.. |Adding Python to DOS Path| image:: python-video-icon.png
-.. _`Adding Python to DOS Path`:
-   http://showmedo.com/videotutorials/video?name=960000&fromSeriesID=96
-
 
 or::
 
