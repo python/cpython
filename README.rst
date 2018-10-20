@@ -1,5 +1,5 @@
-This is Python version 3.7.1 rc2+
-=================================
+This is Python version 3.7.1
+============================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=master
    :alt: CPython build status on Travis CI
