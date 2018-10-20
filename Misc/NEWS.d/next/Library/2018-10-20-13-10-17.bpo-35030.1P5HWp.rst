@@ -1,0 +1,2 @@
+collections.OrderedDict had a circular reference issue which was fixed by
+backporting from python 3 to use weakref

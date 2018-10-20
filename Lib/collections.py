@@ -22,6 +22,7 @@ from operator import itemgetter as _itemgetter, eq as _eq
 from keyword import iskeyword as _iskeyword
 import sys as _sys
 import heapq as _heapq
+from _weakref import proxy as _proxy
 from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
 from itertools import imap as _imap
 
@@ -35,6 +36,10 @@ except ImportError:
 ### OrderedDict
 ################################################################################
 
+class _Link(object):
+    __slots__ = 'prev', 'next', 'key', '__weakref__'
+
+
 class OrderedDict(dict):
     'Dictionary that remembers insertion order'
     # An inherited dict maps keys to values.
@@ -45,7 +50,10 @@ class OrderedDict(dict):
     # The internal self.__map dict maps keys to links in a doubly linked list.
     # The circular doubly linked list starts and ends with a sentinel element.
     # The sentinel element never gets deleted (this simplifies the algorithm).
-    # Each link is stored as a list of length three:  [PREV, NEXT, KEY].
+    # The sentinel is in self.__hardroot with a weakref proxy in self.__root.
+    # The prev links are weakref proxies (to prevent circular references).
+    # Individual links are kept alive by the hard reference in self.__map.
+    # Those hard references disappear when a key is deleted from an OrderedDict.
 
     def __init__(*args, **kwds):
         '''Initialize an ordered dictionary.  The signature is the same as
@@ -63,19 +71,23 @@ class OrderedDict(dict):
         try:
             self.__root
         except AttributeError:
-            self.__root = root = []                     # sentinel node
-            root[:] = [root, root, None]
+            self.__hardroot = _Link()
+            self.__root = root = _proxy(self.__hardroot)  # sentinel node
+            root.prev = root.next = root
             self.__map = {}
         self.__update(*args, **kwds)
 
-    def __setitem__(self, key, value, dict_setitem=dict.__setitem__):
+    def __setitem__(self, key, value, dict_setitem=dict.__setitem__, proxy=_proxy, Link=_Link):
         'od.__setitem__(i, y) <==> od[i]=y'
         # Setting a new item creates a new link at the end of the linked list,
         # and the inherited dictionary is updated with the new key/value pair.
         if key not in self:
+            self.__map[key] = link = Link()
             root = self.__root
-            last = root[0]
-            last[1] = root[0] = self.__map[key] = [last, root, key]
+            last = root.prev
+            link.prev, link.next, link.key = last, root, key
+            last.next = link
+            root.prev = proxy(link)
         return dict_setitem(self, key, value)
 
     def __delitem__(self, key, dict_delitem=dict.__delitem__):
@@ -83,32 +95,36 @@ class OrderedDict(dict):
         # Deleting an existing item uses self.__map to find the link which gets
         # removed by updating the links in the predecessor and successor nodes.
         dict_delitem(self, key)
-        link_prev, link_next, _ = self.__map.pop(key)
-        link_prev[1] = link_next                        # update link_prev[NEXT]
-        link_next[0] = link_prev                        # update link_next[PREV]
+        link = self.__map.pop(key)
+        link_prev = link.prev
+        link_next = link.next
+        link_prev.next = link_next
+        link_next.prev = link_prev
+        link.prev = None
+        link.next = None
 
     def __iter__(self):
         'od.__iter__() <==> iter(od)'
         # Traverse the linked list in order.
         root = self.__root
-        curr = root[1]                                  # start at the first node
+        curr = root.next                                # start at the first node
         while curr is not root:
-            yield curr[2]                               # yield the curr[KEY]
-            curr = curr[1]                              # move to next node
+            yield curr.key                              # yield the curr[KEY]
+            curr = curr.next                            # move to next node
 
     def __reversed__(self):
         'od.__reversed__() <==> reversed(od)'
         # Traverse the linked list in reverse order.
         root = self.__root
-        curr = root[0]                                  # start at the last node
+        curr = root.prev                                # start at the last node
         while curr is not root:
-            yield curr[2]                               # yield the curr[KEY]
-            curr = curr[0]                              # move to previous node
+            yield curr.key                              # yield the curr[KEY]
+            curr = curr.prev                            # move to previous node
 
     def clear(self):
         'od.clear() -> None.  Remove all items from od.'
         root = self.__root
-        root[:] = [root, root, None]
+        root.prev = root.next = root
         self.__map.clear()
         dict.clear(self)
 
