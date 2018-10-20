@@ -4,6 +4,8 @@ What's New in IDLE 2.7.16?
 ==========================
 *Release date: 2019-01-01?*
 
+bpo-31500: Default fonts now are scaled on HiDPI displays.
+
 bpo-34275: Make calltips always visible on Mac.
 Patch by Kevin Walzer.
 
