@@ -257,7 +257,7 @@ To convert to a key function, just wrap the old comparison function:
 
 .. testsetup::
 
-    >>> from functools import cmp_to_key
+    from functools import cmp_to_key
 
 .. doctest::
 
