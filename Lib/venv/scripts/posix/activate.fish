@@ -53,7 +53,11 @@ if test -z "$VIRTUAL_ENV_DISABLE_PROMPT"
 
         # Prompt override?
         if test -n "__VENV_PROMPT__"
-            printf "%s%s" "__VENV_PROMPT__" (set_color normal)
+            if test -n (omf list | grep "bobthefish")
+                printf ""
+            else
+                printf "%s%s" "__VENV_PROMPT__" (set_color normal)
+            end
         else
             # ...Otherwise, prepend env
             set -l _checkbase (basename "$VIRTUAL_ENV")
