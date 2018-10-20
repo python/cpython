@@ -429,6 +429,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         server_context = test_utils.simple_server_sslcontext()
         client_context = test_utils.simple_client_sslcontext()
+        client_context.options |= ssl.OP_NO_TLSv1_3
 
         def client(sock, addr):
             sock.settimeout(self.TIMEOUT)
