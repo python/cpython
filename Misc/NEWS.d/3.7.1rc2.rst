@@ -49,6 +49,15 @@ Fixed integer overflow in the :meth:`~hashlib.shake.digest()` and
 
 ..
 
+.. bpo: 34909
+.. date: 2018-10-20-00-35-19
+.. nonce: Ew_8DC
+.. section: Library
+
+Enum: fix grandchildren subclassing when parent mixed with concrete data
+types.
+
+..
 .. bpo: 34900
 .. date: 2018-10-05-05-55-53
 .. nonce: 8RNiFu
@@ -86,6 +95,17 @@ Fix self-cancellation in C implementation of asyncio.Task
 Use a monotonic clock to compute timeouts in :meth:`Executor.map` and
 :func:`as_completed`, in order to prevent timeouts from deviating when the
 system clock is adjusted.
+
+..
+
+.. bpo: 34521
+.. date: 2018-10-13-19-15-23
+.. nonce: YPaiTK
+.. section: Library
+
+Use :func:`socket.CMSG_SPACE` to calculate ancillary data size instead of
+:func:`socket.CMSG_LEN` in :func:`multiprocessing.reduction.recvfds` as
+:rfc:`3542` requires the use of the former for portable applications.
 
 ..
 
