@@ -626,7 +626,7 @@ non-important content
         self.assertEqual(f'2\x203', '2 3')
         self.assertEqual(f'\x203', ' 3')
 
-        with self.assertWarns(DeprecationWarning):  # invalid escape sequence
+        with self.assertWarns(SyntaxWarning):  # invalid escape sequence
             value = eval(r"f'\{6*7}'")
         self.assertEqual(value, '\\42')
         self.assertEqual(f'\\{6*7}', '\\42')
