@@ -1422,13 +1422,19 @@ win32_error_object(const char* function, PyObject* filename)
 #endif /* MS_WINDOWS */
 
 static PyObject *
+posix_path_object_error(PyObject *path)
+{
+    return PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path);
+}
+
+static PyObject *
 path_object_error(PyObject *path)
 {
 #ifdef MS_WINDOWS
     return PyErr_SetExcFromWindowsErrWithFilenameObject(
                 PyExc_OSError, 0, path);
 #else
-    return PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path);
+    return posix_path_object_error(path);
 #endif
 }
 
@@ -1447,6 +1453,12 @@ static PyObject *
 path_error(path_t *path)
 {
     return path_object_error(path->object);
+}
+
+static PyObject *
+posix_path_error(path_t *path)
+{
+    return posix_path_object_error(path->object);
 }
 
 static PyObject *
@@ -5097,7 +5109,7 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
 
     /* If we get here it's definitely an error */
 
-    path_error(path);
+    posix_path_error(path);
 
     free_string_array(envlist, envc);
   fail:
@@ -9060,7 +9072,7 @@ os_truncate_impl(PyObject *module, path_t *path, Py_off_t length)
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     if (result < 0)
-        return path_error(path);
+        return posix_path_error(path);
 
     Py_RETURN_NONE;
 }
