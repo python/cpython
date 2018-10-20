@@ -1,0 +1,8 @@
+.. bpo: 0
+.. date: 2018-10-20
+.. no changes: True
+.. nonce: 66tWQH
+.. release date: 2018-10-20
+.. section: Library
+
+There were no new changes in version 3.6.7.
