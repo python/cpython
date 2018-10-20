@@ -1719,21 +1719,27 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
 
     mod = PyImport_GetModule(abs_name);
     if (mod != NULL && mod != Py_None) {
+        _Py_IDENTIFIER(__spec__);
         _Py_IDENTIFIER(_lock_unlock_module);
+        PyObject *spec;
 
         /* Optimization: only call _bootstrap._lock_unlock_module() if
            __spec__._initializing is true.
            NOTE: because of this, initializing must be set *before*
            stuffing the new module in sys.modules.
          */
-        if (_PyModule_IsInitializing(mod)) {
+        spec = _PyObject_GetAttrId(mod, &PyId___spec__);
+        if (_PyModuleSpec_IsInitializing(spec)) {
             PyObject *value = _PyObject_CallMethodIdObjArgs(interp->importlib,
                                             &PyId__lock_unlock_module, abs_name,
                                             NULL);
-            if (value == NULL)
+            if (value == NULL) {
+                Py_DECREF(spec);
                 goto error;
+            }
             Py_DECREF(value);
         }
+        Py_XDECREF(spec);
     }
     else {
         Py_XDECREF(mod);

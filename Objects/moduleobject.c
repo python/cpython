@@ -699,29 +699,20 @@ module_repr(PyModuleObject *m)
 }
 
 int
-_PyModule_IsInitializing(PyObject *m)
+_PyModuleSpec_IsInitializing(PyObject *spec)
 {
-    _Py_IDENTIFIER(__spec__);
-    _Py_IDENTIFIER(_initializing);
-    PyObject *spec;
-    PyObject *value = NULL;
-    if (PyModule_Check(m) && ((PyModuleObject *)m)->md_dict) {
-        spec = _PyDict_GetItemId(((PyModuleObject *)m)->md_dict, &PyId___spec__);
-        if (spec != NULL && spec != Py_None) {
-            value = _PyObject_GetAttrId(spec, &PyId__initializing);
-        }
-        if (value == NULL) {
-            PyErr_Clear();
-        }
-        else {
+    if (spec != NULL && spec != Py_None) {
+        _Py_IDENTIFIER(_initializing);
+        PyObject *value = _PyObject_GetAttrId(spec, &PyId__initializing);
+        if (value != NULL) {
             int initializing = PyObject_IsTrue(value);
             Py_DECREF(value);
-            if (initializing < 0) {
-                PyErr_Clear();
+            if (initializing >= 0) {
+                return initializing;
             }
-            return initializing > 0;
         }
     }
+    PyErr_Clear();
     return 0;
 }
 
@@ -744,8 +735,11 @@ module_getattro(PyModuleObject *m, PyObject *name)
         _Py_IDENTIFIER(__name__);
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
         if (mod_name && PyUnicode_Check(mod_name)) {
+            _Py_IDENTIFIER(__spec__);
             Py_INCREF(mod_name);
-            if (_PyModule_IsInitializing((PyObject *)m)) {
+            PyObject *spec = _PyDict_GetItemId(m->md_dict, &PyId___spec__);
+            Py_XINCREF(spec);
+            if (_PyModuleSpec_IsInitializing(spec)) {
                 PyErr_Format(PyExc_AttributeError,
                              "partially initialized "
                              "module '%U' has no attribute '%U' "
@@ -757,6 +751,7 @@ module_getattro(PyModuleObject *m, PyObject *name)
                              "module '%U' has no attribute '%U'",
                              mod_name, name);
             }
+            Py_XDECREF(spec);
             Py_DECREF(mod_name);
             return NULL;
         }
