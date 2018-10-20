@@ -1297,30 +1297,29 @@ find and load modules.
 
    (``__name__``)
 
-   A string for the fully-qualified name of the module.
+   Fully-qualified name of the module.
 
    .. attribute:: loader
 
    (``__loader__``)
 
-   The loader to use for loading.  For namespace packages this should be
-   set to ``None``.
+   Loader object to use for loading the module.
 
    .. attribute:: origin
 
    (``__file__``)
 
-   Name of the place from which the module is loaded, e.g. "builtin" for
-   built-in modules and the filename for modules loaded from source.
-   Normally "origin" should be set, but it may be ``None`` (the default)
-   which indicates it is unspecified (e.g. for namespace packages).
+   Path to the code from where the module should be loaded, e.g.,
+   "builtin" for built-in modules and the filename for modules loaded from
+   source. It may be ``None`` (the default), which indicates it is
+   unspecified (e.g. for namespace packages). It is optional.
 
    .. attribute:: submodule_search_locations
 
    (``__path__``)
 
-   List of strings for where to find submodules, if a package (``None``
-   otherwise).
+   Iterable (possibly empty) of locations to search for submodules of a
+   package module during import. Not set for non-package modules.
 
    .. attribute:: loader_state
 
@@ -1331,18 +1330,20 @@ find and load modules.
 
    (``__cached__``)
 
-   String for where the compiled module should be stored (or ``None``).
+   Path to the compiled code from where the module should be loaded.
+   It is optional.
 
    .. attribute:: parent
 
    (``__package__``)
 
-   (Read-only) Fully-qualified name of the package to which the module
-   belongs as a submodule (or ``None``).
+   The ``__name__`` attribute of the module for package modules.
+   The empty string for non-package top-level modules or the parent
+   package's ``__name__`` attribute for non-package submodules.
 
    .. attribute:: has_location
 
-   Boolean indicating whether or not the module's "origin"
+   Boolean indicating whether or not the module's ``origin``
    attribute refers to a loadable location.
 
 :mod:`importlib.util` -- Utility code for importers
