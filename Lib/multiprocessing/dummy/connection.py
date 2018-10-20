@@ -61,8 +61,8 @@ class Connection(object):
             return True
         if timeout <= 0.0:
             return False
-        with self._in.not_empty:
-            self._in.not_empty.wait(timeout)
+        with self._in.exhausted_or_non_empty:
+            self._in.exhausted_or_non_empty.wait(timeout)
         return self._in.qsize() > 0
 
     def close(self):

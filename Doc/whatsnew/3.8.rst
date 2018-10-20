@@ -167,6 +167,11 @@ Added :attr:`SSLContext.post_handshake_auth` to enable and
 post-handshake authentication.
 (Contributed by Christian Heimes in :issue:`34670`.)
 
+threading
+---------
+
+Queue now supports closing and iteration.
+
 tkinter
 -------
 

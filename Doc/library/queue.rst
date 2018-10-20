@@ -48,7 +48,6 @@ The :mod:`queue` module defines the following classes and exceptions:
    block once this size has been reached, until queue items are consumed.  If
    *maxsize* is less than or equal to zero, the queue size is infinite.
 
-
 .. class:: PriorityQueue(maxsize=0)
 
    Constructor for a priority queue.  *maxsize* is an integer that sets the upperbound
@@ -93,6 +92,24 @@ The :mod:`queue` module defines the following classes and exceptions:
    on a :class:`Queue` object which is full.
 
 
+.. exception:: Closed
+
+   Sub-exception of :exc:`Full` raised when :meth:`~Queue.put`
+   (or :meth:`~Queue.put_nowait`) is called on a :class:`Queue`
+   object which is closed.
+   Also raised in a blocking :meth:`~Queue.put` when the :class:`Queue`
+   object becomes closed while the method is blocking.
+
+
+.. exception:: Exhausted
+
+   Sub-exception of :exc:`Empty` raised when :meth:`~Queue.get`
+   (or :meth:`~Queue.get_nowait`) is called on a :class:`Queue`
+   object which is exhausted, i.e. closed and empty.
+   Also raised in a blocking :meth:`~Queue.get` when the :class:`Queue`
+   object becomes exhausted while the method is blocking.
+
+
 .. _queueobjects:
 
 Queue Objects
@@ -105,35 +122,63 @@ provide the public methods described below.
 .. method:: Queue.qsize()
 
    Return the approximate size of the queue.  Note, qsize() > 0 doesn't
-   guarantee that a subsequent get() will not block, nor will qsize() < maxsize
-   guarantee that put() will not block.
+   guarantee that a subsequent :meth:`get` will not block, nor will
+   qsize() < maxsize guarantee that :meth:`put` will not block.
 
 
 .. method:: Queue.empty()
 
    Return ``True`` if the queue is empty, ``False`` otherwise.  If empty()
-   returns ``True`` it doesn't guarantee that a subsequent call to put()
+   returns ``True`` it doesn't guarantee that a subsequent call to :meth:`put`
    will not block.  Similarly, if empty() returns ``False`` it doesn't
-   guarantee that a subsequent call to get() will not block.
+   guarantee that a subsequent call to :meth:`get` will not block.
 
 
 .. method:: Queue.full()
 
-   Return ``True`` if the queue is full, ``False`` otherwise.  If full()
-   returns ``True`` it doesn't guarantee that a subsequent call to get()
-   will not block.  Similarly, if full() returns ``False`` it doesn't
-   guarantee that a subsequent call to put() will not block.
+   Return ``True`` if the queue is full, ``False`` otherwise.  The queue is
+   considered full if it currently has no free slots available for new items,
+   either because its *maxsize* capacity is filled, or because it is closed.
+   If full() returns ``True`` it doesn't guarantee that a subsequent call to
+   :meth:`get` will not block.  Similarly, if full() returns ``False`` it
+   doesn't guarantee that a subsequent call to :meth:`put` will not block.
+
+
+.. method:: Queue.closed()
+
+   Return ``True`` if the queue is closed, ``False`` otherwise.  The queue can
+   only be closed by an explicit call to the :meth:`~Queue.close` method. If
+   closed() returns ``True``, it is guaranteed that for the rest of the queue's
+   lifetime both closed() and :meth:`full` will continue to return ``True``
+   whereas meth:`put` and meth:`put_nowait` will always fail.
+
+
+.. method:: Queue.exhausted()
+
+   Return ``True`` if the queue is both closed and empty, ``False`` otherwise.
+   If exhausted() returns ``True``, it is guaranteed that for the rest of the
+   queue's lifetime all of exhausted(), meth:`closed`, meth:`empty` and
+   meth:`full` will continue to return ``True`` whereas meth:`get`,
+   meth:`get_nowait`, meth:`put` and meth:`put_nowait` will always fail.
 
 
 .. method:: Queue.put(item, block=True, timeout=None)
 
-   Put *item* into the queue. If optional args *block* is true and *timeout* is
-   ``None`` (the default), block if necessary until a free slot is available. If
-   *timeout* is a positive number, it blocks at most *timeout* seconds and raises
-   the :exc:`Full` exception if no free slot was available within that time.
-   Otherwise (*block* is false), put an item on the queue if a free slot is
-   immediately available, else raise the :exc:`Full` exception (*timeout* is
-   ignored in that case).
+   Put *item* into the queue.
+
+   If optional args *block* is true and *timeout* is ``None`` (the default),
+   block if necessary until a free slot is available or the queue is closed;
+   in the latter case, raise a :exc:`Closed` exception.
+
+   If *block* is true and *timeout* is a positive number, block at most
+   *timeout* seconds and raise the :exc:`Full` exception if no free slot
+   becomes available within that time, or the :exc:`Closed` exception if the
+   queue gets closed before any slots are available.
+
+   If *block* is false, ignore *timeout* and put an item on the
+   queue if a free slot is immediately available, else raise the :exc:`Full` or
+   :exc:`Closed` exception, depending on whether the queue is closed.
+   (Note that :exc:`Closed` is a subclass of :exc:`Full`.)
 
 
 .. method:: Queue.put_nowait(item)
@@ -143,12 +188,22 @@ provide the public methods described below.
 
 .. method:: Queue.get(block=True, timeout=None)
 
-   Remove and return an item from the queue. If optional args *block* is true and
-   *timeout* is ``None`` (the default), block if necessary until an item is available.
-   If *timeout* is a positive number, it blocks at most *timeout* seconds and
-   raises the :exc:`Empty` exception if no item was available within that time.
-   Otherwise (*block* is false), return an item if one is immediately available,
-   else raise the :exc:`Empty` exception (*timeout* is ignored in that case).
+   Remove and return an item from the queue.
+
+   If optional args *block* is true and *timeout* is ``None`` (the default),
+   block if necessary until an item is available or the queue is closed. If
+   the queue is closed and no items are available, raise the :exc:`Exhausted`
+   exception.
+
+   If *block* is true and *timeout* is a positive number, block at most
+   *timeout* seconds and raise the :exc:`Empty` exception if no item becomes
+   available within that time, or the :exc:`Exhausted` exception if the queue
+   gets closed before any items are available.
+
+   If *block* is false, ignore *timeout* and return an item if one is
+   immediately available, else raise the :exc:`Empty` or :exc:`Exhausted`
+   exception, depending on whether the queue is closed.
+   (Note that :exc:`Exhausted` is a subclass of :exc:`Empty`.)
 
 
 .. method:: Queue.get_nowait()
@@ -211,6 +266,63 @@ Example of how to wait for enqueued tasks to be completed::
         q.put(None)
     for t in threads:
         t.join()
+
+
+The :class:`Queue` also supports a *closing* protocol, which can be used to
+cleanly coordinate completion or termination of work.
+
+
+.. method:: Queue.close()
+
+   Close the queue. Once closed, the queue does not accept new items and can
+   not be reopened. Closing immediately aborts any currently-blocking
+   :meth:`put` calls; if the queue is empty at the moment of closing, it
+   also aborts any currently-blocking :meth:`get` calls.
+   Repeated calls to close() after the first one do nothing.
+
+
+The queue is typically closed by whichever part of the producer-consumer
+structure is driving the workflow. A consumer could close the
+queue to signal to producers that there is no interest in further items, a
+producer could close it to signal to consumers that after the current
+contents of the queue are retrieved there is no need to keep waiting for new
+ones, or a third part of the system could close it to signal to both sides that
+they should terminate communication without dropping any items that are already
+in transport.
+
+If multiple actors need to coordinate the conditions for closing
+among themselves (e.g. if the queue is to be closed once multiple producers are
+all finished), this can be resolved outside the queue itself, typically using
+synchronization primitives such as :class:`~threading.Semaphore` or
+:class:`~threading.Barrier`.
+
+
+.. method:: Queue.__iter__()
+
+   Iterate through (blocking) retrieval of items from the queue until it is
+   closed. Each :func:`next` call on the iterator will retrieve one item if
+   available, block until an item becomes available, or stop the iteration
+   once the queue is exhausted (closed and empty). This enables simple
+   consumption in the form of a plain ``for`` loop::
+
+    for item in queue:
+        process(item)
+
+   The iteration support is intended for use with *close()*, because
+   the iteration will never terminate of its own on a queue that doesn't get
+   closed.
+   It can still be used without explicit closing though, as long as the
+   consumption code is able to decide on its own when to stop retrieving::
+
+    for item in queue:
+        process(item)
+        if item.is_last():
+            break
+
+
+Note that the closing and task-tracking protocols are independent and have no
+interactions. One is only about the transport of items, and the other is about
+the completion of their processing.
 
 
 SimpleQueue Objects

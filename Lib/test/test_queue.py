@@ -43,6 +43,11 @@ class _TriggerThread(threading.Thread):
         self.startedEvent.set()
         self.fn(*self.args)
 
+def _set_event_on_exception(func, args, expected_exception_class, event):
+    try:
+        func(*args)
+    except expected_exception_class:
+        event.set()
 
 # Execute a function that blocks, and in a separate thread, a function that
 # triggers the release.  Returns the result of the blocking function.  Caution:
@@ -53,7 +58,8 @@ class _TriggerThread(threading.Thread):
 # timing-dependent sporadic failures, and one of those went rarely seen but
 # undiagnosed for years.  Now block_func must be unexceptional.  If block_func
 # is supposed to raise an exception, call do_exceptional_blocking_test()
-# instead.
+# instead.  If multiple instances of block_func are supposed to get released
+# and raise exceptions, use do_exceptional_simultaneous_blocking_test
 
 class BlockingTestMixin:
 
@@ -72,14 +78,14 @@ class BlockingTestMixin:
 
     # Call this instead if block_func is supposed to raise an exception.
     def do_exceptional_blocking_test(self,block_func, block_args, trigger_func,
-                                   trigger_args, expected_exception_class):
+                                     trigger_args, expected_exception_class):
         thread = _TriggerThread(trigger_func, trigger_args)
         thread.start()
         try:
             try:
                 block_func(*block_args)
             except expected_exception_class:
-                raise
+                pass
             else:
                 self.fail("expected exception of kind %r" %
                                  expected_exception_class)
@@ -87,6 +93,31 @@ class BlockingTestMixin:
             support.join_thread(thread, 10) # make sure the thread terminates
             if not thread.startedEvent.is_set():
                 self.fail("trigger thread ended but event never set")
+
+    # Call this if multiple instances of block_func are expected to all be
+    # released by a single trigger call, and to then raise an exception:
+    def do_exceptional_simultaneously_blocking_test(
+            self,block_func, block_args, trigger_func, trigger_args,
+            expected_exception_class, instances_count = 5):
+        raising_events = [threading.Event() for _ in range(instances_count)]
+        blocking_threads = [threading.Thread(
+            target=_set_event_on_exception,
+            args=(block_func, block_args,
+                  expected_exception_class, raising_events[i]))
+            for i in range(instances_count)]
+        for t in blocking_threads:
+            t.start()
+
+        blocking_threads[0].join(0.1)  # This is expected to time out.
+        if not all(t.is_alive() for t in blocking_threads):
+            self.fail("Blocking function returned before trigger.")
+
+        trigger_func(*trigger_args)
+        for t in blocking_threads:
+            support.join_thread(t, 10)
+        if not all(e.is_set() for e in raising_events):
+            self.fail("Blocking function never raised expected %s." %
+                      expected_exception_class.__name__)
 
 
 class BaseQueueTestMixin(BlockingTestMixin):
@@ -241,6 +272,165 @@ class BaseQueueTestMixin(BlockingTestMixin):
         with self.assertRaises(queue.Full):
             q.put_nowait(4)
 
+    def closed_put_test(self, q):
+        try:
+            q.put("No way!")
+            self.fail("Closed queue should reject puts.")
+        except queue.Closed:
+            pass
+
+    def exhausted_get_test(self, q):
+        try:
+            q.get()
+            self.fail("Exhausted queue should reject gets.")
+        except queue.Exhausted:
+            pass
+
+    def test_queue_closing(self):
+        q = self.type2test(3)
+        self.assertTrue(q.empty())
+        self.assertFalse(q.full())
+        self.assertFalse(q.closed())
+        self.assertFalse(q.exhausted())
+        q.put(1)
+        q.put(2)
+        self.assertFalse(q.empty())
+        self.assertFalse(q.full())
+        self.assertFalse(q.closed())
+        self.assertFalse(q.exhausted())
+
+        q.close()
+        self.assertFalse(q.empty(), "Queue should not turn empty on closing.")
+        self.assertTrue(
+            q.full(),
+            "Queue should report being full immediately after closing.")
+        self.assertTrue(q.closed())
+        self.assertFalse(
+            q.exhausted(),
+            "Non-empty queue should not turn exhausted immediately on closing.")
+        self.closed_put_test(q)
+
+        gotten = []
+        gotten.append(q.get())
+        self.assertFalse(q.empty())
+        self.assertTrue(q.full(), "Closed queue should stay full forever.")
+        self.assertTrue(q.closed(),
+                        "Closed queue should stay closed forever.")
+        self.assertFalse(q.exhausted(),
+                         "Closed queue should stay un-exhausted until empty.")
+        self.closed_put_test(q)
+        gotten.append(q.get())
+        self.assertTrue(q.empty())
+        self.assertTrue(q.full(), "Closed queue should stay full forever.")
+        self.assertTrue(q.closed(),
+                        "Closed queue should stay closed forever.")
+        self.assertTrue(q.exhausted(),
+                         "Closed queue should turn exhausted once empty.")
+        self.closed_put_test(q)
+        self.exhausted_get_test(q)
+
+        gotten.sort()
+        self.assertEqual(gotten, [1, 2],
+                         "Unexpected results gotten from queue.")
+
+        # Test that a queue emptied before closing behaves correctly:
+        q = self.type2test(3)
+        q.put(1)
+        q.get()
+        self.assertTrue(q.empty())
+        self.assertFalse(q.full())
+        self.assertFalse(q.closed())
+        self.assertFalse(q.exhausted())
+        q.close()
+        self.assertTrue(q.empty())
+        self.assertTrue(q.full())
+        self.assertTrue(q.closed())
+        self.assertTrue(q.exhausted())
+        self.closed_put_test(q)
+        self.exhausted_get_test(q)
+
+        # Test that a queue closed before any puts behaves correctly:
+        q = self.type2test(3)
+        self.assertTrue(q.empty())
+        self.assertFalse(q.full())
+        self.assertFalse(q.closed())
+        self.assertFalse(q.exhausted())
+        q.close()
+        self.assertTrue(q.empty())
+        self.assertTrue(q.full())
+        self.assertTrue(q.closed())
+        self.assertTrue(q.exhausted())
+        self.closed_put_test(q)
+        self.exhausted_get_test(q)
+
+        # Test that a queue closed when full behaves correctly:
+        q = self.type2test(2)
+        q.put(1)
+        q.put(2)
+        self.assertFalse(q.empty())
+        self.assertTrue(q.full())
+        self.assertFalse(q.closed())
+        self.assertFalse(q.exhausted())
+        q.close()
+        self.assertFalse(q.empty())
+        self.assertTrue(q.full())
+        self.assertTrue(q.closed())
+        self.assertFalse(q.exhausted())
+        self.closed_put_test(q)
+
+        q.get()
+        self.assertFalse(q.empty())
+        self.assertTrue(q.full())
+        self.assertTrue(q.closed())
+        self.assertFalse(q.exhausted())
+        self.closed_put_test(q)
+
+        q.get()
+        self.assertTrue(q.empty())
+        self.assertTrue(q.full())
+        self.assertTrue(q.closed())
+        self.assertTrue(q.exhausted())
+        self.closed_put_test(q)
+        self.exhausted_get_test(q)
+
+        # Test that blocking methods are released at closing/exhaustion:
+        ## Putting onto a full queue:
+        q = self.type2test(1)
+        q.put(1)
+        self.do_exceptional_blocking_test(q.put, (2,), q.close, (), queue.Closed)
+        ### Once again, with explicit timeout:
+        q = self.type2test(1)
+        q.put(1)
+        self.do_exceptional_blocking_test(
+            q.put, (2, True, 100), q.close, (), queue.Closed)
+        ## Getting from an empty queue:
+        q = self.type2test()
+        self.do_exceptional_blocking_test(q.get, (), q.close, (), queue.Exhausted)
+        ### Once again, with explicit timeout:
+        q = self.type2test()
+        self.do_exceptional_blocking_test(
+            q.get, (True, 100), q.close, (), queue.Exhausted)
+
+        # Test that multiple simultaneously blocked calls are all released:
+        ## Putting onto a full queue:
+        q = self.type2test(1)
+        q.put(1)
+        self.do_exceptional_simultaneously_blocking_test(
+            q.put, (2,), q.close, (), queue.Closed)
+        ### Once again, with explicit timeout:
+        q = self.type2test(1)
+        q.put(1)
+        self.do_exceptional_simultaneously_blocking_test(
+            q.put, (2, True, 100), q.close, (), queue.Closed)
+        ## Getting from an empty queue:
+        q = self.type2test()
+        self.do_exceptional_simultaneously_blocking_test(
+            q.get, (), q.close, (), queue.Exhausted)
+        ### Once again, with explicit timeout:
+        q = self.type2test()
+        self.do_exceptional_simultaneously_blocking_test(
+            q.get, (True, 100), q.close, (), queue.Exhausted)
+
 class QueueTest(BaseQueueTestMixin, unittest.TestCase):
     type2test = queue.Queue
 
@@ -306,12 +496,8 @@ class FailingQueueTest(BlockingTestMixin, unittest.TestCase):
         q.put("last")
         # Test a failing timeout put
         q.fail_next_put = True
-        try:
-            self.do_exceptional_blocking_test(q.put, ("full", True, 10), q.get, (),
-                                              FailingQueueException)
-            self.fail("The queue didn't fail when it should have")
-        except FailingQueueException:
-            pass
+        self.do_exceptional_blocking_test(q.put, ("full", True, 10), q.get, (),
+                                          FailingQueueException)
         # Check the Queue isn't damaged.
         # put failed, but get succeeded - re-add
         q.put("last")
@@ -344,12 +530,8 @@ class FailingQueueTest(BlockingTestMixin, unittest.TestCase):
         q.get()
         self.assertTrue(not q.qsize(), "Queue should be empty")
         q.fail_next_get = True
-        try:
-            self.do_exceptional_blocking_test(q.get, (), q.put, ('empty',),
-                                              FailingQueueException)
-            self.fail("The queue didn't fail when it should have")
-        except FailingQueueException:
-            pass
+        self.do_exceptional_blocking_test(q.get, (), q.put, ('empty',),
+                                          FailingQueueException)
         # put succeeded, but get failed.
         self.assertTrue(q.qsize(), "Queue should not be empty")
         q.get()
