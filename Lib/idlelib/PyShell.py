@@ -1552,6 +1552,8 @@ def main():
     # start editor and/or shell windows:
     root = Tk(className="Idle")
     root.withdraw()
+    from idlelib.run import fix_scaling
+    fix_scaling(root)
 
     # set application icon
     icondir = os.path.join(os.path.dirname(__file__), 'Icons')
