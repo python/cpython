@@ -363,6 +363,15 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         goto error;
     }
 
+    if (binary && buffering == 1) {
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                         "line buffering (buffering=1) isn't supported in "
+                         "binary mode, the default buffer size will be used",
+                         1) < 0) {
+           goto error;
+        }
+    }
+
     /* Create the Raw file stream */
     {
         PyObject *RawIO_class = (PyObject *)&PyFileIO_Type;
