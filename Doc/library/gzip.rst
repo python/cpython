@@ -230,36 +230,19 @@ Command line options
 
 .. cmdoption:: file
 
-   .. code-block:: shell-session
-
-      $ python -m gzip file
-
    If *file* is not specified, read from :attr:`sys.stdin`.
 
 .. cmdoption:: --fast
 
    Indicates the fastest compression method (less compression).
 
-   .. code-block:: shell-session
-
-      $ python -m gzip --fast file
-
 .. cmdoption:: --best
 
    Indicates the slowest compression method (best compression).
-   This is the default method if you do not specify any flag.
-
-   .. code-block:: shell-session
-
-      $ python -m gzip --best file
 
 .. cmdoption:: -d, --decompress
 
    Decompress the given file.
-
-   .. code-block:: shell-session
-
-      $ python -m gzip -d file.gz
 
 .. cmdoption:: -h, --help
 
