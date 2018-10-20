@@ -169,10 +169,10 @@ class CmdLineTest(unittest.TestCase):
     @contextlib.contextmanager
     def interactive_python(self, separate_stderr=False):
         if separate_stderr:
-            p = spawn_python('-i', bufsize=1, stderr=subprocess.PIPE)
+            p = spawn_python('-i', stderr=subprocess.PIPE)
             stderr = p.stderr
         else:
-            p = spawn_python('-i', bufsize=1, stderr=subprocess.STDOUT)
+            p = spawn_python('-i', stderr=subprocess.STDOUT)
             stderr = p.stdout
         try:
             # Drain stderr until prompt

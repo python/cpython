@@ -107,7 +107,8 @@ __all__ = [
     # threads
     "threading_setup", "threading_cleanup", "reap_threads", "start_threads",
     # miscellaneous
-    "check_warnings", "check_no_resource_warning", "EnvironmentVarGuard",
+    "check_warnings", "check_no_resource_warning", "check_no_warnings",
+    "EnvironmentVarGuard",
     "run_with_locale", "swap_item",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
@@ -1253,6 +1254,30 @@ def check_warnings(*filters, **kwargs):
 
 
 @contextlib.contextmanager
+def check_no_warnings(testcase, message='', category=Warning, force_gc=False):
+    """Context manager to check that no warnings are emitted.
+
+    This context manager enables a given warning within its scope
+    and checks that no warnings are emitted even with that warning
+    enabled.
+
+    If force_gc is True, a garbage collection is attempted before checking
+    for warnings. This may help to catch warnings emitted when objects
+    are deleted, such as ResourceWarning.
+
+    Other keyword arguments are passed to warnings.filterwarnings().
+    """
+    with warnings.catch_warnings(record=True) as warns:
+        warnings.filterwarnings('always',
+                                message=message,
+                                category=category)
+        yield
+        if force_gc:
+            gc_collect()
+    testcase.assertEqual(warns, [])
+
+
+@contextlib.contextmanager
 def check_no_resource_warning(testcase):
     """Context manager to check that no ResourceWarning is emitted.
 
@@ -1266,11 +1291,8 @@ def check_no_resource_warning(testcase):
     You must remove the object which may emit ResourceWarning before
     the end of the context manager.
     """
-    with warnings.catch_warnings(record=True) as warns:
-        warnings.filterwarnings('always', category=ResourceWarning)
+    with check_no_warnings(testcase, category=ResourceWarning, force_gc=True):
         yield
-        gc_collect()
-    testcase.assertEqual(warns, [])
 
 
 class CleanImport(object):

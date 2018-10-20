@@ -1136,7 +1136,8 @@ class ProcessTestCase(BaseTestCase):
         # line is not flushed in binary mode with bufsize=1.
         # we should get empty response
         line = b'line' + os.linesep.encode() # assume ascii-based locale
-        self._test_bufsize_equal_one(line, b'', universal_newlines=False)
+        with self.assertWarnsRegex(RuntimeWarning, 'line buffering'):
+            self._test_bufsize_equal_one(line, b'', universal_newlines=False)
 
     def test_leaking_fds_on_error(self):
         # see bug #5179: Popen leaks file descriptors to PIPEs if

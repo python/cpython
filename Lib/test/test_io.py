@@ -593,7 +593,7 @@ class IOTest(unittest.TestCase):
             self.large_file_ops(f)
 
     def test_with_open(self):
-        for bufsize in (0, 1, 100):
+        for bufsize in (0, 100):
             f = None
             with self.open(support.TESTFN, "wb", bufsize) as f:
                 f.write(b"xxx")
