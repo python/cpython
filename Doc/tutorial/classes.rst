@@ -703,6 +703,11 @@ breaking intraclass method calls.  For example::
            for item in zip(keys, values):
                self.items_list.append(item)
 
+The above example would work even if ``MappingSubclass`` were to introduce a
+``__update`` identifier since it is replaced with ``_Mapping__update`` in the
+``Mapping`` class  and ``_MappingSubclass__update`` in the ``MappingSubclass``
+class respectively.
+
 Note that the mangling rules are designed mostly to avoid accidents; it still is
 possible to access or modify a variable that is considered private.  This can
 even be useful in special circumstances, such as in the debugger.
