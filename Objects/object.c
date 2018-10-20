@@ -96,7 +96,7 @@ extern Py_ssize_t null_strings, one_strings;
 void
 dump_counts(FILE* f)
 {
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     if (!interp->core_config.show_alloc_count) {
         return;
     }
@@ -375,8 +375,9 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
             else if (PyUnicode_Check(s)) {
                 PyObject *t;
                 t = PyUnicode_AsEncodedString(s, "utf-8", "backslashreplace");
-                if (t == NULL)
-                    ret = 0;
+                if (t == NULL) {
+                    ret = -1;
+                }
                 else {
                     fwrite(PyBytes_AS_STRING(t), 1,
                            PyBytes_GET_SIZE(t), fp);
@@ -2180,7 +2181,7 @@ _PyTrash_thread_destroy_chain(void)
 /* For Py_LIMITED_API, we need an out-of-line version of _Py_Dealloc.
    Define this here, so we can undefine the macro. */
 #undef _Py_Dealloc
-PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
+void _Py_Dealloc(PyObject *);
 void
 _Py_Dealloc(PyObject *op)
 {

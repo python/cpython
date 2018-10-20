@@ -65,6 +65,14 @@ PyAPI_FUNC(PyObject *) PyLong_GetInfo(void);
 #  error "void* different in size from int, long and long long"
 #endif /* SIZEOF_VOID_P */
 
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(int) _PyLong_UnsignedShort_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyLong_UnsignedInt_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyLong_UnsignedLong_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyLong_UnsignedLongLong_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
+#endif
+
 /* Used by Python/mystrtoul.c, _PyBytes_FromHex(),
    _PyBytes_DecodeEscapeRecode(), etc. */
 #ifndef Py_LIMITED_API

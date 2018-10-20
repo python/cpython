@@ -208,23 +208,6 @@ exit:
 
 #endif /* (XML_COMBINED_VERSION >= 19505) */
 
-PyDoc_STRVAR(pyexpat_xmlparser___dir____doc__,
-"__dir__($self, /)\n"
-"--\n"
-"\n");
-
-#define PYEXPAT_XMLPARSER___DIR___METHODDEF    \
-    {"__dir__", (PyCFunction)pyexpat_xmlparser___dir__, METH_NOARGS, pyexpat_xmlparser___dir____doc__},
-
-static PyObject *
-pyexpat_xmlparser___dir___impl(xmlparseobject *self);
-
-static PyObject *
-pyexpat_xmlparser___dir__(xmlparseobject *self, PyObject *Py_UNUSED(ignored))
-{
-    return pyexpat_xmlparser___dir___impl(self);
-}
-
 PyDoc_STRVAR(pyexpat_ParserCreate__doc__,
 "ParserCreate($module, /, encoding=None, namespace_separator=None,\n"
 "             intern=None)\n"
@@ -289,4 +272,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=34d02345deee104c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6bdf1faf8ba1af32 input=a9049054013a1b77]*/

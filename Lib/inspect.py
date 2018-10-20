@@ -954,7 +954,12 @@ def getsourcelines(object):
     object = unwrap(object)
     lines, lnum = findsource(object)
 
-    if ismodule(object):
+    if istraceback(object):
+        object = object.tb_frame
+
+    # for module or frame that corresponds to module, return all source lines
+    if (ismodule(object) or
+        (isframe(object) and object.f_code.co_name == "<module>")):
         return lines, 0
     else:
         return getblock(lines[lnum:]), lnum + 1
@@ -1065,8 +1070,10 @@ def getargspec(func):
     Alternatively, use getfullargspec() for an API with a similar namedtuple
     based interface, but full support for annotations and keyword-only
     parameters.
+
+    Deprecated since Python 3.5, use `inspect.getfullargspec()`.
     """
-    warnings.warn("inspect.getargspec() is deprecated, "
+    warnings.warn("inspect.getargspec() is deprecated since Python 3.0, "
                   "use inspect.signature() or inspect.getfullargspec()",
                   DeprecationWarning, stacklevel=2)
     args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
@@ -1983,7 +1990,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
         module = sys.modules.get(module_name, None)
         if module:
             module_dict = module.__dict__
-    sys_module_dict = sys.modules
+    sys_module_dict = sys.modules.copy()
 
     def parse_name(node):
         assert isinstance(node, ast.arg)
@@ -2000,14 +2007,8 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             except NameError:
                 raise RuntimeError()
 
-        if isinstance(value, str):
-            return ast.Str(value)
-        if isinstance(value, (int, float)):
-            return ast.Num(value)
-        if isinstance(value, bytes):
-            return ast.Bytes(value)
-        if value in (True, False, None):
-            return ast.NameConstant(value)
+        if isinstance(value, (str, int, float, bytes, bool, type(None))):
+            return ast.Constant(value)
         raise RuntimeError()
 
     class RewriteSymbolics(ast.NodeTransformer):
@@ -2798,19 +2799,25 @@ class Signature:
 
     @classmethod
     def from_function(cls, func):
-        """Constructs Signature for the given python function."""
+        """Constructs Signature for the given python function.
 
-        warnings.warn("inspect.Signature.from_function() is deprecated, "
-                      "use Signature.from_callable()",
+        Deprecated since Python 3.5, use `Signature.from_callable()`.
+        """
+
+        warnings.warn("inspect.Signature.from_function() is deprecated since "
+                      "Python 3.5, use Signature.from_callable()",
                       DeprecationWarning, stacklevel=2)
         return _signature_from_function(cls, func)
 
     @classmethod
     def from_builtin(cls, func):
-        """Constructs Signature for the given builtin function."""
+        """Constructs Signature for the given builtin function.
 
-        warnings.warn("inspect.Signature.from_builtin() is deprecated, "
-                      "use Signature.from_callable()",
+        Deprecated since Python 3.5, use `Signature.from_callable()`.
+        """
+
+        warnings.warn("inspect.Signature.from_builtin() is deprecated since "
+                      "Python 3.5, use Signature.from_callable()",
                       DeprecationWarning, stacklevel=2)
         return _signature_from_builtin(cls, func)
 

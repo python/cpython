@@ -116,7 +116,7 @@ Functions and classes provided:
       async def get_connection():
           conn = await acquire_db_connection()
           try:
-              yield
+              yield conn
           finally:
               await release_db_connection(conn)
 
@@ -471,11 +471,11 @@ Functions and classes provided:
    .. method:: push_async_exit(exit)
 
       Similar to :meth:`push` but expects either an asynchronous context manager
-      or a coroutine.
+      or a coroutine function.
 
    .. method:: push_async_callback(callback, *args, **kwds)
 
-      Similar to :meth:`callback` but expects a coroutine.
+      Similar to :meth:`callback` but expects a coroutine function.
 
    .. method:: aclose()
 

@@ -70,7 +70,7 @@ class TestModule(unittest.TestCase):
                     if not name.startswith('__') and not name.endswith('__'))
         allowed = set(['MAXYEAR', 'MINYEAR', 'date', 'datetime',
                        'datetime_CAPI', 'time', 'timedelta', 'timezone',
-                       'tzinfo'])
+                       'tzinfo', 'sys'])
         self.assertEqual(names - allowed, set([]))
 
     def test_divide_and_round(self):
@@ -1667,6 +1667,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         # Test that fromisoformat() fails on invalid values
         bad_strs = [
             '',                 # Empty string
+            '\ud800',           # bpo-34454: Surrogate code point
             '009-03-04',        # Not 10 characters
             '123456789',        # Not a date
             '200a-12-04',       # Invalid character in year
@@ -1675,6 +1676,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '2009-01-32',       # Invalid day
             '2009-02-29',       # Invalid leap day
             '20090228',         # Valid ISO8601 output not from isoformat()
+            '2009\ud80002\ud80028',     # Separators are surrogate codepoints
         ]
 
         for bad_str in bad_strs:
@@ -2587,7 +2589,8 @@ class TestDateTime(TestDate):
             ' ', 'T', '\u007f',     # 1-bit widths
             '\u0080', 'ʁ',          # 2-bit widths
             'ᛇ', '時',               # 3-bit widths
-            '🐍'                     # 4-bit widths
+            '🐍',                    # 4-bit widths
+            '\ud800',               # bpo-34454: Surrogate code point
         ]
 
         for sep in separators:
@@ -2639,6 +2642,7 @@ class TestDateTime(TestDate):
         # Test that fromisoformat() fails on invalid values
         bad_strs = [
             '',                             # Empty string
+            '\ud800',                       # bpo-34454: Surrogate code point
             '2009.04-19T03',                # Wrong first separator
             '2009-04.19T03',                # Wrong second separator
             '2009-04-19T0a',                # Invalid hours
@@ -2652,6 +2656,8 @@ class TestDateTime(TestDate):
             '2009-04-19T03:15:45.123456+24:30',    # Invalid time zone offset
             '2009-04-19T03:15:45.123456-24:30',    # Invalid negative offset
             '2009-04-10ᛇᛇᛇᛇᛇ12:15',         # Too many unicode separators
+            '2009-04\ud80010T12:15',        # Surrogate char in date
+            '2009-04-10T12\ud80015',        # Surrogate char in time
             '2009-04-19T1',                 # Incomplete hours
             '2009-04-19T12:3',              # Incomplete minutes
             '2009-04-19T12:30:4',           # Incomplete seconds
@@ -3521,6 +3527,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
     def test_fromisoformat_fails(self):
         bad_strs = [
             '',                         # Empty string
+            '12\ud80000',               # Invalid separator - surrogate char
             '12:',                      # Ends on a separator
             '12:30:',                   # Ends on a separator
             '12:30:15.',                # Ends on a separator
@@ -4954,6 +4961,11 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
         self.assertEqual(t0, t1)
         self.assertEqual(t0.fold, 0)
         self.assertEqual(t1.fold, 1)
+
+    def test_fromtimestamp_low_fold_detection(self):
+        # Ensure that fold detection doesn't cause an
+        # OSError for really low values, see bpo-29097
+        self.assertEqual(datetime.fromtimestamp(0).fold, 0)
 
     @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
     def test_timestamp(self):

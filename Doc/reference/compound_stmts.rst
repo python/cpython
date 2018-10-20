@@ -176,7 +176,7 @@ statement executed in the first suite skips the rest of the suite and continues
 with the next item, or with the :keyword:`else` clause if there is no next
 item.
 
-The for-loop makes assignments to the variables(s) in the target list.
+The for-loop makes assignments to the variables in the target list.
 This overwrites all previous assignments to those variables including
 those made in the suite of the for-loop::
 
@@ -203,7 +203,7 @@ returns the list ``[0, 1, 2]``.
       single: mutable sequence; loop over
 
    There is a subtlety when the sequence is being modified by the loop (this can
-   only occur for mutable sequences, i.e. lists).  An internal counter is used
+   only occur for mutable sequences, e.g. lists).  An internal counter is used
    to keep track of which item is used next, and this is incremented on each
    iteration.  When this counter has reached the length of the sequence the loop
    terminates.  This means that if the suite deletes the current (or a previous)
@@ -681,8 +681,14 @@ can be used to create instance variables with different implementation details.
 
 .. seealso::
 
-   :pep:`3115` - Metaclasses in Python 3
+   :pep:`3115` - Metaclasses in Python 3000
+      The proposal that changed the declaration of metaclasses to the current
+      syntax, and the semantics for how classes with metaclasses are
+      constructed.
+
    :pep:`3129` - Class Decorators
+      The proposal that added class decorators.  Function and method decorators
+      were introduced in :pep:`318`.
 
 
 .. _async:
@@ -765,8 +771,8 @@ Is semantically equivalent to::
 
 See also :meth:`__aiter__` and :meth:`__anext__` for details.
 
-It is a :exc:`SyntaxError` to use ``async for`` statement outside of an
-:keyword:`async def` function.
+It is a :exc:`SyntaxError` to use an ``async for`` statement outside of a
+coroutine.
 
 
 .. index:: statement: async with
@@ -803,12 +809,14 @@ Is semantically equivalent to::
 
 See also :meth:`__aenter__` and :meth:`__aexit__` for details.
 
-It is a :exc:`SyntaxError` to use ``async with`` statement outside of an
-:keyword:`async def` function.
+It is a :exc:`SyntaxError` to use an ``async with`` statement outside of a
+coroutine.
 
 .. seealso::
 
    :pep:`492` - Coroutines with async and await syntax
+      The proposal that made coroutines a proper standalone concept in Python,
+      and added supporting syntax.
 
 
 .. rubric:: Footnotes

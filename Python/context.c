@@ -18,6 +18,28 @@ module _contextvars
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=a0955718c8b8cea6]*/
 
 
+#define ENSURE_Context(o, err_ret)                                  \
+    if (!PyContext_CheckExact(o)) {                                 \
+        PyErr_SetString(PyExc_TypeError,                            \
+                        "an instance of Context was expected");     \
+        return err_ret;                                             \
+    }
+
+#define ENSURE_ContextVar(o, err_ret)                               \
+    if (!PyContextVar_CheckExact(o)) {                              \
+        PyErr_SetString(PyExc_TypeError,                            \
+                       "an instance of ContextVar was expected");   \
+        return err_ret;                                             \
+    }
+
+#define ENSURE_ContextToken(o, err_ret)                             \
+    if (!PyContextToken_CheckExact(o)) {                            \
+        PyErr_SetString(PyExc_TypeError,                            \
+                        "an instance of Token was expected");       \
+        return err_ret;                                             \
+    }
+
+
 /////////////////////////// Context API
 
 
@@ -50,21 +72,23 @@ _PyContext_NewHamtForTests(void)
 }
 
 
-PyContext *
+PyObject *
 PyContext_New(void)
 {
-    return context_new_empty();
+    return (PyObject *)context_new_empty();
 }
 
 
-PyContext *
-PyContext_Copy(PyContext * ctx)
+PyObject *
+PyContext_Copy(PyObject * octx)
 {
-    return context_new_from_vars(ctx->ctx_vars);
+    ENSURE_Context(octx, NULL)
+    PyContext *ctx = (PyContext *)octx;
+    return (PyObject *)context_new_from_vars(ctx->ctx_vars);
 }
 
 
-PyContext *
+PyObject *
 PyContext_CopyCurrent(void)
 {
     PyContext *ctx = context_get();
@@ -72,13 +96,16 @@ PyContext_CopyCurrent(void)
         return NULL;
     }
 
-    return context_new_from_vars(ctx->ctx_vars);
+    return (PyObject *)context_new_from_vars(ctx->ctx_vars);
 }
 
 
 int
-PyContext_Enter(PyContext *ctx)
+PyContext_Enter(PyObject *octx)
 {
+    ENSURE_Context(octx, -1)
+    PyContext *ctx = (PyContext *)octx;
+
     if (ctx->ctx_entered) {
         PyErr_Format(PyExc_RuntimeError,
                      "cannot enter context: %R is already entered", ctx);
@@ -100,8 +127,11 @@ PyContext_Enter(PyContext *ctx)
 
 
 int
-PyContext_Exit(PyContext *ctx)
+PyContext_Exit(PyObject *octx)
 {
+    ENSURE_Context(octx, -1)
+    PyContext *ctx = (PyContext *)octx;
+
     if (!ctx->ctx_entered) {
         PyErr_Format(PyExc_RuntimeError,
                      "cannot exit context: %R has not been entered", ctx);
@@ -129,7 +159,7 @@ PyContext_Exit(PyContext *ctx)
 }
 
 
-PyContextVar *
+PyObject *
 PyContextVar_New(const char *name, PyObject *def)
 {
     PyObject *pyname = PyUnicode_FromString(name);
@@ -138,14 +168,15 @@ PyContextVar_New(const char *name, PyObject *def)
     }
     PyContextVar *var = contextvar_new(pyname, def);
     Py_DECREF(pyname);
-    return var;
+    return (PyObject *)var;
 }
 
 
 int
-PyContextVar_Get(PyContextVar *var, PyObject *def, PyObject **val)
+PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
 {
-    assert(PyContextVar_CheckExact(var));
+    ENSURE_ContextVar(ovar, -1)
+    PyContextVar *var = (PyContextVar *)ovar;
 
     PyThreadState *ts = PyThreadState_GET();
     assert(ts != NULL);
@@ -204,9 +235,12 @@ error:
 }
 
 
-PyContextToken *
-PyContextVar_Set(PyContextVar *var, PyObject *val)
+PyObject *
+PyContextVar_Set(PyObject *ovar, PyObject *val)
 {
+    ENSURE_ContextVar(ovar, NULL)
+    PyContextVar *var = (PyContextVar *)ovar;
+
     if (!PyContextVar_CheckExact(var)) {
         PyErr_SetString(
             PyExc_TypeError, "an instance of ContextVar was expected");
@@ -233,13 +267,18 @@ PyContextVar_Set(PyContextVar *var, PyObject *val)
         return NULL;
     }
 
-    return tok;
+    return (PyObject *)tok;
 }
 
 
 int
-PyContextVar_Reset(PyContextVar *var, PyContextToken *tok)
+PyContextVar_Reset(PyObject *ovar, PyObject *otok)
 {
+    ENSURE_ContextVar(ovar, -1)
+    ENSURE_ContextToken(otok, -1)
+    PyContextVar *var = (PyContextVar *)ovar;
+    PyContextToken *tok = (PyContextToken *)otok;
+
     if (tok->tok_used) {
         PyErr_Format(PyExc_RuntimeError,
                      "%R has already been used once", tok);
@@ -376,7 +415,7 @@ context_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             PyExc_TypeError, "Context() does not accept any arguments");
         return NULL;
     }
-    return (PyObject *)PyContext_New();
+    return PyContext_New();
 }
 
 static int
@@ -489,12 +528,17 @@ _contextvars.Context.get
     key: object
     default: object = None
     /
+
+Return the value for `key` if `key` has the value in the context object.
+
+If `key` does not exist, return `default`. If `default` is not given,
+return None.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_Context_get_impl(PyContext *self, PyObject *key,
                               PyObject *default_value)
-/*[clinic end generated code: output=0c54aa7664268189 input=8d4c33c8ecd6d769]*/
+/*[clinic end generated code: output=0c54aa7664268189 input=c8eeb81505023995]*/
 {
     if (context_check_key_type(key)) {
         return NULL;
@@ -516,11 +560,15 @@ _contextvars_Context_get_impl(PyContext *self, PyObject *key,
 
 /*[clinic input]
 _contextvars.Context.items
+
+Return all variables and their values in the context object.
+
+The result is returned as a list of 2-tuples (variable, value).
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_Context_items_impl(PyContext *self)
-/*[clinic end generated code: output=fa1655c8a08502af input=2d570d1455004979]*/
+/*[clinic end generated code: output=fa1655c8a08502af input=00db64ae379f9f42]*/
 {
     return _PyHamt_NewIterItems(self->ctx_vars);
 }
@@ -528,11 +576,13 @@ _contextvars_Context_items_impl(PyContext *self)
 
 /*[clinic input]
 _contextvars.Context.keys
+
+Return a list of all variables in the context object.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_Context_keys_impl(PyContext *self)
-/*[clinic end generated code: output=177227c6b63ec0e2 input=13005e142fbbf37d]*/
+/*[clinic end generated code: output=177227c6b63ec0e2 input=114b53aebca3449c]*/
 {
     return _PyHamt_NewIterKeys(self->ctx_vars);
 }
@@ -540,11 +590,13 @@ _contextvars_Context_keys_impl(PyContext *self)
 
 /*[clinic input]
 _contextvars.Context.values
+
+Return a list of all variables’ values in the context object.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_Context_values_impl(PyContext *self)
-/*[clinic end generated code: output=d286dabfc8db6dde input=c2cbc40a4470e905]*/
+/*[clinic end generated code: output=d286dabfc8db6dde input=6c3d08639ba3bf67]*/
 {
     return _PyHamt_NewIterValues(self->ctx_vars);
 }
@@ -552,11 +604,13 @@ _contextvars_Context_values_impl(PyContext *self)
 
 /*[clinic input]
 _contextvars.Context.copy
+
+Return a shallow copy of the context object.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_Context_copy_impl(PyContext *self)
-/*[clinic end generated code: output=30ba8896c4707a15 input=3e3fd72d598653ab]*/
+/*[clinic end generated code: output=30ba8896c4707a15 input=ebafdbdd9c72d592]*/
 {
     return (PyObject *)context_new_from_vars(self->ctx_vars);
 }
@@ -572,14 +626,14 @@ context_run(PyContext *self, PyObject *const *args,
         return NULL;
     }
 
-    if (PyContext_Enter(self)) {
+    if (PyContext_Enter((PyObject *)self)) {
         return NULL;
     }
 
     PyObject *call_result = _PyObject_FastCallKeywords(
         args[0], args + 1, nargs - 1, kwnames);
 
-    if (PyContext_Exit(self)) {
+    if (PyContext_Exit((PyObject *)self)) {
         return NULL;
     }
 
@@ -872,11 +926,19 @@ error:
 _contextvars.ContextVar.get
     default: object = NULL
     /
+
+Return a value for the context variable for the current context.
+
+If there is no value for the variable in the current context, the method will:
+ * return the value of the default argument of the method, if provided; or
+ * return the default value for the context variable, if it was created
+   with one; or
+ * raise a LookupError.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_ContextVar_get_impl(PyContextVar *self, PyObject *default_value)
-/*[clinic end generated code: output=0746bd0aa2ced7bf input=8d002b02eebbb247]*/
+/*[clinic end generated code: output=0746bd0aa2ced7bf input=30aa2ab9e433e401]*/
 {
     if (!PyContextVar_CheckExact(self)) {
         PyErr_SetString(
@@ -885,7 +947,7 @@ _contextvars_ContextVar_get_impl(PyContextVar *self, PyObject *default_value)
     }
 
     PyObject *val;
-    if (PyContextVar_Get(self, default_value, &val) < 0) {
+    if (PyContextVar_Get((PyObject *)self, default_value, &val) < 0) {
         return NULL;
     }
 
@@ -901,24 +963,36 @@ _contextvars_ContextVar_get_impl(PyContextVar *self, PyObject *default_value)
 _contextvars.ContextVar.set
     value: object
     /
+
+Call to set a new value for the context variable in the current context.
+
+The required value argument is the new value for the context variable.
+
+Returns a Token object that can be used to restore the variable to its previous
+value via the `ContextVar.reset()` method.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_ContextVar_set(PyContextVar *self, PyObject *value)
-/*[clinic end generated code: output=446ed5e820d6d60b input=a2d88f57c6d86f7c]*/
+/*[clinic end generated code: output=446ed5e820d6d60b input=c0a6887154227453]*/
 {
-    return (PyObject *)PyContextVar_Set(self, value);
+    return PyContextVar_Set((PyObject *)self, value);
 }
 
 /*[clinic input]
 _contextvars.ContextVar.reset
     token: object
     /
+
+Reset the context variable.
+
+The variable is reset to the value it had before the `ContextVar.set()` that
+created the token was used.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_ContextVar_reset(PyContextVar *self, PyObject *token)
-/*[clinic end generated code: output=d4ee34d0742d62ee input=4c871b6f1f31a65f]*/
+/*[clinic end generated code: output=d4ee34d0742d62ee input=ebe2881e5af4ffda]*/
 {
     if (!PyContextToken_CheckExact(token)) {
         PyErr_Format(PyExc_TypeError,
@@ -926,7 +1000,7 @@ _contextvars_ContextVar_reset(PyContextVar *self, PyObject *token)
         return NULL;
     }
 
-    if (PyContextVar_Reset(self, (PyContextToken *)token)) {
+    if (PyContextVar_Reset((PyObject *)self, token)) {
         return NULL;
     }
 
