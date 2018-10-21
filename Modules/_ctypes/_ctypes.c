@@ -1405,13 +1405,17 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     type_attr = NULL;
 
     length_attr = PyObject_GetAttrString((PyObject *)result, "_length_");
-    if (!length_attr || !PyLong_Check(length_attr)) {
+    if (!length_attr ||
+        !PyLong_Check(length_attr) ||
+        _PyLong_Sign(length_attr) == -1)
+    {
         PyErr_SetString(PyExc_AttributeError,
                         "class must define a '_length_' attribute, "
                         "which must be a positive integer");
         Py_XDECREF(length_attr);
         goto error;
     }
+
     length = PyLong_AsSsize_t(length_attr);
     Py_DECREF(length_attr);
     if (length == -1 && PyErr_Occurred()) {

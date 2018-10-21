@@ -183,6 +183,24 @@ class ArrayTestCase(unittest.TestCase):
                 _type_ = c_int
                 _length_ = 1.87
 
+    def test_bad_length(self):
+        with self.assertRaises(AttributeError):
+            class T(Array):
+                _type_ = c_int
+                _length_ = -1 << 1000
+        with self.assertRaises(AttributeError):
+            class T(Array):
+                _type_ = c_int
+                _length_ = -1
+        with self.assertRaises(OverflowError):
+            class T(Array):
+                _type_ = c_int
+                _length_ = 1 << 1000
+        # _length_ might be zero.
+        class T(Array):
+            _type_ = c_int
+            _length_ = 0
+
     @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
     @bigmemtest(size=_2G, memuse=1, dry_run=False)
     def test_large_array(self, size):
