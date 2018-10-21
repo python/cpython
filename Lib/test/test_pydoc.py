@@ -791,33 +791,33 @@ class B(A)
  |      B
  |      A
  |      builtins.object
- |  
+ |\x20\x20
  |  Methods defined here:
- |  
+ |\x20\x20
  |  b_size = a_size(self)
- |  
+ |\x20\x20
  |  itemconfig = itemconfigure(self, tagOrId, cnf=None, **kw)
- |  
+ |\x20\x20
  |  itemconfigure(self, tagOrId, cnf=None, **kw)
  |      Configure resources of an item TAGORID.
- |  
+ |\x20\x20
  |  ----------------------------------------------------------------------
  |  Methods inherited from A:
- |  
+ |\x20\x20
  |  a_size(self)
  |      Return size
- |  
+ |\x20\x20
  |  lift = tkraise(self, aboveThis=None)
- |  
+ |\x20\x20
  |  tkraise(self, aboveThis=None)
  |      Raise this widget in the stacking order.
- |  
+ |\x20\x20
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from A:
- |  
+ |\x20\x20
  |  __dict__
  |      dictionary for instance variables (if defined)
- |  
+ |\x20\x20
  |  __weakref__
  |      list of weak references to the object (if defined)
 ''' % __name__)
@@ -831,7 +831,7 @@ Python Library Documentation: class B in module %s
 <tr bgcolor="#ffc8d8">
 <td colspan=3 valign=bottom>&nbsp;<br>
 <font color="#000000" face="helvetica, arial"><a name="B">class <strong>B</strong></a>(A)</font></td></tr>
-    
+\x20\x20\x20\x20
 <tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%%"><dl><dt>Method resolution order:</dt>
 <dd>B</dd>
