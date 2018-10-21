@@ -783,7 +783,9 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     if (arg == NULL) {
         if (encoding != NULL || errors != NULL) {
             PyErr_SetString(PyExc_TypeError,
-                            "encoding or errors without sequence argument");
+                            encoding != NULL ?
+                            "encoding without a string argument" :
+                            "errors without a string argument");
             return -1;
         }
         return 0;
@@ -812,7 +814,9 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     /* If it's not unicode, there can't be encoding or errors */
     if (encoding != NULL || errors != NULL) {
         PyErr_SetString(PyExc_TypeError,
-                        "encoding or errors without a string argument");
+                        encoding != NULL ?
+                        "encoding without a string argument" :
+                        "errors without a string argument");
         return -1;
     }
 
@@ -860,8 +864,14 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
 
     /* Get the iterator */
     it = PyObject_GetIter(arg);
-    if (it == NULL)
+    if (it == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Format(PyExc_TypeError,
+                         "cannot convert '%.200s' object to bytearray",
+                         arg->ob_type->tp_name);
+        }
         return -1;
+    }
     iternext = *Py_TYPE(it)->tp_iternext;
 
     /* Run the iterator to exhaustion */
@@ -1626,8 +1636,14 @@ bytearray_extend(PyByteArrayObject *self, PyObject *iterable_of_ints)
     }
 
     it = PyObject_GetIter(iterable_of_ints);
-    if (it == NULL)
+    if (it == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Format(PyExc_TypeError,
+                         "can't extend bytearray with %.100s",
+                         iterable_of_ints->ob_type->tp_name);
+        }
         return NULL;
+    }
 
     /* Try to determine the length of the argument. 32 is arbitrary. */
     buf_size = PyObject_LengthHint(iterable_of_ints, 32);
