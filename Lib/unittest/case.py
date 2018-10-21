@@ -1,5 +1,6 @@
 """Test case implementation"""
 
+import asyncio
 import sys
 import functools
 import difflib
@@ -1448,3 +1449,144 @@ class _SubTest(TestCase):
 
     def __str__(self):
         return "{} {}".format(self.test_case, self._subDescription())
+
+
+class AsyncioTestCase(TestCase):
+    """Extension of `unittest.TestCase` for concurrent test cases.
+
+    This extension of `unittest.TestCase` runs the instance methods
+    decorated with the **async**/**await** syntax on a event loop.
+    The event loop is created anew for each test method run and
+    destroyed when the test method has exited.  Both the `setUp` and
+    `tearDown` method are decorated with ``async``.  Sub-classes that
+    extend either method MUST call the parent method using the ``await``
+    keyword.
+
+    If individual test methods are co-routines (as defined by
+    ``asyncio.iscoroutinefunction``), then they will be run on the
+    active event loop; otherwise, they will be called as simple methods.
+    In the latter case, the event loop IS NOT RUNNING; however, you
+    can use it to run async code if necessary.
+
+    Clean up functions will be run on the event loop if they are
+    detected as co-routines; otherwise, they are called as standard
+    functions.  After ALL cleanup calls are completed, the event loop
+    is stopped and closed.
+
+    When subclassing AsyncioTestCase, the event loop is available
+    via the ``event_loop`` property.  Tests can assume that
+    `self.event_loop` refers to the event loop created for the test
+    case.  It is also the active event loop as returned by
+    ``asyncio.get_event_loop()``.  Test cases SHOULD NOT change the
+    active event loop during the test run.
+
+    The lifecycle of a single test execution is thus::
+
+        - ``TestCase`` instance is created
+        - ``setUpClass`` is executed
+        - for each test method
+          - new event loop is created
+          - ``setUp`` is executed on the event loop
+          - if ``setUp`` succeeds
+            - the test method is run on the event loop if it is a
+              co-routine; otherwise it is simply called
+            - ``tearDown`` is executed on the event loop
+          - the event loop is stopped if it is somehow running
+          - ``doCleanups`` is called
+            - callables registered with ``addCleanup`` are called
+              in reverse-order executing them on the event loop if
+              necessary
+            - the event loop is stopped if necessary
+            - the event loop is closed and unregistered
+
+    The process is tightly managed by the ``_runTest`` and ``doCleanups``
+    methods.  Care must be taken if extending this class to ensure that
+    the event loop is properly managed.
+
+    """
+
+    def __init__(self, methodName='runTest'):
+        super().__init__(methodName)
+        self.__event_loop = None
+
+    @classmethod
+    def setUpClass(cls):
+        """Hook method for one-time initialization.
+
+        Subclasses MUST invoke this method when extending it.
+        """
+        super().setUpClass()
+        cls.__saved_policy = asyncio.events._event_loop_policy
+
+    @classmethod
+    def tearDownClass(cls):
+        """Hook method for one-time cleanup.
+
+        Subclasses MUST invoke this method when extending it.
+        """
+        super().tearDownClass()
+        asyncio.set_event_loop_policy(cls.__saved_policy)
+
+    async def setUp(self):
+        """Hook method for setting up the test fixture before exercising it.
+
+        Subclasses MUST invoke this method using the ``await`` keyword
+        when extending it.
+        """
+
+    async def tearDown(self):
+        """Hook method for deconstructing the test fixture after testing it.
+
+        Subclasses MUST invoke this method using the ``await`` keyword
+        when extending it.
+        """
+
+    @property
+    def event_loop(self):
+        """Active event loop for the test case."""
+        if self.__event_loop is None:
+            self.__event_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self.__event_loop)
+        return self.__event_loop
+
+    def _runTest(self, testMethod, outcome, expecting_failure):
+        try:
+            with outcome.testPartExecutor(self):
+                self.event_loop.run_until_complete(self.setUp())
+            if outcome.success:
+                outcome.expecting_failure = expecting_failure
+                with outcome.testPartExecutor(self, isTest=True):
+                    if asyncio.iscoroutinefunction(testMethod):
+                        self.event_loop.run_until_complete(testMethod())
+                    else:
+                        testMethod()
+                outcome.expecting_failure = False
+                with outcome.testPartExecutor(self):
+                    self.event_loop.run_until_complete(self.tearDown())
+        finally:
+            if self.event_loop.is_running():
+                self.event_loop.stop()
+
+    def doCleanups(self):
+        """
+        Execute all cleanup functions.
+
+        Normally called for you after tearDown.
+        """
+        outcome = self._outcome or _Outcome()
+        try:
+            while self._cleanups:
+                cleanup_func, args, kwargs = self._cleanups.pop()
+                with outcome.testPartExecutor(self):
+                    if asyncio.iscoroutinefunction(cleanup_func):
+                        self.event_loop.run_until_complete(
+                            cleanup_func(*args, **kwargs))
+                    else:
+                        cleanup_func(*args, **kwargs)
+        finally:
+            if self.event_loop.is_running():
+                self.event_loop.stop()
+            if not self.event_loop.is_closed():
+                self.event_loop.close()
+            self.__event_loop = None
+            asyncio.set_event_loop(None)
