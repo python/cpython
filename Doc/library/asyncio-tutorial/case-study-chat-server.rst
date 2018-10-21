@@ -24,7 +24,7 @@ run for a long time, serving clients that may connect,
 disconnect, and then later reconnect multiple times.
 
 .. literalinclude:: server01.py
-    :language: python
+    :language: python3
 
 As explained earlier, ``main`` itself is a *coroutine function*, and
 when evaluated, i.e., ``main()``, it returns a *coroutine* object
@@ -50,7 +50,7 @@ We can use the *Streams API* (ref:TODO) to create a TCP server very
 easily:
 
 .. literalinclude:: server02.py
-    :language: python
+    :language: python3
     :linenos:
 
 We've added the ``start_server()`` call on line 5, and this call takes
@@ -285,13 +285,46 @@ For completeness, here is the utils module:
 
 .. literalinclude:: utils01.py
     :caption: utils.py
-    :language: python
+    :language: python3
 
 Let's return to the main server application and see how to
 incorporate our new utility functions into the code.
 
 Server: Message Handling
 ------------------------
+
+Below, we import the new ``utils.py`` module and incorporate
+some handling for receiving new messages:
+
+.. literalinclude:: server03.py
+    :caption: Server code with basic message handling
+    :linenos:
+    :language: python3
+
+We've added a few new things inside the ``client_connected``
+callback function:
+
+- line 19: This is a handler function that will get called if a "connect"
+  message is received. We have similar handler functions for the other
+  action types.
+- line 31: A simple dictionary that maps an action "name" to the handler
+  function for that action.
+- line 38: Here you can see how our async generator ``new_messages()``
+  gets used. We simply loop over it, as you would with any other generator,
+  and it will return a message only when one is received. Note the one
+  minor difference as compared to a regular generator: you have to iterate
+  over an async generator with ``async for``.
+- line 39: Upon receiving a message, check which action must be taken.
+- line 43: Look up the *handler function* that corresponds to the
+  action. We set up these handlers earlier at line 31.
+- line 47: call the handler function.
+
+Our server code still doesn't do much; but at least it'll be testable
+with a client sending a few different kinds of actions, and we'll be
+able to see print output for each different kind of action received.
+
+The next thing we'll have to do is set up chat rooms. There's no point
+receiving messages if there's nowhere to put them!
 
 TODO
 

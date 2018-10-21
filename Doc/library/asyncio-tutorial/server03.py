@@ -15,16 +15,27 @@ async def main():
 
 
 async def client_connected(reader: StreamReader, writer: StreamWriter):
+
+    def connect(msg):
+        print(msg.get('username'))
+
+    def joinroom(msg):
+        print('joining room:', msg.get('username'))
+
+    def leaveroom(msg):
+        print('leaving room:', msg.get('username'))
+
+    def chat(msg):
+        print(f'chat sent to room {msg.get("room")}: {msg.get("message")}')
+
     handlers: Dict[str, Callable] = dict(
-        connect=lambda msg: print(msg.get('username')),
-        joinroom=lambda msg: print('joining room:', msg.get('username')),
-        leaveroom=lambda msg: print('leaving room:', msg.get('username')),
-        chat=lambda msg: print(
-            f'chat sent to room {msg.get("room")}: {msg.get("message")}'),
+        connect=connect,
+        joinroom=joinroom,
+        leaveroom=leaveroom,
+        chat=chat,
     )
 
     async for msg in new_messages(reader):
-        print('Received message:', msg)
         action = msg.get('action')
         if not action:
             continue
