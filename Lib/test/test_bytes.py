@@ -113,6 +113,23 @@ class BaseBytesTest:
         b = self.type2test([1, 2, 3])
         self.assertEqual(b, b"\x01\x02\x03")
 
+    def test_from_mutating_list(self):
+        # Issue #34973: Crash in bytes constructor with mutating list.
+        class X:
+            def __index__(self):
+                a.clear()
+                return 42
+        a = [X(), X()]
+        self.assertEqual(bytes(a), b'*')
+
+        class Y:
+            def __index__(self):
+                if len(a) < 1000:
+                    a.append(self)
+                return 42
+        a = [Y()]
+        self.assertEqual(bytes(a), b'*' * 1000)  # should not crash
+
     def test_from_index(self):
         b = self.type2test([Indexable(), Indexable(1), Indexable(254),
                             Indexable(255)])
