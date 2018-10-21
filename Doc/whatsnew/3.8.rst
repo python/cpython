@@ -170,7 +170,7 @@ post-handshake authentication.
 threading
 ---------
 
-Queue now supports closing and iteration.
+queue.Queue now supports closing and iteration.
 
 tkinter
 -------

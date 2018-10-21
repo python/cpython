@@ -1,2 +1,2 @@
-Add close() and __iter__() to threading.Queue to simplify coordination
+Add close() and __iter__() to queue.Queue to simplify coordination
 between producers and consumers. Patch by Vladimir Filipović.
