@@ -2537,8 +2537,9 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (x == NULL) {
         if (encoding != NULL || errors != NULL) {
             PyErr_SetString(PyExc_TypeError,
-                            "encoding or errors without sequence "
-                            "argument");
+                            encoding != NULL ?
+                            "encoding without a string argument" :
+                            "errors without a string argument");
             return NULL;
         }
         return PyBytes_FromStringAndSize(NULL, 0);
