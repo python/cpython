@@ -651,8 +651,10 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 
                     t = PyList_GET_ITEM(value, j);
                     wstr = PyUnicode_AsUnicodeAndSize(t, &len);
-                    if (wstr == NULL)
+                    if (wstr == NULL) {
+                        PyMem_FREE(*retDataBuf);
                         return FALSE;
+                    }
                     wcscpy(P, wstr);
                     P += (len + 1);
                 }
