@@ -174,8 +174,6 @@ class ArrayTestCase(unittest.TestCase):
                 _length_ = 13
 
     def test_bad_length(self):
-        import sys
-
         with self.assertRaises(ValueError):
             class T(Array):
                 _type_ = c_int

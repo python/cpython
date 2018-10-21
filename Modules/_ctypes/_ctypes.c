@@ -1406,8 +1406,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     length_attr = PyObject_GetAttrString((PyObject *)result, "_length_");
     if (!length_attr) {
-        if (!PyErr_Occurred() ||
-            PyErr_ExceptionMatches(PyExc_AttributeError))
+        if (PyErr_ExceptionMatches(PyExc_AttributeError))
         {
             PyErr_SetString(PyExc_AttributeError,
                             "class must define a '_length_' attribute");
