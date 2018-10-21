@@ -2156,6 +2156,8 @@ compiler_class(struct compiler *c, stmt_ty s)
     return 1;
 }
 
+/* Return 0 if the expression is a constant value except named singletons.
+   Return 1 otherwise. */
 static int
 check_is_arg(expr_ty e)
 {
@@ -2169,6 +2171,10 @@ check_is_arg(expr_ty e)
          || value == Py_Ellipsis);
 }
 
+/* Check operands of identity chacks ("is" and "is not").
+   Emit a warning if any operand is a constant except named singletons.
+   Return 0 on error.
+ */
 static int
 check_compare(struct compiler *c, expr_ty e)
 {
