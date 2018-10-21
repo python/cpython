@@ -9,10 +9,10 @@ and look like this:
     def f(x, y):
         print(x + y)
 
+    # Evaluate the function
     f(1, 2)
 
-The snippet also shows how the function is evaluated. Async functions are
-different in two respects:
+Async functions are different in two respects:
 
 .. code-block:: python
 
@@ -21,12 +21,16 @@ different in two respects:
     async def f(x, y):
         print(x + y)
 
+    # Execute the *async* function above
     asyncio.run(f(1, 2))
 
 The first difference is that the function declaration is spelled
 ``async def``. The second difference is that async functions cannot be
-executed by simply evaluating them. Here, we use the ``run()`` function
+executed by simply evaluating them. Instead, we use the ``run()`` function
 from the ``asyncio`` module.
+
+Executing Async Functions
+-------------------------
 
 The ``run`` function is only good for executing an async function
 from "synchronous" code; and this is usually only used to execute

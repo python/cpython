@@ -1,7 +1,7 @@
 Asyncio Tutorial
 ================
 
-Programming with ``async def`` functions is different to normal Python
+Programming with ``async def`` functions is differs from normal Python
 functions; enough so that it is useful to explain a bit more
 about what ``asyncio`` is for, and how to use it in typical
 programs.
