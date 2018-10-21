@@ -97,14 +97,14 @@ class BlockingTestMixin:
     # Call this if multiple instances of block_func are expected to all be
     # released by a single trigger call, and to then raise an exception:
     def do_exceptional_simultaneously_blocking_test(
-            self,block_func, block_args, trigger_func, trigger_args,
+            self, block_func, block_args, trigger_func, trigger_args,
             expected_exception_class, instances_count = 5):
         raising_events = [threading.Event() for _ in range(instances_count)]
         blocking_threads = [threading.Thread(
             target=_set_event_on_exception,
             args=(block_func, block_args,
-                  expected_exception_class, raising_events[i]))
-            for i in range(instances_count)]
+                  expected_exception_class, event))
+            for event in raising_events]
         for t in blocking_threads:
             t.start()
 
