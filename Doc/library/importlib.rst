@@ -1309,17 +1309,15 @@ find and load modules.
 
    (``__file__``)
 
-   Path to the code from where the module should be loaded, e.g.,
-   "builtin" for built-in modules and the filename for modules loaded from
-   source. It may be ``None`` (the default), which indicates it is
-   unspecified (e.g. for namespace packages). It is optional.
+   Path to the code from where the module should be loaded.
+   It is ``None`` for builtin modules and namespace package modules.
 
    .. attribute:: submodule_search_locations
 
    (``__path__``)
 
    Iterable (possibly empty) of locations to search for submodules of a
-   package module during import. Not set for non-package modules.
+   package module during import. It is `None` for non-package modules.
 
    .. attribute:: loader_state
 
@@ -1331,15 +1329,15 @@ find and load modules.
    (``__cached__``)
 
    Path to the compiled code from where the module should be loaded.
-   It is optional.
+   It is ``None`` for builtin modules and namespace package modules.
 
    .. attribute:: parent
 
    (``__package__``)
 
    The ``__name__`` attribute of the module for package modules.
-   The empty string for non-package top-level modules or the parent
-   package's ``__name__`` attribute for non-package submodules.
+   The empty string `''` for non-package top-level modules or the
+   parent package's ``__name__`` attribute for non-package submodules.
 
    .. attribute:: has_location
 
