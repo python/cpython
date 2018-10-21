@@ -51,7 +51,7 @@ finish before the second call (to ``host2``) can begin.
 Computers process things sequentially, which is why programming languages
 like Python also work sequentially; but what we see here is that our
 code is also going to **wait** sequentially. This is, quite literally,
-a waste of time. What we would really like to do here is wait for the
+a waste of time. What we would really like to do here is wait for
 all the replies *concurrently*, i.e., at the same time.
 
 Preemptive Concurrency
@@ -64,7 +64,8 @@ time on your device. At least, they will appear to be running
 concurrently.  What is really happening is that the operating system
 is sharing little slices of processor (CPU) time among all the
 processes.  If we started two copies of our ``greet`` program at the
-same time, then they *would* run (and therefore wait) concurrently.
+same time, they *would* run (and therefore wait) concurrently which is
+exactly what we want.
 
 However, there is a price for that: each new process consumes resources
 from the operating system.  But more than that, there is another tricky
@@ -79,14 +80,19 @@ task being carried out by a computer system, without requiring
 its cooperation, and with the intention of resuming the task
 at a later time*.
 
-This means that you will never be sure of when each of your processes
-and threads is *actually* executing on a CPU. For processes, this
-is quite safe because
+Operating Systems do this kind of preemptive switching for both
+processes and threads. A simplistic but useful description of the
+difference is that one process can have multiple threads, and those
+threads share all the memory in their parent process.
+
+Because of this preemptive switching, you will never be sure of
+when each of your processes and threads is *actually* executing on
+a CPU. For processes, this is quite safe because
 their memory spaces are isolated from each other; however,
-**threads** are not isolated from each other. In fact, the primary
-feature of threads over processes is that multiple threads within a
-single process can access the same memory. And this is where all the
-problems begin.
+**threads** are not isolated from each other (within the same process).
+In fact, the primary feature of threads over processes is that
+multiple threads within a single process can access the same memory.
+And this is where all the problems begin.
 
 Jumping back to our code sample further up: we may also choose to run the
 ``greet()`` function in multiple threads; and then
@@ -96,7 +102,7 @@ with no control over
 how execution will be transferred between the two threads (unless you
 use the synchronization primitives in the ``threading`` module) . This
 situation can result in *race conditions* in how objects are modified,
-and these bugs can be very difficult to debug.
+and these bugs can be very difficult to fix.
 
 Cooperative Concurrency
 -----------------------
@@ -106,11 +112,11 @@ multiple socket connections all in a single thread; and the best part
 is that you get to control *when* execution is allowed to switch between
 these different contexts.
 
-We will explain more of the details later on in the tutorial,
+We will explain more of the details throughout this tutorial,
 but briefly, our earlier example becomes something like the following
 pseudocode:
 
-.. code-block:: python
+.. code-block:: python3
 
     import asyncio
 
@@ -123,6 +129,8 @@ pseudocode:
         print('Reply:', repr(reply))
 
     async def main():
+
+        # Both calls run at the same time
         await asyncio.gather(
             greet(host1, port1),
             greet(host2, port2)

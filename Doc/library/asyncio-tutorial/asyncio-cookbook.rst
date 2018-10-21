@@ -19,6 +19,26 @@ Using A Queue To Control A Pool of Resources
 - show example with a pool of workers
 - show example with a connection pool
 
+Best Practices For Timeouts
+---------------------------
+
+- start with ``asyncio.wait_for()``
+- also look at ``asyncio.wait()``, and what to do if not all tasks
+  are finished when the timeout happens. Also look at the different
+  termination conditions of ``asyncio.wait()``
+
+How To Handle Cancellation
+--------------------------
+
+- app shutdown
+- how to handle CancelledError and then close sockets
+- also, when waiting in a loop on ``await queue.get()`` is it better to
+  handle CancelledError, or use the idiom of putting ``None`` on the
+  queue? (``None`` would be better because it ensures the contents of the
+  queue get processed first, but I don't think we can prevent
+  CancelledError from getting raised so it must be handled anyway. I
+  can make an example to explain better.)
+
 Keeping Track Of Many Connections
 ---------------------------------
 
@@ -104,6 +124,9 @@ TODO
 
     if __name__ == '__main__':
         asyncio.run(main())
+
+- we should also include a brief discussion of "when to use asyncio.gather and
+  when to use asyncio.wait"
 
 Secure Client-Server Networking
 -------------------------------
@@ -196,6 +219,8 @@ Handling Typical Socket Errors
 - ``ConnectionRefusedError``
 
 Might also want to show some examples of ``asyncio.IncompleteReadError``.
+
+Also link/refer to the socket programming HOWTO in the docs.
 
 Graceful Shutdown on Windows
 ----------------------------
