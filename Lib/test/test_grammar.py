@@ -5,6 +5,7 @@ from test.support import check_syntax_error
 import inspect
 import unittest
 import sys
+import warnings
 # testing import *
 from sys import *
 
@@ -1098,6 +1099,14 @@ class GrammarTests(unittest.TestCase):
             self.assertEqual(len(e.args), 0)
         else:
             self.fail("AssertionError not raised by 'assert False'")
+
+        with self.assertWarnsRegex(SyntaxWarning, 'assertion is always true'):
+            compile('assert(x, "msg")', '<testcase>', 'exec')
+        with warnings.catch_warnings():
+            warnings.filterwarnings('error', category=SyntaxWarning)
+            with self.assertRaisesRegex(SyntaxError, 'assertion is always true'):
+                compile('assert(x, "msg")', '<testcase>', 'exec')
+            compile('assert x, "msg"', '<testcase>', 'exec')
 
 
     ### compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
