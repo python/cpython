@@ -80,11 +80,13 @@ its cooperation, and with the intention of resuming the task
 at a later time*.
 
 This means that you will never be sure of when each of your processes
-is *actually* executing on a CPU. This is quite safe because
-processes are isolated from each other; however, **threads** are not
-isolated from each other. In fact, the primary feature of threads over
-processes is that multiple threads within a single process can
-access the same memory. And this is where all the problems begin.
+and threads is *actually* executing on a CPU. For processes, this
+is quite safe because
+their memory spaces are isolated from each other; however,
+**threads** are not isolated from each other. In fact, the primary
+feature of threads over processes is that multiple threads within a
+single process can access the same memory. And this is where all the
+problems begin.
 
 Jumping back to our code sample further up: we may also choose to run the
 ``greet()`` function in multiple threads; and then
