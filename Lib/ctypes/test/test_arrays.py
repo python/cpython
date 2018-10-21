@@ -163,8 +163,6 @@ class ArrayTestCase(unittest.TestCase):
         self.assertEqual(Y()._length_, 187)
 
     def test_bad_subclass(self):
-        import sys
-
         with self.assertRaises(AttributeError):
             class T(Array):
                 pass
@@ -174,29 +172,29 @@ class ArrayTestCase(unittest.TestCase):
         with self.assertRaises(AttributeError):
             class T(Array):
                 _length_ = 13
+
+    def test_bad_length(self):
+        import sys
+
+        with self.assertRaises(ValueError):
+            class T(Array):
+                _type_ = c_int
+                _length_ = - sys.maxsize * 2
+        with self.assertRaises(ValueError):
+            class T(Array):
+                _type_ = c_int
+                _length_ = -1
+        with self.assertRaises(TypeError):
+            class T(Array):
+                _type_ = c_int
+                _length_ = 1.87
         with self.assertRaises(OverflowError):
             class T(Array):
                 _type_ = c_int
                 _length_ = sys.maxsize * 2
-        with self.assertRaises(AttributeError):
-            class T(Array):
-                _type_ = c_int
-                _length_ = 1.87
 
-    def test_bad_length(self):
-        with self.assertRaises(AttributeError):
-            class T(Array):
-                _type_ = c_int
-                _length_ = -1 << 1000
-        with self.assertRaises(AttributeError):
-            class T(Array):
-                _type_ = c_int
-                _length_ = -1
-        with self.assertRaises(OverflowError):
-            class T(Array):
-                _type_ = c_int
-                _length_ = 1 << 1000
-        # _length_ might be zero.
+    def test_zero_length(self):
+        # _length_ can be zero.
         class T(Array):
             _type_ = c_int
             _length_ = 0
