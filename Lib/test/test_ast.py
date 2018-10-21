@@ -683,6 +683,25 @@ class ASTHelpers_Test(unittest.TestCase):
         node = ast.parse('async def foo():\n  x = "not docstring"')
         self.assertIsNone(ast.get_docstring(node.body[0]))
 
+    def test_multi_line_docstring_col_offset_and_lineno_issue16806(self):
+        node = ast.parse(
+            '"""line one\nline two"""\n\n'
+            'def foo():\n  """line one\n  line two"""\n\n'
+            '  def bar():\n    """line one\n    line two"""\n'
+            '  """line one\n  line two"""\n'
+            '"""line one\nline two"""\n\n'
+        )
+        self.assertEqual(node.body[0].col_offset, 0)
+        self.assertEqual(node.body[0].lineno, 1)
+        self.assertEqual(node.body[1].body[0].col_offset, 2)
+        self.assertEqual(node.body[1].body[0].lineno, 5)
+        self.assertEqual(node.body[1].body[1].body[0].col_offset, 4)
+        self.assertEqual(node.body[1].body[1].body[0].lineno, 9)
+        self.assertEqual(node.body[1].body[2].col_offset, 2)
+        self.assertEqual(node.body[1].body[2].lineno, 11)
+        self.assertEqual(node.body[2].col_offset, 0)
+        self.assertEqual(node.body[2].lineno, 13)
+
     def test_literal_eval(self):
         self.assertEqual(ast.literal_eval('[1, 2, 3]'), [1, 2, 3])
         self.assertEqual(ast.literal_eval('{"foo": 42}'), {"foo": 42})
