@@ -517,6 +517,124 @@ class PydocDocTest(unittest.TestCase):
         self.assertEqual(stripid("<type 'exceptions.Exception'>"),
                          "<type 'exceptions.Exception'>")
 
+    def test_builtin_with_more_than_four_children(self):
+        """Tests help on builtin object which have more than four child classes.
+
+        When running help() on a builtin class which has child classes, it
+        should contain a "Built-in subclasses" section and only 4 classes
+        should be displayed with a hint on how many more subclasses are present.
+        For example:
+
+        >>> help(object)
+        Help on class object in module builtins:
+
+        class object
+         |  The most base type
+         |
+         |  Built-in subclasses:
+         |      async_generator
+         |      BaseException
+         |      builtin_function_or_method
+         |      bytearray
+         |      ... and 82 other subclasses
+        """
+        doc = pydoc.TextDoc()
+        text = doc.docclass(object)
+        snip = (" |  Built-in subclasses:\n"
+                " |      async_generator\n"
+                " |      BaseException\n"
+                " |      builtin_function_or_method\n"
+                " |      bytearray\n"
+                " |      ... and \\d+ other subclasses")
+        self.assertRegex(text, snip)
+
+    def test_builtin_with_child(self):
+        """Tests help on builtin object which have only child classes.
+
+        When running help() on a builtin class which has child classes, it
+        should contain a "Built-in subclasses" section. For example:
+
+        >>> help(ArithmeticError)
+        Help on class ArithmeticError in module builtins:
+
+        class ArithmeticError(Exception)
+         |  Base class for arithmetic errors.
+         |
+         ...
+         |
+         |  Built-in subclasses:
+         |      FloatingPointError
+         |      OverflowError
+         |      ZeroDivisionError
+        """
+        doc = pydoc.TextDoc()
+        text = doc.docclass(ArithmeticError)
+        snip = (" |  Built-in subclasses:\n"
+                " |      FloatingPointError\n"
+                " |      OverflowError\n"
+                " |      ZeroDivisionError")
+        self.assertIn(snip, text)
+
+    def test_builtin_with_grandchild(self):
+        """Tests help on builtin classes which have grandchild classes.
+
+        When running help() on a builtin class which has child classes, it
+        should contain a "Built-in subclasses" section. However, if it also has
+        grandchildren, these should not show up on the subclasses section.
+        For example:
+
+        >>> help(Exception)
+        Help on class Exception in module builtins:
+
+        class Exception(BaseException)
+         |  Common base class for all non-exit exceptions.
+         |
+         ...
+         |
+         |  Built-in subclasses:
+         |      ArithmeticError
+         |      AssertionError
+         |      AttributeError
+         ...
+        """
+        doc = pydoc.TextDoc()
+        text = doc.docclass(Exception)
+        snip = (" |  Built-in subclasses:\n"
+                " |      ArithmeticError\n"
+                " |      AssertionError\n"
+                " |      AttributeError")
+        self.assertIn(snip, text)
+        # Testing that the grandchild ZeroDivisionError does not show up
+        self.assertNotIn('ZeroDivisionError', text)
+
+    def test_builtin_no_child(self):
+        """Tests help on builtin object which have no child classes.
+
+        When running help() on a builtin class which has no child classes, it
+        should not contain any "Built-in subclasses" section. For example:
+
+        >>> help(ZeroDivisionError)
+
+        Help on class ZeroDivisionError in module builtins:
+
+        class ZeroDivisionError(ArithmeticError)
+         |  Second argument to a division or modulo operation was zero.
+         |
+         |  Method resolution order:
+         |      ZeroDivisionError
+         |      ArithmeticError
+         |      Exception
+         |      BaseException
+         |      object
+         |
+         |  Methods defined here:
+         ...
+        """
+        doc = pydoc.TextDoc()
+        text = doc.docclass(ZeroDivisionError)
+        # Testing that the subclasses section does not appear
+        self.assertNotIn('Built-in subclasses', text)
+
     @unittest.skipIf(sys.flags.optimize >= 2,
                      'Docstrings are omitted with -O2 and above')
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
