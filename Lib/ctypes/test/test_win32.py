@@ -68,7 +68,7 @@ class ReturnStructSizesTestCase(unittest.TestCase):
             for i, f in enumerate(fields):
                 value = getattr(res, f[0])
                 expected = bytes([ord('a') + i])
-                self.assertEquals(value, expected)
+                self.assertEqual(value, expected)
 
 
 
