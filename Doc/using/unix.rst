@@ -72,7 +72,7 @@ latest release's source or just grab a fresh `clone
 <https://devguide.python.org/setup/#getting-the-source-code>`_.  (If you want
 to contribute patches, you will need a clone.)
 
-The build process consists of the usual invocations. ::
+The build process consists of the usual commands. ::
 
    ./configure
    make
