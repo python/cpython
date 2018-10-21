@@ -1201,6 +1201,8 @@ application).
       --- this is helpful for sorting in multiple passes (for example, sort by
       department, then by salary grade).
 
+      For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
+
       .. impl-detail::
 
          While a list is being sorted, the effect of attempting to mutate, or even
@@ -1700,8 +1702,19 @@ expression support in the :mod:`re` module).
    Return true if the string is a valid identifier according to the language
    definition, section :ref:`identifiers`.
 
-   Use :func:`keyword.iskeyword` to test for reserved identifiers such as
-   :keyword:`def` and :keyword:`class`.
+   Call :func:`keyword.iskeyword` to test whether string ``s`` is a reserved
+   identifier, such as :keyword:`def` and :keyword:`class`.
+
+   Example:
+   ::
+
+      >>> from keyword import iskeyword
+
+      >>> 'hello'.isidentifier(), iskeyword('hello')
+      True, False
+      >>> 'def'.isidentifier(), iskeyword('def')
+      True, True
+
 
 .. method:: str.islower()
 
@@ -4741,4 +4754,3 @@ types, where they are relevant.  Some of these are not reported by the
 
 .. [5] To format only a tuple you should therefore provide a singleton tuple whose only
    element is the tuple to be formatted.
-
