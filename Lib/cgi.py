@@ -636,29 +636,29 @@ class FieldStorage:
 
         # Propagate max_num_fields into the sub class appropriately
         max_num_fields = self.max_num_fields
-        sub_max_num_fields = self.max_num_fields
         if max_num_fields is not None:
-            sub_max_num_fields -= len(self.list)
+            max_num_fields -= len(self.list)
 
         klass = self.FieldStorageClass or self.__class__
         part = klass(self.fp, {}, ib,
                      environ, keep_blank_values, strict_parsing,
-                     sub_max_num_fields)
+                     max_num_fields)
 
         # Throw first part away
         while not part.done:
             headers = rfc822.Message(self.fp)
             part = klass(self.fp, headers, ib,
                          environ, keep_blank_values, strict_parsing,
-                         sub_max_num_fields)
+                         max_num_fields)
 
-            if max_num_fields is not None and part.list:
-                max_num_fields -= len(part.list)
-                sub_max_num_fields -= len(part.list)
+            if max_num_fields is not None:
+                max_num_fields -= 1
+                if part.list:
+                    max_num_fields -= len(part.list)
+                if max_num_fields < 0:
+                    raise ValueError('Max number of fields exceeded')
 
             self.list.append(part)
-            if max_num_fields is not None and max_num_fields < len(self.list):
-                raise ValueError('Max number of fields exceeded')
         self.skip_lines()
 
     def read_single(self):
