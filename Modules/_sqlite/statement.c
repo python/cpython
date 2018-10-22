@@ -85,10 +85,10 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
                 continue;
         }
 
-        self->is_dml = (PyOS_strnicmp(p, "insert ", 7) == 0)
-                    || (PyOS_strnicmp(p, "update ", 7) == 0)
-                    || (PyOS_strnicmp(p, "delete ", 7) == 0)
-                    || (PyOS_strnicmp(p, "replace ", 8) == 0);
+        self->is_dml = (PyOS_strnicmp(p, "insert", 6) == 0)
+                    || (PyOS_strnicmp(p, "update", 6) == 0)
+                    || (PyOS_strnicmp(p, "delete", 6) == 0)
+                    || (PyOS_strnicmp(p, "replace", 7) == 0);
         break;
     }
 

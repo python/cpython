@@ -65,7 +65,7 @@ already gets entropy from the OS to set the expat secret using
 Fix urllib.parse.splithost() to correctly parse fragments. For example,
 ``splithost('//127.0.0.1#@evil.com/')`` now correctly returns the
 ``127.0.0.1`` host, instead of treating ``@evil.com`` as the host in an
-authentification (``login@host``).
+authentication (``login@host``).
 
 ..
 
@@ -3406,7 +3406,7 @@ Patch by Nikolay Kim.
 .. nonce: 4f5gbp
 .. section: Library
 
-urrlib.parse.quote is now based on RFC 3986 and hence includes '~' in the
+urllib.parse.quote is now based on RFC 3986 and hence includes '~' in the
 set of characters that is not quoted by default. Patch by Christian Theune
 and Ratnadeep Debnath.
 
@@ -5711,7 +5711,7 @@ IDLE - make tests pass with zzdummy extension disabled by default.
 Document how IDLE runs tkinter programs. IDLE calls tcl/tk update in the
 background in order to make live
 
-interaction and experimentatin with tkinter applications much easier.
+interaction and experimentation with tkinter applications much easier.
 
 ..
 
@@ -5730,7 +5730,7 @@ not the same as deleting and inserting because int('') will fail.
 .. nonce: 50Jp_Q
 .. section: IDLE
 
-Rearrange IDLE condigdialog GenPage into Window, Editor, and Help sections.
+Rearrange IDLE configdialog GenPage into Window, Editor, and Help sections.
 
 ..
 

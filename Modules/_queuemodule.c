@@ -309,7 +309,7 @@ static PyMethodDef simplequeue_methods[] = {
 static PyTypeObject PySimpleQueueType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_queue.SimpleQueue",               /*tp_name*/
-    sizeof(simplequeueobject),          /*tp_size*/
+    sizeof(simplequeueobject),          /*tp_basicsize*/
     0,                                  /*tp_itemsize*/
     /* methods */
     (destructor)simplequeue_dealloc,    /*tp_dealloc*/

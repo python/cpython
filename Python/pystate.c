@@ -172,22 +172,26 @@ PyInterpreterState_New(void)
     interp->pyexitmodule = NULL;
 
     HEAD_LOCK();
-    interp->next = _PyRuntime.interpreters.head;
-    if (_PyRuntime.interpreters.main == NULL) {
-        _PyRuntime.interpreters.main = interp;
-    }
-    _PyRuntime.interpreters.head = interp;
     if (_PyRuntime.interpreters.next_id < 0) {
         /* overflow or Py_Initialize() not called! */
         PyErr_SetString(PyExc_RuntimeError,
                         "failed to get an interpreter ID");
-        /* XXX deallocate! */
+        PyMem_RawFree(interp);
         interp = NULL;
     } else {
         interp->id = _PyRuntime.interpreters.next_id;
         _PyRuntime.interpreters.next_id += 1;
+        interp->next = _PyRuntime.interpreters.head;
+        if (_PyRuntime.interpreters.main == NULL) {
+            _PyRuntime.interpreters.main = interp;
+        }
+        _PyRuntime.interpreters.head = interp;
     }
     HEAD_UNLOCK();
+
+    if (interp == NULL) {
+        return NULL;
+    }
 
     interp->tstate_next_unique_id = 0;
 
@@ -261,6 +265,44 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
         PyThread_free_lock(interp->id_mutex);
     }
     PyMem_RawFree(interp);
+}
+
+
+/*
+ * Delete all interpreter states except the main interpreter.  If there
+ * is a current interpreter state, it *must* be the main interpreter.
+ */
+void
+_PyInterpreterState_DeleteExceptMain()
+{
+    PyThreadState *tstate = PyThreadState_Swap(NULL);
+    if (tstate != NULL && tstate->interp != _PyRuntime.interpreters.main) {
+        Py_FatalError("PyInterpreterState_DeleteExceptMain: not main interpreter");
+    }
+
+    HEAD_LOCK();
+    PyInterpreterState *interp = _PyRuntime.interpreters.head;
+    _PyRuntime.interpreters.head = NULL;
+    for (; interp != NULL; interp = interp->next) {
+        if (interp == _PyRuntime.interpreters.main) {
+            _PyRuntime.interpreters.main->next = NULL;
+            _PyRuntime.interpreters.head = interp;
+            continue;
+        }
+
+        PyInterpreterState_Clear(interp);  // XXX must activate?
+        zapthreads(interp);
+        if (interp->id_mutex != NULL) {
+            PyThread_free_lock(interp->id_mutex);
+        }
+        PyMem_RawFree(interp);
+    }
+    HEAD_UNLOCK();
+
+    if (_PyRuntime.interpreters.head == NULL) {
+        Py_FatalError("PyInterpreterState_DeleteExceptMain: missing main");
+    }
+    PyThreadState_Swap(tstate);
 }
 
 

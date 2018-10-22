@@ -1,0 +1,3 @@
+Check for floating-point byte order in configure.ac using compilation tests
+instead of executing code, so that these checks work in cross-compiled
+builds.

@@ -389,11 +389,9 @@ implementation."
 static PyObject *
 sys_getfilesystemencoding(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    if (Py_FileSystemDefaultEncoding)
-        return PyUnicode_FromString(Py_FileSystemDefaultEncoding);
-    PyErr_SetString(PyExc_RuntimeError,
-                    "filesystem encoding is not initialized");
-    return NULL;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    const _PyCoreConfig *config = &interp->core_config;
+    return PyUnicode_FromString(config->filesystem_encoding);
 }
 
 PyDoc_STRVAR(getfilesystemencoding_doc,
@@ -406,11 +404,9 @@ operating system filenames."
 static PyObject *
 sys_getfilesystemencodeerrors(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    if (Py_FileSystemDefaultEncodeErrors)
-        return PyUnicode_FromString(Py_FileSystemDefaultEncodeErrors);
-    PyErr_SetString(PyExc_RuntimeError,
-        "filesystem encoding is not initialized");
-    return NULL;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    const _PyCoreConfig *config = &interp->core_config;
+    return PyUnicode_FromString(config->filesystem_errors);
 }
 
 PyDoc_STRVAR(getfilesystemencodeerrors_doc,
@@ -1150,8 +1146,30 @@ environment variable before launching Python."
 static PyObject *
 sys_enablelegacywindowsfsencoding(PyObject *self)
 {
-    Py_FileSystemDefaultEncoding = "mbcs";
-    Py_FileSystemDefaultEncodeErrors = "replace";
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    _PyCoreConfig *config = &interp->core_config;
+
+    /* Set the filesystem encoding to mbcs/replace (PEP 529) */
+    char *encoding = _PyMem_RawStrdup("mbcs");
+    char *errors = _PyMem_RawStrdup("replace");
+    if (encoding == NULL || errors == NULL) {
+        PyMem_Free(encoding);
+        PyMem_Free(errors);
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    PyMem_RawFree(config->filesystem_encoding);
+    config->filesystem_encoding = encoding;
+    PyMem_RawFree(config->filesystem_errors);
+    config->filesystem_errors = errors;
+
+    if (_Py_SetFileSystemEncoding(config->filesystem_encoding,
+                                  config->filesystem_errors) < 0) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 }
 
@@ -2058,7 +2076,7 @@ make_flags(void)
 {
     int pos = 0;
     PyObject *seq;
-    _PyCoreConfig *core_config = &_PyGILState_GetInterpreterStateUnsafe()->core_config;
+    const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
 
     seq = PyStructSequence_New(&FlagsType);
     if (seq == NULL)
@@ -2067,23 +2085,23 @@ make_flags(void)
 #define SetFlag(flag) \
     PyStructSequence_SET_ITEM(seq, pos++, PyLong_FromLong(flag))
 
-    SetFlag(Py_DebugFlag);
-    SetFlag(Py_InspectFlag);
-    SetFlag(Py_InteractiveFlag);
-    SetFlag(Py_OptimizeFlag);
-    SetFlag(Py_DontWriteBytecodeFlag);
-    SetFlag(Py_NoUserSiteDirectory);
-    SetFlag(Py_NoSiteFlag);
-    SetFlag(Py_IgnoreEnvironmentFlag);
-    SetFlag(Py_VerboseFlag);
+    SetFlag(config->parser_debug);
+    SetFlag(config->inspect);
+    SetFlag(config->interactive);
+    SetFlag(config->optimization_level);
+    SetFlag(!config->write_bytecode);
+    SetFlag(!config->user_site_directory);
+    SetFlag(!config->site_import);
+    SetFlag(!config->use_environment);
+    SetFlag(config->verbose);
     /* SetFlag(saw_unbuffered_flag); */
     /* SetFlag(skipfirstline); */
-    SetFlag(Py_BytesWarningFlag);
-    SetFlag(Py_QuietFlag);
-    SetFlag(Py_HashRandomizationFlag);
-    SetFlag(Py_IsolatedFlag);
-    PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(core_config->dev_mode));
-    SetFlag(Py_UTF8Mode);
+    SetFlag(config->bytes_warning);
+    SetFlag(config->quiet);
+    SetFlag(config->use_hash_seed == 0 || config->hash_seed != 0);
+    SetFlag(config->isolated);
+    PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(config->dev_mode));
+    SetFlag(config->utf8_mode);
 #undef SetFlag
 
     if (PyErr_Occurred()) {
@@ -2456,8 +2474,10 @@ err_occurred:
     } while (0)
 
 int
-_PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config)
+_PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
 {
+    const _PyCoreConfig *core_config = &interp->core_config;
+    const _PyMainInterpreterConfig *config = &interp->config;
     int res;
 
     /* _PyMainInterpreterConfig_Read() must set all these variables */
@@ -2505,7 +2525,7 @@ _PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config)
     }
 
     SET_SYS_FROM_STRING_INT_RESULT("dont_write_bytecode",
-                         PyBool_FromLong(Py_DontWriteBytecodeFlag));
+                         PyBool_FromLong(!core_config->write_bytecode));
 
     if (get_warnoptions() == NULL)
         return -1;

@@ -195,7 +195,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop._sock_recv = mock.Mock()
 
         f = self.loop.create_task(self.loop.sock_recv(sock, 1024))
-        self.loop.run_until_complete(asyncio.sleep(0.01, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(0.01))
 
         self.assertEqual(self.loop._sock_recv.call_args[0][1:],
                          (None, sock, 1024))
@@ -215,7 +215,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         fut = self.loop.create_task(
             self.loop.sock_recv(sock, 1024))
 
-        self.loop.run_until_complete(asyncio.sleep(0.01, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(0.01))
 
         callback = self.loop.add_reader.call_args[0][1]
         params = self.loop.add_reader.call_args[0][2:]
@@ -226,7 +226,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         sock.recv.side_effect = OSError(9)
         callback(*params)
 
-        self.loop.run_until_complete(asyncio.sleep(0.01, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(0.01))
 
         self.assertIsInstance(fut.exception(), OSError)
         self.assertEqual((10,), self.loop.remove_reader.call_args[0])
@@ -278,7 +278,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         f = self.loop.create_task(
             self.loop.sock_sendall(sock, b'data'))
 
-        self.loop.run_until_complete(asyncio.sleep(0.01, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(0.01))
 
         self.assertEqual(
             (None, sock, b'data'),
@@ -293,7 +293,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop._sock_sendall = mock.Mock()
 
         f = self.loop.create_task(self.loop.sock_sendall(sock, b''))
-        self.loop.run_until_complete(asyncio.sleep(0, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(0))
 
         self.assertTrue(f.done())
         self.assertIsNone(f.result())
@@ -309,7 +309,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop.remove_writer = mock.Mock()
         fut = self.loop.create_task(self.loop.sock_sendall(sock, b'data'))
 
-        self.loop.run_until_complete(asyncio.sleep(0.01, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(0.01))
 
         callback = self.loop.add_writer.call_args[0][1]
         params = self.loop.add_writer.call_args[0][2:]
@@ -320,7 +320,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         sock.send.side_effect = OSError(9)
         callback(*params)
 
-        self.loop.run_until_complete(asyncio.sleep(0.01, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(0.01))
 
         self.assertIsInstance(fut.exception(), OSError)
         self.assertEqual((10,), self.loop.remove_writer.call_args[0])
@@ -531,7 +531,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop._sock_accept = mock.Mock()
 
         f = self.loop.create_task(self.loop.sock_accept(sock))
-        self.loop.run_until_complete(asyncio.sleep(0.01, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(0.01))
 
         self.assertFalse(self.loop._sock_accept.call_args[0][1])
         self.assertIs(self.loop._sock_accept.call_args[0][2], sock)
