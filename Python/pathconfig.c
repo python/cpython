@@ -494,7 +494,7 @@ Py_SetProgramName(const wchar_t *program_name)
 }
 
 void
-Py_SetProgramFullPath(const wchar_t *program_full_path)
+_Py_SetProgramFullPath(const wchar_t *program_full_path)
 {
     if (program_full_path == NULL || program_full_path[0] == L'\0') {
         return;
@@ -509,7 +509,7 @@ Py_SetProgramFullPath(const wchar_t *program_full_path)
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     if (_Py_path_config.program_full_path == NULL) {
-        Py_FatalError("Py_SetProgramFullPath() failed: out of memory");
+        Py_FatalError("_Py_SetProgramFullPath() failed: out of memory");
     }
 }
 

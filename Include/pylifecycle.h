@@ -87,7 +87,7 @@ PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);
 PyAPI_FUNC(void) Py_SetPythonHome(const wchar_t *);
 PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
 
-PyAPI_FUNC(void) Py_SetProgramFullPath(const wchar_t *);
+PyAPI_FUNC(void) _Py_SetProgramFullPath(const wchar_t *);
 PyAPI_FUNC(wchar_t *) Py_GetProgramFullPath(void);
 
 PyAPI_FUNC(wchar_t *) Py_GetPrefix(void);
