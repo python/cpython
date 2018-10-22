@@ -620,9 +620,8 @@ class FieldStorage:
 
         # Propagate max_num_fields into the sub class appropriately
         max_num_fields = self.max_num_fields
-        sub_max_num_fields = self.max_num_fields
         if max_num_fields is not None:
-            sub_max_num_fields -= len(self.list)
+            max_num_fields -= len(self.list)
 
         while True:
             parser = FeedParser()
@@ -645,16 +644,17 @@ class FieldStorage:
 
             part = klass(self.fp, headers, ib, environ, keep_blank_values,
                          strict_parsing,self.limit-self.bytes_read,
-                         self.encoding, self.errors, sub_max_num_fields)
+                         self.encoding, self.errors, max_num_fields)
 
-            if max_num_fields is not None and part.list:
-                max_num_fields -= len(part.list)
-                sub_max_num_fields -= len(part.list)
+            if max_num_fields is not None:
+                max_num_fields -= 1
+                if part.list:
+                    max_num_fields -= len(part.list)
+                if max_num_fields < 0:
+                    raise ValueError('Max number of fields exceeded')
 
             self.bytes_read += part.bytes_read
             self.list.append(part)
-            if max_num_fields is not None and max_num_fields < len(self.list):
-                raise ValueError('Max number of fields exceeded')
             if part.done or self.bytes_read >= self.length > 0:
                 break
         self.skip_lines()
