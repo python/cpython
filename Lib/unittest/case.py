@@ -1013,9 +1013,10 @@ class TestCase(object):
                     differing += ('Unable to index element %d '
                                   'of second %s\n' % (len1, seq_type_name))
         standardMsg = differing
-        diffMsg = '\n' + '\n'.join(
-            difflib.ndiff(pprint.pformat(seq1).splitlines(),
-                          pprint.pformat(seq2).splitlines()))
+        diffMsg = difflib.unified_diff(pprint.pformat(seq1).splitlines(),
+                                       pprint.pformat(seq2).splitlines(),
+                                       lineterm='')
+        diffMsg = '\n' + '\n'.join(diffMsg)
 
         standardMsg = self._truncateMessage(standardMsg, diffMsg)
         msg = self._formatMessage(msg, standardMsg)

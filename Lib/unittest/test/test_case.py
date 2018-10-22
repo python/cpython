@@ -789,8 +789,10 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertEqual(self.maxDiff, 80*8)
         seq1 = 'a' + 'x' * 80**2
         seq2 = 'b' + 'x' * 80**2
-        diff = '\n'.join(difflib.ndiff(pprint.pformat(seq1).splitlines(),
-                                       pprint.pformat(seq2).splitlines()))
+        diff = difflib.unified_diff(pprint.pformat(seq1).splitlines(),
+                                    pprint.pformat(seq2).splitlines(),
+                                    lineterm='')
+        diff = '\n'.join(diff)
         # the +1 is the leading \n added by assertSequenceEqual
         omitted = unittest.case.DIFF_OMITTED % (len(diff) + 1,)
 
