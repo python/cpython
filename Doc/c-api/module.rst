@@ -173,7 +173,7 @@ or request "multi-phase initialization" by returning the definition struct itsel
       for its state. Non-negative ``m_size`` is required for multi-phase
       initialization.
 
-      See :PEP:`3121` for more details.
+      See :pep:`3121` for more details.
 
    .. c:member:: PyMethodDef* m_methods
 
@@ -309,7 +309,7 @@ The available slot types are:
    .. c:function:: PyObject* create_module(PyObject *spec, PyModuleDef *def)
 
    The function receives a :py:class:`~importlib.machinery.ModuleSpec`
-   instance, as defined in :PEP:`451`, and the module definition.
+   instance, as defined in :pep:`451`, and the module definition.
    It should return a new module object, or set an error
    and return *NULL*.
 
@@ -345,7 +345,7 @@ The available slot types are:
    If multiple ``Py_mod_exec`` slots are specified, they are processed in the
    order they appear in the *m_slots* array.
 
-See :PEP:`489` for more details on multi-phase initialization.
+See :pep:`489` for more details on multi-phase initialization.
 
 Low-level module creation functions
 ...................................
