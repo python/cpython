@@ -125,12 +125,13 @@ public override bool Execute() {
         try {
             int pathLength = 32768;
             StringBuilder pathBuilder = new StringBuilder(pathLength);
-            QueryFullProcessImageName(p.Handle, 0, pathBuilder, ref pathLength);
-            string exeName = Path.GetFullPath(pathBuilder.ToString());
-            Log.LogMessage("Found running process: " + exeName, MessageImportance.Low);
-            if (fullPath.Equals(exeName, StringComparison.OrdinalIgnoreCase)) {
-                Log.LogMessage("Terminating " + exeName, MessageImportance.High);
-                p.Kill();
+            if (QueryFullProcessImageName(p.Handle, 0, pathBuilder, ref pathLength)) {
+                string exeName = Path.GetFullPath(pathBuilder.ToString());
+                Log.LogMessage("Found running process: " + exeName, MessageImportance.Low);
+                if (fullPath.Equals(exeName, StringComparison.OrdinalIgnoreCase)) {
+                    Log.LogMessage("Terminating " + exeName, MessageImportance.High);
+                    p.Kill();
+                }
             }
         } catch {
         }
