@@ -1,0 +1,2 @@
+Replace PEP XYZ by the role `:pep:` and allow to use the direct links to the
+PEPs.
