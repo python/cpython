@@ -352,7 +352,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject *const *args, Py_ssize_t nargs
             Py_INCREF(k[i+1]);
             i += 2;
         }
-        nk = i / 2;
+        assert(i / 2 == nk);
     }
     else {
         kwtuple = NULL;
