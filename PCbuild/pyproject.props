@@ -123,8 +123,8 @@ public override bool Execute() {
     Log.LogMessage("Looking for " + fullPath, MessageImportance.Normal);
     foreach (Process p in Process.GetProcesses()) {
         try {
-	    int pathLength = 32768;
-	    StringBuilder pathBuilder = new StringBuilder(pathLength);
+            int pathLength = 32768;
+            StringBuilder pathBuilder = new StringBuilder(pathLength);
             QueryFullProcessImageName(p.Handle, 0, pathBuilder, ref pathLength);
             string exeName = Path.GetFullPath(pathBuilder.ToString());
             Log.LogMessage("Found running process: " + exeName, MessageImportance.Low);
