@@ -2282,7 +2282,7 @@ for details.
 Unsupported Operating Systems
 -----------------------------
 
-Windows XP is no longer supported by Microsoft, thus, per :pep:`11`, CPython
+Windows XP is no longer supported by Microsoft, thus, per :PEP:`11`, CPython
 3.5 is no longer officially supported on this OS.
 
 

@@ -60,7 +60,7 @@ byte-code cache files in the directory containing the source code.
    the default is :attr:`PycInvalidationMode.TIMESTAMP`.
 
    .. versionchanged:: 3.2
-      Changed default value of *cfile* to be :pep:`3147`-compliant.  Previous
+      Changed default value of *cfile* to be :PEP:`3147`-compliant.  Previous
       default was *file* + ``'c'`` (``'o'`` if optimization was enabled).
       Also added the *optimize* parameter.
 

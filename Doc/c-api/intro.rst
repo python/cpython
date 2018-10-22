@@ -34,7 +34,7 @@ Coding standards
 ================
 
 If you're writing C code for inclusion in CPython, you **must** follow the
-guidelines and standards defined in :pep:`7`.  These guidelines apply
+guidelines and standards defined in :PEP:`7`.  These guidelines apply
 regardless of the version of Python you are contributing to.  Following these
 conventions is not necessary for your own third party extension modules,
 unless you eventually expect to contribute them to Python.

@@ -421,7 +421,7 @@ read as an example.
    Unlike our ``spam`` example, ``xxmodule`` uses *multi-phase initialization*
    (new in Python 3.5), where a PyModuleDef structure is returned from
    ``PyInit_spam``, and creation of the module is left to the import machinery.
-   For details on multi-phase initialization, see :pep:`489`.
+   For details on multi-phase initialization, see :PEP:`489`.
 
 
 .. _compilation:
