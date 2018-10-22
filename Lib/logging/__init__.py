@@ -982,8 +982,7 @@ class StreamHandler(Handler):
         try:
             msg = self.format(record)
             stream = self.stream
-            stream.write(msg)
-            stream.write(self.terminator)
+            stream.write(msg + self.terminator)
             self.flush()
         except Exception:
             self.handleError(record)
