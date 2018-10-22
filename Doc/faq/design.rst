@@ -528,9 +528,9 @@ Some unacceptable solutions that have been proposed:
      mydict = {[1, 2]: '12'}
      print(mydict[[1, 2]])
 
-  would raise a KeyError exception because the id of the ``[1, 2]`` used in the
-  second line differs from that in the first line.  In other words, dictionary
-  keys should be compared using ``==``, not using :keyword:`is`.
+  would raise a :exc:`KeyError` exception because the id of the ``[1, 2]`` used
+  in the second line differs from that in the first line.  In other words,
+  dictionary keys should be compared using ``==``, not using :keyword:`is`.
 
 - Make a copy when using a list as a key.  This doesn't work because the list,
   being a mutable object, could contain a reference to itself, and then the

@@ -560,15 +560,15 @@ PEP 479: Change StopIteration handling inside generators
 
 The interaction of generators and :exc:`StopIteration` in Python 3.4 and
 earlier was sometimes surprising, and could conceal obscure bugs.  Previously,
-``StopIteration`` raised accidentally inside a generator function was
+:exc:`StopIteration` raised accidentally inside a generator function was
 interpreted as the end of the iteration by the loop construct driving the
 generator.
 
-:pep:`479` changes the behavior of generators: when a ``StopIteration``
+:pep:`479` changes the behavior of generators: when a :exc:`StopIteration`
 exception is raised inside a generator, it is replaced with a
 :exc:`RuntimeError` before it exits the generator frame.  The main goal of
 this change is to ease debugging in the situation where an unguarded
-:func:`next` call raises ``StopIteration`` and causes the iteration controlled
+:func:`next` call raises :exc:`StopIteration` and causes the iteration controlled
 by the generator to terminate silently. This is particularly pernicious in
 combination with the ``yield from`` construct.
 
@@ -593,7 +593,7 @@ a :term:`__future__` import is necessary::
     RuntimeError: generator raised StopIteration
 
 Without a ``__future__`` import, a :exc:`PendingDeprecationWarning` will be
-raised whenever a ``StopIteration`` exception is raised inside a generator.
+raised whenever a :exc:`StopIteration` exception is raised inside a generator.
 
 .. seealso::
 

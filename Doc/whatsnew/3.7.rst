@@ -1030,7 +1030,7 @@ support the loading of resources from packages.  See also
 lacks a spec.
 (Contributed by Garvit Khatri in :issue:`29851`.)
 
-:func:`importlib.find_spec` now raises ``ModuleNotFoundError`` instead of
+:func:`importlib.find_spec` now raises :exc:`ModuleNotFoundError` instead of
 :exc:`AttributeError` if the specified parent module is not a package (i.e.
 lacks a ``__path__`` attribute).
 (Contributed by Milan Oberkirch in :issue:`30436`.)
@@ -1393,7 +1393,7 @@ The subprocess module is now more graceful when handling
 :exc:`KeyboardInterrupt` during :func:`subprocess.call`,
 :func:`subprocess.run`, or in a :class:`~subprocess.Popen`
 context manager.  It now waits a short amount of time for the child
-to exit, before continuing the handling of the ``KeyboardInterrupt``
+to exit, before continuing the handling of the :exc:`KeyboardInterrupt`
 exception.
 (Contributed by Gregory P. Smith in :issue:`25942`.)
 

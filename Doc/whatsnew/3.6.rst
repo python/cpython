@@ -741,7 +741,7 @@ Some smaller changes made to the core Python language are:
 
 * A ``global`` or ``nonlocal`` statement must now textually appear
   before the first use of the affected name in the same scope.
-  Previously this was a ``SyntaxWarning``.
+  Previously this was a :exc:`SyntaxWarning`.
 
 * It is now possible to set a :ref:`special method <specialnames>` to
   ``None`` to indicate that the corresponding operation is not available.
@@ -1200,7 +1200,7 @@ importlib
 
 Import now raises the new exception :exc:`ModuleNotFoundError`
 (subclass of :exc:`ImportError`) when it cannot find a module.  Code
-that current checks for ``ImportError`` (in try-except) will still work.
+that current checks for :exc:`ImportError` `in try-except) will still work.
 (Contributed by Eric Snow in :issue:`15767`.)
 
 :class:`importlib.util.LazyLoader` now calls
