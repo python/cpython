@@ -857,7 +857,7 @@ class date:
             assert len(date_string) == 10
             return cls(*_parse_isoformat_date(date_string))
         except Exception:
-            raise ValueError('Invalid isoformat string: %s' % date_string)
+            raise ValueError(f'Invalid isoformat string: {date_string!r}')
 
 
     # Conversions to string
@@ -1369,7 +1369,7 @@ class time:
         try:
             return cls(*_parse_isoformat_time(time_string))
         except Exception:
-            raise ValueError('Invalid isoformat string: %s' % time_string)
+            raise ValueError(f'Invalid isoformat string: {time_string!r}')
 
 
     def strftime(self, fmt):
@@ -1646,13 +1646,13 @@ class datetime(date):
         try:
             date_components = _parse_isoformat_date(dstr)
         except ValueError:
-            raise ValueError('Invalid isoformat string: %s' % date_string)
+            raise ValueError(f'Invalid isoformat string: {date_string!r}')
 
         if tstr:
             try:
                 time_components = _parse_isoformat_time(tstr)
             except ValueError:
-                raise ValueError('Invalid isoformat string: %s' % date_string)
+                raise ValueError(f'Invalid isoformat string: {date_string!r}')
         else:
             time_components = [0, 0, 0, 0, None]
 

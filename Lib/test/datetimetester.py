@@ -13,6 +13,7 @@ import sys
 import os
 import pickle
 import random
+import re
 import struct
 import unittest
 
@@ -2675,6 +2676,14 @@ class TestDateTime(TestDate):
             with self.subTest(bad_str=bad_str):
                 with self.assertRaises(ValueError):
                     self.theclass.fromisoformat(bad_str)
+
+    def test_fromisoformat_fails_surrogate(self):
+        # Test that when fromisoformat() fails with a surrogate character as
+        # the separator, the error message contains the original string
+        dtstr = "2018-01-03\ud80001:0113"
+
+        with self.assertRaisesRegex(ValueError, re.escape(repr(dtstr))):
+            self.theclass.fromisoformat(dtstr)
 
     def test_fromisoformat_utc(self):
         dt_str = '2014-04-19T13:21:13+00:00'
