@@ -482,9 +482,9 @@ Here's a sample usage of the ``generate_ints()`` generator:
 You could equally write ``for i in generate_ints(5)``, or ``a, b, c =
 generate_ints(3)``.
 
-Inside a generator function, ``return value`` causes :exc:`StopIteration` to be
-raised from the :meth:`~generator.__next__` method.  Once this happens, or the
-bottom of the function is reached, the procession of values ends and the
+Inside a generator function, ``return value`` causes ``StopIteration(value)`` to
+be raised from the :meth:`~generator.__next__` method.  Once this happens, or
+the bottom of the function is reached, the procession of values ends and the
 generator cannot yield any further values.
 
 You could achieve the effect of generators manually by writing your own class
