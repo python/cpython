@@ -336,6 +336,9 @@ static PyObject*
 get_attrib_from_keywords(PyObject *kwds)
 {
     PyObject *attrib_str = PyUnicode_FromString("attrib");
+    if (attrib_str == NULL) {
+        return NULL;
+    }
     PyObject *attrib = PyDict_GetItem(kwds, attrib_str);
 
     if (attrib) {
@@ -356,10 +359,10 @@ get_attrib_from_keywords(PyObject *kwds)
 
     Py_DECREF(attrib_str);
 
-    /* attrib can be NULL if PyDict_New failed */
-    if (attrib)
-        if (PyDict_Update(attrib, kwds) < 0)
-            return NULL;
+    if (attrib != NULL && PyDict_Update(attrib, kwds) < 0) {
+        Py_DECREF(attrib);
+        return NULL;
+    }
     return attrib;
 }
 
@@ -592,10 +595,9 @@ subelement(PyObject *self, PyObject *args, PyObject *kwds)
         attrib = PyDict_Copy(attrib);
         if (!attrib)
             return NULL;
-        if (kwds) {
-            if (PyDict_Update(attrib, kwds) < 0) {
-                return NULL;
-            }
+        if (kwds != NULL && PyDict_Update(attrib, kwds) < 0) {
+            Py_DECREF(attrib);
+            return NULL;
         }
     } else if (kwds) {
         /* have keyword args */
@@ -1871,7 +1873,6 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
              * scheduled for removal.
             */
             if (!(recycle = PyList_New(slicelen))) {
-                PyErr_NoMemory();
                 return -1;
             }
 
@@ -1911,7 +1912,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
             self->extra->length -= slicelen;
 
             /* Discard the recycle list with all the deleted sub-elements */
-            Py_XDECREF(recycle);
+            Py_DECREF(recycle);
             return 0;
         }
 
@@ -3338,7 +3339,6 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
         if (!target) {
             Py_CLEAR(self->entity);
             Py_CLEAR(self->names);
-            EXPAT(ParserFree)(self->parser);
             return -1;
         }
     }
