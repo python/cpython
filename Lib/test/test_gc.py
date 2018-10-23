@@ -895,7 +895,7 @@ class GCCallbackTests(unittest.TestCase):
         import subprocess
         code = textwrap.dedent('''
             from test.support import gc_collect
-            a = []
+            a = [1, 2, 3]
             b = [a]
 
             # Simulate the refcount of "a" being too low (compared to the
@@ -920,7 +920,7 @@ class GCCallbackTests(unittest.TestCase):
         self.assertRegex(stderr,
             br'refcount is too small')
         self.assertRegex(stderr,
-            br'object  : \[\]')
+            br'object  : \[1, 2, 3\]')
         self.assertRegex(stderr,
             br'type    : list')
         self.assertRegex(stderr,
