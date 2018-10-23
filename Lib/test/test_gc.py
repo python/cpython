@@ -1,14 +1,17 @@
 import unittest
 from test.support import (verbose, refcount_test, run_unittest,
                           strip_python_stderr, cpython_only, start_threads,
-                          temp_dir, requires_type_collecting, TESTFN, unlink)
+                          temp_dir, requires_type_collecting, TESTFN, unlink,
+                          import_module)
 from test.support.script_helper import assert_python_ok, make_script
 
-import sys
-import time
 import gc
-import weakref
+import sys
+import sysconfig
+import textwrap
 import threading
+import time
+import weakref
 
 try:
     from _testcapi import with_tp_del
@@ -61,6 +64,8 @@ class Uncollectable(object):
             self.partner = partner
     def __tp_del__(self):
         pass
+
+BUILD_WITH_NDEBUG = ('-DNDEBUG' in sysconfig.get_config_vars()['PY_CFLAGS'])
 
 ### Tests
 ###############################################################################
@@ -876,6 +881,52 @@ class GCCallbackTests(unittest.TestCase):
 
         # Uncollectables should be gone
         self.assertEqual(len(gc.garbage), 0)
+
+
+    @unittest.skipIf(BUILD_WITH_NDEBUG,
+                     'built with -NDEBUG')
+    def test_refcount_errors(self):
+        self.preclean()
+        # Verify the "handling" of objects with broken refcounts
+
+        # Skip the test if ctypes is not available
+        import_module("ctypes")
+
+        import subprocess
+        code = textwrap.dedent('''
+            from test.support import gc_collect
+            a = []
+            b = [a]
+
+            # Simulate the refcount of "a" being too low (compared to the
+            # references held on it by live data), but keeping it above zero
+            # (to avoid deallocating it):
+            import ctypes
+            ctypes.pythonapi.Py_DecRef(ctypes.py_object(a))
+
+            # The garbage collector should now have a fatal error
+            # when it reaches the broken object
+            gc_collect()
+        ''')
+        p = subprocess.Popen([sys.executable, "-c", code],
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+        p.stdout.close()
+        p.stderr.close()
+        # Verify that stderr has a useful error message:
+        self.assertRegex(stderr,
+            br'Modules/gcmodule.c:[0-9]+: gc_decref: Assertion "gc_get_refs\(g\) > 0" failed.')
+        self.assertRegex(stderr,
+            br'refcount is too small')
+        self.assertRegex(stderr,
+            br'object  : \[\]')
+        self.assertRegex(stderr,
+            br'type    : list')
+        self.assertRegex(stderr,
+            br'refcount: 1')
+        self.assertRegex(stderr,
+            br'address : 0x[0-9a-f]+')
 
 
 class GCTogglingTests(unittest.TestCase):
