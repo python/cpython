@@ -171,11 +171,15 @@ else:
         pass
 
 def copystat(src, dst, *, follow_symlinks=True):
-    """Copy all stat info (mode bits, atime, mtime, flags) from src to dst.
+    """Copy file metadata
 
-    If the optional flag `follow_symlinks` is not set, symlinks aren't followed if and
-    only if both `src` and `dst` are symlinks.
+    Copy the permission bits, last access time, last modification time, and
+    flags from `src` to `dst`. On Linux, copystat() also copies the "extended
+    attributes" where possible. The file contents, owner, and group are
+    unaffected. `src` and `dst` are path names given as strings.
 
+    If the optional flag `follow_symlinks` is not set, symlinks aren't
+    followed if and only if both `src` and `dst` are symlinks.
     """
     def _nop(*args, ns=None, follow_symlinks=None):
         pass
@@ -243,8 +247,10 @@ def copy(src, dst, *, follow_symlinks=True):
     return dst
 
 def copy2(src, dst, *, follow_symlinks=True):
-    """Copy data and all stat info ("cp -p src dst"). Return the file's
-    destination."
+    """Copy data and metadata. Return the file's destination.
+
+    Metadata is copied with copystat(). Please see the copystat function
+    for more information.
 
     The destination may be a directory.
 
