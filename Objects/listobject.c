@@ -80,7 +80,7 @@ static int
 list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 {
     PyObject **items;
-    size_t allocated, num_allocated_bytes;
+    size_t allocated;
 
     allocated = (size_t)size;
     if (allocated > (size_t)PY_SSIZE_T_MAX / sizeof(PyObject *)) {
@@ -91,8 +91,7 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
     if (size == 0) {
         allocated = 0;
     }
-    num_allocated_bytes = allocated * sizeof(PyObject *);
-    items = (PyObject **)PyMem_Malloc(num_allocated_bytes);
+    items = (PyObject **)PyMem_New(PyObject*, allocated);
     if (items == NULL) {
         PyErr_NoMemory();
         return -1;
@@ -2675,10 +2674,14 @@ list___init___impl(PyListObject *self, PyObject *iterable)
         (void)_list_clear(self);
     }
     if (iterable != NULL) {
-        if(_PyObject_HasLen(iterable)){
-            Py_ssize_t iter_len = PyObject_Length(iterable);
+        if (_PyObject_HasLen(iterable) && self->ob_item == NULL) {
+            Py_ssize_t iter_len = PyObject_Size(iterable);
             if (iter_len == -1) {
-                PyErr_Clear();
+                if (PyErr_ExceptionMatches(PyExc_Exception)) {
+                    PyErr_Clear();
+                } else {
+                    return -1;
+                }
             }
             if (iter_len > 0 && list_preallocate_exact(self, iter_len)) {
                 return -1;
