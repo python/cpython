@@ -252,7 +252,7 @@ class Pool(object):
         """
         for i in range(processes - len(pool)):
             w = Process(ctx, target=worker,
-			            name='{}-Worker-{}'.format(name, i),
+                        name='{}-Worker-{}'.format(name, i),
                         args=(inqueue, outqueue,
                               initializer,
                               initargs, maxtasksperchild,
