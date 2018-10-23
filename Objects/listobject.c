@@ -2675,12 +2675,14 @@ list___init___impl(PyListObject *self, PyObject *iterable)
         (void)_list_clear(self);
     }
     if (iterable != NULL) {
-        Py_ssize_t iter_len = PyObject_Length(iterable);
-        if (iter_len == -1) {
-            PyErr_Clear();
-        }
-        if (iter_len > 0 && list_preallocate_exact(self, iter_len)) {
-            return -1;
+        if(_PyObject_HasLen(iterable)){
+            Py_ssize_t iter_len = PyObject_Length(iterable);
+            if (iter_len == -1) {
+                PyErr_Clear();
+            }
+            if (iter_len > 0 && list_preallocate_exact(self, iter_len)) {
+                return -1;
+            }
         }
         PyObject *rv = list_extend(self, iterable);
         if (rv == NULL)
