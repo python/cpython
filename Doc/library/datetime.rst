@@ -1999,6 +1999,9 @@ Class attributes:
    The UTC timezone, ``timezone(timedelta(0))``.
 
 
+.. index::
+   single: %; datetime format
+
 .. _strftime-strptime-behavior:
 
 :meth:`strftime` and :meth:`strptime` Behavior
