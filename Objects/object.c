@@ -410,13 +410,13 @@ _Py_BreakPoint(void)
 }
 
 
-/* Heuristic checking if the memory of the object has been deallocated.
+/* Heuristic checking if the object memory has been deallocated.
    Rely on the debug hooks on Python memory allocators which fills the memory
    with DEADBYTE (0xDB) when memory is deallocated.
 
    The function can be used to prevent segmentation fault on dereferencing
-   pointers like 0xdbdbdbdbdbdbdbdb which are very unlikely to be mapped in
-   memory. */
+   pointers like 0xdbdbdbdbdbdbdbdb. Such pointer is very unlikely to be mapped
+   in memory. */
 int
 _PyObject_IsFreed(PyObject *op)
 {
