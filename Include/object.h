@@ -776,6 +776,7 @@ PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
  * inline.
  */
 #define _Py_NewReference(op) (                          \
+    _PyTraceMalloc_NewReference(op),                    \
     _Py_INC_TPALLOCS(op) _Py_COUNT_ALLOCS_COMMA         \
     _Py_INC_REFTOTAL  _Py_REF_DEBUG_COMMA               \
     Py_REFCNT(op) = 1)

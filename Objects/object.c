@@ -1919,6 +1919,7 @@ _Py_ReadyTypes(void)
 void
 _Py_NewReference(PyObject *op)
 {
+    _PyTraceMalloc_NewReference(op);
     _Py_INC_REFTOTAL;
     op->ob_refcnt = 1;
     _Py_AddToAllObjects(op, 1);

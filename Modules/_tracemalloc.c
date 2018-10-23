@@ -1713,6 +1713,55 @@ PyTraceMalloc_Untrack(unsigned int domain, uintptr_t ptr)
 }
 
 
+/* If the object memory block is already traced, update its trace
+   with the current Python traceback.
+
+   Do nothing if tracemalloc is not tracing memory allocations
+   or if the object memory block is not already traced. */
+int
+_PyTraceMalloc_NewReference(PyObject *op)
+{
+    assert(PyGILState_Check());
+
+    if (!tracemalloc_config.tracing) {
+        /* tracemalloc is not tracing: do nothing */
+        return -1;
+    }
+
+    uintptr_t ptr;
+    PyTypeObject *type = Py_TYPE(op);
+    if (PyType_IS_GC(type)) {
+        ptr = (uintptr_t)((char *)op - sizeof(PyGC_Head));
+    }
+    else {
+        ptr = (uintptr_t)op;
+    }
+
+    trace_t trace;
+    int found;
+    int res;
+
+    TABLES_LOCK();
+    if (tracemalloc_config.use_domain) {
+        pointer_t key = {ptr, DEFAULT_DOMAIN};
+        found = _Py_HASHTABLE_GET(tracemalloc_traces, key, trace);
+    }
+    else {
+        found = _Py_HASHTABLE_GET(tracemalloc_traces, ptr, trace);
+    }
+
+    if (found) {
+        res = tracemalloc_add_trace(DEFAULT_DOMAIN, ptr, trace.size);
+    }
+    else {
+        res = -1;
+    }
+    TABLES_UNLOCK();
+
+    return res;
+}
+
+
 PyObject*
 _PyTraceMalloc_GetTraceback(unsigned int domain, uintptr_t ptr)
 {
