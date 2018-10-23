@@ -109,19 +109,34 @@
       <FileName Required="true" />
     </ParameterGroup>
     <Task>
-      <Code Type="Fragment" Language="cs">
+      <Using Namespace="System.Diagnostics"/>
+      <Using Namespace="System.IO"/>
+      <Using Namespace="System.Runtime.InteropServices"/>
+      <Using Namespace="System.Text"/>
+      <Code Type="Method" Language="cs">
 <![CDATA[
-string fullPath = System.IO.Path.GetFullPath(FileName);
-Log.LogMessage("Looking for " + fullPath, MessageImportance.Normal);
-foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcesses()) {
-    try {
-        Log.LogMessage("Found running process: " + p.MainModule.FileName, MessageImportance.Low);
-        if (fullPath.Equals(System.IO.Path.GetFullPath(p.MainModule.FileName), StringComparison.OrdinalIgnoreCase)) {
-            Log.LogMessage("Terminating " + p.MainModule.FileName, MessageImportance.High);
-            p.Kill();
+[DllImport("kernel32.dll", SetLastError=true, CharSet=CharSet.Unicode)]
+public static extern bool QueryFullProcessImageName([In]IntPtr hProcess, [In]int dwFlags,
+                                                    [Out]StringBuilder lpExeName, ref int lpdwSize);
+public override bool Execute() {
+    string fullPath = Path.GetFullPath(FileName);
+    Log.LogMessage("Looking for " + fullPath, MessageImportance.Normal);
+    foreach (Process p in Process.GetProcesses()) {
+        try {
+            int pathLength = 32768;
+            StringBuilder pathBuilder = new StringBuilder(pathLength);
+            if (QueryFullProcessImageName(p.Handle, 0, pathBuilder, ref pathLength)) {
+                string exeName = Path.GetFullPath(pathBuilder.ToString());
+                Log.LogMessage("Found running process: " + exeName, MessageImportance.Low);
+                if (fullPath.Equals(exeName, StringComparison.OrdinalIgnoreCase)) {
+                    Log.LogMessage("Terminating " + exeName, MessageImportance.High);
+                    p.Kill();
+                }
+            }
+        } catch {
         }
-    } catch {
     }
+    return true;
 }
 ]]>
       </Code>
