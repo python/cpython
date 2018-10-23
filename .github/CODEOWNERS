@@ -67,3 +67,7 @@ Python/bootstrap_hash.c       @python/crypto-team
 **/*idlelib*                  @terryjreedy
 
 **/*typing*                   @gvanrossum @ilevkivskyi
+
+# macOS
+/Mac/                         @python/macos-team
+**/*osx_support*              @python/macos-team
