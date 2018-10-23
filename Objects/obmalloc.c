@@ -2033,6 +2033,22 @@ _PyMem_DebugRawCalloc(void *ctx, size_t nelem, size_t elsize)
 }
 
 
+/* Heuristic checking if the memory has been freed. Rely on the debug hooks on
+   Python memory allocators which fills the memory with DEADBYTE (0xDB) when
+   memory is deallocated. */
+int
+_PyMem_IsFreed(void *ptr, size_t size)
+{
+    unsigned char *bytes = ptr;
+    for (size_t i=0; i < size; i++) {
+        if (bytes[i] != DEADBYTE) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
 /* The debug free first checks the 2*SST bytes on each end for sanity (in
    particular, that the FORBIDDENBYTEs with the api ID are still intact).
    Then fills the original bytes with DEADBYTE.
