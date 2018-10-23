@@ -1,0 +1,2 @@
+:c:func:`PyUnicode_AsWideChar` and :c:func:`PyUnicode_AsWideCharString` no
+longer cache the ``wchar_t*`` representation of string objects.
