@@ -164,6 +164,14 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #if defined(THREAD_STACK_SIZE)
     size_t      tss;
 #endif
+    /* bpo-33015: Use a temporary cast of the function pointer to "void*"
+       to avoid a compiler warning on the
+       "void (*func)(void *)" => "void *(*func) (void *)" cast
+       ("void" return type => "void*" return type).
+
+       Python uses pthread_detach() and doesn't use pthread_join(),
+       the thread return value is ignored. */
+    void *(*start_routine) (void *) = (void *)func;
 
     dprintf(("PyThread_start_new_thread called\n"));
     if (!initialized)
@@ -194,9 +202,8 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #else
                              (pthread_attr_t*)NULL,
 #endif
-                             (void* (*)(void *))func,
-                             (void *)arg
-                             );
+                             start_routine,
+                             arg);
 
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
     pthread_attr_destroy(&attrs);
