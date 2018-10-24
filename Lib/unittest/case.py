@@ -1527,19 +1527,21 @@ class AsyncioTestCase(TestCase):
         super().tearDownClass()
         asyncio.set_event_loop_policy(cls.__saved_policy)
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         """Hook method for setting up the test fixture before exercising it.
 
-        Subclasses MUST invoke this method using the ``await`` keyword
-        when extending it.
+        This method invokes ``setUp`` inline so subclasses MUST invoke this
+        method using the ``await`` keyword when extending it.
         """
+        self.setUp()
 
-    async def tearDown(self):
+    async def asyncTearDown(self):
         """Hook method for deconstructing the test fixture after testing it.
 
-        Subclasses MUST invoke this method using the ``await`` keyword
-        when extending it.
+        This method invokes ``tearDown`` inline so subclasses MUST invoke
+        this method using the ``await`` keyword when extending it.
         """
+        self.tearDown()
 
     @property
     def event_loop(self):
@@ -1552,7 +1554,7 @@ class AsyncioTestCase(TestCase):
     def _runTest(self, testMethod, outcome, expecting_failure):
         try:
             with outcome.testPartExecutor(self):
-                self.event_loop.run_until_complete(self.setUp())
+                self.event_loop.run_until_complete(self.asyncSetUp())
             if outcome.success:
                 outcome.expecting_failure = expecting_failure
                 with outcome.testPartExecutor(self, isTest=True):
@@ -1562,7 +1564,7 @@ class AsyncioTestCase(TestCase):
                         testMethod()
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
-                    self.event_loop.run_until_complete(self.tearDown())
+                    self.event_loop.run_until_complete(self.asyncTearDown())
         finally:
             if self.event_loop.is_running():
                 self.event_loop.stop()

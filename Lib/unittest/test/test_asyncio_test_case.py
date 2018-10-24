@@ -141,8 +141,7 @@ class Test_AsyncioTestCase(unittest.TestCase):
         class TestCase(Test.SingleTestAsyncTestCase):
             state = {'async_called': False, 'normal_called': False}
 
-            async def setUp(self):
-                await super().setUp()
+            def setUp(self):
                 self.addCleanup(self.async_cleanup)
                 self.addCleanup(self.normal_cleanup)
 
@@ -162,7 +161,7 @@ class Test_AsyncioTestCase(unittest.TestCase):
         class TestCase(unittest.AsyncioTestCase):
             state = {'test_called': False}
 
-            async def setUp(self):
+            def setUp(self):
                 raise RuntimeError()
 
             def test_one(self):
@@ -176,8 +175,8 @@ class Test_AsyncioTestCase(unittest.TestCase):
         class TestCase(unittest.AsyncioTestCase):
             state = {'teardown_called': False}
 
-            async def tearDown(self):
-                await super().tearDown()
+            def tearDown(self):
+                super().tearDown()
                 self.state['teardown_called'] = True
 
             def test_one(self):
@@ -191,16 +190,62 @@ class Test_AsyncioTestCase(unittest.TestCase):
         class TestCase(Test.SingleTestAsyncTestCase):
             state = {'teardown_called': False}
 
-            async def setUp(self):
+            def setUp(self):
                 raise RuntimeError()
 
-            async def tearDown(self):
-                await super().tearDown()
+            def tearDown(self):
+                super().tearDown()
                 self.state['teardown_called'] = True
 
         run_test_case(TestCase, should_fail=True)
         self.assertFalse(TestCase.state['teardown_called'],
                          'tearDown called unexpectedly')
+
+    def test_that_test_method_not_run_when_async_setup_failure(self):
+        class TestCase(unittest.AsyncioTestCase):
+            state = {'test_run': False}
+
+            async def asyncSetUp(self):
+                await super().asyncSetUp()
+                raise RuntimeError()
+
+            def test_one(self):
+                self.state['test_run'] = True
+
+        run_test_case(TestCase, should_fail=True)
+        self.assertFalse(TestCase.state['test_run'],
+                         'test method called unexpectedly')
+
+    def test_that_async_teardown_run_when_test_method_fails(self):
+        class TestCase(unittest.AsyncioTestCase):
+            state = {'teardown_called': False}
+
+            async def asyncTearDown(self):
+                await super().asyncTearDown()
+                self.state['teardown_called'] = True
+
+            def test_one(self):
+                self.fail()
+
+        run_test_case(TestCase, should_fail=True)
+        self.assertTrue(TestCase.state['teardown_called'],
+                        'asyncTearDown method not called')
+
+    def test_that_async_teardown_not_run_when_async_setup_failure(self):
+        class TestCase(Test.SingleTestAsyncTestCase):
+            state = {'teardown_called': False}
+
+            async def asyncSetUp(self):
+                await super().asyncSetUp()
+                raise RuntimeError()
+
+            async def asyncTearDown(self):
+                await super().asyncTearDown()
+                self.state['teardown_called'] = True
+
+        run_test_case(TestCase, should_fail=True)
+        self.assertFalse(TestCase.state['teardown_called'],
+                         'asyncTearDown called unexpectedly')
 
 
 if __name__ == "__main__":
