@@ -45,7 +45,7 @@ fine-tuning parameters.
 
 .. seealso::
 
-   The third-party `regex <https://pypi.python.org/pypi/regex/>`_ module,
+   The third-party `regex <https://pypi.org/project/regex/>`_ module,
    which has an API compatible with the standard library :mod:`re` module,
    but offers additional functionality and a more thorough Unicode support.
 
@@ -204,7 +204,7 @@ The special characters are:
      Standard #18`_ might be added in the future.  This would change the
      syntax, so to facilitate this change a :exc:`FutureWarning` will be raised
      in ambiguous cases for the time being.
-     That include sets starting with a literal ``'['`` or containing literal
+     That includes sets starting with a literal ``'['`` or containing literal
      character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  To
      avoid a warning escape them with a backslash.
 
@@ -1234,9 +1234,7 @@ Checking for a Pair
 ^^^^^^^^^^^^^^^^^^^
 
 In this example, we'll use the following helper function to display match
-objects a little more gracefully:
-
-.. testcode::
+objects a little more gracefully::
 
    def displaymatch(match):
        if match is None:
@@ -1269,10 +1267,9 @@ To match this with a regular expression, one could use backreferences as such::
    "<Match: '354aa', groups=('a',)>"
 
 To find out what card the pair consists of, one could use the
-:meth:`~Match.group` method of the match object in the following manner:
+:meth:`~Match.group` method of the match object in the following manner::
 
-.. doctest::
-
+   >>> pair = re.compile(r".*(.).*\1")
    >>> pair.match("717ak").group(1)
    '7'
 
@@ -1377,7 +1374,9 @@ easily read and modified by Python as demonstrated in the following example that
 creates a phonebook.
 
 First, here is the input.  Normally it may come from a file, here we are using
-triple-quoted string syntax::
+triple-quoted string syntax
+
+.. doctest::
 
    >>> text = """Ross McFluff: 834.345.1254 155 Elm Street
    ...
@@ -1450,8 +1449,8 @@ Finding all Adverbs
 ^^^^^^^^^^^^^^^^^^^
 
 :func:`findall` matches *all* occurrences of a pattern, not just the first
-one as :func:`search` does.  For example, if one was a writer and wanted to
-find all of the adverbs in some text, he or she might use :func:`findall` in
+one as :func:`search` does.  For example, if a writer wanted to
+find all of the adverbs in some text, they might use :func:`findall` in
 the following manner::
 
    >>> text = "He was carefully disguised but captured quickly by police."
@@ -1465,8 +1464,8 @@ Finding all Adverbs and their Positions
 If one wants more information about all matches of a pattern than the matched
 text, :func:`finditer` is useful as it provides :ref:`match objects
 <match-objects>` instead of strings.  Continuing with the previous example, if
-one was a writer who wanted to find all of the adverbs *and their positions* in
-some text, he or she would use :func:`finditer` in the following manner::
+a writer wanted to find all of the adverbs *and their positions* in
+some text, they would use :func:`finditer` in the following manner::
 
    >>> text = "He was carefully disguised but captured quickly by police."
    >>> for m in re.finditer(r"\w+ly", text):

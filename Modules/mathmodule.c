@@ -1656,7 +1656,7 @@ math_factorial(PyObject *module, PyObject *arg)
 {
     long x;
     int overflow;
-    PyObject *result, *odd_part, *two_valuation;
+    PyObject *result, *odd_part, *two_valuation, *pyint_form;
 
     if (PyFloat_Check(arg)) {
         PyObject *lx;
@@ -1672,8 +1672,14 @@ math_factorial(PyObject *module, PyObject *arg)
         x = PyLong_AsLongAndOverflow(lx, &overflow);
         Py_DECREF(lx);
     }
-    else
-        x = PyLong_AsLongAndOverflow(arg, &overflow);
+    else {
+        pyint_form = PyNumber_Index(arg);
+        if (pyint_form == NULL) {
+            return NULL;
+        }
+        x = PyLong_AsLongAndOverflow(pyint_form, &overflow);
+        Py_DECREF(pyint_form);
+    }
 
     if (x == -1 && PyErr_Occurred()) {
         return NULL;
@@ -2031,49 +2037,218 @@ math_fmod_impl(PyObject *module, double x, double y)
         return PyFloat_FromDouble(r);
 }
 
+/*
+Given an *n* length *vec* of values and a value *max*, compute:
+
+    max * sqrt(sum((x / max) ** 2 for x in vec))
+
+The value of the *max* variable must be non-negative and
+at least equal to the absolute value of the largest magnitude
+entry in the vector.  If n==0, then *max* should be 0.0.
+If an infinity is present in the vec, *max* should be INF.
+
+The *found_nan* variable indicates whether some member of
+the *vec* is a NaN.
+
+To improve accuracy and to increase the number of cases where
+vector_norm() is commutative, we use a variant of Neumaier
+summation specialized to exploit that we always know that
+|csum| >= |x|.
+
+The *csum* variable tracks the cumulative sum and *frac* tracks
+the cumulative fractional errors at each step.  Since this
+variant assumes that |csum| >= |x| at each step, we establish
+the precondition by starting the accumulation from 1.0 which
+represents the largest possible value of (x/max)**2.
+
+After the loop is finished, the initial 1.0 is subtracted out
+for a net zero effect on the final sum.  Since *csum* will be
+greater than 1.0, the subtraction of 1.0 will not cause
+fractional digits to be dropped from *csum*.
+
+*/
+
+static inline double
+vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
+{
+    double x, csum = 1.0, oldcsum, frac = 0.0;
+    Py_ssize_t i;
+
+    if (Py_IS_INFINITY(max)) {
+        return max;
+    }
+    if (found_nan) {
+        return Py_NAN;
+    }
+    if (max == 0.0 || n <= 1) {
+        return max;
+    }
+    for (i=0 ; i < n ; i++) {
+        x = vec[i];
+        assert(Py_IS_FINITE(x) && fabs(x) <= max);
+        x /= max;
+        x = x*x;
+        oldcsum = csum;
+        csum += x;
+        assert(csum >= x);
+        frac += (oldcsum - csum) + x;
+    }
+    return max * sqrt(csum - 1.0 + frac);
+}
+
+#define NUM_STACK_ELEMS 16
 
 /*[clinic input]
-math.hypot
+math.dist
 
-    x: double
-    y: double
+    p: object
+    q: object
     /
 
-Return the Euclidean distance, sqrt(x*x + y*y).
+Return the Euclidean distance between two points p and q.
+
+The points should be specified as tuples of coordinates.
+Both tuples must be the same size.
+
+Roughly equivalent to:
+    sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
 [clinic start generated code]*/
 
 static PyObject *
-math_hypot_impl(PyObject *module, double x, double y)
-/*[clinic end generated code: output=b7686e5be468ef87 input=7f8eea70406474aa]*/
+math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
+/*[clinic end generated code: output=56bd9538d06bbcfe input=8c83c07c7a524664]*/
 {
-    double r;
-    /* hypot(x, +/-Inf) returns Inf, even if x is a NaN. */
-    if (Py_IS_INFINITY(x))
-        return PyFloat_FromDouble(fabs(x));
-    if (Py_IS_INFINITY(y))
-        return PyFloat_FromDouble(fabs(y));
-    errno = 0;
-    PyFPE_START_PROTECT("in math_hypot", return 0);
-    r = hypot(x, y);
-    PyFPE_END_PROTECT(r);
-    if (Py_IS_NAN(r)) {
-        if (!Py_IS_NAN(x) && !Py_IS_NAN(y))
-            errno = EDOM;
-        else
-            errno = 0;
-    }
-    else if (Py_IS_INFINITY(r)) {
-        if (Py_IS_FINITE(x) && Py_IS_FINITE(y))
-            errno = ERANGE;
-        else
-            errno = 0;
-    }
-    if (errno && is_error(r))
+    PyObject *item;
+    double max = 0.0;
+    double x, px, qx, result;
+    Py_ssize_t i, m, n;
+    int found_nan = 0;
+    double diffs_on_stack[NUM_STACK_ELEMS];
+    double *diffs = diffs_on_stack;
+
+    if (!PyTuple_Check(p) || !PyTuple_Check(q)) {
+        PyErr_SetString(PyExc_TypeError, "dist argument must be a tuple");
         return NULL;
-    else
-        return PyFloat_FromDouble(r);
+    }
+
+    m = PyTuple_GET_SIZE(p);
+    n = PyTuple_GET_SIZE(q);
+    if (m != n) {
+        PyErr_SetString(PyExc_ValueError,
+                        "both points must have the same number of dimensions");
+        return NULL;
+
+    }
+    if (n > NUM_STACK_ELEMS) {
+        diffs = (double *) PyObject_Malloc(n * sizeof(double));
+        if (diffs == NULL) {
+            return NULL;
+        }
+    }
+    for (i=0 ; i<n ; i++) {
+        item = PyTuple_GET_ITEM(p, i);
+        if (PyFloat_CheckExact(item)) {
+            px = PyFloat_AS_DOUBLE(item);
+        } else {
+            px = PyFloat_AsDouble(item);
+            if (px == -1.0 && PyErr_Occurred()) {
+                goto error_exit;
+            }
+        }
+        item = PyTuple_GET_ITEM(q, i);
+        if (PyFloat_CheckExact(item)) {
+            qx = PyFloat_AS_DOUBLE(item);
+        } else {
+            qx = PyFloat_AsDouble(item);
+            if (qx == -1.0 && PyErr_Occurred()) {
+                goto error_exit;
+            }
+        }
+        x = fabs(px - qx);
+        diffs[i] = x;
+        found_nan |= Py_IS_NAN(x);
+        if (x > max) {
+            max = x;
+        }
+    }
+    result = vector_norm(n, diffs, max, found_nan);
+    if (diffs != diffs_on_stack) {
+        PyObject_Free(diffs);
+    }
+    return PyFloat_FromDouble(result);
+
+  error_exit:
+    if (diffs != diffs_on_stack) {
+        PyObject_Free(diffs);
+    }
+    return NULL;
 }
 
+/* AC: cannot convert yet, waiting for *args support */
+static PyObject *
+math_hypot(PyObject *self, PyObject *args)
+{
+    Py_ssize_t i, n;
+    PyObject *item;
+    double max = 0.0;
+    double x, result;
+    int found_nan = 0;
+    double coord_on_stack[NUM_STACK_ELEMS];
+    double *coordinates = coord_on_stack;
+
+    n = PyTuple_GET_SIZE(args);
+    if (n > NUM_STACK_ELEMS) {
+        coordinates = (double *) PyObject_Malloc(n * sizeof(double));
+        if (coordinates == NULL)
+            return NULL;
+    }
+    for (i=0 ; i<n ; i++) {
+        item = PyTuple_GET_ITEM(args, i);
+        if (PyFloat_CheckExact(item)) {
+            x = PyFloat_AS_DOUBLE(item);
+        } else {
+            x = PyFloat_AsDouble(item);
+            if (x == -1.0 && PyErr_Occurred()) {
+                goto error_exit;
+            }
+        }
+        x = fabs(x);
+        coordinates[i] = x;
+        found_nan |= Py_IS_NAN(x);
+        if (x > max) {
+            max = x;
+        }
+    }
+    result = vector_norm(n, coordinates, max, found_nan);
+    if (coordinates != coord_on_stack) {
+        PyObject_Free(coordinates);
+    }
+    return PyFloat_FromDouble(result);
+
+  error_exit:
+    if (coordinates != coord_on_stack) {
+        PyObject_Free(coordinates);
+    }
+    return NULL;
+}
+
+#undef NUM_STACK_ELEMS
+
+PyDoc_STRVAR(math_hypot_doc,
+             "hypot(*coordinates) -> value\n\n\
+Multidimensional Euclidean distance from the origin to a point.\n\
+\n\
+Roughly equivalent to:\n\
+    sqrt(sum(x**2 for x in coordinates))\n\
+\n\
+For a two dimensional point (x, y), gives the hypotenuse\n\
+using the Pythagorean theorem:  sqrt(x*x + y*y).\n\
+\n\
+For example, the hypotenuse of a 3/4/5 right triangle is:\n\
+\n\
+    >>> hypot(3.0, 4.0)\n\
+    5.0\n\
+");
 
 /* pow can't use math_2, but needs its own wrapper: the problem is
    that an infinite result can arise either as a result of overflow
@@ -2333,6 +2508,7 @@ static PyMethodDef math_methods[] = {
     {"cos",             math_cos,       METH_O,         math_cos_doc},
     {"cosh",            math_cosh,      METH_O,         math_cosh_doc},
     MATH_DEGREES_METHODDEF
+    MATH_DIST_METHODDEF
     {"erf",             math_erf,       METH_O,         math_erf_doc},
     {"erfc",            math_erfc,      METH_O,         math_erfc_doc},
     {"exp",             math_exp,       METH_O,         math_exp_doc},
@@ -2345,7 +2521,7 @@ static PyMethodDef math_methods[] = {
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
     MATH_GCD_METHODDEF
-    MATH_HYPOT_METHODDEF
+    {"hypot",           math_hypot,     METH_VARARGS,   math_hypot_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
     MATH_ISINF_METHODDEF

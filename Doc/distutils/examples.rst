@@ -1,4 +1,4 @@
-.. _examples:
+.. _distutils_examples:
 
 ********
 Examples

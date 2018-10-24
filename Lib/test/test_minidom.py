@@ -60,17 +60,7 @@ class MinidomTest(unittest.TestCase):
     def testDocumentAsyncAttr(self):
         doc = Document()
         self.assertFalse(doc.async_)
-        with self.assertWarns(DeprecationWarning):
-            self.assertFalse(getattr(doc, 'async', True))
-        with self.assertWarns(DeprecationWarning):
-            setattr(doc, 'async', True)
-        with self.assertWarns(DeprecationWarning):
-            self.assertTrue(getattr(doc, 'async', False))
-        self.assertTrue(doc.async_)
-
         self.assertFalse(Document.async_)
-        with self.assertWarns(DeprecationWarning):
-            self.assertFalse(getattr(Document, 'async', True))
 
     def testParseFromBinaryFile(self):
         with open(tstfile, 'rb') as file:
@@ -335,7 +325,7 @@ class MinidomTest(unittest.TestCase):
         node = child.getAttributeNode("spam")
         self.assertRaises(xml.dom.NotFoundErr, child.removeAttributeNode,
             None)
-        child.removeAttributeNode(node)
+        self.assertIs(node, child.removeAttributeNode(node))
         self.confirm(len(child.attributes) == 0
                 and child.getAttributeNode("spam") is None)
         dom2 = Document()

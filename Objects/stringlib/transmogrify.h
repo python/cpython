@@ -5,6 +5,13 @@
 /* the more complicated methods.  parts of these should be pulled out into the
    shared code in bytes_methods.c to cut down on duplicate code bloat.  */
 
+/*[clinic input]
+class B "PyObject *" "&PyType_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2935558188d97c76]*/
+
+#include "clinic/transmogrify.h.h"
+
 static inline PyObject *
 return_self(PyObject *self)
 {
@@ -17,19 +24,24 @@ return_self(PyObject *self)
     return STRINGLIB_NEW(STRINGLIB_STR(self), STRINGLIB_LEN(self));
 }
 
-static PyObject*
-stringlib_expandtabs(PyObject *self, PyObject *args, PyObject *kwds)
+/*[clinic input]
+B.expandtabs as stringlib_expandtabs
+
+    tabsize: int = 8
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+[clinic start generated code]*/
+
+static PyObject *
+stringlib_expandtabs_impl(PyObject *self, int tabsize)
+/*[clinic end generated code: output=069cb7fae72e4c2b input=3c6d3b12aa3ccbea]*/
 {
     const char *e, *p;
     char *q;
     Py_ssize_t i, j;
     PyObject *u;
-    static char *kwlist[] = {"tabsize", 0};
-    int tabsize = 8;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|i:expandtabs",
-                                     kwlist, &tabsize))
-        return NULL;
 
     /* First pass: determine size of output string */
     i = j = 0;
@@ -119,15 +131,22 @@ pad(PyObject *self, Py_ssize_t left, Py_ssize_t right, char fill)
     return u;
 }
 
+/*[clinic input]
+B.ljust as stringlib_ljust
+
+    width: Py_ssize_t
+    fillchar: char = b' '
+    /
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character.
+[clinic start generated code]*/
+
 static PyObject *
-stringlib_ljust(PyObject *self, PyObject *args)
+stringlib_ljust_impl(PyObject *self, Py_ssize_t width, char fillchar)
+/*[clinic end generated code: output=c79ca173c5ff8337 input=eff2d014bc7d80df]*/
 {
-    Py_ssize_t width;
-    char fillchar = ' ';
-
-    if (!PyArg_ParseTuple(args, "n|c:ljust", &width, &fillchar))
-        return NULL;
-
     if (STRINGLIB_LEN(self) >= width) {
         return return_self(self);
     }
@@ -136,15 +155,22 @@ stringlib_ljust(PyObject *self, PyObject *args)
 }
 
 
+/*[clinic input]
+B.rjust as stringlib_rjust
+
+    width: Py_ssize_t
+    fillchar: char = b' '
+    /
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character.
+[clinic start generated code]*/
+
 static PyObject *
-stringlib_rjust(PyObject *self, PyObject *args)
+stringlib_rjust_impl(PyObject *self, Py_ssize_t width, char fillchar)
+/*[clinic end generated code: output=7df5d728a5439570 input=218b0bd31308955d]*/
 {
-    Py_ssize_t width;
-    char fillchar = ' ';
-
-    if (!PyArg_ParseTuple(args, "n|c:rjust", &width, &fillchar))
-        return NULL;
-
     if (STRINGLIB_LEN(self) >= width) {
         return return_self(self);
     }
@@ -153,15 +179,23 @@ stringlib_rjust(PyObject *self, PyObject *args)
 }
 
 
+/*[clinic input]
+B.center as stringlib_center
+
+    width: Py_ssize_t
+    fillchar: char = b' '
+    /
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character.
+[clinic start generated code]*/
+
 static PyObject *
-stringlib_center(PyObject *self, PyObject *args)
+stringlib_center_impl(PyObject *self, Py_ssize_t width, char fillchar)
+/*[clinic end generated code: output=d8da2e055288b4c2 input=3776fd278765d89b]*/
 {
     Py_ssize_t marg, left;
-    Py_ssize_t width;
-    char fillchar = ' ';
-
-    if (!PyArg_ParseTuple(args, "n|c:center", &width, &fillchar))
-        return NULL;
 
     if (STRINGLIB_LEN(self) >= width) {
         return return_self(self);
@@ -173,16 +207,24 @@ stringlib_center(PyObject *self, PyObject *args)
     return pad(self, left, marg - left, fillchar);
 }
 
+/*[clinic input]
+B.zfill as stringlib_zfill
+
+    width: Py_ssize_t
+    /
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The original string is never truncated.
+[clinic start generated code]*/
+
 static PyObject *
-stringlib_zfill(PyObject *self, PyObject *args)
+stringlib_zfill_impl(PyObject *self, Py_ssize_t width)
+/*[clinic end generated code: output=0b3c684a7f1b2319 input=2da6d7b8e9bcb19a]*/
 {
     Py_ssize_t fill;
     PyObject *s;
     char *p;
-    Py_ssize_t width;
-
-    if (!PyArg_ParseTuple(args, "n:zfill", &width))
-        return NULL;
 
     if (STRINGLIB_LEN(self) >= width) {
         return return_self(self);

@@ -1,0 +1,3 @@
+Improve the C-API doc for PyTypeObject.  This includes adding several quick-
+reference tables and a lot of missing slot/typedef entries.  The existing
+entries were also cleaned up with a slightly more consistent format.

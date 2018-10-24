@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "code.h"
 #include "structmember.h"
+#include "internal/pystate.h"
 
 /* Holder for co_extra information */
 typedef struct {
@@ -103,7 +104,7 @@ PyCode_New(int argcount, int kwonlyargcount,
 {
     PyCodeObject *co;
     Py_ssize_t *cell2arg = NULL;
-    Py_ssize_t i, n_cellvars;
+    Py_ssize_t i, n_cellvars, n_varnames, total_args;
 
     /* Check argument types */
     if (argcount < 0 || kwonlyargcount < 0 || nlocals < 0 ||
@@ -138,10 +139,22 @@ PyCode_New(int argcount, int kwonlyargcount,
         flags &= ~CO_NOFREE;
     }
 
+    n_varnames = PyTuple_GET_SIZE(varnames);
+    if (argcount <= n_varnames && kwonlyargcount <= n_varnames) {
+        /* Never overflows. */
+        total_args = (Py_ssize_t)argcount + (Py_ssize_t)kwonlyargcount +
+                ((flags & CO_VARARGS) != 0) + ((flags & CO_VARKEYWORDS) != 0);
+    }
+    else {
+        total_args = n_varnames + 1;
+    }
+    if (total_args > n_varnames) {
+        PyErr_SetString(PyExc_ValueError, "code: varnames is too small");
+        return NULL;
+    }
+
     /* Create mapping between cells and arguments if needed. */
     if (n_cellvars) {
-        Py_ssize_t total_args = argcount + kwonlyargcount +
-            ((flags & CO_VARARGS) != 0) + ((flags & CO_VARKEYWORDS) != 0);
         bool used_cell2arg = false;
         cell2arg = PyMem_NEW(Py_ssize_t, n_cellvars);
         if (cell2arg == NULL) {
@@ -416,7 +429,7 @@ static void
 code_dealloc(PyCodeObject *co)
 {
     if (co->co_extra != NULL) {
-        PyInterpreterState *interp = PyThreadState_Get()->interp;
+        PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
         _PyCodeObjectExtra *co_extra = co->co_extra;
 
         for (Py_ssize_t i = 0; i < co_extra->ce_size; i++) {
@@ -859,7 +872,7 @@ _PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 int
 _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
 {
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
 
     if (!PyCode_Check(code) || index < 0 ||
             index >= interp->co_extra_user_count) {

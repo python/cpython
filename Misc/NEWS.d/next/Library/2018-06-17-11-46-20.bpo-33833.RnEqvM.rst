@@ -1,0 +1,2 @@
+Fixed bug in asyncio where ProactorSocketTransport logs AssertionError if
+force closed during write.

@@ -303,7 +303,7 @@ The launcher can also be used explicitly from the command line as the ``py``
 application. Running ``py`` follows the same version selection rules as
 implicitly launching scripts, but a more specific version can be selected
 by passing appropriate arguments (such as ``-3`` to request Python 3 when
-Python 2 is also installed, or ``-2.6`` to specifclly request an earlier
+Python 2 is also installed, or ``-2.6`` to specifically request an earlier
 Python version when a more recent version is installed).
 
 In addition to the launcher, the Windows installer now includes an
@@ -1414,7 +1414,7 @@ http
 :class:`http.server.BaseHTTPRequestHandler` now buffers the headers and writes
 them all at once when :meth:`~http.server.BaseHTTPRequestHandler.end_headers` is
 called.  A new method :meth:`~http.server.BaseHTTPRequestHandler.flush_headers`
-can be used to directly manage when the accumlated headers are sent.
+can be used to directly manage when the accumulated headers are sent.
 (Contributed by Andrew Schaaf in :issue:`3709`.)
 
 :class:`http.server` now produces valid ``HTML 4.01 strict`` output.
@@ -2386,7 +2386,7 @@ Porting Python code
   finder, you will need to remove keys paired with values of ``None`` **and**
   :class:`imp.NullImporter` to be backwards-compatible. This will lead to extra
   overhead on older versions of Python that re-insert ``None`` into
-  :attr:`sys.path_importer_cache` where it repesents the use of implicit
+  :attr:`sys.path_importer_cache` where it represents the use of implicit
   finders, but semantically it should not change anything.
 
 * :class:`importlib.abc.Finder` no longer specifies a `find_module()` abstract

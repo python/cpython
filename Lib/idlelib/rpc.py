@@ -43,16 +43,20 @@ import traceback
 import types
 
 def unpickle_code(ms):
+    "Return code object from marshal string ms."
     co = marshal.loads(ms)
     assert isinstance(co, types.CodeType)
     return co
 
 def pickle_code(co):
+    "Return unpickle function and tuple with marshalled co code object."
     assert isinstance(co, types.CodeType)
     ms = marshal.dumps(co)
     return unpickle_code, (ms,)
 
 def dumps(obj, protocol=None):
+    "Return pickled (or marshalled) string for obj."
+    # IDLE passes 'None' to select pickle.DEFAULT_PROTOCOL.
     f = io.BytesIO()
     p = CodePickler(f, protocol)
     p.dump(obj)
@@ -625,3 +629,8 @@ def displayhook(value):
         sys.stdout.write(text)
     sys.stdout.write("\n")
     builtins._ = value
+
+
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_rpc', verbosity=2,)

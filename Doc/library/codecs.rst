@@ -174,7 +174,7 @@ recommended approach for working with encoded text files, this module
 provides additional utility functions and classes that allow the use of a
 wider range of codecs when working with binary files:
 
-.. function:: open(filename, mode='r', encoding=None, errors='strict', buffering=1)
+.. function:: open(filename, mode='r', encoding=None, errors='strict', buffering=-1)
 
    Open an encoded file using the given *mode* and return an instance of
    :class:`StreamReaderWriter`, providing transparent encoding/decoding.
@@ -194,8 +194,8 @@ wider range of codecs when working with binary files:
    *errors* may be given to define the error handling. It defaults to ``'strict'``
    which causes a :exc:`ValueError` to be raised in case an encoding error occurs.
 
-   *buffering* has the same meaning as for the built-in :func:`open` function.  It
-   defaults to line buffered.
+   *buffering* has the same meaning as for the built-in :func:`open` function.
+   It defaults to -1 which means that the default buffer size will be used.
 
 
 .. function:: EncodedFile(file, data_encoding, file_encoding=None, errors='strict')
@@ -1425,7 +1425,7 @@ to the user.
 
 Python supports this conversion in several ways:  the ``idna`` codec performs
 conversion between Unicode and ACE, separating an input string into labels
-based on the separator characters defined in `section 3.1`_ (1) of :rfc:`3490`
+based on the separator characters defined in :rfc:`section 3.1 of RFC 3490 <3490#section-3.1>`
 and converting each label to ACE as required, and conversely separating an input
 byte string into labels based on the ``.`` separator and converting any ACE
 labels found into unicode.  Furthermore, the :mod:`socket` module
@@ -1435,8 +1435,6 @@ socket module. On top of that, modules that have host names as function
 parameters, such as :mod:`http.client` and :mod:`ftplib`, accept Unicode host
 names (:mod:`http.client` then also transparently sends an IDNA hostname in the
 :mailheader:`Host` field if it sends that field at all).
-
-.. _section 3.1: https://tools.ietf.org/html/rfc3490#section-3.1
 
 When receiving host names from the wire (such as in reverse name lookup), no
 automatic conversion to Unicode is performed: Applications wishing to present
@@ -1473,7 +1471,7 @@ functions can be used directly if desired.
 
 Encode operand according to the ANSI codepage (CP_ACP).
 
-Availability: Windows only.
+.. availability:: Windows only.
 
 .. versionchanged:: 3.3
    Support any error handler.

@@ -16,6 +16,14 @@
 
 This module defines classes for implementing HTTP servers (Web servers).
 
+
+.. warning::
+
+    :mod:`http.server` is meant for demo purposes and does not implement the
+    stringent security checks needed of a real HTTP server. We do not recommend
+    using this module directly in production.
+
+
 One class, :class:`HTTPServer`, is a :class:`socketserver.TCPServer` subclass.
 It creates and listens at the HTTP socket, dispatching the requests to a
 handler.  Code to create and run the server looks like this::
@@ -33,7 +41,7 @@ handler.  Code to create and run the server looks like this::
    :attr:`server_port`. The server is accessible by the handler, typically
    through the handler's :attr:`server` instance variable.
 
-.. class:: ThreadedHTTPServer(server_address, RequestHandlerClass)
+.. class:: ThreadingHTTPServer(server_address, RequestHandlerClass)
 
    This class is identical to HTTPServer but uses threads to handle
    requests by using the :class:`~socketserver.ThreadingMixIn`. This
@@ -43,7 +51,7 @@ handler.  Code to create and run the server looks like this::
    .. versionadded:: 3.7
 
 
-The :class:`HTTPServer` and :class:`ThreadedHTTPServer` must be given
+The :class:`HTTPServer` and :class:`ThreadingHTTPServer` must be given
 a *RequestHandlerClass* on instantiation, of which this module
 provides three different variants:
 

@@ -47,5 +47,14 @@
 @exit /b 1
 
 :found
-@echo Using %MSBUILD% (found in the %_Py_MSBuild_Source%)
+@pushd %MSBUILD% >nul 2>nul
+@if not ERRORLEVEL 1 @(
+  @if exist msbuild.exe @(set MSBUILD="%CD%\msbuild.exe") else @(set MSBUILD=)
+  @popd
+)
+
+@if defined MSBUILD @echo Using %MSBUILD% (found in the %_Py_MSBuild_Source%)
+@if not defined MSBUILD @echo Failed to find MSBuild
 @set _Py_MSBuild_Source=
+@if not defined MSBUILD @exit /b 1
+@exit /b 0
