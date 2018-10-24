@@ -54,7 +54,7 @@ parameter expect a WSGI-compliant dictionary to be supplied; please see
 
    This function is useful when creating a gateway that wraps CGI or a CGI-like
    protocol such as FastCGI.  Typically, servers providing such protocols will
-   include a ``HTTPS`` variable with a value of "1" "yes", or "on" when a request
+   include a ``HTTPS`` variable with a value of "1", "yes", or "on" when a request
    is received via SSL.  So, this function returns "https" if such a value is
    found, and "http" otherwise.
 

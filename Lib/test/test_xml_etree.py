@@ -91,6 +91,12 @@ ENTITY_XML = """\
 <document>&entity;</document>
 """
 
+EXTERNAL_ENTITY_XML = """\
+<!DOCTYPE points [
+<!ENTITY entity SYSTEM "file:///non-existing-file.xml">
+]>
+<document>&entity;</document>
+"""
 
 def checkwarnings(*filters, quiet=False):
     def decorator(test):
@@ -860,6 +866,13 @@ class ElementTreeTest(unittest.TestCase):
         parser.feed(ENTITY_XML)
         root = parser.close()
         self.serialize_check(root, '<document>text</document>')
+
+        # 4) external (SYSTEM) entity
+
+        with self.assertRaises(ET.ParseError) as cm:
+            ET.XML(EXTERNAL_ENTITY_XML)
+        self.assertEqual(str(cm.exception),
+                'undefined entity &entity;: line 4, column 10')
 
     def test_namespace(self):
         # Test namespace issues.
@@ -2146,6 +2159,21 @@ class ElementTreeTypeTest(unittest.TestCase):
 
         mye = MyElement('joe')
         self.assertEqual(mye.newmethod(), 'joe')
+
+    def test_Element_subclass_find(self):
+        class MyElement(ET.Element):
+            pass
+
+        e = ET.Element('foo')
+        e.text = 'text'
+        sub = MyElement('bar')
+        sub.text = 'subtext'
+        e.append(sub)
+        self.assertEqual(e.findtext('bar'), 'subtext')
+        self.assertEqual(e.find('bar').tag, 'bar')
+        found = list(e.findall('bar'))
+        self.assertEqual(len(found), 1, found)
+        self.assertEqual(found[0].tag, 'bar')
 
 
 class ElementFindTest(unittest.TestCase):

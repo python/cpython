@@ -268,6 +268,10 @@ def _create_parser():
                        help='if a test file alters the environment, mark '
                             'the test as failed')
 
+    group.add_argument('--junit-xml', dest='xmlpath', metavar='FILENAME',
+                       help='writes JUnit-style XML results to the specified '
+                            'file')
+
     return parser
 
 

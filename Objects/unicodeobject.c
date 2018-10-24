@@ -12100,13 +12100,13 @@ str.isidentifier as unicode_isidentifier
 
 Return True if the string is a valid Python identifier, False otherwise.
 
-Use keyword.iskeyword() to test for reserved identifiers such as "def" and
-"class".
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
 [clinic start generated code]*/
 
 static PyObject *
 unicode_isidentifier_impl(PyObject *self)
-/*[clinic end generated code: output=fe585a9666572905 input=916b0a3c9f57e919]*/
+/*[clinic end generated code: output=fe585a9666572905 input=2d807a104f21c0c5]*/
 {
     return PyBool_FromLong(PyUnicode_IsIdentifier(self));
 }
