@@ -663,7 +663,7 @@ More advanced customization may be achieved by overriding default values of
 these parser attributes.  The defaults are defined on the classes, so they may
 be overridden by subclasses or by attribute assignment.
 
-.. attribute:: BOOLEAN_STATES
+.. attribute:: ConfigParser.BOOLEAN_STATES
 
   By default when using :meth:`~ConfigParser.getboolean`, config parsers
   consider the following values ``True``: ``'1'``, ``'yes'``, ``'true'``,
@@ -686,7 +686,7 @@ be overridden by subclasses or by attribute assignment.
   Other typical Boolean pairs include ``accept``/``reject`` or
   ``enabled``/``disabled``.
 
-.. method:: optionxform(option)
+.. method:: ConfigParser.optionxform(option)
 
   This method transforms option names on every read, get, or set
   operation.  The default converts the name to lowercase.  This also
@@ -717,7 +717,7 @@ be overridden by subclasses or by attribute assignment.
      >>> list(custom['Section2'].keys())
      ['AnotherKey']
 
-.. attribute:: SECTCRE
+.. attribute:: ConfigParser.SECTCRE
 
   A compiled regular expression used to parse section headers.  The default
   matches ``[section]`` to the name ``"section"``.  Whitespace is considered
