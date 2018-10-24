@@ -2523,3 +2523,8 @@ In 3.7.1 the C API for Context Variables
 
 :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
 external entities by default. See also :issue:`17239`.
+
+In 3.7.1 the :mod:`tokenize` module now implicitly emits a ``NEWLINE`` token
+when provided with input that does not have a trailing new line.  This behavior
+now matches what the C tokenizer does internally.
+(Contributed by Ammar Askar in :issue:`33899`.)
