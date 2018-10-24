@@ -900,9 +900,13 @@ class GCCallbackTests(unittest.TestCase):
 
         import subprocess
         code = textwrap.dedent('''
-            from test.support import gc_collect
+            from test.support import gc_collect, SuppressCrashReport
+
             a = [1, 2, 3]
             b = [a]
+
+            # Avoid coredump when Py_FatalError() calls abort()
+            SuppressCrashReport().__enter__()
 
             # Simulate the refcount of "a" being too low (compared to the
             # references held on it by live data), but keeping it above zero
