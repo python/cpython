@@ -6,6 +6,8 @@ from test.support import (verbose, refcount_test, run_unittest,
 from test.support.script_helper import assert_python_ok, make_script
 
 import gc
+import os
+import re
 import sys
 import sysconfig
 import textwrap
@@ -65,7 +67,13 @@ class Uncollectable(object):
     def __tp_del__(self):
         pass
 
-BUILD_WITH_NDEBUG = ('-DNDEBUG' in sysconfig.get_config_vars()['PY_CFLAGS'])
+if sysconfig.get_config_vars().get('PY_CFLAGS', ''):
+    BUILD_WITH_NDEBUG = ('-DNDEBUG' in sysconfig.get_config_vars()['PY_CFLAGS'])
+else:
+    # Usually, sys.gettotalrefcount() is only present if Python has been
+    # compiled in debug mode. If it's missing, expect that Python has
+    # been released in release mode: with NDEBUG defined.
+    BUILD_WITH_NDEBUG = (not hasattr(sys, 'gettotalrefcount'))
 
 ### Tests
 ###############################################################################
@@ -916,7 +924,7 @@ class GCCallbackTests(unittest.TestCase):
         p.stderr.close()
         # Verify that stderr has a useful error message:
         self.assertRegex(stderr,
-            br'Modules/gcmodule.c:[0-9]+: gc_decref: Assertion "gc_get_refs\(g\) > 0" failed.')
+            br'gcmodule\.c:[0-9]+: gc_decref: Assertion "gc_get_refs\(g\) > 0" failed.')
         self.assertRegex(stderr,
             br'refcount is too small')
         self.assertRegex(stderr,
@@ -925,8 +933,10 @@ class GCCallbackTests(unittest.TestCase):
             br'type    : list')
         self.assertRegex(stderr,
             br'refcount: 1')
+        # "address : 0x7fb5062efc18"
+        # "address : 7FB5062EFC18"
         self.assertRegex(stderr,
-            br'address : 0x[0-9a-f]+')
+            br'address : [0-9a-fA-Fx]+')
 
 
 class GCTogglingTests(unittest.TestCase):
