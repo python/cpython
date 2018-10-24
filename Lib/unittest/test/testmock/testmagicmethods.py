@@ -296,7 +296,11 @@ class TestMockingMagicMethods(unittest.TestCase):
 
     def test_magic_methods_fspath(self):
         mock = MagicMock()
-        self.assertEqual(os.fspath(mock), mock.__fspath__())
+        expected_path = mock.__fspath__()
+        mock.reset_mock()
+
+        self.assertEqual(os.fspath(mock), expected_path)
+        mock.__fspath__.assert_called_once()
 
 
     def test_magic_methods_and_spec(self):
