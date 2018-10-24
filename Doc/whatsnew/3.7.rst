@@ -2507,3 +2507,8 @@ calling :c:func:`Py_Initialize`.
 In 3.7.1 the C API for Context Variables
 :ref:`was updated <contextvarsobjects_pointertype_change>` to use
 :c:type:`PyObject` pointers.  See also :issue:`34762`.
+
+In 3.7.1 the :mod:`tokenize` module now implicitly emits a ``NEWLINE`` token
+when provided with input that does not have a trailing new line.  This behavior
+now matches what the C tokenizer does internally.
+(Contributed by Ammar Askar in :issue:`33899`.)

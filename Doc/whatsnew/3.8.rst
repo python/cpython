@@ -173,6 +173,14 @@ Added :attr:`SSLContext.post_handshake_auth` to enable and
 post-handshake authentication.
 (Contributed by Christian Heimes in :issue:`34670`.)
 
+tokenize
+--------
+
+The :mod:`tokenize` module now implicitly emits a ``NEWLINE`` token when
+provided with input that does not have a trailing new line.  This behavior
+now matches what the C tokenizer does internally.
+(Contributed by Ammar Askar in :issue:`33899`.)
+
 tkinter
 -------
 
