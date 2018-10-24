@@ -105,7 +105,13 @@ def copymode(src, dst):
         os.chmod(dst, mode)
 
 def copystat(src, dst):
-    """Copy all stat info (mode bits, atime, mtime, flags) from src to dst"""
+    """Copy file metadata
+
+    Copy the permission bits, last access time, last modification time, and
+    flags from `src` to `dst`. On Linux, copystat() also copies the "extended
+    attributes" where possible. The file contents, owner, and group are
+    unaffected. `src` and `dst` are path names given as strings.
+    """
     st = os.stat(src)
     mode = stat.S_IMODE(st.st_mode)
     if hasattr(os, 'utime'):
@@ -134,7 +140,10 @@ def copy(src, dst):
     copymode(src, dst)
 
 def copy2(src, dst):
-    """Copy data and all stat info ("cp -p src dst").
+    """Copy data and metadata. Return the file's destination.
+
+    Metadata is copied with copystat(). Please see the copystat function
+    for more information.
 
     The destination may be a directory.
 
