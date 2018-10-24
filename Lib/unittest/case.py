@@ -627,6 +627,7 @@ class TestCase(object):
                     result.addSuccess(self)
             return result
         finally:
+            self._terminateTest(outcome)
             result.stopTest(self)
             if orig_result is None:
                 stopTestRun = getattr(result, 'stopTestRun', None)
@@ -669,6 +670,10 @@ class TestCase(object):
             outcome.expecting_failure = False
             with outcome.testPartExecutor(self):
                 self.tearDown()
+
+    def _terminateTest(self, outcome):
+        """Hook that is called after a test run is complete."""
+        pass
 
     def debug(self):
         """Run the test without collecting errors in a TestResult"""
@@ -1569,6 +1574,15 @@ class AsyncioTestCase(TestCase):
             if self.event_loop.is_running():
                 self.event_loop.stop()
 
+    def _terminateTest(self, outcome):
+        super()._terminateTest(outcome)
+        if self.event_loop.is_running():
+            self.event_loop.stop()
+        if not self.event_loop.is_closed():
+            self.event_loop.close()
+        self.__event_loop = None
+        asyncio.set_event_loop(None)
+
     def doCleanups(self):
         """
         Execute all cleanup functions.
@@ -1576,19 +1590,11 @@ class AsyncioTestCase(TestCase):
         Normally called for you after tearDown.
         """
         outcome = self._outcome or _Outcome()
-        try:
-            while self._cleanups:
-                cleanup_func, args, kwargs = self._cleanups.pop()
-                with outcome.testPartExecutor(self):
-                    if asyncio.iscoroutinefunction(cleanup_func):
-                        self.event_loop.run_until_complete(
-                            cleanup_func(*args, **kwargs))
-                    else:
-                        cleanup_func(*args, **kwargs)
-        finally:
-            if self.event_loop.is_running():
-                self.event_loop.stop()
-            if not self.event_loop.is_closed():
-                self.event_loop.close()
-            self.__event_loop = None
-            asyncio.set_event_loop(None)
+        while self._cleanups:
+            cleanup_func, args, kwargs = self._cleanups.pop()
+            with outcome.testPartExecutor(self):
+                if asyncio.iscoroutinefunction(cleanup_func):
+                    self.event_loop.run_until_complete(
+                        cleanup_func(*args, **kwargs))
+                else:
+                    cleanup_func(*args, **kwargs)

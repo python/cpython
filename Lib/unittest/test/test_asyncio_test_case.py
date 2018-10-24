@@ -247,6 +247,16 @@ class Test_AsyncioTestCase(unittest.TestCase):
         self.assertFalse(TestCase.state['teardown_called'],
                          'asyncTearDown called unexpectedly')
 
+    def test_that_do_cleanups_can_be_called_from_within_tests(self):
+        class TestCase(unittest.AsyncioTestCase):
+            async def test_case(self):
+                starting_loop = self.event_loop
+                self.doCleanups()
+                self.assertIs(starting_loop, self.event_loop,
+                              'doCleanups altered event loop')
+
+        run_test_case(TestCase)
+
 
 if __name__ == "__main__":
     unittest.main()
