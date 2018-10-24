@@ -768,7 +768,7 @@ Return the number closest to x, in the direction towards y.\n\
 
 PyDoc_STRVAR(doc_ctx_normalize,
 "normalize($self, x, /)\n--\n\n\
-Reduce x to its simplest form. Alias for reduce(x).\n\
+Reduce x to its simplest form.\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_number_class,
