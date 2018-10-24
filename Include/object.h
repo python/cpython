@@ -775,12 +775,17 @@ PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
 /* Without Py_TRACE_REFS, there's little enough to do that we expand code
  * inline.
  */
-#define _Py_NewReference(op) (                          \
-    _Py_INC_TPALLOCS(op) _Py_COUNT_ALLOCS_COMMA         \
-    _Py_INC_REFTOTAL  _Py_REF_DEBUG_COMMA               \
-    Py_REFCNT(op) = 1)
+static inline void _Py_NewReference(PyObject *op)
+{
+    _Py_INC_TPALLOCS(op);
+    _Py_INC_REFTOTAL;
+    Py_REFCNT(op) = 1;
+}
 
-#define _Py_ForgetReference(op) _Py_INC_TPFREES(op)
+static inline void _Py_ForgetReference(PyObject *op)
+{
+    _Py_INC_TPFREES(op);
+}
 
 #ifdef Py_LIMITED_API
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);

@@ -1,0 +1,2 @@
+Convert :c:func:`_Py_NewReference` and :c:func:`_Py_ForgetReference` macros
+to static inline functions.
