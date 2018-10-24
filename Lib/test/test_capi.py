@@ -372,6 +372,110 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertNotEqual(pickle.load(f), id(builtins))
 
 
+class EmbeddingTests(unittest.TestCase):
+    def setUp(self):
+        here = os.path.abspath(__file__)
+        basepath = os.path.dirname(os.path.dirname(os.path.dirname(here)))
+        exename = "_testembed"
+        if sys.platform.startswith("win"):
+            ext = ("_d" if "_d" in sys.executable else "") + ".exe"
+            exename += ext
+            exepath = os.path.dirname(sys.executable)
+        else:
+            exepath = os.path.join(basepath, "Programs")
+        self.test_exe = exe = os.path.join(exepath, exename)
+        if not os.path.exists(exe):
+            self.skipTest("%r doesn't exist" % exe)
+        # This is needed otherwise we get a fatal error:
+        # "Py_Initialize: Unable to get the locale encoding
+        # LookupError: no codec search functions registered: can't find encoding"
+        self.oldcwd = os.getcwd()
+        os.chdir(basepath)
+
+    def tearDown(self):
+        os.chdir(self.oldcwd)
+
+    def run_embedded_interpreter(self, *args, env=None):
+        """Runs a test in the embedded interpreter"""
+        cmd = [self.test_exe]
+        cmd.extend(args)
+        if env is not None and sys.platform == 'win32':
+            # Windows requires at least the SYSTEMROOT environment variable to
+            # start Python.
+            env = env.copy()
+            env['SYSTEMROOT'] = os.environ['SYSTEMROOT']
+
+        p = subprocess.Popen(cmd,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                             universal_newlines=True,
+                             env=env)
+        (out, err) = p.communicate()
+        self.assertEqual(p.returncode, 0,
+                         "bad returncode %d, stderr is %r" %
+                         (p.returncode, err))
+        return out, err
+
+    def test_repeated_init_and_subinterpreters(self):
+        # This is just a "don't crash" test
+        out, err = self.run_embedded_interpreter('repeated_init_and_subinterpreters')
+        if support.verbose:
+            print()
+            print(out)
+            print(err)
+
+    def test_forced_io_encoding(self):
+        # Checks forced configuration of embedded interpreter IO streams
+        env = dict(os.environ, PYTHONIOENCODING="utf-8:surrogateescape")
+        out, err = self.run_embedded_interpreter("forced_io_encoding", env=env)
+        if support.verbose:
+            print()
+            print(out)
+            print(err)
+        expected_stream_encoding = "utf-8"
+        expected_errors = "surrogateescape"
+        expected_output = '\n'.join([
+        "--- Use defaults ---",
+        "Expected encoding: default",
+        "Expected errors: default",
+        "stdin: {in_encoding}:{errors}",
+        "stdout: {out_encoding}:{errors}",
+        "stderr: {out_encoding}:backslashreplace",
+        "--- Set errors only ---",
+        "Expected encoding: default",
+        "Expected errors: ignore",
+        "stdin: {in_encoding}:ignore",
+        "stdout: {out_encoding}:ignore",
+        "stderr: {out_encoding}:backslashreplace",
+        "--- Set encoding only ---",
+        "Expected encoding: latin-1",
+        "Expected errors: default",
+        "stdin: latin-1:{errors}",
+        "stdout: latin-1:{errors}",
+        "stderr: latin-1:backslashreplace",
+        "--- Set encoding and errors ---",
+        "Expected encoding: latin-1",
+        "Expected errors: replace",
+        "stdin: latin-1:replace",
+        "stdout: latin-1:replace",
+        "stderr: latin-1:backslashreplace"])
+        expected_output = expected_output.format(
+                                in_encoding=expected_stream_encoding,
+                                out_encoding=expected_stream_encoding,
+                                errors=expected_errors)
+        # This is useful if we ever trip over odd platform behaviour
+        self.maxDiff = None
+        self.assertEqual(out.strip(), expected_output)
+
+    def test_pre_initialization_api(self):
+        """
+        Checks the few parts of the C-API that work before the runtine
+        is initialized (via Py_Initialize()).
+        """
+        env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
+        out, err = self.run_embedded_interpreter("pre_initialization_api", env=env)
+        self.assertEqual(out, '')
+        self.assertEqual(err, '')
 
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
