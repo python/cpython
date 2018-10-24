@@ -1125,10 +1125,10 @@ _PyObject_DebugTypeStats(FILE *out);
       ? (void)(0)                                      \
       : _PyObject_AssertFailed((obj),                  \
                                (msg),                  \
-                               (__STRING(expr)),       \
-                               (__FILE__),             \
-                               (__LINE__),             \
-                               (__PRETTY_FUNCTION__)))
+                               Py_STRINGIFY(expr),     \
+                               __FILE__,               \
+                               __LINE__,               \
+                               __func__))
 #endif
 
 #define _PyObject_ASSERT(obj, expr) _PyObject_ASSERT_WITH_MSG(obj, expr, NULL)
