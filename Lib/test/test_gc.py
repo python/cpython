@@ -6,8 +6,6 @@ from test.support import (verbose, refcount_test, run_unittest,
 from test.support.script_helper import assert_python_ok, make_script
 
 import gc
-import os
-import re
 import sys
 import sysconfig
 import textwrap
