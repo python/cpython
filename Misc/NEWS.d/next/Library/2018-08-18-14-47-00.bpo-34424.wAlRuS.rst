@@ -1,3 +1,2 @@
-Fix bug that mishandled email header line-separators, thus breaking email
-headers under certain conditions. Also added relevant test case. Patch by
-Jens Troeger.
+Fix serialization of messages containing encoded strings when the
+policy.linesep is set to a multi-character string. Patch by Jens Troeger.

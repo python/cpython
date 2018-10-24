@@ -307,7 +307,7 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
             MIME-Version: 1.0
 
             oh boy, know what I mean, know what I mean?
-            """).encode("utf-8").replace(b"\n", b"\r\n")
+            """).encode().replace(b"\n", b"\r\n")
         s = io.BytesIO()
         g = BytesGenerator(s, policy=policy.SMTP)
         g.flatten(msg)
