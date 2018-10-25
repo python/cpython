@@ -132,9 +132,6 @@ attributes:
 |           | f_locals          | local namespace seen by   |
 |           |                   | this frame                |
 +-----------+-------------------+---------------------------+
-|           | f_restricted      | 0 or 1 if frame is in     |
-|           |                   | restricted execution mode |
-+-----------+-------------------+---------------------------+
 |           | f_trace           | tracing function for this |
 |           |                   | frame, or ``None``        |
 +-----------+-------------------+---------------------------+
