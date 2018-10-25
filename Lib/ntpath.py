@@ -523,7 +523,7 @@ else:  # use native Windows method on Windows
     def abspath(path):
         """Return the absolute version of a path."""
         try:
-            return _getfullpathname(path)
+            return normpath(_getfullpathname(path))
         except (OSError, ValueError):
             return _abspath_fallback(path)
 
