@@ -765,6 +765,10 @@ PyAPI_FUNC(void) dec_count(PyTypeObject *);
 #define _Py_COUNT_ALLOCS_COMMA
 #endif /* COUNT_ALLOCS */
 
+/* Update the Python traceback of an object. This function must be called
+   when a memory block is reused from a free list. */
+PyAPI_FUNC(int) _PyTraceMalloc_NewReference(PyObject *op);
+
 #ifdef Py_TRACE_REFS
 /* Py_TRACE_REFS is such major surgery that we call external routines. */
 PyAPI_FUNC(void) _Py_NewReference(PyObject *);
