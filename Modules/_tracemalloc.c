@@ -1436,10 +1436,12 @@ _tracemalloc__get_object_traceback(PyObject *module, PyObject *obj)
     traceback_t *traceback;
 
     type = Py_TYPE(obj);
-    if (PyType_IS_GC(type))
+    if (PyType_IS_GC(type)) {
         ptr = (void *)((char *)obj - sizeof(PyGC_Head));
-    else
+    }
+    else {
         ptr = (void *)obj;
+    }
 
     traceback = tracemalloc_get_traceback(DEFAULT_DOMAIN, (uintptr_t)ptr);
     if (traceback == NULL)
