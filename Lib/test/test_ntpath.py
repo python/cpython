@@ -307,6 +307,8 @@ class TestNtpath(unittest.TestCase):
                 tester('ntpath.abspath("")', cwd_dir)
                 tester('ntpath.abspath(" ")', cwd_dir + "\\ ")
                 tester('ntpath.abspath("?")', cwd_dir + "\\?")
+                drive, _ = ntpath.splitdrive(cwd_dir)
+                tester('ntpath.abspath("/abc/")', drive + "\\abc")
         except ImportError:
             self.skipTest('nt module not available')
 
