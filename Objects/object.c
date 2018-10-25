@@ -10,6 +10,9 @@
 extern "C" {
 #endif
 
+/* Defined in tracemalloc.c */
+extern void _PyMem_DumpTraceback(int fd, const void *ptr);
+
 _Py_IDENTIFIER(Py_Repr);
 _Py_IDENTIFIER(__bytes__);
 _Py_IDENTIFIER(__dir__);
@@ -200,14 +203,14 @@ void dec_count(PyTypeObject *tp)
 #ifdef Py_REF_DEBUG
 /* Log a fatal error; doesn't return. */
 void
-_Py_NegativeRefcount(const char *fname, int lineno, PyObject *op)
+_Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
 {
     char buf[300];
 
     PyOS_snprintf(buf, sizeof(buf),
                   "%s:%i object at %p has negative ref count "
                   "%" PY_FORMAT_SIZE_T "d",
-                  fname, lineno, op, op->ob_refcnt);
+                  filename, lineno, op, op->ob_refcnt);
     Py_FatalError(buf);
 }
 
@@ -1919,6 +1922,9 @@ _Py_ReadyTypes(void)
 void
 _Py_NewReference(PyObject *op)
 {
+    if (_Py_tracemalloc_config.tracing) {
+        _PyTraceMalloc_NewReference(op);
+    }
     _Py_INC_REFTOTAL;
     op->ob_refcnt = 1;
     _Py_AddToAllObjects(op, 1);
@@ -2207,6 +2213,55 @@ _PyTrash_thread_destroy_chain(void)
         assert(tstate->trash_delete_nesting == 1);
     }
     --tstate->trash_delete_nesting;
+}
+
+
+void
+_PyObject_AssertFailed(PyObject *obj, const char *msg, const char *expr,
+                       const char *file, int line, const char *function)
+{
+    fprintf(stderr,
+            "%s:%d: %s: Assertion \"%s\" failed",
+            file, line, function, expr);
+    fflush(stderr);
+
+    if (msg) {
+        fprintf(stderr, "; %s.\n", msg);
+    }
+    else {
+        fprintf(stderr, ".\n");
+    }
+    fflush(stderr);
+
+    if (obj == NULL) {
+        fprintf(stderr, "<NULL object>\n");
+    }
+    else if (_PyObject_IsFreed(obj)) {
+        /* It seems like the object memory has been freed:
+           don't access it to prevent a segmentation fault. */
+        fprintf(stderr, "<Freed object>\n");
+    }
+    else {
+        /* Diplay the traceback where the object has been allocated.
+           Do it before dumping repr(obj), since repr() is more likely
+           to crash than dumping the traceback. */
+        void *ptr;
+        PyTypeObject *type = Py_TYPE(obj);
+        if (PyType_IS_GC(type)) {
+            ptr = (void *)((char *)obj - sizeof(PyGC_Head));
+        }
+        else {
+            ptr = (void *)obj;
+        }
+        _PyMem_DumpTraceback(fileno(stderr), ptr);
+
+        /* This might succeed or fail, but we're about to abort, so at least
+           try to provide any extra info we can: */
+        _PyObject_Dump(obj);
+    }
+    fflush(stderr);
+
+    Py_FatalError("_PyObject_AssertFailed");
 }
 
 #ifndef Py_TRACE_REFS
