@@ -196,7 +196,7 @@ PyAPI_FUNC(void) PyMem_SetAllocator(PyMemAllocatorDomain domain,
 
    The function does nothing if Python is not compiled is debug mode. */
 PyAPI_FUNC(void) PyMem_SetupDebugHooks(void);
-#endif
+#endif   /* Py_LIMITED_API */
 
 #ifdef Py_BUILD_CORE
 /* Set the memory allocator of the specified domain to the default.
