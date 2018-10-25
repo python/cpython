@@ -6084,7 +6084,7 @@ datetime_timestamp(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-datetime_getdate(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
+datetime_getdate(PyDateTime_DateTime *self)
 {
     return new_date(GET_YEAR(self),
                     GET_MONTH(self),
@@ -6092,7 +6092,7 @@ datetime_getdate(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-datetime_gettime(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
+datetime_gettime(PyDateTime_DateTime *self)
 {
     return new_time(DATE_GET_HOUR(self),
                     DATE_GET_MINUTE(self),
