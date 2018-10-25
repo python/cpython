@@ -889,7 +889,7 @@ PyDoc_STRVAR(os_listdir__doc__,
 "\n"
 "Return a list containing the names of the files in the directory.\n"
 "\n"
-"path can be specified as either str, bytes, or path-like object..  If path is bytes,\n"
+"path can be specified as either str, bytes, or path-like object. If path is bytes,\n"
 "  the filenames returned will also be bytes; in all other circumstances\n"
 "  the filenames returned will be str.\n"
 "If path is None, uses the path=\'.\'.\n"
@@ -5580,7 +5580,7 @@ PyDoc_STRVAR(os_setxattr__doc__,
 "\n"
 "Set extended attribute attribute on path to value.\n"
 "\n"
-"path may be either a string or an open file descriptor.\n"
+"path may be either a string, path-like object, or an open file descriptor.\n"
 "If follow_symlinks is False, and the last element of the path is a symbolic\n"
 "  link, setxattr will modify the symbolic link itself instead of the file\n"
 "  the link points to.");

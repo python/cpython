@@ -2542,7 +2542,7 @@ os_lstat_impl(PyObject *module, path_t *path, int dir_fd)
 os.access -> bool
 
     path: path_t
-        Path to be tested; can be string, bytes, or path-like object
+        Path to be tested; can be string, bytes, or path-like object.
 
     mode: int
         Operating-system mode bitfield.  Can be F_OK to test existence,
@@ -3688,7 +3688,7 @@ os.listdir
 
 Return a list containing the names of the files in the directory.
 
-path can be specified as either str, bytes, or path-like object.  If path is bytes,
+path can be specified as either str, bytes, or path-like object. If path is bytes,
   the filenames returned will also be bytes; in all other circumstances
   the filenames returned will be str.
 If path is None, uses the path='.'.
@@ -11487,7 +11487,7 @@ os.setxattr
 
 Set extended attribute attribute on path to value.
 
-path may be either a string, path-like object,  or an open file descriptor.
+path may be either a string, path-like object, or an open file descriptor.
 If follow_symlinks is False, and the last element of the path is a symbolic
   link, setxattr will modify the symbolic link itself instead of the file
   the link points to.
