@@ -315,6 +315,23 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, _testcapi.get_mapping_values, bad_mapping)
         self.assertRaises(TypeError, _testcapi.get_mapping_items, bad_mapping)
 
+    @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
+                         'need _testcapi.negative_refcount')
+    def test_negative_refcount(self):
+        # bpo-35059: Check that Py_DECREF() reports the correct filename
+        # when calling _Py_NegativeRefcount() to abort Python.
+        code = textwrap.dedent("""
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.negative_refcount()
+        """)
+        rc, out, err = assert_python_failure('-c', code)
+        self.assertRegex(err,
+                         br'_testcapimodule\.c:[0-9]+ object at .* '
+                         br'has negative ref count', err)
+
 
 class TestPendingCalls(unittest.TestCase):
 
