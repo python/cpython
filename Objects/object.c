@@ -207,7 +207,7 @@ _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
 {
     _PyObject_AssertFailed(op, "object has negative ref count",
                            "op->ob_refcnt >= 0",
-                           filename, lineno, __PRETTY_FUNCTION__);
+                           filename, lineno, __func__);
 }
 
 #endif /* Py_REF_DEBUG */
