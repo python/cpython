@@ -1393,7 +1393,7 @@ The subprocess module is now more graceful when handling
 :exc:`KeyboardInterrupt` during :func:`subprocess.call`,
 :func:`subprocess.run`, or in a :class:`~subprocess.Popen`
 context manager.  It now waits a short amount of time for the child
-to exit, before continuing the handling of the :exc:`KeyboardInterrupt`
+to exit, before continuing the handling of the ``KeyboardInterrupt``
 exception.
 (Contributed by Gregory P. Smith in :issue:`25942`.)
 
