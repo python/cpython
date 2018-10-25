@@ -26,20 +26,20 @@ def main():
                         help='write the output of infile to outfile')
     parser.add_argument('--sort-keys', action='store_true', default=False,
                         help='sort the output of dictionaries alphabetically by key')
-    parser.add_argument('--jsonlines', action='store_true', default=False,
+    parser.add_argument('--json-lines', action='store_true', default=False,
                         help='parse input using the jsonlines format')
     options = parser.parse_args()
 
     infile = options.infile or sys.stdin
     outfile = options.outfile or sys.stdout
     sort_keys = options.sort_keys
-    jsonlines = options.jsonlines
+    json_lines = options.json_lines
     with infile:
         try:
-            if jsonlines:
-                objs = [json.loads(line) for line in infile]
+            if json_lines:
+                objs = (json.loads(line) for line in infile)
             else:
-                objs = [json.load(infile)]
+                objs = (json.load(infile), )
         except ValueError as e:
             raise SystemExit(e)
     with outfile:
