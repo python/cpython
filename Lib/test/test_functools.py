@@ -2485,6 +2485,7 @@ class TestCachedProperty(unittest.TestCase):
             def calculate(self):
                 pass
 
+        self.assertTrue(getattr(AbstractExpensiveCalculator.calculate, '__isabstractmethod__', False))
         with self.assertRaises(TypeError):
             AbstractExpensiveCalculator()
 

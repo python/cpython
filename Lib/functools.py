@@ -882,7 +882,9 @@ class cached_property:
         self.func = func
         self.attrname = None
         self.__doc__ = func.__doc__
-        self.__isabstractmethod__ = getattr(func, '__isabstractmethod__', False)
+        func_isabstractmethod = getattr(func, '__isabstractmethod__')
+        if func_isabstractmethod is not None:
+            self.__isabstractmethod__ = func_isabstractmethod
         self.lock = RLock()
 
     def __set_name__(self, owner, name):
