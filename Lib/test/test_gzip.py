@@ -746,7 +746,6 @@ class TestCommandLine(unittest.TestCase):
         rc, out, err = assert_python_ok('-m', 'gzip', local_testgzip)
 
         self.assertTrue(os.path.exists(gzipname))
-        self.assertEqual(rc, 0)
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
@@ -772,13 +771,11 @@ class TestCommandLine(unittest.TestCase):
     def test_compress_fast_best_are_exclusive(self):
         rc, out, err = assert_python_failure('-m', 'gzip', '--fast', '--best')
         self.assertIn(b"error: argument --best: not allowed with argument --fast", err)
-        self.assertGreater(rc, 0)
         self.assertEqual(out, b'')
 
     def test_decompress_cannot_have_flags_compression(self):
         rc, out, err = assert_python_failure('-m', 'gzip', '--fast', '-d')
         self.assertIn(b'error: argument -d/--decompress: not allowed with argument --fast', err)
-        self.assertGreater(rc, 0)
         self.assertEqual(out, b'')
 
 
