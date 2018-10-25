@@ -152,6 +152,31 @@ PyThread__init_thread(void)
  * Thread support.
  */
 
+/* The thread function argument passed to PyThread_start_new_thread has a
+ * different type compared to the thread function passed to the POSIX
+ * pthread_create function and the result of forcibly casting it to the latter
+ * type is undefined.  The pythread_fn struct and the pythread_helper_fn below
+ * help work around this in a conforming manner by wrapping around the thread
+ * function.
+ */
+typedef struct {
+    void (*func) (void *);
+    void *arg;
+} pythread_fn;
+
+static void *
+pythread_helper_fn(void *fn)
+{
+    pythread_fn *pfn = fn;
+
+    void (*func)(void *) = pfn->func;
+    void *arg = pfn->arg;
+
+    PyMem_RawFree((void *)fn);
+    func(arg);
+
+    return NULL;
+}
 
 unsigned long
 PyThread_start_new_thread(void (*func)(void *), void *arg)
@@ -188,21 +213,32 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
     pthread_attr_setscope(&attrs, PTHREAD_SCOPE_SYSTEM);
 #endif
 
+    pythread_fn *fn = (pythread_fn *)PyMem_RawMalloc(sizeof (pythread_fn));
+
+    if (fn == NULL)
+      return PYTHREAD_INVALID_THREAD_ID;
+
+    fn->func = func;
+    fn->arg = arg;
+
     status = pthread_create(&th,
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
                              &attrs,
 #else
                              (pthread_attr_t*)NULL,
 #endif
-                             (void* (*)(void *))func,
-                             (void *)arg
+                             pythread_helper_fn,
+                             fn
                              );
 
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
     pthread_attr_destroy(&attrs);
 #endif
-    if (status != 0)
+
+    if (status != 0) {
+        PyMem_RawFree((void *)fn);
         return PYTHREAD_INVALID_THREAD_ID;
+    }
 
     pthread_detach(th);
 
