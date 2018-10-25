@@ -115,7 +115,7 @@ class TestTool(unittest.TestCase):
         self.assertEqual(err, b'')
 
     def test_jsonlines(self):
-        args = sys.executable, '-m', 'json.tool', '--jsonlines'
+        args = sys.executable, '-m', 'json.tool', '--json-lines'
         with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
             out, err = proc.communicate(self.jsonlines_raw.encode())
         self.assertEqual(out.splitlines(), self.jsonlines_expect.encode().splitlines())

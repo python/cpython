@@ -34,18 +34,17 @@ def main():
     outfile = options.outfile or sys.stdout
     sort_keys = options.sort_keys
     json_lines = options.json_lines
-    with infile:
+    with infile, outfile:
         try:
             if json_lines:
                 objs = (json.loads(line) for line in infile)
             else:
                 objs = (json.load(infile), )
+            for obj in objs:
+                json.dump(obj, outfile, sort_keys=sort_keys, indent=4)
+                outfile.write('\n')
         except ValueError as e:
             raise SystemExit(e)
-    with outfile:
-        for obj in objs:
-            json.dump(obj, outfile, sort_keys=sort_keys, indent=4)
-            outfile.write('\n')
 
 
 if __name__ == '__main__':
