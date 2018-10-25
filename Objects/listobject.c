@@ -79,6 +79,8 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
 static int
 list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 {
+    assert(self->ob_item == NULL);
+
     PyObject **items;
     size_t allocated;
 
@@ -2679,7 +2681,8 @@ list___init___impl(PyListObject *self, PyObject *iterable)
             if (iter_len == -1) {
                 if (PyErr_ExceptionMatches(PyExc_Exception)) {
                     PyErr_Clear();
-                } else {
+                }
+                else {
                     return -1;
                 }
             }
