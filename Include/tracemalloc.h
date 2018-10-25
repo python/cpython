@@ -14,10 +14,6 @@ PyAPI_FUNC(int) PyTraceMalloc_Track(
     uintptr_t ptr,
     size_t size);
 
-/* Update the Python traceback of an object.
-   This function can be used when a memory block is reused from a free list. */
-PyAPI_FUNC(int) _PyTraceMalloc_NewReference(PyObject *op);
-
 /* Untrack an allocated memory block in the tracemalloc module.
    Do nothing if the block was not tracked.
 
