@@ -1578,6 +1578,9 @@ class AsyncioTestCase(TestCase):
         super()._terminateTest(outcome)
         if self.event_loop.is_running():
             self.event_loop.stop()
+        self.event_loop.run_until_complete(
+            self.event_loop.shutdown_asyncgens())
+        asyncio.set_event_loop(None)
         if not self.event_loop.is_closed():
             self.event_loop.close()
         self.__event_loop = None

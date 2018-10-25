@@ -257,6 +257,25 @@ class Test_AsyncioTestCase(unittest.TestCase):
 
         run_test_case(TestCase)
 
+    def test_unclosed_async_generators(self):
+        # XXX - I believe that this tests the closure of asynchronous
+        #       generators in AsyncioTestCase._terminateTest but I
+        #       can't reliably catch it there in a debugger?!
+        async def gen():
+            for n in range(0, 10):
+                yield n
+
+        class TestCase(unittest.AsyncioTestCase):
+            async def test_case(self):
+                # Call the async generator without terminating
+                # it.  This is what requires the call to
+                # shutdown_asyncgens() in _terminateTest().
+                # See PEP-525 for details.
+                g = gen()
+                await g.asend(None)
+
+        run_test_case(TestCase)
+
 
 if __name__ == "__main__":
     unittest.main()
