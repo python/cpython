@@ -1,0 +1,1 @@
+Added path-like objects to docstrings of os methods that accept path
