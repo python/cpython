@@ -1,2 +1,0 @@
-After shutdown, :class:`BaseServer` accepted a last request if it was sent
-between the socket polling and the polling timeout.
