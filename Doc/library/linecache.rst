@@ -30,10 +30,13 @@ The :mod:`linecache` module defines the following functions:
 
    .. index:: triple: module; search; path
 
-   If a file named *filename* is not found, the function will look for it in the
-   module search path, ``sys.path``, after first checking for a :pep:`302`
-   ``__loader__`` in *module_globals*, in case the module was imported from a
-   zipfile or other non-filesystem import source.
+   If a file named *filename* is not found, the function first checks
+   for a :pep:`302` ``__loader__`` in *module_globals*.
+   If there is such a loader and it defines a ``get_source`` method,
+   then that determines the source lines
+   (if ``get_source()`` returns ``None``, then ``''`` is returned).
+   Finally, if *filename* is a relative filename,
+   it is looked up relative to the entries in the module search path, ``sys.path``.
 
 
 .. function:: clearcache()

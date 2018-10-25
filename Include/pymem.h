@@ -36,6 +36,10 @@ PyAPI_FUNC(int) PyTraceMalloc_Track(
     uintptr_t ptr,
     size_t size);
 
+/* Update the Python traceback of an object.
+   This function can be used when a memory block is reused from a free list. */
+PyAPI_FUNC(int) _PyTraceMalloc_NewReference(PyObject *op);
+
 /* Untrack an allocated memory block in the tracemalloc module.
    Do nothing if the block was not tracked.
 
@@ -55,7 +59,9 @@ PyAPI_FUNC(int) PyTraceMalloc_Untrack(
 PyAPI_FUNC(PyObject*) _PyTraceMalloc_GetTraceback(
     unsigned int domain,
     uintptr_t ptr);
-#endif   /* !Py_LIMITED_API */
+
+PyAPI_FUNC(int) _PyMem_IsFreed(void *ptr, size_t size);
+#endif   /* !defined(Py_LIMITED_API) */
 
 
 /* BEWARE:
@@ -236,6 +242,40 @@ PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
     PyMemAllocatorDomain domain,
     PyMemAllocatorEx *old_alloc);
 #endif
+
+
+/* bpo-35053: expose _Py_tracemalloc_config for performance:
+   _Py_NewReference() needs an efficient check to test if tracemalloc is
+   tracing. */
+struct _PyTraceMalloc_Config {
+    /* Module initialized?
+       Variable protected by the GIL */
+    enum {
+        TRACEMALLOC_NOT_INITIALIZED,
+        TRACEMALLOC_INITIALIZED,
+        TRACEMALLOC_FINALIZED
+    } initialized;
+
+    /* Is tracemalloc tracing memory allocations?
+       Variable protected by the GIL */
+    int tracing;
+
+    /* limit of the number of frames in a traceback, 1 by default.
+       Variable protected by the GIL. */
+    int max_nframe;
+
+    /* use domain in trace key?
+       Variable protected by the GIL. */
+    int use_domain;
+};
+
+PyAPI_DATA(struct _PyTraceMalloc_Config) _Py_tracemalloc_config;
+
+#define _PyTraceMalloc_Config_INIT \
+    {.initialized = TRACEMALLOC_NOT_INITIALIZED, \
+     .tracing = 0, \
+     .max_nframe = 1, \
+     .use_domain = 0}
 
 #ifdef __cplusplus
 }

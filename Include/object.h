@@ -521,6 +521,7 @@ struct _Py_Identifier;
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
 PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
+PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 #endif
 PyAPI_FUNC(PyObject *) PyObject_Repr(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_Str(PyObject *);
@@ -775,6 +776,9 @@ PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
  * inline.
  */
 #define _Py_NewReference(op) (                          \
+    (_Py_tracemalloc_config.tracing        \
+        ? _PyTraceMalloc_NewReference(op)               \
+        : 0),                                           \
     _Py_INC_TPALLOCS(op) _Py_COUNT_ALLOCS_COMMA         \
     _Py_INC_REFTOTAL  _Py_REF_DEBUG_COMMA               \
     Py_REFCNT(op) = 1)
