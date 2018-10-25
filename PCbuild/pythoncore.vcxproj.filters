@@ -321,6 +321,9 @@
     <ClInclude Include="..\Include\traceback.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\tracemalloc.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\tupleobject.h">
       <Filter>Include</Filter>
     </ClInclude>

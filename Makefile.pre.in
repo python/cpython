@@ -1017,6 +1017,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/symtable.h \
 		$(srcdir)/Include/sysmodule.h \
 		$(srcdir)/Include/traceback.h \
+		$(srcdir)/Include/tracemalloc.h \
 		$(srcdir)/Include/tupleobject.h \
 		$(srcdir)/Include/ucnhash.h \
 		$(srcdir)/Include/unicodeobject.h \

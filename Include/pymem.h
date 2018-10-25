@@ -24,42 +24,6 @@ PyAPI_FUNC(int) _PyMem_SetupAllocators(const char *opt);
 /* Try to get the allocators name set by _PyMem_SetupAllocators(). */
 PyAPI_FUNC(const char*) _PyMem_GetAllocatorsName(void);
 
-/* Track an allocated memory block in the tracemalloc module.
-   Return 0 on success, return -1 on error (failed to allocate memory to store
-   the trace).
-
-   Return -2 if tracemalloc is disabled.
-
-   If memory block is already tracked, update the existing trace. */
-PyAPI_FUNC(int) PyTraceMalloc_Track(
-    unsigned int domain,
-    uintptr_t ptr,
-    size_t size);
-
-/* Update the Python traceback of an object.
-   This function can be used when a memory block is reused from a free list. */
-PyAPI_FUNC(int) _PyTraceMalloc_NewReference(PyObject *op);
-
-/* Untrack an allocated memory block in the tracemalloc module.
-   Do nothing if the block was not tracked.
-
-   Return -2 if tracemalloc is disabled, otherwise return 0. */
-PyAPI_FUNC(int) PyTraceMalloc_Untrack(
-    unsigned int domain,
-    uintptr_t ptr);
-
-/* Get the traceback where a memory block was allocated.
-
-   Return a tuple of (filename: str, lineno: int) tuples.
-
-   Return None if the tracemalloc module is disabled or if the memory block
-   is not tracked by tracemalloc.
-
-   Raise an exception and return NULL on error. */
-PyAPI_FUNC(PyObject*) _PyTraceMalloc_GetTraceback(
-    unsigned int domain,
-    uintptr_t ptr);
-
 PyAPI_FUNC(int) _PyMem_IsFreed(void *ptr, size_t size);
 #endif   /* !defined(Py_LIMITED_API) */
 
@@ -246,7 +210,9 @@ PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
 
 /* bpo-35053: expose _Py_tracemalloc_config for performance:
    _Py_NewReference() needs an efficient check to test if tracemalloc is
-   tracing. */
+   tracing.
+
+   It has to be defined in pymem.h, before object.h is included. */
 struct _PyTraceMalloc_Config {
     /* Module initialized?
        Variable protected by the GIL */
