@@ -2542,7 +2542,7 @@ os_lstat_impl(PyObject *module, path_t *path, int dir_fd)
 os.access -> bool
 
     path: path_t
-        Path to be tested; can be string or bytes
+        Path to be tested; can be string, bytes, or path-like object
 
     mode: int
         Operating-system mode bitfield.  Can be F_OK to test existence,
@@ -2772,7 +2772,7 @@ os_fchdir_impl(PyObject *module, int fd)
 os.chmod
 
     path: path_t(allow_fd='PATH_HAVE_FCHMOD')
-        Path to be modified.  May always be specified as a str or bytes.
+        Path to be modified.  May always be specified as a str, bytes, or path-like object.
         On some platforms, path may also be specified as an open file descriptor.
         If this functionality is unavailable, using it raises an exception.
 
@@ -3123,7 +3123,7 @@ os_fdatasync_impl(PyObject *module, int fd)
 os.chown
 
     path : path_t(allow_fd='PATH_HAVE_FCHOWN')
-        Path to be examined; can be string, bytes, or open-file-descriptor int.
+        Path to be examined; can be string, bytes, path-like object, or open-file-descriptor int.
 
     uid: uid_t
 
@@ -3688,7 +3688,7 @@ os.listdir
 
 Return a list containing the names of the files in the directory.
 
-path can be specified as either str or bytes.  If path is bytes,
+path can be specified as either str, bytes, or path-like object.  If path is bytes,
   the filenames returned will also be bytes; in all other circumstances
   the filenames returned will be str.
 If path is None, uses the path='.'.
@@ -11415,7 +11415,7 @@ os.getxattr
 
 Return the value of extended attribute attribute on path.
 
-path may be either a string or an open file descriptor.
+path may be either a string, path-like object, or an open file descriptor.
 If follow_symlinks is False, and the last element of the path is a symbolic
   link, getxattr will examine the symbolic link itself instead of the file
   the link points to.
@@ -11487,7 +11487,7 @@ os.setxattr
 
 Set extended attribute attribute on path to value.
 
-path may be either a string or an open file descriptor.
+path may be either a string, path-like object,  or an open file descriptor.
 If follow_symlinks is False, and the last element of the path is a symbolic
   link, setxattr will modify the symbolic link itself instead of the file
   the link points to.
@@ -11535,7 +11535,7 @@ os.removexattr
 
 Remove extended attribute attribute on path.
 
-path may be either a string or an open file descriptor.
+path may be either a string, path-like object, or an open file descriptor.
 If follow_symlinks is False, and the last element of the path is a symbolic
   link, removexattr will modify the symbolic link itself instead of the file
   the link points to.
@@ -11578,7 +11578,7 @@ os.listxattr
 
 Return a list of extended attributes on path.
 
-path may be either None, a string, or an open file descriptor.
+path may be either None, a string, path-like object, or an open file descriptor.
 if path is None, listxattr will examine the current directory.
 If follow_symlinks is False, and the last element of the path is a symbolic
   link, listxattr will examine the symbolic link itself instead of the file
