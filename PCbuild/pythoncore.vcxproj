@@ -177,6 +177,7 @@
     <ClInclude Include="..\Include\sysmodule.h" />
     <ClInclude Include="..\Include\token.h" />
     <ClInclude Include="..\Include\traceback.h" />
+    <ClInclude Include="..\Include\tracemalloc.h" />
     <ClInclude Include="..\Include\tupleobject.h" />
     <ClInclude Include="..\Include\ucnhash.h" />
     <ClInclude Include="..\Include\unicodeobject.h" />
