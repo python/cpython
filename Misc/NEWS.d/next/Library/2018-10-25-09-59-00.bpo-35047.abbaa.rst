@@ -1,0 +1,2 @@
+``unittest.mock`` now prints the list of calls if ``assert_not_called``
+or ``assert_called_once`` fails. Patch by Petter Strandmark.
