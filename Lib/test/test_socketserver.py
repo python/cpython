@@ -492,37 +492,6 @@ class MiscTestCase(unittest.TestCase):
         self.assertEqual(server.shutdown_called, 1)
         server.server_close()
 
-    def test_no_accept_after_shutdown(self):
-        rejected = False
-        s = socketserver.TCPServer((HOST, 0), socketserver.StreamRequestHandler)
-
-        thread_serve = threading.Thread(
-            name='MyServer serving',
-            target=s.serve_forever)
-        thread_serve.daemon = True  # In case this function raises.
-        thread_serve.start()
-
-        thread_shutdown = threading.Thread(
-            name='MyServer shutdown',
-            target=s.shutdown)
-        thread_shutdown.daemon = True  # In case this function raises.
-        thread_shutdown.start()
-
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(0.1)
-        sock.connect(s.server_address)
-        sock.send(b"Request after shutdown\n")
-        try:
-            sock.recv(1024)
-        except socket.timeout:
-            rejected = True
-        sock.close()
-
-        for t in [thread_serve, thread_shutdown]:
-            t.join()
-        s.server_close()
-        self.assertEqual(rejected, True)
-
 
 if __name__ == "__main__":
     unittest.main()
