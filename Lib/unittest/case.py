@@ -1553,6 +1553,7 @@ class AsyncioTestCase(TestCase):
         """Active event loop for the test case."""
         if self.__event_loop is None:
             self.__event_loop = asyncio.new_event_loop()
+            self.__event_loop.set_debug(True)
             asyncio.set_event_loop(self.__event_loop)
         return self.__event_loop
 
@@ -1584,7 +1585,6 @@ class AsyncioTestCase(TestCase):
         if not self.event_loop.is_closed():
             self.event_loop.close()
         self.__event_loop = None
-        asyncio.set_event_loop(None)
 
     def doCleanups(self):
         """
