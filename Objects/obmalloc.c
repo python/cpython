@@ -63,6 +63,12 @@ static void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
 #endif
 
 
+/* bpo-35053: Declare tracemalloc configuration here rather than
+   Modules/_tracemalloc.c because _tracemalloc can be compiled as dynamic
+   library, whereas _Py_NewReference() requires it. */
+struct _PyTraceMalloc_Config _Py_tracemalloc_config = _PyTraceMalloc_Config_INIT;
+
+
 static void *
 _PyMem_RawMalloc(void *ctx, size_t size)
 {
