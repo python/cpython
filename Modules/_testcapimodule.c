@@ -4818,6 +4818,25 @@ fail:
 }
 
 
+#ifdef Py_REF_DEBUG
+static PyObject *
+negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *obj = PyUnicode_FromString("negative_refcount");
+    if (obj == NULL) {
+        return NULL;
+    }
+    assert(Py_REFCNT(obj) == 1);
+
+    Py_REFCNT(obj) = 0;
+    /* Py_DECREF() must call _Py_NegativeRefcount() and abort Python */
+    Py_DECREF(obj);
+
+    Py_RETURN_NONE;
+}
+#endif
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
@@ -5043,6 +5062,9 @@ static PyMethodDef TestMethods[] = {
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
     {"get_coreconfig", get_coreconfig, METH_NOARGS},
+#ifdef Py_REF_DEBUG
+    {"negative_refcount", negative_refcount, METH_NOARGS},
+#endif
     {NULL, NULL} /* sentinel */
 };
 
