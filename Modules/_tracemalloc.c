@@ -1716,14 +1716,8 @@ _PyTraceMalloc_NewReference(PyObject *op)
         ptr = (uintptr_t)op;
     }
 
-    traceback_t *traceback;
-    traceback = traceback_new();
-    if (traceback == NULL) {
-        return -1;
-    }
-
     _Py_hashtable_entry_t* entry;
-    int res;
+    int res = -1;
 
     TABLES_LOCK();
     if (_Py_tracemalloc_config.use_domain) {
@@ -1736,16 +1730,16 @@ _PyTraceMalloc_NewReference(PyObject *op)
 
     if (entry != NULL) {
         /* update the traceback of the memory block */
-        trace_t trace;
-        _Py_HASHTABLE_ENTRY_READ_DATA(tracemalloc_traces, entry, trace);
-        trace.traceback = traceback;
-        _Py_HASHTABLE_ENTRY_WRITE_DATA(tracemalloc_traces, entry, trace);
-        res = 0;
+        traceback_t *traceback = traceback_new();
+        if (traceback != NULL) {
+            trace_t trace;
+            _Py_HASHTABLE_ENTRY_READ_DATA(tracemalloc_traces, entry, trace);
+            trace.traceback = traceback;
+            _Py_HASHTABLE_ENTRY_WRITE_DATA(tracemalloc_traces, entry, trace);
+            res = 0;
+        }
     }
-    else {
-        /* cannot track the object since its memory block size is unknown */
-        res = -1;
-    }
+    /* else: cannot track the object, its memory block size is unknown */
     TABLES_UNLOCK();
 
     return res;
