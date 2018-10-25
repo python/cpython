@@ -368,6 +368,8 @@ class TestUUID(unittest.TestCase):
                       'dd1a1cef-13d5-368a-ad82-eca71acd4cd1'),
                      (uuid.uuid3(uuid.NAMESPACE_X500, 'c=ca'),
                       '658d3002-db6b-3040-a1d1-8ddd7d189a4d'),
+                     (uuid.uuid3(uuid.NAMESPACE_X500, name=u'foo'),
+                      'c3c8dbcd-8f60-3825-b42b-162fc311726f'),
                     ]:
             equal(u.variant, uuid.RFC_4122)
             equal(u.version, 3)
@@ -401,6 +403,8 @@ class TestUUID(unittest.TestCase):
                       '1447fa61-5277-5fef-a9b3-fbc6e44f4af3'),
                      (uuid.uuid5(uuid.NAMESPACE_X500, 'c=ca'),
                       'cc957dd1-a972-5349-98cd-874190002798'),
+                     (uuid.uuid5(uuid.NAMESPACE_X500, name=u'foo'),
+                      'a2dfac7d-e8aa-556e-b751-a37169330d23'),
                     ]:
             equal(u.variant, uuid.RFC_4122)
             equal(u.version, 5)
