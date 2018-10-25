@@ -2478,16 +2478,25 @@ class TestCachedProperty(unittest.TestCase):
     def test_doc(self):
         self.assertEqual(CachedCostItem.cost.__doc__, "The cost of the item.")
 
-    def test_isabstractmethod(self):
+    def test_isabstractmethod_copied(self):
         class AbstractExpensiveCalculator(abc.ABC):
             @functools.cached_property
             @abc.abstractmethod
             def calculate(self):
                 pass
 
-        self.assertTrue(getattr(AbstractExpensiveCalculator.calculate, '__isabstractmethod__', False))
+        self.assertTrue(AbstractExpensiveCalculator.calculate.__isabstractmethod__)
         with self.assertRaises(TypeError):
             AbstractExpensiveCalculator()
+
+    def test_missing_isabstractmethod_not_copied(self):
+        class ConcreteExpensiveCalculator(abc.ABC):
+            @functools.cached_property
+            def calculate(self):
+                return 42
+
+        self.assertFalse(getattr(ConcreteExpensiveCalculator.calculate, '__isabstractmethod__', False))
+        ConcreteExpensiveCalculator()
 
 
 if __name__ == '__main__':

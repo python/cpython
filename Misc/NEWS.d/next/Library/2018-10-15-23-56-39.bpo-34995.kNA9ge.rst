@@ -1,1 +1,1 @@
-Maintain wrapped method's __isabstractmethod__ in functools.cached_property
+:func:`functools.cached_property` now also copies the wrapped method's ``__isabstractmethod__`` attribute.
