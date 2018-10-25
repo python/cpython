@@ -129,6 +129,9 @@ _io -DPy_BUILD_CORE -I$(srcdir)/Modules/_io _io/_iomodule.c _io/iobase.c _io/fil
 faulthandler faulthandler.c
 
 # debug tool to trace memory blocks allocated by Python
+#
+# bpo-35053: The module must be builtin since _Py_NewReference()
+# can call _PyTraceMalloc_NewReference().
 _tracemalloc _tracemalloc.c hashtable.c
 
 # The rest of the modules listed in this file are all commented out by
