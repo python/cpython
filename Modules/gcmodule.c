@@ -62,6 +62,12 @@ module gc
 // most gc_list_* functions for it.
 #define NEXT_MASK_UNREACHABLE  (1)
 
+/* Get an object's GC head */
+#define AS_GC(o) ((PyGC_Head *)(o)-1)
+
+/* Get the object given the GC head */
+#define FROM_GC(g) ((PyObject *)(((PyGC_Head *)g)+1))
+
 static inline int
 gc_is_collecting(PyGC_Head *g)
 {
@@ -98,15 +104,11 @@ gc_reset_refs(PyGC_Head *g, Py_ssize_t refs)
 static inline void
 gc_decref(PyGC_Head *g)
 {
-    assert(gc_get_refs(g) > 0);
+    _PyObject_ASSERT_WITH_MSG(FROM_GC(g),
+                              gc_get_refs(g) > 0,
+                              "refcount is too small");
     g->_gc_prev -= 1 << _PyGC_PREV_SHIFT;
 }
-
-/* Get an object's GC head */
-#define AS_GC(o) ((PyGC_Head *)(o)-1)
-
-/* Get the object given the GC head */
-#define FROM_GC(g) ((PyObject *)(((PyGC_Head *)g)+1))
 
 /* Python string to use if unhandled exception occurs */
 static PyObject *gc_str = NULL;
