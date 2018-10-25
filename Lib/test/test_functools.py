@@ -746,11 +746,8 @@ class TestWraps(TestUpdateWrapper):
         self.assertEqual(wrapper.attr, 'This is a different test')
         self.assertEqual(wrapper.dict_attr, f.dict_attr)
 
-@unittest.skipUnless(c_functools, 'requires the C _functools module')
-class TestReduce(unittest.TestCase):
-    if c_functools:
-        func = c_functools.reduce
 
+class TestReduce:
     def test_reduce(self):
         class Squares:
             def __init__(self, max):
@@ -769,42 +766,42 @@ class TestReduce(unittest.TestCase):
                 return self.sofar[i]
         def add(x, y):
             return x + y
-        self.assertEqual(self.func(add, ['a', 'b', 'c'], ''), 'abc')
+        self.assertEqual(self.reduce(add, ['a', 'b', 'c'], ''), 'abc')
         self.assertEqual(
-            self.func(add, [['a', 'c'], [], ['d', 'w']], []),
+            self.reduce(add, [['a', 'c'], [], ['d', 'w']], []),
             ['a','c','d','w']
         )
-        self.assertEqual(self.func(lambda x, y: x*y, range(2,8), 1), 5040)
+        self.assertEqual(self.reduce(lambda x, y: x*y, range(2,8), 1), 5040)
         self.assertEqual(
-            self.func(lambda x, y: x*y, range(2,21), 1),
+            self.reduce(lambda x, y: x*y, range(2,21), 1),
             2432902008176640000
         )
-        self.assertEqual(self.func(add, Squares(10)), 285)
-        self.assertEqual(self.func(add, Squares(10), 0), 285)
-        self.assertEqual(self.func(add, Squares(0), 0), 0)
-        self.assertRaises(TypeError, self.func)
-        self.assertRaises(TypeError, self.func, 42, 42)
-        self.assertRaises(TypeError, self.func, 42, 42, 42)
-        self.assertEqual(self.func(42, "1"), "1") # func is never called with one item
-        self.assertEqual(self.func(42, "", "1"), "1") # func is never called with one item
-        self.assertRaises(TypeError, self.func, 42, (42, 42))
-        self.assertRaises(TypeError, self.func, add, []) # arg 2 must not be empty sequence with no initial value
-        self.assertRaises(TypeError, self.func, add, "")
-        self.assertRaises(TypeError, self.func, add, ())
-        self.assertRaises(TypeError, self.func, add, object())
+        self.assertEqual(self.reduce(add, Squares(10)), 285)
+        self.assertEqual(self.reduce(add, Squares(10), 0), 285)
+        self.assertEqual(self.reduce(add, Squares(0), 0), 0)
+        self.assertRaises(TypeError, self.reduce)
+        self.assertRaises(TypeError, self.reduce, 42, 42)
+        self.assertRaises(TypeError, self.reduce, 42, 42, 42)
+        self.assertEqual(self.reduce(42, "1"), "1") # func is never called with one item
+        self.assertEqual(self.reduce(42, "", "1"), "1") # func is never called with one item
+        self.assertRaises(TypeError, self.reduce, 42, (42, 42))
+        self.assertRaises(TypeError, self.reduce, add, []) # arg 2 must not be empty sequence with no initial value
+        self.assertRaises(TypeError, self.reduce, add, "")
+        self.assertRaises(TypeError, self.reduce, add, ())
+        self.assertRaises(TypeError, self.reduce, add, object())
 
         class TestFailingIter:
             def __iter__(self):
                 raise RuntimeError
-        self.assertRaises(RuntimeError, self.func, add, TestFailingIter())
+        self.assertRaises(RuntimeError, self.reduce, add, TestFailingIter())
 
-        self.assertEqual(self.func(add, [], None), None)
-        self.assertEqual(self.func(add, [], 42), 42)
+        self.assertEqual(self.reduce(add, [], None), None)
+        self.assertEqual(self.reduce(add, [], 42), 42)
 
         class BadSeq:
             def __getitem__(self, index):
                 raise ValueError
-        self.assertRaises(ValueError, self.func, 42, BadSeq())
+        self.assertRaises(ValueError, self.reduce, 42, BadSeq())
 
     # Test reduce()'s use of iterators.
     def test_iterator_usage(self):
@@ -818,15 +815,25 @@ class TestReduce(unittest.TestCase):
                     raise IndexError
 
         from operator import add
-        self.assertEqual(self.func(add, SequenceClass(5)), 10)
-        self.assertEqual(self.func(add, SequenceClass(5), 42), 52)
-        self.assertRaises(TypeError, self.func, add, SequenceClass(0))
-        self.assertEqual(self.func(add, SequenceClass(0), 42), 42)
-        self.assertEqual(self.func(add, SequenceClass(1)), 0)
-        self.assertEqual(self.func(add, SequenceClass(1), 42), 42)
+        self.assertEqual(self.reduce(add, SequenceClass(5)), 10)
+        self.assertEqual(self.reduce(add, SequenceClass(5), 42), 52)
+        self.assertRaises(TypeError, self.reduce, add, SequenceClass(0))
+        self.assertEqual(self.reduce(add, SequenceClass(0), 42), 42)
+        self.assertEqual(self.reduce(add, SequenceClass(1)), 0)
+        self.assertEqual(self.reduce(add, SequenceClass(1), 42), 42)
 
         d = {"one": 1, "two": 2, "three": 3}
-        self.assertEqual(self.func(add, d), "".join(d.keys()))
+        self.assertEqual(self.reduce(add, d), "".join(d.keys()))
+
+
+@unittest.skipUnless(c_functools, 'requires the C _functools module')
+class TestReduceC(TestReduce, unittest.TestCase):
+    if c_functools:
+        reduce = c_functools.reduce
+
+
+class TestReducePy(TestReduce, unittest.TestCase):
+    reduce = staticmethod(py_functools.reduce)
 
 
 class TestCmpToKey:
