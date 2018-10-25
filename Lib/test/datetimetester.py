@@ -3129,12 +3129,14 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
             pass
 
     def test_strptime_invalid(self):
-        tests = [('2004-12-01 13:02:47.197',
-                  '%Y-%m-%d %H:%M:%S.%f'),
-                 ('2004-12-01', '%Y-%m-%d'),]
+        tests = [
+            ('2004-12-01 13:02:47.197', '%Y-%m-%d %H:%M:%S.%f'),
+            ('2004-12-01', '%Y-%m-%d'),
+        ]
         for date_string, date_format in tests:
-            with self.assertRaises(ValueError):
-                time.strptime(date_string, date_format)
+            with self.subTest(date_string=date_string, date_format=date_format):
+                with self.assertRaises(ValueError):
+                    time.strptime(date_string, date_format)
 
     def test_strptime_valid(self):
         string = '13:02:47.197'
