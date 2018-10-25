@@ -1699,6 +1699,10 @@ The full list of supported magic methods is:
 * Descriptor methods: ``__get__``, ``__set__`` and ``__delete__``
 * Pickling: ``__reduce__``, ``__reduce_ex__``, ``__getinitargs__``,
   ``__getnewargs__``, ``__getstate__`` and ``__setstate__``
+* File system path representation: ``__fspath__``
+
+.. versionchanged:: 3.8
+   Added support for :func:`os.PathLike.__fspath__`.
 
 
 The following methods exist but are *not* supported as they are either in use
