@@ -1761,7 +1761,7 @@ _calculate_return_value = {
     '__hash__': lambda self: object.__hash__(self),
     '__str__': lambda self: object.__str__(self),
     '__sizeof__': lambda self: object.__sizeof__(self),
-    '__fspath__': lambda self: "%s/%s" % (type(self).__name__, id(self))
+    '__fspath__': lambda self: f"{type(self).__name__}/{self._extract_mock_name()}/{id(self)}",
 }
 
 _return_values = {
