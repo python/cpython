@@ -2028,7 +2028,7 @@ order (MRO) for bases """
                 setattr(X, attr, obj)
             setattr(X, name, SpecialDescr(meth_impl))
             runner(X())
-            self.assertGreaterEqual(record.count(1), 1, name)
+            self.assertEqual(record, [1], name)
 
             class X(Checker):
                 pass
