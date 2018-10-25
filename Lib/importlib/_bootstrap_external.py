@@ -785,15 +785,16 @@ class SourceLoader(_LoaderBasics):
 
     def path_mtime(self, path):
         """Optional method that returns the modification time (an int) for the
-        specified path, where path is a str.
+        specified path (a str).
 
         Raises OSError when the path cannot be handled.
         """
         raise OSError
 
     def path_stats(self, path):
-        """Optional method returning a metadata dict for the specified path
-        to by the path (str).
+        """Optional method returning a metadata dict for the specified
+        path (a str).
+
         Possible keys:
         - 'mtime' (mandatory) is the numeric timestamp of last source
           code modification;
