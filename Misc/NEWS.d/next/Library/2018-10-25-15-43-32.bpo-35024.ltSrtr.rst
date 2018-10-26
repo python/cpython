@@ -1,4 +1,3 @@
 `importlib` no longer logs `wrote <bytecode path>` redundantly after
-`(created|could not create) <bytecode path>`. Note that the former was
-always logged, even when writing the `.pyc` file failed, making log parsing
-an unreliable way to determine which modules got cached.
+`(created|could not create) <bytecode path>` is already logged.
+Patch by Quentin Agren.
