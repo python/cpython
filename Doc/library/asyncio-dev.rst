@@ -50,7 +50,7 @@ When the debug mode is enabled:
   <asyncio-coroutine-not-scheduled>` and logs them; this mitigates
   the "forgotten await" pitfall.
 
-* Many non-treadsafe asyncio APIs (such as :meth:`loop.call_soon` and
+* Many non-threadsafe asyncio APIs (such as :meth:`loop.call_soon` and
   :meth:`loop.call_at` methods) raise an exception if they are called
   from a wrong thread.
 
