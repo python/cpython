@@ -125,6 +125,14 @@ class WindowsConsoleIOTests(unittest.TestCase):
         with ConIO('CONOUT$', 'w') as f:
             self.assertEqual(f.write(b''), 0)
 
+    def test_fileno_raises_correct_exception(self):
+        # Test that WindowsConsoleIO implementation of fileno
+        # raises a ValueError instead of io.UnsupportedOperation
+        # if the internal handle value is INVALID_HANDLE_VALUE.
+        f = open('conin$', 'r')
+        f.close()
+        self.assertRaisesRegex(ValueError, "I/O operation on closed file", f.fileno)
+
     def assertStdinRoundTrip(self, text):
         stdin = open('CONIN$', 'r')
         old_stdin = sys.stdin
