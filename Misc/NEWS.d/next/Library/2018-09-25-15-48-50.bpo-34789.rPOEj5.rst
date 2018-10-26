@@ -1,0 +1,2 @@
+:func:`xml.sax.make_parser` now accepts any iterable as its *parser_list*
+argument.  Patch by Andrés Delfino.
