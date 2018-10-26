@@ -19,10 +19,8 @@ This module defines classes for implementing HTTP servers (Web servers).
 
 .. warning::
 
-    :mod:`http.server` is meant for demo purposes and does not implement the
-    stringent security checks needed of a real HTTP server. We do not recommend
-    using this module directly in production.
-
+    :mod:`http.server` is not recommended for production. It only implements
+    basic security checks.
 
 One class, :class:`HTTPServer`, is a :class:`socketserver.TCPServer` subclass.
 It creates and listens at the HTTP socket, dispatching the requests to a
