@@ -3555,7 +3555,7 @@ created for every test class.
 .. nonce: kfV0wm
 .. section: Library
 
-Fix PEP 3118 format strings on ctypes objects with a nontrivial shape.
+Fix :pep:`3118` format strings on ctypes objects with a nontrivial shape.
 
 ..
 
@@ -4824,7 +4824,7 @@ tests.
 .. nonce: kqetng
 .. section: IDLE
 
-Change default paragraph width to 72, the PEP 8 recommendation.
+Change default paragraph width to 72, the :pep:`8` recommendation.
 
 ..
 
@@ -5759,7 +5759,7 @@ Add support for ``yield from`` to 2to3.
 .. nonce: dpFbyZ
 .. section: Tools/Demos
 
-Add support for the PEP 465 matrix multiplication operator to 2to3.
+Add support for the :pep:`465` matrix multiplication operator to 2to3.
 
 ..
 

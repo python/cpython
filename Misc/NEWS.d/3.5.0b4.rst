@@ -14,7 +14,7 @@ argument on Linux.
 .. nonce: bqh6PQ
 .. section: Core and Builtins
 
-Make PEP 448 dictionary evaluation more consistent.
+Make :pep:`448` dictionary evaluation more consistent.
 
 ..
 

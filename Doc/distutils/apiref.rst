@@ -1393,11 +1393,11 @@ This module provides the :class:`FileList` class, used for poking about the
 filesystem and building lists of files.
 
 
-:mod:`distutils.log` --- Simple PEP 282-style logging
-=====================================================
+:mod:`distutils.log` --- Simple :pep:`282`-style logging
+========================================================
 
 .. module:: distutils.log
-   :synopsis: A simple logging mechanism, 282-style
+   :synopsis: A simple logging mechanism, :pep:`282`-style
 
 
 :mod:`distutils.spawn` --- Spawn a sub-process
