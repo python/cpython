@@ -93,14 +93,20 @@ the expression ``(?:a{6})*`` matches any multiple of six ``'a'`` characters.
 
 The special characters are:
 
+.. index:: single: .; in regular expressions
+
 ``.``
    (Dot.)  In the default mode, this matches any character except a newline.  If
    the :const:`DOTALL` flag has been specified, this matches any character
    including a newline.
 
+.. index:: single: ^; in regular expressions
+
 ``^``
    (Caret.)  Matches the start of the string, and in :const:`MULTILINE` mode also
    matches immediately after each newline.
+
+.. index:: single: $; in regular expressions
 
 ``$``
    Matches the end of the string or just before the newline at the end of the
@@ -111,19 +117,30 @@ The special characters are:
    a single ``$`` in ``'foo\n'`` will find two (empty) matches: one just before
    the newline, and one at the end of the string.
 
+.. index:: single: *; in regular expressions
+
 ``*``
    Causes the resulting RE to match 0 or more repetitions of the preceding RE, as
    many repetitions as are possible.  ``ab*`` will match 'a', 'ab', or 'a' followed
    by any number of 'b's.
+
+.. index:: single: +; in regular expressions
 
 ``+``
    Causes the resulting RE to match 1 or more repetitions of the preceding RE.
    ``ab+`` will match 'a' followed by any non-zero number of 'b's; it will not
    match just 'a'.
 
+.. index:: single: ?; in regular expressions
+
 ``?``
    Causes the resulting RE to match 0 or 1 repetitions of the preceding RE.
    ``ab?`` will match either 'a' or 'ab'.
+
+.. index::
+   single: *?; in regular expressions
+   single: +?; in regular expressions
+   single: ??; in regular expressions
 
 ``*?``, ``+?``, ``??``
    The ``'*'``, ``'+'``, and ``'?'`` qualifiers are all :dfn:`greedy`; they match
@@ -133,6 +150,10 @@ The special characters are:
    perform the match in :dfn:`non-greedy` or :dfn:`minimal` fashion; as *few*
    characters as possible will be matched.  Using the RE ``<.*?>`` will match
    only ``'<a>'``.
+
+.. index::
+   single: {; in regular expressions
+   single: }; in regular expressions
 
 ``{m}``
    Specifies that exactly *m* copies of the previous RE should be matched; fewer
@@ -155,6 +176,8 @@ The special characters are:
    6-character string ``'aaaaaa'``, ``a{3,5}`` will match 5 ``'a'`` characters,
    while ``a{3,5}?`` will only match 3 characters.
 
+.. index:: single: \; in regular expressions
+
 ``\``
    Either escapes special characters (permitting you to match characters like
    ``'*'``, ``'?'``, and so forth), or signals a special sequence; special
@@ -168,11 +191,17 @@ The special characters are:
    is complicated and hard to understand, so it's highly recommended that you use
    raw strings for all but the simplest expressions.
 
+.. index::
+   single: [; in regular expressions
+   single: ]; in regular expressions
+
 ``[]``
    Used to indicate a set of characters.  In a set:
 
    * Characters can be listed individually, e.g. ``[amk]`` will match ``'a'``,
      ``'m'``, or ``'k'``.
+
+   .. index:: single: -; in regular expressions
 
    * Ranges of characters can be indicated by giving two characters and separating
      them by a ``'-'``, for example ``[a-z]`` will match any lowercase ASCII letter,
@@ -185,9 +214,13 @@ The special characters are:
      ``[(+*)]`` will match any of the literal characters ``'('``, ``'+'``,
      ``'*'``, or ``')'``.
 
+   .. index:: single: \; in regular expressions
+
    * Character classes such as ``\w`` or ``\S`` (defined below) are also accepted
      inside a set, although the characters they match depends on whether
      :const:`ASCII` or :const:`LOCALE` mode is in force.
+
+   .. index:: single: ^; in regular expressions
 
    * Characters that are not within a range can be matched by :dfn:`complementing`
      the set.  If the first character of the set is ``'^'``, all the characters
@@ -199,6 +232,11 @@ The special characters are:
    * To match a literal ``']'`` inside a set, precede it with a backslash, or
      place it at the beginning of the set.  For example, both ``[()[\]{}]`` and
      ``[]()[{}]`` will both match a parenthesis.
+
+   .. .. index:: single: --; in regular expressions
+   .. .. index:: single: &&; in regular expressions
+   .. .. index:: single: ~~; in regular expressions
+   .. .. index:: single: ||; in regular expressions
 
    * Support of nested sets and set operations as in `Unicode Technical
      Standard #18`_ might be added in the future.  This would change the
@@ -214,6 +252,8 @@ The special characters are:
       :exc:`FutureWarning` is raised if a character set contains constructs
       that will change semantically in the future.
 
+.. index:: single: |; in regular expressions
+
 ``|``
    ``A|B``, where *A* and *B* can be arbitrary REs, creates a regular expression that
    will match either *A* or *B*.  An arbitrary number of REs can be separated by the
@@ -225,12 +265,18 @@ The special characters are:
    greedy.  To match a literal ``'|'``, use ``\|``, or enclose it inside a
    character class, as in ``[|]``.
 
+.. index::
+   single: (; in regular expressions
+   single: ); in regular expressions
+
 ``(...)``
    Matches whatever regular expression is inside the parentheses, and indicates the
    start and end of a group; the contents of a group can be retrieved after a match
    has been performed, and can be matched later in the string with the ``\number``
    special sequence, described below.  To match the literals ``'('`` or ``')'``,
    use ``\(`` or ``\)``, or enclose them inside a character class: ``[(]``, ``[)]``.
+
+.. index:: single: (?; in regular expressions
 
 ``(?...)``
    This is an extension notation (a ``'?'`` following a ``'('`` is not meaningful
@@ -252,6 +298,8 @@ The special characters are:
    regular expression, instead of passing a *flag* argument to the
    :func:`re.compile` function.  Flags should be used first in the
    expression string.
+
+.. index:: single: (?:; in regular expressions
 
 ``(?:...)``
    A non-capturing version of regular parentheses.  Matches whatever regular
@@ -285,6 +333,8 @@ The special characters are:
    .. versionchanged:: 3.7
       The letters ``'a'``, ``'L'`` and ``'u'`` also can be used in a group.
 
+.. index:: single: (?P<; in regular expressions
+
 ``(?P<name>...)``
    Similar to regular parentheses, but the substring matched by the group is
    accessible via the symbolic group name *name*.  Group names must be valid
@@ -310,9 +360,13 @@ The special characters are:
    |                                       | * ``\1``                         |
    +---------------------------------------+----------------------------------+
 
+.. index:: single: (?P=; in regular expressions
+
 ``(?P=name)``
    A backreference to a named group; it matches whatever text was matched by the
    earlier group named *name*.
+
+.. index:: single: (?#; in regular expressions
 
 ``(?#...)``
    A comment; the contents of the parentheses are simply ignored.
@@ -322,10 +376,14 @@ The special characters are:
    called a :dfn:`lookahead assertion`.  For example, ``Isaac (?=Asimov)`` will match
    ``'Isaac '`` only if it's followed by ``'Asimov'``.
 
+.. index:: single: (?!; in regular expressions
+
 ``(?!...)``
    Matches if ``...`` doesn't match next.  This is a :dfn:`negative lookahead assertion`.
    For example, ``Isaac (?!Asimov)`` will match ``'Isaac '`` only if it's *not*
    followed by ``'Asimov'``.
+
+.. index:: single: (?<=; in regular expressions
 
 ``(?<=...)``
    Matches if the current position in the string is preceded by a match for ``...``
@@ -352,6 +410,8 @@ The special characters are:
    .. versionchanged:: 3.5
       Added support for group references of fixed length.
 
+.. index:: single: (?<!; in regular expressions
+
 ``(?<!...)``
    Matches if the current position in the string is not preceded by a match for
    ``...``.  This is called a :dfn:`negative lookbehind assertion`.  Similar to
@@ -373,6 +433,8 @@ If the ordinary character is not an ASCII digit or an ASCII letter, then the
 resulting RE will match the second character.  For example, ``\$`` matches the
 character ``'$'``.
 
+.. index:: single: \; in regular expressions
+
 ``\number``
    Matches the contents of the group of the same number.  Groups are numbered
    starting from 1.  For example, ``(.+) \1`` matches ``'the the'`` or ``'55 55'``,
@@ -383,8 +445,12 @@ character ``'$'``.
    ``'['`` and ``']'`` of a character class, all numeric escapes are treated as
    characters.
 
+.. index:: single: \A; in regular expressions
+
 ``\A``
    Matches only at the start of the string.
+
+.. index:: single: \b; in regular expressions
 
 ``\b``
    Matches the empty string, but only at the beginning or end of a word.
@@ -400,6 +466,8 @@ character ``'$'``.
    Inside a character range, ``\b`` represents the backspace character, for
    compatibility with Python's string literals.
 
+.. index:: single: \B; in regular expressions
+
 ``\B``
    Matches the empty string, but only when it is *not* at the beginning or end
    of a word.  This means that ``r'py\B'`` matches ``'python'``, ``'py3'``,
@@ -408,6 +476,8 @@ character ``'$'``.
    patterns are Unicode alphanumerics or the underscore, although this can
    be changed by using the :const:`ASCII` flag.  Word boundaries are
    determined by the current locale if the :const:`LOCALE` flag is used.
+
+.. index:: single: \d; in regular expressions
 
 ``\d``
    For Unicode (str) patterns:
@@ -419,10 +489,14 @@ character ``'$'``.
    For 8-bit (bytes) patterns:
       Matches any decimal digit; this is equivalent to ``[0-9]``.
 
+.. index:: single: \D; in regular expressions
+
 ``\D``
    Matches any character which is not a decimal digit. This is
    the opposite of ``\d``. If the :const:`ASCII` flag is used this
    becomes the equivalent of ``[^0-9]``.
+
+.. index:: single: \s; in regular expressions
 
 ``\s``
    For Unicode (str) patterns:
@@ -436,10 +510,14 @@ character ``'$'``.
       Matches characters considered whitespace in the ASCII character set;
       this is equivalent to ``[ \t\n\r\f\v]``.
 
+.. index:: single: \S; in regular expressions
+
 ``\S``
    Matches any character which is not a whitespace character. This is
    the opposite of ``\s``. If the :const:`ASCII` flag is used this
    becomes the equivalent of ``[^ \t\n\r\f\v]``.
+
+.. index:: single: \w; in regular expressions
 
 ``\w``
    For Unicode (str) patterns:
@@ -454,6 +532,8 @@ character ``'$'``.
       used, matches characters considered alphanumeric in the current locale
       and the underscore.
 
+.. index:: single: \W; in regular expressions
+
 ``\W``
    Matches any character which is not a word character. This is
    the opposite of ``\w``. If the :const:`ASCII` flag is used this
@@ -461,8 +541,24 @@ character ``'$'``.
    used, matches characters considered alphanumeric in the current locale
    and the underscore.
 
+.. index:: single: \Z; in regular expressions
+
 ``\Z``
    Matches only at the end of the string.
+
+.. index::
+   single: \a; in regular expressions
+   single: \b; in regular expressions
+   single: \f; in regular expressions
+   single: \n; in regular expressions
+   single: \N; in regular expressions
+   single: \r; in regular expressions
+   single: \t; in regular expressions
+   single: \u; in regular expressions
+   single: \U; in regular expressions
+   single: \v; in regular expressions
+   single: \x; in regular expressions
+   single: \\; in regular expressions
 
 Most of the standard escapes supported by Python string literals are also
 accepted by the regular expression parser::
@@ -620,6 +716,8 @@ form.
 .. data:: X
           VERBOSE
 
+   .. index:: single: #; in regular expressions
+
    This flag allows you to write regular expressions that look nicer and are
    more readable by allowing you to visually separate logical sections of the
    pattern and add comments. Whitespace within the pattern is ignored, except
@@ -775,6 +873,8 @@ form.
    occurrences will be replaced. Empty matches for the pattern are replaced only
    when not adjacent to a previous empty match, so ``sub('x*', '-', 'abxd')`` returns
    ``'-a-b--d-'``.
+
+   .. index:: single: \g; in regular expressions
 
    In string-type *repl* arguments, in addition to the character escapes and
    backreferences described above,
