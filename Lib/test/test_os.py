@@ -1255,7 +1255,7 @@ class ChownFileTests(unittest.TestCase):
 class CurrentDirTests(unittest.TestCase):
 
     def setUp(self):
-        self.pwd = os.environ['PWD']
+        self.pwd = os.environ.get('PWD')
         base = os.path.abspath(support.TESTFN)
         self.tmp_dir = base + '_dir'
         self.tmp_lnk = base + '_lnk'
@@ -1291,7 +1291,8 @@ class CurrentDirTests(unittest.TestCase):
             os.unlink(self.tmp_lnk)
 
     def tearDown(self):
-        os.environ['PWD'] = self.pwd
+        if self.pwd is not None:
+            os.environ['PWD'] = self.pwd
 
 
 class RemoveDirsTests(unittest.TestCase):
