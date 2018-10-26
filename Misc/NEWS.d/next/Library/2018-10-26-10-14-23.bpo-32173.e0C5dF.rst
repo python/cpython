@@ -1,0 +1,3 @@
+Add `lazycache` function to `__all__` in `linecache` module.
+Remove `global` keyword reference and use `clear()` to remove elements in `dict`.
+Small refactoring in `getline` method to remove unnecessary `else` condition.
