@@ -1116,7 +1116,7 @@ subtype_dealloc(PyObject *self)
 
     /* Extract the type; we expect it to be a heap type */
     type = Py_TYPE(self);
-    _PyObject_ASSERT(self, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
+    _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 
     /* Test whether the type has GC exactly once */
 
@@ -2217,7 +2217,7 @@ subtype_getweakref(PyObject *obj, void *context)
     _PyObject_ASSERT(obj, Py_TYPE(obj)->tp_weaklistoffset > 0);
     _PyObject_ASSERT(obj,
                      (Py_TYPE(obj)->tp_weaklistoffset + sizeof(PyObject *)) \
-                     <= (size_t)(Py_TYPE(obj)->tp_basicsize));
+                      <= (size_t)(Py_TYPE(obj)->tp_basicsize));
     weaklistptr = (PyObject **)
         ((char *)obj + Py_TYPE(obj)->tp_weaklistoffset);
     if (*weaklistptr == NULL)
