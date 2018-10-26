@@ -324,12 +324,9 @@ validate_list(PyGC_Head *head, uintptr_t expected_mask)
     PyGC_Head *prev = head;
     PyGC_Head *gc = GC_NEXT(head);
     while (gc != head) {
-        _PyObject_ASSERT(FROM_GC(gc),
-                         GC_NEXT(gc) != NULL);
-        _PyObject_ASSERT(FROM_GC(gc),
-                         GC_PREV(gc) == prev);
-        _PyObject_ASSERT(FROM_GC(gc),
-                         (gc->_gc_prev & PREV_MASK_COLLECTING) == expected_mask);
+        assert(GC_NEXT(gc) != NULL);
+        assert(GC_PREV(gc) == prev);
+        assert((gc->_gc_prev & PREV_MASK_COLLECTING) == expected_mask);
         prev = gc;
         gc = GC_NEXT(gc);
     }
@@ -743,10 +740,9 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
 
             /* Move wr to wrcb_to_call, for the next pass. */
             wrasgc = AS_GC(wr);
-            _PyObject_ASSERT((PyObject *)wr,
-                             /* wrasgc is reachable, but next isn't,
-                                so they can't be the same */
-                             wrasgc != next);
+            assert(wrasgc != next); /* wrasgc is reachable, but
+                                       next isn't, so they can't
+                                       be the same */
             gc_list_move(wrasgc, &wrcb_to_call);
         }
     }
