@@ -248,8 +248,12 @@ and imaginary parts.
    builtin: int
    builtin: float
    builtin: complex
-   operator: +
-   operator: -
+   single: operator; +
+   single: +; unary operator
+   single: +; binary operator
+   single: operator; -
+   single: -; unary operator
+   single: -; binary operator
    operator: *
    operator: /
    operator: //
@@ -2096,8 +2100,7 @@ expression support in the :mod:`re` module).
    single: string; interpolation, printf
    single: printf-style formatting
    single: sprintf-style formatting
-   single: % formatting
-   single: % interpolation
+   single: %; printf-style formatting
 
 .. note::
 
@@ -2125,15 +2128,23 @@ components, which must occur in this order:
 
 #. The ``'%'`` character, which marks the start of the specifier.
 
+.. index::
+   single: (; in printf-style formatting
+   single: ); in printf-style formatting
+
 #. Mapping key (optional), consisting of a parenthesised sequence of characters
    (for example, ``(somename)``).
 
 #. Conversion flags (optional), which affect the result of some conversion
    types.
 
+.. index:: single: *; in printf-style formatting
+
 #. Minimum field width (optional).  If specified as an ``'*'`` (asterisk), the
    actual width is read from the next element of the tuple in *values*, and the
    object to convert comes after the minimum field width and optional precision.
+
+.. index:: single: .; in printf-style formatting
 
 #. Precision (optional), given as a ``'.'`` (dot) followed by the precision.  If
    specified as ``'*'`` (an asterisk), the actual precision is read from the next
@@ -2157,6 +2168,12 @@ In this case no ``*`` specifiers may occur in a format (since they require a
 sequential parameter list).
 
 The conversion flag characters are:
+
+.. index::
+   single: #; in printf-style formatting
+   single: -; in printf-style formatting
+   single: +; in printf-style formatting
+   single: space; in printf-style formatting
 
 +---------+---------------------------------------------------------------------+
 | Flag    | Meaning                                                             |
@@ -3210,18 +3227,17 @@ place, and instead produce new objects.
 ----------------------------------
 
 .. index::
-   single: formatting, bytes (%)
-   single: formatting, bytearray (%)
-   single: interpolation, bytes (%)
-   single: interpolation, bytearray (%)
+   single: formatting; bytes (%)
+   single: formatting; bytearray (%)
+   single: interpolation; bytes (%)
+   single: interpolation; bytearray (%)
    single: bytes; formatting
    single: bytearray; formatting
    single: bytes; interpolation
    single: bytearray; interpolation
    single: printf-style formatting
    single: sprintf-style formatting
-   single: % formatting
-   single: % interpolation
+   single: %; printf-style formatting
 
 .. note::
 
@@ -3247,15 +3263,23 @@ components, which must occur in this order:
 
 #. The ``'%'`` character, which marks the start of the specifier.
 
+.. index::
+   single: (; in printf-style formatting
+   single: ); in printf-style formatting
+
 #. Mapping key (optional), consisting of a parenthesised sequence of characters
    (for example, ``(somename)``).
 
 #. Conversion flags (optional), which affect the result of some conversion
    types.
 
+.. index:: single: *; in printf-style formatting
+
 #. Minimum field width (optional).  If specified as an ``'*'`` (asterisk), the
    actual width is read from the next element of the tuple in *values*, and the
    object to convert comes after the minimum field width and optional precision.
+
+.. index:: single: .; in printf-style formatting
 
 #. Precision (optional), given as a ``'.'`` (dot) followed by the precision.  If
    specified as ``'*'`` (an asterisk), the actual precision is read from the next
@@ -3279,6 +3303,12 @@ In this case no ``*`` specifiers may occur in a format (since they require a
 sequential parameter list).
 
 The conversion flag characters are:
+
+.. index::
+   single: #; in printf-style formatting
+   single: -; in printf-style formatting
+   single: +; in printf-style formatting
+   single: space; in printf-style formatting
 
 +---------+---------------------------------------------------------------------+
 | Flag    | Meaning                                                             |
@@ -4582,6 +4612,7 @@ supports no special operations.  There is exactly one null object, named
 It is written as ``None``.
 
 
+.. index:: single: ...; ellipsis literal
 .. _bltin-ellipsis-object:
 
 The Ellipsis Object

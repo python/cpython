@@ -51,10 +51,11 @@ A small number of constants live in the built-in namespace.  They are:
       See :exc:`NotImplementedError` for details on when to use it.
 
 
+.. index:: single: ...; ellipsis literal
 .. data:: Ellipsis
 
-   The same as ``...``.  Special value used mostly in conjunction with extended
-   slicing syntax for user-defined container data types.
+   The same as the ellipsis literal "``...``".  Special value used mostly in conjunction
+   with extended slicing syntax for user-defined container data types.
 
 
 .. data:: __debug__

@@ -321,6 +321,10 @@ but doctest isn't trying to do an exact emulation of any specific Python shell.
    NO!!!
    >>>
 
+.. index::
+   single: >>>; interpreter prompt
+   single: ...; interpreter prompt
+
 Any expected output must immediately follow the final ``'>>> '`` or ``'... '``
 line containing the code, and the expected output (if any) extends to the next
 ``'>>> '`` or all-whitespace line.
@@ -481,6 +485,8 @@ Some details you should read once, but won't need to remember:
   to test a :exc:`SyntaxError` that omits the traceback header, you will need to
   manually add the traceback header line to your test example.
 
+.. index:: single: ^; caret
+
 * For some :exc:`SyntaxError`\ s, Python displays the character position of the
   syntax error, using a ``^`` marker::
 
@@ -532,6 +538,7 @@ doctest decides whether actual output matches an example's expected output:
    option will probably go away, but not for several years.
 
 
+.. index:: single: <BLANKLINE>
 .. data:: DONT_ACCEPT_BLANKLINE
 
    By default, if an expected output block contains a line containing only the
@@ -551,6 +558,7 @@ doctest decides whether actual output matches an example's expected output:
    your source.
 
 
+.. index:: single: ...; in doctests
 .. data:: ELLIPSIS
 
    When specified, an ellipsis marker (``...``) in the expected output can match
@@ -686,6 +694,10 @@ useful unless you intend to extend :mod:`doctest` internals via subclassing:
       MY_FLAG = register_optionflag('MY_FLAG')
 
 
+.. index::
+   single: #; in doctests
+   single: +; in doctests
+   single: -; in doctests
 .. _doctest-directives:
 
 Directives
