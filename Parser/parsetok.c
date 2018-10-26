@@ -188,8 +188,6 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
     node *n;
     int started = 0;
     int col_offset;
-    int lineno;
-    const char *line_start;
 
     if ((ps = PyParser_New(g, start)) == NULL) {
         err_ret->error = E_NOMEM;
@@ -207,6 +205,8 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         size_t len;
         char *str;
         col_offset = -1;
+        int lineno;
+        const char *line_start;
 
         type = PyTokenizer_Get(tok, &a, &b);
         if (type == ERRORTOKEN) {
