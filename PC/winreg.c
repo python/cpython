@@ -621,16 +621,22 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                 for (j = 0; j < i; j++)
                 {
                     PyObject *t;
-                    wchar_t *wstr;
                     Py_ssize_t len;
 
                     t = PyList_GET_ITEM(value, j);
                     if (!PyUnicode_Check(t))
                         return FALSE;
-                    wstr = PyUnicode_AsUnicodeAndSize(t, &len);
-                    if (wstr == NULL)
+#if USE_UNICODE_WCHAR_CACHE
+                    len = PyUnicode_GetSize(t);
+                    if (len < 0)
                         return FALSE;
-                    size += Py_SAFE_DOWNCAST((len + 1) * sizeof(wchar_t),
+                    len++;
+#else /* USE_UNICODE_WCHAR_CACHE */
+                    len = PyUnicode_AsWideChar(t, NULL, 0);
+                    if (len < 0)
+                        return FALSE;
+#endif /* USE_UNICODE_WCHAR_CACHE */
+                    size += Py_SAFE_DOWNCAST(len * sizeof(wchar_t),
                                              size_t, DWORD);
                 }
 
@@ -646,17 +652,18 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                 for (j = 0; j < i; j++)
                 {
                     PyObject *t;
-                    wchar_t *wstr;
                     Py_ssize_t len;
 
                     t = PyList_GET_ITEM(value, j);
-                    wstr = PyUnicode_AsUnicodeAndSize(t, &len);
-                    assert(wstr);
-                    wcscpy(P, wstr);
-                    P += (len + 1);
+                    assert(size > 0);
+                    len = PyUnicode_AsWideChar(t, P, size);
+                    assert(len >= 0);
+                    assert(len < size);
+                    size -= (DWORD)len + 1;
+                    P += len + 1;
                 }
                 /* And doubly-terminate the list... */
-                *P = '\0';
+                *P = L'\0';
                 break;
             }
         case REG_BINARY:
@@ -1573,12 +1580,12 @@ winreg.SetValue
 
     key: HKEY
         An already open key, or any one of the predefined HKEY_* constants.
-    sub_key: Py_UNICODE(accept={str, NoneType})
+    sub_key as sub_key_obj: object
         A string that names the subkey with which the value is associated.
     type: DWORD
         An integer that specifies the type of the data.  Currently this must
         be REG_SZ, meaning only strings are supported.
-    value: Py_UNICODE(zeroes=True)
+    value as value_obj: unicode
         A string that specifies the new value.
     /
 
@@ -1596,11 +1603,13 @@ KEY_SET_VALUE access.
 [clinic start generated code]*/
 
 static PyObject *
-winreg_SetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
-                     DWORD type, const Py_UNICODE *value,
-                     Py_ssize_clean_t value_length)
-/*[clinic end generated code: output=686bedb1cbb4367b input=2cd2adab79339c53]*/
+winreg_SetValue_impl(PyObject *module, HKEY key, PyObject *sub_key_obj,
+                     DWORD type, PyObject *value_obj)
+/*[clinic end generated code: output=e1c0674b77ba195b input=525af06a623c9ad9]*/
 {
+    wchar_t *sub_key = NULL;
+    wchar_t *value = NULL;
+    Py_ssize_t value_length;
     long rc;
 
     if (type != REG_SZ) {
@@ -1609,9 +1618,41 @@ winreg_SetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
         return NULL;
     }
 
+#if USE_UNICODE_WCHAR_CACHE
+    if (!_PyUnicode_UNICODE_Converter(sub_key_obj, &sub_key)) {
+        return NULL;
+    }
+    value = PyUnicode_AsUnicodeAndSize(value_obj, &value_length);
+    if (value == NULL) {
+        return NULL;
+    }
+#else /* USE_UNICODE_WCHAR_CACHE */
+    if (!_PyUnicode_WideCharString_Converter(sub_key_obj, &sub_key)) {
+        return NULL;
+    }
+    value = PyUnicode_AsWideCharString(value_obj, &value_length);
+#endif /* USE_UNICODE_WCHAR_CACHE */
+    if (value == NULL) {
+#if !USE_UNICODE_WCHAR_CACHE
+        PyMem_Free(sub_key);
+#endif /* USE_UNICODE_WCHAR_CACHE */
+        return NULL;
+    }
+    if ((Py_ssize_t)(DWORD)value_length != value_length) {
+        PyErr_SetString(PyExc_OverflowError, "too long string");
+#if !USE_UNICODE_WCHAR_CACHE
+        PyMem_Free(sub_key);
+#endif /* USE_UNICODE_WCHAR_CACHE */
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
-    rc = RegSetValueW(key, sub_key, REG_SZ, value, value_length+1);
+    rc = RegSetValueW(key, sub_key, REG_SZ, value, (DWORD)value_length+1);
     Py_END_ALLOW_THREADS
+#if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free(value);
+    PyMem_Free(sub_key);
+#endif /* USE_UNICODE_WCHAR_CACHE */
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegSetValue");
     Py_RETURN_NONE;

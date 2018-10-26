@@ -1293,7 +1293,6 @@ static int
 WCharArray_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     Py_ssize_t result = 0;
-    Py_UNICODE *wstr;
     Py_ssize_t len;
 
     if (value == NULL) {
@@ -1309,21 +1308,32 @@ WCharArray_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored
     } else
         Py_INCREF(value);
 
-    wstr = PyUnicode_AsUnicodeAndSize(value, &len);
-    if (wstr == NULL)
+#if USE_UNICODE_WCHAR_CACHE
+    len = PyUnicode_GetSize(value);
+    if (len < 0) {
+        Py_DECREF(value);
         return -1;
+    }
+#else /* USE_UNICODE_WCHAR_CACHE */
+    len = PyUnicode_AsWideChar(value, NULL, 0);
+    if (len < 0) {
+        Py_DECREF(value);
+        return -1;
+    }
+    assert(len > 0);
+    len--;
+#endif /* USE_UNICODE_WCHAR_CACHE */
     if ((size_t)len > self->b_size/sizeof(wchar_t)) {
         PyErr_SetString(PyExc_ValueError,
                         "string too long");
-        result = -1;
-        goto done;
+        Py_DECREF(value);
+        return -1;
     }
     result = PyUnicode_AsWideChar(value,
                                   (wchar_t *)self->b_ptr,
                                   self->b_size/sizeof(wchar_t));
     if (result >= 0 && (size_t)result < self->b_size/sizeof(wchar_t))
         ((wchar_t *)self->b_ptr)[result] = (wchar_t)0;
-  done:
     Py_DECREF(value);
 
     return result >= 0 ? 0 : -1;
@@ -3358,10 +3368,12 @@ _validate_paramflags(PyTypeObject *type, PyObject *paramflags)
     for (i = 0; i < len; ++i) {
         PyObject *item = PyTuple_GET_ITEM(paramflags, i);
         int flag;
-        char *name;
+        PyObject *name = Py_None;
         PyObject *defval;
         PyObject *typ;
-        if (!PyArg_ParseTuple(item, "i|ZO", &flag, &name, &defval)) {
+        if (!PyArg_ParseTuple(item, "i|OO", &flag, &name, &defval) ||
+            !(name == Py_None || PyUnicode_Check(name)))
+        {
             PyErr_SetString(PyExc_TypeError,
                    "paramflags must be a sequence of (int [,string [,value]]) tuples");
             return 0;

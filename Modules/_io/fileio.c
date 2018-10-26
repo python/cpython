@@ -275,7 +275,11 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         if (!PyUnicode_FSDecoder(nameobj, &stringobj)) {
             return -1;
         }
+#if USE_UNICODE_WCHAR_CACHE
         widename = PyUnicode_AsUnicode(stringobj);
+#else /* USE_UNICODE_WCHAR_CACHE */
+        widename = PyUnicode_AsWideCharString(stringobj, NULL);
+#endif /* USE_UNICODE_WCHAR_CACHE */
         if (widename == NULL)
             return -1;
 #else
@@ -492,6 +496,11 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         internal_close(self);
 
  done:
+#ifdef MS_WINDOWS
+#if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free(widename);
+#endif /* USE_UNICODE_WCHAR_CACHE */
+#endif
     Py_CLEAR(stringobj);
     return ret;
 }

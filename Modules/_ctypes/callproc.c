@@ -1274,7 +1274,6 @@ The handle may be used to locate exported functions in this\n\
 module.\n";
 static PyObject *load_library(PyObject *self, PyObject *args)
 {
-    const WCHAR *name;
     PyObject *nameobj;
     PyObject *ignored;
     HMODULE hMod;
@@ -1282,7 +1281,11 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "U|O:LoadLibrary", &nameobj, &ignored))
         return NULL;
 
-    name = _PyUnicode_AsUnicode(nameobj);
+#if USE_UNICODE_WCHAR_CACHE
+    const WCHAR *name = _PyUnicode_AsUnicode(nameobj);
+#else /* USE_UNICODE_WCHAR_CACHE */
+    WCHAR *name = PyUnicode_AsWideCharString(nameobj, NULL);
+#endif /* USE_UNICODE_WCHAR_CACHE */
     if (!name)
         return NULL;
 
@@ -1290,6 +1293,9 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     hMod = LoadLibraryW(name);
     Py_END_ALLOW_THREADS
 
+#if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free(name);
+#endif /* USE_UNICODE_WCHAR_CACHE */
     if (!hMod)
         return PyErr_SetFromWindowsErr(GetLastError());
 #ifdef _WIN64

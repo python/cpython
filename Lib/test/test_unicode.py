@@ -2832,6 +2832,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, unicode_copycharacters, s, 0, b'', 0, 0)
 
     @support.cpython_only
+    @support.requires_legacy_unicode_capi
     def test_encode_decimal(self):
         from _testcapi import unicode_encodedecimal
         self.assertEqual(unicode_encodedecimal('123'),
@@ -2848,6 +2849,7 @@ class CAPITest(unittest.TestCase):
             unicode_encodedecimal, "123\u20ac", "replace")
 
     @support.cpython_only
+    @support.requires_legacy_unicode_capi
     def test_transform_decimal(self):
         from _testcapi import unicode_transformdecimaltoascii as transform_decimal
         self.assertEqual(transform_decimal('123'),

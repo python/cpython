@@ -1229,7 +1229,6 @@ U_get(void *ptr, Py_ssize_t size)
 static PyObject *
 U_set(void *ptr, PyObject *value, Py_ssize_t length)
 {
-    Py_UNICODE *wstr;
     Py_ssize_t size;
 
     /* It's easier to calculate in characters than in bytes */
@@ -1242,19 +1241,23 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
         return NULL;
     }
 
-    wstr = PyUnicode_AsUnicodeAndSize(value, &size);
-    if (wstr == NULL)
+#if USE_UNICODE_WCHAR_CACHE
+    size = PyUnicode_GetSize(value);
+    if (size < 0)
         return NULL;
+#else /* USE_UNICODE_WCHAR_CACHE */
+    size = PyUnicode_AsWideChar(value, NULL, 0);
+    if (size < 0)
+        return NULL;
+    size--;
+#endif /* USE_UNICODE_WCHAR_CACHE */
     if (size > length) {
         PyErr_Format(PyExc_ValueError,
                      "string too long (%zd, maximum length %zd)",
                      size, length);
         return NULL;
-    } else if (size < length-1)
-        /* copy terminating NUL character if there is space */
-        size += 1;
-
-    if (PyUnicode_AsWideChar(value, (wchar_t *)ptr, size) == -1) {
+    }
+    if (PyUnicode_AsWideChar(value, (wchar_t *)ptr, length) == -1) {
         return NULL;
     }
 
@@ -1423,7 +1426,11 @@ BSTR_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (value) {
         wchar_t* wvalue;
         Py_ssize_t wsize;
+#if USE_UNICODE_WCHAR_CACHE
         wvalue = PyUnicode_AsUnicodeAndSize(value, &wsize);
+#else /* USE_UNICODE_WCHAR_CACHE */
+        wvalue = PyUnicode_AsWideCharString(value, &wsize);
+#endif /* USE_UNICODE_WCHAR_CACHE */
         if (wvalue == NULL)
             return NULL;
         if ((unsigned) wsize != wsize) {
@@ -1431,6 +1438,9 @@ BSTR_set(void *ptr, PyObject *value, Py_ssize_t size)
             return NULL;
         }
         bstr = SysAllocStringLen(wvalue, (unsigned)wsize);
+#if !USE_UNICODE_WCHAR_CACHE
+        PyMem_Free(wvalue);
+#endif /* USE_UNICODE_WCHAR_CACHE */
     } else
         bstr = NULL;
 

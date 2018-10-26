@@ -33,9 +33,10 @@ import unittest
 import numbers
 import locale
 from test.support import (run_unittest, run_doctest, is_resource_enabled,
-                          requires_IEEE_754, requires_docstrings)
+                          requires_IEEE_754, requires_docstrings,
+                          requires_legacy_unicode_capi)
 from test.support import (import_fresh_module, TestFailed,
-                          run_with_locale, cpython_only)
+                          run_with_locale, cpython_only, get_attribute)
 import random
 import inspect
 import threading
@@ -581,6 +582,7 @@ class ExplicitConstructionTest(unittest.TestCase):
             self.assertRaises(InvalidOperation, Decimal, "1_2_\u00003")
 
     @cpython_only
+    @requires_legacy_unicode_capi
     def test_from_legacy_strings(self):
         import _testcapi
         Decimal = self.decimal.Decimal
@@ -2816,6 +2818,7 @@ class ContextAPItests(unittest.TestCase):
                                               Overflow])
 
     @cpython_only
+    @requires_legacy_unicode_capi
     def test_from_legacy_strings(self):
         import _testcapi
         c = self.decimal.Context()

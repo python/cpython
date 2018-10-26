@@ -421,10 +421,20 @@ record_setstring(msiobj* record, PyObject *args)
 {
     int status;
     int field;
+    PyObject *data_obj;
     wchar_t *data;
 
-    if (!PyArg_ParseTuple(args, "iu:SetString", &field, &data))
+    if (!PyArg_ParseTuple(args, "iU:SetString", &field, &data_obj))
         return NULL;
+
+#if USE_UNICODE_WCHAR_CACHE
+    data = (wchar_t *)_PyUnicode_AsUnicode(data_obj);
+#else /* USE_UNICODE_WCHAR_CACHE */
+    data = PyUnicode_AsWideCharString(data_obj, NULL);
+#endif /* USE_UNICODE_WCHAR_CACHE */
+    if (data == NULL) {
+        return NULL;
+    }
 
     if ((status = MsiRecordSetStringW(record->h, field, data)) != ERROR_SUCCESS)
         return msierror(status);
@@ -622,12 +632,19 @@ summary_setproperty(msiobj* si, PyObject *args)
         return NULL;
 
     if (PyUnicode_Check(data)) {
+#if USE_UNICODE_WCHAR_CACHE
         const WCHAR *value = _PyUnicode_AsUnicode(data);
+#else /* USE_UNICODE_WCHAR_CACHE */
+        WCHAR *value = PyUnicode_AsWideCharString(data, NULL);
+#endif /* USE_UNICODE_WCHAR_CACHE */
         if (value == NULL) {
             return NULL;
         }
         status = MsiSummaryInfoSetPropertyW(si->h, field, VT_LPSTR,
             0, NULL, value);
+#if !USE_UNICODE_WCHAR_CACHE
+        PyMem_Free(value);
+#endif /* USE_UNICODE_WCHAR_CACHE */
     } else if (PyLong_CheckExact(data)) {
         long value = PyLong_AsLong(data);
         if (value == -1 && PyErr_Occurred()) {

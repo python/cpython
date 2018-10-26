@@ -68,6 +68,11 @@ try:
 except ImportError:
     resource = None
 
+try:
+    from _testcapi import unicode_legacy_string
+except ImportError:
+    unicode_legacy_string = None
+
 __all__ = [
     # globals
     "PIPE_MAX_SIZE", "verbose", "max_memuse", "use_resources", "failfast",
@@ -813,6 +818,9 @@ requires_gzip = unittest.skipUnless(gzip, 'requires gzip')
 requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
 
 requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
+
+requires_legacy_unicode_capi = unittest.skipUnless(unicode_legacy_string,
+                        'requires legacy Unicode C API')
 
 is_jython = sys.platform.startswith('java')
 

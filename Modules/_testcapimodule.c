@@ -1410,6 +1410,7 @@ getargs_y_hash(PyObject *self, PyObject *args)
     return PyBytes_FromStringAndSize(str, size);
 }
 
+//#if USE_UNICODE_WCHAR_CACHE
 static PyObject *
 getargs_u(PyObject *self, PyObject *args)
 {
@@ -1453,6 +1454,7 @@ getargs_Z_hash(PyObject *self, PyObject *args)
     else
         Py_RETURN_NONE;
 }
+// #endif /* USE_UNICODE_WCHAR_CACHE */
 
 static PyObject *
 getargs_es(PyObject *self, PyObject *args)
@@ -1637,6 +1639,7 @@ exit:
 
 static volatile int x;
 
+#if USE_UNICODE_WCHAR_CACHE
 /* Test the u and u# codes for PyArg_ParseTuple. May leak memory in case
    of an error.
 */
@@ -1737,6 +1740,7 @@ test_Z_code(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_DECREF(tuple);
     Py_RETURN_NONE;
 }
+#endif /* USE_UNICODE_WCHAR_CACHE */
 
 static PyObject *
 test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -1796,6 +1800,7 @@ test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
         return raiseTestError("test_widechar",
                               "PyUnicode_FromUnicode(L\"\\U00110000\", 1) didn't fail");
 
+#if USE_UNICODE_WCHAR_CACHE
     wide = PyUnicode_FromUnicode(NULL, 1);
     if (wide == NULL)
         return NULL;
@@ -1809,6 +1814,7 @@ test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
         return raiseTestError("test_widechar",
                               "PyUnicode_Ready() didn't fail");
     }
+#endif /* USE_UNICODE_WCHAR_CACHE */
 #endif
 
     Py_RETURN_NONE;
@@ -1946,6 +1952,7 @@ unicode_copycharacters(PyObject *self, PyObject *args)
     return Py_BuildValue("(Nn)", to_copy, copied);
 }
 
+#if USE_UNICODE_WCHAR_CACHE
 static PyObject *
 unicode_encodedecimal(PyObject *self, PyObject *args)
 {
@@ -2013,6 +2020,7 @@ unicode_legacy_string(PyObject *self, PyObject *args)
 
     return u;
 }
+#endif /* USE_UNICODE_WCHAR_CACHE */
 
 static PyObject *
 getargs_w_star(PyObject *self, PyObject *args)
@@ -4809,10 +4817,12 @@ static PyMethodDef TestMethods[] = {
     {"getargs_y",               getargs_y,                       METH_VARARGS},
     {"getargs_y_star",          getargs_y_star,                  METH_VARARGS},
     {"getargs_y_hash",          getargs_y_hash,                  METH_VARARGS},
+// #if USE_UNICODE_WCHAR_CACHE
     {"getargs_u",               getargs_u,                       METH_VARARGS},
     {"getargs_u_hash",          getargs_u_hash,                  METH_VARARGS},
     {"getargs_Z",               getargs_Z,                       METH_VARARGS},
     {"getargs_Z_hash",          getargs_Z_hash,                  METH_VARARGS},
+// #endif /* USE_UNICODE_WCHAR_CACHE */
     {"getargs_w_star",          getargs_w_star,                  METH_VARARGS},
     {"getargs_es",              getargs_es,                      METH_VARARGS},
     {"getargs_et",              getargs_et,                      METH_VARARGS},
@@ -4823,17 +4833,23 @@ static PyMethodDef TestMethods[] = {
     {"codec_incrementaldecoder",
      (PyCFunction)codec_incrementaldecoder,                      METH_VARARGS},
     {"test_s_code",             test_s_code,                     METH_NOARGS},
+#if USE_UNICODE_WCHAR_CACHE
     {"test_u_code",             test_u_code,                     METH_NOARGS},
     {"test_Z_code",             test_Z_code,                     METH_NOARGS},
+#endif /* USE_UNICODE_WCHAR_CACHE */
     {"test_widechar",           test_widechar,                   METH_NOARGS},
     {"unicode_aswidechar",      unicode_aswidechar,              METH_VARARGS},
     {"unicode_aswidecharstring",unicode_aswidecharstring,        METH_VARARGS},
     {"unicode_asucs4",          unicode_asucs4,                  METH_VARARGS},
     {"unicode_findchar",        unicode_findchar,                METH_VARARGS},
     {"unicode_copycharacters",  unicode_copycharacters,          METH_VARARGS},
+#if USE_UNICODE_WCHAR_CACHE
     {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},
     {"unicode_transformdecimaltoascii", unicode_transformdecimaltoascii, METH_VARARGS},
+#endif /* USE_UNICODE_WCHAR_CACHE */
+#if USE_UNICODE_WCHAR_CACHE
     {"unicode_legacy_string",   unicode_legacy_string,           METH_VARARGS},
+#endif /* USE_UNICODE_WCHAR_CACHE */
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
     {"_pending_threadfunc",     pending_threadfunc,              METH_VARARGS},
 #ifdef HAVE_GETTIMEOFDAY

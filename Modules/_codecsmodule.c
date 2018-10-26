@@ -704,13 +704,13 @@ _codecs_unicode_internal_encode_impl(PyObject *module, PyObject *obj,
         return NULL;
 
     if (PyUnicode_Check(obj)) {
-        Py_UNICODE *u;
         Py_ssize_t len, size;
 
         if (PyUnicode_READY(obj) < 0)
             return NULL;
 
-        u = PyUnicode_AsUnicodeAndSize(obj, &len);
+#if USE_UNICODE_WCHAR_CACHE
+        Py_UNICODE *u = PyUnicode_AsUnicodeAndSize(obj, &len);
         if (u == NULL)
             return NULL;
         if ((size_t)len > (size_t)PY_SSIZE_T_MAX / sizeof(Py_UNICODE))
@@ -718,6 +718,24 @@ _codecs_unicode_internal_encode_impl(PyObject *module, PyObject *obj,
         size = len * sizeof(Py_UNICODE);
         return codec_tuple(PyBytes_FromStringAndSize((const char*)u, size),
                            PyUnicode_GET_LENGTH(obj));
+#else /* USE_UNICODE_WCHAR_CACHE */
+        len = PyUnicode_AsWideChar(obj, NULL, 0);
+        if (len < 0) {
+            return NULL;
+        }
+        assert(len > 0);
+        len--;
+        if ((size_t)len > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
+            return PyErr_NoMemory();
+        }
+        size = len * sizeof(wchar_t);
+        PyObject *bytes = PyBytes_FromStringAndSize(NULL, size);
+        if (bytes == NULL) {
+            return NULL;
+        }
+        PyUnicode_AsWideChar(obj, (wchar_t *)PyBytes_AS_STRING(bytes), len);
+        return codec_tuple(bytes, PyUnicode_GET_LENGTH(obj));
+#endif /* USE_UNICODE_WCHAR_CACHE */
     }
     else {
         Py_buffer view;

@@ -15,6 +15,9 @@ typedef wchar_t Py_UNICODE /* Py_DEPRECATED(3.3) */;
 
 /* --- Internal Unicode Operations ---------------------------------------- */
 
+#define HAVE_UNICODE_WCHAR_CACHE 1
+#define USE_UNICODE_WCHAR_CACHE 1
+
 /* Since splitting on whitespace is an important use case, and
    whitespace in most situations is solely ASCII whitespace, we
    optimize for the common case by using a quick look-up table
@@ -71,6 +74,7 @@ typedef wchar_t Py_UNICODE /* Py_DEPRECATED(3.3) */;
 /* low surrogate = bottom 10 bits added to DC00 */
 #define Py_UNICODE_LOW_SURROGATE(ch) (0xDC00 + ((ch) & 0x3FF))
 
+#if HAVE_UNICODE_WCHAR_CACHE
 /* Check if substring matches at given offset.  The offset must be
    valid, and the substring must not be empty. */
 
@@ -78,6 +82,7 @@ typedef wchar_t Py_UNICODE /* Py_DEPRECATED(3.3) */;
     ((*((string)->wstr + (offset)) == *((substring)->wstr)) && \
      ((*((string)->wstr + (offset) + (substring)->wstr_length-1) == *((substring)->wstr + (substring)->wstr_length-1))) && \
      !memcmp((string)->wstr + (offset), (substring)->wstr, (substring)->wstr_length*sizeof(Py_UNICODE)))
+#endif /* HAVE_UNICODE_WCHAR_CACHE */
 
 /* --- Unicode Type ------------------------------------------------------- */
 
@@ -218,7 +223,9 @@ typedef struct {
            4 bytes (see issue #19537 on m68k). */
         unsigned int :24;
     } state;
+#if HAVE_UNICODE_WCHAR_CACHE
     wchar_t *wstr;              /* wchar_t representation (null-terminated) */
+#endif /* HAVE_UNICODE_WCHAR_CACHE */
 } PyASCIIObject;
 
 /* Non-ASCII strings allocated through PyUnicode_New use the
@@ -229,8 +236,10 @@ typedef struct {
     Py_ssize_t utf8_length;     /* Number of bytes in utf8, excluding the
                                  * terminating \0. */
     char *utf8;                 /* UTF-8 representation (null-terminated) */
+#if HAVE_UNICODE_WCHAR_CACHE
     Py_ssize_t wstr_length;     /* Number of code points in wstr, possible
                                  * surrogates count as two code points. */
+#endif /* HAVE_UNICODE_WCHAR_CACHE */
 } PyCompactUnicodeObject;
 
 /* Strings allocated through PyUnicode_FromUnicode(NULL, len) use the
@@ -247,6 +256,8 @@ typedef struct {
 } PyUnicodeObject;
 
 /* Fast access macros */
+#if HAVE_UNICODE_WCHAR_CACHE
+
 #define PyUnicode_WSTR_LENGTH(op) \
     (PyUnicode_IS_COMPACT_ASCII(op) ?                  \
      ((PyASCIIObject*)op)->length :                    \
@@ -285,6 +296,7 @@ typedef struct {
     ((const char *)(PyUnicode_AS_UNICODE(op)))
     /* Py_DEPRECATED(3.3) */
 
+#endif /* HAVE_UNICODE_WCHAR_CACHE */
 
 /* --- Flexible String Representation Helper Macros (PEP 393) -------------- */
 
@@ -1239,6 +1251,9 @@ PyAPI_FUNC(void) _PyUnicode_ClearStaticStrings(void);
 /* Fast equality check when the inputs are known to be exact unicode types
    and where the hash values are equal (i.e. a very probable match) */
 PyAPI_FUNC(int) _PyUnicode_EQ(PyObject *, PyObject *);
+
+PyAPI_FUNC(int) _PyUnicode_WideCharString_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyUnicode_WideCharString_Opt_Converter(PyObject *, void *);
 
 #ifdef __cplusplus
 }
