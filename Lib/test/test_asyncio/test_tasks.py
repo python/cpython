@@ -440,8 +440,8 @@ class BaseTaskTests:
 
         coro_repr = repr(task._coro)
         expected = (
-            r'<CoroWrapper \w+.test_task_repr_partial_corowrapper'
-            r'\.<locals>\.func\(1\)\(\) running, '
+            r'<coroutine object \w+\.test_task_repr_partial_corowrapper'
+            r'\.<locals>\.func at'
         )
         self.assertRegex(coro_repr, expected)
 
