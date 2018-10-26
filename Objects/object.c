@@ -205,13 +205,9 @@ void dec_count(PyTypeObject *tp)
 void
 _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
 {
-    char buf[300];
-
-    PyOS_snprintf(buf, sizeof(buf),
-                  "%s:%i object at %p has negative ref count "
-                  "%" PY_FORMAT_SIZE_T "d",
-                  filename, lineno, op, op->ob_refcnt);
-    Py_FatalError(buf);
+    _PyObject_AssertFailed(op, "object has negative ref count",
+                           "op->ob_refcnt >= 0",
+                           filename, lineno, __func__);
 }
 
 #endif /* Py_REF_DEBUG */
@@ -356,13 +352,14 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
         Py_END_ALLOW_THREADS
     }
     else {
-        if (op->ob_refcnt <= 0)
+        if (op->ob_refcnt <= 0) {
             /* XXX(twouters) cast refcount to long until %zd is
                universally available */
             Py_BEGIN_ALLOW_THREADS
             fprintf(fp, "<refcnt %ld at %p>",
                 (long)op->ob_refcnt, op);
             Py_END_ALLOW_THREADS
+        }
         else {
             PyObject *s;
             if (flags & Py_PRINT_RAW)
