@@ -177,9 +177,8 @@ internal_close(winconsoleio *self)
                 _Py_BEGIN_SUPPRESS_IPH
                 close(self->fd);
                 _Py_END_SUPPRESS_IPH
-            } else {
-                CloseHandle(self->handle);
             }
+            CloseHandle(self->handle);
         }
         self->handle = INVALID_HANDLE_VALUE;
         self->fd = -1;
