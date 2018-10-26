@@ -28,6 +28,7 @@ import unittest
 import uuid
 import warnings
 from test import support
+from unittest import mock
 
 try:
     import resource
@@ -1255,7 +1256,6 @@ class ChownFileTests(unittest.TestCase):
 class CurrentDirTests(unittest.TestCase):
 
     def setUp(self):
-        self.pwd = os.environ.get('PWD')
         base = os.path.abspath(support.TESTFN)
         self.tmp_dir = base + '_dir'
         self.tmp_lnk = base + '_lnk'
@@ -1268,10 +1268,10 @@ class CurrentDirTests(unittest.TestCase):
             os.symlink(self.tmp_dir, self.tmp_lnk, True)
             os.chdir(self.tmp_lnk)
             self.assertEqual(self.tmp_dir, os.getcwd())
-            os.environ['PWD'] = self.tmp_dir
-            self.assertEqual(self.tmp_dir, os.getcwd())
-            os.environ['PWD'] = self.tmp_lnk
-            self.assertEqual(self.tmp_dir, os.getcwd())
+            with mock.patch.dict('os.environ', {'PWD': self.tmp_dir}):
+                self.assertEqual(self.tmp_dir, os.getcwd())
+            with mock.patch.dict('os.environ', {'PWD': self.tmp_lnk}):
+                self.assertEqual(self.tmp_dir, os.getcwd())
             os.unlink(self.tmp_lnk)
 
     def test_get_current_dir_name(self):
@@ -1279,20 +1279,15 @@ class CurrentDirTests(unittest.TestCase):
         # the PWD environment variable if it exists regardless of
         # whether the path contains symlinks.
         with support.temp_cwd(self.tmp_dir):
-            os.environ['PWD'] = self.tmp_dir
-            self.assertEqual(self.tmp_dir, os.get_current_dir_name())
-            os.symlink(self.tmp_dir, self.tmp_lnk, True)
-            if os.name == 'posix':
-                os.environ['PWD'] = self.tmp_lnk
-                self.assertEqual(self.tmp_lnk, os.get_current_dir_name())
-            else:
-                os.environ['PWD'] = self.tmp_lnk
+            with mock.patch.dict('os.environ', {'PWD': self.tmp_dir}):
                 self.assertEqual(self.tmp_dir, os.get_current_dir_name())
+            os.symlink(self.tmp_dir, self.tmp_lnk, True)
+            with mock.patch.dict('os.environ', {'PWD': self.tmp_lnk}):
+                if os.name == 'posix':
+                    self.assertEqual(self.tmp_lnk, os.get_current_dir_name())
+                else:
+                    self.assertEqual(self.tmp_dir, os.get_current_dir_name())
             os.unlink(self.tmp_lnk)
-
-    def tearDown(self):
-        if self.pwd is not None:
-            os.environ['PWD'] = self.pwd
 
 
 class RemoveDirsTests(unittest.TestCase):
