@@ -13977,7 +13977,7 @@ unicode_subscript(PyObject* self, PyObject* item)
         assert(_PyUnicode_CheckConsistency(result, 1));
         return result;
     } else {
-        PyErr_SetString(PyExc_TypeError, "indices of string must be integers");
+        PyErr_SetString(PyExc_TypeError, "indices of strings must be integers");
         return NULL;
     }
 }
