@@ -2,7 +2,7 @@
 ========================================
 
 .. module:: typing
-   :synopsis: Support for type hints (see PEP 484).
+   :synopsis: Support for type hints (see :pep:`484`).
 
 .. versionadded:: 3.5
 
