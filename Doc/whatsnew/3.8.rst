@@ -295,10 +295,9 @@ Deprecated
   versions. :class:`~ast.Constant` should be used instead.
   (Contributed by Serhiy Storchaka in :issue:`32892`.)
 
-* The following functions are deprecated: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
-  :func:`~gettext.lngettext` and :func:`~gettext.ldngettext` in the
-  :mod:`gettext` module and corresponding methods of the
-  :class:`~gettext.NullTranslations` and :class:`~GNUTranslations` classes.
+* The following functions and methods are deprecated in the :mod:`gettext`
+  module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
+  :func:`~gettext.lngettext` and :func:`~gettext.ldngettext`.
   They return encoded bytes, and it's possible that you will get unexpected
   Unicode-related exceptions if there are encoding problems with the
   translated strings. It's much better to use alternatives which return
@@ -309,7 +308,7 @@ Deprecated
   :meth:`~gettext.NullTranslations.set_output_charset`, and the *codeset*
   parameter of functions :func:`~gettext.translation` and
   :func:`~gettext.install` are also deprecated, since they are only used for
-  for ``l*gettext()`` functions.
+  for the ``l*gettext()`` functions.
 
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
