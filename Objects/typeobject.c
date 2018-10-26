@@ -134,7 +134,7 @@ skip_signature(const char *doc)
 static int
 _PyType_CheckConsistency(PyTypeObject *type)
 {
-#define ASSERT(expr) _PyObject_ASSERT((PyObject *)type, expr)
+#define ASSERT(expr) _PyObject_ASSERT((PyObject *)type, (expr))
 
     if (!(type->tp_flags & Py_TPFLAGS_READY)) {
         /* don't check types before PyType_Ready() */

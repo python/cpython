@@ -363,7 +363,8 @@ PyUnicode_GetMax(void)
 int
 _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 {
-#define ASSERT(expr) _PyObject_ASSERT(op, expr)
+#define ASSERT(expr) _PyObject_ASSERT(op, (expr))
+
     PyASCIIObject *ascii;
     unsigned int kind;
 

@@ -439,7 +439,7 @@ static PyObject *empty_values[1] = { NULL };
 static int
 _PyDict_CheckConsistency(PyDictObject *mp)
 {
-#define ASSERT(expr) _PyObject_ASSERT((PyObject *)mp, expr)
+#define ASSERT(expr) _PyObject_ASSERT((PyObject *)mp, (expr))
 
     PyDictKeysObject *keys = mp->ma_keys;
     int splitted = _PyDict_HasSplitTable(mp);
