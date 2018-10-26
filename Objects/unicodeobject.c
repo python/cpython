@@ -363,17 +363,19 @@ PyUnicode_GetMax(void)
 int
 _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 {
+#define ASSERT(expr) _PyObject_ASSERT(op, (expr))
+
     PyASCIIObject *ascii;
     unsigned int kind;
 
-    assert(PyUnicode_Check(op));
+    ASSERT(PyUnicode_Check(op));
 
     ascii = (PyASCIIObject *)op;
     kind = ascii->state.kind;
 
     if (ascii->state.ascii == 1 && ascii->state.compact == 1) {
-        assert(kind == PyUnicode_1BYTE_KIND);
-        assert(ascii->state.ready == 1);
+        ASSERT(kind == PyUnicode_1BYTE_KIND);
+        ASSERT(ascii->state.ready == 1);
     }
     else {
         PyCompactUnicodeObject *compact = (PyCompactUnicodeObject *)op;
@@ -381,41 +383,41 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 
         if (ascii->state.compact == 1) {
             data = compact + 1;
-            assert(kind == PyUnicode_1BYTE_KIND
+            ASSERT(kind == PyUnicode_1BYTE_KIND
                    || kind == PyUnicode_2BYTE_KIND
                    || kind == PyUnicode_4BYTE_KIND);
-            assert(ascii->state.ascii == 0);
-            assert(ascii->state.ready == 1);
-            assert (compact->utf8 != data);
+            ASSERT(ascii->state.ascii == 0);
+            ASSERT(ascii->state.ready == 1);
+            ASSERT (compact->utf8 != data);
         }
         else {
             PyUnicodeObject *unicode = (PyUnicodeObject *)op;
 
             data = unicode->data.any;
             if (kind == PyUnicode_WCHAR_KIND) {
-                assert(ascii->length == 0);
-                assert(ascii->hash == -1);
-                assert(ascii->state.compact == 0);
-                assert(ascii->state.ascii == 0);
-                assert(ascii->state.ready == 0);
-                assert(ascii->state.interned == SSTATE_NOT_INTERNED);
-                assert(ascii->wstr != NULL);
-                assert(data == NULL);
-                assert(compact->utf8 == NULL);
+                ASSERT(ascii->length == 0);
+                ASSERT(ascii->hash == -1);
+                ASSERT(ascii->state.compact == 0);
+                ASSERT(ascii->state.ascii == 0);
+                ASSERT(ascii->state.ready == 0);
+                ASSERT(ascii->state.interned == SSTATE_NOT_INTERNED);
+                ASSERT(ascii->wstr != NULL);
+                ASSERT(data == NULL);
+                ASSERT(compact->utf8 == NULL);
             }
             else {
-                assert(kind == PyUnicode_1BYTE_KIND
+                ASSERT(kind == PyUnicode_1BYTE_KIND
                        || kind == PyUnicode_2BYTE_KIND
                        || kind == PyUnicode_4BYTE_KIND);
-                assert(ascii->state.compact == 0);
-                assert(ascii->state.ready == 1);
-                assert(data != NULL);
+                ASSERT(ascii->state.compact == 0);
+                ASSERT(ascii->state.ready == 1);
+                ASSERT(data != NULL);
                 if (ascii->state.ascii) {
-                    assert (compact->utf8 == data);
-                    assert (compact->utf8_length == ascii->length);
+                    ASSERT (compact->utf8 == data);
+                    ASSERT (compact->utf8_length == ascii->length);
                 }
                 else
-                    assert (compact->utf8 != data);
+                    ASSERT (compact->utf8 != data);
             }
         }
         if (kind != PyUnicode_WCHAR_KIND) {
@@ -427,16 +429,16 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 #endif
                )
             {
-                assert(ascii->wstr == data);
-                assert(compact->wstr_length == ascii->length);
+                ASSERT(ascii->wstr == data);
+                ASSERT(compact->wstr_length == ascii->length);
             } else
-                assert(ascii->wstr != data);
+                ASSERT(ascii->wstr != data);
         }
 
         if (compact->utf8 == NULL)
-            assert(compact->utf8_length == 0);
+            ASSERT(compact->utf8_length == 0);
         if (ascii->wstr == NULL)
-            assert(compact->wstr_length == 0);
+            ASSERT(compact->wstr_length == 0);
     }
     /* check that the best kind is used */
     if (check_content && kind != PyUnicode_WCHAR_KIND)
@@ -455,23 +457,25 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
         }
         if (kind == PyUnicode_1BYTE_KIND) {
             if (ascii->state.ascii == 0) {
-                assert(maxchar >= 128);
-                assert(maxchar <= 255);
+                ASSERT(maxchar >= 128);
+                ASSERT(maxchar <= 255);
             }
             else
-                assert(maxchar < 128);
+                ASSERT(maxchar < 128);
         }
         else if (kind == PyUnicode_2BYTE_KIND) {
-            assert(maxchar >= 0x100);
-            assert(maxchar <= 0xFFFF);
+            ASSERT(maxchar >= 0x100);
+            ASSERT(maxchar <= 0xFFFF);
         }
         else {
-            assert(maxchar >= 0x10000);
-            assert(maxchar <= MAX_UNICODE);
+            ASSERT(maxchar >= 0x10000);
+            ASSERT(maxchar <= MAX_UNICODE);
         }
-        assert(PyUnicode_READ(kind, data, ascii->length) == 0);
+        ASSERT(PyUnicode_READ(kind, data, ascii->length) == 0);
     }
     return 1;
+
+#undef ASSERT
 }
 #endif
 

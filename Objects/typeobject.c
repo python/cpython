@@ -134,15 +134,19 @@ skip_signature(const char *doc)
 static int
 _PyType_CheckConsistency(PyTypeObject *type)
 {
+#define ASSERT(expr) _PyObject_ASSERT((PyObject *)type, (expr))
+
     if (!(type->tp_flags & Py_TPFLAGS_READY)) {
         /* don't check types before PyType_Ready() */
         return 1;
     }
 
-    assert(!(type->tp_flags & Py_TPFLAGS_READYING));
-    assert(type->tp_mro != NULL && PyTuple_Check(type->tp_mro));
-    assert(type->tp_dict != NULL);
+    ASSERT(!(type->tp_flags & Py_TPFLAGS_READYING));
+    ASSERT(type->tp_mro != NULL && PyTuple_Check(type->tp_mro));
+    ASSERT(type->tp_dict != NULL);
     return 1;
+
+#undef ASSERT
 }
 #endif
 
