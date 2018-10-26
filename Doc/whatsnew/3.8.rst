@@ -302,7 +302,7 @@ Deprecated
   They return encoded bytes, and it's possible that you will get unexpected
   Unicode-related exceptions if there are encoding problems with the
   translated strings. It's much better to use alternatives which return
-  Unicode strings in Python 3.  Further, they were broken for long time.
+  Unicode strings in Python 3. These functions have been broken for a long time.
 
   Function :func:`~gettext.bind_textdomain_codeset`, methods
   :meth:`~gettext.NullTranslations.output_charset` and
