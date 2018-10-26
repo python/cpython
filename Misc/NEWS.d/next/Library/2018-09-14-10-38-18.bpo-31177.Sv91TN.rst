@@ -1,1 +1,1 @@
-Skip deleted attributes while calling :meth:`mock.reset_mock`.
+Fix bug that prevented using :meth:`mock.reset_mock` on mock instances with deleted attributes

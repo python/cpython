@@ -1566,20 +1566,11 @@ class MockTest(unittest.TestCase):
             self.assertRaises(AttributeError, getattr, mock, 'f')
 
 
-    def test_attribute_deletion_reset_mock(self):
+    def test_reset_mock_does_not_raise_on_attr_deletion(self):
         mock = Mock()
-        mock.something.return_value = 3
-
-        self.assertEqual(mock.something(), 3)
-        self.assertTrue(mock.something.called)
-        self.assertTrue(hasattr(mock, 'm'))
-
-        del mock.m
-        self.assertFalse(hasattr(mock, 'm'))
-
+        mock.child = True
+        del mock.child
         mock.reset_mock()
-        self.assertFalse(hasattr(mock, 'm'))
-        self.assertFalse(mock.something.called)
 
 
     def test_class_assignable(self):
