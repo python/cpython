@@ -366,7 +366,7 @@ update_refs(PyGC_Head *containers)
          * so serious that maybe this should be a release-build
          * check instead of an assert?
          */
-        assert(gc_get_refs(gc) != 0);
+        _PyObject_ASSERT(FROM_GC(gc), gc_get_refs(gc) != 0);
     }
 }
 
@@ -432,8 +432,10 @@ visit_reachable(PyObject *op, PyGC_Head *reachable)
         // Manually unlink gc from unreachable list because
         PyGC_Head *prev = GC_PREV(gc);
         PyGC_Head *next = (PyGC_Head*)(gc->_gc_next & ~NEXT_MASK_UNREACHABLE);
-        assert(prev->_gc_next & NEXT_MASK_UNREACHABLE);
-        assert(next->_gc_next & NEXT_MASK_UNREACHABLE);
+        _PyObject_ASSERT(FROM_GC(prev),
+                         prev->_gc_next & NEXT_MASK_UNREACHABLE);
+        _PyObject_ASSERT(FROM_GC(next),
+                         next->_gc_next & NEXT_MASK_UNREACHABLE);
         prev->_gc_next = gc->_gc_next;  // copy NEXT_MASK_UNREACHABLE
         _PyGCHead_SET_PREV(next, prev);
 
@@ -453,7 +455,7 @@ visit_reachable(PyObject *op, PyGC_Head *reachable)
      * list, and move_unreachable will eventually get to it.
      */
     else {
-        assert(gc_refs > 0);
+        _PyObject_ASSERT_WITH_MSG(op, gc_refs > 0, "refcount is too small");
     }
     return 0;
 }
@@ -498,7 +500,8 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
              */
             PyObject *op = FROM_GC(gc);
             traverseproc traverse = Py_TYPE(op)->tp_traverse;
-            assert(gc_get_refs(gc) > 0);
+            _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(gc) > 0,
+                                      "refcount is too small");
             // NOTE: visit_reachable may change gc->_gc_next when
             // young->_gc_prev == gc.  Don't do gc = GC_NEXT(gc) before!
             (void) traverse(op,
@@ -593,7 +596,7 @@ move_legacy_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
     for (gc = GC_NEXT(unreachable); gc != unreachable; gc = next) {
         PyObject *op = FROM_GC(gc);
 
-        assert(gc->_gc_next & NEXT_MASK_UNREACHABLE);
+        _PyObject_ASSERT(op, gc->_gc_next & NEXT_MASK_UNREACHABLE);
         gc->_gc_next &= ~NEXT_MASK_UNREACHABLE;
         next = (PyGC_Head*)gc->_gc_next;
 
@@ -690,40 +693,42 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
              * the callback pointer intact.  Obscure:  it also
              * changes *wrlist.
              */
-            assert(wr->wr_object == op);
+            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
             _PyWeakref_ClearRef(wr);
-            assert(wr->wr_object == Py_None);
-            if (wr->wr_callback == NULL)
-                continue;                       /* no callback */
+            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
+            if (wr->wr_callback == NULL) {
+                /* no callback */
+                continue;
+            }
 
-    /* Headache time.  `op` is going away, and is weakly referenced by
-     * `wr`, which has a callback.  Should the callback be invoked?  If wr
-     * is also trash, no:
-     *
-     * 1. There's no need to call it.  The object and the weakref are
-     *    both going away, so it's legitimate to pretend the weakref is
-     *    going away first.  The user has to ensure a weakref outlives its
-     *    referent if they want a guarantee that the wr callback will get
-     *    invoked.
-     *
-     * 2. It may be catastrophic to call it.  If the callback is also in
-     *    cyclic trash (CT), then although the CT is unreachable from
-     *    outside the current generation, CT may be reachable from the
-     *    callback.  Then the callback could resurrect insane objects.
-     *
-     * Since the callback is never needed and may be unsafe in this case,
-     * wr is simply left in the unreachable set.  Note that because we
-     * already called _PyWeakref_ClearRef(wr), its callback will never
-     * trigger.
-     *
-     * OTOH, if wr isn't part of CT, we should invoke the callback:  the
-     * weakref outlived the trash.  Note that since wr isn't CT in this
-     * case, its callback can't be CT either -- wr acted as an external
-     * root to this generation, and therefore its callback did too.  So
-     * nothing in CT is reachable from the callback either, so it's hard
-     * to imagine how calling it later could create a problem for us.  wr
-     * is moved to wrcb_to_call in this case.
-     */
+            /* Headache time.  `op` is going away, and is weakly referenced by
+             * `wr`, which has a callback.  Should the callback be invoked?  If wr
+             * is also trash, no:
+             *
+             * 1. There's no need to call it.  The object and the weakref are
+             *    both going away, so it's legitimate to pretend the weakref is
+             *    going away first.  The user has to ensure a weakref outlives its
+             *    referent if they want a guarantee that the wr callback will get
+             *    invoked.
+             *
+             * 2. It may be catastrophic to call it.  If the callback is also in
+             *    cyclic trash (CT), then although the CT is unreachable from
+             *    outside the current generation, CT may be reachable from the
+             *    callback.  Then the callback could resurrect insane objects.
+             *
+             * Since the callback is never needed and may be unsafe in this case,
+             * wr is simply left in the unreachable set.  Note that because we
+             * already called _PyWeakref_ClearRef(wr), its callback will never
+             * trigger.
+             *
+             * OTOH, if wr isn't part of CT, we should invoke the callback:  the
+             * weakref outlived the trash.  Note that since wr isn't CT in this
+             * case, its callback can't be CT either -- wr acted as an external
+             * root to this generation, and therefore its callback did too.  So
+             * nothing in CT is reachable from the callback either, so it's hard
+             * to imagine how calling it later could create a problem for us.  wr
+             * is moved to wrcb_to_call in this case.
+             */
             if (gc_is_collecting(AS_GC(wr))) {
                 continue;
             }
@@ -751,10 +756,10 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
 
         gc = (PyGC_Head*)wrcb_to_call._gc_next;
         op = FROM_GC(gc);
-        assert(PyWeakref_Check(op));
+        _PyObject_ASSERT(op, PyWeakref_Check(op));
         wr = (PyWeakReference *)op;
         callback = wr->wr_callback;
-        assert(callback != NULL);
+        _PyObject_ASSERT(op, callback != NULL);
 
         /* copy-paste of weakrefobject.c's handle_callback() */
         temp = PyObject_CallFunctionObjArgs(callback, wr, NULL);
@@ -874,12 +879,14 @@ check_garbage(PyGC_Head *collectable)
     for (gc = GC_NEXT(collectable); gc != collectable; gc = GC_NEXT(gc)) {
         // Use gc_refs and break gc_prev again.
         gc_set_refs(gc, Py_REFCNT(FROM_GC(gc)));
-        assert(gc_get_refs(gc) != 0);
+        _PyObject_ASSERT(FROM_GC(gc), gc_get_refs(gc) != 0);
     }
     subtract_refs(collectable);
     PyGC_Head *prev = collectable;
     for (gc = GC_NEXT(collectable); gc != collectable; gc = GC_NEXT(gc)) {
-        assert(gc_get_refs(gc) >= 0);
+        _PyObject_ASSERT_WITH_MSG(FROM_GC(gc),
+                                  gc_get_refs(gc) >= 0,
+                                  "refcount is too small");
         if (gc_get_refs(gc) != 0) {
             ret = -1;
         }
@@ -905,7 +912,8 @@ delete_garbage(PyGC_Head *collectable, PyGC_Head *old)
         PyGC_Head *gc = GC_NEXT(collectable);
         PyObject *op = FROM_GC(gc);
 
-        assert(Py_REFCNT(FROM_GC(gc)) > 0);
+        _PyObject_ASSERT_WITH_MSG(op, Py_REFCNT(op) > 0,
+                                  "refcount is too small");
 
         if (_PyRuntime.gc.debug & DEBUG_SAVEALL) {
             assert(_PyRuntime.gc.garbage != NULL);
@@ -1933,10 +1941,12 @@ PyVarObject *
 _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
     const size_t basicsize = _PyObject_VAR_SIZE(Py_TYPE(op), nitems);
-    PyGC_Head *g = AS_GC(op);
-    assert(!_PyObject_GC_IS_TRACKED(op));
-    if (basicsize > PY_SSIZE_T_MAX - sizeof(PyGC_Head))
+    _PyObject_ASSERT((PyObject *)op, !_PyObject_GC_IS_TRACKED(op));
+    if (basicsize > PY_SSIZE_T_MAX - sizeof(PyGC_Head)) {
         return (PyVarObject *)PyErr_NoMemory();
+    }
+
+    PyGC_Head *g = AS_GC(op);
     g = (PyGC_Head *)PyObject_REALLOC(g,  sizeof(PyGC_Head) + basicsize);
     if (g == NULL)
         return (PyVarObject *)PyErr_NoMemory();
