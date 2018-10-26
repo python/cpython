@@ -230,8 +230,7 @@ class BaseServer:
 
                 while not self.__shutdown_request:
                     ready = selector.select(poll_interval)
-                    # bpo-35017: request arriving after the server shutdown
-                    # and before the poll_interval timeout should not be accepted.
+                    # bpo-35017: shutdown() called during select(), exit immediately.
                     if self.__shutdown_request:
                         break
                     if ready:
