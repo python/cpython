@@ -401,11 +401,11 @@ However, there are a few differences that should be taken into account:
   because default values cannot be deleted from the section (because technically
   they are not there).  If they are overridden in the section, deleting causes
   the default value to be visible again.  Trying to delete a default value
-  causes a ``KeyError``.
+  causes a :exc:`KeyError`.
 
 * ``DEFAULTSECT`` cannot be removed from the parser:
 
-  * trying to delete it raises ``ValueError``,
+  * trying to delete it raises :exc:`ValueError`,
 
   * ``parser.clear()`` leaves it intact,
 
