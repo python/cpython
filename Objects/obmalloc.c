@@ -63,6 +63,12 @@ static void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
 #endif
 
 
+/* bpo-35053: Declare tracemalloc configuration here rather than
+   Modules/_tracemalloc.c because _tracemalloc can be compiled as dynamic
+   library, whereas _Py_NewReference() requires it. */
+struct _PyTraceMalloc_Config _Py_tracemalloc_config = _PyTraceMalloc_Config_INIT;
+
+
 static void *
 _PyMem_RawMalloc(void *ctx, size_t size)
 {
@@ -2030,6 +2036,22 @@ _PyMem_DebugRawCalloc(void *ctx, size_t nelem, size_t elsize)
     assert(elsize == 0 || nelem <= (size_t)PY_SSIZE_T_MAX / elsize);
     nbytes = nelem * elsize;
     return _PyMem_DebugRawAlloc(1, ctx, nbytes);
+}
+
+
+/* Heuristic checking if the memory has been freed. Rely on the debug hooks on
+   Python memory allocators which fills the memory with DEADBYTE (0xDB) when
+   memory is deallocated. */
+int
+_PyMem_IsFreed(void *ptr, size_t size)
+{
+    unsigned char *bytes = ptr;
+    for (size_t i=0; i < size; i++) {
+        if (bytes[i] != DEADBYTE) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 

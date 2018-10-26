@@ -137,5 +137,6 @@
 #include "dtoa.h"
 #include "fileutils.h"
 #include "pyfpe.h"
+#include "tracemalloc.h"
 
 #endif /* !Py_PYTHON_H */
