@@ -155,6 +155,7 @@ process and user.
 .. function:: chdir(path)
               fchdir(fd)
               getcwd()
+              get_current_dir_name()
    :noindex:
 
    These functions are described in :ref:`os-file-dir`.
@@ -1696,6 +1697,19 @@ features:
 .. function:: getcwdb()
 
    Return a bytestring representing the current working directory.
+
+
+.. function:: get_current_dir_name()
+
+    Return a string representing the current working directory taking into
+    consideration the users ``PWD`` environment variable if it exists. This is
+    opposed to :func:`getcwd()` which dereferences symlinks in the path. This
+    function is identical to :func:`getcwd()` on systems that do **not**
+    support the ``PWD`` environment variable.
+
+    .. availability:: Unix.
+
+    .. versionadded:: 3.8
 
 
 .. function:: lchflags(path, flags)

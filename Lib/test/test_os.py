@@ -1252,6 +1252,48 @@ class ChownFileTests(unittest.TestCase):
         os.rmdir(support.TESTFN)
 
 
+class CurrentDirTests(unittest.TestCase):
+
+    def setUp(self):
+        self.pwd = os.environ['PWD']
+        base = os.path.abspath(support.TESTFN)
+        self.tmp_dir = base + '_dir'
+        self.tmp_lnk = base + '_lnk'
+
+    def test_getcwd(self):
+        # os.getcwd() always returns the dereferenced path
+        with support.temp_cwd(self.tmp_dir):
+            os.chdir(self.tmp_dir)
+            self.assertEqual(self.tmp_dir, os.getcwd())
+            os.symlink(self.tmp_dir, self.tmp_lnk, True)
+            os.chdir(self.tmp_lnk)
+            self.assertEqual(self.tmp_dir, os.getcwd())
+            os.environ['PWD'] = self.tmp_dir
+            self.assertEqual(self.tmp_dir, os.getcwd())
+            os.environ['PWD'] = self.tmp_lnk
+            self.assertEqual(self.tmp_dir, os.getcwd())
+            os.unlink(self.tmp_lnk)
+
+    def test_get_current_dir_name(self):
+        # os.get_current_dir_name() returns the direct path--mirroring
+        # the PWD environment variable if it exists regardless of
+        # whether the path contains symlinks.
+        with support.temp_cwd(self.tmp_dir):
+            os.environ['PWD'] = self.tmp_dir
+            self.assertEqual(self.tmp_dir, os.get_current_dir_name())
+            os.symlink(self.tmp_dir, self.tmp_lnk, True)
+            if os.name == 'posix':
+                os.environ['PWD'] = self.tmp_lnk
+                self.assertEqual(self.tmp_lnk, os.get_current_dir_name())
+            else:
+                os.environ['PWD'] = self.tmp_lnk
+                self.assertEqual(self.tmp_dir, os.get_current_dir_name())
+            os.unlink(self.tmp_lnk)
+
+    def tearDown(self):
+        os.environ['PWD'] = self.pwd
+
+
 class RemoveDirsTests(unittest.TestCase):
     def setUp(self):
         os.makedirs(support.TESTFN)

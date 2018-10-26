@@ -32,7 +32,7 @@ _names = sys.builtin_module_names
 __all__ = ["altsep", "curdir", "pardir", "sep", "pathsep", "linesep",
            "defpath", "name", "path", "devnull", "SEEK_SET", "SEEK_CUR",
            "SEEK_END", "fsencode", "fsdecode", "get_exec_path", "fdopen",
-           "popen", "extsep"]
+           "popen", "extsep", "get_current_dir_name"]
 
 def _exists(name):
     return name in globals()
@@ -649,6 +649,29 @@ def get_exec_path(env=None):
     if path_list is None:
         path_list = defpath
     return path_list.split(pathsep)
+
+
+def get_current_dir_name():
+    """
+    Return a string representing the current working directory taking into
+    consideration the users *PWD* environment variable if it exists. This
+    is opposed to getcwd() which dereferences symlinks in the path. This
+    function is identical to getcwd() on systems that do *not* support
+    the *PWD* environment variable.
+    """
+    cwd = getcwd()
+
+    try:
+        pwd = environ["PWD"]
+    except KeyError:
+        return cwd
+
+    cwd_stat, pwd_stat = map(stat, [cwd, pwd])
+
+    if (cwd_stat.st_dev == pwd_stat.st_dev and
+            cwd_stat.st_ino == pwd_stat.st_ino):
+        return pwd
+    return cwd
 
 
 # Change environ to automatically call putenv(), unsetenv if they exist.
