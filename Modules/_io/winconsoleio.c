@@ -474,8 +474,9 @@ static PyObject *
 _io__WindowsConsoleIO_fileno_impl(winconsoleio *self)
 /*[clinic end generated code: output=006fa74ce3b5cfbf input=079adc330ddaabe6]*/
 {
-    if (self->handle == INVALID_HANDLE_VALUE)
+    if (self->handle == INVALID_HANDLE_VALUE) {
         return err_closed();
+    }
 
     if (self->fd < 0) {
         _Py_BEGIN_SUPPRESS_IPH
