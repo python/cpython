@@ -41,7 +41,7 @@ objects:
    :noindex:
 
    Remove the first item from the list whose value is equal to *x*.  It raises a
-   ``ValueError`` if there is no such item.
+   :exc:`ValueError` if there is no such item.
 
 
 .. method:: list.pop([i])

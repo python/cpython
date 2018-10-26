@@ -741,7 +741,7 @@ Some smaller changes made to the core Python language are:
 
 * A ``global`` or ``nonlocal`` statement must now textually appear
   before the first use of the affected name in the same scope.
-  Previously this was a ``SyntaxWarning``.
+  Previously this was a :exc:`SyntaxWarning`.
 
 * It is now possible to set a :ref:`special method <specialnames>` to
   ``None`` to indicate that the corresponding operation is not available.
