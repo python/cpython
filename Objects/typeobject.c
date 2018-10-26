@@ -2208,18 +2208,17 @@ subtype_getweakref(PyObject *obj, void *context)
 {
     PyObject **weaklistptr;
     PyObject *result;
+    PyTypeObject *type = Py_TYPE(obj);
 
-    if (Py_TYPE(obj)->tp_weaklistoffset == 0) {
+    if (type->tp_weaklistoffset == 0) {
         PyErr_SetString(PyExc_AttributeError,
                         "This object has no __weakref__");
         return NULL;
     }
-    _PyObject_ASSERT(obj, Py_TYPE(obj)->tp_weaklistoffset > 0);
-    _PyObject_ASSERT(obj,
-                     (Py_TYPE(obj)->tp_weaklistoffset + sizeof(PyObject *)) \
-                      <= (size_t)(Py_TYPE(obj)->tp_basicsize));
-    weaklistptr = (PyObject **)
-        ((char *)obj + Py_TYPE(obj)->tp_weaklistoffset);
+    _PyObject_ASSERT(type, type->tp_weaklistoffset > 0);
+    _PyObject_ASSERT(type, ((type->tp_weaklistoffset + sizeof(PyObject *))
+                            <= (size_t)(type->tp_basicsize)));
+    weaklistptr = (PyObject **)((char *)obj + type->tp_weaklistoffset);
     if (*weaklistptr == NULL)
         result = Py_None;
     else
