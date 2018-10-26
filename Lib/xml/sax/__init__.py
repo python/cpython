@@ -67,7 +67,7 @@ if sys.platform[:4] == "java" and sys.registry.containsKey(_key):
     default_parser_list = sys.registry.getProperty(_key).split(",")
 
 
-def make_parser(parser_list=tuple()):
+def make_parser(parser_list=()):
     """Creates and returns a SAX parser.
 
     Creates the first parser it is able to instantiate of the ones
