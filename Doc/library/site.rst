@@ -62,7 +62,7 @@ with ``import`` (followed by space or tab) are executed.
    An executable line in a :file:`.pth` file is run at every Python startup,
    regardless of whether a particular module is actually going to be used.
    Its impact should thus be kept to a minimum.
-   The primary intended purpose of the lines is to make the
+   The primary intended purpose of executable lines is to make the
    corresponding module(s) importable
    (load 3rd-party import hooks, adjust :envvar:`PATH` etc).
    Any other initialization is supposed to be done upon a module's
