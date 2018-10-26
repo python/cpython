@@ -299,7 +299,7 @@ Deprecated
   :func:`~gettext.lngettext` and :func:`~gettext.ldngettext` in the
   :mod:`gettext` module and corresponding methods of the
   :class:`~gettext.NullTranslations` and :class:`~GNUTranslations` classes.
-  They return encoded bytes, and it's possible that you may get unexpected
+  They return encoded bytes, and it's possible that you will get unexpected
   Unicode-related exceptions if there are encoding problems with the
   translated strings. It's much better to use alternatives which return
   Unicode strings in Python 3.  Further, they were broken for long time.
