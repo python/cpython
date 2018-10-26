@@ -113,11 +113,11 @@ given with the definition of the object types (see section :ref:`types`).
 
 .. index:: triple: target; list; assignment
    single: ,; in target list
-   single: *; in assiggnment target list
-   single: [; in assiggnment target list
-   single: ]; in assiggnment target list
-   single: (; in assiggnment target list
-   single: ); in assiggnment target list
+   single: *; in assignment target list
+   single: [; in assignment target list
+   single: ]; in assignment target list
+   single: (; in assignment target list
+   single: ); in assignment target list
 
 Assignment of an object to a target list, optionally enclosed in parentheses or
 square brackets, is recursively defined as follows.
