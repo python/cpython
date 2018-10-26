@@ -1,2 +1,2 @@
-Make :func:`xml.sax.make_parser` take any iterable as its *parser_list*
+:func:`xml.sax.make_parser` now accepts any iterable as its *parser_list*
 argument.
