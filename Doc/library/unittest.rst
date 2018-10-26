@@ -1161,7 +1161,7 @@ Test cases
       If *delta* is supplied instead of *places* then the difference
       between *first* and *second* must be less or equal to (or greater than) *delta*.
 
-      Supplying both *delta* and *places* raises a ``TypeError``.
+      Supplying both *delta* and *places* raises a :exc:`TypeError`.
 
       .. versionchanged:: 3.2
          :meth:`assertAlmostEqual` automatically considers almost equal objects

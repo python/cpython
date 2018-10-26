@@ -593,7 +593,7 @@ a :term:`__future__` import is necessary::
     RuntimeError: generator raised StopIteration
 
 Without a ``__future__`` import, a :exc:`PendingDeprecationWarning` will be
-raised whenever a ``StopIteration`` exception is raised inside a generator.
+raised whenever a :exc:`StopIteration` exception is raised inside a generator.
 
 .. seealso::
 

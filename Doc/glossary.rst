@@ -200,7 +200,7 @@ Glossary
       ``int(3.15)`` converts the floating point number to the integer ``3``, but
       in ``3+4.5``, each argument is of a different type (one int, one float),
       and both must be converted to the same type before they can be added or it
-      will raise a ``TypeError``.  Without coercion, all arguments of even
+      will raise a :exc:`TypeError`.  Without coercion, all arguments of even
       compatible types would have to be normalized to the same value by the
       programmer, e.g., ``float(3)+4.5`` rather than just ``3+4.5``.
 

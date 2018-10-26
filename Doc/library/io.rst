@@ -39,7 +39,7 @@ pipe).
 
 All streams are careful about the type of data you give to them.  For example
 giving a :class:`str` object to the ``write()`` method of a binary stream
-will raise a ``TypeError``.  So will giving a :class:`bytes` object to the
+will raise a :exc:`TypeError`.  So will giving a :class:`bytes` object to the
 ``write()`` method of a text stream.
 
 .. versionchanged:: 3.3
