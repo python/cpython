@@ -2676,7 +2676,7 @@ list___init___impl(PyListObject *self, PyObject *iterable)
         (void)_list_clear(self);
     }
     if (iterable != NULL) {
-        if (_PyObject_HasLen(iterable) && self->ob_item == NULL) {
+        if (_PyObject_HasLen(iterable)) {
             Py_ssize_t iter_len = PyObject_Size(iterable);
             if (iter_len == -1) {
                 if (PyErr_ExceptionMatches(PyExc_Exception)) {
@@ -2686,7 +2686,8 @@ list___init___impl(PyListObject *self, PyObject *iterable)
                     return -1;
                 }
             }
-            if (iter_len > 0 && list_preallocate_exact(self, iter_len)) {
+            if (iter_len > 0 && self->ob_item == NULL
+                && list_preallocate_exact(self, iter_len)) {
                 return -1;
             }
         }
