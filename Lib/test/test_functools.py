@@ -2485,7 +2485,8 @@ class TestCachedProperty(unittest.TestCase):
             def calculate(self):
                 pass
 
-        self.assertTrue(AbstractExpensiveCalculator.calculate.__isabstractmethod__)
+        method = AbstractExpensiveCalculator.calculate
+        self.assertTrue(method.__isabstractmethod__)
         with self.assertRaises(TypeError):
             AbstractExpensiveCalculator()
 
@@ -2495,7 +2496,8 @@ class TestCachedProperty(unittest.TestCase):
             def calculate(self):
                 return 42
 
-        self.assertFalse(getattr(ConcreteExpensiveCalculator.calculate, '__isabstractmethod__', False))
+        method = ConcreteExpensiveCalculator.calculate
+        self.assertFalse(getattr(method, '__isabstractmethod__', False))
         ConcreteExpensiveCalculator()
 
 
