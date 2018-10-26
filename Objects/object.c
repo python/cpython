@@ -72,7 +72,7 @@ _Py_AddToAllObjects(PyObject *op, int force)
         /* If it's initialized memory, op must be in or out of
          * the list unambiguously.
          */
-        assert((op->_ob_prev == NULL) == (op->_ob_next == NULL));
+        _PyObject_ASSERT(op, (op->_ob_prev == NULL) == (op->_ob_next == NULL));
     }
 #endif
     if (force || op->_ob_prev == NULL) {
@@ -305,7 +305,9 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     /* Undo the temporary resurrection; can't use DECREF here, it would
      * cause a recursive call.
      */
-    assert(self->ob_refcnt > 0);
+    _PyObject_ASSERT_WITH_MSG(self,
+                              self->ob_refcnt > 0,
+                              "refcount is too small");
     if (--self->ob_refcnt == 0)
         return 0;         /* this is the normal path out */
 
@@ -316,7 +318,9 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     _Py_NewReference(self);
     self->ob_refcnt = refcnt;
 
-    assert(!PyType_IS_GC(Py_TYPE(self)) || _PyObject_GC_IS_TRACKED(self));
+    _PyObject_ASSERT(self,
+                     (!PyType_IS_GC(Py_TYPE(self))
+                      || _PyObject_GC_IS_TRACKED(self)));
     /* If Py_REF_DEBUG, _Py_NewReference bumped _Py_RefTotal, so
      * we need to undo that. */
     _Py_DEC_REFTOTAL;
@@ -1020,7 +1024,7 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
         return err;
     }
     Py_DECREF(name);
-    assert(name->ob_refcnt >= 1);
+    _PyObject_ASSERT(name, name->ob_refcnt >= 1);
     if (tp->tp_getattr == NULL && tp->tp_getattro == NULL)
         PyErr_Format(PyExc_TypeError,
                      "'%.100s' object has no attributes "
@@ -1059,8 +1063,8 @@ _PyObject_GetDictPtr(PyObject *obj)
         size = _PyObject_VAR_SIZE(tp, tsize);
 
         dictoffset += (long)size;
-        assert(dictoffset > 0);
-        assert(dictoffset % SIZEOF_VOID_P == 0);
+        _PyObject_ASSERT(obj, dictoffset > 0);
+        _PyObject_ASSERT(obj, dictoffset % SIZEOF_VOID_P == 0);
     }
     return (PyObject **) ((char *)obj + dictoffset);
 }
@@ -1247,11 +1251,11 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
                 if (tsize < 0)
                     tsize = -tsize;
                 size = _PyObject_VAR_SIZE(tp, tsize);
-                assert(size <= PY_SSIZE_T_MAX);
+                _PyObject_ASSERT(obj, size <= PY_SSIZE_T_MAX);
 
                 dictoffset += (Py_ssize_t)size;
-                assert(dictoffset > 0);
-                assert(dictoffset % SIZEOF_VOID_P == 0);
+                _PyObject_ASSERT(obj, dictoffset > 0);
+                _PyObject_ASSERT(obj, dictoffset % SIZEOF_VOID_P == 0);
             }
             dictptr = (PyObject **) ((char *)obj + dictoffset);
             dict = *dictptr;
@@ -1486,7 +1490,7 @@ _dir_object(PyObject *obj)
     PyObject *result, *sorted;
     PyObject *dirfunc = _PyObject_LookupSpecial(obj, &PyId___dir__);
 
-    assert(obj);
+    assert(obj != NULL);
     if (dirfunc == NULL) {
         if (!PyErr_Occurred())
             PyErr_SetString(PyExc_TypeError, "object does not provide __dir__");
@@ -2129,9 +2133,9 @@ finally:
 void
 _PyTrash_deposit_object(PyObject *op)
 {
-    assert(PyObject_IS_GC(op));
-    assert(!_PyObject_GC_IS_TRACKED(op));
-    assert(op->ob_refcnt == 0);
+    _PyObject_ASSERT(op, PyObject_IS_GC(op));
+    _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
+    _PyObject_ASSERT(op, op->ob_refcnt == 0);
     _PyGCHead_SET_PREV(_Py_AS_GC(op), _PyRuntime.gc.trash_delete_later);
     _PyRuntime.gc.trash_delete_later = op;
 }
@@ -2141,9 +2145,9 @@ void
 _PyTrash_thread_deposit_object(PyObject *op)
 {
     PyThreadState *tstate = PyThreadState_GET();
-    assert(PyObject_IS_GC(op));
-    assert(!_PyObject_GC_IS_TRACKED(op));
-    assert(op->ob_refcnt == 0);
+    _PyObject_ASSERT(op, PyObject_IS_GC(op));
+    _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
+    _PyObject_ASSERT(op, op->ob_refcnt == 0);
     _PyGCHead_SET_PREV(_Py_AS_GC(op), tstate->trash_delete_later);
     tstate->trash_delete_later = op;
 }
@@ -2167,7 +2171,7 @@ _PyTrash_destroy_chain(void)
          * assorted non-release builds calling Py_DECREF again ends
          * up distorting allocation statistics.
          */
-        assert(op->ob_refcnt == 0);
+        _PyObject_ASSERT(op, op->ob_refcnt == 0);
         ++_PyRuntime.gc.trash_delete_nesting;
         (*dealloc)(op);
         --_PyRuntime.gc.trash_delete_nesting;
@@ -2205,7 +2209,7 @@ _PyTrash_thread_destroy_chain(void)
          * assorted non-release builds calling Py_DECREF again ends
          * up distorting allocation statistics.
          */
-        assert(op->ob_refcnt == 0);
+        _PyObject_ASSERT(op, op->ob_refcnt == 0);
         (*dealloc)(op);
         assert(tstate->trash_delete_nesting == 1);
     }
