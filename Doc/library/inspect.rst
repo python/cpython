@@ -132,9 +132,6 @@ attributes:
 |           | f_locals          | local namespace seen by   |
 |           |                   | this frame                |
 +-----------+-------------------+---------------------------+
-|           | f_restricted      | 0 or 1 if frame is in     |
-|           |                   | restricted execution mode |
-+-----------+-------------------+---------------------------+
 |           | f_trace           | tracing function for this |
 |           |                   | frame, or ``None``        |
 +-----------+-------------------+---------------------------+
@@ -301,6 +298,10 @@ attributes:
 
    Return true if the object is a Python generator function.
 
+   .. versionchanged:: 3.8
+      Functions wrapped in :func:`functools.partial` now return true if the
+      wrapped function is a Python generator function.
+
 
 .. function:: isgenerator(object)
 
@@ -313,6 +314,10 @@ attributes:
    (a function defined with an :keyword:`async def` syntax).
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.8
+      Functions wrapped in :func:`functools.partial` now return true if the
+      wrapped function is a :term:`coroutine function`.
 
 
 .. function:: iscoroutine(object)
@@ -354,6 +359,10 @@ attributes:
     True
 
    .. versionadded:: 3.6
+
+   .. versionchanged:: 3.8
+      Functions wrapped in :func:`functools.partial` now return true if the
+      wrapped function is a :term:`asynchronous generator` function.
 
 
 .. function:: isasyncgen(object)
@@ -557,7 +566,7 @@ function.
       >>> sig.parameters['b'].annotation
       <class 'int'>
 
-   Accepts a wide range of python callables, from plain functions and classes to
+   Accepts a wide range of Python callables, from plain functions and classes to
    :func:`functools.partial` objects.
 
    Raises :exc:`ValueError` if no signature can be provided, and
@@ -751,6 +760,25 @@ function.
          ...                        param.default is param.empty):
          ...         print('Parameter:', param)
          Parameter: c
+
+   .. attribute:: Parameter.kind.description
+
+      Describes a enum value of Parameter.kind.
+
+      .. versionadded:: 3.8
+
+      Example: print all descriptions of arguments::
+
+         >>> def foo(a, b, *, c, d=10):
+         ...     pass
+
+         >>> sig = signature(foo)
+         >>> for param in sig.parameters.values():
+         ...     print(param.kind.description)
+         positional or keyword
+         positional or keyword
+         keyword-only
+         keyword-only
 
    .. method:: Parameter.replace(*[, name][, kind][, default][, annotation])
 

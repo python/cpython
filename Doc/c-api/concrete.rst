@@ -113,5 +113,5 @@ Other Objects
    capsule.rst
    gen.rst
    coro.rst
+   contextvars.rst
    datetime.rst
-

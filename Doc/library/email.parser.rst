@@ -238,7 +238,7 @@ in the top-level :mod:`email` package namespace.
 
    Return a message object structure from a :term:`bytes-like object`.  This is
    equivalent to ``BytesParser().parsebytes(s)``.  Optional *_class* and
-   *strict* are interpreted as with the :class:`~email.parser.BytesParser` class
+   *policy* are interpreted as with the :class:`~email.parser.BytesParser` class
    constructor.
 
    .. versionadded:: 3.2
@@ -246,7 +246,7 @@ in the top-level :mod:`email` package namespace.
       Removed the *strict* argument.  Added the *policy* keyword.
 
 
-.. function:: message_from_binary_file(fp, _class=None, *,
+.. function:: message_from_binary_file(fp, _class=None, *, \
                                        policy=policy.compat32)
 
    Return a message object structure tree from an open binary :term:`file

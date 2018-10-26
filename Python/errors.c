@@ -110,6 +110,7 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
             fixed_value = _PyErr_CreateException(exception, value);
             Py_XDECREF(value);
             if (fixed_value == NULL) {
+                Py_DECREF(exc_value);
                 return;
             }
 
@@ -947,7 +948,7 @@ PyErr_WriteUnraisable(PyObject *obj)
     _Py_IDENTIFIER(__module__);
     PyObject *f, *t, *v, *tb;
     PyObject *moduleName = NULL;
-    char* className;
+    const char *className;
 
     PyErr_Fetch(&t, &v, &tb);
 
@@ -977,7 +978,7 @@ PyErr_WriteUnraisable(PyObject *obj)
     assert(PyExceptionClass_Check(t));
     className = PyExceptionClass_Name(t);
     if (className != NULL) {
-        char *dot = strrchr(className, '.');
+        const char *dot = strrchr(className, '.');
         if (dot != NULL)
             className = dot+1;
     }

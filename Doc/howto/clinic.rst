@@ -22,8 +22,8 @@ Argument Clinic How-To
   compatibility for future versions.  In other words: if you
   maintain an external C extension for CPython, you're welcome
   to experiment with Argument Clinic in your own code.  But the
-  version of Argument Clinic that ships with CPython 3.5 *could*
-  be totally incompatible and break all your code.
+  version of Argument Clinic that ships with the next version
+  of CPython *could* be totally incompatible and break all your code.
 
 The Goals Of Argument Clinic
 ============================
@@ -877,6 +877,12 @@ converter::
 
     Write a pickled representation of obj to the open file.
     [clinic start generated code]*/
+
+One advantage of real converters is that they're more flexible than legacy
+converters.  For example, the ``unsigned_int`` converter (and all the
+``unsigned_`` converters) can be specified without ``bitwise=True``.  Their
+default behavior performs range checking on the value, and they won't accept
+negative numbers.  You just can't do that with a legacy converter!
 
 Argument Clinic will show you all the converters it has
 available.  For each converter it'll show you all the parameters

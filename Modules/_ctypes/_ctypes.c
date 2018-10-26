@@ -1390,8 +1390,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     StgDictObject *stgdict;
     StgDictObject *itemdict;
     PyObject *length_attr, *type_attr;
-    long length;
-    int overflow;
+    Py_ssize_t length;
     Py_ssize_t itemsize, itemalign;
 
     /* create the new instance (which is a class,
@@ -1406,21 +1405,37 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     type_attr = NULL;
 
     length_attr = PyObject_GetAttrString((PyObject *)result, "_length_");
-    if (!length_attr || !PyLong_Check(length_attr)) {
-        PyErr_SetString(PyExc_AttributeError,
-                        "class must define a '_length_' attribute, "
-                        "which must be a positive integer");
-        Py_XDECREF(length_attr);
+    if (!length_attr) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_SetString(PyExc_AttributeError,
+                            "class must define a '_length_' attribute");
+        }
         goto error;
     }
-    length = PyLong_AsLongAndOverflow(length_attr, &overflow);
-    if (overflow) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "The '_length_' attribute is too large");
+
+    if (!PyLong_Check(length_attr)) {
         Py_DECREF(length_attr);
+        PyErr_SetString(PyExc_TypeError,
+                        "The '_length_' attribute must be an integer");
         goto error;
     }
+
+    if (_PyLong_Sign(length_attr) == -1) {
+        Py_DECREF(length_attr);
+        PyErr_SetString(PyExc_ValueError,
+                        "The '_length_' attribute must not be negative");
+        goto error;
+    }
+
+    length = PyLong_AsSsize_t(length_attr);
     Py_DECREF(length_attr);
+    if (length == -1 && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "The '_length_' attribute is too large");
+        }
+        goto error;
+    }
 
     type_attr = PyObject_GetAttrString((PyObject *)result, "_type_");
     if (!type_attr) {

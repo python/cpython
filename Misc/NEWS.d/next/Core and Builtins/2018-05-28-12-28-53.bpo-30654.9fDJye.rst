@@ -1,0 +1,2 @@
+Fixed reset of the SIGINT handler to SIG_DFL on interpreter shutdown even
+when there was a custom handler set previously. Patch by Philipp Kerling.

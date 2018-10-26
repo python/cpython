@@ -1,0 +1,3 @@
+The function ``platform.linux_distribution`` and ``platform.dist`` now
+trigger a ``DeprecationWarning`` and have been marked for removal in Python
+3.8

@@ -229,7 +229,7 @@ required packages. ::
         )
 
 Another new enhancement to the Python package index at
-https://pypi.python.org is storing source and binary archives for a
+https://pypi.org is storing source and binary archives for a
 package.  The new :command:`upload` Distutils command will upload a package to
 the repository.
 

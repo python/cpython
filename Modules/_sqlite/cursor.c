@@ -42,11 +42,7 @@ static int pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject*
     Py_XSETREF(self->connection, connection);
     Py_CLEAR(self->statement);
     Py_CLEAR(self->next_row);
-
-    Py_XSETREF(self->row_cast_map, PyList_New(0));
-    if (!self->row_cast_map) {
-        return -1;
-    }
+    Py_CLEAR(self->row_cast_map);
 
     Py_INCREF(Py_None);
     Py_XSETREF(self->description, Py_None);
@@ -109,7 +105,7 @@ PyObject* _pysqlite_get_converter(PyObject* key)
         return NULL;
     }
 
-    retval = PyDict_GetItem(converters, upcase_key);
+    retval = PyDict_GetItem(_pysqlite_converters, upcase_key);
     Py_DECREF(upcase_key);
 
     return retval;
@@ -253,6 +249,7 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
 
     for (i = 0; i < numcols; i++) {
         if (self->connection->detect_types) {
+            assert(self->row_cast_map != NULL);
             converter = PyList_GetItem(self->row_cast_map, i);
             if (!converter) {
                 converter = Py_None;
@@ -378,8 +375,6 @@ static int check_cursor(pysqlite_Cursor* cur)
 PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
 {
     PyObject* operation;
-    const char* operation_cstr;
-    Py_ssize_t operation_len;
     PyObject* parameters_list = NULL;
     PyObject* parameters_iter = NULL;
     PyObject* parameters = NULL;
@@ -464,10 +459,6 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
         pysqlite_statement_reset(self->statement);
     }
 
-    operation_cstr = PyUnicode_AsUTF8AndSize(operation, &operation_len);
-    if (operation_cstr == NULL)
-        goto error;
-
     /* reset description and rowcount */
     Py_INCREF(Py_None);
     Py_SETREF(self->description, Py_None);
@@ -539,7 +530,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
             if (PyErr_Occurred()) {
                 /* there was an error that occurred in a user-defined callback */
-                if (_enable_callback_tracebacks) {
+                if (_pysqlite_enable_callback_tracebacks) {
                     PyErr_Print();
                 } else {
                     PyErr_Clear();

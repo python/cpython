@@ -165,7 +165,9 @@ NotImplemented
 
 
 Ellipsis
-   .. index:: object: Ellipsis
+   .. index::
+      object: Ellipsis
+      single: ...; ellipsis literal
 
    This type has a single value.  There is a single object with this value. This
    object is accessed through the literal ``...`` or the built-in name
@@ -768,7 +770,7 @@ Custom classes
 
    When a class attribute reference (for class :class:`C`, say) would yield a
    class method object, it is transformed into an instance method object whose
-   :attr:`__self__` attributes is :class:`C`.  When it would yield a static
+   :attr:`__self__` attribute is :class:`C`.  When it would yield a static
    method object, it is transformed into the object wrapped by the static method
    object. See section :ref:`descriptors` for another way in which attributes
    retrieved from a class may differ from those actually contained in its
@@ -1059,9 +1061,9 @@ Internal types
       trace (towards the frame where the exception occurred), or ``None`` if
       there is no next level.
 
-    .. versionchanged:: 3.7
-       Traceback objects can now be explicitly instantiated from Python code,
-       and the ``tb_next`` attribute of existing instances can be updated.
+      .. versionchanged:: 3.7
+         Traceback objects can now be explicitly instantiated from Python code,
+         and the ``tb_next`` attribute of existing instances can be updated.
 
    Slice objects
       .. index:: builtin: slice
@@ -1831,8 +1833,9 @@ Metaclasses
 ^^^^^^^^^^^
 
 .. index::
-    single: metaclass
-    builtin: type
+   single: metaclass
+   builtin: type
+   single: =; class definition
 
 By default, classes are constructed using :func:`type`. The class body is
 executed in a new namespace and the class name is bound locally to the
@@ -1967,8 +1970,7 @@ current call is identified based on the first argument passed to the method.
    as a ``__classcell__`` entry in the class namespace. If present, this must
    be propagated up to the ``type.__new__`` call in order for the class to be
    initialised correctly.
-   Failing to do so will result in a :exc:`DeprecationWarning` in Python 3.6,
-   and a :exc:`RuntimeWarning` in the future.
+   Failing to do so will result in a :exc:`RuntimeError` in Python 3.8.
 
 When using the default metaclass :class:`type`, or any metaclass that ultimately
 calls ``type.__new__``, the following additional customisation steps are

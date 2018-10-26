@@ -79,6 +79,7 @@ Commands = {
         'LOGIN':        ('NONAUTH',),
         'LOGOUT':       ('NONAUTH', 'AUTH', 'SELECTED', 'LOGOUT'),
         'LSUB':         ('AUTH', 'SELECTED'),
+        'MOVE':         ('SELECTED',),
         'NAMESPACE':    ('AUTH', 'SELECTED'),
         'NOOP':         ('NONAUTH', 'AUTH', 'SELECTED', 'LOGOUT'),
         'PARTIAL':      ('SELECTED',),                                  # NB: obsolete
@@ -281,7 +282,11 @@ class IMAP4:
 
 
     def _create_socket(self):
-        return socket.create_connection((self.host, self.port))
+        # Default value of IMAP4.host is '', but socket.getaddrinfo()
+        # (which is used by socket.create_connection()) expects None
+        # as a default value for host.
+        host = None if not self.host else self.host
+        return socket.create_connection((host, self.port))
 
     def open(self, host = '', port = IMAP4_PORT):
         """Setup connection to remote server on "host:port"

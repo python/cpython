@@ -226,6 +226,11 @@ otherwise, the context is used to determine what to instantiate.
   (with defaults of ``None``) and these are used to construct a
   :class:`~logging.Formatter` instance.
 
+  .. versionchanged:: 3.8
+     a ``validate`` key (with default of ``True``) can be added into
+     the ``formatters`` section of the configuring dict, this is to
+     validate the format.
+
 * *filters* - the corresponding value will be a dict in which each key
   is a filter id and each value is a dict describing how to configure
   the corresponding Filter instance.
@@ -790,11 +795,10 @@ Sections which specify formatter configuration are typified by the following.
 
 The ``format`` entry is the overall format string, and the ``datefmt`` entry is
 the :func:`strftime`\ -compatible date/time format string.  If empty, the
-package substitutes ISO8601-style format date/times, which is almost equivalent to
-specifying the date format string ``'%Y-%m-%d %H:%M:%S'``.  This format also
-specifies milliseconds, which are appended to the result of using the above
-format string, with a comma separator.  An example time in this format is
-``2003-01-23 00:29:50,411``.
+package substitutes something which is almost equivalent to specifying the date
+format string ``'%Y-%m-%d %H:%M:%S'``.  This format also specifies milliseconds,
+which are appended to the result of using the above format string, with a comma
+separator.  An example time in this format is ``2003-01-23 00:29:50,411``.
 
 The ``class`` entry is optional.  It indicates the name of the formatter's class
 (as a dotted module and class name.)  This option is useful for instantiating a
