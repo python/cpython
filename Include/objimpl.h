@@ -138,12 +138,29 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
 #define PyObject_NewVar(type, typeobj, n) \
                 ( (type *) _PyObject_NewVar((typeobj), (n)) )
 
-/* Macros trading binary compatibility for speed. See also pymem.h.
-   Note that these macros expect non-NULL object pointers.*/
-#define PyObject_INIT(op, typeobj) \
-    ( Py_TYPE(op) = (typeobj), _Py_NewReference((PyObject *)(op)), (op) )
-#define PyObject_INIT_VAR(op, typeobj, size) \
-    ( Py_SIZE(op) = (size), PyObject_INIT((op), (typeobj)) )
+/* Inline functions trading binary compatibility for speed:
+   PyObject_INIT() is the fast version of PyObject_Init(), and
+   PyObject_INIT_VAR() is the fast version of PyObject_InitVar.
+   See also pymem.h.
+
+   These inline functions expect non-NULL object pointers. */
+Py_STATIC_INLINE(PyObject*)
+PyObject_INIT(PyObject *op, PyTypeObject *typeobj)
+{
+    assert(op != NULL);
+    Py_TYPE(op) = typeobj;
+    _Py_NewReference(op);
+    return op;
+}
+
+Py_STATIC_INLINE(PyVarObject*)
+PyObject_INIT_VAR(PyVarObject *op, PyTypeObject *typeobj, Py_ssize_t size)
+{
+    assert(op != NULL);
+    Py_SIZE(op) = size;
+    PyObject_INIT((PyObject *)op, typeobj);
+    return op;
+}
 
 #define _PyObject_SIZE(typeobj) ( (typeobj)->tp_basicsize )
 
