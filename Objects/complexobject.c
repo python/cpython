@@ -228,7 +228,7 @@ PyComplex_FromCComplex(Py_complex cval)
     op = (PyComplexObject *) PyObject_MALLOC(sizeof(PyComplexObject));
     if (op == NULL)
         return PyErr_NoMemory();
-    (void)PyObject_INIT(op, &PyComplex_Type);
+    (void)PyObject_INIT((PyObject *)op, &PyComplex_Type);
     op->cval = cval;
     return (PyObject *) op;
 }
