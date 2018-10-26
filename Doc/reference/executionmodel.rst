@@ -52,7 +52,7 @@ Binding of names
 
 :dfn:`Names` refer to objects.  Names are introduced by name binding operations.
 
-.. index:: statement: from
+.. index:: single: from; import statement
 
 The following constructs bind names: formal parameters to functions,
 :keyword:`import` statements, class and function definitions (these bind the

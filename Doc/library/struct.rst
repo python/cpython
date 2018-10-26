@@ -117,6 +117,13 @@ By default, C types are represented in the machine's native format and byte
 order, and properly aligned by skipping pad bytes if necessary (according to the
 rules used by the C compiler).
 
+.. index::
+   single: @; in struct format strings
+   single: =; in struct format strings
+   single: <; in struct format strings
+   single: >; in struct format strings
+   single: !; in struct format strings
+
 Alternatively, the first character of the format string can be used to indicate
 the byte order, size and alignment of the packed data, according to the
 following table:

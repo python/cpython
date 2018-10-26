@@ -165,7 +165,9 @@ NotImplemented
 
 
 Ellipsis
-   .. index:: object: Ellipsis
+   .. index::
+      object: Ellipsis
+      single: ...; ellipsis literal
 
    This type has a single value.  There is a single object with this value. This
    object is accessed through the literal ``...`` or the built-in name
@@ -1831,8 +1833,9 @@ Metaclasses
 ^^^^^^^^^^^
 
 .. index::
-    single: metaclass
-    builtin: type
+   single: metaclass
+   builtin: type
+   single: =; class definition
 
 By default, classes are constructed using :func:`type`. The class body is
 executed in a new namespace and the class name is bound locally to the
