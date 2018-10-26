@@ -61,6 +61,7 @@ class-based API instead.
    *domain*, which is returned.
 
 
+.. index:: single: _; gettext
 .. function:: gettext(message)
 
    Return the localized translation of *message*, based on the current global

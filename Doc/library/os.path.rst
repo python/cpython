@@ -160,6 +160,8 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
+.. index:: single: ~; home directory expansion
+
 .. function:: expanduser(path)
 
    On Unix and Windows, return the argument with an initial component of ``~`` or
@@ -183,6 +185,9 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+.. index::
+   single: $; environment variables expansion
+   single: %; environment variables expansion (Windows)
 
 .. function:: expandvars(path)
 

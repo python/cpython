@@ -112,6 +112,12 @@ unacceptable.  The rules observed by various types and the exceptions raised are
 given with the definition of the object types (see section :ref:`types`).
 
 .. index:: triple: target; list; assignment
+   single: ,; in target list
+   single: *; in assignment target list
+   single: [; in assignment target list
+   single: ]; in assignment target list
+   single: (; in assignment target list
+   single: ); in assignment target list
 
 Assignment of an object to a target list, optionally enclosed in parentheses or
 square brackets, is recursively defined as follows.
@@ -321,6 +327,7 @@ Annotated assignment statements
 .. index::
    pair: annotated; assignment
    single: statement; assignment, annotated
+   single: :; annotated variable
 
 Annotation assignment is the combination, in a single statement,
 of a variable or attribute annotation and an optional assignment statement:
@@ -372,6 +379,7 @@ The :keyword:`assert` statement
 .. index::
    statement: assert
    pair: debugging; assertions
+   single: ,; expression list
 
 Assert statements are a convenient way to insert debugging assertions into a
 program:
@@ -712,6 +720,9 @@ The :keyword:`import` statement
    single: module; importing
    pair: name; binding
    keyword: from
+   keyword: as
+   exception: ImportError
+   single: ,; import statement
 
 .. productionlist::
    import_stmt: "import" `module` ["as" `identifier`] ("," `module` ["as" `identifier`])*
@@ -761,8 +772,7 @@ available in the local namespace in one of three ways:
 
 .. index::
    pair: name; binding
-   keyword: from
-   exception: ImportError
+   single: from; import statement
 
 The :keyword:`from` form uses a slightly more complex process:
 
@@ -785,6 +795,8 @@ Examples::
    import foo.bar.baz as fbb  # foo.bar.baz imported and bound as fbb
    from foo.bar import baz    # foo.bar.baz imported and bound as baz
    from foo import attr       # foo imported and foo.attr bound as attr
+
+.. index:: single: *; import statement
 
 If the list of identifiers is replaced by a star (``'*'``), all public
 names defined in the module are bound in the local namespace for the scope
@@ -831,7 +843,9 @@ determine dynamically the modules to be loaded.
 Future statements
 -----------------
 
-.. index:: pair: future; statement
+.. index::
+   pair: future; statement
+   single: __future__; future statement
 
 A :dfn:`future statement` is a directive to the compiler that a particular
 module should be compiled using syntax or semantics that will be available in a
@@ -918,6 +932,7 @@ The :keyword:`global` statement
 .. index::
    statement: global
    triple: global; name; binding
+   single: ,; identifier list
 
 .. productionlist::
    global_stmt: "global" `identifier` ("," `identifier`)*
@@ -962,6 +977,7 @@ The :keyword:`nonlocal` statement
 =================================
 
 .. index:: statement: nonlocal
+   single: ,; identifier list
 
 .. productionlist::
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*

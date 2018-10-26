@@ -49,6 +49,10 @@ the key "include-system-site-packages" set to anything other than "false"
 (case-insensitive), the system-level prefixes will still also be
 searched for site-packages; otherwise they won't.
 
+.. index::
+   single: #; comment
+   statement: import
+
 A path configuration file is a file whose name has the form :file:`{name}.pth`
 and exists in one of the four directories mentioned above; its contents are
 additional items (one per line) to be added to ``sys.path``.  Non-existing items
