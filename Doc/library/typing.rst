@@ -899,7 +899,7 @@ The module defines the following classes, functions and decorators:
    non-``@overload``-decorated definition, while the latter is used at
    runtime but should be ignored by a type checker.  At runtime, calling
    a ``@overload``-decorated function directly will raise
-   ``NotImplementedError``. An example of overload that gives a more
+   :exc:`NotImplementedError`. An example of overload that gives a more
    precise type than can be expressed using a union or a type variable::
 
       @overload
