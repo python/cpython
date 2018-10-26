@@ -300,7 +300,7 @@ Fixed problem with in-place string concatenation and utf-8 cache.
 .. nonce: tCCgmH
 .. section: Core and Builtins
 
-Mention PEP 420 in the importlib docs.
+Mention :pep:`420` in the importlib docs.
 
 ..
 
@@ -423,7 +423,7 @@ A new version of typing.py provides several new classes and features:
 @overload outside stubs, Reversible, DefaultDict, Text, ContextManager,
 Type[], NewType(), TYPE_CHECKING, and numerous bug fixes (note that some of
 the new features are not yet implemented in mypy or other static analyzers).
-Also classes for PEP 492 (Awaitable, AsyncIterable, AsyncIterator) have been
+Also classes for :pep:`492` (Awaitable, AsyncIterable, AsyncIterator) have been
 added (in fact they made it into 3.5.1 but were never mentioned).
 
 ..
@@ -1816,7 +1816,7 @@ Patch by Ammar Askar.
 .. nonce: MUK0zK
 .. section: Documentation
 
-Document the new PEP 448 unpacking syntax of 3.5.
+Document the new :pep:`448` unpacking syntax of 3.5.
 
 ..
 

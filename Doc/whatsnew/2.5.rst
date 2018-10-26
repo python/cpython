@@ -256,7 +256,7 @@ Package uploading was implemented by Martin von Löwis and Richard Jones.
 PEP 328: Absolute and Relative Imports
 ======================================
 
-The simpler part of PEP 328 was implemented in Python 2.4: parentheses could now
+The simpler part of :pep:`328` was implemented in Python 2.4: parentheses could now
 be used to enclose the names imported from a module using the ``from ... import
 ...`` statement, making it easier to import many different names.
 
@@ -529,7 +529,7 @@ chance to run.  The syntactic restriction that you couldn't mix :keyword:`yield`
 statements with a ``try...finally`` suite has therefore been removed.  This
 seems like a minor bit of language trivia, but using generators and
 ``try...finally`` is actually necessary in order to implement the
-:keyword:`with` statement described by PEP 343.  I'll look at this new statement
+:keyword:`with` statement described by :pep:`343`.  I'll look at this new statement
 in the following  section.
 
 Another even more esoteric effect of this change: previously, the
@@ -1483,7 +1483,7 @@ complete list of changes, or look through the SVN logs for all the details.
   2.4, so this completes the removal of the feature.
 
 * The :mod:`pkgutil` module, containing various utility functions for finding
-  packages, was enhanced to support PEP 302's import hooks and now also works for
+  packages, was enhanced to support :pep:`302`'s import hooks and now also works for
   packages stored in ZIP-format archives. (Contributed by Phillip J. Eby.)
 
 * The pybench benchmark suite by Marc-André Lemburg is now included in the
@@ -2043,7 +2043,7 @@ between web servers and Python web applications and is described in :pep:`333`.
 The :mod:`wsgiref` package is a reference implementation of the WSGI
 specification.
 
-.. XXX should this be in a PEP 333 section instead?
+.. XXX should this be in a :pep:`333` section instead?
 
 The package includes a basic HTTP server that will run a WSGI application; this
 server is useful for debugging but isn't intended for  production use.  Setting

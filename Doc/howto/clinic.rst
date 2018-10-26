@@ -765,7 +765,7 @@ All Argument Clinic converters accept the following arguments:
 
   ``annotation``
     The annotation value for this parameter.  Not currently supported,
-    because PEP 8 mandates that the Python library may not use
+    because :pep:`8` mandates that the Python library may not use
     annotations.
 
 In addition, some converters accept additional arguments.  Here is a list
