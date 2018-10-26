@@ -308,7 +308,7 @@ Deprecated
   :meth:`~gettext.NullTranslations.output_charset` and
   :meth:`~gettext.NullTranslations.set_output_charset`, and the *codeset*
   parameter of functions :func:`~gettext.translation` and
-  :func:`~gettext.install` are also depreted, since they are only used for
+  :func:`~gettext.install` are also deprecated, since they are only used for
   for ``l*gettext()`` functions.
 
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
