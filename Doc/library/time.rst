@@ -369,6 +369,9 @@ Functions
       :pep:`475` for the rationale).
 
 
+.. index::
+   single: %; datetime format
+
 .. function:: strftime(format[, t])
 
    Convert a tuple or :class:`struct_time` representing a time as returned by
@@ -499,6 +502,9 @@ Functions
    this is also not portable. The field width is normally 2 except for ``%j`` where
    it is 3.
 
+
+.. index::
+   single: %; datetime format
 
 .. function:: strptime(string[, format])
 
