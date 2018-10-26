@@ -439,6 +439,8 @@ static PyObject *empty_values[1] = { NULL };
 static int
 _PyDict_CheckConsistency(PyDictObject *mp)
 {
+#define ASSERT(expr) _PyObject_ASSERT((PyObject *)mp, (expr))
+
     PyDictKeysObject *keys = mp->ma_keys;
     int splitted = _PyDict_HasSplitTable(mp);
     Py_ssize_t usable = USABLE_FRACTION(keys->dk_size);
@@ -447,23 +449,23 @@ _PyDict_CheckConsistency(PyDictObject *mp)
     Py_ssize_t i;
 #endif
 
-    assert(0 <= mp->ma_used && mp->ma_used <= usable);
-    assert(IS_POWER_OF_2(keys->dk_size));
-    assert(0 <= keys->dk_usable
+    ASSERT(0 <= mp->ma_used && mp->ma_used <= usable);
+    ASSERT(IS_POWER_OF_2(keys->dk_size));
+    ASSERT(0 <= keys->dk_usable
            && keys->dk_usable <= usable);
-    assert(0 <= keys->dk_nentries
+    ASSERT(0 <= keys->dk_nentries
            && keys->dk_nentries <= usable);
-    assert(keys->dk_usable + keys->dk_nentries <= usable);
+    ASSERT(keys->dk_usable + keys->dk_nentries <= usable);
 
     if (!splitted) {
         /* combined table */
-        assert(keys->dk_refcnt == 1);
+        ASSERT(keys->dk_refcnt == 1);
     }
 
 #ifdef DEBUG_PYDICT
     for (i=0; i < keys->dk_size; i++) {
         Py_ssize_t ix = dk_get_index(keys, i);
-        assert(DKIX_DUMMY <= ix && ix <= usable);
+        ASSERT(DKIX_DUMMY <= ix && ix <= usable);
     }
 
     for (i=0; i < usable; i++) {
@@ -473,32 +475,34 @@ _PyDict_CheckConsistency(PyDictObject *mp)
         if (key != NULL) {
             if (PyUnicode_CheckExact(key)) {
                 Py_hash_t hash = ((PyASCIIObject *)key)->hash;
-                assert(hash != -1);
-                assert(entry->me_hash == hash);
+                ASSERT(hash != -1);
+                ASSERT(entry->me_hash == hash);
             }
             else {
                 /* test_dict fails if PyObject_Hash() is called again */
-                assert(entry->me_hash != -1);
+                ASSERT(entry->me_hash != -1);
             }
             if (!splitted) {
-                assert(entry->me_value != NULL);
+                ASSERT(entry->me_value != NULL);
             }
         }
 
         if (splitted) {
-            assert(entry->me_value == NULL);
+            ASSERT(entry->me_value == NULL);
         }
     }
 
     if (splitted) {
         /* splitted table */
         for (i=0; i < mp->ma_used; i++) {
-            assert(mp->ma_values[i] != NULL);
+            ASSERT(mp->ma_values[i] != NULL);
         }
     }
 #endif
 
     return 1;
+
+#undef ASSERT
 }
 #endif
 
