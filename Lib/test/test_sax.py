@@ -259,7 +259,28 @@ class MakeParserTest(unittest.TestCase):
         # list.
         make_parser(('module', ))
         make_parser({'module'})
+        make_parser(frozenset({'module'}))
         make_parser({'module': None})
+        make_parser(iter(['module']))
+
+    def test_make_parser4(self):
+        # Testing that make_parser can handle empty iterables.
+        make_parser([])
+        make_parser(tuple())
+        make_parser(set())
+        make_parser(frozenset())
+        make_parser({})
+        make_parser(iter([]))
+
+    def test_make_parser5(self):
+        # Testing that make_parser can handle iterables with more than
+        # one item.
+        make_parser(['module1', 'module2'])
+        make_parser(('module1', 'module2'))
+        make_parser({'module1', 'module2'})
+        make_parser(frozenset({'module1', 'module2'}))
+        make_parser({'module1': None, 'module2': None})
+        make_parser(iter(['module1', 'module2']))
 
 # ===========================================================================
 #
