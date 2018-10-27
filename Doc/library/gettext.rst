@@ -53,6 +53,8 @@ class-based API instead.
    and :func:`ldngettext` functions.
    If *codeset* is omitted, then the current binding is returned.
 
+   .. deprecated-removed:: 3.8 3.10
+
 
 .. function:: textdomain(domain=None)
 
@@ -112,9 +114,9 @@ class-based API instead.
       Unicode strings instead, since most Python applications will want to
       manipulate human readable text as strings instead of bytes.  Further,
       it's possible that you may get unexpected Unicode-related exceptions
-      if there are encoding problems with the translated strings.  It is
-      possible that the ``l*()`` functions will be deprecated in future Python
-      versions due to their inherent problems and limitations.
+      if there are encoding problems with the translated strings.
+
+   .. deprecated-removed:: 3.8 3.10
 
 
 Note that GNU :program:`gettext` also defines a :func:`dcgettext` method, but
@@ -192,6 +194,9 @@ class can also install themselves in the built-in namespace as the function
    .. versionchanged:: 3.3
       :exc:`IOError` used to be raised instead of :exc:`OSError`.
 
+   .. deprecated-removed:: 3.8 3.10
+      The *codeset* parameter.
+
 
 .. function:: install(domain, localedir=None, codeset=None, names=None)
 
@@ -211,6 +216,9 @@ class can also install themselves in the built-in namespace as the function
    For convenience, you want the :func:`_` function to be installed in Python's
    builtins namespace, so it is easily accessible in all modules of your
    application.
+
+   .. deprecated-removed:: 3.8 3.10
+      The *codeset* parameter.
 
 
 The :class:`NullTranslations` class
@@ -272,6 +280,8 @@ are the methods of :class:`!NullTranslations`:
          These methods should be avoided in Python 3.  See the warning for the
          :func:`lgettext` function.
 
+      .. deprecated-removed:: 3.8 3.10
+
 
    .. method:: info()
 
@@ -288,10 +298,14 @@ are the methods of :class:`!NullTranslations`:
       Return the encoding used to return translated messages in :meth:`.lgettext`
       and :meth:`.lngettext`.
 
+      .. deprecated-removed:: 3.8 3.10
+
 
    .. method:: set_output_charset(charset)
 
       Change the encoding used to return translated messages.
+
+      .. deprecated-removed:: 3.8 3.10
 
 
    .. method:: install(names=None)
@@ -392,6 +406,8 @@ unexpected, or if other problems occur while reading the file, instantiating a
 
          These methods should be avoided in Python 3.  See the warning for the
          :func:`lgettext` function.
+
+      .. deprecated-removed:: 3.8 3.10
 
 
 Solaris message catalog support
