@@ -1340,9 +1340,9 @@ size."
 static PyObject *
 sys_getcounts(PyObject *self)
 {
-    extern PyObject *get_counts(void);
+    extern PyObject *_Py_get_counts(void);
 
-    return get_counts();
+    return _Py_get_counts();
 }
 #endif
 

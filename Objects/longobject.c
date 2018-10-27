@@ -42,7 +42,7 @@ PyObject *_PyLong_One = NULL;
 */
 static PyLongObject small_ints[NSMALLNEGINTS + NSMALLPOSINTS];
 #ifdef COUNT_ALLOCS
-Py_ssize_t quick_int_allocs, quick_neg_int_allocs;
+Py_ssize_t _Py_quick_int_allocs, _Py_quick_neg_int_allocs;
 #endif
 
 static PyObject *
@@ -54,9 +54,9 @@ get_small_int(sdigit ival)
     Py_INCREF(v);
 #ifdef COUNT_ALLOCS
     if (ival >= 0)
-        quick_int_allocs++;
+        _Py_quick_int_allocs++;
     else
-        quick_neg_int_allocs++;
+        _Py_quick_neg_int_allocs++;
 #endif
     return v;
 }
