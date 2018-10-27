@@ -348,9 +348,6 @@ error:
    _PyHASH_XXROTATE() expansion. If that doesn't happen for some important
    platform, the macro could be changed to expand to a platform-specific rotate
    spelling instead.
-
-   NOTE: if xxHash is ever used for other hashes besides tuples, these macros
-   should be moved to Include/pyhash.h
 */
 #if SIZEOF_PY_UHASH_T > 4
 #define _PyHASH_XXPRIME_1 ((Py_uhash_t)11400714785074694791ULL)

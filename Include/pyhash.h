@@ -12,8 +12,8 @@ PyAPI_FUNC(Py_hash_t) _Py_HashPointer(void*);
 PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
 #endif
 
-/* Multiplier used for various hashes */
-#define _PyHASH_MULTIPLIER 1000003UL
+/* Prime multiplier used in string and various other hashes. */
+#define _PyHASH_MULTIPLIER 1000003UL  /* 0xf4243 */
 
 /* Parameters used for the numeric hash implementation.  See notes for
    _Py_HashDouble in Python/pyhash.c.  Numeric hashes are based on
