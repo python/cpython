@@ -248,12 +248,6 @@ PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
 #if !defined(Py_LIMITED_API)
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
 #endif
-#ifdef Py_BUILD_CORE
-   /* Macro which should only be used for performance critical code.
-      Need "#include "pycore/pycore_pystate.h". See also _PyInterpreterState_Get()
-      and _PyGILState_GetInterpreterStateUnsafe(). */
-#  define _PyInterpreterState_GET_UNSAFE() (PyThreadState_GET()->interp)
-#endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
 /* New in 3.7 */
 PyAPI_FUNC(int64_t) PyInterpreterState_GetID(PyInterpreterState *);
@@ -291,6 +285,11 @@ PyAPI_FUNC(void) _PyGILState_Reinit(void);
  * the caller needn't check for NULL). */
 PyAPI_FUNC(PyThreadState *) PyThreadState_Get(void);
 
+#ifndef Py_BUILD_CORE
+#  define PyThreadState_GET() PyThreadState_Get()
+#endif
+
+
 #ifndef Py_LIMITED_API
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
  * if it is NULL. */
@@ -303,16 +302,6 @@ PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 
 
 /* Variable and macro for in-line access to current thread state */
-
-/* Assuming the current thread holds the GIL, this is the
-   PyThreadState for the current thread. */
-#ifdef Py_BUILD_CORE
-#  define _PyThreadState_Current _PyRuntime.gilstate.tstate_current
-#  define PyThreadState_GET() \
-             ((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
-#else
-#  define PyThreadState_GET() PyThreadState_Get()
-#endif
 
 typedef
     enum {PyGILState_LOCKED, PyGILState_UNLOCKED}

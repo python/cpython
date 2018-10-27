@@ -215,6 +215,18 @@ PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
     (_PyRuntime.finalizing == tstate)
 
 
+/* Assuming the current thread holds the GIL, this is the
+   PyThreadState for the current thread. */
+#define _PyThreadState_Current _PyRuntime.gilstate.tstate_current
+#define PyThreadState_GET() \
+           ((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
+
+/* Macro which should only be used for performance critical code.
+   Need "#include "pycore/pycore_pystate.h". See also _PyInterpreterState_Get()
+   and _PyGILState_GetInterpreterStateUnsafe(). */
+#define _PyInterpreterState_GET_UNSAFE() (PyThreadState_GET()->interp)
+
+
 /* Other */
 
 PyAPI_FUNC(_PyInitError) _PyInterpreterState_Enable(_PyRuntimeState *);
