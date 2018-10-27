@@ -363,7 +363,7 @@ ZipFile Objects
    Return the name of the first bad file, or else return ``None``.
 
    .. versionchanged:: 3.6
-      Calling :meth:`testfile` on a closed ZipFile will raise a
+      Calling :meth:`testzip` on a closed ZipFile will raise a
       :exc:`ValueError`.  Previously, a :exc:`RuntimeError` was raised.
 
 
