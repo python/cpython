@@ -8,9 +8,9 @@ extern "C" {
 #include "pyatomic.h"
 #include "pythread.h"
 
-#include "internal/mem.h"
-#include "internal/ceval.h"
-#include "internal/warnings.h"
+#include "pycore/pycore_objimpl.h"
+#include "pycore/pycore_ceval.h"
+#include "pycore/pycore_warnings.h"
 
 
 /* GIL state */

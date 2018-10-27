@@ -1,7 +1,6 @@
 /* Return the initial module search path. */
 
 #include "Python.h"
-#include "internal/pystate.h"
 #include "osdefs.h"
 
 #include <sys/types.h>

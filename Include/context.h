@@ -75,6 +75,9 @@ PyAPI_FUNC(PyObject *) _PyContext_NewHamtForTests(void);
 
 PyAPI_FUNC(int) PyContext_ClearFreeList(void);
 
+#ifdef Py_BUILD_CORE
+#  include "pycore/pycore_context.h"
+#endif
 
 #endif /* !Py_LIMITED_API */
 

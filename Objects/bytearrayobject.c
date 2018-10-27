@@ -2,8 +2,6 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
 #include "structmember.h"
 #include "bytes_methods.h"
 #include "bytesobject.h"

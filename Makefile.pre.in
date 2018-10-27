@@ -1026,13 +1026,13 @@ PYTHON_HEADERS= \
 		pyconfig.h \
 		$(PARSER_HEADERS) \
 		$(srcdir)/Include/Python-ast.h \
-		$(srcdir)/Include/internal/ceval.h \
-		$(srcdir)/Include/internal/gil.h \
-		$(srcdir)/Include/internal/mem.h \
-		$(srcdir)/Include/internal/pygetopt.h \
-		$(srcdir)/Include/internal/pystate.h \
-		$(srcdir)/Include/internal/context.h \
-		$(srcdir)/Include/internal/warnings.h \
+		$(srcdir)/Include/pycore/pycore_ceval.h \
+		$(srcdir)/Include/pycore/pycore_context.h \
+		$(srcdir)/Include/pycore/pycore_gil.h \
+		$(srcdir)/Include/pycore/pycore_objimpl.h \
+		$(srcdir)/Include/pycore/pycore_pygetopt.h \
+		$(srcdir)/Include/pycore/pycore_pystate.h \
+		$(srcdir)/Include/pycore/pycore_warnings.h \
 		$(DTRACE_HEADERS)
 
 $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)

@@ -16,8 +16,6 @@
 #define PGEN
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
 #include "pgenheaders.h"
 #include "grammar.h"
 #include "node.h"

@@ -1,12 +1,8 @@
-#ifndef Py_INTERNAL_MEM_H
-#define Py_INTERNAL_MEM_H
+#ifndef Py_INTERNAL_OBJIMPL_H
+#define Py_INTERNAL_OBJIMPL_H
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "objimpl.h"
-#include "pymem.h"
-
 
 /* GC runtime state */
 
@@ -143,9 +139,4 @@ struct _gc_runtime_state {
 
 PyAPI_FUNC(void) _PyGC_Initialize(struct _gc_runtime_state *);
 
-#define _PyGC_generation0 _PyRuntime.gc.generation0
-
-#ifdef __cplusplus
-}
-#endif
-#endif /* !Py_INTERNAL_MEM_H */
+#endif /* !Py_INTERNAL_OBJIMPL_H */

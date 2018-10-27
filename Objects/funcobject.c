@@ -2,8 +2,6 @@
 /* Function object implementation */
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
 #include "code.h"
 #include "structmember.h"
 

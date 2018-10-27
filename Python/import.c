@@ -4,8 +4,7 @@
 
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
-#include "internal/hash.h"
-#include "internal/pystate.h"
+#include "pycore/pycore_hash.h"
 #include "errcode.h"
 #include "marshal.h"
 #include "code.h"

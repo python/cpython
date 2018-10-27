@@ -2,8 +2,7 @@
 
 #include "Python.h"
 #include "osdefs.h"
-#include "internal/pygetopt.h"
-#include "internal/pystate.h"
+#include "pycore/pycore_pygetopt.h"
 
 #include <locale.h>
 

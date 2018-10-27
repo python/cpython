@@ -1,7 +1,6 @@
 /* Frame object implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
 
 #include "code.h"
 #include "frameobject.h"

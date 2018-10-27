@@ -1,7 +1,6 @@
 /* Generator object implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
 #include "frameobject.h"
 #include "structmember.h"
 #include "opcode.h"

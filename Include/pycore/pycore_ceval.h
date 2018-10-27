@@ -25,7 +25,7 @@ struct _pending_calls {
     int last;
 };
 
-#include "internal/gil.h"
+#include "pycore/pycore_gil.h"
 
 struct _ceval_runtime_state {
     int recursion_limit;

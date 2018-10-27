@@ -32,7 +32,6 @@
 */
 
 #include "Python.h"
-#include "internal/pystate.h"
 #include "structmember.h"
 
 /* Object used as dummy key to fill deleted entries */

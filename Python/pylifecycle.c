@@ -4,9 +4,7 @@
 
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
-#include "internal/context.h"
-#include "internal/hamt.h"
-#include "internal/pystate.h"
+#include "pycore/pycore_hamt.h"
 #include "grammar.h"
 #include "node.h"
 #include "token.h"

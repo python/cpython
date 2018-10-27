@@ -2,7 +2,6 @@
 
 #include "Python.h"
 #include "osdefs.h"
-#include "internal/pystate.h"
 #include <wchar.h>
 
 #ifdef __cplusplus

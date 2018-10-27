@@ -278,7 +278,9 @@ typedef struct {
     uintptr_t _gc_prev;
 } PyGC_Head;
 
-extern PyGC_Head *_PyGC_generation0;
+#ifdef Py_BUILD_CORE
+#  include "pycore/pycore_objimpl.h"
+#endif
 
 #define _Py_AS_GC(o) ((PyGC_Head *)(o)-1)
 
@@ -315,7 +317,7 @@ extern PyGC_Head *_PyGC_generation0;
  * NB: While the object is tracked by the collector, it must be safe to call the
  * ob_traverse method.
  *
- * Internal note: _PyGC_generation0->_gc_prev doesn't have any bit flags
+ * Internal note: _PyRuntime.gc.generation0->_gc_prev doesn't have any bit flags
  * because it's not object header.  So we don't use _PyGCHead_PREV() and
  * _PyGCHead_SET_PREV() for it to avoid unnecessary bitwise operations.
  */
@@ -325,11 +327,11 @@ extern PyGC_Head *_PyGC_generation0;
         Py_FatalError("GC object already tracked"); \
     } \
     assert((g->_gc_prev & _PyGC_PREV_MASK_COLLECTING) == 0); \
-    PyGC_Head *last = (PyGC_Head*)(_PyGC_generation0->_gc_prev); \
+    PyGC_Head *last = (PyGC_Head*)(_PyRuntime.gc.generation0->_gc_prev); \
     _PyGCHead_SET_NEXT(last, g); \
     _PyGCHead_SET_PREV(g, last); \
-    _PyGCHead_SET_NEXT(g, _PyGC_generation0); \
-    _PyGC_generation0->_gc_prev = (uintptr_t)g; \
+    _PyGCHead_SET_NEXT(g, _PyRuntime.gc.generation0); \
+    _PyRuntime.gc.generation0->_gc_prev = (uintptr_t)g; \
     } while (0);
 
 /* Tell the GC to stop tracking this object.

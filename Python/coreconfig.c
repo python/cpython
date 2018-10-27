@@ -1,5 +1,4 @@
 #include "Python.h"
-#include "internal/pystate.h"
 #include <locale.h>
 #ifdef HAVE_LANGINFO_H
 #  include <langinfo.h>
