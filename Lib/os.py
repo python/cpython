@@ -660,15 +660,12 @@ def get_current_dir_name():
     the *PWD* environment variable.
     """
     cwd = getcwd()
-
     if name == 'nt':
         return cwd
-
     try:
         pwd = environ["PWD"]
     except KeyError:
         return cwd
-
     if path.samefile(cwd, pwd):
         return pwd
     return cwd

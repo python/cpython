@@ -1702,10 +1702,10 @@ features:
 .. function:: get_current_dir_name()
 
     Return a string representing the current working directory taking into
-    consideration the users ``PWD`` environment variable if it exists. This is
-    opposed to :func:`getcwd()` which dereferences symlinks in the path. This
-    function is identical to :func:`getcwd()` on systems that do **not**
-    support the ``PWD`` environment variable.
+    consideration the users :envvar:`PWD` environment variable if it exists. This is
+    opposed to :func:`getcwd` which dereferences symlinks in the path. This
+    function is identical to :func:`getcwd` on systems that do **not**
+    support the :envvar:`PWD` environment variable.
 
     .. versionadded:: 3.8
 

@@ -141,6 +141,12 @@ by right-clicking the button.  (Contributed by Tal Einat in :issue:`1529353`.)
 The changes above have been backported to 3.7 maintenance releases.
 
 
+os
+--
+
+Added :func:`~os.get_current_dir_name` function.
+(Contributed by Braden Groom in :issue:`1154351`.)
+
 os.path
 -------
 
