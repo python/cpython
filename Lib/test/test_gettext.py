@@ -1,5 +1,6 @@
 import os
 import base64
+import contextlib
 import gettext
 import locale
 import unittest
@@ -461,115 +462,173 @@ class LGettextTestCase(GettextBaseTest):
         GettextBaseTest.setUp(self)
         self.mofile = MOFILE
 
+    @contextlib.contextmanager
+    def assertDeprecated(self, name):
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   fr'^{name}\(\) is deprecated'):
+            yield
+
     def test_lgettext(self):
         lgettext = gettext.lgettext
         ldgettext = gettext.ldgettext
-        self.assertEqual(lgettext('mullusk'), b'bacon')
-        self.assertEqual(lgettext('spam'), b'spam')
-        self.assertEqual(ldgettext('gettext', 'mullusk'), b'bacon')
-        self.assertEqual(ldgettext('gettext', 'spam'), b'spam')
+        with self.assertDeprecated('lgettext'):
+            self.assertEqual(lgettext('mullusk'), b'bacon')
+        with self.assertDeprecated('lgettext'):
+            self.assertEqual(lgettext('spam'), b'spam')
+        with self.assertDeprecated('ldgettext'):
+            self.assertEqual(ldgettext('gettext', 'mullusk'), b'bacon')
+        with self.assertDeprecated('ldgettext'):
+            self.assertEqual(ldgettext('gettext', 'spam'), b'spam')
 
     def test_lgettext_2(self):
         with open(self.mofile, 'rb') as fp:
             t = gettext.GNUTranslations(fp)
         lgettext = t.lgettext
-        self.assertEqual(lgettext('mullusk'), b'bacon')
-        self.assertEqual(lgettext('spam'), b'spam')
+        with self.assertDeprecated('lgettext'):
+            self.assertEqual(lgettext('mullusk'), b'bacon')
+        with self.assertDeprecated('lgettext'):
+            self.assertEqual(lgettext('spam'), b'spam')
 
     def test_lgettext_bind_textdomain_codeset(self):
         lgettext = gettext.lgettext
         ldgettext = gettext.ldgettext
-        saved_codeset = gettext.bind_textdomain_codeset('gettext')
+        with self.assertDeprecated('bind_textdomain_codeset'):
+            saved_codeset = gettext.bind_textdomain_codeset('gettext')
         try:
-            gettext.bind_textdomain_codeset('gettext', 'utf-16')
-            self.assertEqual(lgettext('mullusk'), 'bacon'.encode('utf-16'))
-            self.assertEqual(lgettext('spam'), 'spam'.encode('utf-16'))
-            self.assertEqual(ldgettext('gettext', 'mullusk'), 'bacon'.encode('utf-16'))
-            self.assertEqual(ldgettext('gettext', 'spam'), 'spam'.encode('utf-16'))
+            with self.assertDeprecated('bind_textdomain_codeset'):
+                gettext.bind_textdomain_codeset('gettext', 'utf-16')
+            with self.assertDeprecated('lgettext'):
+                self.assertEqual(lgettext('mullusk'), 'bacon'.encode('utf-16'))
+            with self.assertDeprecated('lgettext'):
+                self.assertEqual(lgettext('spam'), 'spam'.encode('utf-16'))
+            with self.assertDeprecated('ldgettext'):
+                self.assertEqual(ldgettext('gettext', 'mullusk'), 'bacon'.encode('utf-16'))
+            with self.assertDeprecated('ldgettext'):
+                self.assertEqual(ldgettext('gettext', 'spam'), 'spam'.encode('utf-16'))
         finally:
             del gettext._localecodesets['gettext']
-            gettext.bind_textdomain_codeset('gettext', saved_codeset)
+            with self.assertDeprecated('bind_textdomain_codeset'):
+                gettext.bind_textdomain_codeset('gettext', saved_codeset)
 
     def test_lgettext_output_encoding(self):
         with open(self.mofile, 'rb') as fp:
             t = gettext.GNUTranslations(fp)
         lgettext = t.lgettext
-        t.set_output_charset('utf-16')
-        self.assertEqual(lgettext('mullusk'), 'bacon'.encode('utf-16'))
-        self.assertEqual(lgettext('spam'), 'spam'.encode('utf-16'))
+        with self.assertDeprecated('set_output_charset'):
+            t.set_output_charset('utf-16')
+        with self.assertDeprecated('lgettext'):
+            self.assertEqual(lgettext('mullusk'), 'bacon'.encode('utf-16'))
+        with self.assertDeprecated('lgettext'):
+            self.assertEqual(lgettext('spam'), 'spam'.encode('utf-16'))
 
     def test_lngettext(self):
         lngettext = gettext.lngettext
         ldngettext = gettext.ldngettext
-        x = lngettext('There is %s file', 'There are %s files', 1)
+        with self.assertDeprecated('lngettext'):
+            x = lngettext('There is %s file', 'There are %s files', 1)
         self.assertEqual(x, b'Hay %s fichero')
-        x = lngettext('There is %s file', 'There are %s files', 2)
+        with self.assertDeprecated('lngettext'):
+            x = lngettext('There is %s file', 'There are %s files', 2)
         self.assertEqual(x, b'Hay %s ficheros')
-        x = lngettext('There is %s directory', 'There are %s directories', 1)
+        with self.assertDeprecated('lngettext'):
+            x = lngettext('There is %s directory', 'There are %s directories', 1)
         self.assertEqual(x, b'There is %s directory')
-        x = lngettext('There is %s directory', 'There are %s directories', 2)
+        with self.assertDeprecated('lngettext'):
+            x = lngettext('There is %s directory', 'There are %s directories', 2)
         self.assertEqual(x, b'There are %s directories')
-        x = ldngettext('gettext', 'There is %s file', 'There are %s files', 1)
+        with self.assertDeprecated('ldngettext'):
+            x = ldngettext('gettext', 'There is %s file', 'There are %s files', 1)
         self.assertEqual(x, b'Hay %s fichero')
-        x = ldngettext('gettext', 'There is %s file', 'There are %s files', 2)
+        with self.assertDeprecated('ldngettext'):
+            x = ldngettext('gettext', 'There is %s file', 'There are %s files', 2)
         self.assertEqual(x, b'Hay %s ficheros')
-        x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 1)
+        with self.assertDeprecated('ldngettext'):
+            x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 1)
         self.assertEqual(x, b'There is %s directory')
-        x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 2)
+        with self.assertDeprecated('ldngettext'):
+            x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 2)
         self.assertEqual(x, b'There are %s directories')
 
     def test_lngettext_2(self):
         with open(self.mofile, 'rb') as fp:
             t = gettext.GNUTranslations(fp)
         lngettext = t.lngettext
-        x = lngettext('There is %s file', 'There are %s files', 1)
+        with self.assertDeprecated('lngettext'):
+            x = lngettext('There is %s file', 'There are %s files', 1)
         self.assertEqual(x, b'Hay %s fichero')
-        x = lngettext('There is %s file', 'There are %s files', 2)
+        with self.assertDeprecated('lngettext'):
+            x = lngettext('There is %s file', 'There are %s files', 2)
         self.assertEqual(x, b'Hay %s ficheros')
-        x = lngettext('There is %s directory', 'There are %s directories', 1)
+        with self.assertDeprecated('lngettext'):
+            x = lngettext('There is %s directory', 'There are %s directories', 1)
         self.assertEqual(x, b'There is %s directory')
-        x = lngettext('There is %s directory', 'There are %s directories', 2)
+        with self.assertDeprecated('lngettext'):
+            x = lngettext('There is %s directory', 'There are %s directories', 2)
         self.assertEqual(x, b'There are %s directories')
 
     def test_lngettext_bind_textdomain_codeset(self):
         lngettext = gettext.lngettext
         ldngettext = gettext.ldngettext
-        saved_codeset = gettext.bind_textdomain_codeset('gettext')
+        with self.assertDeprecated('bind_textdomain_codeset'):
+            saved_codeset = gettext.bind_textdomain_codeset('gettext')
         try:
-            gettext.bind_textdomain_codeset('gettext', 'utf-16')
-            x = lngettext('There is %s file', 'There are %s files', 1)
+            with self.assertDeprecated('bind_textdomain_codeset'):
+                gettext.bind_textdomain_codeset('gettext', 'utf-16')
+            with self.assertDeprecated('lngettext'):
+                x = lngettext('There is %s file', 'There are %s files', 1)
             self.assertEqual(x, 'Hay %s fichero'.encode('utf-16'))
-            x = lngettext('There is %s file', 'There are %s files', 2)
+            with self.assertDeprecated('lngettext'):
+                x = lngettext('There is %s file', 'There are %s files', 2)
             self.assertEqual(x, 'Hay %s ficheros'.encode('utf-16'))
-            x = lngettext('There is %s directory', 'There are %s directories', 1)
+            with self.assertDeprecated('lngettext'):
+                x = lngettext('There is %s directory', 'There are %s directories', 1)
             self.assertEqual(x, 'There is %s directory'.encode('utf-16'))
-            x = lngettext('There is %s directory', 'There are %s directories', 2)
+            with self.assertDeprecated('lngettext'):
+                x = lngettext('There is %s directory', 'There are %s directories', 2)
             self.assertEqual(x, 'There are %s directories'.encode('utf-16'))
-            x = ldngettext('gettext', 'There is %s file', 'There are %s files', 1)
+            with self.assertDeprecated('ldngettext'):
+                x = ldngettext('gettext', 'There is %s file', 'There are %s files', 1)
             self.assertEqual(x, 'Hay %s fichero'.encode('utf-16'))
-            x = ldngettext('gettext', 'There is %s file', 'There are %s files', 2)
+            with self.assertDeprecated('ldngettext'):
+                x = ldngettext('gettext', 'There is %s file', 'There are %s files', 2)
             self.assertEqual(x, 'Hay %s ficheros'.encode('utf-16'))
-            x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 1)
+            with self.assertDeprecated('ldngettext'):
+                x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 1)
             self.assertEqual(x, 'There is %s directory'.encode('utf-16'))
-            x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 2)
+            with self.assertDeprecated('ldngettext'):
+                x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 2)
             self.assertEqual(x, 'There are %s directories'.encode('utf-16'))
         finally:
             del gettext._localecodesets['gettext']
-            gettext.bind_textdomain_codeset('gettext', saved_codeset)
+            with self.assertDeprecated('bind_textdomain_codeset'):
+                gettext.bind_textdomain_codeset('gettext', saved_codeset)
 
     def test_lngettext_output_encoding(self):
         with open(self.mofile, 'rb') as fp:
             t = gettext.GNUTranslations(fp)
         lngettext = t.lngettext
-        t.set_output_charset('utf-16')
-        x = lngettext('There is %s file', 'There are %s files', 1)
+        with self.assertDeprecated('set_output_charset'):
+            t.set_output_charset('utf-16')
+        with self.assertDeprecated('lngettext'):
+            x = lngettext('There is %s file', 'There are %s files', 1)
         self.assertEqual(x, 'Hay %s fichero'.encode('utf-16'))
-        x = lngettext('There is %s file', 'There are %s files', 2)
+        with self.assertDeprecated('lngettext'):
+            x = lngettext('There is %s file', 'There are %s files', 2)
         self.assertEqual(x, 'Hay %s ficheros'.encode('utf-16'))
-        x = lngettext('There is %s directory', 'There are %s directories', 1)
+        with self.assertDeprecated('lngettext'):
+            x = lngettext('There is %s directory', 'There are %s directories', 1)
         self.assertEqual(x, 'There is %s directory'.encode('utf-16'))
-        x = lngettext('There is %s directory', 'There are %s directories', 2)
+        with self.assertDeprecated('lngettext'):
+            x = lngettext('There is %s directory', 'There are %s directories', 2)
         self.assertEqual(x, 'There are %s directories'.encode('utf-16'))
+
+    def test_output_encoding(self):
+        with open(self.mofile, 'rb') as fp:
+            t = gettext.GNUTranslations(fp)
+        with self.assertDeprecated('set_output_charset'):
+            t.set_output_charset('utf-16')
+        with self.assertDeprecated('output_charset'):
+            self.assertEqual(t.output_charset(), 'utf-16')
 
 
 class GNUTranslationParsingTest(GettextBaseTest):
@@ -642,6 +701,16 @@ class GettextCacheTestCase(GettextBaseTest):
         self.assertEqual(len(gettext._translations), 2)
         self.assertEqual(t.__class__, DummyGNUTranslations)
 
+        # Test deprecated parameter codeset
+        with self.assertWarnsRegex(DeprecationWarning, 'parameter codeset'):
+            t = gettext.translation('gettext', self.localedir,
+                                    class_=DummyGNUTranslations,
+                                    codeset='utf-16')
+        self.assertEqual(len(gettext._translations), 2)
+        self.assertEqual(t.__class__, DummyGNUTranslations)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(t.output_charset(), 'utf-16')
+
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
@@ -649,11 +718,8 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, gettext, blacklist=blacklist)
 
 
-def test_main():
-    support.run_unittest(__name__)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
 
 
 # For reference, here's the .po file used to created the GNU_MO_DATA above.
