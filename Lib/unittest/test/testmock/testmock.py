@@ -1298,7 +1298,7 @@ class MockTest(unittest.TestCase):
         m = Mock()
         with self.assertRaises(AssertionError) as e:
             m.assert_called_once()
-        self.assertFalse("Calls:" in str(e.exception))
+        self.assertNotIn("Calls:", str(e.exception))
 
     #Issue21256 printout of keyword args should be in deterministic order
     def test_sorted_call_signature(self):
