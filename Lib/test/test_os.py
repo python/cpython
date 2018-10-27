@@ -1268,7 +1268,10 @@ class CurrentDirTests(unittest.TestCase):
             self.addCleanup(support.unlink, self.tmp_lnk)
             os.symlink(self.tmp_dir, self.tmp_lnk, True)
             os.chdir(self.tmp_lnk)
-            self.assertEqual(os.getcwd(), self.tmp_dir)
+            if os.name == 'nt':
+                self.assertEqual(os.getcwd(), self.tmp_lnk)
+            else:
+                self.assertEqual(os.getcwd(), self.tmp_dir)
             with mock.patch.dict('os.environ', {'PWD': self.tmp_dir}):
                 self.assertEqual(os.getcwd(), self.tmp_dir)
             with mock.patch.dict('os.environ', {'PWD': self.tmp_lnk}):

@@ -661,6 +661,9 @@ def get_current_dir_name():
     """
     cwd = getcwd()
 
+    if name == 'nt':
+        return cwd
+
     try:
         pwd = environ["PWD"]
     except KeyError:
