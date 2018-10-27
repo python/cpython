@@ -1567,6 +1567,8 @@ class MockTest(unittest.TestCase):
 
 
     def test_reset_mock_does_not_raise_on_attr_deletion(self):
+        # bpo-31177: reset_mock should not AttributeError when attributes
+        # were deleted in a mock instance
         mock = Mock()
         mock.child = True
         del mock.child
