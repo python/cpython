@@ -922,7 +922,7 @@ class NonCallableMock(Base):
         Example: "\nCalls: [call(1), call(2)]."
 
         If self.mock_calls is empty, an empty string is returned. The
-        output will be truncated if very long. 
+        output will be truncated if very long.
         """
         if not self.mock_calls:
             return ""
