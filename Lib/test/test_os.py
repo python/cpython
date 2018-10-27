@@ -1265,6 +1265,7 @@ class CurrentDirTests(unittest.TestCase):
         with support.temp_cwd(self.tmp_dir):
             os.chdir(self.tmp_dir)
             self.assertEqual(os.getcwd(), self.tmp_dir)
+            self.addCleanup(support.unlink, self.tmp_lnk)
             os.symlink(self.tmp_dir, self.tmp_lnk, True)
             os.chdir(self.tmp_lnk)
             self.assertEqual(os.getcwd(), self.tmp_dir)
@@ -1272,7 +1273,6 @@ class CurrentDirTests(unittest.TestCase):
                 self.assertEqual(os.getcwd(), self.tmp_dir)
             with mock.patch.dict('os.environ', {'PWD': self.tmp_lnk}):
                 self.assertEqual(os.getcwd(), self.tmp_dir)
-            os.unlink(self.tmp_lnk)
 
     def test_get_current_dir_name(self):
         # os.get_current_dir_name() returns the direct path--mirroring
