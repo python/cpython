@@ -666,10 +666,7 @@ def get_current_dir_name():
     except KeyError:
         return cwd
 
-    cwd_stat, pwd_stat = map(stat, [cwd, pwd])
-
-    if (cwd_stat.st_dev == pwd_stat.st_dev and
-            cwd_stat.st_ino == pwd_stat.st_ino):
+    if path.samefile(cwd, pwd):
         return pwd
     return cwd
 

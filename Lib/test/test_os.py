@@ -1264,14 +1264,14 @@ class CurrentDirTests(unittest.TestCase):
         # os.getcwd() always returns the dereferenced path
         with support.temp_cwd(self.tmp_dir):
             os.chdir(self.tmp_dir)
-            self.assertEqual(self.tmp_dir, os.getcwd())
+            self.assertEqual(os.getcwd(), self.tmp_dir)
             os.symlink(self.tmp_dir, self.tmp_lnk, True)
             os.chdir(self.tmp_lnk)
-            self.assertEqual(self.tmp_dir, os.getcwd())
+            self.assertEqual(os.getcwd(), self.tmp_dir)
             with mock.patch.dict('os.environ', {'PWD': self.tmp_dir}):
-                self.assertEqual(self.tmp_dir, os.getcwd())
+                self.assertEqual(os.getcwd(), self.tmp_dir)
             with mock.patch.dict('os.environ', {'PWD': self.tmp_lnk}):
-                self.assertEqual(self.tmp_dir, os.getcwd())
+                self.assertEqual(os.getcwd(), self.tmp_dir)
             os.unlink(self.tmp_lnk)
 
     def test_get_current_dir_name(self):
@@ -1280,14 +1280,14 @@ class CurrentDirTests(unittest.TestCase):
         # whether the path contains symlinks.
         with support.temp_cwd(self.tmp_dir):
             with mock.patch.dict('os.environ', {'PWD': self.tmp_dir}):
-                self.assertEqual(self.tmp_dir, os.get_current_dir_name())
+                self.assertEqual(os.get_current_dir_name(), self.tmp_dir)
+            self.addCleanup(support.unlink, self.tmp_lnk)
             os.symlink(self.tmp_dir, self.tmp_lnk, True)
             with mock.patch.dict('os.environ', {'PWD': self.tmp_lnk}):
                 if os.name == 'posix':
-                    self.assertEqual(self.tmp_lnk, os.get_current_dir_name())
+                    self.assertEqual(os.get_current_dir_name(), self.tmp_lnk)
                 else:
-                    self.assertEqual(self.tmp_dir, os.get_current_dir_name())
-            os.unlink(self.tmp_lnk)
+                    self.assertEqual(os.get_current_dir_name(), self.tmp_dir)
 
 
 class RemoveDirsTests(unittest.TestCase):

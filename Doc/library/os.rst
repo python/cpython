@@ -1707,8 +1707,6 @@ features:
     function is identical to :func:`getcwd()` on systems that do **not**
     support the ``PWD`` environment variable.
 
-    .. availability:: Unix.
-
     .. versionadded:: 3.8
 
 
