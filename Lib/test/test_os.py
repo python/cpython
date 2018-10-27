@@ -1269,13 +1269,15 @@ class CurrentDirTests(unittest.TestCase):
             os.symlink(self.tmp_dir, self.tmp_lnk, True)
             os.chdir(self.tmp_lnk)
             if os.name == 'nt':
-                self.assertEqual(os.getcwd(), self.tmp_lnk)
+                # windows doesn't dereference the path
+                expected_cwd = self.tmp_lnk
             else:
-                self.assertEqual(os.getcwd(), self.tmp_dir)
+                expected_cwd = self.tmp_dir
+            self.assertEqual(os.getcwd(), expected_cwd)
             with mock.patch.dict('os.environ', {'PWD': self.tmp_dir}):
-                self.assertEqual(os.getcwd(), self.tmp_dir)
+                self.assertEqual(os.getcwd(), expected_cwd)
             with mock.patch.dict('os.environ', {'PWD': self.tmp_lnk}):
-                self.assertEqual(os.getcwd(), self.tmp_dir)
+                self.assertEqual(os.getcwd(), expected_cwd)
 
     def test_get_current_dir_name(self):
         # os.get_current_dir_name() returns the direct path--mirroring
