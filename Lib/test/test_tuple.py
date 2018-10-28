@@ -183,7 +183,7 @@ class TupleTest(seq_tests.CommonTest):
         # variation is in the lowest bits and across a single high-order
         # bit - the middle bits are all zeroes. A decent hash has to
         # both propagate low bits to the left and high bits to the
-        # right.  This is also complicated a bit in that there
+        # right.  This is also complicated a bit in that there are
         # collisions among the hashes of the integers in L alone.
         L = [n << 60 for n in range(100)]
         tryone("0..99 << 60 by 3", list(product(L, repeat=3)),
