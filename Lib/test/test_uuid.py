@@ -5,13 +5,16 @@ import contextlib
 import io
 import os
 import pickle
-import platform
 import shutil
 import subprocess
+import sys
 
 py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
-AIX = platform.system() == 'AIX'
+# would prefer using platform.system() but CI tests have a merge conflict with "import platform"
+# removing it for the moment
+# AIX = platform.system() == 'AIX'
+AIX = sys.platform.startswith("aix")
 
 def importable(name):
     try:
