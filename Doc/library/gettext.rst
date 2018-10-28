@@ -49,10 +49,8 @@ class-based API instead.
 .. function:: bind_textdomain_codeset(domain, codeset=None)
 
    Bind the *domain* to *codeset*, changing the encoding of byte strings
-   returned by the :func:`lgettext`, :func:`ldgettext`, :func:`lngettext`,
-   :func:`ldngettext`, :func:`lpgettext`, :func:`ldpgettext`,
-   :func:`lnpgettext`, and :func:`ldnpgettext` functions.
-   If *codeset* is omitted, then the current binding is returned.
+   returned by the :func:`lgettext`, :func:`ldgettext`, :func:`lngettext`
+   and :func:`ldngettext` functions.
 
    .. deprecated-removed:: 3.8 3.10
 
@@ -113,17 +111,12 @@ class-based API instead.
 .. function:: ldgettext(domain, message)
 .. function:: lngettext(singular, plural, n)
 .. function:: ldngettext(domain, singular, plural, n)
-.. function:: lpgettext(context, message)
-.. function:: ldpgettext(domain, context, message)
-.. function:: lnpgettext(context, singular, plural, n)
-.. function:: ldnpgettext(domain, context, singular, plural, n)
 
    Equivalent to the corresponding functions without the ``l`` prefix
-   (:func:`.gettext`, :func:`dgettext`, :func:`ngettext`, :func:`dngettext`,
-   :func:`pgettext`, :func:`dpgettext`, :func:`npgettext`, and
-   :func:`dnpgettext`), but the translation is returned as a byte string
-   encoded in the preferred system encoding if no other encoding was
-   explicitly set with :func:`bind_textdomain_codeset`.
+   (:func:`.gettext`, :func:`dgettext`, :func:`ngettext` and :func:`dngettext`),
+   but the translation is returned as a byte string encoded in the preferred
+   system encoding if no other encoding was explicitly set with
+   :func:`bind_textdomain_codeset`.
 
    .. warning::
 
@@ -303,13 +296,10 @@ are the methods of :class:`!NullTranslations`:
 
    .. method:: lgettext(message)
    .. method:: lngettext(singular, plural, n)
-   .. method:: lpgettext(context, message)
-   .. method:: lnpgettext(context, singular, plural, n)
 
-      Equivalent to :meth:`.gettext`, :meth:`.ngettext`, :meth:`.pgettext`,
-      and :meth:`npgettext`, but the translation is returned as a byte string
-      encoded in the preferred system encoding if no encoding was explicitly
-      set with :meth:`set_output_charset`.
+      Equivalent to :meth:`.gettext` and :meth:`.ngettext`, but the translation
+      is returned as a byte string encoded in the preferred system encoding
+      if no encoding was explicitly set with :meth:`set_output_charset`.
       Overridden in derived classes.
 
       .. warning::
@@ -332,9 +322,8 @@ are the methods of :class:`!NullTranslations`:
 
    .. method:: output_charset()
 
-      Return the encoding used to return translated messages in
-      :meth:`.lgettext`, :meth:`.lngettext`, :meth:`.lpgettext`, and
-      :meth:`.lnpgettext`.
+      Return the encoding used to return translated messages in :meth:`.lgettext`
+      and :meth:`.lngettext`.
 
       .. deprecated-removed:: 3.8 3.10
 
@@ -354,8 +343,7 @@ are the methods of :class:`!NullTranslations`:
       If the *names* parameter is given, it must be a sequence containing the
       names of functions you want to install in the builtins namespace in
       addition to :func:`_`.  Supported names are ``'gettext'``, ``'ngettext'``,
-      ``'pgettext'``, ``'lgettext'``, ``'lngettext'``, ``'lpgettext'``,  and
-      ``'lnpgettext'``.
+      ``'pgettext'``, ``'lgettext'``, and ``'lngettext'``.
 
       Note that this is only one way, albeit the most convenient way, to make
       the :func:`_` function available to your application.  Because it affects
@@ -461,8 +449,6 @@ unexpected, or if other problems occur while reading the file, instantiating a
 
    .. method:: lgettext(message)
    .. method:: lngettext(singular, plural, n)
-   .. method:: lpgettext(context, message)
-   .. method:: lnpgettext(context, singular, plural, n)
 
       Equivalent to :meth:`.gettext` and :meth:`.ngettext`, but the translation
       is returned as a byte string encoded in the preferred system encoding

@@ -58,7 +58,6 @@ __all__ = ['NullTranslations', 'GNUTranslations', 'Catalog',
            'dgettext', 'dngettext', 'gettext', 'lgettext', 'ldgettext',
            'ldngettext', 'lngettext', 'ngettext',
            'pgettext', 'dpgettext', 'npgettext', 'dnpgettext',
-           'lpgettext', 'ldpgettext', 'lnpgettext', 'ldnpgettext',
            ]
 
 _default_localedir = os.path.join(sys.base_prefix, 'share', 'locale')
@@ -318,13 +317,6 @@ class NullTranslations:
             return self._fallback.pgettext(context, message)
         return message
 
-    def lpgettext(self, context, message):
-        if self._fallback:
-            return self._fallback.lpgettext(context, message)
-        if self._output_charset:
-            return message.encode(self._output_charset)
-        return message.encode(locale.getpreferredencoding())
-
     def npgettext(self, context, msgid1, msgid2, n):
         if self._fallback:
             return self._fallback.npgettext(context, msgid1, msgid2, n)
@@ -332,17 +324,6 @@ class NullTranslations:
             return msgid1
         else:
             return msgid2
-
-    def lnpgettext(self, context, msgid1, msgid2, n):
-        if self._fallback:
-            return self._fallback.lnpgettext(context, msgid1, msgid2, n)
-        if n == 1:
-            tmsg = msgid1
-        else:
-            tmsg = msgid2
-        if self._output_charset:
-            return tmsg.encode(self._output_charset)
-        return tmsg.encode(locale.getpreferredencoding())
 
     def info(self):
         return self._info
@@ -366,8 +347,8 @@ class NullTranslations:
         import builtins
         builtins.__dict__['_'] = self.gettext
         if names is not None:
-            allowed = {'gettext', 'lgettext', 'lngettext', 'lnpgettext',
-                       'lpgettext', 'ngettext', 'npgettext', 'pgettext'}
+            allowed = {'gettext', 'lgettext', 'lngettext',
+                       'ngettext', 'npgettext', 'pgettext'}
             for name in allowed & set(names):
                 builtins.__dict__[name] = getattr(self, name)
 
@@ -548,33 +529,6 @@ class GNUTranslations(NullTranslations):
             else:
                 tmsg = msgid2
         return tmsg
-
-    def lpgettext(self, context, message):
-        ctxt_msg_id = self.CONTEXT % (context, message)
-        missing = object()
-        tmsg = self._catalog.get(ctxt_msg_id, missing)
-        if tmsg is missing:
-            if self._fallback:
-                return self._fallback.lpgettext(context, message)
-            tmsg = message
-        if self._output_charset:
-            return tmsg.encode(self._output_charset)
-        return tmsg.encode(locale.getpreferredencoding())
-
-    def lnpgettext(self, context, msgid1, msgid2, n):
-        ctxt_msg_id = self.CONTEXT % (context, msgid1)
-        try:
-            tmsg = self._catalog[(ctxt_msg_id, self.plural(n))]
-        except KeyError:
-            if self._fallback:
-                return self._fallback.lnpgettext(context, msgid1, msgid2, n)
-            if n == 1:
-                tmsg = msgid1
-            else:
-                tmsg = msgid2
-        if self._output_charset:
-            return tmsg.encode(self._output_charset)
-        return tmsg.encode(locale.getpreferredencoding())
 
 
 # Locate a .mo file using the gettext strategy
@@ -761,45 +715,21 @@ def ldngettext(domain, msgid1, msgid2, n):
 
 def dpgettext(domain, context, message):
     try:
-        t = translation(domain, _localedirs.get(domain, None),
-                        codeset=_localecodesets.get(domain))
+        t = translation(domain, _localedirs.get(domain, None))
     except OSError:
         return message
     return t.pgettext(context, message)
 
 
-def ldpgettext(domain, context, message):
-    codeset = _localecodesets.get(domain)
-    try:
-        t = translation(domain, _localedirs.get(domain, None), codeset=codeset)
-    except OSError:
-        return message.encode(codeset or locale.getpreferredencoding())
-    return t.lpgettext(context, message)
-
-
 def dnpgettext(domain, context, msgid1, msgid2, n):
     try:
-        t = translation(domain, _localedirs.get(domain, None),
-                        codeset=_localecodesets.get(domain))
+        t = translation(domain, _localedirs.get(domain, None))
     except OSError:
         if n == 1:
             return msgid1
         else:
             return msgid2
     return t.npgettext(context, msgid1, msgid2, n)
-
-
-def ldnpgettext(domain, context, msgid1, msgid2, n):
-    codeset = _localecodesets.get(domain)
-    try:
-        t = translation(domain, _localedirs.get(domain, None), codeset=codeset)
-    except OSError:
-        if n == 1:
-            tmsg = msgid1
-        else:
-            tmsg = msgid2
-        return tmsg.encode(codeset or locale.getpreferredencoding())
-    return t.lnpgettext(context, msgid1, msgid2, n)
 
 
 def gettext(message):
@@ -834,16 +764,8 @@ def pgettext(context, message):
     return dpgettext(_current_domain, context, message)
 
 
-def lpgettext(context, message):
-    return ldpgettext(_current_domain, context, message)
-
-
 def npgettext(context, msgid1, msgid2, n):
     return dnpgettext(_current_domain, context, msgid1, msgid2, n)
-
-
-def lnpgettext(context, msgid1, msgid2, n):
-    return ldnpgettext(_current_domain, context, msgid1, msgid2, n)
 
 
 # dcgettext() has been deemed unnecessary and is not implemented.
