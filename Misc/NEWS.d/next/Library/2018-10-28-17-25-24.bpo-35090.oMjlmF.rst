@@ -1,0 +1,2 @@
+:mod:`bz2`: Avoid division by zero in ``BZ2_Malloc()`` in case if
+``size == 0``.
