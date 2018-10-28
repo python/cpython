@@ -752,10 +752,10 @@ PyAPI_FUNC(void) _PyDebug_PrintTotalRefs(void);
 #endif /* Py_REF_DEBUG */
 
 #ifdef COUNT_ALLOCS
-PyAPI_FUNC(void) inc_count(PyTypeObject *);
-PyAPI_FUNC(void) dec_count(PyTypeObject *);
-#define _Py_INC_TPALLOCS(OP)    inc_count(Py_TYPE(OP))
-#define _Py_INC_TPFREES(OP)     dec_count(Py_TYPE(OP))
+PyAPI_FUNC(void) _Py_inc_count(PyTypeObject *);
+PyAPI_FUNC(void) _Py_dec_count(PyTypeObject *);
+#define _Py_INC_TPALLOCS(OP)    _Py_inc_count(Py_TYPE(OP))
+#define _Py_INC_TPFREES(OP)     _Py_dec_count(Py_TYPE(OP))
 #define _Py_DEC_TPFREES(OP)     Py_TYPE(OP)->tp_frees--
 #define _Py_COUNT_ALLOCS_COMMA  ,
 #else

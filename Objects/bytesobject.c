@@ -18,7 +18,7 @@ class bytes "PyBytesObject *" "&PyBytes_Type"
 #include "clinic/bytesobject.c.h"
 
 #ifdef COUNT_ALLOCS
-Py_ssize_t null_strings, one_strings;
+Py_ssize_t _Py_null_strings, _Py_one_strings;
 #endif
 
 static PyBytesObject *characters[UCHAR_MAX + 1];
@@ -66,7 +66,7 @@ _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
 
     if (size == 0 && (op = nullstring) != NULL) {
 #ifdef COUNT_ALLOCS
-        null_strings++;
+        _Py_null_strings++;
 #endif
         Py_INCREF(op);
         return (PyObject *)op;
@@ -110,7 +110,7 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
         (op = characters[*str & UCHAR_MAX]) != NULL)
     {
 #ifdef COUNT_ALLOCS
-        one_strings++;
+        _Py_one_strings++;
 #endif
         Py_INCREF(op);
         return (PyObject *)op;
@@ -146,14 +146,14 @@ PyBytes_FromString(const char *str)
     }
     if (size == 0 && (op = nullstring) != NULL) {
 #ifdef COUNT_ALLOCS
-        null_strings++;
+        _Py_null_strings++;
 #endif
         Py_INCREF(op);
         return (PyObject *)op;
     }
     if (size == 1 && (op = characters[*str & UCHAR_MAX]) != NULL) {
 #ifdef COUNT_ALLOCS
-        one_strings++;
+        _Py_one_strings++;
 #endif
         Py_INCREF(op);
         return (PyObject *)op;
