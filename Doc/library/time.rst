@@ -370,7 +370,7 @@ Functions
 
 
 .. index::
-   single: %; datetime format
+   single: % (percent); datetime format
 
 .. function:: strftime(format[, t])
 
@@ -504,7 +504,7 @@ Functions
 
 
 .. index::
-   single: %; datetime format
+   single: % (percent); datetime format
 
 .. function:: strptime(string[, format])
 

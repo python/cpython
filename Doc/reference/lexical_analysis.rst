@@ -65,7 +65,7 @@ Comments
 --------
 
 .. index:: comment, hash character
-   single: #; comment
+   single: # (hash); comment
 
 A comment starts with a hash character (``#``) that is not part of a string
 literal, and ends at the end of the physical line.  A comment signifies the end
@@ -79,7 +79,7 @@ Encoding declarations
 ---------------------
 
 .. index:: source character set, encoding declarations (source file)
-   single: #; source encoding declaration
+   single: # (hash); source encoding declaration
 
 If a comment in the first or second line of the Python script matches the
 regular expression ``coding[=:]\s*([-\w.]+)``, this comment is processed as an
@@ -401,8 +401,8 @@ Literals are notations for constant values of some built-in types.
 
 
 .. index:: string literal, bytes literal, ASCII
-   single: '; string literal
-   single: "; string literal
+   single: ' (single quote); string literal
+   single: " (double quote); string literal
    single: u'; string literal
    single: u"; string literal
 .. _strings:
@@ -495,7 +495,7 @@ retained), except that three unescaped quotes in a row terminate the literal.  (
 "quote" is the character used to open the literal, i.e. either ``'`` or ``"``.)
 
 .. index:: physical line, escape sequence, Standard C, C
-   single: \; escape sequence
+   single: \ (backslash); escape sequence
    single: \\; escape sequence
    single: \a; escape sequence
    single: \b; escape sequence
@@ -636,10 +636,9 @@ and formatted string literals may be concatenated with plain string literals.
    single: string; formatted literal
    single: string; interpolated literal
    single: f-string
-   single: {; in formatted string literal
-   single: }; in formatted string literal
-   single: !; in formatted string literal
-   single: :; in formatted string literal
+   single: {} (curly brackets); in formatted string literal
+   single: ! (exclamation); in formatted string literal
+   single: : (colon); in formatted string literal
 .. _f-strings:
 
 Formatted string literals
@@ -778,7 +777,7 @@ actually an expression composed of the unary operator '``-``' and the literal
    single: 0b; integer literal
    single: 0o; integer literal
    single: 0x; integer literal
-   single: _; in numeric literal
+   single: _ (underscore); in numeric literal
 
 .. _integers:
 
@@ -821,9 +820,9 @@ Some examples of integer literals::
 
 
 .. index::
-   single: .; in numeric literal
+   single: . (dot); in numeric literal
    single: e; in numeric literal
-   single: _; in numeric literal
+   single: _ (underscore); in numeric literal
 .. _floating:
 
 Floating point literals
