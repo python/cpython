@@ -1083,6 +1083,45 @@ call fails (for example because the path doesn't exist).
 
    .. versionadded:: 3.5
 
+
+.. method:: Path.append_bytes(data)
+
+   Open the file pointed to in bytes mode, append *data* to it, and close the
+   file::
+
+      >>> p = Path('my_binary_file')
+      >>> p.write_bytes(b'Binary file contents')
+      20
+      >>> p.read_bytes()
+      b'Binary file contents'
+      >>> p.append_bytes(b'\nMore binary file contents')
+      25
+      >>> p.read_bytes()
+      b'Binary file contents\nMore binary file contents')
+
+   An existing file of the same name is overwritten.
+
+   .. versionadded:: 3.8
+
+
+.. method:: Path.append_text(data, encoding=None, errors=None)
+
+   Open the file pointed to in text mode, append *data* to it, and close the
+   file::
+
+      >>> p = Path('my_text_file')
+      >>> p.write_text('Text file contents')
+      18
+      >>> p.read_text()
+      'Text file contents'
+      >>> p.append_text('More text file contents')
+      23
+      >>> p.read_text()
+      'Text file contents\nMore text file contents'
+
+   .. versionadded:: 3.8
+
+
 Correspondence to tools in the :mod:`os` module
 -----------------------------------------------
 

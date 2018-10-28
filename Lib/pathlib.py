@@ -1208,6 +1208,25 @@ class Path(PurePath):
         with self.open(mode='w', encoding=encoding, errors=errors) as f:
             return f.write(data)
 
+    def append_bytes(self, data):
+        """
+        Open the file in bytes mode, append to it, and close the file.
+        """
+        # type-check for the buffer interface before truncating the file
+        view = memoryview(data)
+        with self.open(mode='ab') as f:
+            return f.write(view)
+
+    def append_text(self, data, encoding=None, errors=None):
+        """
+        Open the file in text mode, append to it, and close the file.
+        """
+        if not isinstance(data, str):
+            raise TypeError('data must be str, not %s' %
+                            data.__class__.__name__)
+        with self.open(mode='a', encoding=encoding, errors=errors) as f:
+            return f.write(data)
+
     def touch(self, mode=0o666, exist_ok=True):
         """
         Create this file with the given access mode, if it doesn't exist.

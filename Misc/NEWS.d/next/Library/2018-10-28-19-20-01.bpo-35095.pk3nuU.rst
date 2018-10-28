@@ -1,0 +1,3 @@
+Implement :meth:`pathlib.Path.append_bytes` and
+:meth:`pathlib.Path.append_text` to allow appending bytes and text
+respectively to a :class:`pathlib.Path` object. Patch by Pablo Galindo.

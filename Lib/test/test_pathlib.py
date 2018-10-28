@@ -1374,6 +1374,27 @@ class _BasePathTest(object):
         self.assertRaises(TypeError, (p / 'fileA').write_text, b'somebytes')
         self.assertEqual((p / 'fileA').read_text(encoding='latin-1'), 'äbcdefg')
 
+    def test_read_write_append_bytes(self):
+        p = self.cls(BASE)
+        (p / 'fileA').write_bytes(b'abcdefg')
+        self.assertEqual((p / 'fileA').read_bytes(), b'abcdefg')
+        (p / 'fileA').append_bytes(b'123456')
+        self.assertEqual((p / 'fileA').read_bytes(), b'abcdefg123456')
+        # check that trying to write str does not truncate the file
+        self.assertRaises(TypeError, (p / 'fileA').append_bytes, 'somestr')
+        self.assertEqual((p / 'fileA').read_bytes(), b'abcdefg123456')
+
+    def test_read_write_append_text(self):
+        p = self.cls(BASE)
+        (p / 'fileA').write_text('äbcdefg', encoding='latin-1')
+        self.assertEqual((p / 'fileA').read_text(
+            encoding='utf-8', errors='ignore'), 'bcdefg')
+        (p / 'fileA').append_text('ä123456', encoding='latin-1')
+        self.assertEqual((p / 'fileA').read_text(
+            encoding='utf-8', errors='ignore'), 'bcdefg123456')
+        self.assertRaises(TypeError, (p / 'fileA').append_text, b'somebytes')
+        self.assertEqual((p / 'fileA').read_text(encoding='latin-1'), 'äbcdefgä123456')
+
     def test_iterdir(self):
         P = self.cls
         p = P(BASE)
