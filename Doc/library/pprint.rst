@@ -219,7 +219,8 @@ let's fetch information about a project from `PyPI <https://pypi.org>`_::
    >>> from urllib.request import urlopen
    >>> with urlopen('https://pypi.org/pypi/Twisted/json') as url:
    ...     http_info = url.info()
-   ...     raw_data = url.read().decode(http_info.get_content_charset())
+   ...     charset = http_info.get_content_charset(failobj="utf-8")
+   ...     raw_data = url.read().decode(charset)
    >>> project_info = json.loads(raw_data)
 
 In its basic form, :func:`pprint` shows the whole object::
