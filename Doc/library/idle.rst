@@ -351,7 +351,7 @@ the *Python Shell window* subsection below.
 
 Squeeze
    If the cursor is over an output line, squeeze all the output between
-   the code above and the prompt below down to a 'Squeezed text' button.
+   the code above and the prompt below down to a 'Squeezed text' label.
 
 
 Editing and navigation
@@ -484,8 +484,8 @@ or immediately run an existing file before editing.
 Python Shell window
 ^^^^^^^^^^^^^^^^^^^
 
-IDLE's Shell window is a specialized editor window that also responds
-to the following keys.
+The editing features described above work when entering code interactively.
+IDLE's Shell window also responds to the following keys.
 
 * :kbd:`C-c` interrupts executing command
 
@@ -502,13 +502,15 @@ to the following keys.
 
   * :kbd:`Return` while on any previous command retrieves that command
 
-Shell also has a special facility for squeezing output lines down to a
-'Squeezed text' button.  This is done automatically for output over N lines
+Shell has a special facility for squeezing output lines down to a
+'Squeezed text' label.  This is done automatically for output over N lines
 (N = 50 by default).  N can be changed in the PyShell section of the General
-page of the Settings dialog.  Fewer lines can be squeezed by right clicking
-on the output.  This can be useful for extra long lines.  Squeezed output can
-be expanded in place by double-clicking the button.  It can instead be sent
-to the clipboard or a separate view window by right-clicking the button.
+page of the Settings dialog.  Output with fewer lines can be squeezed by
+right clicking on the output.  This can be useful for extra long lines.
+
+Squeezed output is expanded in place by double-clicking the label.
+It can also be sent to the clipboard or a separate view window by
+right-clicking the label.
 
 Text colors
 ^^^^^^^^^^^
