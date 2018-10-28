@@ -486,8 +486,8 @@ def _lanscan_getnode():
 def _netstat_getnode():
     """Get the hardware address on Unix by running netstat."""
     # This works on AIX and might work on Tru64 UNIX.
-    mac = _find_mac_netstat('netstat', '-ia', b'Address', lambda i: i+0)
-    return mac if mac else None
+    mac = _find_mac_netstat('netstat', '-ia', b'Address', lambda i: i)
+    return mac or None
 
 def _ipconfig_getnode():
     """Get the hardware address on Windows by running ipconfig.exe."""

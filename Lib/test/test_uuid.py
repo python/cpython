@@ -4,13 +4,13 @@ import builtins
 import contextlib
 import io
 import os
+import platform
 import shutil
 import subprocess
-import sys
 
 py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
-AIX = sys.platform.startswith("aix")
+AIX = platform.system() == 'AIX'
 
 def importable(name):
     try:
@@ -541,9 +541,10 @@ en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
         self.assertEqual(mac, 0xfead0c012304)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipIf(AIX, 'because AIX "ifconfig" does not provide macaddr')
+    @unittest.skipIf(AIX, 'AIX "ifconfig" does not provide macaddr')
     def test_find_mac(self):
-        data = '''fake      Link encap:UNSPEC  hwaddr 00-00
+        data = '''
+fake      Link encap:UNSPEC  hwaddr 00-00
 cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
 eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 '''
@@ -573,7 +574,7 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
                         "%s is not an RFC 4122 node ID" % hex)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipIf(AIX, 'because AIX "ifconfig" does not provide macaddr')
+    @unittest.skipIf(AIX, 'AIX "ifconfig" does not provide macaddr')
     def test_ifconfig_getnode(self):
         node = self.uuid._ifconfig_getnode()
         self.check_node(node, 'ifconfig')
@@ -585,7 +586,7 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
         self.check_node(node, 'ip')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipIf(AIX, 'because AIX "arp" does not provide macaddr')
+    @unittest.skipIf(AIX, 'AIX "arp" does not provide macaddr')
     def test_arp_getnode(self):
         node = self.uuid._arp_getnode()
         self.check_node(node, 'arp')
