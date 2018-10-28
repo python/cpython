@@ -352,10 +352,11 @@ class Random(_random.Random):
         if is_set or k*2 >= n:
             for i, item in enumerate(population):
                 r = randbelow(i + 1)
-                if r < k:
-                    if i < k:
-                        result[i] = result[r]
-                    result[r] = item
+                if r >= k:
+                    continue
+                if i < k:
+                    result[i] = result[r]
+                result[r] = item
         else:
             t = n - k + 1
             # Fairly choose a k-item sorted list 0 <= item < t
