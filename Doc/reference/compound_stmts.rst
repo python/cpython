@@ -21,7 +21,7 @@ also syntactically compound statements.
 .. index::
    single: clause
    single: suite
-   single: ;
+   single: ; (semicolon)
 
 A compound statement consists of one or more 'clauses.'  A clause consists of a
 header and a 'suite.'  The clause headers of a particular compound statement are
@@ -85,7 +85,7 @@ The :keyword:`if` statement
    statement: if
    keyword: elif
    keyword: else
-   single: :; compound statement
+   single: : (colon); compound statement
 
 The :keyword:`if` statement is used for conditional execution:
 
@@ -111,7 +111,7 @@ The :keyword:`while` statement
    keyword: else
    pair: loop; statement
    keyword: else
-   single: :; compound statement
+   single: : (colon); compound statement
 
 The :keyword:`while` statement is used for repeated execution as long as an
 expression is true:
@@ -150,7 +150,7 @@ The :keyword:`for` statement
    keyword: else
    pair: target; list
    object: sequence
-   single: :; compound statement
+   single: : (colon); compound statement
 
 The :keyword:`for` statement is used to iterate over the elements of a sequence
 (such as a string, tuple or list) or other iterable object:
@@ -233,7 +233,7 @@ The :keyword:`try` statement
    keyword: finally
    keyword: else
    keyword: as
-   single: :; compound statement
+   single: : (colon); compound statement
 
 The :keyword:`try` statement specifies exception handlers and/or cleanup code
 for a group of statements:
@@ -383,8 +383,8 @@ The :keyword:`with` statement
    statement: with
    keyword: as
    single: as; with statement
-   single: ,; with statement
-   single: :; compound statement
+   single: , (comma); with statement
+   single: : (colon); compound statement
 
 The :keyword:`with` statement is used to wrap the execution of a block with
 methods defined by a context manager (see section :ref:`context-managers`).
@@ -471,10 +471,9 @@ Function definitions
    object: function
    pair: function; name
    pair: name; binding
-   single: (; function definition
-   single: ); function definition
-   single: ,; parameter list
-   single: :; compound statement
+   single: () (parentheses); function definition
+   single: , (comma); parameter list
+   single: : (colon); compound statement
 
 A function definition defines a user-defined function object (see section
 :ref:`types`):
@@ -504,7 +503,7 @@ The function definition does not execute the function body; this gets executed
 only when the function is called. [#]_
 
 .. index::
-   single: @; function definition
+   single: @ (at); function definition
 
 A function definition may be wrapped by one or more :term:`decorator` expressions.
 Decorator expressions are evaluated when the function is defined, in the scope
@@ -527,7 +526,7 @@ except that the original function is not temporarily bound to the name ``func``.
 .. index::
    triple: default; parameter; value
    single: argument; function definition
-   single: =; function definition
+   single: = (equals); function definition
 
 When one or more :term:`parameters <parameter>` have the form *parameter* ``=``
 *expression*, the function is said to have "default parameter values."  For a
@@ -554,7 +553,7 @@ e.g.::
        return penguin
 
 .. index::
-   single: *; function definition
+   single: * (asterisk); function definition
    single: **; function definition
 
 Function call semantics are described in more detail in section :ref:`calls`. A
@@ -571,7 +570,7 @@ used keyword arguments.
 .. index::
    pair: function; annotations
    single: ->; function annotations
-   single: :; function annotations
+   single: : (colon); function annotations
 
 Parameters may have annotations of the form "``: expression``" following the
 parameter name.  Any parameter may have an annotation even those of the form
@@ -620,10 +619,9 @@ Class definitions
    pair: execution; frame
    single: inheritance
    single: docstring
-   single: (; class definition
-   single: ); class definition
-   single: ,; expression list
-   single: :; compound statement
+   single: () (parentheses); class definition
+   single: , (comma); expression list
+   single: : (colon); compound statement
 
 A class definition defines a class object (see section :ref:`types`):
 
@@ -663,7 +661,7 @@ the definition syntax.
 Class creation can be customized heavily using :ref:`metaclasses <metaclasses>`.
 
 .. index::
-   single: @; class definition
+   single: @ (at); class definition
 
 Classes can also be decorated: just like when decorating functions, ::
 

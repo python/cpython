@@ -193,13 +193,11 @@ related to that of :ref:`formatted string literals <f-strings>`, but
 there are differences.
 
 .. index::
-   single: {; in string formatting
-   single: }; in string formatting
-   single: .; in string formatting
-   single: [; in string formatting
-   single: ]; in string formatting
-   single: !; in string formatting
-   single: :; in string formatting
+   single: {} (curly brackets); in string formatting
+   single: . (dot); in string formatting
+   single: [] (square brackets); in string formatting
+   single: ! (exclamation); in string formatting
+   single: : (colon); in string formatting
 
 Format strings contain "replacement fields" surrounded by curly braces ``{}``.
 Anything that is not contained in braces is considered literal text, which is
@@ -333,10 +331,10 @@ affect the :func:`format` function.
 The meaning of the various alignment options is as follows:
 
    .. index::
-      single: <; in string formatting
-      single: >; in string formatting
-      single: =; in string formatting
-      single: ^; in string formatting
+      single: < (less); in string formatting
+      single: > (greater); in string formatting
+      single: = (equals); in string formatting
+      single: ^ (caret); in string formatting
 
    +---------+----------------------------------------------------------+
    | Option  | Meaning                                                  |
@@ -365,8 +363,8 @@ The *sign* option is only valid for number types, and can be one of the
 following:
 
    .. index::
-      single: +; in string formatting
-      single: -; in string formatting
+      single: + (plus); in string formatting
+      single: - (minus); in string formatting
       single: space; in string formatting
 
    +---------+----------------------------------------------------------+
@@ -383,7 +381,7 @@ following:
    +---------+----------------------------------------------------------+
 
 
-.. index:: single: #; in string formatting
+.. index:: single: # (hash); in string formatting
 
 The ``'#'`` option causes the "alternate form" to be used for the
 conversion.  The alternate form is defined differently for different
@@ -397,7 +395,7 @@ decimal-point character appears in the result of these conversions
 only if a digit follows it. In addition, for ``'g'`` and ``'G'``
 conversions, trailing zeros are not removed from the result.
 
-.. index:: single: ,; in string formatting
+.. index:: single: , (comma); in string formatting
 
 The ``','`` option signals the use of a comma for a thousands separator.
 For a locale aware separator, use the ``'n'`` integer presentation type
@@ -406,7 +404,7 @@ instead.
 .. versionchanged:: 3.1
    Added the ``','`` option (see also :pep:`378`).
 
-.. index:: single: _; in string formatting
+.. index:: single: _ (underscore); in string formatting
 
 The ``'_'`` option signals the use of an underscore for a thousands
 separator for floating point presentation types and for integer
@@ -694,7 +692,7 @@ formatting facilities in Python.  As an example of a library built on template
 strings for i18n, see the
 `flufl.i18n <http://flufli18n.readthedocs.io/en/latest/>`_ package.
 
-.. index:: single: $; in template strings
+.. index:: single: $ (dollar); in template strings
 
 Template strings support ``$``-based substitutions, using the following rules:
 

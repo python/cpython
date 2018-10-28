@@ -312,6 +312,14 @@ defined and implemented by all standard Python codecs:
 The following error handlers are only applicable to
 :term:`text encodings <text encoding>`:
 
+.. index::
+   single: ? (question mark); replacement character
+   single: \ (backslash); escape sequence
+   single: \x; escape sequence
+   single: \u; escape sequence
+   single: \U; escape sequence
+   single: \N; escape sequence
+
 +-------------------------+-----------------------------------------------+
 | Value                   | Meaning                                       |
 +=========================+===============================================+
