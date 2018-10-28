@@ -780,31 +780,24 @@ The module defines the following classes, functions and decorators:
 
    .. versionadded:: 3.5.2
 
-.. class:: io
+.. class:: IO
+           TextIO
+           BinaryIO
 
-   Wrapper namespace for I/O stream types.
-
-   This defines the generic type ``IO[AnyStr]`` and subclasses ``TextIO``
-   and ``BinaryIO``, deriving from ``IO[str]`` and ``IO[bytes]``,
-   respectively. These represent the types of I/O streams such as returned by
+   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
+   and ``BinaryIO(IO[bytes])``
+   represent the types of I/O streams such as returned by
    :func:`open`.
 
-   These types are also accessible directly as ``typing.IO``,
-   ``typing.TextIO``, and ``typing.BinaryIO``.
+.. class:: Pattern
+           Match
 
-.. class:: re
-
-   Wrapper namespace for regular expression matching types.
-
-   This defines the type aliases ``Pattern`` and ``Match`` which
+   These type aliases
    correspond to the return types from :func:`re.compile` and
    :func:`re.match`.  These types (and the corresponding functions)
    are generic in ``AnyStr`` and can be made specific by writing
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
    ``Match[bytes]``.
-
-   These types are also accessible directly as ``typing.Pattern``
-   and ``typing.Match``.
 
 .. class:: NamedTuple
 
