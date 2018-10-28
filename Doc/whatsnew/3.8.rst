@@ -312,6 +312,10 @@ Deprecated
 
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
+* Using :meth:`~argparser._SubParsersAction.add_parser` to overwrite an existing
+  subparser is deprecated and will be prohibited in Python 3.9.
+  (Contributed by Braden Groom in :issue:`14856`.)
+
 
 Removed
 =======

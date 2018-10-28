@@ -2149,6 +2149,18 @@ class TestAddSubparsers(TestCase):
                 3                   3 help
             """))
 
+    def test_warn_already_defined_subparser(self):
+        parser = ErrorRaisingArgumentParser()
+        subparsers = parser.add_subparsers()
+        subparsers.add_parser('foo')
+        self.assertWarns(DeprecationWarning, subparsers.add_parser, 'foo')
+
+    def test_warn_already_defined_alias(self):
+        parser = ErrorRaisingArgumentParser()
+        subparsers = parser.add_subparsers()
+        subparsers.add_parser('foo')
+        self.assertWarns(DeprecationWarning, subparsers.add_parser, 'bar', aliases=['foo'])
+
 # ============
 # Groups tests
 # ============

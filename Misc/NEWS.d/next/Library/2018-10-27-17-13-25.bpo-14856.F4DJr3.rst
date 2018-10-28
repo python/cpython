@@ -1,0 +1,2 @@
+Deprecate using add_parser() to overwrite an existing subparser.
+Patch by Braden Groom

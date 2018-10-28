@@ -1097,6 +1097,20 @@ class _SubParsersAction(Action):
             metavar=metavar)
 
     def add_parser(self, name, **kwargs):
+        import warnings
+        if name in self._name_parser_map:
+            warnings.warn('using add_parser() to overwrite an existing '
+                          'subparser is deprecated, use set_parser() instead',
+                          DeprecationWarning, 2)
+        aliases = kwargs.get('aliases', [])
+        for alias in aliases:
+            if alias in self._name_parser_map:
+                warnings.warn('using add_parser() to overwrite an existing '
+                              'subparser is deprecated, use set_parser() instead',
+                              DeprecationWarning, 2)
+        return self.set_parser(name, **kwargs)
+
+    def set_parser(self, name, **kwargs):
         # set prog from the existing prefix
         if kwargs.get('prog') is None:
             kwargs['prog'] = '%s %s' % (self._prog_prefix, name)
