@@ -16,6 +16,13 @@ This module provides support for Unix shell-style wildcards, which are *not* the
 same as regular expressions (which are documented in the :mod:`re` module).  The
 special characters used in shell-style wildcards are:
 
+.. index::
+   single: * (asterisk); in glob-style wildcards
+   single: ? (question mark); in glob-style wildcards
+   single: [] (square brackets); in glob-style wildcards
+   single: ! (exclamation); in glob-style wildcards
+   single: - (minus); in glob-style wildcards
+
 +------------+------------------------------------+
 | Pattern    | Meaning                            |
 +============+====================================+
