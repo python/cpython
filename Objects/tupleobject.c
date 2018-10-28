@@ -28,8 +28,8 @@ static PyTupleObject *free_list[PyTuple_MAXSAVESIZE];
 static int numfree[PyTuple_MAXSAVESIZE];
 #endif
 #ifdef COUNT_ALLOCS
-Py_ssize_t fast_tuple_allocs;
-Py_ssize_t tuple_zero_allocs;
+Py_ssize_t _Py_fast_tuple_allocs;
+Py_ssize_t _Py_tuple_zero_allocs;
 #endif
 
 /* Debug statistic to count GC tracking of tuples.
@@ -89,7 +89,7 @@ PyTuple_New(Py_ssize_t size)
         op = free_list[0];
         Py_INCREF(op);
 #ifdef COUNT_ALLOCS
-        tuple_zero_allocs++;
+        _Py_tuple_zero_allocs++;
 #endif
         return (PyObject *) op;
     }
@@ -97,7 +97,7 @@ PyTuple_New(Py_ssize_t size)
         free_list[size] = (PyTupleObject *) op->ob_item[0];
         numfree[size]--;
 #ifdef COUNT_ALLOCS
-        fast_tuple_allocs++;
+        _Py_fast_tuple_allocs++;
 #endif
         /* Inline PyObject_InitVar */
 #ifdef Py_TRACE_REFS

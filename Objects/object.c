@@ -93,11 +93,11 @@ static PyTypeObject *type_list;
    is set, they will be removed from the type_list
    once the last object is deallocated. */
 static int unlist_types_without_objects;
-extern Py_ssize_t tuple_zero_allocs, fast_tuple_allocs;
-extern Py_ssize_t quick_int_allocs, quick_neg_int_allocs;
-extern Py_ssize_t null_strings, one_strings;
+extern Py_ssize_t _Py_tuple_zero_allocs, _Py_fast_tuple_allocs;
+extern Py_ssize_t _Py_quick_int_allocs, _Py_quick_neg_int_allocs;
+extern Py_ssize_t _Py_null_strings, _Py_one_strings;
 void
-dump_counts(FILE* f)
+_Py_dump_counts(FILE* f)
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
     if (!interp->core_config.show_alloc_count) {
@@ -113,17 +113,17 @@ dump_counts(FILE* f)
             tp->tp_maxalloc);
     fprintf(f, "fast tuple allocs: %" PY_FORMAT_SIZE_T "d, "
         "empty: %" PY_FORMAT_SIZE_T "d\n",
-        fast_tuple_allocs, tuple_zero_allocs);
+        _Py_fast_tuple_allocs, _Py_tuple_zero_allocs);
     fprintf(f, "fast int allocs: pos: %" PY_FORMAT_SIZE_T "d, "
         "neg: %" PY_FORMAT_SIZE_T "d\n",
-        quick_int_allocs, quick_neg_int_allocs);
+        _Py_quick_int_allocs, _Py_quick_neg_int_allocs);
     fprintf(f, "null strings: %" PY_FORMAT_SIZE_T "d, "
         "1-strings: %" PY_FORMAT_SIZE_T "d\n",
-        null_strings, one_strings);
+        _Py_null_strings, _Py_one_strings);
 }
 
 PyObject *
-get_counts(void)
+_Py_get_counts(void)
 {
     PyTypeObject *tp;
     PyObject *result;
@@ -150,12 +150,12 @@ get_counts(void)
 }
 
 void
-inc_count(PyTypeObject *tp)
+_Py_inc_count(PyTypeObject *tp)
 {
     if (tp->tp_next == NULL && tp->tp_prev == NULL) {
         /* first time; insert in linked list */
         if (tp->tp_next != NULL) /* sanity check */
-            Py_FatalError("XXX inc_count sanity check");
+            Py_FatalError("XXX _Py_inc_count sanity check");
         if (type_list)
             type_list->tp_prev = tp;
         tp->tp_next = type_list;
@@ -181,7 +181,7 @@ inc_count(PyTypeObject *tp)
         tp->tp_maxalloc = tp->tp_allocs - tp->tp_frees;
 }
 
-void dec_count(PyTypeObject *tp)
+void _Py_dec_count(PyTypeObject *tp)
 {
     tp->tp_frees++;
     if (unlist_types_without_objects &&
