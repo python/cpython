@@ -244,8 +244,8 @@ Optimizations
 
 * The :class:`list` constructor does not overallocate the internal item buffer
   if the input iterable has a known size (the input implements ``__len__``).
-  This makes the created list 12% smaller on average and it speeds the creation
-  of very large lists. (Contributed by Pablo Galindo in :issue:`33234`.)
+  This makes the created list 12% smaller on average. (Contributed by Pablo
+  Galindo in :issue:`33234`.)
 
 
 Build and C API Changes
