@@ -1,4 +1,5 @@
 import copy
+import re
 import sys
 import tempfile
 
@@ -406,6 +407,14 @@ class MockTest(unittest.TestCase):
             AssertionError,
             lambda: mock.assert_called_once_with('bob', 'bar', baz=2)
         )
+
+    def test_assert_called_once_with_call_list(self):
+        m = Mock()
+        m(1)
+        m(2)
+        self.assertRaisesRegex(AssertionError,
+            re.escape("Calls: [call(1), call(2)]"),
+            lambda: m.assert_called_once_with(2))
 
 
     def test_assert_called_once_with_function_spec(self):
@@ -1250,6 +1259,13 @@ class MockTest(unittest.TestCase):
         with self.assertRaises(AssertionError):
             m.hello.assert_not_called()
 
+    def test_assert_not_called_message(self):
+        m = Mock()
+        m(1, 2)
+        self.assertRaisesRegex(AssertionError,
+            re.escape("Calls: [call(1, 2)]"),
+            m.assert_not_called)
+
     def test_assert_called(self):
         m = Mock()
         with self.assertRaises(AssertionError):
@@ -1270,6 +1286,20 @@ class MockTest(unittest.TestCase):
         m.hello()
         with self.assertRaises(AssertionError):
             m.hello.assert_called_once()
+
+    def test_assert_called_once_message(self):
+        m = Mock()
+        m(1, 2)
+        m(3)
+        self.assertRaisesRegex(AssertionError,
+            re.escape("Calls: [call(1, 2), call(3)]"),
+            m.assert_called_once)
+
+    def test_assert_called_once_message_not_called(self):
+        m = Mock()
+        with self.assertRaises(AssertionError) as e:
+            m.assert_called_once()
+        self.assertNotIn("Calls:", str(e.exception))
 
     #Issue21256 printout of keyword args should be in deterministic order
     def test_sorted_call_signature(self):
