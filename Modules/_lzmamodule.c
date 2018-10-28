@@ -108,7 +108,7 @@ catch_lzma_error(lzma_ret lzret)
 static void*
 PyLzma_Malloc(void *opaque, size_t items, size_t size)
 {
-    if (items > (size_t)PY_SSIZE_T_MAX / size)
+    if (size != 0 && items > (size_t)PY_SSIZE_T_MAX / size)
         return NULL;
     /* PyMem_Malloc() cannot be used:
        the GIL is not held when lzma_code() is called */
