@@ -216,7 +216,7 @@ class TupleTest(seq_tests.CommonTest):
         # Ensures, for example, that the hash:
         #   is non-commutative
         #   spreads closely spaced values
-        #   doesn'texhibit cancellation in tuples like (x,(x,y))
+        #   doesn't exhibit cancellation in tuples like (x,(x,y))
         N = 50
         base = list(range(N))
         xp = list(product(base, repeat=2))
