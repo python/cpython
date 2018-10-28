@@ -1,0 +1,2 @@
+The list constructor will pre-size and not over-allocate when
+the input lenght is known.
