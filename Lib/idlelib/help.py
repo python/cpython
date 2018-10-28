@@ -126,7 +126,10 @@ class HelpParser(HTMLParser):
         if tag in ['h1', 'h2', 'h3']:
             self.indent(0)  # clear tag, reset indent
             if self.show:
-                self.toc.append((self.header, self.text.index('insert')))
+                indent = ('        ' if tag == 'h3' else
+                          '    ' if tag == 'h2' else
+                          '')
+                self.toc.append((indent+self.header, self.text.index('insert')))
         elif tag in ['span', 'em']:
             self.chartags = ''
         elif tag == 'a':
@@ -142,11 +145,15 @@ class HelpParser(HTMLParser):
         if self.show and not self.hdrlink:
             d = data if self.pre else data.replace('\n', ' ')
             if self.tags == 'h1':
-                self.hprefix = d[0:d.index(' ')]
-            if self.tags in ['h1', 'h2', 'h3'] and self.hprefix != '':
-                if d[0:len(self.hprefix)] == self.hprefix:
-                    d = d[len(self.hprefix):].strip()
-                self.header += d
+                try:
+                    self.hprefix = d[0:d.index(' ')]
+                except ValueError:
+                    self.hprefix = ''
+            if self.tags in ['h1', 'h2', 'h3']:
+                if (self.hprefix != '' and
+                    d[0:len(self.hprefix)] == self.hprefix):
+                    d = d[len(self.hprefix):]
+                self.header += d.strip()
             self.text.insert('end', d, (self.tags, self.chartags))
 
 
