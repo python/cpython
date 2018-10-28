@@ -1,0 +1,2 @@
+Update idlelib.help.copy_string docstring. We now use git and backporting
+instead of hg and forward merging.
