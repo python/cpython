@@ -225,7 +225,7 @@ This module offers the following functions:
 
 
 .. index::
-   single: %; environment variables expansion (Windows)
+   single: % (percent); environment variables expansion (Windows)
 
 .. function:: ExpandEnvironmentStrings(str)
 
