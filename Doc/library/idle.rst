@@ -341,10 +341,17 @@ Set Breakpoint
 Clear Breakpoint
    Clear the breakpoint on that line.
 
-Shell and Output windows have the following.
+Shell and Output windows also have the following.
 
 Go to file/line
    Same as in Debug menu.
+
+The Shell window also has an output squeezing facility explained in the
+the *Python Shell window* subsection below.
+
+Squeeze
+   If the cursor is over an output line, squeeze all the output between
+   the code above and the prompt below down to a 'Squeezed text' button.
 
 
 Editing and navigation
@@ -477,6 +484,9 @@ or immediately run an existing file before editing.
 Python Shell window
 ^^^^^^^^^^^^^^^^^^^
 
+IDLE's Shell window is a specialized editor window that also responds
+to the following keys.
+
 * :kbd:`C-c` interrupts executing command
 
 * :kbd:`C-d` sends end-of-file; closes window if typed at a ``>>>`` prompt
@@ -492,6 +502,13 @@ Python Shell window
 
   * :kbd:`Return` while on any previous command retrieves that command
 
+Shell also has a special facility for squeezing output lines down to a
+'Squeezed text' button.  This is done automatically for output over N lines
+(N = 50 by default).  N can be changed in the PyShell section of the General
+page of the Settings dialog.  Fewer lines can be squeezed by right clicking
+on the output.  This can be useful for extra long lines.  Squeezed output can
+be expanded in place by double-clicking the button.  It can instead be sent
+to the clipboard or a separate view window by right-clicking the button.
 
 Text colors
 ^^^^^^^^^^^
