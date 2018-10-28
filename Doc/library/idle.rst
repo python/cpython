@@ -295,7 +295,7 @@ About IDLE
    Display version, copyright, license, credits, and more.
 
 IDLE Help
-   Display a help file for IDLE detailing the menu options, basic editing and
+   Display this IDLE document, detailing the menu options, basic editing and
    navigation, and other tips.
 
 Python Docs
@@ -306,7 +306,8 @@ Turtle Demo
    Run the turtledemo module with example Python code and turtle drawings.
 
 Additional help sources may be added here with the Configure IDLE dialog under
-the General tab.
+the General tab. See the "Help sources" subsection below for more
+on Help menu choices.
 
 .. index::
    single: Cut
@@ -693,15 +694,25 @@ with the default subprocess if at all possible.
 Help and preferences
 --------------------
 
-Additional help sources
-^^^^^^^^^^^^^^^^^^^^^^^
+Help sources
+^^^^^^^^^^^^
 
-IDLE includes a help menu entry called "Python Docs" that will open the
-extensive sources of help, including tutorials, available at docs.python.org.
+Help menu entry "IDLE Help" displays a formatted html version of the
+IDLE chapter of the Library Reference.  The result, in a read-only
+tkinter text window, is close to what one sees in a web browser.
+Navigate through the text with a mousewheel,
+the scrollbar, or up and down arrow keys held down.
+Or click the TOC (Table of Contents) button and select a section
+header in the opened box.
+
+Help menu entry "Python Docs" opens the extensive sources of help,
+including tutorials, available at docs.python.org/x.y, where 'x.y'
+is the currently running Python version.  If your system
+has an off-line copy of the docs (this may be an installation option),
+that will be opened instead.
+
 Selected URLs can be added or removed from the help menu at any time using the
-Configure IDLE dialog. See the IDLE help option in the help menu of IDLE for
-more information.
-
+General tab of the Configure IDLE dialog .
 
 Setting preferences
 ^^^^^^^^^^^^^^^^^^^
@@ -710,7 +721,6 @@ The font preferences, highlighting, keys, and general preferences can be
 changed via Configure IDLE on the Option menu.  Keys can be user defined;
 IDLE ships with four built-in key sets. In addition, a user can create a
 custom key set in the Configure IDLE dialog under the keys tab.
-
 
 Extensions
 ^^^^^^^^^^

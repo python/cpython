@@ -332,7 +332,7 @@ it to the foreground (deiconifying it if necessary).</p>
 <dt>About IDLE</dt>
 <dd>Display version, copyright, license, credits, and more.</dd>
 <dt>IDLE Help</dt>
-<dd>Display a help file for IDLE detailing the menu options, basic editing and
+<dd>Display this IDLE document, detailing the menu options, basic editing and
 navigation, and other tips.</dd>
 <dt>Python Docs</dt>
 <dd>Access local Python documentation, if installed, or start a web browser
@@ -341,7 +341,8 @@ and open docs.python.org showing the latest Python documentation.</dd>
 <dd>Run the turtledemo module with example Python code and turtle drawings.</dd>
 </dl>
 <p>Additional help sources may be added here with the Configure IDLE dialog under
-the General tab.</p>
+the General tab. See the “Help sources” subsection below for more
+on Help menu choices.</p>
 </div>
 <div class="section" id="context-menus">
 <span id="index-4"></span><h3>Context Menus<a class="headerlink" href="#context-menus" title="Permalink to this headline">¶</a></h3>
@@ -666,13 +667,22 @@ with the default subprocess if at all possible.</p>
 </div>
 <div class="section" id="help-and-preferences">
 <h2>Help and preferences<a class="headerlink" href="#help-and-preferences" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="additional-help-sources">
-<h3>Additional help sources<a class="headerlink" href="#additional-help-sources" title="Permalink to this headline">¶</a></h3>
-<p>IDLE includes a help menu entry called “Python Docs” that will open the
-extensive sources of help, including tutorials, available at docs.python.org.
-Selected URLs can be added or removed from the help menu at any time using the
-Configure IDLE dialog. See the IDLE help option in the help menu of IDLE for
-more information.</p>
+<div class="section" id="help-sources">
+<h3>Help sources<a class="headerlink" href="#help-sources" title="Permalink to this headline">¶</a></h3>
+<p>Help menu entry “IDLE Help” displays a formatted html version of the
+IDLE chapter of the Library Reference.  The result, in a read-only
+tkinter text window, is close to what one sees in a web browser.
+Navigate through the text with a mousewheel,
+the scrollbar, or up and down arrow keys held down.
+Or click the TOC (Table of Contents) button and select a section
+header in the opened box.</p>
+<p>Help menu entry “Python Docs” opens the extensive sources of help,
+including tutorials, available at docs.python.org/x.y, where ‘x.y’
+is the currently running Python version.  If your system
+has an off-line copy of the docs (this may be an installation option),
+that will be opened instead.</p>
+<p>Selected URLs can be added or removed from the help menu at any time using the
+General tab of the Configure IDLE dialog .</p>
 </div>
 <div class="section" id="setting-preferences">
 <h3>Setting preferences<a class="headerlink" href="#setting-preferences" title="Permalink to this headline">¶</a></h3>
@@ -731,7 +741,7 @@ also used for testing.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#help-and-preferences">Help and preferences</a><ul>
-<li><a class="reference internal" href="#additional-help-sources">Additional help sources</a></li>
+<li><a class="reference internal" href="#help-sources">Help sources</a></li>
 <li><a class="reference internal" href="#setting-preferences">Setting preferences</a></li>
 <li><a class="reference internal" href="#extensions">Extensions</a></li>
 </ul>
