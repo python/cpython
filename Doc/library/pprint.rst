@@ -217,7 +217,7 @@ let's fetch information about a project from `PyPI <https://pypi.org>`_::
    >>> import json
    >>> import pprint
    >>> from urllib.request import urlopen
-   >>> with urlopen('http://pypi.org/project/Twisted/json') as url:
+   >>> with urlopen('https://pypi.org/pypi/Twisted/json') as url:
    ...     http_info = url.info()
    ...     raw_data = url.read().decode(http_info.get_content_charset())
    >>> project_info = json.loads(raw_data)
