@@ -598,6 +598,9 @@ Cursor Objects
 
    A :class:`Cursor` instance has the following attributes and methods.
 
+   .. index:: single: ? (question mark); in SQL statements
+   .. index:: single: : (colon); in SQL statements
+
    .. method:: execute(sql[, parameters])
 
       Executes an SQL statement. The SQL statement may be parameterized (i. e.
