@@ -240,28 +240,28 @@ class HelpWindow(Toplevel):
 def copy_strip():
     """Copy idle.html to idlelib/help.html, stripping trailing whitespace.
 
-    Files with trailing whitespace cannot be pushed to the hg cpython
+    Files with trailing whitespace cannot be pushed to the git cpython
     repository.  For 3.x (on Windows), help.html is generated, after
-    editing idle.rst in the earliest maintenance version, with
+    editing idle.rst on the master branch, with
       sphinx-build -bhtml . build/html
       python_d.exe -c "from idlelib.help import copy_strip; copy_strip()"
-    After refreshing TortoiseHG workshop to generate a diff,
-    check  both the diff and displayed text.  Push the diff along with
-    the idle.rst change and merge both into default (or an intermediate
-    maintenance version).
+    Check build/html/library/idle.html, the help.html diff, and the text
+    displayed by Help => IDLE Help.  Add a blurb and create a PR.
 
-    When the 'earlist' version gets its final maintenance release,
-    do an update as described above, without editing idle.rst, to
-    rebase help.html on the next version of idle.rst.  Do not worry
-    about version changes as version is not displayed.  Examine other
-    changes and the result of Help -> IDLE Help.
+    It can be worthwhile to occasionally generate help.html without
+    touching idle.rst.  Changes to the master version and to the doc
+    build system may result in changes that should not changed
+    the displayed text, but might break HelpParser.
 
-    If maintenance and default versions of idle.rst diverge, and
-    merging does not go smoothly, then consider generating
-    separate help.html files from separate idle.htmls.
+    As long as master and maintenance versions of idle.rst remain the
+    same, help.html can be backported.  The internal Python version
+    number is not displayed.  If maintenance idle.rst diverges from
+    the master version, then instead of backporting help.html from
+    master, repeat the proceedure above to generate a maintenance
+    version.
     """
     src = join(abspath(dirname(dirname(dirname(__file__)))),
-               'Doc', 'build', 'html', 'library', 'idle.html')
+            'Doc', 'build', 'html', 'library', 'idle.html')
     dst = join(abspath(dirname(__file__)), 'help.html')
     with open(src, 'rb') as inn,\
          open(dst, 'wb') as out:
