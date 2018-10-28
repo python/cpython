@@ -933,9 +933,9 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     if root_dir is not None:
         if logger is not None:
             logger.debug("changing into '%s'", root_dir)
-        base_name = os.path.abspath(base_name)
         if not dry_run:
             os.chdir(root_dir)
+        base_name = os.path.abspath(base_name)
 
     if base_dir is None:
         base_dir = os.curdir
