@@ -1341,8 +1341,8 @@ Returns -1 on error.  See listsort.txt for info on the method.
 static Py_ssize_t
 gallop_left(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_t hint)
 {
-    Py_ssize_t ofs;
-    Py_ssize_t lastofs;
+    size_t ofs;
+    size_t lastofs;
     Py_ssize_t k;
 
     assert(key && a && n > 0 && hint >= 0 && hint < n);
@@ -1354,13 +1354,11 @@ gallop_left(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_
         /* a[hint] < key -- gallop right, until
          * a[hint + lastofs] < key <= a[hint + ofs]
          */
-        const Py_ssize_t maxofs = n - hint;             /* &a[n-1] is highest */
+        const size_t maxofs = n - hint;             /* &a[n-1] is highest */
         while (ofs < maxofs) {
             IFLT(a[ofs], key) {
                 lastofs = ofs;
                 ofs = (ofs << 1) + 1;
-                if (ofs <= 0)                   /* int overflow */
-                    ofs = maxofs;
             }
             else                /* key <= a[hint + ofs] */
                 break;
@@ -1368,40 +1366,37 @@ gallop_left(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_
         if (ofs > maxofs)
             ofs = maxofs;
         /* Translate back to offsets relative to &a[0]. */
-        lastofs += hint;
+        lastofs += hint + 1;
         ofs += hint;
     }
     else {
         /* key <= a[hint] -- gallop left, until
          * a[hint - ofs] < key <= a[hint - lastofs]
          */
-        const Py_ssize_t maxofs = hint + 1;             /* &a[0] is lowest */
+        const size_t maxofs = hint + 1;             /* &a[0] is lowest */
         while (ofs < maxofs) {
             IFLT(*(a-ofs), key)
                 break;
             /* key <= a[hint - ofs] */
             lastofs = ofs;
             ofs = (ofs << 1) + 1;
-            if (ofs <= 0)               /* int overflow */
-                ofs = maxofs;
         }
         if (ofs > maxofs)
             ofs = maxofs;
         /* Translate back to positive offsets relative to &a[0]. */
-        k = lastofs;
-        lastofs = hint - ofs;
-        ofs = hint - k;
+        size_t tmp = lastofs;
+        lastofs = hint + 1 - ofs;
+        ofs = hint - tmp;
     }
     a -= hint;
 
-    assert(-1 <= lastofs && lastofs < ofs && ofs <= n);
-    /* Now a[lastofs] < key <= a[ofs], so key belongs somewhere to the
-     * right of lastofs but no farther right than ofs.  Do a binary
+    assert(lastofs <= ofs && ofs <= (size_t)n);
+    /* Now a[lastofs-1] < key <= a[ofs], so key belongs somewhere to the
+     * right of lastofs-1 but no farther right than ofs.  Do a binary
      * search, with invariant a[lastofs-1] < key <= a[ofs].
      */
-    ++lastofs;
     while (lastofs < ofs) {
-        Py_ssize_t m = lastofs + ((ofs - lastofs) >> 1);
+        size_t m = lastofs + ((ofs - lastofs) >> 1);
 
         IFLT(a[m], key)
             lastofs = m+1;              /* a[m] < key */
@@ -1409,7 +1404,7 @@ gallop_left(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_
             ofs = m;                    /* key <= a[m] */
     }
     assert(lastofs == ofs);             /* so a[ofs-1] < key <= a[ofs] */
-    return ofs;
+    return (Py_ssize_t)ofs;
 
 fail:
     return -1;
@@ -1432,8 +1427,8 @@ written as one routine with yet another "left or right?" flag.
 static Py_ssize_t
 gallop_right(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_t hint)
 {
-    Py_ssize_t ofs;
-    Py_ssize_t lastofs;
+    size_t ofs;
+    size_t lastofs;
     Py_ssize_t k;
 
     assert(key && a && n > 0 && hint >= 0 && hint < n);
@@ -1445,13 +1440,11 @@ gallop_right(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize
         /* key < a[hint] -- gallop left, until
          * a[hint - ofs] <= key < a[hint - lastofs]
          */
-        const Py_ssize_t maxofs = hint + 1;             /* &a[0] is lowest */
+        const size_t maxofs = hint + 1;             /* &a[0] is lowest */
         while (ofs < maxofs) {
             IFLT(key, *(a-ofs)) {
                 lastofs = ofs;
                 ofs = (ofs << 1) + 1;
-                if (ofs <= 0)                   /* int overflow */
-                    ofs = maxofs;
             }
             else                /* a[hint - ofs] <= key */
                 break;
@@ -1459,40 +1452,37 @@ gallop_right(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize
         if (ofs > maxofs)
             ofs = maxofs;
         /* Translate back to positive offsets relative to &a[0]. */
-        k = lastofs;
-        lastofs = hint - ofs;
-        ofs = hint - k;
+        size_t tmp = lastofs;
+        lastofs = hint + 1 - ofs;
+        ofs = hint - tmp;
     }
     else {
         /* a[hint] <= key -- gallop right, until
          * a[hint + lastofs] <= key < a[hint + ofs]
         */
-        const Py_ssize_t maxofs = n - hint;             /* &a[n-1] is highest */
+        const size_t maxofs = n - hint;             /* &a[n-1] is highest */
         while (ofs < maxofs) {
             IFLT(key, a[ofs])
                 break;
             /* a[hint + ofs] <= key */
             lastofs = ofs;
             ofs = (ofs << 1) + 1;
-            if (ofs <= 0)               /* int overflow */
-                ofs = maxofs;
         }
         if (ofs > maxofs)
             ofs = maxofs;
         /* Translate back to offsets relative to &a[0]. */
-        lastofs += hint;
+        lastofs += hint + 1;
         ofs += hint;
     }
     a -= hint;
 
-    assert(-1 <= lastofs && lastofs < ofs && ofs <= n);
-    /* Now a[lastofs] <= key < a[ofs], so key belongs somewhere to the
-     * right of lastofs but no farther right than ofs.  Do a binary
+    assert(lastofs <= ofs && ofs <= (size_t)n);
+    /* Now a[lastofs-1] <= key < a[ofs], so key belongs somewhere to the
+     * right of lastofs-1 but no farther right than ofs.  Do a binary
      * search, with invariant a[lastofs-1] <= key < a[ofs].
      */
-    ++lastofs;
     while (lastofs < ofs) {
-        Py_ssize_t m = lastofs + ((ofs - lastofs) >> 1);
+        size_t m = lastofs + ((ofs - lastofs) >> 1);
 
         IFLT(key, a[m])
             ofs = m;                    /* key < a[m] */
@@ -1500,7 +1490,7 @@ gallop_right(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize
             lastofs = m+1;              /* a[m] <= key */
     }
     assert(lastofs == ofs);             /* so a[ofs-1] <= key < a[ofs] */
-    return ofs;
+    return (Py_ssize_t)ofs;
 
 fail:
     return -1;
