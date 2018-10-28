@@ -979,7 +979,7 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
                             k,
                             _escape_attrib(v)
                             ))
-                for k, v in sorted(items):  # lexical order
+                for k, v in items:
                     if isinstance(k, QName):
                         k = k.text
                     if isinstance(v, QName):
