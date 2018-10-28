@@ -783,7 +783,7 @@ The module defines the following classes, functions and decorators:
            TextIO
            BinaryIO
 
-   Generic type ``IO[AnyStr]`` and subclasses ``TextIO(IO[str])``
+   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
    and ``BinaryIO(IO[bytes])``
    represent the types of I/O streams such as returned by
    :func:`open`.
