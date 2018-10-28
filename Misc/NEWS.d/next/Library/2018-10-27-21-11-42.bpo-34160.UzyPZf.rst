@@ -1,0 +1,1 @@
+ElementTree now preserves the attribute order specified by the user.
