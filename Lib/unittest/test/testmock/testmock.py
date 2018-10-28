@@ -1,4 +1,5 @@
 import copy
+import re
 import sys
 import tempfile
 
@@ -412,7 +413,7 @@ class MockTest(unittest.TestCase):
         m(1)
         m(2)
         self.assertRaisesRegex(AssertionError,
-            r"Calls: \[call\(1\), call\(2\)\]",
+            re.escape("Calls: [call(1), call(2)]"),
             lambda: m.assert_called_once_with(2))
 
 
@@ -1262,7 +1263,7 @@ class MockTest(unittest.TestCase):
         m = Mock()
         m(1, 2)
         self.assertRaisesRegex(AssertionError,
-            r"Calls: \[call\(1, 2\)\]",
+            re.escape("Calls: [call(1, 2)]"),
             m.assert_not_called)
 
     def test_assert_called(self):
@@ -1291,7 +1292,7 @@ class MockTest(unittest.TestCase):
         m(1, 2)
         m(3)
         self.assertRaisesRegex(AssertionError,
-            r"Calls: \[call\(1, 2\), call\(3\)\]",
+            re.escape("Calls: [call(1, 2), call(3)]"),
             m.assert_called_once)
 
     def test_assert_called_once_message_not_called(self):

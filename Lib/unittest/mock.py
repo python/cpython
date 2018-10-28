@@ -782,7 +782,7 @@ class NonCallableMock(Base):
             msg = ("Expected '%s' to not have been called. Called %s times.%s"
                    % (self._mock_name or 'mock',
                       self.call_count,
-                      self._call_list_as_string()))
+                      self._calls_repr()))
             raise AssertionError(msg)
 
     def assert_called(_mock_self):
@@ -802,7 +802,7 @@ class NonCallableMock(Base):
             msg = ("Expected '%s' to have been called once. Called %s times.%s"
                    % (self._mock_name or 'mock',
                       self.call_count,
-                      self._call_list_as_string()))
+                      self._calls_repr()))
             raise AssertionError(msg)
 
     def assert_called_with(_mock_self, *args, **kwargs):
@@ -833,7 +833,7 @@ class NonCallableMock(Base):
             msg = ("Expected '%s' to be called once. Called %s times.%s"
                    % (self._mock_name or 'mock',
                       self.call_count,
-                      self._call_list_as_string()))
+                      self._calls_repr()))
             raise AssertionError(msg)
         return self.assert_called_with(*args, **kwargs)
 
@@ -855,7 +855,7 @@ class NonCallableMock(Base):
             if expected not in all_calls:
                 raise AssertionError(
                     'Calls not found.\nExpected: %r%s'
-                    % (_CallList(calls), self._call_list_as_string())
+                    % (_CallList(calls), self._calls_repr(prefix="Actual"))
                 ) from cause
             return
 
@@ -916,7 +916,7 @@ class NonCallableMock(Base):
         return klass(**kw)
 
 
-    def _call_list_as_string(self):
+    def _calls_repr(self, prefix="Calls"):
         """Renders self.mock_calls as a string.
 
         Example: "\nCalls: [call(1), call(2)]."
@@ -926,7 +926,7 @@ class NonCallableMock(Base):
         """
         if not self.mock_calls:
             return ""
-        return f"\nCalls: {safe_repr(self.mock_calls)}."
+        return f"\n{prefix}: {safe_repr(self.mock_calls)}."
 
 
 
