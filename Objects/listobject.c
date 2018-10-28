@@ -2679,7 +2679,7 @@ list___init___impl(PyListObject *self, PyObject *iterable)
         if (_PyObject_HasLen(iterable)) {
             Py_ssize_t iter_len = PyObject_Size(iterable);
             if (iter_len == -1) {
-                if (!PyErr_ExceptionMatches(PyExc_Exception)) {
+                if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
                     return -1;
                 }
                 PyErr_Clear();
