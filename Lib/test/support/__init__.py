@@ -2938,7 +2938,7 @@ def maybe_get_event_loop_policy():
     return asyncio.events._event_loop_policy
 
 # Helpers for testing hashing.
-NHASHBITS = sys.maxsize.bit_length() + 1 # number of bits in hash() result
+NHASHBITS = sys.hash_info.width # number of bits in hash() result
 assert NHASHBITS in (32, 64)
 
 # Return mean and sdev of number of collisions when tossing nballs balls
