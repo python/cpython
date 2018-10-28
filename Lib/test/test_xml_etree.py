@@ -5,6 +5,7 @@
 # For this purpose, the module-level "ET" symbol is temporarily
 # monkey-patched when running the "test_xml_etree_c" test suite.
 
+import contextlib
 import copy
 import functools
 import html
@@ -1056,18 +1057,12 @@ class ElementTreeTest(unittest.TestCase):
         # See BPO 34160
         root = ET.Element('cirriculum', status='public', company='example')
         tree = ET.ElementTree(root)
-        try:
-            fo = open(support.TESTFN, "wb")
-            tree.write(fo, encoding='utf-8', xml_declaration=True)
-            fo.close()
-            fo = open(support.TESTFN, "r")
-            text = fo.read()
-        finally:
-            fo.close()
-            support.unlink(support.TESTFN)
-        self.assertEqual(text,
-                         "<?xml version='1.0' encoding='utf-8'?>\n"
-                         '<cirriculum status="public" company="example" />')
+        f = io.BytesIO()
+        with contextlib.redirect_stdout(f):
+            tree.write(f, encoding='utf-8', xml_declaration=True)
+        self.assertEqual(f.getvalue(),
+                         b"<?xml version='1.0' encoding='utf-8'?>\n"
+                         b'<cirriculum status="public" company="example" />')
 
 
 class XMLPullParserTest(unittest.TestCase):
