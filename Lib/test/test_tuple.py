@@ -12,7 +12,7 @@ import pickle
 # most useful to set JUST_SHOW_HASH_RESULTS, to see all the results
 # instead of wrestling with test "failures".  See the bottom of the
 # file for extensive notes on what we're testing here and why.
-RUN_ALL_HASH_TESTS = True # XXX change to False
+RUN_ALL_HASH_TESTS = False
 JUST_SHOW_HASH_RESULTS = False # if RUN_ALL_HASH_TESTS, just display
 
 class TupleTest(seq_tests.CommonTest):
