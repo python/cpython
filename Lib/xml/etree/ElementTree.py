@@ -923,7 +923,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
                             k,
                             _escape_attrib(v)
                             ))
-                for k, v in sorted(items):  # lexical order
+                for k, v in items:
                     if isinstance(k, QName):
                         k = k.text
                     if isinstance(v, QName):
