@@ -161,6 +161,24 @@ class TupleTest(seq_tests.CommonTest):
         # pass with 99.1% confidence.
         self.assertLessEqual(collisions, 15)
 
+    # We expect tuples whose base components have deterministic hashes to
+    # have deterministic hashes too - and, indeed, the same hashes across
+    # platforms with hash codes of the same bit width.
+    def test_hash_exact(self):
+        def check_one_exact(t, e32, e64):
+            got = hash(t)
+            expected = e32 if support.NHASHBITS == 32 else e64
+            if got != expected:
+                msg = f"FAIL hash({t!r}) == {got} != {expected}"
+                self.fail(msg)
+
+        check_one_exact((), 750394483, 5740354900026072187)
+        check_one_exact((0,), 1214856301, -8753497827991233192)
+        check_one_exact((0, 0), -168982784, -8458139203682520985)
+        check_one_exact((0.5,), 2077348973, -408149959306781352)
+        check_one_exact((0.5, (), (-2, 3, (4, 6))), 714642271,
+                        -1845940830829704396)
+
     def test_repr(self):
         l0 = tuple()
         l2 = (0, 1, 2)
