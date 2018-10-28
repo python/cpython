@@ -281,7 +281,7 @@ BZ2_Malloc(void* ctx, int items, int size)
         return NULL;
     /* PyMem_Malloc() cannot be used: compress() and decompress()
        release the GIL */
-    return PyMem_RawMalloc((Py_ssize_t)items * (Py_ssize_t)size);
+    return PyMem_RawMalloc((size_t)items * (size_t)size);
 }
 
 static void
