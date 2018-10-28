@@ -4809,6 +4809,20 @@ class TestTypeFunctionCalledOnDefault(TestCase):
         args = parser.parse_args([])
         self.assertEqual(args.test, [])
 
+# =======================
+# unhashable type tests
+# =======================
+
+class TestUnhasableTypeError(TestCase):
+
+    def test_unhashable_type_noerror(self):
+        "_registry_get handles unhashable TypeError"
+        dd = dict(one=1, two=20, three=300)
+        parser = ErrorRaisingArgumentParser(prog='PROG', add_help=False)
+        parser.add_argument('x', type=dd.get)
+        args = parser.parse_args('two'.split())
+        self.assertEqual(NS(x=20), args)
+
 # ======================
 # parse_known_args tests
 # ======================

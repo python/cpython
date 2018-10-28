@@ -1,0 +1,2 @@
+Allow argparse type to be unhashable
+Patch by Braden Groom
