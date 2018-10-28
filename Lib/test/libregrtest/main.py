@@ -79,6 +79,7 @@ class Regrtest:
         self.resource_denieds = []
         self.environment_changed = []
         self.rerun = []
+        self.run_no_tests = []
         self.first_result = None
         self.interrupted = False
 
@@ -119,7 +120,7 @@ class Regrtest:
             self.skipped.append(test)
             self.resource_denieds.append(test)
         elif ok == TEST_DID_NOT_RUN:
-            pass
+            self.run_no_tests.append(test)
         elif ok != INTERRUPTED:
             raise ValueError("invalid test result: %r" % ok)
 
@@ -321,10 +322,6 @@ class Regrtest:
         if self.ns.pgo:
             return
 
-        if not any((self.good, self.bad, self.skipped, self.interrupted,
-            self.environment_changed)):
-            return
-
         print()
         print("== Tests result: %s ==" % self.get_tests_result())
 
@@ -373,6 +370,11 @@ class Regrtest:
             print()
             print("%s:" % count(len(self.rerun), "re-run test"))
             printlist(self.rerun)
+
+        if self.run_no_tests:
+            print()
+            print(count(len(self.run_no_tests), "test"), "run no tests:")
+            printlist(self.run_no_tests)
 
     def run_tests_sequential(self):
         if self.ns.trace:

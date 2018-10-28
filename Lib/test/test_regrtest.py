@@ -458,6 +458,10 @@ class BaseTestCase(unittest.TestCase):
                 regex = "Re-running test %r in verbose mode" % name
                 self.check_line(output, regex)
 
+        if no_test_ran:
+            regex = list_regex('%s test%s run no tests', no_test_ran)
+            self.check_line(output, regex)
+
         good = (len(tests) - len(skipped) - len(failed)
                 - len(omitted) - len(env_changed) - len(no_test_ran))
         if good:
