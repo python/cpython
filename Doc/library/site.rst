@@ -50,7 +50,7 @@ the key "include-system-site-packages" set to anything other than "false"
 searched for site-packages; otherwise they won't.
 
 .. index::
-   single: #; comment
+   single: # (hash); comment
    statement: import
 
 A path configuration file is a file whose name has the form :file:`{name}.pth`
