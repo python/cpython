@@ -364,10 +364,17 @@ debugger.  Breakpoints for a file are saved in the user’s .idlerc directory.</
 <dt>Clear Breakpoint</dt>
 <dd>Clear the breakpoint on that line.</dd>
 </dl>
-<p>Shell and Output windows have the following.</p>
+<p>Shell and Output windows also have the following.</p>
 <dl class="docutils">
 <dt>Go to file/line</dt>
 <dd>Same as in Debug menu.</dd>
+</dl>
+<p>The Shell window also has an output squeezing facility explained in the
+the <em>Python Shell window</em> subsection below.</p>
+<dl class="docutils">
+<dt>Squeeze</dt>
+<dd>If the cursor is over an output line, squeeze all the output between
+the code above and the prompt below down to a ‘Squeezed text’ label.</dd>
 </dl>
 </div>
 </div>
@@ -478,6 +485,8 @@ or immediately run an existing file before editing.</p>
 </div>
 <div class="section" id="python-shell-window">
 <h3>Python Shell window<a class="headerlink" href="#python-shell-window" title="Permalink to this headline">¶</a></h3>
+<p>The editing features described above work when entering code interactively.
+IDLE’s Shell window also responds to the following keys.</p>
 <ul>
 <li><p class="first"><kbd class="kbd docutils literal notranslate">C-c</kbd> interrupts executing command</p>
 </li>
@@ -493,6 +502,14 @@ OS X use <kbd class="kbd docutils literal notranslate">C-p</kbd>.</li>
 </ul>
 </li>
 </ul>
+<p>Shell has a special facility for squeezing output lines down to a
+‘Squeezed text’ label.  This is done automatically for output over N lines
+(N = 50 by default).  N can be changed in the PyShell section of the General
+page of the Settings dialog.  Output with fewer lines can be squeezed by
+right clicking on the output.  This can be useful for extra long lines.</p>
+<p>Squeezed output is expanded in place by double-clicking the label.
+It can also be sent to the clipboard or a separate view window by
+right-clicking the label.</p>
 </div>
 <div class="section" id="text-colors">
 <h3>Text colors<a class="headerlink" href="#text-colors" title="Permalink to this headline">¶</a></h3>
@@ -797,7 +814,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Oct 27, 2018.
+    Last updated on Oct 28, 2018.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 
