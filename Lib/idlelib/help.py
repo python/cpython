@@ -152,7 +152,7 @@ class HelpParser(HTMLParser):
             if self.tags in ['h1', 'h2', 'h3']:
                 if (self.hprefix != '' and
                     d[0:len(self.hprefix)] == self.hprefix):
-                        d = d[len(self.hprefix):]
+                    d = d[len(self.hprefix):]
                 self.header += d.strip()
             self.text.insert('end', d, (self.tags, self.chartags))
 
