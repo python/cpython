@@ -3,7 +3,7 @@
 Implements the Distutils 'bdist_rpm' command (create RPM source and binary
 distributions)."""
 
-import subprocess, sys, os
+import shutil, subprocess, sys, os
 from distutils.core import Command
 from distutils.debug import DEBUG
 from distutils.util import get_platform
@@ -310,8 +310,7 @@ class bdist_rpm(Command):
         # build package
         log.info("building RPMs")
         rpm_cmd = ['rpm']
-        if os.path.exists('/usr/bin/rpmbuild') or \
-           os.path.exists('/bin/rpmbuild'):
+        if shutil.which('rpmbuild'):
             rpm_cmd = ['rpmbuild']
 
         if self.source_only: # what kind of RPMs?
