@@ -570,7 +570,7 @@ gettmarg(PyObject *args, struct tm *p, const char *format)
         PyObject *item;
         item = PyTuple_GET_ITEM(args, 9);
         if (item != Py_None) {
-            p->tm_zone = PyUnicode_AsUTF8(item);
+            p->tm_zone = (char *)PyUnicode_AsUTF8(item);
             if (p->tm_zone == NULL) {
                 return 0;
             }
