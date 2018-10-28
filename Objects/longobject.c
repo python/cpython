@@ -211,7 +211,7 @@ _PyLong_New(Py_ssize_t size)
         PyErr_NoMemory();
         return NULL;
     }
-    return (PyLongObject*)PyObject_INIT_VAR(result, &PyLong_Type, size);
+    return (PyLongObject*)PyObject_INIT_VAR((PyVarObject *)result, &PyLong_Type, size);
 }
 
 PyObject *
@@ -5280,13 +5280,8 @@ static PyObject *
 int_as_integer_ratio_impl(PyObject *self)
 /*[clinic end generated code: output=e60803ae1cc8621a input=55ce3058e15de393]*/
 {
-    PyObject *numerator;
     PyObject *ratio_tuple;
-
-    if (PyLong_CheckExact(self)) {
-        return PyTuple_Pack(2, self, _PyLong_One);
-    }
-    numerator = _PyLong_Copy((PyLongObject *) self);
+    PyObject *numerator = long_long(self);
     if (numerator == NULL) {
         return NULL;
     }
@@ -5625,7 +5620,7 @@ _PyLong_Init(void)
             assert(v->ob_digit[0] == (digit)abs(ival));
         }
         else {
-            (void)PyObject_INIT(v, &PyLong_Type);
+            (void)PyObject_INIT((PyObject *)v, &PyLong_Type);
         }
         Py_SIZE(v) = size;
         v->ob_digit[0] = (digit)abs(ival);

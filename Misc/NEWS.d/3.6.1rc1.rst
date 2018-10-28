@@ -465,7 +465,7 @@ Patch written by Jiajun Huang.
 .. nonce: kN5S6v
 .. section: Library
 
-functools.lru_cache() now respects PEP 468 and preserves the order of
+functools.lru_cache() now respects :pep:`468` and preserves the order of
 keyword arguments.  f(a=1, b=2) is now cached separately from f(b=2, a=1)
 since both calls could potentially give different results.
 
@@ -689,7 +689,7 @@ Correctly handle special console filenames (patch by Eryk Sun)
 .. nonce: bhvrJ2
 .. section: Windows
 
-Implement PEP 529 for io.FileIO (Patch by Eryk Sun)
+Implement :pep:`529` for io.FileIO (Patch by Eryk Sun)
 
 ..
 
