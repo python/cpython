@@ -62,29 +62,104 @@ class TupleTest(seq_tests.CommonTest):
                 yield i
         self.assertEqual(list(tuple(f())), list(range(1000)))
 
-    def test_hash(self):
-        # See SF bug 942952:  Weakness in tuple hash
-        # The hash should:
-        #      be non-commutative
-        #      should spread-out closely spaced values
-        #      should not exhibit cancellation in tuples like (x,(x,y))
-        #      should be distinct from element hashes:  hash(x)!=hash((x,))
-        # This test exercises those cases.
-        # For a pure random hash and N=50, the expected number of occupied
-        #      buckets when tossing 252,600 balls into 2**32 buckets
-        #      is 252,592.6, or about 7.4 expected collisions.  The
-        #      standard deviation is 2.73.  On a box with 64-bit hash
-        #      codes, no collisions are expected.  Here we accept no
-        #      more than 15 collisions.  Any worse and the hash function
-        #      is sorely suspect.
-
+    # Various tests for hashing of tuples to check that we get few collisions.
+    #
+    # Earlier versions of the tuple hash algorithm had collisions
+    # reported at:
+    # - https://bugs.python.org/issue942952
+    # - https://bugs.python.org/issue34751
+    #
+    # Notes:
+    # - The hash of tuples is deterministic: if the test passes once on a given
+    #   system, it will always pass. So the probabilities mentioned in the
+    #   test_hash functions below should be interpreted assuming that the
+    #   hashes are random.
+    # - Due to the structure in the testsuite inputs, collisions are not
+    #   independent. For example, if hash((a,b)) == hash((c,d)), then also
+    #   hash((a,b,x)) == hash((c,d,x)). But the quoted probabilities assume
+    #   independence anyway.
+    # - We limit the hash to 32 bits in the tests to have a good test on
+    #   64-bit systems too. Furthermore, this is also a sanity check that the
+    #   lower 32 bits of a 64-bit hash are sufficiently random too.
+    def test_hash1(self):
+        # Check for hash collisions between small integers in range(50) and
+        # certain tuples and nested tuples of such integers.
         N=50
         base = list(range(N))
         xp = [(i, j) for i in base for j in base]
         inps = base + [(i, j) for i in base for j in xp] + \
                      [(i, j) for i in xp for j in base] + xp + list(zip(base))
-        collisions = len(inps) - len(set(map(hash, inps)))
-        self.assertTrue(collisions <= 15)
+        self.assertEqual(len(inps), 252600)
+        hashes = set(hash(x) % 2**32 for x in inps)
+        collisions = len(inps) - len(hashes)
+
+        # For a pure random 32-bit hash and N = 252,600 test items, the
+        # expected number of collisions equals
+        #
+        # 2**(-32) * N(N-1)/2 = 7.4
+        #
+        # We allow up to 15 collisions, which suffices to make the test
+        # pass with 99.5% confidence.
+        self.assertLessEqual(collisions, 15)
+
+    def test_hash2(self):
+        # Check for hash collisions between small integers (positive and
+        # negative), tuples and nested tuples of such integers.
+
+        # All numbers in the interval [-n, ..., n] except -1 because
+        # hash(-1) == hash(-2).
+        n = 5
+        A = [x for x in range(-n, n+1) if x != -1]
+
+        B = A + [(a,) for a in A]
+
+        L2 = [(a,b) for a in A for b in A]
+        L3 = L2 + [(a,b,c) for a in A for b in A for c in A]
+        L4 = L3 + [(a,b,c,d) for a in A for b in A for c in A for d in A]
+
+        # T = list of testcases. These consist of all (possibly nested
+        # at most 2 levels deep) tuples containing at most 4 items from
+        # the set A.
+        T = A
+        T += [(a,) for a in B + L4]
+        T += [(a,b) for a in L3 for b in B]
+        T += [(a,b) for a in L2 for b in L2]
+        T += [(a,b) for a in B for b in L3]
+        T += [(a,b,c) for a in B for b in B for c in L2]
+        T += [(a,b,c) for a in B for b in L2 for c in B]
+        T += [(a,b,c) for a in L2 for b in B for c in B]
+        T += [(a,b,c,d) for a in B for b in B for c in B for d in B]
+        self.assertEqual(len(T), 345130)
+        hashes = set(hash(x) % 2**32 for x in T)
+        collisions = len(T) - len(hashes)
+
+        # For a pure random 32-bit hash and N = 345,130 test items, the
+        # expected number of collisions equals
+        #
+        # 2**(-32) * N(N-1)/2 = 13.9
+        #
+        # We allow up to 20 collisions, which suffices to make the test
+        # pass with 95.5% confidence.
+        self.assertLessEqual(collisions, 20)
+
+    def test_hash3(self):
+        # Check for hash collisions between tuples containing 0.0 and 0.5.
+        # The hashes of 0.0 and 0.5 itself differ only in one high bit.
+        # So this implicitly tests propagation of high bits to low bits.
+        from itertools import product
+        T = list(product([0.0, 0.5], repeat=18))
+        self.assertEqual(len(T), 262144)
+        hashes = set(hash(x) % 2**32 for x in T)
+        collisions = len(T) - len(hashes)
+
+        # For a pure random 32-bit hash and N = 262,144 test items, the
+        # expected number of collisions equals
+        #
+        # 2**(-32) * N(N-1)/2 = 8.0
+        #
+        # We allow up to 15 collisions, which suffices to make the test
+        # pass with 99.1% confidence.
+        self.assertLessEqual(collisions, 15)
 
     def test_repr(self):
         l0 = tuple()
