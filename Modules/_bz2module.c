@@ -288,11 +288,11 @@ BZ2_Malloc(void* ctx, int items, int size)
 {
     if (items < 0 || size < 0)
         return NULL;
-    if ((size_t)items > (size_t)PY_SSIZE_T_MAX / (size_t)size)
+    if (size != 0 && (size_t)items > (size_t)PY_SSIZE_T_MAX / (size_t)size)
         return NULL;
     /* PyMem_Malloc() cannot be used: compress() and decompress()
        release the GIL */
-    return PyMem_RawMalloc(items * size);
+    return PyMem_RawMalloc((size_t)items * (size_t)size);
 }
 
 static void
