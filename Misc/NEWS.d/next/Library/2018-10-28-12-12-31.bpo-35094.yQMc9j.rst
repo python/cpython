@@ -1,0 +1,2 @@
+Use less memory in random.sample with improved sampling algorithms. Patch by
+Paul Crowley.
