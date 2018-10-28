@@ -323,44 +323,55 @@ class Random(_random.Random):
         large population:   sample(range(10000000), 60)
         """
 
-        # Sampling without replacement entails tracking either potential
-        # selections (the pool) in a list or previous selections in a set.
+        # Where k is n/2 or more, or where the population is a set and so we
+        # have to iterate through every item anyway, use reservoir sampling
+        # (Knuth's "Algorithm R").
 
-        # When the number of selections is small compared to the
-        # population, then tracking selections is efficient, requiring
-        # only a small set and an occasional reselection.  For
-        # a larger number of selections, the pool tracking method is
-        # preferred since the list takes less space than the
-        # set and it doesn't suffer from frequent reselections.
+        # Otherwise use the "cardchoose" algorithm: select fairly from
+        # all the possible sorted lists of integers 0 <= item < n - k + 1
+        # (for this we have to introduce a bias in favour of duplicates,
+        # which the sort fixes) then turn this into a random choice from
+        # the population. Consider eg random.randchoose(range(3), 2):
+        # then n - k + 1 = 2 and the possible sorted lists are
+        # [0, 0], [0, 1], [1, 1], each of which can arise in two different ways.
+        # After `result[i] += i` this becomes [0, 1], [0, 2], or [1, 2];
+        # then we Fisher-Yates shuffle this list, and substitute with
+        # 'result[i] = population[result[i]]'.
 
-        if isinstance(population, _Set):
-            population = tuple(population)
-        if not isinstance(population, _Sequence):
+        # Neither of these methods require allocation of memory beyond that
+        # needed for the result.
+
+        is_set = isinstance(population, _Set)
+        if not (is_set or isinstance(population, _Sequence)):
             raise TypeError("Population must be a sequence or set.  For dicts, use list(d).")
         randbelow = self._randbelow
         n = len(population)
         if not 0 <= k <= n:
             raise ValueError("Sample larger than population or is negative")
         result = [None] * k
-        setsize = 21        # size of a small set minus size of an empty list
-        if k > 5:
-            setsize += 4 ** _ceil(_log(k * 3, 4)) # table size for big sets
-        if n <= setsize:
-            # An n-length list is smaller than a k-length set
-            pool = list(population)
-            for i in range(k):         # invariant:  non-selected at [0,n-i)
-                j = randbelow(n-i)
-                result[i] = pool[j]
-                pool[j] = pool[n-i-1]   # move non-selected item into vacancy
+        if is_set or k*2 >= n:
+            for i, item in enumerate(population):
+                r = randbelow(i + 1)
+                if r < k:
+                    if i < k:
+                        result[i] = result[r]
+                    result[r] = item
         else:
-            selected = set()
-            selected_add = selected.add
+            t = n - k + 1
+            # Fairly choose a k-item sorted list 0 <= item < t
             for i in range(k):
-                j = randbelow(n)
-                while j in selected:
-                    j = randbelow(n)
-                selected_add(j)
-                result[i] = population[j]
+                r = randbelow(t + i)
+                if r < t:
+                    result[i] = r
+                else:
+                    result[i] = result[r - t]
+            result.sort()
+            # Add i to each item in the list, F-Y shuffle, and substitute.
+            for i in range(k):
+                ix = result[i] + i
+                j = randbelow(i+1)
+                result[i] = result[j]
+                result[j] = population[ix]
         return result
 
     def choices(self, population, weights=None, *, cum_weights=None, k=1):
