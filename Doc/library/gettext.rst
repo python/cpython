@@ -51,6 +51,7 @@ class-based API instead.
    Bind the *domain* to *codeset*, changing the encoding of byte strings
    returned by the :func:`lgettext`, :func:`ldgettext`, :func:`lngettext`
    and :func:`ldngettext` functions.
+   If *codeset* is omitted, then the current binding is returned.
 
    .. deprecated-removed:: 3.8 3.10
 

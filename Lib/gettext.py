@@ -661,7 +661,6 @@ def dgettext(domain, message):
         return message
     return t.gettext(message)
 
-
 def ldgettext(domain, message):
     import warnings
     warnings.warn('ldgettext() is deprecated, use dgettext() instead',
@@ -679,7 +678,6 @@ def ldgettext(domain, message):
                                 DeprecationWarning)
         return t.lgettext(message)
 
-
 def dngettext(domain, msgid1, msgid2, n):
     try:
         t = translation(domain, _localedirs.get(domain, None))
@@ -689,7 +687,6 @@ def dngettext(domain, msgid1, msgid2, n):
         else:
             return msgid2
     return t.ngettext(msgid1, msgid2, n)
-
 
 def ldngettext(domain, msgid1, msgid2, n):
     import warnings
@@ -735,7 +732,6 @@ def dnpgettext(domain, context, msgid1, msgid2, n):
 def gettext(message):
     return dgettext(_current_domain, message)
 
-
 def lgettext(message):
     import warnings
     warnings.warn('lgettext() is deprecated, use gettext() instead',
@@ -745,10 +741,8 @@ def lgettext(message):
                                 DeprecationWarning)
         return ldgettext(_current_domain, message)
 
-
 def ngettext(msgid1, msgid2, n):
     return dngettext(_current_domain, msgid1, msgid2, n)
-
 
 def lngettext(msgid1, msgid2, n):
     import warnings
