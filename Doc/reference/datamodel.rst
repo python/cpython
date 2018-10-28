@@ -1770,7 +1770,7 @@ Metaclasses
 .. index::
    single: metaclass
    builtin: type
-   single: =; class definition
+   single: = (equals); class definition
 
 By default, classes are constructed using :func:`type`. The class body is
 executed in a new namespace and the class name is bound locally to the

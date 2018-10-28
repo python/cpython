@@ -152,7 +152,7 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. index:: single: ~; home directory expansion
+.. index:: single: ~ (tilde); home directory expansion
 
 .. function:: expanduser(path)
 
@@ -178,8 +178,8 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 .. index::
-   single: $; environment variables expansion
-   single: %; environment variables expansion (Windows)
+   single: $ (dollar); environment variables expansion
+   single: % (percent); environment variables expansion (Windows)
 
 .. function:: expandvars(path)
 

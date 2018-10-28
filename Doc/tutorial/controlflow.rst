@@ -526,7 +526,7 @@ Arbitrary Argument Lists
 ------------------------
 
 .. index::
-   single: *; in function calls
+   single: * (asterisk); in function calls
 
 Finally, the least frequently used option is to specify that a function can be
 called with an arbitrary number of arguments.  These arguments will be wrapped
@@ -676,7 +676,7 @@ Function Annotations
 .. index::
    pair: function; annotations
    single: ->; function annotations
-   single: :; function annotations
+   single: : (colon); function annotations
 
 :ref:`Function annotations <function>` are completely optional metadata
 information about the types used by user-defined functions (see :pep:`3107` and

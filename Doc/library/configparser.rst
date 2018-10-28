@@ -291,7 +291,7 @@ On top of the core functionality, :class:`ConfigParser` supports
 interpolation.  This means values can be preprocessed before returning them
 from ``get()`` calls.
 
-.. index:: single: %; interpolation in configuration files
+.. index:: single: % (percent); interpolation in configuration files
 
 .. class:: BasicInterpolation()
 
@@ -321,7 +321,7 @@ from ``get()`` calls.
    ``%(my_dir)s/Pictures`` as the value of ``my_pictures`` and
    ``%(home_dir)s/lumberjack`` as the value of ``my_dir``.
 
-.. index:: single: $; interpolation in configuration files
+.. index:: single: $ (dollar); interpolation in configuration files
 
 .. class:: ExtendedInterpolation()
 
