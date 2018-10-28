@@ -4,6 +4,7 @@ import builtins
 import contextlib
 import io
 import os
+import pickle
 import platform
 import shutil
 import subprocess
