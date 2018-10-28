@@ -485,7 +485,7 @@ Some details you should read once, but won't need to remember:
   to test a :exc:`SyntaxError` that omits the traceback header, you will need to
   manually add the traceback header line to your test example.
 
-.. index:: single: ^; caret
+.. index:: single: ^ (caret); marker
 
 * For some :exc:`SyntaxError`\ s, Python displays the character position of the
   syntax error, using a ``^`` marker::
@@ -695,9 +695,9 @@ useful unless you intend to extend :mod:`doctest` internals via subclassing:
 
 
 .. index::
-   single: #; in doctests
-   single: +; in doctests
-   single: -; in doctests
+   single: # (hash); in doctests
+   single: + (plus); in doctests
+   single: - (minus); in doctests
 .. _doctest-directives:
 
 Directives

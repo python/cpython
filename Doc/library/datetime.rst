@@ -2000,7 +2000,7 @@ Class attributes:
 
 
 .. index::
-   single: %; datetime format
+   single: % (percent); datetime format
 
 .. _strftime-strptime-behavior:
 

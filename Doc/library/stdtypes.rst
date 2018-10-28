@@ -123,9 +123,9 @@ Comparisons
    pair: chaining; comparisons
    pair: operator; comparison
    operator: ==
-   operator: <
+   operator: < (less)
    operator: <=
-   operator: >
+   operator: > (greater)
    operator: >=
    operator: !=
    operator: is
@@ -246,16 +246,16 @@ and imaginary parts.
    builtin: int
    builtin: float
    builtin: complex
-   single: operator; +
-   single: +; unary operator
-   single: +; binary operator
-   single: operator; -
-   single: -; unary operator
-   single: -; binary operator
-   operator: *
-   operator: /
+   single: operator; + (plus)
+   single: + (plus); unary operator
+   single: + (plus); binary operator
+   single: operator; - (minus)
+   single: - (minus); unary operator
+   single: - (minus); binary operator
+   operator: * (asterisk)
+   operator: / (slash)
    operator: //
-   operator: %
+   operator: % (percent)
    operator: **
 
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
@@ -391,12 +391,12 @@ Bitwise Operations on Integer Types
    pair: bitwise; operations
    pair: shifting; operations
    pair: masking; operations
-   operator: |
-   operator: ^
-   operator: &
+   operator: | (vertical bar)
+   operator: ^ (caret)
+   operator: & (ampersand)
    operator: <<
    operator: >>
-   operator: ~
+   operator: ~ (tilde)
 
 Bitwise operations only make sense for integers. The result of bitwise
 operations is calculated as though carried out in two's complement with an
@@ -2119,7 +2119,7 @@ expression support in the :mod:`re` module).
    single: string; interpolation, printf
    single: printf-style formatting
    single: sprintf-style formatting
-   single: %; printf-style formatting
+   single: % (percent); printf-style formatting
 
 .. note::
 
@@ -2148,8 +2148,7 @@ components, which must occur in this order:
 #. The ``'%'`` character, which marks the start of the specifier.
 
 .. index::
-   single: (; in printf-style formatting
-   single: ); in printf-style formatting
+   single: () (parentheses); in printf-style formatting
 
 #. Mapping key (optional), consisting of a parenthesised sequence of characters
    (for example, ``(somename)``).
@@ -2157,13 +2156,13 @@ components, which must occur in this order:
 #. Conversion flags (optional), which affect the result of some conversion
    types.
 
-.. index:: single: *; in printf-style formatting
+.. index:: single: * (asterisk); in printf-style formatting
 
 #. Minimum field width (optional).  If specified as an ``'*'`` (asterisk), the
    actual width is read from the next element of the tuple in *values*, and the
    object to convert comes after the minimum field width and optional precision.
 
-.. index:: single: .; in printf-style formatting
+.. index:: single: . (dot); in printf-style formatting
 
 #. Precision (optional), given as a ``'.'`` (dot) followed by the precision.  If
    specified as ``'*'`` (an asterisk), the actual precision is read from the next
@@ -2189,9 +2188,9 @@ sequential parameter list).
 The conversion flag characters are:
 
 .. index::
-   single: #; in printf-style formatting
-   single: -; in printf-style formatting
-   single: +; in printf-style formatting
+   single: # (hash); in printf-style formatting
+   single: - (minus); in printf-style formatting
+   single: + (plus); in printf-style formatting
    single: space; in printf-style formatting
 
 +---------+---------------------------------------------------------------------+
@@ -3256,7 +3255,7 @@ place, and instead produce new objects.
    single: bytearray; interpolation
    single: printf-style formatting
    single: sprintf-style formatting
-   single: %; printf-style formatting
+   single: % (percent); printf-style formatting
 
 .. note::
 
@@ -3283,8 +3282,7 @@ components, which must occur in this order:
 #. The ``'%'`` character, which marks the start of the specifier.
 
 .. index::
-   single: (; in printf-style formatting
-   single: ); in printf-style formatting
+   single: () (parentheses); in printf-style formatting
 
 #. Mapping key (optional), consisting of a parenthesised sequence of characters
    (for example, ``(somename)``).
@@ -3292,13 +3290,13 @@ components, which must occur in this order:
 #. Conversion flags (optional), which affect the result of some conversion
    types.
 
-.. index:: single: *; in printf-style formatting
+.. index:: single: * (asterisk); in printf-style formatting
 
 #. Minimum field width (optional).  If specified as an ``'*'`` (asterisk), the
    actual width is read from the next element of the tuple in *values*, and the
    object to convert comes after the minimum field width and optional precision.
 
-.. index:: single: .; in printf-style formatting
+.. index:: single: . (dot); in printf-style formatting
 
 #. Precision (optional), given as a ``'.'`` (dot) followed by the precision.  If
    specified as ``'*'`` (an asterisk), the actual precision is read from the next
@@ -3324,9 +3322,9 @@ sequential parameter list).
 The conversion flag characters are:
 
 .. index::
-   single: #; in printf-style formatting
-   single: -; in printf-style formatting
-   single: +; in printf-style formatting
+   single: # (hash); in printf-style formatting
+   single: - (minus); in printf-style formatting
+   single: + (plus); in printf-style formatting
    single: space; in printf-style formatting
 
 +---------+---------------------------------------------------------------------+

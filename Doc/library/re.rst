@@ -93,20 +93,20 @@ the expression ``(?:a{6})*`` matches any multiple of six ``'a'`` characters.
 
 The special characters are:
 
-.. index:: single: .; in regular expressions
+.. index:: single: . (dot); in regular expressions
 
 ``.``
    (Dot.)  In the default mode, this matches any character except a newline.  If
    the :const:`DOTALL` flag has been specified, this matches any character
    including a newline.
 
-.. index:: single: ^; in regular expressions
+.. index:: single: ^ (caret); in regular expressions
 
 ``^``
    (Caret.)  Matches the start of the string, and in :const:`MULTILINE` mode also
    matches immediately after each newline.
 
-.. index:: single: $; in regular expressions
+.. index:: single: $ (dollar); in regular expressions
 
 ``$``
    Matches the end of the string or just before the newline at the end of the
@@ -117,21 +117,21 @@ The special characters are:
    a single ``$`` in ``'foo\n'`` will find two (empty) matches: one just before
    the newline, and one at the end of the string.
 
-.. index:: single: *; in regular expressions
+.. index:: single: * (asterisk); in regular expressions
 
 ``*``
    Causes the resulting RE to match 0 or more repetitions of the preceding RE, as
    many repetitions as are possible.  ``ab*`` will match 'a', 'ab', or 'a' followed
    by any number of 'b's.
 
-.. index:: single: +; in regular expressions
+.. index:: single: + (plus); in regular expressions
 
 ``+``
    Causes the resulting RE to match 1 or more repetitions of the preceding RE.
    ``ab+`` will match 'a' followed by any non-zero number of 'b's; it will not
    match just 'a'.
 
-.. index:: single: ?; in regular expressions
+.. index:: single: ? (question mark); in regular expressions
 
 ``?``
    Causes the resulting RE to match 0 or 1 repetitions of the preceding RE.
@@ -152,8 +152,7 @@ The special characters are:
    only ``'<a>'``.
 
 .. index::
-   single: {; in regular expressions
-   single: }; in regular expressions
+   single: {} (curly brackets); in regular expressions
 
 ``{m}``
    Specifies that exactly *m* copies of the previous RE should be matched; fewer
@@ -176,7 +175,7 @@ The special characters are:
    6-character string ``'aaaaaa'``, ``a{3,5}`` will match 5 ``'a'`` characters,
    while ``a{3,5}?`` will only match 3 characters.
 
-.. index:: single: \; in regular expressions
+.. index:: single: \ (backslash); in regular expressions
 
 ``\``
    Either escapes special characters (permitting you to match characters like
@@ -192,8 +191,7 @@ The special characters are:
    raw strings for all but the simplest expressions.
 
 .. index::
-   single: [; in regular expressions
-   single: ]; in regular expressions
+   single: [] (square brackets); in regular expressions
 
 ``[]``
    Used to indicate a set of characters.  In a set:
@@ -201,7 +199,7 @@ The special characters are:
    * Characters can be listed individually, e.g. ``[amk]`` will match ``'a'``,
      ``'m'``, or ``'k'``.
 
-   .. index:: single: -; in regular expressions
+   .. index:: single: - (minus); in regular expressions
 
    * Ranges of characters can be indicated by giving two characters and separating
      them by a ``'-'``, for example ``[a-z]`` will match any lowercase ASCII letter,
@@ -214,13 +212,13 @@ The special characters are:
      ``[(+*)]`` will match any of the literal characters ``'('``, ``'+'``,
      ``'*'``, or ``')'``.
 
-   .. index:: single: \; in regular expressions
+   .. index:: single: \ (backslash); in regular expressions
 
    * Character classes such as ``\w`` or ``\S`` (defined below) are also accepted
      inside a set, although the characters they match depends on whether
      :const:`ASCII` or :const:`LOCALE` mode is in force.
 
-   .. index:: single: ^; in regular expressions
+   .. index:: single: ^ (caret); in regular expressions
 
    * Characters that are not within a range can be matched by :dfn:`complementing`
      the set.  If the first character of the set is ``'^'``, all the characters
@@ -252,7 +250,7 @@ The special characters are:
       :exc:`FutureWarning` is raised if a character set contains constructs
       that will change semantically in the future.
 
-.. index:: single: |; in regular expressions
+.. index:: single: | (vertical bar); in regular expressions
 
 ``|``
    ``A|B``, where *A* and *B* can be arbitrary REs, creates a regular expression that
@@ -266,8 +264,7 @@ The special characters are:
    character class, as in ``[|]``.
 
 .. index::
-   single: (; in regular expressions
-   single: ); in regular expressions
+   single: () (parentheses); in regular expressions
 
 ``(...)``
    Matches whatever regular expression is inside the parentheses, and indicates the
@@ -433,7 +430,7 @@ If the ordinary character is not an ASCII digit or an ASCII letter, then the
 resulting RE will match the second character.  For example, ``\$`` matches the
 character ``'$'``.
 
-.. index:: single: \; in regular expressions
+.. index:: single: \ (backslash); in regular expressions
 
 ``\number``
    Matches the contents of the group of the same number.  Groups are numbered
@@ -719,7 +716,7 @@ form.
 .. data:: X
           VERBOSE
 
-   .. index:: single: #; in regular expressions
+   .. index:: single: # (hash); in regular expressions
 
    This flag allows you to write regular expressions that look nicer and are
    more readable by allowing you to visually separate logical sections of the

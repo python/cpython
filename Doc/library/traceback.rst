@@ -47,7 +47,7 @@ The module defines the following functions:
 
    * it prints the exception *etype* and *value* after the stack trace
 
-   .. index:: single: ^; caret
+   .. index:: single: ^ (caret); marker
 
    * if *type(value)* is :exc:`SyntaxError` and *value* has the appropriate
      format, it prints the line where the syntax error occurred with a caret

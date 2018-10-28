@@ -71,7 +71,7 @@ Assignment statements
 =====================
 
 .. index::
-   single: =; assignment statement
+   single: = (equals); assignment statement
    pair: assignment; statement
    pair: binding; name
    pair: rebinding; name
@@ -112,12 +112,10 @@ unacceptable.  The rules observed by various types and the exceptions raised are
 given with the definition of the object types (see section :ref:`types`).
 
 .. index:: triple: target; list; assignment
-   single: ,; in target list
-   single: *; in assignment target list
-   single: [; in assignment target list
-   single: ]; in assignment target list
-   single: (; in assignment target list
-   single: ); in assignment target list
+   single: , (comma); in target list
+   single: * (asterisk); in assignment target list
+   single: [] (square brackets); in assignment target list
+   single: () (parentheses); in assignment target list
 
 Assignment of an object to a target list, optionally enclosed in parentheses or
 square brackets, is recursively defined as follows.
@@ -327,7 +325,7 @@ Annotated assignment statements
 .. index::
    pair: annotated; assignment
    single: statement; assignment, annotated
-   single: :; annotated variable
+   single: : (colon); annotated variable
 
 Annotation assignment is the combination, in a single statement,
 of a variable or attribute annotation and an optional assignment statement:
@@ -379,7 +377,7 @@ The :keyword:`assert` statement
 .. index::
    statement: assert
    pair: debugging; assertions
-   single: ,; expression list
+   single: , (comma); expression list
 
 Assert statements are a convenient way to insert debugging assertions into a
 program:
@@ -722,7 +720,7 @@ The :keyword:`import` statement
    keyword: from
    keyword: as
    exception: ImportError
-   single: ,; import statement
+   single: , (comma); import statement
 
 .. productionlist::
    import_stmt: "import" `module` ["as" `identifier`] ("," `module` ["as" `identifier`])*
@@ -796,7 +794,7 @@ Examples::
    from foo.bar import baz    # foo.bar.baz imported and bound as baz
    from foo import attr       # foo imported and foo.attr bound as attr
 
-.. index:: single: *; import statement
+.. index:: single: * (asterisk); import statement
 
 If the list of identifiers is replaced by a star (``'*'``), all public
 names defined in the module are bound in the local namespace for the scope
@@ -932,7 +930,7 @@ The :keyword:`global` statement
 .. index::
    statement: global
    triple: global; name; binding
-   single: ,; identifier list
+   single: , (comma); identifier list
 
 .. productionlist::
    global_stmt: "global" `identifier` ("," `identifier`)*
@@ -977,7 +975,7 @@ The :keyword:`nonlocal` statement
 =================================
 
 .. index:: statement: nonlocal
-   single: ,; identifier list
+   single: , (comma); identifier list
 
 .. productionlist::
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*
