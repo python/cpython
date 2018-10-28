@@ -24,7 +24,7 @@ PyDoc_STRVAR(SHA512Type_digest__doc__,
 "digest($self, /)\n"
 "--\n"
 "\n"
-"Return the digest value as a string of binary data.");
+"Return the digest value as a bytes object.");
 
 #define SHA512TYPE_DIGEST_METHODDEF    \
     {"digest", (PyCFunction)SHA512Type_digest, METH_NOARGS, SHA512Type_digest__doc__},
@@ -124,4 +124,4 @@ _sha512_sha384(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=18f15598c3487045 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=59a43fa6eb3b5f4f input=a9049054013a1b77]*/
