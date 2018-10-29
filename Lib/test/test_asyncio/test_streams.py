@@ -589,6 +589,7 @@ class StreamTests(test_utils.TestCase):
                 client_writer.write(data)
                 await client_writer.drain()
                 client_writer.close()
+                await client_writer.wait_closed()
 
             def start(self):
                 sock = socket.socket()
@@ -628,6 +629,7 @@ class StreamTests(test_utils.TestCase):
             # read it back
             msgback = await reader.readline()
             writer.close()
+            await writer.wait_closed()
             return msgback
 
         messages = []
@@ -666,6 +668,7 @@ class StreamTests(test_utils.TestCase):
                 client_writer.write(data)
                 await client_writer.drain()
                 client_writer.close()
+                await client_writer.wait_closed()
 
             def start(self):
                 self.server = self.loop.run_until_complete(
@@ -697,6 +700,7 @@ class StreamTests(test_utils.TestCase):
             # read it back
             msgback = await reader.readline()
             writer.close()
+            await writer.wait_closed()
             return msgback
 
         messages = []
