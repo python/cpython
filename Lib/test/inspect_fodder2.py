@@ -137,3 +137,8 @@ class cls135:
         def func137():
             never_reached1
             never_reached2
+
+#line 141
+class cls142:
+    import inspect
+    frame144 = inspect.currentframe()

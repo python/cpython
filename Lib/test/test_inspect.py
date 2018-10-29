@@ -676,6 +676,8 @@ class TestBuggyCases(GetSourceBase):
     def test_nested_func(self):
         self.assertSourceEqual(mod2.cls135.func136, 136, 139)
 
+    def test_getsource_on_class_frame(self):
+        self.assertSourceEqual(mod2.cls142.frame144, 142, 144)
 
 class TestNoEOL(GetSourceBase):
     def setUp(self):
