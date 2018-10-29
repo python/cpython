@@ -154,8 +154,9 @@ class RegressionTestResult(unittest.TextTestResult):
         return e
 
 class QuietRegressionTestRunner:
-    def __init__(self, stream):
+    def __init__(self, stream, buffer=False):
         self.result = RegressionTestResult(stream, None, 0)
+        self.result.buffer = buffer
 
     def run(self, test):
         test(self.result)
@@ -167,7 +168,7 @@ def get_test_runner_class(verbosity, buffer=False):
                                  resultclass=RegressionTestResult,
                                  buffer=buffer,
                                  verbosity=verbosity)
-    return QuietRegressionTestRunner
+    return functools.partial(QuietRegressionTestRunner, buffer=buffer)
 
 def get_test_runner(stream, verbosity, capture_output=False):
     return get_test_runner_class(verbosity, capture_output)(stream)
