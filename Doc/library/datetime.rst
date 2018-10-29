@@ -2015,8 +2015,7 @@ Conversely, the :meth:`datetime.strptime` class method creates a
 corresponding format string. ``datetime.strptime(date_string, format)`` is
 equivalent to ``datetime(*(time.strptime(date_string, format)[0:6]))``, except
 when the format includes sub-second components or timezone offset information,
-which are supported in ``datetime.strptime`` but are discarded by ``time.strptime``,
-since ``time.strptime`` won't fail; however, it will silently ignore such input.
+which are supported in ``datetime.strptime`` but are discarded by ``time.strptime``.
 
 For :class:`.time` objects, the format codes for year, month, and day should not
 be used, as time objects have no such values.  If they're used anyway, ``1900``
