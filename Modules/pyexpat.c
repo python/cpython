@@ -1084,21 +1084,7 @@ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
         return NULL;
     new_parser->buffer_size = self->buffer_size;
     new_parser->buffer_used = 0;
-    if (self->buffer != NULL) {
-        new_parser->buffer = malloc(new_parser->buffer_size);
-        if (new_parser->buffer == NULL) {
-#ifndef Py_TPFLAGS_HAVE_GC
-            /* Code for versions 2.0 and 2.1 */
-            PyObject_Del(new_parser);
-#else
-            /* Code for versions 2.2 and later. */
-            PyObject_GC_Del(new_parser);
-#endif
-            return PyErr_NoMemory();
-        }
-    }
-    else
-        new_parser->buffer = NULL;
+    new_parser->buffer = NULL;
     new_parser->returns_unicode = self->returns_unicode;
     new_parser->ordered_attributes = self->ordered_attributes;
     new_parser->specified_attributes = self->specified_attributes;
@@ -1118,6 +1104,14 @@ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
     if (!new_parser->itself) {
         Py_DECREF(new_parser);
         return PyErr_NoMemory();
+    }
+
+    if (self->buffer != NULL) {
+        new_parser->buffer = malloc(new_parser->buffer_size);
+        if (new_parser->buffer == NULL) {
+            Py_DECREF(new_parser);
+            return PyErr_NoMemory();
+        }
     }
 
     XML_SetUserData(new_parser->itself, (void *)new_parser);
@@ -1310,6 +1304,8 @@ newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
     self->in_callback = 0;
     self->ns_prefixes = 0;
     self->handlers = NULL;
+    self->intern = intern;
+    Py_XINCREF(self->intern);
     if (namespace_separator != NULL) {
         self->itself = XML_ParserCreateNS(encoding, *namespace_separator);
     }
@@ -1327,8 +1323,6 @@ newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
     XML_SetHashSalt(self->itself,
                     (unsigned long)_Py_HashSecret.prefix);
 #endif
-    self->intern = intern;
-    Py_XINCREF(self->intern);
 #ifdef Py_TPFLAGS_HAVE_GC
     PyObject_GC_Track(self);
 #else
