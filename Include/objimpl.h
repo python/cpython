@@ -144,7 +144,7 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
    See also pymem.h.
 
    These inline functions expect non-NULL object pointers. */
-Py_STATIC_INLINE(PyObject*)
+static inline PyObject*
 PyObject_INIT(PyObject *op, PyTypeObject *typeobj)
 {
     assert(op != NULL);
@@ -153,7 +153,7 @@ PyObject_INIT(PyObject *op, PyTypeObject *typeobj)
     return op;
 }
 
-Py_STATIC_INLINE(PyVarObject*)
+static inline PyVarObject*
 PyObject_INIT_VAR(PyVarObject *op, PyTypeObject *typeobj, Py_ssize_t size)
 {
     assert(op != NULL);
