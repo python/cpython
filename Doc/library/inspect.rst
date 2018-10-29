@@ -132,9 +132,6 @@ attributes:
 |           | f_locals          | local namespace seen by   |
 |           |                   | this frame                |
 +-----------+-------------------+---------------------------+
-|           | f_restricted      | 0 or 1 if frame is in     |
-|           |                   | restricted execution mode |
-+-----------+-------------------+---------------------------+
 |           | f_trace           | tracing function for this |
 |           |                   | frame, or ``None``        |
 +-----------+-------------------+---------------------------+
@@ -301,6 +298,10 @@ attributes:
 
    Return true if the object is a Python generator function.
 
+   .. versionchanged:: 3.8
+      Functions wrapped in :func:`functools.partial` now return true if the
+      wrapped function is a Python generator function.
+
 
 .. function:: isgenerator(object)
 
@@ -313,6 +314,10 @@ attributes:
    (a function defined with an :keyword:`async def` syntax).
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.8
+      Functions wrapped in :func:`functools.partial` now return true if the
+      wrapped function is a :term:`coroutine function`.
 
 
 .. function:: iscoroutine(object)
@@ -354,6 +359,10 @@ attributes:
     True
 
    .. versionadded:: 3.6
+
+   .. versionchanged:: 3.8
+      Functions wrapped in :func:`functools.partial` now return true if the
+      wrapped function is a :term:`asynchronous generator` function.
 
 
 .. function:: isasyncgen(object)

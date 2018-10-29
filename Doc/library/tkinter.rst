@@ -262,6 +262,8 @@ To make a widget in Tk, the command is always of the form::
 *classCommand*
    denotes which kind of widget to make (a button, a label, a menu...)
 
+.. index:: single: . (dot); in Tkinter
+
 *newPathname*
    is the new name for this widget.  All names in Tk must be unique.  To help
    enforce this, widgets in Tk are named with *pathnames*, just like files in a

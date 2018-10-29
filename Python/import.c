@@ -543,9 +543,10 @@ PyImport_Cleanup(void)
        module last.  Likewise, we don't delete sys until the very
        end because it is implicitly referenced (e.g. by print). */
     if (weaklist != NULL) {
-        Py_ssize_t i, n;
-        n = PyList_GET_SIZE(weaklist);
-        for (i = 0; i < n; i++) {
+        Py_ssize_t i;
+        /* Since dict is ordered in CPython 3.6+, modules are saved in
+           importing order.  First clear modules imported later. */
+        for (i = PyList_GET_SIZE(weaklist) - 1; i >= 0; i--) {
             PyObject *tup = PyList_GET_ITEM(weaklist, i);
             PyObject *name = PyTuple_GET_ITEM(tup, 0);
             PyObject *mod = PyWeakref_GET_OBJECT(PyTuple_GET_ITEM(tup, 1));

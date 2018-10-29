@@ -4086,6 +4086,7 @@ are defined for all platforms.
 Higher-level operations on pathnames are defined in the :mod:`os.path` module.
 
 
+.. index:: single: . (dot); in pathnames
 .. data:: curdir
 
    The constant string used by the operating system to refer to the current
@@ -4093,6 +4094,7 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
    :mod:`os.path`.
 
 
+.. index:: single: ..; in pathnames
 .. data:: pardir
 
    The constant string used by the operating system to refer to the parent
@@ -4100,6 +4102,8 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
    :mod:`os.path`.
 
 
+.. index:: single: / (slash); in pathnames
+.. index:: single: \ (backslash); in pathnames (Windows)
 .. data:: sep
 
    The character used by the operating system to separate pathname components.
@@ -4109,6 +4113,7 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
    useful. Also available via :mod:`os.path`.
 
 
+.. index:: single: / (slash); in pathnames
 .. data:: altsep
 
    An alternative character used by the operating system to separate pathname
@@ -4117,12 +4122,15 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
    :mod:`os.path`.
 
 
+.. index:: single: . (dot); in pathnames
 .. data:: extsep
 
    The character which separates the base filename from the extension; for example,
    the ``'.'`` in :file:`os.py`. Also available via :mod:`os.path`.
 
 
+.. index:: single: : (colon); path separator (POSIX)
+   single: ; (semicolon)
 .. data:: pathsep
 
    The character conventionally used by the operating system to separate search

@@ -399,6 +399,10 @@ class AST_Tests(unittest.TestCase):
         self.assertFalse(isinstance(ast.Constant(), ast.NameConstant))
         self.assertFalse(isinstance(ast.Constant(), ast.Ellipsis))
 
+        class S(str): pass
+        self.assertTrue(isinstance(ast.Constant(S('42')), ast.Str))
+        self.assertFalse(isinstance(ast.Constant(S('42')), ast.Num))
+
     def test_subclasses(self):
         class N(ast.Num):
             def __init__(self, *args, **kwargs):
