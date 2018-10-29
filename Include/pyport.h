@@ -178,23 +178,6 @@ typedef int Py_ssize_clean_t;
 #  define Py_LOCAL_INLINE(type) static inline type
 #endif
 
-/* Declare a "static inline" function. Typical usage:
-
-     Py_STATIC_INLINE(int) add(int a, int b) { return a + b; }
-
-   If the compiler supports it, try to always inline the function even if no
-   optimization level was specified. */
-#if defined(__GNUC__) || defined(__clang__)
-#  define Py_STATIC_INLINE(TYPE) \
-       __attribute__((always_inline)) static inline TYPE
-#elif defined(_MSC_VER)
-#  define Py_STATIC_INLINE(TYPE) \
-       static __forceinline TYPE
-#else
-#  define Py_STATIC_INLINE(TYPE) static inline TYPE
-#endif
-
-
 /* Py_MEMCPY is kept for backwards compatibility,
  * see https://bugs.python.org/issue28126 */
 #define Py_MEMCPY memcpy
