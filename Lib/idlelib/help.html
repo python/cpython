@@ -381,6 +381,20 @@ the code above and the prompt below down to a ‘Squeezed text’ label.</dd>
 </div>
 <div class="section" id="editing-and-navigation">
 <h2>Editing and navigation<a class="headerlink" href="#editing-and-navigation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="editor-windows">
+<h3>Editor windows<a class="headerlink" href="#editor-windows" title="Permalink to this headline">¶</a></h3>
+<p>IDLE may open editor windows when it starts, depending on settings
+and how you start IDLE.  Thereafter, use the File menu.  There can be only
+one open editor window for a given file.</p>
+<p>The title bar contains the name of the file, the full path, and the version
+of Python and IDLE running the window.  The status bar contains the line
+number (‘Ln’) and column number (‘Col’).  Line numbers start with 1;
+column numbers with 0.</p>
+<p>IDLE assumes that files with a known .py* extension contain Python code
+and that other files do not.  Run Python code with the Run menu.</p>
+</div>
+<div class="section" id="key-bindings">
+<h3>Key bindings<a class="headerlink" href="#key-bindings" title="Permalink to this headline">¶</a></h3>
 <p>In this section, ‘C’ refers to the <kbd class="kbd docutils literal notranslate">Control</kbd> key on Windows and Unix and
 the <kbd class="kbd docutils literal notranslate">Command</kbd> key on Mac OSX.</p>
 <ul>
@@ -416,6 +430,7 @@ this)</li>
 </ul>
 <p>Standard keybindings (like <kbd class="kbd docutils literal notranslate">C-c</kbd> to copy and <kbd class="kbd docutils literal notranslate">C-v</kbd> to paste)
 may work.  Keybindings are selected in the Configure IDLE dialog.</p>
+</div>
 <div class="section" id="automatic-indentation">
 <h3>Automatic indentation<a class="headerlink" href="#automatic-indentation" title="Permalink to this headline">¶</a></h3>
 <p>After a block-opening statement, the next line is indented by 4 spaces (in the
@@ -725,6 +740,8 @@ also used for testing.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#editing-and-navigation">Editing and navigation</a><ul>
+<li><a class="reference internal" href="#editor-windows">Editor windows</a></li>
+<li><a class="reference internal" href="#key-bindings">Key bindings</a></li>
 <li><a class="reference internal" href="#automatic-indentation">Automatic indentation</a></li>
 <li><a class="reference internal" href="#completions">Completions</a></li>
 <li><a class="reference internal" href="#calltips">Calltips</a></li>
