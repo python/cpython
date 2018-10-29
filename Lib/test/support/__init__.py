@@ -1921,10 +1921,9 @@ def _filter_suite(suite, pred):
 
 def _run_suite(suite):
     """Run tests from a unittest.TestSuite-derived class."""
-    runner = get_test_runner(sys.stdout, verbosity=verbose)
-
-    # TODO: Remove this before merging (here for easy comparison with old impl)
-    #runner = unittest.TextTestRunner(sys.stdout, verbosity=2, failfast=failfast)
+    runner = get_test_runner(sys.stdout,
+                             verbosity=verbose,
+                             capture_output=(junit_xml_list is not None))
 
     result = runner.run(suite)
 
