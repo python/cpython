@@ -60,10 +60,10 @@ class RegressionTestResult(unittest.TextTestResult):
             e.set('time', f'{time.perf_counter() - self.__start_time:0.6f}')
 
         if capture:
-            if self._stdout_buffer:
+            if self._stdout_buffer is not None:
                 stdout = self._stdout_buffer.getvalue().rstrip()
                 ET.SubElement(e, 'system-out').text = stdout
-            if self._stderr_buffer:
+            if self._stderr_buffer is not None:
                 stderr = self._stderr_buffer.getvalue().rstrip()
                 ET.SubElement(e, 'system-err').text = stderr
 
