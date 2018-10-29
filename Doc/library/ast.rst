@@ -41,6 +41,9 @@ Node classes
    with alternatives (aka "sums"), the left-hand side class is abstract: only
    instances of specific constructor nodes are ever created.
 
+   .. index:: single: ? (question mark); in AST grammar
+   .. index:: single: * (asterisk); in AST grammar
+
    .. attribute:: _fields
 
       Each concrete class has an attribute :attr:`_fields` which gives the names

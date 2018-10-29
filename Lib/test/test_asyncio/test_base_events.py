@@ -371,31 +371,6 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.set_debug(False)
         self.assertFalse(self.loop.get_debug())
 
-    @mock.patch('asyncio.base_events.logger')
-    def test__run_once_logging(self, m_logger):
-        def slow_select(timeout):
-            # Sleep a bit longer than a second to avoid timer resolution
-            # issues.
-            time.sleep(1.1)
-            return []
-
-        # logging needs debug flag
-        self.loop.set_debug(True)
-
-        # Log to INFO level if timeout > 1.0 sec.
-        self.loop._selector.select = slow_select
-        self.loop._process_events = mock.Mock()
-        self.loop._run_once()
-        self.assertEqual(logging.INFO, m_logger.log.call_args[0][0])
-
-        def fast_select(timeout):
-            time.sleep(0.001)
-            return []
-
-        self.loop._selector.select = fast_select
-        self.loop._run_once()
-        self.assertEqual(logging.DEBUG, m_logger.log.call_args[0][0])
-
     def test__run_once_schedule_handle(self):
         handle = None
         processed = False
@@ -507,7 +482,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             pass
 
         async def foo(delay):
-            await asyncio.sleep(delay, loop=self.loop)
+            await asyncio.sleep(delay)
 
         def throw():
             raise ShowStopper
@@ -604,7 +579,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         @asyncio.coroutine
         def zero_error_coro():
-            yield from asyncio.sleep(0.01, loop=self.loop)
+            yield from asyncio.sleep(0.01)
             1/0
 
         # Test Future.__del__
@@ -950,6 +925,74 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.stop()
         self.loop.run_forever()
         self.loop._selector.select.assert_called_once_with(0)
+
+    async def leave_unfinalized_asyncgen(self):
+        # Create an async generator, iterate it partially, and leave it
+        # to be garbage collected.
+        # Used in async generator finalization tests.
+        # Depends on implementation details of garbage collector. Changes
+        # in gc may break this function.
+        status = {'started': False,
+                  'stopped': False,
+                  'finalized': False}
+
+        async def agen():
+            status['started'] = True
+            try:
+                for item in ['ZERO', 'ONE', 'TWO', 'THREE', 'FOUR']:
+                    yield item
+            finally:
+                status['finalized'] = True
+
+        ag = agen()
+        ai = ag.__aiter__()
+
+        async def iter_one():
+            try:
+                item = await ai.__anext__()
+            except StopAsyncIteration:
+                return
+            if item == 'THREE':
+                status['stopped'] = True
+                return
+            asyncio.create_task(iter_one())
+
+        asyncio.create_task(iter_one())
+        return status
+
+    def test_asyncgen_finalization_by_gc(self):
+        # Async generators should be finalized when garbage collected.
+        self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
+        with support.disable_gc():
+            status = self.loop.run_until_complete(self.leave_unfinalized_asyncgen())
+            while not status['stopped']:
+                test_utils.run_briefly(self.loop)
+            self.assertTrue(status['started'])
+            self.assertTrue(status['stopped'])
+            self.assertFalse(status['finalized'])
+            support.gc_collect()
+            test_utils.run_briefly(self.loop)
+            self.assertTrue(status['finalized'])
+
+    def test_asyncgen_finalization_by_gc_in_other_thread(self):
+        # Python issue 34769: If garbage collector runs in another
+        # thread, async generators will not finalize in debug
+        # mode.
+        self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
+        self.loop.set_debug(True)
+        with support.disable_gc():
+            status = self.loop.run_until_complete(self.leave_unfinalized_asyncgen())
+            while not status['stopped']:
+                test_utils.run_briefly(self.loop)
+            self.assertTrue(status['started'])
+            self.assertTrue(status['stopped'])
+            self.assertFalse(status['finalized'])
+            self.loop.run_until_complete(
+                self.loop.run_in_executor(None, support.gc_collect))
+            test_utils.run_briefly(self.loop)
+            self.assertTrue(status['finalized'])
 
 
 class MyProto(asyncio.Protocol):

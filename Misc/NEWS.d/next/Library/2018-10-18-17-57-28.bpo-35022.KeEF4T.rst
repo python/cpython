@@ -1,0 +1,2 @@
+:class:`unittest.mock.MagicMock` now supports the ``__fspath__`` method
+(from :class:`os.PathLike`).

@@ -640,7 +640,7 @@ class SSLObject:
 
     When compared to ``SSLSocket``, this object lacks the following features:
 
-     * Any form of network IO incluging methods such as ``recv`` and ``send``.
+     * Any form of network IO, including methods such as ``recv`` and ``send``.
      * The ``do_handshake_on_connect`` and ``suppress_ragged_eofs`` machinery.
     """
     def __init__(self, *args, **kwargs):

@@ -161,7 +161,7 @@ created.  Socket addresses are represented as follows:
 
   - *feat* and *mask* are unsigned 32bit integers.
 
-  Availability Linux 2.6.38, some algorithm types require more recent Kernels.
+  .. availability:: Linux 2.6.38, some algorithm types require more recent Kernels.
 
   .. versionadded:: 3.6
 
@@ -169,7 +169,7 @@ created.  Socket addresses are represented as follows:
   their hosts. The sockets are represented as a ``(CID, port)`` tuple
   where the context ID or CID and port are integers.
 
-  Availability: Linux >= 4.8 QEMU >= 2.8 ESX >= 4.0 ESX Workstation >= 6.5
+  .. availability:: Linux >= 4.8 QEMU >= 2.8 ESX >= 4.0 ESX Workstation >= 6.5.
 
   .. versionadded:: 3.7
 
@@ -313,7 +313,7 @@ Constants
       `Secure File Descriptor Handling <http://udrepper.livejournal.com/20407.html>`_
       for a more thorough explanation.
 
-   Availability: Linux >= 2.6.27.
+   .. availability:: Linux >= 2.6.27.
 
    .. versionadded:: 3.2
 
@@ -361,7 +361,7 @@ Constants
    Many constants of these forms, documented in the Linux documentation, are
    also defined in the socket module.
 
-   Availability: Linux >= 2.6.25.
+   .. availability:: Linux >= 2.6.25.
 
    .. versionadded:: 3.3
 
@@ -372,7 +372,7 @@ Constants
    Broadcast manager constants, documented in the Linux documentation, are also
    defined in the socket module.
 
-   Availability: Linux >= 2.6.25.
+   .. availability:: Linux >= 2.6.25.
 
    .. versionadded:: 3.4
 
@@ -384,7 +384,7 @@ Constants
 
    This constant is documented in the Linux documentation.
 
-   Availability: Linux >= 3.6.
+   .. availability:: Linux >= 3.6.
 
    .. versionadded:: 3.5
 
@@ -393,7 +393,7 @@ Constants
    CAN_ISOTP, in the CAN protocol family, is the ISO-TP (ISO 15765-2) protocol.
    ISO-TP constants, documented in the Linux documentation.
 
-   Availability: Linux >= 2.6.25
+   .. availability:: Linux >= 2.6.25.
 
    .. versionadded:: 3.7
 
@@ -405,7 +405,7 @@ Constants
    Many constants of these forms, documented in the Linux documentation, are
    also defined in the socket module.
 
-   Availability: Linux >= 2.2.
+   .. availability:: Linux >= 2.2.
 
 
 .. data:: AF_RDS
@@ -416,7 +416,7 @@ Constants
    Many constants of these forms, documented in the Linux documentation, are
    also defined in the socket module.
 
-   Availability: Linux >= 2.6.30.
+   .. availability:: Linux >= 2.6.30.
 
    .. versionadded:: 3.3
 
@@ -444,7 +444,7 @@ Constants
 
    Constants for Linux Kernel cryptography.
 
-   Availability: Linux >= 2.6.38.
+   .. availability:: Linux >= 2.6.38.
 
    .. versionadded:: 3.6
 
@@ -456,13 +456,13 @@ Constants
 
    Constants for Linux host/guest communication.
 
-   Availability: Linux >= 4.8.
+   .. availability:: Linux >= 4.8.
 
    .. versionadded:: 3.7
 
 .. data:: AF_LINK
 
-  Availability: BSD, OSX.
+  .. availability:: BSD, OSX.
 
   .. versionadded:: 3.4
 
@@ -493,7 +493,7 @@ Constants
    Constant for Qualcomm's IPC router protocol, used to communicate with
    service providing remote processors.
 
-   Availability: Linux >= 4.7.
+   .. availability:: Linux >= 4.7.
 
 Functions
 ^^^^^^^^^
@@ -618,7 +618,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    Instantiate a socket from data obtained from the :meth:`socket.share`
    method.  The socket is assumed to be in blocking mode.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
    .. versionadded:: 3.3
 
@@ -865,7 +865,7 @@ The :mod:`socket` module also offers various network-related services:
    both the value of *address_family* and the underlying implementation of
    :c:func:`inet_pton`.
 
-   Availability: Unix (maybe not all platforms), Windows.
+   .. availability:: Unix (maybe not all platforms), Windows.
 
    .. versionchanged:: 3.4
       Windows support added
@@ -885,7 +885,7 @@ The :mod:`socket` module also offers various network-related services:
    length for the specified address family, :exc:`ValueError` will be raised.
    :exc:`OSError` is raised for errors from the call to :func:`inet_ntop`.
 
-   Availability: Unix (maybe not all platforms), Windows.
+   .. availability:: Unix (maybe not all platforms), Windows.
 
    .. versionchanged:: 3.4
       Windows support added
@@ -911,7 +911,7 @@ The :mod:`socket` module also offers various network-related services:
    buffer.  Raises :exc:`OverflowError` if *length* is outside the
    permissible range of values.
 
-   Availability: most Unix platforms, possibly others.
+   .. availability:: most Unix platforms, possibly others.
 
    .. versionadded:: 3.3
 
@@ -932,7 +932,7 @@ The :mod:`socket` module also offers various network-related services:
    amount of ancillary data that can be received, since additional
    data may be able to fit into the padding area.
 
-   Availability: most Unix platforms, possibly others.
+   .. availability:: most Unix platforms, possibly others.
 
    .. versionadded:: 3.3
 
@@ -957,7 +957,7 @@ The :mod:`socket` module also offers various network-related services:
    Set the machine's hostname to *name*.  This will raise an
    :exc:`OSError` if you don't have enough rights.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -968,7 +968,7 @@ The :mod:`socket` module also offers various network-related services:
    (index int, name string) tuples.
    :exc:`OSError` if the system call fails.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -979,7 +979,7 @@ The :mod:`socket` module also offers various network-related services:
    interface name.
    :exc:`OSError` if no interface with the given name exists.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -990,7 +990,7 @@ The :mod:`socket` module also offers various network-related services:
    interface index number.
    :exc:`OSError` if no interface with the given index exists.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -1317,7 +1317,7 @@ to sockets.
                   fds.fromstring(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
           return msg, list(fds)
 
-   Availability: most Unix platforms, possibly others.
+   .. availability:: most Unix platforms, possibly others.
 
    .. versionadded:: 3.3
 
@@ -1359,7 +1359,7 @@ to sockets.
       >>> [b1, b2, b3]
       [bytearray(b'Mary'), bytearray(b'01 had a 9'), bytearray(b'little lamb---')]
 
-   Availability: most Unix platforms, possibly others.
+   .. availability:: most Unix platforms, possibly others.
 
    .. versionadded:: 3.3
 
@@ -1463,7 +1463,7 @@ to sockets.
       def send_fds(sock, msg, fds):
           return sock.sendmsg([msg], [(socket.SOL_SOCKET, socket.SCM_RIGHTS, array.array("i", fds))])
 
-   Availability: most Unix platforms, possibly others.
+   .. availability:: most Unix platforms, possibly others.
 
    .. versionadded:: 3.3
 
@@ -1477,7 +1477,7 @@ to sockets.
    Specialized version of :meth:`~socket.sendmsg` for :const:`AF_ALG` socket.
    Set mode, IV, AEAD associated data length and flags for :const:`AF_ALG` socket.
 
-   Availability: Linux >= 2.6.38
+   .. availability:: Linux >= 2.6.38.
 
    .. versionadded:: 3.6
 
@@ -1578,7 +1578,7 @@ to sockets.
    Once this method has been called, it is safe to close the socket since
    the operating system has already duplicated it for the target process.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
    .. versionadded:: 3.3
 

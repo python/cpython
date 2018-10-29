@@ -570,7 +570,7 @@ gettmarg(PyObject *args, struct tm *p, const char *format)
         PyObject *item;
         item = PyTuple_GET_ITEM(args, 9);
         if (item != Py_None) {
-            p->tm_zone = PyUnicode_AsUTF8(item);
+            p->tm_zone = (char *)PyUnicode_AsUTF8(item);
             if (p->tm_zone == NULL) {
                 return 0;
             }
@@ -1723,6 +1723,8 @@ PyInit_time(void)
     /* Set, or reset, module variables like time.timezone */
     PyInit_timezone(m);
 
+#if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES)
+
 #ifdef CLOCK_REALTIME
     PyModule_AddIntMacro(m, CLOCK_REALTIME);
 #endif
@@ -1750,6 +1752,8 @@ PyInit_time(void)
 #ifdef CLOCK_UPTIME
     PyModule_AddIntMacro(m, CLOCK_UPTIME);
 #endif
+
+#endif  /* defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES) */
 
     if (!initialized) {
         if (PyStructSequence_InitType2(&StructTimeType,

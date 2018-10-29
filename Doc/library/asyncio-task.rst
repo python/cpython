@@ -57,12 +57,12 @@ To actually run a coroutine asyncio provides three main mechanisms:
           print(what)
 
       async def main():
-          print('started at', time.strftime('%X'))
+          print(f"started at {time.strftime('%X')}")
 
           await say_after(1, 'hello')
           await say_after(2, 'world')
 
-          print('finished at', time.strftime('%X'))
+          print(f"finished at {time.strftime('%X')}")
 
       asyncio.run(main())
 
@@ -86,14 +86,14 @@ To actually run a coroutine asyncio provides three main mechanisms:
           task2 = asyncio.create_task(
               say_after(2, 'world'))
 
-          print('started at', time.strftime('%X'))
+          print(f"started at {time.strftime('%X')}")
 
           # Wait until both tasks are completed (should take
           # around 2 seconds.)
           await task1
           await task2
 
-          print('finished at', time.strftime('%X'))
+          print(f"finished at {time.strftime('%X')}")
 
   Note that expected output now shows that the snippet runs
   1 second faster than before::
@@ -275,6 +275,9 @@ Sleeping
 
    If *result* is provided, it is returned to the caller
    when the coroutine completes.
+
+   ``sleep()`` always suspends the current task, allowing other tasks
+   to run.
 
    The *loop* argument is deprecated and scheduled for removal
    in Python 3.10.
@@ -600,9 +603,9 @@ Scheduling From Other Threads
          print('The coroutine took too long, cancelling the task...')
          future.cancel()
      except Exception as exc:
-         print('The coroutine raised an exception: {!r}'.format(exc))
+         print(f'The coroutine raised an exception: {exc!r}')
      else:
-         print('The coroutine returned: {!r}'.format(result))
+         print(f'The coroutine returned: {result!r}')
 
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.
@@ -924,8 +927,7 @@ enforced.
    Return ``True`` if *obj* is a :ref:`coroutine object <coroutine>`.
 
    This method is different from :func:`inspect.iscoroutine` because
-   it returns ``True`` for generator-based coroutines decorated with
-   :func:`@coroutine <coroutine>`.
+   it returns ``True`` for generator-based coroutines.
 
 .. function:: iscoroutinefunction(func)
 
