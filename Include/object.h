@@ -807,7 +807,7 @@ static inline void _Py_Dealloc_inline(PyObject *op)
 }
 
 #  define _Py_Dealloc(op) _Py_Dealloc_inline(op)
-#endif   /* !defined(Py_TRACE_REFS) && !defined(Py_LIMITED_API) */
+#endif   /* !defined(Py_LIMITED_API) */
 
 
 static inline void _Py_INCREF(PyObject *op)
