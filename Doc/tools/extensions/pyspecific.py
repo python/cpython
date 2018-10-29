@@ -131,6 +131,25 @@ class ImplementationDetail(Directive):
         return [pnode]
 
 
+# Support for documenting platform availability
+
+class Availability(Directive):
+
+    has_content = False
+    required_arguments = 1
+    optional_arguments = 0
+    final_argument_whitespace = True
+
+    def run(self):
+        pnode = nodes.paragraph(classes=['availability'])
+        n, m = self.state.inline_text(':ref:`Availability <availability>`: ',
+                                      self.lineno)
+        pnode.extend(n + m)
+        n, m = self.state.inline_text(self.arguments[0], self.lineno)
+        pnode.extend(n + m)
+        return [pnode]
+
+
 # Support for documenting decorators
 
 class PyDecoratorMixin(object):
@@ -401,14 +420,13 @@ def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
+    app.add_directive('availability', Availability)
     app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
     app.add_builder(suspicious.CheckSuspiciousMarkupBuilder)
-    app.add_description_unit('opcode', 'opcode', '%s (opcode)',
-                             parse_opcode_signature)
-    app.add_description_unit('pdbcommand', 'pdbcmd', '%s (pdb command)',
-                             parse_pdb_command)
-    app.add_description_unit('2to3fixer', '2to3fixer', '%s (2to3 fixer)')
+    app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
+    app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
+    app.add_object_type('2to3fixer', '2to3fixer', '%s (2to3 fixer)')
     app.add_directive_to_domain('py', 'decorator', PyDecoratorFunction)
     app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)
