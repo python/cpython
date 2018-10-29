@@ -698,10 +698,13 @@ module_repr(PyModuleObject *m)
     return PyObject_CallMethod(interp->importlib, "_module_repr", "O", m);
 }
 
+/* Check if the "_initializing" attribute of the module spec is set to true.
+   Clear the exception and return 0 if spec is NULL.
+ */
 int
 _PyModuleSpec_IsInitializing(PyObject *spec)
 {
-    if (spec != NULL && spec != Py_None) {
+    if (spec != NULL) {
         _Py_IDENTIFIER(_initializing);
         PyObject *value = _PyObject_GetAttrId(spec, &PyId__initializing);
         if (value != NULL) {
