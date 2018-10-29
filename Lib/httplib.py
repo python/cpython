@@ -71,6 +71,7 @@ import os
 import re
 import socket
 from sys import py3kwarning
+import collections
 from urlparse import urlsplit
 import warnings
 with warnings.catch_warnings():
@@ -855,7 +856,15 @@ class HTTPConnection:
                 self.sock.sendall(datablock)
                 datablock = data.read(blocksize)
         else:
-            self.sock.sendall(data)
+            try:
+                self.sock.sendall(data)
+            except TypeError:
+                if isinstance(data, collections.Iterable):
+                    for d in data:
+                        self.sock.sendall(d)
+                else:
+                    raise TypeError("data should be a bytes-like object "
+                                    "or an iterable, got %r" % type(data))
 
     def _output(self, s):
         """Add a line of output to the current request buffer.

@@ -1,0 +1,1 @@
+Support iterable bodies in httplib.
