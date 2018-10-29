@@ -871,20 +871,24 @@ static inline void _Py_DECREF(const char *filename, int lineno,
         }                                       \
     } while (0)
 
-/* Macros to use in case the object pointer may be NULL: */
-#define Py_XINCREF(op)                                \
-    do {                                              \
-        PyObject *_py_xincref_tmp = (PyObject *)(op); \
-        if (_py_xincref_tmp != NULL)                  \
-            Py_INCREF(_py_xincref_tmp);               \
-    } while (0)
+/* Function to use in case the object pointer can be NULL: */
+static inline void _Py_XINCREF(PyObject *op)
+{
+    if (op != NULL) {
+        Py_INCREF(op);
+    }
+}
 
-#define Py_XDECREF(op)                                \
-    do {                                              \
-        PyObject *_py_xdecref_tmp = (PyObject *)(op); \
-        if (_py_xdecref_tmp != NULL)                  \
-            Py_DECREF(_py_xdecref_tmp);               \
-    } while (0)
+#define Py_XINCREF(op) _Py_XINCREF((PyObject *)(op))
+
+static inline void _Py_XDECREF(PyObject *op)
+{
+    if (op != NULL) {
+        Py_DECREF(op);
+    }
+}
+
+#define Py_XDECREF(op) _Py_XDECREF((PyObject *)(op))
 
 #ifndef Py_LIMITED_API
 /* Safely decref `op` and set `op` to `op2`.
