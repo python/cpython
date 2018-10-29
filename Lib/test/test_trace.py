@@ -305,7 +305,7 @@ class TestFuncs(unittest.TestCase):
             self.filemod + ('decorator1',): 1,
             self.filemod + ('func',): 1,
         }
-        self.assertEqual(self.tracer.results().calledfuncs, expected, self.tracer.results().calledfuncs)
+        self.assertEqual(self.tracer.results().calledfuncs, expected)
 
 
 class TestCallers(unittest.TestCase):
