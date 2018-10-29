@@ -1,0 +1,2 @@
+Fix inspect.findsource incorrectly returning the line number of the first
+function above any given class frame objects.
