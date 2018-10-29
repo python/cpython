@@ -358,6 +358,24 @@ Squeeze
 Editing and navigation
 ----------------------
 
+Editor windows
+^^^^^^^^^^^^^^
+
+IDLE may open editor windows when it starts, depending on settings
+and how you start IDLE.  Thereafter, use the File menu.  There can be only
+one open editor window for a given file.
+
+The title bar contains the name of the file, the full path, and the version
+of Python and IDLE running the window.  The status bar contains the line
+number ('Ln') and column number ('Col').  Line numbers start with 1;
+column numbers with 0.
+
+IDLE assumes that files with a known .py* extension contain Python code
+and that other files do not.  Run Python code with the Run menu.
+
+Key bindings
+^^^^^^^^^^^^
+
 In this section, 'C' refers to the :kbd:`Control` key on Windows and Unix and
 the :kbd:`Command` key on Mac OSX.
 
@@ -396,7 +414,6 @@ the :kbd:`Command` key on Mac OSX.
 
 Standard keybindings (like :kbd:`C-c` to copy and :kbd:`C-v` to paste)
 may work.  Keybindings are selected in the Configure IDLE dialog.
-
 
 Automatic indentation
 ^^^^^^^^^^^^^^^^^^^^^
