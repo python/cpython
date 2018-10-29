@@ -274,7 +274,8 @@ Configure IDLE
 
 Code Context (toggle)(Editor Window only)
    Open a pane at the top of the edit window which shows the block context
-   of the code which has scrolled above the top of the window.
+   of the code which has scrolled above the top of the window.  Clicking a
+   line in this pane exposes that line at the top of the editor.
 
 Window menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -294,7 +295,7 @@ About IDLE
    Display version, copyright, license, credits, and more.
 
 IDLE Help
-   Display a help file for IDLE detailing the menu options, basic editing and
+   Display this IDLE document, detailing the menu options, basic editing and
    navigation, and other tips.
 
 Python Docs
@@ -302,10 +303,11 @@ Python Docs
    and open docs.python.org showing the latest Python documentation.
 
 Turtle Demo
-   Run the turtledemo module with example python code and turtle drawings.
+   Run the turtledemo module with example Python code and turtle drawings.
 
 Additional help sources may be added here with the Configure IDLE dialog under
-the General tab.
+the General tab. See the "Help sources" subsection below for more
+on Help menu choices.
 
 .. index::
    single: Cut
@@ -340,14 +342,39 @@ Set Breakpoint
 Clear Breakpoint
    Clear the breakpoint on that line.
 
-Shell and Output windows have the following.
+Shell and Output windows also have the following.
 
 Go to file/line
    Same as in Debug menu.
 
+The Shell window also has an output squeezing facility explained in the
+the *Python Shell window* subsection below.
+
+Squeeze
+   If the cursor is over an output line, squeeze all the output between
+   the code above and the prompt below down to a 'Squeezed text' label.
+
 
 Editing and navigation
 ----------------------
+
+Editor windows
+^^^^^^^^^^^^^^
+
+IDLE may open editor windows when it starts, depending on settings
+and how you start IDLE.  Thereafter, use the File menu.  There can be only
+one open editor window for a given file.
+
+The title bar contains the name of the file, the full path, and the version
+of Python and IDLE running the window.  The status bar contains the line
+number ('Ln') and column number ('Col').  Line numbers start with 1;
+column numbers with 0.
+
+IDLE assumes that files with a known .py* extension contain Python code
+and that other files do not.  Run Python code with the Run menu.
+
+Key bindings
+^^^^^^^^^^^^
 
 In this section, 'C' refers to the :kbd:`Control` key on Windows and Unix and
 the :kbd:`Command` key on Mac OSX.
@@ -387,7 +414,6 @@ the :kbd:`Command` key on Mac OSX.
 
 Standard keybindings (like :kbd:`C-c` to copy and :kbd:`C-v` to paste)
 may work.  Keybindings are selected in the Configure IDLE dialog.
-
 
 Automatic indentation
 ^^^^^^^^^^^^^^^^^^^^^
@@ -476,6 +502,9 @@ or immediately run an existing file before editing.
 Python Shell window
 ^^^^^^^^^^^^^^^^^^^
 
+The editing features described above work when entering code interactively.
+IDLE's Shell window also responds to the following keys.
+
 * :kbd:`C-c` interrupts executing command
 
 * :kbd:`C-d` sends end-of-file; closes window if typed at a ``>>>`` prompt
@@ -491,6 +520,15 @@ Python Shell window
 
   * :kbd:`Return` while on any previous command retrieves that command
 
+Shell has a special facility for squeezing output lines down to a
+'Squeezed text' label.  This is done automatically for output over N lines
+(N = 50 by default).  N can be changed in the PyShell section of the General
+page of the Settings dialog.  Output with fewer lines can be squeezed by
+right clicking on the output.  This can be useful for extra long lines.
+
+Squeezed output is expanded in place by double-clicking the label.
+It can also be sent to the clipboard or a separate view window by
+right-clicking the label.
 
 Text colors
 ^^^^^^^^^^^
@@ -673,15 +711,25 @@ with the default subprocess if at all possible.
 Help and preferences
 --------------------
 
-Additional help sources
-^^^^^^^^^^^^^^^^^^^^^^^
+Help sources
+^^^^^^^^^^^^
 
-IDLE includes a help menu entry called "Python Docs" that will open the
-extensive sources of help, including tutorials, available at docs.python.org.
+Help menu entry "IDLE Help" displays a formatted html version of the
+IDLE chapter of the Library Reference.  The result, in a read-only
+tkinter text window, is close to what one sees in a web browser.
+Navigate through the text with a mousewheel,
+the scrollbar, or up and down arrow keys held down.
+Or click the TOC (Table of Contents) button and select a section
+header in the opened box.
+
+Help menu entry "Python Docs" opens the extensive sources of help,
+including tutorials, available at docs.python.org/x.y, where 'x.y'
+is the currently running Python version.  If your system
+has an off-line copy of the docs (this may be an installation option),
+that will be opened instead.
+
 Selected URLs can be added or removed from the help menu at any time using the
-Configure IDLE dialog. See the IDLE help option in the help menu of IDLE for
-more information.
-
+General tab of the Configure IDLE dialog .
 
 Setting preferences
 ^^^^^^^^^^^^^^^^^^^
@@ -690,7 +738,6 @@ The font preferences, highlighting, keys, and general preferences can be
 changed via Configure IDLE on the Option menu.  Keys can be user defined;
 IDLE ships with four built-in key sets. In addition, a user can create a
 custom key set in the Configure IDLE dialog under the keys tab.
-
 
 Extensions
 ^^^^^^^^^^

@@ -11,6 +11,7 @@ import pkgutil
 import re
 import stat
 import string
+import tempfile
 import test.support
 import time
 import types
@@ -356,8 +357,9 @@ def get_pydoc_html(module):
 
 def get_pydoc_link(module):
     "Returns a documentation web link of a module"
+    abspath = os.path.abspath
     dirname = os.path.dirname
-    basedir = dirname(dirname(os.path.realpath(__file__)))
+    basedir = dirname(dirname(abspath(__file__)))
     doc = pydoc.TextDoc()
     loc = doc.getdocloc(module, basedir=basedir)
     return loc
@@ -514,6 +516,124 @@ class PydocDocTest(unittest.TestCase):
         self.assertEqual(stripid('42'), '42')
         self.assertEqual(stripid("<type 'exceptions.Exception'>"),
                          "<type 'exceptions.Exception'>")
+
+    def test_builtin_with_more_than_four_children(self):
+        """Tests help on builtin object which have more than four child classes.
+
+        When running help() on a builtin class which has child classes, it
+        should contain a "Built-in subclasses" section and only 4 classes
+        should be displayed with a hint on how many more subclasses are present.
+        For example:
+
+        >>> help(object)
+        Help on class object in module builtins:
+
+        class object
+         |  The most base type
+         |
+         |  Built-in subclasses:
+         |      async_generator
+         |      BaseException
+         |      builtin_function_or_method
+         |      bytearray
+         |      ... and 82 other subclasses
+        """
+        doc = pydoc.TextDoc()
+        text = doc.docclass(object)
+        snip = (" |  Built-in subclasses:\n"
+                " |      async_generator\n"
+                " |      BaseException\n"
+                " |      builtin_function_or_method\n"
+                " |      bytearray\n"
+                " |      ... and \\d+ other subclasses")
+        self.assertRegex(text, snip)
+
+    def test_builtin_with_child(self):
+        """Tests help on builtin object which have only child classes.
+
+        When running help() on a builtin class which has child classes, it
+        should contain a "Built-in subclasses" section. For example:
+
+        >>> help(ArithmeticError)
+        Help on class ArithmeticError in module builtins:
+
+        class ArithmeticError(Exception)
+         |  Base class for arithmetic errors.
+         |
+         ...
+         |
+         |  Built-in subclasses:
+         |      FloatingPointError
+         |      OverflowError
+         |      ZeroDivisionError
+        """
+        doc = pydoc.TextDoc()
+        text = doc.docclass(ArithmeticError)
+        snip = (" |  Built-in subclasses:\n"
+                " |      FloatingPointError\n"
+                " |      OverflowError\n"
+                " |      ZeroDivisionError")
+        self.assertIn(snip, text)
+
+    def test_builtin_with_grandchild(self):
+        """Tests help on builtin classes which have grandchild classes.
+
+        When running help() on a builtin class which has child classes, it
+        should contain a "Built-in subclasses" section. However, if it also has
+        grandchildren, these should not show up on the subclasses section.
+        For example:
+
+        >>> help(Exception)
+        Help on class Exception in module builtins:
+
+        class Exception(BaseException)
+         |  Common base class for all non-exit exceptions.
+         |
+         ...
+         |
+         |  Built-in subclasses:
+         |      ArithmeticError
+         |      AssertionError
+         |      AttributeError
+         ...
+        """
+        doc = pydoc.TextDoc()
+        text = doc.docclass(Exception)
+        snip = (" |  Built-in subclasses:\n"
+                " |      ArithmeticError\n"
+                " |      AssertionError\n"
+                " |      AttributeError")
+        self.assertIn(snip, text)
+        # Testing that the grandchild ZeroDivisionError does not show up
+        self.assertNotIn('ZeroDivisionError', text)
+
+    def test_builtin_no_child(self):
+        """Tests help on builtin object which have no child classes.
+
+        When running help() on a builtin class which has no child classes, it
+        should not contain any "Built-in subclasses" section. For example:
+
+        >>> help(ZeroDivisionError)
+
+        Help on class ZeroDivisionError in module builtins:
+
+        class ZeroDivisionError(ArithmeticError)
+         |  Second argument to a division or modulo operation was zero.
+         |
+         |  Method resolution order:
+         |      ZeroDivisionError
+         |      ArithmeticError
+         |      Exception
+         |      BaseException
+         |      object
+         |
+         |  Methods defined here:
+         ...
+        """
+        doc = pydoc.TextDoc()
+        text = doc.docclass(ZeroDivisionError)
+        # Testing that the subclasses section does not appear
+        self.assertNotIn('Built-in subclasses', text)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      'Docstrings are omitted with -O2 and above')
@@ -824,10 +944,10 @@ class TestDescriptions(unittest.TestCase):
         T = typing.TypeVar('T')
         class C(typing.Generic[T], typing.Mapping[int, str]): ...
         self.assertEqual(pydoc.render_doc(foo).splitlines()[-1],
-                         'f\x08fo\x08oo\x08o(data:List[Any], x:int)'
+                         'f\x08fo\x08oo\x08o(data: List[Any], x: int)'
                          ' -> Iterator[Tuple[int, Any]]')
         self.assertEqual(pydoc.render_doc(C).splitlines()[2],
-                         'class C\x08C(typing.Mapping)')
+                         'class C\x08C(collections.abc.Mapping, typing.Generic)')
 
     def test_builtin(self):
         for name in ('str', 'str.translate', 'builtins.str',
@@ -1084,6 +1204,71 @@ class PydocWithMetaClasses(unittest.TestCase):
         self.assertIn('class Enum', helptext)
 
 
+class TestInternalUtilities(unittest.TestCase):
+
+    def setUp(self):
+        tmpdir = tempfile.TemporaryDirectory()
+        self.argv0dir = tmpdir.name
+        self.argv0 = os.path.join(tmpdir.name, "nonexistent")
+        self.addCleanup(tmpdir.cleanup)
+        self.abs_curdir = abs_curdir = os.getcwd()
+        self.curdir_spellings = ["", os.curdir, abs_curdir]
+
+    def _get_revised_path(self, given_path, argv0=None):
+        # Checking that pydoc.cli() actually calls pydoc._get_revised_path()
+        # is handled via code review (at least for now).
+        if argv0 is None:
+            argv0 = self.argv0
+        return pydoc._get_revised_path(given_path, argv0)
+
+    def _get_starting_path(self):
+        # Get a copy of sys.path without the current directory.
+        clean_path = sys.path.copy()
+        for spelling in self.curdir_spellings:
+            for __ in range(clean_path.count(spelling)):
+                clean_path.remove(spelling)
+        return clean_path
+
+    def test_sys_path_adjustment_adds_missing_curdir(self):
+        clean_path = self._get_starting_path()
+        expected_path = [self.abs_curdir] + clean_path
+        self.assertEqual(self._get_revised_path(clean_path), expected_path)
+
+    def test_sys_path_adjustment_removes_argv0_dir(self):
+        clean_path = self._get_starting_path()
+        expected_path = [self.abs_curdir] + clean_path
+        leading_argv0dir = [self.argv0dir] + clean_path
+        self.assertEqual(self._get_revised_path(leading_argv0dir), expected_path)
+        trailing_argv0dir = clean_path + [self.argv0dir]
+        self.assertEqual(self._get_revised_path(trailing_argv0dir), expected_path)
+
+
+    def test_sys_path_adjustment_protects_pydoc_dir(self):
+        def _get_revised_path(given_path):
+            return self._get_revised_path(given_path, argv0=pydoc.__file__)
+        clean_path = self._get_starting_path()
+        leading_argv0dir = [self.argv0dir] + clean_path
+        expected_path = [self.abs_curdir] + leading_argv0dir
+        self.assertEqual(_get_revised_path(leading_argv0dir), expected_path)
+        trailing_argv0dir = clean_path + [self.argv0dir]
+        expected_path = [self.abs_curdir] + trailing_argv0dir
+        self.assertEqual(_get_revised_path(trailing_argv0dir), expected_path)
+
+    def test_sys_path_adjustment_when_curdir_already_included(self):
+        clean_path = self._get_starting_path()
+        for spelling in self.curdir_spellings:
+            with self.subTest(curdir_spelling=spelling):
+                # If curdir is already present, no alterations are made at all
+                leading_curdir = [spelling] + clean_path
+                self.assertIsNone(self._get_revised_path(leading_curdir))
+                trailing_curdir = clean_path + [spelling]
+                self.assertIsNone(self._get_revised_path(trailing_curdir))
+                leading_argv0dir = [self.argv0dir] + leading_curdir
+                self.assertIsNone(self._get_revised_path(leading_argv0dir))
+                trailing_argv0dir = trailing_curdir + [self.argv0dir]
+                self.assertIsNone(self._get_revised_path(trailing_argv0dir))
+
+
 @reap_threads
 def test_main():
     try:
@@ -1094,6 +1279,7 @@ def test_main():
                                   PydocUrlHandlerTest,
                                   TestHelper,
                                   PydocWithMetaClasses,
+                                  TestInternalUtilities,
                                   )
     finally:
         reap_children()

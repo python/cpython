@@ -12,7 +12,7 @@
 --------------
 
 This module provides an interface to the POSIX calls for tty I/O control. For a
-complete description of these calls, see :manpage:`termios(2)` Unix manual
+complete description of these calls, see :manpage:`termios(3)` Unix manual
 page.  It is only available for those Unix versions that support POSIX
 *termios* style tty I/O control configured during installation.
 

@@ -51,6 +51,7 @@ PyAPI_FUNC(void) _PyGen_Finalize(PyObject *self);
 #ifndef Py_LIMITED_API
 typedef struct {
     _PyGenObject_HEAD(cr)
+    PyObject *cr_origin;
 } PyCoroObject;
 
 PyAPI_DATA(PyTypeObject) PyCoro_Type;

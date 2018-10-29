@@ -1,3 +1,0 @@
-Fix timeout rounding in the select module to round correctly negative timeouts between -1.0 and 0.0.
-The functions now block waiting for events as expected. Previously, the call was incorrectly non-blocking.
-Patch by Pablo Galindo.

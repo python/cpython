@@ -1,2 +1,0 @@
-Prevent crashes when calling methods of an uninitialized
-``zipimport.zipimporter`` object. Patch by Oren Milman.

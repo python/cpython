@@ -11,7 +11,6 @@ Usage::
 
 """
 import argparse
-import collections
 import json
 import sys
 
@@ -34,11 +33,7 @@ def main():
     sort_keys = options.sort_keys
     with infile:
         try:
-            if sort_keys:
-                obj = json.load(infile)
-            else:
-                obj = json.load(infile,
-                                object_pairs_hook=collections.OrderedDict)
+            obj = json.load(infile)
         except ValueError as e:
             raise SystemExit(e)
     with outfile:

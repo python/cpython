@@ -23,12 +23,16 @@ from . import util
 
 __all__ = ['ensure_running', 'register', 'unregister']
 
+_HAVE_SIGMASK = hasattr(signal, 'pthread_sigmask')
+_IGNORED_SIGNALS = (signal.SIGINT, signal.SIGTERM)
+
 
 class SemaphoreTracker(object):
 
     def __init__(self):
         self._lock = threading.Lock()
         self._fd = None
+        self._pid = None
 
     def getfd(self):
         self.ensure_running()
@@ -40,8 +44,26 @@ class SemaphoreTracker(object):
         This can be run from any process.  Usually a child process will use
         the semaphore created by its parent.'''
         with self._lock:
-            if self._fd is not None:
-                return
+            if self._pid is not None:
+                # semaphore tracker was launched before, is it still running?
+                try:
+                    pid, _ = os.waitpid(self._pid, os.WNOHANG)
+                except ChildProcessError:
+                    # The process terminated
+                    pass
+                else:
+                    if not pid:
+                        # => still alive
+                        return
+
+                # => dead, launch it again
+                os.close(self._fd)
+                self._fd = None
+                self._pid = None
+
+                warnings.warn('semaphore_tracker: process died unexpectedly, '
+                              'relaunching.  Some semaphores might leak.')
+
             fds_to_pass = []
             try:
                 fds_to_pass.append(sys.stderr.fileno())
@@ -55,12 +77,25 @@ class SemaphoreTracker(object):
                 exe = spawn.get_executable()
                 args = [exe] + util._args_from_interpreter_flags()
                 args += ['-c', cmd % r]
-                util.spawnv_passfds(exe, args, fds_to_pass)
+                # bpo-33613: Register a signal mask that will block the signals.
+                # This signal mask will be inherited by the child that is going
+                # to be spawned and will protect the child from a race condition
+                # that can make the child die before it registers signal handlers
+                # for SIGINT and SIGTERM. The mask is unregistered after spawning
+                # the child.
+                try:
+                    if _HAVE_SIGMASK:
+                        signal.pthread_sigmask(signal.SIG_BLOCK, _IGNORED_SIGNALS)
+                    pid = util.spawnv_passfds(exe, args, fds_to_pass)
+                finally:
+                    if _HAVE_SIGMASK:
+                        signal.pthread_sigmask(signal.SIG_UNBLOCK, _IGNORED_SIGNALS)
             except:
                 os.close(w)
                 raise
             else:
                 self._fd = w
+                self._pid = pid
             finally:
                 os.close(r)
 
@@ -90,12 +125,13 @@ register = _semaphore_tracker.register
 unregister = _semaphore_tracker.unregister
 getfd = _semaphore_tracker.getfd
 
-
 def main(fd):
     '''Run semaphore tracker.'''
     # protect the process from ^C and "killall python" etc
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    if _HAVE_SIGMASK:
+        signal.pthread_sigmask(signal.SIG_UNBLOCK, _IGNORED_SIGNALS)
 
     for f in (sys.stdin, sys.stdout):
         try:

@@ -35,7 +35,7 @@
 #define THREAD_STACK_SIZE       0x400000
 #endif
 /* for safety, ensure a viable minimum stacksize */
-#define THREAD_STACK_MIN        0x8000  /* 32kB */
+#define THREAD_STACK_MIN        0x8000  /* 32 KiB */
 #else  /* !_POSIX_THREAD_ATTR_STACKSIZE */
 #ifdef THREAD_STACK_SIZE
 #error "THREAD_STACK_SIZE defined but _POSIX_THREAD_ATTR_STACKSIZE undefined"
@@ -53,16 +53,6 @@
 #else
 #include <semaphore.h>
 #include <errno.h>
-#endif
-#endif
-
-/* Before FreeBSD 5.4, system scope threads was very limited resource
-   in default setting.  So the process scope is preferred to get
-   enough number of threads to work. */
-#ifdef __FreeBSD__
-#include <osreldate.h>
-#if __FreeBSD_version >= 500000 && __FreeBSD_version < 504101
-#undef PTHREAD_SYSTEM_SCHED_SUPPORTED
 #endif
 #endif
 

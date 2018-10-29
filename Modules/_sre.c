@@ -87,24 +87,17 @@ static const char copyright[] =
 /* search engine state */
 
 #define SRE_IS_DIGIT(ch)\
-    ((ch) < 128 && Py_ISDIGIT(ch))
+    ((ch) <= '9' && Py_ISDIGIT(ch))
 #define SRE_IS_SPACE(ch)\
-    ((ch) < 128 && Py_ISSPACE(ch))
+    ((ch) <= ' ' && Py_ISSPACE(ch))
 #define SRE_IS_LINEBREAK(ch)\
     ((ch) == '\n')
-#define SRE_IS_ALNUM(ch)\
-    ((ch) < 128 && Py_ISALNUM(ch))
 #define SRE_IS_WORD(ch)\
-    ((ch) < 128 && (Py_ISALNUM(ch) || (ch) == '_'))
+    ((ch) <= 'z' && (Py_ISALNUM(ch) || (ch) == '_'))
 
 static unsigned int sre_lower_ascii(unsigned int ch)
 {
     return ((ch) < 128 ? Py_TOLOWER(ch) : ch);
-}
-
-static unsigned int sre_upper_ascii(unsigned int ch)
-{
-    return ((ch) < 128 ? Py_TOUPPER(ch) : ch);
 }
 
 /* locale-specific character predicates */
@@ -295,7 +288,7 @@ _sre_ascii_iscased_impl(PyObject *module, int character)
 /*[clinic end generated code: output=4f454b630fbd19a2 input=9f0bd952812c7ed3]*/
 {
     unsigned int ch = (unsigned int)character;
-    return ch != sre_lower_ascii(ch) || ch != sre_upper_ascii(ch);
+    return ch < 128 && Py_ISALPHA(ch);
 }
 
 /*[clinic input]
@@ -446,6 +439,8 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
 
     state->isbytes = isbytes;
     state->charsize = charsize;
+    state->match_all = 0;
+    state->must_advance = 0;
 
     state->beginning = ptr;
 
@@ -559,14 +554,14 @@ pattern_dealloc(PatternObject* self)
 }
 
 LOCAL(Py_ssize_t)
-sre_match(SRE_STATE* state, SRE_CODE* pattern, int match_all)
+sre_match(SRE_STATE* state, SRE_CODE* pattern)
 {
     if (state->charsize == 1)
-        return sre_ucs1_match(state, pattern, match_all);
+        return sre_ucs1_match(state, pattern, 1);
     if (state->charsize == 2)
-        return sre_ucs2_match(state, pattern, match_all);
+        return sre_ucs2_match(state, pattern, 1);
     assert(state->charsize == 4);
-    return sre_ucs4_match(state, pattern, match_all);
+    return sre_ucs4_match(state, pattern, 1);
 }
 
 LOCAL(Py_ssize_t)
@@ -606,7 +601,7 @@ _sre_SRE_Pattern_match_impl(PatternObject *self, PyObject *string,
 
     TRACE(("|%p|%p|MATCH\n", PatternObject_GetCode(self), state.ptr));
 
-    status = sre_match(&state, PatternObject_GetCode(self), 0);
+    status = sre_match(&state, PatternObject_GetCode(self));
 
     TRACE(("|%p|%p|END\n", PatternObject_GetCode(self), state.ptr));
     if (PyErr_Occurred()) {
@@ -645,7 +640,8 @@ _sre_SRE_Pattern_fullmatch_impl(PatternObject *self, PyObject *string,
 
     TRACE(("|%p|%p|FULLMATCH\n", PatternObject_GetCode(self), state.ptr));
 
-    status = sre_match(&state, PatternObject_GetCode(self), 1);
+    state.match_all = 1;
+    status = sre_match(&state, PatternObject_GetCode(self));
 
     TRACE(("|%p|%p|END\n", PatternObject_GetCode(self), state.ptr));
     if (PyErr_Occurred()) {
@@ -808,11 +804,8 @@ _sre_SRE_Pattern_findall_impl(PatternObject *self, PyObject *string,
         if (status < 0)
             goto error;
 
-        if (state.ptr == state.start)
-            state.start = (void*) ((char*) state.ptr + state.charsize);
-        else
-            state.start = state.ptr;
-
+        state.must_advance = (state.ptr == state.start);
+        state.start = state.ptr;
     }
 
     state_fini(&state);
@@ -901,17 +894,6 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
     void* last;
 
     assert(self->codesize != 0);
-    if (self->code[0] != SRE_OP_INFO || self->code[3] == 0) {
-        if (self->code[0] == SRE_OP_INFO && self->code[4] == 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "split() requires a non-empty pattern match.");
-            return NULL;
-        }
-        if (PyErr_WarnEx(PyExc_FutureWarning,
-                         "split() requires a non-empty pattern match.",
-                         1) < 0)
-            return NULL;
-    }
 
     if (!state_init(&state, self, string, 0, PY_SSIZE_T_MAX))
         return NULL;
@@ -942,14 +924,6 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
             goto error;
         }
 
-        if (state.start == state.ptr) {
-            if (last == state.end || state.ptr == state.end)
-                break;
-            /* skip one character */
-            state.start = (void*) ((char*) state.ptr + state.charsize);
-            continue;
-        }
-
         /* get segment before this match */
         item = getslice(state.isbytes, state.beginning,
             string, STATE_OFFSET(&state, last),
@@ -974,7 +948,7 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
         }
 
         n = n + 1;
-
+        state.must_advance = (state.ptr == state.start);
         last = state.start = state.ptr;
 
     }
@@ -1101,9 +1075,7 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
             if (status < 0)
                 goto error;
 
-        } else if (i == b && i == e && n > 0)
-            /* ignore empty match on latest position */
-            goto next;
+        }
 
         if (filter_is_callable) {
             /* pass match object through filter */
@@ -1130,16 +1102,8 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
 
         i = e;
         n = n + 1;
-
-next:
-        /* move on */
-        if (state.ptr == state.end)
-            break;
-        if (state.ptr == state.start)
-            state.start = (void*) ((char*) state.ptr + state.charsize);
-        else
-            state.start = state.ptr;
-
+        state.must_advance = (state.ptr == state.start);
+        state.start = state.ptr;
     }
 
     /* get segment following last match */
@@ -2450,7 +2414,7 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self)
 
     state->ptr = state->start;
 
-    status = sre_match(state, PatternObject_GetCode(self->pattern), 0);
+    status = sre_match(state, PatternObject_GetCode(self->pattern));
     if (PyErr_Occurred())
         return NULL;
 
@@ -2459,12 +2423,10 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self)
 
     if (status == 0)
         state->start = NULL;
-    else if (state->ptr != state->start)
+    else {
+        state->must_advance = (state->ptr == state->start);
         state->start = state->ptr;
-    else if (state->ptr != state->end)
-        state->start = (void*) ((char*) state->ptr + state->charsize);
-    else
-        state->start = NULL;
+    }
 
     return match;
 }
@@ -2499,12 +2461,10 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self)
 
     if (status == 0)
         state->start = NULL;
-    else if (state->ptr != state->start)
+    else {
+        state->must_advance = (state->ptr == state->start);
         state->start = state->ptr;
-    else if (state->ptr != state->end)
-        state->start = (void*) ((char*) state->ptr + state->charsize);
-    else
-        state->start = NULL;
+    }
 
     return match;
 }

@@ -2,10 +2,12 @@
 
 import sys
 from test.support import run_unittest, TESTFN, unlink
+import unittest
 
 # rip off all interesting stuff from test_profile
 import cProfile
 from test.test_profile import ProfileTest, regenerate_expected_output
+from test.support.script_helper import assert_python_failure, assert_python_ok
 
 
 class CProfileTest(ProfileTest):
@@ -35,9 +37,54 @@ class CProfileTest(ProfileTest):
         finally:
             unlink(TESTFN)
 
+    # Issue 21862
+    def test_module_path_option(self):
+        # Test -m switch with modules
+
+        # Test that -m switch needs an argument
+        assert_python_failure('-m', 'cProfile', '-m')
+
+        # Test failure for not-existent module
+        assert_python_failure('-m', 'cProfile', '-m', 'random_module_xyz')
+
+        # Test successful run
+        assert_python_ok('-m', 'cProfile', '-m', 'timeit', '-n', '1')
+
+    def test_profile_enable_disable(self):
+        prof = self.profilerclass()
+        # Make sure we clean ourselves up if the test fails for some reason.
+        self.addCleanup(prof.disable)
+
+        prof.enable()
+        self.assertIs(sys.getprofile(), prof)
+
+        prof.disable()
+        self.assertIs(sys.getprofile(), None)
+
+    def test_profile_as_context_manager(self):
+        prof = self.profilerclass()
+        # Make sure we clean ourselves up if the test fails for some reason.
+        self.addCleanup(prof.disable)
+
+        with prof as __enter__return_value:
+            # profile.__enter__ should return itself.
+            self.assertIs(prof, __enter__return_value)
+
+            # profile should be set as the global profiler inside the
+            # with-block
+            self.assertIs(sys.getprofile(), prof)
+
+        # profile shouldn't be set once we leave the with-block.
+        self.assertIs(sys.getprofile(), None)
+
+class TestCommandLine(unittest.TestCase):
+    def test_sort(self):
+        rc, out, err = assert_python_failure('-m', 'cProfile', '-s', 'demo')
+        self.assertGreater(rc, 0)
+        self.assertIn(b"option -s: invalid choice: 'demo'", err)
 
 def test_main():
-    run_unittest(CProfileTest)
+    run_unittest(CProfileTest, TestCommandLine)
 
 def main():
     if '-r' not in sys.argv:

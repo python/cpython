@@ -92,7 +92,7 @@ class TestCurses(unittest.TestCase):
                 with self.subTest(meth=meth.__qualname__, args=args):
                     meth(*args)
 
-        for meth in [stdscr.box, stdscr.clear, stdscr.clrtobot,
+        for meth in [stdscr.clear, stdscr.clrtobot,
                      stdscr.clrtoeol, stdscr.cursyncup, stdscr.delch,
                      stdscr.deleteln, stdscr.erase, stdscr.getbegyx,
                      stdscr.getbkgd, stdscr.getkey, stdscr.getmaxyx,
@@ -125,6 +125,13 @@ class TestCurses(unittest.TestCase):
                                msg="Expected win.border() to raise TypeError"):
             win.border(65, 66, 67, 68,
                        69, [], 71, 72)
+
+        win.box(65, 67)
+        win.box('!', '_')
+        win.box(b':', b'~')
+        self.assertRaises(TypeError, win.box, 65, 66, 67)
+        self.assertRaises(TypeError, win.box, 65)
+        win.box()
 
         stdscr.clearok(1)
 
@@ -323,7 +330,8 @@ class TestCurses(unittest.TestCase):
 
     @requires_curses_func('panel')
     def test_userptr_segfault(self):
-        panel = curses.panel.new_panel(self.stdscr)
+        w = curses.newwin(10, 10)
+        panel = curses.panel.new_panel(w)
         class A:
             def __del__(self):
                 panel.set_userptr(None)
@@ -332,7 +340,8 @@ class TestCurses(unittest.TestCase):
 
     @requires_curses_func('panel')
     def test_new_curses_panel(self):
-        panel = curses.panel.new_panel(self.stdscr)
+        w = curses.newwin(10, 10)
+        panel = curses.panel.new_panel(w)
         self.assertRaises(TypeError, type(panel))
 
     @requires_curses_func('is_term_resized')

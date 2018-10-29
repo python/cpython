@@ -1,0 +1,1 @@
+Fixed WindowsConsoleIO.write() for writing empty data.

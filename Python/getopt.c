@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <wchar.h>
-#include <pygetopt.h>
+#include "internal/pygetopt.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,7 +51,8 @@ void _PyOS_ResetGetOpt(void)
     opt_ptr = L"";
 }
 
-int _PyOS_GetOpt(int argc, wchar_t **argv, wchar_t *optstring)
+int _PyOS_GetOpt(int argc, wchar_t **argv, wchar_t *optstring,
+                 const _PyOS_LongOption *longopts, int *longindex)
 {
     wchar_t *ptr;
     wchar_t option;
@@ -86,12 +87,40 @@ int _PyOS_GetOpt(int argc, wchar_t **argv, wchar_t *optstring)
             return 'V';
         }
 
-
         opt_ptr = &argv[_PyOS_optind++][1];
     }
 
     if ((option = *opt_ptr++) == L'\0')
         return -1;
+
+    if (option == L'-') {
+        // Parse long option.
+        if (*opt_ptr == L'\0') {
+            fprintf(stderr, "expected long option\n");
+            return -1;
+        }
+        *longindex = 0;
+        const _PyOS_LongOption *opt;
+        for (opt = &longopts[*longindex]; opt->name; opt = &longopts[++(*longindex)]) {
+            if (!wcscmp(opt->name, opt_ptr))
+                break;
+        }
+        if (!opt->name) {
+            fprintf(stderr, "unknown option %ls\n", argv[_PyOS_optind - 1]);
+            return '_';
+        }
+        opt_ptr = L"";
+        if (!opt->has_arg) {
+            return opt->val;
+        }
+        if (_PyOS_optind >= argc) {
+            fprintf(stderr, "Argument expected for the %ls options\n",
+                    argv[_PyOS_optind - 1]);
+            return '_';
+        }
+        _PyOS_optarg = argv[_PyOS_optind++];
+        return opt->val;
+    }
 
     if (option == 'J') {
         if (_PyOS_opterr)

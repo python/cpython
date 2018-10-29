@@ -24,7 +24,7 @@ PyDoc_STRVAR(SHA512Type_digest__doc__,
 "digest($self, /)\n"
 "--\n"
 "\n"
-"Return the digest value as a string of binary data.");
+"Return the digest value as a bytes object.");
 
 #define SHA512TYPE_DIGEST_METHODDEF    \
     {"digest", (PyCFunction)SHA512Type_digest, METH_NOARGS, SHA512Type_digest__doc__},
@@ -78,7 +78,7 @@ static PyObject *
 _sha512_sha512_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha512_sha512(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sha512_sha512(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", NULL};
@@ -108,7 +108,7 @@ static PyObject *
 _sha512_sha384_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha512_sha384(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sha512_sha384(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", NULL};
@@ -124,4 +124,4 @@ _sha512_sha384(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2f6ad0831d16c35f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fcc3306fb6672222 input=a9049054013a1b77]*/

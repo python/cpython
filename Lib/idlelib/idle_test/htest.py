@@ -65,6 +65,7 @@ autocomplete_w.AutoCompleteWindow
 outwin.OutputWindow (indirectly being tested with grep test)
 '''
 
+import idlelib.pyshell  # Set Windows DPI awareness before Tk().
 from importlib import import_module
 import tkinter as tk
 from tkinter.ttk import Scrollbar
@@ -79,11 +80,14 @@ AboutDialog_spec = {
            "are correctly displayed.\n [Close] to exit.",
     }
 
+# TODO implement ^\; adding '<Control-Key-\\>' to function does not work.
 _calltip_window_spec = {
     'file': 'calltip_w',
     'kwds': {},
     'msg': "Typing '(' should display a calltip.\n"
            "Typing ') should hide the calltip.\n"
+           "So should moving cursor out of argument area.\n"
+           "Force-open-calltip does not work here.\n"
     }
 
 _module_browser_spec = {
@@ -159,7 +163,7 @@ _grep_dialog_spec = {
     'msg': "Click the 'Show GrepDialog' button.\n"
            "Test the various 'Find-in-files' functions.\n"
            "The results should be displayed in a new '*Output*' window.\n"
-           "'Right-click'->'Goto file/line' anywhere in the search results "
+           "'Right-click'->'Go to file/line' anywhere in the search results "
            "should open that file \nin a new EditorWindow."
     }
 
@@ -294,16 +298,6 @@ _stack_viewer_spec = {
     'msg': "A stacktrace for a NameError exception.\n"
            "Expand 'idlelib ...' and '<locals>'.\n"
            "Check that exc_value, exc_tb, and exc_type are correct.\n"
-    }
-
-_tabbed_pages_spec = {
-    'file': 'tabbedpages',
-    'kwds': {},
-    'msg': "Toggle between the two tabs 'foo' and 'bar'\n"
-           "Add a tab by entering a suitable name for it.\n"
-           "Remove an existing tab by entering its name.\n"
-           "Remove all existing tabs.\n"
-           "<nothing> is an invalid add page and remove page name.\n"
     }
 
 _tooltip_spec = {

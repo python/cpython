@@ -1,0 +1,3 @@
+Fix a regression in :mod:`ipaddress` that result of :meth:`hosts`
+is empty when the network is constructed by a tuple containing an
+integer mask and only 1 bit left for addresses.

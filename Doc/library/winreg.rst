@@ -224,6 +224,9 @@ This module offers the following functions:
       See :ref:`above <exception-changed>`.
 
 
+.. index::
+   single: % (percent); environment variables expansion (Windows)
+
 .. function:: ExpandEnvironmentStrings(str)
 
    Expands environment variable placeholders ``%NAME%`` in strings like

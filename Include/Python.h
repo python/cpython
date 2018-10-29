@@ -32,8 +32,11 @@
 #include <errno.h>
 #endif
 #include <stdlib.h>
-#ifdef HAVE_UNISTD_H
+#ifndef MS_WINDOWS
 #include <unistd.h>
+#endif
+#ifdef HAVE_CRYPT_H
+#include <crypt.h>
 #endif
 
 /* For size_t? */
@@ -108,7 +111,9 @@
 #include "codecs.h"
 #include "pyerrors.h"
 
+#include "coreconfig.h"
 #include "pystate.h"
+#include "context.h"
 
 #include "pyarena.h"
 #include "modsupport.h"
@@ -132,5 +137,6 @@
 #include "dtoa.h"
 #include "fileutils.h"
 #include "pyfpe.h"
+#include "tracemalloc.h"
 
 #endif /* !Py_PYTHON_H */

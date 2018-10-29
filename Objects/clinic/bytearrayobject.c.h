@@ -58,7 +58,7 @@ bytearray_translate_impl(PyByteArrayObject *self, PyObject *table,
                          PyObject *deletechars);
 
 static PyObject *
-bytearray_translate(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+bytearray_translate(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "delete", NULL};
@@ -94,7 +94,7 @@ static PyObject *
 bytearray_maketrans_impl(Py_buffer *frm, Py_buffer *to);
 
 static PyObject *
-bytearray_maketrans(void *null, PyObject **args, Py_ssize_t nargs)
+bytearray_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer frm = {NULL, NULL};
@@ -140,7 +140,7 @@ bytearray_replace_impl(PyByteArrayObject *self, Py_buffer *old,
                        Py_buffer *new, Py_ssize_t count);
 
 static PyObject *
-bytearray_replace(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs)
+bytearray_replace(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer old = {NULL, NULL};
@@ -188,7 +188,7 @@ bytearray_split_impl(PyByteArrayObject *self, PyObject *sep,
                      Py_ssize_t maxsplit);
 
 static PyObject *
-bytearray_split(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+bytearray_split(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sep", "maxsplit", NULL};
@@ -263,7 +263,7 @@ bytearray_rsplit_impl(PyByteArrayObject *self, PyObject *sep,
                       Py_ssize_t maxsplit);
 
 static PyObject *
-bytearray_rsplit(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+bytearray_rsplit(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sep", "maxsplit", NULL};
@@ -317,7 +317,7 @@ static PyObject *
 bytearray_insert_impl(PyByteArrayObject *self, Py_ssize_t index, int item);
 
 static PyObject *
-bytearray_insert(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs)
+bytearray_insert(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t index;
@@ -394,7 +394,7 @@ static PyObject *
 bytearray_pop_impl(PyByteArrayObject *self, Py_ssize_t index);
 
 static PyObject *
-bytearray_pop(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs)
+bytearray_pop(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t index = -1;
@@ -454,7 +454,7 @@ static PyObject *
 bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes);
 
 static PyObject *
-bytearray_strip(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs)
+bytearray_strip(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
@@ -485,7 +485,7 @@ static PyObject *
 bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes);
 
 static PyObject *
-bytearray_lstrip(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs)
+bytearray_lstrip(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
@@ -516,7 +516,7 @@ static PyObject *
 bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes);
 
 static PyObject *
-bytearray_rstrip(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs)
+bytearray_rstrip(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
@@ -555,7 +555,7 @@ bytearray_decode_impl(PyByteArrayObject *self, const char *encoding,
                       const char *errors);
 
 static PyObject *
-bytearray_decode(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+bytearray_decode(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"encoding", "errors", NULL};
@@ -602,7 +602,7 @@ static PyObject *
 bytearray_splitlines_impl(PyByteArrayObject *self, int keepends);
 
 static PyObject *
-bytearray_splitlines(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+bytearray_splitlines(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"keepends", NULL};
@@ -680,7 +680,7 @@ static PyObject *
 bytearray_reduce_ex_impl(PyByteArrayObject *self, int proto);
 
 static PyObject *
-bytearray_reduce_ex(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs)
+bytearray_reduce_ex(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int proto = 0;
@@ -712,4 +712,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=c2804d009182328c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bb9051a369adb328 input=a9049054013a1b77]*/

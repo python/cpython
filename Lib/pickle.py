@@ -57,9 +57,9 @@ compatible_formats = ["1.0",            # Original protocol 0
 HIGHEST_PROTOCOL = 4
 
 # The protocol we write by default.  May be less than HIGHEST_PROTOCOL.
-# We intentionally write a protocol that Python 2.x cannot read;
-# there are too many issues with that.
-DEFAULT_PROTOCOL = 3
+# Only bump this if the oldest still supported version of Python already
+# includes it.
+DEFAULT_PROTOCOL = 4
 
 class PickleError(Exception):
     """A common base class for the other pickling exceptions."""
@@ -183,6 +183,7 @@ __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$", x)])
 
 class _Framer:
 
+    _FRAME_SIZE_MIN = 4
     _FRAME_SIZE_TARGET = 64 * 1024
 
     def __init__(self, file_write):
@@ -201,20 +202,46 @@ class _Framer:
         if self.current_frame:
             f = self.current_frame
             if f.tell() >= self._FRAME_SIZE_TARGET or force:
-                with f.getbuffer() as data:
-                    n = len(data)
-                    write = self.file_write
-                    write(FRAME)
-                    write(pack("<Q", n))
-                    write(data)
-                f.seek(0)
-                f.truncate()
+                data = f.getbuffer()
+                write = self.file_write
+                if len(data) >= self._FRAME_SIZE_MIN:
+                    # Issue a single call to the write method of the underlying
+                    # file object for the frame opcode with the size of the
+                    # frame. The concatenation is expected to be less expensive
+                    # than issuing an additional call to write.
+                    write(FRAME + pack("<Q", len(data)))
+
+                # Issue a separate call to write to append the frame
+                # contents without concatenation to the above to avoid a
+                # memory copy.
+                write(data)
+
+                # Start the new frame with a new io.BytesIO instance so that
+                # the file object can have delayed access to the previous frame
+                # contents via an unreleased memoryview of the previous
+                # io.BytesIO instance.
+                self.current_frame = io.BytesIO()
 
     def write(self, data):
         if self.current_frame:
             return self.current_frame.write(data)
         else:
             return self.file_write(data)
+
+    def write_large_bytes(self, header, payload):
+        write = self.file_write
+        if self.current_frame:
+            # Terminate the current frame and flush it to the file.
+            self.commit_frame(force=True)
+
+        # Perform direct write of the header and payload of the large binary
+        # object. Be careful not to concatenate the header and the payload
+        # prior to calling 'write' as we do not want to allocate a large
+        # temporary bytes object.
+        # We intentionally do not insert a protocol 4 frame opcode to make
+        # it possible to optimize file.read calls in the loader.
+        write(header)
+        write(payload)
 
 
 class _Unframer:
@@ -349,8 +376,8 @@ class _Pickler:
 
         The optional *protocol* argument tells the pickler to use the
         given protocol; supported protocols are 0, 1, 2, 3 and 4.  The
-        default protocol is 3; a backward-incompatible protocol designed
-        for Python 3.
+        default protocol is 4. It was introduced in Python 3.4, it is
+        incompatible with previous versions.
 
         Specifying a negative protocol version selects the highest
         protocol version supported.  The higher the protocol used, the
@@ -379,6 +406,7 @@ class _Pickler:
             raise TypeError("file must have a 'write' attribute")
         self.framer = _Framer(self._file_write)
         self.write = self.framer.write
+        self._write_large_bytes = self.framer.write_large_bytes
         self.memo = {}
         self.proto = int(protocol)
         self.bin = protocol >= 1
@@ -482,11 +510,7 @@ class _Pickler:
             rv = reduce(obj)
         else:
             # Check for a class with a custom metaclass; treat as regular class
-            try:
-                issc = issubclass(t, type)
-            except TypeError: # t is not a class (old Boost; see SF #502085)
-                issc = False
-            if issc:
+            if issubclass(t, type):
                 self.save_global(obj)
                 return
 
@@ -674,7 +698,10 @@ class _Pickler:
             else:
                 self.write(LONG4 + pack("<i", n) + encoded)
             return
-        self.write(LONG + repr(obj).encode("ascii") + b'L\n')
+        if -0x80000000 <= obj <= 0x7fffffff:
+            self.write(INT + repr(obj).encode("ascii") + b'\n')
+        else:
+            self.write(LONG + repr(obj).encode("ascii") + b'L\n')
     dispatch[int] = save_long
 
     def save_float(self, obj):
@@ -696,7 +723,9 @@ class _Pickler:
         if n <= 0xff:
             self.write(SHORT_BINBYTES + pack("<B", n) + obj)
         elif n > 0xffffffff and self.proto >= 4:
-            self.write(BINBYTES8 + pack("<Q", n) + obj)
+            self._write_large_bytes(BINBYTES8 + pack("<Q", n), obj)
+        elif n >= self.framer._FRAME_SIZE_TARGET:
+            self._write_large_bytes(BINBYTES + pack("<I", n), obj)
         else:
             self.write(BINBYTES + pack("<I", n) + obj)
         self.memoize(obj)
@@ -709,7 +738,9 @@ class _Pickler:
             if n <= 0xff and self.proto >= 4:
                 self.write(SHORT_BINUNICODE + pack("<B", n) + encoded)
             elif n > 0xffffffff and self.proto >= 4:
-                self.write(BINUNICODE8 + pack("<Q", n) + encoded)
+                self._write_large_bytes(BINUNICODE8 + pack("<Q", n), encoded)
+            elif n >= self.framer._FRAME_SIZE_TARGET:
+                self._write_large_bytes(BINUNICODE + pack("<I", n), encoded)
             else:
                 self.write(BINUNICODE + pack("<I", n) + encoded)
         else:

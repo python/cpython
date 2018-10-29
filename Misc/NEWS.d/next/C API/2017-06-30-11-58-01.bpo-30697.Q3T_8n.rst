@@ -1,4 +1,0 @@
-The `PyExc_RecursionErrorInst` singleton is removed and
-`PyErr_NormalizeException()` does not use it anymore. This singleton is
-persistent and its members being never cleared may cause a segfault during
-finalization of the interpreter. See also issue #22898.

@@ -46,7 +46,7 @@ static PyObject *
 binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick);
 
 static PyObject *
-binascii_b2a_uu(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+binascii_b2a_uu(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "backtick", NULL};
@@ -113,7 +113,7 @@ static PyObject *
 binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline);
 
 static PyObject *
-binascii_b2a_base64(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "newline", NULL};
@@ -276,7 +276,7 @@ static unsigned int
 binascii_crc_hqx_impl(PyObject *module, Py_buffer *data, unsigned int crc);
 
 static PyObject *
-binascii_crc_hqx(PyObject *module, PyObject **args, Py_ssize_t nargs)
+binascii_crc_hqx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -315,7 +315,7 @@ static unsigned int
 binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc);
 
 static PyObject *
-binascii_crc32(PyObject *module, PyObject **args, Py_ssize_t nargs)
+binascii_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -490,7 +490,7 @@ static PyObject *
 binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header);
 
 static PyObject *
-binascii_a2b_qp(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+binascii_a2b_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "header", NULL};
@@ -530,7 +530,7 @@ binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
                      int istext, int header);
 
 static PyObject *
-binascii_b2a_qp(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+binascii_b2a_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "quotetabs", "istext", "header", NULL};
@@ -554,4 +554,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=2878727c0cf4f636 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=815f1c453fd6568f input=a9049054013a1b77]*/

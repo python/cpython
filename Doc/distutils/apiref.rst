@@ -78,7 +78,7 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
    |                    | be built                       | :class:`distutils.core.Extension`                           |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *classifiers*      | A list of categories for the   | a list of strings; valid classifiers are listed on `PyPI    |
-   |                    | package                        | <https://pypi.python.org/pypi?:action=list_classifiers>`_.  |
+   |                    | package                        | <https://pypi.org/classifiers>`_.                           |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *distclass*        | the :class:`Distribution`      | a subclass of                                               |
    |                    | class to use                   | :class:`distutils.core.Distribution`                        |
@@ -285,6 +285,10 @@ the full reference.
    See the :func:`setup` function for a list of keyword arguments accepted  by the
    Distribution constructor. :func:`setup` creates a Distribution instance.
 
+   .. versionchanged:: 3.7
+      :class:`~distutils.core.Distribution` now warns if ``classifiers``,
+      ``keywords`` and ``platforms`` fields are not specified as a list or
+      a string.
 
 .. class:: Command
 
@@ -1389,11 +1393,11 @@ This module provides the :class:`FileList` class, used for poking about the
 filesystem and building lists of files.
 
 
-:mod:`distutils.log` --- Simple PEP 282-style logging
-=====================================================
+:mod:`distutils.log` --- Simple :pep:`282`-style logging
+========================================================
 
 .. module:: distutils.log
-   :synopsis: A simple logging mechanism, 282-style
+   :synopsis: A simple logging mechanism, :pep:`282`-style
 
 
 :mod:`distutils.spawn` --- Spawn a sub-process

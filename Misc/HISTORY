@@ -629,7 +629,7 @@ Library
 - Issue #21560: An attempt to write a data of wrong type no longer cause
   GzipFile corruption.  Original patch by Wolfgang Maier.
 
-- Issue #23647: Increase impalib's MAXLINE to accommodate modern mailbox sizes.
+- Issue #23647: Increase imaplib's MAXLINE to accommodate modern mailbox sizes.
 
 - Issue #23539: If body is None, http.client.HTTPConnection.request now sets
   Content-Length to 0 for PUT, POST, and PATCH headers to avoid 411 errors from
@@ -677,7 +677,7 @@ Library
 - Issue #23521: Corrected pure python implementation of timedelta division.
 
  * Eliminated OverflowError from timedelta * float for some floats;
- * Corrected rounding in timedlta true division.
+ * Corrected rounding in timedelta true division.
 
 - Issue #21619: Popen objects no longer leave a zombie after exit in the with
   statement if the pipe was broken.  Patch by Martin Panter.
@@ -966,7 +966,7 @@ Core and Builtins
   returned NotImplemented.  Original patch by Martin Panter.
 
 - Issue #23321: Fixed a crash in str.decode() when error handler returned
-  replacment string longer than mailformed input data.
+  replacement string longer than malformed input data.
 
 - Issue #23048: Fix jumping out of an infinite while loop in the pdb.
 
@@ -1042,7 +1042,7 @@ Library
 - Issue #23250: In the http.cookies module, capitalize "HttpOnly" and "Secure"
   as they are written in the standard.
 
-- Issue #23063: In the disutils' check command, fix parsing of reST with code or
+- Issue #23063: In the distutils' check command, fix parsing of reST with code or
   code-block directives.
 
 - Issue #23209, #23225: selectors.BaseSelector.close() now clears its internal
@@ -1389,7 +1389,7 @@ Release date: 2014-09-22
 Core and Builtins
 -----------------
 
-- Issue #22258: Fix the the internal function set_inheritable() on Illumos.
+- Issue #22258: Fix the internal function set_inheritable() on Illumos.
   This platform exposes the function ``ioctl(FIOCLEX)``, but calling it fails
   with errno is ENOTTY: "Inappropriate ioctl for device". set_inheritable()
   now falls back to the slower ``fcntl()`` (``F_GETFD`` and then ``F_SETFD``).
@@ -9752,7 +9752,7 @@ Library
 - Issue #11382: Trivial system calls, such as dup() or pipe(), needn't
   release the GIL.  Patch by Charles-François Natali.
 
-- Issue #11223: Add threading._info() function providing informations about
+- Issue #11223: Add threading._info() function providing information about
   the thread implementation.
 
 - Issue #11731: simplify/enhance email parser/generator API by introducing
@@ -9956,7 +9956,7 @@ Library
   ensure that it will be found regardless of the shell PATH. This ensures
   that multiprocessing.cpu_count works on default installs of MacOSX.
 
-- Issue #11501: disutils.archive_utils.make_zipfile no longer fails if zlib is
+- Issue #11501: distutils.archive_utils.make_zipfile no longer fails if zlib is
   not installed. Instead, the zipfile.ZIP_STORED compression is used to create
   the ZipFile. Patch by Natalia B. Bidart.
 
@@ -29642,7 +29642,7 @@ of the object in the message.
 - Fixed a bug in list.sort() that would occasionally dump core.
 
 - Fixed a bug in PyNumber_Power() that caused numeric arrays to fail
-when taken tothe real power.
+when taken to the real power.
 
 - Fixed a number of bugs in the file reading code, at least one of
 which could cause a core dump on NT, and one of which would
@@ -29689,7 +29689,7 @@ thanks to Charles Waldman.
 - Many nits fixed in the manuals, thanks to Fred Drake and many others
 (especially Rob Hooft and Andrew Kuchling).  The HTML version now uses
 HTML markup instead of inline GIF images for tables; only two images
-are left (for obsure bits of math).  The index of the HTML version has
+are left (for obscure bits of math).  The index of the HTML version has
 also been much improved.  Finally, it is once again possible to
 generate an Emacs info file from the library manual (but I don't
 commit to supporting this in future versions).
@@ -30341,7 +30341,7 @@ http://grail.cnri.reston.va.us/python/essays/packages.html
 for more info.
 
 - Changes to standard library subdirectory names: those subdirectories
-that are not packages have been renamed with a hypen in their name,
+that are not packages have been renamed with a hyphen in their name,
 e.g. lib-tk, lib-stdwin, plat-win, plat-linux2, plat-sunos5, dos-8x3.
 The test suite is now a package -- to run a test, you must now use
 "import test.test_foo".
@@ -34181,7 +34181,7 @@ You need STDWIN version 0.9.7 (released 30 June 1992) for the stdwin
 interface
 
 Dynamic loading is now supported for Sun (and other non-COFF systems)
-throug dld-3.2.3, as well as for SGI (a new version of Jack Jansen's
+through dld-3.2.3, as well as for SGI (a new version of Jack Jansen's
 DL is out, 1.4)
 
 The system-dependent code for the use of the select() system call is

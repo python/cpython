@@ -7,54 +7,6 @@ extern "C" {
 #include "objimpl.h"
 #include "pymem.h"
 
-#ifdef WITH_PYMALLOC
-#include "internal/pymalloc.h"
-#endif
-
-/* Low-level memory runtime state */
-
-struct _pymem_runtime_state {
-    struct _allocator_runtime_state {
-        PyMemAllocatorEx mem;
-        PyMemAllocatorEx obj;
-        PyMemAllocatorEx raw;
-    } allocators;
-#ifdef WITH_PYMALLOC
-    /* Array of objects used to track chunks of memory (arenas). */
-    struct arena_object* arenas;
-    /* The head of the singly-linked, NULL-terminated list of available
-       arena_objects. */
-    struct arena_object* unused_arena_objects;
-    /* The head of the doubly-linked, NULL-terminated at each end,
-       list of arena_objects associated with arenas that have pools
-       available. */
-    struct arena_object* usable_arenas;
-    /* Number of slots currently allocated in the `arenas` vector. */
-    unsigned int maxarenas;
-    /* Number of arenas allocated that haven't been free()'d. */
-    size_t narenas_currently_allocated;
-    /* High water mark (max value ever seen) for
-     * narenas_currently_allocated. */
-    size_t narenas_highwater;
-    /* Total number of times malloc() called to allocate an arena. */
-    size_t ntimes_arena_allocated;
-    poolp usedpools[MAX_POOLS];
-    Py_ssize_t num_allocated_blocks;
-#endif /* WITH_PYMALLOC */
-    size_t serialno;     /* incremented on each debug {m,re}alloc */
-};
-
-PyAPI_FUNC(void) _PyMem_Initialize(struct _pymem_runtime_state *);
-
-
-/* High-level memory runtime state */
-
-struct _pyobj_runtime_state {
-    PyObjectArenaAllocator allocator_arenas;
-};
-
-PyAPI_FUNC(void) _PyObject_Initialize(struct _pyobj_runtime_state *);
-
 
 /* GC runtime state */
 

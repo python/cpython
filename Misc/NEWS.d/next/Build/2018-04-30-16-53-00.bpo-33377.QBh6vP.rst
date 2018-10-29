@@ -1,0 +1,2 @@
+Add new triplets for mips r6 and riscv variants (used in extension
+suffixes).

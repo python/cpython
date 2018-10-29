@@ -1,0 +1,3 @@
+Harden ssl module against LibreSSL CVE-2018-8970.
+X509_VERIFY_PARAM_set1_host() is called with an explicit namelen. A new test
+ensures that NULL bytes are not allowed.

@@ -1,1 +1,0 @@
-Finish removing support for AtheOS.

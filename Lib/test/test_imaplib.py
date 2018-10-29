@@ -1,6 +1,7 @@
 from test import support
 
 from contextlib import contextmanager
+import errno
 import imaplib
 import os.path
 import socketserver
@@ -68,6 +69,19 @@ class TestImaplib(unittest.TestCase):
         # since the result depends on the timezone the machine is in.
         for t in self.timevalues():
             imaplib.Time2Internaldate(t)
+
+    def test_imap4_host_default_value(self):
+        expected_errnos = [
+            # This is the exception that should be raised.
+            errno.ECONNREFUSED,
+        ]
+        if hasattr(errno, 'EADDRNOTAVAIL'):
+            # socket.create_connection() fails randomly with
+            # EADDRNOTAVAIL on Travis CI.
+            expected_errnos.append(errno.EADDRNOTAVAIL)
+        with self.assertRaises(OSError) as cm:
+            imaplib.IMAP4()
+        self.assertIn(cm.exception.errno, expected_errnos)
 
 
 if ssl:
@@ -485,7 +499,8 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
         ssl_context.load_verify_locations(CAFILE)
 
         with self.assertRaisesRegex(ssl.CertificateError,
-                "hostname '127.0.0.1' doesn't match 'localhost'"):
+                "IP address mismatch, certificate is not valid for "
+                "'127.0.0.1'"):
             _, server = self._setup(SimpleIMAPHandler)
             client = self.imap_class(*server.server_address,
                                      ssl_context=ssl_context)
@@ -874,7 +889,8 @@ class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
 
         with self.assertRaisesRegex(
                 ssl.CertificateError,
-                "hostname '127.0.0.1' doesn't match 'localhost'"):
+                "IP address mismatch, certificate is not valid for "
+                "'127.0.0.1'"):
             with self.reaped_server(SimpleIMAPHandler) as server:
                 client = self.imap_class(*server.server_address,
                                          ssl_context=ssl_context)

@@ -1,5 +1,7 @@
 :tocdepth: 2
 
+.. highlightlang:: none
+
 .. _windows-faq:
 
 =====================
@@ -21,30 +23,22 @@ This is not necessarily a straightforward question. If you are already familiar
 with running programs from the Windows command line then everything will seem
 obvious; otherwise, you might need a little more guidance.
 
-.. sidebar:: |Python Development on XP|_
-   :subtitle: `Python Development on XP`_
-
-   This series of screencasts aims to get you up and running with Python on
-   Windows XP.  The knowledge is distilled into 1.5 hours and will get you up
-   and running with the right Python distribution, coding in your choice of IDE,
-   and debugging and writing solid code with unit-tests.
-
-.. |Python Development on XP| image:: python-video-icon.png
-.. _`Python Development on XP`:
-   http://showmedo.com/videotutorials/series?name=pythonOzsvaldPyNewbieSeries
-
 Unless you use some sort of integrated development environment, you will end up
 *typing* Windows commands into what is variously referred to as a "DOS window"
 or "Command prompt window".  Usually you can create such a window from your
 Start menu; under Windows 7 the menu selection is :menuselection:`Start -->
 Programs --> Accessories --> Command Prompt`.  You should be able to recognize
 when you have started such a window because you will see a Windows "command
-prompt", which usually looks like this::
+prompt", which usually looks like this:
+
+.. code-block:: doscon
 
    C:\>
 
 The letter may be different, and there might be other things after it, so you
-might just as easily see something like::
+might just as easily see something like:
+
+.. code-block:: doscon
 
    D:\YourName\Projects\Python>
 
@@ -60,11 +54,15 @@ program. So, how do you arrange for the interpreter to handle your Python?
 First, you need to make sure that your command window recognises the word
 "python" as an instruction to start the interpreter.  If you have opened a
 command window, you should try entering the command ``python`` and hitting
-return.::
+return:
+
+.. code-block:: doscon
 
    C:\Users\YourName> python
 
-You should then see something like::
+You should then see something like:
+
+.. code-block:: pycon
 
    Python 3.3.0 (v3.3.0:bd8afb90ebf2, Sep 29 2012, 10:55:48) [MSC v.1600 32 bit (Intel)] on win32
    Type "help", "copyright", "credits" or "license" for more information.
@@ -73,7 +71,9 @@ You should then see something like::
 You have started the interpreter in "interactive mode". That means you can enter
 Python statements or expressions interactively and have them executed or
 evaluated while you wait.  This is one of Python's strongest features.  Check it
-by entering a few expressions of your choice and seeing the results::
+by entering a few expressions of your choice and seeing the results:
+
+.. code-block:: pycon
 
     >>> print("Hello")
     Hello
@@ -95,18 +95,6 @@ If the ``python`` command, instead of displaying the interpreter prompt ``>>>``,
 gives you a message like::
 
    'python' is not recognized as an internal or external command, operable program or batch file.
-
-.. sidebar:: |Adding Python to DOS Path|_
-   :subtitle: `Adding Python to DOS Path`_
-
-   Python is not added to the DOS path by default.  This screencast will walk
-   you through the steps to add the correct entry to the `System Path`, allowing
-   Python to be executed from the command-line by all users.
-
-.. |Adding Python to DOS Path| image:: python-video-icon.png
-.. _`Adding Python to DOS Path`:
-   http://showmedo.com/videotutorials/video?name=960000&fromSeriesID=96
-
 
 or::
 
@@ -170,8 +158,8 @@ offender.
 How do I make an executable from a Python script?
 -------------------------------------------------
 
-See http://cx-freeze.sourceforge.net/ for a distutils extension that allows you
-to create console and GUI executables from Python code.
+See `cx_Freeze <https://anthony-tuininga.github.io/cx_Freeze/>`_ for a distutils extension
+that allows you to create console and GUI executables from Python code.
 `py2exe <http://www.py2exe.org/>`_, the most popular extension for building
 Python 2.x-based executables, does not yet support Python 3 but a version that
 does is in development.
@@ -317,7 +305,9 @@ present, and ``getch()`` which gets one character without echoing it.
 How do I emulate os.kill() in Windows?
 --------------------------------------
 
-Prior to Python 2.7 and 3.2, to terminate a process, you can use :mod:`ctypes`::
+Prior to Python 2.7 and 3.2, to terminate a process, you can use :mod:`ctypes`:
+
+.. code-block:: python
 
    import ctypes
 
