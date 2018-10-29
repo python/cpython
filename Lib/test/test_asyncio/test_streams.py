@@ -991,6 +991,25 @@ os.close(fd)
 
         self.assertEqual(messages, [])
 
+    def test_eof_feed_when_closing_writer(self):
+        # See http://bugs.python.org/issue35065
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        with test_utils.run_test_server() as httpd:
+            rd, wr = self.loop.run_until_complete(
+                asyncio.open_connection(*httpd.address,
+                                        loop=self.loop))
+
+            f = wr.aclose()
+            self.loop.run_until_complete(f)
+            assert rd.at_eof()
+            f = rd.read()
+            data = self.loop.run_until_complete(f)
+            assert data == b''
+
+        self.assertEqual(messages, [])
+
 
 if __name__ == '__main__':
     unittest.main()
