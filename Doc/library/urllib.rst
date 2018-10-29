@@ -201,7 +201,8 @@ High-level interface
       just have to assume that the download was successful.
 
    .. versionchanged:: 2.7.9
-      The *context* parameter was added. All the neccessary certificate and hostname checks are done by default.
+      The *context* parameter was added. All the neccessary certificate and hostname
+      checks are done by default.
 
 
 .. data:: _urlopener
