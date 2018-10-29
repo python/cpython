@@ -1301,7 +1301,7 @@ The :mod:`curses` module defines the following data members:
 
    Availability: if the ncurses library is used.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.8
 
 
 Some constants are available to specify character cell attributes.
