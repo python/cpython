@@ -1,6 +1,12 @@
 #ifndef Py_ATOMIC_H
 #define Py_ATOMIC_H
-#ifdef Py_BUILD_CORE
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifndef Py_BUILD_CORE
+#  error "Py_BUILD_CORE must be defined to include this header"
+#endif
 
 #include "dynamic_annotations.h"
 
@@ -531,5 +537,8 @@ typedef struct _Py_atomic_int {
     _Py_atomic_store_explicit(ATOMIC_VAL, NEW_VAL, _Py_memory_order_relaxed)
 #define _Py_atomic_load_relaxed(ATOMIC_VAL) \
     _Py_atomic_load_explicit(ATOMIC_VAL, _Py_memory_order_relaxed)
-#endif  /* Py_BUILD_CORE */
+
+#ifdef __cplusplus
+}
+#endif
 #endif  /* Py_ATOMIC_H */
