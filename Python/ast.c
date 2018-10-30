@@ -1659,12 +1659,6 @@ ast_for_decorated(struct compiling *c, const node *n)
     } else if (TYPE(CHILD(n, 1)) == async_funcdef) {
       thing = ast_for_async_funcdef(c, CHILD(n, 1), decorator_seq);
     }
-    /* we count the decorators in when talking about the class' or
-     * function's line number */
-    if (thing) {
-        thing->lineno = LINENO(n);
-        thing->col_offset = n->n_col_offset;
-    }
     return thing;
 }
 
