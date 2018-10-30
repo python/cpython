@@ -29,7 +29,7 @@ class BaseTestUUID:
     def test_UUID(self):
         equal = self.assertEqual
         ascending = []
-        for (string, curly, hex, bytes, bytes_le, fields, integer, urn,
+        for (string, curly, hex_, bytes, bytes_le, fields, integer, urn,
              time, clock_seq, variant, version) in [
             ('00000000-0000-0000-0000-000000000000',
              '{00000000-0000-0000-0000-000000000000}',
@@ -167,6 +167,7 @@ class BaseTestUUID:
                 # Test all conversions and properties of the UUID object.
                 equal(str(u), string)
                 equal(int(u), integer)
+                equal(hex(u), hex_)
                 equal(u.bytes, bytes)
                 equal(u.bytes_le, bytes_le)
                 equal(u.fields, fields)
@@ -176,7 +177,7 @@ class BaseTestUUID:
                 equal(u.clock_seq_hi_variant, fields[3])
                 equal(u.clock_seq_low, fields[4])
                 equal(u.node, fields[5])
-                equal(u.hex, hex)
+                equal(u.hex, hex_)
                 equal(u.int, integer)
                 equal(u.urn, urn)
                 equal(u.time, time)
