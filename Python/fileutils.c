@@ -180,6 +180,18 @@ error:
     return 1;
 }
 
+
+int
+_Py_GetForceASCII(void)
+{
+    if (force_ascii == -1) {
+        force_ascii = check_force_ascii();
+    }
+    return force_ascii;
+}
+
+
+
 static int
 encode_ascii(const wchar_t *text, char **str,
              size_t *error_pos, const char **reason,

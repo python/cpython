@@ -183,6 +183,10 @@ PyAPI_FUNC(int) _Py_GetLocaleconvNumeric(
 
 #endif   /* Py_LIMITED_API */
 
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(int) _Py_GetForceASCII(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
