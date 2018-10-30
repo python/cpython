@@ -768,7 +768,6 @@ PyAPI_FUNC(int) _PyTraceMalloc_NewReference(PyObject *op);
 /* Py_TRACE_REFS is such major surgery that we call external routines. */
 PyAPI_FUNC(void) _Py_NewReference(PyObject *);
 PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
-PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 PyAPI_FUNC(void) _Py_PrintReferences(FILE *);
 PyAPI_FUNC(void) _Py_PrintReferenceAddresses(FILE *);
 PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
@@ -790,15 +789,25 @@ static inline void _Py_ForgetReference(PyObject *op)
 {
     _Py_INC_TPFREES(op);
 }
-
-#ifdef Py_LIMITED_API
-PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
-#else
-#define _Py_Dealloc(op) (                               \
-    _Py_INC_TPFREES(op) _Py_COUNT_ALLOCS_COMMA          \
-    (*Py_TYPE(op)->tp_dealloc)((PyObject *)(op)))
-#endif
 #endif /* !Py_TRACE_REFS */
+
+
+PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
+
+#ifndef Py_LIMITED_API
+static inline void _Py_Dealloc_inline(PyObject *op)
+{
+    destructor dealloc = Py_TYPE(op)->tp_dealloc;
+#ifdef Py_TRACE_REFS
+    _Py_ForgetReference(op);
+#else
+    _Py_INC_TPFREES(op);
+#endif
+    (*dealloc)(op);
+}
+
+#  define _Py_Dealloc(op) _Py_Dealloc_inline(op)
+#endif   /* !defined(Py_LIMITED_API) */
 
 
 static inline void _Py_INCREF(PyObject *op)
