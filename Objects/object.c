@@ -1964,14 +1964,6 @@ _Py_ForgetReference(PyObject *op)
     _Py_INC_TPFREES(op);
 }
 
-void
-_Py_Dealloc(PyObject *op)
-{
-    destructor dealloc = Py_TYPE(op)->tp_dealloc;
-    _Py_ForgetReference(op);
-    (*dealloc)(op);
-}
-
 /* Print all live objects.  Because PyObject_Print is called, the
  * interpreter must be in a healthy state.
  */
@@ -2265,18 +2257,20 @@ _PyObject_AssertFailed(PyObject *obj, const char *msg, const char *expr,
     Py_FatalError("_PyObject_AssertFailed");
 }
 
-#ifndef Py_TRACE_REFS
-/* For Py_LIMITED_API, we need an out-of-line version of _Py_Dealloc.
-   Define this here, so we can undefine the macro. */
+
 #undef _Py_Dealloc
-void _Py_Dealloc(PyObject *);
+
 void
 _Py_Dealloc(PyObject *op)
 {
-    _Py_INC_TPFREES(op) _Py_COUNT_ALLOCS_COMMA
-    (*Py_TYPE(op)->tp_dealloc)(op);
-}
+    destructor dealloc = Py_TYPE(op)->tp_dealloc;
+#ifdef Py_TRACE_REFS
+    _Py_ForgetReference(op);
+#else
+    _Py_INC_TPFREES(op);
 #endif
+    (*dealloc)(op);
+}
 
 #ifdef __cplusplus
 }
