@@ -1456,13 +1456,19 @@ win32_error_object(const char* function, PyObject* filename)
 #endif /* MS_WINDOWS */
 
 static PyObject *
+posix_path_object_error(PyObject *path)
+{
+    return PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path);
+}
+
+static PyObject *
 path_object_error(PyObject *path)
 {
 #ifdef MS_WINDOWS
     return PyErr_SetExcFromWindowsErrWithFilenameObject(
                 PyExc_OSError, 0, path);
 #else
-    return PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path);
+    return posix_path_object_error(path);
 #endif
 }
 
@@ -1481,6 +1487,12 @@ static PyObject *
 path_error(path_t *path)
 {
     return path_object_error(path->object);
+}
+
+static PyObject *
+posix_path_error(path_t *path)
+{
+    return posix_path_object_error(path->object);
 }
 
 static PyObject *
@@ -1942,7 +1954,7 @@ static PyTypeObject WaitidResultType;
 static int initialized;
 static PyTypeObject StatResultType;
 static PyTypeObject StatVFSResultType;
-#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
+#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
 static PyTypeObject SchedParamType;
 #endif
 static newfunc structseq_new;
@@ -5141,7 +5153,7 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
 
     /* If we get here it's definitely an error */
 
-    path_error(path);
+    posix_path_error(path);
 
     free_string_array(envlist, envc);
   fail:
@@ -5160,8 +5172,10 @@ enum posix_spawn_file_actions_identifier {
     POSIX_SPAWN_DUP2
 };
 
+#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
 static int
 convert_sched_param(PyObject *param, struct sched_param *res);
+#endif
 
 static int
 parse_posix_spawn_flags(PyObject *setpgroup, int resetids, PyObject *setsigmask,
@@ -5925,7 +5939,7 @@ os_sched_getscheduler_impl(PyObject *module, pid_t pid)
 #endif /* HAVE_SCHED_SETSCHEDULER */
 
 
-#if defined(HAVE_SCHED_SETSCHEDULER) || defined(HAVE_SCHED_SETPARAM)
+#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
 /*[clinic input]
 class os.sched_param "PyObject *" "&SchedParamType"
 
@@ -5986,7 +6000,7 @@ convert_sched_param(PyObject *param, struct sched_param *res)
     res->sched_priority = Py_SAFE_DOWNCAST(priority, long, int);
     return 1;
 }
-#endif /* defined(HAVE_SCHED_SETSCHEDULER) || defined(HAVE_SCHED_SETPARAM) */
+#endif /* defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM) */
 
 
 #ifdef HAVE_SCHED_SETSCHEDULER
@@ -9475,7 +9489,7 @@ os_truncate_impl(PyObject *module, path_t *path, Py_off_t length)
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     if (result < 0)
-        return path_error(path);
+        return posix_path_error(path);
 
     Py_RETURN_NONE;
 }
@@ -10079,13 +10093,38 @@ os__getdiskusage_impl(PyObject *module, path_t *path)
 {
     BOOL retval;
     ULARGE_INTEGER _, total, free;
+    DWORD err = 0;
 
     Py_BEGIN_ALLOW_THREADS
     retval = GetDiskFreeSpaceExW(path->wide, &_, &total, &free);
     Py_END_ALLOW_THREADS
-    if (retval == 0)
-        return PyErr_SetFromWindowsErr(0);
+    if (retval == 0) {
+        if (GetLastError() == ERROR_DIRECTORY) {
+            wchar_t *dir_path = NULL;
 
+            dir_path = PyMem_New(wchar_t, path->length + 1);
+            if (dir_path == NULL) {
+                return PyErr_NoMemory();
+            }
+
+            wcscpy_s(dir_path, path->length + 1, path->wide);
+
+            if (_dirnameW(dir_path) != -1) {
+                Py_BEGIN_ALLOW_THREADS
+                retval = GetDiskFreeSpaceExW(dir_path, &_, &total, &free);
+                Py_END_ALLOW_THREADS
+            }
+            /* Record the last error in case it's modified by PyMem_Free. */
+            err = GetLastError();
+            PyMem_Free(dir_path);
+            if (retval) {
+                goto success;
+            }
+        }
+        return PyErr_SetFromWindowsErr(err);
+    }
+
+success:
     return Py_BuildValue("(LL)", total.QuadPart, free.QuadPart);
 }
 #endif /* MS_WINDOWS */
@@ -13900,7 +13939,7 @@ INITFUNC(void)
 #  endif
 #endif
 
-#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
+#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
         sched_param_desc.name = MODNAME ".sched_param";
         if (PyStructSequence_InitType2(&SchedParamType, &sched_param_desc) < 0)
             return NULL;

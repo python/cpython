@@ -188,8 +188,7 @@ PyEval_ReleaseLock(void)
        We therefore avoid PyThreadState_GET() which dumps a fatal error
        in debug mode.
     */
-    drop_gil((PyThreadState*)_Py_atomic_load_relaxed(
-        &_PyThreadState_Current));
+    drop_gil(PyThreadState_GET());
 }
 
 void
@@ -237,17 +236,13 @@ PyEval_ReInitThreads(void)
 }
 
 /* This function is used to signal that async exceptions are waiting to be
-   raised, therefore it is also useful in non-threaded builds. */
+   raised. */
 
 void
 _PyEval_SignalAsyncExc(void)
 {
     SIGNAL_ASYNC_EXC();
 }
-
-/* Functions save_thread and restore_thread are always defined so
-   dynamically loaded modules needn't be compiled separately for use
-   with and without threads: */
 
 PyThreadState *
 PyEval_SaveThread(void)
@@ -3096,7 +3091,7 @@ main_loop:
                 /* There was an exception and a True return.
                  * We must manually unwind the EXCEPT_HANDLER block
                  * which was created when the exception was caught,
-                 * otherwise the stack will be in an inconsisten state.
+                 * otherwise the stack will be in an inconsistent state.
                  */
                 PyTryBlock *b = PyFrame_BlockPop(f);
                 assert(b->b_type == EXCEPT_HANDLER);

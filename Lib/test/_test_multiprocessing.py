@@ -30,9 +30,6 @@ from test import support
 _multiprocessing = test.support.import_module('_multiprocessing')
 # Skip tests if sem_open implementation is broken.
 test.support.import_module('multiprocessing.synchronize')
-# import threading after _multiprocessing to raise a more relevant error
-# message: "No module named _multiprocessing". _multiprocessing is not compiled
-# without thread support.
 import threading
 
 import multiprocessing.connection
@@ -1117,6 +1114,14 @@ class _TestQueue(BaseTestCase):
         # Assert that the serialization and the hook have been called correctly
         self.assertTrue(not_serializable_obj.reduce_was_called)
         self.assertTrue(not_serializable_obj.on_queue_feeder_error_was_called)
+
+    def test_closed_queue_put_get_exceptions(self):
+        for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
+            q.close()
+            with self.assertRaisesRegex(ValueError, 'is closed'):
+                q.put('foo')
+            with self.assertRaisesRegex(ValueError, 'is closed'):
+                q.get()
 #
 #
 #
@@ -2552,6 +2557,12 @@ class _TestPool(BaseTestCase):
         # they were released too.
         self.assertEqual(CountedObject.n_instances, 0)
 
+    def test_del_pool(self):
+        p = self.Pool(1)
+        wr = weakref.ref(p)
+        del p
+        gc.collect()
+        self.assertIsNone(wr())
 
 def raising():
     raise KeyError("key")
@@ -4545,7 +4556,8 @@ class TestSemaphoreTracker(unittest.TestCase):
         if pid is not None:
             os.kill(pid, signal.SIGKILL)
             os.waitpid(pid, 0)
-        with warnings.catch_warnings(record=True) as all_warn:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
             _semaphore_tracker.ensure_running()
         pid = _semaphore_tracker._pid
 
@@ -4554,6 +4566,7 @@ class TestSemaphoreTracker(unittest.TestCase):
 
         ctx = multiprocessing.get_context("spawn")
         with warnings.catch_warnings(record=True) as all_warn:
+            warnings.simplefilter("always")
             sem = ctx.Semaphore()
             sem.acquire()
             sem.release()
@@ -4566,7 +4579,7 @@ class TestSemaphoreTracker(unittest.TestCase):
             if should_die:
                 self.assertEqual(len(all_warn), 1)
                 the_warn = all_warn[0]
-                issubclass(the_warn.category, UserWarning)
+                self.assertTrue(issubclass(the_warn.category, UserWarning))
                 self.assertTrue("semaphore_tracker: process died"
                                 in str(the_warn.message))
             else:

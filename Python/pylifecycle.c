@@ -295,7 +295,7 @@ static const char *_C_LOCALE_WARNING =
 static void
 _emit_stderr_warning_for_legacy_locale(const _PyCoreConfig *core_config)
 {
-    if (core_config->_coerce_c_locale_warn && _Py_LegacyLocaleDetected()) {
+    if (core_config->coerce_c_locale_warn && _Py_LegacyLocaleDetected()) {
         PySys_FormatStderr("%s", _C_LOCALE_WARNING);
     }
 }
@@ -929,7 +929,7 @@ Py_Initialize(void)
 
 
 #ifdef COUNT_ALLOCS
-extern void dump_counts(FILE*);
+extern void _Py_dump_counts(FILE*);
 #endif
 
 /* Flush stdout and stderr */
@@ -1112,7 +1112,7 @@ Py_FinalizeEx(void)
 
     /* Debugging stuff */
 #ifdef COUNT_ALLOCS
-    dump_counts(stderr);
+    _Py_dump_counts(stderr);
 #endif
     /* dump hash stats */
     _PyHash_Fini();

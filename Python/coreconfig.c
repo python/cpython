@@ -303,8 +303,8 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(dump_refs);
     COPY_ATTR(malloc_stats);
 
-    COPY_ATTR(_coerce_c_locale);
-    COPY_ATTR(_coerce_c_locale_warn);
+    COPY_ATTR(coerce_c_locale);
+    COPY_ATTR(coerce_c_locale_warn);
     COPY_ATTR(utf8_mode);
 
     COPY_WSTR_ATTR(pycache_prefix);
@@ -705,17 +705,6 @@ config_init_utf8_mode(_PyCoreConfig *config)
         return _Py_INIT_OK();
     }
 
-#ifndef MS_WINDOWS
-    /* The C locale and the POSIX locale enable the UTF-8 Mode (PEP 540) */
-    const char *ctype_loc = setlocale(LC_CTYPE, NULL);
-    if (ctype_loc != NULL
-        && (strcmp(ctype_loc, "C") == 0 || strcmp(ctype_loc, "POSIX") == 0))
-    {
-        config->utf8_mode = 1;
-        return _Py_INIT_OK();
-    }
-#endif
-
     return _Py_INIT_OK();
 }
 
@@ -817,6 +806,23 @@ config_read_env_vars(_PyCoreConfig *config)
     }
     if (_PyCoreConfig_GetEnv(config, "PYTHONMALLOCSTATS")) {
         config->malloc_stats = 1;
+    }
+
+    const char *env = _PyCoreConfig_GetEnv(config, "PYTHONCOERCECLOCALE");
+    if (env) {
+        if (strcmp(env, "0") == 0) {
+            if (config->coerce_c_locale < 0) {
+                config->coerce_c_locale = 0;
+            }
+        }
+        else if (strcmp(env, "warn") == 0) {
+            config->coerce_c_locale_warn = 1;
+        }
+        else {
+            if (config->coerce_c_locale < 0) {
+                config->coerce_c_locale = 1;
+            }
+        }
     }
 
     wchar_t *path;
@@ -958,76 +964,28 @@ config_read_complex_options(_PyCoreConfig *config)
 }
 
 
-static _PyInitError
-config_init_coerce_c_locale(_PyCoreConfig *config)
+static void
+config_init_locale(_PyCoreConfig *config)
 {
-    const wchar_t *xopt = config_get_xoption(config, L"coerce_c_locale");
-    if (xopt) {
-        wchar_t *sep = wcschr(xopt, L'=');
-        if (sep) {
-            xopt = sep + 1;
-            if (wcscmp(xopt, L"1") == 0) {
-                if (config->_coerce_c_locale < 0) {
-                    config->_coerce_c_locale = 1;
-                }
-            }
-            else if (wcscmp(xopt, L"0") == 0) {
-                if (config->_coerce_c_locale < 0) {
-                    config->_coerce_c_locale = 0;
-                }
-            }
-            else if (wcscmp(xopt, L"warn") == 0) {
-                if (config->_coerce_c_locale_warn < 0) {
-                    config->_coerce_c_locale_warn = 1;
-                }
-            }
-            else {
-                return _Py_INIT_USER_ERR("invalid -X coerce_c_locale option value");
-            }
-        }
-        else {
-            if (config->_coerce_c_locale < 0) {
-                config->_coerce_c_locale = 1;
-            }
-        }
-
-        if (config->_coerce_c_locale_warn < 0) {
-            config->_coerce_c_locale_warn = 0;
-        }
-    }
-
-    const char *env = _PyCoreConfig_GetEnv(config, "PYTHONCOERCECLOCALE");
-    if (env) {
-        if (strcmp(env, "0") == 0) {
-            if (config->_coerce_c_locale < 0) {
-                config->_coerce_c_locale = 0;
-            }
-        }
-        else if (strcmp(env, "warn") == 0) {
-            if (config->_coerce_c_locale_warn < 0) {
-                config->_coerce_c_locale_warn = 1;
-            }
-        }
-        else {
-            if (config->_coerce_c_locale < 0) {
-                config->_coerce_c_locale = 1;
-            }
-        }
-
-        if (config->_coerce_c_locale_warn < 0) {
-            config->_coerce_c_locale_warn = 0;
-        }
-    }
-
-    if (config->_coerce_c_locale < 0) {
+    if (config->coerce_c_locale < 0) {
         /* The C locale enables the C locale coercion (PEP 538) */
         if (_Py_LegacyLocaleDetected()) {
-            config->_coerce_c_locale = 1;
-            return _Py_INIT_OK();
+            config->coerce_c_locale = 1;
         }
     }
 
-    return _Py_INIT_OK();
+#ifndef MS_WINDOWS
+    if (config->utf8_mode < 0) {
+        /* The C locale and the POSIX locale enable the UTF-8 Mode (PEP 540) */
+        const char *ctype_loc = setlocale(LC_CTYPE, NULL);
+        if (ctype_loc != NULL
+           && (strcmp(ctype_loc, "C") == 0
+               || strcmp(ctype_loc, "POSIX") == 0))
+        {
+            config->utf8_mode = 1;
+        }
+    }
+#endif
 }
 
 
@@ -1206,13 +1164,17 @@ config_init_fs_encoding(_PyCoreConfig *config)
         }
     }
 
-    /* Windows defaults to utf-8/surrogatepass (PEP 529) */
+    /* Windows defaults to utf-8/surrogatepass (PEP 529).
+
+       Note: UTF-8 Mode takes the same code path and the Legacy Windows FS
+             encoding has the priortiy over UTF-8 Mode. */
     if (config->filesystem_encoding == NULL) {
         config->filesystem_encoding = _PyMem_RawStrdup("utf-8");
         if (config->filesystem_encoding == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
     }
+
     if (config->filesystem_errors == NULL) {
         config->filesystem_errors = _PyMem_RawStrdup("surrogatepass");
         if (config->filesystem_errors == NULL) {
@@ -1220,30 +1182,28 @@ config_init_fs_encoding(_PyCoreConfig *config)
         }
     }
 #else
-    if (config->utf8_mode) {
-        /* UTF-8 Mode use: utf-8/surrogateescape */
-        if (config->filesystem_encoding == NULL) {
-            config->filesystem_encoding = _PyMem_RawStrdup("utf-8");
-            if (config->filesystem_encoding == NULL) {
-                return _Py_INIT_NO_MEMORY();
-            }
-        }
-        /* errors defaults to surrogateescape above */
-    }
-
     if (config->filesystem_encoding == NULL) {
-        /* macOS and Android use UTF-8, other platforms use
-           the locale encoding. */
-        char *locale_encoding;
-#if defined(__APPLE__) || defined(__ANDROID__)
-        locale_encoding = "UTF-8";
-#else
-        _PyInitError err = get_locale_encoding(&locale_encoding);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
+        if (config->utf8_mode) {
+            /* UTF-8 Mode use: utf-8/surrogateescape */
+            config->filesystem_encoding = _PyMem_RawStrdup("utf-8");
+            /* errors defaults to surrogateescape above */
         }
+        else if (_Py_GetForceASCII()) {
+            config->filesystem_encoding = _PyMem_RawStrdup("ascii");
+        }
+        else {
+            /* macOS and Android use UTF-8,
+               other platforms use the locale encoding. */
+#if defined(__APPLE__) || defined(__ANDROID__)
+            config->filesystem_encoding = _PyMem_RawStrdup("utf-8");
+#else
+            _PyInitError err = get_locale_encoding(&config->filesystem_encoding);
+            if (_Py_INIT_FAILED(err)) {
+                return err;
+            }
 #endif
-        config->filesystem_encoding = _PyMem_RawStrdup(locale_encoding);
+        }
+
         if (config->filesystem_encoding == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
@@ -1333,11 +1293,8 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         }
     }
 
-    if (config->_coerce_c_locale < 0 || config->_coerce_c_locale_warn < 0) {
-        err = config_init_coerce_c_locale(config);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
-        }
+    if (config->utf8_mode < 0 || config->coerce_c_locale < 0) {
+        config_init_locale(config);
     }
 
     if (config->_install_importlib) {
@@ -1366,11 +1323,8 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     if (config->tracemalloc < 0) {
         config->tracemalloc = 0;
     }
-    if (config->_coerce_c_locale < 0) {
-        config->_coerce_c_locale = 0;
-    }
-    if (config->_coerce_c_locale_warn < 0) {
-        config->_coerce_c_locale_warn = 0;
+    if (config->coerce_c_locale < 0) {
+        config->coerce_c_locale = 0;
     }
     if (config->utf8_mode < 0) {
         config->utf8_mode = 0;
@@ -1391,8 +1345,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         return err;
     }
 
-    assert(config->_coerce_c_locale >= 0);
-    assert(config->_coerce_c_locale_warn >= 0);
+    assert(config->coerce_c_locale >= 0);
     assert(config->use_environment >= 0);
     assert(config->filesystem_encoding != NULL);
     assert(config->filesystem_errors != NULL);

@@ -717,7 +717,7 @@ received data, and close the connection::
     import asyncio
 
 
-    class EchoServerClientProtocol(asyncio.Protocol):
+    class EchoServerProtocol(asyncio.Protocol):
         def connection_made(self, transport):
             peername = transport.get_extra_info('peername')
             print('Connection from {}'.format(peername))
@@ -740,7 +740,7 @@ received data, and close the connection::
         loop = asyncio.get_running_loop()
 
         server = await loop.create_server(
-            lambda: EchoServerClientProtocol(),
+            lambda: EchoServerProtocol(),
             '127.0.0.1', 8888)
 
         async with server:
@@ -1029,10 +1029,6 @@ The subprocess is created by th :meth:`loop.subprocess_exec` method::
         # pipe_data_received() method of the protocol.
         data = bytes(protocol.output)
         return data.decode('ascii').rstrip()
-
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(
-            asyncio.WindowsProactorEventLoopPolicy())
 
     date = asyncio.run(get_date())
     print(f"Current date: {date}")

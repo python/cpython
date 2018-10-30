@@ -53,7 +53,7 @@ See also the main documentation section about the
     * - :meth:`loop.stop`
       - Stop the event loop.
 
-    * - :meth:`loop.stop`
+    * - :meth:`loop.close`
       - Close the event loop.
 
     * - :meth:`loop.is_running()`

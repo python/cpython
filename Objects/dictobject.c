@@ -235,6 +235,8 @@ static Py_ssize_t lookdict_split(PyDictObject *mp, PyObject *key,
 
 static int dictresize(PyDictObject *mp, Py_ssize_t minused);
 
+static PyObject* dict_iter(PyDictObject *dict);
+
 /*Global counter used to set ma_version_tag field of dictionary.
  * It is incremented each time that a dictionary is created and each
  * time that a dictionary is modified. */
@@ -437,6 +439,8 @@ static PyObject *empty_values[1] = { NULL };
 static int
 _PyDict_CheckConsistency(PyDictObject *mp)
 {
+#define ASSERT(expr) _PyObject_ASSERT((PyObject *)mp, (expr))
+
     PyDictKeysObject *keys = mp->ma_keys;
     int splitted = _PyDict_HasSplitTable(mp);
     Py_ssize_t usable = USABLE_FRACTION(keys->dk_size);
@@ -445,23 +449,23 @@ _PyDict_CheckConsistency(PyDictObject *mp)
     Py_ssize_t i;
 #endif
 
-    assert(0 <= mp->ma_used && mp->ma_used <= usable);
-    assert(IS_POWER_OF_2(keys->dk_size));
-    assert(0 <= keys->dk_usable
+    ASSERT(0 <= mp->ma_used && mp->ma_used <= usable);
+    ASSERT(IS_POWER_OF_2(keys->dk_size));
+    ASSERT(0 <= keys->dk_usable
            && keys->dk_usable <= usable);
-    assert(0 <= keys->dk_nentries
+    ASSERT(0 <= keys->dk_nentries
            && keys->dk_nentries <= usable);
-    assert(keys->dk_usable + keys->dk_nentries <= usable);
+    ASSERT(keys->dk_usable + keys->dk_nentries <= usable);
 
     if (!splitted) {
         /* combined table */
-        assert(keys->dk_refcnt == 1);
+        ASSERT(keys->dk_refcnt == 1);
     }
 
 #ifdef DEBUG_PYDICT
     for (i=0; i < keys->dk_size; i++) {
         Py_ssize_t ix = dk_get_index(keys, i);
-        assert(DKIX_DUMMY <= ix && ix <= usable);
+        ASSERT(DKIX_DUMMY <= ix && ix <= usable);
     }
 
     for (i=0; i < usable; i++) {
@@ -471,32 +475,34 @@ _PyDict_CheckConsistency(PyDictObject *mp)
         if (key != NULL) {
             if (PyUnicode_CheckExact(key)) {
                 Py_hash_t hash = ((PyASCIIObject *)key)->hash;
-                assert(hash != -1);
-                assert(entry->me_hash == hash);
+                ASSERT(hash != -1);
+                ASSERT(entry->me_hash == hash);
             }
             else {
                 /* test_dict fails if PyObject_Hash() is called again */
-                assert(entry->me_hash != -1);
+                ASSERT(entry->me_hash != -1);
             }
             if (!splitted) {
-                assert(entry->me_value != NULL);
+                ASSERT(entry->me_value != NULL);
             }
         }
 
         if (splitted) {
-            assert(entry->me_value == NULL);
+            ASSERT(entry->me_value == NULL);
         }
     }
 
     if (splitted) {
         /* splitted table */
         for (i=0; i < mp->ma_used; i++) {
-            assert(mp->ma_values[i] != NULL);
+            ASSERT(mp->ma_values[i] != NULL);
         }
     }
 #endif
 
     return 1;
+
+#undef ASSERT
 }
 #endif
 
@@ -1308,8 +1314,8 @@ PyDict_GetItem(PyObject *op, PyObject *key)
     /* We can arrive here with a NULL tstate during initialization: try
        running "python -Wi" for an example related to string interning.
        Let's just hope that no exception occurs then...  This must be
-       _PyThreadState_Current and not PyThreadState_GET() because in debug
-       mode, the latter complains if tstate is NULL. */
+       PyThreadState_GET() and not PyThreadState_Get() because the latter
+       abort Python if tstate is NULL. */
     tstate = PyThreadState_GET();
     if (tstate != NULL && tstate->curexc_type != NULL) {
         /* preserve the existing exception */
@@ -2379,7 +2385,7 @@ dict_merge(PyObject *a, PyObject *b, int override)
         return -1;
     }
     mp = (PyDictObject*)a;
-    if (PyDict_Check(b)) {
+    if (PyDict_Check(b) && (Py_TYPE(b)->tp_iter == (getiterfunc)dict_iter)) {
         other = (PyDictObject*)b;
         if (other == mp || other->ma_used == 0)
             /* a.update(a) or a.update({}); nothing to do */
@@ -3661,44 +3667,14 @@ PyTypeObject PyDictIterItem_Type = {
 static PyObject *
 dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *list;
-    dictiterobject tmp;
-
-    list = PyList_New(0);
-    if (!list)
-        return NULL;
-
-    /* copy the itertor state */
-    tmp = *di;
+    /* copy the iterator state */
+    dictiterobject tmp = *di;
     Py_XINCREF(tmp.di_dict);
 
     /* iterate the temporary into a list */
-    for(;;) {
-        PyObject *element = 0;
-        if (Py_TYPE(di) == &PyDictIterItem_Type)
-            element = dictiter_iternextitem(&tmp);
-        else if (Py_TYPE(di) == &PyDictIterKey_Type)
-            element = dictiter_iternextkey(&tmp);
-        else if (Py_TYPE(di) == &PyDictIterValue_Type)
-            element = dictiter_iternextvalue(&tmp);
-        else
-            Py_UNREACHABLE();
-        if (element) {
-            if (PyList_Append(list, element)) {
-                Py_DECREF(element);
-                Py_DECREF(list);
-                Py_XDECREF(tmp.di_dict);
-                return NULL;
-            }
-            Py_DECREF(element);
-        } else
-            break;
-    }
+    PyObject *list = PySequence_List((PyObject*)&tmp);
     Py_XDECREF(tmp.di_dict);
-    /* check for error */
-    if (tmp.di_dict != NULL) {
-        /* we have an error */
-        Py_DECREF(list);
+    if (list == NULL) {
         return NULL;
     }
     return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), list);
