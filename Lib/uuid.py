@@ -254,6 +254,9 @@ class UUID:
 
     def __int__(self):
         return self.int
+    
+    def __index__(self):
+        return self.int
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, str(self))
