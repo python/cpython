@@ -1,3 +1,6 @@
-The *args* argument of :func:`subprocess.Popen`, or the first element of
-*args* if *args* is a sequence, can now be a :term:`path-like object`. Based
-on patch by Anders Lorentsen.
+Added support for bytes and path-like objects in :func:`subprocess.Popen`
+on Windows.  *args* parameter accepts now a :term:`path-like object` if
+*shell* is ``False`` and a sequence containing bytes and path-like objects.
+*executable* parameter accepts now a bytes and :term:`path-like object`.
+*cwd* parameter accepts now a bytes object.
+Based on patch by Anders Lorentsen.

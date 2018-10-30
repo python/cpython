@@ -515,7 +515,7 @@ def list2cmdline(seq):
     # "Parsing C++ Command-Line Arguments"
     result = []
     needquote = False
-    for arg in seq:
+    for arg in map(os.fsdecode, seq):
         bs_buf = []
 
         # Add a space to separate this argument from the others
@@ -1122,10 +1122,8 @@ class Popen(object):
             if isinstance(args, str):
                 pass
             elif not shell and isinstance(args, os.PathLike):
-                args = list2cmdline([os.fsdecode(args)])
+                args = list2cmdline([args])
             else:
-                args = list(args)
-                args[0] = os.fsdecode(args[0])
                 args = list2cmdline(args)
 
             if executable is not None:
@@ -1187,7 +1185,7 @@ class Popen(object):
                                          int(not close_fds),
                                          creationflags,
                                          env,
-                                         os.fspath(cwd) if cwd is not None else None,
+                                         os.fsdecode(cwd) if cwd is not None else None,
                                          startupinfo)
             finally:
                 # Child is launched. Close the parent's copy of those pipe
