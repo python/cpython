@@ -154,7 +154,7 @@ The :mod:`urlparse` module defines the following functions:
       Copied from the :mod:`cgi` module.
 
    .. versionchanged:: 2.7.16
-      Added *max_num_fields* param.
+      Added *max_num_fields* parameter.
 
 .. function:: parse_qsl(qs[, keep_blank_values[, strict_parsing[, max_num_fields]]])
 
@@ -183,7 +183,7 @@ The :mod:`urlparse` module defines the following functions:
       Copied from the :mod:`cgi` module.
 
    .. versionchanged:: 2.7.16
-      Added *max_num_fields* param.
+      Added *max_num_fields* parameter.
 
 .. function:: urlunparse(parts)
 
