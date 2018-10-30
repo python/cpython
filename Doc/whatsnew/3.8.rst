@@ -152,6 +152,15 @@ now return ``False`` instead of raising :exc:`ValueError` or its subclasses
 characters or bytes unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
+
+ncurses
+-------
+
+Added a new variable holding structured version information for the
+underlying ncurses library: :data:`~curses.ncurses_version`.
+(Contributed by Serhiy Storchaka in :issue:`31680`.)
+
+
 pathlib
 -------
 
