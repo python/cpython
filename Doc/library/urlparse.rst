@@ -143,9 +143,9 @@ The :mod:`urlparse` module defines the following functions:
    parsing errors.  If false (the default), errors are silently ignored.  If true,
    errors raise a :exc:`ValueError` exception.
 
-   The optional argument *max_num_fields* is a flag for the maximum number of
-   fields to read. If set, then throws a :exc:`ValueError` if there are more
-   than *max_num_fields* fields read. Default is *None*.
+   The optional argument *max_num_fields* is the maximum number of fields to
+   read. If set, then throws a :exc:`ValueError` if there are more than
+   *max_num_fields* fields read.
 
    Use the :func:`urllib.urlencode` function to convert such dictionaries into
    query strings.
@@ -172,9 +172,9 @@ The :mod:`urlparse` module defines the following functions:
    parsing errors.  If false (the default), errors are silently ignored.  If true,
    errors raise a :exc:`ValueError` exception.
 
-   The optional argument *max_num_fields* is a flag for the maximum number of
-   fields to read. If set, then throws a :exc:`ValueError` if there are more
-   than *max_num_fields* fields read. Default is *None*.
+   The optional argument *max_num_fields* is the maximum number of fields to
+   read. If set, then throws a :exc:`ValueError` if there are more than
+   *max_num_fields* fields read.
 
    Use the :func:`urllib.urlencode` function to convert such lists of pairs into
    query strings.
