@@ -1,0 +1,1 @@
+``UUID`` objects can now be casted by using the built-in function ``hex()``. Patch by Flavio Curella.
