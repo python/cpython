@@ -155,9 +155,9 @@ or on combining URL components into a URL string.
    percent-encoded sequences into Unicode characters, as accepted by the
    :meth:`bytes.decode` method.
 
-   The optional argument *max_num_fields* is a flag for the maximum number of
-   fields to read. If set, then throws a :exc:`ValueError` if there are more
-   than *max_num_fields* fields read. Default is *None*.
+   The optional argument *max_num_fields* is the maximum number of fields to
+   read. If set, then throws a :exc:`ValueError` if there are more than
+   *max_num_fields* fields read.
 
    Use the :func:`urllib.parse.urlencode` function (with the ``doseq``
    parameter set to ``True``) to convert such dictionaries into query
@@ -191,9 +191,9 @@ or on combining URL components into a URL string.
    percent-encoded sequences into Unicode characters, as accepted by the
    :meth:`bytes.decode` method.
 
-   The optional argument *max_num_fields* is a flag for the maximum number of
-   fields to read. If set, then throws a :exc:`ValueError` if there are more
-   than *max_num_fields* fields read. Default is *None*.
+   The optional argument *max_num_fields* is the maximum number of fields to
+   read. If set, then throws a :exc:`ValueError` if there are more than
+   *max_num_fields* fields read.
 
    Use the :func:`urllib.parse.urlencode` function to convert such lists of pairs into
    query strings.
