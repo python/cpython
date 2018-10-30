@@ -208,8 +208,8 @@ typedef struct _ts {
      * if the thread holds the last reference to the lock, decref'ing the
      * lock will delete the lock, and that may trigger arbitrary Python code
      * if there's a weakref, with a callback, to the lock.  But by this time
-     * _PyThreadState_Current is already NULL, so only the simplest of C code
-     * can be allowed to run (in particular it must not be possible to
+     * _PyRuntime.gilstate.tstate_current is already NULL, so only the simplest
+     * of C code can be allowed to run (in particular it must not be possible to
      * release the GIL).
      * So instead of holding the lock directly, the tstate holds a weakref to
      * the lock:  that's the value of on_delete_data below.  Decref'ing a
@@ -307,9 +307,8 @@ PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 /* Assuming the current thread holds the GIL, this is the
    PyThreadState for the current thread. */
 #ifdef Py_BUILD_CORE
-#  define _PyThreadState_Current _PyRuntime.gilstate.tstate_current
 #  define PyThreadState_GET() \
-             ((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
+             ((PyThreadState*)_Py_atomic_load_relaxed(&_PyRuntime.gilstate.tstate_current))
 #else
 #  define PyThreadState_GET() PyThreadState_Get()
 #endif

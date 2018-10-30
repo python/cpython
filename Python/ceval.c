@@ -188,8 +188,7 @@ PyEval_ReleaseLock(void)
        We therefore avoid PyThreadState_GET() which dumps a fatal error
        in debug mode.
     */
-    drop_gil((PyThreadState*)_Py_atomic_load_relaxed(
-        &_PyThreadState_Current));
+    drop_gil(PyThreadState_GET());
 }
 
 void

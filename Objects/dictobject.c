@@ -1314,8 +1314,8 @@ PyDict_GetItem(PyObject *op, PyObject *key)
     /* We can arrive here with a NULL tstate during initialization: try
        running "python -Wi" for an example related to string interning.
        Let's just hope that no exception occurs then...  This must be
-       _PyThreadState_Current and not PyThreadState_GET() because in debug
-       mode, the latter complains if tstate is NULL. */
+       PyThreadState_GET() and not PyThreadState_Get() because the latter
+       abort Python if tstate is NULL. */
     tstate = PyThreadState_GET();
     if (tstate != NULL && tstate->curexc_type != NULL) {
         /* preserve the existing exception */
