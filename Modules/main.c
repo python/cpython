@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "osdefs.h"
+#include "internal/mem.h"
 #include "internal/pygetopt.h"
 #include "internal/pystate.h"
 

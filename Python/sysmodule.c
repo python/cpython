@@ -15,6 +15,7 @@ Data members:
 */
 
 #include "Python.h"
+#include "internal/mem.h"
 #include "internal/pystate.h"
 #include "code.h"
 #include "frameobject.h"
