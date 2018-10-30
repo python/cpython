@@ -174,7 +174,7 @@ recommended approach for working with encoded text files, this module
 provides additional utility functions and classes that allow the use of a
 wider range of codecs when working with binary files:
 
-.. function:: open(filename, mode='r', encoding=None, errors='strict', buffering=1)
+.. function:: open(filename, mode='r', encoding=None, errors='strict', buffering=-1)
 
    Open an encoded file using the given *mode* and return an instance of
    :class:`StreamReaderWriter`, providing transparent encoding/decoding.
@@ -194,8 +194,8 @@ wider range of codecs when working with binary files:
    *errors* may be given to define the error handling. It defaults to ``'strict'``
    which causes a :exc:`ValueError` to be raised in case an encoding error occurs.
 
-   *buffering* has the same meaning as for the built-in :func:`open` function.  It
-   defaults to line buffered.
+   *buffering* has the same meaning as for the built-in :func:`open` function.
+   It defaults to -1 which means that the default buffer size will be used.
 
 
 .. function:: EncodedFile(file, data_encoding, file_encoding=None, errors='strict')
@@ -311,6 +311,14 @@ defined and implemented by all standard Python codecs:
 
 The following error handlers are only applicable to
 :term:`text encodings <text encoding>`:
+
+.. index::
+   single: ? (question mark); replacement character
+   single: \ (backslash); escape sequence
+   single: \x; escape sequence
+   single: \u; escape sequence
+   single: \U; escape sequence
+   single: \N; escape sequence
 
 +-------------------------+-----------------------------------------------+
 | Value                   | Meaning                                       |
@@ -1471,7 +1479,7 @@ functions can be used directly if desired.
 
 Encode operand according to the ANSI codepage (CP_ACP).
 
-Availability: Windows only.
+.. availability:: Windows only.
 
 .. versionchanged:: 3.3
    Support any error handler.

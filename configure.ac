@@ -1265,6 +1265,26 @@ else
   DEF_MAKE_RULE="all"
 fi
 
+# Make llvm-relatec checks work on systems where llvm tools are not installed with their
+# normal names in the default $PATH (ie: Ubuntu).  They exist under the
+# non-suffixed name in their versioned llvm directory.
+
+llvm_bin_dir=''
+llvm_path="${PATH}"
+if test "${CC}" = "clang"
+then
+  clang_bin=`which clang`
+  # Some systems install clang elsewhere as a symlink to the real path
+  # which is where the related llvm tools are located.
+  if test -L "${clang_bin}"
+  then
+    clang_dir=`dirname "${clang_bin}"`
+    clang_bin=`readlink "${clang_bin}"`
+    llvm_bin_dir="${clang_dir}/"`dirname "${clang_bin}"`
+    llvm_path="${llvm_path}${PATH_SEPARATOR}${llvm_bin_dir}"
+  fi
+fi
+
 # Enable LTO flags
 AC_MSG_CHECKING(for --with-lto)
 AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto], [Enable Link Time Optimization in any build. Disabled by default.]),
@@ -1281,6 +1301,33 @@ fi],
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
+      AC_SUBST(LLVM_AR)
+      AC_PATH_TARGET_TOOL(LLVM_AR, llvm-ar, '', ${llvm_path})
+      AC_SUBST(LLVM_AR_FOUND)
+      if test -n "${LLVM_AR}" -a -x "${LLVM_AR}"
+      then
+        LLVM_AR_FOUND="found"
+      else
+        LLVM_AR_FOUND="not-found"
+      fi
+      if test "$ac_sys_system" = "Darwin" -a "${LLVM_AR_FOUND}" = "not-found"
+      then
+        found_llvm_ar=`/usr/bin/xcrun -find llvm-ar 2>/dev/null`
+        if test -n "${found_llvm_ar}"
+        then
+          LLVM_AR='/usr/bin/xcrun llvm-ar'
+          LLVM_AR_FOUND=found
+          AC_MSG_NOTICE([llvm-ar found via xcrun: ${LLVM_AR}])
+        fi
+      fi
+      if test $LLVM_AR_FOUND = not-found
+      then
+        LLVM_PROFR_ERR=yes
+        AC_MSG_ERROR([llvm-ar is required for a --with-lto build with clang but could not be found.])
+      else
+        LLVM_AR_ERR=no
+      fi
+      AR="${LLVM_AR}"
       case $ac_sys_system in
         Darwin*)
           # Any changes made here should be reflected in the GCC+Darwin case below
@@ -1310,7 +1357,7 @@ if test "$Py_LTO" = 'true' ; then
       LTOFLAGS="$LTOFLAGS -g"
   fi
 
-  CFLAGS="$CFLAGS $LTOFLAGS"
+  BASECFLAGS="$BASECFLAGS $LTOFLAGS"
   LDFLAGS="$LDFLAGS $LTOFLAGS"
 fi
 
@@ -1320,24 +1367,6 @@ AC_SUBST(PGO_PROF_USE_FLAG)
 AC_SUBST(LLVM_PROF_MERGER)
 AC_SUBST(LLVM_PROF_FILE)
 AC_SUBST(LLVM_PROF_ERR)
-# Make this work on systems where llvm tools are not installed with their
-# normal names in the default $PATH (ie: Ubuntu).  They exist under the
-# non-suffixed name in their versioned llvm directory.
-llvm_bin_dir=''
-llvm_path="${PATH}"
-if test "${CC}" = "clang"
-then
-  clang_bin=`which clang`
-  # Some systems install clang elsewhere as a symlink to the real path
-  # which is where the related llvm tools are located.
-  if test -L "${clang_bin}"
-  then
-    clang_dir=`dirname "${clang_bin}"`
-    clang_bin=`readlink "${clang_bin}"`
-    llvm_bin_dir="${clang_dir}/"`dirname "${clang_bin}"`
-    llvm_path="${llvm_path}${PATH_SEPARATOR}${llvm_bin_dir}"
-  fi
-fi
 AC_SUBST(LLVM_PROFDATA)
 AC_PATH_TARGET_TOOL(LLVM_PROFDATA, llvm-profdata, '', ${llvm_path})
 AC_SUBST(LLVM_PROF_FOUND)
@@ -2104,6 +2133,16 @@ AC_CHECK_HEADERS([net/if.h], [], [],
 
 # On Linux, netlink.h requires asm/types.h
 AC_CHECK_HEADERS(linux/netlink.h,,,[
+#ifdef HAVE_ASM_TYPES_H
+#include <asm/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+])
+
+# On Linux, qrtr.h requires asm/types.h
+AC_CHECK_HEADERS(linux/qrtr.h,,,[
 #ifdef HAVE_ASM_TYPES_H
 #include <asm/types.h>
 #endif
@@ -2944,8 +2983,6 @@ else
   done
 fi])
 AC_MSG_RESULT($with_dbmliborder)
-
-AC_SUBST(LDLAST)
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
@@ -4206,74 +4243,24 @@ fi
 # * Check for various properties of floating point *
 # **************************************************
 
-AC_MSG_CHECKING(whether C doubles are little-endian IEEE 754 binary64)
-AC_CACHE_VAL(ac_cv_little_endian_double, [
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <string.h>
-int main() {
-    double x = 9006104071832581.0;
-    if (memcmp(&x, "\x05\x04\x03\x02\x01\xff\x3f\x43", 8) == 0)
-        return 0;
-    else
-        return 1;
-}
-]])],
-[ac_cv_little_endian_double=yes],
-[ac_cv_little_endian_double=no],
-[ac_cv_little_endian_double=no])])
-AC_MSG_RESULT($ac_cv_little_endian_double)
-if test "$ac_cv_little_endian_double" = yes
-then
-  AC_DEFINE(DOUBLE_IS_LITTLE_ENDIAN_IEEE754, 1,
-  [Define if C doubles are 64-bit IEEE 754 binary format, stored
-   with the least significant byte first])
-fi
-
-AC_MSG_CHECKING(whether C doubles are big-endian IEEE 754 binary64)
-AC_CACHE_VAL(ac_cv_big_endian_double, [
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <string.h>
-int main() {
-    double x = 9006104071832581.0;
-    if (memcmp(&x, "\x43\x3f\xff\x01\x02\x03\x04\x05", 8) == 0)
-        return 0;
-    else
-        return 1;
-}
-]])],
-[ac_cv_big_endian_double=yes],
-[ac_cv_big_endian_double=no],
-[ac_cv_big_endian_double=no])])
-AC_MSG_RESULT($ac_cv_big_endian_double)
-if test "$ac_cv_big_endian_double" = yes
+AX_C_FLOAT_WORDS_BIGENDIAN
+if test "$ax_cv_c_float_words_bigendian" = "yes"
 then
   AC_DEFINE(DOUBLE_IS_BIG_ENDIAN_IEEE754, 1,
   [Define if C doubles are 64-bit IEEE 754 binary format, stored
    with the most significant byte first])
-fi
-
-# Some ARM platforms use a mixed-endian representation for doubles.
-# While Python doesn't currently have full support for these platforms
-# (see e.g., issue 1762561), we can at least make sure that float <-> string
-# conversions work.
-AC_MSG_CHECKING(whether C doubles are ARM mixed-endian IEEE 754 binary64)
-AC_CACHE_VAL(ac_cv_mixed_endian_double, [
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <string.h>
-int main() {
-    double x = 9006104071832581.0;
-    if (memcmp(&x, "\x01\xff\x3f\x43\x05\x04\x03\x02", 8) == 0)
-        return 0;
-    else
-        return 1;
-}
-]])],
-[ac_cv_mixed_endian_double=yes],
-[ac_cv_mixed_endian_double=no],
-[ac_cv_mixed_endian_double=no])])
-AC_MSG_RESULT($ac_cv_mixed_endian_double)
-if test "$ac_cv_mixed_endian_double" = yes
+elif test "$ax_cv_c_float_words_bigendian" = "no"
 then
+  AC_DEFINE(DOUBLE_IS_LITTLE_ENDIAN_IEEE754, 1,
+  [Define if C doubles are 64-bit IEEE 754 binary format, stored
+   with the least significant byte first])
+else
+  # Some ARM platforms use a mixed-endian representation for doubles.
+  # While Python doesn't currently have full support for these platforms
+  # (see e.g., issue 1762561), we can at least make sure that float <-> string
+  # conversions work.
+  # FLOAT_WORDS_BIGENDIAN doesnt actually detect this case, but if it's not big
+  # or little, then it must be this?
   AC_DEFINE(DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754, 1,
   [Define if C doubles are 64-bit IEEE 754 binary format, stored
    in ARM mixed-endian order (byte order 45670123)])

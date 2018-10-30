@@ -149,7 +149,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
 .. function:: dis(x=None, *, file=None, depth=None)
 
    Disassemble the *x* object.  *x* can denote either a module, a class, a
-   method, a function, a generator, an asynchronous generator, a couroutine,
+   method, a function, a generator, an asynchronous generator, a coroutine,
    a code object, a string of source code or a byte sequence of raw bytecode.
    For a module, it disassembles all functions. For a class, it disassembles
    all methods (including class and static methods). For a code object or
@@ -248,11 +248,20 @@ operation is being performed, so the intermediate analysis object isn't useful:
    return a list of these offsets.
 
 
-.. function:: stack_effect(opcode, [oparg])
+.. function:: stack_effect(opcode, oparg=None, *, jump=None)
 
    Compute the stack effect of *opcode* with argument *oparg*.
 
+   If the code has a jump target and *jump* is ``True``, :func:`~stack_effect`
+   will return the stack effect of jumping.  If *jump* is ``False``,
+   it will return the stack effect of not jumping. And if *jump* is
+   ``None`` (default), it will return the maximal stack effect of both cases.
+
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.8
+      Added *jump* parameter.
+
 
 .. _bytecodes:
 

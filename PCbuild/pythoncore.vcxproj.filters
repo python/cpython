@@ -321,6 +321,9 @@
     <ClInclude Include="..\Include\traceback.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\tracemalloc.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\tupleobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -615,9 +618,6 @@
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\xxsubtype.c">
-      <Filter>Modules</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zipimport.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\zlibmodule.c">

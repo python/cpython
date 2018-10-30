@@ -1,5 +1,8 @@
 #ifndef Py_OBJECT_H
 #define Py_OBJECT_H
+
+#include "pymem.h"   /* _Py_tracemalloc_config */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -521,6 +524,7 @@ struct _Py_Identifier;
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
 PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
+PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 #endif
 PyAPI_FUNC(PyObject *) PyObject_Repr(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_Str(PyObject *);
@@ -725,17 +729,13 @@ you can count such references to the type object.)
  */
 #ifdef Py_REF_DEBUG
 PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
-PyAPI_FUNC(void) _Py_NegativeRefcount(const char *fname,
-                                            int lineno, PyObject *op);
+PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
+                                      PyObject *op);
 PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
 #define _Py_INC_REFTOTAL        _Py_RefTotal++
 #define _Py_DEC_REFTOTAL        _Py_RefTotal--
 #define _Py_REF_DEBUG_COMMA     ,
-#define _Py_CHECK_REFCNT(OP)                                    \
-{       if (((PyObject*)OP)->ob_refcnt < 0)                             \
-                _Py_NegativeRefcount(__FILE__, __LINE__,        \
-                                     (PyObject *)(OP));         \
-}
+
 /* Py_REF_DEBUG also controls the display of refcounts and memory block
  * allocations at the interactive prompt and at interpreter shutdown
  */
@@ -744,14 +744,13 @@ PyAPI_FUNC(void) _PyDebug_PrintTotalRefs(void);
 #define _Py_INC_REFTOTAL
 #define _Py_DEC_REFTOTAL
 #define _Py_REF_DEBUG_COMMA
-#define _Py_CHECK_REFCNT(OP)    /* a semicolon */;
 #endif /* Py_REF_DEBUG */
 
 #ifdef COUNT_ALLOCS
-PyAPI_FUNC(void) inc_count(PyTypeObject *);
-PyAPI_FUNC(void) dec_count(PyTypeObject *);
-#define _Py_INC_TPALLOCS(OP)    inc_count(Py_TYPE(OP))
-#define _Py_INC_TPFREES(OP)     dec_count(Py_TYPE(OP))
+PyAPI_FUNC(void) _Py_inc_count(PyTypeObject *);
+PyAPI_FUNC(void) _Py_dec_count(PyTypeObject *);
+#define _Py_INC_TPALLOCS(OP)    _Py_inc_count(Py_TYPE(OP))
+#define _Py_INC_TPFREES(OP)     _Py_dec_count(Py_TYPE(OP))
 #define _Py_DEC_TPFREES(OP)     Py_TYPE(OP)->tp_frees--
 #define _Py_COUNT_ALLOCS_COMMA  ,
 #else
@@ -760,6 +759,10 @@ PyAPI_FUNC(void) dec_count(PyTypeObject *);
 #define _Py_DEC_TPFREES(OP)
 #define _Py_COUNT_ALLOCS_COMMA
 #endif /* COUNT_ALLOCS */
+
+/* Update the Python traceback of an object. This function must be called
+   when a memory block is reused from a free list. */
+PyAPI_FUNC(int) _PyTraceMalloc_NewReference(PyObject *op);
 
 #ifdef Py_TRACE_REFS
 /* Py_TRACE_REFS is such major surgery that we call external routines. */
@@ -772,14 +775,21 @@ PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
 
 #else
 /* Without Py_TRACE_REFS, there's little enough to do that we expand code
- * inline.
- */
-#define _Py_NewReference(op) (                          \
-    _Py_INC_TPALLOCS(op) _Py_COUNT_ALLOCS_COMMA         \
-    _Py_INC_REFTOTAL  _Py_REF_DEBUG_COMMA               \
-    Py_REFCNT(op) = 1)
+   inline. */
+static inline void _Py_NewReference(PyObject *op)
+{
+    if (_Py_tracemalloc_config.tracing) {
+        _PyTraceMalloc_NewReference(op);
+    }
+    _Py_INC_TPALLOCS(op);
+    _Py_INC_REFTOTAL;
+    Py_REFCNT(op) = 1;
+}
 
-#define _Py_ForgetReference(op) _Py_INC_TPFREES(op)
+static inline void _Py_ForgetReference(PyObject *op)
+{
+    _Py_INC_TPFREES(op);
+}
 
 #ifdef Py_LIMITED_API
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
@@ -790,19 +800,33 @@ PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 #endif
 #endif /* !Py_TRACE_REFS */
 
-#define Py_INCREF(op) (                         \
-    _Py_INC_REFTOTAL  _Py_REF_DEBUG_COMMA       \
-    ((PyObject *)(op))->ob_refcnt++)
 
-#define Py_DECREF(op)                                   \
-    do {                                                \
-        PyObject *_py_decref_tmp = (PyObject *)(op);    \
-        if (_Py_DEC_REFTOTAL  _Py_REF_DEBUG_COMMA       \
-        --(_py_decref_tmp)->ob_refcnt != 0)             \
-            _Py_CHECK_REFCNT(_py_decref_tmp)            \
-        else                                            \
-            _Py_Dealloc(_py_decref_tmp);                \
-    } while (0)
+static inline void _Py_INCREF(PyObject *op)
+{
+    _Py_INC_REFTOTAL;
+    op->ob_refcnt++;
+}
+
+#define Py_INCREF(op) _Py_INCREF((PyObject *)(op))
+
+static inline void _Py_DECREF(const char *filename, int lineno,
+                              PyObject *op)
+{
+    _Py_DEC_REFTOTAL;
+    if (--op->ob_refcnt != 0) {
+#ifdef Py_REF_DEBUG
+        if (op->ob_refcnt < 0) {
+            _Py_NegativeRefcount(filename, lineno, op);
+        }
+#endif
+    }
+    else {
+        _Py_Dealloc(op);
+    }
+}
+
+#define Py_DECREF(op) _Py_DECREF(__FILE__, __LINE__, (PyObject *)(op))
+
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
  * and tp_dealloc implementations.
@@ -847,20 +871,24 @@ PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
         }                                       \
     } while (0)
 
-/* Macros to use in case the object pointer may be NULL: */
-#define Py_XINCREF(op)                                \
-    do {                                              \
-        PyObject *_py_xincref_tmp = (PyObject *)(op); \
-        if (_py_xincref_tmp != NULL)                  \
-            Py_INCREF(_py_xincref_tmp);               \
-    } while (0)
+/* Function to use in case the object pointer can be NULL: */
+static inline void _Py_XINCREF(PyObject *op)
+{
+    if (op != NULL) {
+        Py_INCREF(op);
+    }
+}
 
-#define Py_XDECREF(op)                                \
-    do {                                              \
-        PyObject *_py_xdecref_tmp = (PyObject *)(op); \
-        if (_py_xdecref_tmp != NULL)                  \
-            Py_DECREF(_py_xdecref_tmp);               \
-    } while (0)
+#define Py_XINCREF(op) _Py_XINCREF((PyObject *)(op))
+
+static inline void _Py_XDECREF(PyObject *op)
+{
+    if (op != NULL) {
+        Py_DECREF(op);
+    }
+}
+
+#define Py_XDECREF(op) _Py_XDECREF((PyObject *)(op))
 
 #ifndef Py_LIMITED_API
 /* Safely decref `op` and set `op` to `op2`.
@@ -1097,6 +1125,53 @@ _PyDebugAllocatorStats(FILE *out, const char *block_name, int num_blocks,
 PyAPI_FUNC(void)
 _PyObject_DebugTypeStats(FILE *out);
 #endif /* ifndef Py_LIMITED_API */
+
+
+#ifndef Py_LIMITED_API
+/* Define a pair of assertion macros:
+   _PyObject_ASSERT_WITH_MSG() and _PyObject_ASSERT().
+
+   These work like the regular C assert(), in that they will abort the
+   process with a message on stderr if the given condition fails to hold,
+   but compile away to nothing if NDEBUG is defined.
+
+   However, before aborting, Python will also try to call _PyObject_Dump() on
+   the given object.  This may be of use when investigating bugs in which a
+   particular object is corrupt (e.g. buggy a tp_visit method in an extension
+   module breaking the garbage collector), to help locate the broken objects.
+
+   The WITH_MSG variant allows you to supply an additional message that Python
+   will attempt to print to stderr, after the object dump. */
+#ifdef NDEBUG
+   /* No debugging: compile away the assertions: */
+#  define _PyObject_ASSERT_WITH_MSG(obj, expr, msg) ((void)0)
+#else
+   /* With debugging: generate checks: */
+#  define _PyObject_ASSERT_WITH_MSG(obj, expr, msg)     \
+     ((expr)                                           \
+      ? (void)(0)                                      \
+      : _PyObject_AssertFailed((obj),                  \
+                               (msg),                  \
+                               Py_STRINGIFY(expr),     \
+                               __FILE__,               \
+                               __LINE__,               \
+                               __func__))
+#endif
+
+#define _PyObject_ASSERT(obj, expr) _PyObject_ASSERT_WITH_MSG(obj, expr, NULL)
+
+/* Declare and define _PyObject_AssertFailed() even when NDEBUG is defined,
+   to avoid causing compiler/linker errors when building extensions without
+   NDEBUG against a Python built with NDEBUG defined. */
+PyAPI_FUNC(void) _PyObject_AssertFailed(
+    PyObject *obj,
+    const char *msg,
+    const char *expr,
+    const char *file,
+    int line,
+    const char *function);
+#endif /* ifndef Py_LIMITED_API */
+
 
 #ifdef __cplusplus
 }

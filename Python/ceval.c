@@ -237,17 +237,13 @@ PyEval_ReInitThreads(void)
 }
 
 /* This function is used to signal that async exceptions are waiting to be
-   raised, therefore it is also useful in non-threaded builds. */
+   raised. */
 
 void
 _PyEval_SignalAsyncExc(void)
 {
     SIGNAL_ASYNC_EXC();
 }
-
-/* Functions save_thread and restore_thread are always defined so
-   dynamically loaded modules needn't be compiled separately for use
-   with and without threads: */
 
 PyThreadState *
 PyEval_SaveThread(void)
@@ -3096,7 +3092,7 @@ main_loop:
                 /* There was an exception and a True return.
                  * We must manually unwind the EXCEPT_HANDLER block
                  * which was created when the exception was caught,
-                 * otherwise the stack will be in an inconsisten state.
+                 * otherwise the stack will be in an inconsistent state.
                  */
                 PyTryBlock *b = PyFrame_BlockPop(f);
                 assert(b->b_type == EXCEPT_HANDLER);
@@ -4642,15 +4638,39 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
 static PyObject *
 do_call_core(PyObject *func, PyObject *callargs, PyObject *kwdict)
 {
+    PyObject *result;
+
     if (PyCFunction_Check(func)) {
-        PyObject *result;
         PyThreadState *tstate = PyThreadState_GET();
         C_TRACE(result, PyCFunction_Call(func, callargs, kwdict));
         return result;
     }
-    else {
-        return PyObject_Call(func, callargs, kwdict);
+    else if (Py_TYPE(func) == &PyMethodDescr_Type) {
+        PyThreadState *tstate = PyThreadState_GET();
+        Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
+        if (nargs > 0 && tstate->use_tracing) {
+            /* We need to create a temporary bound method as argument
+               for profiling.
+
+               If nargs == 0, then this cannot work because we have no
+               "self". In any case, the call itself would raise
+               TypeError (foo needs an argument), so we just skip
+               profiling. */
+            PyObject *self = PyTuple_GET_ITEM(callargs, 0);
+            func = Py_TYPE(func)->tp_descr_get(func, self, (PyObject*)Py_TYPE(self));
+            if (func == NULL) {
+                return NULL;
+            }
+
+            C_TRACE(result, _PyCFunction_FastCallDict(func,
+                                                      &PyTuple_GET_ITEM(callargs, 1),
+                                                      nargs - 1,
+                                                      kwdict));
+            Py_DECREF(func);
+            return result;
+        }
     }
+    return PyObject_Call(func, callargs, kwdict);
 }
 
 /* Extract a slice index from a PyLong or an object with the

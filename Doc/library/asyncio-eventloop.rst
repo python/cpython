@@ -137,7 +137,7 @@ Running and stopping the loop
 
    Close the event loop.
 
-   The loop must be running when this function is called.
+   The loop must not be running when this function is called.
    Any pending callbacks will be discarded.
 
    This method clears all queues and shuts down the executor, but does
@@ -510,7 +510,7 @@ Opening network connections
    See the documentation of the :meth:`loop.create_connection` method
    for information about arguments to this method.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -630,7 +630,7 @@ Creating network servers
    See the documentation of the :meth:`loop.create_server` method
    for information about arguments to this method.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -755,7 +755,7 @@ Watching file descriptors
    invoke *callback* with the specified arguments once *fd* is available for
    writing.
 
-   Use :func:`functools.partial` :ref:`to pass keywords
+   Use :func:`functools.partial` :ref:`to pass keyword arguments
    <asyncio-pass-keywords>` to *func*.
 
 .. method:: loop.remove_writer(fd)
@@ -969,7 +969,7 @@ Unix signals
    Raise :exc:`ValueError` if the signal number is invalid or uncatchable.
    Raise :exc:`RuntimeError` if there is a problem setting up the handler.
 
-   Use :func:`functools.partial` :ref:`to pass keywords
+   Use :func:`functools.partial` :ref:`to pass keyword arguments
    <asyncio-pass-keywords>` to *func*.
 
 .. method:: loop.remove_signal_handler(sig)
@@ -979,7 +979,7 @@ Unix signals
    Return ``True`` if the signal handler was removed, or ``False`` if
    no handler was set for the given signal.
 
-Availability: Unix.
+   .. availability:: Unix.
 
 .. seealso::
 
@@ -989,17 +989,58 @@ Availability: Unix.
 Executing code in thread or process pools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. coroutinemethod:: loop.run_in_executor(executor, func, \*args)
+.. awaitablemethod:: loop.run_in_executor(executor, func, \*args)
 
    Arrange for *func* to be called in the specified executor.
 
    The *executor* argument should be an :class:`concurrent.futures.Executor`
    instance. The default executor is used if *executor* is ``None``.
 
-   Use :func:`functools.partial` :ref:`to pass keywords
-   <asyncio-pass-keywords>` to *func*.
+   Example::
+
+      import asyncio
+      import concurrent.futures
+
+      def blocking_io():
+          # File operations (such as logging) can block the
+          # event loop: run them in a thread pool.
+          with open('/dev/urandom', 'rb') as f:
+              return f.read(100)
+
+      def cpu_bound():
+          # CPU-bound operations will block the event loop:
+          # in general it is preferable to run them in a
+          # process pool.
+          return sum(i * i for i in range(10 ** 7))
+
+      async def main():
+          loop = asyncio.get_running_loop()
+
+          ## Options:
+
+          # 1. Run in the default loop's executor:
+          result = await loop.run_in_executor(
+              None, blocking_io)
+          print('default thread pool', result)
+
+          # 2. Run in a custom thread pool:
+          with concurrent.futures.ThreadPoolExecutor() as pool:
+              result = await loop.run_in_executor(
+                  pool, blocking_io)
+              print('custom thread pool', result)
+
+          # 3. Run in a custom process pool:
+          with concurrent.futures.ProcessPoolExecutor() as pool:
+              result = await loop.run_in_executor(
+                  pool, cpu_bound)
+              print('custom process pool', result)
+
+      asyncio.run(main())
 
    This method returns a :class:`asyncio.Future` object.
+
+   Use :func:`functools.partial` :ref:`to pass keyword arguments
+   <asyncio-pass-keywords>` to *func*.
 
    .. versionchanged:: 3.5.3
       :meth:`loop.run_in_executor` no longer configures the
@@ -1382,23 +1423,14 @@ on all platforms.
       asyncio.set_event_loop(loop)
 
 
-   Availability: Unix, Windows.
+   .. availability:: Unix, Windows.
 
 
 .. class:: ProactorEventLoop
 
    An event loop for Windows that uses "I/O Completion Ports" (IOCP).
 
-   Availability: Windows.
-
-   An example how to use :class:`ProactorEventLoop` on Windows::
-
-        import asyncio
-        import sys
-
-        if sys.platform == 'win32':
-            loop = asyncio.ProactorEventLoop()
-            asyncio.set_event_loop(loop)
+   .. availability:: Windows.
 
    .. seealso::
 

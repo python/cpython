@@ -177,6 +177,7 @@
     <ClInclude Include="..\Include\sysmodule.h" />
     <ClInclude Include="..\Include\token.h" />
     <ClInclude Include="..\Include\traceback.h" />
+    <ClInclude Include="..\Include\tracemalloc.h" />
     <ClInclude Include="..\Include\tupleobject.h" />
     <ClInclude Include="..\Include\ucnhash.h" />
     <ClInclude Include="..\Include\unicodeobject.h" />
@@ -282,7 +283,6 @@
     <ClCompile Include="..\Modules\timemodule.c" />
     <ClCompile Include="..\Modules\xxsubtype.c" />
     <ClCompile Include="..\Modules\_xxsubinterpretersmodule.c" />
-    <ClCompile Include="..\Modules\zipimport.c" />
     <ClCompile Include="..\Modules\_io\fileio.c" />
     <ClCompile Include="..\Modules\_io\bytesio.c" />
     <ClCompile Include="..\Modules\_io\stringio.c" />

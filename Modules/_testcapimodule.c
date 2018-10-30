@@ -4550,6 +4550,28 @@ new_hamt(PyObject *self, PyObject *args)
 }
 
 
+/* def bad_get(self, obj, cls):
+       cls()
+       return repr(self)
+*/
+static PyObject*
+bad_get(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    if (nargs != 3) {
+        PyErr_SetString(PyExc_TypeError, "bad_get requires exactly 3 arguments");
+        return NULL;
+    }
+
+    PyObject *res = PyObject_CallObject(args[2], NULL);
+    if (res == NULL) {
+        return NULL;
+    }
+    Py_DECREF(res);
+
+    return PyObject_Repr(args[0]);
+}
+
+
 static PyObject *
 encode_locale_ex(PyObject *self, PyObject *args)
 {
@@ -4701,6 +4723,10 @@ get_coreconfig(PyObject *self, PyObject *Py_UNUSED(args))
              PyLong_FromLong(config->dump_refs));
     SET_ITEM("malloc_stats",
              PyLong_FromLong(config->malloc_stats));
+    SET_ITEM("coerce_c_locale",
+             PyLong_FromLong(config->coerce_c_locale));
+    SET_ITEM("coerce_c_locale_warn",
+             PyLong_FromLong(config->coerce_c_locale_warn));
     SET_ITEM("filesystem_encoding",
              FROM_STRING(config->filesystem_encoding));
     SET_ITEM("filesystem_errors",
@@ -4779,10 +4805,6 @@ get_coreconfig(PyObject *self, PyObject *Py_UNUSED(args))
              FROM_STRING(config->_check_hash_pycs_mode));
     SET_ITEM("_frozen",
              PyLong_FromLong(config->_frozen));
-    SET_ITEM("_coerce_c_locale",
-             PyLong_FromLong(config->_coerce_c_locale));
-    SET_ITEM("_coerce_c_locale_warn",
-             PyLong_FromLong(config->_coerce_c_locale_warn));
 
     return dict;
 
@@ -4794,6 +4816,25 @@ fail:
 #undef FROM_WSTRING
 #undef SET_ITEM
 }
+
+
+#ifdef Py_REF_DEBUG
+static PyObject *
+negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *obj = PyUnicode_FromString("negative_refcount");
+    if (obj == NULL) {
+        return NULL;
+    }
+    assert(Py_REFCNT(obj) == 1);
+
+    Py_REFCNT(obj) = 0;
+    /* Py_DECREF() must call _Py_NegativeRefcount() and abort Python */
+    Py_DECREF(obj);
+
+    Py_RETURN_NONE;
+}
+#endif
 
 
 static PyMethodDef TestMethods[] = {
@@ -5017,9 +5058,13 @@ static PyMethodDef TestMethods[] = {
     {"get_mapping_items", get_mapping_items, METH_O},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {"hamt", new_hamt, METH_NOARGS},
+    {"bad_get", bad_get, METH_FASTCALL},
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
     {"get_coreconfig", get_coreconfig, METH_NOARGS},
+#ifdef Py_REF_DEBUG
+    {"negative_refcount", negative_refcount, METH_NOARGS},
+#endif
     {NULL, NULL} /* sentinel */
 };
 

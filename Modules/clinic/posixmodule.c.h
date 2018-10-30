@@ -1005,27 +1005,6 @@ PyDoc_STRVAR(os__isdir__doc__,
 #define OS__ISDIR_METHODDEF    \
     {"_isdir", (PyCFunction)os__isdir, METH_O, os__isdir__doc__},
 
-static PyObject *
-os__isdir_impl(PyObject *module, path_t *path);
-
-static PyObject *
-os__isdir(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    path_t path = PATH_T_INITIALIZE("_isdir", "path", 0, 0);
-
-    if (!PyArg_Parse(arg, "O&:_isdir", path_converter, &path)) {
-        goto exit;
-    }
-    return_value = os__isdir_impl(module, &path);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 #endif /* defined(MS_WINDOWS) */
 
 #if defined(MS_WINDOWS)
@@ -2085,7 +2064,7 @@ exit:
 
 #endif /* defined(HAVE_SCHED_H) && defined(HAVE_SCHED_SETSCHEDULER) */
 
-#if defined(HAVE_SCHED_H) && (defined(HAVE_SCHED_SETSCHEDULER) || defined(HAVE_SCHED_SETPARAM))
+#if defined(HAVE_SCHED_H) && (defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM))
 
 PyDoc_STRVAR(os_sched_param__doc__,
 "sched_param(sched_priority)\n"
@@ -2117,7 +2096,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SCHED_H) && (defined(HAVE_SCHED_SETSCHEDULER) || defined(HAVE_SCHED_SETPARAM)) */
+#endif /* defined(HAVE_SCHED_H) && (defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)) */
 
 #if defined(HAVE_SCHED_H) && defined(HAVE_SCHED_SETSCHEDULER)
 
@@ -6778,4 +6757,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=0f23518dd4482e66 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1603fddefffa1fb9 input=a9049054013a1b77]*/
