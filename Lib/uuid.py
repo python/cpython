@@ -252,10 +252,10 @@ class UUID:
     def __hash__(self):
         return hash(self.int)
 
-    def __int__(self):
-        return self.int
-    
     def __index__(self):
+        return self.int
+
+    def __int__(self):
         return self.int
 
     def __repr__(self):
