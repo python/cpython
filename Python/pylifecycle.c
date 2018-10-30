@@ -1615,6 +1615,10 @@ initfsencoding(PyInterpreterState *interp)
         Py_FileSystemDefaultEncoding = "utf-8";
         Py_HasFileSystemDefaultEncoding = 1;
     }
+    else if (_Py_GetForceASCII()) {
+        Py_FileSystemDefaultEncoding = "ascii";
+        Py_HasFileSystemDefaultEncoding = 1;
+    }
     else if (Py_FileSystemDefaultEncoding == NULL) {
         Py_FileSystemDefaultEncoding = get_locale_encoding();
         if (Py_FileSystemDefaultEncoding == NULL) {
