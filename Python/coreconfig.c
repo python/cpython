@@ -1164,13 +1164,17 @@ config_init_fs_encoding(_PyCoreConfig *config)
         }
     }
 
-    /* Windows defaults to utf-8/surrogatepass (PEP 529) */
+    /* Windows defaults to utf-8/surrogatepass (PEP 529).
+
+       Note: UTF-8 Mode takes the same code path and the Legacy Windows FS
+             encoding has the priortiy over UTF-8 Mode. */
     if (config->filesystem_encoding == NULL) {
         config->filesystem_encoding = _PyMem_RawStrdup("utf-8");
         if (config->filesystem_encoding == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
     }
+
     if (config->filesystem_errors == NULL) {
         config->filesystem_errors = _PyMem_RawStrdup("surrogatepass");
         if (config->filesystem_errors == NULL) {
@@ -1178,30 +1182,28 @@ config_init_fs_encoding(_PyCoreConfig *config)
         }
     }
 #else
-    if (config->utf8_mode) {
-        /* UTF-8 Mode use: utf-8/surrogateescape */
-        if (config->filesystem_encoding == NULL) {
-            config->filesystem_encoding = _PyMem_RawStrdup("utf-8");
-            if (config->filesystem_encoding == NULL) {
-                return _Py_INIT_NO_MEMORY();
-            }
-        }
-        /* errors defaults to surrogateescape above */
-    }
-
     if (config->filesystem_encoding == NULL) {
-        /* macOS and Android use UTF-8, other platforms use
-           the locale encoding. */
-        char *locale_encoding;
-#if defined(__APPLE__) || defined(__ANDROID__)
-        locale_encoding = "UTF-8";
-#else
-        _PyInitError err = get_locale_encoding(&locale_encoding);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
+        if (config->utf8_mode) {
+            /* UTF-8 Mode use: utf-8/surrogateescape */
+            config->filesystem_encoding = _PyMem_RawStrdup("utf-8");
+            /* errors defaults to surrogateescape above */
         }
+        else if (_Py_GetForceASCII()) {
+            config->filesystem_encoding = _PyMem_RawStrdup("ascii");
+        }
+        else {
+            /* macOS and Android use UTF-8,
+               other platforms use the locale encoding. */
+#if defined(__APPLE__) || defined(__ANDROID__)
+            config->filesystem_encoding = _PyMem_RawStrdup("utf-8");
+#else
+            _PyInitError err = get_locale_encoding(&config->filesystem_encoding);
+            if (_Py_INIT_FAILED(err)) {
+                return err;
+            }
 #endif
-        config->filesystem_encoding = _PyMem_RawStrdup(locale_encoding);
+        }
+
         if (config->filesystem_encoding == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
