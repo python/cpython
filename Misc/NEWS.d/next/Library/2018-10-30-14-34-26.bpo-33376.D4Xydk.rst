@@ -1,0 +1,2 @@
+Fixes spurious statement resets after a connection rollback in some
+situations.
