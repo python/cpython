@@ -168,7 +168,7 @@ or on combining URL components into a URL string.
       Add *encoding* and *errors* parameters.
 
    .. versionchanged:: 3.6.8
-      Added *max_num_fields* param.
+      Added *max_num_fields* parameter.
 
 
 .. function:: parse_qsl(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace', max_num_fields=None)
@@ -202,7 +202,7 @@ or on combining URL components into a URL string.
       Add *encoding* and *errors* parameters.
 
    .. versionchanged:: 3.6.8
-      Added *max_num_fields* param.
+      Added *max_num_fields* parameter.
 
 
 .. function:: urlunparse(parts)
