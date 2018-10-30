@@ -9,7 +9,6 @@ extern "C" {
 
 #include "internal/mem.h"
 #include "internal/ceval.h"
-#include "internal/pyatomic.h"
 #include "internal/warnings.h"
 
 
