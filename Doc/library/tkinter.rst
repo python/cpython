@@ -205,6 +205,7 @@ A Simple Hello World Program
     class Application(tk.Frame):
         def __init__(self, master=None):
             super().__init__(master)
+            self.master = master
             self.pack()
             self.create_widgets()
 
@@ -215,7 +216,7 @@ A Simple Hello World Program
             self.hi_there.pack(side="top")
 
             self.quit = tk.Button(self, text="QUIT", fg="red",
-                                  command=root.destroy)
+                                  command=self.master.destroy)
             self.quit.pack(side="bottom")
 
         def say_hi(self):
@@ -261,6 +262,8 @@ To make a widget in Tk, the command is always of the form::
 
 *classCommand*
    denotes which kind of widget to make (a button, a label, a menu...)
+
+.. index:: single: . (dot); in Tkinter
 
 *newPathname*
    is the new name for this widget.  All names in Tk must be unique.  To help

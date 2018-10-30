@@ -1030,7 +1030,7 @@ support the loading of resources from packages.  See also
 lacks a spec.
 (Contributed by Garvit Khatri in :issue:`29851`.)
 
-:func:`importlib.find_spec` now raises ``ModuleNotFoundError`` instead of
+:func:`importlib.find_spec` now raises :exc:`ModuleNotFoundError` instead of
 :exc:`AttributeError` if the specified parent module is not a package (i.e.
 lacks a ``__path__`` attribute).
 (Contributed by Milan Oberkirch in :issue:`30436`.)
@@ -1355,7 +1355,7 @@ feature.  Instances must be created with :class:`~ssl.SSLContext` methods
 OpenSSL 1.1 APIs for setting the minimum and maximum TLS protocol version are
 available as :attr:`SSLContext.minimum_version <ssl.SSLContext.minimum_version>`
 and :attr:`SSLContext.maximum_version <ssl.SSLContext.maximum_version>`.
-Supported protocols are indicated by serveral new flags, such as
+Supported protocols are indicated by several new flags, such as
 :data:`~ssl.HAS_TLSv1_1`.
 (Contributed by Christian Heimes in :issue:`32609`.)
 
@@ -2023,7 +2023,7 @@ Use :mod:`threading` instead.
 socket
 ------
 
-The silent argument value trunctation in :func:`socket.htons` and
+The silent argument value truncation in :func:`socket.htons` and
 :func:`socket.ntohs` has been deprecated.  In future versions of Python,
 if the passed argument is larger than 16 bits, an exception will be raised.
 (Contributed by Oren Milman in :issue:`28332`.)
@@ -2507,3 +2507,8 @@ calling :c:func:`Py_Initialize`.
 In 3.7.1 the C API for Context Variables
 :ref:`was updated <contextvarsobjects_pointertype_change>` to use
 :c:type:`PyObject` pointers.  See also :issue:`34762`.
+
+In 3.7.1 the :mod:`tokenize` module now implicitly emits a ``NEWLINE`` token
+when provided with input that does not have a trailing new line.  This behavior
+now matches what the C tokenizer does internally.
+(Contributed by Ammar Askar in :issue:`33899`.)
