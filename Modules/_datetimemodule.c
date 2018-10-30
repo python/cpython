@@ -12,6 +12,8 @@
 #  include <winsock2.h>         /* struct timeval */
 #endif
 
+/* Redefine macros defined in datetime.h to use directly types,
+   rather than getting types from PyDateTimeAPI. */
 
 #undef PyDate_Check
 #undef PyDate_CheckExact
