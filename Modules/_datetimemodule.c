@@ -3,6 +3,7 @@
  */
 
 #include "Python.h"
+#include "datetime.h"
 #include "structmember.h"
 
 #include <time.h>
@@ -11,14 +12,32 @@
 #  include <winsock2.h>         /* struct timeval */
 #endif
 
-/* Differentiate between building the core module and building extension
- * modules.
- */
-#ifndef Py_BUILD_CORE
-#define Py_BUILD_CORE
-#endif
-#include "datetime.h"
-#undef Py_BUILD_CORE
+
+#undef PyDate_Check
+#undef PyDate_CheckExact
+#define PyDate_Check(op) PyObject_TypeCheck(op, &PyDateTime_DateType)
+#define PyDate_CheckExact(op) (Py_TYPE(op) == &PyDateTime_DateType)
+
+#undef PyDateTime_Check
+#undef PyDateTime_CheckExact
+#define PyDateTime_Check(op) PyObject_TypeCheck(op, &PyDateTime_DateTimeType)
+#define PyDateTime_CheckExact(op) (Py_TYPE(op) == &PyDateTime_DateTimeType)
+
+#undef PyTime_Check
+#undef PyTime_CheckExact
+#define PyTime_Check(op) PyObject_TypeCheck(op, &PyDateTime_TimeType)
+#define PyTime_CheckExact(op) (Py_TYPE(op) == &PyDateTime_TimeType)
+
+#undef PyDelta_Check
+#undef PyDelta_CheckExact
+#define PyDelta_Check(op) PyObject_TypeCheck(op, &PyDateTime_DeltaType)
+#define PyDelta_CheckExact(op) (Py_TYPE(op) == &PyDateTime_DeltaType)
+
+#undef PyTZInfo_Check
+#undef PyTZInfo_CheckExact
+#define PyTZInfo_Check(op) PyObject_TypeCheck(op, &PyDateTime_TZInfoType)
+#define PyTZInfo_CheckExact(op) (Py_TYPE(op) == &PyDateTime_TZInfoType)
+
 
 /*[clinic input]
 module datetime
