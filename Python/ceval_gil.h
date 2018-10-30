@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include "internal/pyatomic.h"
 
 /* First some general settings */
 

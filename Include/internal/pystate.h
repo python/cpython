@@ -5,7 +5,6 @@ extern "C" {
 #endif
 
 #include "pystate.h"
-#include "pyatomic.h"
 #include "pythread.h"
 
 #include "internal/mem.h"

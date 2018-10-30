@@ -988,7 +988,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pgen.h \
 		$(srcdir)/Include/pgenheaders.h \
 		$(srcdir)/Include/pyarena.h \
-		$(srcdir)/Include/pyatomic.h \
 		$(srcdir)/Include/pycapsule.h \
 		$(srcdir)/Include/pyctype.h \
 		$(srcdir)/Include/pydebug.h \
@@ -1029,6 +1028,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/ceval.h \
 		$(srcdir)/Include/internal/gil.h \
 		$(srcdir)/Include/internal/mem.h \
+		$(srcdir)/Include/internal/pyatomic.h \
 		$(srcdir)/Include/internal/pygetopt.h \
 		$(srcdir)/Include/internal/pystate.h \
 		$(srcdir)/Include/internal/context.h \

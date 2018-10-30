@@ -153,6 +153,9 @@
     <ClInclude Include="..\Include\internal\mem.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pyatomic.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pystate.h">
       <Filter>Include</Filter>
     </ClInclude>
