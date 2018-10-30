@@ -63,14 +63,14 @@ def _reduce_ex(self, proto):
         state = None
     else:
         if base is cls:
-            raise TypeError(f"cannot serialize '{cls.__name__}' object")
+            raise TypeError(f"cannot pickle {cls.__name__!r} object")
         state = base(self)
     args = (cls, base, state)
     try:
         getstate = self.__getstate__
     except AttributeError:
         if getattr(self, "__slots__", None):
-            raise TypeError(f"cannot serialize '{cls.__name__}' object: "
+            raise TypeError(f"cannot pickle {cls.__name__!r} object: "
                             f"a class that defines __slots__ without "
                             f"defining __getstate__ cannot be pickled "
                             f"with protocol {proto}") from None

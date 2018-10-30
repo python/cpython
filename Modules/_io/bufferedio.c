@@ -608,8 +608,6 @@ buffered_isatty(buffered *self, PyObject *Py_UNUSED(ignored))
     return PyObject_CallMethodObjArgs(self->raw, _PyIO_str_isatty, NULL);
 }
 
-/* Serialization */
-
 /* Forward decls */
 static PyObject *
 _bufferedwriter_flush_unlocked(buffered *);
