@@ -1807,7 +1807,7 @@ PySys_ResetWarnOptions(void)
     PyList_SetSlice(warnoptions, 0, PyList_GET_SIZE(warnoptions), NULL);
 }
 
-int
+static int
 _PySys_AddWarnOptionWithError(PyObject *option)
 {
     PyObject *warnoptions = get_warnoptions();
@@ -1823,7 +1823,12 @@ _PySys_AddWarnOptionWithError(PyObject *option)
 void
 PySys_AddWarnOptionUnicode(PyObject *option)
 {
-    (void)_PySys_AddWarnOptionWithError(option);
+    if (_PySys_AddWarnOptionWithError(option) < 0) {
+        /* No return value, therefore clear error state if possible */
+        if (_PyThreadState_UncheckedGet()) {
+            PyErr_Clear();
+        }
+    }
 }
 
 void
@@ -1877,7 +1882,7 @@ get_xoptions(void)
     return xoptions;
 }
 
-int
+static int
 _PySys_AddXOptionWithError(const wchar_t *s)
 {
     PyObject *name = NULL, *value = NULL;
