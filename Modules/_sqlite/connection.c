@@ -238,6 +238,7 @@ void pysqlite_do_all_statements(pysqlite_Connection* self, int action, int reset
             cursor = (pysqlite_Cursor*)PyWeakref_GetObject(weakref);
             if ((PyObject*)cursor != Py_None) {
                 cursor->reset = 1;
+                Py_CLEAR(cursor->statement);
             }
         }
     }

@@ -381,6 +381,48 @@ class RegressionTests(unittest.TestCase):
                 counter += 1
         self.assertEqual(counter, 3, "should have returned exactly three rows")
 
+    def CheckActionAfterRollbackCursorReset(self):
+        """
+        Similar to `CheckCommitCursorReset`, `Connection::rollback()` resets
+        statements and cursors, which could cause statements to be reset again
+        when they shouldn't be.
+
+        See issue33376 for more details.
+        """
+        con = sqlite.connect(":memory:")
+        con.executescript("""
+        create table t(c);
+        insert into t values(0);
+        insert into t values(1);
+        insert into t values(2);
+        """)
+
+        self.assertEqual(con.isolation_level, "")
+
+        curs = con.cursor()
+        curs.execute("BEGIN TRANSACTION")
+        curs.execute("select c from t")
+        con.rollback()
+
+        # Reusing the same statement from the statement cache, which has been
+        # reset by the rollback above.
+        gen = con.execute("select c from t")
+
+        # Would previously cause a spurious reset of the statement.
+        del curs
+
+        counter = 0
+        for i, row in enumerate(gen):
+            with self.subTest(i=i, row=row):
+                if counter == 0:
+                    self.assertEqual(row[0], 0)
+                elif counter == 1:
+                    self.assertEqual(row[0], 1)
+                elif counter == 2:
+                    self.assertEqual(row[0], 2)
+                counter += 1
+        self.assertEqual(counter, 3, "should have returned exactly three rows")
+
     def CheckBpo31770(self):
         """
         The interpreter shouldn't crash in case Cursor.__init__() is called
