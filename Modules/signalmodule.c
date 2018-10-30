@@ -4,6 +4,8 @@
 /* XXX Signals should be recorded per thread, now we have thread state. */
 
 #include "Python.h"
+#include "internal/pyatomic.h"
+
 #ifndef MS_WINDOWS
 #include "posixmodule.h"
 #endif
