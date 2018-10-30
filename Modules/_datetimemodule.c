@@ -38,6 +38,8 @@
 #define PyTZInfo_Check(op) PyObject_TypeCheck(op, &PyDateTime_TZInfoType)
 #define PyTZInfo_CheckExact(op) (Py_TYPE(op) == &PyDateTime_TZInfoType)
 
+#undef PyDateTime_TimeZone_UTC
+
 
 /*[clinic input]
 module datetime
