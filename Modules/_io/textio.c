@@ -268,7 +268,7 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
         self->errors = errors;
     }
 
-    self->translate = translate;
+    self->translate = translate ? 1 : 0;
     self->seennl = 0;
     self->pendingcr = 0;
 
