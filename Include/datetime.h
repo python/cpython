@@ -181,11 +181,10 @@ typedef struct {
 
 
 /* When datetime.h is included from _datetimemodule.c,
-   the PyDateTimeAPI variable must not be defined. */
+   the macros are defines in _datetimemodule.c. */
 #ifndef _PY_DATETIME_IMPL
 /* Define global variable for the C API and a macro for setting it. */
 static PyDateTime_CAPI *PyDateTimeAPI = NULL;
-#endif
 
 #define PyDateTime_IMPORT \
     PyDateTimeAPI = (PyDateTime_CAPI *)PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0)
@@ -208,6 +207,8 @@ static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 
 #define PyTZInfo_Check(op) PyObject_TypeCheck(op, PyDateTimeAPI->TZInfoType)
 #define PyTZInfo_CheckExact(op) (Py_TYPE(op) == PyDateTimeAPI->TZInfoType)
+#endif   /* !defined(_PY_DATETIME_IMPL) */
+
 
 /* Macros for accessing constructors in a simplified fashion. */
 #define PyDate_FromDate(year, month, day) \

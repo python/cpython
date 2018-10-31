@@ -3,7 +3,7 @@
  */
 
 /* When datetime.h is included from _datetimemodule.c,
-   the PyDateTimeAPI variable must not be defined. */
+   the macros are defines in _datetimemodule.c. */
 #define _PY_DATETIME_IMPL
 
 #include "Python.h"
@@ -16,35 +16,20 @@
 #  include <winsock2.h>         /* struct timeval */
 #endif
 
-/* Redefine macros defined in datetime.h to use directly types,
-   rather than getting types from PyDateTimeAPI. */
-
-#undef PyDate_Check
-#undef PyDate_CheckExact
 #define PyDate_Check(op) PyObject_TypeCheck(op, &PyDateTime_DateType)
 #define PyDate_CheckExact(op) (Py_TYPE(op) == &PyDateTime_DateType)
 
-#undef PyDateTime_Check
-#undef PyDateTime_CheckExact
 #define PyDateTime_Check(op) PyObject_TypeCheck(op, &PyDateTime_DateTimeType)
 #define PyDateTime_CheckExact(op) (Py_TYPE(op) == &PyDateTime_DateTimeType)
 
-#undef PyTime_Check
-#undef PyTime_CheckExact
 #define PyTime_Check(op) PyObject_TypeCheck(op, &PyDateTime_TimeType)
 #define PyTime_CheckExact(op) (Py_TYPE(op) == &PyDateTime_TimeType)
 
-#undef PyDelta_Check
-#undef PyDelta_CheckExact
 #define PyDelta_Check(op) PyObject_TypeCheck(op, &PyDateTime_DeltaType)
 #define PyDelta_CheckExact(op) (Py_TYPE(op) == &PyDateTime_DeltaType)
 
-#undef PyTZInfo_Check
-#undef PyTZInfo_CheckExact
 #define PyTZInfo_Check(op) PyObject_TypeCheck(op, &PyDateTime_TZInfoType)
 #define PyTZInfo_CheckExact(op) (Py_TYPE(op) == &PyDateTime_TZInfoType)
-
-#undef PyDateTime_TimeZone_UTC
 
 
 /*[clinic input]
