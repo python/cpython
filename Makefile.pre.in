@@ -91,7 +91,7 @@ CONFIGURE_LDFLAGS=	@LDFLAGS@
 # command line to append to these values without stomping the pre-set
 # values.
 PY_CFLAGS=	$(BASECFLAGS) $(OPT) $(CONFIGURE_CFLAGS) $(CFLAGS) $(EXTRA_CFLAGS)
-PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST)
+PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) -I$(srcdir)/Include/internal
 # Both CPPFLAGS and LDFLAGS need to contain the shell's value for setup.py to
 # be able to build extension modules using the directories specified in the
 # environment variables
@@ -1025,14 +1025,14 @@ PYTHON_HEADERS= \
 		pyconfig.h \
 		$(PARSER_HEADERS) \
 		$(srcdir)/Include/Python-ast.h \
-		$(srcdir)/Include/internal/ceval.h \
-		$(srcdir)/Include/internal/gil.h \
-		$(srcdir)/Include/internal/mem.h \
-		$(srcdir)/Include/internal/pyatomic.h \
-		$(srcdir)/Include/internal/pygetopt.h \
-		$(srcdir)/Include/internal/pystate.h \
-		$(srcdir)/Include/internal/context.h \
-		$(srcdir)/Include/internal/warnings.h \
+		$(srcdir)/Include/internal/pycore_atomic.h \
+		$(srcdir)/Include/internal/pycore_ceval.h \
+		$(srcdir)/Include/internal/pycore_context.h \
+		$(srcdir)/Include/internal/pycore_getopt.h \
+		$(srcdir)/Include/internal/pycore_gil.h \
+		$(srcdir)/Include/internal/pycore_mem.h \
+		$(srcdir)/Include/internal/pycore_state.h \
+		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(DTRACE_HEADERS)
 
 $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)

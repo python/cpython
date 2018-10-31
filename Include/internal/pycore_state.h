@@ -7,9 +7,9 @@ extern "C" {
 #include "pystate.h"
 #include "pythread.h"
 
-#include "internal/mem.h"
-#include "internal/ceval.h"
-#include "internal/warnings.h"
+#include "pycore_mem.h"
+#include "pycore_ceval.h"
+#include "pycore_warnings.h"
 
 
 /* GIL state */

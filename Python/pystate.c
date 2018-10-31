@@ -2,8 +2,8 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_mem.h"
+#include "pycore_state.h"
 
 #define _PyThreadState_SET(value) \
     _Py_atomic_store_relaxed(&_PyRuntime.gilstate.tstate_current, \

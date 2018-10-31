@@ -1,7 +1,7 @@
 /* Descriptors -- a new, flexible way to describe attributes */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_state.h"
 #include "structmember.h" /* Why is this not included in Python.h? */
 
 /*[clinic input]

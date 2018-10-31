@@ -2,8 +2,8 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
-#include "internal/pystate.h"
-#include "internal/context.h"
+#include "pycore_state.h"
+#include "pycore_context.h"
 #include "frameobject.h"
 
 #ifdef __cplusplus
