@@ -4122,7 +4122,7 @@ _PyObject_GetState(PyObject *obj, int required)
 
         if (required && obj->ob_type->tp_itemsize) {
             PyErr_Format(PyExc_TypeError,
-                         "can't pickle %.200s objects",
+                         "cannot pickle '%.200s' object",
                          Py_TYPE(obj)->tp_name);
             return NULL;
         }
@@ -4163,7 +4163,7 @@ _PyObject_GetState(PyObject *obj, int required)
                 Py_DECREF(slotnames);
                 Py_DECREF(state);
                 PyErr_Format(PyExc_TypeError,
-                             "can't pickle %.200s objects",
+                             "cannot pickle '%.200s' object",
                              Py_TYPE(obj)->tp_name);
                 return NULL;
             }
@@ -4400,7 +4400,7 @@ reduce_newobj(PyObject *obj)
 
     if (Py_TYPE(obj)->tp_new == NULL) {
         PyErr_Format(PyExc_TypeError,
-                     "can't pickle %.200s objects",
+                     "cannot pickle '%.200s' object",
                      Py_TYPE(obj)->tp_name);
         return NULL;
     }
