@@ -2,6 +2,10 @@
  *  http://www.zope.org/Members/fdrake/DateTimeWiki/FrontPage
  */
 
+/* When datetime.h is included from _datetimemodule.c,
+   the PyDateTimeAPI variable must not be defined. */
+#define _PY_DATETIME_IMPL
+
 #include "Python.h"
 #include "datetime.h"
 #include "structmember.h"

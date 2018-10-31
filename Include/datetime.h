@@ -180,8 +180,12 @@ typedef struct {
 #define PyDateTime_CAPSULE_NAME "datetime.datetime_CAPI"
 
 
+/* When datetime.h is included from _datetimemodule.c,
+   the PyDateTimeAPI variable must not be defined. */
+#ifndef _PY_DATETIME_IMPL
 /* Define global variable for the C API and a macro for setting it. */
 static PyDateTime_CAPI *PyDateTimeAPI = NULL;
+#endif
 
 #define PyDateTime_IMPORT \
     PyDateTimeAPI = (PyDateTime_CAPI *)PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0)
