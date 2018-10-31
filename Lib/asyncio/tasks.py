@@ -537,7 +537,7 @@ class as_completed(object):
 
     """
     def __init__(self, fs, *, loop=None, timeout=None):
-        from .queue import Queue
+        from .queues import Queue
 
         self._pending = set(ensure_future(f) for f in fs)
         self._completed = Queue()
