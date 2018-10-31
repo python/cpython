@@ -1941,9 +1941,9 @@ fatal_error(const char *prefix, const char *msg, int status)
     int has_tstate_and_gil = (tss_tstate != NULL);
 
     if (has_tstate_and_gil) {
-        /* Print the exception (if an exception is set) with its traceback. */
+        /* If an exception is set, print the exception with its traceback */
         if (!_Py_FatalError_PrintExc(fd)) {
-            /* Display the current Python stack */
+            /* No exception is set, or an exception is set without traceback */
             _Py_FatalError_DumpTracebacks(fd);
         }
     }
