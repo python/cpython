@@ -3776,11 +3776,11 @@ written in Python, such as a mail server's external command delivery program.
 .. function:: wait3(options)
 
    Similar to :func:`waitpid`, except no process id argument is given and a
-   3-element tuple containing the child's process id, exit status indication, and
-   resource usage information is returned.  Refer to :mod:`resource`.\
-   :func:`~resource.getrusage` for details on resource usage information.  The
-   option argument is the same as that provided to :func:`waitpid` and
-   :func:`wait4`.
+   3-element tuple containing the child's process id, exit status indication,
+   and resource usage information is returned.  Refer to
+   :mod:`resource`.\ :func:`~resource.getrusage` for details on resource usage
+   information.  The option argument is the same as that provided to
+   :func:`waitpid` and :func:`wait4`.
 
    .. availability:: Unix.
 
