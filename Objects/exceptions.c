@@ -6,8 +6,8 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_mem.h"
+#include "pycore_state.h"
 #include "structmember.h"
 #include "osdefs.h"
 

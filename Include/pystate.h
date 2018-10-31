@@ -250,7 +250,7 @@ PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
 #endif
 #ifdef Py_BUILD_CORE
    /* Macro which should only be used for performance critical code.
-      Need "#include "internal/pystate.h". See also _PyInterpreterState_Get()
+      Need "#include "pycore_state.h". See also _PyInterpreterState_Get()
       and _PyGILState_GetInterpreterStateUnsafe(). */
 #  define _PyInterpreterState_GET_UNSAFE() (PyThreadState_GET()->interp)
 #endif

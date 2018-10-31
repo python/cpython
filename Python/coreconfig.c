@@ -1,6 +1,6 @@
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_mem.h"
+#include "pycore_state.h"
 #include <locale.h>
 #ifdef HAVE_LANGINFO_H
 #  include <langinfo.h>
