@@ -379,8 +379,8 @@ types is covered in section :ref:`optparse-extending-optparse`.
 Handling boolean (flag) options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Flag options---set a variable to true or false when a particular option is seen
----are quite common.  :mod:`optparse` supports them with two separate actions,
+Flag options---set a variable to true or false when a particular option is
+seen---are quite common.  :mod:`optparse` supports them with two separate actions,
 ``store_true`` and ``store_false``.  For example, you might have a ``verbose``
 flag that is turned on with ``-v`` and off with ``-q``::
 
