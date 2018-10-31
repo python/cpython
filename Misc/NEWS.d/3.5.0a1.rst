@@ -2707,7 +2707,11 @@ Added support for the "xztar" format in the shutil module.
 .. section: Library
 
 Don't force 3rd party C extensions to be built with
+<<<<<<< HEAD
 ``-Werror=declaration-after-statement``.
+=======
+-Werror=declaration-after-statement.
+>>>>>>> 3f819ca138... bpo-35110: Fix unintentional spaces around hyphens and dashes. (GH-10231)
 
 ..
 
@@ -5060,7 +5064,11 @@ Anticipated fixes to support OS X versions > 10.9.
 .. section: Build
 
 Prevent possible segfaults and other random failures of python
+<<<<<<< HEAD
 ``--generate-posix-vars`` in pybuilddir.txt build target.
+=======
+--generate-posix-vars in pybuilddir.txt build target.
+>>>>>>> 3f819ca138... bpo-35110: Fix unintentional spaces around hyphens and dashes. (GH-10231)
 
 ..
 
