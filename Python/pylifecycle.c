@@ -6,6 +6,7 @@
 #undef Yield /* undefine macro conflicting with winbase.h */
 #include "internal/context.h"
 #include "internal/hamt.h"
+#include "internal/mem.h"
 #include "internal/pystate.h"
 #include "grammar.h"
 #include "node.h"

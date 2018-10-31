@@ -198,16 +198,6 @@ PyAPI_FUNC(void) PyMem_SetAllocator(PyMemAllocatorDomain domain,
 PyAPI_FUNC(void) PyMem_SetupDebugHooks(void);
 #endif   /* Py_LIMITED_API */
 
-#ifdef Py_BUILD_CORE
-/* Set the memory allocator of the specified domain to the default.
-   Save the old allocator into *old_alloc if it's non-NULL.
-   Return on success, or return -1 if the domain is unknown. */
-PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
-    PyMemAllocatorDomain domain,
-    PyMemAllocatorEx *old_alloc);
-#endif
-
-
 /* bpo-35053: expose _Py_tracemalloc_config for performance:
    _Py_NewReference() needs an efficient check to test if tracemalloc is
    tracing.
