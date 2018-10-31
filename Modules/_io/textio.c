@@ -2891,14 +2891,6 @@ _io_TextIOWrapper_isatty_impl(textio *self)
     return _PyObject_CallMethodId(self->buffer, &PyId_isatty, NULL);
 }
 
-static PyObject *
-textiowrapper_getstate(textio *self, PyObject *args)
-{
-    PyErr_Format(PyExc_TypeError,
-                 "cannot serialize '%s' object", Py_TYPE(self)->tp_name);
-    return NULL;
-}
-
 /*[clinic input]
 _io.TextIOWrapper.flush
 [clinic start generated code]*/
@@ -3132,7 +3124,6 @@ static PyMethodDef textiowrapper_methods[] = {
     _IO_TEXTIOWRAPPER_READABLE_METHODDEF
     _IO_TEXTIOWRAPPER_WRITABLE_METHODDEF
     _IO_TEXTIOWRAPPER_ISATTY_METHODDEF
-    {"__getstate__", (PyCFunction)textiowrapper_getstate, METH_NOARGS},
 
     _IO_TEXTIOWRAPPER_SEEK_METHODDEF
     _IO_TEXTIOWRAPPER_TELL_METHODDEF
