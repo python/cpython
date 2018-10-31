@@ -1820,12 +1820,6 @@ _Py_FatalError_PrintExc(int fd)
     PyObject *exception, *v, *tb;
     int has_tb;
 
-    if (PyThreadState_GET() == NULL) {
-        /* The GIL is released: trying to acquire it is likely to deadlock,
-           just give up. */
-        return 0;
-    }
-
     PyErr_Fetch(&exception, &v, &tb);
     if (exception == NULL) {
         /* No current exception */
@@ -1930,9 +1924,30 @@ fatal_error(const char *prefix, const char *msg, int status)
     fputs("\n", stderr);
     fflush(stderr); /* it helps in Windows debug build */
 
-    /* Print the exception (if an exception is set) with its traceback,
-     * or display the current Python stack. */
-    if (!_Py_FatalError_PrintExc(fd)) {
+    /* Check if the current thread has a Python thread state
+       and holds the GIL */
+    PyThreadState *tss_tstate = PyGILState_GetThisThreadState();
+    if (tss_tstate != NULL) {
+        PyThreadState *tstate = PyThreadState_GET();
+        if (tss_tstate != tstate) {
+            /* The Python thread does not hold the GIL */
+            tss_tstate = NULL;
+        }
+    }
+    else {
+        /* Py_FatalError() has been called from a C thread
+           which has no Python thread state. */
+    }
+    int has_tstate_and_gil = (tss_tstate != NULL);
+
+    if (has_tstate_and_gil) {
+        /* If an exception is set, print the exception with its traceback */
+        if (!_Py_FatalError_PrintExc(fd)) {
+            /* No exception is set, or an exception is set without traceback */
+            _Py_FatalError_DumpTracebacks(fd);
+        }
+    }
+    else {
         _Py_FatalError_DumpTracebacks(fd);
     }
 
@@ -1943,7 +1958,7 @@ fatal_error(const char *prefix, const char *msg, int status)
     _PyFaulthandler_Fini();
 
     /* Check if the current Python thread hold the GIL */
-    if (PyThreadState_GET() != NULL) {
+    if (has_tstate_and_gil) {
         /* Flush sys.stdout and sys.stderr */
         flush_std_files();
     }
