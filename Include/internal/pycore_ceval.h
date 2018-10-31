@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-#include "internal/pyatomic.h"
+#include "pycore_atomic.h"
 #include "pythread.h"
 
 struct _pending_calls {
@@ -25,7 +25,7 @@ struct _pending_calls {
     int last;
 };
 
-#include "internal/gil.h"
+#include "pycore_gil.h"
 
 struct _ceval_runtime_state {
     int recursion_limit;

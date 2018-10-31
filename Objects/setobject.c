@@ -32,7 +32,7 @@
 */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_state.h"
 #include "structmember.h"
 
 /* Object used as dummy key to fill deleted entries */
