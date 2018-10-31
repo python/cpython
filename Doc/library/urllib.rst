@@ -147,7 +147,8 @@ High-level interface
       :envvar:`no_proxy` environment variable.
 
    .. versionchanged:: 2.7.9
-      The *context* parameter was added. All the neccessary certificate and hostname checks are done by default.
+      The *context* parameter was added.  All the neccessary certificate and hostname
+      checks are done by default.
 
    .. deprecated:: 2.6
       The :func:`urlopen` function has been removed in Python 3 in favor
@@ -201,7 +202,7 @@ High-level interface
       just have to assume that the download was successful.
 
    .. versionchanged:: 2.7.9
-      The *context* parameter was added. All the neccessary certificate and hostname
+      The *context* parameter was added.  All the neccessary certificate and hostname
       checks are done by default.
 
 
@@ -356,6 +357,10 @@ URL Opener objects
 
    :class:`URLopener` objects will raise an :exc:`IOError` exception if the server
    returns an error code.
+
+   .. versionchanged:: 2.7.9
+      The *context* parameter was added.  All the neccessary certificate and hostname
+      checks are done by default.
 
    .. method:: open(fullurl[, data])
 
