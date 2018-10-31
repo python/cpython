@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "internal/pyatomic.h"
+#include "pycore_atomic.h"
 
 /* First some general settings */
 

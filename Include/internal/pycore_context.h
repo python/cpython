@@ -2,7 +2,7 @@
 #define Py_INTERNAL_CONTEXT_H
 
 
-#include "internal/hamt.h"
+#include "pycore_hamt.h"
 
 
 struct _pycontextobject {

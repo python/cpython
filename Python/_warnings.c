@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_state.h"
 #include "frameobject.h"
 #include "clinic/_warnings.c.h"
 
