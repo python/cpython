@@ -14,7 +14,6 @@ import contextvars
 import functools
 import inspect
 import itertools
-import time
 import types
 import warnings
 import weakref
@@ -545,36 +544,56 @@ class as_completed(object):
 
         self._loop = loop
         self._timeout = timeout
+        self._timeout_handle = None
 
         for future in self._pending:
-            future.add_done_callback(self._done_callback)
+            future.add_done_callback(self._on_completion)
 
-    def _done_callback(self, future):
+    def _on_completion(self, future):
         self._pending.remove(future)
         self._completed.put_nowait(future)
 
+        if not self._pending and self._timeout_handle is not None:
+            self._timeout_handle.cancel()
+
+    async def _wait_for_one(self):
+        f = await self._completed.get()
+        if f is None:
+            # Dummy value from _on_timeout().
+            raise exceptions.TimeoutError
+
+        return f.result()  # May raise f.exception().
+
+    def _on_timeout(self):
+        for f in self._pending:
+            f.remove_done_callback(self._on_completion)
+
+    def _start_timeout(self):
+        if self._pending and self._timeout is not None:
+            self._timeout_handle = self._loop.call_later(self._timeout,
+                                                         self._on_timeout)
+
     async def __aiter__(self):
+        self._start_timeout()
+
         try:
-            t0 = time.time()
-
             while self._pending:
-                timeout = (self._timeout - (time.time() - t0)
-                           if self._timeout is not None else None)
-
-                future = await wait_for(self._completed.get(),
-                                        timeout,
-                                        loop=self._loop)
+                future = await self._completed.get()
                 yield future.result()
         finally:
             # If an exception happened, we want to ensure that the done
             # callback doesn't run anyway
             for future in self._pending:
-                future.remove_done_callback(self._done_callback)
+                future.remove_done_callback(self._on_completion)
 
     def __iter__(self):
-        while self._pending:
-            future = self._completed.get()
-            yield future
+        for f in self._pending:
+            f.add_done_callback(self._on_completion)
+
+        self._start_timeout()
+
+        for _ in range(len(self._pending)):
+            yield self._wait_for_one()
 
 
 @types.coroutine
