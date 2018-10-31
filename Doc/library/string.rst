@@ -458,11 +458,11 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | ``'o'`` | Octal format. Outputs the number in base 8.              |
    +---------+----------------------------------------------------------+
-   | ``'x'`` | Hex format. Outputs the number in base 16, using lower-  |
-   |         | case letters for the digits above 9.                     |
+   | ``'x'`` | Hex format. Outputs the number in base 16, using         |
+   |         | lower-case letters for the digits above 9.               |
    +---------+----------------------------------------------------------+
-   | ``'X'`` | Hex format. Outputs the number in base 16, using upper-  |
-   |         | case letters for the digits above 9.                     |
+   | ``'X'`` | Hex format. Outputs the number in base 16, using         |
+   |         | upper-case letters for the digits above 9.               |
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
