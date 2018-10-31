@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "internal/mem.h"
+#include "pycore_mem.h"
 
 #include <stdbool.h>
 

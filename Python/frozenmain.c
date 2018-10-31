@@ -2,7 +2,7 @@
 /* Python interpreter main program for frozen scripts */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_state.h"
 #include <locale.h>
 
 #ifdef MS_WINDOWS

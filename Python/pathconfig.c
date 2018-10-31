@@ -2,8 +2,8 @@
 
 #include "Python.h"
 #include "osdefs.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_mem.h"
+#include "pycore_state.h"
 #include <wchar.h>
 
 #ifdef __cplusplus

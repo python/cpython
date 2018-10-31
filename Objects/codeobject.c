@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "code.h"
 #include "structmember.h"
-#include "internal/pystate.h"
+#include "pycore_state.h"
 
 /* Holder for co_extra information */
 typedef struct {

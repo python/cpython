@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <wchar.h>
-#include "internal/pygetopt.h"
+#include "pycore_getopt.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -135,31 +135,34 @@
     <ClInclude Include="..\Include\import.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\ceval.h">
+    <ClInclude Include="..\Include\internal\pycore_atomic.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\condvar.h">
+    <ClInclude Include="..\Include\internal\pycore_ceval.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\context.h">
+    <ClInclude Include="..\Include\internal\pycore_condvar.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\gil.h">
+    <ClInclude Include="..\Include\internal\pycore_context.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\hamt.h">
+    <ClInclude Include="..\Include\internal\pycore_getopt.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\mem.h">
+    <ClInclude Include="..\Include\internal\pycore_gil.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pyatomic.h">
+    <ClInclude Include="..\Include\internal\pycore_hamt.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pystate.h">
+    <ClInclude Include="..\Include\internal\pycore_mem.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\warnings.h">
+    <ClInclude Include="..\Include\internal\pycore_state.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_warnings.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\intrcheck.h">
@@ -247,9 +250,6 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\pyfpe.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\internal\pygetopt.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\pylifecycle.h">

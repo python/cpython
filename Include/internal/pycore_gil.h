@@ -4,8 +4,8 @@
 extern "C" {
 #endif
 
-#include "internal/condvar.h"
-#include "internal/pyatomic.h"
+#include "pycore_condvar.h"
+#include "pycore_atomic.h"
 
 #ifndef Py_HAVE_CONDVAR
 #  error You need either a POSIX-compatible or a Windows system!

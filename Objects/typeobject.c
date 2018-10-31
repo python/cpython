@@ -1,7 +1,7 @@
 /* Type object implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_state.h"
 #include "frameobject.h"
 #include "structmember.h"
 

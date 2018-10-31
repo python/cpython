@@ -1,8 +1,8 @@
 /* Cell object implementation */
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_mem.h"
+#include "pycore_state.h"
 
 PyObject *
 PyCell_New(PyObject *obj)

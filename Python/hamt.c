@@ -1,8 +1,8 @@
 #include "Python.h"
 
 #include "structmember.h"
-#include "internal/pystate.h"
-#include "internal/hamt.h"
+#include "pycore_state.h"
+#include "pycore_hamt.h"
 
 /*
 This file provides an implemention of an immutable mapping using the
