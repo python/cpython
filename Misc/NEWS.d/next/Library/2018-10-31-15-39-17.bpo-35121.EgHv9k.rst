@@ -1,0 +1,2 @@
+Prefix domain with dot for proper subdomain validation in
+:meth:`http.cookiejar.DefaultCookiePolicy.domain_return_ok`
