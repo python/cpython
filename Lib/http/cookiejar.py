@@ -1173,6 +1173,8 @@ class DefaultCookiePolicy(CookiePolicy):
             req_host = "."+req_host
         if not erhn.startswith("."):
             erhn = "."+erhn
+        if not domain.startswith("."):
+            domain = "."+domain
         if not (req_host.endswith(domain) or erhn.endswith(domain)):
             #_debug("   request domain %s does not match cookie domain %s",
             #       req_host, domain)

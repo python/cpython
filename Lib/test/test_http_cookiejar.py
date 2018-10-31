@@ -425,6 +425,8 @@ class CookieTests(unittest.TestCase):
             ("http://foo/", "foo", True),
             ("http://foo/", "foo.local", True),
             ("http://foo/", ".local", True),
+            ("http://barfoo.com", ".foo.com", False),
+            ("http://barfoo.com", "foo.com", False),
             ]:
             request = urllib.request.Request(url)
             r = pol.domain_return_ok(domain, request)
