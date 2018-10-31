@@ -14,6 +14,7 @@ import contextvars
 import functools
 import inspect
 import itertools
+import time
 import types
 import warnings
 import weakref
@@ -522,60 +523,58 @@ async def _cancel_and_wait(fut, loop):
         fut.remove_done_callback(cb)
 
 
-# This is *not* a @coroutine!  It is just an iterator (yielding Futures).
-def as_completed(fs, *, loop=None, timeout=None):
-    """Return an iterator whose values are coroutines.
+class as_completed(object):
+    """Asynchronous iterator over awaitables which returns the result of each
+    as completed.
 
-    When waiting for the yielded coroutines you'll get the results (or
-    exceptions!) of the original Futures (or coroutines), in the order
-    in which and as soon as they complete.
+    This differs from PEP 3148; results are yielded from asynchronous
+    iteration rather than futures.
 
-    This differs from PEP 3148; the proper way to use this is:
+    For backwards compatibility, this can also be used as a regular iterator::
 
         for f in as_completed(fs):
             result = await f  # The 'await' may raise.
             # Use result.
 
-    If a timeout is specified, the 'await' will raise
-    TimeoutError when the timeout occurs before all Futures are done.
-
-    Note: The futures 'f' are not necessarily members of fs.
     """
-    if futures.isfuture(fs) or coroutines.iscoroutine(fs):
-        raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
-    loop = loop if loop is not None else events.get_event_loop()
-    todo = {ensure_future(f, loop=loop) for f in set(fs)}
-    from .queues import Queue  # Import here to avoid circular import problem.
-    done = Queue(loop=loop)
-    timeout_handle = None
+    def __init__(self, fs, *, loop=None, timeout=None):
+        from .queue import Queue
 
-    def _on_timeout():
-        for f in todo:
-            f.remove_done_callback(_on_completion)
-            done.put_nowait(None)  # Queue a dummy value for _wait_for_one().
-        todo.clear()  # Can't do todo.remove(f) in the loop.
+        self._pending = set(ensure_future(f) for f in fs)
+        self._completed = Queue()
 
-    def _on_completion(f):
-        if not todo:
-            return  # _on_timeout() was here first.
-        todo.remove(f)
-        done.put_nowait(f)
-        if not todo and timeout_handle is not None:
-            timeout_handle.cancel()
+        self._loop = loop
+        self._timeout = timeout
 
-    async def _wait_for_one():
-        f = await done.get()
-        if f is None:
-            # Dummy value from _on_timeout().
-            raise exceptions.TimeoutError
-        return f.result()  # May raise f.exception().
+        for future in self._pending:
+            future.add_done_callback(self._done_callback)
 
-    for f in todo:
-        f.add_done_callback(_on_completion)
-    if todo and timeout is not None:
-        timeout_handle = loop.call_later(timeout, _on_timeout)
-    for _ in range(len(todo)):
-        yield _wait_for_one()
+    def _done_callback(self, future):
+        self._pending.remove(future)
+        self._completed.put_nowait(future)
+
+    async def __aiter__(self):
+        try:
+            t0 = time.time()
+
+            while self._pending:
+                timeout = (self._timeout - (time.time() - t0)
+                           if self._timeout is not None else None)
+
+                future = await wait_for(self._completed.get(),
+                                        timeout,
+                                        loop=self._loop)
+                yield future.result()
+        finally:
+            # If an exception happened, we want to ensure that the done
+            # callback doesn't run anyway
+            for future in self._pending:
+                future.remove_done_callback(self._done_callback)
+
+    def __iter__(self):
+        while self._pending:
+            future = self._completed.get()
+            yield future
 
 
 @types.coroutine
