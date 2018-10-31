@@ -62,7 +62,7 @@ class SemaphoreTracker(object):
                 self._pid = None
 
                 warnings.warn('semaphore_tracker: process died unexpectedly, '
-                              'relaunching.  Some semaphores might leak.')
+                              'relaunching. Some semaphores might leak.')
 
             fds_to_pass = []
             try:
