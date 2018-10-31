@@ -81,8 +81,8 @@ astral characters.  Patch by Xiang Zhang.
 .. nonce: RYbEGH
 .. section: Core and Builtins
 
-Extra slash no longer added to sys.path components in case of empty compile-
-time PYTHONPATH components.
+Extra slash no longer added to sys.path components in case of empty
+compile-time PYTHONPATH components.
 
 ..
 
@@ -349,8 +349,8 @@ Patch written by Xiang Zhang.
 .. section: Core and Builtins
 
 Standard __import__() no longer look up "__import__" in globals or builtins
-for importing submodules or "from import".  Fixed handling an error of non-
-string package name.
+for importing submodules or "from import".  Fixed handling an error of
+non-string package name.
 
 ..
 
@@ -1124,10 +1124,10 @@ after a commit.
 .. nonce: cYraeH
 .. section: Library
 
-A new version of typing.py from https://github.com/python/typing: -
-Collection (only for 3.6) (Issue #27598) - Add FrozenSet to __all__
-(upstream #261) - fix crash in _get_type_vars() (upstream #259) - Remove the
-dict constraint in ForwardRef._eval_type (upstream #252)
+A new version of typing.py from https://github.com/python/typing:
+Collection (only for 3.6) (Issue #27598). Add FrozenSet to __all__
+(upstream #261). Fix crash in _get_type_vars() (upstream #259). Remove the
+dict constraint in ForwardRef._eval_type (upstream #252).
 
 ..
 
@@ -2070,9 +2070,9 @@ Update message in validate_ucrtbase.py
 .. section: Build
 
 Cause lack of llvm-profdata tool when using clang as required for PGO
-linking to be a configure time error rather than make time when --with-
-optimizations is enabled.  Also improve our ability to find the llvm-
-profdata tool on MacOS and some Linuxes.
+linking to be a configure time error rather than make time when
+--with-optimizations is enabled.  Also improve our ability to find the
+llvm-profdata tool on MacOS and some Linuxes.
 
 ..
 
@@ -2131,7 +2131,7 @@ CPP invocation in configure must use CPPFLAGS. Patch by Chi Hsuan Yen.
 .. section: Build
 
 The configure script now inserts comments into the makefile to prevent the
-pgen and _freeze_importlib executables from being cross- compiled.
+pgen and _freeze_importlib executables from being cross-compiled.
 
 ..
 

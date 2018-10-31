@@ -183,8 +183,9 @@ the full reference.
    | *sources*              | list of source filenames,      | a list of strings         |
    |                        | relative to the distribution   |                           |
    |                        | root (where the setup script   |                           |
-   |                        | lives), in Unix form (slash-   |                           |
-   |                        | separated) for portability.    |                           |
+   |                        | lives), in Unix form           |                           |
+   |                        | (slash-separated) for          |                           |
+   |                        | portability.                   |                           |
    |                        | Source files may be C, C++,    |                           |
    |                        | SWIG (.i), platform-specific   |                           |
    |                        | resource files, or whatever    |                           |
@@ -1566,8 +1567,8 @@ lines, and joining lines with backslashes.
    +------------------+--------------------------------+---------+
    | option name      | description                    | default |
    +==================+================================+=========+
-   | *strip_comments* | strip from ``'#'`` to end-of-  | true    |
-   |                  | line, as well as any           |         |
+   | *strip_comments* | strip from ``'#'`` to          | true    |
+   |                  | end-of-line, as well as any    |         |
    |                  | whitespace leading up to the   |         |
    |                  | ``'#'``\ ---unless it is       |         |
    |                  | escaped by a backslash         |         |

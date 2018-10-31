@@ -63,9 +63,9 @@ distribution to generate: for example, ::
 
    python setup.py bdist --format=zip
 
-would, when run on a Unix system, create :file:`Distutils-1.0.{plat}.zip`\
----again, this archive would be unpacked from the root directory to install the
-Distutils.
+would, when run on a Unix system, create
+:file:`Distutils-1.0.{plat}.zip`\ ---again, this archive would be unpacked
+from the root directory to install the Distutils.
 
 The available formats for built distributions are:
 

@@ -130,8 +130,8 @@ message objects.
 
    .. method:: is_multipart()
 
-      Return ``True`` if the message's payload is a list of sub-\
-      :class:`EmailMessage` objects, otherwise return ``False``.  When
+      Return ``True`` if the message's payload is a list of
+      sub-\ :class:`EmailMessage` objects, otherwise return ``False``.  When
       :meth:`is_multipart` returns ``False``, the payload should be a string
       object (which might be a CTE encoded binary payload).  Note that
       :meth:`is_multipart` returning ``True`` does not necessarily mean that
