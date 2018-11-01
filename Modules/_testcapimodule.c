@@ -4835,6 +4835,31 @@ negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
 
     Py_RETURN_NONE;
 }
+
+static PyObject *
+structseq_newtype_doesnt_leak(PyObject *Py_UNUSED(self),
+                              PyObject *Py_UNUSED(args))
+{
+    PyStructSequence_Desc descr;
+    PyStructSequence_Field descr_fields[3];
+
+    descr_fields[0] = (PyStructSequence_Field){"foo", "foo value"};
+    descr_fields[1] = (PyStructSequence_Field){NULL, "some hidden value"};
+    descr_fields[2] = (PyStructSequence_Field){0, NULL};
+
+    descr.name = "_testcapi.test_descr";
+    descr.doc = "This is used to test for memory leaks in NewType";
+    descr.fields = descr_fields;
+    descr.n_in_sequence = 1;
+
+    PyTypeObject* structseq_type = PyStructSequence_NewType(&descr);
+    assert(structseq_type != NULL);
+    assert(PyType_Check(structseq_type));
+    assert(PyType_FastSubclass(structseq_type, Py_TPFLAGS_TUPLE_SUBCLASS));
+    Py_DECREF(structseq_type);
+
+    Py_RETURN_NONE;
+}
 #endif
 
 
@@ -5065,6 +5090,7 @@ static PyMethodDef TestMethods[] = {
     {"get_coreconfig", get_coreconfig, METH_NOARGS},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
+    {"structseq_newtype_doesnt_leak", structseq_newtype_doesnt_leak, METH_NOARGS},
 #endif
     {NULL, NULL} /* sentinel */
 };

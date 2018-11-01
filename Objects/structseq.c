@@ -354,7 +354,7 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
     }
 #endif
 
-    Py_REFCNT(type) = 1;
+    Py_REFCNT(type) = 0;
     type->tp_name = desc->name;
     type->tp_basicsize = sizeof(PyStructSequence) - sizeof(PyObject *);
     type->tp_itemsize = sizeof(PyObject *);
@@ -379,10 +379,12 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
         PyMem_FREE(members);
         return -1;
     }
+    Py_INCREF(type);
 
     if (initialize_structseq_dict(
             desc, type->tp_dict, n_members, n_unnamed_members) < 0) {
         PyMem_FREE(members);
+        Py_DECREF(type);
         return -1;
     }
 

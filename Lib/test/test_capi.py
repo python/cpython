@@ -2,6 +2,7 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 from collections import OrderedDict
+import gc
 import os
 import pickle
 import random
@@ -332,6 +333,27 @@ class CAPITest(unittest.TestCase):
                          br'_testcapimodule\.c:[0-9]+: '
                          br'_Py_NegativeRefcount: Assertion ".*" failed; '
                          br'object has negative ref count')
+
+    @unittest.skipUnless(hasattr(_testcapi, 'structseq_newtype_doesnt_leak'),
+                         'need _testcapi.structseq_newtype_doesnt_leak')
+    def test_structseq_newtype_doesnt_leak(self):
+        # Warmup the caches
+        for i in range(10):
+            _testcapi.structseq_newtype_doesnt_leak()
+
+        # Iterate multiple times
+        gc.collect()
+        refcounts_before = sys.gettotalrefcount()
+        blocks_before = sys.getallocatedblocks()
+        for i in range(3000):
+            _testcapi.structseq_newtype_doesnt_leak()
+        gc.collect()
+        refcounts_after = sys.gettotalrefcount()
+        blocks_after = sys.getallocatedblocks()
+
+        # Check results
+        self.assertAlmostEqual(refcounts_after - refcounts_before, 0, delta=10)
+        self.assertAlmostEqual(blocks_after - blocks_before, 0, delta=10)
 
 
 class TestPendingCalls(unittest.TestCase):
