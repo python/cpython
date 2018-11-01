@@ -335,7 +335,7 @@ ViewWindow_spec = {
 _widget_redirector_spec = {
     'file': 'redirector',
     'kwds': {},
-    'msg': "Every text insert should be printed to the console. "
+    'msg': "Every text insert should be printed to the console "
            "or the IDLE shell."
     }
 
