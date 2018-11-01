@@ -2209,7 +2209,7 @@ def get_section(value):
         digits += value[0]
         value = value[1:]
     if digits[0] == '0' and digits != '0':
-        section.defects.append(errors.InvalidHeaderError("section number"
+        section.defects.append(errors.InvalidHeaderError("section number "
             "has an invalid leading 0"))
     section.number = int(digits)
     section.append(ValueTerminal(digits, 'digits'))
