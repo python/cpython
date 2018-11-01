@@ -1,0 +1,1 @@
+Implement multibyte encoder/decoder state methods
