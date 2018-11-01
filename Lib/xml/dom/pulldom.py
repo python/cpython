@@ -1,4 +1,3 @@
-import xml.sax
 import xml.sax.handler
 
 START_ELEMENT = "START_ELEMENT"
@@ -15,7 +14,7 @@ class PullDOM(xml.sax.ContentHandler):
     _locator = None
     document = None
 
-    def __init__(self, documentFactory=None, handle_sax=False):
+    def __init__(self, documentFactory=None):
         from xml.dom import XML_NAMESPACE
         self.documentFactory = documentFactory
         self.firstEvent = [None, None]
@@ -27,10 +26,9 @@ class PullDOM(xml.sax.ContentHandler):
         except AttributeError:
             # use class' pop instead
             pass
-        self._ns_contexts = [{XML_NAMESPACE:'xml'}] # contains uri -> prefix dicts
+        self._ns_contexts = [{XML_NAMESPACE: 'xml'}]  # contains uri -> prefix dicts
         self._current_context = self._ns_contexts[-1]
         self.pending_events = []
-        self.handle_sax = handle_sax
 
     def pop(self):
         result = self.elementStack[-1]
@@ -50,7 +48,7 @@ class PullDOM(xml.sax.ContentHandler):
     def endPrefixMapping(self, prefix):
         self._current_context = self._ns_contexts.pop()
 
-    def startElementNS(self, name, tagName , attrs):
+    def startElementNS(self, name, tagName, attrs):
         # Retrieve xml namespace declaration attributes.
         xmlns_uri = 'http://www.w3.org/2000/xmlns/'
         xmlns_attrs = getattr(self, '_xmlns_attrs', None)
@@ -81,7 +79,7 @@ class PullDOM(xml.sax.ContentHandler):
             else:
                 node = self.buildDocument(None, localname)
 
-        for aname,value in attrs.items():
+        for aname, value in attrs.items():
             a_uri, a_localname = aname
             if a_uri == xmlns_uri:
                 if a_localname == 'xmlns':
@@ -117,7 +115,7 @@ class PullDOM(xml.sax.ContentHandler):
         else:
             node = self.buildDocument(None, name)
 
-        for aname,value in attrs.items():
+        for aname, value in attrs.items():
             attr = self.document.createAttribute(aname)
             attr.value = value
             node.setAttributeNode(attr)
@@ -178,7 +176,7 @@ class PullDOM(xml.sax.ContentHandler):
                 n = self.document.createProcessingInstruction(target,
                                                               data)
                 e[0] = (PROCESSING_INSTRUCTION, n)
-                if self.handle_sax:
+                if isinstance(self, SAX2DOM):
                     node.appendChild(n)
             elif e[0][0] == COMMENT:
                 n = self.document.createComment(e[0][1])
@@ -198,13 +196,17 @@ class PullDOM(xml.sax.ContentHandler):
         "clear(): Explicitly release parsing structures"
         self.document = None
 
+
 class ErrorHandler:
     def warning(self, exception):
         print(exception)
+
     def error(self, exception):
         raise exception
+
     def fatalError(self, exception):
         raise exception
+
 
 class DOMEventStream:
     def __init__(self, stream, parser, bufsize):
@@ -300,8 +302,8 @@ class DOMEventStream:
 
 
 class SAX2DOM(PullDOM):
-    def __init__(self, documentFactory=None, handle_sax=True):
-        super().__init__(documentFactory, handle_sax)
+    def __init__(self, documentFactory=None):
+        super().__init__(documentFactory)
 
     def startElementNS(self, name, tagName, attrs):
         super().startElementNS(name, tagName, attrs)
