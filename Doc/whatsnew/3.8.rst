@@ -91,8 +91,8 @@ Other Language Changes
   was lifted.
   (Contributed by Serhiy Storchaka in :issue:`32489`.)
 
-* The ``int`` type now has a new ``as_integer_ratio`` method compatible
-  with the existing ``float.as_integer_ratio`` method.
+* The :class:`int` type now has a new :meth:`~int.as_integer_ratio` method
+  compatible with the existing :meth:`float.as_integer_ratio` method.
   (Contributed by Lisa Roach in :issue:`33073`.)
 
 * Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
@@ -106,6 +106,12 @@ Other Language Changes
 * Iterable unpacking is now allowed without parentheses in :keyword:`yield`
   and :keyword:`return` statements.
   (Contributed by David Cuthbert and Jordan Chapman in :issue:`32117`.)
+
+* A backslash-character pair that is not a valid escape sequence generates
+  a :exc:`DeprecationWarning` since Python 3.6. In Python 3.8 it generates
+  a :exc:`SyntaxWarning` instead.
+  (Contributed by Serhiy Storchaka in :issue:`32912`.)
+
 
 New Modules
 ===========
@@ -146,6 +152,15 @@ now return ``False`` instead of raising :exc:`ValueError` or its subclasses
 characters or bytes unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
+
+ncurses
+-------
+
+Added a new variable holding structured version information for the
+underlying ncurses library: :data:`~curses.ncurses_version`.
+(Contributed by Serhiy Storchaka in :issue:`31680`.)
+
+
 pathlib
 -------
 
@@ -166,6 +181,14 @@ Added :attr:`SSLContext.post_handshake_auth` to enable and
 :meth:`ssl.SSLSocket.verify_client_post_handshake` to initiate TLS 1.3
 post-handshake authentication.
 (Contributed by Christian Heimes in :issue:`34670`.)
+
+tokenize
+--------
+
+The :mod:`tokenize` module now implicitly emits a ``NEWLINE`` token when
+provided with input that does not have a trailing new line.  This behavior
+now matches what the C tokenizer does internally.
+(Contributed by Ammar Askar in :issue:`33899`.)
 
 tkinter
 -------
@@ -228,6 +251,11 @@ Optimizations
   Note that this means that instances can no longer be weak-referenced and
   that arbitrary attributes can no longer be added to them.
 
+* The :class:`list` constructor does not overallocate the internal item buffer
+  if the input iterable has a known length (the input implements ``__len__``).
+  This makes the created list 12% smaller on average. (Contributed by Pablo
+  Galindo in :issue:`33234`.)
+
 
 Build and C API Changes
 =======================
@@ -280,6 +308,23 @@ Deprecated
   ``Ellipsis`` are considered deprecated and will be removed in future Python
   versions. :class:`~ast.Constant` should be used instead.
   (Contributed by Serhiy Storchaka in :issue:`32892`.)
+
+* The following functions and methods are deprecated in the :mod:`gettext`
+  module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
+  :func:`~gettext.lngettext` and :func:`~gettext.ldngettext`.
+  They return encoded bytes, and it's possible that you will get unexpected
+  Unicode-related exceptions if there are encoding problems with the
+  translated strings. It's much better to use alternatives which return
+  Unicode strings in Python 3. These functions have been broken for a long time.
+
+  Function :func:`~gettext.bind_textdomain_codeset`, methods
+  :meth:`~gettext.NullTranslations.output_charset` and
+  :meth:`~gettext.NullTranslations.set_output_charset`, and the *codeset*
+  parameter of functions :func:`~gettext.translation` and
+  :func:`~gettext.install` are also deprecated, since they are only used for
+  for the ``l*gettext()`` functions.
+
+  (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
 
 Removed
@@ -389,8 +434,9 @@ CPython bytecode changes
 
 * The interpreter loop  has been simplified by moving the logic of unrolling
   the stack of blocks into the compiler.  The compiler emits now explicit
-  instructions for adjusting the stack of values and calling the cleaning-
-  up code for :keyword:`break`, :keyword:`continue` and :keyword:`return`.
+  instructions for adjusting the stack of values and calling the
+  cleaning-up code for :keyword:`break`, :keyword:`continue` and
+  :keyword:`return`.
 
   Removed opcodes :opcode:`BREAK_LOOP`, :opcode:`CONTINUE_LOOP`,
   :opcode:`SETUP_LOOP` and :opcode:`SETUP_EXCEPT`.  Added new opcodes

@@ -230,6 +230,9 @@ class BaseServer:
 
                 while not self.__shutdown_request:
                     ready = selector.select(poll_interval)
+                    # bpo-35017: shutdown() called during select(), exit immediately.
+                    if self.__shutdown_request:
+                        break
                     if ready:
                         self._handle_request_noblock()
 
