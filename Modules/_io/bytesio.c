@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "structmember.h"       /* for offsetof() */
 #include "_iomodule.h"
+#include "pycore_object.h"
 
 /*[clinic input]
 module _io

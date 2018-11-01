@@ -1,6 +1,6 @@
 #include "Python.h"
-#include "structmember.h" /* offsetof */
 #include "pythread.h"
+#include "structmember.h" /* offsetof */
 
 /*[clinic input]
 module _queue
@@ -26,7 +26,7 @@ typedef struct {
 static void
 simplequeue_dealloc(simplequeueobject *self)
 {
-    _PyObject_GC_UNTRACK(self);
+    PyObject_GC_UnTrack(self);
     if (self->lock != NULL) {
         /* Unlock the lock so it's safe to free it */
         if (self->locked > 0)

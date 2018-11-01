@@ -1,10 +1,11 @@
 /* Generator object implementation */
 
 #include "Python.h"
-#include "pycore_state.h"
 #include "frameobject.h"
-#include "structmember.h"
 #include "opcode.h"
+#include "pycore_object.h"
+#include "pycore_state.h"
+#include "structmember.h"
 
 static PyObject *gen_close(PyGenObject *, PyObject *);
 static PyObject *async_gen_asend_new(PyAsyncGenObject *, PyObject *);

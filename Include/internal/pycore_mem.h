@@ -147,9 +147,6 @@ struct _gc_runtime_state {
 
 PyAPI_FUNC(void) _PyGC_Initialize(struct _gc_runtime_state *);
 
-#define _PyGC_generation0 _PyRuntime.gc.generation0
-
-
 /* Set the memory allocator of the specified domain to the default.
    Save the old allocator into *old_alloc if it's non-NULL.
    Return on success, or return -1 if the domain is unknown. */

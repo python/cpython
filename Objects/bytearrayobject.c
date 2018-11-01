@@ -2,12 +2,13 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_mem.h"
-#include "pycore_state.h"
-#include "structmember.h"
 #include "bytes_methods.h"
 #include "bytesobject.h"
+#include "pycore_mem.h"
+#include "pycore_object.h"
+#include "pycore_state.h"
 #include "pystrhex.h"
+#include "structmember.h"
 
 /*[clinic input]
 class bytearray "PyByteArrayObject *" "&PyByteArray_Type"

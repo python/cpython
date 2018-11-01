@@ -10,16 +10,15 @@
 #define PY_LOCAL_AGGRESSIVE
 
 #include "Python.h"
-#include "pycore_state.h"
-
 #include "code.h"
 #include "dictobject.h"
 #include "frameobject.h"
 #include "opcode.h"
+#include "pycore_object.h"
+#include "pycore_state.h"
 #include "pydtrace.h"
 #include "setobject.h"
 #include "structmember.h"
-
 #include <ctype.h>
 
 #ifdef Py_DEBUG

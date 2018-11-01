@@ -2,9 +2,10 @@
 /* Function object implementation */
 
 #include "Python.h"
-#include "pycore_mem.h"
-#include "pycore_state.h"
 #include "code.h"
+#include "pycore_mem.h"
+#include "pycore_object.h"
+#include "pycore_state.h"
 #include "structmember.h"
 
 PyObject *

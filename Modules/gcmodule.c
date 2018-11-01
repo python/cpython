@@ -26,6 +26,7 @@
 #include "Python.h"
 #include "pycore_context.h"
 #include "pycore_mem.h"
+#include "pycore_object.h"
 #include "pycore_state.h"
 #include "frameobject.h"        /* for PyFrame_ClearFreeList */
 #include "pydtrace.h"
