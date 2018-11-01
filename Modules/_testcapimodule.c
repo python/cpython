@@ -8,10 +8,12 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include <float.h>
-#include "structmember.h"
 #include "datetime.h"
 #include "marshal.h"
+#include "pycore_pathconfig.h"
+#include "pythread.h"
+#include "structmember.h"
+#include <float.h>
 #include <signal.h>
 
 #ifdef MS_WINDOWS
@@ -22,7 +24,6 @@
 #include <sys/wait.h>           /* For W_STOPCODE */
 #endif
 
-#include "pythread.h"
 static PyObject *TestError;     /* set to exception object in init */
 
 /* Raise TestError with test_name + ": " + msg, and return NULL. */
