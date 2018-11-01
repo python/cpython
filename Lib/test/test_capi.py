@@ -59,9 +59,12 @@ class CAPITest(unittest.TestCase):
         (out, err) = p.communicate()
         self.assertEqual(out, b'')
         # This used to cause an infinite loop.
-        self.assertTrue(err.rstrip().startswith(
+        err = err.rstrip()
+        cond = err.startswith(
                          b'Fatal Python error:'
-                         b' PyThreadState_Get: no current thread'))
+                         b' PyThreadState_Get: no current thread')
+        cond |= bool(re.search(b"Assertion.*PyGILState_Check.*failed", err))
+        self.assertTrue(cond, err.decode(errors="replace"))
 
     def test_memoryview_from_NULL_pointer(self):
         self.assertRaises(ValueError, _testcapi.make_memoryview_from_NULL_pointer)

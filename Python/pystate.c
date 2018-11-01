@@ -703,7 +703,7 @@ PyThreadState_Delete(PyThreadState *tstate)
 void
 PyThreadState_DeleteCurrent()
 {
-    PyThreadState *tstate = _PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET_UNSAFE();
     if (tstate == NULL)
         Py_FatalError(
             "PyThreadState_DeleteCurrent: no current tstate");
@@ -776,7 +776,7 @@ PyThreadState_Get(void)
 PyThreadState *
 PyThreadState_Swap(PyThreadState *newts)
 {
-    PyThreadState *oldts = _PyThreadState_GET();
+    PyThreadState *oldts = _PyThreadState_GET_UNSAFE();
 
     _PyThreadState_SET(newts);
     /* It should not be possible for more than one thread state
@@ -957,8 +957,10 @@ static int
 PyThreadState_IsCurrent(PyThreadState *tstate)
 {
     /* Must be the tstate for this thread */
-    assert(PyGILState_GetThisThreadState()==tstate);
-    return tstate == _PyThreadState_GET();
+    assert(PyGILState_GetThisThreadState() == tstate);
+
+    PyThreadState *current = _PyThreadState_GET_UNSAFE();
+    return (tstate == current);
 }
 
 /* Internal initialization/finalization functions called by
@@ -1085,7 +1087,7 @@ PyGILState_Check(void)
         return 1;
     }
 
-    tstate = _PyThreadState_GET();
+    tstate = _PyThreadState_GET_UNSAFE();
     if (tstate == NULL)
         return 0;
 

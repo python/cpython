@@ -176,6 +176,12 @@ PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
 /* Variable and macro for in-line access to current thread
    and interpreter state */
 
+/* Similar to _PyThreadState_GET(), but don't check that the GIL is hold. */
+static inline PyThreadState* _PyThreadState_GET_UNSAFE(void)
+{
+    return (PyThreadState*)_Py_atomic_load_relaxed(&_PyRuntime.gilstate.tstate_current);
+}
+
 /* Get the current Python thread state.
 
    Efficient macro reading directly the 'gilstate.tstate_current' atomic
@@ -185,8 +191,11 @@ PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
    The caller must hold the GIL.
 
    See also PyThreadState_Get() and PyThreadState_GET(). */
-#define _PyThreadState_GET() \
-    ((PyThreadState*)_Py_atomic_load_relaxed(&_PyRuntime.gilstate.tstate_current))
+static inline PyThreadState* _PyThreadState_GET(void)
+{
+    assert(PyGILState_Check());
+    return _PyThreadState_GET_UNSAFE();
+}
 
 /* Redefine PyThreadState_GET() as an alias to _PyThreadState_GET() */
 #undef PyThreadState_GET
@@ -200,7 +209,15 @@ PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
 
    See also _PyInterpreterState_Get()
    and _PyGILState_GetInterpreterStateUnsafe(). */
-#define _PyInterpreterState_GET_UNSAFE() (_PyThreadState_GET()->interp)
+static inline PyInterpreterState* _PyInterpreterState_GET_UNSAFE(void)
+{
+    assert(PyGILState_Check());
+    PyThreadState *tstate = _PyThreadState_GET_UNSAFE();
+    assert(tstate != NULL);
+    PyInterpreterState *interp = tstate->interp;
+    assert(interp != NULL);
+    return interp;
+}
 
 
 /* Other */

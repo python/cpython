@@ -188,7 +188,8 @@ PyEval_ReleaseLock(void)
        We therefore avoid PyThreadState_Get() which dumps a fatal error
        in debug mode.
     */
-    drop_gil(_PyThreadState_GET());
+    PyThreadState *tstate = _PyThreadState_GET_UNSAFE();
+    drop_gil(tstate);
 }
 
 void

@@ -1916,7 +1916,7 @@ fatal_error(const char *prefix, const char *msg, int status)
        and holds the GIL */
     PyThreadState *tss_tstate = PyGILState_GetThisThreadState();
     if (tss_tstate != NULL) {
-        PyThreadState *tstate = _PyThreadState_GET();
+        PyThreadState *tstate = _PyThreadState_GET_UNSAFE();
         if (tss_tstate != tstate) {
             /* The Python thread does not hold the GIL */
             tss_tstate = NULL;
