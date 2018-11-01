@@ -2113,9 +2113,9 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     def test_get_group_mixed_list(self):
         group = self._test_get_x(parser.get_group,
-            ('Monty Python: "Fred A. Bear" <dinsdale@example.com>, '
+            ('Monty Python: "Fred A. Bear" <dinsdale@example.com>,'
                 '(foo) Roger <ping@exampele.com>, x@test.example.com;'),
-            ('Monty Python: "Fred A. Bear" <dinsdale@example.com>, '
+            ('Monty Python: "Fred A. Bear" <dinsdale@example.com>,'
                 '(foo) Roger <ping@exampele.com>, x@test.example.com;'),
             ('Monty Python: "Fred A. Bear" <dinsdale@example.com>,'
                 ' Roger <ping@exampele.com>, x@test.example.com;'),
@@ -2134,9 +2134,9 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     def test_get_group_one_invalid(self):
         group = self._test_get_x(parser.get_group,
-            ('Monty Python: "Fred A. Bear" <dinsdale@example.com>, '
+            ('Monty Python: "Fred A. Bear" <dinsdale@example.com>,'
                 '(foo) Roger ping@exampele.com, x@test.example.com;'),
-            ('Monty Python: "Fred A. Bear" <dinsdale@example.com>, '
+            ('Monty Python: "Fred A. Bear" <dinsdale@example.com>,'
                 '(foo) Roger ping@exampele.com, x@test.example.com;'),
             ('Monty Python: "Fred A. Bear" <dinsdale@example.com>,'
                 ' Roger ping@exampele.com, x@test.example.com;'),
@@ -2154,11 +2154,11 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     def test_get_group_missing_final_semicol(self):
         group = self._test_get_x(parser.get_group,
-            ('Monty Python:"Fred A. Bear" <dinsdale@example.com>, '
+            ('Monty Python:"Fred A. Bear" <dinsdale@example.com>,'
              'eric@where.test,John <jdoe@test>'),
-            ('Monty Python:"Fred A. Bear" <dinsdale@example.com>, '
+            ('Monty Python:"Fred A. Bear" <dinsdale@example.com>,'
              'eric@where.test,John <jdoe@test>;'),
-            ('Monty Python:"Fred A. Bear" <dinsdale@example.com>, '
+            ('Monty Python:"Fred A. Bear" <dinsdale@example.com>,'
              'eric@where.test,John <jdoe@test>;'),
             [errors.InvalidHeaderDefect],
             '')
@@ -2359,13 +2359,13 @@ class TestParser(TestParserMixin, TestEmailBase):
     def test_get_address_list_mailboxes_complex(self):
         address_list = self._test_get_x(parser.get_address_list,
             ('"Roy A. Bear" <dinsdale@example.com>, '
-                '(ping) Foo <x@example.com>, '
+                '(ping) Foo <x@example.com>,'
                 'Nobody Is. Special <y@(bird)example.(bad)com>'),
             ('"Roy A. Bear" <dinsdale@example.com>, '
-                '(ping) Foo <x@example.com>, '
+                '(ping) Foo <x@example.com>,'
                 'Nobody Is. Special <y@(bird)example.(bad)com>'),
             ('"Roy A. Bear" <dinsdale@example.com>, '
-                'Foo <x@example.com>, '
+                'Foo <x@example.com>,'
                 '"Nobody Is. Special" <y@example. com>'),
             [errors.ObsoleteHeaderDefect, # period in Is.
             errors.ObsoleteHeaderDefect], # cfws in domain
@@ -2386,13 +2386,13 @@ class TestParser(TestParserMixin, TestEmailBase):
     def test_get_address_list_mailboxes_invalid_addresses(self):
         address_list = self._test_get_x(parser.get_address_list,
             ('"Roy A. Bear" <dinsdale@example.com>, '
-                '(ping) Foo x@example.com[], '
+                '(ping) Foo x@example.com[],'
                 'Nobody Is. Special <(bird)example.(bad)com>'),
             ('"Roy A. Bear" <dinsdale@example.com>, '
-                '(ping) Foo x@example.com[], '
+                '(ping) Foo x@example.com[],'
                 'Nobody Is. Special <(bird)example.(bad)com>'),
             ('"Roy A. Bear" <dinsdale@example.com>, '
-                'Foo x@example.com[], '
+                'Foo x@example.com[],'
                 '"Nobody Is. Special" < example. com>'),
              [errors.InvalidHeaderDefect,   # invalid address in list
               errors.InvalidHeaderDefect,   # 'Foo x' local part invalid.
