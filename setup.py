@@ -681,7 +681,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension("_json", ["_json.c"]) )
         # Python C API test module
         exts.append( Extension('_testcapi', ['_testcapimodule.c'],
-                               depends=['testcapi_long.h']) )
+                               depends=['testcapi_long.h'],
+                               define_macros=[('Py_BUILD_CORE', '')]) )
         # Python PEP-3118 (buffer protocol) test module
         exts.append( Extension('_testbuffer', ['_testbuffer.c']) )
         # Test loading multiple modules from one compiled file (http://bugs.python.org/issue16421)
