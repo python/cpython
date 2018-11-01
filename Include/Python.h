@@ -146,4 +146,10 @@
 #include "pyfpe.h"
 #include "tracemalloc.h"
 
+#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
+   /* bpo-35081: Automatically include pycore_object.h in Python.h, to avoid
+      to have to add an explicit #include "pycore_object.h" to each C file. */
+#  include "pycore_object.h"
+#endif
+
 #endif /* !Py_PYTHON_H */
