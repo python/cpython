@@ -3,7 +3,7 @@
 
 #include "Python.h"
 #include "pycore_state.h"
-#include "accu.h"
+#include "pycore_accu.h"
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"

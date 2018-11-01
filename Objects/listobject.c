@@ -2,7 +2,7 @@
 
 #include "Python.h"
 #include "pycore_state.h"
-#include "accu.h"
+#include "pycore_accu.h"
 
 #ifdef STDC_HEADERS
 #include <stddef.h>

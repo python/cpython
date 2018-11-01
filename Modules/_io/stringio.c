@@ -1,7 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "structmember.h"
-#include "accu.h"
+#include "pycore_accu.h"
 #include "_iomodule.h"
 
 /* Implementation note: the buffer is always at least one character longer
