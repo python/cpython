@@ -80,3 +80,26 @@ try:
     raise Exception()
 except:
     tb = sys.exc_info()[2]
+
+# line 84
+def extra_a():
+    pass
+class A:
+    def func(self):
+        pass
+    fr = inspect.currentframe()
+
+# line 92
+extra_b = 1
+class B:
+    def func(self):
+        pass
+    fr = inspect.currentframe()
+
+# line 99
+def extra_c():
+    pass
+class C:
+    def func(self):
+        pass
+    fr = inspect.currentframe()
