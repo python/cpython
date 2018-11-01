@@ -336,7 +336,7 @@ PyDoc_STRVAR(excepthook_doc,
 static PyObject *
 sys_exc_info(PyObject *self, PyObject *noargs)
 {
-    _PyErr_StackItem *err_info = _PyErr_GetTopmostException(PyThreadState_GET());
+    _PyErr_StackItem *err_info = _PyErr_GetTopmostException(_PyThreadState_GET());
     return Py_BuildValue(
         "(OOO)",
         err_info->exc_type != NULL ? err_info->exc_type : Py_None,
@@ -565,7 +565,7 @@ function call.  See the debugger chapter in the library manual."
 static PyObject *
 sys_gettrace(PyObject *self, PyObject *args)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *temp = tstate->c_traceobj;
 
     if (temp == NULL)
@@ -603,7 +603,7 @@ and return.  See the profiler chapter in the library manual."
 static PyObject *
 sys_getprofile(PyObject *self, PyObject *args)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *temp = tstate->c_profileobj;
 
     if (temp == NULL)
@@ -722,7 +722,7 @@ sys_setrecursionlimit(PyObject *self, PyObject *args)
        the new low-water mark. Otherwise it may not be possible anymore to
        reset the overflowed flag to 0. */
     mark = _Py_RecursionLimitLowerWaterMark(new_limit);
-    tstate = PyThreadState_GET();
+    tstate = _PyThreadState_GET();
     if (tstate->recursion_depth >= mark) {
         PyErr_Format(PyExc_RecursionError,
                      "cannot set the recursion limit to %i at "
@@ -1362,7 +1362,7 @@ purposes only."
 static PyObject *
 sys_getframe(PyObject *self, PyObject *args)
 {
-    PyFrameObject *f = PyThreadState_GET()->frame;
+    PyFrameObject *f = _PyThreadState_GET()->frame;
     int depth = -1;
 
     if (!PyArg_ParseTuple(args, "|i:_getframe", &depth))
@@ -1745,7 +1745,7 @@ static int
 _PySys_ReadPreInitOptions(void)
 {
     /* Rerun the add commands with the actual sys module available */
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
         /* Still don't have a thread state, so something is wrong! */
         return -1;
@@ -1796,7 +1796,7 @@ get_warnoptions(void)
 void
 PySys_ResetWarnOptions(void)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
         _clear_preinit_entries(&_preinit_warnoptions);
         return;
@@ -1835,7 +1835,7 @@ PySys_AddWarnOptionUnicode(PyObject *option)
 void
 PySys_AddWarnOption(const wchar_t *s)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
         _append_preinit_entry(&_preinit_warnoptions, s);
         return;
@@ -1922,7 +1922,7 @@ error:
 void
 PySys_AddXOption(const wchar_t *s)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
         _append_preinit_entry(&_preinit_xoptions, s);
         return;

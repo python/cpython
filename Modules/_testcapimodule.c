@@ -4160,7 +4160,7 @@ test_PyTime_AsMicroseconds(PyObject *self, PyObject *args)
 static PyObject*
 get_recursion_depth(PyObject *self, PyObject *args)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = PyThreadState_Get();
 
     /* subtract one to ignore the frame of the get_recursion_depth() call */
     return PyLong_FromLong(tstate->recursion_depth - 1);
