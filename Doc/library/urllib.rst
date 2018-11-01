@@ -147,14 +147,15 @@ High-level interface
       :envvar:`no_proxy` environment variable.
 
    .. versionchanged:: 2.7.9
-      The *context* parameter was added. All the neccessary certificate and hostname checks are done by default.
+      The *context* parameter was added.  All the neccessary certificate and hostname
+      checks are done by default.
 
    .. deprecated:: 2.6
       The :func:`urlopen` function has been removed in Python 3 in favor
       of :func:`urllib2.urlopen`.
 
 
-.. function:: urlretrieve(url[, filename[, reporthook[, data]]])
+.. function:: urlretrieve(url[, filename[, reporthook[, data[, context]]]])
 
    Copy a network object denoted by a URL to a local file, if necessary. If the URL
    points to a local file, or a valid cached copy of the object exists, the object
@@ -179,6 +180,10 @@ High-level interface
    :mimetype:`application/x-www-form-urlencoded` format; see the :func:`urlencode`
    function below.
 
+   The *context* parameter may be set to a :class:`ssl.SSLContext` instance to
+   configure the SSL settings that are used if :func:`urlretrieve` makes a HTTPS
+   connection.
+
    .. versionchanged:: 2.5
       :func:`urlretrieve` will raise :exc:`ContentTooShortError` when it detects that
       the amount of data available  was less than the expected amount (which is the
@@ -195,6 +200,10 @@ High-level interface
       If no *Content-Length* header was supplied, :func:`urlretrieve` can not check
       the size of the data it has downloaded, and just returns it.  In this case you
       just have to assume that the download was successful.
+
+   .. versionchanged:: 2.7.9
+      The *context* parameter was added.  All the neccessary certificate and hostname
+      checks are done by default.
 
 
 .. data:: _urlopener
@@ -348,6 +357,10 @@ URL Opener objects
 
    :class:`URLopener` objects will raise an :exc:`IOError` exception if the server
    returns an error code.
+
+   .. versionchanged:: 2.7.9
+      The *context* parameter was added.  All the neccessary certificate and hostname
+      checks are done by default.
 
    .. method:: open(fullurl[, data])
 
