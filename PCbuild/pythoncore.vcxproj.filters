@@ -36,9 +36,6 @@
     <ClInclude Include="..\Include\abstract.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\accu.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\asdl.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -133,6 +130,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\import.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_accu.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_atomic.h">
