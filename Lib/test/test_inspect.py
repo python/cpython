@@ -385,7 +385,10 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getclasses(self):
         classes = inspect.getmembers(mod, inspect.isclass)
         self.assertEqual(classes,
-                         [('FesteringGob', mod.FesteringGob),
+                         [('A', mod.A),
+                          ('B', mod.B),
+                          ('C', mod.C),
+                          ('FesteringGob', mod.FesteringGob),
                           ('MalodorousPervert', mod.MalodorousPervert),
                           ('ParrotDroppings', mod.ParrotDroppings),
                           ('StupidGit', mod.StupidGit),
@@ -394,7 +397,10 @@ class TestRetrievingSourceCode(GetSourceBase):
         tree = inspect.getclasstree([cls[1] for cls in classes])
         self.assertEqual(tree,
                          [(object, ()),
-                          [(mod.ParrotDroppings, (object,)),
+                          [(mod.A, (object,)),
+                           (mod.B, (object,)),
+                           (mod.C, (object,)),
+                           (mod.ParrotDroppings, (object,)),
                            [(mod.FesteringGob, (mod.MalodorousPervert,
                                                    mod.ParrotDroppings))
                             ],
@@ -409,7 +415,10 @@ class TestRetrievingSourceCode(GetSourceBase):
         tree = inspect.getclasstree([cls[1] for cls in classes], True)
         self.assertEqual(tree,
                          [(object, ()),
-                          [(mod.ParrotDroppings, (object,)),
+                          [(mod.A, (object,)),
+                           (mod.B, (object,)),
+                           (mod.C, (object,)),
+                           (mod.ParrotDroppings, (object,)),
                            (mod.StupidGit, (object,)),
                            [(mod.MalodorousPervert, (mod.StupidGit,)),
                             [(mod.FesteringGob, (mod.MalodorousPervert,
@@ -422,6 +431,8 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getfunctions(self):
         functions = inspect.getmembers(mod, inspect.isfunction)
         self.assertEqual(functions, [('eggs', mod.eggs),
+                                     ('extra_a', mod.extra_a),
+                                     ('extra_c', mod.extra_c),
                                      ('lobbest', mod.lobbest),
                                      ('spam', mod.spam)])
 
