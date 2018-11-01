@@ -431,7 +431,6 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getfunctions(self):
         functions = inspect.getmembers(mod, inspect.isfunction)
         self.assertEqual(functions, [('eggs', mod.eggs),
-                                     ('extra_a', mod.extra_a),
                                      ('extra_c', mod.extra_c),
                                      ('lobbest', mod.lobbest),
                                      ('spam', mod.spam)])
@@ -578,12 +577,12 @@ class TestGettingSourceOfFrames(GetSourceBase):
         self.assertSourceEqual(mod.tb, 1, None)
 
     def test_class_frame(self):
-        self.assertSourceEqual(mod.A.fr, 87, 90)
+        self.assertSourceEqual(mod.A.fr, 100, 103)
         self.assertNotSourceEqual(mod.A.fr, 85, 86)
         self.assertSourceEqual(mod.B.fr, 94, 97)
-        self.assertNotSourceEqual(mod.B.fr, 87, 90)
-        self.assertSourceEqual(mod.C.fr, 102, 105)
-        self.assertNotSourceEqual(mod.C.fr, 100, 101)
+        self.assertNotSourceEqual(mod.B.fr, 85, 86)
+        self.assertSourceEqual(mod.C.fr, 87, 90)
+        self.assertNotSourceEqual(mod.C.fr, 85, 86)
 
 class TestDecorators(GetSourceBase):
     fodderModule = mod2

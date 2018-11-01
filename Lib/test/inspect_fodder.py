@@ -82,9 +82,9 @@ except:
     tb = sys.exc_info()[2]
 
 # line 84
-def extra_a():
+def extra_c():
     pass
-class A:
+class C:
     def func(self):
         pass
     fr = inspect.currentframe()
@@ -97,9 +97,7 @@ class B:
     fr = inspect.currentframe()
 
 # line 99
-def extra_c():
-    pass
-class C:
+class A:
     def func(self):
         pass
     fr = inspect.currentframe()
