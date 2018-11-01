@@ -258,7 +258,7 @@ function_code_fastcall(PyCodeObject *co, PyObject *const *args, Py_ssize_t nargs
                        PyObject *globals)
 {
     PyFrameObject *f;
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     PyObject **fastlocals;
     Py_ssize_t i;
     PyObject *result;
