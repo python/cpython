@@ -523,11 +523,11 @@ async def _cancel_and_wait(fut, loop):
 
 
 class as_completed(object):
-    """Asynchronous iterator over awaitables which returns the result of each
-    as completed.
+    """Asynchronous iterator over awaitables which yields each future as it
+    is completed consistent with PEP 3148. Usage::
 
-    This differs from PEP 3148; results are yielded from asynchronous
-    iteration rather than futures.
+        async for future in as_completed(fs):
+            print(future.result())
 
     For backwards compatibility, this can also be used as a regular iterator::
 
@@ -579,7 +579,7 @@ class as_completed(object):
         try:
             while self._pending:
                 future = await self._completed.get()
-                yield future.result()
+                yield future
         finally:
             # If an exception happened, we want to ensure that the done
             # callback doesn't run anyway
