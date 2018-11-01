@@ -4,6 +4,10 @@
 extern "C" {
 #endif
 
+#ifndef Py_BUILD_CORE
+#  error "Py_BUILD_CORE must be defined to include this header"
+#endif
+
 #include "pystate.h"
 #include "pythread.h"
 
@@ -212,6 +216,36 @@ PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
 
 #define _Py_CURRENTLY_FINALIZING(tstate) \
     (_PyRuntime.finalizing == tstate)
+
+
+/* Variable and macro for in-line access to current thread
+   and interpreter state */
+
+/* Get the current Python thread state.
+
+   Efficient macro reading directly the 'gilstate.tstate_current' atomic
+   variable. The macro is unsafe: it does not check for error and it can
+   return NULL.
+
+   The caller must hold the GIL.
+
+   See also PyThreadState_Get() and PyThreadState_GET(). */
+#define _PyThreadState_GET() \
+    ((PyThreadState*)_Py_atomic_load_relaxed(&_PyRuntime.gilstate.tstate_current))
+
+/* Redefine PyThreadState_GET() as an alias to _PyThreadState_GET() */
+#undef PyThreadState_GET
+#define PyThreadState_GET() _PyThreadState_GET()
+
+/* Get the current interpreter state.
+
+   The macro is unsafe: it does not check for error and it can return NULL.
+
+   The caller must hold the GIL.
+
+   See also _PyInterpreterState_Get()
+   and _PyGILState_GetInterpreterStateUnsafe(). */
+#define _PyInterpreterState_GET_UNSAFE() (_PyThreadState_GET()->interp)
 
 
 /* Other */

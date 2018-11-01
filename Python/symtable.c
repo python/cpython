@@ -265,7 +265,7 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
     st->st_future = future;
 
     /* Setup recursion depth check counters */
-    tstate = PyThreadState_GET();
+    tstate = _PyThreadState_GET();
     if (!tstate) {
         PySymtable_Free(st);
         return NULL;
