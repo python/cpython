@@ -119,7 +119,9 @@
     <ClInclude Include="..\Include\internal\pycore_getopt.h" />
     <ClInclude Include="..\Include\internal\pycore_gil.h" />
     <ClInclude Include="..\Include\internal\pycore_hamt.h" />
+    <ClInclude Include="..\Include\internal\pycore_lifecycle.h" />
     <ClInclude Include="..\Include\internal\pycore_mem.h" />
+    <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_state.h" />
     <ClInclude Include="..\Include\internal\pycore_warnings.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
