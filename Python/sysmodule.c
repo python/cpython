@@ -15,10 +15,12 @@ Data members:
 */
 
 #include "Python.h"
-#include "pycore_mem.h"
-#include "pycore_state.h"
 #include "code.h"
 #include "frameobject.h"
+#include "pycore_lifecycle.h"
+#include "pycore_mem.h"
+#include "pycore_pathconfig.h"
+#include "pycore_state.h"
 #include "pythread.h"
 
 #include "osdefs.h"
