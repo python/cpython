@@ -1,8 +1,9 @@
 /* Return the initial module search path. */
 
 #include "Python.h"
-#include "pycore_state.h"
 #include "osdefs.h"
+#include "pycore_pathconfig.h"
+#include "pycore_state.h"
 
 #include <sys/types.h>
 #include <string.h>
