@@ -207,7 +207,7 @@ class Element:
 
     def __bool__(self):
         warnings.warn(
-            "The behavior of this method will change in future versions. "
+            "The behavior of this method will change in future versions.  "
             "Use specific 'len(elem)' or 'elem is not None' test instead.",
             FutureWarning, stacklevel=2
             )
@@ -281,7 +281,7 @@ class Element:
 
         """
         warnings.warn(
-            "This method will be removed in future versions. "
+            "This method will be removed in future versions.  "
             "Use 'list(elem)' or iteration over elem instead.",
             DeprecationWarning, stacklevel=2
             )
@@ -413,7 +413,7 @@ class Element:
     # compatibility
     def getiterator(self, tag=None):
         warnings.warn(
-            "This method will be removed in future versions. "
+            "This method will be removed in future versions.  "
             "Use 'elem.iter()' or 'list(elem.iter())' instead.",
             DeprecationWarning, stacklevel=2
         )
@@ -622,7 +622,7 @@ class ElementTree:
     # compatibility
     def getiterator(self, tag=None):
         warnings.warn(
-            "This method will be removed in future versions. "
+            "This method will be removed in future versions.  "
             "Use 'tree.iter()' or 'list(tree.iter())' instead.",
             DeprecationWarning, stacklevel=2
         )
@@ -644,7 +644,7 @@ class ElementTree:
             path = "." + path
             warnings.warn(
                 "This search is broken in 1.3 and earlier, and will be "
-                "fixed in a future version. If you rely on the current "
+                "fixed in a future version.  If you rely on the current "
                 "behaviour, change it to %r" % path,
                 FutureWarning, stacklevel=2
                 )
@@ -666,7 +666,7 @@ class ElementTree:
             path = "." + path
             warnings.warn(
                 "This search is broken in 1.3 and earlier, and will be "
-                "fixed in a future version. If you rely on the current "
+                "fixed in a future version.  If you rely on the current "
                 "behaviour, change it to %r" % path,
                 FutureWarning, stacklevel=2
                 )
@@ -688,7 +688,7 @@ class ElementTree:
             path = "." + path
             warnings.warn(
                 "This search is broken in 1.3 and earlier, and will be "
-                "fixed in a future version. If you rely on the current "
+                "fixed in a future version.  If you rely on the current "
                 "behaviour, change it to %r" % path,
                 FutureWarning, stacklevel=2
                 )
@@ -710,7 +710,7 @@ class ElementTree:
             path = "." + path
             warnings.warn(
                 "This search is broken in 1.3 and earlier, and will be "
-                "fixed in a future version. If you rely on the current "
+                "fixed in a future version.  If you rely on the current "
                 "behaviour, change it to %r" % path,
                 FutureWarning, stacklevel=2
                 )
@@ -1596,7 +1596,7 @@ class XMLParser:
                     self.target.doctype(name, pubid, system[1:-1])
                 elif hasattr(self, "doctype"):
                     warnings.warn(
-                        "The doctype() method of XMLParser is ignored. "
+                        "The doctype() method of XMLParser is ignored.  "
                         "Define doctype() method on the TreeBuilder target.",
                         RuntimeWarning)
 
