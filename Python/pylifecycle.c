@@ -530,7 +530,7 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
     /* bpo-34008: For backward compatibility reasons, calling Py_Main() after
        Py_Initialize() ignores the new configuration. */
     if (_PyRuntime.core_initialized) {
-        PyThreadState *tstate = PyThreadState_GET();
+        PyThreadState *tstate = _PyThreadState_GET();
         if (!tstate) {
             return _Py_INIT_ERR("failed to read thread state");
         }
@@ -1009,7 +1009,7 @@ Py_FinalizeEx(void)
     wait_for_thread_shutdown();
 
     /* Get current thread state and interpreter pointer */
-    tstate = PyThreadState_GET();
+    tstate = _PyThreadState_GET();
     interp = tstate->interp;
 
     /* The interpreter is still entirely intact at this point, and the
@@ -1406,7 +1406,7 @@ Py_EndInterpreter(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
 
-    if (tstate != PyThreadState_GET())
+    if (tstate != _PyThreadState_GET())
         Py_FatalError("Py_EndInterpreter: thread is not current");
     if (tstate->frame != NULL)
         Py_FatalError("Py_EndInterpreter: thread still has a frame");
@@ -1928,7 +1928,7 @@ fatal_error(const char *prefix, const char *msg, int status)
        and holds the GIL */
     PyThreadState *tss_tstate = PyGILState_GetThisThreadState();
     if (tss_tstate != NULL) {
-        PyThreadState *tstate = PyThreadState_GET();
+        PyThreadState *tstate = _PyThreadState_GET();
         if (tss_tstate != tstate) {
             /* The Python thread does not hold the GIL */
             tss_tstate = NULL;

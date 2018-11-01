@@ -189,7 +189,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
         return PYTHREAD_INVALID_THREAD_ID;
     obj->func = func;
     obj->arg = arg;
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     size_t stacksize = tstate ? tstate->interp->pythread_stacksize : 0;
     hThread = (HANDLE)_beginthreadex(0,
                       Py_SAFE_DOWNCAST(stacksize, Py_ssize_t, unsigned int),
@@ -334,13 +334,13 @@ _pythread_nt_set_stacksize(size_t size)
 {
     /* set to default */
     if (size == 0) {
-        PyThreadState_GET()->interp->pythread_stacksize = 0;
+        _PyInterpreterState_GET_UNSAFE()->pythread_stacksize = 0;
         return 0;
     }
 
     /* valid range? */
     if (size >= THREAD_MIN_STACKSIZE && size < THREAD_MAX_STACKSIZE) {
-        PyThreadState_GET()->interp->pythread_stacksize = size;
+        _PyInterpreterState_GET_UNSAFE()->pythread_stacksize = size;
         return 0;
     }
 

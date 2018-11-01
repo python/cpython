@@ -301,7 +301,7 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     char *rv, *res;
     size_t len;
 
-    if (_PyOS_ReadlineTState == PyThreadState_GET()) {
+    if (_PyOS_ReadlineTState == _PyThreadState_GET()) {
         PyErr_SetString(PyExc_RuntimeError,
                         "can't re-enter readline");
         return NULL;
@@ -316,7 +316,7 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
         _PyOS_ReadlineLock = PyThread_allocate_lock();
     }
 
-    _PyOS_ReadlineTState = PyThreadState_GET();
+    _PyOS_ReadlineTState = _PyThreadState_GET();
     Py_BEGIN_ALLOW_THREADS
     PyThread_acquire_lock(_PyOS_ReadlineLock, 1);
 
