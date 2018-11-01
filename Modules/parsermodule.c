@@ -39,7 +39,6 @@
 #include "grammar.h"
 #include "parsetok.h"
                                         /* ISTERMINAL() / ISNONTERMINAL() */
-#undef Yield
 #include "ast.h"
 
 extern grammar _PyParser_Grammar; /* From graminit.c */
