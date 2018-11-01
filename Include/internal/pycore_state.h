@@ -221,9 +221,15 @@ PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
 /* Variable and macro for in-line access to current thread
    and interpreter state */
 
-/* Efficient macro to get the current Python thread thread.
+/* Get the current Python thread state.
 
-   The caller must hold the GIL. */
+   Efficient macro reading directly the 'gilstate.tstate_current' atomic
+   variable. The macro is unsafe: it does not check for error and it can
+   return NULL.
+
+   The caller must hold the GIL.
+
+   See also PyThreadState_Get() and PyThreadState_GET(). */
 #define _PyThreadState_GET() \
     ((PyThreadState*)_Py_atomic_load_relaxed(&_PyRuntime.gilstate.tstate_current))
 
