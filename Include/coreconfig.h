@@ -361,17 +361,6 @@ PyAPI_FUNC(int) _PyCoreConfig_GetEnvDup(
 #endif
 
 
-#ifdef Py_BUILD_CORE
-PyAPI_FUNC(int) _Py_SetFileSystemEncoding(
-    const char *encoding,
-    const char *errors);
-PyAPI_FUNC(void) _Py_ClearFileSystemEncoding(void);
-#endif
-
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject*) _Py_wstrlist_as_pylist(int len, wchar_t **list);
-#endif
-
 
 #ifdef __cplusplus
 }

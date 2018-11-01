@@ -6,7 +6,9 @@
 #undef Yield /* undefine macro conflicting with winbase.h */
 #include "pycore_context.h"
 #include "pycore_hamt.h"
+#include "pycore_lifecycle.h"
 #include "pycore_mem.h"
+#include "pycore_pathconfig.h"
 #include "pycore_state.h"
 #include "grammar.h"
 #include "node.h"
@@ -62,20 +64,6 @@ static _PyInitError initsigs(void);
 static void call_py_exitfuncs(PyInterpreterState *);
 static void wait_for_thread_shutdown(void);
 static void call_ll_exitfuncs(void);
-extern int _PyUnicode_Init(void);
-extern int _PyStructSequence_Init(void);
-extern void _PyUnicode_Fini(void);
-extern int _PyLong_Init(void);
-extern void PyLong_Fini(void);
-extern _PyInitError _PyFaulthandler_Init(int enable);
-extern void _PyFaulthandler_Fini(void);
-extern void _PyHash_Fini(void);
-extern int _PyTraceMalloc_Init(int enable);
-extern int _PyTraceMalloc_Fini(void);
-extern void _Py_ReadyTypes(void);
-
-extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
-extern void _PyGILState_Fini(void);
 
 _PyRuntimeState _PyRuntime = _PyRuntimeState_INIT;
 
