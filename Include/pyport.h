@@ -809,4 +809,19 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #define WITH_THREAD
 #endif
 
+/* The Py_WCSTOK macro provides a uniform interface to the wide
+ * character tokenizer function.  Based on the environment,
+ * an appropriate implementation will be chosen.
+ *
+ * Microsoft does not have a three-argument wcstok, but instead provides
+ * an equivalent via the wcstok_s().  Borland/Embarcadero and MinGW provide this
+ * same wcstok_s() function.  If MS_WINDOWS is not defined,
+ * we'll assume that a POSIX-like three-argument version is available.
+ */
+#if defined(MS_WINDOWS)
+#       define Py_WCSTOK(str, tok, state)  wcstok_s(str, tok, state)
+#else
+#       define Py_WCSTOK(str, tok, state)  wcstok(str, tok, state)
+#endif
+
 #endif /* Py_PYPORT_H */

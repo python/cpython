@@ -44,13 +44,6 @@ extern "C" {
      ? _Py_INIT_USER_ERR("cannot decode " NAME) \
      : _Py_INIT_NO_MEMORY())
 
-
-#ifdef MS_WINDOWS
-#define WCSTOK wcstok_s
-#else
-#define WCSTOK wcstok
-#endif
-
 /* For Py_GetArgcArgv(); set by main() */
 static wchar_t **orig_argv = NULL;
 static int orig_argc = 0;
@@ -893,9 +886,9 @@ cmdline_init_env_warnoptions(_PyMain *pymain, const _PyCoreConfig *config,
 
 
     wchar_t *warning, *context = NULL;
-    for (warning = WCSTOK(env, L",", &context);
+    for (warning = Py_WCSTOK(env, L",", &context);
          warning != NULL;
-         warning = WCSTOK(NULL, L",", &context))
+         warning = Py_WCSTOK(NULL, L",", &context))
     {
         _PyInitError err = _Py_wstrlist_append(&cmdline->nenv_warnoption,
                                                &cmdline->env_warnoptions,
