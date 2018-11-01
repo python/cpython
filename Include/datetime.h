@@ -181,7 +181,7 @@ typedef struct {
 
 
 /* When datetime.h is included from _datetimemodule.c,
-   the macros are defines in _datetimemodule.c. */
+   the macros are defined in _datetimemodule.c. */
 #ifndef _PY_DATETIME_IMPL
 /* Define global variable for the C API and a macro for setting it. */
 static PyDateTime_CAPI *PyDateTimeAPI = NULL;
