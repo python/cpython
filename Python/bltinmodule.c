@@ -2,7 +2,7 @@
 
 #include "Python.h"
 #include "Python-ast.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 
 #include "node.h"
 #include "code.h"

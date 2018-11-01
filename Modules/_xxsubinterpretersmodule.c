@@ -4,7 +4,7 @@
 
 #include "Python.h"
 #include "frameobject.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 
 
 static char *

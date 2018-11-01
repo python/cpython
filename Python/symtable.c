@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 #ifdef Yield
 #undef Yield /* undefine conflicting macro from winbase.h */
 #endif

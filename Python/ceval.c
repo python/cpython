@@ -10,7 +10,7 @@
 #define PY_LOCAL_AGGRESSIVE
 
 #include "Python.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 
 #include "code.h"
 #include "dictobject.h"
