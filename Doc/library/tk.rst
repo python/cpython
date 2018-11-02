@@ -34,11 +34,9 @@ alternatives, see the :ref:`other-gui-packages` section.
 
    tkinter.rst
    tkinter.colorchooser.rst
-   tkinter.commondialog.rst
-   tkinter.filedialog.rst
    tkinter.font.rst
+   dialog.rst
    tkinter.messagebox.rst
-   tkinter.simpledialog.rst
    tkinter.scrolledtext.rst
    tkinter.dnd.rst
    tkinter.ttk.rst

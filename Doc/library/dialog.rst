@@ -1,5 +1,46 @@
+Tkinter Dialogs
+===============
+
+:mod:`tkinter.simpledialog` --- Standard Tkinter input dialogs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. module:: tkinter.simpledialog
+   :platform: Tk
+   :synopsis: Simple dialog windows
+
+**Source code:** :source:`Lib/tkinter/simpledialog.py`
+
+--------------
+
+The :mod:`tkinter.simpledialog` module contains convenience classes and
+functions for creating simple modal dialogs to get a value from the user.
+
+
+.. function:: askfloat(title, prompt, **kw)
+              askinteger(title, prompt, **kw)
+              askstring(title, prompt, **kw)
+
+   The above three functions provide dialogs that prompt the user to enter a value
+   of the desired type.
+
+.. class:: Dialog(parent, title=None)
+
+   The base class for custom dialogs.
+
+    .. method:: body(master)
+
+       Override to construct the dialog's interface and return the widget that
+       should have initial focus.
+
+    .. method:: buttonbox()
+
+       Default behaviour adds OK and Cancel buttons. Override for custom button
+       layouts.
+
+
+
 :mod:`tkinter.filedialog` --- File selection dialogs
-====================================================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. module:: tkinter.filedialog
    :platform: Tk
@@ -13,7 +54,7 @@ The :mod:`tkinter.filedialog` module provides classes and factory functions for
 creating file/directory selection windows.
 
 Native Load/Save Dialogs
-^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------
 
 The following classes and functions provide file dialog windows that combine a
 native look-and-feel with configuration options to customize behaviour.
@@ -163,6 +204,27 @@ These do not emulate the native look-and-feel of the platform.
       directory. Confirmation is required if an already existing file is
       selected.
 
+:mod:`tkinter.commondialog` --- Dialog window templates
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. module:: tkinter.commondialog
+   :platform: Tk
+   :synopsis: Tkinter base class for dialogs
+
+**Source code:** :source:`Lib/tkinter/commondialog.py`
+
+--------------
+
+The :mod:`tkinter.commondialog` module provides the :class:`Dialog` class that
+is the base class for dialogs defined in other supporting modules.
+
+.. class:: Dialog(master=None, **options)
+
+   .. method:: show(color=None, **options)
+
+      Render the Dialog window.
+
+
 .. seealso::
 
-   :mod:`tkinter.commondialog`, :ref:`tut-files`
+   Modules :mod:`tkinter.messagebox`, :ref:`tut-files`
