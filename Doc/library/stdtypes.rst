@@ -4399,10 +4399,6 @@ An example of dictionary view usage::
    {'bacon'}
    >>> keys ^ {'sausage', 'juice'}
    {'juice', 'sausage', 'bacon', 'spam'}
-   >>> list(reversed(keys))
-   ['spam', 'bacon']
-   >>> list(reversed(values))
-   [500, 1]
 
 
 .. _typecontextmanager:
