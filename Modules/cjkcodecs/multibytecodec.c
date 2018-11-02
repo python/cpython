@@ -1218,6 +1218,7 @@ _multibytecodec_MultibyteIncrementalDecoder_getstate_impl(MultibyteIncrementalDe
 /*[clinic end generated code: output=255009c4713b7f82 input=4006aa49bddbaa75]*/
 {
     PyObject *buffer;
+    PyObject *statelong;
 
     buffer = PyBytes_FromStringAndSize((const char *)self->pending,
                                        self->pendingsize);
@@ -1225,7 +1226,16 @@ _multibytecodec_MultibyteIncrementalDecoder_getstate_impl(MultibyteIncrementalDe
         return NULL;
     }
 
-    return make_tuple(buffer, (Py_ssize_t)*self->state.c);
+    statelong = (PyObject *)_PyLong_FromByteArray(self->state.c,
+                                                  sizeof(self->state.c),
+                                                  1 /* little-endian */ ,
+                                                  0 /* unsigned */ );
+    if (statelong == NULL) {
+        Py_DECREF(buffer);
+        return NULL;
+    }
+
+    return Py_BuildValue("NN", buffer, statelong);
 }
 
 /*[clinic input]
@@ -1240,13 +1250,20 @@ _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(MultibyteIncrementalDe
 /*[clinic end generated code: output=106b2fbca3e2dcc2 input=e5d794e8baba1a47]*/
 {
     PyObject *buffer;
+    PyLongObject *statelong;
     Py_ssize_t buffersize;
     char *bufferstr;
-    unsigned long long flag;
+    unsigned char statebytes[8];
 
-    if (!PyArg_ParseTuple(state, "SK;setstate(): illegal state argument",
-                          &buffer, &flag))
+    if (!PyArg_ParseTuple(state, "SO!;setstate(): illegal state argument",
+                          &buffer, &PyLong_Type, &statelong))
     {
+        return NULL;
+    }
+
+    if (_PyLong_AsByteArray(statelong, statebytes, sizeof(statebytes),
+                            1 /* little-endian */ ,
+                            0 /* unsigned */ ) < 0) {
         return NULL;
     }
 
@@ -1266,7 +1283,7 @@ _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(MultibyteIncrementalDe
     }
     self->pendingsize = buffersize;
     memcpy(self->pending, bufferstr, self->pendingsize);
-    memcpy(self->state.c, (unsigned char *)&flag, sizeof(flag));
+    memcpy(self->state.c, statebytes, sizeof(statebytes));
 
     Py_RETURN_NONE;
 }
