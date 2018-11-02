@@ -271,6 +271,10 @@ class Test_IncrementalDecoder(unittest.TestCase):
         pending4, _ = decoder.getstate()
         self.assertEqual(pending4, b'')
 
+        # Ensure state values are preserved correctly
+        decoder.setstate((b'abc', 123456789))
+        self.assertEqual(decoder.getstate(), (b'abc', 123456789))
+
     def test_setstate_validates_input(self):
         decoder = codecs.getincrementaldecoder('euc_jp')()
         self.assertRaises(TypeError, decoder.setstate, 123)
