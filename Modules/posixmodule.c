@@ -2391,7 +2391,7 @@ class sched_param_converter(CConverter):
 os.stat
 
     path : path_t(allow_fd=True)
-        Path to be examined; can be string, bytes, path-like object or
+        Path to be examined; can be string, bytes, a path-like object or
         open-file-descriptor int.
 
     *
@@ -2419,7 +2419,7 @@ It's an error to use dir_fd or follow_symlinks when specifying path as
 
 static PyObject *
 os_stat_impl(PyObject *module, path_t *path, int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=7d4976e6f18a59c5 input=270bd64e7bb3c8f7]*/
+/*[clinic end generated code: output=7d4976e6f18a59c5 input=01d362ebcc06996b]*/
 {
     return posix_do_stat("stat", path, dir_fd, follow_symlinks);
 }
@@ -2453,7 +2453,7 @@ os_lstat_impl(PyObject *module, path_t *path, int dir_fd)
 os.access -> bool
 
     path: path_t
-        Path to be tested; can be string or bytes
+        Path to be tested; can be string, bytes, or a path-like object.
 
     mode: int
         Operating-system mode bitfield.  Can be F_OK to test existence,
@@ -2491,7 +2491,7 @@ Note that most operations will use the effective uid/gid, therefore this
 static int
 os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
                int effective_ids, int follow_symlinks)
-/*[clinic end generated code: output=cf84158bc90b1a77 input=8e8c3a6ba791fee3]*/
+/*[clinic end generated code: output=cf84158bc90b1a77 input=3ffe4e650ee3bf20]*/
 {
     int return_value;
 
@@ -2683,7 +2683,7 @@ os_fchdir_impl(PyObject *module, int fd)
 os.chmod
 
     path: path_t(allow_fd='PATH_HAVE_FCHMOD')
-        Path to be modified.  May always be specified as a str or bytes.
+        Path to be modified.  May always be specified as a str, bytes, or a path-like object.
         On some platforms, path may also be specified as an open file descriptor.
         If this functionality is unavailable, using it raises an exception.
 
@@ -2714,7 +2714,7 @@ dir_fd and follow_symlinks may not be implemented on your platform.
 static PyObject *
 os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
               int follow_symlinks)
-/*[clinic end generated code: output=5cf6a94915cc7bff input=7f1618e5e15cc196]*/
+/*[clinic end generated code: output=5cf6a94915cc7bff input=989081551c00293b]*/
 {
     int result;
 
@@ -3034,7 +3034,7 @@ os_fdatasync_impl(PyObject *module, int fd)
 os.chown
 
     path : path_t(allow_fd='PATH_HAVE_FCHOWN')
-        Path to be examined; can be string, bytes, or open-file-descriptor int.
+        Path to be examined; can be string, bytes, a path-like object, or open-file-descriptor int.
 
     uid: uid_t
 
@@ -3072,7 +3072,7 @@ dir_fd and follow_symlinks may not be implemented on your platform.
 static PyObject *
 os_chown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid,
               int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=4beadab0db5f70cd input=a61cc35574814d5d]*/
+/*[clinic end generated code: output=4beadab0db5f70cd input=b08c5ec67996a97d]*/
 {
     int result;
 
@@ -3599,7 +3599,7 @@ os.listdir
 
 Return a list containing the names of the files in the directory.
 
-path can be specified as either str or bytes.  If path is bytes,
+path can be specified as either str, bytes, or a path-like object.  If path is bytes,
   the filenames returned will also be bytes; in all other circumstances
   the filenames returned will be str.
 If path is None, uses the path='.'.
@@ -3615,7 +3615,7 @@ entries '.' and '..' even if they are present in the directory.
 
 static PyObject *
 os_listdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=293045673fcd1a75 input=09e300416e3cd729]*/
+/*[clinic end generated code: output=293045673fcd1a75 input=e3f58030f538295d]*/
 {
 #if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
     return _listdir_windows_no_opendir(path, NULL);
@@ -10667,7 +10667,7 @@ os.getxattr
 
 Return the value of extended attribute attribute on path.
 
-path may be either a string or an open file descriptor.
+path may be either a string, a path-like object, or an open file descriptor.
 If follow_symlinks is False, and the last element of the path is a symbolic
   link, getxattr will examine the symbolic link itself instead of the file
   the link points to.
@@ -10677,7 +10677,7 @@ If follow_symlinks is False, and the last element of the path is a symbolic
 static PyObject *
 os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
                  int follow_symlinks)
-/*[clinic end generated code: output=5f2f44200a43cff2 input=8c8ea3bab78d89c2]*/
+/*[clinic end generated code: output=5f2f44200a43cff2 input=025789491708f7eb]*/
 {
     Py_ssize_t i;
     PyObject *buffer = NULL;
@@ -10739,7 +10739,7 @@ os.setxattr
 
 Set extended attribute attribute on path to value.
 
-path may be either a string or an open file descriptor.
+path may be either a string, a path-like object,  or an open file descriptor.
 If follow_symlinks is False, and the last element of the path is a symbolic
   link, setxattr will modify the symbolic link itself instead of the file
   the link points to.
@@ -10749,7 +10749,7 @@ If follow_symlinks is False, and the last element of the path is a symbolic
 static PyObject *
 os_setxattr_impl(PyObject *module, path_t *path, path_t *attribute,
                  Py_buffer *value, int flags, int follow_symlinks)
-/*[clinic end generated code: output=98b83f63fdde26bb input=f0d26833992015c2]*/
+/*[clinic end generated code: output=98b83f63fdde26bb input=c17c0103009042f0]*/
 {
     ssize_t result;
 
@@ -10787,7 +10787,7 @@ os.removexattr
 
 Remove extended attribute attribute on path.
 
-path may be either a string or an open file descriptor.
+path may be either a string, a path-like object, or an open file descriptor.
 If follow_symlinks is False, and the last element of the path is a symbolic
   link, removexattr will modify the symbolic link itself instead of the file
   the link points to.
@@ -10797,7 +10797,7 @@ If follow_symlinks is False, and the last element of the path is a symbolic
 static PyObject *
 os_removexattr_impl(PyObject *module, path_t *path, path_t *attribute,
                     int follow_symlinks)
-/*[clinic end generated code: output=521a51817980cda6 input=cdb54834161e3329]*/
+/*[clinic end generated code: output=521a51817980cda6 input=3d9a7d36fe2f7c4e]*/
 {
     ssize_t result;
 
@@ -10830,7 +10830,7 @@ os.listxattr
 
 Return a list of extended attributes on path.
 
-path may be either None, a string, or an open file descriptor.
+path may be either None, a string, a path-like object, or an open file descriptor.
 if path is None, listxattr will examine the current directory.
 If follow_symlinks is False, and the last element of the path is a symbolic
   link, listxattr will examine the symbolic link itself instead of the file
@@ -10839,7 +10839,7 @@ If follow_symlinks is False, and the last element of the path is a symbolic
 
 static PyObject *
 os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
-/*[clinic end generated code: output=bebdb4e2ad0ce435 input=08cca53ac0b07c13]*/
+/*[clinic end generated code: output=bebdb4e2ad0ce435 input=9826edf9fdb90869]*/
 {
     Py_ssize_t i;
     PyObject *result = NULL;

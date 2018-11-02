@@ -9,7 +9,7 @@ PyDoc_STRVAR(os_stat__doc__,
 "Perform a stat system call on the given path.\n"
 "\n"
 "  path\n"
-"    Path to be examined; can be string, bytes, path-like object or\n"
+"    Path to be examined; can be string, bytes, a path-like object or\n"
 "    open-file-descriptor int.\n"
 "  dir_fd\n"
 "    If not None, it should be a file descriptor open to a directory,\n"
@@ -101,7 +101,7 @@ PyDoc_STRVAR(os_access__doc__,
 "Use the real uid/gid to test for access to a path.\n"
 "\n"
 "  path\n"
-"    Path to be tested; can be string or bytes\n"
+"    Path to be tested; can be string, bytes, or a path-like object.\n"
 "  mode\n"
 "    Operating-system mode bitfield.  Can be F_OK to test existence,\n"
 "    or the inclusive-OR of R_OK, W_OK, and X_OK.\n"
@@ -304,7 +304,7 @@ PyDoc_STRVAR(os_chmod__doc__,
 "Change the access permissions of a file.\n"
 "\n"
 "  path\n"
-"    Path to be modified.  May always be specified as a str or bytes.\n"
+"    Path to be modified.  May always be specified as a str, bytes, or a path-like object.\n"
 "    On some platforms, path may also be specified as an open file descriptor.\n"
 "    If this functionality is unavailable, using it raises an exception.\n"
 "  mode\n"
@@ -655,7 +655,7 @@ PyDoc_STRVAR(os_chown__doc__,
 "Change the owner and group id of path to the numeric uid and gid.\\\n"
 "\n"
 "  path\n"
-"    Path to be examined; can be string, bytes, or open-file-descriptor int.\n"
+"    Path to be examined; can be string, bytes, a path-like object, or open-file-descriptor int.\n"
 "  dir_fd\n"
 "    If not None, it should be a file descriptor open to a directory,\n"
 "    and path should be relative; path will then be relative to that\n"
@@ -889,7 +889,7 @@ PyDoc_STRVAR(os_listdir__doc__,
 "\n"
 "Return a list containing the names of the files in the directory.\n"
 "\n"
-"path can be specified as either str or bytes.  If path is bytes,\n"
+"path can be specified as either str, bytes, or a path-like object.  If path is bytes,\n"
 "  the filenames returned will also be bytes; in all other circumstances\n"
 "  the filenames returned will be str.\n"
 "If path is None, uses the path=\'.\'.\n"
@@ -5234,7 +5234,7 @@ PyDoc_STRVAR(os_getxattr__doc__,
 "\n"
 "Return the value of extended attribute attribute on path.\n"
 "\n"
-"path may be either a string or an open file descriptor.\n"
+"path may be either a string, a path-like object, or an open file descriptor.\n"
 "If follow_symlinks is False, and the last element of the path is a symbolic\n"
 "  link, getxattr will examine the symbolic link itself instead of the file\n"
 "  the link points to.");
@@ -5282,7 +5282,7 @@ PyDoc_STRVAR(os_setxattr__doc__,
 "\n"
 "Set extended attribute attribute on path to value.\n"
 "\n"
-"path may be either a string or an open file descriptor.\n"
+"path may be either a string, a path-like object,  or an open file descriptor.\n"
 "If follow_symlinks is False, and the last element of the path is a symbolic\n"
 "  link, setxattr will modify the symbolic link itself instead of the file\n"
 "  the link points to.");
@@ -5335,7 +5335,7 @@ PyDoc_STRVAR(os_removexattr__doc__,
 "\n"
 "Remove extended attribute attribute on path.\n"
 "\n"
-"path may be either a string or an open file descriptor.\n"
+"path may be either a string, a path-like object, or an open file descriptor.\n"
 "If follow_symlinks is False, and the last element of the path is a symbolic\n"
 "  link, removexattr will modify the symbolic link itself instead of the file\n"
 "  the link points to.");
@@ -5382,7 +5382,7 @@ PyDoc_STRVAR(os_listxattr__doc__,
 "\n"
 "Return a list of extended attributes on path.\n"
 "\n"
-"path may be either None, a string, or an open file descriptor.\n"
+"path may be either None, a string, a path-like object, or an open file descriptor.\n"
 "if path is None, listxattr will examine the current directory.\n"
 "If follow_symlinks is False, and the last element of the path is a symbolic\n"
 "  link, listxattr will examine the symbolic link itself instead of the file\n"
@@ -6150,4 +6150,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=455def991740915a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=92026f29ec925950 input=a9049054013a1b77]*/
