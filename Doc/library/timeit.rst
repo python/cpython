@@ -45,10 +45,10 @@ This can be achieved from the :ref:`python-interface` with::
    0.23702679807320237
 
 
-Note however that :mod:`timeit` will automatically determine the number of
+Note however that :func:`.timeit` will automatically determine the number of
 repetitions only when the command-line interface is used.
 
-:mod:`timeit` also takes a callable for the statement and setup parameters::
+:func:`.timeit` also takes a callable for the *stmt* and *setup* parameters::
 
    >>> timeit.timeit(lambda: "-".join(map(str, range(100))), number=10000)
    0.19665591977536678
