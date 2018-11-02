@@ -1,1 +1,2 @@
-Added path-like objects to docstrings of os methods that accept path
+Clarify in the docstrings of :mod:`os` methods that path-like objects are also accepted
+as input parameters.
