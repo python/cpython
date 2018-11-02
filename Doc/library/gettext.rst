@@ -344,7 +344,7 @@ are the methods of :class:`!NullTranslations`:
       If the *names* parameter is given, it must be a sequence containing the
       names of functions you want to install in the builtins namespace in
       addition to :func:`_`.  Supported names are ``'gettext'``, ``'ngettext'``,
-      ``'pgettext'``, ``'lgettext'``, and ``'lngettext'``.
+      ``'pgettext'``, ``'npgettext'``, ``'lgettext'``, and ``'lngettext'``.
 
       Note that this is only one way, albeit the most convenient way, to make
       the :func:`_` function available to your application.  Because it affects
@@ -358,6 +358,9 @@ are the methods of :class:`!NullTranslations`:
 
       This puts :func:`_` only in the module's global namespace and so only
       affects calls within this module.
+
+      .. versionchanged:: 3.8
+      Added ``'pgettext'`` and ``'npgettext'``.
 
 
 The :class:`GNUTranslations` class
@@ -437,8 +440,7 @@ unexpected, or if other problems occur while reading the file, instantiating a
 
       Do a plural-forms lookup of a message id.  *singular* is used as the
       message id for purposes of lookup in the catalog, while *n* is used to
-      determine which  plural form to use.  The returned message string is a
-      Unicode string.
+      determine which plural form to use.
 
       If the message id for *context* is not found in the catalog, and a
       fallback is specified, the request is forwarded to the fallback's

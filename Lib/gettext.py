@@ -520,7 +520,7 @@ class GNUTranslations(NullTranslations):
     def npgettext(self, context, msgid1, msgid2, n):
         ctxt_msg_id = self.CONTEXT % (context, msgid1)
         try:
-            tmsg = self._catalog[(ctxt_msg_id, self.plural(n))]
+            tmsg = self._catalog[ctxt_msg_id, self.plural(n)]
         except KeyError:
             if self._fallback:
                 return self._fallback.npgettext(context, msgid1, msgid2, n)

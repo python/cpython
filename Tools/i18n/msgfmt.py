@@ -38,15 +38,11 @@ __version__ = "1.2"
 MESSAGES = {}
 
 
-
-
 def usage(code, msg=''):
     print(__doc__, file=sys.stderr)
     if msg:
         print(msg, file=sys.stderr)
     sys.exit(code)
-
-
 
 
 def add(ctxt, id, str, fuzzy):
@@ -56,9 +52,7 @@ def add(ctxt, id, str, fuzzy):
         if ctxt is None:
             MESSAGES[id] = str
         else:
-            MESSAGES["%s\x04%s" % (ctxt, id)] = str
-
-
+            MESSAGES[b"%b\x04%b" % (ctxt, id)] = str
 
 
 def generate():
@@ -100,8 +94,6 @@ def generate():
     output += ids
     output += strs
     return output
-
-
 
 
 def make(filename, outfile):
@@ -148,12 +140,12 @@ def make(filename, outfile):
         if l[0] == '#':
             continue
         # Now we are in a msgid or msgctxt section, output previous section
-        if l.startswith("msgctxt"):
+        if l.startswith('msgctxt'):
             if section == STR:
                 add(msgctxt, msgid, msgstr, fuzzy)
             section = CTXT
             l = l[7:]
-            msgctxt = ''
+            msgctxt = b''
         elif l.startswith('msgid') and not l.startswith('msgid_plural'):
             if section == STR:
                 add(msgctxt, msgid, msgstr, fuzzy)
@@ -199,7 +191,7 @@ def make(filename, outfile):
             continue
         l = ast.literal_eval(l)
         if section == CTXT:
-            msgctxt += l
+            msgctxt += l.encode(encoding)
         elif section == ID:
             msgid += l.encode(encoding)
         elif section == STR:
@@ -221,8 +213,6 @@ def make(filename, outfile):
             f.write(output)
     except IOError as msg:
         print(msg, file=sys.stderr)
-
-
 
 
 def main():
