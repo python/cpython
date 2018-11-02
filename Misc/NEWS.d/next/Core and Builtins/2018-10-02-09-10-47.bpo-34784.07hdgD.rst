@@ -1,2 +1,5 @@
 Fix the implementation of PyStructSequence_NewType in order to create heap
 allocated StructSequences.
+
+Please refer to the following for the reasoning and motivation for this change:
+https://mail.python.org/pipermail/python-dev/2018-September/155069.html
