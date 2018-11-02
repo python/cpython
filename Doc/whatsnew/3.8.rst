@@ -132,7 +132,7 @@ gettext
 -------
 
 Added :func:`~gettext.pgettext` and its variants.
-(Contributed by Franz Glasner in :issue:`2504`.)
+(Contributed by Franz Glasner, Éric Araujo, and Cheryl Sabella in :issue:`2504`.)
 
 
 idlelib and IDLE

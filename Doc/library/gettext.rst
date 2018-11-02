@@ -360,7 +360,7 @@ are the methods of :class:`!NullTranslations`:
       affects calls within this module.
 
       .. versionchanged:: 3.8
-      Added ``'pgettext'`` and ``'npgettext'``.
+         Added ``'pgettext'`` and ``'npgettext'``.
 
 
 The :class:`GNUTranslations` class
