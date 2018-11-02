@@ -6140,7 +6140,7 @@ PyDoc_STRVAR(os_scandir__doc__,
 "\n"
 "Return an iterator of DirEntry objects for given path.\n"
 "\n"
-"path can be specified as either str, bytes or a path-like object.  If path\n"
+"path can be specified as either str, bytes, or a path-like object.  If path\n"
 "is bytes, the names of yielded DirEntry objects will also be bytes; in\n"
 "all other circumstances they will be str.\n"
 "\n"
@@ -6757,4 +6757,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=9ff930b71764e262 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f2951c34e0907fb6 input=a9049054013a1b77]*/
