@@ -101,7 +101,7 @@ PyDoc_STRVAR(os_access__doc__,
 "Use the real uid/gid to test for access to a path.\n"
 "\n"
 "  path\n"
-"    Path to be tested; can be string, bytes, or a path-like object\n"
+"    Path to be tested; can be string, bytes, or a path-like object.\n"
 "  mode\n"
 "    Operating-system mode bitfield.  Can be F_OK to test existence,\n"
 "    or the inclusive-OR of R_OK, W_OK, and X_OK.\n"
@@ -6757,4 +6757,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=0908b4c130034474 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9ff930b71764e262 input=a9049054013a1b77]*/
