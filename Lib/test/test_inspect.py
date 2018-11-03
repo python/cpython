@@ -744,6 +744,7 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(asyncio.run(mod2.func226()), 227, 229)
         self.assertSourceEqual(mod2.cls227, 233, 237)
         self.assertSourceEqual(asyncio.run(mod2.cls227().func234()), 235, 236)
+        asyncio.set_event_loop_policy(None)
 
 class TestNoEOL(GetSourceBase):
     def setUp(self):
