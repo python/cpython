@@ -820,12 +820,7 @@ def findsource(object):
                 self.stack.pop()
                 self.stack.pop()
 
-            def visit_AsyncFunctionDef(self, node):
-                self.stack.append(node.name)
-                self.stack.append('<locals>')
-                self.generic_visit(node)
-                self.stack.pop()
-                self.stack.pop()
+            visit_AsyncFunctionDef = visit_FunctionDef
 
             def visit_ClassDef(self, node):
                 self.stack.append(node.name)

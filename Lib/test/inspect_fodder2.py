@@ -205,49 +205,47 @@ class cls203:
         class cls205:
             pass
     class cls207:
-        class cls208:
+        class cls205:
             pass
 
 # line 211
 def func212():
     class cls213:
-        def func(self):
-            pass
+        pass
     return cls213
 
-# line 218
+# line 217
 class cls213:
-    def func220(self):
-        class cls221:
+    def func219(self):
+        class cls220:
             pass
-        return cls221
+        return cls220
 
-# line 225
-async def func226():
-    class cls227:
-        def func(self):
-            pass
-    return cls227
+# line 224
+async def func225():
+    class cls226:
+        pass
+    return cls226
 
-# line 232
-class cls227:
-    async def func234(self):
-        class cls235:
+# line 230
+class cls226:
+    async def func232(self):
+        class cls233:
             pass
         return cls235
 
-#line 239
+#line 237
 def positional_only_arg(a, /):
     pass
 
-#line 243
+#line 241
 def all_markers(a, b, /, c, d, *, e, f):
     pass
 
-# line 247
+# line 245
 def all_markers_with_args_and_kwargs(a, b, /, c, d, *args, e, f, **kwargs):
     pass
 
-#line 251
+#line 249
 def all_markers_with_defaults(a, b=1, /, c=2, d=3, *, e=4, f=5):
     pass
