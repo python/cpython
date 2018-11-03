@@ -201,18 +201,26 @@ class cls197:
     class cls201:
         pass
 
-#line 204
+class cls204:
+    class cls205:
+        class cls206:
+            pass
+    class cls208:
+        class cls209:
+            pass
+
+#line 212
 def positional_only_arg(a, /):
     pass
 
-#line 208
+#line 216
 def all_markers(a, b, /, c, d, *, e, f):
     pass
 
-# line 212
+# line 220
 def all_markers_with_args_and_kwargs(a, b, /, c, d, *args, e, f, **kwargs):
     pass
 
-#line 216
+#line 224
 def all_markers_with_defaults(a, b=1, /, c=2, d=3, *, e=4, f=5):
     pass

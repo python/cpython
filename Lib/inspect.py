@@ -806,25 +806,6 @@ def findsource(object):
 
         class ClassVisitor(ast.NodeVisitor):
 
-            def recursive(func):
-                def wrapper(self, node):
-                    """A recursive wrapper to iterate over inner classes that uses a stack
-                    to store inner class's name for computation of qualname"""
-                    if not self.stack:
-                        self.stack.append(node.name)
-
-                    func(self, node)
-                    for child in ast.iter_child_nodes(node):
-                        if isinstance(child, ast.ClassDef):
-                            self.stack.append(child.name)
-                            self.visit(child)
-                            self.stack.pop()
-
-                    if self.stack:
-                        self.stack.pop()
-
-                return wrapper
-
             def __init__(self, source, qualname, *args, **kwargs):
                 self.stack = []
                 self.source = source
@@ -832,12 +813,30 @@ def findsource(object):
                 self.qualname = qualname
                 super().__init__(*args, **kwargs)
 
-            @recursive
             def visit_ClassDef(self, node):
+                set_top_level_class = False
+
+                # Push the node on stack when there is a module level class
+                if not self.stack:
+                    set_top_level_class = True
+                    self.stack.append(node.name)
+
                 qualname = '.'.join(self.stack)
                 if self.qualname == qualname:
                     # decrement by one since lines starts with indexing by zero
                     self.line_number = node.lineno - 1
+
+                for child in ast.iter_child_nodes(node):
+                    if isinstance(child, ast.ClassDef):
+                        self.stack.append(child.name)
+                        self.visit(child)
+                        self.stack.pop()
+
+                # pop from stack here only when module level class is pushed
+                # This avoids the case where a class has children and we don't
+                # pop the child here which has to be done in the loop where it's pushed
+                if set_top_level_class and self.stack:
+                    self.stack.pop()
 
         qualname = object.__qualname__
         source = ''.join(lines)

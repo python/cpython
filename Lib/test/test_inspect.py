@@ -726,6 +726,13 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls197, 195, 202)
         self.assertSourceEqual(mod2.cls197.cls201, 199, 202)
 
+    def test_multiple_children_classes(self):
+        self.assertSourceEqual(mod2.cls204, 204, 210)
+        self.assertSourceEqual(mod2.cls204.cls205, 205, 207)
+        self.assertSourceEqual(mod2.cls204.cls205.cls206, 206, 207)
+        self.assertSourceEqual(mod2.cls204.cls208, 208, 210)
+        self.assertSourceEqual(mod2.cls204.cls208.cls209, 209, 210)
+
 class TestNoEOL(GetSourceBase):
     def setUp(self):
         self.tempdir = TESTFN + '_dir'
