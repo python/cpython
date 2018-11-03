@@ -314,7 +314,7 @@ to create specific exception classes for different error conditions::
            self.next = next
            self.message = message
 
-Most exceptions are defined with names that end in "Error," similar to the
+Most exceptions are defined with names that end in "Error", similar to the
 naming of the standard exceptions.
 
 Many standard modules define their own exceptions to report errors that may
