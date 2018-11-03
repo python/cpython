@@ -806,52 +806,37 @@ def findsource(object):
 
         class ClassVisitor(ast.NodeVisitor):
 
-            def __init__(self, source, qualname, *args, **kwargs):
+            def __init__(self, qualname):
                 self.stack = []
-                self.source = source
                 self.line_number = None
                 self.qualname = qualname
-                super().__init__(*args, **kwargs)
 
             def visit_ClassDef(self, node):
-                set_top_level_class = False
-
-                # Push the node on stack when there is a module level class
-                if not self.stack:
-                    set_top_level_class = True
-                    self.stack.append(node.name)
+                self.stack.append(node.name)
 
                 qualname = '.'.join(self.stack)
                 if self.qualname == qualname:
+                    if node.decorator_list:
+                        line_number = node.decorator_list[0].lineno
+                    else:
+                        line_number = node.lineno
                     # decrement by one since lines starts with indexing by zero
-                    self.line_number = node.lineno - 1
+                    self.line_number = line_number - 1
 
                 for child in ast.iter_child_nodes(node):
                     if isinstance(child, ast.ClassDef):
-                        self.stack.append(child.name)
                         self.visit(child)
-                        self.stack.pop()
 
-                # pop from stack here only when module level class is pushed
-                # This avoids the case where a class has children and we don't
-                # pop the child here which has to be done in the loop where it's pushed
-                if set_top_level_class and self.stack:
-                    self.stack.pop()
+                self.stack.pop()
 
         qualname = object.__qualname__
         source = ''.join(lines)
         tree = ast.parse(source)
-        class_visitor = ClassVisitor(source, qualname)
+        class_visitor = ClassVisitor(qualname)
         class_visitor.visit(tree)
 
         if class_visitor.line_number is not None:
             line_number = class_visitor.line_number
-            decorator_pattern = re.compile(r'^(\s*@)')
-            for line in reversed(lines[:line_number]):
-                if decorator_pattern.match(line):
-                    line_number -= 1
-                else:
-                    break
             return lines, line_number
         else:
             raise OSError('could not find class definition')
