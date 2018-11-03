@@ -135,7 +135,7 @@ following functions:
 
 .. function:: is_normalized(form, unistr)
 
-   Returns whether the Unicode string *unistr* is in the normal form *form*. Valid
+   Return whether the Unicode string *unistr* is in the normal form *form*. Valid
    values for *form* are 'NFC', 'NFKC', 'NFD', and 'NFKD'.
 
    .. versionadded:: 3.8
