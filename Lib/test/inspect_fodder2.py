@@ -138,18 +138,81 @@ class cls135:
             never_reached1
             never_reached2
 
-#line 141
+# line 141
+class cls142:
+    a = """
+class cls149:
+    ...
+"""
+
+# line 148
+class cls149:
+
+    def func151(self):
+        pass
+
+'''
+class cls160:
+    pass
+'''
+
+# line 159
+class cls160:
+
+    def func162(self):
+        pass
+
+# line 165
+class cls166:
+    a = '''
+    class cls175:
+        ...
+    '''
+
+# line 172
+class cls173:
+
+    class cls175:
+        pass
+
+# line 178
+class cls179:
+    pass
+
+# line 182
+class cls183:
+
+    class cls185:
+
+        def func186(self):
+            pass
+
+
+def class_decorator(cls):
+    return cls
+
+# line 195
+@class_decorator
+@class_decorator
+class cls197:
+
+    @class_decorator
+    @class_decorator
+    class cls201:
+        pass
+
+#line 204
 def positional_only_arg(a, /):
     pass
 
-#line 145
+#line 208
 def all_markers(a, b, /, c, d, *, e, f):
     pass
 
-# line 149
+# line 212
 def all_markers_with_args_and_kwargs(a, b, /, c, d, *args, e, f, **kwargs):
     pass
 
-#line 153
+#line 216
 def all_markers_with_defaults(a, b=1, /, c=2, d=3, *, e=4, f=5):
     pass

@@ -802,25 +802,58 @@ def findsource(object):
         return lines, 0
 
     if isclass(object):
-        name = object.__name__
-        pat = re.compile(r'^(\s*)class\s*' + name + r'\b')
-        # make some effort to find the best matching class definition:
-        # use the one with the least indentation, which is the one
-        # that's most probably not inside a function definition.
-        candidates = []
-        for i in range(len(lines)):
-            match = pat.match(lines[i])
-            if match:
-                # if it's at toplevel, it's already the best one
-                if lines[i][0] == 'c':
-                    return lines, i
-                # else add whitespace to candidate list
-                candidates.append((match.group(1), i))
-        if candidates:
-            # this will sort by whitespace, and by line number,
-            # less whitespace first
-            candidates.sort()
-            return lines, candidates[0][1]
+        import ast
+
+        class ClassVisitor(ast.NodeVisitor):
+
+            def recursive(func):
+                def wrapper(self, node):
+                    """A recursive wrapper to iterate over inner classes that uses a stack
+                    to store inner class's name for computation of qualname"""
+                    if not self.stack:
+                        self.stack.append(node.name)
+
+                    func(self, node)
+                    for child in ast.iter_child_nodes(node):
+                        if isinstance(child, ast.ClassDef):
+                            self.stack.append(child.name)
+                            self.visit(child)
+                            self.stack.pop()
+
+                    if self.stack:
+                        self.stack.pop()
+
+                return wrapper
+
+            def __init__(self, source, qualname, *args, **kwargs):
+                self.stack = []
+                self.source = source
+                self.line_number = None
+                self.qualname = qualname
+                super().__init__(*args, **kwargs)
+
+            @recursive
+            def visit_ClassDef(self, node):
+                qualname = '.'.join(self.stack)
+                if self.qualname == qualname:
+                    # decrement by one since lines starts with indexing by zero
+                    self.line_number = node.lineno - 1
+
+        qualname = object.__qualname__
+        source = ''.join(lines)
+        tree = ast.parse(source)
+        class_visitor = ClassVisitor(source, qualname)
+        class_visitor.visit(tree)
+
+        if class_visitor.line_number is not None:
+            line_number = class_visitor.line_number
+            decorator_pattern = re.compile(r'^(\s*@)')
+            for line in reversed(lines[:line_number]):
+                if decorator_pattern.match(line):
+                    line_number -= 1
+                else:
+                    break
+            return lines, line_number
         else:
             raise OSError('could not find class definition')
 
