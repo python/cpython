@@ -222,25 +222,26 @@ Once executed the :mod:`gzip` module keeps the input file(s).
 .. versionchanged:: 3.8
 
    Add a new command line interface with a usage.
+   By default, when you will execute the CLI, the default compression level is 6.
 
 Command line options
 ^^^^^^^^^^^^^^^^^^^^
 
 .. cmdoption:: file
 
-   .. code-block:: shell-session
-
-      $ python -m gzip file
-
    If *file* is not specified, read from :attr:`sys.stdin`.
+
+.. cmdoption:: --fast
+
+   Indicates the fastest compression method (less compression).
+
+.. cmdoption:: --best
+
+   Indicates the slowest compression method (best compression).
 
 .. cmdoption:: -d, --decompress
 
-   Decompress the given file
-
-   .. code-block:: shell-session
-
-      $ python -m gzip -d file.gz
+   Decompress the given file.
 
 .. cmdoption:: -h, --help
 

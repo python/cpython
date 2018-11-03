@@ -1,0 +1,3 @@
+gzip: Add --fast, --best on the gzip CLI, these parameters will be used for the
+fast compression method (quick) or the best method compress (slower, but smaller
+file). Also, change the default compression level to 6 (tradeoff).
