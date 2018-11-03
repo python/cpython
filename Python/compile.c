@@ -174,6 +174,7 @@ static int compiler_addop(struct compiler *, int);
 static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
 static int compiler_addop_j(struct compiler *, int, basicblock *, int);
 static int compiler_error(struct compiler *, const char *);
+static int compiler_warn(struct compiler *, const char *);
 static int compiler_nameop(struct compiler *, identifier, expr_context_ty);
 
 static PyCodeObject *compiler_mod(struct compiler *, mod_ty);
@@ -1949,6 +1950,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     Py_ssize_t i, funcflags;
     int annotations;
     int scope_type;
+    int firstlineno;
 
     if (is_async) {
         assert(s->kind == AsyncFunctionDef_kind);
@@ -1975,6 +1977,11 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     if (!compiler_decorators(c, decos))
         return 0;
 
+    firstlineno = s->lineno;
+    if (asdl_seq_LEN(decos)) {
+        firstlineno = ((expr_ty)asdl_seq_GET(decos, 0))->lineno;
+    }
+
     funcflags = compiler_default_arguments(c, args);
     if (funcflags == -1) {
         return 0;
@@ -1988,7 +1995,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         funcflags |= 0x04;
     }
 
-    if (!compiler_enter_scope(c, name, scope_type, (void *)s, s->lineno)) {
+    if (!compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno)) {
         return 0;
     }
 
@@ -2031,11 +2038,16 @@ compiler_class(struct compiler *c, stmt_ty s)
 {
     PyCodeObject *co;
     PyObject *str;
-    int i;
+    int i, firstlineno;
     asdl_seq* decos = s->v.ClassDef.decorator_list;
 
     if (!compiler_decorators(c, decos))
         return 0;
+
+    firstlineno = s->lineno;
+    if (asdl_seq_LEN(decos)) {
+        firstlineno = ((expr_ty)asdl_seq_GET(decos, 0))->lineno;
+    }
 
     /* ultimately generate code for:
          <name> = __build_class__(<func>, <name>, *<bases>, **<keywords>)
@@ -2051,7 +2063,7 @@ compiler_class(struct compiler *c, stmt_ty s)
 
     /* 1. compile the class body into a code object */
     if (!compiler_enter_scope(c, s->v.ClassDef.name,
-                              COMPILER_SCOPE_CLASS, (void *)s, s->lineno))
+                              COMPILER_SCOPE_CLASS, (void *)s, firstlineno))
         return 0;
     /* this block represents what we do in the new scope */
     {
@@ -2971,7 +2983,6 @@ compiler_assert(struct compiler *c, stmt_ty s)
 {
     static PyObject *assertion_error = NULL;
     basicblock *end;
-    PyObject* msg;
 
     if (c->c_optimize)
         return 1;
@@ -2981,18 +2992,13 @@ compiler_assert(struct compiler *c, stmt_ty s)
             return 0;
     }
     if (s->v.Assert.test->kind == Tuple_kind &&
-        asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0) {
-        msg = PyUnicode_FromString("assertion is always true, "
-                                   "perhaps remove parentheses?");
-        if (msg == NULL)
-            return 0;
-        if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg,
-                                     c->c_filename, c->u->u_lineno,
-                                     NULL, NULL) == -1) {
-            Py_DECREF(msg);
+        asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0)
+    {
+        if (!compiler_warn(c, "assertion is always true, "
+                              "perhaps remove parentheses?"))
+        {
             return 0;
         }
-        Py_DECREF(msg);
     }
     end = compiler_new_block(c);
     if (end == NULL)
@@ -4791,6 +4797,31 @@ compiler_error(struct compiler *c, const char *errstr)
     Py_XDECREF(u);
     Py_XDECREF(v);
     return 0;
+}
+
+/* Emits a SyntaxWarning and returns 1 on success.
+   If a SyntaxWarning raised as error, replaces it with a SyntaxError
+   and returns 0.
+*/
+static int
+compiler_warn(struct compiler *c, const char *errstr)
+{
+    PyObject *msg = PyUnicode_FromString(errstr);
+    if (msg == NULL) {
+        return 0;
+    }
+    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, c->c_filename,
+                                 c->u->u_lineno, NULL, NULL) < 0)
+    {
+        Py_DECREF(msg);
+        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
+            PyErr_Clear();
+            return compiler_error(c, errstr);
+        }
+        return 0;
+    }
+    Py_DECREF(msg);
+    return 1;
 }
 
 static int

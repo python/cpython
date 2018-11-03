@@ -1407,7 +1407,7 @@ an :term:`importer`.
    file path.  For example, if *path* is
    ``/foo/bar/__pycache__/baz.cpython-32.pyc`` the returned path would be
    ``/foo/bar/baz.py``.  *path* need not exist, however if it does not conform
-   to :pep:`3147` or :pep:`488` format, a ``ValueError`` is raised. If
+   to :pep:`3147` or :pep:`488` format, a :exc:`ValueError` is raised. If
    :attr:`sys.implementation.cache_tag` is not defined,
    :exc:`NotImplementedError` is raised.
 
@@ -1731,7 +1731,7 @@ Python 3.6 and newer for other parts of the code).
       if '.' in absolute_name:
           parent_name, _, child_name = absolute_name.rpartition('.')
           parent_module = import_module(parent_name)
-          path = parent_module.spec.submodule_search_locations
+          path = parent_module.__spec__.submodule_search_locations
       for finder in sys.meta_path:
           spec = finder.find_spec(absolute_name, path)
           if spec is not None:

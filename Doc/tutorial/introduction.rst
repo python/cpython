@@ -11,6 +11,8 @@ with a prompt are output from the interpreter. Note that a secondary prompt on a
 line by itself in an example means you must type a blank line; this is used to
 end a multi-line command.
 
+.. index:: single: # (hash); comment
+
 Many of the examples in this manual, even those entered at the interactive
 prompt, include comments.  Comments in Python start with the hash character,
 ``#``, and extend to the end of the physical line.  A comment may appear at the
