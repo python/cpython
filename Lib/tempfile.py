@@ -788,8 +788,37 @@ class TemporaryDirectory(object):
             warn_message="Implicitly cleaning up {!r}".format(self))
 
     @classmethod
+    def _rmtree(cls, name):
+        def onerror(func, path, exc_info):
+            if issubclass(exc_info[0], PermissionError):
+                try:
+                    try:
+                        if path != name:
+                            _os.chflags(_os.path.dirname(path), 0)
+                        _os.chflags(path, 0)
+                    except AttributeError:
+                        pass
+                    if path != name:
+                        _os.chmod(_os.path.dirname(path), 0o700)
+                    _os.chmod(path, 0o700)
+
+                    try:
+                        _os.unlink(path)
+                    # PermissionError is raised on FreeBSD for directories
+                    except (IsADirectoryError, PermissionError):
+                        cls._rmtree(path)
+                except FileNotFoundError:
+                    pass
+            elif issubclass(exc_info[0], FileNotFoundError):
+                pass
+            else:
+                raise
+
+        _shutil.rmtree(name, onerror=onerror)
+
+    @classmethod
     def _cleanup(cls, name, warn_message):
-        _shutil.rmtree(name)
+        cls._rmtree(name)
         _warnings.warn(warn_message, ResourceWarning)
 
     def __repr__(self):
@@ -803,4 +832,4 @@ class TemporaryDirectory(object):
 
     def cleanup(self):
         if self._finalizer.detach():
-            _shutil.rmtree(self.name)
+            self._rmtree(self.name)
