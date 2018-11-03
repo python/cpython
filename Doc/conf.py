@@ -50,7 +50,7 @@ exclude_patterns = [venvdir+'/*', 'README.rst']
 
 # Disable Docutils smartquotes for several translations
 smartquotes_excludes = {
-    'languages': ['ja', 'fr', 'zh_TW'], 'builders': ['man', 'text'],
+    'languages': ['ja', 'fr', 'zh_TW', 'zh_CN'], 'builders': ['man', 'text'],
 }
 
 
