@@ -806,7 +806,7 @@ def findsource(object):
         # it's not used for other than this part.
         import ast
 
-        class ClassVisitor(ast.NodeVisitor):
+        class ClassFinder(ast.NodeVisitor):
 
             def visit_FunctionDef(self, node):
                 stack.append(node.name)
@@ -835,11 +835,10 @@ def findsource(object):
         qualname = object.__qualname__
         source = ''.join(lines)
         tree = ast.parse(source)
-        class_visitor = ClassVisitor()
-        class_visitor.visit(tree)
+        class_finder = ClassFinder()
+        class_finder.visit(tree)
 
         if line_number is not None:
-            line_number = line_number
             return lines, line_number
         else:
             raise OSError('could not find class definition')
