@@ -11,9 +11,10 @@ BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
+SPHINXERRORHANDLING = -W
 
-ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -W -D latex_elements.papersize=$(PAPER) \
-                $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
+ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_elements.papersize=$(PAPER) \
+                $(SPHINXOPTS) $(SPHINXERRORHANDLING) . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help build html htmlhelp latex text changes linkcheck \
 	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \
