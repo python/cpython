@@ -390,7 +390,7 @@ class Connection(_ConnectionBase):
     def _send_bytes(self, buf):
         n = len(buf)
         # For wire compatibility with 3.2 and lower
-        header = struct.pack("!i", n)
+        header = struct.pack("!Q", n)
         if n > 16384:
             # The payload is large so Nagle's algorithm won't be triggered
             # and we'd better avoid the cost of concatenation.
@@ -404,8 +404,8 @@ class Connection(_ConnectionBase):
             self._send(header + buf)
 
     def _recv_bytes(self, maxsize=None):
-        buf = self._recv(4)
-        size, = struct.unpack("!i", buf.getvalue())
+        buf = self._recv(8)
+        size, = struct.unpack("!Q", buf.getvalue())
         if maxsize is not None and size > maxsize:
             return None
         return self._recv(size)
