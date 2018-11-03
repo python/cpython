@@ -802,6 +802,8 @@ def findsource(object):
         return lines, 0
 
     if isclass(object):
+        # Lazy import ast because it's relatively heavy and
+        # it's not used for other than this part.
         import ast
 
         class ClassVisitor(ast.NodeVisitor):
@@ -811,22 +813,30 @@ def findsource(object):
                 self.line_number = None
                 self.qualname = qualname
 
+            def visit_FunctionDef(self, node):
+                self.stack.append(node.name)
+                self.stack.append('<locals>')
+                self.generic_visit(node)
+                self.stack.pop()
+                self.stack.pop()
+
+            def visit_AsyncFunctionDef(self, node):
+                self.stack.append(node.name)
+                self.stack.append('<locals>')
+                self.generic_visit(node)
+                self.stack.pop()
+                self.stack.pop()
+
             def visit_ClassDef(self, node):
                 self.stack.append(node.name)
-
-                qualname = '.'.join(self.stack)
-                if self.qualname == qualname:
+                if self.qualname == '.'.join(self.stack):
                     if node.decorator_list:
                         line_number = node.decorator_list[0].lineno
                     else:
                         line_number = node.lineno
                     # decrement by one since lines starts with indexing by zero
                     self.line_number = line_number - 1
-
-                for child in ast.iter_child_nodes(node):
-                    if isinstance(child, ast.ClassDef):
-                        self.visit(child)
-
+                self.generic_visit(node)
                 self.stack.pop()
 
         qualname = object.__qualname__

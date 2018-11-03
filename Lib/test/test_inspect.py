@@ -473,6 +473,7 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getcomments(self):
         self.assertEqual(inspect.getcomments(mod), '# line 1\n')
         self.assertEqual(inspect.getcomments(mod.StupidGit), '# line 20\n')
+        self.assertEqual(inspect.getcomments(mod2.cls160), '# line 159\n')
         # If the object source file is not available, return None.
         co = compile('x=1', '_non_existing_filename.py', 'exec')
         self.assertIsNone(inspect.getcomments(co))
@@ -723,15 +724,26 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls183.cls185, 185, 188)
 
     def test_class_decorator(self):
-        self.assertSourceEqual(mod2.cls197, 195, 202)
-        self.assertSourceEqual(mod2.cls197.cls201, 199, 202)
+        self.assertSourceEqual(mod2.cls196, 194, 201)
+        self.assertSourceEqual(mod2.cls196.cls200, 198, 201)
 
     def test_multiple_children_classes(self):
-        self.assertSourceEqual(mod2.cls204, 204, 210)
-        self.assertSourceEqual(mod2.cls204.cls205, 205, 207)
-        self.assertSourceEqual(mod2.cls204.cls205.cls206, 206, 207)
-        self.assertSourceEqual(mod2.cls204.cls208, 208, 210)
-        self.assertSourceEqual(mod2.cls204.cls208.cls209, 209, 210)
+        self.assertSourceEqual(mod2.cls203, 203, 209)
+        self.assertSourceEqual(mod2.cls203.cls204, 204, 206)
+        self.assertSourceEqual(mod2.cls203.cls204.cls205, 205, 206)
+        self.assertSourceEqual(mod2.cls203.cls207, 207, 209)
+        self.assertSourceEqual(mod2.cls203.cls207.cls208, 208, 209)
+
+    def test_nested_class_definition_inside_function(self):
+        self.assertSourceEqual(mod2.func212(), 213, 215)
+        self.assertSourceEqual(mod2.cls213, 219, 223)
+        self.assertSourceEqual(mod2.cls213().func220(), 221, 222)
+
+    def test_nested_class_definition_inside_async_function(self):
+        import asyncio
+        self.assertSourceEqual(asyncio.run(mod2.func226()), 227, 229)
+        self.assertSourceEqual(mod2.cls227, 233, 237)
+        self.assertSourceEqual(asyncio.run(mod2.cls227().func234()), 235, 236)
 
 class TestNoEOL(GetSourceBase):
     def setUp(self):

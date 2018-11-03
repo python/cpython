@@ -187,40 +187,67 @@ class cls183:
         def func186(self):
             pass
 
-
 def class_decorator(cls):
     return cls
 
-# line 195
+# line 193
 @class_decorator
 @class_decorator
-class cls197:
+class cls196:
 
     @class_decorator
     @class_decorator
-    class cls201:
+    class cls200:
         pass
 
-class cls204:
-    class cls205:
-        class cls206:
+class cls203:
+    class cls204:
+        class cls205:
             pass
-    class cls208:
-        class cls209:
+    class cls207:
+        class cls208:
             pass
 
-#line 212
+# line 211
+def func212():
+    class cls213:
+        def func(self):
+            pass
+    return cls213
+
+# line 218
+class cls213:
+    def func220(self):
+        class cls221:
+            pass
+        return cls221
+
+# line 225
+async def func226():
+    class cls227:
+        def func(self):
+            pass
+    return cls227
+
+# line 232
+class cls227:
+    async def func234(self):
+        class cls235:
+            pass
+        return cls235
+
+#line 239
 def positional_only_arg(a, /):
     pass
 
-#line 216
+#line 243
 def all_markers(a, b, /, c, d, *, e, f):
     pass
 
-# line 220
+# line 247
 def all_markers_with_args_and_kwargs(a, b, /, c, d, *args, e, f, **kwargs):
     pass
 
-#line 224
+#line 251
 def all_markers_with_defaults(a, b=1, /, c=2, d=3, *, e=4, f=5):
     pass
