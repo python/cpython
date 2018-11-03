@@ -1,0 +1,2 @@
+Made bigger type for struct.pack/unpack in mutliprocessing.Connection to
+avoid error on big (>2GB) Process outputs on linux
