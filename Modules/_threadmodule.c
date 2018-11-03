@@ -3,7 +3,7 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_state.h"
 #include "structmember.h" /* offsetof */
 #include "pythread.h"
 
@@ -226,7 +226,7 @@ static PyMethodDef lock_methods[] = {
 static PyTypeObject Locktype = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "_thread.lock",                     /*tp_name*/
-    sizeof(lockobject),                 /*tp_size*/
+    sizeof(lockobject),                 /*tp_basicsize*/
     0,                                  /*tp_itemsize*/
     /* methods */
     (destructor)lock_dealloc,           /*tp_dealloc*/
@@ -487,7 +487,7 @@ static PyMethodDef rlock_methods[] = {
 static PyTypeObject RLocktype = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "_thread.RLock",                    /*tp_name*/
-    sizeof(rlockobject),                /*tp_size*/
+    sizeof(rlockobject),                /*tp_basicsize*/
     0,                                  /*tp_itemsize*/
     /* methods */
     (destructor)rlock_dealloc,          /*tp_dealloc*/

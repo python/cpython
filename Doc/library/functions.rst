@@ -1412,8 +1412,8 @@ are always available.  They are listed here in alphabetical order.
    Has two optional arguments which must be specified as keyword arguments.
 
    *key* specifies a function of one argument that is used to extract a comparison
-   key from each list element: ``key=str.lower``.  The default value is ``None``
-   (compare the elements directly).
+   key from each element in *iterable* (for example, ``key=str.lower``).  The
+   default value is ``None`` (compare the elements directly).
 
    *reverse* is a boolean value.  If set to ``True``, then the list elements are
    sorted as if each comparison were reversed.
@@ -1487,6 +1487,9 @@ are always available.  They are listed here in alphabetical order.
    ``''.join(sequence)``.  To add floating point values with extended precision,
    see :func:`math.fsum`\.  To concatenate a series of iterables, consider using
    :func:`itertools.chain`.
+
+   .. versionchanged:: 3.8
+      The *start* parameter can be specified as a keyword argument.
 
 .. function:: super([type[, object-or-type]])
 

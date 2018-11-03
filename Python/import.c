@@ -4,8 +4,10 @@
 
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
-#include "internal/hash.h"
-#include "internal/pystate.h"
+#include "pycore_hash.h"
+#include "pycore_lifecycle.h"
+#include "pycore_mem.h"
+#include "pycore_state.h"
 #include "errcode.h"
 #include "marshal.h"
 #include "code.h"
@@ -543,9 +545,10 @@ PyImport_Cleanup(void)
        module last.  Likewise, we don't delete sys until the very
        end because it is implicitly referenced (e.g. by print). */
     if (weaklist != NULL) {
-        Py_ssize_t i, n;
-        n = PyList_GET_SIZE(weaklist);
-        for (i = 0; i < n; i++) {
+        Py_ssize_t i;
+        /* Since dict is ordered in CPython 3.6+, modules are saved in
+           importing order.  First clear modules imported later. */
+        for (i = PyList_GET_SIZE(weaklist) - 1; i >= 0; i--) {
             PyObject *tup = PyList_GET_ITEM(weaklist, i);
             PyObject *name = PyTuple_GET_ITEM(tup, 0);
             PyObject *mod = PyWeakref_GET_OBJECT(PyTuple_GET_ITEM(tup, 1));
@@ -1138,7 +1141,7 @@ get_path_importer(PyObject *path_importer_cache, PyObject *path_hooks,
     return importer;
 }
 
-PyAPI_FUNC(PyObject *)
+PyObject *
 PyImport_GetImporter(PyObject *path) {
     PyObject *importer=NULL, *path_importer_cache=NULL, *path_hooks=NULL;
 
@@ -1720,11 +1723,8 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     mod = PyImport_GetModule(abs_name);
     if (mod != NULL && mod != Py_None) {
         _Py_IDENTIFIER(__spec__);
-        _Py_IDENTIFIER(_initializing);
         _Py_IDENTIFIER(_lock_unlock_module);
-        PyObject *value = NULL;
         PyObject *spec;
-        int initializing = 0;
 
         /* Optimization: only call _bootstrap._lock_unlock_module() if
            __spec__._initializing is true.
@@ -1732,26 +1732,17 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
            stuffing the new module in sys.modules.
          */
         spec = _PyObject_GetAttrId(mod, &PyId___spec__);
-        if (spec != NULL) {
-            value = _PyObject_GetAttrId(spec, &PyId__initializing);
-            Py_DECREF(spec);
-        }
-        if (value == NULL)
-            PyErr_Clear();
-        else {
-            initializing = PyObject_IsTrue(value);
-            Py_DECREF(value);
-            if (initializing == -1)
-                PyErr_Clear();
-            if (initializing > 0) {
-                value = _PyObject_CallMethodIdObjArgs(interp->importlib,
-                                                &PyId__lock_unlock_module, abs_name,
-                                                NULL);
-                if (value == NULL)
-                    goto error;
-                Py_DECREF(value);
+        if (_PyModuleSpec_IsInitializing(spec)) {
+            PyObject *value = _PyObject_CallMethodIdObjArgs(interp->importlib,
+                                            &PyId__lock_unlock_module, abs_name,
+                                            NULL);
+            if (value == NULL) {
+                Py_DECREF(spec);
+                goto error;
             }
+            Py_DECREF(value);
         }
+        Py_XDECREF(spec);
     }
     else {
         Py_XDECREF(mod);

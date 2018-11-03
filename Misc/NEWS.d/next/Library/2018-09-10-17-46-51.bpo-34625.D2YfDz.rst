@@ -1,0 +1,1 @@
+Update vendorized expat library version to 2.2.6.

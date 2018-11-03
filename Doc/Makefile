@@ -12,7 +12,7 @@ PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
 
-ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_elements.papersize=$(PAPER) \
+ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -W -D latex_elements.papersize=$(PAPER) \
                 $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help build html htmlhelp latex text changes linkcheck \

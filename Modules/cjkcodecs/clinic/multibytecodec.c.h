@@ -115,6 +115,50 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalEncoder_getstate__doc__,
+"getstate($self, /)\n"
+"--\n"
+"\n");
+
+#define _MULTIBYTECODEC_MULTIBYTEINCREMENTALENCODER_GETSTATE_METHODDEF    \
+    {"getstate", (PyCFunction)_multibytecodec_MultibyteIncrementalEncoder_getstate, METH_NOARGS, _multibytecodec_MultibyteIncrementalEncoder_getstate__doc__},
+
+static PyObject *
+_multibytecodec_MultibyteIncrementalEncoder_getstate_impl(MultibyteIncrementalEncoderObject *self);
+
+static PyObject *
+_multibytecodec_MultibyteIncrementalEncoder_getstate(MultibyteIncrementalEncoderObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _multibytecodec_MultibyteIncrementalEncoder_getstate_impl(self);
+}
+
+PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalEncoder_setstate__doc__,
+"setstate($self, state, /)\n"
+"--\n"
+"\n");
+
+#define _MULTIBYTECODEC_MULTIBYTEINCREMENTALENCODER_SETSTATE_METHODDEF    \
+    {"setstate", (PyCFunction)_multibytecodec_MultibyteIncrementalEncoder_setstate, METH_O, _multibytecodec_MultibyteIncrementalEncoder_setstate__doc__},
+
+static PyObject *
+_multibytecodec_MultibyteIncrementalEncoder_setstate_impl(MultibyteIncrementalEncoderObject *self,
+                                                          PyLongObject *statelong);
+
+static PyObject *
+_multibytecodec_MultibyteIncrementalEncoder_setstate(MultibyteIncrementalEncoderObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyLongObject *statelong;
+
+    if (!PyArg_Parse(arg, "O!:setstate", &PyLong_Type, &statelong)) {
+        goto exit;
+    }
+    return_value = _multibytecodec_MultibyteIncrementalEncoder_setstate_impl(self, statelong);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalEncoder_reset__doc__,
 "reset($self, /)\n"
 "--\n"
@@ -166,6 +210,50 @@ exit:
        PyBuffer_Release(&input);
     }
 
+    return return_value;
+}
+
+PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalDecoder_getstate__doc__,
+"getstate($self, /)\n"
+"--\n"
+"\n");
+
+#define _MULTIBYTECODEC_MULTIBYTEINCREMENTALDECODER_GETSTATE_METHODDEF    \
+    {"getstate", (PyCFunction)_multibytecodec_MultibyteIncrementalDecoder_getstate, METH_NOARGS, _multibytecodec_MultibyteIncrementalDecoder_getstate__doc__},
+
+static PyObject *
+_multibytecodec_MultibyteIncrementalDecoder_getstate_impl(MultibyteIncrementalDecoderObject *self);
+
+static PyObject *
+_multibytecodec_MultibyteIncrementalDecoder_getstate(MultibyteIncrementalDecoderObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _multibytecodec_MultibyteIncrementalDecoder_getstate_impl(self);
+}
+
+PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalDecoder_setstate__doc__,
+"setstate($self, state, /)\n"
+"--\n"
+"\n");
+
+#define _MULTIBYTECODEC_MULTIBYTEINCREMENTALDECODER_SETSTATE_METHODDEF    \
+    {"setstate", (PyCFunction)_multibytecodec_MultibyteIncrementalDecoder_setstate, METH_O, _multibytecodec_MultibyteIncrementalDecoder_setstate__doc__},
+
+static PyObject *
+_multibytecodec_MultibyteIncrementalDecoder_setstate_impl(MultibyteIncrementalDecoderObject *self,
+                                                          PyObject *state);
+
+static PyObject *
+_multibytecodec_MultibyteIncrementalDecoder_setstate(MultibyteIncrementalDecoderObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *state;
+
+    if (!PyArg_Parse(arg, "O!:setstate", &PyTuple_Type, &state)) {
+        goto exit;
+    }
+    return_value = _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(self, state);
+
+exit:
     return return_value;
 }
 
@@ -330,4 +418,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=680f59f4cfe63c25 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2fa0a38494716b97 input=a9049054013a1b77]*/

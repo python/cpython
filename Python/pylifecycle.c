@@ -4,9 +4,12 @@
 
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
-#include "internal/context.h"
-#include "internal/hamt.h"
-#include "internal/pystate.h"
+#include "pycore_context.h"
+#include "pycore_hamt.h"
+#include "pycore_lifecycle.h"
+#include "pycore_mem.h"
+#include "pycore_pathconfig.h"
+#include "pycore_state.h"
 #include "grammar.h"
 #include "node.h"
 #include "token.h"
@@ -61,20 +64,6 @@ static _PyInitError initsigs(void);
 static void call_py_exitfuncs(PyInterpreterState *);
 static void wait_for_thread_shutdown(void);
 static void call_ll_exitfuncs(void);
-extern int _PyUnicode_Init(void);
-extern int _PyStructSequence_Init(void);
-extern void _PyUnicode_Fini(void);
-extern int _PyLong_Init(void);
-extern void PyLong_Fini(void);
-extern _PyInitError _PyFaulthandler_Init(int enable);
-extern void _PyFaulthandler_Fini(void);
-extern void _PyHash_Fini(void);
-extern int _PyTraceMalloc_Init(int enable);
-extern int _PyTraceMalloc_Fini(void);
-extern void _Py_ReadyTypes(void);
-
-extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
-extern void _PyGILState_Fini(void);
 
 _PyRuntimeState _PyRuntime = _PyRuntimeState_INIT;
 
@@ -191,7 +180,6 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     PyObject *importlib;
     PyObject *impmod;
     PyObject *value;
-    _PyInitError err;
 
     /* Import _importlib through its frozen version, _frozen_importlib. */
     if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
@@ -233,11 +221,6 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     Py_DECREF(value);
     Py_DECREF(impmod);
 
-    err = _PyImportZip_Init();
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
     return _Py_INIT_OK();
 }
 
@@ -252,7 +235,7 @@ initexternalimport(PyInterpreterState *interp)
         return _Py_INIT_ERR("external importer setup failed");
     }
     Py_DECREF(value);
-    return _Py_INIT_OK();
+    return _PyImportZip_Init();
 }
 
 /* Helper functions to better handle the legacy C locale
@@ -535,7 +518,7 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
     /* bpo-34008: For backward compatibility reasons, calling Py_Main() after
        Py_Initialize() ignores the new configuration. */
     if (_PyRuntime.core_initialized) {
-        PyThreadState *tstate = PyThreadState_GET();
+        PyThreadState *tstate = _PyThreadState_GET();
         if (!tstate) {
             return _Py_INIT_ERR("failed to read thread state");
         }
@@ -886,7 +869,7 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
 _PyInitError
 _Py_InitializeFromConfig(const _PyCoreConfig *config)
 {
-    PyInterpreterState *interp;
+    PyInterpreterState *interp = NULL;
     _PyInitError err;
     err = _Py_InitializeCore(&interp, config);
     if (_Py_INIT_FAILED(err)) {
@@ -935,7 +918,7 @@ Py_Initialize(void)
 
 
 #ifdef COUNT_ALLOCS
-extern void dump_counts(FILE*);
+extern void _Py_dump_counts(FILE*);
 #endif
 
 /* Flush stdout and stderr */
@@ -1014,7 +997,7 @@ Py_FinalizeEx(void)
     wait_for_thread_shutdown();
 
     /* Get current thread state and interpreter pointer */
-    tstate = PyThreadState_GET();
+    tstate = _PyThreadState_GET();
     interp = tstate->interp;
 
     /* The interpreter is still entirely intact at this point, and the
@@ -1118,7 +1101,7 @@ Py_FinalizeEx(void)
 
     /* Debugging stuff */
 #ifdef COUNT_ALLOCS
-    dump_counts(stderr);
+    _Py_dump_counts(stderr);
 #endif
     /* dump hash stats */
     _PyHash_Fini();
@@ -1411,7 +1394,7 @@ Py_EndInterpreter(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
 
-    if (tstate != PyThreadState_GET())
+    if (tstate != _PyThreadState_GET())
         Py_FatalError("Py_EndInterpreter: thread is not current");
     if (tstate->frame != NULL)
         Py_FatalError("Py_EndInterpreter: thread still has a frame");
@@ -1825,12 +1808,6 @@ _Py_FatalError_PrintExc(int fd)
     PyObject *exception, *v, *tb;
     int has_tb;
 
-    if (PyThreadState_GET() == NULL) {
-        /* The GIL is released: trying to acquire it is likely to deadlock,
-           just give up. */
-        return 0;
-    }
-
     PyErr_Fetch(&exception, &v, &tb);
     if (exception == NULL) {
         /* No current exception */
@@ -1935,9 +1912,30 @@ fatal_error(const char *prefix, const char *msg, int status)
     fputs("\n", stderr);
     fflush(stderr); /* it helps in Windows debug build */
 
-    /* Print the exception (if an exception is set) with its traceback,
-     * or display the current Python stack. */
-    if (!_Py_FatalError_PrintExc(fd)) {
+    /* Check if the current thread has a Python thread state
+       and holds the GIL */
+    PyThreadState *tss_tstate = PyGILState_GetThisThreadState();
+    if (tss_tstate != NULL) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (tss_tstate != tstate) {
+            /* The Python thread does not hold the GIL */
+            tss_tstate = NULL;
+        }
+    }
+    else {
+        /* Py_FatalError() has been called from a C thread
+           which has no Python thread state. */
+    }
+    int has_tstate_and_gil = (tss_tstate != NULL);
+
+    if (has_tstate_and_gil) {
+        /* If an exception is set, print the exception with its traceback */
+        if (!_Py_FatalError_PrintExc(fd)) {
+            /* No exception is set, or an exception is set without traceback */
+            _Py_FatalError_DumpTracebacks(fd);
+        }
+    }
+    else {
         _Py_FatalError_DumpTracebacks(fd);
     }
 
@@ -1948,7 +1946,7 @@ fatal_error(const char *prefix, const char *msg, int status)
     _PyFaulthandler_Fini();
 
     /* Check if the current Python thread hold the GIL */
-    if (PyThreadState_GET() != NULL) {
+    if (has_tstate_and_gil) {
         /* Flush sys.stdout and sys.stderr */
         flush_std_files();
     }

@@ -56,7 +56,7 @@ test runner
       Kent Beck's original paper on testing frameworks using the pattern shared
       by :mod:`unittest`.
 
-   `Nose <https://nose.readthedocs.io/>`_ and `py.test <https://docs.pytest.org/>`_
+   `Nose <https://nose.readthedocs.io/>`_ and `pytest <https://docs.pytest.org/>`_
       Third-party unittest frameworks with a lighter-weight syntax for writing
       tests.  For example, ``assert func(10) == 42``.
 
@@ -944,7 +944,7 @@ Test cases
    +---------------------------------------------------------+--------------------------------------+------------+
 
    .. method:: assertRaises(exception, callable, *args, **kwds)
-               assertRaises(exception, msg=None)
+               assertRaises(exception, *, msg=None)
 
       Test that an exception is raised when *callable* is called with any
       positional or keyword arguments that are also passed to
@@ -984,7 +984,7 @@ Test cases
 
 
    .. method:: assertRaisesRegex(exception, regex, callable, *args, **kwds)
-               assertRaisesRegex(exception, regex, msg=None)
+               assertRaisesRegex(exception, regex, *, msg=None)
 
       Like :meth:`assertRaises` but also tests that *regex* matches
       on the string representation of the raised exception.  *regex* may be
@@ -1010,7 +1010,7 @@ Test cases
 
 
    .. method:: assertWarns(warning, callable, *args, **kwds)
-               assertWarns(warning, msg=None)
+               assertWarns(warning, *, msg=None)
 
       Test that a warning is triggered when *callable* is called with any
       positional or keyword arguments that are also passed to
@@ -1051,7 +1051,7 @@ Test cases
 
 
    .. method:: assertWarnsRegex(warning, regex, callable, *args, **kwds)
-               assertWarnsRegex(warning, regex, msg=None)
+               assertWarnsRegex(warning, regex, *, msg=None)
 
       Like :meth:`assertWarns` but also tests that *regex* matches on the
       message of the triggered warning.  *regex* may be a regular expression
@@ -1161,7 +1161,7 @@ Test cases
       If *delta* is supplied instead of *places* then the difference
       between *first* and *second* must be less or equal to (or greater than) *delta*.
 
-      Supplying both *delta* and *places* raises a ``TypeError``.
+      Supplying both *delta* and *places* raises a :exc:`TypeError`.
 
       .. versionchanged:: 3.2
          :meth:`assertAlmostEqual` automatically considers almost equal objects

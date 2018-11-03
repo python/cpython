@@ -2787,7 +2787,7 @@ class str_converter(CConverter):
 
 #
 # This is the fourth or fifth rewrite of registering all the
-# crazy string converter format units.  Previous approaches hid
+# string converter format units.  Previous approaches hid
 # bugs--generally mismatches between the semantics of the format
 # unit and the arguments necessary to represent those semantics
 # properly.  Hopefully with this approach we'll get it 100% right.
@@ -3840,9 +3840,6 @@ class DSLParser:
                         # "starred": "a = [1, 2, 3]; *a"
                         visit_Starred = bad_node
 
-                        # allow ellipsis, for now
-                        # visit_Ellipsis = bad_node
-
                     blacklist = DetectBadNodes()
                     blacklist.visit(module)
                     bad = blacklist.bad
@@ -3868,10 +3865,15 @@ class DSLParser:
                     py_default = 'None'
                     c_default = "NULL"
                 elif (isinstance(expr, ast.BinOp) or
-                    (isinstance(expr, ast.UnaryOp) and not isinstance(expr.operand, ast.Num))):
+                    (isinstance(expr, ast.UnaryOp) and
+                     not (isinstance(expr.operand, ast.Num) or
+                          (hasattr(ast, 'Constant') and
+                           isinstance(expr.operand, ast.Constant) and
+                           type(expr.operand.value) in (int, float, complex)))
+                    )):
                     c_default = kwargs.get("c_default")
                     if not (isinstance(c_default, str) and c_default):
-                        fail("When you specify an expression (" + repr(default) + ") as your default value,\nyou MUST specify a valid c_default.")
+                        fail("When you specify an expression (" + repr(default) + ") as your default value,\nyou MUST specify a valid c_default." + ast.dump(expr))
                     py_default = default
                     value = unknown
                 elif isinstance(expr, ast.Attribute):
@@ -3946,6 +3948,11 @@ class DSLParser:
         self.function.parameters[parameter_name] = p
 
     def parse_converter(self, annotation):
+        if (hasattr(ast, 'Constant') and
+            isinstance(annotation, ast.Constant) and
+            type(annotation.value) is str):
+            return annotation.value, True, {}
+
         if isinstance(annotation, ast.Str):
             return annotation.s, True, {}
 

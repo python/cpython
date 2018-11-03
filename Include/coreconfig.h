@@ -75,6 +75,8 @@ typedef struct {
          highest priority;
        * PYTHONIOENCODING environment variable;
        * The UTF-8 Mode uses UTF-8/surrogateescape;
+       * If Python forces the usage of the ASCII encoding (ex: C locale
+         or POSIX locale on FreeBSD or HP-UX), use ASCII/surrogateescape;
        * locale encoding: ANSI code page on Windows, UTF-8 on Android,
          LC_CTYPE locale encoding on other platforms;
        * On Windows, "surrogateescape" error handler;
@@ -358,17 +360,6 @@ PyAPI_FUNC(int) _PyCoreConfig_GetEnvDup(
     char *name);
 #endif
 
-
-#ifdef Py_BUILD_CORE
-PyAPI_FUNC(int) _Py_SetFileSystemEncoding(
-    const char *encoding,
-    const char *errors);
-PyAPI_FUNC(void) _Py_ClearFileSystemEncoding(void);
-#endif
-
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject*) _Py_wstrlist_as_pylist(int len, wchar_t **list);
-#endif
 
 
 #ifdef __cplusplus

@@ -20,10 +20,10 @@ rearrange their members in place, and don't return a specific item, never return
 the collection instance itself but ``None``.
 
 Some operations are supported by several object types; in particular,
-practically all objects can be compared, tested for truth value, and converted
-to a string (with the :func:`repr` function or the slightly different
-:func:`str` function).  The latter function is implicitly used when an object is
-written by the :func:`print` function.
+practically all objects can be compared for equality, tested for truth
+value, and converted to a string (with the :func:`repr` function or the
+slightly different :func:`str` function).  The latter function is implicitly
+used when an object is written by the :func:`print` function.
 
 
 .. _truth:
@@ -123,9 +123,9 @@ Comparisons
    pair: chaining; comparisons
    pair: operator; comparison
    operator: ==
-   operator: <
+   operator: < (less)
    operator: <=
-   operator: >
+   operator: > (greater)
    operator: >=
    operator: !=
    operator: is
@@ -164,12 +164,10 @@ This table summarizes the comparison operations:
    pair: objects; comparing
 
 Objects of different types, except different numeric types, never compare equal.
-Furthermore, some types (for example, function objects) support only a degenerate
-notion of comparison where any two objects of that type are unequal.  The ``<``,
-``<=``, ``>`` and ``>=`` operators will raise a :exc:`TypeError` exception when
-comparing a complex number with another built-in numeric type, when the objects
-are of different types that cannot be compared, or in other cases where there is
-no defined ordering.
+The ``==`` operator is always defined but for some object types (for example,
+class objects) is equivalent to :keyword:`is`. The ``<``, ``<=``, ``>`` and ``>=``
+operators are only defined where they make sense; for example, they raise a
+:exc:`TypeError` exception when one of the arguments is a complex number.
 
 .. index::
    single: __eq__() (instance method)
@@ -197,8 +195,8 @@ exception.
    operator: not in
 
 Two more operations with the same syntactic priority, :keyword:`in` and
-:keyword:`not in`, are supported only by sequence types (below).
-
+:keyword:`not in`, are supported by types that are :term:`iterable` or
+implement the :meth:`__contains__` method.
 
 .. _typesnumeric:
 
@@ -248,12 +246,16 @@ and imaginary parts.
    builtin: int
    builtin: float
    builtin: complex
-   operator: +
-   operator: -
-   operator: *
-   operator: /
+   single: operator; + (plus)
+   single: + (plus); unary operator
+   single: + (plus); binary operator
+   single: operator; - (minus)
+   single: - (minus); unary operator
+   single: - (minus); binary operator
+   operator: * (asterisk)
+   operator: / (slash)
    operator: //
-   operator: %
+   operator: % (percent)
    operator: **
 
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
@@ -389,12 +391,12 @@ Bitwise Operations on Integer Types
    pair: bitwise; operations
    pair: shifting; operations
    pair: masking; operations
-   operator: |
-   operator: ^
-   operator: &
+   operator: | (vertical bar)
+   operator: ^ (caret)
+   operator: & (ampersand)
    operator: <<
    operator: >>
-   operator: ~
+   operator: ~ (tilde)
 
 Bitwise operations only make sense for integers. The result of bitwise
 operations is calculated as though carried out in two's complement with an
@@ -539,6 +541,14 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.2
 
+.. method:: int.as_integer_ratio()
+
+   Return a pair of integers whose ratio is exactly equal to the original
+   integer and with a positive denominator. The integer ratio of integers
+   (whole numbers) is always the integer as the numerator and ``1`` as the
+   denominator.
+
+   .. versionadded:: 3.8
 
 Additional Methods on Float
 ---------------------------
@@ -1195,6 +1205,8 @@ application).
       --- this is helpful for sorting in multiple passes (for example, sort by
       department, then by salary grade).
 
+      For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
+
       .. impl-detail::
 
          While a list is being sorted, the effect of attempting to mutate, or even
@@ -1694,8 +1706,19 @@ expression support in the :mod:`re` module).
    Return true if the string is a valid identifier according to the language
    definition, section :ref:`identifiers`.
 
-   Use :func:`keyword.iskeyword` to test for reserved identifiers such as
-   :keyword:`def` and :keyword:`class`.
+   Call :func:`keyword.iskeyword` to test whether string ``s`` is a reserved
+   identifier, such as :keyword:`def` and :keyword:`class`.
+
+   Example:
+   ::
+
+      >>> from keyword import iskeyword
+
+      >>> 'hello'.isidentifier(), iskeyword('hello')
+      True, False
+      >>> 'def'.isidentifier(), iskeyword('def')
+      True, True
+
 
 .. method:: str.islower()
 
@@ -2096,8 +2119,7 @@ expression support in the :mod:`re` module).
    single: string; interpolation, printf
    single: printf-style formatting
    single: sprintf-style formatting
-   single: % formatting
-   single: % interpolation
+   single: % (percent); printf-style formatting
 
 .. note::
 
@@ -2125,15 +2147,22 @@ components, which must occur in this order:
 
 #. The ``'%'`` character, which marks the start of the specifier.
 
+.. index::
+   single: () (parentheses); in printf-style formatting
+
 #. Mapping key (optional), consisting of a parenthesised sequence of characters
    (for example, ``(somename)``).
 
 #. Conversion flags (optional), which affect the result of some conversion
    types.
 
+.. index:: single: * (asterisk); in printf-style formatting
+
 #. Minimum field width (optional).  If specified as an ``'*'`` (asterisk), the
    actual width is read from the next element of the tuple in *values*, and the
    object to convert comes after the minimum field width and optional precision.
+
+.. index:: single: . (dot); in printf-style formatting
 
 #. Precision (optional), given as a ``'.'`` (dot) followed by the precision.  If
    specified as ``'*'`` (an asterisk), the actual precision is read from the next
@@ -2157,6 +2186,12 @@ In this case no ``*`` specifiers may occur in a format (since they require a
 sequential parameter list).
 
 The conversion flag characters are:
+
+.. index::
+   single: # (hash); in printf-style formatting
+   single: - (minus); in printf-style formatting
+   single: + (plus); in printf-style formatting
+   single: space; in printf-style formatting
 
 +---------+---------------------------------------------------------------------+
 | Flag    | Meaning                                                             |
@@ -3210,18 +3245,17 @@ place, and instead produce new objects.
 ----------------------------------
 
 .. index::
-   single: formatting, bytes (%)
-   single: formatting, bytearray (%)
-   single: interpolation, bytes (%)
-   single: interpolation, bytearray (%)
+   single: formatting; bytes (%)
+   single: formatting; bytearray (%)
+   single: interpolation; bytes (%)
+   single: interpolation; bytearray (%)
    single: bytes; formatting
    single: bytearray; formatting
    single: bytes; interpolation
    single: bytearray; interpolation
    single: printf-style formatting
    single: sprintf-style formatting
-   single: % formatting
-   single: % interpolation
+   single: % (percent); printf-style formatting
 
 .. note::
 
@@ -3247,15 +3281,22 @@ components, which must occur in this order:
 
 #. The ``'%'`` character, which marks the start of the specifier.
 
+.. index::
+   single: () (parentheses); in printf-style formatting
+
 #. Mapping key (optional), consisting of a parenthesised sequence of characters
    (for example, ``(somename)``).
 
 #. Conversion flags (optional), which affect the result of some conversion
    types.
 
+.. index:: single: * (asterisk); in printf-style formatting
+
 #. Minimum field width (optional).  If specified as an ``'*'`` (asterisk), the
    actual width is read from the next element of the tuple in *values*, and the
    object to convert comes after the minimum field width and optional precision.
+
+.. index:: single: . (dot); in printf-style formatting
 
 #. Precision (optional), given as a ``'.'`` (dot) followed by the precision.  If
    specified as ``'*'`` (an asterisk), the actual precision is read from the next
@@ -3279,6 +3320,12 @@ In this case no ``*`` specifiers may occur in a format (since they require a
 sequential parameter list).
 
 The conversion flag characters are:
+
+.. index::
+   single: # (hash); in printf-style formatting
+   single: - (minus); in printf-style formatting
+   single: + (plus); in printf-style formatting
+   single: space; in printf-style formatting
 
 +---------+---------------------------------------------------------------------+
 | Flag    | Meaning                                                             |
@@ -4601,6 +4648,7 @@ supports no special operations.  There is exactly one null object, named
 It is written as ``None``.
 
 
+.. index:: single: ...; ellipsis literal
 .. _bltin-ellipsis-object:
 
 The Ellipsis Object
@@ -4735,4 +4783,3 @@ types, where they are relevant.  Some of these are not reported by the
 
 .. [5] To format only a tuple you should therefore provide a singleton tuple whose only
    element is the tuple to be formatted.
-
