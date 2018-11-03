@@ -808,40 +808,38 @@ def findsource(object):
 
         class ClassVisitor(ast.NodeVisitor):
 
-            def __init__(self, qualname):
-                self.stack = []
-                self.line_number = None
-                self.qualname = qualname
-
             def visit_FunctionDef(self, node):
-                self.stack.append(node.name)
-                self.stack.append('<locals>')
+                stack.append(node.name)
+                stack.append('<locals>')
                 self.generic_visit(node)
-                self.stack.pop()
-                self.stack.pop()
+                stack.pop()
+                stack.pop()
 
             visit_AsyncFunctionDef = visit_FunctionDef
 
             def visit_ClassDef(self, node):
-                self.stack.append(node.name)
-                if self.qualname == '.'.join(self.stack):
+                nonlocal line_number
+                stack.append(node.name)
+                if qualname == '.'.join(stack):
                     if node.decorator_list:
                         line_number = node.decorator_list[0].lineno
                     else:
                         line_number = node.lineno
                     # decrement by one since lines starts with indexing by zero
-                    self.line_number = line_number - 1
+                    line_number = line_number - 1
                 self.generic_visit(node)
-                self.stack.pop()
+                stack.pop()
 
+        stack = []
+        line_number = None
         qualname = object.__qualname__
         source = ''.join(lines)
         tree = ast.parse(source)
-        class_visitor = ClassVisitor(qualname)
+        class_visitor = ClassVisitor()
         class_visitor.visit(tree)
 
-        if class_visitor.line_number is not None:
-            line_number = class_visitor.line_number
+        if line_number is not None:
+            line_number = line_number
             return lines, line_number
         else:
             raise OSError('could not find class definition')
