@@ -124,11 +124,11 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
         Py_DECREF(py_int_id);
     }
 #ifdef HAVE_GETGRGID_R
-    Py_BEGIN_ALLOW_THREADS
     int status;
     Py_ssize_t bufsize;
     struct group grp;
 
+    Py_BEGIN_ALLOW_THREADS
     bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
     if (bufsize == -1) {
         bufsize = DEFAULT_BUFFER_SIZE;
@@ -204,11 +204,11 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
     if (PyBytes_AsStringAndSize(bytes, &name_chars, NULL) == -1)
         goto out;
 #ifdef HAVE_GETGRNAM_R
-    Py_BEGIN_ALLOW_THREADS
     int status;
     Py_ssize_t bufsize;
     struct group grp;
 
+    Py_BEGIN_ALLOW_THREADS
     bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
     if (bufsize == -1) {
         bufsize = DEFAULT_BUFFER_SIZE;

@@ -131,11 +131,11 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
         return NULL;
     }
 #ifdef HAVE_GETPWUID_R
-    Py_BEGIN_ALLOW_THREADS
     int status;
     Py_ssize_t bufsize;
     struct passwd pwd;
 
+    Py_BEGIN_ALLOW_THREADS
     bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
     if (bufsize == -1) {
         bufsize = DEFAULT_BUFFER_SIZE;
@@ -212,11 +212,11 @@ pwd_getpwnam_impl(PyObject *module, PyObject *name)
     if (PyBytes_AsStringAndSize(bytes, &name_chars, NULL) == -1)
         goto out;
 #ifdef HAVE_GETPWNAM_R
-    Py_BEGIN_ALLOW_THREADS
     int status;
     Py_ssize_t bufsize;
     struct passwd pwd;
 
+    Py_BEGIN_ALLOW_THREADS
     bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
     if (bufsize == -1) {
         bufsize = DEFAULT_BUFFER_SIZE;
