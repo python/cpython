@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_state.h"
 #ifdef Yield
 #undef Yield /* undefine conflicting macro from winbase.h */
 #endif
@@ -265,7 +265,7 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
     st->st_future = future;
 
     /* Setup recursion depth check counters */
-    tstate = PyThreadState_GET();
+    tstate = _PyThreadState_GET();
     if (!tstate) {
         PySymtable_Free(st);
         return NULL;
@@ -1175,6 +1175,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                 VISIT_QUIT(st, 0);
             }
             if ((cur & (DEF_GLOBAL | DEF_NONLOCAL))
+                && (st->st_cur->ste_symbols != st->st_global)
                 && s->v.AnnAssign.simple) {
                 PyErr_Format(PyExc_SyntaxError,
                              cur & DEF_GLOBAL ? GLOBAL_ANNOT : NONLOCAL_ANNOT,

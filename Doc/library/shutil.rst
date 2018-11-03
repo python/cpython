@@ -177,7 +177,7 @@ Directory and files operations
 .. function:: copy2(src, dst, *, follow_symlinks=True)
 
    Identical to :func:`~shutil.copy` except that :func:`copy2`
-   also attempts to preserve all file metadata.
+   also attempts to preserve file metadata.
 
    When *follow_symlinks* is false, and *src* is a symbolic
    link, :func:`copy2` attempts to copy all metadata from the
@@ -351,7 +351,7 @@ Directory and files operations
    .. versionchanged:: 3.8
      On Windows, *path* can now be a file or directory.
 
-   Availability: Unix, Windows.
+   .. availability:: Unix, Windows.
 
 .. function:: chown(path, user=None, group=None)
 
@@ -362,7 +362,7 @@ Directory and files operations
 
    See also :func:`os.chown`, the underlying function.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 

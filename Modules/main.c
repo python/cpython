@@ -2,8 +2,11 @@
 
 #include "Python.h"
 #include "osdefs.h"
-#include "internal/pygetopt.h"
-#include "internal/pystate.h"
+#include "pycore_getopt.h"
+#include "pycore_lifecycle.h"
+#include "pycore_mem.h"
+#include "pycore_pathconfig.h"
+#include "pycore_state.h"
 
 #include <locale.h>
 

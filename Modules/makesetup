@@ -110,7 +110,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	rulesf="@rules.$$"
 	trap 'rm -f $rulesf' 0 1 2 3
 	echo "
-# Rules appended by makedepend
+# Rules appended by makesetup
 " >$rulesf
 	DEFS=
 	BUILT=
