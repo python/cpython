@@ -185,7 +185,7 @@ unicodedata
 -----------
 
 * New function :func:`~unicodedata.is_normalized` can be used to verify a string
-  is in a specific normal form (contributed by Max Belanger, David Euresti in
+  is in a specific normal form. (Contributed by Max Belanger and David Euresti in
   :issue:`32285`).
 
 venv
