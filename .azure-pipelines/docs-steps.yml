@@ -24,7 +24,7 @@ steps:
   - script: sudo apt-get update && sudo apt-get install -qy --force-yes texlive-full 
     displayName: 'Install LaTeX'
 
-  - script: make dist PYTHON=python SPHINXOPTS='-W' SPHINXBUILD='python -m sphinx' BLURB='python -m blurb'
+  - script: make dist PYTHON=python SPHINXBUILD='python -m sphinx' BLURB='python -m blurb'
     workingDirectory: '$(build.sourcesDirectory)/Doc'
     displayName: 'Build documentation'
 
