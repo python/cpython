@@ -266,12 +266,14 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             parser.EndCdataSectionHandler = None
             parser.StartDoctypeDeclHandler = None
             parser.EndDoctypeDeclHandler = None
+            parser.XmlDeclHandler = None
         else:
             parser.CommentHandler = lex.comment
             parser.StartCdataSectionHandler = lex.startCDATA
             parser.EndCdataSectionHandler = lex.endCDATA
             parser.StartDoctypeDeclHandler = self.start_doctype_decl
             parser.EndDoctypeDeclHandler = lex.endDTD
+            parser.XmlDeclHandler = lex.xmlDecl
 
     def reset(self):
         if self._namespaces:
