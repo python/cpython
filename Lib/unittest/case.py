@@ -1467,11 +1467,11 @@ class AsyncioTestCase(TestCase):
     is stopped and closed.
 
     When subclassing AsyncioTestCase, the event loop is available
-    via the ``event_loop`` property.  Tests can assume that
-    `self.event_loop` refers to the event loop created for the test
-    case.  It is also the active event loop as returned by
-    ``asyncio.get_event_loop()``.  Test cases SHOULD NOT change the
-    active event loop during the test run.
+    via the ``loop`` property.  Tests can assume that `self.loop`
+    refers to the event loop created for the test case.  It is also
+    the active event loop as returned by ``asyncio.get_event_loop()``.
+    Test cases SHOULD NOT change the active event loop during the test
+    run.
 
     The lifecycle of a single test execution is thus::
 
@@ -1500,7 +1500,7 @@ class AsyncioTestCase(TestCase):
 
     def __init__(self, methodName='runTest'):
         super().__init__(methodName)
-        self.__event_loop = None
+        self.__loop = None
 
     @classmethod
     def setUpClass(cls):
@@ -1537,42 +1537,42 @@ class AsyncioTestCase(TestCase):
         self.tearDown()
 
     @property
-    def event_loop(self):
+    def loop(self):
         """Active event loop for the test case."""
-        if self.__event_loop is None:
-            self.__event_loop = asyncio.new_event_loop()
-            self.__event_loop.set_debug(True)
-            asyncio.set_event_loop(self.__event_loop)
-        return self.__event_loop
+        if self.__loop is None:
+            self.__loop = asyncio.new_event_loop()
+            self.__loop.set_debug(True)
+            asyncio.set_event_loop(self.__loop)
+        return self.__loop
 
     def _runTest(self, testMethod, outcome, expecting_failure):
         try:
             with outcome.testPartExecutor(self):
-                self.event_loop.run_until_complete(self.asyncSetUp())
+                self.loop.run_until_complete(self.asyncSetUp())
             if outcome.success:
                 outcome.expecting_failure = expecting_failure
                 with outcome.testPartExecutor(self, isTest=True):
                     if asyncio.iscoroutinefunction(testMethod):
-                        self.event_loop.run_until_complete(testMethod())
+                        self.loop.run_until_complete(testMethod())
                     else:
                         testMethod()
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
-                    self.event_loop.run_until_complete(self.asyncTearDown())
+                    self.loop.run_until_complete(self.asyncTearDown())
         finally:
-            if self.event_loop.is_running():
-                self.event_loop.stop()
+            if self.loop.is_running():
+                self.loop.stop()
 
     def _terminateTest(self, outcome):
         super()._terminateTest(outcome)
-        if self.event_loop.is_running():
-            self.event_loop.stop()
-        self.event_loop.run_until_complete(
-            self.event_loop.shutdown_asyncgens())
+        if self.loop.is_running():
+            self.loop.stop()
+        self.loop.run_until_complete(
+            self.loop.shutdown_asyncgens())
         asyncio.set_event_loop(None)
-        if not self.event_loop.is_closed():
-            self.event_loop.close()
-        self.__event_loop = None
+        if not self.loop.is_closed():
+            self.loop.close()
+        self.__loop = None
 
     def doCleanups(self):
         """Execute all cleanup functions.
@@ -1584,7 +1584,7 @@ class AsyncioTestCase(TestCase):
             cleanup_func, args, kwargs = self._cleanups.pop()
             with outcome.testPartExecutor(self):
                 if asyncio.iscoroutinefunction(cleanup_func):
-                    self.event_loop.run_until_complete(
+                    self.loop.run_until_complete(
                         cleanup_func(*args, **kwargs))
                 else:
                     cleanup_func(*args, **kwargs)
