@@ -37,7 +37,7 @@ if sysconfig.is_python_build():
         TEMPDIR = sysconfig.get_config_var('srcdir')
     TEMPDIR = os.path.join(TEMPDIR, 'build')
 else:
-    TEMPDIR = tempfile.gettempdir()
+    TEMPDIR = os.getenv('PY_TEMPDIR', None) or tempfile.gettempdir()
 TEMPDIR = os.path.abspath(TEMPDIR)
 
 
@@ -550,10 +550,14 @@ class Regrtest:
 
     def main(self, tests=None, **kwargs):
         global TEMPDIR
+        self.ns = self.parse_args(kwargs)
 
-        if sysconfig.is_python_build():
+        if self.ns.tempdir:
+            TEMPDIR = self.ns.tempdir
+
+        if not os.path.isdir(TEMPDIR):
             try:
-                os.mkdir(TEMPDIR)
+                os.makedirs(TEMPDIR)
             except FileExistsError:
                 pass
 
@@ -571,8 +575,6 @@ class Regrtest:
             self._main(tests, kwargs)
 
     def _main(self, tests, kwargs):
-        self.ns = self.parse_args(kwargs)
-
         if self.ns.huntrleaks:
             warmup, repetitions, _ = self.ns.huntrleaks
             if warmup < 1 or repetitions < 1:
