@@ -14,6 +14,7 @@ __all__ = [
     'get_paths',
     'get_platform',
     'get_python_version',
+    'get_full_python_version',
     'get_scheme_names',
     'parse_config_h',
 ]
@@ -85,7 +86,7 @@ _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
                 'scripts', 'data')
 
 releaselevel_serial = ''
-if sys.version_info[3] == 'alpha' or sys.version_info[3] == 'beta':
+if sys.version_info[3] in ('alpha', 'beta'):
     releaselevel_serial = sys.version_info[3][0] + str(sys.version_info[4])
 elif sys.version_info[3] == 'release':
     releaselevel_serial = 'rc' + str(sys.version_info[4])
@@ -676,6 +677,10 @@ def get_platform():
 
 def get_python_version():
     return _PY_VERSION_SHORT
+
+
+def get_full_python_version():
+    return _PY_VERSION
 
 
 def _print_dict(title, data):
