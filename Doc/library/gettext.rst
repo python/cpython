@@ -464,7 +464,6 @@ it in ``_('...')`` --- that is, a call to the function :func:`_`.  For example::
    message = _('writing a log message')
    with open(filename, 'w') as fp:
        fp.write(message)
-       fp.close()
 
 In this example, the string ``'writing a log message'`` is marked as a candidate
 for translation, while the strings ``'mylog.txt'`` and ``'w'`` are not.
@@ -671,6 +670,6 @@ implementations, and valuable experience to the creation of this module:
    The :mod:`gettext` module does not try to support these system dependent
    defaults; instead its default is :file:`{sys.prefix}/share/locale`. For this
    reason, it is always best to call :func:`bindtextdomain` with an explicit
-   absolute path at the start of your application.
+   absolute path at the start of your application (see :data:`sys.prefix`).
 
 .. [#] See the footnote for :func:`bindtextdomain` above.
