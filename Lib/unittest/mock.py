@@ -30,6 +30,7 @@ import pprint
 import sys
 import builtins
 from types import ModuleType
+from unittest.util import safe_repr
 from functools import wraps, partial
 
 
@@ -778,8 +779,10 @@ class NonCallableMock(Base):
         """
         self = _mock_self
         if self.call_count != 0:
-            msg = ("Expected '%s' to not have been called. Called %s times." %
-                   (self._mock_name or 'mock', self.call_count))
+            msg = ("Expected '%s' to not have been called. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
             raise AssertionError(msg)
 
     def assert_called(_mock_self):
@@ -796,8 +799,10 @@ class NonCallableMock(Base):
         """
         self = _mock_self
         if not self.call_count == 1:
-            msg = ("Expected '%s' to have been called once. Called %s times." %
-                   (self._mock_name or 'mock', self.call_count))
+            msg = ("Expected '%s' to have been called once. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
             raise AssertionError(msg)
 
     def assert_called_with(_mock_self, *args, **kwargs):
@@ -825,8 +830,10 @@ class NonCallableMock(Base):
         with the specified arguments."""
         self = _mock_self
         if not self.call_count == 1:
-            msg = ("Expected '%s' to be called once. Called %s times." %
-                   (self._mock_name or 'mock', self.call_count))
+            msg = ("Expected '%s' to be called once. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
             raise AssertionError(msg)
         return self.assert_called_with(*args, **kwargs)
 
@@ -847,8 +854,8 @@ class NonCallableMock(Base):
         if not any_order:
             if expected not in all_calls:
                 raise AssertionError(
-                    'Calls not found.\nExpected: %r\n'
-                    'Actual: %r' % (_CallList(calls), self.mock_calls)
+                    'Calls not found.\nExpected: %r%s'
+                    % (_CallList(calls), self._calls_repr(prefix="Actual"))
                 ) from cause
             return
 
@@ -907,6 +914,19 @@ class NonCallableMock(Base):
             raise AttributeError(mock_name)
 
         return klass(**kw)
+
+
+    def _calls_repr(self, prefix="Calls"):
+        """Renders self.mock_calls as a string.
+
+        Example: "\nCalls: [call(1), call(2)]."
+
+        If self.mock_calls is empty, an empty string is returned. The
+        output will be truncated if very long.
+        """
+        if not self.mock_calls:
+            return ""
+        return f"\n{prefix}: {safe_repr(self.mock_calls)}."
 
 
 

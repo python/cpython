@@ -1,6 +1,9 @@
 #ifndef Py_LIMITED_API
-#ifndef Py_ACCU_H
-#define Py_ACCU_H
+#ifndef Py_INTERNAL_ACCU_H
+#define Py_INTERNAL_ACCU_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*** This is a private API for use by the interpreter and the stdlib.
  *** Its definition may be changed or removed at any moment.
@@ -11,10 +14,6 @@
  * of keeping a huge number of small separate objects, and the quadratic
  * behaviour of using a naive repeated concatenation scheme.
  */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #undef small /* defined by some Windows headers */
 
@@ -32,6 +31,5 @@ PyAPI_FUNC(void) _PyAccu_Destroy(_PyAccu *acc);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* Py_ACCU_H */
-#endif /* Py_LIMITED_API */
+#endif /* !Py_INTERNAL_ACCU_H */
+#endif /* !Py_LIMITED_API */

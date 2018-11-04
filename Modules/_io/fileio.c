@@ -1120,14 +1120,6 @@ _io_FileIO_isatty_impl(fileio *self)
     return PyBool_FromLong(res);
 }
 
-static PyObject *
-fileio_getstate(fileio *self, PyObject *Py_UNUSED(ignored))
-{
-    PyErr_Format(PyExc_TypeError,
-                 "cannot serialize '%s' object", Py_TYPE(self)->tp_name);
-    return NULL;
-}
-
 #include "clinic/fileio.c.h"
 
 static PyMethodDef fileio_methods[] = {
@@ -1145,7 +1137,6 @@ static PyMethodDef fileio_methods[] = {
     _IO_FILEIO_FILENO_METHODDEF
     _IO_FILEIO_ISATTY_METHODDEF
     {"_dealloc_warn", (PyCFunction)fileio_dealloc_warn, METH_O, NULL},
-    {"__getstate__", (PyCFunction)fileio_getstate, METH_NOARGS, NULL},
     {NULL,           NULL}             /* sentinel */
 };
 

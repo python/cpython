@@ -137,7 +137,7 @@ Running and stopping the loop
 
    Close the event loop.
 
-   The loop must be running when this function is called.
+   The loop must not be running when this function is called.
    Any pending callbacks will be discarded.
 
    This method clears all queues and shuts down the executor, but does

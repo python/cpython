@@ -8,10 +8,12 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include <float.h>
-#include "structmember.h"
 #include "datetime.h"
 #include "marshal.h"
+#include "pycore_pathconfig.h"
+#include "pythread.h"
+#include "structmember.h"
+#include <float.h>
 #include <signal.h>
 
 #ifdef MS_WINDOWS
@@ -22,7 +24,6 @@
 #include <sys/wait.h>           /* For W_STOPCODE */
 #endif
 
-#include "pythread.h"
 static PyObject *TestError;     /* set to exception object in init */
 
 /* Raise TestError with test_name + ": " + msg, and return NULL. */
@@ -4160,7 +4161,7 @@ test_PyTime_AsMicroseconds(PyObject *self, PyObject *args)
 static PyObject*
 get_recursion_depth(PyObject *self, PyObject *args)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = PyThreadState_Get();
 
     /* subtract one to ignore the frame of the get_recursion_depth() call */
     return PyLong_FromLong(tstate->recursion_depth - 1);

@@ -2,8 +2,8 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
-#include "internal/pystate.h"
-#include "internal/context.h"
+#include "pycore_state.h"
+#include "pycore_context.h"
 #include "frameobject.h"
 
 #ifdef __cplusplus
@@ -72,7 +72,7 @@ _Py_AddToAllObjects(PyObject *op, int force)
         /* If it's initialized memory, op must be in or out of
          * the list unambiguously.
          */
-        assert((op->_ob_prev == NULL) == (op->_ob_next == NULL));
+        _PyObject_ASSERT(op, (op->_ob_prev == NULL) == (op->_ob_next == NULL));
     }
 #endif
     if (force || op->_ob_prev == NULL) {
@@ -93,11 +93,11 @@ static PyTypeObject *type_list;
    is set, they will be removed from the type_list
    once the last object is deallocated. */
 static int unlist_types_without_objects;
-extern Py_ssize_t tuple_zero_allocs, fast_tuple_allocs;
-extern Py_ssize_t quick_int_allocs, quick_neg_int_allocs;
-extern Py_ssize_t null_strings, one_strings;
+extern Py_ssize_t _Py_tuple_zero_allocs, _Py_fast_tuple_allocs;
+extern Py_ssize_t _Py_quick_int_allocs, _Py_quick_neg_int_allocs;
+extern Py_ssize_t _Py_null_strings, _Py_one_strings;
 void
-dump_counts(FILE* f)
+_Py_dump_counts(FILE* f)
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
     if (!interp->core_config.show_alloc_count) {
@@ -113,17 +113,17 @@ dump_counts(FILE* f)
             tp->tp_maxalloc);
     fprintf(f, "fast tuple allocs: %" PY_FORMAT_SIZE_T "d, "
         "empty: %" PY_FORMAT_SIZE_T "d\n",
-        fast_tuple_allocs, tuple_zero_allocs);
+        _Py_fast_tuple_allocs, _Py_tuple_zero_allocs);
     fprintf(f, "fast int allocs: pos: %" PY_FORMAT_SIZE_T "d, "
         "neg: %" PY_FORMAT_SIZE_T "d\n",
-        quick_int_allocs, quick_neg_int_allocs);
+        _Py_quick_int_allocs, _Py_quick_neg_int_allocs);
     fprintf(f, "null strings: %" PY_FORMAT_SIZE_T "d, "
         "1-strings: %" PY_FORMAT_SIZE_T "d\n",
-        null_strings, one_strings);
+        _Py_null_strings, _Py_one_strings);
 }
 
 PyObject *
-get_counts(void)
+_Py_get_counts(void)
 {
     PyTypeObject *tp;
     PyObject *result;
@@ -150,12 +150,12 @@ get_counts(void)
 }
 
 void
-inc_count(PyTypeObject *tp)
+_Py_inc_count(PyTypeObject *tp)
 {
     if (tp->tp_next == NULL && tp->tp_prev == NULL) {
         /* first time; insert in linked list */
         if (tp->tp_next != NULL) /* sanity check */
-            Py_FatalError("XXX inc_count sanity check");
+            Py_FatalError("XXX _Py_inc_count sanity check");
         if (type_list)
             type_list->tp_prev = tp;
         tp->tp_next = type_list;
@@ -181,7 +181,7 @@ inc_count(PyTypeObject *tp)
         tp->tp_maxalloc = tp->tp_allocs - tp->tp_frees;
 }
 
-void dec_count(PyTypeObject *tp)
+void _Py_dec_count(PyTypeObject *tp)
 {
     tp->tp_frees++;
     if (unlist_types_without_objects &&
@@ -305,7 +305,9 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     /* Undo the temporary resurrection; can't use DECREF here, it would
      * cause a recursive call.
      */
-    assert(self->ob_refcnt > 0);
+    _PyObject_ASSERT_WITH_MSG(self,
+                              self->ob_refcnt > 0,
+                              "refcount is too small");
     if (--self->ob_refcnt == 0)
         return 0;         /* this is the normal path out */
 
@@ -316,7 +318,9 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     _Py_NewReference(self);
     self->ob_refcnt = refcnt;
 
-    assert(!PyType_IS_GC(Py_TYPE(self)) || _PyObject_GC_IS_TRACKED(self));
+    _PyObject_ASSERT(self,
+                     (!PyType_IS_GC(Py_TYPE(self))
+                      || _PyObject_GC_IS_TRACKED(self)));
     /* If Py_REF_DEBUG, _Py_NewReference bumped _Py_RefTotal, so
      * we need to undo that. */
     _Py_DEC_REFTOTAL;
@@ -1020,7 +1024,7 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
         return err;
     }
     Py_DECREF(name);
-    assert(name->ob_refcnt >= 1);
+    _PyObject_ASSERT(name, name->ob_refcnt >= 1);
     if (tp->tp_getattr == NULL && tp->tp_getattro == NULL)
         PyErr_Format(PyExc_TypeError,
                      "'%.100s' object has no attributes "
@@ -1059,8 +1063,8 @@ _PyObject_GetDictPtr(PyObject *obj)
         size = _PyObject_VAR_SIZE(tp, tsize);
 
         dictoffset += (long)size;
-        assert(dictoffset > 0);
-        assert(dictoffset % SIZEOF_VOID_P == 0);
+        _PyObject_ASSERT(obj, dictoffset > 0);
+        _PyObject_ASSERT(obj, dictoffset % SIZEOF_VOID_P == 0);
     }
     return (PyObject **) ((char *)obj + dictoffset);
 }
@@ -1247,11 +1251,11 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
                 if (tsize < 0)
                     tsize = -tsize;
                 size = _PyObject_VAR_SIZE(tp, tsize);
-                assert(size <= PY_SSIZE_T_MAX);
+                _PyObject_ASSERT(obj, size <= PY_SSIZE_T_MAX);
 
                 dictoffset += (Py_ssize_t)size;
-                assert(dictoffset > 0);
-                assert(dictoffset % SIZEOF_VOID_P == 0);
+                _PyObject_ASSERT(obj, dictoffset > 0);
+                _PyObject_ASSERT(obj, dictoffset % SIZEOF_VOID_P == 0);
             }
             dictptr = (PyObject **) ((char *)obj + dictoffset);
             dict = *dictptr;
@@ -1486,7 +1490,7 @@ _dir_object(PyObject *obj)
     PyObject *result, *sorted;
     PyObject *dirfunc = _PyObject_LookupSpecial(obj, &PyId___dir__);
 
-    assert(obj);
+    assert(obj != NULL);
     if (dirfunc == NULL) {
         if (!PyErr_Occurred())
             PyErr_SetString(PyExc_TypeError, "object does not provide __dir__");
@@ -1960,14 +1964,6 @@ _Py_ForgetReference(PyObject *op)
     _Py_INC_TPFREES(op);
 }
 
-void
-_Py_Dealloc(PyObject *op)
-{
-    destructor dealloc = Py_TYPE(op)->tp_dealloc;
-    _Py_ForgetReference(op);
-    (*dealloc)(op);
-}
-
 /* Print all live objects.  Because PyObject_Print is called, the
  * interpreter must be in a healthy state.
  */
@@ -2129,9 +2125,9 @@ finally:
 void
 _PyTrash_deposit_object(PyObject *op)
 {
-    assert(PyObject_IS_GC(op));
-    assert(!_PyObject_GC_IS_TRACKED(op));
-    assert(op->ob_refcnt == 0);
+    _PyObject_ASSERT(op, PyObject_IS_GC(op));
+    _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
+    _PyObject_ASSERT(op, op->ob_refcnt == 0);
     _PyGCHead_SET_PREV(_Py_AS_GC(op), _PyRuntime.gc.trash_delete_later);
     _PyRuntime.gc.trash_delete_later = op;
 }
@@ -2140,10 +2136,10 @@ _PyTrash_deposit_object(PyObject *op)
 void
 _PyTrash_thread_deposit_object(PyObject *op)
 {
-    PyThreadState *tstate = PyThreadState_GET();
-    assert(PyObject_IS_GC(op));
-    assert(!_PyObject_GC_IS_TRACKED(op));
-    assert(op->ob_refcnt == 0);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyObject_ASSERT(op, PyObject_IS_GC(op));
+    _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
+    _PyObject_ASSERT(op, op->ob_refcnt == 0);
     _PyGCHead_SET_PREV(_Py_AS_GC(op), tstate->trash_delete_later);
     tstate->trash_delete_later = op;
 }
@@ -2167,7 +2163,7 @@ _PyTrash_destroy_chain(void)
          * assorted non-release builds calling Py_DECREF again ends
          * up distorting allocation statistics.
          */
-        assert(op->ob_refcnt == 0);
+        _PyObject_ASSERT(op, op->ob_refcnt == 0);
         ++_PyRuntime.gc.trash_delete_nesting;
         (*dealloc)(op);
         --_PyRuntime.gc.trash_delete_nesting;
@@ -2178,7 +2174,7 @@ _PyTrash_destroy_chain(void)
 void
 _PyTrash_thread_destroy_chain(void)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     /* We need to increase trash_delete_nesting here, otherwise,
        _PyTrash_thread_destroy_chain will be called recursively
        and then possibly crash.  An example that may crash without
@@ -2205,7 +2201,7 @@ _PyTrash_thread_destroy_chain(void)
          * assorted non-release builds calling Py_DECREF again ends
          * up distorting allocation statistics.
          */
-        assert(op->ob_refcnt == 0);
+        _PyObject_ASSERT(op, op->ob_refcnt == 0);
         (*dealloc)(op);
         assert(tstate->trash_delete_nesting == 1);
     }
@@ -2261,18 +2257,20 @@ _PyObject_AssertFailed(PyObject *obj, const char *msg, const char *expr,
     Py_FatalError("_PyObject_AssertFailed");
 }
 
-#ifndef Py_TRACE_REFS
-/* For Py_LIMITED_API, we need an out-of-line version of _Py_Dealloc.
-   Define this here, so we can undefine the macro. */
+
 #undef _Py_Dealloc
-void _Py_Dealloc(PyObject *);
+
 void
 _Py_Dealloc(PyObject *op)
 {
-    _Py_INC_TPFREES(op) _Py_COUNT_ALLOCS_COMMA
-    (*Py_TYPE(op)->tp_dealloc)(op);
-}
+    destructor dealloc = Py_TYPE(op)->tp_dealloc;
+#ifdef Py_TRACE_REFS
+    _Py_ForgetReference(op);
+#else
+    _Py_INC_TPFREES(op);
 #endif
+    (*dealloc)(op);
+}
 
 #ifdef __cplusplus
 }

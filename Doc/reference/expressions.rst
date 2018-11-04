@@ -130,8 +130,7 @@ Parenthesized forms
 
 .. index::
    single: parenthesized form
-   single: (; tuple display
-   single: ); tuple display
+   single: () (parentheses); tuple display
 
 A parenthesized form is an optional expression list enclosed in parentheses:
 
@@ -150,7 +149,7 @@ tuple may or may not yield the same object).
 
 .. index::
    single: comma
-   single: ,
+   single: , (comma)
 
 Note that tuples are not formed by the parentheses, but rather by use of the
 comma operator.  The exception is the empty tuple, for which parentheses *are*
@@ -238,9 +237,8 @@ List displays
    pair: list; comprehensions
    pair: empty; list
    object: list
-   single: [; list expression
-   single: ]; list expression
-   single: ,; expression list
+   single: [] (square brackets); list expression
+   single: , (comma); expression list
 
 A list display is a possibly empty series of expressions enclosed in square
 brackets:
@@ -263,9 +261,8 @@ Set displays
 .. index::
    pair: set; display
    object: set
-   single: {; set expression
-   single: }; set expression
-   single: ,; expression list
+   single: {} (curly brackets); set expression
+   single: , (comma); expression list
 
 A set display is denoted by curly braces and distinguishable from dictionary
 displays by the lack of colons separating keys and values:
@@ -292,10 +289,9 @@ Dictionary displays
    pair: dictionary; display
    key, datum, key/datum pair
    object: dictionary
-   single: {; dictionary expression
-   single: }; dictionary expression
-   single: :; in dictionary expressions
-   single: ,; in dictionary displays
+   single: {} (curly brackets); dictionary expression
+   single: : (colon); in dictionary expressions
+   single: , (comma); in dictionary displays
 
 A dictionary display is a possibly empty series of key/datum pairs enclosed in
 curly braces:
@@ -349,8 +345,7 @@ Generator expressions
 .. index::
    pair: generator; expression
    object: generator
-   single: (; generator expression
-   single: ); generator expression
+   single: () (parentheses); generator expression
 
 A generator expression is a compact generator notation in parentheses:
 
@@ -752,7 +747,7 @@ Attribute references
 
 .. index::
    pair: attribute; reference
-   single: .; attribute reference
+   single: . (dot); attribute reference
 
 An attribute reference is a primary followed by a period and a name:
 
@@ -780,8 +775,7 @@ Subscriptions
 
 .. index::
    single: subscription
-   single: [; subscription
-   single: ]; subscription
+   single: [] (square brackets); subscription
 
 .. index::
    object: sequence
@@ -838,8 +832,8 @@ Slicings
 .. index::
    single: slicing
    single: slice
-   single: :; slicing
-   single: ,; slicing
+   single: : (colon); slicing
+   single: , (comma); slicing
 
 .. index::
    object: sequence
@@ -889,10 +883,9 @@ substituting ``None`` for missing expressions.
    object: callable
    single: call
    single: argument; call semantics
-   single: (; call
-   single: ); call
-   single: ,; argument list
-   single: =; in function calls
+   single: () (parentheses); call
+   single: , (comma); argument list
+   single: = (equals); in function calls
 
 .. _calls:
 
@@ -969,7 +962,7 @@ and the argument values as corresponding values), or a (new) empty dictionary if
 there were no excess keyword arguments.
 
 .. index::
-   single: *; in function calls
+   single: * (asterisk); in function calls
    single: unpacking; in function calls
 
 If the syntax ``*expression`` appears in the function call, ``expression`` must
@@ -1141,21 +1134,21 @@ All unary arithmetic and bitwise operations have the same priority:
 .. index::
    single: negation
    single: minus
-   single: operator; -
-   single: -; unary operator
+   single: operator; - (minus)
+   single: - (minus); unary operator
 
 The unary ``-`` (minus) operator yields the negation of its numeric argument.
 
 .. index::
    single: plus
-   single: operator; +
-   single: +; unary operator
+   single: operator; + (plus)
+   single: + (plus); unary operator
 
 The unary ``+`` (plus) operator yields its numeric argument unchanged.
 
 .. index::
    single: inversion
-   operator: ~
+   operator: ~ (tilde)
 
 The unary ``~`` (invert) operator yields the bitwise inversion of its integer
 argument.  The bitwise inversion of ``x`` is defined as ``-(x+1)``.  It only
@@ -1187,7 +1180,7 @@ operators and one for additive operators:
 
 .. index::
    single: multiplication
-   operator: *
+   operator: * (asterisk)
 
 The ``*`` (multiplication) operator yields the product of its arguments.  The
 arguments must either both be numbers, or one argument must be an integer and
@@ -1197,7 +1190,7 @@ repetition is performed; a negative repetition factor yields an empty sequence.
 
 .. index::
    single: matrix multiplication
-   operator: @
+   operator: @ (at)
 
 The ``@`` (at) operator is intended to be used for matrix multiplication.  No
 builtin Python types implement this operator.
@@ -1207,7 +1200,7 @@ builtin Python types implement this operator.
 .. index::
    exception: ZeroDivisionError
    single: division
-   operator: /
+   operator: / (slash)
    operator: //
 
 The ``/`` (division) and ``//`` (floor division) operators yield the quotient of
@@ -1219,7 +1212,7 @@ exception.
 
 .. index::
    single: modulo
-   operator: %
+   operator: % (percent)
 
 The ``%`` (modulo) operator yields the remainder from the division of the first
 argument by the second.  The numeric arguments are first converted to a common
@@ -1246,8 +1239,8 @@ point number using the :func:`abs` function if appropriate.
 
 .. index::
    single: addition
-   single: operator; +
-   single: +; binary operator
+   single: operator; + (plus)
+   single: + (plus); binary operator
 
 The ``+`` (addition) operator yields the sum of its arguments.  The arguments
 must either both be numbers or both be sequences of the same type.  In the
@@ -1256,8 +1249,8 @@ In the latter case, the sequences are concatenated.
 
 .. index::
    single: subtraction
-   single: operator; -
-   single: -; binary operator
+   single: operator; - (minus)
+   single: - (minus); binary operator
 
 The ``-`` (subtraction) operator yields the difference of its arguments.  The
 numeric arguments are first converted to a common type.
@@ -1303,7 +1296,7 @@ Each of the three bitwise operations has a different priority level:
 
 .. index::
    pair: bitwise; and
-   operator: &
+   operator: & (ampersand)
 
 The ``&`` operator yields the bitwise AND of its arguments, which must be
 integers.
@@ -1311,7 +1304,7 @@ integers.
 .. index::
    pair: bitwise; xor
    pair: exclusive; or
-   operator: ^
+   operator: ^ (caret)
 
 The ``^`` operator yields the bitwise XOR (exclusive OR) of its arguments, which
 must be integers.
@@ -1319,7 +1312,7 @@ must be integers.
 .. index::
    pair: bitwise; or
    pair: inclusive; or
-   operator: |
+   operator: | (vertical bar)
 
 The ``|`` operator yields the bitwise (inclusive) OR of its arguments, which
 must be integers.
@@ -1333,8 +1326,8 @@ Comparisons
 .. index::
    single: comparison
    pair: C; language
-   operator: <
-   operator: >
+   operator: < (less)
+   operator: > (greater)
    operator: <=
    operator: >=
    operator: ==
@@ -1684,7 +1677,7 @@ Lambdas
    pair: lambda; expression
    pair: lambda; form
    pair: anonymous; function
-   single: :; lambda expression
+   single: : (colon); lambda expression
 
 .. productionlist::
    lambda_expr: "lambda" [`parameter_list`] ":" `expression`
@@ -1711,8 +1704,7 @@ Expression lists
 
 .. index::
    pair: expression; list
-   single: comma; expression list
-   single: ,; expression list
+   single: , (comma); expression list
 
 .. productionlist::
    expression_list: `expression` ("," `expression`)* [","]
@@ -1729,7 +1721,7 @@ evaluated from left to right.
 
 .. index::
    pair: iterable; unpacking
-   single: *; in expression lists
+   single: * (asterisk); in expression lists
 
 An asterisk ``*`` denotes :dfn:`iterable unpacking`.  Its operand must be
 an :term:`iterable`.  The iterable is expanded into a sequence of items,
