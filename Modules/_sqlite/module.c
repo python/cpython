@@ -35,13 +35,20 @@
 
 /* static objects at module-level */
 
-PyObject* pysqlite_Error, *pysqlite_Warning, *pysqlite_InterfaceError, *pysqlite_DatabaseError,
-    *pysqlite_InternalError, *pysqlite_OperationalError, *pysqlite_ProgrammingError,
-    *pysqlite_IntegrityError, *pysqlite_DataError, *pysqlite_NotSupportedError;
+PyObject *pysqlite_Error = NULL;
+PyObject *pysqlite_Warning = NULL;
+PyObject *pysqlite_InterfaceError = NULL;
+PyObject *pysqlite_DatabaseError = NULL;
+PyObject *pysqlite_InternalError = NULL;
+PyObject *pysqlite_OperationalError = NULL;
+PyObject *pysqlite_ProgrammingError = NULL;
+PyObject *pysqlite_IntegrityError = NULL;
+PyObject *pysqlite_DataError = NULL;
+PyObject *pysqlite_NotSupportedError = NULL;
 
-PyObject* converters;
-int _enable_callback_tracebacks;
-int pysqlite_BaseTypeAdapted;
+PyObject* _pysqlite_converters = NULL;
+int _pysqlite_enable_callback_tracebacks = 0;
+int pysqlite_BaseTypeAdapted = 0;
 
 static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
         kwargs)
@@ -55,7 +62,7 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
         "check_same_thread", "factory", "cached_statements", "uri",
         NULL
     };
-    char* database;
+    PyObject* database;
     int detect_types = 0;
     PyObject* isolation_level;
     PyObject* factory = NULL;
@@ -66,7 +73,7 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
 
     PyObject* result;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|diOiOip", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|diOiOip", kwlist,
                                      &database, &timeout, &detect_types,
                                      &isolation_level, &check_same_thread,
                                      &factory, &cached_statements, &uri))
@@ -197,7 +204,7 @@ static PyObject* module_register_converter(PyObject* self, PyObject* args)
         goto error;
     }
 
-    if (PyDict_SetItem(converters, name, callable) != 0) {
+    if (PyDict_SetItem(_pysqlite_converters, name, callable) != 0) {
         goto error;
     }
 
@@ -215,7 +222,7 @@ Registers a converter with pysqlite. Non-standard.");
 
 static PyObject* enable_callback_tracebacks(PyObject* self, PyObject* args)
 {
-    if (!PyArg_ParseTuple(args, "i", &_enable_callback_tracebacks)) {
+    if (!PyArg_ParseTuple(args, "i", &_pysqlite_enable_callback_tracebacks)) {
         return NULL;
     }
 
@@ -229,12 +236,12 @@ Enable or disable callback functions throwing errors to stderr.");
 
 static void converters_init(PyObject* dict)
 {
-    converters = PyDict_New();
-    if (!converters) {
+    _pysqlite_converters = PyDict_New();
+    if (!_pysqlite_converters) {
         return;
     }
 
-    PyDict_SetItemString(dict, "converters", converters);
+    PyDict_SetItemString(dict, "converters", _pysqlite_converters);
 }
 
 static PyMethodDef module_methods[] = {
@@ -315,6 +322,9 @@ static const IntConstantPair _int_constants[] = {
 #endif
 #if SQLITE_VERSION_NUMBER >= 3008003
     {"SQLITE_RECURSIVE", SQLITE_RECURSIVE},
+#endif
+#if SQLITE_VERSION_NUMBER >= 3006011
+    {"SQLITE_DONE", SQLITE_DONE},
 #endif
     {(char*)NULL, 0}
 };
@@ -460,10 +470,6 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
 
     /* initialize the default converters */
     converters_init(dict);
-
-    _enable_callback_tracebacks = 0;
-
-    pysqlite_BaseTypeAdapted = 0;
 
 error:
     if (PyErr_Occurred())

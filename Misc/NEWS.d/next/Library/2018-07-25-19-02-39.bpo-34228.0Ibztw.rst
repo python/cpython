@@ -1,0 +1,3 @@
+tracemalloc: PYTHONTRACEMALLOC=0 environment variable and -X tracemalloc=0
+command line option are now allowed to disable explicitly tracemalloc at
+startup.

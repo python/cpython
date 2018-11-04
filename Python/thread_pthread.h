@@ -35,7 +35,7 @@
 #define THREAD_STACK_SIZE       0x400000
 #endif
 /* for safety, ensure a viable minimum stacksize */
-#define THREAD_STACK_MIN        0x8000  /* 32kB */
+#define THREAD_STACK_MIN        0x8000  /* 32 KiB */
 #else  /* !_POSIX_THREAD_ATTR_STACKSIZE */
 #ifdef THREAD_STACK_SIZE
 #error "THREAD_STACK_SIZE defined but _POSIX_THREAD_ATTR_STACKSIZE undefined"
@@ -53,16 +53,6 @@
 #else
 #include <semaphore.h>
 #include <errno.h>
-#endif
-#endif
-
-/* Before FreeBSD 5.4, system scope threads was very limited resource
-   in default setting.  So the process scope is preferred to get
-   enough number of threads to work. */
-#ifdef __FreeBSD__
-#include <osreldate.h>
-#if __FreeBSD_version >= 500000 && __FreeBSD_version < 504101
-#undef PTHREAD_SYSTEM_SCHED_SUPPORTED
 #endif
 #endif
 
@@ -184,7 +174,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
         return PYTHREAD_INVALID_THREAD_ID;
 #endif
 #if defined(THREAD_STACK_SIZE)
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     size_t stacksize = tstate ? tstate->interp->pythread_stacksize : 0;
     tss = (stacksize != 0) ? stacksize : THREAD_STACK_SIZE;
     if (tss != 0) {
@@ -318,23 +308,66 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     sem_t *thelock = (sem_t *)lock;
     int status, error = 0;
     struct timespec ts;
+    _PyTime_t deadline = 0;
 
     (void) error; /* silence unused-but-set-variable warning */
     dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
              lock, microseconds, intr_flag));
 
-    if (microseconds > 0)
+    if (microseconds > PY_TIMEOUT_MAX) {
+        Py_FatalError("Timeout larger than PY_TIMEOUT_MAX");
+    }
+
+    if (microseconds > 0) {
         MICROSECONDS_TO_TIMESPEC(microseconds, ts);
-    do {
-        if (microseconds > 0)
+
+        if (!intr_flag) {
+            /* cannot overflow thanks to (microseconds > PY_TIMEOUT_MAX)
+               check done above */
+            _PyTime_t timeout = _PyTime_FromNanoseconds(microseconds * 1000);
+            deadline = _PyTime_GetMonotonicClock() + timeout;
+        }
+    }
+
+    while (1) {
+        if (microseconds > 0) {
             status = fix_status(sem_timedwait(thelock, &ts));
-        else if (microseconds == 0)
+        }
+        else if (microseconds == 0) {
             status = fix_status(sem_trywait(thelock));
-        else
+        }
+        else {
             status = fix_status(sem_wait(thelock));
+        }
+
         /* Retry if interrupted by a signal, unless the caller wants to be
            notified.  */
-    } while (!intr_flag && status == EINTR);
+        if (intr_flag || status != EINTR) {
+            break;
+        }
+
+        if (microseconds > 0) {
+            /* wait interrupted by a signal (EINTR): recompute the timeout */
+            _PyTime_t dt = deadline - _PyTime_GetMonotonicClock();
+            if (dt < 0) {
+                status = ETIMEDOUT;
+                break;
+            }
+            else if (dt > 0) {
+                _PyTime_t realtime_deadline = _PyTime_GetSystemClock() + dt;
+                if (_PyTime_AsTimespec(realtime_deadline, &ts) < 0) {
+                    /* Cannot occur thanks to (microseconds > PY_TIMEOUT_MAX)
+                       check done above */
+                    Py_UNREACHABLE();
+                }
+                /* no need to update microseconds value, the code only care
+                   if (microseconds > 0 or (microseconds == 0). */
+            }
+            else {
+                microseconds = 0;
+            }
+        }
+    }
 
     /* Don't check the status if we're stopping because of an interrupt.  */
     if (!(intr_flag && status == EINTR)) {
@@ -558,7 +591,7 @@ _pythread_pthread_set_stacksize(size_t size)
 
     /* set to default */
     if (size == 0) {
-        PyThreadState_GET()->interp->pythread_stacksize = 0;
+        _PyInterpreterState_GET_UNSAFE()->pythread_stacksize = 0;
         return 0;
     }
 
@@ -575,7 +608,7 @@ _pythread_pthread_set_stacksize(size_t size)
             rc = pthread_attr_setstacksize(&attrs, size);
             pthread_attr_destroy(&attrs);
             if (rc == 0) {
-                PyThreadState_GET()->interp->pythread_stacksize = size;
+                _PyInterpreterState_GET_UNSAFE()->pythread_stacksize = size;
                 return 0;
             }
         }

@@ -3,6 +3,7 @@ import os
 import platform
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import unittest
 import warnings
@@ -16,29 +17,34 @@ class PlatformTest(unittest.TestCase):
     @support.skip_unless_symlink
     def test_architecture_via_symlink(self): # issue3762
         # On Windows, the EXE needs to know where pythonXY.dll and *.pyd is at
-        # so we add the directory to the path and PYTHONPATH.
+        # so we add the directory to the path, PYTHONHOME and PYTHONPATH.
+        env = None
         if sys.platform == "win32":
-            def restore_environ(old_env):
-                os.environ.clear()
-                os.environ.update(old_env)
+            env = {k.upper(): os.environ[k] for k in os.environ}
+            env["PATH"] = "{};{}".format(
+                os.path.dirname(sys.executable), env.get("PATH", ""))
+            env["PYTHONHOME"] = os.path.dirname(sys.executable)
+            if sysconfig.is_python_build(True):
+                env["PYTHONPATH"] = os.path.dirname(os.__file__)
 
-            self.addCleanup(restore_environ, dict(os.environ))
-
-            os.environ["Path"] = "{};{}".format(
-                os.path.dirname(sys.executable), os.environ["Path"])
-            os.environ["PYTHONPATH"] = os.path.dirname(sys.executable)
-
-        def get(python):
+        def get(python, env=None):
             cmd = [python, '-c',
                 'import platform; print(platform.architecture())']
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-            return p.communicate()
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE, env=env)
+            r = p.communicate()
+            if p.returncode:
+                print(repr(r[0]))
+                print(repr(r[1]), file=sys.stderr)
+                self.fail('unexpected return code: {0} (0x{0:08X})'
+                          .format(p.returncode))
+            return r
 
         real = os.path.realpath(sys.executable)
         link = os.path.abspath(support.TESTFN)
         os.symlink(real, link)
         try:
-            self.assertEqual(get(real), get(link))
+            self.assertEqual(get(real), get(link, env=env))
         finally:
             os.remove(link)
 
@@ -145,14 +151,14 @@ class PlatformTest(unittest.TestCase):
                 ("PyPy", "2.5.2", "trunk", "63378", ('63378', 'Mar 26 2009'),
                  "")
             }
-        for (version_tag, subversion, sys_platform), info in \
+        for (version_tag, scm, sys_platform), info in \
                 sys_versions.items():
             sys.version = version_tag
-            if subversion is None:
+            if scm is None:
                 if hasattr(sys, "_git"):
                     del sys._git
             else:
-                sys._git = subversion
+                sys._git = scm
             if sys_platform is not None:
                 sys.platform = sys_platform
             self.assertEqual(platform.python_implementation(), info[0])
@@ -259,18 +265,7 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(cpid, pid)
             self.assertEqual(sts, 0)
 
-    def test_dist(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                'ignore',
-                r'dist\(\) and linux_distribution\(\) '
-                'functions are deprecated .*',
-                PendingDeprecationWarning,
-            )
-            res = platform.dist()
-
     def test_libc_ver(self):
-        import os
         if os.path.isdir(sys.executable) and \
            os.path.exists(sys.executable+'.exe'):
             # Cygwin horror
@@ -279,22 +274,48 @@ class PlatformTest(unittest.TestCase):
             executable = sys.executable
         res = platform.libc_ver(executable)
 
-    def test_parse_release_file(self):
+        self.addCleanup(support.unlink, support.TESTFN)
+        with open(support.TESTFN, 'wb') as f:
+            f.write(b'x'*(16384-10))
+            f.write(b'GLIBC_1.23.4\0GLIBC_1.9\0GLIBC_1.21\0')
+        self.assertEqual(platform.libc_ver(support.TESTFN),
+                         ('glibc', '1.23.4'))
 
-        for input, output in (
-            # Examples of release file contents:
-            ('SuSE Linux 9.3 (x86-64)', ('SuSE Linux ', '9.3', 'x86-64')),
-            ('SUSE LINUX 10.1 (X86-64)', ('SUSE LINUX ', '10.1', 'X86-64')),
-            ('SUSE LINUX 10.1 (i586)', ('SUSE LINUX ', '10.1', 'i586')),
-            ('Fedora Core release 5 (Bordeaux)', ('Fedora Core', '5', 'Bordeaux')),
-            ('Red Hat Linux release 8.0 (Psyche)', ('Red Hat Linux', '8.0', 'Psyche')),
-            ('Red Hat Linux release 9 (Shrike)', ('Red Hat Linux', '9', 'Shrike')),
-            ('Red Hat Enterprise Linux release 4 (Nahant)', ('Red Hat Enterprise Linux', '4', 'Nahant')),
-            ('CentOS release 4', ('CentOS', '4', None)),
-            ('Rocks release 4.2.1 (Cydonia)', ('Rocks', '4.2.1', 'Cydonia')),
-            ('', ('', '', '')), # If there's nothing there.
-            ):
-            self.assertEqual(platform._parse_release_file(input), output)
+    @support.cpython_only
+    def test__comparable_version(self):
+        from platform import _comparable_version as V
+        self.assertEqual(V('1.2.3'), V('1.2.3'))
+        self.assertLess(V('1.2.3'), V('1.2.10'))
+        self.assertEqual(V('1.2.3.4'), V('1_2-3+4'))
+        self.assertLess(V('1.2spam'), V('1.2dev'))
+        self.assertLess(V('1.2dev'), V('1.2alpha'))
+        self.assertLess(V('1.2dev'), V('1.2a'))
+        self.assertLess(V('1.2alpha'), V('1.2beta'))
+        self.assertLess(V('1.2a'), V('1.2b'))
+        self.assertLess(V('1.2beta'), V('1.2c'))
+        self.assertLess(V('1.2b'), V('1.2c'))
+        self.assertLess(V('1.2c'), V('1.2RC'))
+        self.assertLess(V('1.2c'), V('1.2rc'))
+        self.assertLess(V('1.2RC'), V('1.2.0'))
+        self.assertLess(V('1.2rc'), V('1.2.0'))
+        self.assertLess(V('1.2.0'), V('1.2pl'))
+        self.assertLess(V('1.2.0'), V('1.2p'))
+
+        self.assertLess(V('1.5.1'), V('1.5.2b2'))
+        self.assertLess(V('3.10a'), V('161'))
+        self.assertEqual(V('8.02'), V('8.02'))
+        self.assertLess(V('3.4j'), V('1996.07.12'))
+        self.assertLess(V('3.1.1.6'), V('3.2.pl0'))
+        self.assertLess(V('2g6'), V('11g'))
+        self.assertLess(V('0.9'), V('2.2'))
+        self.assertLess(V('1.2'), V('1.2.1'))
+        self.assertLess(V('1.1'), V('1.2.2'))
+        self.assertLess(V('1.1'), V('1.2'))
+        self.assertLess(V('1.2.1'), V('1.2.2'))
+        self.assertLess(V('1.2'), V('1.2.2'))
+        self.assertLess(V('0.4'), V('0.4.0'))
+        self.assertLess(V('1.13++'), V('5.5.kw'))
+        self.assertLess(V('0.960923'), V('2.2beta29'))
 
     def test_popen(self):
         mswindows = (sys.platform == "win32")
@@ -327,44 +348,6 @@ class PlatformTest(unittest.TestCase):
                 else:
                     returncode = ret >> 8
                 self.assertEqual(returncode, len(data))
-
-    def test_linux_distribution_encoding(self):
-        # Issue #17429
-        with tempfile.TemporaryDirectory() as tempdir:
-            filename = os.path.join(tempdir, 'fedora-release')
-            with open(filename, 'w', encoding='utf-8') as f:
-                f.write('Fedora release 19 (Schr\xf6dinger\u2019s Cat)\n')
-
-            with mock.patch('platform._UNIXCONFDIR', tempdir):
-                with warnings.catch_warnings():
-                    warnings.filterwarnings(
-                        'ignore',
-                        r'dist\(\) and linux_distribution\(\) '
-                        'functions are deprecated .*',
-                        PendingDeprecationWarning,
-                    )
-                    distname, version, distid = platform.linux_distribution()
-
-                self.assertEqual(distname, 'Fedora')
-            self.assertEqual(version, '19')
-            self.assertEqual(distid, 'Schr\xf6dinger\u2019s Cat')
-
-
-class DeprecationTest(unittest.TestCase):
-
-    def test_dist_deprecation(self):
-        with self.assertWarns(PendingDeprecationWarning) as cm:
-            platform.dist()
-        self.assertEqual(str(cm.warning),
-                         'dist() and linux_distribution() functions are '
-                         'deprecated in Python 3.5')
-
-    def test_linux_distribution_deprecation(self):
-        with self.assertWarns(PendingDeprecationWarning) as cm:
-            platform.linux_distribution()
-        self.assertEqual(str(cm.warning),
-                         'dist() and linux_distribution() functions are '
-                         'deprecated in Python 3.5')
 
 if __name__ == '__main__':
     unittest.main()

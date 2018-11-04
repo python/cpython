@@ -779,12 +779,12 @@ class Bz2DetectReadTest(Bz2Test, DetectReadTest):
     def test_detect_stream_bz2(self):
         # Originally, tarfile's stream detection looked for the string
         # "BZh91" at the start of the file. This is incorrect because
-        # the '9' represents the blocksize (900kB). If the file was
+        # the '9' represents the blocksize (900,000 bytes). If the file was
         # compressed using another blocksize autodetection fails.
         with open(tarname, "rb") as fobj:
             data = fobj.read()
 
-        # Compress with blocksize 100kB, the file starts with "BZh11".
+        # Compress with blocksize 100,000 bytes, the file starts with "BZh11".
         with bz2.BZ2File(tmpname, "wb", compresslevel=1) as fobj:
             fobj.write(data)
 
@@ -1129,6 +1129,30 @@ class WriteTest(WriteTestBase, unittest.TestCase):
         finally:
             support.rmdir(path)
 
+    # mock the following:
+    #  os.listdir: so we know that files are in the wrong order
+    def test_ordered_recursion(self):
+        path = os.path.join(TEMPDIR, "directory")
+        os.mkdir(path)
+        open(os.path.join(path, "1"), "a").close()
+        open(os.path.join(path, "2"), "a").close()
+        try:
+            tar = tarfile.open(tmpname, self.mode)
+            try:
+                with unittest.mock.patch('os.listdir') as mock_listdir:
+                    mock_listdir.return_value = ["2", "1"]
+                    tar.add(path)
+                paths = []
+                for m in tar.getmembers():
+                    paths.append(os.path.split(m.name)[-1])
+                self.assertEqual(paths, ["directory", "1", "2"]);
+            finally:
+                tar.close()
+        finally:
+            support.unlink(os.path.join(path, "1"))
+            support.unlink(os.path.join(path, "2"))
+            support.rmdir(path)
+
     def test_gettarinfo_pathlike_name(self):
         with tarfile.open(tmpname, self.mode) as tar:
             path = pathlib.Path(TEMPDIR) / "file"
@@ -1147,7 +1171,10 @@ class WriteTest(WriteTestBase, unittest.TestCase):
         target = os.path.join(TEMPDIR, "link_target")
         with open(target, "wb") as fobj:
             fobj.write(b"aaa")
-        os.link(target, link)
+        try:
+            os.link(target, link)
+        except PermissionError as e:
+            self.skipTest('os.link(): %s' % e)
         try:
             tar = tarfile.open(tmpname, self.mode)
             try:
@@ -1609,7 +1636,10 @@ class HardlinkTest(unittest.TestCase):
         with open(self.foo, "wb") as fobj:
             fobj.write(b"foo")
 
-        os.link(self.foo, self.bar)
+        try:
+            os.link(self.foo, self.bar)
+        except PermissionError as e:
+            self.skipTest('os.link(): %s' % e)
 
         self.tar = tarfile.open(tmpname, "w")
         self.tar.add(self.foo)
@@ -2118,6 +2148,14 @@ class MiscTest(unittest.TestCase):
                          b"\xff\xff\xff\xff\xff\xff\xff\x9c")
         self.assertEqual(tarfile.itn(-0x100000000000000),
                          b"\xff\x00\x00\x00\x00\x00\x00\x00")
+
+        # Issue 32713: Test if itn() supports float values outside the
+        # non-GNU format range
+        self.assertEqual(tarfile.itn(-100.0, format=tarfile.GNU_FORMAT),
+                         b"\xff\xff\xff\xff\xff\xff\xff\x9c")
+        self.assertEqual(tarfile.itn(8 ** 12 + 0.0, format=tarfile.GNU_FORMAT),
+                         b"\x80\x00\x00\x10\x00\x00\x00\x00")
+        self.assertEqual(tarfile.nti(tarfile.itn(-0.1, format=tarfile.GNU_FORMAT)), 0)
 
     def test_number_field_limits(self):
         with self.assertRaises(ValueError):

@@ -57,10 +57,10 @@ if sys.platform == 'win32':
 
 
 def _init_timeout(timeout=CONNECTION_TIMEOUT):
-    return time.time() + timeout
+    return time.monotonic() + timeout
 
 def _check_timeout(t):
-    return time.time() > t
+    return time.monotonic() > t
 
 #
 #
@@ -914,7 +914,7 @@ else:
                 selector.register(obj, selectors.EVENT_READ)
 
             if timeout is not None:
-                deadline = time.time() + timeout
+                deadline = time.monotonic() + timeout
 
             while True:
                 ready = selector.select(timeout)
@@ -922,7 +922,7 @@ else:
                     return [key.fileobj for (key, events) in ready]
                 else:
                     if timeout is not None:
-                        timeout = deadline - time.time()
+                        timeout = deadline - time.monotonic()
                         if timeout < 0:
                             return ready
 

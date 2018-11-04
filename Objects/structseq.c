@@ -240,7 +240,7 @@ structseq_repr(PyStructSequence *obj)
 }
 
 static PyObject *
-structseq_reduce(PyStructSequence* self)
+structseq_reduce(PyStructSequence* self, PyObject *Py_UNUSED(ignored))
 {
     PyObject* tup = NULL;
     PyObject* dict = NULL;

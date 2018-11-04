@@ -289,6 +289,8 @@ Putting REs in strings keeps the Python language simpler, but has one
 disadvantage which is the topic of the next section.
 
 
+.. _the-backslash-plague:
+
 The Backslash Plague
 --------------------
 
@@ -326,6 +328,13 @@ backslashes are not handled in any special way in a string literal prefixed with
 ``'r'``, so ``r"\n"`` is a two-character string containing ``'\'`` and ``'n'``,
 while ``"\n"`` is a one-character string containing a newline. Regular
 expressions will often be written in Python code using this raw string notation.
+
+In addition, special escape sequences that are valid in regular expressions,
+but not valid as Python string literals, now result in a
+:exc:`DeprecationWarning` and will eventually become a :exc:`SyntaxError`,
+which means the sequences will be invalid if raw string notation or escaping
+the backslashes isn't used.
+
 
 +-------------------+------------------+
 | Regular String    | Raw string       |
@@ -457,9 +466,15 @@ In actual programs, the most common style is to store the
 Two pattern methods return all of the matches for a pattern.
 :meth:`~re.Pattern.findall` returns a list of matching strings::
 
-   >>> p = re.compile('\d+')
+   >>> p = re.compile(r'\d+')
    >>> p.findall('12 drummers drumming, 11 pipers piping, 10 lords a-leaping')
    ['12', '11', '10']
+
+The ``r`` prefix, making the literal a raw string literal, is needed in this
+example because escape sequences in a normal "cooked" string literal that are
+not recognized by Python, as opposed to regular expressions, now result in a
+:exc:`DeprecationWarning` and will eventually become a :exc:`SyntaxError`.  See
+:ref:`the-backslash-plague`.
 
 :meth:`~re.Pattern.findall` has to create the entire list before it can be returned as the
 result.  The :meth:`~re.Pattern.finditer` method returns a sequence of
@@ -771,7 +786,9 @@ Frequently you need to obtain more information than just whether the RE matched
 or not.  Regular expressions are often used to dissect strings by writing a RE
 divided into several subgroups which match different components of interest.
 For example, an RFC-822 header line is divided into a header name and a value,
-separated by a ``':'``, like this::
+separated by a ``':'``, like this:
+
+.. code-block:: none
 
    From: author@example.com
    User-Agent: Thunderbird 1.5.0.9 (X11/20061227)
@@ -844,7 +861,7 @@ backreferences in a RE.
 
 For example, the following RE detects doubled words in a string. ::
 
-   >>> p = re.compile(r'(\b\w+)\s+\1')
+   >>> p = re.compile(r'\b(\w+)\s+\1\b')
    >>> p.search('Paris in the the spring').group()
    'the the'
 
@@ -943,9 +960,9 @@ number of the group.  There's naturally a variant that uses the group name
 instead of the number. This is another Python extension: ``(?P=name)`` indicates
 that the contents of the group called *name* should again be matched at the
 current point.  The regular expression for finding doubled words,
-``(\b\w+)\s+\1`` can also be written as ``(?P<word>\b\w+)\s+(?P=word)``::
+``\b(\w+)\s+\1\b`` can also be written as ``\b(?P<word>\w+)\s+(?P=word)\b``::
 
-   >>> p = re.compile(r'(?P<word>\b\w+)\s+(?P=word)')
+   >>> p = re.compile(r'\b(?P<word>\w+)\s+(?P=word)\b')
    >>> p.search('Paris in the the spring').group()
    'the the'
 
@@ -1096,11 +1113,11 @@ following calls::
 The module-level function :func:`re.split` adds the RE to be used as the first
 argument, but is otherwise the same.   ::
 
-   >>> re.split('[\W]+', 'Words, words, words.')
+   >>> re.split(r'[\W]+', 'Words, words, words.')
    ['Words', 'words', 'words', '']
-   >>> re.split('([\W]+)', 'Words, words, words.')
+   >>> re.split(r'([\W]+)', 'Words, words, words.')
    ['Words', ', ', 'words', ', ', 'words', '.', '']
-   >>> re.split('[\W]+', 'Words, words, words.', 1)
+   >>> re.split(r'[\W]+', 'Words, words, words.', 1)
    ['Words', 'words, words.']
 
 
@@ -1140,12 +1157,12 @@ new string value and the number of replacements  that were performed::
    >>> p.subn('colour', 'no colours at all')
    ('no colours at all', 0)
 
-Empty matches are replaced only when they're not adjacent to a previous match.
+Empty matches are replaced only when they're not adjacent to a previous empty match.
 ::
 
    >>> p = re.compile('x*')
    >>> p.sub('-', 'abxd')
-   '-a-b-d-'
+   '-a-b--d-'
 
 If *replacement* is a string, any backslash escapes in it are processed.  That
 is, ``\n`` is converted to a single newline character, ``\r`` is converted to a

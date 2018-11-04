@@ -59,11 +59,6 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
-  <ItemDefinitionGroup>
-    <Link>
-      <BaseAddress>0x1D120000</BaseAddress>
-    </Link>
-  </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Modules\unicodedata_db.h" />
     <ClInclude Include="..\Modules\unicodename_db.h" />

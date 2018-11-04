@@ -15,7 +15,7 @@ static PyObject *
 list_insert_impl(PyListObject *self, Py_ssize_t index, PyObject *object);
 
 static PyObject *
-list_insert(PyListObject *self, PyObject **args, Py_ssize_t nargs)
+list_insert(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t index;
@@ -100,7 +100,7 @@ static PyObject *
 list_pop_impl(PyListObject *self, Py_ssize_t index);
 
 static PyObject *
-list_pop(PyListObject *self, PyObject **args, Py_ssize_t nargs)
+list_pop(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t index = -1;
@@ -128,7 +128,7 @@ static PyObject *
 list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse);
 
 static PyObject *
-list_sort(PyListObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+list_sort(PyListObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "reverse", NULL};
@@ -180,7 +180,7 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
                 Py_ssize_t stop);
 
 static PyObject *
-list_index(PyListObject *self, PyObject **args, Py_ssize_t nargs)
+list_index(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *value;
@@ -285,4 +285,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=4a4f72a5e7ff5068 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d8cb29e6e6d79844 input=a9049054013a1b77]*/

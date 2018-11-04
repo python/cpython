@@ -10,7 +10,7 @@ extern "C" {
 /*
 Another generally useful object type is a tuple of object pointers.
 For Python, this is an immutable type.  C code can change the tuple items
-(but not their number), and even use tuples are general-purpose arrays of
+(but not their number), and even use tuples as general-purpose arrays of
 object references, but in general only brand new tuples should be mutated,
 not ones that might already have been exposed to Python code.
 

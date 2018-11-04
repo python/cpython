@@ -20,7 +20,6 @@ import time
 import unittest
 
 from test import support
-android_not_root = support.android_not_root
 
 @contextlib.contextmanager
 def kill_on_error(proc):
@@ -53,7 +52,8 @@ class EINTRBaseTest(unittest.TestCase):
 
         # Issue #25277: Use faulthandler to try to debug a hang on FreeBSD
         if hasattr(faulthandler, 'dump_traceback_later'):
-            faulthandler.dump_traceback_later(10 * 60, exit=True)
+            faulthandler.dump_traceback_later(10 * 60, exit=True,
+                                              file=sys.__stderr__)
 
     @classmethod
     def stop_alarm(cls):
@@ -312,14 +312,16 @@ class SocketEINTRTest(EINTRBaseTest):
     # https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=203162
     @support.requires_freebsd_version(10, 3)
     @unittest.skipUnless(hasattr(os, 'mkfifo'), 'needs mkfifo()')
-    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     def _test_open(self, do_open_close_reader, do_open_close_writer):
         filename = support.TESTFN
 
         # Use a fifo: until the child opens it for reading, the parent will
         # block when trying to open it for writing.
         support.unlink(filename)
-        os.mkfifo(filename)
+        try:
+            os.mkfifo(filename)
+        except PermissionError as e:
+            self.skipTest('os.mkfifo(): %s' % e)
         self.addCleanup(support.unlink, filename)
 
         code = '\n'.join((

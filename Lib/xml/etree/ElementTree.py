@@ -217,11 +217,11 @@ class Element:
         return self._children[index]
 
     def __setitem__(self, index, element):
-        # if isinstance(index, slice):
-        #     for elt in element:
-        #         assert iselement(elt)
-        # else:
-        #     assert iselement(element)
+        if isinstance(index, slice):
+            for elt in element:
+                self._assert_is_element(elt)
+        else:
+            self._assert_is_element(element)
         self._children[index] = element
 
     def __delitem__(self, index):
@@ -412,11 +412,10 @@ class Element:
 
     # compatibility
     def getiterator(self, tag=None):
-        # Change for a DeprecationWarning in 1.4
         warnings.warn(
             "This method will be removed in future versions.  "
             "Use 'elem.iter()' or 'list(elem.iter())' instead.",
-            PendingDeprecationWarning, stacklevel=2
+            DeprecationWarning, stacklevel=2
         )
         return list(self.iter(tag))
 
@@ -622,11 +621,10 @@ class ElementTree:
 
     # compatibility
     def getiterator(self, tag=None):
-        # Change for a DeprecationWarning in 1.4
         warnings.warn(
             "This method will be removed in future versions.  "
             "Use 'tree.iter()' or 'list(tree.iter())' instead.",
-            PendingDeprecationWarning, stacklevel=2
+            DeprecationWarning, stacklevel=2
         )
         return list(self.iter(tag))
 
@@ -925,7 +923,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
                             k,
                             _escape_attrib(v)
                             ))
-                for k, v in sorted(items):  # lexical order
+                for k, v in items:
                     if isinstance(k, QName):
                         k = k.text
                     if isinstance(v, QName):
@@ -981,7 +979,7 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
                             k,
                             _escape_attrib(v)
                             ))
-                for k, v in sorted(items):  # lexical order
+                for k, v in items:
                     if isinstance(k, QName):
                         k = k.text
                     if isinstance(v, QName):
@@ -1062,7 +1060,7 @@ def _escape_cdata(text):
     # escape character data
     try:
         # it's worth avoiding do-nothing calls for strings that are
-        # shorter than 500 character, or so.  assume that's, by far,
+        # shorter than 500 characters, or so.  assume that's, by far,
         # the most common case in most applications.
         if "&" in text:
             text = text.replace("&", "&amp;")
@@ -1431,13 +1429,11 @@ class TreeBuilder:
         self._tail = 1
         return self._last
 
-_sentinel = ['sentinel']
 
 # also see ElementTree and TreeBuilder
 class XMLParser:
     """Element structure builder for XML source data based on the expat parser.
 
-    *html* are predefined HTML entities (deprecated and not supported),
     *target* is an optional target object which defaults to an instance of the
     standard TreeBuilder class, *encoding* is an optional encoding string
     which if given, overrides the encoding specified in the XML file:
@@ -1445,11 +1441,7 @@ class XMLParser:
 
     """
 
-    def __init__(self, html=_sentinel, target=None, encoding=None):
-        if html is not _sentinel:
-            warnings.warn(
-                "The html argument of XMLParser() is deprecated",
-                DeprecationWarning, stacklevel=2)
+    def __init__(self, *, target=None, encoding=None):
         try:
             from xml.parsers import expat
         except ImportError:
@@ -1602,27 +1594,13 @@ class XMLParser:
                     return
                 if hasattr(self.target, "doctype"):
                     self.target.doctype(name, pubid, system[1:-1])
-                elif self.doctype != self._XMLParser__doctype:
-                    # warn about deprecated call
-                    self._XMLParser__doctype(name, pubid, system[1:-1])
-                    self.doctype(name, pubid, system[1:-1])
+                elif hasattr(self, "doctype"):
+                    warnings.warn(
+                        "The doctype() method of XMLParser is ignored.  "
+                        "Define doctype() method on the TreeBuilder target.",
+                        RuntimeWarning)
+
                 self._doctype = None
-
-    def doctype(self, name, pubid, system):
-        """(Deprecated)  Handle doctype declaration
-
-        *name* is the Doctype name, *pubid* is the public identifier,
-        and *system* is the system identifier.
-
-        """
-        warnings.warn(
-            "This method of XMLParser is deprecated.  Define doctype() "
-            "method on the TreeBuilder target.",
-            DeprecationWarning,
-            )
-
-    # sentinel, if doctype is redefined in a subclass
-    __doctype = doctype
 
     def feed(self, data):
         """Feed encoded data to parser."""

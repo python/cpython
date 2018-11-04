@@ -84,7 +84,7 @@ winreg_HKEYType___exit___impl(PyHKEYObject *self, PyObject *exc_type,
                               PyObject *exc_value, PyObject *traceback);
 
 static PyObject *
-winreg_HKEYType___exit__(PyHKEYObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+winreg_HKEYType___exit__(PyHKEYObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"exc_type", "exc_value", "traceback", NULL};
@@ -141,7 +141,7 @@ winreg_ConnectRegistry_impl(PyObject *module, Py_UNICODE *computer_name,
                             HKEY key);
 
 static PyObject *
-winreg_ConnectRegistry(PyObject *module, PyObject **args, Py_ssize_t nargs)
+winreg_ConnectRegistry(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_UNICODE *computer_name;
@@ -188,7 +188,7 @@ static HKEY
 winreg_CreateKey_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key);
 
 static PyObject *
-winreg_CreateKey(PyObject *module, PyObject **args, Py_ssize_t nargs)
+winreg_CreateKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -242,7 +242,7 @@ winreg_CreateKeyEx_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
                         int reserved, REGSAM access);
 
 static PyObject *
-winreg_CreateKeyEx(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
@@ -292,7 +292,7 @@ static PyObject *
 winreg_DeleteKey_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key);
 
 static PyObject *
-winreg_DeleteKey(PyObject *module, PyObject **args, Py_ssize_t nargs)
+winreg_DeleteKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -341,7 +341,7 @@ winreg_DeleteKeyEx_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
                         REGSAM access, int reserved);
 
 static PyObject *
-winreg_DeleteKeyEx(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+winreg_DeleteKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "sub_key", "access", "reserved", NULL};
@@ -379,7 +379,7 @@ static PyObject *
 winreg_DeleteValue_impl(PyObject *module, HKEY key, Py_UNICODE *value);
 
 static PyObject *
-winreg_DeleteValue(PyObject *module, PyObject **args, Py_ssize_t nargs)
+winreg_DeleteValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -417,7 +417,7 @@ static PyObject *
 winreg_EnumKey_impl(PyObject *module, HKEY key, int index);
 
 static PyObject *
-winreg_EnumKey(PyObject *module, PyObject **args, Py_ssize_t nargs)
+winreg_EnumKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -464,7 +464,7 @@ static PyObject *
 winreg_EnumValue_impl(PyObject *module, HKEY key, int index);
 
 static PyObject *
-winreg_EnumValue(PyObject *module, PyObject **args, Py_ssize_t nargs)
+winreg_EnumValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -583,7 +583,7 @@ winreg_LoadKey_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
                     Py_UNICODE *file_name);
 
 static PyObject *
-winreg_LoadKey(PyObject *module, PyObject **args, Py_ssize_t nargs)
+winreg_LoadKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -627,7 +627,7 @@ winreg_OpenKey_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
                     int reserved, REGSAM access);
 
 static PyObject *
-winreg_OpenKey(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
@@ -679,7 +679,7 @@ winreg_OpenKeyEx_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
                       int reserved, REGSAM access);
 
 static PyObject *
-winreg_OpenKeyEx(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
@@ -767,7 +767,7 @@ static PyObject *
 winreg_QueryValue_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key);
 
 static PyObject *
-winreg_QueryValue(PyObject *module, PyObject **args, Py_ssize_t nargs)
+winreg_QueryValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -806,7 +806,7 @@ static PyObject *
 winreg_QueryValueEx_impl(PyObject *module, HKEY key, Py_UNICODE *name);
 
 static PyObject *
-winreg_QueryValueEx(PyObject *module, PyObject **args, Py_ssize_t nargs)
+winreg_QueryValueEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -850,7 +850,7 @@ static PyObject *
 winreg_SaveKey_impl(PyObject *module, HKEY key, Py_UNICODE *file_name);
 
 static PyObject *
-winreg_SaveKey(PyObject *module, PyObject **args, Py_ssize_t nargs)
+winreg_SaveKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -901,7 +901,7 @@ winreg_SetValue_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
                      Py_ssize_clean_t value_length);
 
 static PyObject *
-winreg_SetValue(PyObject *module, PyObject **args, Py_ssize_t nargs)
+winreg_SetValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -971,7 +971,7 @@ winreg_SetValueEx_impl(PyObject *module, HKEY key, Py_UNICODE *value_name,
                        PyObject *reserved, DWORD type, PyObject *value);
 
 static PyObject *
-winreg_SetValueEx(PyObject *module, PyObject **args, Py_ssize_t nargs)
+winreg_SetValueEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -1091,4 +1091,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9f7991a8580bbd93 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d1c8e2678015dd7d input=a9049054013a1b77]*/

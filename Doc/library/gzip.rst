@@ -211,3 +211,39 @@ Example of how to GZIP compress a binary string::
       The basic data compression module needed to support the :program:`gzip` file
       format.
 
+Command Line Interface
+----------------------
+
+The :mod:`gzip` module provides a simple command line interface to compress or
+decompress files.
+
+Once executed the :mod:`gzip` module keeps the input file(s).
+
+.. versionchanged:: 3.8
+
+   Add a new command line interface with a usage.
+   By default, when you will execute the CLI, the default compression level is 6.
+
+Command line options
+^^^^^^^^^^^^^^^^^^^^
+
+.. cmdoption:: file
+
+   If *file* is not specified, read from :attr:`sys.stdin`.
+
+.. cmdoption:: --fast
+
+   Indicates the fastest compression method (less compression).
+
+.. cmdoption:: --best
+
+   Indicates the slowest compression method (best compression).
+
+.. cmdoption:: -d, --decompress
+
+   Decompress the given file.
+
+.. cmdoption:: -h, --help
+
+   Show the help message.
+

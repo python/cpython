@@ -96,7 +96,7 @@ resources to test.  Currently only the following are defined:
 
     largefile - It is okay to run some test that may create huge
                 files.  These tests can take a long time and may
-                consume >2GB of disk space temporarily.
+                consume >2 GiB of disk space temporarily.
 
     network -   It is okay to run tests that use external network
                 resource, e.g. testing SSL support for sockets.
@@ -170,7 +170,7 @@ def _create_parser():
     group.add_argument('--wait', action='store_true',
                        help='wait for user input, e.g., allow a debugger '
                             'to be attached')
-    group.add_argument('--slaveargs', metavar='ARGS')
+    group.add_argument('--worker-args', metavar='ARGS')
     group.add_argument('-S', '--start', metavar='START',
                        help='the name of the test at which to start.' +
                             more_details)
@@ -267,6 +267,10 @@ def _create_parser():
     group.add_argument('--fail-env-changed', action='store_true',
                        help='if a test file alters the environment, mark '
                             'the test as failed')
+
+    group.add_argument('--junit-xml', dest='xmlpath', metavar='FILENAME',
+                       help='writes JUnit-style XML results to the specified '
+                            'file')
 
     return parser
 

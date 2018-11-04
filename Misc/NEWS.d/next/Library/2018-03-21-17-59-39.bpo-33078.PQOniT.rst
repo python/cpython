@@ -1,0 +1,1 @@
+Fix the failure on OSX caused by the tests relying on sem_getvalue

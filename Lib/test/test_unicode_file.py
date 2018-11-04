@@ -1,5 +1,5 @@
 # Test some Unicode file name semantics
-# We dont test many operations on files other than
+# We don't test many operations on files other than
 # that their names can be used with Unicode characters.
 import os, glob, time, shutil
 import unicodedata

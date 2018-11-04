@@ -41,7 +41,7 @@
 #if BUFSIZ < (8*1024)
 #define SMALLCHUNK (8*1024)
 #elif (BUFSIZ >= (2 << 25))
-#error "unreasonable BUFSIZ > 64MB defined"
+#error "unreasonable BUFSIZ > 64 MiB defined"
 #else
 #define SMALLCHUNK BUFSIZ
 #endif
@@ -683,10 +683,12 @@ _io_FileIO_readall_impl(fileio *self)
     Py_ssize_t bytes_read = 0;
     Py_ssize_t n;
     size_t bufsize;
+    int fstat_result;
 
     if (self->fd < 0)
         return err_closed();
 
+    Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
     pos = _lseeki64(self->fd, 0L, SEEK_CUR);
@@ -694,8 +696,10 @@ _io_FileIO_readall_impl(fileio *self)
     pos = lseek(self->fd, 0L, SEEK_CUR);
 #endif
     _Py_END_SUPPRESS_IPH
+    fstat_result = _Py_fstat_noraise(self->fd, &status);
+    Py_END_ALLOW_THREADS
 
-    if (_Py_fstat_noraise(self->fd, &status) == 0)
+    if (fstat_result == 0)
         end = status.st_size;
     else
         end = (Py_off_t)-1;
@@ -787,11 +791,9 @@ _io_FileIO_read_impl(fileio *self, Py_ssize_t size)
     if (size < 0)
         return _io_FileIO_readall_impl(self);
 
-#ifdef MS_WINDOWS
-    /* On Windows, the count parameter of read() is an int */
-    if (size > INT_MAX)
-        size = INT_MAX;
-#endif
+    if (size > _PY_READ_MAX) {
+        size = _PY_READ_MAX;
+    }
 
     bytes = PyBytes_FromStringAndSize(NULL, size);
     if (bytes == NULL)
@@ -1069,12 +1071,10 @@ fileio_repr(fileio *self)
     if (self->fd < 0)
         return PyUnicode_FromFormat("<_io.FileIO [closed]>");
 
-    nameobj = _PyObject_GetAttrId((PyObject *) self, &PyId_name);
+    if (_PyObject_LookupAttrId((PyObject *) self, &PyId_name, &nameobj) < 0) {
+        return NULL;
+    }
     if (nameobj == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError))
-            PyErr_Clear();
-        else
-            return NULL;
         res = PyUnicode_FromFormat(
             "<_io.FileIO fd=%d mode='%s' closefd=%s>",
             self->fd, mode_string(self), self->closefd ? "True" : "False");
@@ -1120,14 +1120,6 @@ _io_FileIO_isatty_impl(fileio *self)
     return PyBool_FromLong(res);
 }
 
-static PyObject *
-fileio_getstate(fileio *self)
-{
-    PyErr_Format(PyExc_TypeError,
-                 "cannot serialize '%s' object", Py_TYPE(self)->tp_name);
-    return NULL;
-}
-
 #include "clinic/fileio.c.h"
 
 static PyMethodDef fileio_methods[] = {
@@ -1145,7 +1137,6 @@ static PyMethodDef fileio_methods[] = {
     _IO_FILEIO_FILENO_METHODDEF
     _IO_FILEIO_ISATTY_METHODDEF
     {"_dealloc_warn", (PyCFunction)fileio_dealloc_warn, METH_O, NULL},
-    {"__getstate__", (PyCFunction)fileio_getstate, METH_NOARGS, NULL},
     {NULL,           NULL}             /* sentinel */
 };
 

@@ -1,0 +1,3 @@
+Have :func:`importlib.resources.contents` and
+:meth:`importlib.abc.ResourceReader.contents` return an :term:`iterable` instead
+of an :term:`iterator`.

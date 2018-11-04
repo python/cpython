@@ -215,9 +215,9 @@ class build_ext(Command):
                 new_lib = os.path.join(new_lib, suffix)
             self.library_dirs.append(new_lib)
 
-        # for extensions under Cygwin and AtheOS Python's library directory must be
+        # For extensions under Cygwin, Python's library directory must be
         # appended to library_dirs
-        if sys.platform[:6] == 'cygwin' or sys.platform[:6] == 'atheos':
+        if sys.platform[:6] == 'cygwin':
             if sys.executable.startswith(os.path.join(sys.exec_prefix, "bin")):
                 # building third party extensions
                 self.library_dirs.append(os.path.join(sys.prefix, "lib",
@@ -715,22 +715,6 @@ class build_ext(Command):
                 return ext.libraries + [pythonlib]
             else:
                 return ext.libraries
-        elif sys.platform[:6] == "atheos":
-            from distutils import sysconfig
-
-            template = "python%d.%d"
-            pythonlib = (template %
-                   (sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff))
-            # Get SHLIBS from Makefile
-            extra = []
-            for lib in sysconfig.get_config_var('SHLIBS').split():
-                if lib.startswith('-l'):
-                    extra.append(lib[2:])
-                else:
-                    extra.append(lib)
-            # don't extend ext.libraries, it may be shared with other
-            # extensions, it is a reference to the original list
-            return ext.libraries + [pythonlib, "m"] + extra
         elif sys.platform == 'darwin':
             # Don't use the default code below
             return ext.libraries

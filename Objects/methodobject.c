@@ -2,8 +2,8 @@
 /* Method object implementation */
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_mem.h"
+#include "pycore_state.h"
 #include "structmember.h"
 
 /* Free list for method objects to safe malloc/free overhead
@@ -18,7 +18,7 @@ static int numfree = 0;
 /* undefine macro trampoline to PyCFunction_NewEx */
 #undef PyCFunction_New
 
-PyAPI_FUNC(PyObject *)
+PyObject *
 PyCFunction_New(PyMethodDef *ml, PyObject *self)
 {
     return PyCFunction_NewEx(ml, self, NULL);
@@ -31,7 +31,7 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
     op = free_list;
     if (op != NULL) {
         free_list = (PyCFunctionObject *)(op->m_self);
-        (void)PyObject_INIT(op, &PyCFunction_Type);
+        (void)PyObject_INIT((PyObject *)op, &PyCFunction_Type);
         numfree--;
     }
     else {
@@ -101,7 +101,7 @@ meth_dealloc(PyCFunctionObject *m)
 }
 
 static PyObject *
-meth_reduce(PyCFunctionObject *m)
+meth_reduce(PyCFunctionObject *m, PyObject *Py_UNUSED(ignored))
 {
     PyObject *builtins;
     PyObject *getattr;
@@ -251,16 +251,8 @@ static Py_hash_t
 meth_hash(PyCFunctionObject *a)
 {
     Py_hash_t x, y;
-    if (a->m_self == NULL)
-        x = 0;
-    else {
-        x = PyObject_Hash(a->m_self);
-        if (x == -1)
-            return -1;
-    }
+    x = _Py_HashPointer(a->m_self);
     y = _Py_HashPointer((void*)(a->m_ml->ml_meth));
-    if (y == -1)
-        return -1;
     x ^= y;
     if (x == -1)
         x = -2;

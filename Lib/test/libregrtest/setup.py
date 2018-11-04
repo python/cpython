@@ -57,7 +57,7 @@ def setup_tests(ns):
         if hasattr(module, '__path__'):
             for index, path in enumerate(module.__path__):
                 module.__path__[index] = os.path.abspath(path)
-        if hasattr(module, '__file__'):
+        if getattr(module, '__file__', None):
             module.__file__ = os.path.abspath(module.__file__)
 
     # MacOSX (a.k.a. Darwin) has a default stack size that is too small

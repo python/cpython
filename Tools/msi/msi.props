@@ -54,8 +54,8 @@
         <OutputPath Condition="!HasTrailingSlash($(OutputPath))">$(OutputPath)\</OutputPath>
         <OutDir>$(OutputPath)</OutDir>
         <ReuseCabinetCache>true</ReuseCabinetCache>
-        <CRTRedist Condition="'$(CRTRedist)' == ''">$(ExternalsDir)\windows-installer\redist</CRTRedist>
-        <CRTRedist Condition="!Exists($(CRTRedist))"></CRTRedist>
+        <CRTRedist Condition="'$(CRTRedist)' == ''">$(ExternalsDir)\windows-installer\redist-1\$(Platform)</CRTRedist>
+        <CRTRedist>$([System.IO.Path]::GetFullPath($(CRTRedist)))</CRTRedist>
         <DocFilename>python$(MajorVersionNumber)$(MinorVersionNumber)$(MicroVersionNumber)$(ReleaseLevelName).chm</DocFilename>
 
         <InstallerVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(Field3Value).0</InstallerVersion>
@@ -123,10 +123,7 @@
         <LinkerBindInputPaths Include="$(tcltkDir)">
             <BindName>tcltk</BindName>
         </LinkerBindInputPaths>
-        <LinkerBindInputPaths Include="$(CRTRedist)" Condition="'$(CRTRedist)' != ''">
-            <BindName>redist</BindName>
-        </LinkerBindInputPaths>
-        <LinkerBindInputPaths Include="$(VS140COMNTOOLS)\..\..\VC\redist\$(Platform)\Microsoft.VC140.CRT">
+        <LinkerBindInputPaths Include="$(CRTRedist)">
             <BindName>redist</BindName>
         </LinkerBindInputPaths>
         <LinkerBindInputPaths Include="$(BuildPath32)">

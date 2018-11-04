@@ -353,10 +353,10 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 suffix = fileName[plen:]
                 if self.extMatch.match(suffix):
                     result.append(os.path.join(dirName, fileName))
-        result.sort()
         if len(result) < self.backupCount:
             result = []
         else:
+            result.sort()
             result = result[:len(result) - self.backupCount]
         return result
 
@@ -1180,7 +1180,9 @@ class HTTPHandler(logging.Handler):
             i = host.find(":")
             if i >= 0:
                 host = host[:i]
-            h.putheader("Host", host)
+            # See issue #30904: putrequest call above already adds this header
+            # on Python 3.x.
+            # h.putheader("Host", host)
             if self.method == "POST":
                 h.putheader("Content-type",
                             "application/x-www-form-urlencoded")
@@ -1372,13 +1374,14 @@ class QueueHandler(logging.Handler):
         # (if there's exception data), and also returns the formatted
         # message. We can then use this to replace the original
         # msg + args, as these might be unpickleable. We also zap the
-        # exc_info attribute, as it's no longer needed and, if not None,
-        # will typically not be pickleable.
+        # exc_info and exc_text attributes, as they are no longer
+        # needed and, if not None, will typically not be pickleable.
         msg = self.format(record)
         record.message = msg
         record.msg = msg
         record.args = None
         record.exc_info = None
+        record.exc_text = None
         return record
 
     def emit(self, record):
