@@ -1830,6 +1830,7 @@ precedence and have a left-to-right chaining feature as described in the
 +-----------------------------------------------+-------------------------------------+
 | ``(expressions...)``,                         | Binding or parenthesized            |
 |                                               | expressions,                        |
++-----------------------------------------------+-------------------------------------+
 | ``[expressions...]``,                         | list display,                       |
 | ``{key: value...}``,                          | dictionary display,                 |
 | ``{expressions...}``                          | set display                         |
