@@ -5,6 +5,7 @@
 
 import locale
 import os
+import platform
 import re
 import subprocess
 import sys
@@ -53,6 +54,10 @@ if gdb_major_version < 7:
 
 if not sysconfig.is_python_build():
     raise unittest.SkipTest("test_gdb only works on source builds at the moment.")
+
+if 'Clang' in platform.python_compiler() and sys.platform == 'darwin':
+    raise unittest.SkipTest("test_gdb doesn't work correctly when python is"
+                            " built with LLVM clang")
 
 # Location of custom hooks file in a repository checkout.
 checkout_hook_path = os.path.join(os.path.dirname(sys.executable),
