@@ -207,6 +207,8 @@ Correctly Closing Connections
 
 - from the client side
 - from the server side
+- Yury I need your help here. What is the actual "correct" way
+  to do this? Streams API preferable, if possible.
 
 Handling Typical Socket Errors
 ------------------------------
@@ -235,6 +237,17 @@ Run A Blocking Call In An Executor
 - show example with a custom executor (thread-based)
 - show example with a custom executor (process-based)
 
+
+Adding Asyncio To An Existing Sync (Threaded) Application
+---------------------------------------------------------
+
+- Imagine an existing app that uses threading for concurrency,
+  but we want to make use of asyncio only for, say, a large
+  number of concurrent GET requests, but leave the rest of the
+  app unchanged.
+- Plan would be to run the asyncio loop in another thread
+- Can show how to safely communicate between that thread and
+  the main thread (or others).
 
 
 

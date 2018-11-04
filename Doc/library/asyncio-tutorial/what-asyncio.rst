@@ -3,7 +3,7 @@ What Does "Async" Mean?
 
 Let's make a function that communicates over the network:
 
-.. code-block:: python
+.. code-block:: python3
 
     import socket
 
@@ -30,7 +30,7 @@ Python only ever executes one line at a time.
 Now the question comes up: what if you need to send a greeting to
 *multiple* hosts? You could just call it twice, right?
 
-.. code-block:: python
+.. code-block:: python3
 
     import socket
 
