@@ -3,7 +3,7 @@ import collections
 import unittest
 
 
-class Test(object):
+class Test:
     "Keep these TestCase classes out of the main namespace"
 
     class SingleTestAsyncTestCase(unittest.AsyncioTestCase):
@@ -24,7 +24,7 @@ def run_test_case(test_class, should_fail=False):
         raise AssertionError(f'test {test_class} unexpectedly failed')
 
 
-class EventLoopTracking(object):
+class EventLoopTracking:
     class Loop(asyncio.SelectorEventLoop):
         def __init__(self, tracker, *args, **kwargs):
             super().__init__(*args, **kwargs)
