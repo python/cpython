@@ -1,0 +1,2 @@
+Fixed crash in :func:`bytes` when the :class:`list` argument is mutated
+while it is iterated.
