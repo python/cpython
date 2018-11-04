@@ -809,7 +809,7 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #define WITH_THREAD
 #endif
 
-/* The Py_WCSTOK macro provides a uniform interface to the wide
+/* The _Py_WCSTOK macro provides a uniform interface to the wide
  * character tokenizer function.  Based on the environment,
  * an appropriate implementation will be chosen.
  *
