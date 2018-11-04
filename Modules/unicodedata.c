@@ -838,8 +838,7 @@ unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
 
     if (PyUnicode_GET_LENGTH(input) == 0) {
         /* special case empty input strings. */
-        Py_INCREF(Py_True);
-        return Py_True;
+        Py_RETURN_TRUE;
     }
 
     PyObject *result;

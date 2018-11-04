@@ -89,7 +89,11 @@ class NormalizationTest(unittest.TestCase):
                             line)
 
             self.assertTrue(is_normalized("NFC", c2))
+            self.assertTrue(is_normalized("NFC", c4))
+
             self.assertTrue(is_normalized("NFD", c3))
+            self.assertTrue(is_normalized("NFD", c5))
+
             self.assertTrue(is_normalized("NFKC", c4))
             self.assertTrue(is_normalized("NFKD", c5))
 
