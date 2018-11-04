@@ -1,0 +1,1 @@
+define a platform dependent _Py_WCSTOK in Include/pyport.h
