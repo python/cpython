@@ -819,9 +819,9 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
  * we'll assume that a POSIX-like three-argument version is available.
  */
 #if defined(MS_WINDOWS)
-#       define Py_WCSTOK(str, tok, state)  wcstok_s(str, tok, state)
+#       define _Py_WCSTOK(str, tok, state)  wcstok_s(str, tok, state)
 #else
-#       define Py_WCSTOK(str, tok, state)  wcstok(str, tok, state)
+#       define _Py_WCSTOK(str, tok, state)  wcstok(str, tok, state)
 #endif
 
 #endif /* Py_PYPORT_H */

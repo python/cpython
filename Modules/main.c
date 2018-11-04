@@ -886,9 +886,9 @@ cmdline_init_env_warnoptions(_PyMain *pymain, const _PyCoreConfig *config,
 
 
     wchar_t *warning, *context = NULL;
-    for (warning = Py_WCSTOK(env, L",", &context);
+    for (warning = _Py_WCSTOK(env, L",", &context);
          warning != NULL;
-         warning = Py_WCSTOK(NULL, L",", &context))
+         warning = _Py_WCSTOK(NULL, L",", &context))
     {
         _PyInitError err = _Py_wstrlist_append(&cmdline->nenv_warnoption,
                                                &cmdline->env_warnoptions,

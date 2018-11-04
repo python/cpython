@@ -693,11 +693,11 @@ _Py_FindEnvConfigValue(FILE *env_file, const wchar_t *key,
         wchar_t *tmpbuffer = _Py_DecodeUTF8_surrogateescape(buffer, n);
         if (tmpbuffer) {
             wchar_t * state;
-            wchar_t * tok = Py_WCSTOK(tmpbuffer, L" \t\r\n", &state);
+            wchar_t * tok = _Py_WCSTOK(tmpbuffer, L" \t\r\n", &state);
             if ((tok != NULL) && !wcscmp(tok, key)) {
-                tok = Py_WCSTOK(NULL, L" \t", &state);
+                tok = _Py_WCSTOK(NULL, L" \t", &state);
                 if ((tok != NULL) && !wcscmp(tok, L"=")) {
-                    tok = Py_WCSTOK(NULL, L"\r\n", &state);
+                    tok = _Py_WCSTOK(NULL, L"\r\n", &state);
                     if (tok != NULL) {
                         wcsncpy(value, tok, MAXPATHLEN);
                         result = 1;
