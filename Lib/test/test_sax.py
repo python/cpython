@@ -5,6 +5,7 @@ from xml.sax import make_parser, ContentHandler, \
                     SAXException, SAXReaderNotAvailable, SAXParseException
 import unittest
 from unittest import mock
+from Lib.pickle import FALSE
 try:
     make_parser()
 except SAXReaderNotAvailable:
@@ -1418,24 +1419,6 @@ class LexicalHandlerTest(unittest.TestCase):
             def comment(self, text):
                 self.test_harness.comments.append(text)
 
-        class TestErrorHandler(ErrorHandler):
-            def __init__(self, test_harness, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-                self.test_harness = test_harness
-
-            def fatalError(self, exception):
-                code = self.test_harness.parser.\
-                    getProperty('http://xml.org/sax/properties/xml-string')
-                print('Exception: {} - Code being parsed: {}'.
-                      format(exception.__repr__(), code))
-                self.test_harness.test_data.seek(0)
-                test_data = self.test_harness.test_data.getvalue().split('\n')
-                i = 0
-                print('Test data')
-                for i in range(len(test_data) - 1):
-                    print('{} - {}'.format(i + 1, test_data[i]))
-                raise exception
-
         self.parser = create_parser()
         self.parser.setContentHandler(ContentHandler())
         self.parser.setProperty(
@@ -1443,7 +1426,6 @@ class LexicalHandlerTest(unittest.TestCase):
             TestLexicalHandler(self))
         source = InputSource()
         source.setCharacterStream(self.test_data)
-        self.parser.setErrorHandler(TestErrorHandler(self))
         self.parser.parse(source)
         self.assertEqual(self.version, self.specified_version)
         self.assertEqual(self.encoding, self.specified_encoding)
@@ -1459,6 +1441,68 @@ class LexicalHandlerTest(unittest.TestCase):
                              self.comments[i])
 
 
+class CDATAHandlerTest():
+    """This is implemented as a separate class since CDATA sections in XML
+    cannot appear within elements defined within a DTD. Hence this test does
+    not use a DTD."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.parser = None
+        self.specified_chars = []
+        self.specified_chars.append(('Parseable character data', False))
+        self.specified_chars.append(('<> &% - assorted other XML junk.', True))
+        self.char_index = 0  # Used to index specified results within handlers
+        self.test_data = StringIO()
+        self.test_data.write('<root_doc>\n')
+        self.test_data.write('<some_pcdata>\n')
+        self.test_data.write('{}\n'.format(self.specified_chars[0]))
+        self.test_data.write('</some_pcdata>\n')
+        self.test_data.write('<some_cdata>\n')
+        self.test_data.write('{}\n'.format(self.specified_chars[1]))
+        self.test_data.write('</some_cdata>\n')
+        self.test_data.write('</root_doc>\n')
+        self.test_data.seek(0)
+
+        # Data received from handlers - to be validated
+        self.chardata = []
+        self.in_cdata = False
+
+    def test_handlers(self):
+        class TestLexicalHandler(LexicalHandler):
+            def __init__(self, test_harness, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.test_harness = test_harness
+
+            def startCDATA(self):
+                self.test_harness.in_cdata = True
+
+            def endCDATA(self):
+                self.test_harness.in_cdata = False
+
+        class TestCharHandler(ContentHandler):
+            def __init__(self, test_harness, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.test_harness = test_harness
+
+            def characters(self, content):
+                t = self.specified_chars[self.char_index]
+                self.test_harness.assertEqual(t[0], content)
+                self.asertEqual(t[1], self.test_harness.in_cdata)
+                self.test_harness.char_index += 1
+
+        self.parser = create_parser()
+        self.parser.setContentHandler(TestCharHandler(self))
+        self.parser.setProperty(
+            'http://xml.org/sax/properties/lexical-handler',
+            TestLexicalHandler(self))
+        source = InputSource()
+        source.setCharacterStream(self.test_data)
+        self.parser.parse(source)
+
+        self.assertFalse(self.in_cdata)
+        self.assertEqual(self.char_index, 2)
+
+
 def test_main():
     run_unittest(MakeParserTest,
                  ParseTest,
@@ -1472,7 +1516,8 @@ def test_main():
                  ExpatReaderTest,
                  ErrorReportingTest,
                  XmlReaderTest,
-                 LexicalHandlerTest)
+                 LexicalHandlerTest,
+                 CDATAHandlerTest)
 
 
 if __name__ == "__main__":

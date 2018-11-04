@@ -438,27 +438,33 @@ with the property identifier
 
 
 .. method:: LexicalHandler.xmlDecl(version, encoding, standalone)
+
    Reports an XML declaration or the default values used if no XML
    declaration was provided.
 
 .. method:: LexicalHandler.comment(content)
+
    Reports a comment anywhere in the document (including the DTD and
    outside the document element).
 
 .. method:: LexicalHandler.startDTD(name, public_id, system_id)
+
    Reports the start of the DTD declarations if the document has an
    associated DTD.
 
 .. method:: LexicalHandler.endDTD()
+
    Reports the end of DTD declaration.
 
 .. method:: LexicalHandler.startCDATA()
+
    Reports the start of a CDATA marked section.
 
    The contents of the CDATA marked section will be reported through
    the characters handler.
 
- .. method:: LexicalHandler.endCDATA()
+.. method:: LexicalHandler.endCDATA()
+ 
    Reports the end of a CDATA marked section.
 
  
