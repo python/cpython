@@ -37,7 +37,7 @@ if sysconfig.is_python_build():
         TEMPDIR = sysconfig.get_config_var('srcdir')
     TEMPDIR = os.path.join(TEMPDIR, 'build')
 else:
-    TEMPDIR = os.getenv('PY_TEMPDIR', None) or tempfile.gettempdir()
+    TEMPDIR = tempfile.gettempdir()
 TEMPDIR = os.path.abspath(TEMPDIR)
 
 
