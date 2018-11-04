@@ -1820,7 +1820,7 @@ precedence and have a left-to-right chaining feature as described in the
 | ``x[index]``, ``x[index:index]``,             | Subscription, slicing,              |
 | ``x(arguments...)``, ``x.attribute``          | call, attribute reference           |
 +-----------------------------------------------+-------------------------------------+
-| ``(expressions...)``,                         | Binding or parenthesized            |
+| ``(expressions...)``                          | Binding or parenthesized            |
 |                                               | expressions,                        |
 +-----------------------------------------------+-------------------------------------+
 | ``[expressions...]``,                         | list display,                       |
