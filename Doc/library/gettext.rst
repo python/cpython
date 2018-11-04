@@ -668,8 +668,9 @@ implementations, and valuable experience to the creation of this module:
 .. [#] The default locale directory is system dependent; for example, on RedHat Linux
    it is :file:`/usr/share/locale`, but on Solaris it is :file:`/usr/lib/locale`.
    The :mod:`gettext` module does not try to support these system dependent
-   defaults; instead its default is :file:`{sys.prefix}/share/locale`. For this
-   reason, it is always best to call :func:`bindtextdomain` with an explicit
-   absolute path at the start of your application (see :data:`sys.prefix`).
+   defaults; instead its default is :file:`{sys.prefix}/share/locale` (see
+   :data:`sys.prefix`). For this reason, it is always best to call
+   :func:`bindtextdomain` with an explicit absolute path at the start of your
+   application.
 
 .. [#] See the footnote for :func:`bindtextdomain` above.
