@@ -133,6 +133,7 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
 #ifdef HAVE_GETPWUID_R
     int status;
     Py_ssize_t bufsize;
+    /* Note: 'pwd' will be used via pointer 'p' on getpwuid_r success. */
     struct passwd pwd;
 
     Py_BEGIN_ALLOW_THREADS
@@ -214,6 +215,7 @@ pwd_getpwnam_impl(PyObject *module, PyObject *name)
 #ifdef HAVE_GETPWNAM_R
     int status;
     Py_ssize_t bufsize;
+    /* Note: 'pwd' will be used via pointer 'p' on getpwnam_r success. */
     struct passwd pwd;
 
     Py_BEGIN_ALLOW_THREADS

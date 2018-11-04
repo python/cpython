@@ -126,6 +126,7 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
 #ifdef HAVE_GETGRGID_R
     int status;
     Py_ssize_t bufsize;
+    /* Note: 'grp' will be used via pointer 'p' on getgrgid_r success. */
     struct group grp;
 
     Py_BEGIN_ALLOW_THREADS
@@ -206,6 +207,7 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
 #ifdef HAVE_GETGRNAM_R
     int status;
     Py_ssize_t bufsize;
+    /* Note: 'grp' will be used via pointer 'p' on getgrnam_r success. */
     struct group grp;
 
     Py_BEGIN_ALLOW_THREADS
