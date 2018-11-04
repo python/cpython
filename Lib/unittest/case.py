@@ -24,22 +24,17 @@ DIFF_OMITTED = ('\nDiff is %s characters long. '
                  'Set self.maxDiff to None to see it.')
 
 class SkipTest(Exception):
-    """
-    Raise this exception in a test to skip it.
+    """Raise this exception in a test to skip it.
 
     Usually you can use TestCase.skipTest() or one of the skipping decorators
     instead of raising this directly.
     """
 
 class _ShouldStop(Exception):
-    """
-    The test should stop.
-    """
+    """The test should stop."""
 
 class _UnexpectedSuccess(Exception):
-    """
-    The test was supposed to fail, but it didn't!
-    """
+    """The test was supposed to fail, but it didn't!"""
 
 
 class _Outcome:
@@ -96,9 +91,7 @@ def _id(obj):
     return obj
 
 def skip(reason):
-    """
-    Unconditionally skip a test.
-    """
+    """Unconditionally skip a test."""
     def decorator(test_item):
         if not isinstance(test_item, type):
             @functools.wraps(test_item)
@@ -112,17 +105,13 @@ def skip(reason):
     return decorator
 
 def skipIf(condition, reason):
-    """
-    Skip a test if the condition is true.
-    """
+    """Skip a test if the condition is true."""
     if condition:
         return skip(reason)
     return _id
 
 def skipUnless(condition, reason):
-    """
-    Skip a test unless the condition is true.
-    """
+    """Skip a test unless the condition is true."""
     if not condition:
         return skip(reason)
     return _id
@@ -158,8 +147,7 @@ class _AssertRaisesBaseContext(_BaseTestCaseContext):
         self.msg = None
 
     def handle(self, name, args, kwargs):
-        """
-        If args is empty, assertRaises/Warns is being used as a
+        """If args is empty, assertRaises/Warns is being used as a
         context manager, so check for a 'msg' kwarg and return self.
         If args is not empty, call a callable passing positional and keyword
         arguments.
@@ -1587,8 +1575,7 @@ class AsyncioTestCase(TestCase):
         self.__event_loop = None
 
     def doCleanups(self):
-        """
-        Execute all cleanup functions.
+        """Execute all cleanup functions.
 
         Normally called for you after tearDown.
         """
