@@ -280,7 +280,14 @@ class install(Command):
         # $platbase in the other installation directories and not worry
         # about needing recursive variable expansion (shudder).
 
-        py_version = sys.version.split()[0]
+        releaselevel_serial = ''
+        if sys.version_info[3] == 'alpha' or sys.version_info[3] == 'beta':
+            releaselevel_serial = (sys.version_info[3][0]
+                                   + str(sys.version_info[4]))
+        elif sys.version_info[3] == 'release':
+            releaselevel_serial = 'rc' + str(sys.version_info[4])
+        py_version = '%d.%d.%d%s' % (*sys.version_info[:3],
+                                     releaselevel_serial)
         (prefix, exec_prefix) = get_config_vars('prefix', 'exec_prefix')
         try:
             abiflags = sys.abiflags
