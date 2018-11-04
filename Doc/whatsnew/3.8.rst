@@ -204,6 +204,13 @@ Added method :meth:`~tkinter.Canvas.moveto`
 in the :class:`tkinter.Canvas` class.
 (Contributed by Juliette Monsel in :issue:`23831`.)
 
+unicodedata
+-----------
+
+* New function :func:`~unicodedata.is_normalized` can be used to verify a string
+  is in a specific normal form. (Contributed by Max Belanger and David Euresti in
+  :issue:`32285`).
+
 venv
 ----
 
