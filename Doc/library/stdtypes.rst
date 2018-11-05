@@ -4298,16 +4298,11 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       ['four', 'three', 'two', 'one']
       >>> list(reversed(d.values()))
       [4, 3, 2, 1]
-      >>> d["one"] = 42
-      >>> d
-      {'one': 42, 'two': 2, 'three': 3, 'four': 4}
-      >>> list(reversed(d.values()))
-      [4, 3, 2, 42]
       >>> list(reversed(d.items()))
-      [('four', 4), ('three', 3), ('two', 2), ('one', 42)]
+      [('four', 4), ('three', 3), ('two', 2), ('one', 1)]
 
    .. versionchanged:: 3.8
-      Dictionaries and dictionary views are now reversible.
+      Dictionaries are now reversible.
 
 
 .. seealso::
