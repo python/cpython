@@ -503,7 +503,7 @@ class TestGzip(BaseTest):
         mtime = 123456789
         for data in [data1, data2]:
             for args in [(1, mtime), (6, mtime), (9, mtime)]:
-                with self.subTest(data=data,args=args):
+                with self.subTest(data=data, args=args):
                     datac = gzip.compress(data, *args)
                     self.assertEqual(type(datac), bytes)
                     with gzip.GzipFile(fileobj=io.BytesIO(datac), mode="rb") as f:
