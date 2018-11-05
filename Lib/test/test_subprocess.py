@@ -18,6 +18,7 @@ import shutil
 import threading
 import gc
 import textwrap
+import json
 from test.support import FakePath
 
 try:
@@ -31,6 +32,15 @@ try:
     import _testcapi
 except ImportError:
     _testcapi = None
+
+try:
+    import pwd
+except ImportError:
+    pwd = None
+try:
+    import grp
+except ImportError:
+    grp = None
 
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
@@ -1661,6 +1671,139 @@ class POSIXProcessTestCase(BaseTestCase):
             child_pgid = int(output)
             self.assertNotEqual(parent_pgid, child_pgid)
 
+    @unittest.skipUnless(hasattr(os, 'setreuid'), 'no setreuid on platform')
+    def test_user(self):
+        # For code coverage of the user parameter.  We don't care if we get an
+        # EPERM error from it depending on the test execution environment, that
+        # still indicates that it was called.
+
+        uid = os.geteuid()
+        test_users = [65534 if uid != 65534 else 65533, uid]
+        name_uid = "nobody" if sys.platform != 'darwin' else "unknown"
+
+        if pwd is not None:
+            test_users.append(name_uid)
+
+        for user in test_users:
+            with self.subTest(user=user):
+                try:
+                    output = subprocess.check_output(
+                            [sys.executable, "-c",
+                             "import os; print(os.getuid())"],
+                            user=user)
+                except OSError as e:
+                    if e.errno != errno.EPERM:
+                        raise
+                else:
+                    if isinstance(user, str):
+                        user_uid = pwd.getpwnam(user).pw_uid
+                    else:
+                        user_uid = user
+                    child_user = int(output)
+                    self.assertEqual(child_user, user_uid)
+
+        with self.assertRaises(ValueError):
+            subprocess.check_call([sys.executable, "-c", "pass"], user=-1)
+
+        if pwd is None:
+            with self.assertRaises(ValueError):
+                subprocess.check_call([sys.executable, "-c", "pass"], user=name_uid)
+
+    @unittest.skipIf(hasattr(os, 'setreuid'), 'setreuid() available on platform')
+    def test_user_error(self):
+        with self.assertRaises(ValueError):
+            subprocess.check_call([sys.executable, "-c", "pass"], user=65535)
+
+    @unittest.skipUnless(hasattr(os, 'setregid'), 'no setregid() on platform')
+    def test_group(self):
+        gid = os.getegid()
+        group_list = [65534 if gid != 65534 else 65533]
+        name_group = "nogroup" if sys.platform != 'darwin' else "staff"
+
+        if grp is not None:
+            group_list.append(name_group)
+
+        for group in group_list + [gid]:
+            with self.subTest(group=group):
+                try:
+                    output = subprocess.check_output(
+                            [sys.executable, "-c",
+                             "import os; print(os.getgid())"],
+                            group=group)
+                except OSError as e:
+                    if e.errno != errno.EPERM:
+                        raise
+                else:
+                    if isinstance(group, str):
+                        group_gid = grp.getgrnam(group).gr_gid
+                    else:
+                        group_gid = group
+
+                    child_group = int(output)
+                    self.assertEqual(child_group, group_gid)
+
+        # make sure we bomb on negative values
+        with self.assertRaises(ValueError):
+            subprocess.check_call([sys.executable, "-c", "pass"], group=-1)
+
+        if grp is None:
+            with self.assertRaises(ValueError):
+                subprocess.check_call([sys.executable, "-c", "pass"], group=name_group)
+
+    @unittest.skipIf(hasattr(os, 'setregid'), 'setregid() available on platform')
+    def test_group_error(self):
+        with self.assertRaises(ValueError):
+            subprocess.check_call([sys.executable, "-c", "pass"], group=65535)
+
+    @unittest.skipUnless(hasattr(os, 'setgroups'), 'no setgroups() on platform')
+    def test_extra_groups(self):
+        gid = os.getegid()
+        group_list = [65534 if gid != 65534 else 65533]
+        name_group = "nogroup" if sys.platform != 'darwin' else "staff"
+        perm_error = False
+
+        if grp is not None:
+            group_list.append(name_group)
+
+        try:
+            output = subprocess.check_output(
+                    [sys.executable, "-c",
+                     "import os, sys, json; json.dump(os.getgroups(), sys.stdout)"],
+                    extra_groups=group_list)
+        except OSError as ex:
+            if ex.errno != errno.EPERM:
+                raise
+            perm_error = True
+
+        else:
+            parent_groups = os.getgroups()
+            child_groups = json.loads(output)
+
+            if grp is not None:
+                desired_gids = [grp.getgrnam(g).gr_gid if isinstance(g, str) else g
+                                for g in group_list]
+            else:
+                desired_gids = group_list
+
+            if perm_error:
+                self.assertEqual(set(child_groups), set(parent_groups))
+            else:
+                self.assertEqual(set(desired_gids), set(child_groups))
+
+        # make sure we bomb on negative values
+        with self.assertRaises(ValueError):
+            subprocess.check_call([sys.executable, "-c", "pass"], extra_groups=[-1])
+
+        if grp is None:
+            with self.assertRaises(ValueError):
+                subprocess.check_call([sys.executable, "-c", "pass"],
+                                      extra_groups=[name_group])
+
+    @unittest.skipIf(hasattr(os, 'setgroups'), 'setgroups() available on platform')
+    def test_extra_groups_error(self):
+        with self.assertRaises(ValueError):
+            subprocess.check_call([sys.executable, "-c", "pass"], extra_groups=[])
+
     def test_run_abort(self):
         # returncode handles signal termination
         with support.SuppressCrashReport():
@@ -2704,7 +2847,8 @@ class POSIXProcessTestCase(BaseTestCase):
                         True, (), cwd, env_list,
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
-                        True, True, func)
+                        True, True,
+                        False, 0, False, [], False, 0, func)
         finally:
             if not gc_enabled:
                 gc.disable()
@@ -2743,7 +2887,9 @@ class POSIXProcessTestCase(BaseTestCase):
                         True, fds_to_keep, None, [b"env"],
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
-                        True, True, None)
+                        True, True,
+                        None, None, None,
+                        None)
                 self.assertIn('fds_to_keep', str(c.exception))
         finally:
             if not gc_enabled:
@@ -3155,7 +3301,7 @@ class MiscTests(unittest.TestCase):
 
     def test__all__(self):
         """Ensure that __all__ is populated properly."""
-        intentionally_excluded = {"list2cmdline", "Handle"}
+        intentionally_excluded = {"list2cmdline", "Handle", "pwd", "grp"}
         exported = set(subprocess.__all__)
         possible_exports = set()
         import types
