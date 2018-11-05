@@ -16,7 +16,7 @@ error handlers, entity resolvers and lexical handlers. Applications normally
 only need to implement those interfaces whose events they are interested in;
 they can implement the interfaces in a single object or in multiple objects.
 Handler implementations should inherit from the base classes provided in the
-module:mod:`xml.sax.handler`, so that all methods get default implementations.
+module :mod:`xml.sax.handler`, so that all methods get default implementations.
 
 
 .. class:: ContentHandler
