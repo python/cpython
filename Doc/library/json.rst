@@ -648,7 +648,9 @@ when serializing Python :class:`int` values of extremely large magnitude, or
 when serializing instances of "exotic" numerical types such as
 :class:`decimal.Decimal`.
 
+
 .. _json-commandline:
+.. program:: json.tool
 
 Command Line Interface
 ----------------------
@@ -679,6 +681,7 @@ specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively:
    The output is now in the same order as the input. Use the
    :option:`--sort-keys` option to sort the output of dictionaries
    alphabetically by key.
+
 
 Command line options
 ^^^^^^^^^^^^^^^^^^^^
