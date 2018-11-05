@@ -3743,10 +3743,10 @@ dictreviter_iternext(dictiterobject *di)
             }
             PyTuple_SET_ITEM(result, 0, key); /* steals reference */
             PyTuple_SET_ITEM(result, 1, value); /* steals reference */
-
         }
         return result;
-    } else {
+    }
+    else {
         Py_UNREACHABLE();
     }
 
