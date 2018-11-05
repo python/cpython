@@ -1806,7 +1806,7 @@ class HTMLHelp:
             print('<!-- This file defines the table of contents -->', file=fp)
             print('<HTML>', file=fp)
             print('<HEAD>', file=fp)
-            print('<meta name="GENERATOR"'
+            print('<meta name="GENERATOR" '
                         'content="Microsoft&reg; HTML Help Workshop 4.1">', file=fp)
             print('<!-- Sitemap 1.0 -->', file=fp)
             print('</HEAD>', file=fp)
@@ -1831,7 +1831,7 @@ class HTMLHelp:
             print('<!-- This file defines the index -->', file=fp)
             print('<HTML>', file=fp)
             print('<HEAD>', file=fp)
-            print('<meta name="GENERATOR"'
+            print('<meta name="GENERATOR" '
                         'content="Microsoft&reg; HTML Help Workshop 4.1">', file=fp)
             print('<!-- Sitemap 1.0 -->', file=fp)
             print('</HEAD>', file=fp)

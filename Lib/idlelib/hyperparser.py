@@ -224,7 +224,7 @@ class HyperParser:
         given index, which is empty if there is no real one.
         """
         if not self.is_in_code():
-            raise ValueError("get_expression should only be called"
+            raise ValueError("get_expression should only be called "
                              "if index is inside a code.")
 
         rawtext = self.rawtext
