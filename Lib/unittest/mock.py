@@ -1772,7 +1772,7 @@ _all_magics = _magics | _non_defaults
 
 _unsupported_magics = {
     '__getattr__', '__setattr__',
-    '__init__', '__new__', '__prepare__'
+    '__init__', '__new__', '__prepare__',
     '__instancecheck__', '__subclasscheck__',
     '__del__'
 }

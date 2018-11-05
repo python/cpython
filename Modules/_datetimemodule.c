@@ -3446,7 +3446,7 @@ tzinfo_fromutc(PyDateTime_TZInfo *self, PyObject *dt)
     return result;
 
 Inconsistent:
-    PyErr_SetString(PyExc_ValueError, "fromutc: tz.dst() gave"
+    PyErr_SetString(PyExc_ValueError, "fromutc: tz.dst() gave "
                     "inconsistent results; cannot convert");
 
     /* fall through to failure */
