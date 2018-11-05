@@ -1653,7 +1653,7 @@ Importing a source file directly
 ''''''''''''''''''''''''''''''''
 
 To import a Python source file directly, use the following recipe
-(Python 3.4 and newer only)::
+(Python 3.5 and newer only)::
 
   import importlib.util
   import sys
