@@ -4614,7 +4614,7 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "'memo' attribute must be a PicklerMemoProxy object"
+                     "'memo' attribute must be a PicklerMemoProxy object "
                      "or dict, not %.200s", Py_TYPE(obj)->tp_name);
         return -1;
     }
@@ -7060,7 +7060,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "'memo' attribute must be an UnpicklerMemoProxy object"
+                     "'memo' attribute must be an UnpicklerMemoProxy object "
                      "or dict, not %.200s", Py_TYPE(obj)->tp_name);
         return -1;
     }
