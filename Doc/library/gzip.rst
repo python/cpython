@@ -211,6 +211,9 @@ Example of how to GZIP compress a binary string::
       The basic data compression module needed to support the :program:`gzip` file
       format.
 
+
+.. program:: gzip
+
 Command Line Interface
 ----------------------
 
