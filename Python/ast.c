@@ -1659,12 +1659,6 @@ ast_for_decorated(struct compiling *c, const node *n)
     } else if (TYPE(CHILD(n, 1)) == async_funcdef) {
       thing = ast_for_async_funcdef(c, CHILD(n, 1), decorator_seq);
     }
-    /* we count the decorators in when talking about the class' or
-     * function's line number */
-    if (thing) {
-        thing->lineno = LINENO(n);
-        thing->col_offset = n->n_col_offset;
-    }
     return thing;
 }
 
@@ -4128,14 +4122,14 @@ warn_invalid_escape_sequence(struct compiling *c, const node *n,
     if (msg == NULL) {
         return -1;
     }
-    if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg,
+    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg,
                                    c->c_filename, LINENO(n),
                                    NULL, NULL) < 0)
     {
-        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
             const char *s;
 
-            /* Replace the DeprecationWarning exception with a SyntaxError
+            /* Replace the SyntaxWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
 

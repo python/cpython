@@ -113,6 +113,23 @@ class BaseBytesTest:
         b = self.type2test([1, 2, 3])
         self.assertEqual(b, b"\x01\x02\x03")
 
+    def test_from_mutating_list(self):
+        # Issue #34973: Crash in bytes constructor with mutating list.
+        class X:
+            def __index__(self):
+                a.clear()
+                return 42
+        a = [X(), X()]
+        self.assertEqual(bytes(a), b'*')
+
+        class Y:
+            def __index__(self):
+                if len(a) < 1000:
+                    a.append(self)
+                return 42
+        a = [Y()]
+        self.assertEqual(bytes(a), b'*' * 1000)  # should not crash
+
     def test_from_index(self):
         b = self.type2test([Indexable(), Indexable(1), Indexable(254),
                             Indexable(255)])
@@ -126,8 +143,8 @@ class BaseBytesTest:
         a = self.type2test(b"\x01\x02\x03")
         self.assertEqual(a, b"\x01\x02\x03")
 
-        # http://bugs.python.org/issue29159
-        # Fallback when __index__ raises exception other than OverflowError
+        # Issues #29159 and #34974.
+        # Fallback when __index__ raises a TypeError
         class B(bytes):
             def __index__(self):
                 raise TypeError
@@ -152,6 +169,8 @@ class BaseBytesTest:
         self.assertRaises(TypeError, self.type2test, [0.0])
         self.assertRaises(TypeError, self.type2test, [None])
         self.assertRaises(TypeError, self.type2test, [C()])
+        self.assertRaises(TypeError, self.type2test, encoding='ascii')
+        self.assertRaises(TypeError, self.type2test, errors='ignore')
         self.assertRaises(TypeError, self.type2test, 0, 'ascii')
         self.assertRaises(TypeError, self.type2test, b'', 'ascii')
         self.assertRaises(TypeError, self.type2test, 0, errors='ignore')
@@ -183,6 +202,20 @@ class BaseBytesTest:
             bytearray(size - 4)
         except (OverflowError, MemoryError):
             pass
+
+    def test_constructor_exceptions(self):
+        # Issue #34974: bytes and bytearray constructors replace unexpected
+        # exceptions.
+        class BadInt:
+            def __index__(self):
+                1/0
+        self.assertRaises(ZeroDivisionError, self.type2test, BadInt())
+        self.assertRaises(ZeroDivisionError, self.type2test, [BadInt()])
+
+        class BadIterable:
+            def __iter__(self):
+                1/0
+        self.assertRaises(ZeroDivisionError, self.type2test, BadIterable())
 
     def test_compare(self):
         b1 = self.type2test([1, 2, 3])
