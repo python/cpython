@@ -715,7 +715,7 @@ remove_module(PyObject *name)
     if (PyDict_GetItem(modules, name) == NULL)
         return;
     if (PyDict_DelItem(modules, name) < 0)
-        Py_FatalError("import:  deleting existing key in"
+        Py_FatalError("import:  deleting existing key in "
                       "sys.modules failed");
 }
 
