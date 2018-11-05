@@ -573,7 +573,7 @@ or tuple::
    single: **; in function calls
 
 In the same fashion, dictionaries can deliver keyword arguments with the
-``**``\ -operator::
+``**`` operator::
 
    >>> def parrot(voltage, state='a stiff', action='voom'):
    ...     print("-- This parrot wouldn't", action, end=' ')
