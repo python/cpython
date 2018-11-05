@@ -1441,7 +1441,7 @@ class LexicalHandlerTest(unittest.TestCase):
                              self.comments[i])
 
 
-class CDATAHandlerTest():
+class CDATAHandlerTest(unittest.TestCase):
     """This is implemented as a separate class since CDATA sections in XML
     cannot appear within elements defined within a DTD. Hence this test does
     not use a DTD."""
@@ -1455,10 +1455,10 @@ class CDATAHandlerTest():
         self.test_data = StringIO()
         self.test_data.write('<root_doc>\n')
         self.test_data.write('<some_pcdata>\n')
-        self.test_data.write('{}\n'.format(self.specified_chars[0]))
+        self.test_data.write('{}\n'.format(self.specified_chars[0][0]))
         self.test_data.write('</some_pcdata>\n')
         self.test_data.write('<some_cdata>\n')
-        self.test_data.write('{}\n'.format(self.specified_chars[1]))
+        self.test_data.write('<![CDATA[{}]]>\n'.format(self.specified_chars[1][0]))
         self.test_data.write('</some_cdata>\n')
         self.test_data.write('</root_doc>\n')
         self.test_data.seek(0)
@@ -1485,10 +1485,11 @@ class CDATAHandlerTest():
                 self.test_harness = test_harness
 
             def characters(self, content):
-                t = self.specified_chars[self.char_index]
-                self.test_harness.assertEqual(t[0], content)
-                self.asertEqual(t[1], self.test_harness.in_cdata)
-                self.test_harness.char_index += 1
+                if content != '\n':
+                    t = self.test_harness.specified_chars[self.test_harness.char_index]
+                    self.test_harness.assertEqual(t[0], content)
+                    self.test_harness.assertEqual(t[1], self.test_harness.in_cdata)
+                    self.test_harness.char_index += 1
 
         self.parser = create_parser()
         self.parser.setContentHandler(TestCharHandler(self))
