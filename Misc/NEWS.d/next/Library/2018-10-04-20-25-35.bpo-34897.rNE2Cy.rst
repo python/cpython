@@ -1,4 +1,2 @@
-Fix Lib/distutils/ccompiler.py def set_executables() so that when
-the value to be assigned is equivalent to NULL or len(value) = 0
-set to None
+Fix Lib/test/support/__init__.py so that an assignment of "" is ignored
 patch by aixtools
