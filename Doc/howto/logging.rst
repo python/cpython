@@ -750,9 +750,9 @@ the new dictionary-based approach:
         level: DEBUG
         handlers: [console]
         propagate: no
-      root:
-        level: DEBUG
-        handlers: [console]
+    root:
+      level: DEBUG
+      handlers: [console]
 
 For more information about logging using a dictionary, see
 :ref:`logging-config-api`.
@@ -971,7 +971,7 @@ provided:
 
 The :class:`NullHandler`, :class:`StreamHandler` and :class:`FileHandler`
 classes are defined in the core logging package. The other handlers are
-defined in a sub- module, :mod:`logging.handlers`. (There is also another
+defined in a sub-module, :mod:`logging.handlers`. (There is also another
 sub-module, :mod:`logging.config`, for configuration functionality.)
 
 Logged messages are formatted for presentation through instances of the

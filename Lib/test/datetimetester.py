@@ -13,6 +13,7 @@ import sys
 import os
 import pickle
 import random
+import re
 import struct
 import unittest
 
@@ -302,6 +303,8 @@ class TestTimeZone(unittest.TestCase):
         self.assertEqual('UTC+09:30', timezone(9.5 * HOUR).tzname(None))
         self.assertEqual('UTC-00:01', timezone(timedelta(minutes=-1)).tzname(None))
         self.assertEqual('XYZ', timezone(-5 * HOUR, 'XYZ').tzname(None))
+        # bpo-34482: Check that surrogates are handled properly.
+        self.assertEqual('\ud800', timezone(ZERO, '\ud800').tzname(None))
 
         # Sub-minute offsets:
         self.assertEqual('UTC+01:06:40', timezone(timedelta(0, 4000)).tzname(None))
@@ -1307,6 +1310,12 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             except ValueError:
                 pass
 
+        # bpo-34482: Check that surrogates don't cause a crash.
+        try:
+            t.strftime('%y\ud800%m')
+        except UnicodeEncodeError:
+            pass
+
         #check that this standard extension works
         t.strftime("%f")
 
@@ -1667,6 +1676,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         # Test that fromisoformat() fails on invalid values
         bad_strs = [
             '',                 # Empty string
+            '\ud800',           # bpo-34454: Surrogate code point
             '009-03-04',        # Not 10 characters
             '123456789',        # Not a date
             '200a-12-04',       # Invalid character in year
@@ -1675,6 +1685,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '2009-01-32',       # Invalid day
             '2009-02-29',       # Invalid leap day
             '20090228',         # Valid ISO8601 output not from isoformat()
+            '2009\ud80002\ud80028',     # Separators are surrogate codepoints
         ]
 
         for bad_str in bad_strs:
@@ -1744,6 +1755,9 @@ class TestDateTime(TestDate):
         self.assertEqual(t.isoformat('T'), "0001-02-03T04:05:01.000123")
         self.assertEqual(t.isoformat(' '), "0001-02-03 04:05:01.000123")
         self.assertEqual(t.isoformat('\x00'), "0001-02-03\x0004:05:01.000123")
+        # bpo-34482: Check that surrogates are handled properly.
+        self.assertEqual(t.isoformat('\ud800'),
+                         "0001-02-03\ud80004:05:01.000123")
         self.assertEqual(t.isoformat(timespec='hours'), "0001-02-03T04")
         self.assertEqual(t.isoformat(timespec='minutes'), "0001-02-03T04:05")
         self.assertEqual(t.isoformat(timespec='seconds'), "0001-02-03T04:05:01")
@@ -1752,6 +1766,8 @@ class TestDateTime(TestDate):
         self.assertEqual(t.isoformat(timespec='auto'), "0001-02-03T04:05:01.000123")
         self.assertEqual(t.isoformat(sep=' ', timespec='minutes'), "0001-02-03 04:05")
         self.assertRaises(ValueError, t.isoformat, timespec='foo')
+        # bpo-34482: Check that surrogates are handled properly.
+        self.assertRaises(ValueError, t.isoformat, timespec='\ud800')
         # str is ISO format with the separator forced to a blank.
         self.assertEqual(str(t), "0001-02-03 04:05:01.000123")
 
@@ -2283,6 +2299,19 @@ class TestDateTime(TestDate):
         self.assertIs(type(expected), self.theclass)
         self.assertIs(type(got), self.theclass)
 
+        # bpo-34482: Check that surrogates are handled properly.
+        inputs = [
+            ('2004-12-01\ud80013:02:47.197', '%Y-%m-%d\ud800%H:%M:%S.%f'),
+            ('2004\ud80012-01 13:02:47.197', '%Y\ud800%m-%d %H:%M:%S.%f'),
+            ('2004-12-01 13:02\ud80047.197', '%Y-%m-%d %H:%M\ud800%S.%f'),
+        ]
+        for string, format in inputs:
+            with self.subTest(string=string, format=format):
+                expected = _strptime._strptime_datetime(self.theclass, string,
+                                                        format)
+                got = self.theclass.strptime(string, format)
+                self.assertEqual(expected, got)
+
         strptime = self.theclass.strptime
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
         self.assertEqual(strptime("-0002", "%z").utcoffset(), -2 * MINUTE)
@@ -2349,6 +2378,12 @@ class TestDateTime(TestDate):
             tz = timezone(-timedelta(hours=2, seconds=s, microseconds=us))
             t = t.replace(tzinfo=tz)
             self.assertEqual(t.strftime("%z"), "-0200" + z)
+
+        # bpo-34482: Check that surrogates don't cause a crash.
+        try:
+            t.strftime('%y\ud800%m %H\ud800%M')
+        except UnicodeEncodeError:
+            pass
 
     def test_extract(self):
         dt = self.theclass(2002, 3, 4, 18, 45, 3, 1234)
@@ -2587,7 +2622,8 @@ class TestDateTime(TestDate):
             ' ', 'T', '\u007f',     # 1-bit widths
             '\u0080', 'ʁ',          # 2-bit widths
             'ᛇ', '時',               # 3-bit widths
-            '🐍'                     # 4-bit widths
+            '🐍',                    # 4-bit widths
+            '\ud800',               # bpo-34454: Surrogate code point
         ]
 
         for sep in separators:
@@ -2639,6 +2675,7 @@ class TestDateTime(TestDate):
         # Test that fromisoformat() fails on invalid values
         bad_strs = [
             '',                             # Empty string
+            '\ud800',                       # bpo-34454: Surrogate code point
             '2009.04-19T03',                # Wrong first separator
             '2009-04.19T03',                # Wrong second separator
             '2009-04-19T0a',                # Invalid hours
@@ -2652,6 +2689,8 @@ class TestDateTime(TestDate):
             '2009-04-19T03:15:45.123456+24:30',    # Invalid time zone offset
             '2009-04-19T03:15:45.123456-24:30',    # Invalid negative offset
             '2009-04-10ᛇᛇᛇᛇᛇ12:15',         # Too many unicode separators
+            '2009-04\ud80010T12:15',        # Surrogate char in date
+            '2009-04-10T12\ud80015',        # Surrogate char in time
             '2009-04-19T1',                 # Incomplete hours
             '2009-04-19T12:3',              # Incomplete minutes
             '2009-04-19T12:30:4',           # Incomplete seconds
@@ -2669,6 +2708,14 @@ class TestDateTime(TestDate):
             with self.subTest(bad_str=bad_str):
                 with self.assertRaises(ValueError):
                     self.theclass.fromisoformat(bad_str)
+
+    def test_fromisoformat_fails_surrogate(self):
+        # Test that when fromisoformat() fails with a surrogate character as
+        # the separator, the error message contains the original string
+        dtstr = "2018-01-03\ud80001:0113"
+
+        with self.assertRaisesRegex(ValueError, re.escape(repr(dtstr))):
+            self.theclass.fromisoformat(dtstr)
 
     def test_fromisoformat_utc(self):
         dt_str = '2014-04-19T13:21:13+00:00'
@@ -2863,6 +2910,8 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.isoformat(timespec='microseconds'), "12:34:56.123456")
         self.assertEqual(t.isoformat(timespec='auto'), "12:34:56.123456")
         self.assertRaises(ValueError, t.isoformat, timespec='monkey')
+        # bpo-34482: Check that surrogates are handled properly.
+        self.assertRaises(ValueError, t.isoformat, timespec='\ud800')
 
         t = self.theclass(hour=12, minute=34, second=56, microsecond=999500)
         self.assertEqual(t.isoformat(timespec='milliseconds'), "12:34:56.999")
@@ -2912,6 +2961,12 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime('%H %M %S %f'), "01 02 03 000004")
         # A naive object replaces %z and %Z with empty strings.
         self.assertEqual(t.strftime("'%z' '%Z'"), "'' ''")
+
+        # bpo-34482: Check that surrogates don't cause a crash.
+        try:
+            t.strftime('%H\ud800%M')
+        except UnicodeEncodeError:
+            pass
 
     def test_format(self):
         t = self.theclass(1, 2, 3, 4)
@@ -3521,6 +3576,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
     def test_fromisoformat_fails(self):
         bad_strs = [
             '',                         # Empty string
+            '12\ud80000',               # Invalid separator - surrogate char
             '12:',                      # Ends on a separator
             '12:30:',                   # Ends on a separator
             '12:30:15.',                # Ends on a separator

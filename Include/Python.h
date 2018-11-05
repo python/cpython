@@ -32,7 +32,7 @@
 #include <errno.h>
 #endif
 #include <stdlib.h>
-#ifdef HAVE_UNISTD_H
+#ifndef MS_WINDOWS
 #include <unistd.h>
 #endif
 #ifdef HAVE_CRYPT_H
@@ -52,8 +52,6 @@
 
 #include "pyport.h"
 #include "pymacro.h"
-
-#include "pyatomic.h"
 
 /* Debug-mode build with pymalloc implies PYMALLOC_DEBUG.
  *  PYMALLOC_DEBUG is in error if pymalloc is not in use.
@@ -137,5 +135,6 @@
 #include "dtoa.h"
 #include "fileutils.h"
 #include "pyfpe.h"
+#include "tracemalloc.h"
 
 #endif /* !Py_PYTHON_H */

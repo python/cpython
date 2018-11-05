@@ -13,10 +13,14 @@ Glossary
       examples which can be executed interactively in the interpreter.
 
    ``...``
-      The default Python prompt of the interactive shell when entering code for
-      an indented code block, when within a pair of matching left and right
-      delimiters (parentheses, square brackets, curly braces or triple quotes),
-      or after specifying a decorator.
+      Can refer to:
+
+      * The default Python prompt of the interactive shell when entering code for
+        an indented code block, when within a pair of matching left and right
+        delimiters (parentheses, square brackets, curly braces or triple quotes),
+        or after specifying a decorator.
+
+      * The :const:`Ellipsis` built-in constant.
 
    2to3
       A tool that tries to convert Python 2.x code to Python 3.x code by
@@ -200,7 +204,7 @@ Glossary
       ``int(3.15)`` converts the floating point number to the integer ``3``, but
       in ``3+4.5``, each argument is of a different type (one int, one float),
       and both must be converted to the same type before they can be added or it
-      will raise a ``TypeError``.  Without coercion, all arguments of even
+      will raise a :exc:`TypeError`.  Without coercion, all arguments of even
       compatible types would have to be normalized to the same value by the
       programmer, e.g., ``float(3)+4.5`` rather than just ``3+4.5``.
 
@@ -1012,7 +1016,7 @@ Glossary
 
    struct sequence
       A tuple with named elements. Struct sequences expose an interface similar
-      to :term:`named tuple` in that elements can either be accessed either by
+      to :term:`named tuple` in that elements can be accessed either by
       index or as an attribute. However, they do not have any of the named tuple
       methods like :meth:`~collections.somenamedtuple._make` or
       :meth:`~collections.somenamedtuple._asdict`. Examples of struct sequences

@@ -118,6 +118,8 @@ class UUID:
                     uuid_generate_time_safe(3).
     """
 
+    __slots__ = ('int', 'is_safe')
+
     def __init__(self, hex=None, bytes=None, bytes_le=None, fields=None,
                        int=None, version=None,
                        *, is_safe=SafeUUID.unknown):
@@ -201,8 +203,23 @@ class UUID:
             # Set the version number.
             int &= ~(0xf000 << 64)
             int |= version << 76
-        self.__dict__['int'] = int
-        self.__dict__['is_safe'] = is_safe
+        object.__setattr__(self, 'int', int)
+        object.__setattr__(self, 'is_safe', is_safe)
+
+    def __getstate__(self):
+        d = {'int': self.int}
+        if self.is_safe != SafeUUID.unknown:
+            # is_safe is a SafeUUID instance.  Return just its value, so that
+            # it can be un-pickled in older Python versions without SafeUUID.
+            d['is_safe'] = self.is_safe.value
+        return d
+
+    def __setstate__(self, state):
+        object.__setattr__(self, 'int', state['int'])
+        # is_safe was added in 3.7; it is also omitted when it is "unknown"
+        object.__setattr__(self, 'is_safe',
+                           SafeUUID(state['is_safe'])
+                           if 'is_safe' in state else SafeUUID.unknown)
 
     def __eq__(self, other):
         if isinstance(other, UUID):

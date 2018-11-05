@@ -1,7 +1,7 @@
 /* Generator object implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_state.h"
 #include "frameobject.h"
 #include "structmember.h"
 #include "opcode.h"
@@ -151,7 +151,7 @@ gen_dealloc(PyGenObject *gen)
 static PyObject *
 gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     PyFrameObject *f = gen->gi_frame;
     PyObject *result;
 
@@ -1128,6 +1128,9 @@ compute_cr_origin(int origin_depth)
 
     /* Now collect them */
     PyObject *cr_origin = PyTuple_New(frame_count);
+    if (cr_origin == NULL) {
+        return NULL;
+    }
     frame = PyEval_GetFrame();
     for (int i = 0; i < frame_count; ++i) {
         PyObject *frameinfo = Py_BuildValue(
@@ -1154,7 +1157,7 @@ PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
         return NULL;
     }
 
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     int origin_depth = tstate->coroutine_origin_tracking_depth;
 
     if (origin_depth == 0) {
@@ -1264,7 +1267,7 @@ async_gen_init_hooks(PyAsyncGenObject *o)
 
     o->ag_hooks_inited = 1;
 
-    tstate = PyThreadState_GET();
+    tstate = _PyThreadState_GET();
 
     finalizer = tstate->async_gen_finalizer;
     if (finalizer) {

@@ -15,9 +15,12 @@ Data members:
 */
 
 #include "Python.h"
-#include "internal/pystate.h"
 #include "code.h"
 #include "frameobject.h"
+#include "pycore_lifecycle.h"
+#include "pycore_mem.h"
+#include "pycore_pathconfig.h"
+#include "pycore_state.h"
 #include "pythread.h"
 
 #include "osdefs.h"
@@ -148,16 +151,8 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         return NULL;
     }
 
-    PyObject *fromlist = Py_BuildValue("(s)", attrname);
-    if (fromlist == NULL) {
-        Py_DECREF(modulepath);
-        PyMem_RawFree(envar);
-        return NULL;
-    }
-    PyObject *module = PyImport_ImportModuleLevelObject(
-        modulepath, NULL, NULL, fromlist, 0);
+    PyObject *module = PyImport_Import(modulepath);
     Py_DECREF(modulepath);
-    Py_DECREF(fromlist);
 
     if (module == NULL) {
         goto error;
@@ -335,7 +330,7 @@ PyDoc_STRVAR(excepthook_doc,
 static PyObject *
 sys_exc_info(PyObject *self, PyObject *noargs)
 {
-    _PyErr_StackItem *err_info = _PyErr_GetTopmostException(PyThreadState_GET());
+    _PyErr_StackItem *err_info = _PyErr_GetTopmostException(_PyThreadState_GET());
     return Py_BuildValue(
         "(OOO)",
         err_info->exc_type != NULL ? err_info->exc_type : Py_None,
@@ -389,11 +384,9 @@ implementation."
 static PyObject *
 sys_getfilesystemencoding(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    if (Py_FileSystemDefaultEncoding)
-        return PyUnicode_FromString(Py_FileSystemDefaultEncoding);
-    PyErr_SetString(PyExc_RuntimeError,
-                    "filesystem encoding is not initialized");
-    return NULL;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    const _PyCoreConfig *config = &interp->core_config;
+    return PyUnicode_FromString(config->filesystem_encoding);
 }
 
 PyDoc_STRVAR(getfilesystemencoding_doc,
@@ -406,11 +399,9 @@ operating system filenames."
 static PyObject *
 sys_getfilesystemencodeerrors(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    if (Py_FileSystemDefaultEncodeErrors)
-        return PyUnicode_FromString(Py_FileSystemDefaultEncodeErrors);
-    PyErr_SetString(PyExc_RuntimeError,
-        "filesystem encoding is not initialized");
-    return NULL;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    const _PyCoreConfig *config = &interp->core_config;
+    return PyUnicode_FromString(config->filesystem_errors);
 }
 
 PyDoc_STRVAR(getfilesystemencodeerrors_doc,
@@ -568,7 +559,7 @@ function call.  See the debugger chapter in the library manual."
 static PyObject *
 sys_gettrace(PyObject *self, PyObject *args)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *temp = tstate->c_traceobj;
 
     if (temp == NULL)
@@ -606,7 +597,7 @@ and return.  See the profiler chapter in the library manual."
 static PyObject *
 sys_getprofile(PyObject *self, PyObject *args)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *temp = tstate->c_profileobj;
 
     if (temp == NULL)
@@ -725,7 +716,7 @@ sys_setrecursionlimit(PyObject *self, PyObject *args)
        the new low-water mark. Otherwise it may not be possible anymore to
        reset the overflowed flag to 0. */
     mark = _Py_RecursionLimitLowerWaterMark(new_limit);
-    tstate = PyThreadState_GET();
+    tstate = _PyThreadState_GET();
     if (tstate->recursion_depth >= mark) {
         PyErr_Format(PyExc_RecursionError,
                      "cannot set the recursion limit to %i at "
@@ -1150,8 +1141,30 @@ environment variable before launching Python."
 static PyObject *
 sys_enablelegacywindowsfsencoding(PyObject *self)
 {
-    Py_FileSystemDefaultEncoding = "mbcs";
-    Py_FileSystemDefaultEncodeErrors = "replace";
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    _PyCoreConfig *config = &interp->core_config;
+
+    /* Set the filesystem encoding to mbcs/replace (PEP 529) */
+    char *encoding = _PyMem_RawStrdup("mbcs");
+    char *errors = _PyMem_RawStrdup("replace");
+    if (encoding == NULL || errors == NULL) {
+        PyMem_Free(encoding);
+        PyMem_Free(errors);
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    PyMem_RawFree(config->filesystem_encoding);
+    config->filesystem_encoding = encoding;
+    PyMem_RawFree(config->filesystem_errors);
+    config->filesystem_errors = errors;
+
+    if (_Py_SetFileSystemEncoding(config->filesystem_encoding,
+                                  config->filesystem_errors) < 0) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 }
 
@@ -1322,9 +1335,9 @@ size."
 static PyObject *
 sys_getcounts(PyObject *self)
 {
-    extern PyObject *get_counts(void);
+    extern PyObject *_Py_get_counts(void);
 
-    return get_counts();
+    return _Py_get_counts();
 }
 #endif
 
@@ -1343,7 +1356,7 @@ purposes only."
 static PyObject *
 sys_getframe(PyObject *self, PyObject *args)
 {
-    PyFrameObject *f = PyThreadState_GET()->frame;
+    PyFrameObject *f = _PyThreadState_GET()->frame;
     int depth = -1;
 
     if (!PyArg_ParseTuple(args, "|i:_getframe", &depth))
@@ -1726,7 +1739,7 @@ static int
 _PySys_ReadPreInitOptions(void)
 {
     /* Rerun the add commands with the actual sys module available */
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
         /* Still don't have a thread state, so something is wrong! */
         return -1;
@@ -1777,7 +1790,7 @@ get_warnoptions(void)
 void
 PySys_ResetWarnOptions(void)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
         _clear_preinit_entries(&_preinit_warnoptions);
         return;
@@ -1789,7 +1802,7 @@ PySys_ResetWarnOptions(void)
     PyList_SetSlice(warnoptions, 0, PyList_GET_SIZE(warnoptions), NULL);
 }
 
-int
+static int
 _PySys_AddWarnOptionWithError(PyObject *option)
 {
     PyObject *warnoptions = get_warnoptions();
@@ -1805,13 +1818,18 @@ _PySys_AddWarnOptionWithError(PyObject *option)
 void
 PySys_AddWarnOptionUnicode(PyObject *option)
 {
-    (void)_PySys_AddWarnOptionWithError(option);
+    if (_PySys_AddWarnOptionWithError(option) < 0) {
+        /* No return value, therefore clear error state if possible */
+        if (_PyThreadState_UncheckedGet()) {
+            PyErr_Clear();
+        }
+    }
 }
 
 void
 PySys_AddWarnOption(const wchar_t *s)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
         _append_preinit_entry(&_preinit_warnoptions, s);
         return;
@@ -1859,7 +1877,7 @@ get_xoptions(void)
     return xoptions;
 }
 
-int
+static int
 _PySys_AddXOptionWithError(const wchar_t *s)
 {
     PyObject *name = NULL, *value = NULL;
@@ -1898,7 +1916,7 @@ error:
 void
 PySys_AddXOption(const wchar_t *s)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
         _append_preinit_entry(&_preinit_xoptions, s);
         return;
@@ -2058,7 +2076,7 @@ make_flags(void)
 {
     int pos = 0;
     PyObject *seq;
-    _PyCoreConfig *core_config = &_PyGILState_GetInterpreterStateUnsafe()->core_config;
+    const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
 
     seq = PyStructSequence_New(&FlagsType);
     if (seq == NULL)
@@ -2067,23 +2085,23 @@ make_flags(void)
 #define SetFlag(flag) \
     PyStructSequence_SET_ITEM(seq, pos++, PyLong_FromLong(flag))
 
-    SetFlag(Py_DebugFlag);
-    SetFlag(Py_InspectFlag);
-    SetFlag(Py_InteractiveFlag);
-    SetFlag(Py_OptimizeFlag);
-    SetFlag(Py_DontWriteBytecodeFlag);
-    SetFlag(Py_NoUserSiteDirectory);
-    SetFlag(Py_NoSiteFlag);
-    SetFlag(Py_IgnoreEnvironmentFlag);
-    SetFlag(Py_VerboseFlag);
+    SetFlag(config->parser_debug);
+    SetFlag(config->inspect);
+    SetFlag(config->interactive);
+    SetFlag(config->optimization_level);
+    SetFlag(!config->write_bytecode);
+    SetFlag(!config->user_site_directory);
+    SetFlag(!config->site_import);
+    SetFlag(!config->use_environment);
+    SetFlag(config->verbose);
     /* SetFlag(saw_unbuffered_flag); */
     /* SetFlag(skipfirstline); */
-    SetFlag(Py_BytesWarningFlag);
-    SetFlag(Py_QuietFlag);
-    SetFlag(Py_HashRandomizationFlag);
-    SetFlag(Py_IsolatedFlag);
-    PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(core_config->dev_mode));
-    SetFlag(Py_UTF8Mode);
+    SetFlag(config->bytes_warning);
+    SetFlag(config->quiet);
+    SetFlag(config->use_hash_seed == 0 || config->hash_seed != 0);
+    SetFlag(config->isolated);
+    PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(config->dev_mode));
+    SetFlag(config->utf8_mode);
 #undef SetFlag
 
     if (PyErr_Occurred()) {
@@ -2456,8 +2474,10 @@ err_occurred:
     } while (0)
 
 int
-_PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config)
+_PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
 {
+    const _PyCoreConfig *core_config = &interp->core_config;
+    const _PyMainInterpreterConfig *config = &interp->config;
     int res;
 
     /* _PyMainInterpreterConfig_Read() must set all these variables */
@@ -2505,7 +2525,7 @@ _PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config)
     }
 
     SET_SYS_FROM_STRING_INT_RESULT("dont_write_bytecode",
-                         PyBool_FromLong(Py_DontWriteBytecodeFlag));
+                         PyBool_FromLong(!core_config->write_bytecode));
 
     if (get_warnoptions() == NULL)
         return -1;

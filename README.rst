@@ -9,6 +9,10 @@ This is Python version 3.8.0 alpha 0
    :alt: CPython build status on Appveyor
    :target: https://ci.appveyor.com/project/python/cpython/branch/master
 
+.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=master
+   :alt: CPython build status on Azure DevOps
+   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=master
+
 .. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython
@@ -16,7 +20,7 @@ This is Python version 3.8.0 alpha 0
 .. image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
    :alt: Python Zulip chat
    :target: https://python.zulipchat.com
-  
+
 
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
 2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
@@ -193,6 +197,8 @@ If the failure persists and appears to be a problem with Python rather than
 your environment, you can `file a bug report <https://bugs.python.org>`_ and
 include relevant output from that command to show the issue.
 
+See `Running & Writing Tests <https://devguide.python.org/runtests/>`_
+for more on running tests.
 
 Installing multiple versions
 ----------------------------

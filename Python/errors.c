@@ -2,7 +2,7 @@
 /* Error handling */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_state.h"
 
 #ifndef __STDC__
 #ifndef MS_WINDOWS
@@ -28,7 +28,7 @@ _Py_IDENTIFIER(stderr);
 void
 PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *oldtype, *oldvalue, *oldtraceback;
 
     if (traceback != NULL && !PyTraceBack_Check(traceback)) {
@@ -82,7 +82,7 @@ _PyErr_CreateException(PyObject *exception, PyObject *value)
 void
 PyErr_SetObject(PyObject *exception, PyObject *value)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *exc_value;
     PyObject *tb = NULL;
 
@@ -110,6 +110,7 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
             fixed_value = _PyErr_CreateException(exception, value);
             Py_XDECREF(value);
             if (fixed_value == NULL) {
+                Py_DECREF(exc_value);
                 return;
             }
 
@@ -174,7 +175,7 @@ PyErr_SetString(PyObject *exception, const char *string)
 PyObject* _Py_HOT_FUNCTION
 PyErr_Occurred(void)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     return tstate == NULL ? NULL : tstate->curexc_type;
 }
 
@@ -333,7 +334,7 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 void
 PyErr_Fetch(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
 
     *p_type = tstate->curexc_type;
     *p_value = tstate->curexc_value;
@@ -353,7 +354,7 @@ PyErr_Clear(void)
 void
 PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
 
     _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
     *p_type = exc_info->exc_type;
@@ -370,7 +371,7 @@ void
 PyErr_SetExcInfo(PyObject *p_type, PyObject *p_value, PyObject *p_traceback)
 {
     PyObject *oldtype, *oldvalue, *oldtraceback;
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
 
     oldtype = tstate->exc_info->exc_type;
     oldvalue = tstate->exc_info->exc_value;

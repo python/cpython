@@ -1,0 +1,2 @@
+Raise a ``TypeError`` instead of crashing if a ``collections.deque`` subclass
+returns a non-deque from ``__new__``. Patch by Oren Milman.

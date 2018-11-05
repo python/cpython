@@ -294,8 +294,9 @@ math_dist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *p;
     PyObject *q;
 
-    if (!_PyArg_ParseStack(args, nargs, "O!O!:dist",
-        &PyTuple_Type, &p, &PyTuple_Type, &q)) {
+    if (!_PyArg_UnpackStack(args, nargs, "dist",
+        2, 2,
+        &p, &q)) {
         goto exit;
     }
     return_value = math_dist_impl(module, p, q);
@@ -522,4 +523,4 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d936137c1189b89b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=239c51a5acefbafb input=a9049054013a1b77]*/

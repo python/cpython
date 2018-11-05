@@ -4,9 +4,12 @@
 
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
-#include "internal/context.h"
-#include "internal/hamt.h"
-#include "internal/pystate.h"
+#include "pycore_context.h"
+#include "pycore_hamt.h"
+#include "pycore_lifecycle.h"
+#include "pycore_mem.h"
+#include "pycore_pathconfig.h"
+#include "pycore_state.h"
 #include "grammar.h"
 #include "node.h"
 #include "token.h"
@@ -61,20 +64,6 @@ static _PyInitError initsigs(void);
 static void call_py_exitfuncs(PyInterpreterState *);
 static void wait_for_thread_shutdown(void);
 static void call_ll_exitfuncs(void);
-extern int _PyUnicode_Init(void);
-extern int _PyStructSequence_Init(void);
-extern void _PyUnicode_Fini(void);
-extern int _PyLong_Init(void);
-extern void PyLong_Fini(void);
-extern _PyInitError _PyFaulthandler_Init(int enable);
-extern void _PyFaulthandler_Fini(void);
-extern void _PyHash_Fini(void);
-extern int _PyTraceMalloc_Init(int enable);
-extern int _PyTraceMalloc_Fini(void);
-extern void _Py_ReadyTypes(void);
-
-extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
-extern void _PyGILState_Fini(void);
 
 _PyRuntimeState _PyRuntime = _PyRuntimeState_INIT;
 
@@ -138,66 +127,6 @@ Py_IsInitialized(void)
     return _PyRuntime.initialized;
 }
 
-/* Helper to allow an embedding application to override the normal
- * mechanism that attempts to figure out an appropriate IO encoding
- */
-
-static char *_Py_StandardStreamEncoding = NULL;
-static char *_Py_StandardStreamErrors = NULL;
-
-int
-Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
-{
-    if (Py_IsInitialized()) {
-        /* This is too late to have any effect */
-        return -1;
-    }
-
-    int res = 0;
-
-    /* Py_SetStandardStreamEncoding() can be called before Py_Initialize(),
-       but Py_Initialize() can change the allocator. Use a known allocator
-       to be able to release the memory later. */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    /* Can't call PyErr_NoMemory() on errors, as Python hasn't been
-     * initialised yet.
-     *
-     * However, the raw memory allocators are initialised appropriately
-     * as C static variables, so _PyMem_RawStrdup is OK even though
-     * Py_Initialize hasn't been called yet.
-     */
-    if (encoding) {
-        _Py_StandardStreamEncoding = _PyMem_RawStrdup(encoding);
-        if (!_Py_StandardStreamEncoding) {
-            res = -2;
-            goto done;
-        }
-    }
-    if (errors) {
-        _Py_StandardStreamErrors = _PyMem_RawStrdup(errors);
-        if (!_Py_StandardStreamErrors) {
-            if (_Py_StandardStreamEncoding) {
-                PyMem_RawFree(_Py_StandardStreamEncoding);
-            }
-            res = -3;
-            goto done;
-        }
-    }
-#ifdef MS_WINDOWS
-    if (_Py_StandardStreamEncoding) {
-        /* Overriding the stream encoding implies legacy streams */
-        Py_LegacyWindowsStdioFlag = 1;
-    }
-#endif
-
-done:
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    return res;
-}
-
 
 /* Global initializations.  Can be undone by Py_FinalizeEx().  Don't
    call this twice without an intervening Py_FinalizeEx() call.  When
@@ -244,23 +173,6 @@ error:
     return NULL;
 }
 
-static char*
-get_locale_encoding(void)
-{
-#if defined(HAVE_LANGINFO_H) && defined(CODESET)
-    char* codeset = nl_langinfo(CODESET);
-    if (!codeset || codeset[0] == '\0') {
-        PyErr_SetString(PyExc_ValueError, "CODESET is not set or empty");
-        return NULL;
-    }
-    return get_codec_name(codeset);
-#elif defined(__ANDROID__)
-    return get_codec_name("UTF-8");
-#else
-    PyErr_SetNone(PyExc_NotImplementedError);
-    return NULL;
-#endif
-}
 
 static _PyInitError
 initimport(PyInterpreterState *interp, PyObject *sysmod)
@@ -268,7 +180,6 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     PyObject *importlib;
     PyObject *impmod;
     PyObject *value;
-    _PyInitError err;
 
     /* Import _importlib through its frozen version, _frozen_importlib. */
     if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
@@ -310,11 +221,6 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     Py_DECREF(value);
     Py_DECREF(impmod);
 
-    err = _PyImportZip_Init();
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
     return _Py_INIT_OK();
 }
 
@@ -329,7 +235,7 @@ initexternalimport(PyInterpreterState *interp)
         return _Py_INIT_ERR("external importer setup failed");
     }
     Py_DECREF(value);
-    return _Py_INIT_OK();
+    return _PyImportZip_Init();
 }
 
 /* Helper functions to better handle the legacy C locale
@@ -378,10 +284,8 @@ static const char *_C_LOCALE_WARNING =
 static void
 _emit_stderr_warning_for_legacy_locale(const _PyCoreConfig *core_config)
 {
-    if (core_config->coerce_c_locale_warn) {
-        if (_Py_LegacyLocaleDetected()) {
-            fprintf(stderr, "%s", _C_LOCALE_WARNING);
-        }
+    if (core_config->coerce_c_locale_warn && _Py_LegacyLocaleDetected()) {
+        PySys_FormatStderr("%s", _C_LOCALE_WARNING);
     }
 }
 
@@ -396,30 +300,19 @@ static _LocaleCoercionTarget _TARGET_LOCALES[] = {
     {NULL}
 };
 
-static const char *
-get_default_standard_stream_error_handler(void)
+
+int
+_Py_IsLocaleCoercionTarget(const char *ctype_loc)
 {
-    const char *ctype_loc = setlocale(LC_CTYPE, NULL);
-    if (ctype_loc != NULL) {
-        /* "surrogateescape" is the default in the legacy C locale */
-        if (strcmp(ctype_loc, "C") == 0) {
-            return "surrogateescape";
+    const _LocaleCoercionTarget *target = NULL;
+    for (target = _TARGET_LOCALES; target->locale_name; target++) {
+        if (strcmp(ctype_loc, target->locale_name) == 0) {
+            return 1;
         }
-
-#ifdef PY_COERCE_C_LOCALE
-        /* "surrogateescape" is the default in locale coercion target locales */
-        const _LocaleCoercionTarget *target = NULL;
-        for (target = _TARGET_LOCALES; target->locale_name; target++) {
-            if (strcmp(ctype_loc, target->locale_name) == 0) {
-                return "surrogateescape";
-            }
-        }
-#endif
-   }
-
-   /* Otherwise return NULL to request the typical default error handler */
-   return NULL;
+    }
+    return 0;
 }
+
 
 #ifdef PY_COERCE_C_LOCALE
 static const char C_LOCALE_COERCION_WARNING[] =
@@ -427,7 +320,7 @@ static const char C_LOCALE_COERCION_WARNING[] =
     "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behavior).\n";
 
 static void
-_coerce_default_locale_settings(const _PyCoreConfig *config, const _LocaleCoercionTarget *target)
+_coerce_default_locale_settings(int warn, const _LocaleCoercionTarget *target)
 {
     const char *newloc = target->locale_name;
 
@@ -440,7 +333,7 @@ _coerce_default_locale_settings(const _PyCoreConfig *config, const _LocaleCoerci
                 "Error setting LC_CTYPE, skipping C locale coercion\n");
         return;
     }
-    if (config->coerce_c_locale_warn) {
+    if (warn) {
         fprintf(stderr, C_LOCALE_COERCION_WARNING, newloc);
     }
 
@@ -450,9 +343,16 @@ _coerce_default_locale_settings(const _PyCoreConfig *config, const _LocaleCoerci
 #endif
 
 void
-_Py_CoerceLegacyLocale(const _PyCoreConfig *config)
+_Py_CoerceLegacyLocale(int warn)
 {
 #ifdef PY_COERCE_C_LOCALE
+    char *oldloc = NULL;
+
+    oldloc = _PyMem_RawStrdup(setlocale(LC_CTYPE, NULL));
+    if (oldloc == NULL) {
+        return;
+    }
+
     const char *locale_override = getenv("LC_ALL");
     if (locale_override == NULL || *locale_override == '\0') {
         /* LC_ALL is also not set (or is set to an empty string) */
@@ -473,12 +373,17 @@ defined(HAVE_LANGINFO_H) && defined(CODESET)
                 }
 #endif
                 /* Successfully configured locale, so make it the default */
-                _coerce_default_locale_settings(config, target);
-                return;
+                _coerce_default_locale_settings(warn, target);
+                goto done;
             }
         }
     }
     /* No C locale warning here, as Py_Initialize will emit one later */
+
+    setlocale(LC_CTYPE, oldloc);
+
+done:
+    PyMem_RawFree(oldloc);
 #endif
 }
 
@@ -613,7 +518,7 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
     /* bpo-34008: For backward compatibility reasons, calling Py_Main() after
        Py_Initialize() ignores the new configuration. */
     if (_PyRuntime.core_initialized) {
-        PyThreadState *tstate = PyThreadState_GET();
+        PyThreadState *tstate = _PyThreadState_GET();
         if (!tstate) {
             return _Py_INIT_ERR("failed to read thread state");
         }
@@ -654,14 +559,6 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
      * pair :(
      */
     _PyRuntime.finalizing = NULL;
-
-#ifndef MS_WINDOWS
-    /* Set up the LC_CTYPE locale, so we can obtain
-       the locale's charset without having to switch
-       locales. */
-    _Py_SetLocaleFromEnv(LC_CTYPE);
-    _emit_stderr_warning_for_legacy_locale(core_config);
-#endif
 
     err = _Py_HashRandomization_Init(core_config);
     if (_Py_INIT_FAILED(err)) {
@@ -812,6 +709,9 @@ _Py_InitializeCore(PyInterpreterState **interp_p,
        (and the input configuration is read only). */
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
+    /* Set LC_CTYPE to the user preferred locale */
+    _Py_SetLocaleFromEnv(LC_CTYPE);
+
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     if (_PyCoreConfig_Copy(&config, src_config) >= 0) {
         err = _PyCoreConfig_Read(&config);
@@ -895,7 +795,7 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
         return _Py_INIT_ERR("can't initialize time");
     }
 
-    if (_PySys_EndInit(interp->sysdict, &interp->config) < 0) {
+    if (_PySys_EndInit(interp->sysdict, interp) < 0) {
         return _Py_INIT_ERR("can't finish initializing sys");
     }
 
@@ -956,6 +856,11 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
             return err;
         }
     }
+
+#ifndef MS_WINDOWS
+    _emit_stderr_warning_for_legacy_locale(core_config);
+#endif
+
     return _Py_INIT_OK();
 }
 
@@ -964,7 +869,7 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
 _PyInitError
 _Py_InitializeFromConfig(const _PyCoreConfig *config)
 {
-    PyInterpreterState *interp;
+    PyInterpreterState *interp = NULL;
     _PyInitError err;
     err = _Py_InitializeCore(&interp, config);
     if (_Py_INIT_FAILED(err)) {
@@ -1013,7 +918,7 @@ Py_Initialize(void)
 
 
 #ifdef COUNT_ALLOCS
-extern void dump_counts(FILE*);
+extern void _Py_dump_counts(FILE*);
 #endif
 
 /* Flush stdout and stderr */
@@ -1092,7 +997,7 @@ Py_FinalizeEx(void)
     wait_for_thread_shutdown();
 
     /* Get current thread state and interpreter pointer */
-    tstate = PyThreadState_GET();
+    tstate = _PyThreadState_GET();
     interp = tstate->interp;
 
     /* The interpreter is still entirely intact at this point, and the
@@ -1196,7 +1101,7 @@ Py_FinalizeEx(void)
 
     /* Debugging stuff */
 #ifdef COUNT_ALLOCS
-    dump_counts(stderr);
+    _Py_dump_counts(stderr);
 #endif
     /* dump hash stats */
     _PyHash_Fini();
@@ -1251,11 +1156,7 @@ Py_FinalizeEx(void)
     /* Cleanup Unicode implementation */
     _PyUnicode_Fini();
 
-    /* reset file system default encoding */
-    if (!Py_HasFileSystemDefaultEncoding && Py_FileSystemDefaultEncoding) {
-        PyMem_RawFree((char*)Py_FileSystemDefaultEncoding);
-        Py_FileSystemDefaultEncoding = NULL;
-    }
+    _Py_ClearFileSystemEncoding();
 
     /* XXX Still allocated:
        - various static ad-hoc pointers to interned strings
@@ -1379,7 +1280,7 @@ new_interpreter(PyThreadState **tstate_p)
             goto handle_error;
         Py_INCREF(interp->sysdict);
         PyDict_SetItemString(interp->sysdict, "modules", modules);
-        _PySys_EndInit(interp->sysdict, &interp->config);
+        _PySys_EndInit(interp->sysdict, interp);
     }
 
     bimod = _PyImport_FindBuiltin("builtins", modules);
@@ -1493,7 +1394,7 @@ Py_EndInterpreter(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
 
-    if (tstate != PyThreadState_GET())
+    if (tstate != _PyThreadState_GET())
         Py_FatalError("Py_EndInterpreter: thread is not current");
     if (tstate->frame != NULL)
         Py_FatalError("Py_EndInterpreter: thread still has a frame");
@@ -1564,45 +1465,31 @@ add_main_module(PyInterpreterState *interp)
 static _PyInitError
 initfsencoding(PyInterpreterState *interp)
 {
-    PyObject *codec;
+    _PyCoreConfig *config = &interp->core_config;
 
-#ifdef MS_WINDOWS
-    if (Py_LegacyWindowsFSEncodingFlag) {
-        Py_FileSystemDefaultEncoding = "mbcs";
-        Py_FileSystemDefaultEncodeErrors = "replace";
-    }
-    else {
-        Py_FileSystemDefaultEncoding = "utf-8";
-        Py_FileSystemDefaultEncodeErrors = "surrogatepass";
-    }
-#else
-    if (Py_FileSystemDefaultEncoding == NULL &&
-        interp->core_config.utf8_mode)
-    {
-        Py_FileSystemDefaultEncoding = "utf-8";
-        Py_HasFileSystemDefaultEncoding = 1;
-    }
-    else if (Py_FileSystemDefaultEncoding == NULL) {
-        Py_FileSystemDefaultEncoding = get_locale_encoding();
-        if (Py_FileSystemDefaultEncoding == NULL) {
-            return _Py_INIT_ERR("Unable to get the locale encoding");
-        }
-
-        Py_HasFileSystemDefaultEncoding = 0;
-        interp->fscodec_initialized = 1;
-        return _Py_INIT_OK();
-    }
-#endif
-
-    /* the encoding is mbcs, utf-8 or ascii */
-    codec = _PyCodec_Lookup(Py_FileSystemDefaultEncoding);
-    if (!codec) {
+    char *encoding = get_codec_name(config->filesystem_encoding);
+    if (encoding == NULL) {
         /* Such error can only occurs in critical situations: no more
-         * memory, import a module of the standard library failed,
-         * etc. */
-        return _Py_INIT_ERR("unable to load the file system codec");
+           memory, import a module of the standard library failed, etc. */
+        return _Py_INIT_ERR("failed to get the Python codec "
+                            "of the filesystem encoding");
     }
-    Py_DECREF(codec);
+
+    /* Update the filesystem encoding to the normalized Python codec name.
+       For example, replace "ANSI_X3.4-1968" (locale encoding) with "ascii"
+       (Python codec name). */
+    PyMem_RawFree(config->filesystem_encoding);
+    config->filesystem_encoding = encoding;
+
+    /* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
+       global configuration variables. */
+    if (_Py_SetFileSystemEncoding(config->filesystem_encoding,
+                                  config->filesystem_errors) < 0) {
+        return _Py_INIT_NO_MEMORY();
+    }
+
+    /* PyUnicode can now use the Python codec rather than C implementation
+       for the filesystem encoding */
     interp->fscodec_initialized = 1;
     return _Py_INIT_OK();
 }
@@ -1651,7 +1538,7 @@ is_valid_fd(int fd)
 
 /* returns Py_None if the fd is not valid */
 static PyObject*
-create_stdio(PyObject* io,
+create_stdio(const _PyCoreConfig *config, PyObject* io,
     int fd, int write_mode, const char* name,
     const char* encoding, const char* errors)
 {
@@ -1664,6 +1551,7 @@ create_stdio(PyObject* io,
     _Py_IDENTIFIER(isatty);
     _Py_IDENTIFIER(TextIOWrapper);
     _Py_IDENTIFIER(mode);
+    const int buffered_stdio = config->buffered_stdio;
 
     if (!is_valid_fd(fd))
         Py_RETURN_NONE;
@@ -1673,7 +1561,7 @@ create_stdio(PyObject* io,
        depends on the presence of a read1() method which only exists on
        buffered streams.
     */
-    if (Py_UnbufferedStdioFlag && write_mode)
+    if (!buffered_stdio && write_mode)
         buffering = 0;
     else
         buffering = -1;
@@ -1715,11 +1603,11 @@ create_stdio(PyObject* io,
     Py_DECREF(res);
     if (isatty == -1)
         goto error;
-    if (Py_UnbufferedStdioFlag)
+    if (!buffered_stdio)
         write_through = Py_True;
     else
         write_through = Py_False;
-    if (isatty && !Py_UnbufferedStdioFlag)
+    if (isatty && buffered_stdio)
         line_buffering = Py_True;
     else
         line_buffering = Py_False;
@@ -1781,9 +1669,16 @@ init_sys_streams(PyInterpreterState *interp)
     PyObject *std = NULL;
     int fd;
     PyObject * encoding_attr;
-    char *pythonioencoding = NULL;
-    const char *encoding, *errors;
     _PyInitError res = _Py_INIT_OK();
+    _PyCoreConfig *config = &interp->core_config;
+
+    char *codec_name = get_codec_name(config->stdio_encoding);
+    if (codec_name == NULL) {
+        return _Py_INIT_ERR("failed to get the Python codec name "
+                            "of the stdio encoding");
+    }
+    PyMem_RawFree(config->stdio_encoding);
+    config->stdio_encoding = codec_name;
 
     /* Hack to avoid a nasty recursion issue when Python is invoked
        in verbose mode: pre-import the Latin-1 and UTF-8 codecs */
@@ -1815,47 +1710,15 @@ init_sys_streams(PyInterpreterState *interp)
     }
     Py_DECREF(wrapper);
 
-    encoding = _Py_StandardStreamEncoding;
-    errors = _Py_StandardStreamErrors;
-    if (!encoding || !errors) {
-        char *opt = Py_GETENV("PYTHONIOENCODING");
-        if (opt && opt[0] != '\0') {
-            char *err;
-            pythonioencoding = _PyMem_Strdup(opt);
-            if (pythonioencoding == NULL) {
-                PyErr_NoMemory();
-                goto error;
-            }
-            err = strchr(pythonioencoding, ':');
-            if (err) {
-                *err = '\0';
-                err++;
-                if (*err && !errors) {
-                    errors = err;
-                }
-            }
-            if (*pythonioencoding && !encoding) {
-                encoding = pythonioencoding;
-            }
-        }
-        else if (interp->core_config.utf8_mode) {
-            encoding = "utf-8";
-            errors = "surrogateescape";
-        }
-
-        if (!errors && !pythonioencoding) {
-            /* Choose the default error handler based on the current locale */
-            errors = get_default_standard_stream_error_handler();
-        }
-    }
-
     /* Set sys.stdin */
     fd = fileno(stdin);
     /* Under some conditions stdin, stdout and stderr may not be connected
      * and fileno() may point to an invalid file descriptor. For example
      * GUI apps don't have valid standard streams by default.
      */
-    std = create_stdio(iomod, fd, 0, "<stdin>", encoding, errors);
+    std = create_stdio(config, iomod, fd, 0, "<stdin>",
+                       config->stdio_encoding,
+                       config->stdio_errors);
     if (std == NULL)
         goto error;
     PySys_SetObject("__stdin__", std);
@@ -1864,7 +1727,9 @@ init_sys_streams(PyInterpreterState *interp)
 
     /* Set sys.stdout */
     fd = fileno(stdout);
-    std = create_stdio(iomod, fd, 1, "<stdout>", encoding, errors);
+    std = create_stdio(config, iomod, fd, 1, "<stdout>",
+                       config->stdio_encoding,
+                       config->stdio_errors);
     if (std == NULL)
         goto error;
     PySys_SetObject("__stdout__", std);
@@ -1874,7 +1739,9 @@ init_sys_streams(PyInterpreterState *interp)
 #if 1 /* Disable this if you have trouble debugging bootstrap stuff */
     /* Set sys.stderr, replaces the preliminary stderr */
     fd = fileno(stderr);
-    std = create_stdio(iomod, fd, 1, "<stderr>", encoding, "backslashreplace");
+    std = create_stdio(config, iomod, fd, 1, "<stderr>",
+                       config->stdio_encoding,
+                       "backslashreplace");
     if (std == NULL)
         goto error;
 
@@ -1907,24 +1774,9 @@ init_sys_streams(PyInterpreterState *interp)
 error:
     res = _Py_INIT_ERR("can't initialize sys standard streams");
 
-    /* Use the same allocator than Py_SetStandardStreamEncoding() */
-    PyMemAllocatorEx old_alloc;
 done:
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    _Py_ClearStandardStreamEncoding();
 
-    /* We won't need them anymore. */
-    if (_Py_StandardStreamEncoding) {
-        PyMem_RawFree(_Py_StandardStreamEncoding);
-        _Py_StandardStreamEncoding = NULL;
-    }
-    if (_Py_StandardStreamErrors) {
-        PyMem_RawFree(_Py_StandardStreamErrors);
-        _Py_StandardStreamErrors = NULL;
-    }
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    PyMem_Free(pythonioencoding);
     Py_XDECREF(bimod);
     Py_XDECREF(iomod);
     return res;
@@ -1955,12 +1807,6 @@ _Py_FatalError_PrintExc(int fd)
     PyObject *ferr, *res;
     PyObject *exception, *v, *tb;
     int has_tb;
-
-    if (PyThreadState_GET() == NULL) {
-        /* The GIL is released: trying to acquire it is likely to deadlock,
-           just give up. */
-        return 0;
-    }
 
     PyErr_Fetch(&exception, &v, &tb);
     if (exception == NULL) {
@@ -2066,9 +1912,30 @@ fatal_error(const char *prefix, const char *msg, int status)
     fputs("\n", stderr);
     fflush(stderr); /* it helps in Windows debug build */
 
-    /* Print the exception (if an exception is set) with its traceback,
-     * or display the current Python stack. */
-    if (!_Py_FatalError_PrintExc(fd)) {
+    /* Check if the current thread has a Python thread state
+       and holds the GIL */
+    PyThreadState *tss_tstate = PyGILState_GetThisThreadState();
+    if (tss_tstate != NULL) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (tss_tstate != tstate) {
+            /* The Python thread does not hold the GIL */
+            tss_tstate = NULL;
+        }
+    }
+    else {
+        /* Py_FatalError() has been called from a C thread
+           which has no Python thread state. */
+    }
+    int has_tstate_and_gil = (tss_tstate != NULL);
+
+    if (has_tstate_and_gil) {
+        /* If an exception is set, print the exception with its traceback */
+        if (!_Py_FatalError_PrintExc(fd)) {
+            /* No exception is set, or an exception is set without traceback */
+            _Py_FatalError_DumpTracebacks(fd);
+        }
+    }
+    else {
         _Py_FatalError_DumpTracebacks(fd);
     }
 
@@ -2079,7 +1946,7 @@ fatal_error(const char *prefix, const char *msg, int status)
     _PyFaulthandler_Fini();
 
     /* Check if the current Python thread hold the GIL */
-    if (PyThreadState_GET() != NULL) {
+    if (has_tstate_and_gil) {
         /* Flush sys.stdout and sys.stderr */
         flush_std_files();
     }

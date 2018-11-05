@@ -9,7 +9,7 @@ PyDoc_STRVAR(os_stat__doc__,
 "Perform a stat system call on the given path.\n"
 "\n"
 "  path\n"
-"    Path to be examined; can be string, bytes, path-like object or\n"
+"    Path to be examined; can be string, bytes, a path-like object or\n"
 "    open-file-descriptor int.\n"
 "  dir_fd\n"
 "    If not None, it should be a file descriptor open to a directory,\n"
@@ -101,7 +101,7 @@ PyDoc_STRVAR(os_access__doc__,
 "Use the real uid/gid to test for access to a path.\n"
 "\n"
 "  path\n"
-"    Path to be tested; can be string or bytes\n"
+"    Path to be tested; can be string, bytes, or a path-like object.\n"
 "  mode\n"
 "    Operating-system mode bitfield.  Can be F_OK to test existence,\n"
 "    or the inclusive-OR of R_OK, W_OK, and X_OK.\n"
@@ -304,7 +304,7 @@ PyDoc_STRVAR(os_chmod__doc__,
 "Change the access permissions of a file.\n"
 "\n"
 "  path\n"
-"    Path to be modified.  May always be specified as a str or bytes.\n"
+"    Path to be modified.  May always be specified as a str, bytes, or a path-like object.\n"
 "    On some platforms, path may also be specified as an open file descriptor.\n"
 "    If this functionality is unavailable, using it raises an exception.\n"
 "  mode\n"
@@ -655,7 +655,7 @@ PyDoc_STRVAR(os_chown__doc__,
 "Change the owner and group id of path to the numeric uid and gid.\\\n"
 "\n"
 "  path\n"
-"    Path to be examined; can be string, bytes, or open-file-descriptor int.\n"
+"    Path to be examined; can be string, bytes, a path-like object, or open-file-descriptor int.\n"
 "  dir_fd\n"
 "    If not None, it should be a file descriptor open to a directory,\n"
 "    and path should be relative; path will then be relative to that\n"
@@ -889,7 +889,7 @@ PyDoc_STRVAR(os_listdir__doc__,
 "\n"
 "Return a list containing the names of the files in the directory.\n"
 "\n"
-"path can be specified as either str or bytes.  If path is bytes,\n"
+"path can be specified as either str, bytes, or a path-like object.  If path is bytes,\n"
 "  the filenames returned will also be bytes; in all other circumstances\n"
 "  the filenames returned will be str.\n"
 "If path is None, uses the path=\'.\'.\n"
@@ -1004,27 +1004,6 @@ PyDoc_STRVAR(os__isdir__doc__,
 
 #define OS__ISDIR_METHODDEF    \
     {"_isdir", (PyCFunction)os__isdir, METH_O, os__isdir__doc__},
-
-static PyObject *
-os__isdir_impl(PyObject *module, path_t *path);
-
-static PyObject *
-os__isdir(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    path_t path = PATH_T_INITIALIZE("_isdir", "path", 0, 0);
-
-    if (!PyArg_Parse(arg, "O&:_isdir", path_converter, &path)) {
-        goto exit;
-    }
-    return_value = os__isdir_impl(module, &path);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
 
 #endif /* defined(MS_WINDOWS) */
 
@@ -1730,7 +1709,9 @@ exit:
 #if defined(HAVE_POSIX_SPAWN)
 
 PyDoc_STRVAR(os_posix_spawn__doc__,
-"posix_spawn($module, path, argv, env, file_actions=None, /)\n"
+"posix_spawn($module, path, argv, env, /, *, file_actions=(),\n"
+"            setpgroup=None, resetids=False, setsigmask=(),\n"
+"            setsigdef=(), scheduler=None)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -1742,29 +1723,48 @@ PyDoc_STRVAR(os_posix_spawn__doc__,
 "  env\n"
 "    Dictionary of strings mapping to strings.\n"
 "  file_actions\n"
-"    A sequence of file action tuples.");
+"    A sequence of file action tuples.\n"
+"  setpgroup\n"
+"    The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.\n"
+"  resetids\n"
+"    If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.\n"
+"  setsigmask\n"
+"    The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.\n"
+"  setsigdef\n"
+"    The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.\n"
+"  scheduler\n"
+"    A tuple with the scheduler policy (optional) and parameters.");
 
 #define OS_POSIX_SPAWN_METHODDEF    \
-    {"posix_spawn", (PyCFunction)os_posix_spawn, METH_FASTCALL, os_posix_spawn__doc__},
+    {"posix_spawn", (PyCFunction)os_posix_spawn, METH_FASTCALL|METH_KEYWORDS, os_posix_spawn__doc__},
 
 static PyObject *
 os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
-                    PyObject *env, PyObject *file_actions);
+                    PyObject *env, PyObject *file_actions,
+                    PyObject *setpgroup, int resetids, PyObject *setsigmask,
+                    PyObject *setsigdef, PyObject *scheduler);
 
 static PyObject *
-os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsigmask", "setsigdef", "scheduler", NULL};
+    static _PyArg_Parser _parser = {"O&OO|$OOiOOO:posix_spawn", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("posix_spawn", "path", 0, 0);
     PyObject *argv;
     PyObject *env;
-    PyObject *file_actions = Py_None;
+    PyObject *file_actions = NULL;
+    PyObject *setpgroup = NULL;
+    int resetids = 0;
+    PyObject *setsigmask = NULL;
+    PyObject *setsigdef = NULL;
+    PyObject *scheduler = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&OO|O:posix_spawn",
-        path_converter, &path, &argv, &env, &file_actions)) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        path_converter, &path, &argv, &env, &file_actions, &setpgroup, &resetids, &setsigmask, &setsigdef, &scheduler)) {
         goto exit;
     }
-    return_value = os_posix_spawn_impl(module, &path, argv, env, file_actions);
+    return_value = os_posix_spawn_impl(module, &path, argv, env, file_actions, setpgroup, resetids, setsigmask, setsigdef, scheduler);
 
 exit:
     /* Cleanup for path */
@@ -2064,7 +2064,7 @@ exit:
 
 #endif /* defined(HAVE_SCHED_H) && defined(HAVE_SCHED_SETSCHEDULER) */
 
-#if defined(HAVE_SCHED_H) && (defined(HAVE_SCHED_SETSCHEDULER) || defined(HAVE_SCHED_SETPARAM))
+#if defined(HAVE_SCHED_H) && (defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM))
 
 PyDoc_STRVAR(os_sched_param__doc__,
 "sched_param(sched_priority)\n"
@@ -2096,7 +2096,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SCHED_H) && (defined(HAVE_SCHED_SETSCHEDULER) || defined(HAVE_SCHED_SETPARAM)) */
+#endif /* defined(HAVE_SCHED_H) && (defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)) */
 
 #if defined(HAVE_SCHED_H) && defined(HAVE_SCHED_SETSCHEDULER)
 
@@ -3164,6 +3164,50 @@ os_wait(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 #endif /* defined(HAVE_WAIT) */
+
+#if (defined(HAVE_READLINK) || defined(MS_WINDOWS))
+
+PyDoc_STRVAR(os_readlink__doc__,
+"readlink($module, /, path, *, dir_fd=None)\n"
+"--\n"
+"\n"
+"Return a string representing the path to which the symbolic link points.\n"
+"\n"
+"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
+"and path should be relative; path will then be relative to that directory.\n"
+"\n"
+"dir_fd may not be implemented on your platform.  If it is unavailable,\n"
+"using it will raise a NotImplementedError.");
+
+#define OS_READLINK_METHODDEF    \
+    {"readlink", (PyCFunction)os_readlink, METH_FASTCALL|METH_KEYWORDS, os_readlink__doc__},
+
+static PyObject *
+os_readlink_impl(PyObject *module, path_t *path, int dir_fd);
+
+static PyObject *
+os_readlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"path", "dir_fd", NULL};
+    static _PyArg_Parser _parser = {"O&|$O&:readlink", _keywords, 0};
+    path_t path = PATH_T_INITIALIZE("readlink", "path", 0, 0);
+    int dir_fd = DEFAULT_DIR_FD;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        path_converter, &path, READLINKAT_DIR_FD_CONVERTER, &dir_fd)) {
+        goto exit;
+    }
+    return_value = os_readlink_impl(module, &path, dir_fd);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* (defined(HAVE_READLINK) || defined(MS_WINDOWS)) */
 
 #if defined(HAVE_SYMLINK)
 
@@ -5488,7 +5532,7 @@ PyDoc_STRVAR(os_getxattr__doc__,
 "\n"
 "Return the value of extended attribute attribute on path.\n"
 "\n"
-"path may be either a string or an open file descriptor.\n"
+"path may be either a string, a path-like object, or an open file descriptor.\n"
 "If follow_symlinks is False, and the last element of the path is a symbolic\n"
 "  link, getxattr will examine the symbolic link itself instead of the file\n"
 "  the link points to.");
@@ -5536,7 +5580,7 @@ PyDoc_STRVAR(os_setxattr__doc__,
 "\n"
 "Set extended attribute attribute on path to value.\n"
 "\n"
-"path may be either a string or an open file descriptor.\n"
+"path may be either a string, a path-like object,  or an open file descriptor.\n"
 "If follow_symlinks is False, and the last element of the path is a symbolic\n"
 "  link, setxattr will modify the symbolic link itself instead of the file\n"
 "  the link points to.");
@@ -5589,7 +5633,7 @@ PyDoc_STRVAR(os_removexattr__doc__,
 "\n"
 "Remove extended attribute attribute on path.\n"
 "\n"
-"path may be either a string or an open file descriptor.\n"
+"path may be either a string, a path-like object, or an open file descriptor.\n"
 "If follow_symlinks is False, and the last element of the path is a symbolic\n"
 "  link, removexattr will modify the symbolic link itself instead of the file\n"
 "  the link points to.");
@@ -5636,7 +5680,7 @@ PyDoc_STRVAR(os_listxattr__doc__,
 "\n"
 "Return a list of extended attributes on path.\n"
 "\n"
-"path may be either None, a string, or an open file descriptor.\n"
+"path may be either None, a string, a path-like object, or an open file descriptor.\n"
 "if path is None, listxattr will examine the current directory.\n"
 "If follow_symlinks is False, and the last element of the path is a symbolic\n"
 "  link, listxattr will examine the symbolic link itself instead of the file\n"
@@ -5852,6 +5896,80 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
+#if !defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os_get_blocking__doc__,
+"get_blocking($module, fd, /)\n"
+"--\n"
+"\n"
+"Get the blocking mode of the file descriptor.\n"
+"\n"
+"Return False if the O_NONBLOCK flag is set, True if the flag is cleared.");
+
+#define OS_GET_BLOCKING_METHODDEF    \
+    {"get_blocking", (PyCFunction)os_get_blocking, METH_O, os_get_blocking__doc__},
+
+static int
+os_get_blocking_impl(PyObject *module, int fd);
+
+static PyObject *
+os_get_blocking(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    int _return_value;
+
+    if (!PyArg_Parse(arg, "i:get_blocking", &fd)) {
+        goto exit;
+    }
+    _return_value = os_get_blocking_impl(module, fd);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* !defined(MS_WINDOWS) */
+
+#if !defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os_set_blocking__doc__,
+"set_blocking($module, fd, blocking, /)\n"
+"--\n"
+"\n"
+"Set the blocking mode of the specified file descriptor.\n"
+"\n"
+"Set the O_NONBLOCK flag if blocking is False,\n"
+"clear the O_NONBLOCK flag otherwise.");
+
+#define OS_SET_BLOCKING_METHODDEF    \
+    {"set_blocking", (PyCFunction)os_set_blocking, METH_FASTCALL, os_set_blocking__doc__},
+
+static PyObject *
+os_set_blocking_impl(PyObject *module, int fd, int blocking);
+
+static PyObject *
+os_set_blocking(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    int blocking;
+
+    if (!_PyArg_ParseStack(args, nargs, "ii:set_blocking",
+        &fd, &blocking)) {
+        goto exit;
+    }
+    return_value = os_set_blocking_impl(module, fd, blocking);
+
+exit:
+    return return_value;
+}
+
+#endif /* !defined(MS_WINDOWS) */
+
 PyDoc_STRVAR(os_DirEntry_is_symlink__doc__,
 "is_symlink($self, /)\n"
 "--\n"
@@ -6022,7 +6140,7 @@ PyDoc_STRVAR(os_scandir__doc__,
 "\n"
 "Return an iterator of DirEntry objects for given path.\n"
 "\n"
-"path can be specified as either str, bytes or path-like object.  If path\n"
+"path can be specified as either str, bytes, or a path-like object.  If path\n"
 "is bytes, the names of yielded DirEntry objects will also be bytes; in\n"
 "all other circumstances they will be str.\n"
 "\n"
@@ -6404,6 +6522,10 @@ exit:
     #define OS_WAIT_METHODDEF
 #endif /* !defined(OS_WAIT_METHODDEF) */
 
+#ifndef OS_READLINK_METHODDEF
+    #define OS_READLINK_METHODDEF
+#endif /* !defined(OS_READLINK_METHODDEF) */
+
 #ifndef OS_SYMLINK_METHODDEF
     #define OS_SYMLINK_METHODDEF
 #endif /* !defined(OS_SYMLINK_METHODDEF) */
@@ -6624,7 +6746,15 @@ exit:
     #define OS_SET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_SET_HANDLE_INHERITABLE_METHODDEF) */
 
+#ifndef OS_GET_BLOCKING_METHODDEF
+    #define OS_GET_BLOCKING_METHODDEF
+#endif /* !defined(OS_GET_BLOCKING_METHODDEF) */
+
+#ifndef OS_SET_BLOCKING_METHODDEF
+    #define OS_SET_BLOCKING_METHODDEF
+#endif /* !defined(OS_SET_BLOCKING_METHODDEF) */
+
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=47fb6a3e88cba6d9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f2951c34e0907fb6 input=a9049054013a1b77]*/
