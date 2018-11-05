@@ -464,7 +464,7 @@ with the property identifier
    the characters handler.
 
 .. method:: LexicalHandler.endCDATA()
- 
+
    Reports the end of a CDATA marked section.
 
  
