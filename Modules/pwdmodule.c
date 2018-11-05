@@ -145,6 +145,7 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
     while(1) {
         buf2 = PyMem_RawRealloc(buf, bufsize);
         if (buf2 == NULL) {
+            p = NULL;
             nomem = 1;
             break;
         }
@@ -227,6 +228,7 @@ pwd_getpwnam_impl(PyObject *module, PyObject *name)
     while(1) {
         buf2 = PyMem_RawRealloc(buf, bufsize);
         if (buf2 == NULL) {
+            p = NULL;
             nomem = 1;
             break;
         }
