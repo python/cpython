@@ -503,7 +503,7 @@ on the right hand side of an assignment statement.
 
    :pep:`525` - Asynchronous Generators
       The proposal that expanded on :pep:`492` by adding generator capabilities to
-      function coroutines.
+      coroutine functions.
 
 .. index:: object: generator
 .. _generator-methods:
