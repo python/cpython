@@ -81,14 +81,14 @@ by entering a few expressions of your choice and seeing the results:
 
 Many people use the interactive mode as a convenient yet highly programmable
 calculator.  When you want to end your interactive Python session,
-call the ``exit()`` function or hold the :kbd:`Ctrl` key down
+call the :func:`exit` function or hold the :kbd:`Ctrl` key down
 while you enter a :kbd:`Z`, then hit the ":kbd:`Enter`" key to get
 back to your Windows command prompt.
 
 You may also find that you have a Start-menu entry such as :menuselection:`Start
---> Programs --> Python 3.6 --> Python (command line)` that results in you
+--> Programs --> Python 3.x --> Python (command line)` that results in you
 seeing the ``>>>`` prompt in a new window.  If so, the window will disappear
-after you call the ``exit()`` function or enter the :kbd:`Ctrl-Z`
+after you call the :func:`exit` function or enter the :kbd:`Ctrl-Z`
 character; Windows is running a single "python"
 command in the window, and closes it when you terminate the interpreter.
 
@@ -101,37 +101,12 @@ similar to::
 
    C:\Users\YourName>
 
-or::
+So now you'll ask the ``py`` command to give your script to Python by
+typing ``py`` followed by your script path::
 
-   Bad command or filename
 
-then you need to make sure that your computer knows where to find the Python
-interpreter.  To do this you will have to modify a setting called PATH, which is
-a list of directories where Windows will look for programs.
-
-You should arrange for Python's installation directory to be added to the PATH
-of every command window as it starts.  If you installed Python fairly recently
-then the command ::
-
-   dir C:\py*
-
-will probably tell you where it is installed; the usual location is something
-like ``C:\Python33``.  Otherwise you will be reduced to a search of your whole
-disk ... use :menuselection:`Tools --> Find` or hit the :guilabel:`Search`
-button and look for "python.exe".  Supposing you discover that Python is
-installed in the ``C:\Python33`` directory (the default at the time of writing),
-you should make sure that entering the command ::
-
-   c:\Python33\python
-
-starts up the interpreter as above (and don't forget you'll need a ":kbd:`Ctrl-Z`" and
-an ":kbd:`Enter`" to get out of it). Once you have verified the directory, you can
-add it to the system path to make it easier to start Python by just running
-the ``python`` command. This is currently an option in the installer as of
-CPython 3.3.
-
-More information about environment variables can be found on the
-:ref:`Using Python on Windows <setting-envvars>` page.
+   C:\Users\YourName> py Desktop\hello.py
+   hello
 
 How do I make Python scripts executable?
 ----------------------------------------
