@@ -520,7 +520,7 @@ class _GzipReader(_compression.DecompressReader):
         super()._rewind()
         self._new_member = True
 
-def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, mtime=None):
+def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=None):
     """Compress data in one shot and return the compressed string.
     Optional argument is the compression level, in range of 0-9.
     """
