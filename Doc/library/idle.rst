@@ -674,7 +674,7 @@ Text widgets display a subset of Unicode, the Basic Multilingual Plane (BMP).
 Which characters get a proper glyph instead of a replacement box depends on
 the operating system and installed fonts.  Newline characters cause following
 text to appear on a new line, but other control characters are replaced
-with a box.  But note that the ``repr`` function, which is used for
+with a box.  But note that the ``repr()`` function, which is used for
 interactive echo of expression values, replaces control characters
 with escape codes before they are output.
 
