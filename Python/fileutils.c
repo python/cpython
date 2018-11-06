@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_fileutils.h"
 #include "osdefs.h"
 #include <locale.h>
 
