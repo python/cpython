@@ -502,8 +502,16 @@ or immediately run an existing file before editing.
 Python Shell window
 ^^^^^^^^^^^^^^^^^^^
 
-The editing features described above work when entering code interactively.
-IDLE's Shell window also responds to the following keys.
+With IDLE's Shell, one enters, edits, and recalls complete statements.
+Most consoles and terminals only work with a single physical line at a time.
+
+When one pastes code into Shell, it is not compiled and possibly executed
+until one hits :kbd:`Return`.  One may edit pasted code first.
+If one pastes more that one statement into Shell, the result will be a
+:exc:`SyntaxError` when multiple statements are compiled as if they were one.
+
+The editing features described in previous subsections work when entering
+code interactively.  IDLE's Shell window also responds to the following keys.
 
 * :kbd:`C-c` interrupts executing command
 
@@ -519,16 +527,6 @@ IDLE's Shell window also responds to the following keys.
   * :kbd:`Alt-n` retrieves next. On OS X use :kbd:`C-n`.
 
   * :kbd:`Return` while on any previous command retrieves that command
-
-Shell has a special facility for squeezing output lines down to a
-'Squeezed text' label.  This is done automatically for output over N lines
-(N = 50 by default).  N can be changed in the PyShell section of the General
-page of the Settings dialog.  Output with fewer lines can be squeezed by
-right clicking on the output.  This can be useful for extra long lines.
-
-Squeezed output is expanded in place by double-clicking the label.
-It can also be sent to the clipboard or a separate view window by
-right-clicking the label.
 
 Text colors
 ^^^^^^^^^^^
@@ -665,6 +663,44 @@ will then be attached to that window for input and output.
 If ``sys`` is reset by user code, such as with ``importlib.reload(sys)``,
 IDLE's changes are lost and input from the keyboard and output to the screen
 will not work correctly.
+
+User output in Shell
+^^^^^^^^^^^^^^^^^^^^
+
+When a program outputs text, the result is determined by the
+corresponding output device.  When IDLE executes user code, ``sys.stdout``
+and ``sys.stderr`` are connected to the display area of IDLE's Shell.  Some of
+its features are inherited from the underlying Tk Text widget.  Others
+are programmed additions.
+
+Text widgets display a subset of Unicode, the Basic Multilingual Plane (BMP).
+Which characters get a proper glyph instead of a replacement box depends on
+the operating system and installed fonts.  Newline characters cause following
+text to appear on a new line, but other control characters are replaced
+with a box.  But note that the ``repr()`` function, which is used for
+interactive echo of expression values, replaces control characters
+with escape codes before they are output.
+
+Normal and error output are generally kept separate (on separate lines)
+from code input and each other.  They each get different highlight colors.
+
+For SyntaxError tracebacks, the normal '^' marking where the error was
+detected is replaced by coloring the text with an error highlight.
+When code run from a file causes other exceptions, one may right click
+on a traceback line to jump to the corresponding line in an IDLE editor.
+The file will be opened if necessary.
+
+Shell has a special facility for squeezing output lines down to a
+'Squeezed text' label.  This is done automatically
+for output over N lines (N = 50 by default).
+N can be changed in the PyShell section of the General
+page of the Settings dialog.  Output with fewer lines can be squeezed by
+right clicking on the output.  This can be useful lines long enough to slow
+down scrolling.
+
+Squeezed output is expanded in place by double-clicking the label.
+It can also be sent to the clipboard or a separate view window by
+right-clicking the label.
 
 Developing tkinter applications
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
