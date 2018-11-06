@@ -679,7 +679,7 @@ interactive echo of expression values, replaces control characters
 with escape codes before they are output.
 
 Normal and error output are generally kept separate (on separate lines)
-from code input and each other,  They each get different highlight colors.
+from code input and each other.  They each get different highlight colors.
 
 For SyntaxError tracebacks, the normal '^' marking where the error was
 detected is replaced by coloring the text with an error highlight.
