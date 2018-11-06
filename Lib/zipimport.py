@@ -592,7 +592,7 @@ def _unmarshal_code(self, pathname, fullpath, fullname, data):
 
     try:
         flags = _bootstrap_external._classify_pyc(data, fullname, exc_details)
-    except ImportError as e:
+    except ImportError:
         return None
 
     hash_based = flags & 0b1 != 0
@@ -681,14 +681,16 @@ def _get_mtime_and_size_of_source(self, path):
 # contents of the matching .py file, or None if no source
 # is available.
 def _get_pyc_source(self, path):
+    # strip 'c' or 'o' from *.py[co]
+    assert path[-1:] in ('c', 'o')
+    path = path[:-1]
+
     try:
-        # strip 'c' or 'o' from *.py[co]
-        assert path[-1:] in ('c', 'o')
-        path = path[:-1]
         toc_entry = self._files[path]
-        return _get_data(self.archive, toc_entry)
-    except (KeyError, IndexError, TypeError):
+    except KeyError:
         return None
+    else:
+        return _get_data(self.archive, toc_entry)
 
 
 # Get the code object associated with the module specified by
