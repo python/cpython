@@ -292,9 +292,11 @@ count_members(PyStructSequence_Desc *desc, Py_ssize_t *n_unnamed_members) {
     Py_ssize_t i;
 
     *n_unnamed_members = 0;
-    for (i = 0; desc->fields[i].name != NULL; ++i)
-        if (desc->fields[i].name == PyStructSequence_UnnamedField)
+    for (i = 0; desc->fields[i].name != NULL; ++i) {
+        if (desc->fields[i].name == PyStructSequence_UnnamedField) {
             (*n_unnamed_members)++;
+        }
+    }
     return i;
 }
 
@@ -306,8 +308,9 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
 #define SET_DICT_FROM_SIZE(key, value)                                         \
     do {                                                                       \
         v = PyLong_FromSsize_t(value);                                         \
-        if (v == NULL)                                                         \
+        if (v == NULL) {                                                       \
             return -1;                                                         \
+        }                                                                      \
         if (PyDict_SetItemString(dict, key, v) < 0) {                          \
             Py_DECREF(v);                                                      \
             return -1;                                                         \
@@ -447,12 +450,14 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     type = (PyTypeObject *)PyType_FromSpecWithBases(&spec, bases);
     Py_DECREF(bases);
     PyMem_FREE(members);
-    if (type == NULL)
+    if (type == NULL) {
         return NULL;
+    }
 
     if (initialize_structseq_dict(
-            desc, type->tp_dict, n_members, n_unnamed_members) < 0)
+            desc, type->tp_dict, n_members, n_unnamed_members) < 0) {
         return NULL;
+    }
 
     return type;
 }
