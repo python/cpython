@@ -150,6 +150,7 @@ class Availability(Directive):
         pnode.extend(n + m)
         return [pnode]
 
+
 # Support for documenting decorators
 
 class PyDecoratorMixin(object):
