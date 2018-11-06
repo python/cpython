@@ -9,20 +9,21 @@
 
 __all__ = [ 'Client', 'Listener', 'Pipe', 'wait' ]
 
-import _multiprocessing
 import io
-import itertools
 import os
+import sys
 import socket
 import struct
-import sys
-import tempfile
 import time
+import tempfile
+import itertools
+
+import _multiprocessing
+
+from . import util
 
 from . import AuthenticationError, BufferTooShort
-from . import util
 from .context import reduction
-
 _ForkingPickler = reduction.ForkingPickler
 
 try:
@@ -785,11 +786,13 @@ def _xml_loads(s):
 class XmlListener(Listener):
     def accept(self):
         global xmlrpclib
+        import xmlrpc.client as xmlrpclib
         obj = Listener.accept(self)
         return ConnectionWrapper(obj, _xml_dumps, _xml_loads)
 
 def XmlClient(*args, **kwds):
     global xmlrpclib
+    import xmlrpc.client as xmlrpclib
     return ConnectionWrapper(Client(*args, **kwds), _xml_dumps, _xml_loads)
 
 #
