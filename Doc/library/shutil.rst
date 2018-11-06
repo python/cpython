@@ -532,11 +532,13 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    *root_dir* is a directory that will be the root directory of the
    archive; for example, we typically chdir into *root_dir* before creating the
-   archive.
+   archive.  This also means that all paths in the archive will be relative to
+   *root_dir*.
 
    *base_dir* is the directory where we start archiving from;
    i.e. *base_dir* will be the common prefix of all files and
-   directories in the archive.
+   directories in the archive.  *base_dir* must be given realative
+   to *root_dir*.
 
    *root_dir* and *base_dir* both default to the current directory.
 
@@ -678,6 +680,34 @@ The resulting archive contains:
     -rw------- tarek/staff    1675 2008-06-09 13:26:54 ./id_rsa
     -rw-r--r-- tarek/staff     397 2008-06-09 13:26:54 ./id_rsa.pub
     -rw-r--r-- tarek/staff   37192 2010-02-06 18:23:10 ./known_hosts
+
+
+.. _shutil-archiving-example-with-basedir:
+
+Archiving example with *base_dir*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In this example, we try to make the use of *base_dir* a bit more clear.  We
+have a file :file:`please_add.txt` within the directory structure
+:file:`tmp/root/structure/content`, which we want to add to the archive along
+with the directories :file:`structure` and :file:`content`, and a second file
+:file:`do_not_add.txt` in :file:`tmp/root/structure`, which we don't want to have
+in the archive. Therefore we use the following::
+
+    >>> from shutil import make_archive
+    >>> make_archive(base_name='tmp/archive',
+                     format='tar',
+                     root_dir='tmp/root',
+                     base_dir='structure/content/')
+    '/Users/user/tmp/archive.tar'
+
+Listing the files in the resulting archive gives us the following:
+
+.. code-block:: shell-session
+
+    $ tar -tvf tmp/archive.zip
+    drwxr-xr-x  0 user staff   0 Nov  6 02:07 structure/content/
+    -rw-r--r--  0 user staff  11 Nov  6 02:07 structure/content/please_add.txt
 
 
 Querying the size of the output terminal
