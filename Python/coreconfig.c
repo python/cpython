@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_fileutils.h"
 #include "pycore_lifecycle.h"
 #include "pycore_mem.h"
 #include "pycore_pathconfig.h"
