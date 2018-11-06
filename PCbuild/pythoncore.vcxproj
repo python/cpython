@@ -79,7 +79,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Include\abstract.h" />
-    <ClInclude Include="..\Include\accu.h" />
     <ClInclude Include="..\Include\asdl.h" />
     <ClInclude Include="..\Include\ast.h" />
     <ClInclude Include="..\Include\bitset.h" />
@@ -112,15 +111,19 @@
     <ClInclude Include="..\Include\graminit.h" />
     <ClInclude Include="..\Include\grammar.h" />
     <ClInclude Include="..\Include\import.h" />
-    <ClInclude Include="..\Include\internal\ceval.h" />
-    <ClInclude Include="..\Include\internal\condvar.h" />
-    <ClInclude Include="..\Include\internal\context.h" />
-    <ClInclude Include="..\Include\internal\gil.h" />
-    <ClInclude Include="..\Include\internal\hamt.h" />
-    <ClInclude Include="..\Include\internal\mem.h" />
-    <ClInclude Include="..\Include\internal\pyatomic.h" />
-    <ClInclude Include="..\Include\internal\pystate.h" />
-    <ClInclude Include="..\Include\internal\warnings.h" />
+    <ClInclude Include="..\Include\internal\pycore_accu.h" />
+    <ClInclude Include="..\Include\internal\pycore_atomic.h" />
+    <ClInclude Include="..\Include\internal\pycore_ceval.h" />
+    <ClInclude Include="..\Include\internal\pycore_condvar.h" />
+    <ClInclude Include="..\Include\internal\pycore_context.h" />
+    <ClInclude Include="..\Include\internal\pycore_getopt.h" />
+    <ClInclude Include="..\Include\internal\pycore_gil.h" />
+    <ClInclude Include="..\Include\internal\pycore_hamt.h" />
+    <ClInclude Include="..\Include\internal\pycore_lifecycle.h" />
+    <ClInclude Include="..\Include\internal\pycore_mem.h" />
+    <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
+    <ClInclude Include="..\Include\internal\pycore_state.h" />
+    <ClInclude Include="..\Include\internal\pycore_warnings.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
     <ClInclude Include="..\Include\iterobject.h" />
     <ClInclude Include="..\Include\listobject.h" />
@@ -153,7 +156,6 @@
     <ClInclude Include="..\Include\pyerrors.h" />
     <ClInclude Include="..\Include\pyexpat.h" />
     <ClInclude Include="..\Include\pyfpe.h" />
-    <ClInclude Include="..\Include\internal\pygetopt.h" />
     <ClInclude Include="..\Include\pylifecycle.h" />
     <ClInclude Include="..\Include\pymath.h" />
     <ClInclude Include="..\Include\pytime.h" />

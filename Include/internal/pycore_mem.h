@@ -4,6 +4,10 @@
 extern "C" {
 #endif
 
+#ifndef Py_BUILD_CORE
+#  error "Py_BUILD_CORE must be defined to include this header"
+#endif
+
 #include "objimpl.h"
 #include "pymem.h"
 
@@ -144,6 +148,14 @@ struct _gc_runtime_state {
 PyAPI_FUNC(void) _PyGC_Initialize(struct _gc_runtime_state *);
 
 #define _PyGC_generation0 _PyRuntime.gc.generation0
+
+
+/* Set the memory allocator of the specified domain to the default.
+   Save the old allocator into *old_alloc if it's non-NULL.
+   Return on success, or return -1 if the domain is unknown. */
+PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
+    PyMemAllocatorDomain domain,
+    PyMemAllocatorEx *old_alloc);
 
 #ifdef __cplusplus
 }
