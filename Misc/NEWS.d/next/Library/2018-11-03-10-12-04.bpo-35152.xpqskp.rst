@@ -1,1 +1,1 @@
-On Linux, fix multiprocessing.Connection for very large read: fix multiprocessing Connection._recv_bytes and Connection._send_bytes for read larger than INT_MAX (usually 2^31-1).
+Allow sending more than 2 GB at once on a multiprocessing connection on non-Windows systems.
