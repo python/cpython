@@ -2852,15 +2852,19 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     PyTypeObject *type, *base;
 
     PyType_Slot *slot;
-    Py_ssize_t nslots;
+    Py_ssize_t nmembers;
     char *s, *res_start;
 
-    nslots = 0;
-    for (slot = spec->slots; slot->slot; slot++)
-        if (slot->slot == Py_tp_members)
-            for (memb = slot->pfunc; memb->name != NULL; memb++)
-                nslots++;
-    res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, nslots);
+    nmembers = 0;
+    for (slot = spec->slots; slot->slot; slot++) {
+        if (slot->slot == Py_tp_members) {
+            for (memb = slot->pfunc; memb->name != NULL; memb++) {
+                nmembers++;
+            }
+        }
+    }
+
+    res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, nmembers);
     if (res == NULL)
         return NULL;
     res_start = (char*)res;
@@ -2962,7 +2966,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
         /* Move the slots to the heap type itself */
         if (slot->slot == Py_tp_members) {
-            size_t len = Py_TYPE(type)->tp_itemsize * nslots;
+            size_t len = Py_TYPE(type)->tp_itemsize * nmembers;
             memcpy(PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
             type->tp_members = PyHeapType_GET_MEMBERS(res);
         }

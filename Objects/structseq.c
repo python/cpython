@@ -327,8 +327,12 @@ initialize_members(PyStructSequence_Desc *desc, PyMemberDef* members,
     Py_ssize_t i, k;
 
     for (i = k = 0; i < n_members; ++i) {
-        if (desc->fields[i].name == PyStructSequence_UnnamedField)
+        if (desc->fields[i].name == PyStructSequence_UnnamedField) {
             continue;
+        }
+
+        /* The names and docstrings in these MemberDefs are statically */
+        /* allocated so it is expected that they'll outlive the MemberDef */
         members[k].name = desc->fields[i].name;
         members[k].type = T_OBJECT;
         members[k].offset = offsetof(PyStructSequence, ob_item)
@@ -354,7 +358,12 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
     }
 #endif
 
-    Py_REFCNT(type) = 0;
+    /* PyTypeObject has already been initialized */
+    if (Py_REFCNT(type) != 0) {
+      PyErr_BadInternalCall();
+      return -1;
+    }
+
     type->tp_name = desc->name;
     type->tp_basicsize = sizeof(PyStructSequence) - sizeof(PyObject *);
     type->tp_itemsize = sizeof(PyObject *);
@@ -426,6 +435,8 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     slots[6] = (PyType_Slot){0, 0};
 
     /* Initialize Spec */
+    /* The name in this PyType_Spec is statically allocated so it is */
+    /* expected that it'll outlive the PyType_Spec */
     spec.name = desc->name;
     spec.basicsize = sizeof(PyStructSequence) - sizeof(PyObject *);
     spec.itemsize = sizeof(PyObject *);
