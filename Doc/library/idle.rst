@@ -504,11 +504,14 @@ Python Shell window
 
 With IDLE's Shell, one enters, edits, and recalls complete statements.
 Most consoles and terminals only work with a single physical line at a time.
-If one pastes more that one statement into Shell, Shell ignores anything
-past the first statement.
 
-The editing features described above work when entering code interactively.
-IDLE's Shell window also responds to the following keys.
+When one pastes code into Shell, it is not compiled and possibly executed
+until one hits :kbd:`Return`.  One may edit pasted code first.
+If one pastes more that one statement into Shell, the result will be a
+:exc:`SyntaxError` when multiple statements are compiled as if they were one.
+
+The editing features described in previous subsections work when entering
+code interactively.  IDLE's Shell window also responds to the following keys.
 
 * :kbd:`C-c` interrupts executing command
 
@@ -688,10 +691,12 @@ on a traceback line to jump to the corresponding line in an IDLE editor.
 The file will be opened if necessary.
 
 Shell has a special facility for squeezing output lines down to a
-'Squeezed text' label.  This is done automatically for output over N lines
-(N = 50 by default).  N can be changed in the PyShell section of the General
+'Squeezed text' label.  This is done automatically
+for output over N lines (N = 50 by default).
+N can be changed in the PyShell section of the General
 page of the Settings dialog.  Output with fewer lines can be squeezed by
-right clicking on the output.  This can be useful for extra long lines.
+right clicking on the output.  This can be useful lines long enough to slow
+down scrolling.
 
 Squeezed output is expanded in place by double-clicking the label.
 It can also be sent to the clipboard or a separate view window by
