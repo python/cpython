@@ -501,8 +501,14 @@ or immediately run an existing file before editing.</p>
 </div>
 <div class="section" id="python-shell-window">
 <h3>Python Shell window<a class="headerlink" href="#python-shell-window" title="Permalink to this headline">¶</a></h3>
-<p>The editing features described above work when entering code interactively.
-IDLE’s Shell window also responds to the following keys.</p>
+<p>With IDLE’s Shell, one enters, edits, and recalls complete statements.
+Most consoles and terminals only work with a single physical line at a time.</p>
+<p>When one pastes code into Shell, it is not compiled and possibly executed
+until one hits <kbd class="kbd docutils literal notranslate">Return</kbd>.  One may edit pasted code first.
+If one pastes more that one statement into Shell, the result will be a
+<a class="reference internal" href="exceptions.html#SyntaxError" title="SyntaxError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">SyntaxError</span></code></a> when multiple statements are compiled as if they were one.</p>
+<p>The editing features described in previous subsections work when entering
+code interactively.  IDLE’s Shell window also responds to the following keys.</p>
 <ul>
 <li><p class="first"><kbd class="kbd docutils literal notranslate">C-c</kbd> interrupts executing command</p>
 </li>
@@ -518,14 +524,6 @@ OS X use <kbd class="kbd docutils literal notranslate">C-p</kbd>.</li>
 </ul>
 </li>
 </ul>
-<p>Shell has a special facility for squeezing output lines down to a
-‘Squeezed text’ label.  This is done automatically for output over N lines
-(N = 50 by default).  N can be changed in the PyShell section of the General
-page of the Settings dialog.  Output with fewer lines can be squeezed by
-right clicking on the output.  This can be useful for extra long lines.</p>
-<p>Squeezed output is expanded in place by double-clicking the label.
-It can also be sent to the clipboard or a separate view window by
-right-clicking the label.</p>
 </div>
 <div class="section" id="text-colors">
 <h3>Text colors<a class="headerlink" href="#text-colors" title="Permalink to this headline">¶</a></h3>
@@ -643,6 +641,38 @@ will then be attached to that window for input and output.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">sys</span></code> is reset by user code, such as with <code class="docutils literal notranslate"><span class="pre">importlib.reload(sys)</span></code>,
 IDLE’s changes are lost and input from the keyboard and output to the screen
 will not work correctly.</p>
+</div>
+<div class="section" id="user-output-in-shell">
+<h3>User output in Shell<a class="headerlink" href="#user-output-in-shell" title="Permalink to this headline">¶</a></h3>
+<p>When a program outputs text, the result is determined by the
+corresponding output device.  When IDLE executes user code, <code class="docutils literal notranslate"><span class="pre">sys.stdout</span></code>
+and <code class="docutils literal notranslate"><span class="pre">sys.stderr</span></code> are connected to the display area of IDLE’s Shell.  Some of
+its features are inherited from the underlying Tk Text widget.  Others
+are programmed additions.</p>
+<p>Text widgets display a subset of Unicode, the Basic Multilingual Plane (BMP).
+Which characters get a proper glyph instead of a replacement box depends on
+the operating system and installed fonts.  Newline characters cause following
+text to appear on a new line, but other control characters are replaced
+with a box.  But note that the <code class="docutils literal notranslate"><span class="pre">repr()</span></code> function, which is used for
+interactive echo of expression values, replaces control characters
+with escape codes before they are output.</p>
+<p>Normal and error output are generally kept separate (on separate lines)
+from code input and each other.  They each get different highlight colors.</p>
+<p>For SyntaxError tracebacks, the normal ‘^’ marking where the error was
+detected is replaced by coloring the text with an error highlight.
+When code run from a file causes other exceptions, one may right click
+on a traceback line to jump to the corresponding line in an IDLE editor.
+The file will be opened if necessary.</p>
+<p>Shell has a special facility for squeezing output lines down to a
+‘Squeezed text’ label.  This is done automatically
+for output over N lines (N = 50 by default).
+N can be changed in the PyShell section of the General
+page of the Settings dialog.  Output with fewer lines can be squeezed by
+right clicking on the output.  This can be useful lines long enough to slow
+down scrolling.</p>
+<p>Squeezed output is expanded in place by double-clicking the label.
+It can also be sent to the clipboard or a separate view window by
+right-clicking the label.</p>
 </div>
 <div class="section" id="developing-tkinter-applications">
 <h3>Developing tkinter applications<a class="headerlink" href="#developing-tkinter-applications" title="Permalink to this headline">¶</a></h3>
@@ -763,6 +793,7 @@ also used for testing.</p>
 <li><a class="reference internal" href="#command-line-usage">Command line usage</a></li>
 <li><a class="reference internal" href="#startup-failure">Startup failure</a></li>
 <li><a class="reference internal" href="#running-user-code">Running user code</a></li>
+<li><a class="reference internal" href="#user-output-in-shell">User output in Shell</a></li>
 <li><a class="reference internal" href="#developing-tkinter-applications">Developing tkinter applications</a></li>
 <li><a class="reference internal" href="#running-without-a-subprocess">Running without a subprocess</a></li>
 </ul>
@@ -851,7 +882,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Nov 05, 2018.
+    Last updated on Nov 06, 2018.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 
