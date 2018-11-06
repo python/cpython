@@ -1,2 +1,2 @@
-The C code and the documentation related to tokens are now generated from
-token.py.
+The C and Python code and the documentation related to tokens are now generated
+from a single source file :file:`Grammar/Tokens`.

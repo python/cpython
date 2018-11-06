@@ -845,21 +845,26 @@ regen-opcode:
 
 .PHONY: regen-token
 regen-token:
-	# Regenerate Include/token.h from Lib/token.py
-	# using Tools/scripts/generate_token_h.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token_h.py \
-		$(srcdir)/Lib/token.py \
-		$(srcdir)/Include/token.h
-	# Regenerate Parser/token.c from Lib/token.py
-	# using Tools/scripts/generate_token_c.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token_c.py \
-		$(srcdir)/Lib/token.py \
-		$(srcdir)/Parser/token.c
-	# Regenerate Doc/library/token-list.inc from Lib/token.py
-	# using Tools/scripts/generate_token_rst.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token_rst.py \
-		$(srcdir)/Lib/token.py \
+	# Regenerate Doc/library/token-list.inc from Grammar/Tokens
+	# using Tools/scripts/generate_token.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py rst \
+		$(srcdir)/Grammar/Tokens \
 		$(srcdir)/Doc/library/token-list.inc
+	# Regenerate Include/token.h from Grammar/Tokens
+	# using Tools/scripts/generate_token.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py h \
+		$(srcdir)/Grammar/Tokens \
+		$(srcdir)/Include/token.h
+	# Regenerate Parser/token.c from Grammar/Tokens
+	# using Tools/scripts/generate_token.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py c \
+		$(srcdir)/Grammar/Tokens \
+		$(srcdir)/Parser/token.c
+	# Regenerate Lib/token.py from Grammar/Tokens
+	# using Tools/scripts/generate_token.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py py \
+		$(srcdir)/Grammar/Tokens \
+		$(srcdir)/Lib/token.py
 
 .PHONY: regen-symbol
 regen-symbol: $(srcdir)/Include/graminit.h
