@@ -1580,7 +1580,7 @@ a module object to a subclass of :class:`types.ModuleType`. For example::
 
        def __setattr__(self, attr, value):
            print(f'Setting {attr}...')
-           setattr(self, attr, value)
+           super().__setattr__(attr, value)
 
    sys.modules[__name__].__class__ = VerboseModule
 
