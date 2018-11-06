@@ -1271,6 +1271,19 @@ class CircularImportTests(unittest.TestCase):
         except ImportError:
             self.fail('circular import with binding a submodule to a name failed')
 
+    def test_crossreference1(self):
+        import test.test_import.data.circular_imports.use
+        import test.test_import.data.circular_imports.source
+
+    def test_crossreference2(self):
+        with self.assertRaises(AttributeError) as cm:
+            import test.test_import.data.circular_imports.source
+        errmsg = str(cm.exception)
+        self.assertIn('test.test_import.data.circular_imports.source', errmsg)
+        self.assertIn('spam', errmsg)
+        self.assertIn('partially initialized module', errmsg)
+        self.assertIn('circular import', errmsg)
+
 
 if __name__ == '__main__':
     # Test needs to be a package, so we can do relative imports.
