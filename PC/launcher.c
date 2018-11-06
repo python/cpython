@@ -1454,7 +1454,7 @@ show_python_list(wchar_t ** argv)
         fwprintf(stderr, L"\n\nCan't find a Default Python.\n\n");
     else
         fwprintf(stderr, L"\n\n"); /* End with a blank line */
-    return(FALSE); /* If this has been called we cannot continue */
+    return FALSE; /* If this has been called we cannot continue */
 }
 
 static int
@@ -1468,7 +1468,6 @@ process(int argc, wchar_t ** argv)
     size_t plen;
     INSTALLED_PYTHON * ip;
     BOOL valid;
-    BOOL version_call = FALSE;
     DWORD size, attrs;
     HRESULT hr;
     wchar_t message[MSGSIZE];
@@ -1601,15 +1600,15 @@ process(int argc, wchar_t ** argv)
     }
     else {
         p = argv[1];
-        if ((argc == 2) && 
-            (!_wcsicmp(p, L"-0") || !_wcsicmp(p, L"--list") || /* Version args. */
-            !_wcsicmp(p, L"-0p") || !_wcsicmp(p, L"--list-paths")))
+        plen = wcslen(p);
+        if ((argc == 2) && // list version args
+            (!wcsncmp(p, L"-0", wcslen(L"-0")) ||
+            !wcsncmp(p, L"--list", wcslen(L"--list"))))
         {
             show_python_list(argv);
-            version_call = TRUE;
-            executable = NULL;
+            return rc;
         }
-        valid = !version_call && (*p == L'-') && validate_version(&p[1]);
+        valid = valid && (*p == L'-') && validate_version(&p[1]);
         if (valid) {
             ip = locate_python(&p[1], FALSE);
             if (ip == NULL)
@@ -1640,25 +1639,29 @@ installed, use -0 for available pythons", &p[1]);
     if (!valid) {
         if ((argc == 2) && (!_wcsicmp(p, L"-h") || !_wcsicmp(p, L"--help")))
             show_help_text(argv);
+        if ((argc == 2) &&
+            (!_wcsicmp(p, L"-0") || !_wcsicmp(p, L"--list") ||
+            !_wcsicmp(p, L"-0p") || !_wcsicmp(p, L"--list-paths")))
+        {
+            executable = NULL; /* Info call only */
+        }
+        else {
+            /* Look for an active virtualenv */
+            executable = find_python_by_venv();
 
-        /* Look for an active virtualenv */
-        executable = find_python_by_venv();
-
-        /* If we didn't find one, look for the default Python */
-        if (executable == NULL) {
-            ip = locate_python(L"", FALSE);
-            if (ip == NULL)
-                error(RC_NO_PYTHON, L"Can't find a default Python.");
-            executable = ip->executable;
+            /* If we didn't find one, look for the default Python */
+            if (executable == NULL) {
+                ip = locate_python(L"", FALSE);
+                if (ip == NULL)
+                    error(RC_NO_PYTHON, L"Can't find a default Python.");
+                executable = ip->executable;
+            }
         }
     }
-    if (executable == NULL) {
-        rc = RC_NO_PYTHON;
-    }
-    else if (!version_call) {
+    if (executable != NULL)
         invoke_child(executable, NULL, command);
-    }
-
+    else
+        rc = RC_NO_PYTHON;
     return rc;
 }
 
