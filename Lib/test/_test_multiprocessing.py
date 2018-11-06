@@ -2571,6 +2571,16 @@ def raising():
 def unpickleable_result():
     return lambda: 42
 
+def waiting():
+    while True:
+        time.sleep(10)
+
+def bad_exit(value):
+    if value:
+        from sys import exit
+        exit(123)
+
+
 class _TestPoolWorkerErrors(BaseTestCase):
     ALLOWED_TYPES = ('processes', )
 
@@ -2610,6 +2620,26 @@ class _TestPoolWorkerErrors(BaseTestCase):
 
         p.close()
         p.join()
+
+    def test_broken_process_pool1(self):
+        from multiprocessing.pool import BrokenProcessPool
+        p = multiprocessing.Pool(2)
+        res = p.map_async(waiting, range(3))
+        # Kill one of the pool workers.
+        pid = p._pool[0].pid
+        os.kill(pid, signal.SIGTERM)
+        self.assertRaises(BrokenProcessPool, res.get)
+        p.close()
+        p.join()
+
+    def test_broken_process_pool2(self):
+        from multiprocessing.pool import BrokenProcessPool
+        p = multiprocessing.Pool(2)
+        with self.assertRaises(BrokenProcessPool):
+            res = p.map(bad_exit, [0, 0, 1, 0])
+        p.close()
+        p.join()
+
 
 class _TestPoolWorkerLifetime(BaseTestCase):
     ALLOWED_TYPES = ('processes', )
