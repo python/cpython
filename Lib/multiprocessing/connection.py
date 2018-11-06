@@ -389,14 +389,14 @@ class Connection(_ConnectionBase):
 
     def _send_bytes(self, buf):
         n = len(buf)
-        if n > 2147483647:
+        if n > 0x7fffffff:
             pre_header = struct.pack("!i", -1)
             header = struct.pack("!Q", n)
             self._send(pre_header)
             self._send(header)
             self._send(buf)
         else:
-            # For wire compatibility with 3.2 and lower
+            # For wire compatibility with 3.7 and lower
             header = struct.pack("!i", n)
             if n > 16384:
                 # The payload is large so Nagle's algorithm won't be triggered
