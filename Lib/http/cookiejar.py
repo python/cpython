@@ -878,6 +878,7 @@ class DefaultCookiePolicy(CookiePolicy):
                  strict_ns_domain=DomainLiberal,
                  strict_ns_set_initial_dollar=False,
                  strict_ns_set_path=False,
+                 secure_protocols=("https", "wss")
                  ):
         """Constructor arguments should be passed as keyword arguments only."""
         self.netscape = netscape
@@ -890,6 +891,7 @@ class DefaultCookiePolicy(CookiePolicy):
         self.strict_ns_domain = strict_ns_domain
         self.strict_ns_set_initial_dollar = strict_ns_set_initial_dollar
         self.strict_ns_set_path = strict_ns_set_path
+        self.secure_protocols = secure_protocols
 
         if blocked_domains is not None:
             self._blocked_domains = tuple(blocked_domains)
@@ -1116,7 +1118,7 @@ class DefaultCookiePolicy(CookiePolicy):
         return True
 
     def return_ok_secure(self, cookie, request):
-        if cookie.secure and request.type != "https":
+        if cookie.secure and request.type not in self.secure_protocols:
             _debug("   secure cookie with non-secure request")
             return False
         return True

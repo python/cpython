@@ -68,7 +68,7 @@ PyDoc_STRVAR(abc_data_doc,
 static PyTypeObject _abc_data_type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "_abc_data",                        /*tp_name*/
-    sizeof(_abc_data),                  /*tp_size*/
+    sizeof(_abc_data),                  /*tp_basicsize*/
     .tp_dealloc = (destructor)abc_data_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_alloc = PyType_GenericAlloc,

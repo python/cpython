@@ -392,7 +392,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: make_legacy_pyc(source)
 
-   Move a PEP 3147/488 pyc file to its legacy pyc location and return the file
+   Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return the file
    system path to the legacy pyc file.  The *source* value is the file system
    path to the source file.  It does not need to exist, however the PEP
    3147/488 pyc file must exist.
@@ -1076,7 +1076,7 @@ The :mod:`test.support` module defines the following functions:
    Either this method or :func:`bind_port` should be used for any tests
    where a server socket needs to be bound to a particular port for the
    duration of the test.
-   Which one to use depends on whether the calling code is creating a python
+   Which one to use depends on whether the calling code is creating a Python
    socket, or if an unused port needs to be provided in a constructor
    or passed to an external program (i.e. the ``-accept`` argument to
    openssl's s_server mode).  Always prefer :func:`bind_port` over

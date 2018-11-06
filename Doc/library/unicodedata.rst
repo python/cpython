@@ -133,6 +133,13 @@ following functions:
    a human reader, if one has combining characters and the other
    doesn't, they may not compare equal.
 
+.. function:: is_normalized(form, unistr)
+
+   Return whether the Unicode string *unistr* is in the normal form *form*. Valid
+   values for *form* are 'NFC', 'NFKC', 'NFD', and 'NFKD'.
+
+   .. versionadded:: 3.8
+
 
 In addition, the module exposes the following constant:
 

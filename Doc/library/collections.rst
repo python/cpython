@@ -198,6 +198,7 @@ updates keys found deeper in the chain::
     >>> d['lion'] = 'orange'         # update an existing key two levels down
     >>> d['snake'] = 'red'           # new keys get added to the topmost dict
     >>> del d['elephant']            # remove an existing key one level down
+    >>> d                            # display result
     DeepChainMap({'zebra': 'black', 'snake': 'red'}, {}, {'lion': 'orange'})
 
 
@@ -530,9 +531,9 @@ or subtracting from an empty counter.
 
 In addition to the above, deques support iteration, pickling, ``len(d)``,
 ``reversed(d)``, ``copy.copy(d)``, ``copy.deepcopy(d)``, membership testing with
-the :keyword:`in` operator, and subscript references such as ``d[-1]``.  Indexed
-access is O(1) at both ends but slows to O(n) in the middle.  For fast random
-access, use lists instead.
+the :keyword:`in` operator, and subscript references such as ``d[0]`` to access
+the first element.  Indexed access is O(1) at both ends but slows to O(n) in
+the middle.  For fast random access, use lists instead.
 
 Starting in version 3.5, deques support ``__add__()``, ``__mul__()``,
 and ``__imul__()``.

@@ -2,6 +2,7 @@
 
 import sys
 from test.support import run_unittest, TESTFN, unlink
+import unittest
 
 # rip off all interesting stuff from test_profile
 import cProfile
@@ -36,19 +37,6 @@ class CProfileTest(ProfileTest):
         finally:
             unlink(TESTFN)
 
-    # Issue 21862
-    def test_module_path_option(self):
-        # Test -m switch with modules
-
-        # Test that -m switch needs an argument
-        assert_python_failure('-m', 'cProfile', '-m')
-
-        # Test failure for not-existent module
-        assert_python_failure('-m', 'cProfile', '-m', 'random_module_xyz')
-
-        # Test successful run
-        assert_python_ok('-m', 'cProfile', '-m', 'timeit', '-n', '1')
-
     def test_profile_enable_disable(self):
         prof = self.profilerclass()
         # Make sure we clean ourselves up if the test fails for some reason.
@@ -76,9 +64,14 @@ class CProfileTest(ProfileTest):
         # profile shouldn't be set once we leave the with-block.
         self.assertIs(sys.getprofile(), None)
 
+class TestCommandLine(unittest.TestCase):
+    def test_sort(self):
+        rc, out, err = assert_python_failure('-m', 'cProfile', '-s', 'demo')
+        self.assertGreater(rc, 0)
+        self.assertIn(b"option -s: invalid choice: 'demo'", err)
 
 def test_main():
-    run_unittest(CProfileTest)
+    run_unittest(CProfileTest, TestCommandLine)
 
 def main():
     if '-r' not in sys.argv:

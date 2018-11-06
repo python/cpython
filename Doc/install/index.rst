@@ -554,10 +554,10 @@ C headers              ``--install-headers``
 
 These override options can be relative, absolute,
 or explicitly defined in terms of one of the installation base directories.
-(There are two installation base directories, and they are normally the same---
-they only differ when you use the Unix "prefix scheme" and supply different
-``--prefix`` and ``--exec-prefix`` options; using ``--install-lib`` will
-override values computed or given for ``--install-purelib`` and
+(There are two installation base directories, and they are normally the
+same---they only differ when you use the Unix "prefix scheme" and supply
+different ``--prefix`` and ``--exec-prefix`` options; using ``--install-lib``
+will override values computed or given for ``--install-purelib`` and
 ``--install-platlib``, and is recommended for schemes that don't make a
 difference between Python and extension modules.)
 
@@ -584,10 +584,10 @@ in this case.)
 
 If you maintain Python on Windows, you might want third-party modules to live in
 a subdirectory of :file:`{prefix}`, rather than right in :file:`{prefix}`
-itself.  This is almost as easy as customizing the script installation directory
----you just have to remember that there are two types of modules to worry about,
-Python and extension modules, which can conveniently be both controlled by one
-option::
+itself.  This is almost as easy as customizing the script installation
+directory---you just have to remember that there are two types of modules
+to worry about, Python and extension modules, which can conveniently be both
+controlled by one option::
 
    python setup.py install --install-lib=Site
 

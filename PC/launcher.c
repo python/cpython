@@ -1051,7 +1051,7 @@ static BOOL
 validate_version(wchar_t * p)
 {
     /*
-    Version information should start with one of 2 or 3,
+    Version information should start with the major version,
     Optionally followed by a period and a minor version,
     Optionally followed by a minus and one of 32 or 64.
     Valid examples:
@@ -1068,7 +1068,7 @@ validate_version(wchar_t * p)
     */
     BOOL result = (p != NULL); /* Default to False if null pointer. */
 
-    result = result && iswdigit(*p);  /* Result = False if fist string element is not a digit. */
+    result = result && iswdigit(*p);  /* Result = False if first string element is not a digit. */
 
     while (result && iswdigit(*p))   /* Require a major version */
         ++p;  /* Skip all leading digit(s) */
