@@ -692,7 +692,7 @@ class CacheTests(unittest.TestCase):
         finally:
             locale.setlocale(locale.LC_TIME, locale_info)
 
-    @support.run_with_tz('STD-1DST')
+    @support.run_with_tz('STD-1DST,M4.1.0,M10.1.0')
     def test_TimeRE_recreation_timezone(self):
         # The TimeRE instance should be recreated upon changing the timezone.
         oldtzname = time.tzname
