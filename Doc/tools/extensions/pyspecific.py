@@ -141,7 +141,10 @@ class Availability(Directive):
     final_argument_whitespace = True
 
     def run(self):
-        pnode = nodes.paragraph(classes=['availability'])
+        pnode = nodes.paragraph(
+            ':ref:`Availability <availability>`: ' + self.arguments[0],
+            classes=["availability"],
+        )
         n, m = self.state.inline_text(':ref:`Availability <availability>`: ',
                                       self.lineno)
         pnode.extend(n + m)
