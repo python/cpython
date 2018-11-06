@@ -358,9 +358,10 @@ PyAPI_FUNC(int) _PyCoreConfig_GetEnvDup(
     wchar_t **dest,
     wchar_t *wname,
     char *name);
+
+/* Used by _testcapi.get_coreconfig() */
+PyAPI_FUNC(PyObject *) _PyCoreConfig_AsDict(const _PyCoreConfig *config);
 #endif
-
-
 
 #ifdef __cplusplus
 }
