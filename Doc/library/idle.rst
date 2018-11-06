@@ -667,7 +667,7 @@ User output in Shell
 When a program outputs text, the result is determined by the
 corresponding output device.  When IDLE executes user code, ``sys.stdout``
 and ``sys.stderr`` are connected to the display area of IDLE's Shell.  Some of
-its features are inherited from the underlying tcl/tk Text widget.  Others
+its features are inherited from the underlying Tk Text widget.  Others
 are programmed additions.
 
 Text widgets display a subset of Unicode, the Basic Multilingual Plane (BMP).
