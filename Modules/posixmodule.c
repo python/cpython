@@ -13913,8 +13913,9 @@ INITFUNC(void)
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
         waitid_result_desc.name = MODNAME ".waitid_result";
         WaitidResultType = PyStructSequence_NewType(&waitid_result_desc);
-        if (WaitidResultType == NULL)
+        if (WaitidResultType == NULL) {
             return NULL;
+        }
 #endif
 
         stat_result_desc.name = "os.stat_result"; /* see issue #19209 */
@@ -13922,15 +13923,17 @@ INITFUNC(void)
         stat_result_desc.fields[8].name = PyStructSequence_UnnamedField;
         stat_result_desc.fields[9].name = PyStructSequence_UnnamedField;
         StatResultType = PyStructSequence_NewType(&stat_result_desc);
-        if (StatResultType == NULL)
+        if (StatResultType == NULL) {
             return NULL;
+        }
         structseq_new = StatResultType->tp_new;
         StatResultType->tp_new = statresult_new;
 
         statvfs_result_desc.name = "os.statvfs_result"; /* see issue #19209 */
         StatVFSResultType = PyStructSequence_NewType(&statvfs_result_desc);
-        if (StatVFSResultType == NULL)
+        if (StatVFSResultType == NULL) {
             return NULL;
+        }
 #ifdef NEED_TICKS_PER_SECOND
 #  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
         ticks_per_second = sysconf(_SC_CLK_TCK);
@@ -13944,15 +13947,17 @@ INITFUNC(void)
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
         sched_param_desc.name = MODNAME ".sched_param";
         SchedParamType = PyStructSequence_NewType(&sched_param_desc);
-        if (SchedParamType == NULL)
+        if (SchedParamType == NULL) {
             return NULL;
+        }
         SchedParamType->tp_new = os_sched_param;
 #endif
 
         /* initialize TerminalSize_info */
         TerminalSizeType = PyStructSequence_NewType(&TerminalSize_desc);
-        if (TerminalSizeType == NULL)
+        if (TerminalSizeType == NULL) {
             return NULL;
+        }
 
         /* initialize scandir types */
         if (PyType_Ready(&ScandirIteratorType) < 0)
@@ -13977,14 +13982,16 @@ INITFUNC(void)
 
     times_result_desc.name = MODNAME ".times_result";
     TimesResultType = PyStructSequence_NewType(&times_result_desc);
-    if (TimesResultType == NULL)
+    if (TimesResultType == NULL) {
         return NULL;
+    }
     PyModule_AddObject(m, "times_result", (PyObject *)TimesResultType);
 
     uname_result_desc.name = MODNAME ".uname_result";
     UnameResultType = PyStructSequence_NewType(&uname_result_desc);
-    if (UnameResultType == NULL)
+    if (UnameResultType == NULL) {
         return NULL;
+    }
     PyModule_AddObject(m, "uname_result", (PyObject *)UnameResultType);
 
 #ifdef __APPLE__
