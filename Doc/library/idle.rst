@@ -647,8 +647,8 @@ By default, IDLE runs user code in a separate OS process rather than in
 the user interface process that runs the shell and editor.  In the execution
 process, it replaces ``sys.stdin``, ``sys.stdout``, and ``sys.stderr``
 with objects that get input from and send output to the Shell window.
-The original values stored in sys.__stdin__, sys.__stdout__, and sys.__stderr__
-are not touched, but may be None.
+The original values stored in ``sys.__stdin__``, ``sys.__stdout__``, and
+``sys.__stderr__`` are not touched, but may be ``None``.
 
 When Shell has the focus, it controls the keyboard and screen.  This is
 normally transparent, but functions that directly access the keyboard
