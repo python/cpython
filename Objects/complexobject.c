@@ -353,8 +353,6 @@ PyComplex_AsCComplex(PyObject *op)
 static PyObject *
 complex_repr(PyComplexObject *v)
 {
-    int precision = 0;
-    char format_code = 'r';
     PyObject *result = NULL;
 
     /* If these are non-NULL, they'll need to be freed. */
@@ -366,37 +364,80 @@ complex_repr(PyComplexObject *v)
        are pointers to constants. */
     const char *re = NULL;
     const char *lead = "";
-    const char *tail = "";
+    const char *tail = ")";
 
-    if (v->cval.real == 0. && copysign(1.0, v->cval.real)==1.0) {
-        /* Real part is +0: just output the imaginary part and do not
-           include parens. */
+    if (v->cval.real == 0.0
+        && copysign(1.0, v->cval.real) > 0.0
+        && copysign(1.0, v->cval.imag) > 0.0)
+    {
+        /* Real part is +0, imaginary part is not negative: just output
+           the imaginary part and do not include parens. */
         re = "";
-        im = PyOS_double_to_string(v->cval.imag, format_code,
-                                   precision, 0, NULL);
-        if (!im) {
-            PyErr_NoMemory();
-            goto done;
+        im = PyOS_double_to_string(v->cval.imag, 'r', 0, 0, NULL);
+        tail = "";
+    }
+    else
+    if (v->cval.real == 0.0
+        && v->cval.imag == 0.0
+        && copysign(1.0, v->cval.real) != copysign(1.0, v->cval.imag))
+    {
+        /* Real part is +0, imaginary part is -0 or
+           real part is -0, imaginary part is +0. */
+        re = "-0.0";
+        im = PyOS_double_to_string(-0.0, 'r', 0, Py_DTSF_SIGN, NULL);
+        lead = copysign(1.0, v->cval.real) > 0.0 ? "-(" : "(";
+    }
+    else
+    if (v->cval.real == 0.0
+        && copysign(1.0, v->cval.real) < 0.0
+        && copysign(1.0, v->cval.imag) > 0.0)
+    {
+        /* Real part is -0, imaginary part is not negative. */
+        re = "0";
+        im = PyOS_double_to_string(-v->cval.imag, 'r', 0, Py_DTSF_SIGN, NULL);
+        lead = "-(";
+    }
+    else
+    if (v->cval.imag == 0.0
+        && copysign(1.0, v->cval.imag) < 0.0)
+    {
+        /* Imaginary part is -0. */
+        if (v->cval.real == 0.0 && copysign(1.0, v->cval.real) > 0.0) {
+            re = "-0.0";
         }
-    } else {
+        else {
+            pre = PyOS_double_to_string(-v->cval.real, 'r', 0, 0, NULL);
+            if (!pre) {
+                PyErr_NoMemory();
+                goto done;
+            }
+            re = pre;
+        }
+
+        im = PyOS_double_to_string(-v->cval.imag, 'r', 0, Py_DTSF_SIGN, NULL);
+        lead = "-(";
+    }
+    else {
         /* Format imaginary part with sign, real part without. Include
            parens in the result. */
-        pre = PyOS_double_to_string(v->cval.real, format_code,
-                                    precision, 0, NULL);
-        if (!pre) {
-            PyErr_NoMemory();
-            goto done;
+        if (v->cval.real == 0.0 && copysign(1.0, v->cval.real) < 0.0) {
+            re = "-0.0";
         }
-        re = pre;
+        else {
+            pre = PyOS_double_to_string(v->cval.real, 'r', 0, 0, NULL);
+            if (!pre) {
+                PyErr_NoMemory();
+                goto done;
+            }
+            re = pre;
+        }
 
-        im = PyOS_double_to_string(v->cval.imag, format_code,
-                                   precision, Py_DTSF_SIGN, NULL);
-        if (!im) {
-            PyErr_NoMemory();
-            goto done;
-        }
+        im = PyOS_double_to_string(v->cval.imag, 'r', 0, Py_DTSF_SIGN, NULL);
         lead = "(";
-        tail = ")";
+    }
+    if (!im) {
+        PyErr_NoMemory();
+        goto done;
     }
     result = PyUnicode_FromFormat("%s%s%sj%s", lead, re, im, tail);
   done:
@@ -760,9 +801,16 @@ complex_from_string_inner(const char *s, Py_ssize_t len, void *type)
     start = s;
     while (Py_ISSPACE(*s))
         s++;
+
     if (*s == '(') {
-        /* Skip over possible bracket from repr(). */
         got_bracket = 1;
+    }
+    else if (*s == '-' && s[1] == '(') {
+        got_bracket = -1;
+        s++;
+    }
+    if (got_bracket) {
+        /* Skip over possible bracket from repr(). */
         s++;
         while (Py_ISSPACE(*s))
             s++;
@@ -863,6 +911,10 @@ complex_from_string_inner(const char *s, Py_ssize_t len, void *type)
     if (s-start != len)
         goto parse_error;
 
+    if (got_bracket < 0) {
+        x = -x;
+        y = -y;
+    }
     return complex_subtype_from_doubles((PyTypeObject *)type, x, y);
 
   parse_error:

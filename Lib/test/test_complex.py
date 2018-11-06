@@ -473,7 +473,7 @@ class ComplexTest(unittest.TestCase):
         test(complex(NAN, NAN), "(nan+nanj)")
 
         test(complex(0, INF), "infj")
-        test(complex(0, -INF), "-infj")
+        test(complex(0, -INF), "(0-infj)")
         test(complex(0, NAN), "nanj")
 
         self.assertEqual(1-6j,complex(repr(1-6j)))
@@ -487,15 +487,24 @@ class ComplexTest(unittest.TestCase):
             test_fn(repr(v), expected)
             test_fn(str(v), expected)
 
+        for x in 0.0, -0.0, 1.0, -1.0:
+            for y in 0.0, -0.0, 1.0, -1.0:
+                r = repr(complex(x, y))
+                with self.subTest(real=x, imag=y, repr=r):
+                    z = eval(r)
+                    self.assertEqual(z, complex(x, y))
+                    self.assertFloatsAreIdentical(z.real, x)
+                    self.assertFloatsAreIdentical(z.imag, y)
+
         test(complex(0., 1.),   "1j")
-        test(complex(-0., 1.),  "(-0+1j)")
-        test(complex(0., -1.),  "-1j")
-        test(complex(-0., -1.), "(-0-1j)")
+        test(complex(-0., 1.),  "-(0-1j)")
+        test(complex(0., -1.),  "(0-1j)")
+        test(complex(-0., -1.), "(-0.0-1j)")
 
         test(complex(0., 0.),   "0j")
-        test(complex(0., -0.),  "-0j")
-        test(complex(-0., 0.),  "(-0+0j)")
-        test(complex(-0., -0.), "(-0-0j)")
+        test(complex(0., -0.),  "-(-0.0-0j)")
+        test(complex(-0., 0.),  "(-0.0-0j)")
+        test(complex(-0., -0.), "-(0+0j)")
 
     def test_neg(self):
         self.assertEqual(-(1+6j), -1-6j)
@@ -563,9 +572,11 @@ class ComplexTest(unittest.TestCase):
         for x in vals:
             for y in vals:
                 z = complex(x, y)
-                roundtrip = complex(repr(z))
-                self.assertFloatsAreIdentical(z.real, roundtrip.real)
-                self.assertFloatsAreIdentical(z.imag, roundtrip.imag)
+                r = repr(z)
+                with self.subTest(x=x, y=y, repr=r):
+                    roundtrip = complex(r)
+                    self.assertFloatsAreIdentical(z.real, roundtrip.real)
+                    self.assertFloatsAreIdentical(z.imag, roundtrip.imag)
 
         # if we predefine some constants, then eval(repr(z)) should
         # also work, except that it might change the sign of zeros
