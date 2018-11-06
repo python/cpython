@@ -637,15 +637,16 @@ Running user code
 ^^^^^^^^^^^^^^^^^
 
 With rare exceptions, the result of executing Python code with IDLE is
-intended to be the same as executing the same code in a console window.
+intended to be the same as executing the same code by the default method,
+directly with Python in a text-mode system console or terminal window.
 However, the different interface and operation occasionally affect
 visible results.  For instance, ``sys.modules`` starts with more entries,
 and ``threading.activeCount()`` returns 2 instead of 1.
 
-By default, IDLE run user code is a separate OS process rather than the
-same process as the user interface.  It replaces ``sys.stdin``, ``sys.stdout``,
-and ``sys.stderr`` in the execution process with
-objects that get input from and send output to the Shell window.
+By default, IDLE runs user code in a separate OS process rather than in
+the user interface process that runs the shell and editor.  In the execution
+process, it replaces ``sys.stdin``, ``sys.stdout``, and ``sys.stderr``
+with objects that get input from and send output to the Shell window.
 The original values stored in sys.__stdin__, sys.__stdout__, and sys.__stderr__
 are not touched, but may be None.
 
@@ -655,14 +656,15 @@ and screen will not work.  These include system-specific functions that
 determine whether a key has been pressed and if so, which.
 
 IDLE's standard stream replacements are not inherited by subprocesses
-created by user code or by modules, such as multiprocessing, that create
-subprocesses.  One should start IDLE in a system console if one creates
-subprocesses that use ``input`` and ``print``.  User subprocess will then
-be attached to the console for input and output.
+created in the execution process, whether directly by user code or by modules
+such as multiprocessing.  If such subprocess use ``input`` from sys.stdin
+or ``print`` or ``write`` to sys.stdout or sys.stderr,
+IDLE should be started in a command line window.  The secondary subprocess
+will then be attached to that window for input and output.
 
-If ``sys`` is reset with ``importlib.reload(sys)``,
-IDLE's changes are lost and functions like ``input`` and
-``print`` will not work correctly.
+If ``sys`` is reset by user code, such as with ``importlib.reload(sys)``,
+IDLE's changes are lost and input from the keyboard and output to the screen
+will not work correctly.
 
 Developing tkinter applications
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
