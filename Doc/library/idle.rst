@@ -563,7 +563,6 @@ looked for in the user's home directory.  Statements in this file will be
 executed in the Tk namespace, so this file is not useful for importing
 functions to be used from IDLE's Python shell.
 
-
 Command line usage
 ^^^^^^^^^^^^^^^^^^
 
@@ -590,7 +589,6 @@ If there are arguments:
 
 * Otherwise, arguments are files opened for editing and
   ``sys.argv`` reflects the arguments passed to IDLE itself.
-
 
 Startup failure
 ^^^^^^^^^^^^^^^
@@ -635,27 +633,36 @@ be to delete one or more of the configuration files.
 If IDLE quits with no message, and it was not started from a console, try
 starting from a console (``python -m idlelib)`` and see if a message appears.
 
-
-IDLE-console differences
-^^^^^^^^^^^^^^^^^^^^^^^^
+Running user code
+^^^^^^^^^^^^^^^^^
 
 With rare exceptions, the result of executing Python code with IDLE is
 intended to be the same as executing the same code in a console window.
 However, the different interface and operation occasionally affect
-visible results.  For instance, ``sys.modules`` starts with more entries.
+visible results.  For instance, ``sys.modules`` starts with more entries,
+and ``threading.activeCount()`` returns 2 instead of 1.
 
-IDLE also replaces ``sys.stdin``, ``sys.stdout``, and ``sys.stderr`` with
+By default, IDLE run user code is a separate OS process rather than the
+same process as the user interface.  It replaces ``sys.stdin``, ``sys.stdout``,
+and ``sys.stderr`` in the execution process with
 objects that get input from and send output to the Shell window.
+The original values stored in sys.__stdin__, sys.__stdout__, and sys.__stderr__
+are not touched, but may be None.
+
 When Shell has the focus, it controls the keyboard and screen.  This is
 normally transparent, but functions that directly access the keyboard
-and screen will not work.  If ``sys`` is reset with ``importlib.reload(sys)``,
-IDLE's changes are lost and things like ``input``, ``raw_input``, and
-``print`` will not work correctly.
+and screen will not work.  These include system-specific functions that
+determine whether a key has been pressed and if so, which.
 
-With IDLE's Shell, one enters, edits, and recalls complete statements.
-Some consoles only work with a single physical line at a time.  IDLE uses
-``exec`` to run each statement.  As a result, ``'__builtins__'`` is always
-defined for each statement.
+IDLE's standard stream replacements are not inherited by subprocesses
+created by user code or by modules, such as multiprocessing, that create
+subprocesses.  One should start IDLE in a system console if one creates
+subprocesses that use ``input`` and ``print``.  User subprocess will then
+be attached to the console for input and output.
+
+If ``sys`` is reset with ``importlib.reload(sys)``,
+IDLE's changes are lost and functions like ``input`` and
+``print`` will not work correctly.
 
 Developing tkinter applications
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
