@@ -3100,6 +3100,7 @@ static PyMethodDef mapp_methods[] = {
      clear__doc__},
     {"copy",            (PyCFunction)dict_copy,         METH_NOARGS,
      copy__doc__},
+    DICT___REVERSED___METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -3335,22 +3336,32 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
 {
     dictiterobject *di;
     di = PyObject_GC_New(dictiterobject, itertype);
-    if (di == NULL)
+    if (di == NULL) {
         return NULL;
+    }
     Py_INCREF(dict);
     di->di_dict = dict;
     di->di_used = dict->ma_used;
-    di->di_pos = 0;
     di->len = dict->ma_used;
-    if (itertype == &PyDictIterItem_Type) {
+    if ((itertype == &PyDictRevIterKey_Type ||
+         itertype == &PyDictRevIterItem_Type ||
+         itertype == &PyDictRevIterValue_Type) && dict->ma_used) {
+            di->di_pos = dict->ma_keys->dk_nentries - 1;
+    }
+    else {
+        di->di_pos = 0;
+    }
+    if (itertype == &PyDictIterItem_Type ||
+        itertype == &PyDictRevIterItem_Type) {
         di->di_result = PyTuple_Pack(2, Py_None, Py_None);
         if (di->di_result == NULL) {
             Py_DECREF(di);
             return NULL;
         }
     }
-    else
+    else {
         di->di_result = NULL;
+    }
     _PyObject_GC_TRACK(di);
     return (PyObject *)di;
 }
@@ -3664,6 +3675,120 @@ PyTypeObject PyDictIterItem_Type = {
 };
 
 
+/* dictreviter */
+
+static PyObject *
+dictreviter_iternext(dictiterobject *di)
+{
+    PyDictObject *d = di->di_dict;
+
+    if (d == NULL) {
+        return NULL;
+    }
+    assert (PyDict_Check(d));
+
+    if (di->di_used != d->ma_used) {
+        PyErr_SetString(PyExc_RuntimeError,
+                         "dictionary changed size during iteration");
+        di->di_used = -1; /* Make this state sticky */
+        return NULL;
+    }
+
+    Py_ssize_t i = di->di_pos;
+    PyDictKeysObject *k = d->ma_keys;
+    PyObject *key, *value, *result;
+
+    if (d->ma_values) {
+        if (i < 0) {
+            goto fail;
+        }
+        key = DK_ENTRIES(k)[i].me_key;
+        value = d->ma_values[i];
+        assert (value != NULL);
+    }
+    else {
+        PyDictKeyEntry *entry_ptr = &DK_ENTRIES(k)[i];
+        while (i >= 0 && entry_ptr->me_value == NULL) {
+            entry_ptr--;
+            i--;
+        }
+        if (i < 0) {
+            goto fail;
+        }
+        key = entry_ptr->me_key;
+        value = entry_ptr->me_value;
+    }
+    di->di_pos = i-1;
+    di->len--;
+
+    if (Py_TYPE(di) == &PyDictRevIterKey_Type) {
+        Py_INCREF(key);
+        return key;
+    }
+    else if (Py_TYPE(di) == &PyDictRevIterValue_Type) {
+        Py_INCREF(value);
+        return value;
+    }
+    else if (Py_TYPE(di) == &PyDictRevIterItem_Type) {
+        Py_INCREF(key);
+        Py_INCREF(value);
+        result = di->di_result;
+        if (Py_REFCNT(result) == 1) {
+            PyObject *oldkey = PyTuple_GET_ITEM(result, 0);
+            PyObject *oldvalue = PyTuple_GET_ITEM(result, 1);
+            PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
+            PyTuple_SET_ITEM(result, 1, value);  /* steals reference */
+            Py_INCREF(result);
+            Py_DECREF(oldkey);
+            Py_DECREF(oldvalue);
+        }
+        else {
+            result = PyTuple_New(2);
+            if (result == NULL) {
+                return NULL;
+            }
+            PyTuple_SET_ITEM(result, 0, key); /* steals reference */
+            PyTuple_SET_ITEM(result, 1, value); /* steals reference */
+        }
+        return result;
+    }
+    else {
+        Py_UNREACHABLE();
+    }
+
+fail:
+    di->di_dict = NULL;
+    Py_DECREF(d);
+    return NULL;
+}
+
+PyTypeObject PyDictRevIterKey_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "dict_reversekeyiterator",
+    sizeof(dictiterobject),
+    .tp_dealloc = (destructor)dictiter_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = (traverseproc)dictiter_traverse,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)dictreviter_iternext,
+    .tp_methods = dictiter_methods
+};
+
+
+/*[clinic input]
+dict.__reversed__
+
+Return a reverse iterator over the dict keys.
+[clinic start generated code]*/
+
+static PyObject *
+dict___reversed___impl(PyDictObject *self)
+/*[clinic end generated code: output=e674483336d1ed51 input=23210ef3477d8c4d]*/
+{
+    assert (PyDict_Check(self));
+    return dictiter_new(self, &PyDictRevIterKey_Type);
+}
+
 static PyObject *
 dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored))
 {
@@ -3671,7 +3796,6 @@ dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored))
     dictiterobject tmp = *di;
     Py_XINCREF(tmp.di_dict);
 
-    /* iterate the temporary into a list */
     PyObject *list = PySequence_List((PyObject*)&tmp);
     Py_XDECREF(tmp.di_dict);
     if (list == NULL) {
@@ -3679,6 +3803,30 @@ dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored))
     }
     return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), list);
 }
+
+PyTypeObject PyDictRevIterItem_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "dict_reverseitemiterator",
+    sizeof(dictiterobject),
+    .tp_dealloc = (destructor)dictiter_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = (traverseproc)dictiter_traverse,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)dictreviter_iternext,
+    .tp_methods = dictiter_methods
+};
+
+PyTypeObject PyDictRevIterValue_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "dict_reversevalueiterator",
+    sizeof(dictiterobject),
+    .tp_dealloc = (destructor)dictiter_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = (traverseproc)dictiter_traverse,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)dictreviter_iternext,
+    .tp_methods = dictiter_methods
+};
 
 /***********************************************/
 /* View objects for keys(), items(), values(). */
@@ -4035,9 +4183,16 @@ dictviews_isdisjoint(PyObject *self, PyObject *other)
 PyDoc_STRVAR(isdisjoint_doc,
 "Return True if the view and the given iterable have a null intersection.");
 
+static PyObject* dictkeys_reversed(_PyDictViewObject *dv);
+
+PyDoc_STRVAR(reversed_keys_doc,
+"Return a reverse iterator over the dict keys.");
+
 static PyMethodDef dictkeys_methods[] = {
     {"isdisjoint",      (PyCFunction)dictviews_isdisjoint,  METH_O,
      isdisjoint_doc},
+    {"__reversed__",    (PyCFunction)dictkeys_reversed,    METH_NOARGS,
+     reversed_keys_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -4078,6 +4233,15 @@ static PyObject *
 dictkeys_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
 {
     return _PyDictView_New(dict, &PyDictKeys_Type);
+}
+
+static PyObject *
+dictkeys_reversed(_PyDictViewObject *dv)
+{
+    if (dv->dv_dict == NULL) {
+        Py_RETURN_NONE;
+    }
+    return dictiter_new(dv->dv_dict, &PyDictRevIterKey_Type);
 }
 
 /*** dict_items ***/
@@ -4125,9 +4289,16 @@ static PySequenceMethods dictitems_as_sequence = {
     (objobjproc)dictitems_contains,     /* sq_contains */
 };
 
+static PyObject* dictitems_reversed(_PyDictViewObject *dv);
+
+PyDoc_STRVAR(reversed_items_doc,
+"Return a reverse iterator over the dict items.");
+
 static PyMethodDef dictitems_methods[] = {
     {"isdisjoint",      (PyCFunction)dictviews_isdisjoint,  METH_O,
      isdisjoint_doc},
+    {"__reversed__",    (PyCFunction)dictitems_reversed,    METH_NOARGS,
+     reversed_items_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -4170,6 +4341,15 @@ dictitems_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
     return _PyDictView_New(dict, &PyDictItems_Type);
 }
 
+static PyObject *
+dictitems_reversed(_PyDictViewObject *dv)
+{
+    if (dv->dv_dict == NULL) {
+        Py_RETURN_NONE;
+    }
+    return dictiter_new(dv->dv_dict, &PyDictRevIterItem_Type);
+}
+
 /*** dict_values ***/
 
 static PyObject *
@@ -4192,7 +4372,14 @@ static PySequenceMethods dictvalues_as_sequence = {
     (objobjproc)0,                      /* sq_contains */
 };
 
+static PyObject* dictvalues_reversed(_PyDictViewObject *dv);
+
+PyDoc_STRVAR(reversed_values_doc,
+"Return a reverse iterator over the dict values.");
+
 static PyMethodDef dictvalues_methods[] = {
+    {"__reversed__",    (PyCFunction)dictvalues_reversed,    METH_NOARGS,
+     reversed_values_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -4234,6 +4421,16 @@ dictvalues_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
 {
     return _PyDictView_New(dict, &PyDictValues_Type);
 }
+
+static PyObject *
+dictvalues_reversed(_PyDictViewObject *dv)
+{
+    if (dv->dv_dict == NULL) {
+        Py_RETURN_NONE;
+    }
+    return dictiter_new(dv->dv_dict, &PyDictRevIterValue_Type);
+}
+
 
 /* Returns NULL if cannot allocate a new PyDictKeysObject,
    but does not set an error */

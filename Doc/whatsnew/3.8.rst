@@ -98,6 +98,9 @@ Other Language Changes
 * Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
+* Dict and dictviews are now iterable in reversed insertion order using
+  :func:`reversed`. (Contributed by Rémi Lapeyre in :issue:`33462`.)
+
 * The syntax allowed for keyword names in function calls was further
   restricted. In particular, ``f((keyword)=arg)`` is no longer allowed. It was
   never intended to permit more than a bare name on the left-hand side of a
