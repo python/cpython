@@ -45,7 +45,7 @@ __all__ = [
 
 import re
 
-from string import hexdigits
+from string import hexdigits, digits, letters
 from email.utils import fix_eols
 
 CRLF = '\r\n'
@@ -56,6 +56,21 @@ MISC_LEN = 7
 
 hqre = re.compile(r'[^-a-zA-Z0-9!*+/ ]')
 bqre = re.compile(r'[^ !-<>-~\t]')
+
+# Build a mapping of octets to the expansion of that octet.  Since we're only
+# going to have 256 of these things, this isn't terribly inefficient
+# space-wise.  Remember that headers and bodies have different sets of safe
+# characters.  Initialize both maps with the full expansion, and then override
+# the safe bytes with the more compact form.
+_QUOPRI_MAP = ['=%02X' % c for c in range(256)]
+_QUOPRI_HEADER_MAP = _QUOPRI_MAP[:]
+_QUOPRI_BODY_MAP = _QUOPRI_MAP[:]
+
+# Safe header bytes which need no encoding.
+for c in b'-!*+/' + letters.encode('ascii') + digits.encode('ascii'):
+    _QUOPRI_HEADER_MAP[ord(c)] = c
+# Headers have one other special encoding; spaces become underscores.
+_QUOPRI_HEADER_MAP[ord(' ')] = '_'
 
 
 
@@ -79,6 +94,19 @@ def header_quopri_len(s):
         else:
             count += 1
     return count
+
+
+def header_length(bytearray):
+    """Return a header quoted-printable encoding length.
+
+    Note that this does not include any RFC 2047 chrome added by
+    `header_encode()`.
+
+    :param bytearray: An array of bytes (a.k.a. octets).
+    :return: The length in bytes of the byte array when it is encoded with
+        quoted-printable for headers.
+    """
+    return sum(len(_QUOPRI_HEADER_MAP[ord(octet)]) for octet in bytearray)
 
 
 def body_quopri_len(str):

@@ -10,6 +10,7 @@ __all__ = [
     ]
 
 import codecs
+from functools import partial
 import email.base64mime
 import email.quoprimime
 
@@ -24,9 +25,14 @@ BASE64      = 2 # Base64
 SHORTEST    = 3 # the shorter of QP and base64, but only for headers
 
 # In "=?charset?q?hello_world?=", the =?, ?q?, and ?= add up to 7
+RFC2047_CHROME_LEN = 7
+
+# In "=?charset?q?hello_world?=", the =?, ?q?, and ?= add up to 7
 MISC_LEN = 7
 
 DEFAULT_CHARSET = 'us-ascii'
+UNKNOWN8BIT = 'unknown-8bit'
+EMPTYSTRING = ''
 
 
 
@@ -150,6 +156,16 @@ def add_codec(charset, codecname):
     built-in, or to the encode() method of a Unicode string.
     """
     CODEC_MAP[charset] = codecname
+
+
+
+# Convenience function for encoding strings, taking into account
+# that they might be unknown-8bit (ie: have surrogate-escaped bytes)
+def _encode(string, codec):
+    if codec == UNKNOWN8BIT:
+        return string.encode('ascii', 'surrogateescape')
+    else:
+        return string.encode(codec)
 
 
 
@@ -374,6 +390,84 @@ class Charset:
                 return email.quoprimime.header_encode(s, cset, maxlinelen=None)
         else:
             return s
+
+    def _get_encoder(self, header_bytes):
+        if self.header_encoding == BASE64:
+            return email.base64mime
+        elif self.header_encoding == QP:
+            return email.quoprimime
+        elif self.header_encoding == SHORTEST:
+            len64 = email.base64mime.header_length(header_bytes)
+            lenqp = email.quoprimime.header_length(header_bytes)
+            if len64 < lenqp:
+                return email.base64mime
+            else:
+                return email.quoprimime
+        else:
+            return None
+
+    def header_encode_lines(self, string, maxlengths):
+        """Header-encode a string by converting it first to bytes.
+
+        This is similar to `header_encode()` except that the string is fit
+        into maximum line lengths as given by the argument.
+
+        :param string: A unicode string for the header.  It must be possible
+            to encode this string to bytes using the character set's
+            output codec.
+        :param maxlengths: Maximum line length iterator.  Each element
+            returned from this iterator will provide the next maximum line
+            length.  This parameter is used as an argument to built-in next()
+            and should never be exhausted.  The maximum line lengths should
+            not count the RFC 2047 chrome.  These line lengths are only a
+            hint; the splitter does the best it can.
+        :return: Lines of encoded strings, each with RFC 2047 chrome.
+        """
+        # See which encoding we should use.
+        codec = self.output_codec or 'us-ascii'
+        _encode = lambda a, b: self.convert(a)
+        header_bytes = _encode(string, codec)
+        encoder_module = self._get_encoder(header_bytes)
+        encoder = partial(encoder_module.header_encode, charset=codec)
+        # Calculate the number of characters that the RFC 2047 chrome will
+        # contribute to each line.
+        charset = self.get_output_charset()
+        extra = len(charset) + RFC2047_CHROME_LEN
+        # Now comes the hard part.  We must encode bytes but we can't split on
+        # bytes because some character sets are variable length and each
+        # encoded word must stand on its own.  So the problem is you have to
+        # encode to bytes to figure out this word's length, but you must split
+        # on characters.  This causes two problems: first, we don't know how
+        # many octets a specific substring of unicode characters will get
+        # encoded to, and second, we don't know how many ASCII characters
+        # those octets will get encoded to.  Unless we try it.  Which seems
+        # inefficient.  In the interest of being correct rather than fast (and
+        # in the hope that there will be few encoded headers in any such
+        # message), brute force it. :(
+        lines = []
+        current_line = []
+        maxlen = next(maxlengths) - extra
+        for character in string:
+            current_line.append(character)
+            this_line = EMPTYSTRING.join(current_line)
+            length = encoder_module.header_length(_encode(this_line, charset))
+            if length > maxlen:
+                # This last character doesn't fit so pop it off.
+                current_line.pop()
+                # Does nothing fit on the first line?
+                if not lines and not current_line:
+                    lines.append(None)
+                else:
+                    separator = (' ' if lines else '')
+                    joined_line = EMPTYSTRING.join(current_line)
+                    header_bytes = _encode(joined_line, codec)
+                    lines.append(encoder(header_bytes))
+                current_line = [character]
+                maxlen = next(maxlengths) - extra
+        joined_line = EMPTYSTRING.join(current_line)
+        header_bytes = _encode(joined_line, codec)
+        lines.append(encoder(header_bytes))
+        return lines
 
     def body_encode(self, s, convert=True):
         """Body-encode a string and convert it to output_charset.

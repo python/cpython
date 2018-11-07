@@ -243,16 +243,7 @@ class TestMessageAPI(TestEmailBase):
         msg = self._msgobj('msg_01.txt')
         fp = openfile('msg_01.txt')
         try:
-            # BAW 30-Mar-2009 Evil be here.  So, the generator is broken with
-            # respect to long line breaking.  It's also not idempotent when a
-            # header from a parsed message is continued with tabs rather than
-            # spaces.  Before we fixed bug 1974 it was reversedly broken,
-            # i.e. headers that were continued with spaces got continued with
-            # tabs.  For Python 2.x there's really no good fix and in Python
-            # 3.x all this stuff is re-written to be right(er).  Chris Withers
-            # convinced me that using space as the default continuation
-            # character is less bad for more applications.
-            text = fp.read().replace('\t', ' ')
+            text = fp.read()
         finally:
             fp.close()
         self.ndiffAssertEqual(text, msg.as_string())
@@ -548,8 +539,8 @@ test
         g.flatten(msg)
         eq(sfp.getvalue(), """\
 Subject: bug demonstration
- 12345678911234567892123456789312345678941234567895123456789612345678971234567898112345678911234567892123456789112345678911234567892123456789
- more text
+\t12345678911234567892123456789312345678941234567895123456789612345678971234567898112345678911234567892123456789112345678911234567892123456789
+\tmore text
 
 test
 """)
@@ -568,8 +559,8 @@ bug demonstration
         h = Header(hstr)
         eq(h.encode(), """\
 bug demonstration
- 12345678911234567892123456789312345678941234567895123456789612345678971234567898112345678911234567892123456789112345678911234567892123456789
- more text""")
+\t12345678911234567892123456789312345678941234567895123456789612345678971234567898112345678911234567892123456789112345678911234567892123456789
+\tmore text""")
 
     def test_long_nonstring(self):
         eq = self.ndiffAssertEqual
@@ -589,30 +580,30 @@ bug demonstration
         g.flatten(msg)
         eq(sfp.getvalue(), """\
 Subject: =?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_einem_Foerd?=
- =?iso-8859-1?q?erband_komfortabel_den_Korridor_entlang=2C_an_s=FCdl=FCndi?=
- =?iso-8859-1?q?schen_Wandgem=E4lden_vorbei=2C_gegen_die_rotierenden_Kling?=
- =?iso-8859-1?q?en_bef=F6rdert=2E_?= =?iso-8859-2?q?Finan=E8ni_met?=
- =?iso-8859-2?q?ropole_se_hroutily_pod_tlakem_jejich_d=F9vtipu=2E=2E_?=
- =?utf-8?b?5q2j56K644Gr6KiA44GG44Go57+76Kiz44Gv44GV44KM44Gm44GE?=
- =?utf-8?b?44G+44Gb44KT44CC5LiA6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM44CB?=
- =?utf-8?b?44GC44Go44Gv44Gn44Gf44KJ44KB44Gn44GZ44CC5a6f6Zqb44Gr44Gv44CM?=
- =?utf-8?q?Wenn_ist_das_Nunstuck_git_und_Slotermeyer=3F_Ja!_Beiherhund_das?=
- =?utf-8?b?IE9kZXIgZGllIEZsaXBwZXJ3YWxkdCBnZXJzcHV0LuOAjeOBqOiogOOBow==?=
- =?utf-8?b?44Gm44GE44G+44GZ44CC?=
+ =?iso-8859-1?q?erband_komfortabel_den_Korridor_entlang=2C_an_s=FCdl=FCnd?=
+ =?iso-8859-1?q?ischen_Wandgem=E4lden_vorbei=2C_gegen_die_rotierenden_Kli?=
+ =?iso-8859-1?q?ngen_bef=F6rdert=2E_?= =?iso-8859-2?q?Finan=E8ni_metropol?=
+ =?iso-8859-2?q?e_se_hroutily_pod_tlakem_jejich_d=F9vtipu=2E=2E_?=
+ =?utf-8?b?5q2j56K644Gr6KiA44GG44Go57+76Kiz44Gv44GV44KM44Gm44GE44G+44Gb?=
+ =?utf-8?b?44KT44CC5LiA6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM44CB44GC44Go?=
+ =?utf-8?b?44Gv44Gn44Gf44KJ44KB44Gn44GZ44CC5a6f6Zqb44Gr44Gv44CMV2VubiBp?=
+ =?utf-8?b?c3QgZGFzIE51bnN0dWNrIGdpdCB1bmQgU2xvdGVybWV5ZXI/IEphISBCZWlo?=
+ =?utf-8?b?ZXJodW5kIGRhcyBPZGVyIGRpZSBGbGlwcGVyd2FsZHQgZ2Vyc3B1dC7jgI3j?=
+ =?utf-8?b?gajoqIDjgaPjgabjgYTjgb7jgZnjgII=?=
 
 """)
         eq(h.encode(), """\
 =?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_einem_Foerd?=
- =?iso-8859-1?q?erband_komfortabel_den_Korridor_entlang=2C_an_s=FCdl=FCndi?=
- =?iso-8859-1?q?schen_Wandgem=E4lden_vorbei=2C_gegen_die_rotierenden_Kling?=
- =?iso-8859-1?q?en_bef=F6rdert=2E_?= =?iso-8859-2?q?Finan=E8ni_met?=
- =?iso-8859-2?q?ropole_se_hroutily_pod_tlakem_jejich_d=F9vtipu=2E=2E_?=
- =?utf-8?b?5q2j56K644Gr6KiA44GG44Go57+76Kiz44Gv44GV44KM44Gm44GE?=
- =?utf-8?b?44G+44Gb44KT44CC5LiA6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM44CB?=
- =?utf-8?b?44GC44Go44Gv44Gn44Gf44KJ44KB44Gn44GZ44CC5a6f6Zqb44Gr44Gv44CM?=
- =?utf-8?q?Wenn_ist_das_Nunstuck_git_und_Slotermeyer=3F_Ja!_Beiherhund_das?=
- =?utf-8?b?IE9kZXIgZGllIEZsaXBwZXJ3YWxkdCBnZXJzcHV0LuOAjeOBqOiogOOBow==?=
- =?utf-8?b?44Gm44GE44G+44GZ44CC?=""")
+ =?iso-8859-1?q?erband_komfortabel_den_Korridor_entlang=2C_an_s=FCdl=FCnd?=
+ =?iso-8859-1?q?ischen_Wandgem=E4lden_vorbei=2C_gegen_die_rotierenden_Kli?=
+ =?iso-8859-1?q?ngen_bef=F6rdert=2E_?= =?iso-8859-2?q?Finan=E8ni_metropol?=
+ =?iso-8859-2?q?e_se_hroutily_pod_tlakem_jejich_d=F9vtipu=2E=2E_?=
+ =?utf-8?b?5q2j56K644Gr6KiA44GG44Go57+76Kiz44Gv44GV44KM44Gm44GE44G+44Gb?=
+ =?utf-8?b?44KT44CC5LiA6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM44CB44GC44Go?=
+ =?utf-8?b?44Gv44Gn44Gf44KJ44KB44Gn44GZ44CC5a6f6Zqb44Gr44Gv44CMV2VubiBp?=
+ =?utf-8?b?c3QgZGFzIE51bnN0dWNrIGdpdCB1bmQgU2xvdGVybWV5ZXI/IEphISBCZWlo?=
+ =?utf-8?b?ZXJodW5kIGRhcyBPZGVyIGRpZSBGbGlwcGVyd2FsZHQgZ2Vyc3B1dC7jgI3j?=
+ =?utf-8?b?gajoqIDjgaPjgabjgYTjgb7jgZnjgII=?=""")
 
     def test_long_header_encode(self):
         eq = self.ndiffAssertEqual
@@ -630,8 +621,9 @@ wasnipoop; giraffes="very-long-necked-animals";
                    header_name='X-Foobar-Spoink-Defrobnit',
                    continuation_ws='\t')
         eq(h.encode(), '''\
-wasnipoop; giraffes="very-long-necked-animals";
-\tspooge="yummy"; hippos="gargantuan"; marshmallows="gooey"''')
+wasnipoop;
+ giraffes="very-long-necked-animals"; spooge="yummy";
+ hippos="gargantuan"; marshmallows="gooey"''')
 
     def test_header_splitter(self):
         eq = self.ndiffAssertEqual
@@ -674,7 +666,8 @@ Test""")
         hstr = 'References: ' + 'x' * 80
         h = Header(hstr, continuation_ws='\t')
         eq(h.encode(), """\
-References: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx""")
+References:
+ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx""")
 
     def test_splitting_multiple_long_lines(self):
         eq = self.ndiffAssertEqual
@@ -686,17 +679,17 @@ from babylon.socal-raves.org (localhost [127.0.0.1]); by babylon.socal-raves.org
         h = Header(hstr, continuation_ws='\t')
         eq(h.encode(), """\
 from babylon.socal-raves.org (localhost [127.0.0.1]);
-\tby babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81;
-\tfor <mailman-admin@babylon.socal-raves.org>;
-\tSat, 2 Feb 2002 17:00:06 -0800 (PST)
+ by babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81;
+ for <mailman-admin@babylon.socal-raves.org>;
+ Sat, 2 Feb 2002 17:00:06 -0800 (PST)
 \tfrom babylon.socal-raves.org (localhost [127.0.0.1]);
-\tby babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81;
-\tfor <mailman-admin@babylon.socal-raves.org>;
-\tSat, 2 Feb 2002 17:00:06 -0800 (PST)
+ by babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81;
+ for <mailman-admin@babylon.socal-raves.org>;
+ Sat, 2 Feb 2002 17:00:06 -0800 (PST)
 \tfrom babylon.socal-raves.org (localhost [127.0.0.1]);
-\tby babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81;
-\tfor <mailman-admin@babylon.socal-raves.org>;
-\tSat, 2 Feb 2002 17:00:06 -0800 (PST)""")
+ by babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81;
+ for <mailman-admin@babylon.socal-raves.org>;
+ Sat, 2 Feb 2002 17:00:06 -0800 (PST)""")
 
     def test_splitting_first_line_only_is_long(self):
         eq = self.ndiffAssertEqual
@@ -708,8 +701,8 @@ from modemcable093.139-201-24.que.mc.videotron.ca ([24.201.139.93] helo=cthulhu.
         h = Header(hstr, maxlinelen=78, header_name='Received',
                    continuation_ws='\t')
         eq(h.encode(), """\
-from modemcable093.139-201-24.que.mc.videotron.ca ([24.201.139.93]
-\thelo=cthulhu.gerg.ca)
+from modemcable093.139-201-24.que.mc.videotron.ca
+ ([24.201.139.93] helo=cthulhu.gerg.ca)
 \tby kronos.mems-exchange.org with esmtp (Exim 4.05)
 \tid 17k4h5-00034i-00
 \tfor test@mems-exchange.org; Wed, 28 Aug 2002 11:25:20 -0400""")
@@ -722,8 +715,8 @@ from modemcable093.139-201-24.que.mc.videotron.ca ([24.201.139.93]
         h.append('gr\xfcnes Licht f\xfcr Offshore-Windkraftprojekte')
         msg['Subject'] = h
         eq(msg.as_string(), """\
-Subject: =?iso-8859-1?q?Britische_Regierung_gibt?= =?iso-8859-1?q?gr=FCnes?=
- =?iso-8859-1?q?_Licht_f=FCr_Offshore-Windkraftprojekte?=
+Subject: =?iso-8859-1?q?Britische_Regierung_gibt_gr=FCnes_Licht_f=FCr_Off?=
+ =?iso-8859-1?q?shore-Windkraftprojekte?=
 
 """)
 
@@ -742,9 +735,9 @@ Reply-To: Britische Regierung gibt gr\xfcnes Licht f\xfcr Offshore-Windkraftproj
         msg = Message()
         msg['To'] = to
         eq(msg.as_string(0), '''\
-To: "Someone Test #A" <someone@eecs.umich.edu>, <someone@eecs.umich.edu>,
- "Someone Test #B" <someone@umich.edu>,
- "Someone Test #C" <someone@eecs.umich.edu>,
+To: "Someone Test #A"
+ <someone@eecs.umich.edu>,<someone@eecs.umich.edu>,"Someone Test #B"
+ <someone@umich.edu>, "Someone Test #C" <someone@eecs.umich.edu>,
  "Someone Test #D" <someone@eecs.umich.edu>
 
 ''')
@@ -774,9 +767,9 @@ This is an example of string which has almost the limit of header length.
         # BAW: this seems broken because the first line is too long
         eq(h.encode(), """\
 =?iso-8859-1?q?Die_Mieter_treten_hier_?=
- =?iso-8859-1?q?ein_werden_mit_einem_Foerderband_komfortabel_den_Korridor_?=
- =?iso-8859-1?q?entlang=2C_an_s=FCdl=FCndischen_Wandgem=E4lden_vorbei=2C_g?=
- =?iso-8859-1?q?egen_die_rotierenden_Klingen_bef=F6rdert=2E_?=""")
+ =?iso-8859-1?q?ein_werden_mit_einem_Foerderband_komfortabel_den_Korridor?=
+ =?iso-8859-1?q?_entlang=2C_an_s=FCdl=FCndischen_Wandgem=E4lden_vorbei=2C?=
+ =?iso-8859-1?q?_gegen_die_rotierenden_Klingen_bef=F6rdert=2E_?=""")
 
     def test_long_received_header(self):
         h = 'from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by hrothgar.la.mastaler.com (tmda-ofmipd) with ESMTP; Wed, 05 Mar 2003 18:10:18 -0700'
@@ -785,8 +778,8 @@ This is an example of string which has almost the limit of header length.
         msg['Received-2'] = h
         self.ndiffAssertEqual(msg.as_string(), """\
 Received-1: from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by
-\throthgar.la.mastaler.com (tmda-ofmipd) with ESMTP;
-\tWed, 05 Mar 2003 18:10:18 -0700
+ hrothgar.la.mastaler.com (tmda-ofmipd) with ESMTP;
+ Wed, 05 Mar 2003 18:10:18 -0700
 Received-2: from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by
  hrothgar.la.mastaler.com (tmda-ofmipd) with ESMTP;
  Wed, 05 Mar 2003 18:10:18 -0700
@@ -800,8 +793,9 @@ Received-2: from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by
                                  continuation_ws='\t')
         msg['Received'] = h
         self.ndiffAssertEqual(msg.as_string(), """\
-Received: <15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de>
-\t(David Bremner's message of "Thu, 6 Mar 2003 13:58:21 +0100")
+Received: 
+ <15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de>
+ (David Bremner's message of "Thu, 6 Mar 2003 13:58:21 +0100")
 Received: <15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de>
  (David Bremner's message of "Thu, 6 Mar 2003 13:58:21 +0100")
 
@@ -816,9 +810,11 @@ Received: <15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de>
         msg['Face-1'] = t
         msg['Face-2'] = Header(t, header_name='Face-2')
         eq(msg.as_string(), """\
-Face-1: iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
+Face-1: 
+ iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
  locQDQ4zJykFBAXJfWDjAAACYUlEQVR4nF2TQY/jIAyFc6lydlG5x8Nyp1Y69wj1PN2I5gzp
-Face-2: iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
+Face-2: 
+ iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
  locQDQ4zJykFBAXJfWDjAAACYUlEQVR4nF2TQY/jIAyFc6lydlG5x8Nyp1Y69wj1PN2I5gzp
 
 """)
@@ -831,7 +827,8 @@ Received: from siimage.com ([172.25.1.3]) by zima.siliconimage.com with Microsof
         msg = email.message_from_string(m)
         eq(msg.as_string(), '''\
 Received: from siimage.com ([172.25.1.3]) by zima.siliconimage.com with
- Microsoft SMTPSVC(5.0.2195.4905); Wed, 16 Oct 2002 07:41:11 -0700
+ Microsoft SMTPSVC(5.0.2195.4905);
+ Wed, 16 Oct 2002 07:41:11 -0700
 
 ''')
 
@@ -844,10 +841,12 @@ List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/spamassassin-tal
         msg['List'] = h
         msg['List'] = Header(h, header_name='List')
         self.ndiffAssertEqual(msg.as_string(), """\
-List: List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/spamassassin-talk>,
- <mailto:spamassassin-talk-request@lists.sourceforge.net?subject=unsubscribe>
-List: List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/spamassassin-talk>,
- <mailto:spamassassin-talk-request@lists.sourceforge.net?subject=unsubscribe>
+List: List-Unsubscribe:
+ <https://lists.sourceforge.net/lists/listinfo/spamassassin-talk>,
+        <mailto:spamassassin-talk-request@lists.sourceforge.net?subject=unsubscribe>
+List: List-Unsubscribe:
+ <https://lists.sourceforge.net/lists/listinfo/spamassassin-talk>,
+        <mailto:spamassassin-talk-request@lists.sourceforge.net?subject=unsubscribe>
 
 """)
 
@@ -1563,8 +1562,7 @@ class TestRFC2047(unittest.TestCase):
             ('baz foo bar', None),
             ('r\x8aksm\x9arg\x8cs', 'mac-iceland')])
         eq(str(make_header(dh)),
-           """Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar
- =?mac-iceland?q?r=8Aksm=9Arg=8Cs?=""")
+           'Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar =?mac-iceland?q?r=8Aks?=\n =?mac-iceland?q?m=9Arg=8Cs?=')
 
     def test_whitespace_eater_unicode(self):
         eq = self.assertEqual
@@ -2867,16 +2865,16 @@ class TestHeader(TestEmailBase):
         enc = h.encode()
         eq(enc, """\
 =?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_einem_Foerderband_ko?=
- =?iso-8859-1?q?mfortabel_den_Korridor_entlang=2C_an_s=FCdl=FCndischen_Wan?=
- =?iso-8859-1?q?dgem=E4lden_vorbei=2C_gegen_die_rotierenden_Klingen_bef=F6?=
- =?iso-8859-1?q?rdert=2E_?= =?iso-8859-2?q?Finan=E8ni_metropole_se_hroutily?=
- =?iso-8859-2?q?_pod_tlakem_jejich_d=F9vtipu=2E=2E_?= =?utf-8?b?5q2j56K6?=
- =?utf-8?b?44Gr6KiA44GG44Go57+76Kiz44Gv44GV44KM44Gm44GE44G+44Gb44KT44CC?=
- =?utf-8?b?5LiA6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM44CB44GC44Go44Gv44Gn?=
- =?utf-8?b?44Gf44KJ44KB44Gn44GZ44CC5a6f6Zqb44Gr44Gv44CMV2VubiBpc3QgZGFz?=
- =?utf-8?q?_Nunstuck_git_und_Slotermeyer=3F_Ja!_Beiherhund_das_Oder_die_Fl?=
- =?utf-8?b?aXBwZXJ3YWxkdCBnZXJzcHV0LuOAjeOBqOiogOOBo+OBpuOBhOOBvuOBmQ==?=
- =?utf-8?b?44CC?=""")
+ =?iso-8859-1?q?mfortabel_den_Korridor_entlang=2C_an_s=FCdl=FCndischen_Wa?=
+ =?iso-8859-1?q?ndgem=E4lden_vorbei=2C_gegen_die_rotierenden_Klingen_bef?=
+ =?iso-8859-1?q?=F6rdert=2E_?= =?iso-8859-2?q?Finan=E8ni_metropole_se_hro?=
+ =?iso-8859-2?q?utily_pod_tlakem_jejich_d=F9vtipu=2E=2E_?= =?utf-8?b?5q2j?=
+ =?utf-8?b?56K644Gr6KiA44GG44Go57+76Kiz44Gv44GV44KM44Gm44GE44G+44Gb44KT?=
+ =?utf-8?b?44CC5LiA6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM44CB44GC44Go44Gv?=
+ =?utf-8?b?44Gn44Gf44KJ44KB44Gn44GZ44CC5a6f6Zqb44Gr44Gv44CMV2VubiBpc3Qg?=
+ =?utf-8?b?ZGFzIE51bnN0dWNrIGdpdCB1bmQgU2xvdGVybWV5ZXI/IEphISBCZWloZXJo?=
+ =?utf-8?b?dW5kIGRhcyBPZGVyIGRpZSBGbGlwcGVyd2FsZHQgZ2Vyc3B1dC7jgI3jgajo?=
+ =?utf-8?b?qIDjgaPjgabjgYTjgb7jgZnjgII=?=""")
         eq(decode_header(enc),
            [(g_head, "iso-8859-1"), (cz_head, "iso-8859-2"),
             (utf8_head, "utf-8")])
@@ -2918,8 +2916,8 @@ A very long line that must get split to something other than at the 76th
  character boundary to test the non-default behavior''')
         h = Header(hstr, header_name='Subject')
         eq(h.encode(), '''\
-A very long line that must get split to something other than at the
- 76th character boundary to test the non-default behavior''')
+A very long line that must get split to something other than at
+ the 76th character boundary to test the non-default behavior''')
         h = Header(hstr, maxlinelen=1024, header_name='Subject')
         eq(h.encode(), hstr)
 
@@ -3018,7 +3016,7 @@ class TestRFC2231(TestEmailBase):
 Return-Path: <bbb@zzz.org>
 Delivered-To: bbb@zzz.org
 Received: by mail.zzz.org (Postfix, from userid 889)
- id 27CEAD38CC; Fri,  4 May 2001 14:05:44 -0400 (EDT)
+\tid 27CEAD38CC; Fri,  4 May 2001 14:05:44 -0400 (EDT)
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Message-ID: <15090.61304.110929.45684@aaa.zzz.org>
@@ -3048,7 +3046,7 @@ Do you like this message?
 Return-Path: <bbb@zzz.org>
 Delivered-To: bbb@zzz.org
 Received: by mail.zzz.org (Postfix, from userid 889)
- id 27CEAD38CC; Fri,  4 May 2001 14:05:44 -0400 (EDT)
+\tid 27CEAD38CC; Fri,  4 May 2001 14:05:44 -0400 (EDT)
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Message-ID: <15090.61304.110929.45684@aaa.zzz.org>

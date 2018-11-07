@@ -61,6 +61,18 @@ def base64_len(s):
 
 
 
+# Helpers
+def header_length(bytearray):
+    """Return the length of s when it is encoded with base64."""
+    groups_of_3, leftover = divmod(len(bytearray), 3)
+    # 4 bytes out for each 3 bytes (or nonzero fraction thereof) in.
+    n = groups_of_3 * 4
+    if leftover:
+        n += 4
+    return n
+
+
+
 def header_encode(header, charset='iso-8859-1', keep_eols=False,
                   maxlinelen=76, eol=NL):
     """Encode a single header line with Base64 encoding in a given charset.
