@@ -1,0 +1,2 @@
+Fixed implementation of :file:`activate.bat` to handle Unicode contents on
+localized Windows systems (eg. German). Patch by Martin Bijl.
