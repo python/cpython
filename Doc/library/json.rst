@@ -717,6 +717,12 @@ Command line options
 
    .. versionadded:: 3.5
 
+.. cmdoption:: --json-lines
+
+   Parse every input line as separate JSON object.
+
+   .. versionadded:: 3.8
+
 .. cmdoption:: -h, --help
 
    Show the help message.
