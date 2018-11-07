@@ -648,14 +648,21 @@ will not work correctly.</p>
 corresponding output device.  When IDLE executes user code, <code class="docutils literal notranslate"><span class="pre">sys.stdout</span></code>
 and <code class="docutils literal notranslate"><span class="pre">sys.stderr</span></code> are connected to the display area of IDLE’s Shell.  Some of
 its features are inherited from the underlying Tk Text widget.  Others
-are programmed additions.</p>
+are programmed additions.  Where it matters, Shell is designed for development
+rather than production runs.</p>
+<p>For instance, Shell never throws away output.  A program that sends unlimited
+output to Shell will eventually fill memory, resulting in a memory error.
+In contrast, some system text windows only keep the last n lines of output.
+A Windows console, for instance, keeps a user-settable 1 to 9999 lines,
+with 300 the default.</p>
 <p>Text widgets display a subset of Unicode, the Basic Multilingual Plane (BMP).
 Which characters get a proper glyph instead of a replacement box depends on
 the operating system and installed fonts.  Newline characters cause following
-text to appear on a new line, but other control characters are replaced
-with a box.  But note that the <code class="docutils literal notranslate"><span class="pre">repr()</span></code> function, which is used for
-interactive echo of expression values, replaces control characters
-with escape codes before they are output.</p>
+text to appear on a new line, but other control characters are either
+replaced with a box or deleted.  However, <code class="docutils literal notranslate"><span class="pre">repr()</span></code>, which is used for
+interactive echo of expression values, replaces control characters,
+some BMP codepoints, and all non-BMP characters with escape codes
+before they are output.</p>
 <p>Normal and error output are generally kept separate (on separate lines)
 from code input and each other.  They each get different highlight colors.</p>
 <p>For SyntaxError tracebacks, the normal ‘^’ marking where the error was
