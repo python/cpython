@@ -2,6 +2,8 @@
 
 import copy
 import pickle
+import io
+import contextlib
 from test.support import findfile
 import unittest
 
@@ -1559,6 +1561,25 @@ class MinidomTest(unittest.TestCase):
         doc = parse(tstfile)
         pi = doc.createProcessingInstruction("y", "z")
         pi.nodeValue = "crash"
+
+    def test_minidom_attribute_order(self):
+        xml_str = '<?xml version="1.0" ?><curriculum status="public" company="example"/>'
+        doc = parseString(xml_str)
+        output = io.StringIO()
+        doc.writexml(output)
+        self.assertEqual(output.getvalue(), xml_str)
+
+    def test_toxml_with_attributes_ordered(self):
+        xml_str = '<?xml version="1.0" ?><curriculum status="public" company="example"/>'
+        doc = parseString(xml_str)
+        self.assertEqual(doc.toxml(), xml_str)
+
+    def test_toprettyxml_with_attributes_ordered(self):
+        xml_str = '<?xml version="1.0" ?><curriculum status="public" company="example"/>'
+        doc = parseString(xml_str)
+        self.assertEqual(doc.toprettyxml(),
+                         '<?xml version="1.0" ?>\n'
+                         '<curriculum status="public" company="example"/>\n')
 
 if __name__ == "__main__":
     unittest.main()
