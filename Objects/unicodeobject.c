@@ -40,7 +40,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_fileutils.h"
+#include "pycore_state.h"
 #include "ucnhash.h"
 #include "bytes_methods.h"
 #include "stringlib/eq.h"

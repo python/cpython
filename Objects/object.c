@@ -2,8 +2,8 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
-#include "internal/pystate.h"
-#include "internal/context.h"
+#include "pycore_state.h"
+#include "pycore_context.h"
 #include "frameobject.h"
 
 #ifdef __cplusplus
@@ -1790,6 +1790,15 @@ _Py_ReadyTypes(void)
     if (PyType_Ready(&PyDictItems_Type) < 0)
         Py_FatalError("Can't initialize dict items type");
 
+    if (PyType_Ready(&PyDictRevIterKey_Type) < 0)
+        Py_FatalError("Can't initialize reversed dict keys type");
+
+    if (PyType_Ready(&PyDictRevIterValue_Type) < 0)
+        Py_FatalError("Can't initialize reversed dict values type");
+
+    if (PyType_Ready(&PyDictRevIterItem_Type) < 0)
+        Py_FatalError("Can't initialize reversed dict items type");
+
     if (PyType_Ready(&PyODict_Type) < 0)
         Py_FatalError("Can't initialize OrderedDict type");
 
@@ -1964,14 +1973,6 @@ _Py_ForgetReference(PyObject *op)
     _Py_INC_TPFREES(op);
 }
 
-void
-_Py_Dealloc(PyObject *op)
-{
-    destructor dealloc = Py_TYPE(op)->tp_dealloc;
-    _Py_ForgetReference(op);
-    (*dealloc)(op);
-}
-
 /* Print all live objects.  Because PyObject_Print is called, the
  * interpreter must be in a healthy state.
  */
@@ -2144,7 +2145,7 @@ _PyTrash_deposit_object(PyObject *op)
 void
 _PyTrash_thread_deposit_object(PyObject *op)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     _PyObject_ASSERT(op, PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, op->ob_refcnt == 0);
@@ -2182,7 +2183,7 @@ _PyTrash_destroy_chain(void)
 void
 _PyTrash_thread_destroy_chain(void)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     /* We need to increase trash_delete_nesting here, otherwise,
        _PyTrash_thread_destroy_chain will be called recursively
        and then possibly crash.  An example that may crash without
@@ -2265,18 +2266,20 @@ _PyObject_AssertFailed(PyObject *obj, const char *msg, const char *expr,
     Py_FatalError("_PyObject_AssertFailed");
 }
 
-#ifndef Py_TRACE_REFS
-/* For Py_LIMITED_API, we need an out-of-line version of _Py_Dealloc.
-   Define this here, so we can undefine the macro. */
+
 #undef _Py_Dealloc
-void _Py_Dealloc(PyObject *);
+
 void
 _Py_Dealloc(PyObject *op)
 {
-    _Py_INC_TPFREES(op) _Py_COUNT_ALLOCS_COMMA
-    (*Py_TYPE(op)->tp_dealloc)(op);
-}
+    destructor dealloc = Py_TYPE(op)->tp_dealloc;
+#ifdef Py_TRACE_REFS
+    _Py_ForgetReference(op);
+#else
+    _Py_INC_TPFREES(op);
 #endif
+    (*dealloc)(op);
+}
 
 #ifdef __cplusplus
 }

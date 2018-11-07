@@ -1154,6 +1154,7 @@ long_range:
     it = PyObject_New(longrangeiterobject, &PyLongRangeIter_Type);
     if (it == NULL)
         return NULL;
+    it->index = it->start = it->step = NULL;
 
     /* start + (len - 1) * step */
     it->len = range->length;

@@ -98,6 +98,9 @@ Other Language Changes
 * Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
+* Dict and dictviews are now iterable in reversed insertion order using
+  :func:`reversed`. (Contributed by Rémi Lapeyre in :issue:`33462`.)
+
 * The syntax allowed for keyword names in function calls was further
   restricted. In particular, ``f((keyword)=arg)`` is no longer allowed. It was
   never intended to permit more than a bare name on the left-hand side of a
@@ -134,6 +137,12 @@ gettext
 Added :func:`~gettext.pgettext` and its variants.
 (Contributed by Franz Glasner, Éric Araujo, and Cheryl Sabella in :issue:`2504`.)
 
+gzip
+----
+
+Added the *mtime* parameter to :func:`gzip.compress` for reproducible output.
+(Contributed by Guo Ci Teo in :issue:`34898`.)
+
 
 idlelib and IDLE
 ----------------
@@ -148,6 +157,12 @@ by right-clicking the button.  (Contributed by Tal Einat in :issue:`1529353`.)
 The changes above have been backported to 3.7 maintenance releases.
 
 
+json.tool
+---------
+
+Add option ``--json-lines`` to parse every input line as separate JSON object.
+(Contributed by Weipeng Hong in :issue:`31553`.)
+
 os.path
 -------
 
@@ -158,6 +173,15 @@ now return ``False`` instead of raising :exc:`ValueError` or its subclasses
 :exc:`UnicodeEncodeError` and :exc:`UnicodeDecodeError` for paths that contain
 characters or bytes unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
+
+
+ncurses
+-------
+
+Added a new variable holding structured version information for the
+underlying ncurses library: :data:`~curses.ncurses_version`.
+(Contributed by Serhiy Storchaka in :issue:`31680`.)
+
 
 pathlib
 -------
@@ -201,6 +225,13 @@ in the :class:`tkinter.Spinbox` class.
 Added method :meth:`~tkinter.Canvas.moveto`
 in the :class:`tkinter.Canvas` class.
 (Contributed by Juliette Monsel in :issue:`23831`.)
+
+unicodedata
+-----------
+
+* New function :func:`~unicodedata.is_normalized` can be used to verify a string
+  is in a specific normal form. (Contributed by Max Belanger and David Euresti in
+  :issue:`32285`).
 
 venv
 ----
@@ -248,6 +279,11 @@ Optimizations
 * :class:`uuid.UUID` now uses ``__slots__`` to reduce its memory footprint.
   Note that this means that instances can no longer be weak-referenced and
   that arbitrary attributes can no longer be added to them.
+
+* The :class:`list` constructor does not overallocate the internal item buffer
+  if the input iterable has a known length (the input implements ``__len__``).
+  This makes the created list 12% smaller on average. (Contributed by Pablo
+  Galindo in :issue:`33234`.)
 
 
 Build and C API Changes
@@ -427,8 +463,9 @@ CPython bytecode changes
 
 * The interpreter loop  has been simplified by moving the logic of unrolling
   the stack of blocks into the compiler.  The compiler emits now explicit
-  instructions for adjusting the stack of values and calling the cleaning-
-  up code for :keyword:`break`, :keyword:`continue` and :keyword:`return`.
+  instructions for adjusting the stack of values and calling the
+  cleaning-up code for :keyword:`break`, :keyword:`continue` and
+  :keyword:`return`.
 
   Removed opcodes :opcode:`BREAK_LOOP`, :opcode:`CONTINUE_LOOP`,
   :opcode:`SETUP_LOOP` and :opcode:`SETUP_EXCEPT`.  Added new opcodes

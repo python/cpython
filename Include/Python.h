@@ -53,8 +53,6 @@
 #include "pyport.h"
 #include "pymacro.h"
 
-#include "pyatomic.h"
-
 /* Debug-mode build with pymalloc implies PYMALLOC_DEBUG.
  *  PYMALLOC_DEBUG is in error if pymalloc is not in use.
  */

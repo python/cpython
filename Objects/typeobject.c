@@ -1,7 +1,7 @@
 /* Type object implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_state.h"
 #include "frameobject.h"
 #include "structmember.h"
 
@@ -1115,7 +1115,7 @@ subtype_dealloc(PyObject *self)
 {
     PyTypeObject *type, *base;
     destructor basedealloc;
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     int has_finalizer;
 
     /* Extract the type; we expect it to be a heap type */
@@ -4122,7 +4122,7 @@ _PyObject_GetState(PyObject *obj, int required)
 
         if (required && obj->ob_type->tp_itemsize) {
             PyErr_Format(PyExc_TypeError,
-                         "can't pickle %.200s objects",
+                         "cannot pickle '%.200s' object",
                          Py_TYPE(obj)->tp_name);
             return NULL;
         }
@@ -4163,7 +4163,7 @@ _PyObject_GetState(PyObject *obj, int required)
                 Py_DECREF(slotnames);
                 Py_DECREF(state);
                 PyErr_Format(PyExc_TypeError,
-                             "can't pickle %.200s objects",
+                             "cannot pickle '%.200s' object",
                              Py_TYPE(obj)->tp_name);
                 return NULL;
             }
@@ -4400,7 +4400,7 @@ reduce_newobj(PyObject *obj)
 
     if (Py_TYPE(obj)->tp_new == NULL) {
         PyErr_Format(PyExc_TypeError,
-                     "can't pickle %.200s objects",
+                     "cannot pickle '%.200s' object",
                      Py_TYPE(obj)->tp_name);
         return NULL;
     }
@@ -7678,7 +7678,7 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
         PyFrameObject *f;
         PyCodeObject *co;
         Py_ssize_t i, n;
-        f = PyThreadState_GET()->frame;
+        f = _PyThreadState_GET()->frame;
         if (f == NULL) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no current frame");
