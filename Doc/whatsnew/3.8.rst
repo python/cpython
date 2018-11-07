@@ -151,6 +151,12 @@ by right-clicking the button.  (Contributed by Tal Einat in :issue:`1529353`.)
 The changes above have been backported to 3.7 maintenance releases.
 
 
+json.tool
+---------
+
+Add option ``--json-lines`` to parse every input line as separate JSON object.
+(Contributed by Weipeng Hong in :issue:`31553`.)
+
 os.path
 -------
 
