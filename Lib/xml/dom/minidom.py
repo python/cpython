@@ -854,9 +854,8 @@ class Element(Node):
         writer.write(indent+"<" + self.tagName)
 
         attrs = self._get_attributes()
-        a_names = sorted(attrs.keys())
 
-        for a_name in a_names:
+        for a_name in attrs.keys():
             writer.write(" %s=\"" % a_name)
             _write_data(writer, attrs[a_name].value)
             writer.write("\"")
