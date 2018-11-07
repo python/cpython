@@ -131,6 +131,12 @@ asyncio
 On Windows, the default event loop is now :class:`~asyncio.ProactorEventLoop`.
 
 
+gettext
+-------
+
+Added :func:`~gettext.pgettext` and its variants.
+(Contributed by Franz Glasner, Éric Araujo, and Cheryl Sabella in :issue:`2504`.)
+
 gzip
 ----
 
