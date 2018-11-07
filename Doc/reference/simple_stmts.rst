@@ -25,6 +25,7 @@ simple statements is:
               : | `break_stmt`
               : | `continue_stmt`
               : | `import_stmt`
+              : | `future_stmt`
               : | `global_stmt`
               : | `nonlocal_stmt`
 
