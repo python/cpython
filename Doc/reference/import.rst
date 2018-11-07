@@ -951,7 +951,7 @@ In :ref:`the remaining cases <using-on-interface-options>`
 :mod:`__main__` does not correspond directly with an importable module:
 
 - interactive prompt
-- -c switch
+- :option:`-c` option
 - running from stdin
 - running directly from a source or bytecode file
 
