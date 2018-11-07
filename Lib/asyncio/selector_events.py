@@ -358,26 +358,29 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
+        try:
+            return sock.recv(n)
+        except (BlockingIOError, InterruptedError):
+            pass
         fut = self.create_future()
-        self._sock_recv(fut, None, sock, n)
+        fd = sock.fileno()
+        self.add_reader(fd, self._sock_recv, fut, fd, sock, n)
+        fut.add_done_callback(
+            functools.partial(self._sock_read_done, fd))
         return await fut
 
-    def _sock_recv(self, fut, registered_fd, sock, n):
+    def _sock_read_done(self, fd, fut):
+        self.remove_reader(fd)
+
+    def _sock_recv(self, fut, sock, n):
         # _sock_recv() can add itself as an I/O callback if the operation can't
         # be done immediately. Don't use it directly, call sock_recv().
-        if registered_fd is not None:
-            # Remove the callback early.  It should be rare that the
-            # selector says the fd is ready but the call still returns
-            # EAGAIN, and I am willing to take a hit in that case in
-            # order to simplify the common case.
-            self.remove_reader(registered_fd)
         if fut.cancelled():
             return
         try:
             data = sock.recv(n)
         except (BlockingIOError, InterruptedError):
-            fd = sock.fileno()
-            self.add_reader(fd, self._sock_recv, fut, fd, sock, n)
+            return  # try again next time
         except Exception as exc:
             fut.set_exception(exc)
         else:
@@ -391,27 +394,27 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
+        try:
+            return sock.recv_into(buf)
+        except (BlockingIOError, InterruptedError):
+            pass
         fut = self.create_future()
-        self._sock_recv_into(fut, None, sock, buf)
+        fd = sock.fileno()
+        self.add_reader(fd, self._sock_recv_into, fut, fd, sock, buf)
+        fut.add_done_callback(
+            functools.partial(self._sock_read_done, fd))
         return await fut
 
-    def _sock_recv_into(self, fut, registered_fd, sock, buf):
+    def _sock_recv_into(self, fut, sock, buf):
         # _sock_recv_into() can add itself as an I/O callback if the operation
         # can't be done immediately. Don't use it directly, call
         # sock_recv_into().
-        if registered_fd is not None:
-            # Remove the callback early.  It should be rare that the
-            # selector says the FD is ready but the call still returns
-            # EAGAIN, and I am willing to take a hit in that case in
-            # order to simplify the common case.
-            self.remove_reader(registered_fd)
         if fut.cancelled():
             return
         try:
             nbytes = sock.recv_into(buf)
         except (BlockingIOError, InterruptedError):
-            fd = sock.fileno()
-            self.add_reader(fd, self._sock_recv_into, fut, fd, sock, buf)
+            return  # try again next time
         except Exception as exc:
             fut.set_exception(exc)
         else:
