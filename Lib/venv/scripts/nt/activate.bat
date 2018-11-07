@@ -1,11 +1,10 @@
 @echo off
 
-rem This file is UTF-8 encoded, so we need to update the current code page while executing it
-for /f "tokens=2 delims=:" %%a in ('"%SystemRoot%\System32\chcp.com"') do (
-    set "_OLD_CODEPAGE=%%a"
-)
+rem This file is UTF-8 encoded, so we need to update the current code page while executing it.
+for /f %%a in ('%~dp0python.exe -Ic "import ctypes; print(ctypes.windll.kernel32.GetConsoleOutputCP())"') do (set "_OLD_CODEPAGE=%%a")
+
 if defined _OLD_CODEPAGE (
-    "%SystemRoot%\System32\chcp.com" 65001 > nul
+    %~dp0python.exe -Ic "import ctypes; ctypes.windll.kernel32.SetConsoleOutputCP(65001)"
 )
 
 set "VIRTUAL_ENV=__VENV_DIR__"
@@ -40,6 +39,6 @@ set "PATH=%VIRTUAL_ENV%\__VENV_BIN_NAME__;%PATH%"
 
 :END
 if defined _OLD_CODEPAGE (
-    "%SystemRoot%\System32\chcp.com" %_OLD_CODEPAGE% > nul
+    %~dp0python.exe -Ic "import ctypes; ctypes.windll.kernel32.SetConsoleOutputCP(%_OLD_CODEPAGE%)"
     set "_OLD_CODEPAGE="
 )
