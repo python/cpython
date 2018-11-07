@@ -671,15 +671,23 @@ When a program outputs text, the result is determined by the
 corresponding output device.  When IDLE executes user code, ``sys.stdout``
 and ``sys.stderr`` are connected to the display area of IDLE's Shell.  Some of
 its features are inherited from the underlying Tk Text widget.  Others
-are programmed additions.
+are programmed additions.  Where it matters, Shell is designed for development
+rather than production runs.
+
+For instance, Shell never throws away output.  A program that sends unlimited
+output to Shell will eventually fill memory, resulting in a memory error.
+In contrast, some system text windows only keep the last n lines of output.
+A Windows console, for instance, keeps a user-settable 1 to 9999 lines,
+with 300 the default.
 
 Text widgets display a subset of Unicode, the Basic Multilingual Plane (BMP).
 Which characters get a proper glyph instead of a replacement box depends on
 the operating system and installed fonts.  Newline characters cause following
-text to appear on a new line, but other control characters are replaced
-with a box.  But note that the ``repr()`` function, which is used for
-interactive echo of expression values, replaces control characters
-with escape codes before they are output.
+text to appear on a new line, but other control characters are either
+replaced with a box or deleted.  However, ``repr()``, which is used for
+interactive echo of expression values, replaces control characters,
+some BMP codepoints, and all non-BMP characters with escape codes
+before they are output.
 
 Normal and error output are generally kept separate (on separate lines)
 from code input and each other.  They each get different highlight colors.
