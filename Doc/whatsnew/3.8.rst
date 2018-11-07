@@ -131,6 +131,13 @@ asyncio
 On Windows, the default event loop is now :class:`~asyncio.ProactorEventLoop`.
 
 
+gzip
+----
+
+Added the *mtime* parameter to :func:`gzip.compress` for reproducible output.
+(Contributed by Guo Ci Teo in :issue:`34898`.)
+
+
 idlelib and IDLE
 ----------------
 
