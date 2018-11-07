@@ -499,6 +499,17 @@ class TestGzip(BaseTest):
                 with gzip.GzipFile(fileobj=io.BytesIO(datac), mode="rb") as f:
                     self.assertEqual(f.read(), data)
 
+    def test_compress_mtime(self):
+        mtime = 123456789
+        for data in [data1, data2]:
+            for args in [(), (1,), (6,), (9,)]:
+                with self.subTest(data=data, args=args):
+                    datac = gzip.compress(data, *args, mtime=mtime)
+                    self.assertEqual(type(datac), bytes)
+                    with gzip.GzipFile(fileobj=io.BytesIO(datac), mode="rb") as f:
+                        f.read(1) # to set mtime attribute
+                        self.assertEqual(f.mtime, mtime)
+
     def test_decompress(self):
         for data in (data1, data2):
             buf = io.BytesIO()
