@@ -418,7 +418,7 @@ coroutine function to be an asynchronous generator. For example::
     def gen():  # defines a generator function
         yield 123
 
-    async def agen(): # defines an asynchronous generator function (PEP 525)
+    async def agen(): # defines an asynchronous generator function
         yield 123
 
 Due to their side effects on the containing scope, ``yield`` expressions
@@ -500,6 +500,10 @@ on the right hand side of an assignment statement.
    :pep:`380` - Syntax for Delegating to a Subgenerator
       The proposal to introduce the :token:`yield_from` syntax, making delegation
       to sub-generators easy.
+
+   :pep:`525` - Asynchronous Generators
+      The proposal that expanded on :pep:`492` by adding generator capabilities to
+      coroutine functions.
 
 .. index:: object: generator
 .. _generator-methods:
