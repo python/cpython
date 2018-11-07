@@ -40,7 +40,7 @@ def check_output(cmd, encoding=None):
     out, err = p.communicate()
     if p.returncode:
         raise subprocess.CalledProcessError(
-            p.returncode, cmd, None, out, err)
+            p.returncode, cmd, out, err)
     return out, err
 
 class BaseTest(unittest.TestCase):
