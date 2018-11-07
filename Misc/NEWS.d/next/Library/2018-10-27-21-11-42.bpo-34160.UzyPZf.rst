@@ -1,1 +1,1 @@
-ElementTree now preserves the attribute order specified by the user.
+ElementTree and minidom now preserve the attribute order specified by the user.
