@@ -364,7 +364,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             pass
         fut = self.create_future()
         fd = sock.fileno()
-        self.add_reader(fd, self._sock_recv, fut, fd, sock, n)
+        self.add_reader(fd, self._sock_recv, fut, sock, n)
         fut.add_done_callback(
             functools.partial(self._sock_read_done, fd))
         return await fut
@@ -375,7 +375,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     def _sock_recv(self, fut, sock, n):
         # _sock_recv() can add itself as an I/O callback if the operation can't
         # be done immediately. Don't use it directly, call sock_recv().
-        if fut.cancelled():
+        if fut.done():
             return
         try:
             data = sock.recv(n)
@@ -400,7 +400,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             pass
         fut = self.create_future()
         fd = sock.fileno()
-        self.add_reader(fd, self._sock_recv_into, fut, fd, sock, buf)
+        self.add_reader(fd, self._sock_recv_into, fut, sock, buf)
         fut.add_done_callback(
             functools.partial(self._sock_read_done, fd))
         return await fut
@@ -409,7 +409,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         # _sock_recv_into() can add itself as an I/O callback if the operation
         # can't be done immediately. Don't use it directly, call
         # sock_recv_into().
-        if fut.cancelled():
+        if fut.done():
             return
         try:
             nbytes = sock.recv_into(buf)
@@ -450,7 +450,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         return await fut
 
     def _sock_sendall(self, fut, sock, data):
-        if fut.cancelled():
+        if fut.done():
             # Future cancellation can be scheduled on previous loop iteration
             return
         try:
@@ -504,7 +504,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         self.remove_writer(fd)
 
     def _sock_connect_cb(self, fut, sock, address):
-        if fut.cancelled():
+        if fut.done():
             return
 
         try:
@@ -538,7 +538,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         fd = sock.fileno()
         if registered:
             self.remove_reader(fd)
-        if fut.cancelled():
+        if fut.done():
             return
         try:
             conn, address = sock.accept()
