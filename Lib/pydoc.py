@@ -941,8 +941,7 @@ class HTMLDoc(Doc):
         if name == realname:
             title = '<a name="%s"><strong>%s</strong></a>' % (anchor, realname)
         else:
-            if (cl and realname in cl.__dict__ and
-                cl.__dict__[realname] is object):
+            if cl and inspect.getattr_static(cl, realname, []) is object:
                 reallink = '<a href="#%s">%s</a>' % (
                     cl.__name__ + '-' + realname, realname)
                 skipdocs = 1
@@ -1346,8 +1345,7 @@ location listed above.
         if name == realname:
             title = self.bold(realname)
         else:
-            if (cl and realname in cl.__dict__ and
-                cl.__dict__[realname] is object):
+            if cl and inspect.getattr_static(cl, realname, []) is object:
                 skipdocs = 1
             title = self.bold(name) + ' = ' + realname
         argspec = None
