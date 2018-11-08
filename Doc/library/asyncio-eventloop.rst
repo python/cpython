@@ -489,7 +489,7 @@ Opening network connections
       The *family*, *proto*, *flags*, *reuse_address*, *reuse_port,
       *allow_broadcast*, and *sock* parameters were added.
 
-   .. versionchanged:: 3.8.0
+   .. versionchanged:: 3.8
       Added support for Windows.
 
 .. coroutinemethod:: loop.create_unix_connection(protocol_factory, \
