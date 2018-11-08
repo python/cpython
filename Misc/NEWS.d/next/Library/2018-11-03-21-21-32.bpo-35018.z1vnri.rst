@@ -1,4 +1,4 @@
 Add the LexicalHandler class that is present in other SAX XML
-implementations. The plumbing is already supported by Ptyhon so this simply
-adds the poecelain that makes it easy for users of the Python Sax parser to
+implementations. The plumbing is already supported by Python so this simply
+adds the porcelain that makes it easy for users of the Python Sax parser to
 handle lexical events.

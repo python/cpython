@@ -5,7 +5,6 @@ from xml.sax import make_parser, ContentHandler, \
                     SAXException, SAXReaderNotAvailable, SAXParseException
 import unittest
 from unittest import mock
-from Lib.pickle import FALSE
 try:
     make_parser()
 except SAXReaderNotAvailable:
@@ -14,8 +13,8 @@ except SAXReaderNotAvailable:
 from xml.sax.saxutils import XMLGenerator, escape, unescape, quoteattr, \
                              XMLFilterBase, prepare_input_source
 from xml.sax.expatreader import create_parser
-from xml.sax.handler import feature_namespaces, feature_external_ges, \
-                            LexicalHandler, ErrorHandler
+from xml.sax.handler import (feature_namespaces, feature_external_ges,
+                             LexicalHandler)
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from io import BytesIO, StringIO
 import codecs

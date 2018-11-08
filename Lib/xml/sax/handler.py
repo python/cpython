@@ -11,14 +11,14 @@ $Id$
 
 version = '2.0beta'
 
-# ============================================================================
+#============================================================================
 #
 # HANDLER INTERFACES
 #
-# ============================================================================
+#============================================================================
 
 
-# ===== ERRORHANDLER =====
+#===== ERRORHANDLER =====
 
 class ErrorHandler:
     """Basic interface for SAX error handlers.
@@ -204,7 +204,7 @@ class ContentHandler:
         properties."""
 
 
-# ===== DTDHandler =====
+#===== DTDHandler =====
 
 class DTDHandler:
     """Handle DTD events.
@@ -219,14 +219,14 @@ class DTDHandler:
         "Handle an unparsed entity declaration event."
 
 
-# ===== ENTITYRESOLVER =====
+#===== ENTITYRESOLVER =====
 
 class EntityResolver:
     """Basic interface for resolving entities. If you create an object
     implementing this interface, then register the object with your
     Parser, the parser will call the method in your object to
     resolve all external entities. Note that DefaultHandler implements
-    this interface with the default behavior."""
+    this interface with the default behaviour."""
 
     def resolveEntity(self, publicId, systemId):
         """Resolve the system identifier of an entity and return either
@@ -235,11 +235,11 @@ class EntityResolver:
         return systemId
 
 
-# ============================================================================
+#============================================================================
 #
 # CORE FEATURES
 #
-# ============================================================================
+#============================================================================
 
 feature_namespaces = "http://xml.org/sax/features/namespaces"
 # true: Perform Namespace processing (default).
@@ -286,11 +286,11 @@ all_features = [feature_namespaces,
                 feature_external_pes]
 
 
-# ============================================================================
+#============================================================================
 #
 # CORE PROPERTIES
 #
-# ============================================================================
+#============================================================================
 
 property_lexical_handler = "http://xml.org/sax/properties/lexical-handler"
 # data type: xml.sax.sax2lib.LexicalHandler
@@ -394,4 +394,4 @@ class LexicalHandler:
         through the characters event."""
 
     def endCDATA(self):
-        "Reports the end of a CDATA marked section."
+        """Reports the end of a CDATA marked section."""
