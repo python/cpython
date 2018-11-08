@@ -75,9 +75,11 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
                 return NULL;
             }
             memcpy(buf, str, len);
-            Py_BEGIN_ALLOW_THREADS
-            ret = fcntl(fd, code, buf);
-            Py_END_ALLOW_THREADS
+            do {
+                Py_BEGIN_ALLOW_THREADS
+                ret = fcntl(fd, code, buf);
+                Py_END_ALLOW_THREADS
+            } while (ret == -1 && errno == EINTR && !PyErr_CheckSignals());
             if (ret < 0) {
                 PyErr_SetFromErrno(PyExc_IOError);
                 return NULL;
@@ -95,9 +97,11 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
         }
     }
 
-    Py_BEGIN_ALLOW_THREADS
-    ret = fcntl(fd, code, (int)int_arg);
-    Py_END_ALLOW_THREADS
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        ret = fcntl(fd, code, (int)int_arg);
+        Py_END_ALLOW_THREADS
+    } while (ret == -1 && errno == EINTR && !PyErr_CheckSignals());
     if (ret < 0) {
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
@@ -310,9 +314,11 @@ fcntl_flock_impl(PyObject *module, int fd, int code)
             return NULL;
         }
         l.l_whence = l.l_start = l.l_len = 0;
-        Py_BEGIN_ALLOW_THREADS
-        ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
-        Py_END_ALLOW_THREADS
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
+            Py_END_ALLOW_THREADS
+        } while (ret == -1 && errno == EINTR && !PyErr_CheckSignals());
     }
 #endif /* HAVE_FLOCK */
     if (ret < 0) {
