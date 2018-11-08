@@ -1,0 +1,1 @@
+Add transparency methods to :class:`tkinter.PhotoImage`.
