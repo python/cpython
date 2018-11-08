@@ -1,0 +1,3 @@
+:mod:`pydoc` now supports aliases not only to methods defined in
+the end class, but also to inherited methods.  The docstring is not
+duplicated for aliases.
