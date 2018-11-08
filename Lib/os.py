@@ -25,6 +25,7 @@ and opendir), and leave all pathname manipulation to os.path
 import abc
 import sys
 import stat as st
+import platform
 
 _names = sys.builtin_module_names
 
@@ -1070,3 +1071,12 @@ class PathLike(abc.ABC):
     @classmethod
     def __subclasshook__(cls, subclass):
         return hasattr(subclass, '__fspath__')
+
+""" This function is badly needed!! """
+""" by Alexander Abraham aka dukealexanderthefirst """
+
+def clear():                                     exec_platform = str(platform.system())       if exec_platform == 'Linux':                     try:                                             system('clear')
+        except Exception as error:                       print(str(error))                    elif exec_platform == 'Windows':
+        try:                                             system('cls')                            except Exception as error:                       print(str(error))                    else:                                            try:                                             system('clear')
+        except Exception as error:
+            print(str(error))
