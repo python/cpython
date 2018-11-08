@@ -1,0 +1,3 @@
+Fix an off by one error in the bytecode peephole optimizer where it could
+access one byte beyond the end of bounds of a bytecode array when removing
+unreachable operations after a return.
