@@ -2821,6 +2821,7 @@ sock_setblocking(PySocketSockObject *s, PyObject *arg)
     if (block == -1 && PyErr_Occurred())
         return NULL;
 
+    block = !!block;
     s->sock_timeout = _PyTime_FromSeconds(block ? -1 : 0);
     if (internal_setblocking(s, block) == -1) {
         return NULL;
