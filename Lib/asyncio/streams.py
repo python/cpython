@@ -227,9 +227,6 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             self._reject_connection = True
         self._stream_reader_wr = None
 
-    def _untrack_reader(self):
-        self._stream_reader_wr = None
-
     @property
     def _stream_reader(self):
         if self._stream_reader_wr is None:
@@ -345,9 +342,6 @@ class StreamWriter:
         return self._transport.can_write_eof()
 
     def close(self):
-        # a reader can be garbage collected
-        # after connection closing
-        self._protocol._untrack_reader()
         self._transport.close()
 
     def is_closing(self):
