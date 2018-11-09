@@ -875,10 +875,10 @@ class SpecSignatureTest(unittest.TestCase):
     def test_autospec_getattr_partial_function(self):
         # bpo-32153 : getattr returning partial functions without
         # __name__ should not create AttributeError in create_autospec
-        class Foo(object):
+        class Foo:
 
-            def __getattr__(self, name):
-                return partial(lambda name: name, name)
+            def __getattr__(self, attribute):
+                return partial(lambda name: name, attribute)
 
         proxy = Foo()
         autospec = create_autospec(proxy)
