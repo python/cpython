@@ -4,6 +4,10 @@
 extern "C" {
 #endif
 
+#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
+#  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
+#endif
+
 #include "pycore_atomic.h"
 #include "pythread.h"
 
