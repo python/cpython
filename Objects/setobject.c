@@ -721,7 +721,7 @@ set_pop(PySetObject *so, PyObject *Py_UNUSED(ignored))
     entry->key = dummy;
     entry->hash = -1;
     so->used--;
-    so->finger = entry - so->table;         /* next place to start */
+    so->finger = entry - so->table + 1;   /* next place to start */
     return key;
 }
 
