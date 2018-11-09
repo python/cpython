@@ -2109,7 +2109,7 @@ with the :class:`Pool` class.
       *context*
 
    .. versionchanged:: 3.8
-      When one of the worker processes terminates abruptly (e.g. the 
+      When one of the worker processes terminates abruptly (e.g. the
       Out Of Memory Killer of linux kicked in), a :exc:`BrokenProcessPool`
       error is now raised. Previously, behavior was undefined and
       the :class:`Pool` or its workers would often freeze or deadlock.
