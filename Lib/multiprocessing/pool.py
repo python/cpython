@@ -25,6 +25,7 @@ import traceback
 # we avoid top-level imports which are liable to fail on some systems.
 from . import util
 from . import get_context, TimeoutError
+
 #
 # Constants representing the state of a pool
 #
@@ -43,6 +44,7 @@ job_counter = itertools.count()
 
 def mapstar(args):
     return list(map(*args))
+
 
 def starmapstar(args):
     return list(itertools.starmap(args[0], args[1]))
@@ -235,10 +237,7 @@ class Pool(object):
     def _join_exited_workers(pool):
         """Cleanup after any worker processes which have exited due to reaching
         their specified lifetime.  Returns True if any workers were cleaned up.
-
-        If pid is provided, explicitly call join() on the process matching that
-        pid.
-
+        Returns None if the process pool is broken.
         """
         cleaned = False
         broken = []
@@ -255,8 +254,6 @@ class Pool(object):
         if any(broken):
             # Stop all workers
             util.info('worker handler: process pool is broken, terminating workers...')
-            thread = threading.current_thread()
-            thread._state = BROKEN
             for p in pool:
                 if p.exitcode is None:
                     p.terminate()
@@ -477,7 +474,7 @@ class Pool(object):
 
         # Keep maintaining workers until the cache gets drained, unless the pool
         # is terminated or broken.
-        while thread._state == RUN or (cache and thread._state not in (TERMINATE, BROKEN)):
+        while thread._state == RUN or (cache and thread._state != TERMINATE):
             new_workers = Pool._maintain_pool(
                 ctx, Process, processes, pool, inqueue,
                 outqueue, initializer, initargs,
@@ -488,8 +485,8 @@ class Pool(object):
                     err = BrokenProcessPool(
                         'A worker of the pool terminated abruptly '
                         'while the child process was still executing.')
+                    # Exhaust MapResult with errors
                     while cache_ent._number_left > 0:
-                        # Exhaust MapResult with errors
                         cache_ent._set(i, (False, err))
             time.sleep(0.1)
         # send sentinel to stop workers
@@ -623,7 +620,9 @@ class Pool(object):
         util.debug('closing pool')
         if self._state == RUN:
             self._state = CLOSE
-            self._worker_handler._state = CLOSE
+            # Avert race condition in broken pools
+            if self._worker_handler._state != BROKEN:
+                self._worker_handler._state = CLOSE
 
     def terminate(self):
         util.debug('terminating pool')
