@@ -135,6 +135,14 @@ PyTuple_New(Py_ssize_t size)
 }
 
 Py_ssize_t
+_PyTuple_GET_SIZE_impl(const PyObject *op)
+{
+    _PyObject_ASSERT((PyObject *)op, PyTuple_Check(op));
+    return Py_SIZE(op);
+
+}
+
+Py_ssize_t
 PyTuple_Size(PyObject *op)
 {
     if (!PyTuple_Check(op)) {
@@ -143,6 +151,14 @@ PyTuple_Size(PyObject *op)
     }
     else
         return Py_SIZE(op);
+}
+
+PyObject*
+_PyTuple_GET_ITEM_impl(const PyObject *op, Py_ssize_t i)
+{
+    _PyObject_ASSERT((PyObject *)op, PyTuple_Check(op));
+    assert(0 <= i && i < Py_SIZE(op));
+    return ((PyTupleObject *)op) -> ob_item[i];
 }
 
 PyObject *
