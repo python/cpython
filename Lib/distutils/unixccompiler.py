@@ -188,7 +188,10 @@ class UnixCCompiler(CCompiler):
                         i = 1
                         while '=' in linker[i]:
                             i += 1
-                    linker[i] = self.compiler_cxx[i]
+                    if linker[i].endswith('ld_so_aix'):
+                        # Linker is ld_so_aix, so compiler is next arg
+                        i += 1
+                    linker = linker[:i] + self.compiler_cxx + linker[i+1:]
 
                 if sys.platform == 'darwin':
                     linker = _osx_support.compiler_fixup(linker, ld_args)
