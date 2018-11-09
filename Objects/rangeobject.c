@@ -572,21 +572,53 @@ static PySequenceMethods range_as_sequence = {
 static PyObject *
 range_repr(rangeobject *r)
 {
-    Py_ssize_t istep;
+    Py_ssize_t istart, istop, istep;
+    Py_ssize_t expected_len, expected_end;
 
-    /* Check for special case values for printing.  We don't always
-       need the step value.  We don't care about overflow. */
+    istart = PyNumber_AsSsize_t(r->start, NULL);
+    if (istart == -1 && PyErr_Occurred()) {
+        assert(!PyErr_ExceptionMatches(PyExc_OverflowError));
+        return NULL;
+    }
+    istop = PyNumber_AsSsize_t(r->stop, NULL);
+    if (istop == -1 && PyErr_Occurred()) {
+        assert(!PyErr_ExceptionMatches(PyExc_OverflowError));
+        return NULL;
+    }
+
     istep = PyNumber_AsSsize_t(r->step, NULL);
     if (istep == -1 && PyErr_Occurred()) {
         assert(!PyErr_ExceptionMatches(PyExc_OverflowError));
         return NULL;
     }
-
-    if (istep == 1)
-        return PyUnicode_FromFormat("range(%R, %R)", r->start, r->stop);
-    else
-        return PyUnicode_FromFormat("range(%R, %R, %R)",
-                                    r->start, r->stop, r->step);
+    expected_len = ceil((istop - istart) / (float)istep);
+    expected_len = Py_MAX(0, expected_len);
+    expected_end = istart + (expected_len - 1) * istep;
+    switch (expected_len) {
+    case 4:
+        return PyUnicode_FromFormat(
+            "<range object [%zi, %zi, %zi, %zi]>",
+            istart, istart + istep, istart + 2 * istep, istart + 3 * istep);
+    case 3:
+        return PyUnicode_FromFormat(
+            "<range object [%zi, %zi, %zi]>",
+            istart, istart + istep, expected_end);
+    case 2:
+        return PyUnicode_FromFormat(
+            "<range object [%zi, %zi]>",
+            istart, expected_end);
+    case 1:
+        return PyUnicode_FromFormat(
+            "<range object [%zi]>",
+            istart);
+    case 0:
+        return PyUnicode_FromFormat(
+            "<range object []>");
+    default:
+        return PyUnicode_FromFormat(
+            "<range object [%zi, %zi, ..., %zi, %zi]>",
+            istart, istart + istep, expected_end - istep, expected_end);
+    }
 }
 
 /* Pickling support */

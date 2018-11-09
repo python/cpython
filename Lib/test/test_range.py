@@ -15,6 +15,24 @@ def pyrange(start, stop, step):
             yield start
             start += step
 
+def dumb_range_repr(a_range):
+    """Pure python implementation of the range_repr function.
+    """
+    r = list(a_range)
+    if len(r) > 4:
+        return (f"<range object [{r[0]}, {r[1]}, ..., {r[-2]}, {r[-1]}]>")
+    elif len(r) == 4:
+        return (f"<range object [{r[0]}, {r[1]}, {r[-2]}, {r[-1]}]>")
+    elif len(r) == 3:
+        return (f"<range object [{r[0]}, {r[1]}, {r[2]}]>")
+    elif len(r) == 2:
+        return (f"<range object [{r[0]}, {r[1]}]>")
+    elif len(r) == 1:
+        return (f"<range object [{r[0]}]>")
+    elif len(r) == 0:
+        return (f"<range object []>")
+
+
 def pyrange_reversed(start, stop, step):
     stop += (start - stop) % step
     return pyrange(stop - step, start - step, -step)
@@ -353,9 +371,14 @@ class RangeTest(unittest.TestCase):
         self.assertEqual(len(range(sys.maxsize, sys.maxsize+10)), 10)
 
     def test_repr(self):
-        self.assertEqual(repr(range(1)), 'range(0, 1)')
-        self.assertEqual(repr(range(1, 2)), 'range(1, 2)')
-        self.assertEqual(repr(range(1, 2, 3)), 'range(1, 2, 3)')
+        for start in range(-10, 25):
+            for stop in range(-10, 25):
+                for step in range(-10, 5):
+                    if step == 0:
+                        continue  # range() arg 3 must not be zero
+                    self.assertEqual(repr(range(start, stop, step)),
+                                     dumb_range_repr(range(start, stop, step)),
+                                     f"For range({start}, {stop}, {step})")
 
     def test_pickling(self):
         testcases = [(13,), (0, 11), (-22, 10), (20, 3, -1),
