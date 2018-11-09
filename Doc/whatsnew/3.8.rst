@@ -233,6 +233,15 @@ unicodedata
   is in a specific normal form. (Contributed by Max Belanger and David Euresti in
   :issue:`32285`).
 
+unittest
+--------
+
+* Added :func:`~unittest.addModuleCleanup()` and
+  :meth:`~unittest.TestCase.addClassCleanup()` to unittest to support
+  cleanups for :func:`~unittest.setUpModule()` and
+  :meth:`~unittest.TestCase.setUpClass()`.
+  (Contributed by Lisa Roach in :issue:`24412`.)
+
 venv
 ----
 
