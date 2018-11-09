@@ -20,11 +20,9 @@ import collections
 import os
 import time
 import traceback
-from signal import SIGTERM, SIGINT, SIGKILL
 
 # If threading is available then ThreadPool should be provided.  Therefore
 # we avoid top-level imports which are liable to fail on some systems.
-from .connection import wait
 from . import util
 from . import get_context, TimeoutError
 #
