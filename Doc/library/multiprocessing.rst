@@ -2108,6 +2108,12 @@ with the :class:`Pool` class.
    .. versionadded:: 3.4
       *context*
 
+   .. versionchanged:: 3.8
+      When one of the worker processes terminates abruptly (e.g. the 
+      Out Of Memory Killer of linux kicked in), a :exc:`BrokenProcessPool`
+      error is now raised. Previously, behavior was undefined and
+      the :class:`Pool` or its workers would often freeze or deadlock.
+
    .. note::
 
       Worker processes within a :class:`Pool` typically live for the complete
@@ -2224,6 +2230,12 @@ with the :class:`Pool` class.
       Pool objects now support the context management protocol -- see
       :ref:`typecontextmanager`.  :meth:`~contextmanager.__enter__` returns the
       pool object, and :meth:`~contextmanager.__exit__` calls :meth:`terminate`.
+
+   .. exception:: BrokenProcessPool
+
+      Derived from :exc:`RuntimeError`, this exception class is raised when
+      one of the workers of a :class:`Pool` has terminated in a non-clean
+      fashion (for example, if it was killed from the outside).
 
 
 .. class:: AsyncResult
