@@ -882,7 +882,7 @@ class SpecSignatureTest(unittest.TestCase):
 
         proxy = Foo()
         autospec = create_autospec(proxy)
-        assert not hasattr(autospec, '__name__')
+        self.assertFalse(hasattr(autospec, '__name__'))
 
 
 class TestCallList(unittest.TestCase):
