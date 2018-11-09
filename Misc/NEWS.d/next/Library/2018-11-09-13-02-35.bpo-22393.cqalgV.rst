@@ -1,0 +1,2 @@
+Fix ``multiprocessing.Pool`` indefintely hang when a worker process dies
+unexpectedly. Patch by Oscar Esteban, based on code from Dan O'Reilly.
