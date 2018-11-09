@@ -1,0 +1,4 @@
+When Python is compiled in debug mode (Py_DEBUG), PyTuple_GET_ITEM() macro
+becomes a function which implements sanity checks using assertions. It
+should help to detect misusage of the C API. "&PyTuple_GET_ITEM(op, i)" is
+now invalid in debug mode.

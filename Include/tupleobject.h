@@ -55,8 +55,17 @@ PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 
 /* Macro, trading safety for speed */
 #ifndef Py_LIMITED_API
-#define PyTuple_GET_ITEM(op, i) (((PyTupleObject *)(op))->ob_item[i])
-#define PyTuple_GET_SIZE(op)    (assert(PyTuple_Check(op)),Py_SIZE(op))
+
+#ifdef Py_DEBUG
+PyAPI_FUNC(PyObject*) _PyTuple_GET_ITEM_impl(const PyObject *op, Py_ssize_t i);
+PyAPI_FUNC(Py_ssize_t) _PyTuple_GET_SIZE_impl(const PyObject *op);
+
+#  define PyTuple_GET_ITEM(op, i) _PyTuple_GET_ITEM_impl((PyObject *)(op), i)
+#  define PyTuple_GET_SIZE(op) _PyTuple_GET_SIZE_impl((PyObject *)(op))
+#else
+#  define PyTuple_GET_ITEM(op, i) (((PyTupleObject *)(op))->ob_item[i])
+#  define PyTuple_GET_SIZE(op)    (assert(PyTuple_Check(op)),Py_SIZE(op))
+#endif
 
 #ifdef Py_BUILD_CORE
 #  define _PyTuple_ITEMS(op) ((((PyTupleObject *)(op))->ob_item))
