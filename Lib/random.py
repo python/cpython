@@ -383,7 +383,7 @@ class Random(_random.Random):
         if len(cum_weights) != n:
             raise ValueError('The number of weights does not match the population')
         bisect = _bisect.bisect
-        total = cum_weights[-1] + 0.0
+        total = cum_weights[-1] + 0.0   # convert to float
         hi = n - 1
         return [population[bisect(cum_weights, random() * total, 0, hi)]
                 for i in range(k)]
