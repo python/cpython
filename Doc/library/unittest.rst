@@ -607,7 +607,7 @@ Distinguishing test iterations using subtests
 
 .. versionadded:: 3.4
 
-When some of your tests differ only by a some very small differences, for
+When there are very small differences among your tests, for
 instance some parameters, unittest allows you to distinguish them inside
 the body of a test method using the :meth:`~TestCase.subTest` context manager.
 
