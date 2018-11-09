@@ -149,11 +149,10 @@ static const struct dbcs_map *mapping_list;
         writer->pos += 2;                                                  \
     } while (0)
 
-#define OUTBYTEI(c, i)         \
-    do {                       \
-        unsigned int _c = (c); \
-        assert(_c <= 255);     \
-        ((*outbuf)[i]) = _c;   \
+#define OUTBYTEI(c, i)                     \
+    do {                                   \
+        assert((unsigned char)(c) == (c)); \
+        ((*outbuf)[i]) = (c);              \
     } while (0)
 
 #define OUTBYTE1(c) OUTBYTEI(c, 0)
