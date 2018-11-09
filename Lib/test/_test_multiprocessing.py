@@ -2571,9 +2571,8 @@ def raising():
 def unpickleable_result():
     return lambda: 42
 
-def waiting():
-    while True:
-        time.sleep(10)
+def waiting(args):
+    time.sleep(7)
 
 def bad_exit(value):
     if value:
@@ -2628,7 +2627,8 @@ class _TestPoolWorkerErrors(BaseTestCase):
         # Kill one of the pool workers.
         pid = p._pool[0].pid
         os.kill(pid, signal.SIGTERM)
-        self.assertRaises(BrokenProcessPool, res.get)
+        with self.assertRaises(BrokenProcessPool):
+            res.get(timeout=10)
         p.close()
         p.join()
 
