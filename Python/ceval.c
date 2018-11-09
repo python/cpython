@@ -4662,7 +4662,7 @@ do_call_core(PyObject *func, PyObject *callargs, PyObject *kwdict)
             }
 
             C_TRACE(result, _PyCFunction_FastCallDict(func,
-                                                      &PyTuple_GET_ITEM(callargs, 1),
+                                                      &_PyTuple_ITEMS(callargs)[1],
                                                       nargs - 1,
                                                       kwdict));
             Py_DECREF(func);
