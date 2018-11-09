@@ -4361,7 +4361,7 @@ fastcall_args(PyObject *args, PyObject ***stack, Py_ssize_t *nargs)
         *nargs = 0;
     }
     else if (PyTuple_Check(args)) {
-        *stack = &PyTuple_GET_ITEM(args, 0);
+        *stack = ((PyTupleObject *)args)->ob_item;
         *nargs = PyTuple_GET_SIZE(args);
     }
     else {

@@ -39,7 +39,7 @@ intern_strings(PyObject *tuple)
         if (v == NULL || !PyUnicode_CheckExact(v)) {
             Py_FatalError("non-string found in code slot");
         }
-        PyUnicode_InternInPlace(&PyTuple_GET_ITEM(tuple, i));
+        PyUnicode_InternInPlace(&_PyTuple_ITEMS(tuple)[i]);
     }
 }
 
