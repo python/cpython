@@ -1,3 +1,4 @@
-Fix an off by one error in the bytecode peephole optimizer where it could
-access one byte beyond the end of bounds of a bytecode array when removing
-unreachable operations after a return.
+Fix an off by one error in the bytecode peephole optimizer where it could read
+bytes beyond the end of bounds of a bytecode array when removing unreachable
+code after a return.  This did not always crash an interpreter, but could.
+An interpreter compiled using the clang memory sanitizer always failed.
