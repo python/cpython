@@ -96,9 +96,9 @@ lastn_const_start(const _Py_CODEUNIT *codestr, Py_ssize_t i, Py_ssize_t n)
 
 /* Scans through EXTENDED ARGs, seeking the index of the effective opcode */
 static Py_ssize_t
-find_op(const _Py_CODEUNIT *codestr, Py_ssize_t i)
+find_op(const _Py_CODEUNIT *codestr, Py_ssize_t codelen, Py_ssize_t i)
 {
-    while (_Py_OPCODE(codestr[i]) == EXTENDED_ARG) {
+    while (i < codelen && _Py_OPCODE(codestr[i]) == EXTENDED_ARG) {
         i++;
     }
     return i;
@@ -590,7 +590,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
     CONST_STACK_CREATE();
 
-    for (i=find_op(codestr, 0) ; i<codelen ; i=nexti) {
+    for (i=find_op(codestr, codelen, 0) ; i<codelen ; i=nexti) {
         opcode = _Py_OPCODE(codestr[i]);
         op_start = i;
         while (op_start >= 1 && _Py_OPCODE(codestr[op_start-1]) == EXTENDED_ARG) {
@@ -755,7 +755,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case JUMP_IF_FALSE_OR_POP:
             case JUMP_IF_TRUE_OR_POP:
                 h = get_arg(codestr, i) / sizeof(_Py_CODEUNIT);
-                tgt = find_op(codestr, h);
+                tgt = find_op(codestr, codelen, h);
 
                 j = _Py_OPCODE(codestr[tgt]);
                 if (CONDITIONAL_JUMP(j)) {
@@ -796,7 +796,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case SETUP_WITH:
             case SETUP_ASYNC_WITH:
                 h = GETJUMPTGT(codestr, i);
-                tgt = find_op(codestr, h);
+                tgt = find_op(codestr, codelen, h);
                 /* Replace JUMP_* to a RETURN into just a RETURN */
                 if (UNCONDITIONAL_JUMP(opcode) &&
                     _Py_OPCODE(codestr[tgt]) == RETURN_VALUE) {
@@ -825,7 +825,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 }
                 if (h > i + 1) {
                     fill_nops(codestr, i + 1, h);
-                    nexti = find_op(codestr, h);
+                    nexti = find_op(codestr, codelen, h);
                 }
                 break;
         }
