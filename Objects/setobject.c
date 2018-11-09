@@ -701,8 +701,7 @@ static PyObject *
 set_pop(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
     /* Make sure the search finger is in bounds */
-    Py_ssize_t i = so->finger & so->mask;
-    setentry *entry;
+    setentry *entry, *limit;
     PyObject *key;
 
     assert (PyAnySet_Check(so));
@@ -711,16 +710,18 @@ set_pop(PySetObject *so, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
 
-    while ((entry = &so->table[i])->key == NULL || entry->key==dummy) {
-        i++;
-        if (i > so->mask)
-            i = 0;
+    entry = so->table + (so->finger & so->mask);
+    limit = so->table + so->mask;
+    while (entry->key == NULL || entry->key==dummy) {
+        entry++;
+        if (entry > limit)
+            entry = so->table;
     }
     key = entry->key;
     entry->key = dummy;
     entry->hash = -1;
     so->used--;
-    so->finger = i + 1;         /* next place to start */
+    so->finger = entry - so->table + 1;   /* next place to start */
     return key;
 }
 
