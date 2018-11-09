@@ -2623,16 +2623,30 @@ class _TestPoolWorkerErrors(BaseTestCase):
     def test_broken_process_pool1(self):
         from multiprocessing.pool import BrokenProcessPool
         p = multiprocessing.Pool(2)
-        res = p.map_async(waiting, range(3))
+        res = p.map_async(waiting, range(10))
+        # Kill one of the pool workers.
+        waiting(None)
+        pid = p._pool[0].pid
+        os.kill(pid, signal.SIGTERM)
+        with self.assertRaises(BrokenProcessPool):
+            res.get()
+        p.close()
+        p.join()
+
+
+    def test_broken_process_pool2(self):
+        from multiprocessing.pool import BrokenProcessPool
+        p = multiprocessing.Pool(2)
+        res = p.map_async(waiting, [1])
         # Kill one of the pool workers.
         pid = p._pool[0].pid
         os.kill(pid, signal.SIGTERM)
         with self.assertRaises(BrokenProcessPool):
-            res.get(timeout=10)
+            res.get()
         p.close()
         p.join()
 
-    def test_broken_process_pool2(self):
+    def test_broken_process_pool3(self):
         from multiprocessing.pool import BrokenProcessPool
         p = multiprocessing.Pool(2)
         with self.assertRaises(BrokenProcessPool):
