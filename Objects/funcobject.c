@@ -581,7 +581,7 @@ function_call(PyObject *func, PyObject *args, PyObject *kwargs)
     PyObject **stack;
     Py_ssize_t nargs;
 
-    stack = &PyTuple_GET_ITEM(args, 0);
+    stack = _PyTuple_ITEMS(args);
     nargs = PyTuple_GET_SIZE(args);
     return _PyFunction_FastCallDict(func, stack, nargs, kwargs);
 }
