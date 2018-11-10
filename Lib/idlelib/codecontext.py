@@ -13,7 +13,7 @@ import re
 from sys import maxsize as INFINITY
 
 import tkinter
-from tkinter.constants import TOP, LEFT, X, W, SUNKEN
+from tkinter.constants import TOP, X, SUNKEN
 
 from idlelib.config import idleConf
 
