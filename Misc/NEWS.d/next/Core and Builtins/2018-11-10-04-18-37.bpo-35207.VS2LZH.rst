@@ -1,0 +1,2 @@
+Assignments to single names surrounded by parenthesis (i.e. :code:`(x) =
+42`) now raises :exc:`SyntaxError`.

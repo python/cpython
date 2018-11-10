@@ -2882,6 +2882,23 @@ ast_for_testlist(struct compiling *c, const node* n)
     }
 }
 
+static bool
+name_is_surrounded_by_parens(node *n)
+{
+    node *current = n;
+
+    while (current != NULL && TYPE(current) != atom) {
+        current = CHILD(current, 0);
+    }
+
+    if (current == NULL || NCH(current) != 3) {
+        return 0;
+    }
+
+    return (TYPE(CHILD(current, 0)) == LPAR
+            && TYPE(CHILD(current, 2)) == RPAR);
+}
+
 static stmt_ty
 ast_for_expr_stmt(struct compiling *c, const node *n)
 {
@@ -2918,6 +2935,11 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
           those. */
         switch (expr1->kind) {
             case Name_kind:
+                if (name_is_surrounded_by_parens(ch)) {
+                    ast_error(c, ch, "a single name cannot be surrounded by "
+                                     "parentheses in an assignment");
+                    return NULL;
+                }
             case Attribute_kind:
             case Subscript_kind:
                 break;
@@ -3031,6 +3053,12 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
             e = ast_for_testlist(c, ch);
             if (!e)
               return NULL;
+
+            if (e->kind == Name_kind && name_is_surrounded_by_parens(ch)) {
+                ast_error(c, ch, "a single name cannot be surrounded by "
+                                 "parentheses in an assignment");
+                return NULL;
+            }
 
             /* set context to assign */
             if (!set_context(c, e, Store, CHILD(n, i)))

@@ -30,6 +30,10 @@ class TestSpecifics(unittest.TestCase):
         compile("hi\r\nstuff\r\ndef f():\n    pass\r", "<test>", "exec")
         compile("this_is\rreally_old_mac\rdef f():\n    pass", "<test>", "exec")
 
+    def test_assignment_to_name_surrounded_by_parentheses(self):
+        self.assertRaises(SyntaxError, compile, '(x) = 1', '?', 'single')
+        self.assertRaises(SyntaxError, compile, 'x=1; (x) += 1', '?', 'single')
+
     def test_debug_assignment(self):
         # catch assignments to __debug__
         self.assertRaises(SyntaxError, compile, '__debug__ = 1', '?', 'single')
