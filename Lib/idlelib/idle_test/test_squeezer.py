@@ -306,21 +306,6 @@ class SqueezerTest(unittest.TestCase):
             squeezer.expandingbuttons[1],
         ))
 
-    GetOptionSignature = namedtuple('GetOptionSignature',
-        'configType section option default type warn_on_default raw')
-    @classmethod
-    def _make_sig(cls, configType, section, option, default=sentinel.NOT_GIVEN,
-                  type=sentinel.NOT_GIVEN,
-                  warn_on_default=sentinel.NOT_GIVEN,
-                  raw=sentinel.NOT_GIVEN):
-        return cls.GetOptionSignature(configType, section, option, default,
-                                      type, warn_on_default, raw)
-
-    @classmethod
-    def get_GetOption_signature(cls, mock_call_obj):
-        args, kwargs = mock_call_obj[-2:]
-        return cls._make_sig(*args, **kwargs)
-
     def test_reload(self):
         """Test the reload() class-method."""
         self.assertIsInstance(Squeezer.auto_squeeze_min_lines, int)
