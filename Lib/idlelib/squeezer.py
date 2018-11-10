@@ -15,6 +15,7 @@ output written to the standard error stream ("stderr"), such as exception
 messages and their tracebacks.
 """
 import re
+import weakref
 
 import tkinter as tk
 from tkinter.font import Font
@@ -202,6 +203,8 @@ class Squeezer:
     This avoids IDLE's shell slowing down considerably, and even becoming
     completely unresponsive, when very long outputs are written.
     """
+    _instance_weakrefs = []
+
     @classmethod
     def reload(cls):
         """Load class variables from config."""
@@ -209,6 +212,17 @@ class Squeezer:
             "main", "PyShell", "auto-squeeze-min-lines",
             type="int", default=50,
         )
+
+        # Loading the font info requires a Tk root, and we don't want to
+        # rely on Tkinter's "default root", so each instance will load
+        # font info separately using its editor windows's Tk root.
+        new_instance_weakrefs = []
+        for inst_ref in cls._instance_weakrefs:
+            inst = inst_ref()
+            if inst is not None:
+                inst.load_font()
+                new_instance_weakrefs.append(inst_ref)
+        cls._instance_weakrefs = new_instance_weakrefs
 
     def __init__(self, editwin):
         """Initialize settings for Squeezer.
@@ -229,25 +243,56 @@ class Squeezer:
         # the actual Text widget. Squeezer, however, needs to make such changes.
         self.base_text = editwin.per.bottom
 
+        self._instance_weakrefs.append(weakref.ref(self))
+        self.load_font()
+
+        # Twice the text widget's border width and internal padding;
+        # pre-calculated here for the get_line_width() method.
+        self.window_width_delta = 2 * (
+            int(text.cget('border')) +
+            int(text.cget('padx'))
+        )
+
         self.expandingbuttons = []
         from idlelib.pyshell import PyShell  # done here to avoid import cycle
         if isinstance(editwin, PyShell):
             # If we get a PyShell instance, replace its write method with a
             # wrapper, which inserts an ExpandingButton instead of a long text.
             def mywrite(s, tags=(), write=editwin.write):
-                # only auto-squeeze text which has just the "stdout" tag
+                # Only auto-squeeze text which has just the "stdout" tag.
                 if tags != "stdout":
                     return write(s, tags)
 
-                # only auto-squeeze text with at least the minimum
-                # configured number of lines
+                # Only auto-squeeze text with at least the minimum
+                # configured number of lines.
+
+                # First, a very quick check to skip very short texts.
+                s_len = len(s)
+                auto_squeeze_min_lines = self.auto_squeeze_min_lines
+                if s_len < auto_squeeze_min_lines:
+                    return write(s, tags)
+
+                # Try another quick check to avoid calculating the actual
+                # number of lines, but only if the given text is not too
+                # long for it to possibly succeed.
+                line_width = self.get_line_width()
+                if s_len < auto_squeeze_min_lines * line_width:
+                    # Check lower bound: Assume that all non-newline
+                    # characters are in one long line, and that the
+                    # tab width is 8.
+                    n_newlines = s.count('\n')
+                    n_tabs = s.count('\t')
+                    n_lines_lower_bound = n_newlines + \
+                        (s_len - n_newlines + n_tabs * 7) // line_width
+                    if n_lines_lower_bound < auto_squeeze_min_lines:
+                        return write(s, tags)
+
                 numoflines = self.count_lines(s)
                 if numoflines < self.auto_squeeze_min_lines:
                     return write(s, tags)
 
                 # create an ExpandingButton instance
-                expandingbutton = ExpandingButton(s, tags, numoflines,
-                                                  self)
+                expandingbutton = ExpandingButton(s, tags, numoflines, self)
 
                 # insert the ExpandingButton into the Text widget
                 text.mark_gravity("iomark", tk.RIGHT)
@@ -275,23 +320,26 @@ class Squeezer:
         """
         # Tab width is configurable
         tabwidth = self.editwin.get_tk_tabwidth()
+        linewidth = self.get_line_width()
+        return count_lines_with_wrapping(s, linewidth, tabwidth)
 
-        # Get the Text widget's size
-        linewidth = self.editwin.text.winfo_width()
-        # Deduct the border and padding
-        linewidth -= 2*sum([int(self.editwin.text.cget(opt))
-                            for opt in ('border', 'padx')])
+    def get_line_width(self):
+        # The maximum line length in pixels: The width of the text widget,
+        # minus twice the border width and internal padding.
+        linewidth_pixels = \
+            self.base_text.winfo_width() - self.window_width_delta
 
-        # Get the Text widget's font
-        font = Font(self.editwin.text, name=self.editwin.text.cget('font'))
-        # Divide the size of the Text widget by the font's width.
+        # Divide the width of the Text widget by the font's width.
         # According to Tk8.5 docs, the Text widget's width is set
         # according to the width of its font's '0' (zero) character,
         # so we will use this as an approximation.
         # see: http://www.tcl.tk/man/tcl8.5/TkCmd/text.htm#M-width
-        linewidth //= font.measure('0')
+        return linewidth_pixels // self.zero_char_width
 
-        return count_lines_with_wrapping(s, linewidth, tabwidth)
+    def load_font(self):
+        text = self.base_text
+        self.zero_char_width = \
+            Font(text, name=text.cget('font')).measure('0')
 
     def squeeze_current_text_event(self, event):
         """squeeze-current-text event handler

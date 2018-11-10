@@ -115,61 +115,44 @@ class SqueezerTest(unittest.TestCase):
         """Create an actual Squeezer instance with a mock EditorWindow."""
         if editor_window is None:
             editor_window = self.make_mock_editor_window()
-        return Squeezer(editor_window)
+        squeezer = Squeezer(editor_window)
+        squeezer.get_line_width = Mock(return_value=80)
+        squeezer.editwin.get_tk_tabwidth = Mock(return_value=8)
+        return squeezer
+
+    def make_text_widget(self):
+        root = get_test_tk_root(self)
+        text_widget = Text(root)
+        text_widget["font"] = idleConf.GetFont(root, "main", "EditorWindow")
+        text_widget.mark_set("iomark", "1.0")
+        return text_widget
 
     def test_count_lines(self):
-        """Test Squeezer.count_lines() with various inputs.
-
-        This checks that Squeezer.count_lines() calls the
-        count_lines_with_wrapping() function with the appropriate parameters.
-        """
-        for tabwidth, linewidth in [(4, 80), (1, 79), (8, 80), (3, 120)]:
-            self._test_count_lines_helper(linewidth=linewidth,
-                                          tabwidth=tabwidth)
-
-    def _prepare_mock_editwin_for_count_lines(self, editwin,
-                                              linewidth, tabwidth):
-        """Prepare a mock EditorWindow object for Squeezer.count_lines."""
-        CHAR_WIDTH = 10
-        BORDER_WIDTH = 2
-        PADDING_WIDTH = 1
-
-        # Prepare all the required functionality on the mock EditorWindow object
-        # so that the calculations in Squeezer.count_lines() can run.
-        editwin.get_tk_tabwidth.return_value = tabwidth
-        editwin.text.winfo_width.return_value = \
-            linewidth * CHAR_WIDTH + 2 * (BORDER_WIDTH + PADDING_WIDTH)
-        text_opts = {
-            'border': BORDER_WIDTH,
-            'padx': PADDING_WIDTH,
-            'font': None,
-        }
-        editwin.text.cget = lambda opt: text_opts[opt]
-
-        # monkey-path tkinter.font.Font with a mock object, so that
-        # Font.measure('0') returns CHAR_WIDTH
-        mock_font = Mock()
-        def measure(char):
-            if char == '0':
-                return CHAR_WIDTH
-            raise ValueError("measure should only be called on '0'!")
-        mock_font.return_value.measure = measure
-        patcher = patch('idlelib.squeezer.Font', mock_font)
-        patcher.start()
-        self.addCleanup(patcher.stop)
-
-    def _test_count_lines_helper(self, linewidth, tabwidth):
-        """Helper for test_count_lines."""
+        """Test Squeezer.count_lines() with various inputs."""
         editwin = self.make_mock_editor_window()
-        self._prepare_mock_editwin_for_count_lines(editwin, linewidth, tabwidth)
         squeezer = self.make_squeezer_instance(editwin)
 
-        mock_count_lines = Mock(return_value=SENTINEL_VALUE)
-        text = 'TEXT'
-        with patch('idlelib.squeezer.count_lines_with_wrapping',
-                   mock_count_lines):
-            self.assertIs(squeezer.count_lines(text), SENTINEL_VALUE)
-            mock_count_lines.assert_called_with(text, linewidth, tabwidth)
+        for text_code, tab_width, line_width, expected in [
+            (r"'\n'", 8, 80, 1),
+            (r"'\n' * 3", 8, 80, 3),
+            (r"'a' * 40 + '\n'", 8, 80, 1),
+            (r"'a' * 80 + '\n'", 8, 80, 1),
+            # TODO: uncomment the next test case after bpo-35208 is fixed
+            # (r"'a' * 200 + '\n'", 8, 80, 3),
+            (r"'aa\t' * 20", 8, 80, 2),
+            (r"'aa\t' * 21", 8, 80, 3),
+            (r"'aa\t' * 20", 8, 40, 4),
+            (r"'aa\t' * 20", 4, 80, 1),
+            (r"'aa\t' * 21", 4, 80, 2),
+        ]:
+            with self.subTest(text_code=text_code,
+                              tab_width=tab_width,
+                              line_width=line_width,
+                              expected=expected):
+                text = eval(text_code)
+                editwin.get_tk_tabwidth.return_value = tab_width
+                squeezer.get_line_width.return_value = line_width
+                self.assertEquals(squeezer.count_lines(text), expected)
 
     def test_init(self):
         """Test the creation of Squeezer instances."""
@@ -207,8 +190,6 @@ class SqueezerTest(unittest.TestCase):
     def test_write_stdout(self):
         """Test Squeezer's overriding of the EditorWindow's write() method."""
         editwin = self.make_mock_editor_window()
-        self._prepare_mock_editwin_for_count_lines(editwin,
-                                                   linewidth=80, tabwidth=8)
 
         for text in ['', 'TEXT']:
             editwin.write = orig_write = Mock(return_value=SENTINEL_VALUE)
@@ -232,9 +213,7 @@ class SqueezerTest(unittest.TestCase):
 
     def test_auto_squeeze(self):
         """Test that the auto-squeezing creates an ExpandingButton properly."""
-        root = get_test_tk_root(self)
-        text_widget = Text(root)
-        text_widget.mark_set("iomark", "1.0")
+        text_widget = self.make_text_widget()
 
         editwin = self.make_mock_editor_window()
         editwin.text = text_widget
@@ -248,12 +227,9 @@ class SqueezerTest(unittest.TestCase):
 
     def test_squeeze_current_text_event(self):
         """Test the squeeze_current_text event."""
-        root = get_test_tk_root(self)
-
         # squeezing text should work for both stdout and stderr
         for tag_name in ["stdout", "stderr"]:
-            text_widget = Text(root)
-            text_widget.mark_set("iomark", "1.0")
+            text_widget = self.make_text_widget()
 
             editwin = self.make_mock_editor_window()
             editwin.text = editwin.per.bottom = text_widget
@@ -282,10 +258,7 @@ class SqueezerTest(unittest.TestCase):
 
     def test_squeeze_current_text_event_no_allowed_tags(self):
         """Test that the event doesn't squeeze text without a relevant tag."""
-        root = get_test_tk_root(self)
-
-        text_widget = Text(root)
-        text_widget.mark_set("iomark", "1.0")
+        text_widget = self.make_text_widget()
 
         editwin = self.make_mock_editor_window()
         editwin.text = editwin.per.bottom = text_widget
@@ -307,10 +280,7 @@ class SqueezerTest(unittest.TestCase):
 
     def test_squeeze_text_before_existing_squeezed_text(self):
         """Test squeezing text before existing squeezed text."""
-        root = get_test_tk_root(self)
-
-        text_widget = Text(root)
-        text_widget.mark_set("iomark", "1.0")
+        text_widget = self.make_text_widget()
 
         editwin = self.make_mock_editor_window()
         editwin.text = editwin.per.bottom = text_widget
