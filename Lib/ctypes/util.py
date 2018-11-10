@@ -271,12 +271,14 @@ elif os.name == "posix":
             return res.group(1)
 
         def _findWalk_ldpath(name):
+
             def _is_elf(filepath):
                 try:
                     with open(filepath, 'rb') as fh:
                         return fh.read(4) == b'\x7fELF'
                 except:
                     return False
+
             from glob import glob
 
             if os.path.isabs(name):
