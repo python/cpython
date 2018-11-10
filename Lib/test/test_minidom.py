@@ -1567,17 +1567,26 @@ class MinidomTest(unittest.TestCase):
         doc = parseString(xml_str)
         output = io.StringIO()
         doc.writexml(output)
+        self.assertEqual(output.getvalue(),
+            '<?xml version="1.0" ?><curriculum company="example" status="public"/>')
+        output = io.StringIO()
+        doc.writexml(output, sort_attrs=False)
         self.assertEqual(output.getvalue(), xml_str)
 
     def test_toxml_with_attributes_ordered(self):
         xml_str = '<?xml version="1.0" ?><curriculum status="public" company="example"/>'
         doc = parseString(xml_str)
-        self.assertEqual(doc.toxml(), xml_str)
+        self.assertEqual(doc.toxml(),
+            '<?xml version="1.0" ?><curriculum company="example" status="public"/>')
+        self.assertEqual(doc.toxml(sort_attrs=False), xml_str)
 
     def test_toprettyxml_with_attributes_ordered(self):
         xml_str = '<?xml version="1.0" ?><curriculum status="public" company="example"/>'
         doc = parseString(xml_str)
         self.assertEqual(doc.toprettyxml(),
+                         '<?xml version="1.0" ?>\n'
+                         '<curriculum company="example" status="public"/>\n')
+        self.assertEqual(doc.toprettyxml(sort_attrs=False),
                          '<?xml version="1.0" ?>\n'
                          '<curriculum status="public" company="example"/>\n')
 

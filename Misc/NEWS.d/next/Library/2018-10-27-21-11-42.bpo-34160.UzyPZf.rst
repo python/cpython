@@ -1,1 +1,2 @@
-ElementTree and minidom now preserve the attribute order specified by the user.
+Added support for the *sort_attrs* argument in methods for serializing XML in
+modules :mod:`xml.etree.ElementTree` and :mod:`xml.dom.minidom`.

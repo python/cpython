@@ -132,7 +132,7 @@ module documentation.  This section lists the differences between the API and
           ... # Work with dom.
 
 
-.. method:: Node.writexml(writer, indent="", addindent="", newl="")
+.. method:: Node.writexml(writer, indent="", addindent="", newl="", *, sort_attrs=True)
 
    Write XML to the writer object.  The writer should have a :meth:`write` method
    which matches that of the file object interface.  The *indent* parameter is the
@@ -143,11 +143,13 @@ module documentation.  This section lists the differences between the API and
    For the :class:`Document` node, an additional keyword argument *encoding* can
    be used to specify the encoding field of the XML header.
 
-   .. versionchanged:: 3.8
-      The :meth:`writexml` method now preserves the attribute order specified
-      by the user.
+   If *sort_attrs* is true (by default), then element attributes will be
+   written in lexical order.
 
-.. method:: Node.toxml(encoding=None)
+   .. versionchanged:: 3.8
+      Added support for the *sort_attrs* argument.
+
+.. method:: Node.toxml(encoding=None, *, sort_attrs=True)
 
    Return a string or byte string containing the XML represented by
    the DOM node.
@@ -159,22 +161,23 @@ module documentation.  This section lists the differences between the API and
    encoding. Encoding this string in an encoding other than UTF-8 is
    likely incorrect, since UTF-8 is the default encoding of XML.
 
-   .. versionchanged:: 3.8
-      The :meth:`toxml` method now preserves the attribute order specified
-      by the user.
+   The *sort_attrs* argument behaves like the corresponding arguments of
+   :meth:`writexml`.
 
-.. method:: Node.toprettyxml(indent="", newl="", encoding="")
+   .. versionchanged:: 3.8
+      Added support for the *sort_attrs* argument.
+
+.. method:: Node.toprettyxml(indent="", newl="", encoding="", *, sort_attrs=True)
 
    Return a pretty-printed version of the document. *indent* specifies the
    indentation string and defaults to a tabulator; *newl* specifies the string
    emitted at the end of each line and defaults to ``\n``.
 
-   The *encoding* argument behaves like the corresponding argument of
-   :meth:`toxml`.
+   The *encoding* and *sort_attrs* argument behave like the corresponding
+   arguments of :meth:`toxml`.
 
    .. versionchanged:: 3.8
-      The :meth:`toprettyxml` method now preserves the attribute order specified
-      by the user.
+      Added support for the *sort_attrs* argument.
 
 
 .. _dom-example:

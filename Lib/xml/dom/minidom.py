@@ -43,10 +43,10 @@ class Node(xml.dom.Node):
     def __bool__(self):
         return True
 
-    def toxml(self, encoding=None):
-        return self.toprettyxml("", "", encoding)
+    def toxml(self, encoding=None, *, sort_attrs=True):
+        return self.toprettyxml("", "", encoding, sort_attrs=sort_attrs)
 
-    def toprettyxml(self, indent="\t", newl="\n", encoding=None):
+    def toprettyxml(self, indent="\t", newl="\n", encoding=None, *, sort_attrs=True):
         if encoding is None:
             writer = io.StringIO()
         else:
@@ -56,9 +56,11 @@ class Node(xml.dom.Node):
                                       newline='\n')
         if self.nodeType == Node.DOCUMENT_NODE:
             # Can pass encoding only to document, to put it into XML header
-            self.writexml(writer, "", indent, newl, encoding)
+            self.writexml(writer, "", indent, newl, encoding,
+                          sort_attrs=sort_attrs)
         else:
-            self.writexml(writer, "", indent, newl)
+            self.writexml(writer, "", indent, newl,
+                          sort_attrs=sort_attrs)
         if encoding is None:
             return writer.getvalue()
         else:
@@ -847,15 +849,19 @@ class Element(Node):
     def __repr__(self):
         return "<DOM Element: %s at %#x>" % (self.tagName, id(self))
 
-    def writexml(self, writer, indent="", addindent="", newl=""):
+    def writexml(self, writer, indent="", addindent="", newl="", *,
+                 sort_attrs=True):
         # indent = current indentation
         # addindent = indentation to add to higher levels
         # newl = newline string
         writer.write(indent+"<" + self.tagName)
 
         attrs = self._get_attributes()
+        a_names = attrs.keys()
+        if sort_attrs:
+            a_names = sorted(a_names)
 
-        for a_name in attrs.keys():
+        for a_name in a_names:
             writer.write(" %s=\"" % a_name)
             _write_data(writer, attrs[a_name].value)
             writer.write("\"")
@@ -863,11 +869,13 @@ class Element(Node):
             writer.write(">")
             if (len(self.childNodes) == 1 and
                 self.childNodes[0].nodeType == Node.TEXT_NODE):
-                self.childNodes[0].writexml(writer, '', '', '')
+                self.childNodes[0].writexml(writer, '', '', '',
+                                            sort_attrs=sort_attrs)
             else:
                 writer.write(newl)
                 for node in self.childNodes:
-                    node.writexml(writer, indent+addindent, addindent, newl)
+                    node.writexml(writer, indent+addindent, addindent, newl,
+                                  sort_attrs=sort_attrs)
                 writer.write(indent)
             writer.write("</%s>%s" % (self.tagName, newl))
         else:
@@ -984,7 +992,8 @@ class ProcessingInstruction(Childless, Node):
         self.target = value
     nodeName = property(_get_nodeName, _set_nodeName)
 
-    def writexml(self, writer, indent="", addindent="", newl=""):
+    def writexml(self, writer, indent="", addindent="", newl="", *,
+                 sort_attrs=True):
         writer.write("%s<?%s %s?>%s" % (indent,self.target, self.data, newl))
 
 
@@ -1084,7 +1093,8 @@ class Text(CharacterData):
         self.data = self.data[:offset]
         return newText
 
-    def writexml(self, writer, indent="", addindent="", newl=""):
+    def writexml(self, writer, indent="", addindent="", newl="", *,
+                 sort_attrs=True):
         _write_data(writer, "%s%s%s" % (indent, self.data, newl))
 
     # DOM Level 3 (WD 9 April 2002)
@@ -1179,7 +1189,8 @@ class Comment(CharacterData):
         CharacterData.__init__(self)
         self._data = data
 
-    def writexml(self, writer, indent="", addindent="", newl=""):
+    def writexml(self, writer, indent="", addindent="", newl="", *,
+                 sort_attrs=True):
         if "--" in self.data:
             raise ValueError("'--' is not allowed in a comment node")
         writer.write("%s<!--%s-->%s" % (indent, self.data, newl))
@@ -1191,7 +1202,8 @@ class CDATASection(Text):
     nodeType = Node.CDATA_SECTION_NODE
     nodeName = "#cdata-section"
 
-    def writexml(self, writer, indent="", addindent="", newl=""):
+    def writexml(self, writer, indent="", addindent="", newl="", *,
+                 sort_attrs=True):
         if self.data.find("]]>") >= 0:
             raise ValueError("']]>' not allowed in a CDATA section")
         writer.write("<![CDATA[%s]]>" % self.data)
@@ -1324,7 +1336,8 @@ class DocumentType(Identified, Childless, Node):
         else:
             return None
 
-    def writexml(self, writer, indent="", addindent="", newl=""):
+    def writexml(self, writer, indent="", addindent="", newl="", *,
+                 sort_attrs=True):
         writer.write("<!DOCTYPE ")
         writer.write(self.name)
         if self.publicId:
@@ -1786,14 +1799,15 @@ class Document(Node, DocumentLS):
             raise xml.dom.NotSupportedErr("cannot import document type nodes")
         return _clone_node(node, deep, self)
 
-    def writexml(self, writer, indent="", addindent="", newl="", encoding=None):
+    def writexml(self, writer, indent="", addindent="", newl="", encoding=None,
+                 *, sort_attrs=True):
         if encoding is None:
             writer.write('<?xml version="1.0" ?>'+newl)
         else:
             writer.write('<?xml version="1.0" encoding="%s"?>%s' % (
                 encoding, newl))
         for node in self.childNodes:
-            node.writexml(writer, indent, addindent, newl)
+            node.writexml(writer, indent, addindent, newl, sort_attrs=sort_attrs)
 
     # DOM Level 3 (WD 9 April 2002)
 

@@ -592,29 +592,34 @@ Functions
 
 
 .. function:: tostring(element, encoding="us-ascii", method="xml", *, \
-                       short_empty_elements=True)
+                       short_empty_elements=True, sort_attrs=True)
 
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *short_empty_elements* has the same meaning as in :meth:`ElementTree.write`.
+   *short_empty_elements* and *sort_attrs* has the same meaning as in
+   :meth:`ElementTree.write`.
    Returns an (optionally) encoded string containing the XML data.
 
    .. versionadded:: 3.4
       The *short_empty_elements* parameter.
 
+   .. versionadded:: 3.8
+      The *sort_attrs* parameter.
+
 
 .. function:: tostringlist(element, encoding="us-ascii", method="xml", *, \
-                           short_empty_elements=True)
+                           short_empty_elements=True, sort_attrs=True)
 
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *short_empty_elements* has the same meaning as in :meth:`ElementTree.write`.
+   *short_empty_elements* and *sort_attrs* has the same meaning as in
+   :meth:`ElementTree.write`.
    Returns a list of (optionally) encoded strings containing the XML data.
    It does not guarantee any specific sequence, except that
    ``b"".join(tostringlist(element)) == tostring(element)``.
@@ -623,6 +628,9 @@ Functions
 
    .. versionadded:: 3.4
       The *short_empty_elements* parameter.
+
+   .. versionadded:: 3.8
+      The *sort_attrs* parameter.
 
 
 .. function:: XML(text, parser=None)
@@ -925,7 +933,7 @@ ElementTree Objects
 
    .. method:: write(file, encoding="us-ascii", xml_declaration=None, \
                      default_namespace=None, method="xml", *, \
-                     short_empty_elements=True)
+                     short_empty_elements=True, sort_attrs=True)
 
       Writes the element tree to a file, as XML.  *file* is a file name, or a
       :term:`file object` opened for writing.  *encoding* [1]_ is the output
@@ -940,6 +948,8 @@ ElementTree Objects
       of elements that contain no content.  If ``True`` (the default), they are
       emitted as a single self-closed tag, otherwise they are emitted as a pair
       of start/end tags.
+      If *sort_attrs* is true (by default), then element attributes will be
+      written in lexical order.
 
       The output is either a string (:class:`str`) or binary (:class:`bytes`).
       This is controlled by the *encoding* argument.  If *encoding* is
@@ -951,9 +961,8 @@ ElementTree Objects
       .. versionadded:: 3.4
          The *short_empty_elements* parameter.
 
-      .. versionchanged:: 3.8
-         The :meth:`write` method now preserves the attribute order specified
-         by the user.
+      .. versionadded:: 3.8
+         The *sort_attrs* parameter.
 
 
 This is the XML file that is going to be manipulated::

@@ -1054,10 +1054,15 @@ class ElementTreeTest(unittest.TestCase):
 
     def test_tree_write_attribute_order(self):
         # See BPO 34160
-        root = ET.Element('cirriculum', status='public', company='example')
+        root = ET.XML('<cirriculum status="public" company="example"></cirriculum>')
+        #root = ET.Element('cirriculum', status='public', company='example')
         self.assertEqual(serialize(root),
+                         '<cirriculum company="example" status="public" />')
+        self.assertEqual(serialize(root, sort_attrs=False),
                          '<cirriculum status="public" company="example" />')
         self.assertEqual(serialize(root, method='html'),
+                '<cirriculum company="example" status="public"></cirriculum>')
+        self.assertEqual(serialize(root, method='html', sort_attrs=False),
                 '<cirriculum status="public" company="example"></cirriculum>')
 
 
