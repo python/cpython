@@ -1,0 +1,2 @@
+Use bytes + memoryview + resize instead of bytesarray + bytes in
+io.RawIOBase.read

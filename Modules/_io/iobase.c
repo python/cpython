@@ -898,7 +898,8 @@ static PyObject *
 _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
 /*[clinic end generated code: output=6cdeb731e3c9f13c input=b6d0dcf6417d1374]*/
 {
-    PyObject *b, *res;
+    PyObject *b, *res, *mem;
+    Py_ssize_t newn, refcnt;
 
     if (n < 0) {
         _Py_IDENTIFIER(readall);
@@ -906,28 +907,49 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
         return _PyObject_CallMethodId(self, &PyId_readall, NULL);
     }
 
-    /* TODO: allocate a bytes object directly instead and manually construct
-       a writable memoryview pointing to it. */
-    b = PyByteArray_FromStringAndSize(NULL, n);
+    b = PyBytes_FromStringAndSize(NULL, n);
     if (b == NULL)
         return NULL;
 
-    res = PyObject_CallMethodObjArgs(self, _PyIO_str_readinto, b, NULL);
+    mem = PyMemoryView_FromMemory(PyBytes_AS_STRING(b), n, PyBUF_WRITE);
+    if (mem == NULL) {
+        Py_DECREF(b);
+        return NULL;
+    }
+
+    res = PyObject_CallMethodObjArgs(self, _PyIO_str_readinto, mem, NULL);
+    refcnt = Py_REFCNT(mem);
+    Py_DECREF(mem);
     if (res == NULL || res == Py_None) {
         Py_DECREF(b);
         return res;
     }
 
-    n = PyNumber_AsSsize_t(res, PyExc_ValueError);
+    newn = PyNumber_AsSsize_t(res, PyExc_ValueError);
     Py_DECREF(res);
-    if (n == -1 && PyErr_Occurred()) {
+    if (newn == -1 && PyErr_Occurred()) {
         Py_DECREF(b);
         return NULL;
     }
 
-    res = PyBytes_FromStringAndSize(PyByteArray_AsString(b), n);
-    Py_DECREF(b);
-    return res;
+    if (newn < n) {
+        if (refcnt == 1) {
+            _PyBytes_Resize(&b, newn);
+        } else {
+            /* In case someone holds a reference to the memoryview
+            inside the readinto function */
+            mem = PyBytes_FromStringAndSize(PyBytes_AS_STRING(b), newn);
+            Py_DECREF(b);
+            b = mem;
+        }
+        return b;
+    } else if (newn == n) {
+        return b;
+    } else {
+        PyErr_SetString(PyExc_RuntimeError, "readinto() returned bad value");
+        Py_DECREF(b);
+        return NULL;
+    }
 }
 
 
