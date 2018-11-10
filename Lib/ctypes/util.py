@@ -270,8 +270,34 @@ elif os.name == "posix":
                 return None
             return res.group(1)
 
+        def _findWalk_ldpath(name):
+            def _is_elf(filepath):
+                try:
+                    with open(filepath, 'rb') as fh:
+                        return fh.read(4) == b'\x7fELF'
+                except:
+                    return False
+            from glob import glob
+
+            if os.path.isabs(name):
+                return name
+            # search LD_LIBRARY_PATH list
+            paths = os.environ.get('LD_LIBRARY_PATH', '').split(':')
+            if paths:
+                for d in paths:
+                    f = os.path.join(d, name)
+                    if _is_elf(f):
+                        return os.path.basename(f)
+                    prefix = os.path.join(d, 'lib'+name)
+                    for suffix in ['.so', '.so.*']:
+                        for f in glob('{0}{1}'.format(prefix, suffix)):
+                            if _is_elf(f):
+                                return os.path.basename(f)
+
         def find_library(name):
-            return _findSoname_ldconfig(name) or _get_soname(_findLib_gcc(name))
+            return _findSoname_ldconfig(name) or \
+                   _get_soname(_findLib_gcc(name)) or \
+                   _findWalk_ldpath(name)
 
 ################################################################
 # test code
