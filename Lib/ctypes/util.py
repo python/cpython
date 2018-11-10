@@ -307,14 +307,16 @@ elif os.name == "posix":
             return result
 
         def _findWalk_ldpath(name):
+
             def _is_elf(filepath):
                 try:
                     with open(filepath, 'rb') as fh:
                         return fh.read(4) == b'\x7fELF'
                 except:
                     return False
+
             from glob import glob
-             if os.path.isabs(name):
+            if os.path.isabs(name):
                 return name
             # search LD_LIBRARY_PATH list
             paths = os.environ.get('LD_LIBRARY_PATH', '').split(':')
