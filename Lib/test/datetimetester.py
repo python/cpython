@@ -1031,7 +1031,6 @@ class TestDateOnly(unittest.TestCase):
     def test_strptime_invalid_format(self):
         tests = [
             ('2004-12-01 13:02:47.197', '%Y-%m-%d %H:%M:%S.%f'),
-            ('2018-01-01 00:00', '%Y-%m-%d %H:%M'),
             ('2018-01-01', ''),
             ('01', '%M'),
             ('02', '%H'),
@@ -3134,8 +3133,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         tests = [
             ('2004-12-01 13:02:47.197', '%Y-%m-%d %H:%M:%S.%f'),
             ('2004-12-01', '%Y-%m-%d'),
-            ('1900-01-01 12:30', '%Y-%m-%d %H:%M'),
-            ('12:30:15', '')
+            ('12:30:15', ''),
         ]
         for date_string, date_format in tests:
             with self.subTest(date_string=date_string, date_format=date_format):
