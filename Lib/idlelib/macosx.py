@@ -81,7 +81,7 @@ def tkVersionWarning(root):
         patchlevel = root.tk.call('info', 'patchlevel')
         if patchlevel not in ('8.5.7', '8.5.9'):
             return False
-        return ("WARNING: The version of Tcl/Tk in use ({0}) may"
+        return ("WARNING: The version of Tcl/Tk ({0}) in use may"
                 " be unstable.\n"
                 "Visit http://www.python.org/download/mac/tcltk/"
                 " for current information.".format(patchlevel))
@@ -89,26 +89,29 @@ def tkVersionWarning(root):
         return False
 
 
-def readSystemPrefereces():
+def readSystemPreferences():
     """
     Fetch the macOS system preferences.
     """
     plist_path = expanduser('~/Library/Preferences/.GlobalPreferences.plist')
-    with open(plist_path, 'rb') as plist_file:
-        return plistlib.load(plist_file)
+    try:
+        with open(plist_path, 'rb') as plist_file:
+            return plistlib.load(plist_file)
+    except OSError:
+        return None
 
 
 def preferTabsPreferenceWarning():
     """
     Warn if "Prefer tabs when opening documents" is set to "Always".
     """
-    prefs = readSystemPrefereces()
-    if prefs['AppleWindowTabbingMode'] == 'always':
+    prefs = readSystemPreferences()
+    if prefs and prefs.get('AppleWindowTabbingMode') == 'always':
         return (
-            'WARNING: The system preferece "Prefer tabs when opening documents"'
-            ' is set to "Always". This will cause various problems with IDLE.'
-            ' For the best expereince, change this setting before running IDLE'
-            ' (via System Preferences -> Dock).'
+            'WARNING: The system preference "Prefer tabs when opening'
+            ' documents" is set to "Always". This will cause various problems'
+            ' with IDLE. For the best experience, change this setting before'
+            ' running IDLE (via System Preferences -> Dock).'
         )
     return None
 

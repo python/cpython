@@ -1560,10 +1560,10 @@ def main():
             shell.show_warning(tkversionwarning)
 
         # Warn if the "Prefer tabs when opening documents" system
-        # prference is set to "Always".
-        preferTabsPreferenceWarning = macosx.preferTabsPreferenceWarning()
-        if preferTabsPreferenceWarning:
-            shell.show_warning(preferTabsPreferenceWarning)
+        # preference is set to "Always".
+        prefer_tabs_preference_warning = macosx.preferTabsPreferenceWarning()
+        if prefer_tabs_preference_warning:
+            shell.show_warning(prefer_tabs_preference_warning)
 
     while flist.inversedict:  # keep IDLE running while files are open.
         root.mainloop()
