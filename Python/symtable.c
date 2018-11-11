@@ -1,10 +1,5 @@
 #include "Python.h"
 #include "pycore_state.h"
-#ifdef Yield
-#undef Yield /* undefine conflicting macro from winbase.h */
-#endif
-#include "Python-ast.h"
-#include "code.h"
 #include "symtable.h"
 #include "structmember.h"
 
