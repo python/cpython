@@ -1,6 +1,8 @@
 """
 A number of functions that enhance IDLE on Mac OSX.
 """
+from os.path import expanduser
+import plistlib
 from sys import platform  # Used in _init_tk_type, changed by test.
 
 import tkinter
@@ -79,12 +81,36 @@ def tkVersionWarning(root):
         patchlevel = root.tk.call('info', 'patchlevel')
         if patchlevel not in ('8.5.7', '8.5.9'):
             return False
-        return (r"WARNING: The version of Tcl/Tk ({0}) in use may"
-                r" be unstable.\n"
-                r"Visit http://www.python.org/download/mac/tcltk/"
-                r" for current information.".format(patchlevel))
+        return ("WARNING: The version of Tcl/Tk in use ({0}) may"
+                " be unstable.\n"
+                "Visit http://www.python.org/download/mac/tcltk/"
+                " for current information.".format(patchlevel))
     else:
         return False
+
+
+def readSystemPrefereces():
+    """
+    Fetch the macOS system preferences.
+    """
+    plist_path = expanduser('~/Library/Preferences/.GlobalPreferences.plist')
+    with open(plist_path, 'rb') as plist_file:
+        return plistlib.load(plist_file)
+
+
+def preferTabsPreferenceWarning():
+    """
+    Warn if "Prefer tabs when opening documents" is set to "Always".
+    """
+    prefs = readSystemPrefereces()
+    if prefs['AppleWindowTabbingMode'] == 'always':
+        return (
+            'WARNING: The system preferece "Prefer tabs when opening documents"'
+            ' is set to "Always". This will cause various problems with IDLE.'
+            ' For the best expereince, change this setting before running IDLE'
+            ' (via System Preferences -> Dock).'
+        )
+    return None
 
 
 ## Fix the menu and related functions.
