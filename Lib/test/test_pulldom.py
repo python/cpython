@@ -275,8 +275,8 @@ class SAXExerciser(object):
 
 
 class SAX2DOMExerciser(SAXExerciser):
-    """The same as SAXExerciser, but without the
-    comment before the root element, because S2D can"t handle it"""
+    """The same as SAXExerciser, but without the comment before the root
+    element, because S2D can"t handle it"""
 
     def parse(self, _):
         h = self._handler
