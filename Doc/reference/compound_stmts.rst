@@ -598,10 +598,6 @@ which is then bound to the class name.
    there is a :keyword:`finally` clause which happens to raise another
    exception. That new exception causes the old one to be lost.
 
-.. [#] Currently, control "flows off the end" except in the case of an exception or the
-   execution of a :keyword:`return`, :keyword:`continue`, or :keyword:`break`
-   statement.
-
 .. [#] A string literal appearing as the first statement in the function body is
    transformed into the function's ``__doc__`` attribute and therefore the
    function's :term:`docstring`.
