@@ -25,7 +25,6 @@ and opendir), and leave all pathname manipulation to os.path
 import abc
 import sys
 import stat as st
-import platform
 
 _names = sys.builtin_module_names
 
