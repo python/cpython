@@ -1,2 +1,3 @@
 Fix a problem where the SAX XML paeser could not handle XML processing
 instructions that appeared before the root element of the XML document.
+Patch by Jonathan Gossage.
