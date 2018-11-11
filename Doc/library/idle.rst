@@ -40,13 +40,17 @@ Menus
 -----
 
 IDLE has two main window types, the Shell window and the Editor window.  It is
-possible to have multiple editor windows simultaneously.  Output windows, such
-as used for Edit / Find in Files, are a subtype of edit window.  They currently
-have the same top menu as Editor windows but a different default title and
-context menu.
+possible to have multiple editor windows simultaneously.  On Windows and
+Linux, each has its own top menu.  Each menu documented below indicates
+which window type it is associated with.
 
-IDLE's menus dynamically change based on which window is currently selected.
-Each menu documented below indicates which window type it is associated with.
+Output windows, such as used for Edit => Find in Files, are a subtype of editor
+window.  They currently have the same top menu but a different
+default title and context menu.
+
+On MacOS, there is one application menu.  It dynamically changes according
+to the window currently selected.  It has an IDLE menu, and some entries
+described below are moved around to conform to Apple guidlines.
 
 File menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -791,6 +795,13 @@ The font preferences, highlighting, keys, and general preferences can be
 changed via Configure IDLE on the Option menu.  Keys can be user defined;
 IDLE ships with four built-in key sets. In addition, a user can create a
 custom key set in the Configure IDLE dialog under the keys tab.
+
+IDLE on MacOS
+^^^^^^^^^^^^^
+
+Under System Preferences: Dock, one can set "Prefer tabs when opening
+documents" to "Always".  This setting is not compatible with the tk/tkinter
+GUI framework used by IDLE, and it breaks a few IDLE features.
 
 Extensions
 ^^^^^^^^^^

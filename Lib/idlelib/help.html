@@ -122,12 +122,15 @@ of global and local namespaces</li>
 <div class="section" id="menus">
 <h2>Menus<a class="headerlink" href="#menus" title="Permalink to this headline">¶</a></h2>
 <p>IDLE has two main window types, the Shell window and the Editor window.  It is
-possible to have multiple editor windows simultaneously.  Output windows, such
-as used for Edit / Find in Files, are a subtype of edit window.  They currently
-have the same top menu as Editor windows but a different default title and
-context menu.</p>
-<p>IDLE’s menus dynamically change based on which window is currently selected.
-Each menu documented below indicates which window type it is associated with.</p>
+possible to have multiple editor windows simultaneously.  On Windows and
+Linux, each has its own top menu.  Each menu documented below indicates
+which window type it is associated with.</p>
+<p>Output windows, such as used for Edit =&gt; Find in Files, are a subtype of editor
+window.  They currently have the same top menu but a different
+default title and context menu.</p>
+<p>On MacOS, there is one application menu.  It dynamically changes according
+to the window currently selected.  It has an IDLE menu, and some entries
+described below are moved around to conform to Apple guidlines.</p>
 <div class="section" id="file-menu-shell-and-editor">
 <h3>File menu (Shell and Editor)<a class="headerlink" href="#file-menu-shell-and-editor" title="Permalink to this headline">¶</a></h3>
 <dl class="docutils">
@@ -753,6 +756,12 @@ changed via Configure IDLE on the Option menu.  Keys can be user defined;
 IDLE ships with four built-in key sets. In addition, a user can create a
 custom key set in the Configure IDLE dialog under the keys tab.</p>
 </div>
+<div class="section" id="idle-on-macos">
+<h3>IDLE on MacOS<a class="headerlink" href="#idle-on-macos" title="Permalink to this headline">¶</a></h3>
+<p>Under System Preferences: Dock, one can set “Prefer tabs when opening
+documents” to “Always”.  This setting is not compatible with the tk/tkinter
+GUI framework used by IDLE, and it breaks a few IDLE features.</p>
+</div>
 <div class="section" id="extensions">
 <h3>Extensions<a class="headerlink" href="#extensions" title="Permalink to this headline">¶</a></h3>
 <p>IDLE contains an extension facility.  Preferences for extensions can be
@@ -808,6 +817,7 @@ also used for testing.</p>
 <li><a class="reference internal" href="#help-and-preferences">Help and preferences</a><ul>
 <li><a class="reference internal" href="#help-sources">Help sources</a></li>
 <li><a class="reference internal" href="#setting-preferences">Setting preferences</a></li>
+<li><a class="reference internal" href="#idle-on-macos">IDLE on MacOS</a></li>
 <li><a class="reference internal" href="#extensions">Extensions</a></li>
 </ul>
 </li>
@@ -889,7 +899,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Nov 06, 2018.
+    Last updated on Nov 10, 2018.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 
