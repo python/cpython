@@ -1,0 +1,1 @@
+On macOS, warn if "Prefer tabs when opening documents" is set to "Always".
