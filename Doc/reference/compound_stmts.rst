@@ -281,9 +281,11 @@ function that handled an exception.
    statement: break
    statement: continue
 
-The optional :keyword:`else` clause is executed if and when control flows off
-the end of the :keyword:`try` clause. [#]_ Exceptions in the :keyword:`else`
-clause are not handled by the preceding :keyword:`except` clauses.
+The optional :keyword:`else` clause is executed if the control flow leaves the
+:keyword:`try` suite, no exception was raised, and no :keyword:`return`,
+:keyword:`continue`, or :keyword:`break` statement was executed.  Exceptions in
+the :keyword:`else` clause are not handled by the preceding :keyword:`except`
+clauses.
 
 .. index:: keyword: finally
 
@@ -595,10 +597,6 @@ which is then bound to the class name.
 .. [#] The exception is propagated to the invocation stack unless
    there is a :keyword:`finally` clause which happens to raise another
    exception. That new exception causes the old one to be lost.
-
-.. [#] Currently, control "flows off the end" except in the case of an exception or the
-   execution of a :keyword:`return`, :keyword:`continue`, or :keyword:`break`
-   statement.
 
 .. [#] A string literal appearing as the first statement in the function body is
    transformed into the function's ``__doc__`` attribute and therefore the
