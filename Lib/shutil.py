@@ -10,6 +10,7 @@ import stat
 import fnmatch
 import collections
 import errno
+import platform # for the clear_screen function
 
 try:
     import zlib
@@ -1311,3 +1312,24 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
                 if _access_check(name, mode):
                     return name
     return None
+
+''' CLEAR function for clearing the screen during a terminal session! '''
+''' by Alexander Abraham aka @dukealexanderthefirst '''
+
+def clear_screen():
+    exec_platform = str(platform.system())
+    if exec_platform == 'Linux':
+        try:
+            os.system('clear')
+        except Exception as error:
+            print(str(error))
+    elif exec_platform == 'Windows':
+        try:
+            os.system('cls')
+        except Exception as error:
+            print(str(error))
+    else:
+        try:
+            os.system('clear')
+        except Exception as error:
+            print(str(error))
