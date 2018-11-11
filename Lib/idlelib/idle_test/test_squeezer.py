@@ -310,7 +310,8 @@ class SqueezerTest(unittest.TestCase):
         """Test the reload() class-method."""
         self.assertIsInstance(Squeezer.auto_squeeze_min_lines, int)
         idleConf.SetOption('main', 'PyShell', 'auto-squeeze-min-lines', '42')
-        Squeezer.reload()
+        with patch('idlelib.squeezer.Squeezer.load_font') as mock_load_font:
+            Squeezer.reload()
         self.assertEqual(Squeezer.auto_squeeze_min_lines, 42)
 
 
