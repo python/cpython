@@ -134,8 +134,8 @@ static PyTypeObject PyDateTime_TimeType;
 static PyTypeObject PyDateTime_TZInfoType;
 static PyTypeObject PyDateTime_TimeZoneType;
 static PyObject *datetime_strptime(PyObject *cls, PyObject *args);
-static PyObject *datetime_getdate(PyDateTime_DateTime *self);
-static PyObject *datetime_gettime(PyDateTime_DateTime *self);
+static PyObject *datetime_getdate(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored));
+static PyObject *datetime_gettime(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored));
 
 
 static int check_tzinfo_subclass(PyObject *p);
@@ -2972,7 +2972,7 @@ date_strptime(PyObject *cls, PyObject *args)
             "date.strptime value cannot have a time part");
     }
     else {
-        date = datetime_getdate((PyDateTime_DateTime *)datetime);
+        date = datetime_getdate((PyDateTime_DateTime *)datetime, NULL);
     }
 
     Py_DECREF(datetime);
@@ -4105,7 +4105,7 @@ time_strptime(PyObject *cls, PyObject *args)
                         "time.strptime value cannot have a date part");
     }
     else {
-        time = datetime_gettime((PyDateTime_DateTime *)datetime);
+        time = datetime_gettime((PyDateTime_DateTime *)datetime, NULL);
     }
 
     Py_DECREF(datetime);
@@ -6084,7 +6084,7 @@ datetime_timestamp(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-datetime_getdate(PyDateTime_DateTime *self)
+datetime_getdate(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
 {
     return new_date(GET_YEAR(self),
                     GET_MONTH(self),
@@ -6092,7 +6092,7 @@ datetime_getdate(PyDateTime_DateTime *self)
 }
 
 static PyObject *
-datetime_gettime(PyDateTime_DateTime *self)
+datetime_gettime(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
 {
     return new_time(DATE_GET_HOUR(self),
                     DATE_GET_MINUTE(self),
