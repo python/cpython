@@ -200,7 +200,7 @@ Assignment of an object to a single target is recursively defined as follows.
 
   If the primary is a mutable sequence object (such as a list), the subscript
   must yield an integer.  If it is negative, the sequence's length is added to
-  it.  The resulting value must be a nonnegative integer less than the
+  it.  The resulting value must be a non-negative integer less than the
   sequence's length, and the sequence is asked to assign the assigned object to
   its item with that index.  If the index is out of range, :exc:`IndexError` is
   raised (assignment to a subscripted sequence cannot add new items to a list).
