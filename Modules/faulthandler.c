@@ -1393,7 +1393,7 @@ void _PyFaulthandler_Fini(void)
 #ifdef HAVE_SIGALTSTACK
     if (stack.ss_sp != NULL) {
         /* Fetch the current alt stack */
-        stack_t current_stack;
+        stack_t current_stack = {};
         if (sigaltstack(NULL, &current_stack) == 0) {
             if (current_stack.ss_sp == stack.ss_sp) {
                 /* The current alt stack is the one that we installed.
