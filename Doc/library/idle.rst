@@ -267,7 +267,7 @@ Options menu (Shell and Editor)
 Configure IDLE
    Open a configuration dialog and change preferences for the following:
    fonts, indentation, keybindings, text color themes, startup windows and
-   size, additional help sources, and extensions (see below).  On OS X,
+   size, additional help sources, and extensions (see below).  On macOS,
    open the configuration dialog by selecting Preferences in the application
    menu.  To use a new built-in color theme (IDLE Dark) with older IDLEs,
    save it as a new custom theme.
@@ -324,7 +324,7 @@ on Help menu choices.
 Context Menus
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Open a context menu by right-clicking in a window (Control-click on OS X).
+Open a context menu by right-clicking in a window (Control-click on macOS).
 Context menus have the standard clipboard functions also on the Edit menu.
 
 Cut
@@ -526,9 +526,9 @@ code interactively.  IDLE's Shell window also responds to the following keys.
   Command history
 
   * :kbd:`Alt-p` retrieves previous command matching what you have typed. On
-    OS X use :kbd:`C-p`.
+    macOS use :kbd:`C-p`.
 
-  * :kbd:`Alt-n` retrieves next. On OS X use :kbd:`C-n`.
+  * :kbd:`Alt-n` retrieves next. On macOS use :kbd:`C-n`.
 
   * :kbd:`Return` while on any previous command retrieves that command
 
