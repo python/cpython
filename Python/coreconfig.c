@@ -1,9 +1,9 @@
 #include "Python.h"
 #include "pycore_fileutils.h"
-#include "pycore_lifecycle.h"
-#include "pycore_mem.h"
+#include "pycore_pylifecycle.h"
+#include "pycore_pymem.h"
 #include "pycore_pathconfig.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 #include <locale.h>
 #ifdef HAVE_LANGINFO_H
 #  include <langinfo.h>
