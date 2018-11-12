@@ -99,7 +99,7 @@ Glossary
       that it contains :keyword:`yield` expressions for producing a series of
       values usable in an :keyword:`async for` loop.
 
-      Usually refers to a asynchronous generator function, but may refer to an
+      Usually refers to an asynchronous generator function, but may refer to an
       *asynchronous generator iterator* in some contexts.  In cases where the
       intended meaning isn't clear, using the full terms avoids ambiguity.
 
@@ -393,7 +393,7 @@ Glossary
       An :term:`annotation` of a function parameter or return value.
 
       Function annotations are usually used for
-      :term:`type hints <type hint>`: for example this function is expected to take two
+      :term:`type hints <type hint>`: for example, this function is expected to take two
       :class:`int` arguments and is also expected to have an :class:`int`
       return value::
 
