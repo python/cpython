@@ -4292,7 +4292,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
    .. versionchanged:: 3.7
       Dictionary order is guaranteed to be insertion order.  This behavior was
-      implementation detail of CPython from 3.6.
+      an implementation detail of CPython from 3.6.
 
 .. seealso::
    :class:`types.MappingProxyType` can be used to create a read-only view
