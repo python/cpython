@@ -180,11 +180,21 @@ class SSLWSGIServer(SSLWSGIServerMixin, SilentWSGIServer):
 
 def _run_test_server(*, address, use_ssl=False, server_cls, server_ssl_cls):
 
+    def loop(environ):
+        size = int(environ['CONTENT_LENGTH'])
+        while size:
+            data = environ['wsgi.input'].read(min(size, 0x10000))
+            yield data
+            size -= len(data)
+
     def app(environ, start_response):
         status = '200 OK'
         headers = [('Content-type', 'text/plain')]
         start_response(status, headers)
-        return [b'Test message']
+        if environ['PATH_INFO'] == '/loop':
+            return loop(environ)
+        else:
+            return [b'Test message']
 
     # Run the test WSGI server in a separate thread in order not to
     # interfere with event handling in the main thread
