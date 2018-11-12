@@ -2,7 +2,7 @@
 /* Error handling */
 
 #include "Python.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 
 #ifndef __STDC__
 #ifndef MS_WINDOWS
