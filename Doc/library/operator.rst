@@ -441,7 +441,7 @@ Python syntax and the functions in the :mod:`operator` module.
 +-----------------------+-------------------------+---------------------------------------+
 
 In-place Operators
------------------
+------------------
 
 Many operations have an "in-place" version.  Listed below are functions
 providing a more primitive access to in-place operators than the usual syntax
