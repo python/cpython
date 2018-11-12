@@ -1,7 +1,7 @@
 #include "Python.h"
 
 #include "structmember.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 #include "pycore_context.h"
 #include "pycore_hamt.h"
 

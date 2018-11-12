@@ -1,8 +1,8 @@
 /* Memoryview object implementation */
 
 #include "Python.h"
-#include "pycore_mem.h"
-#include "pycore_state.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "pystrhex.h"
 #include <stddef.h>
 

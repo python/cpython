@@ -12,8 +12,8 @@ extern "C" {
 #include "pythread.h"
 
 #include "pycore_ceval.h"
-#include "pycore_mem.h"
 #include "pycore_pathconfig.h"
+#include "pycore_pymem.h"
 #include "pycore_warnings.h"
 
 

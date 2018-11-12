@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 #include "symtable.h"
 #include "structmember.h"
 

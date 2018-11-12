@@ -80,7 +80,7 @@
 
 
 #include "Python.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 #include "osdefs.h"
 #include <wchar.h>
 

@@ -301,7 +301,7 @@ PyAPI_FUNC(PyThreadState *) PyThreadState_Get(void);
 /* Get the current Python thread state.
 
    Macro using PyThreadState_Get() or _PyThreadState_GET() depending if
-   pycore_state.h is included or not (this header redefines the macro).
+   pycore_pystate.h is included or not (this header redefines the macro).
 
    If PyThreadState_Get() is used, issue a fatal error if the current thread
    state is NULL.

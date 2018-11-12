@@ -2,7 +2,7 @@
 /* Support for dynamic loading of extension modules */
 
 #include "Python.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 #include "importdl.h"
 
 #include <sys/types.h>

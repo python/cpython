@@ -2,7 +2,7 @@
 /* Traceback implementation */
 
 #include "Python.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 
 #include "code.h"
 #include "frameobject.h"

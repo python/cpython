@@ -2,8 +2,8 @@
 /* Method object implementation */
 
 #include "Python.h"
-#include "pycore_mem.h"
-#include "pycore_state.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 
 /* Free list for method objects to safe malloc/free overhead

@@ -32,7 +32,7 @@
 #else
 #include "winreparse.h"
 #endif
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 
 /* On android API level 21, 'AT_EACCESS' is not declared although
  * HAVE_FACCESSAT is defined. */
