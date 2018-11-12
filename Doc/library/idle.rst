@@ -20,7 +20,7 @@ IDLE has the following features:
 
 * coded in 100% pure Python, using the :mod:`tkinter` GUI toolkit
 
-* cross-platform: works mostly the same on Windows, Unix, and Mac OS X
+* cross-platform: works mostly the same on Windows, Unix, and macOS
 
 * Python shell window (interactive interpreter) with colorizing
   of code input, output, and error messages
@@ -48,7 +48,7 @@ Output windows, such as used for Edit => Find in Files, are a subtype of editor
 window.  They currently have the same top menu but a different
 default title and context menu.
 
-On MacOS, there is one application menu.  It dynamically changes according
+On macOS, there is one application menu.  It dynamically changes according
 to the window currently selected.  It has an IDLE menu, and some entries
 described below are moved around to conform to Apple guidlines.
 
@@ -381,7 +381,7 @@ Key bindings
 ^^^^^^^^^^^^
 
 In this section, 'C' refers to the :kbd:`Control` key on Windows and Unix and
-the :kbd:`Command` key on Mac OSX.
+the :kbd:`Command` key on macOS.
 
 * :kbd:`Backspace` deletes to the left; :kbd:`Del` deletes to the right
 
@@ -796,7 +796,7 @@ changed via Configure IDLE on the Option menu.  Keys can be user defined;
 IDLE ships with four built-in key sets. In addition, a user can create a
 custom key set in the Configure IDLE dialog under the keys tab.
 
-IDLE on MacOS
+IDLE on macOS
 ^^^^^^^^^^^^^
 
 Under System Preferences: Dock, one can set "Prefer tabs when opening
