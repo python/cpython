@@ -215,10 +215,17 @@ class CookieTests(unittest.TestCase):
                 self.assertEqual(C1.output(), expected_output)
 
     def test_illegal_chars(self):
-        rawdata = "a=b; c,d=e"
+        rawdata = "a=b; c@d=e"
         C = cookies.SimpleCookie()
         with self.assertRaises(cookies.CookieError):
             C.load(rawdata)
+
+    def test_comma_separator(self):
+        rawdata = "a=b,z=zz"  # , is accepted as a cookie separator
+        C = cookies.SimpleCookie()
+        C.load(rawdata)
+        self.assertEqual(C["a"].value, 'b')
+        self.assertEqual(C["z"].value, 'zz')
 
     def test_comment_quoting(self):
         c = cookies.SimpleCookie()

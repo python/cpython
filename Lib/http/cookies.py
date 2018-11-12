@@ -429,7 +429,7 @@ class Morsel(dict):
 # result, the parsing rules here are less strict.
 #
 
-_LegalKeyChars  = r"\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\="
+_LegalKeyChars  = r"\w\d!#%&'~_`><@:/\$\*\+\-\.\^\|\)\(\?\}\{\="
 _LegalValueChars = _LegalKeyChars + r'\[\]'
 _CookiePattern = re.compile(r"""
     \s*                            # Optional whitespace at start of cookie
@@ -447,7 +447,7 @@ _CookiePattern = re.compile(r"""
     )                                # End of group 'val'
     )?                             # End of optional value group
     \s*                            # Any number of spaces.
-    (\s+|;|$)                      # Ending either at space, semicolon, or EOS.
+    (\s+|;|,|$)                    # Ending either at space, comma, semicolon, or EOS.
     """, re.ASCII | re.VERBOSE)    # re.ASCII may be removed if safe.
 
 

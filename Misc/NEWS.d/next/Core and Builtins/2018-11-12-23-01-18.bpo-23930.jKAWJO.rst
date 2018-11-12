@@ -1,0 +1,1 @@
+Add support for comma-separated cookies (contributed by Rémi Lapeyre).
