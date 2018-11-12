@@ -470,6 +470,7 @@ class Pool(object):
                         inqueue, outqueue, initializer, initargs,
                         maxtasksperchild, wrap_exception):
         thread = threading.current_thread()
+        setattr(thread, '_state_lock', ctx.Lock())
         util.debug('worker handler entering')
 
         # Keep maintaining workers until the cache gets drained, unless the pool
@@ -480,7 +481,8 @@ class Pool(object):
                 outqueue, initializer, initargs,
                 maxtasksperchild, wrap_exception)
             if new_workers is None:
-                thread._state = BROKEN
+                with thread._state_lock:
+                    thread._state = BROKEN
                 for i, cache_ent in list(cache.items()):
                     err = BrokenProcessPool(
                         'A worker of the pool terminated abruptly '
@@ -621,8 +623,9 @@ class Pool(object):
         if self._state == RUN:
             self._state = CLOSE
             # Avert race condition in broken pools
-            if self._worker_handler._state != BROKEN:
-                self._worker_handler._state = CLOSE
+            with self._worker_handler._state_lock:
+                if self._worker_handler._state != BROKEN:
+                    self._worker_handler._state = CLOSE
 
     def terminate(self):
         util.debug('terminating pool')
@@ -656,9 +659,10 @@ class Pool(object):
                         worker_handler, task_handler, result_handler, cache):
         # this is guaranteed to only be called once
         util.debug('terminate pool entering')
-        is_broken = BROKEN in (task_handler._state,
-                               worker_handler._state,
-                               result_handler._state)
+        with worker_handler._state_lock:
+            is_broken = BROKEN in (task_handler._state,
+                                   worker_handler._state,
+                                   result_handler._state)
 
         worker_handler._state = TERMINATE
         task_handler._state = TERMINATE
