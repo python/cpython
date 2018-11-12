@@ -54,7 +54,9 @@ def _formatwarnmsg_impl(msg):
     if msg.source is not None:
         try:
             import tracemalloc
-        except ImportError:
+        # Logging a warning should not raise a new exception:
+        # catch Exception, not only ImportError and RecursionError.
+        except Exception:
             # don't suggest to enable tracemalloc if it's not available
             tracing = True
             tb = None
