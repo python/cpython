@@ -178,7 +178,7 @@ class Pool(object):
         if processes is None:
             processes = os.cpu_count() or 1
         if processes < 1:
-            raise ValueError("Number of processes must be 2 or more")
+            raise ValueError("Number of processes must be at least 1")
 
         if initializer is not None and not callable(initializer):
             raise TypeError('initializer must be a callable')
@@ -296,7 +296,6 @@ class Pool(object):
                        wrap_exception):
         """Clean up any exited workers and start replacements for them.
         """
-        thread = threading.current_thread()
         need_repopulate = Pool._join_exited_workers(pool)
         if need_repopulate:
             Pool._repopulate_pool_static(ctx, Process, processes, pool,
