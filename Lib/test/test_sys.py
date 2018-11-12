@@ -10,7 +10,6 @@ import codecs
 import gc
 import sysconfig
 import locale
-import threading
 
 # count the number of test runs, used to create unique
 # strings to intern in test_intern()

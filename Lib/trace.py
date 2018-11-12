@@ -51,7 +51,6 @@ __all__ = ['Trace', 'CoverageResults']
 
 import linecache
 import os
-import re
 import sys
 import token
 import tokenize
