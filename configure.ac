@@ -2854,11 +2854,37 @@ esac
 AC_MSG_CHECKING(for --with-address-sanitizer)
 AC_ARG_WITH(address_sanitizer,
             AS_HELP_STRING([--with-address-sanitizer],
-                           [enable AddressSanitizer]),
+                           [enable AddressSanitizer (asan)]),
 [
 AC_MSG_RESULT($withval)
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
+# ASan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+],
+[AC_MSG_RESULT(no)])
+
+AC_MSG_CHECKING(for --with-memory-sanitizer)
+AC_ARG_WITH(memory_sanitizer,
+            AS_HELP_STRING([--with-memory-sanitizer],
+                           [enable MemorySanitizer (msan)]),
+[
+AC_MSG_RESULT($withval)
+BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+# MSan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+],
+[AC_MSG_RESULT(no)])
+
+AC_MSG_CHECKING(for --with-undefined-behavior-sanitizer)
+AC_ARG_WITH(undefined_behavior_sanitizer,
+            AS_HELP_STRING([--with-undefined-behavior-sanitizer],
+                           [enable UndefinedBehaviorSanitizer (ubsan)]),
+[
+AC_MSG_RESULT($withval)
+BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
+LDFLAGS="-fsanitize=undefined $LDFLAGS"
 ],
 [AC_MSG_RESULT(no)])
 
