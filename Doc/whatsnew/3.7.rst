@@ -1223,7 +1223,7 @@ can be set within the scope of a group.
 (Contributed by Serhiy Storchaka in :issue:`25054`.)
 
 Regular expressions compiled with the :const:`re.LOCALE` flag no longer
-depends on the locale at compile time.  Locale settings are applied only
+depend on the locale at compile time.  Locale settings are applied only
 when the compiled regular expression is used.
 (Contributed by Serhiy Storchaka in :issue:`30215`.)
 
@@ -1264,7 +1264,7 @@ The :mod:`socket` module now exposes the :data:`socket.TCP_CONGESTION`
 (Contributed by Omar Sandoval in :issue:`26273` and
 Nathaniel J. Smith in :issue:`29728`.)
 
-Support for :data:`socket.AF_VSOCK` sockets have been added to allow
+Support for :data:`socket.AF_VSOCK` sockets has been added to allow
 communication between virtual machines and their hosts.
 (Contributed by Cathy Avery in :issue:`27584`.)
 
@@ -1378,7 +1378,7 @@ This is equivalent to passing :data:`subprocess.PIPE` as *stdout* and
 (Contributed by Bo Bayles in :issue:`32102`.)
 
 The ``subprocess.run`` function and the :class:`subprocess.Popen` constructor
-now accepts the *text* keyword argument as an alias
+now accept the *text* keyword argument as an alias
 to *universal_newlines*.
 (Contributed by Andrew Clegg in :issue:`31756`.)
 
@@ -1676,7 +1676,7 @@ Added functions :c:func:`PySlice_Unpack` and :c:func:`PySlice_AdjustIndices`.
 :issue:`16500`.)
 
 The ``PyExc_RecursionErrorInst`` singleton that was part of the public API
-has been removed as its members were never cleared may cause a segfault
+has been removed as its members being never cleared may cause a segfault
 during finalization of the interpreter. Contributed by Xavier de Gaye in
 :issue:`22898` and :issue:`30697`.
 
@@ -1855,7 +1855,7 @@ Significant speed improvements to alternate constructors for
 constructors when not constructing subclasses. (Contributed by Paul Ganssle
 in :issue:`32403`)
 
-The speed of comparison of :class:`array.array` instances have been
+The speed of comparison of :class:`array.array` instances has been
 improved considerably in certain cases.  It is now from 10x to 70x faster
 when comparing arrays holding values of the same integer type.
 (Contributed by Adrian Wielgosik in :issue:`24700`.)
@@ -1930,7 +1930,7 @@ asyncio
 -------
 
 Support for directly ``await``-ing instances of :class:`asyncio.Lock` and
-other asyncio synchronization primitives have been deprecated. An
+other asyncio synchronization primitives has been deprecated.  An
 asynchronous context manager must be used in order to acquire and release
 the synchronization resource.
 (Contributed by Andrew Svetlov in :issue:`32253`.)
@@ -2378,7 +2378,7 @@ Changes in the Python API
   instances.
   (Contributed by Yury Selivanov in :issue:`32327`.)
 
-* :attr:`asyncio.Server.sockets` now return a copy of the internal list
+* :attr:`asyncio.Server.sockets` now returns a copy of the internal list
   of server sockets, instead of returning it directly.
   (Contributed by Yury Selivanov in :issue:`32662`.)
 
