@@ -144,7 +144,6 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,
 
         task = job = result = func = args = kwds = None
         completed += 1
-
     util.debug('worker exiting after %d tasks' % completed)
 
 def _helper_reraises_exception(ex):
@@ -241,13 +240,12 @@ class Pool(object):
         """
         cleaned = False
         broken = []
-        for i in reversed(range(len(pool))):
-            worker = pool[i]
-            broken.append(worker.exitcode not in (None, 0))
-            if worker.exitcode is not None:
+        for i, p in reversed(list(enumerate(pool))):
+            broken.append(p.exitcode not in (None, 0))
+            if p.exitcode is not None:
                 # worker exited
                 util.debug('cleaning up worker %d' % i)
-                worker.join()
+                p.join()
                 cleaned = True
                 del pool[i]
 
@@ -259,7 +257,6 @@ class Pool(object):
                     p.terminate()
             for p in pool:
                 p.join()
-
             del pool[:]
             return None
         return cleaned
@@ -298,8 +295,6 @@ class Pool(object):
                        initializer, initargs, maxtasksperchild,
                        wrap_exception):
         """Clean up any exited workers and start replacements for them.
-
-
         """
         thread = threading.current_thread()
         need_repopulate = Pool._join_exited_workers(pool)
@@ -473,7 +468,7 @@ class Pool(object):
         util.debug('worker handler entering')
 
         # Keep maintaining workers until the cache gets drained, unless the pool
-        # is terminated or broken.
+        # is terminated.
         while thread._state == RUN or (cache and thread._state != TERMINATE):
             new_workers = Pool._maintain_pool(
                 ctx, Process, processes, pool, inqueue,
@@ -578,7 +573,6 @@ class Pool(object):
             if task is None:
                 util.debug('result handler ignoring extra sentinel')
                 continue
-
             job, i, obj = task
             try:
                 cache[job]._set(i, obj)
@@ -706,7 +700,6 @@ class Pool(object):
                     # worker has not yet exited
                     util.debug('cleaning up worker %d' % p.pid)
                     p.join()
-
         util.debug('terminate pool finalized')
 
     def __enter__(self):
