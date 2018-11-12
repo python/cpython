@@ -1,1 +1,2 @@
-On macOS, warn if "Prefer tabs when opening documents" is set to "Always".
+On macOS, warn if the system preference "Prefer tabs when opening documents"
+is set to "Always".

@@ -93,6 +93,9 @@ def readSystemPreferences():
     """
     Fetch the macOS system preferences.
     """
+    if platform != 'darwin':
+        return None
+
     plist_path = expanduser('~/Library/Preferences/.GlobalPreferences.plist')
     try:
         with open(plist_path, 'rb') as plist_file:
@@ -105,12 +108,15 @@ def preferTabsPreferenceWarning():
     """
     Warn if "Prefer tabs when opening documents" is set to "Always".
     """
+    if platform != 'darwin':
+        return None
+
     prefs = readSystemPreferences()
     if prefs and prefs.get('AppleWindowTabbingMode') == 'always':
         return (
             'WARNING: The system preference "Prefer tabs when opening'
             ' documents" is set to "Always". This will cause various problems'
-            ' with IDLE. For the best experience, change this setting before'
+            ' with IDLE. For the best experience, change this setting when'
             ' running IDLE (via System Preferences -> Dock).'
         )
     return None
