@@ -432,7 +432,7 @@ and size) with source metadata saved in the cache file header when it was
 generated. While effective, this invalidation method has its drawbacks.  When
 filesystem timestamps are too coarse, Python can miss source updates, leading to
 user confusion. Additionally, having a timestamp in the cache file is
-problematic for `build reproduciblity <https://reproducible-builds.org/>`_ and
+problematic for `build reproducibility <https://reproducible-builds.org/>`_ and
 content-based build systems.
 
 :pep:`552` extends the pyc format to allow the hash of the source file to be
