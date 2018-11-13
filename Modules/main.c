@@ -1441,28 +1441,85 @@ _PyMainInterpreterConfig_Copy(_PyMainInterpreterConfig *config,
 {
     _PyMainInterpreterConfig_Clear(config);
 
-#define COPY_ATTR(ATTR) \
+#define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
+#define COPY_OBJ_ATTR(OBJ_ATTR) \
     do { \
-        if (config2->ATTR != NULL) { \
-            config->ATTR = config_copy_attr(config2->ATTR); \
-            if (config->ATTR == NULL) { \
+        if (config2->OBJ_ATTR != NULL) { \
+            config->OBJ_ATTR = config_copy_attr(config2->OBJ_ATTR); \
+            if (config->OBJ_ATTR == NULL) { \
                 return -1; \
             } \
         } \
     } while (0)
 
-    COPY_ATTR(argv);
-    COPY_ATTR(executable);
-    COPY_ATTR(prefix);
-    COPY_ATTR(base_prefix);
-    COPY_ATTR(exec_prefix);
-    COPY_ATTR(base_exec_prefix);
-    COPY_ATTR(warnoptions);
-    COPY_ATTR(xoptions);
-    COPY_ATTR(module_search_path);
-    COPY_ATTR(pycache_prefix);
+    COPY_ATTR(install_signal_handlers);
+    COPY_OBJ_ATTR(argv);
+    COPY_OBJ_ATTR(executable);
+    COPY_OBJ_ATTR(prefix);
+    COPY_OBJ_ATTR(base_prefix);
+    COPY_OBJ_ATTR(exec_prefix);
+    COPY_OBJ_ATTR(base_exec_prefix);
+    COPY_OBJ_ATTR(warnoptions);
+    COPY_OBJ_ATTR(xoptions);
+    COPY_OBJ_ATTR(module_search_path);
+    COPY_OBJ_ATTR(pycache_prefix);
 #undef COPY_ATTR
+#undef COPY_OBJ_ATTR
     return 0;
+}
+
+
+PyObject*
+_PyMainInterpreterConfig_AsDict(const _PyMainInterpreterConfig *config)
+{
+    PyObject *dict, *obj;
+    int res;
+
+    dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+
+#define SET_ITEM(KEY, ATTR) \
+        do { \
+            obj = config->ATTR; \
+            if (obj == NULL) { \
+                obj = Py_None; \
+            } \
+            res = PyDict_SetItemString(dict, (KEY), obj); \
+            if (res < 0) { \
+                goto fail; \
+            } \
+        } while (0)
+
+    obj = PyLong_FromLong(config->install_signal_handlers);
+    if (obj == NULL) {
+        goto fail;
+    }
+    res = PyDict_SetItemString(dict, "install_signal_handlers", obj);
+    Py_DECREF(obj);
+    if (res < 0) {
+        goto fail;
+    }
+
+    SET_ITEM("argv", argv);
+    SET_ITEM("executable", executable);
+    SET_ITEM("prefix", prefix);
+    SET_ITEM("base_prefix", base_prefix);
+    SET_ITEM("exec_prefix", exec_prefix);
+    SET_ITEM("base_exec_prefix", base_exec_prefix);
+    SET_ITEM("warnoptions", warnoptions);
+    SET_ITEM("xoptions", xoptions);
+    SET_ITEM("module_search_path", module_search_path);
+    SET_ITEM("pycache_prefix", pycache_prefix);
+
+    return dict;
+
+fail:
+    Py_DECREF(dict);
+    return NULL;
+
+#undef SET_ITEM
 }
 
 

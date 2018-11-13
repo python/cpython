@@ -255,9 +255,11 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
+    CORE_CONFIG_REGEX = re.compile(r"^core_config\[([^]]*)\] = (.*)$")
+    MAIN_CONFIG_REGEX = re.compile(r"^main_config\[([^]]*)\] = (.*)$")
     UTF8_MODE_ERRORS = ('surrogatepass' if sys.platform == 'win32'
                         else 'surrogateescape')
-    DEFAULT_CONFIG = {
+    DEFAULT_CORE_CONFIG = {
         'install_signal_handlers': 1,
         'use_environment': 1,
         'use_hash_seed': 0,
@@ -338,7 +340,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         return out.split()
 
     def check_config(self, testname, expected):
-        expected = dict(self.DEFAULT_CONFIG, **expected)
+        expected = dict(self.DEFAULT_CORE_CONFIG, **expected)
 
         env = dict(os.environ)
         for key in list(env):
@@ -367,11 +369,39 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter(testname, env=env)
         # Ignore err
 
-        config = {}
+        core_config = {}
+        main_config = {}
         for line in out.splitlines():
-            key, value = line.split(' = ', 1)
-            config[key] = value
-        self.assertEqual(config, expected)
+            match = self.CORE_CONFIG_REGEX.match(line)
+            if match is not None:
+                key = match.group(1)
+                value = match.group(2)
+                core_config[key] = value
+            else:
+                match = self.MAIN_CONFIG_REGEX.match(line)
+                if match is None:
+                    raise ValueError(f"failed to parse line {line!r}")
+                key = match.group(1)
+                value = match.group(2)
+                main_config[key] = value
+        self.assertEqual(core_config, expected)
+
+        pycache_prefix = core_config['pycache_prefix']
+        if pycache_prefix != NULL_STR:
+            pycache_prefix = repr(pycache_prefix)
+        else:
+            pycache_prefix = "NULL"
+        expected_main = {
+            'install_signal_handlers': core_config['install_signal_handlers'],
+            'argv': '[]',
+            'prefix': repr(sys.prefix),
+            'base_prefix': repr(sys.base_prefix),
+            'base_exec_prefix': repr(sys.base_exec_prefix),
+            'warnoptions': '[]',
+            'xoptions': '{}',
+            'pycache_prefix': pycache_prefix,
+        }
+        self.assertEqual(main_config, expected_main)
 
     def test_init_default_config(self):
         self.check_config("init_default_config", {})

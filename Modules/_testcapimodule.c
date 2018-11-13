@@ -4702,6 +4702,15 @@ get_coreconfig(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+get_mainconfig(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    const _PyMainInterpreterConfig *config = &interp->config;
+    return _PyMainInterpreterConfig_AsDict(config);
+}
+
+
 #ifdef Py_REF_DEBUG
 static PyObject *
 negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
@@ -4948,6 +4957,7 @@ static PyMethodDef TestMethods[] = {
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
     {"get_coreconfig", get_coreconfig, METH_NOARGS},
+    {"get_mainconfig", get_mainconfig, METH_NOARGS},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
 #endif
