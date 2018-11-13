@@ -1,7 +1,7 @@
 /* Descriptors -- a new, flexible way to describe attributes */
 
 #include "Python.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 #include "structmember.h" /* Why is this not included in Python.h? */
 
 /*[clinic input]
@@ -247,7 +247,7 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
     }
 
     result = _PyMethodDef_RawFastCallDict(descr->d_method, self,
-                                          &PyTuple_GET_ITEM(args, 1), nargs - 1,
+                                          &_PyTuple_ITEMS(args)[1], nargs - 1,
                                           kwargs);
     result = _Py_CheckFunctionResult((PyObject *)descr, result, NULL);
     return result;
@@ -331,7 +331,7 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
     }
 
     result = _PyMethodDef_RawFastCallDict(descr->d_method, self,
-                                          &PyTuple_GET_ITEM(args, 1), argc - 1,
+                                          &_PyTuple_ITEMS(args)[1], argc - 1,
                                           kwds);
     result = _Py_CheckFunctionResult((PyObject *)descr, result, NULL);
     return result;

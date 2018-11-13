@@ -2,7 +2,7 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 #include "pycore_context.h"
 #include "frameobject.h"
 
@@ -1789,6 +1789,15 @@ _Py_ReadyTypes(void)
 
     if (PyType_Ready(&PyDictItems_Type) < 0)
         Py_FatalError("Can't initialize dict items type");
+
+    if (PyType_Ready(&PyDictRevIterKey_Type) < 0)
+        Py_FatalError("Can't initialize reversed dict keys type");
+
+    if (PyType_Ready(&PyDictRevIterValue_Type) < 0)
+        Py_FatalError("Can't initialize reversed dict values type");
+
+    if (PyType_Ready(&PyDictRevIterItem_Type) < 0)
+        Py_FatalError("Can't initialize reversed dict items type");
 
     if (PyType_Ready(&PyODict_Type) < 0)
         Py_FatalError("Can't initialize OrderedDict type");

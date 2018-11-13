@@ -17,10 +17,10 @@ Data members:
 #include "Python.h"
 #include "code.h"
 #include "frameobject.h"
-#include "pycore_lifecycle.h"
-#include "pycore_mem.h"
+#include "pycore_pylifecycle.h"
+#include "pycore_pymem.h"
 #include "pycore_pathconfig.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 #include "pythread.h"
 
 #include "osdefs.h"

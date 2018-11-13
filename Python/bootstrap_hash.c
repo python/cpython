@@ -20,6 +20,10 @@
 #  endif
 #endif
 
+#ifdef _Py_MEMORY_SANITIZER
+#  include <sanitizer/msan_interface.h>
+#endif
+
 #ifdef Py_DEBUG
 int _Py_HashSecret_Initialized = 0;
 #else
@@ -143,6 +147,11 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
         else {
             n = syscall(SYS_getrandom, dest, n, flags);
         }
+#  ifdef _Py_MEMORY_SANITIZER
+        if (n > 0) {
+             __msan_unpoison(dest, n);
+        }
+#  endif
 #endif
 
         if (n < 0) {

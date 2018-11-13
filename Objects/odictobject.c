@@ -465,7 +465,7 @@ later:
 */
 
 #include "Python.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 #include "dict-common.h"
 #include <stddef.h>

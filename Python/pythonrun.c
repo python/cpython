@@ -11,8 +11,7 @@
 #include "Python.h"
 
 #include "Python-ast.h"
-#undef Yield /* undefine macro conflicting with winbase.h */
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 #include "grammar.h"
 #include "node.h"
 #include "token.h"
