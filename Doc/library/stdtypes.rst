@@ -265,7 +265,7 @@ which is narrower than complex.  Comparisons between numbers of mixed type use
 the same rule. [2]_ The constructors :func:`int`, :func:`float`, and
 :func:`complex` can be used to produce numbers of a specific type.
 
-All numeric types (except complex) support the following operations (for priorities of 
+All numeric types (except complex) support the following operations (for priorities of
 the operations, see :ref:`operator-summary`):
 
 +---------------------+---------------------------------+---------+--------------------+
