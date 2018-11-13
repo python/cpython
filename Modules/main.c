@@ -1398,6 +1398,7 @@ done:
 void
 _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
 {
+    config->install_signal_handlers = -1;
     Py_CLEAR(config->argv);
     Py_CLEAR(config->executable);
     Py_CLEAR(config->prefix);
@@ -1440,6 +1441,8 @@ _PyMainInterpreterConfig_Copy(_PyMainInterpreterConfig *config,
                               const _PyMainInterpreterConfig *config2)
 {
     _PyMainInterpreterConfig_Clear(config);
+
+    config->install_signal_handlers = config2->install_signal_handlers;
 
 #define COPY_ATTR(ATTR) \
     do { \
