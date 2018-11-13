@@ -4551,6 +4551,31 @@ new_hamt(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+get_global_config(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return _Py_GetGlobalVariablesAsDict();
+}
+
+
+static PyObject *
+get_core_config(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    const _PyCoreConfig *config = &interp->core_config;
+    return _PyCoreConfig_AsDict(config);
+}
+
+
+static PyObject *
+get_main_config(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    const _PyMainInterpreterConfig *config = &interp->config;
+    return _PyMainInterpreterConfig_AsDict(config);
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -4777,6 +4802,9 @@ static PyMethodDef TestMethods[] = {
     {"get_mapping_items", get_mapping_items, METH_O},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {"hamt", new_hamt, METH_NOARGS},
+    {"get_global_config", get_global_config, METH_NOARGS},
+    {"get_core_config", get_core_config, METH_NOARGS},
+    {"get_main_config", get_main_config, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

@@ -3,6 +3,7 @@ from test import support
 import unittest
 
 from collections import namedtuple
+import json
 import os
 import re
 import subprocess
@@ -251,12 +252,51 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
-    DEFAULT_CONFIG = {
+    UTF8_MODE_ERRORS = ('surrogatepass' if sys.platform == 'win32'
+                        else 'surrogateescape')
+    # FIXME: untested core configuration variables
+    UNTESTED_CORE_CONFIG = (
+        'base_exec_prefix',
+        'base_prefix',
+        'exec_prefix',
+        'executable',
+        'home',
+        'module_search_path_env',
+        'module_search_paths',
+        'prefix',
+    )
+    # FIXME: untested main configuration variables
+    UNTESTED_MAIN_CONFIG = (
+        'install_signal_handlers',
+        'module_search_path',
+    )
+    DEFAULT_GLOBAL_CONFIG = {
+        'Py_BytesWarningFlag': 0,
+        'Py_DebugFlag': 0,
+        'Py_DontWriteBytecodeFlag': 0,
+        'Py_FrozenFlag': 0,
+        'Py_HasFileSystemDefaultEncoding': 0,
+        'Py_HashRandomizationFlag': 1,
+        'Py_InspectFlag': 0,
+        'Py_InteractiveFlag': 0,
+        'Py_IsolatedFlag': 0,
+        'Py_NoSiteFlag': 0,
+        'Py_NoUserSiteDirectory': 0,
+        'Py_OptimizeFlag': 0,
+        'Py_QuietFlag': 0,
+        'Py_UnbufferedStdioFlag': 0,
+        'Py_VerboseFlag': 0,
+}
+    if os.name == 'nt':
+        DEFAULT_GLOBAL_CONFIG['Py_LegacyWindowsFSEncodingFlag'] = 0
+        DEFAULT_GLOBAL_CONFIG['Py_LegacyWindowsStdioFlag'] = 0
+
+    DEFAULT_CORE_CONFIG = {
         'install_signal_handlers': 1,
-        'Py_IgnoreEnvironmentFlag': 0,
+        'ignore_environment': 0,
         'use_hash_seed': 0,
         'hash_seed': 0,
-        'allocator': '(null)',
+        'allocator': None,
         'dev_mode': 0,
         'faulthandler': 0,
         'tracemalloc': 0,
@@ -265,34 +305,54 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'show_alloc_count': 0,
         'dump_refs': 0,
         'malloc_stats': 0,
-        'utf8_mode': 0,
 
+        'utf8_mode': 0,
         'coerce_c_locale': 0,
         'coerce_c_locale_warn': 0,
 
         'program_name': './_testembed',
-        'argc': 0,
-        'argv': '[]',
-        'program': '(null)',
+        'argv': [],
+        'program': None,
 
-        'Py_IsolatedFlag': 0,
-        'Py_NoSiteFlag': 0,
-        'Py_BytesWarningFlag': 0,
-        'Py_InspectFlag': 0,
-        'Py_InteractiveFlag': 0,
-        'Py_OptimizeFlag': 0,
-        'Py_DebugFlag': 0,
-        'Py_DontWriteBytecodeFlag': 0,
-        'Py_VerboseFlag': 0,
-        'Py_QuietFlag': 0,
-        'Py_NoUserSiteDirectory': 0,
-        'Py_UnbufferedStdioFlag': 0,
+        'xoptions': [],
+        'warnoptions': [],
 
         '_disable_importlib': 0,
-        'Py_FrozenFlag': 0,
     }
 
-    def check_config(self, testname, expected):
+    def get_stdio_encoding(self, env):
+        code = 'import sys; print(sys.stdout.encoding, sys.stdout.errors)'
+        args = (sys.executable, '-c', code)
+        proc = subprocess.run(args, env=env, text=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT)
+        if proc.returncode:
+            raise Exception(f"failed to get the stdio encoding: stdout={proc.stdout!r}")
+        out = proc.stdout.rstrip()
+        return out.split()
+
+    def get_filesystem_encoding(self, isolated, env):
+        code = ('import codecs, locale, sys; '
+                'print(sys.getfilesystemencoding(), '
+                'sys.getfilesystemencodeerrors())')
+        args = (sys.executable, '-c', code)
+        env = dict(env)
+        if not isolated:
+            env['PYTHONCOERCECLOCALE'] = '0'
+            env['PYTHONUTF8'] = '0'
+        proc = subprocess.run(args, text=True, env=env,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+        if proc.returncode:
+            raise Exception(f"failed to get the locale encoding: "
+                            f"stdout={proc.stdout!r} stderr={proc.stderr!r}")
+        out = proc.stdout.rstrip()
+        return out.split()
+
+    def check_config(self, testname, expected, expected_global):
+        expected = dict(self.DEFAULT_CORE_CONFIG, **expected)
+        isolated = False
+
         env = dict(os.environ)
         for key in list(env):
             if key.startswith('PYTHON'):
@@ -301,42 +361,90 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # on the current locale
         env['PYTHONCOERCECLOCALE'] = '0'
         env['PYTHONUTF8'] = '0'
+
+        #if expected['stdio_encoding'] is None or expected['stdio_errors'] is None:
+        #    res = self.get_stdio_encoding(env)
+        #    if expected['stdio_encoding'] is None:
+        #        expected['stdio_encoding'] = res[0]
+        #    if expected['stdio_errors'] is None:
+        #        expected['stdio_errors'] = res[1]
+        #if expected['filesystem_encoding'] is None or expected['filesystem_errors'] is None:
+        #    res = self.get_filesystem_encoding(expected['isolated'], env)
+        #    if expected['filesystem_encoding'] is None:
+        #        expected['filesystem_encoding'] = res[0]
+        #    if expected['filesystem_errors'] is None:
+        #        expected['filesystem_errors'] = res[1]
+
         out, err = self.run_embedded_interpreter(testname, env=env)
         # Ignore err
 
-        expected = dict(self.DEFAULT_CONFIG, **expected)
-        for key, value in expected.items():
-            expected[key] = str(value)
+        config = json.loads(out)
+        core_config = config['core_config']
+        executable = core_config['executable']
+        main_config = config['main_config']
 
-        config = {}
-        for line in out.splitlines():
-            key, value = line.split(' = ', 1)
-            config[key] = value
-        self.assertEqual(config, expected)
+        for key in self.UNTESTED_MAIN_CONFIG:
+            del main_config[key]
+
+        expected_main = {
+            'argv': [],
+            'prefix': sys.prefix,
+            'executable': core_config['executable'],
+            'base_prefix': sys.base_prefix,
+            'base_exec_prefix': sys.base_exec_prefix,
+            'warnoptions': core_config['warnoptions'],
+            'xoptions': {},
+            'exec_prefix': core_config['exec_prefix'],
+        }
+        self.assertEqual(main_config, expected_main)
+
+        expected_global = dict(self.DEFAULT_GLOBAL_CONFIG, **expected_global)
+
+        if 'Py_FileSystemDefaultEncoding' not in expected_global:
+            fs_encoding, fs_errors = self.get_filesystem_encoding(isolated, env)
+            expected_global['Py_FileSystemDefaultEncodeErrors'] = fs_errors
+            expected_global['Py_FileSystemDefaultEncoding'] = fs_encoding
+
+        for global_key, core_key in (
+            ('Py_UTF8Mode', 'utf8_mode'),
+            ('Py_IgnoreEnvironmentFlag', 'ignore_environment'),
+        ):
+            expected_global[global_key] = core_config[core_key]
+
+        self.assertEqual(config['global_config'], expected_global)
+
+        for key in self.UNTESTED_CORE_CONFIG:
+            core_config.pop(key, None)
+        self.assertEqual(core_config, expected)
 
     def test_init_default_config(self):
-        self.check_config("init_default_config", {})
+        self.check_config("init_default_config", {}, {})
 
     def test_init_global_config(self):
-        config = {
+        core_config = {
             'program_name': './globalvar',
-            'Py_NoSiteFlag': 1,
+            'utf8_mode': 1,
+        }
+        global_config = {
             'Py_BytesWarningFlag': 1,
+            'Py_DontWriteBytecodeFlag': 1,
+            'Py_HasFileSystemDefaultEncoding': 1,
+            'Py_FileSystemDefaultEncodeErrors': self.UTF8_MODE_ERRORS,
+            'Py_FileSystemDefaultEncoding': 'utf-8',
             'Py_InspectFlag': 1,
             'Py_InteractiveFlag': 1,
-            'Py_OptimizeFlag': 2,
-            'Py_DontWriteBytecodeFlag': 1,
-            'Py_VerboseFlag': 1,
-            'Py_QuietFlag': 1,
-            'Py_UnbufferedStdioFlag': 1,
-            'utf8_mode': 1,
+            'Py_NoSiteFlag': 1,
             'Py_NoUserSiteDirectory': 1,
+            'Py_OptimizeFlag': 2,
+            'Py_QuietFlag': 1,
+            'Py_VerboseFlag': 1,
             'Py_FrozenFlag': 1,
+            'Py_UnbufferedStdioFlag': 1,
         }
-        self.check_config("init_global_config", config)
+        self.check_config("init_global_config", core_config, global_config)
 
     def test_init_from_config(self):
-        config = {
+        core_config = {
             'install_signal_handlers': 0,
             'use_hash_seed': 1,
             'hash_seed': 123,
@@ -354,10 +462,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             'faulthandler': 1,
         }
-        self.check_config("init_from_config", config)
+        global_config = {
+            'Py_HasFileSystemDefaultEncoding': 1,
+            'Py_NoUserSiteDirectory': 0,
+        }
+        self.check_config("init_from_config", core_config, global_config)
 
     def test_init_env(self):
-        config = {
+        core_config = {
             'use_hash_seed': 1,
             'hash_seed': 42,
             'allocator': 'malloc_debug',
@@ -365,32 +477,39 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'import_time': 1,
             'malloc_stats': 1,
             'utf8_mode': 1,
-            'Py_InspectFlag': 1,
-            'Py_OptimizeFlag': 2,
-            'Py_DontWriteBytecodeFlag': 1,
-            'Py_VerboseFlag': 1,
-            'Py_UnbufferedStdioFlag': 1,
-            'Py_NoUserSiteDirectory': 1,
             'faulthandler': 1,
             'dev_mode': 1,
         }
-        self.check_config("init_env", config)
+        global_config = {
+            'Py_DontWriteBytecodeFlag': 1,
+            'Py_HasFileSystemDefaultEncoding': 1,
+            'Py_InspectFlag': 1,
+            'Py_NoUserSiteDirectory': 1,
+            'Py_OptimizeFlag': 2,
+            'Py_UnbufferedStdioFlag': 1,
+            'Py_VerboseFlag': 1,
+            'Py_FileSystemDefaultEncoding': 'utf-8',
+            'Py_FileSystemDefaultEncodeErrors': self.UTF8_MODE_ERRORS,
+        }
+        self.check_config("init_env", core_config, global_config)
 
     def test_init_dev_mode(self):
-        config = {
+        core_config = {
             'dev_mode': 1,
             'faulthandler': 1,
             'allocator': 'debug',
         }
-        self.check_config("init_dev_mode", config)
+        self.check_config("init_dev_mode", core_config, {})
 
     def test_init_isolated(self):
-        config = {
+        core_config = {
+            'ignore_environment': 1,
+        }
+        global_config = {
             'Py_IsolatedFlag': 1,
-            'Py_IgnoreEnvironmentFlag': 1,
             'Py_NoUserSiteDirectory': 1,
         }
-        self.check_config("init_isolated", config)
+        self.check_config("init_isolated", core_config, global_config)
 
 
 if __name__ == "__main__":
