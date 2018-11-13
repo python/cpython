@@ -3314,6 +3314,31 @@ test_decref_doesnt_leak(PyObject *ob, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
+test_structseq_newtype_doesnt_leak(PyObject *Py_UNUSED(self),
+                              PyObject *Py_UNUSED(args))
+{
+    PyStructSequence_Desc descr;
+    PyStructSequence_Field descr_fields[3];
+
+    descr_fields[0] = (PyStructSequence_Field){"foo", "foo value"};
+    descr_fields[1] = (PyStructSequence_Field){NULL, "some hidden value"};
+    descr_fields[2] = (PyStructSequence_Field){0, NULL};
+
+    descr.name = "_testcapi.test_descr";
+    descr.doc = "This is used to test for memory leaks in NewType";
+    descr.fields = descr_fields;
+    descr.n_in_sequence = 1;
+
+    PyTypeObject* structseq_type = PyStructSequence_NewType(&descr);
+    assert(structseq_type != NULL);
+    assert(PyType_Check(structseq_type));
+    assert(PyType_FastSubclass(structseq_type, Py_TPFLAGS_TUPLE_SUBCLASS));
+    Py_DECREF(structseq_type);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 test_incref_decref_API(PyObject *ob, PyObject *Py_UNUSED(ignored))
 {
     PyObject *obj = PyLong_FromLong(0);
@@ -4721,6 +4746,8 @@ static PyMethodDef TestMethods[] = {
     {"test_incref_doesnt_leak", test_incref_doesnt_leak,         METH_NOARGS},
     {"test_xdecref_doesnt_leak",test_xdecref_doesnt_leak,        METH_NOARGS},
     {"test_decref_doesnt_leak", test_decref_doesnt_leak,         METH_NOARGS},
+    {"test_structseq_newtype_doesnt_leak",
+        test_structseq_newtype_doesnt_leak, METH_NOARGS},
     {"test_incref_decref_API",  test_incref_decref_API,          METH_NOARGS},
     {"test_long_and_overflow",  test_long_and_overflow,          METH_NOARGS},
     {"test_long_as_double",     test_long_as_double,             METH_NOARGS},
