@@ -535,24 +535,21 @@ def collect_gdbm(info_add):
 
 
 def collect_get_config(info_add):
-    # Dump _PyCoreConfig and _PyMainInterpreterConfig
+    # Dump global configuration variables, _PyCoreConfig
+    # and _PyMainInterpreterConfig
     try:
-        from _testcapi import get_coreconfig
+        from _testcapi import get_global_config, get_core_config, get_main_config
     except ImportError:
-        pass
-    else:
-        config = get_coreconfig()
-        for key in sorted(config):
-            info_add('core_config[%s]' % key, repr(config[key]))
+        return
 
-    try:
-        from _testcapi import get_mainconfig
-    except ImportError:
-        pass
-    else:
-        config = get_mainconfig()
+    for prefix, get_config_func in (
+        ('global_config', get_global_config),
+        ('core_config', get_core_config),
+        ('main_config', get_main_config),
+    ):
+        config = get_config_func()
         for key in sorted(config):
-            info_add('main_config[%s]' % key, repr(config[key]))
+            info_add('%s[%s]' % (prefix, key), repr(config[key]))
 
 
 def collect_info(info):

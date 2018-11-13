@@ -3,15 +3,13 @@ from test import support
 import unittest
 
 from collections import namedtuple
+import json
 import os
 import platform
 import re
 import subprocess
 import sys
 
-
-# AIX libc prints an empty string as '' rather than the string '(null)'
-NULL_STR = '' if platform.system() == 'AIX' else '(null)'
 
 class EmbeddingTestsMixin:
     def setUp(self):
@@ -255,16 +253,32 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
-    CORE_CONFIG_REGEX = re.compile(r"^core_config\[([^]]*)\] = (.*)$")
-    MAIN_CONFIG_REGEX = re.compile(r"^main_config\[([^]]*)\] = (.*)$")
     UTF8_MODE_ERRORS = ('surrogatepass' if sys.platform == 'win32'
                         else 'surrogateescape')
+    # FIXME: untested core configuration variables
+    UNTESTED_CORE_CONFIG = (
+        'base_exec_prefix',
+        'base_prefix',
+        'dll_path',
+        'exec_prefix',
+        'executable',
+        'home',
+        'legacy_windows_fs_encoding',
+        'legacy_windows_stdio',
+        'module_search_path_env',
+        'module_search_paths',
+        'prefix',
+    )
+    # FIXME: untested main configuration variables
+    UNTESTED_MAIN_CONFIG = (
+        'module_search_path',
+    )
     DEFAULT_CORE_CONFIG = {
         'install_signal_handlers': 1,
         'use_environment': 1,
         'use_hash_seed': 0,
         'hash_seed': 0,
-        'allocator': NULL_STR,
+        'allocator': None,
         'dev_mode': 0,
         'faulthandler': 0,
         'tracemalloc': 0,
@@ -282,11 +296,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'coerce_c_locale': 0,
         'coerce_c_locale_warn': 0,
 
-        'pycache_prefix': NULL_STR,
+        'pycache_prefix': None,
         'program_name': './_testembed',
-        'argc': 0,
-        'argv': '[]',
-        'program': NULL_STR,
+        'argv': [],
+        'program': None,
+
+        'xoptions': [],
+        'warnoptions': [],
 
         'isolated': 0,
         'site_import': 1,
@@ -363,45 +379,75 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 expected['filesystem_encoding'] = res[0]
             if expected['filesystem_errors'] is None:
                 expected['filesystem_errors'] = res[1]
-        for key, value in expected.items():
-            expected[key] = str(value)
 
         out, err = self.run_embedded_interpreter(testname, env=env)
         # Ignore err
 
-        core_config = {}
-        main_config = {}
-        for line in out.splitlines():
-            match = self.CORE_CONFIG_REGEX.match(line)
-            if match is not None:
-                key = match.group(1)
-                value = match.group(2)
-                core_config[key] = value
-            else:
-                match = self.MAIN_CONFIG_REGEX.match(line)
-                if match is None:
-                    raise ValueError(f"failed to parse line {line!r}")
-                key = match.group(1)
-                value = match.group(2)
-                main_config[key] = value
-        self.assertEqual(core_config, expected)
+        config = json.loads(out)
+        core_config = config['core_config']
+        executable = core_config['executable']
+        main_config = config['main_config']
 
-        pycache_prefix = core_config['pycache_prefix']
-        if pycache_prefix != NULL_STR:
-            pycache_prefix = repr(pycache_prefix)
-        else:
-            pycache_prefix = "NULL"
+        for key in self.UNTESTED_MAIN_CONFIG:
+            del main_config[key]
+
         expected_main = {
             'install_signal_handlers': core_config['install_signal_handlers'],
-            'argv': '[]',
-            'prefix': repr(sys.prefix),
-            'base_prefix': repr(sys.base_prefix),
-            'base_exec_prefix': repr(sys.base_exec_prefix),
-            'warnoptions': '[]',
-            'xoptions': '{}',
-            'pycache_prefix': pycache_prefix,
+            'argv': [],
+            'prefix': sys.prefix,
+            'executable': core_config['executable'],
+            'base_prefix': sys.base_prefix,
+            'base_exec_prefix': sys.base_exec_prefix,
+            'warnoptions': core_config['warnoptions'],
+            'xoptions': {},
+            'pycache_prefix': core_config['pycache_prefix'],
+            'exec_prefix': core_config['exec_prefix'],
         }
         self.assertEqual(main_config, expected_main)
+
+
+        copy_global_config = [
+            ('Py_BytesWarningFlag', 'bytes_warning'),
+            ('Py_DebugFlag', 'parser_debug'),
+            ('Py_DontWriteBytecodeFlag', 'write_bytecode', True),
+            ('Py_FileSystemDefaultEncodeErrors', 'filesystem_errors'),
+            ('Py_FileSystemDefaultEncoding', 'filesystem_encoding'),
+            ('Py_FrozenFlag', '_frozen'),
+            ('Py_IgnoreEnvironmentFlag', 'use_environment', True),
+            ('Py_InspectFlag', 'inspect'),
+            ('Py_InteractiveFlag', 'interactive'),
+            ('Py_IsolatedFlag', 'isolated'),
+            ('Py_NoSiteFlag', 'site_import', True),
+            ('Py_NoUserSiteDirectory', 'user_site_directory', True),
+            ('Py_OptimizeFlag', 'optimization_level'),
+            ('Py_QuietFlag', 'quiet'),
+            ('Py_UTF8Mode', 'utf8_mode'),
+            ('Py_UnbufferedStdioFlag', 'buffered_stdio', True),
+            ('Py_VerboseFlag', 'verbose'),
+        ]
+        if os.name == 'nt':
+            copy_global_config.extend((
+                ('Py_LegacyWindowsFSEncodingFlag', 'legacy_windows_fs_encoding'),
+                ('Py_LegacyWindowsStdioFlag', 'legacy_windows_stdio'),
+            ))
+
+        expected_global = {}
+        for item in copy_global_config:
+            if len(item) == 3:
+                global_key, core_key, opposite = item
+                expected_global[global_key] = 0 if core_config[core_key] else 1
+            else:
+                global_key, core_key = item
+                expected_global[global_key] = core_config[core_key]
+
+        expected_global['Py_HasFileSystemDefaultEncoding'] = 0
+        expected_global['_Py_HasFileSystemDefaultEncodeErrors'] = 0
+        expected_global['Py_HashRandomizationFlag'] = 1
+        self.assertEqual(config['global_config'], expected_global)
+
+        for key in self.UNTESTED_CORE_CONFIG:
+            core_config.pop(key, None)
+        self.assertEqual(core_config, expected)
 
     def test_init_default_config(self):
         self.check_config("init_default_config", {})
