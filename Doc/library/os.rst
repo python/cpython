@@ -2697,7 +2697,7 @@ features:
    morph to the target dynamically.  If the target is present, the type of the
    symlink will be created to match. Otherwise, the symlink will be created
    as a directory if *target_is_directory* is ``True`` or a file symlink (the
-   default) otherwise.  On non-Window platforms, *target_is_directory* is ignored.
+   default) otherwise.  On non-Windows platforms, *target_is_directory* is ignored.
 
    Symbolic link support was introduced in Windows 6.0 (Vista).  :func:`symlink`
    will raise a :exc:`NotImplementedError` on Windows versions earlier than 6.0.
