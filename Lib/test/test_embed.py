@@ -404,8 +404,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.assertEqual(main_config, expected_main)
 
-        expected_global = {}
-        for item in (
+
+        copy_global_config = [
             ('Py_BytesWarningFlag', 'bytes_warning'),
             ('Py_DebugFlag', 'parser_debug'),
             ('Py_DontWriteBytecodeFlag', 'write_bytecode', True),
@@ -423,13 +423,22 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             ('Py_UTF8Mode', 'utf8_mode'),
             ('Py_UnbufferedStdioFlag', 'buffered_stdio', True),
             ('Py_VerboseFlag', 'verbose'),
-        ):
+        ]
+        if os.name == 'nt':
+            copy_global_config.extend((
+                ('Py_LegacyWindowsFSEncodingFlag', 'legacy_windows_fs_encoding'),
+                ('Py_LegacyWindowsStdioFlag', 'legacy_windows_stdio'),
+            ))
+
+        expected_global = {}
+        for item in copy_global_config:
             if len(item) == 3:
                 global_key, core_key, opposite = item
                 expected_global[global_key] = 0 if core_config[core_key] else 1
             else:
                 global_key, core_key = item
                 expected_global[global_key] = core_config[core_key]
+
         expected_global['Py_HasFileSystemDefaultEncoding'] = 0
         expected_global['_Py_HasFileSystemDefaultEncodeErrors'] = 0
         expected_global['Py_HashRandomizationFlag'] = 1
