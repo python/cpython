@@ -2387,7 +2387,7 @@ static PyMemberDef tuplegetter_members[] = {
 
 static PyTypeObject tuplegetter_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "_collections.tuplegetter",                 /* tp_name */
+    "_collections._tuplegetter",                /* tp_name */
     sizeof(_tuplegetterobject),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
