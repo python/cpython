@@ -293,7 +293,7 @@ static int test_initialize_pymain(void)
 
 
 static void
-dump_config(void)
+dump_core_config(void)
 {
 #define ASSERT_EQUAL(a, b) \
     if ((a) != (b)) { \
@@ -309,37 +309,37 @@ dump_config(void)
     PyInterpreterState *interp = _PyInterpreterState_Get();
     _PyCoreConfig *config = &interp->core_config;
 
-    printf("install_signal_handlers = %i\n", config->install_signal_handlers);
+    printf("core_config[install_signal_handlers] = %i\n", config->install_signal_handlers);
 
-    printf("use_environment = %i\n", config->use_environment);
+    printf("core_config[use_environment] = %i\n", config->use_environment);
     ASSERT_EQUAL(config->use_environment, !Py_IgnoreEnvironmentFlag);
 
-    printf("use_hash_seed = %i\n", config->use_hash_seed);
-    printf("hash_seed = %lu\n", config->hash_seed);
+    printf("core_config[use_hash_seed] = %i\n", config->use_hash_seed);
+    printf("core_config[hash_seed] = %lu\n", config->hash_seed);
 
-    printf("allocator = %s\n", config->allocator);
+    printf("core_config[allocator] = %s\n", config->allocator);
 
-    printf("dev_mode = %i\n", config->dev_mode);
-    printf("faulthandler = %i\n", config->faulthandler);
-    printf("tracemalloc = %i\n", config->tracemalloc);
-    printf("import_time = %i\n", config->import_time);
-    printf("show_ref_count = %i\n", config->show_ref_count);
-    printf("show_alloc_count = %i\n", config->show_alloc_count);
-    printf("dump_refs = %i\n", config->dump_refs);
-    printf("malloc_stats = %i\n", config->malloc_stats);
+    printf("core_config[dev_mode] = %i\n", config->dev_mode);
+    printf("core_config[faulthandler] = %i\n", config->faulthandler);
+    printf("core_config[tracemalloc] = %i\n", config->tracemalloc);
+    printf("core_config[import_time] = %i\n", config->import_time);
+    printf("core_config[show_ref_count] = %i\n", config->show_ref_count);
+    printf("core_config[show_alloc_count] = %i\n", config->show_alloc_count);
+    printf("core_config[dump_refs] = %i\n", config->dump_refs);
+    printf("core_config[malloc_stats] = %i\n", config->malloc_stats);
 
-    printf("filesystem_encoding = %s\n", config->filesystem_encoding);
-    printf("filesystem_errors = %s\n", config->filesystem_errors);
-    printf("coerce_c_locale = %i\n", config->coerce_c_locale);
-    printf("coerce_c_locale_warn = %i\n", config->coerce_c_locale_warn);
-    printf("utf8_mode = %i\n", config->utf8_mode);
+    printf("core_config[filesystem_encoding] = %s\n", config->filesystem_encoding);
+    printf("core_config[filesystem_errors] = %s\n", config->filesystem_errors);
+    printf("core_config[coerce_c_locale] = %i\n", config->coerce_c_locale);
+    printf("core_config[coerce_c_locale_warn] = %i\n", config->coerce_c_locale_warn);
+    printf("core_config[utf8_mode] = %i\n", config->utf8_mode);
 
-    printf("pycache_prefix = %ls\n", config->pycache_prefix);
-    printf("program_name = %ls\n", config->program_name);
+    printf("core_config[pycache_prefix] = %ls\n", config->pycache_prefix);
+    printf("core_config[program_name] = %ls\n", config->program_name);
     ASSERT_STR_EQUAL(config->program_name, Py_GetProgramName());
 
-    printf("argc = %i\n", config->argc);
-    printf("argv = [");
+    printf("core_config[argc] = %i\n", config->argc);
+    printf("core_config[argv] = [");
     for (int i=0; i < config->argc; i++) {
         if (i) {
             printf(", ");
@@ -348,7 +348,7 @@ dump_config(void)
     }
     printf("]\n");
 
-    printf("program = %ls\n", config->program);
+    printf("core_config[program] = %ls\n", config->program);
     /* FIXME: test xoptions */
     /* FIXME: test warnoptions */
     /* FIXME: test module_search_path_env */
@@ -361,33 +361,72 @@ dump_config(void)
     /* FIXME: test base_exec_prefix */
     /* FIXME: test dll_path */
 
-    printf("isolated = %i\n", config->isolated);
+    printf("core_config[isolated] = %i\n", config->isolated);
     ASSERT_EQUAL(config->isolated, Py_IsolatedFlag);
-    printf("site_import = %i\n", config->site_import);
-    printf("bytes_warning = %i\n", config->bytes_warning);
-    printf("inspect = %i\n", config->inspect);
-    printf("interactive = %i\n", config->interactive);
-    printf("optimization_level = %i\n", config->optimization_level);
-    printf("parser_debug = %i\n", config->parser_debug);
-    printf("write_bytecode = %i\n", config->write_bytecode);
-    printf("verbose = %i\n", config->verbose);
+    printf("core_config[site_import] = %i\n", config->site_import);
+    printf("core_config[bytes_warning] = %i\n", config->bytes_warning);
+    printf("core_config[inspect] = %i\n", config->inspect);
+    printf("core_config[interactive] = %i\n", config->interactive);
+    printf("core_config[optimization_level] = %i\n", config->optimization_level);
+    printf("core_config[parser_debug] = %i\n", config->parser_debug);
+    printf("core_config[write_bytecode] = %i\n", config->write_bytecode);
+    printf("core_config[verbose] = %i\n", config->verbose);
     ASSERT_EQUAL(config->verbose, Py_VerboseFlag);
-    printf("quiet = %i\n", config->quiet);
-    printf("user_site_directory = %i\n", config->user_site_directory);
-    printf("buffered_stdio = %i\n", config->buffered_stdio);
+    printf("core_config[quiet] = %i\n", config->quiet);
+    printf("core_config[user_site_directory] = %i\n", config->user_site_directory);
+    printf("core_config[buffered_stdio] = %i\n", config->buffered_stdio);
     ASSERT_EQUAL(config->buffered_stdio, !Py_UnbufferedStdioFlag);
-    printf("stdio_encoding = %s\n", config->stdio_encoding);
-    printf("stdio_errors = %s\n", config->stdio_errors);
+    printf("core_config[stdio_encoding] = %s\n", config->stdio_encoding);
+    printf("core_config[stdio_errors] = %s\n", config->stdio_errors);
 
     /* FIXME: test legacy_windows_fs_encoding */
     /* FIXME: test legacy_windows_stdio */
 
-    printf("_install_importlib = %i\n", config->_install_importlib);
-    printf("_check_hash_pycs_mode = %s\n", config->_check_hash_pycs_mode);
-    printf("_frozen = %i\n", config->_frozen);
+    printf("core_config[_install_importlib] = %i\n", config->_install_importlib);
+    printf("core_config[_check_hash_pycs_mode] = %s\n", config->_check_hash_pycs_mode);
+    printf("core_config[_frozen] = %i\n", config->_frozen);
 
 #undef ASSERT_EQUAL
 #undef ASSERT_STR_EQUAL
+}
+
+
+static void
+dump_main_config(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    _PyMainInterpreterConfig *config = &interp->config;
+
+    printf("main_config[install_signal_handlers] = %i\n", config->install_signal_handlers);
+#define DUMP_ATTR(ATTR) \
+        do { \
+            if (config->ATTR != NULL) { \
+                PySys_FormatStdout("main_config[" #ATTR "] = %R\n", config->ATTR); \
+            } \
+            else { \
+                PySys_FormatStdout("main_config[" #ATTR "] = NULL\n"); \
+            } \
+        } while (0)
+
+    DUMP_ATTR(argv);
+    /* FIXME: DUMP_ATTR(executable); */
+    DUMP_ATTR(prefix);
+    DUMP_ATTR(base_prefix);
+    DUMP_ATTR(base_exec_prefix);
+    DUMP_ATTR(warnoptions);
+    DUMP_ATTR(xoptions);
+    /* FIXME: DUMP_ATTR(module_search_path); */
+    DUMP_ATTR(pycache_prefix);
+
+#undef DUMP_ATTR
+}
+
+
+static void
+dump_config(void)
+{
+    dump_core_config();
+    dump_main_config();
 }
 
 
