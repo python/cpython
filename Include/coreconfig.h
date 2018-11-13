@@ -361,6 +361,7 @@ PyAPI_FUNC(int) _PyCoreConfig_GetEnvDup(
 
 /* Used by _testcapi.get_coreconfig() */
 PyAPI_FUNC(PyObject *) _PyCoreConfig_AsDict(const _PyCoreConfig *config);
+PyAPI_FUNC(PyObject *) _Py_GetGlobalVariablesAsDict(void);
 #endif
 
 #ifdef __cplusplus

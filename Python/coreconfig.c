@@ -55,6 +55,78 @@ int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
 #endif
 
 
+PyObject *
+_Py_GetGlobalVariablesAsDict(void)
+{
+    PyObject *dict, *obj;
+
+    dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+
+#define SET_ITEM(KEY, EXPR) \
+        do { \
+            obj = (EXPR); \
+            if (obj == NULL) { \
+                return NULL; \
+            } \
+            int res = PyDict_SetItemString(dict, (KEY), obj); \
+            Py_DECREF(obj); \
+            if (res < 0) { \
+                goto fail; \
+            } \
+        } while (0)
+#define SET_ITEM_INT(VAR) \
+    SET_ITEM(#VAR, PyLong_FromLong(VAR))
+#define FROM_STRING(STR) \
+    ((STR != NULL) ? \
+        PyUnicode_FromString(STR) \
+        : (Py_INCREF(Py_None), Py_None))
+#define SET_ITEM_STR(VAR) \
+    SET_ITEM(#VAR, FROM_STRING(VAR))
+
+    SET_ITEM_STR(Py_FileSystemDefaultEncoding);
+    SET_ITEM_INT(Py_HasFileSystemDefaultEncoding);
+    SET_ITEM_STR(Py_FileSystemDefaultEncodeErrors);
+    SET_ITEM_INT(_Py_HasFileSystemDefaultEncodeErrors);
+
+    SET_ITEM_INT(Py_UTF8Mode);
+    SET_ITEM_INT(Py_DebugFlag);
+    SET_ITEM_INT(Py_VerboseFlag);
+    SET_ITEM_INT(Py_QuietFlag);
+    SET_ITEM_INT(Py_InteractiveFlag);
+    SET_ITEM_INT(Py_InspectFlag);
+
+    SET_ITEM_INT(Py_OptimizeFlag);
+    SET_ITEM_INT(Py_NoSiteFlag);
+    SET_ITEM_INT(Py_BytesWarningFlag);
+    SET_ITEM_INT(Py_FrozenFlag);
+    SET_ITEM_INT(Py_IgnoreEnvironmentFlag);
+    SET_ITEM_INT(Py_DontWriteBytecodeFlag);
+    SET_ITEM_INT(Py_NoUserSiteDirectory);
+    SET_ITEM_INT(Py_UnbufferedStdioFlag);
+    SET_ITEM_INT(Py_HashRandomizationFlag);
+    SET_ITEM_INT(Py_IsolatedFlag);
+
+#ifdef MS_WINDOWS
+    SET_ITEM_INT(Py_LegacyWindowsFSEncodingFlag);
+    SET_ITEM_INT(Py_LegacyWindowsStdioFlag);
+#endif
+
+    return dict;
+
+fail:
+    Py_DECREF(dict);
+    return NULL;
+
+#undef FROM_STRING
+#undef SET_ITEM
+#undef SET_ITEM_INT
+#undef SET_ITEM_STR
+}
+
+
 void
 _Py_wstrlist_clear(int len, wchar_t **list)
 {
@@ -493,6 +565,7 @@ _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
 #endif
+    COPY_FLAG(_frozen, Py_FrozenFlag);
 
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
@@ -1438,6 +1511,8 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
              _Py_wstrlist_as_pylist(config->argc, config->argv));
     SET_ITEM("program",
              FROM_WSTRING(config->program));
+    SET_ITEM("xoptions",
+             _Py_wstrlist_as_pylist(config->nxoption, config->xoptions));
     SET_ITEM("warnoptions",
              _Py_wstrlist_as_pylist(config->nwarnoption, config->warnoptions));
     SET_ITEM("module_search_path_env",

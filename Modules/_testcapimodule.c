@@ -4694,7 +4694,14 @@ decode_locale_ex(PyObject *self, PyObject *args)
 
 
 static PyObject *
-get_coreconfig(PyObject *self, PyObject *Py_UNUSED(args))
+get_global_config(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return _Py_GetGlobalVariablesAsDict();
+}
+
+
+static PyObject *
+get_core_config(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
     const _PyCoreConfig *config = &interp->core_config;
@@ -4703,7 +4710,7 @@ get_coreconfig(PyObject *self, PyObject *Py_UNUSED(args))
 
 
 static PyObject *
-get_mainconfig(PyObject *self, PyObject *Py_UNUSED(args))
+get_main_config(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
     const _PyMainInterpreterConfig *config = &interp->config;
@@ -4956,8 +4963,9 @@ static PyMethodDef TestMethods[] = {
     {"bad_get", bad_get, METH_FASTCALL},
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
-    {"get_coreconfig", get_coreconfig, METH_NOARGS},
-    {"get_mainconfig", get_mainconfig, METH_NOARGS},
+    {"get_global_config", get_global_config, METH_NOARGS},
+    {"get_core_config", get_core_config, METH_NOARGS},
+    {"get_main_config", get_main_config, METH_NOARGS},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
 #endif
