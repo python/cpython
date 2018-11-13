@@ -66,6 +66,9 @@ Constructors for container types must conform to two rules:
    A macro version of :c:func:`PyObject_GC_Track`.  It should not be used for
    extension modules.
 
+   .. deprecated:: 3.6
+      This macro is removed from Python 3.8.
+
 Similarly, the deallocator for the object must conform to a similar pair of
 rules:
 
@@ -94,6 +97,9 @@ rules:
 
    A macro version of :c:func:`PyObject_GC_UnTrack`.  It should not be used for
    extension modules.
+
+   .. deprecated:: 3.6
+      This macro is removed from Python 3.8.
 
 The :c:member:`~PyTypeObject.tp_traverse` handler accepts a function parameter of this type:
 
