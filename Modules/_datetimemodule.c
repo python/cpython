@@ -2,7 +2,13 @@
  *  http://www.zope.org/Members/fdrake/DateTimeWiki/FrontPage
  */
 
+/* bpo-35081: Defining this prevents including the C API capsule;
+ * internal versions of the  Py*_Check macros which do not require
+ * the capsule are defined below */
+#define _PY_DATETIME_IMPL
+
 #include "Python.h"
+#include "datetime.h"
 #include "structmember.h"
 
 #include <time.h>
@@ -11,14 +17,21 @@
 #  include <winsock2.h>         /* struct timeval */
 #endif
 
-/* Differentiate between building the core module and building extension
- * modules.
- */
-#ifndef Py_BUILD_CORE
-#define Py_BUILD_CORE
-#endif
-#include "datetime.h"
-#undef Py_BUILD_CORE
+#define PyDate_Check(op) PyObject_TypeCheck(op, &PyDateTime_DateType)
+#define PyDate_CheckExact(op) (Py_TYPE(op) == &PyDateTime_DateType)
+
+#define PyDateTime_Check(op) PyObject_TypeCheck(op, &PyDateTime_DateTimeType)
+#define PyDateTime_CheckExact(op) (Py_TYPE(op) == &PyDateTime_DateTimeType)
+
+#define PyTime_Check(op) PyObject_TypeCheck(op, &PyDateTime_TimeType)
+#define PyTime_CheckExact(op) (Py_TYPE(op) == &PyDateTime_TimeType)
+
+#define PyDelta_Check(op) PyObject_TypeCheck(op, &PyDateTime_DeltaType)
+#define PyDelta_CheckExact(op) (Py_TYPE(op) == &PyDateTime_DeltaType)
+
+#define PyTZInfo_Check(op) PyObject_TypeCheck(op, &PyDateTime_TZInfoType)
+#define PyTZInfo_CheckExact(op) (Py_TYPE(op) == &PyDateTime_TZInfoType)
+
 
 /*[clinic input]
 module datetime
