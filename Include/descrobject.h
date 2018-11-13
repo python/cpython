@@ -101,6 +101,14 @@ PyAPI_FUNC(PyObject *) PyDescr_NewWrapper(PyTypeObject *,
 PyAPI_FUNC(PyObject *) PyDictProxy_New(PyObject *);
 PyAPI_FUNC(PyObject *) PyWrapper_New(PyObject *, PyObject *);
 
+typedef struct {
+    PyObject_HEAD
+    PyObject *prop_get;
+    PyObject *prop_set;
+    PyObject *prop_del;
+    PyObject *prop_doc;
+    int getter_doc;
+} propertyobject;
 
 PyAPI_DATA(PyTypeObject) PyProperty_Type;
 #ifdef __cplusplus

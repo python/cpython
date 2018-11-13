@@ -2328,6 +2328,107 @@ done:
     Py_RETURN_NONE;
 }
 
+/* Helper functions for namedtuples */
+
+typedef struct {
+    propertyobject po;
+    Py_ssize_t index;
+    PyObject* doc;
+} _tuplegetterobject;
+
+static PyObject *
+tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    Py_ssize_t index;
+    PyObject *doc;
+    _tuplegetterobject *self;
+
+    static char *kwlist[] = {"index", "doc", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "n$O", kwlist,
+                                     &index, &doc)){
+        return NULL;
+    }
+
+    self = (_tuplegetterobject *)PyProperty_Type.tp_new(type, args, kwds);
+    if (self == NULL) {
+        return NULL;
+    }
+    self->index = index;
+    Py_INCREF(doc);
+    self->doc = doc;
+    return (PyObject *)self;
+}
+
+static PyObject *
+tuplegetterdescr_get(PyObject *self, PyObject *obj, PyObject *type)
+{
+    PyObject *result;
+    if (obj == NULL || obj == Py_None) {
+        Py_INCREF(self);
+        return self;
+    }
+    result = PyTuple_GetItem(obj, ((_tuplegetterobject*)self)->index);
+    Py_XINCREF(result);
+    return result;
+}
+
+static void
+tuplegetter_dealloc(_tuplegetterobject *self)
+{
+    Py_XDECREF(self->doc);
+    PyProperty_Type.tp_dealloc((PyObject*)self);
+}
+
+
+static PyMemberDef tuplegetter_members[] = {
+    {"__doc__",  T_OBJECT, offsetof(_tuplegetterobject, doc), 0},
+    {0}
+};
+
+static PyTypeObject tuplegetter_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "_collections.tuplegetter",                 /* tp_name */
+    sizeof(_tuplegetterobject),                 /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)tuplegetter_dealloc,            /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    0,                                          /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
+    0,                                          /* tp_doc */
+    0,                                          /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    0,                                          /* tp_methods */
+    tuplegetter_members,                        /* tp_members */
+    0,                                          /* tp_getset */
+    &PyProperty_Type,                           /* tp_base */
+    0,                                          /* tp_dict */
+    tuplegetterdescr_get,                       /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    tuplegetter_new,                            /* tp_new */
+    0,
+};
+
+
 /* module level code ********************************************************/
 
 PyDoc_STRVAR(module_doc,
@@ -2385,6 +2486,11 @@ PyInit__collections(void)
         return NULL;
     Py_INCREF(&dequereviter_type);
     PyModule_AddObject(m, "_deque_reverse_iterator", (PyObject *)&dequereviter_type);
+
+    if (PyType_Ready(&tuplegetter_type) < 0)
+        return NULL;
+    Py_INCREF(&tuplegetter_type);
+    PyModule_AddObject(m, "_tuplegetter", (PyObject *)&tuplegetter_type);
 
     return m;
 }
