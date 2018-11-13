@@ -259,6 +259,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     UNTESTED_CORE_CONFIG = (
         'base_exec_prefix',
         'base_prefix',
+        'dll_path',
         'exec_prefix',
         'executable',
         'home',
