@@ -409,7 +409,7 @@ dump_main_config(void)
         } while (0)
 
     DUMP_ATTR(argv);
-    DUMP_ATTR(executable);
+    /* FIXME: DUMP_ATTR(executable); */
     DUMP_ATTR(prefix);
     DUMP_ATTR(base_prefix);
     DUMP_ATTR(base_exec_prefix);

@@ -386,8 +386,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 main_config[key] = value
         self.assertEqual(core_config, expected)
 
-        executable = os.path.join(os.path.dirname(sys.executable),
-                                  os.path.basename(core_config['program_name']))
         pycache_prefix = core_config['pycache_prefix']
         if pycache_prefix != NULL_STR:
             pycache_prefix = repr(pycache_prefix)
@@ -396,12 +394,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         expected_main = {
             'install_signal_handlers': core_config['install_signal_handlers'],
             'argv': '[]',
-            'executable': repr(executable),
             'prefix': repr(sys.prefix),
             'base_prefix': repr(sys.base_prefix),
             'base_exec_prefix': repr(sys.base_exec_prefix),
-            'warnoptions': repr(sys.warnoptions),
-            'xoptions': repr(sys._xoptions),
+            'warnoptions': '[]',
+            'xoptions': '{}',
             'pycache_prefix': pycache_prefix,
         }
         self.assertEqual(main_config, expected_main)
