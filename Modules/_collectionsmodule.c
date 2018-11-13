@@ -2367,6 +2367,10 @@ tuplegetterdescr_get(PyObject *self, PyObject *obj, PyObject *type)
         Py_INCREF(self);
         return self;
     }
+    if (!PyTuple_Check(obj)){
+        PyErr_SetString(PyExc_TypeError, "_tuplegetter must be used with tuples");
+        return NULL;
+    }
     result = PyTuple_GetItem(obj, ((_tuplegetterobject*)self)->index);
     Py_XINCREF(result);
     return result;
