@@ -1,0 +1,2 @@
+Fixed an out of bounds memory access when parsing a malformed f-string
+ending with ``\N``.
