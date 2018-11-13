@@ -292,141 +292,76 @@ static int test_initialize_pymain(void)
 }
 
 
-static void
-dump_core_config(void)
+static int
+dump_config_impl(void)
 {
-#define ASSERT_EQUAL(a, b) \
-    if ((a) != (b)) { \
-        printf("ERROR: %s != %s (%i != %i)\n", #a, #b, (a), (b)); \
-        exit(1); \
-    }
-#define ASSERT_STR_EQUAL(a, b) \
-    if ((a) == NULL || (b == NULL) || wcscmp((a), (b)) != 0) { \
-        printf("ERROR: %s != %s ('%ls' != '%ls')\n", #a, #b, (a), (b)); \
-        exit(1); \
+    PyObject *config = NULL;
+    PyObject *dict = NULL;
+
+    config = PyDict_New();
+    if (config == NULL) {
+        goto error;
     }
 
+    /* global config */
+    dict = _Py_GetGlobalVariablesAsDict();
+    if (dict == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(config, "global_config", dict) < 0) {
+        goto error;
+    }
+    Py_CLEAR(dict);
+
+    /* core config */
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    _PyCoreConfig *config = &interp->core_config;
-
-    printf("core_config[install_signal_handlers] = %i\n", config->install_signal_handlers);
-
-    printf("core_config[use_environment] = %i\n", config->use_environment);
-    ASSERT_EQUAL(config->use_environment, !Py_IgnoreEnvironmentFlag);
-
-    printf("core_config[use_hash_seed] = %i\n", config->use_hash_seed);
-    printf("core_config[hash_seed] = %lu\n", config->hash_seed);
-
-    printf("core_config[allocator] = %s\n", config->allocator);
-
-    printf("core_config[dev_mode] = %i\n", config->dev_mode);
-    printf("core_config[faulthandler] = %i\n", config->faulthandler);
-    printf("core_config[tracemalloc] = %i\n", config->tracemalloc);
-    printf("core_config[import_time] = %i\n", config->import_time);
-    printf("core_config[show_ref_count] = %i\n", config->show_ref_count);
-    printf("core_config[show_alloc_count] = %i\n", config->show_alloc_count);
-    printf("core_config[dump_refs] = %i\n", config->dump_refs);
-    printf("core_config[malloc_stats] = %i\n", config->malloc_stats);
-
-    printf("core_config[filesystem_encoding] = %s\n", config->filesystem_encoding);
-    printf("core_config[filesystem_errors] = %s\n", config->filesystem_errors);
-    printf("core_config[coerce_c_locale] = %i\n", config->coerce_c_locale);
-    printf("core_config[coerce_c_locale_warn] = %i\n", config->coerce_c_locale_warn);
-    printf("core_config[utf8_mode] = %i\n", config->utf8_mode);
-
-    printf("core_config[pycache_prefix] = %ls\n", config->pycache_prefix);
-    printf("core_config[program_name] = %ls\n", config->program_name);
-    ASSERT_STR_EQUAL(config->program_name, Py_GetProgramName());
-
-    printf("core_config[argc] = %i\n", config->argc);
-    printf("core_config[argv] = [");
-    for (int i=0; i < config->argc; i++) {
-        if (i) {
-            printf(", ");
-        }
-        printf("\"%ls\"", config->argv[i]);
+    const _PyCoreConfig *core_config = &interp->core_config;
+    dict = _PyCoreConfig_AsDict(core_config);
+    if (dict == NULL) {
+        goto error;
     }
-    printf("]\n");
+    if (PyDict_SetItemString(config, "core_config", dict) < 0) {
+        goto error;
+    }
+    Py_CLEAR(dict);
 
-    printf("core_config[program] = %ls\n", config->program);
-    /* FIXME: test xoptions */
-    /* FIXME: test warnoptions */
-    /* FIXME: test module_search_path_env */
-    /* FIXME: test home */
-    /* FIXME: test module_search_paths */
-    /* FIXME: test executable */
-    /* FIXME: test prefix */
-    /* FIXME: test base_prefix */
-    /* FIXME: test exec_prefix */
-    /* FIXME: test base_exec_prefix */
-    /* FIXME: test dll_path */
+    /* main config */
+    const _PyMainInterpreterConfig *main_config = &interp->config;
+    dict = _PyMainInterpreterConfig_AsDict(main_config);
+    if (dict == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(config, "main_config", dict) < 0) {
+        goto error;
+    }
+    Py_CLEAR(dict);
 
-    printf("core_config[isolated] = %i\n", config->isolated);
-    ASSERT_EQUAL(config->isolated, Py_IsolatedFlag);
-    printf("core_config[site_import] = %i\n", config->site_import);
-    printf("core_config[bytes_warning] = %i\n", config->bytes_warning);
-    printf("core_config[inspect] = %i\n", config->inspect);
-    printf("core_config[interactive] = %i\n", config->interactive);
-    printf("core_config[optimization_level] = %i\n", config->optimization_level);
-    printf("core_config[parser_debug] = %i\n", config->parser_debug);
-    printf("core_config[write_bytecode] = %i\n", config->write_bytecode);
-    printf("core_config[verbose] = %i\n", config->verbose);
-    ASSERT_EQUAL(config->verbose, Py_VerboseFlag);
-    printf("core_config[quiet] = %i\n", config->quiet);
-    printf("core_config[user_site_directory] = %i\n", config->user_site_directory);
-    printf("core_config[buffered_stdio] = %i\n", config->buffered_stdio);
-    ASSERT_EQUAL(config->buffered_stdio, !Py_UnbufferedStdioFlag);
-    printf("core_config[stdio_encoding] = %s\n", config->stdio_encoding);
-    printf("core_config[stdio_errors] = %s\n", config->stdio_errors);
+    PyObject *json = PyImport_ImportModule("json");
+    PyObject *res = PyObject_CallMethod(json, "dumps", "O", config);
+    Py_DECREF(json);
+    Py_CLEAR(config);
+    if (res == NULL) {
+        goto error;
+    }
 
-    /* FIXME: test legacy_windows_fs_encoding */
-    /* FIXME: test legacy_windows_stdio */
+    PySys_FormatStdout("%S\n", res);
+    Py_DECREF(res);
 
-    printf("core_config[_install_importlib] = %i\n", config->_install_importlib);
-    printf("core_config[_check_hash_pycs_mode] = %s\n", config->_check_hash_pycs_mode);
-    printf("core_config[_frozen] = %i\n", config->_frozen);
+    return 0;
 
-#undef ASSERT_EQUAL
-#undef ASSERT_STR_EQUAL
+error:
+    Py_XDECREF(config);
+    Py_XDECREF(dict);
+    return -1;
 }
-
-
-static void
-dump_main_config(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    _PyMainInterpreterConfig *config = &interp->config;
-
-    printf("main_config[install_signal_handlers] = %i\n", config->install_signal_handlers);
-#define DUMP_ATTR(ATTR) \
-        do { \
-            if (config->ATTR != NULL) { \
-                PySys_FormatStdout("main_config[" #ATTR "] = %R\n", config->ATTR); \
-            } \
-            else { \
-                PySys_FormatStdout("main_config[" #ATTR "] = NULL\n"); \
-            } \
-        } while (0)
-
-    DUMP_ATTR(argv);
-    /* FIXME: DUMP_ATTR(executable); */
-    DUMP_ATTR(prefix);
-    DUMP_ATTR(base_prefix);
-    DUMP_ATTR(base_exec_prefix);
-    DUMP_ATTR(warnoptions);
-    DUMP_ATTR(xoptions);
-    /* FIXME: DUMP_ATTR(module_search_path); */
-    DUMP_ATTR(pycache_prefix);
-
-#undef DUMP_ATTR
-}
-
 
 static void
 dump_config(void)
 {
-    dump_core_config();
-    dump_main_config();
+    if (dump_config_impl() < 0) {
+        fprintf(stderr, "failed to dump the configuration:\n");
+        PyErr_Print();
+    }
 }
 
 
