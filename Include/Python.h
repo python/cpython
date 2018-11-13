@@ -56,8 +56,8 @@
 /* A convenient way for code to know if clang's memory sanitizer is enabled. */
 #if defined(__has_feature)
 #  if __has_feature(memory_sanitizer)
-#    if !defined(MEMORY_SANITIZER)
-#      define MEMORY_SANITIZER
+#    if !defined(_Py_MEMORY_SANITIZER)
+#      define _Py_MEMORY_SANITIZER
 #    endif
 #  endif
 #endif

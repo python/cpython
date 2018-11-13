@@ -21,7 +21,7 @@
 #include <dirent.h>
 #endif
 
-#ifdef MEMORY_SANITIZER
+#ifdef _Py_MEMORY_SANITIZER
 # include <sanitizer/msan_interface.h>
 #endif
 
@@ -291,7 +291,7 @@ _close_open_fds_safe(int start_fd, PyObject* py_fds_to_keep)
                                 sizeof(buffer))) > 0) {
             struct linux_dirent64 *entry;
             int offset;
-#ifdef MEMORY_SANITIZER
+#ifdef _Py_MEMORY_SANITIZER
             __msan_unpoison(buffer, bytes);
 #endif
             for (offset = 0; offset < bytes; offset += entry->d_reclen) {

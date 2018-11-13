@@ -75,7 +75,7 @@
 #include <alloca.h>
 #endif
 
-#ifdef MEMORY_SANITIZER
+#ifdef _Py_MEMORY_SANITIZER
 #include <sanitizer/msan_interface.h>
 #endif
 
@@ -1129,7 +1129,7 @@ PyObject *_ctypes_callproc(PPROC pProc,
     rtype = _ctypes_get_ffi_type(restype);
     resbuf = alloca(max(rtype->size, sizeof(ffi_arg)));
 
-#ifdef MEMORY_SANITIZER
+#ifdef _Py_MEMORY_SANITIZER
     /* ffi_call actually initializes resbuf, but from asm, which
      * MemorySanitizer can't detect. Avoid false positives from MSan. */
     if (resbuf != NULL) {

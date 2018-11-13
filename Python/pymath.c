@@ -17,7 +17,7 @@ double _Py_force_double(double x)
 
 /* inline assembly for getting and setting the 387 FPU control word on
    gcc/x86 */
-#ifdef MEMORY_SANITIZER
+#ifdef _Py_MEMORY_SANITIZER
 __attribute__((no_sanitize_memory))
 #endif
 unsigned short _Py_get_387controlword(void) {
