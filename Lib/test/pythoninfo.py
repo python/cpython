@@ -534,15 +534,25 @@ def collect_gdbm(info_add):
     info_add('gdbm.GDBM_VERSION', '.'.join(map(str, _GDBM_VERSION)))
 
 
-def collect_get_coreconfig(info_add):
+def collect_get_config(info_add):
+    # Dump _PyCoreConfig and _PyMainInterpreterConfig
     try:
         from _testcapi import get_coreconfig
     except ImportError:
-        return
+        pass
+    else:
+        config = get_coreconfig()
+        for key in sorted(config):
+            info_add('core_config[%s]' % key, repr(config[key]))
 
-    config = get_coreconfig()
-    for key in sorted(config):
-        info_add('coreconfig[%s]' % key, repr(config[key]))
+    try:
+        from _testcapi import get_mainconfig
+    except ImportError:
+        pass
+    else:
+        config = get_mainconfig()
+        for key in sorted(config):
+            info_add('main_config[%s]' % key, repr(config[key]))
 
 
 def collect_info(info):
@@ -573,7 +583,7 @@ def collect_info(info):
         collect_resource,
         collect_cc,
         collect_gdbm,
-        collect_get_coreconfig,
+        collect_get_config,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,
