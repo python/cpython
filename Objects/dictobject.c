@@ -302,13 +302,26 @@ PyDict_Fini(void)
 #define DK_ENTRIES(dk) \
     ((PyDictKeyEntry*)(&((int8_t*)((dk)->dk_indices))[DK_SIZE(dk) * DK_IXSIZE(dk)]))
 
-#define DK_DEBUG_INCREF _Py_INC_REFTOTAL _Py_REF_DEBUG_COMMA
-#define DK_DEBUG_DECREF _Py_DEC_REFTOTAL _Py_REF_DEBUG_COMMA
-
-#define DK_INCREF(dk) (DK_DEBUG_INCREF ++(dk)->dk_refcnt)
-#define DK_DECREF(dk) if (DK_DEBUG_DECREF (--(dk)->dk_refcnt) == 0) free_keys_object(dk)
 #define DK_MASK(dk) (((dk)->dk_size)-1)
 #define IS_POWER_OF_2(x) (((x) & (x-1)) == 0)
+
+static void free_keys_object(PyDictKeysObject *keys);
+
+static inline void
+dk_incref(PyDictKeysObject *dk)
+{
+    _Py_INC_REFTOTAL;
+    dk->dk_refcnt++;
+}
+
+static inline void
+dk_decref(PyDictKeysObject *dk)
+{
+    _Py_DEC_REFTOTAL;
+    if (--dk->dk_refcnt == 0) {
+        free_keys_object(dk);
+    }
+}
 
 /* lookup indices.  returns DKIX_EMPTY, DKIX_DUMMY, or ix >=0 */
 static inline Py_ssize_t
@@ -543,7 +556,8 @@ static PyDictKeysObject *new_keys_object(Py_ssize_t size)
             return NULL;
         }
     }
-    DK_DEBUG_INCREF dk->dk_refcnt = 1;
+    _Py_INC_REFTOTAL;
+    dk->dk_refcnt = 1;
     dk->dk_size = size;
     dk->dk_usable = usable;
     dk->dk_lookup = lookdict_unicode_nodummy;
@@ -587,7 +601,7 @@ new_dict(PyDictKeysObject *keys, PyObject **values)
     else {
         mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
         if (mp == NULL) {
-            DK_DECREF(keys);
+            dk_decref(keys);
             free_values(values);
             return NULL;
         }
@@ -610,7 +624,7 @@ new_dict_with_shared_keys(PyDictKeysObject *keys)
     size = USABLE_FRACTION(DK_SIZE(keys));
     values = new_values(size);
     if (values == NULL) {
-        DK_DECREF(keys);
+        dk_decref(keys);
         return PyErr_NoMemory();
     }
     for (i = 0; i < size; i++) {
@@ -665,7 +679,7 @@ clone_combined_dict(PyDictObject *orig)
 
     /* Since we copied the keys table we now have an extra reference
        in the system.  Manually call _Py_INC_REFTOTAL to signal that
-       we have it now; calling DK_INCREF would be an error as
+       we have it now; calling dk_incref would be an error as
        keys->dk_refcnt is already set to 1 (after memcpy). */
     _Py_INC_REFTOTAL;
 
@@ -1171,7 +1185,7 @@ dictresize(PyDictObject *mp, Py_ssize_t minsize)
             newentries[i].me_value = oldvalues[i];
         }
 
-        DK_DECREF(oldkeys);
+        dk_decref(oldkeys);
         mp->ma_values = NULL;
         if (oldvalues != empty_values) {
             free_values(oldvalues);
@@ -1194,10 +1208,12 @@ dictresize(PyDictObject *mp, Py_ssize_t minsize)
         assert(oldkeys->dk_refcnt == 1);
         if (oldkeys->dk_size == PyDict_MINSIZE &&
             numfreekeys < PyDict_MAXFREELIST) {
-            DK_DEBUG_DECREF keys_free_list[numfreekeys++] = oldkeys;
+            _Py_DEC_REFTOTAL;
+            keys_free_list[numfreekeys++] = oldkeys;
         }
         else {
-            DK_DEBUG_DECREF PyObject_FREE(oldkeys);
+            _Py_DEC_REFTOTAL;
+            PyObject_FREE(oldkeys);
         }
     }
 
@@ -1247,7 +1263,7 @@ make_keys_shared(PyObject *op)
         mp->ma_keys->dk_lookup = lookdict_split;
         mp->ma_values = values;
     }
-    DK_INCREF(mp->ma_keys);
+    dk_incref(mp->ma_keys);
     return mp->ma_keys;
 }
 
@@ -1630,7 +1646,7 @@ PyDict_Clear(PyObject *op)
     if (oldvalues == empty_values)
         return;
     /* Empty the dict... */
-    DK_INCREF(Py_EMPTY_KEYS);
+    dk_incref(Py_EMPTY_KEYS);
     mp->ma_keys = Py_EMPTY_KEYS;
     mp->ma_values = empty_values;
     mp->ma_used = 0;
@@ -1641,11 +1657,11 @@ PyDict_Clear(PyObject *op)
         for (i = 0; i < n; i++)
             Py_CLEAR(oldvalues[i]);
         free_values(oldvalues);
-        DK_DECREF(oldkeys);
+        dk_decref(oldkeys);
     }
     else {
        assert(oldkeys->dk_refcnt == 1);
-       DK_DECREF(oldkeys);
+       dk_decref(oldkeys);
     }
     assert(_PyDict_CheckConsistency(mp));
 }
@@ -1910,11 +1926,11 @@ dict_dealloc(PyDictObject *mp)
             }
             free_values(values);
         }
-        DK_DECREF(keys);
+        dk_decref(keys);
     }
     else if (keys != NULL) {
         assert(keys->dk_refcnt == 1);
-        DK_DECREF(keys);
+        dk_decref(keys);
     }
     if (numfree < PyDict_MAXFREELIST && Py_TYPE(mp) == &PyDict_Type)
         free_list[numfree++] = mp;
@@ -2563,7 +2579,7 @@ PyDict_Copy(PyObject *o)
         split_copy->ma_keys = mp->ma_keys;
         split_copy->ma_used = mp->ma_used;
         split_copy->ma_version_tag = DICT_NEXT_VERSION();
-        DK_INCREF(mp->ma_keys);
+        dk_incref(mp->ma_keys);
         for (i = 0, n = size; i < n; i++) {
             PyObject *value = mp->ma_values[i];
             Py_XINCREF(value);
@@ -4460,7 +4476,7 @@ PyObject_GenericGetDict(PyObject *obj, void *context)
     if (dict == NULL) {
         PyTypeObject *tp = Py_TYPE(obj);
         if ((tp->tp_flags & Py_TPFLAGS_HEAPTYPE) && CACHED_KEYS(tp)) {
-            DK_INCREF(CACHED_KEYS(tp));
+            dk_incref(CACHED_KEYS(tp));
             *dictptr = dict = new_dict_with_shared_keys(CACHED_KEYS(tp));
         }
         else {
@@ -4484,7 +4500,7 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
         assert(dictptr != NULL);
         dict = *dictptr;
         if (dict == NULL) {
-            DK_INCREF(cached);
+            dk_incref(cached);
             dict = new_dict_with_shared_keys(cached);
             if (dict == NULL)
                 return -1;
@@ -4496,7 +4512,7 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
             // always converts dict to combined form.
             if ((cached = CACHED_KEYS(tp)) != NULL) {
                 CACHED_KEYS(tp) = NULL;
-                DK_DECREF(cached);
+                dk_decref(cached);
             }
         }
         else {
@@ -4525,7 +4541,7 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
                 else {
                     CACHED_KEYS(tp) = NULL;
                 }
-                DK_DECREF(cached);
+                dk_decref(cached);
                 if (CACHED_KEYS(tp) == NULL && PyErr_Occurred())
                     return -1;
             }
@@ -4550,5 +4566,5 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
 void
 _PyDictKeys_DecRef(PyDictKeysObject *keys)
 {
-    DK_DECREF(keys);
+    dk_decref(keys);
 }
