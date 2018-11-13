@@ -1741,51 +1741,8 @@ ast_for_namedexpr(struct compiling *c, const node *n)
             '*' test )
     */
     expr_ty target, value;
-    node *ch = CHILD(n, 0);
 
-    // To remain LL(1), the grammar accepts any test (basically, any
-    // expression) in the keyword slot of a call site.  So, we need
-    // to manually enforce that the keyword is a NAME here.
-    static const int name_tree[] = {
-        namedexpr_test,
-        test,
-        or_test,
-        and_test,
-        not_test,
-        comparison,
-        expr,
-        xor_expr,
-        and_expr,
-        shift_expr,
-        arith_expr,
-        term,
-        factor,
-        power,
-        atom_expr,
-        atom,
-    };
-
-    node *expr_node = ch;
-    for (int i = 1; name_tree[i]; i++) {
-        if (TYPE(expr_node) != name_tree[i])
-            break;
-        if (TYPE(expr_node) == atom && expr_node->n_nchildren == 3) {
-            node *expr_node_ch = CHILD(CHILD(expr_node, 1), 0);
-            for (int i = 0; name_tree[i]; i++) {
-                if (TYPE(expr_node_ch) != name_tree[i])
-                    break;
-                expr_node_ch = CHILD(expr_node_ch, 0);
-            }
-            if (TYPE(expr_node_ch) == NAME) {
-                ast_error(c, ch,
-                            "can't use named assignment with expression");
-                return NULL;
-            }
-        }
-        expr_node = CHILD(expr_node, 0);
-    }
-
-    target = ast_for_expr(c, ch);
+    target = ast_for_expr(c, CHILD(n, 0));
     if (!target)
         return NULL;
 
