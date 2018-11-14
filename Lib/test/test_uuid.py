@@ -11,10 +11,7 @@ import sys
 
 py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
-# would prefer using platform.system() but CI tests have a merge conflict with "import platform"
-# removing it for the moment
-# AIX = platform.system() == 'AIX'
-AIX = sys.platform.startswith("aix")
+_AIX = sys.platform.startswith("aix")
 
 def importable(name):
     try:
@@ -518,9 +515,10 @@ class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
 class BaseTestInternals:
     uuid = None
 
-    @unittest.skipUnless(AIX, 'requires AIX')
+    @unittest.skipUnless(_AIX, 'requires AIX')
     def test_find_mac_netstat(self):
-        data = '''Name  Mtu   Network     Address           Ipkts Ierrs    Opkts Oerrs  Coll
+        data = '''\
+Name  Mtu   Network     Address           Ipkts Ierrs    Opkts Oerrs  Coll
 en0   1500  link#2      fe.ad.c.1.23.4   1714807956     0 711348489     0     0
                         01:00:5e:00:00:01
 en0   1500  192.168.129 x071             1714807956     0 711348489     0     0
@@ -545,7 +543,7 @@ en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
         self.assertEqual(mac, 0xfead0c012304)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipIf(AIX, 'AIX "ifconfig" does not provide macaddr')
+    @unittest.skipIf(_AIX, 'AIX "ifconfig" does not provide macaddr')
     def test_find_mac(self):
         data = '''
 fake      Link encap:UNSPEC  hwaddr 00-00
@@ -578,25 +576,25 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
                         "%s is not an RFC 4122 node ID" % hex)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipIf(AIX, 'AIX "ifconfig" does not provide macaddr')
+    @unittest.skipIf(_AIX, 'AIX "ifconfig" does not provide macaddr')
     def test_ifconfig_getnode(self):
         node = self.uuid._ifconfig_getnode()
         self.check_node(node, 'ifconfig')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipIf(AIX, 'requires command "ip"')
+    @unittest.skipIf(_AIX, 'requires command "ip"')
     def test_ip_getnode(self):
         node = self.uuid._ip_getnode()
         self.check_node(node, 'ip')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipIf(AIX, 'AIX "arp" does not provide macaddr')
+    @unittest.skipIf(_AIX, 'AIX "arp" does not provide macaddr')
     def test_arp_getnode(self):
         node = self.uuid._arp_getnode()
         self.check_node(node, 'arp')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipIf(AIX, 'requires command "lanscan"')
+    @unittest.skipIf(_AIX, 'requires command "lanscan"')
     def test_lanscan_getnode(self):
         node = self.uuid._lanscan_getnode()
         self.check_node(node, 'lanscan')
