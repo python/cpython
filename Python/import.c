@@ -833,7 +833,7 @@ remove_module(PyObject *name)
         if (!PyMapping_HasKey(modules, name)) {
             return;
         }
-        Py_FatalError("import:  deleting existing key in"
+        Py_FatalError("import:  deleting existing key in "
                       "sys.modules failed");
     }
 }

@@ -770,7 +770,7 @@ class SimSMTPChannel(smtpd.SMTPChannel):
             try:
                 user, hashed_pass = logpass.split()
             except ValueError as e:
-                self.push('535 Splitting response {!r} into user and password'
+                self.push('535 Splitting response {!r} into user and password '
                           'failed: {}'.format(logpass, e))
                 return False
             valid_hashed_pass = hmac.HMAC(
