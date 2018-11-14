@@ -44,8 +44,8 @@ additional methods of invocation:
   produce that with :kbd:`Ctrl-D` on UNIX or :kbd:`Ctrl-Z, Enter` on Windows) is read.
 * When called with a file name argument or with a file as standard input, it
   reads and executes a script from that file.
-* When called with a directory name argument, it reads and executes an
-  appropriately named script from that directory.
+* When called with a directory name argument, it reads and executes the script
+  named ``__main__.py`` from that directory.
 * When called with ``-c command``, it executes the Python statement(s) given as
   *command*.  Here *command* may contain multiple statements separated by
   newlines. Leading whitespace is significant in Python statements!
