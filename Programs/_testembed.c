@@ -533,6 +533,11 @@ static int test_init_from_config(void)
 
     putenv("PYTHONIOENCODING=cp424");
     Py_SetStandardStreamEncoding("ascii", "ignore");
+#ifdef MS_WINDOWS
+    /* Py_SetStandardStreamEncoding() sets Py_LegacyWindowsStdioFlag to 1.
+       Force it to 0 through the config. */
+    config.legacy_windows_stdio = 0;
+#endif
     config.stdio_encoding = "iso8859-1";
     config.stdio_errors = "replace";
 
