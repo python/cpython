@@ -447,6 +447,9 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     spec.slots = slots;
 
     bases = PyTuple_Pack(1, &PyTuple_Type);
+    if (bases == NULL) {
+        return NULL;
+    }
     type = (PyTypeObject *)PyType_FromSpecWithBases(&spec, bases);
     Py_DECREF(bases);
     PyMem_FREE(members);
