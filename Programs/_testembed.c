@@ -355,6 +355,7 @@ error:
     return -1;
 }
 
+
 static void
 dump_config(void)
 {
@@ -468,10 +469,30 @@ static int test_init_from_config(void)
     Py_SetProgramName(L"./globalvar");
     config.program_name = L"./conf_program_name";
 
-    /* FIXME: test argc/argv */
+    static wchar_t* argv[2] = {
+        L"-c",
+        L"pass",
+    };
+    config.argc = Py_ARRAY_LENGTH(argv);
+    config.argv = argv;
+
     config.program = L"conf_program";
-    /* FIXME: test xoptions */
-    /* FIXME: test warnoptions */
+
+    static wchar_t* xoptions[3] = {
+        L"core_xoption1=3",
+        L"core_xoption2=",
+        L"core_xoption3",
+    };
+    config.nxoption = Py_ARRAY_LENGTH(xoptions);
+    config.xoptions = xoptions;
+
+    static wchar_t* warnoptions[2] = {
+        L"default",
+        L"error::ResourceWarning",
+    };
+    config.nwarnoption = Py_ARRAY_LENGTH(warnoptions);
+    config.warnoptions = warnoptions;
+
     /* FIXME: test module_search_path_env */
     /* FIXME: test home */
     /* FIXME: test path config: module_search_path .. dll_path */
@@ -512,6 +533,11 @@ static int test_init_from_config(void)
 
     putenv("PYTHONIOENCODING=cp424");
     Py_SetStandardStreamEncoding("ascii", "ignore");
+#ifdef MS_WINDOWS
+    /* Py_SetStandardStreamEncoding() sets Py_LegacyWindowsStdioFlag to 1.
+       Force it to 0 through the config. */
+    config.legacy_windows_stdio = 0;
+#endif
     config.stdio_encoding = "iso8859-1";
     config.stdio_errors = "replace";
 
