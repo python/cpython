@@ -26,8 +26,7 @@ obvious; otherwise, you might need a little more guidance.
 Unless you use some sort of integrated development environment, you will end up
 *typing* Windows commands into what is variously referred to as a "DOS window"
 or "Command prompt window".  Usually you can create such a window from your
-Start menu; under Windows 7 the menu selection is :menuselection:`Start -->
-Programs --> Accessories --> Command Prompt`.  You should be able to recognize
+search bar by searching for ``cmd``.  You should be able to recognize
 when you have started such a window because you will see a Windows "command
 prompt", which usually looks like this:
 
@@ -52,19 +51,19 @@ compiles it into bytecodes, and then executes the bytecodes to run your
 program. So, how do you arrange for the interpreter to handle your Python?
 
 First, you need to make sure that your command window recognises the word
-"python" as an instruction to start the interpreter.  If you have opened a
-command window, you should try entering the command ``python`` and hitting
+"py" as an instruction to start the interpreter.  If you have opened a
+command window, you should try entering the command ``py`` and hitting
 return:
 
 .. code-block:: doscon
 
-   C:\Users\YourName> python
+   C:\Users\YourName> py
 
 You should then see something like:
 
 .. code-block:: pycon
 
-   Python 3.3.0 (v3.3.0:bd8afb90ebf2, Sep 29 2012, 10:55:48) [MSC v.1600 32 bit (Intel)] on win32
+   Python 3.6.4 (v3.6.4:d48eceb, Dec 19 2017, 06:04:45) [MSC v.1900 32 bit (Intel)] on win32
    Type "help", "copyright", "credits" or "license" for more information.
    >>>
 
@@ -81,52 +80,33 @@ by entering a few expressions of your choice and seeing the results:
     'HelloHelloHello'
 
 Many people use the interactive mode as a convenient yet highly programmable
-calculator.  When you want to end your interactive Python session, hold the :kbd:`Ctrl`
-key down while you enter a :kbd:`Z`, then hit the ":kbd:`Enter`" key to get back to your
-Windows command prompt.
+calculator.  When you want to end your interactive Python session,
+call the :func:`exit` function or hold the :kbd:`Ctrl` key down
+while you enter a :kbd:`Z`, then hit the ":kbd:`Enter`" key to get
+back to your Windows command prompt.
 
 You may also find that you have a Start-menu entry such as :menuselection:`Start
---> Programs --> Python 3.3 --> Python (command line)` that results in you
+--> Programs --> Python 3.x --> Python (command line)` that results in you
 seeing the ``>>>`` prompt in a new window.  If so, the window will disappear
-after you enter the :kbd:`Ctrl-Z` character; Windows is running a single "python"
+after you call the :func:`exit` function or enter the :kbd:`Ctrl-Z`
+character; Windows is running a single "python"
 command in the window, and closes it when you terminate the interpreter.
 
-If the ``python`` command, instead of displaying the interpreter prompt ``>>>``,
-gives you a message like::
+Now that we know the ``py`` command is recognized, you can give your
+Python script to it. You'll have to give either an absolute or a
+relative path to the Python script. Let's say your Python script is
+located in your desktop and is named ``hello.py``, and your command
+prompt is nicely opened in your home directory so you're seeing something
+similar to::
 
-   'python' is not recognized as an internal or external command, operable program or batch file.
+   C:\Users\YourName>
 
-or::
+So now you'll ask the ``py`` command to give your script to Python by
+typing ``py`` followed by your script path::
 
-   Bad command or filename
 
-then you need to make sure that your computer knows where to find the Python
-interpreter.  To do this you will have to modify a setting called PATH, which is
-a list of directories where Windows will look for programs.
-
-You should arrange for Python's installation directory to be added to the PATH
-of every command window as it starts.  If you installed Python fairly recently
-then the command ::
-
-   dir C:\py*
-
-will probably tell you where it is installed; the usual location is something
-like ``C:\Python33``.  Otherwise you will be reduced to a search of your whole
-disk ... use :menuselection:`Tools --> Find` or hit the :guilabel:`Search`
-button and look for "python.exe".  Supposing you discover that Python is
-installed in the ``C:\Python33`` directory (the default at the time of writing),
-you should make sure that entering the command ::
-
-   c:\Python33\python
-
-starts up the interpreter as above (and don't forget you'll need a ":kbd:`Ctrl-Z`" and
-an ":kbd:`Enter`" to get out of it). Once you have verified the directory, you can
-add it to the system path to make it easier to start Python by just running
-the ``python`` command. This is currently an option in the installer as of
-CPython 3.3.
-
-More information about environment variables can be found on the
-:ref:`Using Python on Windows <setting-envvars>` page.
+   C:\Users\YourName> py Desktop\hello.py
+   hello
 
 How do I make Python scripts executable?
 ----------------------------------------
@@ -332,4 +312,3 @@ This is a mistake; the extension should be .TGZ.
 Simply rename the downloaded file to have the .TGZ extension, and WinZip will be
 able to handle it.  (If your copy of WinZip doesn't, get a newer one from
 https://www.winzip.com.)
-
