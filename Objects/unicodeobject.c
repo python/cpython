@@ -2950,7 +2950,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                 if (ucnhash_CAPI == NULL)
                     goto ucnhashError;
             }
-            if (*s == '{') {
+            if (s < end && *s == '{') {
                 const char *start = s+1;
                 /* look for the closing brace */
                 while (*s != '}' && s < end)
