@@ -20,7 +20,7 @@ see the PEP for why this was added to Python. (See also :pep:`3141` and the
 The :mod:`collections` module has some concrete classes that derive from
 ABCs; these can, of course, be further derived. In addition, the
 :mod:`collections.abc` submodule has some ABCs that can be used to test whether
-a class or instance provides a particular interface, e.g.: if it is
+a class or instance provides a particular interface, for example, if it is
 hashable or if it is a mapping.
 
 
