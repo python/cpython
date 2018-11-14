@@ -2652,26 +2652,29 @@ _PyMainInterpreterConfig_Copy(_PyMainInterpreterConfig *config,
 {
     _PyMainInterpreterConfig_Clear(config);
 
-#define COPY_ATTR(ATTR) \
+#define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
+#define COPY_OBJ_ATTR(OBJ_ATTR) \
     do { \
-        if (config2->ATTR != NULL) { \
-            config->ATTR = config_copy_attr(config2->ATTR); \
-            if (config->ATTR == NULL) { \
+        if (config2->OBJ_ATTR != NULL) { \
+            config->OBJ_ATTR = config_copy_attr(config2->OBJ_ATTR); \
+            if (config->OBJ_ATTR == NULL) { \
                 return -1; \
             } \
         } \
     } while (0)
 
-    COPY_ATTR(argv);
-    COPY_ATTR(executable);
-    COPY_ATTR(prefix);
-    COPY_ATTR(base_prefix);
-    COPY_ATTR(exec_prefix);
-    COPY_ATTR(base_exec_prefix);
-    COPY_ATTR(warnoptions);
-    COPY_ATTR(xoptions);
-    COPY_ATTR(module_search_path);
+    COPY_ATTR(install_signal_handlers);
+    COPY_OBJ_ATTR(argv);
+    COPY_OBJ_ATTR(executable);
+    COPY_OBJ_ATTR(prefix);
+    COPY_OBJ_ATTR(base_prefix);
+    COPY_OBJ_ATTR(exec_prefix);
+    COPY_OBJ_ATTR(base_exec_prefix);
+    COPY_OBJ_ATTR(warnoptions);
+    COPY_OBJ_ATTR(xoptions);
+    COPY_OBJ_ATTR(module_search_path);
 #undef COPY_ATTR
+#undef COPY_OBJ_ATTR
     return 0;
 }
 
