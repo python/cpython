@@ -734,7 +734,6 @@ PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
 PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
 #define _Py_INC_REFTOTAL        _Py_RefTotal++
 #define _Py_DEC_REFTOTAL        _Py_RefTotal--
-#define _Py_REF_DEBUG_COMMA     ,
 
 /* Py_REF_DEBUG also controls the display of refcounts and memory block
  * allocations at the interactive prompt and at interpreter shutdown
@@ -743,7 +742,6 @@ PyAPI_FUNC(void) _PyDebug_PrintTotalRefs(void);
 #else
 #define _Py_INC_REFTOTAL
 #define _Py_DEC_REFTOTAL
-#define _Py_REF_DEBUG_COMMA
 #endif /* Py_REF_DEBUG */
 
 #ifdef COUNT_ALLOCS
