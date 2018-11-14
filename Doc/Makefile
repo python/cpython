@@ -191,6 +191,10 @@ autobuild-dev:
 autobuild-dev-html:
 	make html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1 -A switchers=1'
 
+# for quick rebuilds (HTML only)
+quickbuild-dev-html:
+	make html SPHINXOPTS='$(SPHINXOPTS) -A daily=1 -A switchers=1'
+
 # for stable releases: only build if not in pre-release stage (alpha, beta)
 # release candidate downloads are okay, since the stable tree can be in that stage
 autobuild-stable:
