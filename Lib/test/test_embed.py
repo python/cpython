@@ -267,7 +267,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     )
     # FIXME: untested main configuration variables
     UNTESTED_MAIN_CONFIG = (
-        'install_signal_handlers',
         'module_search_path',
     )
     DEFAULT_GLOBAL_CONFIG = {
@@ -363,6 +362,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             del main_config[key]
 
         expected_main = {
+            'install_signal_handlers': core_config['install_signal_handlers'],
             'argv': [],
             'prefix': sys.prefix,
             'executable': core_config['executable'],
