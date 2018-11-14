@@ -448,6 +448,7 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
 
     bases = PyTuple_Pack(1, &PyTuple_Type);
     if (bases == NULL) {
+        PyMem_FREE(members);
         return NULL;
     }
     type = (PyTypeObject *)PyType_FromSpecWithBases(&spec, bases);
@@ -459,6 +460,7 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
 
     if (initialize_structseq_dict(
             desc, type->tp_dict, n_members, n_unnamed_members) < 0) {
+        Py_DECREF(type);
         return NULL;
     }
 
