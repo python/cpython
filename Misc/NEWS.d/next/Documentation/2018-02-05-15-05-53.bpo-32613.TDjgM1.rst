@@ -1,0 +1,2 @@
+Update the faq/windows.html to use the py command from PEP 397 instead of
+python.
