@@ -217,7 +217,7 @@ The :mod:`abc` module also provides the following decorator:
    the descriptor must identify itself as abstract using
    :attr:`__isabstractmethod__`. In general, this attribute should be ``True``
    if any of the methods used to compose the descriptor are abstract. For
-   example, Python's built-in property does the equivalent of::
+   example, Python's built-in :class:`property` does the equivalent of::
 
       class Descriptor:
           ...
