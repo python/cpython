@@ -288,6 +288,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'Py_VerboseFlag': 0,
     }
     if os.name == 'nt':
+        DEFAULT_GLOBAL_CONFIG['Py_HasFileSystemDefaultEncoding'] = 1
         DEFAULT_GLOBAL_CONFIG['Py_LegacyWindowsFSEncodingFlag'] = 0
         DEFAULT_GLOBAL_CONFIG['Py_LegacyWindowsStdioFlag'] = 0
 
