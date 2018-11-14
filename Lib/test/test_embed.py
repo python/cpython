@@ -287,9 +287,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'Py_VerboseFlag': 0,
     }
     if os.name == 'nt':
-        DEFAULT_GLOBAL_CONFIG['Py_HasFileSystemDefaultEncoding'] = 1
         DEFAULT_GLOBAL_CONFIG['Py_LegacyWindowsFSEncodingFlag'] = 0
         DEFAULT_GLOBAL_CONFIG['Py_LegacyWindowsStdioFlag'] = 0
+    if sys.platform in ('win32', 'darwin'):
+        DEFAULT_GLOBAL_CONFIG['Py_HasFileSystemDefaultEncoding'] = 1
 
     DEFAULT_CORE_CONFIG = {
         'install_signal_handlers': 1,
