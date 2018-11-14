@@ -269,10 +269,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'module_search_paths',
         'prefix',
     )
-    # FIXME: untested main configuration variables
-    UNTESTED_MAIN_CONFIG = (
-        'module_search_path',
-    )
     DEFAULT_CORE_CONFIG = {
         'install_signal_handlers': 1,
         'use_environment': 1,
@@ -388,15 +384,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         executable = core_config['executable']
         main_config = config['main_config']
 
-        for key in self.UNTESTED_MAIN_CONFIG:
-            del main_config[key]
-
         expected_main = {
             'install_signal_handlers': core_config['install_signal_handlers'],
             'argv': [],
             'prefix': sys.prefix,
             'executable': core_config['executable'],
             'base_prefix': sys.base_prefix,
+            'module_search_path': core_config['module_search_paths'],
             'base_exec_prefix': sys.base_exec_prefix,
             'warnoptions': core_config['warnoptions'],
             'xoptions': {},

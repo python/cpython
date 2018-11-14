@@ -202,10 +202,9 @@ static int test_pre_initialization_sys_options(void)
     _Py_EMBED_PREINIT_CHECK("Initializing interpreter\n");
     _testembed_Py_Initialize();
     _Py_EMBED_PREINIT_CHECK("Check sys module contents\n");
-    PyRun_SimpleString("import sys; "
+    PyRun_SimpleString("import sys, warnings; "
                        "print('sys.warnoptions:', sys.warnoptions); "
                        "print('sys._xoptions:', sys._xoptions); "
-                       "warnings = sys.modules['warnings']; "
                        "latest_filters = [f[0] for f in warnings.filters[:3]]; "
                        "print('warnings.filters[:3]:', latest_filters)");
     _Py_EMBED_PREINIT_CHECK("Finalizing interpreter\n");
