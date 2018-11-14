@@ -286,7 +286,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'Py_QuietFlag': 0,
         'Py_UnbufferedStdioFlag': 0,
         'Py_VerboseFlag': 0,
-}
+    }
     if os.name == 'nt':
         DEFAULT_GLOBAL_CONFIG['Py_LegacyWindowsFSEncodingFlag'] = 0
         DEFAULT_GLOBAL_CONFIG['Py_LegacyWindowsStdioFlag'] = 0
@@ -320,17 +320,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         '_disable_importlib': 0,
     }
 
-    def get_stdio_encoding(self, env):
-        code = 'import sys; print(sys.stdout.encoding, sys.stdout.errors)'
-        args = (sys.executable, '-c', code)
-        proc = subprocess.run(args, env=env, text=True,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT)
-        if proc.returncode:
-            raise Exception(f"failed to get the stdio encoding: stdout={proc.stdout!r}")
-        out = proc.stdout.rstrip()
-        return out.split()
-
     def get_filesystem_encoding(self, isolated, env):
         code = ('import codecs, locale, sys; '
                 'print(sys.getfilesystemencoding(), '
@@ -351,7 +340,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def check_config(self, testname, expected, expected_global):
         expected = dict(self.DEFAULT_CORE_CONFIG, **expected)
-        isolated = False
 
         env = dict(os.environ)
         for key in list(env):
@@ -361,19 +349,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # on the current locale
         env['PYTHONCOERCECLOCALE'] = '0'
         env['PYTHONUTF8'] = '0'
-
-        #if expected['stdio_encoding'] is None or expected['stdio_errors'] is None:
-        #    res = self.get_stdio_encoding(env)
-        #    if expected['stdio_encoding'] is None:
-        #        expected['stdio_encoding'] = res[0]
-        #    if expected['stdio_errors'] is None:
-        #        expected['stdio_errors'] = res[1]
-        #if expected['filesystem_encoding'] is None or expected['filesystem_errors'] is None:
-        #    res = self.get_filesystem_encoding(expected['isolated'], env)
-        #    if expected['filesystem_encoding'] is None:
-        #        expected['filesystem_encoding'] = res[0]
-        #    if expected['filesystem_errors'] is None:
-        #        expected['filesystem_errors'] = res[1]
 
         out, err = self.run_embedded_interpreter(testname, env=env)
         # Ignore err
@@ -401,6 +376,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         expected_global = dict(self.DEFAULT_GLOBAL_CONFIG, **expected_global)
 
         if 'Py_FileSystemDefaultEncoding' not in expected_global:
+            isolated = expected_global['Py_IsolatedFlag']
             fs_encoding, fs_errors = self.get_filesystem_encoding(isolated, env)
             expected_global['Py_FileSystemDefaultEncodeErrors'] = fs_errors
             expected_global['Py_FileSystemDefaultEncoding'] = fs_encoding
