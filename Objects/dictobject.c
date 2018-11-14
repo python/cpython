@@ -317,6 +317,7 @@ dictkeys_incref(PyDictKeysObject *dk)
 static inline void
 dictkeys_decref(PyDictKeysObject *dk)
 {
+    assert(dk->dk_refcnt > 0);
     _Py_DEC_REFTOTAL;
     if (--dk->dk_refcnt == 0) {
         free_keys_object(dk);
