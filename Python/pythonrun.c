@@ -1661,15 +1661,13 @@ PyOS_CheckStack(void)
  * Return non-zero when we run out of memory on the stack; zero otherwise.
  */
 
-__thread size_t last_remains = 0; /* Size of the last stack remain space */ 
-__thread size_t stack_space = 0; /* Size of a thread stack space */
-
 int
 PyOS_CheckStack(void)
 {
     const pthread_t p_thread = pthread_self();
     const uintptr_t end = (uintptr_t)pthread_get_stackaddr_np(p_thread);
     const uintptr_t frame = (uintptr_t)__builtin_frame_address(0);
+    size_t stack_space = 0;
 
     if (stack_space == 0) {
         if (pthread_main_np() == 1) {
@@ -1693,24 +1691,11 @@ PyOS_CheckStack(void)
             stack_space = pthread_get_stacksize_np(p_thread);
         }
     }
-
     const size_t remains = stack_space - (end - frame);
-    size_t required_stack_space = PYOS_STACK_MARGIN * sizeof(void*);
-
-    // Estimate a required stack space based on last remain space.
-    if(last_remains > 0) {
-        if(last_remains > remains) {
-            required_stack_space = last_remains - remains;
-        } else if (last_remains < remains) {
-            required_stack_space = remains - last_remains;
-        }
-    }
-    last_remains = remains;
-    if (remains >= required_stack_space) {
-        return 0;
-    }
-    return 1;
+    const size_t required_stack_space = PYOS_STACK_MARGIN * sizeof(void*);
+    return remains < PTHREAD_STACK_MIN;
 }
+
 #endif /* __APPLE__ */
 
 /* Alternate implementations can be added here... */
