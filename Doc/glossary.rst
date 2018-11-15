@@ -112,8 +112,8 @@ Glossary
 
       This is an :term:`asynchronous iterator` which when called using the
       :meth:`__anext__` method returns an awaitable object which will execute
-      that the body of the asynchronous generator function until the
-      next :keyword:`yield` expression.
+      the body of the asynchronous generator function until the next
+      :keyword:`yield` expression.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
       location execution state (including local variables and pending
