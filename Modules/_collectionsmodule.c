@@ -2331,7 +2331,7 @@ done:
 /* Helper functions for namedtuples */
 
 typedef struct {
-    propertyobject po;
+    PyObject_HEAD
     Py_ssize_t index;
     PyObject* doc;
 } _tuplegetterobject;
@@ -2339,24 +2339,37 @@ typedef struct {
 static PyObject *
 tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    _tuplegetterobject* self;
+    self = (_tuplegetterobject *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+    self->index = 0;
+    Py_INCREF(Py_None);
+    self->doc = Py_None;
+    return (PyObject *)self;
+}
+
+
+static int
+tuplegetter_init(_tuplegetterobject *self, PyObject *args, PyObject *kwds)
+{
     Py_ssize_t index;
-    PyObject *doc;
-    _tuplegetterobject *self;
+    PyObject *doc, *tmp;
 
     static char *kwlist[] = {"index", "doc", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "n$O", kwlist,
                                      &index, &doc)){
-        return NULL;
-    }
-
-    self = (_tuplegetterobject *)PyProperty_Type.tp_new(type, args, kwds);
-    if (self == NULL) {
-        return NULL;
+        return -1;
     }
     self->index = index;
-    Py_INCREF(doc);
-    self->doc = doc;
-    return (PyObject *)self;
+    if (doc) {
+        tmp = self->doc;
+        Py_INCREF(doc);
+        self->doc = doc;
+        Py_DECREF(tmp);
+    }
+    return 0;
 }
 
 static PyObject *
@@ -2376,11 +2389,29 @@ tuplegetterdescr_get(PyObject *self, PyObject *obj, PyObject *type)
     return result;
 }
 
+
+static int
+tuplegetter_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    _tuplegetterobject *tuplegetter = (_tuplegetterobject *)self;
+    Py_VISIT(tuplegetter->doc);
+    return 0;
+}
+
+static int
+tuplegetter_clear(PyObject *self)
+{
+    _tuplegetterobject *tuplegetter = (_tuplegetterobject *)self;
+    Py_CLEAR(tuplegetter->doc);
+    return 0;
+}
+
 static void
 tuplegetter_dealloc(_tuplegetterobject *self)
 {
-    Py_XDECREF(self->doc);
-    PyProperty_Type.tp_dealloc((PyObject*)self);
+    PyObject_GC_UnTrack(self);
+    tuplegetter_clear((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 
@@ -2410,10 +2441,10 @@ static PyTypeObject tuplegetter_type = {
     0,                                          /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
+    (traverseproc)tuplegetter_traverse,         /* tp_traverse */
+    (inquiry)tuplegetter_clear,                 /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
@@ -2421,12 +2452,12 @@ static PyTypeObject tuplegetter_type = {
     0,                                          /* tp_methods */
     tuplegetter_members,                        /* tp_members */
     0,                                          /* tp_getset */
-    &PyProperty_Type,                           /* tp_base */
+    0,                                          /* tp_base */
     0,                                          /* tp_dict */
     tuplegetterdescr_get,                       /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
+    (initproc)tuplegetter_init,                 /* tp_init */
     0,                                          /* tp_alloc */
     tuplegetter_new,                            /* tp_new */
     0,

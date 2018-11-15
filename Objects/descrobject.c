@@ -1256,6 +1256,15 @@ class property(object):
 
 */
 
+typedef struct {
+    PyObject_HEAD
+    PyObject *prop_get;
+    PyObject *prop_set;
+    PyObject *prop_del;
+    PyObject *prop_doc;
+    int getter_doc;
+} propertyobject;
+
 static PyObject * property_copy(PyObject *, PyObject *, PyObject *,
                                   PyObject *);
 
