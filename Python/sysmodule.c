@@ -2529,6 +2529,8 @@ _PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
         Py_DECREF(dict);
     }
 
+#undef COPY_LIST
+
     /* Set flags to their final values */
     SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags());
     /* prevent user from creating new instances */
