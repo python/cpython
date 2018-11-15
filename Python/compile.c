@@ -160,7 +160,8 @@ struct compiler {
     int c_interactive;           /* true if in interactive mode */
     int c_nestlevel;
 
-    PyObject *c_const_cache;     /* all constants, including names tuple */
+    PyObject *c_const_cache;     /* Python dict holding all constants,
+                                    including names tuple */
     struct compiler_unit *u; /* compiler state for current block */
     PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
     PyArena *c_arena;            /* pointer to memory allocation arena */
@@ -1190,7 +1191,7 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 
 // Merge const *o* recursively and return constant key object.
 static PyObject*
-merge_consts(struct compiler *c, PyObject *o)
+merge_consts_recursive(struct compiler *c, PyObject *o)
 {
     // None and Ellipsis are singleton, and key is the singleton.
     // No need to merge object and key.
@@ -1216,7 +1217,7 @@ merge_consts(struct compiler *c, PyObject *o)
         Py_ssize_t i, len = PyTuple_GET_SIZE(o);
         for (i = 0; i < len; i++) {
             PyObject *item = PyTuple_GET_ITEM(o, i);
-            PyObject *u = merge_consts(c, item);
+            PyObject *u = merge_consts_recursive(c, item);
             if (u == NULL) {
                 Py_DECREF(key);
                 return NULL;
@@ -1263,7 +1264,7 @@ merge_consts(struct compiler *c, PyObject *o)
         PyObject *item;
         Py_hash_t hash;
         while (_PySet_NextEntry(o, &pos, &item, &hash)) {
-            PyObject *k = merge_consts(c, item);
+            PyObject *k = merge_consts_recursive(c, item);
             if (k == NULL) {
                 Py_DECREF(tuple);
                 Py_DECREF(key);
@@ -1296,7 +1297,7 @@ merge_consts(struct compiler *c, PyObject *o)
 static Py_ssize_t
 compiler_add_const(struct compiler *c, PyObject *o)
 {
-    PyObject *key = merge_consts(c, o);
+    PyObject *key = merge_consts_recursive(c, o);
     if (key == NULL) {
         return -1;
     }
@@ -5493,7 +5494,7 @@ compute_code_flags(struct compiler *c)
 }
 
 // Merge *tuple* with constant cache.
-// Unlike merge_consts(), this function doesn't work recursively.
+// Unlike merge_consts_recursive(), this function doesn't work recursively.
 static int
 merge_const_tuple(struct compiler *c, PyObject **tuple)
 {
