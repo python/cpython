@@ -855,17 +855,6 @@ static PyObject* ast2obj_int(long b)
 
 /* Conversion Python -> AST */
 
-static int obj2ast_singleton(PyObject *obj, PyObject** out, PyArena* arena)
-{
-    if (obj != Py_None && obj != Py_True && obj != Py_False) {
-        PyErr_SetString(PyExc_ValueError,
-                        "AST singleton must be True, False, or None");
-        return 1;
-    }
-    *out = obj;
-    return 0;
-}
-
 static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
 {
     if (obj == Py_None)
@@ -883,13 +872,11 @@ static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
 
 static int obj2ast_constant(PyObject* obj, PyObject** out, PyArena* arena)
 {
-    if (obj) {
-        if (PyArena_AddPyObject(arena, obj) < 0) {
-            *out = NULL;
-            return -1;
-        }
-        Py_INCREF(obj);
+    if (PyArena_AddPyObject(arena, obj) < 0) {
+        *out = NULL;
+        return -1;
     }
+    Py_INCREF(obj);
     *out = obj;
     return 0;
 }
@@ -898,24 +885,6 @@ static int obj2ast_identifier(PyObject* obj, PyObject** out, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && obj != Py_None) {
         PyErr_SetString(PyExc_TypeError, "AST identifier must be of type str");
-        return 1;
-    }
-    return obj2ast_object(obj, out, arena);
-}
-
-static int obj2ast_string(PyObject* obj, PyObject** out, PyArena* arena)
-{
-    if (!PyUnicode_CheckExact(obj) && !PyBytes_CheckExact(obj)) {
-        PyErr_SetString(PyExc_TypeError, "AST string must be of type str");
-        return 1;
-    }
-    return obj2ast_object(obj, out, arena);
-}
-
-static int obj2ast_bytes(PyObject* obj, PyObject** out, PyArena* arena)
-{
-    if (!PyBytes_CheckExact(obj)) {
-        PyErr_SetString(PyExc_TypeError, "AST bytes must be of type bytes");
         return 1;
     }
     return obj2ast_object(obj, out, arena);
@@ -1270,7 +1239,16 @@ def main(srcfile, dump_module=False):
     if H_FILE:
         with open(H_FILE, "w") as f:
             f.write(auto_gen_msg)
-            f.write('#include "asdl.h"\n\n')
+            f.write('#ifndef Py_PYTHON_AST_H\n')
+            f.write('#define Py_PYTHON_AST_H\n')
+            f.write('#ifdef __cplusplus\n')
+            f.write('extern "C" {\n')
+            f.write('#endif\n')
+            f.write('\n')
+            f.write('#include "asdl.h"\n')
+            f.write('\n')
+            f.write('#undef Yield /* undefine macro conflicting with winbase.h */\n')
+            f.write('\n')
             c = ChainOfVisitors(TypeDefVisitor(f),
                                 StructVisitor(f),
                                 PrototypeVisitor(f),
@@ -1279,6 +1257,11 @@ def main(srcfile, dump_module=False):
             f.write("PyObject* PyAST_mod2obj(mod_ty t);\n")
             f.write("mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);\n")
             f.write("int PyAST_Check(PyObject* obj);\n")
+            f.write('\n')
+            f.write('#ifdef __cplusplus\n')
+            f.write('}\n')
+            f.write('#endif\n')
+            f.write('#endif /* !Py_PYTHON_AST_H */\n')
 
     if C_FILE:
         with open(C_FILE, "w") as f:

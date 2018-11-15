@@ -9,16 +9,8 @@ This is Python version 3.8.0 alpha 0
    :alt: CPython build status on Appveyor
    :target: https://ci.appveyor.com/project/python/cpython/branch/master
 
-.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Linux-Buildbot?branchName=master&label=Linux
-   :alt: CPython build status on Azure DevOps (Linux)
-   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=6&branchName=master
-
-.. image:: https://dev.azure.com/python/cpython/_apis/build/status/macOS-Buildbot?branchName=master&label=macOS
-   :alt: CPython build status on Azure DevOps (macOS)
-   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=5&branchName=master
-
-.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Windows-Buildbot?branchName=master&label=Windows
-   :alt: CPython build status on Azure DevOps (Windows)
+.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=master
+   :alt: CPython build status on Azure DevOps
    :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=master
 
 .. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg
@@ -30,9 +22,7 @@ This is Python version 3.8.0 alpha 0
    :target: https://python.zulipchat.com
 
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
-reserved.
+Copyright (c) 2001-2018 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -259,9 +249,7 @@ See :pep:`569` for Python 3.8 release details.
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
-reserved.
+Copyright (c) 2001-2018 Python Software Foundation.  All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 

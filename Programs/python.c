@@ -1,6 +1,7 @@
 /* Minimal main program -- everything is loaded from the library */
 
 #include "Python.h"
+#include "pycore_pylifecycle.h"
 
 #ifdef MS_WINDOWS
 int

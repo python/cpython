@@ -260,7 +260,7 @@ class Text:
         elif op == '!=':
             return line1 != line2 or  char1 != char2
         else:
-            raise TclError('''bad comparison operator "%s":'''
+            raise TclError('''bad comparison operator "%s": '''
                                   '''must be <, <=, ==, >=, >, or !=''' % op)
 
     # The following Text methods normally do something and return None.

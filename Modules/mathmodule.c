@@ -2043,7 +2043,7 @@ Given an *n* length *vec* of values and a value *max*, compute:
     max * sqrt(sum((x / max) ** 2 for x in vec))
 
 The value of the *max* variable must be non-negative and
-at least equal to the absolute value of the largest magnitude
+equal to the absolute value of the largest magnitude
 entry in the vector.  If n==0, then *max* should be 0.0.
 If an infinity is present in the vec, *max* should be INF.
 
@@ -2101,8 +2101,8 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 /*[clinic input]
 math.dist
 
-    p: object(subclass_of='&PyTuple_Type')
-    q: object(subclass_of='&PyTuple_Type')
+    p: object
+    q: object
     /
 
 Return the Euclidean distance between two points p and q.
@@ -2116,7 +2116,7 @@ Roughly equivalent to:
 
 static PyObject *
 math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
-/*[clinic end generated code: output=56bd9538d06bbcfe input=937122eaa5f19272]*/
+/*[clinic end generated code: output=56bd9538d06bbcfe input=8c83c07c7a524664]*/
 {
     PyObject *item;
     double max = 0.0;
@@ -2125,6 +2125,11 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     int found_nan = 0;
     double diffs_on_stack[NUM_STACK_ELEMS];
     double *diffs = diffs_on_stack;
+
+    if (!PyTuple_Check(p) || !PyTuple_Check(q)) {
+        PyErr_SetString(PyExc_TypeError, "dist argument must be a tuple");
+        return NULL;
+    }
 
     m = PyTuple_GET_SIZE(p);
     n = PyTuple_GET_SIZE(q);

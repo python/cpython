@@ -156,7 +156,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    See :pep:`529` for more details.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
 .. c:var:: Py_LegacyWindowsStdioFlag
 
@@ -168,7 +168,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    See :pep:`528` for more details.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
 .. c:var:: Py_NoSiteFlag
 
@@ -842,18 +842,18 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
 
-   Release the global interpreter lock (if it has been created and thread
-   support is enabled) and reset the thread state to *NULL*, returning the
-   previous thread state (which is not *NULL*).  If the lock has been created,
-   the current thread must have acquired it.
+   Release the global interpreter lock (if it has been created) and reset the
+   thread state to *NULL*, returning the previous thread state (which is not
+   *NULL*).  If the lock has been created, the current thread must have
+   acquired it.
 
 
 .. c:function:: void PyEval_RestoreThread(PyThreadState *tstate)
 
-   Acquire the global interpreter lock (if it has been created and thread
-   support is enabled) and set the thread state to *tstate*, which must not be
-   *NULL*.  If the lock has been created, the current thread must not have
-   acquired it, otherwise deadlock ensues.
+   Acquire the global interpreter lock (if it has been created) and set the
+   thread state to *tstate*, which must not be *NULL*.  If the lock has been
+   created, the current thread must not have acquired it, otherwise deadlock
+   ensues.
 
 
 .. c:function:: PyThreadState* PyThreadState_Get()

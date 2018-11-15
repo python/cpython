@@ -1607,7 +1607,7 @@ class TestBreakpoint(unittest.TestCase):
     @unittest.skipIf(sys.flags.ignore_environment, '-E was given')
     def test_envar_unimportable(self):
         for envar in (
-                '.', '..', '.foo', 'foo.', '.int', 'int.'
+                '.', '..', '.foo', 'foo.', '.int', 'int.',
                 'nosuchbuiltin',
                 'nosuchmodule.nosuchcallable',
                 ):
@@ -1967,6 +1967,15 @@ class TestType(unittest.TestCase):
             type('A', (B,), {'__slots__': '__dict__'})
         with self.assertRaises(TypeError):
             type('A', (B,), {'__slots__': '__weakref__'})
+
+    def test_namespace_order(self):
+        # bpo-34320: namespace should preserve order
+        od = collections.OrderedDict([('a', 1), ('b', 2)])
+        od.move_to_end('a')
+        expected = list(od.items())
+
+        C = type('C', (), od)
+        self.assertEqual(list(C.__dict__.items())[:2], [('b', 2), ('a', 1)])
 
 
 def load_tests(loader, tests, pattern):

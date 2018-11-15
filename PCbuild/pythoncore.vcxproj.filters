@@ -36,9 +36,6 @@
     <ClInclude Include="..\Include\abstract.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\accu.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\asdl.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -135,28 +132,46 @@
     <ClInclude Include="..\Include\import.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\ceval.h">
+    <ClInclude Include="..\Include\internal\pycore_accu.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\condvar.h">
+    <ClInclude Include="..\Include\internal\pycore_atomic.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\context.h">
+    <ClInclude Include="..\Include\internal\pycore_ceval.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\gil.h">
+    <ClInclude Include="..\Include\internal\pycore_condvar.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\hamt.h">
+    <ClInclude Include="..\Include\internal\pycore_context.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\mem.h">
+    <ClInclude Include="..\Include\internal\pycore_getopt.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pystate.h">
+    <ClInclude Include="..\Include\internal\pycore_gil.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\warnings.h">
+    <ClInclude Include="..\Include\internal\pycore_hamt.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_pathconfig.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_pyhash.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_pylifecycle.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_pymem.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_pystate.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_warnings.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\intrcheck.h">
@@ -246,9 +261,6 @@
     <ClInclude Include="..\Include\pyfpe.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pygetopt.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\pylifecycle.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -319,6 +331,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\traceback.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\tracemalloc.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\tupleobject.h">

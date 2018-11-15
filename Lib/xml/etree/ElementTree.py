@@ -217,11 +217,11 @@ class Element:
         return self._children[index]
 
     def __setitem__(self, index, element):
-        # if isinstance(index, slice):
-        #     for elt in element:
-        #         assert iselement(elt)
-        # else:
-        #     assert iselement(element)
+        if isinstance(index, slice):
+            for elt in element:
+                self._assert_is_element(elt)
+        else:
+            self._assert_is_element(element)
         self._children[index] = element
 
     def __delitem__(self, index):
@@ -923,7 +923,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
                             k,
                             _escape_attrib(v)
                             ))
-                for k, v in sorted(items):  # lexical order
+                for k, v in items:
                     if isinstance(k, QName):
                         k = k.text
                     if isinstance(v, QName):
@@ -979,7 +979,7 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
                             k,
                             _escape_attrib(v)
                             ))
-                for k, v in sorted(items):  # lexical order
+                for k, v in items:
                     if isinstance(k, QName):
                         k = k.text
                     if isinstance(v, QName):

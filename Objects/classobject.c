@@ -1,8 +1,8 @@
 /* Class object implementation (dead now except for methods) */
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 
 #define TP_DESCR_GET(t) ((t)->tp_descr_get)
@@ -55,7 +55,7 @@ PyMethod_New(PyObject *func, PyObject *self)
     im = free_list;
     if (im != NULL) {
         free_list = (PyMethodObject *)(im->im_self);
-        (void)PyObject_INIT(im, &PyMethod_Type);
+        (void)PyObject_INIT((PyObject *)im, &PyMethod_Type);
         numfree--;
     }
     else {

@@ -1,16 +1,9 @@
 /* Built-in functions */
 
 #include "Python.h"
-#include "Python-ast.h"
-#include "internal/pystate.h"
-
-#include "node.h"
-#include "code.h"
-
-#include "asdl.h"
-#include "ast.h"
-
 #include <ctype.h>
+#include "ast.h"
+#include "pycore_pystate.h"
 
 _Py_IDENTIFIER(__builtins__);
 _Py_IDENTIFIER(__dict__);
