@@ -3,7 +3,6 @@ from test import support
 import builtins
 import contextlib
 import copy
-from functools import partial
 import io
 import os
 import pickle
