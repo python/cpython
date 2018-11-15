@@ -4704,7 +4704,7 @@ static PyObject *
 get_core_config(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    const _PyCoreConfig *config = &interp->core_config;
+    const _PyCoreConfig *config = &interp->config.core_config;
     return _PyCoreConfig_AsDict(config);
 }
 

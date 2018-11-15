@@ -3466,7 +3466,7 @@ PyObject *
 PyUnicode_EncodeFSDefault(PyObject *unicode)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    const _PyCoreConfig *config = &interp->core_config;
+    const _PyCoreConfig *config = &interp->config.core_config;
 #if defined(__APPLE__)
     return _PyUnicode_AsUTF8String(unicode, config->filesystem_errors);
 #else
@@ -3690,7 +3690,7 @@ PyObject*
 PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    const _PyCoreConfig *config = &interp->core_config;
+    const _PyCoreConfig *config = &interp->config.core_config;
 #if defined(__APPLE__)
     return PyUnicode_DecodeUTF8Stateful(s, size, config->filesystem_errors, NULL);
 #else

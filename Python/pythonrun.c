@@ -91,7 +91,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
     PyCompilerFlags local_flags;
     int nomem_count = 0;
 #ifdef Py_REF_DEBUG
-    int show_ref_count = _PyInterpreterState_Get()->core_config.show_ref_count;
+    int show_ref_count = _PyInterpreterState_Get()->config.core_config.show_ref_count;
 #endif
 
     filename = PyUnicode_DecodeFSDefault(filename_str);

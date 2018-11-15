@@ -1622,7 +1622,7 @@ import_find_and_load(PyObject *abs_name)
     _Py_IDENTIFIER(_find_and_load);
     PyObject *mod = NULL;
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    int import_time = interp->core_config.import_time;
+    int import_time = interp->config.core_config.import_time;
     static int import_level;
     static _PyTime_t accumulated;
 
@@ -2279,7 +2279,7 @@ PyInit__imp(void)
     d = PyModule_GetDict(m);
     if (d == NULL)
         goto failure;
-    _PyCoreConfig *config = &_PyInterpreterState_Get()->core_config;
+    _PyCoreConfig *config = &_PyInterpreterState_Get()->config.core_config;
     PyObject *pyc_mode = PyUnicode_FromString(config->_check_hash_pycs_mode);
     if (pyc_mode == NULL) {
         goto failure;

@@ -561,7 +561,8 @@ calculate_reduce_exec_prefix(PyCalculatePath *calculate, wchar_t *exec_prefix)
 
 
 static _PyInitError
-calculate_program_full_path(const _PyCoreConfig *core_config,
+calculate_program_full_path(const _PyPreConfig *pre_config,
+                            const _PyCoreConfig *core_config,
                             PyCalculatePath *calculate, _PyPathConfig *config)
 {
     wchar_t program_full_path[MAXPATHLEN+1];
@@ -581,8 +582,8 @@ calculate_program_full_path(const _PyCoreConfig *core_config,
      * other way to find a directory to start the search from.  If
      * $PATH isn't exported, you lose.
      */
-    if (wcschr(core_config->program_name, SEP)) {
-        wcsncpy(program_full_path, core_config->program_name, MAXPATHLEN);
+    if (wcschr(pre_config->program_name, SEP)) {
+        wcsncpy(program_full_path, pre_config->program_name, MAXPATHLEN);
     }
 #ifdef __APPLE__
      /* On Mac OS X, if a script uses an interpreter of the form
@@ -624,7 +625,7 @@ calculate_program_full_path(const _PyCoreConfig *core_config,
                 wcsncpy(program_full_path, path, MAXPATHLEN);
             }
 
-            joinpath(program_full_path, core_config->program_name);
+            joinpath(program_full_path, pre_config->program_name);
             if (isxfile(program_full_path)) {
                 break;
             }
@@ -934,12 +935,13 @@ calculate_free(PyCalculatePath *calculate)
 
 
 static _PyInitError
-calculate_path_impl(const _PyCoreConfig *core_config,
+calculate_path_impl(const _PyPreConfig *pre_config,
+                    const _PyCoreConfig *core_config,
                     PyCalculatePath *calculate, _PyPathConfig *config)
 {
     _PyInitError err;
 
-    err = calculate_program_full_path(core_config, calculate, config);
+    err = calculate_program_full_path(pre_config, core_config, calculate, config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -993,7 +995,9 @@ calculate_path_impl(const _PyCoreConfig *core_config,
 
 
 _PyInitError
-_PyPathConfig_Calculate_impl(_PyPathConfig *config, const _PyCoreConfig *core_config)
+_PyPathConfig_Calculate_impl(_PyPathConfig *path_config,
+                             const _PyPreConfig *pre_config,
+                             const _PyCoreConfig *core_config)
 {
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));
@@ -1003,7 +1007,8 @@ _PyPathConfig_Calculate_impl(_PyPathConfig *config, const _PyCoreConfig *core_co
         goto done;
     }
 
-    err = calculate_path_impl(core_config, &calculate, config);
+    err = calculate_path_impl(pre_config, core_config,
+                              &calculate, path_config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }

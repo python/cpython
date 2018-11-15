@@ -41,8 +41,8 @@ Py_FrozenMain(int argc, char **argv)
         }
     }
 
-    _PyCoreConfig config = _PyCoreConfig_INIT;
-    config._frozen = 1;   /* Suppress errors from getpath.c */
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
+    preconfig.core_config._frozen = 1;   /* Suppress errors from getpath.c */
 
     if ((p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
         inspect = 1;
@@ -82,7 +82,7 @@ Py_FrozenMain(int argc, char **argv)
     if (argc >= 1)
         Py_SetProgramName(argv_copy[0]);
 
-    err = _Py_InitializeFromConfig(&config);
+    err = _Py_InitializeFromConfig(&preconfig, NULL);
     /* No need to call _PyCoreConfig_Clear() since we didn't allocate any
        memory: program_name is a constant string. */
     if (_Py_INIT_FAILED(err)) {

@@ -297,11 +297,8 @@ _PyCoreConfig_Clear(_PyCoreConfig *config)
         LIST = NULL; \
     } while (0)
 
-    CLEAR(config->pycache_prefix);
     CLEAR(config->module_search_path_env);
     CLEAR(config->home);
-    CLEAR(config->program_name);
-    CLEAR(config->program);
 
     CLEAR_WSTRLIST(config->argc, config->argv);
     config->argc = -1;
@@ -383,11 +380,8 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(coerce_c_locale_warn);
     COPY_ATTR(utf8_mode);
 
-    COPY_WSTR_ATTR(pycache_prefix);
     COPY_WSTR_ATTR(module_search_path_env);
     COPY_WSTR_ATTR(home);
-    COPY_WSTR_ATTR(program_name);
-    COPY_WSTR_ATTR(program);
 
     COPY_WSTRLIST(argc, argv);
     COPY_WSTRLIST(nwarnoption, warnoptions);
@@ -585,15 +579,15 @@ _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
 /* Get the program name: use PYTHONEXECUTABLE and __PYVENV_LAUNCHER__
    environment variables on macOS if available. */
 static _PyInitError
-config_init_program_name(_PyCoreConfig *config)
+config_init_program_name(_PyPreConfig *preconfig, _PyCoreConfig *config)
 {
-    assert(config->program_name == NULL);
+    assert(preconfig->program_name == NULL);
 
     /* If Py_SetProgramName() was called, use its value */
     const wchar_t *program_name = _Py_path_config.program_name;
     if (program_name != NULL) {
-        config->program_name = _PyMem_RawWcsdup(program_name);
-        if (config->program_name == NULL) {
+        preconfig->program_name = _PyMem_RawWcsdup(program_name);
+        if (preconfig->program_name == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
         return _Py_INIT_OK();
@@ -617,7 +611,7 @@ config_init_program_name(_PyCoreConfig *config)
             return DECODE_LOCALE_ERR("PYTHONEXECUTABLE environment "
                                      "variable", (Py_ssize_t)len);
         }
-        config->program_name = program_name;
+        preconfig->program_name = program_name;
         return _Py_INIT_OK();
     }
 #ifdef WITH_NEXT_FRAMEWORK
@@ -633,7 +627,7 @@ config_init_program_name(_PyCoreConfig *config)
                 return DECODE_LOCALE_ERR("__PYVENV_LAUNCHER__ environment "
                                          "variable", (Py_ssize_t)len);
             }
-            config->program_name = program_name;
+            preconfig->program_name = program_name;
             return _Py_INIT_OK();
         }
     }
@@ -641,9 +635,9 @@ config_init_program_name(_PyCoreConfig *config)
 #endif   /* __APPLE__ */
 
     /* Use argv[0] by default, if available */
-    if (config->program != NULL) {
-        config->program_name = _PyMem_RawWcsdup(config->program);
-        if (config->program_name == NULL) {
+    if (preconfig->program != NULL) {
+        preconfig->program_name = _PyMem_RawWcsdup(preconfig->program);
+        if (preconfig->program_name == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
         return _Py_INIT_OK();
@@ -655,8 +649,8 @@ config_init_program_name(_PyCoreConfig *config)
 #else
     const wchar_t *default_program_name = L"python3";
 #endif
-    config->program_name = _PyMem_RawWcsdup(default_program_name);
-    if (config->program_name == NULL) {
+    preconfig->program_name = _PyMem_RawWcsdup(default_program_name);
+    if (preconfig->program_name == NULL) {
         return _Py_INIT_NO_MEMORY();
     }
     return _Py_INIT_OK();
@@ -968,22 +962,22 @@ config_init_tracemalloc(_PyCoreConfig *config)
 
 
 static _PyInitError
-config_init_pycache_prefix(_PyCoreConfig *config)
+config_init_pycache_prefix(_PyPreConfig *preconfig, _PyCoreConfig *config)
 {
-    assert(config->pycache_prefix == NULL);
+    assert(preconfig->pycache_prefix == NULL);
 
     const wchar_t *xoption = config_get_xoption(config, L"pycache_prefix");
     if (xoption) {
         const wchar_t *sep = wcschr(xoption, L'=');
         if (sep && wcslen(sep) > 1) {
-            config->pycache_prefix = _PyMem_RawWcsdup(sep + 1);
-            if (config->pycache_prefix == NULL) {
+            preconfig->pycache_prefix = _PyMem_RawWcsdup(sep + 1);
+            if (preconfig->pycache_prefix == NULL) {
                 return _Py_INIT_NO_MEMORY();
             }
         }
         else {
             // -X pycache_prefix= can cancel the env var
-            config->pycache_prefix = NULL;
+            preconfig->pycache_prefix = NULL;
         }
     }
     else {
@@ -996,7 +990,7 @@ config_init_pycache_prefix(_PyCoreConfig *config)
         }
 
         if (env) {
-            config->pycache_prefix = env;
+            preconfig->pycache_prefix = env;
         }
     }
     return _Py_INIT_OK();
@@ -1004,7 +998,7 @@ config_init_pycache_prefix(_PyCoreConfig *config)
 
 
 static _PyInitError
-config_read_complex_options(_PyCoreConfig *config)
+config_read_complex_options(_PyPreConfig *preconfig, _PyCoreConfig *config)
 {
     /* More complex options configured by env var and -X option */
     if (config->faulthandler < 0) {
@@ -1031,8 +1025,8 @@ config_read_complex_options(_PyCoreConfig *config)
         }
     }
 
-    if (config->pycache_prefix == NULL) {
-        err = config_init_pycache_prefix(config);
+    if (preconfig->pycache_prefix == NULL) {
+        err = config_init_pycache_prefix(preconfig, config);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -1311,8 +1305,9 @@ config_init_fs_encoding(_PyCoreConfig *config)
  */
 
 _PyInitError
-_PyCoreConfig_Read(_PyCoreConfig *config)
+_PyPreConfig_Read(_PyPreConfig *preconfig)
 {
+    _PyCoreConfig *config = &preconfig->core_config;
     _PyInitError err;
 
     _PyCoreConfig_GetGlobalConfig(config);
@@ -1344,7 +1339,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         config->show_alloc_count = 1;
     }
 
-    err = config_read_complex_options(config);
+    err = config_read_complex_options(preconfig, config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -1363,8 +1358,8 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         }
     }
 
-    if (config->program_name == NULL) {
-        err = config_init_program_name(config);
+    if (preconfig->program_name == NULL) {
+        err = config_init_program_name(preconfig, config);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -1375,7 +1370,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     }
 
     if (config->_install_importlib) {
-        err = _PyCoreConfig_InitPathConfig(config);
+        err = _PyCoreConfig_InitPathConfig(preconfig);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -1493,10 +1488,7 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
     SET_ITEM_STR(filesystem_encoding);
     SET_ITEM_STR(filesystem_errors);
     SET_ITEM_INT(utf8_mode);
-    SET_ITEM_WSTR(pycache_prefix);
-    SET_ITEM_WSTR(program_name);
     SET_ITEM_WSTRLIST(argc, argv);
-    SET_ITEM_WSTR(program);
     SET_ITEM_WSTRLIST(nxoption, xoptions);
     SET_ITEM_WSTRLIST(nwarnoption, warnoptions);
     SET_ITEM_WSTR(module_search_path_env);
@@ -1547,3 +1539,52 @@ fail:
 #undef SET_ITEM_WSTR
 #undef SET_ITEM_WSTRLIST
 }
+
+
+void
+_PyPreConfig_Clear(_PyPreConfig *config)
+{
+    _PyCoreConfig_Clear(&config->core_config);
+
+#define CLEAR(ATTR) \
+    do { \
+        PyMem_RawFree(ATTR); \
+        ATTR = NULL; \
+    } while (0)
+
+    CLEAR(config->pycache_prefix);
+    CLEAR(config->program);
+    CLEAR(config->program_name);
+
+#undef CLEAR
+}
+
+
+int
+_PyPreConfig_Copy(_PyPreConfig *config, const _PyPreConfig *config2)
+{
+    _PyPreConfig_Clear(config);
+
+    if (_PyCoreConfig_Copy(&config->core_config, &config2->core_config) < 0) {
+        return -1;
+    }
+
+#define COPY_WSTR_ATTR(ATTR) \
+    do { \
+        if (config2->ATTR != NULL) { \
+            config->ATTR = _PyMem_RawWcsdup(config2->ATTR); \
+            if (config->ATTR == NULL) { \
+                return -1; \
+            } \
+        } \
+    } while (0)
+
+    COPY_WSTR_ATTR(pycache_prefix);
+    COPY_WSTR_ATTR(program);
+    COPY_WSTR_ATTR(program_name);
+    return 0;
+
+#undef COPY_WSTR_ATTR
+}
+
+

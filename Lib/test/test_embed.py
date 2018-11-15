@@ -288,10 +288,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'coerce_c_locale': 0,
         'coerce_c_locale_warn': 0,
 
-        'pycache_prefix': None,
-        'program_name': './_testembed',
         'argv': [],
-        'program': None,
 
         'xoptions': [],
         'warnoptions': [],
@@ -331,6 +328,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         })
 
     # main config
+    DEFAULT_MAIN_CONFIG = {
+        'program_name': './_testembed',
+        'program': None,
+        'pycache_prefix': None,
+    }
     COPY_MAIN_CONFIG = (
         # Copy core config to main config for expected values
         'argv',
@@ -338,9 +340,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'base_prefix',
         'exec_prefix',
         'executable',
-        'install_signal_handlers',
         'prefix',
-        'pycache_prefix',
         'warnoptions',
         # xoptions is created from core_config in check_main_config().
         # 'module_search_paths' is copied to 'module_search_path'.
@@ -418,17 +418,20 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 xoptions[opt] = True
         return xoptions
 
-    def check_main_config(self, config):
+    def check_main_config(self, config, expected=None):
         core_config = config['core_config']
         main_config = config['main_config']
 
         # main config
-        expected_main = {}
+        if expected is not None:
+            expected = dict(self.DEFAULT_MAIN_CONFIG, **expected)
+        else:
+            expected = dict(self.DEFAULT_MAIN_CONFIG)
         for key in self.COPY_MAIN_CONFIG:
-            expected_main[key] = core_config[key]
-        expected_main['module_search_path'] = core_config['module_search_paths']
-        expected_main['xoptions'] = self.main_xoptions(core_config['xoptions'])
-        self.assertEqual(main_config, expected_main)
+            expected[key] = core_config[key]
+        expected['module_search_path'] = core_config['module_search_paths']
+        expected['xoptions'] = self.main_xoptions(core_config['xoptions'])
+        self.assertEqual(main_config, expected)
 
     def check_core_config(self, config, expected, env):
         if expected['stdio_encoding'] is None or expected['stdio_errors'] is None:
@@ -463,8 +466,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         self.assertEqual(config['global_config'], expected_global)
 
-    def check_config(self, testname, expected):
-        expected = dict(self.DEFAULT_CORE_CONFIG, **expected)
+    def check_config(self, testname, expected_core, expected_main=None):
+        expected_core = dict(self.DEFAULT_CORE_CONFIG, **expected_core)
 
         env = dict(os.environ)
         # Remove PYTHON* environment variables to get deterministic environment
@@ -480,16 +483,15 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # Ignore err
         config = json.loads(out)
 
-        self.check_core_config(config, expected, env)
-        self.check_main_config(config)
+        self.check_core_config(config, expected_core, env)
+        self.check_main_config(config, expected_main)
         self.check_global_config(config)
 
     def test_init_default_config(self):
         self.check_config("init_default_config", {})
 
     def test_init_global_config(self):
-        config = {
-            'program_name': './globalvar',
+        core_config = {
             'site_import': 0,
             'bytes_warning': 1,
             'inspect': 1,
@@ -508,7 +510,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'user_site_directory': 0,
             '_frozen': 1,
         }
-        self.check_config("init_global_config", config)
+        main_config = {
+            'program_name': './globalvar',
+        }
+        self.check_config("init_global_config", core_config, main_config)
 
     def test_init_from_config(self):
         config = {
@@ -528,10 +533,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'filesystem_encoding': 'utf-8',
             'filesystem_errors': self.UTF8_MODE_ERRORS,
 
-            'pycache_prefix': 'conf_pycache_prefix',
-            'program_name': './conf_program_name',
             'argv': ['-c', 'pass'],
-            'program': 'conf_program',
             'xoptions': ['core_xoption1=3', 'core_xoption2=', 'core_xoption3'],
             'warnoptions': ['default', 'error::ResourceWarning'],
 
@@ -550,10 +552,15 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             '_check_hash_pycs_mode': 'always',
             '_frozen': 1,
         }
-        self.check_config("init_from_config", config)
+        main_config = {
+            'program_name': './conf_program_name',
+            'program': 'conf_program',
+            'pycache_prefix': 'conf_pycache_prefix',
+        }
+        self.check_config("init_from_config", config, main_config)
 
     def test_init_env(self):
-        config = {
+        core_config = {
             'use_hash_seed': 1,
             'hash_seed': 42,
             'allocator': 'malloc_debug',
@@ -565,7 +572,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'filesystem_errors': self.UTF8_MODE_ERRORS,
             'inspect': 1,
             'optimization_level': 2,
-            'pycache_prefix': 'env_pycache_prefix',
             'write_bytecode': 0,
             'verbose': 1,
             'buffered_stdio': 0,
@@ -575,7 +581,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'faulthandler': 1,
             'dev_mode': 1,
         }
-        self.check_config("init_env", config)
+        main_config = {
+            'pycache_prefix': 'env_pycache_prefix',
+        }
+        self.check_config("init_env", core_config, main_config)
 
     def test_init_dev_mode(self):
         config = {

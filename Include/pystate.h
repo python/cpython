@@ -25,28 +25,6 @@ typedef struct _is PyInterpreterState;
 #else
 typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
-/* Placeholders while working on the new configuration API
- *
- * See PEP 432 for final anticipated contents
- */
-typedef struct {
-    int install_signal_handlers;   /* Install signal handlers? -1 means unset */
-    PyObject *argv;                /* sys.argv list, can be NULL */
-    PyObject *executable;          /* sys.executable str */
-    PyObject *prefix;              /* sys.prefix str */
-    PyObject *base_prefix;         /* sys.base_prefix str, can be NULL */
-    PyObject *exec_prefix;         /* sys.exec_prefix str */
-    PyObject *base_exec_prefix;    /* sys.base_exec_prefix str, can be NULL */
-    PyObject *warnoptions;         /* sys.warnoptions list, can be NULL */
-    PyObject *xoptions;            /* sys._xoptions dict, can be NULL */
-    PyObject *module_search_path;  /* sys.path list */
-    PyObject *pycache_prefix;      /* sys.pycache_prefix str, can be NULL */
-} _PyMainInterpreterConfig;
-
-#define _PyMainInterpreterConfig_INIT \
-    (_PyMainInterpreterConfig){.install_signal_handlers = -1}
-/* Note: _PyMainInterpreterConfig_INIT sets other fields to 0/NULL */
-
 typedef struct _is {
 
     struct _is *next;
@@ -79,7 +57,6 @@ typedef struct _is {
     int codecs_initialized;
     int fscodec_initialized;
 
-    _PyCoreConfig core_config;
     _PyMainInterpreterConfig config;
 #ifdef HAVE_DLOPEN
     int dlopenflags;

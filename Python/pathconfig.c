@@ -66,6 +66,7 @@ _PyPathConfig_Clear(_PyPathConfig *config)
 /* Calculate the path configuration: initialize path_config from core_config */
 static _PyInitError
 _PyPathConfig_Calculate(_PyPathConfig *path_config,
+                        const _PyPreConfig *pre_config,
                         const _PyCoreConfig *core_config)
 {
     _PyInitError err;
@@ -76,7 +77,7 @@ _PyPathConfig_Calculate(_PyPathConfig *path_config,
 
     /* Calculate program_full_path, prefix, exec_prefix (Unix)
        or dll_path (Windows), and module_search_path */
-    err = _PyPathConfig_Calculate_impl(&new_config, core_config);
+    err = _PyPathConfig_Calculate_impl(&new_config, pre_config, core_config);
     if (_Py_INIT_FAILED(err)) {
         goto err;
     }
@@ -86,7 +87,7 @@ _PyPathConfig_Calculate(_PyPathConfig *path_config,
         err = _Py_INIT_NO_MEMORY();
         goto err;
     }
-    if (copy_wstr(&new_config.program_name, core_config->program_name) < 0) {
+    if (copy_wstr(&new_config.program_name, pre_config->program_name) < 0) {
         err = _Py_INIT_NO_MEMORY();
         goto err;
     }
@@ -187,8 +188,10 @@ wstrlist_join(wchar_t sep, int count, wchar_t **list)
 
 /* Set the global path configuration from core_config. */
 _PyInitError
-_PyCoreConfig_SetPathConfig(const _PyCoreConfig *core_config)
+_PyPreConfig_SetPathConfig(const _PyPreConfig *pre_config)
 {
+    const _PyCoreConfig *core_config = &pre_config->core_config;
+
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
@@ -217,7 +220,7 @@ _PyCoreConfig_SetPathConfig(const _PyCoreConfig *core_config)
         goto no_memory;
     }
 #endif
-    if (copy_wstr(&path_config.program_name, core_config->program_name) < 0) {
+    if (copy_wstr(&path_config.program_name, pre_config->program_name) < 0) {
         goto no_memory;
     }
     if (copy_wstr(&path_config.home, core_config->home) < 0) {
@@ -286,12 +289,13 @@ core_config_init_module_search_paths(_PyCoreConfig *config,
 
 
 static _PyInitError
-_PyCoreConfig_CalculatePathConfig(_PyCoreConfig *config)
+_PyCoreConfig_CalculatePathConfig(_PyPreConfig *preconfig,
+                                  _PyCoreConfig *config)
 {
     _PyPathConfig path_config = _PyPathConfig_INIT;
     _PyInitError err;
 
-    err = _PyPathConfig_Calculate(&path_config, config);
+    err = _PyPathConfig_Calculate(&path_config, preconfig, config);
     if (_Py_INIT_FAILED(err)) {
         goto error;
     }
@@ -355,8 +359,10 @@ error:
 
 
 _PyInitError
-_PyCoreConfig_InitPathConfig(_PyCoreConfig *config)
+_PyCoreConfig_InitPathConfig(_PyPreConfig *preconfig)
 {
+    _PyCoreConfig *config = &preconfig->core_config;
+
     /* Do we need to calculate the path? */
     if ((config->nmodule_search_path < 0)
         || (config->executable == NULL)
@@ -366,7 +372,7 @@ _PyCoreConfig_InitPathConfig(_PyCoreConfig *config)
 #endif
         || (config->exec_prefix == NULL))
     {
-        _PyInitError err = _PyCoreConfig_CalculatePathConfig(config);
+        _PyInitError err = _PyCoreConfig_CalculatePathConfig(preconfig, config);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -396,23 +402,23 @@ pathconfig_global_init(void)
     }
 
     _PyInitError err;
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
 
-    err = _PyCoreConfig_Read(&config);
+    err = _PyPreConfig_Read(&preconfig);
     if (_Py_INIT_FAILED(err)) {
         goto error;
     }
 
-    err = _PyCoreConfig_SetPathConfig(&config);
+    err = _PyPreConfig_SetPathConfig(&preconfig);
     if (_Py_INIT_FAILED(err)) {
         goto error;
     }
 
-    _PyCoreConfig_Clear(&config);
+    _PyPreConfig_Clear(&preconfig);
     return;
 
 error:
-    _PyCoreConfig_Clear(&config);
+    _PyPreConfig_Clear(&preconfig);
     _Py_FatalInitError(err);
 }
 

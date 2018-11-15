@@ -148,7 +148,6 @@ PyInterpreterState_New(void)
     interp->codec_error_registry = NULL;
     interp->codecs_initialized = 0;
     interp->fscodec_initialized = 0;
-    interp->core_config = _PyCoreConfig_INIT;
     interp->config = _PyMainInterpreterConfig_INIT;
     interp->importlib = NULL;
     interp->import_func = NULL;
@@ -205,7 +204,6 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     for (p = interp->tstate_head; p != NULL; p = p->next)
         PyThreadState_Clear(p);
     HEAD_UNLOCK();
-    _PyCoreConfig_Clear(&interp->core_config);
     _PyMainInterpreterConfig_Clear(&interp->config);
     Py_CLEAR(interp->codec_search_path);
     Py_CLEAR(interp->codec_search_cache);
@@ -623,7 +621,7 @@ _PyState_ClearModules(void)
 void
 PyThreadState_Clear(PyThreadState *tstate)
 {
-    int verbose = tstate->interp->core_config.verbose;
+    int verbose = tstate->interp->config.core_config.verbose;
 
     if (verbose && tstate->frame != NULL)
         fprintf(stderr,

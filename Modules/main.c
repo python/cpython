@@ -358,7 +358,7 @@ pymain_wstrdup(_PyMain *pymain, const wchar_t *str)
 
 
 static int
-pymain_init_cmdline_argv(_PyMain *pymain, _PyCoreConfig *config,
+pymain_init_cmdline_argv(_PyMain *pymain, _PyPreConfig *preconfig,
                          _PyCmdline *cmdline)
 {
     assert(cmdline->argv == NULL);
@@ -398,8 +398,8 @@ pymain_init_cmdline_argv(_PyMain *pymain, _PyCoreConfig *config,
     else {
         program = L"";
     }
-    config->program = pymain_wstrdup(pymain, program);
-    if (config->program == NULL) {
+    preconfig->program = pymain_wstrdup(pymain, program);
+    if (preconfig->program == NULL) {
         return -1;
     }
 
@@ -443,19 +443,6 @@ pymain_clear_pymain(_PyMain *pymain)
     CLEAR(pymain->command);
     CLEAR(pymain->module);
 #undef CLEAR
-}
-
-static void
-pymain_clear_config(_PyCoreConfig *config)
-{
-    /* Clear core config with the memory allocator
-       used by pymain_read_conf() */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    _PyCoreConfig_Clear(config);
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 
@@ -567,9 +554,11 @@ pymain_wstrlist_append(_PyMain *pymain, int *len, wchar_t ***list, const wchar_t
    Return 1 if parsing failed.
    Set pymain->err and return -1 on other errors. */
 static int
-pymain_parse_cmdline_impl(_PyMain *pymain, _PyCoreConfig *config,
+pymain_parse_cmdline_impl(_PyMain *pymain, _PyPreConfig *preconfig,
                           _PyCmdline *cmdline)
 {
+    _PyCoreConfig *config = &preconfig->core_config;
+
     _PyOS_ResetGetOpt();
     do {
         int longindex = -1;
@@ -972,7 +961,7 @@ pymain_header(_PyMain *pymain, const _PyCoreConfig *config)
 
 
 static int
-pymain_init_core_argv(_PyMain *pymain, _PyCoreConfig *config, _PyCmdline *cmdline)
+pymain_init_core_argv(_PyMain *pymain, _PyPreConfig *preconfig, _PyCmdline *cmdline)
 {
     /* Copy argv to be able to modify it (to force -c/-m) */
     int argc = pymain->argc - _PyOS_optind;
@@ -1015,8 +1004,8 @@ pymain_init_core_argv(_PyMain *pymain, _PyCoreConfig *config, _PyCmdline *cmdlin
         argv[0] = arg0;
     }
 
-    config->argc = argc;
-    config->argv = argv;
+    preconfig->core_config.argc = argc;
+    preconfig->core_config.argv = argv;
     return 0;
 }
 
@@ -1093,22 +1082,38 @@ pymain_run_startup(_PyMain *pymain, _PyCoreConfig *config, PyCompilerFlags *cf)
 
 
 static void
-pymain_run_file(_PyMain *pymain, _PyCoreConfig *config, PyCompilerFlags *cf)
+pymain_run_file(_PyMain *pymain, _PyMainInterpreterConfig *config, PyCompilerFlags *cf)
 {
     const wchar_t *filename = pymain->filename;
     FILE *fp = _Py_wfopen(filename, L"r");
     if (fp == NULL) {
-        char *cfilename_buffer;
-        const char *cfilename;
         int err = errno;
-        cfilename_buffer = _Py_EncodeLocaleRaw(filename, NULL);
-        if (cfilename_buffer != NULL)
-            cfilename = cfilename_buffer;
-        else
-            cfilename = "<unprintable file name>";
-        fprintf(stderr, "%ls: can't open file '%s': [Errno %d] %s\n",
-                config->program, cfilename, err, strerror(err));
-        PyMem_RawFree(cfilename_buffer);
+
+        PyObject* filename_obj = PyUnicode_FromWideChar(filename, -1);
+        if (filename_obj != NULL) {
+            PySys_FormatStderr("'%U'", filename_obj);
+            Py_DECREF(filename_obj);
+        }
+        else {
+            PySys_WriteStderr("<undecodable filename>");
+        }
+
+        PyObject* errmsg_obj;
+        char *errmsg = strerror(err);
+        if (errmsg != NULL) {
+            errmsg_obj = PyUnicode_DecodeLocale(errmsg, "surrogateescape");
+        }
+        else {
+            errmsg_obj = NULL;
+        }
+        if (errmsg_obj != NULL) {
+            PySys_FormatStderr(": [Errno %d] %U\n", err, errmsg_obj);
+            Py_DECREF(errmsg_obj);
+        }
+        else {
+            PySys_WriteStderr(": [Errno %d]\n", err);
+        }
+
         pymain->status = 2;
         return;
     }
@@ -1126,9 +1131,17 @@ pymain_run_file(_PyMain *pymain, _PyCoreConfig *config, PyCompilerFlags *cf)
 
     struct _Py_stat_struct sb;
     if (_Py_fstat_noraise(fileno(fp), &sb) == 0 && S_ISDIR(sb.st_mode)) {
-        fprintf(stderr,
-                "%ls: '%ls' is a directory, cannot continue\n",
-                config->program, filename);
+        PySys_FormatStderr("%U: ", config->program);
+        PyObject* filename_obj = PyUnicode_FromWideChar(filename, -1);
+        if (filename_obj != NULL) {
+            PySys_FormatStderr("'%U'", filename_obj);
+            Py_DECREF(filename_obj);
+        }
+        else {
+            PySys_WriteStderr("<undecodable filename>");
+        }
+        PySys_WriteStderr(" is a directory, cannot continue\n");
+
         pymain->status = 1;
         fclose(fp);
         return;
@@ -1217,15 +1230,15 @@ pymain_repl(_PyMain *pymain, _PyCoreConfig *config, PyCompilerFlags *cf)
    Return 0 on success.
    Set pymain->err and return -1 on failure. */
 static int
-pymain_parse_cmdline(_PyMain *pymain, _PyCoreConfig *config,
+pymain_parse_cmdline(_PyMain *pymain, _PyPreConfig *preconfig,
                      _PyCmdline *cmdline)
 {
-    int res = pymain_parse_cmdline_impl(pymain, config, cmdline);
+    int res = pymain_parse_cmdline_impl(pymain, preconfig, cmdline);
     if (res < 0) {
         return -1;
     }
     if (res) {
-        pymain_usage(1, config->program);
+        pymain_usage(1, preconfig->program);
         pymain->status = 2;
         return 1;
     }
@@ -1246,26 +1259,27 @@ pymain_parse_cmdline(_PyMain *pymain, _PyCoreConfig *config,
    Return 1 if Python is done and must exit.
    Set pymain->err and return -1 on error. */
 static int
-pymain_read_conf_impl(_PyMain *pymain, _PyCoreConfig *config,
+pymain_read_conf_impl(_PyMain *pymain, _PyPreConfig *preconfig,
                       _PyCmdline *cmdline)
 {
     _PyInitError err;
 
-    int res = pymain_parse_cmdline(pymain, config, cmdline);
+    int res = pymain_parse_cmdline(pymain, preconfig, cmdline);
     if (res != 0) {
         return res;
     }
 
-    if (pymain_init_core_argv(pymain, config, cmdline) < 0) {
+    if (pymain_init_core_argv(pymain, preconfig, cmdline) < 0) {
         return -1;
     }
 
-    err = _PyCoreConfig_Read(config);
+    err = _PyPreConfig_Read(preconfig);
     if (_Py_INIT_FAILED(err)) {
         pymain->err = err;
         return -1;
     }
 
+    _PyCoreConfig *config = &preconfig->core_config;
     if (config->use_environment) {
         err = cmdline_init_env_warnoptions(pymain, config, cmdline);
         if (_Py_INIT_FAILED(err)) {
@@ -1286,19 +1300,19 @@ pymain_read_conf_impl(_PyMain *pymain, _PyCoreConfig *config,
 /* Read the configuration and initialize the LC_CTYPE locale:
    enable UTF-8 mode (PEP 540) and/or coerce the C locale (PEP 538). */
 static int
-pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
-                 _PyCmdline *cmdline)
+pymain_read_conf(_PyMain *pymain, _PyPreConfig *preconfig, _PyCmdline *cmdline)
 {
     int init_utf8_mode = Py_UTF8Mode;
 #ifdef MS_WINDOWS
     int init_legacy_encoding = Py_LegacyWindowsFSEncodingFlag;
 #endif
-    _PyCoreConfig save_config = _PyCoreConfig_INIT;
+    _PyPreConfig save_config = _PyPreConfig_INIT;
+    _PyCoreConfig *config = &preconfig->core_config;
     int res = -1;
     int locale_coerced = 0;
     int loops = 0;
 
-    if (_PyCoreConfig_Copy(&save_config, config) < 0) {
+    if (_PyPreConfig_Copy(&save_config, preconfig) < 0) {
         pymain->err = _Py_INIT_NO_MEMORY();
         goto done;
     }
@@ -1325,11 +1339,11 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
         Py_LegacyWindowsFSEncodingFlag = config->legacy_windows_fs_encoding;
 #endif
 
-        if (pymain_init_cmdline_argv(pymain, config, cmdline) < 0) {
+        if (pymain_init_cmdline_argv(pymain, preconfig, cmdline) < 0) {
             goto done;
         }
 
-        int conf_res = pymain_read_conf_impl(pymain, config, cmdline);
+        int conf_res = pymain_read_conf_impl(pymain, preconfig, cmdline);
         if (conf_res != 0) {
             res = conf_res;
             goto done;
@@ -1371,7 +1385,7 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
            just keep UTF-8 Mode value. */
         int new_utf8_mode = config->utf8_mode;
         int new_coerce_c_locale = config->coerce_c_locale;
-        if (_PyCoreConfig_Copy(config, &save_config) < 0) {
+        if (_PyPreConfig_Copy(preconfig, &save_config) < 0) {
             pymain->err = _Py_INIT_NO_MEMORY();
             goto done;
         }
@@ -1386,7 +1400,7 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
     res = 0;
 
 done:
-    _PyCoreConfig_Clear(&save_config);
+    _PyPreConfig_Clear(&save_config);
     Py_UTF8Mode = init_utf8_mode ;
 #ifdef MS_WINDOWS
     Py_LegacyWindowsFSEncodingFlag = init_legacy_encoding;
@@ -1398,6 +1412,7 @@ done:
 void
 _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
 {
+    _PyCoreConfig_Clear(&config->core_config);
     Py_CLEAR(config->argv);
     Py_CLEAR(config->executable);
     Py_CLEAR(config->prefix);
@@ -1407,6 +1422,8 @@ _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
     Py_CLEAR(config->warnoptions);
     Py_CLEAR(config->xoptions);
     Py_CLEAR(config->module_search_path);
+    Py_CLEAR(config->program_name);
+    Py_CLEAR(config->program);
     Py_CLEAR(config->pycache_prefix);
 }
 
@@ -1441,7 +1458,10 @@ _PyMainInterpreterConfig_Copy(_PyMainInterpreterConfig *config,
 {
     _PyMainInterpreterConfig_Clear(config);
 
-#define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
+    if (_PyCoreConfig_Copy(&config->core_config, &config2->core_config) < 0) {
+        return -1;
+    }
+
 #define COPY_OBJ_ATTR(ATTR) \
     do { \
         if (config2->ATTR != NULL) { \
@@ -1452,7 +1472,6 @@ _PyMainInterpreterConfig_Copy(_PyMainInterpreterConfig *config,
         } \
     } while (0)
 
-    COPY_ATTR(install_signal_handlers);
     COPY_OBJ_ATTR(argv);
     COPY_OBJ_ATTR(executable);
     COPY_OBJ_ATTR(prefix);
@@ -1462,8 +1481,9 @@ _PyMainInterpreterConfig_Copy(_PyMainInterpreterConfig *config,
     COPY_OBJ_ATTR(warnoptions);
     COPY_OBJ_ATTR(xoptions);
     COPY_OBJ_ATTR(module_search_path);
+    COPY_OBJ_ATTR(program_name);
+    COPY_OBJ_ATTR(program);
     COPY_OBJ_ATTR(pycache_prefix);
-#undef COPY_ATTR
 #undef COPY_OBJ_ATTR
     return 0;
 }
@@ -1505,7 +1525,6 @@ _PyMainInterpreterConfig_AsDict(const _PyMainInterpreterConfig *config)
         } \
     } while (0)
 
-    SET_ITEM_INT(install_signal_handlers);
     SET_ITEM_OBJ(argv);
     SET_ITEM_OBJ(executable);
     SET_ITEM_OBJ(prefix);
@@ -1515,6 +1534,8 @@ _PyMainInterpreterConfig_AsDict(const _PyMainInterpreterConfig *config)
     SET_ITEM_OBJ(warnoptions);
     SET_ITEM_OBJ(xoptions);
     SET_ITEM_OBJ(module_search_path);
+    SET_ITEM_OBJ(program_name);
+    SET_ITEM_OBJ(program);
     SET_ITEM_OBJ(pycache_prefix);
 
     return dict;
@@ -1529,11 +1550,12 @@ fail:
 
 _PyInitError
 _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
-                              const _PyCoreConfig *config)
+                              const _PyPreConfig *preconfig)
 {
-    if (main_config->install_signal_handlers < 0) {
-        main_config->install_signal_handlers = config->install_signal_handlers;
+    if (_PyCoreConfig_Copy(&main_config->core_config, &preconfig->core_config) < 0) {
+        return _Py_INIT_NO_MEMORY();
     }
+    const _PyCoreConfig *config = &main_config->core_config;
 
     if (main_config->xoptions == NULL) {
         main_config->xoptions = config_create_xoptions_dict(config);
@@ -1542,10 +1564,10 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
         }
     }
 
-#define COPY_WSTR(ATTR) \
+#define COPY_WSTR(CONFIG, ATTR) \
     do { \
-        if (main_config->ATTR == NULL && config->ATTR != NULL) { \
-            main_config->ATTR = PyUnicode_FromWideChar(config->ATTR, -1); \
+        if (main_config->ATTR == NULL && CONFIG->ATTR != NULL) { \
+            main_config->ATTR = PyUnicode_FromWideChar(CONFIG->ATTR, -1); \
             if (main_config->ATTR == NULL) { \
                 return _Py_INIT_NO_MEMORY(); \
             } \
@@ -1569,21 +1591,18 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
     }
 
     if (config->_install_importlib) {
-        COPY_WSTR(executable);
-        COPY_WSTR(prefix);
-        COPY_WSTR(base_prefix);
-        COPY_WSTR(exec_prefix);
-        COPY_WSTR(base_exec_prefix);
+        COPY_WSTR(config, executable);
+        COPY_WSTR(config, prefix);
+        COPY_WSTR(config, base_prefix);
+        COPY_WSTR(config, exec_prefix);
+        COPY_WSTR(config, base_exec_prefix);
 
         COPY_WSTRLIST(main_config->module_search_path,
                       config->nmodule_search_path, config->module_search_paths);
 
-        if (config->pycache_prefix != NULL) {
-            COPY_WSTR(pycache_prefix);
-        } else {
-            main_config->pycache_prefix = NULL;
-        }
-
+        COPY_WSTR(preconfig, program_name);
+        COPY_WSTR(preconfig, program);
+        COPY_WSTR(preconfig, pycache_prefix);
     }
 
     return _Py_INIT_OK();
@@ -1593,31 +1612,11 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
 
 
 static int
-pymain_init_python_main(_PyMain *pymain, _PyCoreConfig *config,
-                        PyInterpreterState *interp)
-{
-    _PyInitError err;
-
-    _PyMainInterpreterConfig main_config = _PyMainInterpreterConfig_INIT;
-    err = _PyMainInterpreterConfig_Read(&main_config, config);
-    if (!_Py_INIT_FAILED(err)) {
-        err = _Py_InitializeMainInterpreter(interp, &main_config);
-    }
-    _PyMainInterpreterConfig_Clear(&main_config);
-
-    if (_Py_INIT_FAILED(err)) {
-        pymain->err = err;
-        return -1;
-    }
-    return 0;
-}
-
-
-static int
 pymain_run_python(_PyMain *pymain, PyInterpreterState *interp)
 {
     int res = 0;
-    _PyCoreConfig *config = &interp->core_config;
+    _PyMainInterpreterConfig *main_config = &interp->config;
+    _PyCoreConfig *config = &main_config->core_config;
 
     PyObject *main_importer_path = NULL;
     if (pymain->filename != NULL) {
@@ -1668,7 +1667,7 @@ pymain_run_python(_PyMain *pymain, PyInterpreterState *interp)
         pymain->status = (sts != 0);
     }
     else if (pymain->filename != NULL) {
-        pymain_run_file(pymain, config, &cf);
+        pymain_run_file(pymain, main_config, &cf);
     }
     else {
         pymain_run_stdin(pymain, config, &cf);
@@ -1683,15 +1682,14 @@ done:
 
 
 static int
-pymain_cmdline_impl(_PyMain *pymain, _PyCoreConfig *config,
-                    _PyCmdline *cmdline)
+pymain_cmdline_impl(_PyMain *pymain, _PyPreConfig *preconfig, _PyCmdline *cmdline)
 {
     pymain->err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(pymain->err)) {
         return -1;
     }
 
-    int res = pymain_read_conf(pymain, config, cmdline);
+    int res = pymain_read_conf(pymain, preconfig, cmdline);
     if (res < 0) {
         return -1;
     }
@@ -1701,7 +1699,7 @@ pymain_cmdline_impl(_PyMain *pymain, _PyCoreConfig *config,
     }
 
     if (cmdline->print_help) {
-        pymain_usage(0, config->program);
+        pymain_usage(0, preconfig->program);
         return 1;
     }
 
@@ -1734,7 +1732,7 @@ pymain_cmdline_impl(_PyMain *pymain, _PyCoreConfig *config,
    _PyCmdline is a temporary structure used to prioritize these
    variables. */
 static int
-pymain_cmdline(_PyMain *pymain, _PyCoreConfig *config)
+pymain_cmdline(_PyMain *pymain, _PyPreConfig *preconfig)
 {
     /* Force default allocator, since pymain_free() and pymain_clear_config()
        must use the same allocator than this function. */
@@ -1748,7 +1746,7 @@ pymain_cmdline(_PyMain *pymain, _PyCoreConfig *config)
     _PyCmdline cmdline;
     memset(&cmdline, 0, sizeof(cmdline));
 
-    int res = pymain_cmdline_impl(pymain, config, &cmdline);
+    int res = pymain_cmdline_impl(pymain, preconfig, &cmdline);
 
     pymain_clear_cmdline(pymain, &cmdline);
 
@@ -1766,6 +1764,9 @@ pymain_cmdline(_PyMain *pymain, _PyCoreConfig *config)
 static int
 pymain_init(_PyMain *pymain, PyInterpreterState **interp_p)
 {
+    PyMemAllocatorEx old_alloc;
+    int res = 0;
+
     /* 754 requires that FP exceptions run in "no stop" mode by default,
      * and until C vendors implement C99's ways to control FP exceptions,
      * Python requires non-stop mode.  Alas, some platforms enable FP
@@ -1775,38 +1776,34 @@ pymain_init(_PyMain *pymain, PyInterpreterState **interp_p)
     fedisableexcept(FE_OVERFLOW);
 #endif
 
-    _PyCoreConfig local_config = _PyCoreConfig_INIT;
-    _PyCoreConfig *config = &local_config;
+    _PyPreConfig local_preconfig = _PyPreConfig_INIT;
+    _PyCoreConfig *config = &local_preconfig.core_config;
 
     _PyCoreConfig_GetGlobalConfig(config);
 
-    int cmd_res = pymain_cmdline(pymain, config);
+    int cmd_res = pymain_cmdline(pymain, &local_preconfig);
     if (cmd_res < 0) {
         _Py_FatalInitError(pymain->err);
     }
     if (cmd_res == 1) {
-        pymain_clear_config(config);
-        return 1;
+        res = 1;
+        goto done;
     }
 
     _PyCoreConfig_SetGlobalConfig(config);
 
     pymain_init_stdio(pymain, config);
 
-    PyInterpreterState *interp;
-    pymain->err = _Py_InitializeCore(&interp, config);
+    pymain->err = _Py_InitializeFromConfig(&local_preconfig, interp_p);
     if (_Py_INIT_FAILED(pymain->err)) {
         _Py_FatalInitError(pymain->err);
     }
-    *interp_p = interp;
 
-    pymain_clear_config(config);
-    config = &interp->core_config;
-
-    if (pymain_init_python_main(pymain, config, interp) < 0) {
-        _Py_FatalInitError(pymain->err);
-    }
-    return 0;
+done:
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    _PyPreConfig_Clear(&local_preconfig);
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    return res;
 }
 
 

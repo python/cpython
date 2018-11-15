@@ -23,16 +23,12 @@ PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
 
 
 #ifndef Py_LIMITED_API
-/* PEP 432 Multi-phase initialization API (Private while provisional!) */
-PyAPI_FUNC(_PyInitError) _Py_InitializeCore(
-    PyInterpreterState **interp,
-    const _PyCoreConfig *);
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
 
 
 PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_Read(
     _PyMainInterpreterConfig *config,
-    const _PyCoreConfig *core_config);
+    const _PyPreConfig *preconfig);
 PyAPI_FUNC(void) _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *);
 PyAPI_FUNC(int) _PyMainInterpreterConfig_Copy(
     _PyMainInterpreterConfig *config,
@@ -51,7 +47,8 @@ PyAPI_FUNC(void) Py_Initialize(void);
 PyAPI_FUNC(void) Py_InitializeEx(int);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(_PyInitError) _Py_InitializeFromConfig(
-    const _PyCoreConfig *config);
+    const _PyPreConfig *config,
+    PyInterpreterState **interp_p);
 PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalInitError(_PyInitError err);
 #endif
 PyAPI_FUNC(void) Py_Finalize(void);

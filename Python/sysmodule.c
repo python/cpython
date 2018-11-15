@@ -385,7 +385,7 @@ static PyObject *
 sys_getfilesystemencoding(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    const _PyCoreConfig *config = &interp->core_config;
+    const _PyCoreConfig *config = &interp->config.core_config;
     return PyUnicode_FromString(config->filesystem_encoding);
 }
 
@@ -400,7 +400,7 @@ static PyObject *
 sys_getfilesystemencodeerrors(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    const _PyCoreConfig *config = &interp->core_config;
+    const _PyCoreConfig *config = &interp->config.core_config;
     return PyUnicode_FromString(config->filesystem_errors);
 }
 
@@ -1142,7 +1142,7 @@ static PyObject *
 sys_enablelegacywindowsfsencoding(PyObject *self)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    _PyCoreConfig *config = &interp->core_config;
+    _PyCoreConfig *config = &interp->config.core_config;
 
     /* Set the filesystem encoding to mbcs/replace (PEP 529) */
     char *encoding = _PyMem_RawStrdup("mbcs");
@@ -2076,7 +2076,7 @@ make_flags(void)
 {
     int pos = 0;
     PyObject *seq;
-    const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+    const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->config.core_config;
 
     seq = PyStructSequence_New(&FlagsType);
     if (seq == NULL)
@@ -2476,7 +2476,7 @@ err_occurred:
 int
 _PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
 {
-    const _PyCoreConfig *core_config = &interp->core_config;
+    const _PyCoreConfig *core_config = &interp->config.core_config;
     const _PyMainInterpreterConfig *config = &interp->config;
     int res;
 

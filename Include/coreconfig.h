@@ -107,13 +107,9 @@ typedef struct {
        If set to -1 (default), inherit Py_UTF8Mode value. */
     int utf8_mode;
 
-    wchar_t *pycache_prefix; /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
-
-    wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
     int argc;               /* Number of command line arguments,
                                -1 means unset */
     wchar_t **argv;         /* Command line arguments */
-    wchar_t *program;       /* argv[0] or "" */
 
     int nxoption;           /* Number of -X options */
     wchar_t **xoptions;     /* -X options */
@@ -339,15 +335,54 @@ typedef struct {
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 
+typedef struct {
+    _PyCoreConfig core_config;
+    wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
+    wchar_t *program;       /* argv[0] or "" */
+    wchar_t *pycache_prefix; /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
+} _PyPreConfig;
+
+#define _PyPreConfig_INIT \
+    (_PyPreConfig){.core_config = _PyCoreConfig_INIT}
+/* Note: _PyPreConfig_INIT sets other fields to 0/NULL */
+
+
+typedef struct {
+    _PyCoreConfig core_config;
+    PyObject *argv;                /* sys.argv list, can be NULL */
+    PyObject *program_name;        /* Program name, see also Py_GetProgramName() */
+    PyObject* program;             /* argv[0] or "" */
+    PyObject *executable;          /* sys.executable str */
+    PyObject *prefix;              /* sys.prefix str */
+    PyObject *base_prefix;         /* sys.base_prefix str, can be NULL */
+    PyObject *exec_prefix;         /* sys.exec_prefix str */
+    PyObject *base_exec_prefix;    /* sys.base_exec_prefix str, can be NULL */
+    PyObject *warnoptions;         /* sys.warnoptions list, can be NULL */
+    PyObject *xoptions;            /* sys._xoptions dict, can be NULL */
+    PyObject *module_search_path;  /* sys.path list */
+    PyObject *pycache_prefix;      /* sys.pycache_prefix str, can be NULL */
+} _PyMainInterpreterConfig;
+
+#define _PyMainInterpreterConfig_INIT \
+    (_PyMainInterpreterConfig){ \
+        .core_config = _PyCoreConfig_INIT}
+/* Note: _PyMainInterpreterConfig_INIT sets other fields to 0/NULL */
+
+
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
+PyAPI_FUNC(void) _PyPreConfig_Clear(_PyPreConfig *config);
+PyAPI_FUNC(int) _PyPreConfig_Copy(_PyPreConfig *config,
+    const _PyPreConfig *config2);
+PyAPI_FUNC(_PyInitError) _PyPreConfig_Read(_PyPreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyPreConfig_SetPathConfig(
+    const _PyPreConfig *config);
+
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
 PyAPI_FUNC(int) _PyCoreConfig_Copy(
     _PyCoreConfig *config,
     const _PyCoreConfig *config2);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPathConfig(_PyCoreConfig *config);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPathConfig(
-    const _PyCoreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPathConfig(
+    _PyPreConfig *preconfig);
 PyAPI_FUNC(void) _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config);
 PyAPI_FUNC(void) _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config);
 PyAPI_FUNC(const char*) _PyCoreConfig_GetEnv(

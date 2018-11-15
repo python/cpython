@@ -315,7 +315,7 @@ dump_config_impl(void)
 
     /* core config */
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    const _PyCoreConfig *core_config = &interp->core_config;
+    const _PyCoreConfig *core_config = &interp->config.core_config;
     dict = _PyCoreConfig_AsDict(core_config);
     if (dict == NULL) {
         goto error;
@@ -427,71 +427,72 @@ static int test_init_global_config(void)
 static int test_init_from_config(void)
 {
     /* Test _Py_InitializeFromConfig() */
-    _PyCoreConfig config = _PyCoreConfig_INIT;
-    config.install_signal_handlers = 0;
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
+    _PyCoreConfig *config = &preconfig.core_config;
+    config->install_signal_handlers = 0;
 
     /* FIXME: test use_environment */
 
     putenv("PYTHONHASHSEED=42");
-    config.use_hash_seed = 1;
-    config.hash_seed = 123;
+    config->use_hash_seed = 1;
+    config->hash_seed = 123;
 
     putenv("PYTHONMALLOC=malloc");
-    config.allocator = "malloc_debug";
+    config->allocator = "malloc_debug";
 
     /* dev_mode=1 is tested in test_init_dev_mode() */
 
     putenv("PYTHONFAULTHANDLER=");
-    config.faulthandler = 1;
+    config->faulthandler = 1;
 
     putenv("PYTHONTRACEMALLOC=0");
-    config.tracemalloc = 2;
+    config->tracemalloc = 2;
 
     putenv("PYTHONPROFILEIMPORTTIME=0");
-    config.import_time = 1;
+    config->import_time = 1;
 
-    config.show_ref_count = 1;
-    config.show_alloc_count = 1;
+    config->show_ref_count = 1;
+    config->show_alloc_count = 1;
     /* FIXME: test dump_refs: bpo-34223 */
 
     putenv("PYTHONMALLOCSTATS=0");
-    config.malloc_stats = 1;
+    config->malloc_stats = 1;
 
     /* FIXME: test coerce_c_locale and coerce_c_locale_warn */
 
     putenv("PYTHONUTF8=0");
     Py_UTF8Mode = 0;
-    config.utf8_mode = 1;
+    config->utf8_mode = 1;
 
     putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
-    config.pycache_prefix = L"conf_pycache_prefix";
+    preconfig.pycache_prefix = L"conf_pycache_prefix";
 
     Py_SetProgramName(L"./globalvar");
-    config.program_name = L"./conf_program_name";
+    preconfig.program_name = L"./conf_program_name";
 
     static wchar_t* argv[2] = {
         L"-c",
         L"pass",
     };
-    config.argc = Py_ARRAY_LENGTH(argv);
-    config.argv = argv;
+    config->argc = Py_ARRAY_LENGTH(argv);
+    config->argv = argv;
 
-    config.program = L"conf_program";
+    preconfig.program = L"conf_program";
 
     static wchar_t* xoptions[3] = {
         L"core_xoption1=3",
         L"core_xoption2=",
         L"core_xoption3",
     };
-    config.nxoption = Py_ARRAY_LENGTH(xoptions);
-    config.xoptions = xoptions;
+    config->nxoption = Py_ARRAY_LENGTH(xoptions);
+    config->xoptions = xoptions;
 
     static wchar_t* warnoptions[2] = {
         L"default",
         L"error::ResourceWarning",
     };
-    config.nwarnoption = Py_ARRAY_LENGTH(warnoptions);
-    config.warnoptions = warnoptions;
+    config->nwarnoption = Py_ARRAY_LENGTH(warnoptions);
+    config->warnoptions = warnoptions;
 
     /* FIXME: test module_search_path_env */
     /* FIXME: test home */
@@ -499,59 +500,60 @@ static int test_init_from_config(void)
 
     putenv("PYTHONVERBOSE=0");
     Py_VerboseFlag = 0;
-    config.verbose = 1;
+    config->verbose = 1;
 
     Py_NoSiteFlag = 0;
-    config.site_import = 0;
+    config->site_import = 0;
 
     Py_BytesWarningFlag = 0;
-    config.bytes_warning = 1;
+    config->bytes_warning = 1;
 
     putenv("PYTHONINSPECT=");
     Py_InspectFlag = 0;
-    config.inspect = 1;
+    config->inspect = 1;
 
     Py_InteractiveFlag = 0;
-    config.interactive = 1;
+    config->interactive = 1;
 
     putenv("PYTHONOPTIMIZE=0");
     Py_OptimizeFlag = 1;
-    config.optimization_level = 2;
+    config->optimization_level = 2;
 
     /* FIXME: test parser_debug */
 
     putenv("PYTHONDONTWRITEBYTECODE=");
     Py_DontWriteBytecodeFlag = 0;
-    config.write_bytecode = 0;
+    config->write_bytecode = 0;
 
     Py_QuietFlag = 0;
-    config.quiet = 1;
+    config->quiet = 1;
 
     putenv("PYTHONUNBUFFERED=");
     Py_UnbufferedStdioFlag = 0;
-    config.buffered_stdio = 0;
+    config->buffered_stdio = 0;
 
     putenv("PYTHONIOENCODING=cp424");
     Py_SetStandardStreamEncoding("ascii", "ignore");
 #ifdef MS_WINDOWS
     /* Py_SetStandardStreamEncoding() sets Py_LegacyWindowsStdioFlag to 1.
        Force it to 0 through the config. */
-    config.legacy_windows_stdio = 0;
+    config->legacy_windows_stdio = 0;
 #endif
-    config.stdio_encoding = "iso8859-1";
-    config.stdio_errors = "replace";
+    config->stdio_encoding = "iso8859-1";
+    config->stdio_errors = "replace";
 
     putenv("PYTHONNOUSERSITE=");
     Py_NoUserSiteDirectory = 0;
-    config.user_site_directory = 0;
+    config->user_site_directory = 0;
 
-    config._check_hash_pycs_mode = "always";
+    config->_check_hash_pycs_mode = "always";
 
     Py_FrozenFlag = 0;
-    config._frozen = 1;
+    config->_frozen = 1;
 
-    _PyInitError err = _Py_InitializeFromConfig(&config);
-    /* Don't call _PyCoreConfig_Clear() since all strings are static */
+    _PyInitError err = _Py_InitializeFromConfig(&preconfig, NULL);
+    /* Don't call _PyPreConfig_Clear() nor _PyCoreConfig_Clear(),
+       since all strings are static */
     if (_Py_INIT_FAILED(err)) {
         _Py_FatalInitError(err);
     }
@@ -604,19 +606,20 @@ static int test_init_env(void)
 static int test_init_isolated(void)
 {
     /* Test _PyCoreConfig.isolated=1 */
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
+    _PyCoreConfig *config = &preconfig.core_config;
 
     /* Set coerce_c_locale and utf8_mode to not depend on the locale */
-    config.coerce_c_locale = 0;
-    config.utf8_mode = 0;
+    config->coerce_c_locale = 0;
+    config->utf8_mode = 0;
     /* Use path starting with "./" avoids a search along the PATH */
-    config.program_name = L"./_testembed";
+    preconfig.program_name = L"./_testembed";
 
     Py_IsolatedFlag = 0;
-    config.isolated = 1;
+    config->isolated = 1;
 
     test_init_env_putenvs();
-    _PyInitError err = _Py_InitializeFromConfig(&config);
+    _PyInitError err = _Py_InitializeFromConfig(&preconfig, NULL);
     if (_Py_INIT_FAILED(err)) {
         _Py_FatalInitError(err);
     }
@@ -628,12 +631,13 @@ static int test_init_isolated(void)
 
 static int test_init_dev_mode(void)
 {
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
+    _PyCoreConfig *config = &preconfig.core_config;
     putenv("PYTHONFAULTHANDLER=");
     putenv("PYTHONMALLOC=");
-    config.dev_mode = 1;
-    config.program_name = L"./_testembed";
-    _PyInitError err = _Py_InitializeFromConfig(&config);
+    config->dev_mode = 1;
+    preconfig.program_name = L"./_testembed";
+    _PyInitError err = _Py_InitializeFromConfig(&preconfig, NULL);
     if (_Py_INIT_FAILED(err)) {
         _Py_FatalInitError(err);
     }

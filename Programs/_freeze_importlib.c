@@ -76,6 +76,7 @@ main(int argc, char *argv[])
     }
     text[text_size] = '\0';
 
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
     _PyCoreConfig config = _PyCoreConfig_INIT;
     config.user_site_directory = 0;
     config.site_import = 0;
@@ -85,7 +86,7 @@ main(int argc, char *argv[])
     config._install_importlib = 0;
     config._frozen = 1;
 
-    _PyInitError err = _Py_InitializeFromConfig(&config);
+    _PyInitError err = _Py_InitializeFromConfig(&preconfig, &config, NULL);
     /* No need to call _PyCoreConfig_Clear() since we didn't allocate any
        memory: program_name is a constant string. */
     if (_Py_INIT_FAILED(err)) {
