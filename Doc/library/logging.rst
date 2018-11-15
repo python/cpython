@@ -951,7 +951,7 @@ functions.
    use keywords in the format string, together with a single dictionary argument.)
 
    There are three keyword arguments in *kwargs* which are inspected: *exc_info*
-   which, if it does not evaluate as false, causes exception information to be
+   which, if true, causes exception information to be
    added to the logging message. If an exception tuple (in the format returned by
    :func:`sys.exc_info`) or an exception instance is provided, it is used;
    otherwise, :func:`sys.exc_info` is called to get the exception information.
