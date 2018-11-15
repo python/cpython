@@ -2296,9 +2296,6 @@ class TestSingleDispatch(unittest.TestCase):
         ))
         self.assertTrue(str(exc.exception).endswith(msg_suffix))
 
-        # FIXME: The following will only work after PEP 560 is implemented.
-        return
-
         with self.assertRaises(TypeError) as exc:
             @i.register
             def _(arg: typing.Iterable[str]):
