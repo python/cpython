@@ -3453,7 +3453,7 @@ unicode_encode_locale(PyObject *unicode, const char *errors,
     PyMem_Free(wstr);
 
     PyObject *bytes = PyBytes_FromString(str);
-    PyMem_RawFree(str);
+    _PyMem_RawFreeCtx(&interp->core_config.ctx, str);
     return bytes;
 }
 
@@ -3665,7 +3665,7 @@ unicode_decode_locale(const char *str, Py_ssize_t len, const char *errors,
     }
 
     PyObject *unicode = PyUnicode_FromWideChar(wstr, wlen);
-    PyMem_RawFree(wstr);
+    _PyMem_RawFreeCtx(&interp->core_config.ctx, wstr);
     return unicode;
 }
 

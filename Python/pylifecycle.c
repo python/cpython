@@ -575,12 +575,13 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
     }
     *interp_p = interp;
 
+    /* Update the memory allocator of the config and copy the new config */
+    _PyCoreConfig_Clear(&interp->core_config);
+    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &interp->core_config.ctx.raw_alloc);
     if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
         return _Py_INIT_ERR("failed to copy core config");
     }
     core_config = &interp->core_config;
-    /* FIXME: update ctx just after _PyMem_SetupAllocators() */
-    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &interp->core_config.ctx.raw_alloc);
 
     PyThreadState *tstate = PyThreadState_New(interp);
     if (tstate == NULL)
