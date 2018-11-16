@@ -294,7 +294,7 @@ compiler_init(struct compiler *c)
 
     c->c_stack = PyList_New(0);
     if (!c->c_stack) {
-        Py_DECREF(c->c_const_cache);
+        Py_CLEAR(c->c_const_cache);
         return 0;
     }
 
