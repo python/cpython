@@ -201,24 +201,6 @@ class ProgressTests(unittest.TestCase):
         con.execute("select 1 union select 2 union select 3").fetchall()
         self.assertEqual(action, 0, "progress handler was not cleared")
 
-    def CheckProgressHandlerUnhashable(self):
-        progress_calls = []
-        class UnhashableFunc:
-            __hash__ = None
-
-            def __call__(*args, **kwargs):
-                progress_calls.append(None)
-                return 0
-
-        con = sqlite.connect(":memory:")
-        with self.assertRaisesRegex(TypeError, "unhashable type"):
-            con.set_progress_handler(UnhashableFunc(), 1)
-        con.execute("""
-            create table foo(a, b)
-            """)
-        self.assertFalse(progress_calls)
-
-
 class TraceCallbackTests(unittest.TestCase):
     def CheckTraceCallbackUsed(self):
         """
