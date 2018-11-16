@@ -69,6 +69,14 @@ void _PyConfigCtx_Init(_PyConfigCtx *ctx)
     PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &ctx->raw_alloc);
 }
 
+static void
+_PyConfigCtx_Copy(_PyConfigCtx *ctx, const _PyConfigCtx *ctx2)
+{
+    /* Don't copy raw_alloc, each context keeps is own memory allocators.
+       Memory allocators must be copied or modified manually. */
+    ctx->utf8_mode = ctx2->utf8_mode;
+}
+
 
 PyObject *
 _Py_GetGlobalVariablesAsDict(void)
@@ -357,7 +365,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
 {
     _PyCoreConfig_Clear(config);
 
-    memcpy(&config->ctx, &config2->ctx, sizeof(config->ctx));
+    _PyConfigCtx_Copy(&config->ctx, &config2->ctx);
 
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
 #define COPY_STR_ATTR(ATTR) \
