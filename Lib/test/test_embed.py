@@ -331,10 +331,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         })
 
     # main config
-    UNTESTED_MAIN_CONFIG = (
-        # FIXME: untested main configuration variables
-        'module_search_path',
-    )
     COPY_MAIN_CONFIG = (
         # Copy core config to main config for expected values
         'argv',
@@ -346,7 +342,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'prefix',
         'pycache_prefix',
         'warnoptions',
-        # xoptions is created from core_config in check_main_config()
+        # xoptions is created from core_config in check_main_config().
+        # 'module_search_paths' is copied to 'module_search_path'.
     )
 
     # global config
@@ -426,12 +423,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         main_config = config['main_config']
 
         # main config
-        for key in self.UNTESTED_MAIN_CONFIG:
-            del main_config[key]
-
         expected_main = {}
         for key in self.COPY_MAIN_CONFIG:
             expected_main[key] = core_config[key]
+        expected_main['module_search_path'] = core_config['module_search_paths']
         expected_main['xoptions'] = self.main_xoptions(core_config['xoptions'])
         self.assertEqual(main_config, expected_main)
 

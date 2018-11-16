@@ -2488,7 +2488,20 @@ _PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
     assert(config->exec_prefix != NULL);
     assert(config->base_exec_prefix != NULL);
 
-    SET_SYS_FROM_STRING_BORROW("path", config->module_search_path);
+#define COPY_LIST(KEY, ATTR) \
+    do { \
+        assert(PyList_Check(config->ATTR)); \
+        PyObject *list = PyList_GetSlice(config->ATTR, \
+                                         0, PyList_GET_SIZE(config->ATTR)); \
+        if (list == NULL) { \
+            return -1; \
+        } \
+        SET_SYS_FROM_STRING_BORROW(KEY, list); \
+        Py_DECREF(list); \
+    } while (0)
+
+    COPY_LIST("path", module_search_path);
+
     SET_SYS_FROM_STRING_BORROW("executable", config->executable);
     SET_SYS_FROM_STRING_BORROW("prefix", config->prefix);
     SET_SYS_FROM_STRING_BORROW("base_prefix", config->base_prefix);
@@ -2505,11 +2518,18 @@ _PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
         SET_SYS_FROM_STRING_BORROW("argv", config->argv);
     }
     if (config->warnoptions != NULL) {
-        SET_SYS_FROM_STRING_BORROW("warnoptions", config->warnoptions);
+        COPY_LIST("warnoptions", warnoptions);
     }
     if (config->xoptions != NULL) {
-        SET_SYS_FROM_STRING_BORROW("_xoptions", config->xoptions);
+        PyObject *dict = PyDict_Copy(config->xoptions);
+        if (dict == NULL) {
+            return -1;
+        }
+        SET_SYS_FROM_STRING_BORROW("_xoptions", dict);
+        Py_DECREF(dict);
     }
+
+#undef COPY_LIST
 
     /* Set flags to their final values */
     SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags());
