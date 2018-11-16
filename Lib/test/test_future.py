@@ -1,6 +1,5 @@
 # Test various flavors of legal and illegal future statements
 
-from functools import partial
 import unittest
 from test import support
 from textwrap import dedent

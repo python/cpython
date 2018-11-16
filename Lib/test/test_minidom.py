@@ -3,7 +3,6 @@
 import copy
 import pickle
 import io
-import contextlib
 from test.support import findfile
 import unittest
 

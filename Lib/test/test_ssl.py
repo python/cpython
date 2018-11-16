@@ -17,7 +17,6 @@ import traceback
 import asyncore
 import weakref
 import platform
-import functools
 import sysconfig
 try:
     import ctypes
