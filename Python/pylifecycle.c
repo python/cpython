@@ -836,8 +836,8 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
     }
 
     /* Initialize warnings. */
-    if (interp->config.warnoptions != NULL &&
-        PyList_Size(interp->config.warnoptions) > 0)
+    PyObject *warnoptions = PySys_GetObject("warnoptions");
+    if (warnoptions != NULL && PyList_Size(warnoptions) > 0)
     {
         PyObject *warnings_module = PyImport_ImportModule("warnings");
         if (warnings_module == NULL) {
