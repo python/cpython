@@ -1,0 +1,3 @@
+Debug builds will no longer to attempt to import extension modules built
+for the ABI as they were never compatible to begin with.
+Patch by Stefano Rivera.
