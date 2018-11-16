@@ -1571,8 +1571,10 @@ class PyBuildExt(build_ext):
         elif host_platform.startswith('netbsd'):
             macros = dict()
             libraries = []
-
-        else:                                   # Linux and other unices
+        elif host_platform.startswith(('linux')):
+            macros = dict()
+            libraries = ['pthread']
+        else:                                   # Other unixes
             macros = dict()
             libraries = ['rt']
 
@@ -1590,6 +1592,7 @@ class PyBuildExt(build_ext):
 
         exts.append ( Extension('_multiprocessing', multiprocessing_srcs,
                                 define_macros=list(macros.items()),
+                                libraries=libraries,
                                 include_dirs=["Modules/_multiprocessing"]))
         # End multiprocessing
 
