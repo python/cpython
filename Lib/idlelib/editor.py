@@ -945,7 +945,7 @@ class EditorWindow(object):
         self.top.wm_iconname(icon)
 
     def get_saved(self):
-        return self.undo.get_saved()
+        return self.undo and self.undo.get_saved()
 
     def set_saved(self, flag):
         self.undo.set_saved(flag)
