@@ -1,11 +1,12 @@
 #ifndef Py_PYCORECONFIG_H
 #define Py_PYCORECONFIG_H
+#ifndef Py_LIMITED_API
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-#ifndef Py_LIMITED_API
 typedef struct {
     const char *prefix;
     const char *msg;
@@ -32,8 +33,6 @@ typedef struct {
 #define _Py_INIT_FAILED(err) \
     (err.msg != NULL)
 
-#endif   /* !defined(Py_LIMITED_API) */
-
 
 typedef struct {
     /* Enable UTF-8 mode?
@@ -47,14 +46,12 @@ typedef struct {
 PyAPI_FUNC(void) _PyConfigCtx_Init(_PyConfigCtx *ctx);
 
 
-#ifndef Py_LIMITED_API
 /* Functions implemented in obmalloc.c */
 PyAPI_FUNC(void *) _PyMem_RawMallocCtx(const _PyConfigCtx *ctx, size_t size);
 PyAPI_FUNC(void *) _PyMem_RawCallocCtx(const _PyConfigCtx *ctx, size_t nelem, size_t elsize);
 PyAPI_FUNC(void *) _PyMem_RawReallocCtx(const _PyConfigCtx *ctx, void *ptr, size_t new_size);
 PyAPI_FUNC(void) _PyMem_RawFreeCtx(const _PyConfigCtx *ctx, void *ptr);
 PyAPI_FUNC(wchar_t*) _PyMem_RawWcsdup(const _PyConfigCtx *ctx, const wchar_t *str);
-#endif   /* !Py_LIMITED_API */
 
 
 typedef struct {
@@ -360,7 +357,6 @@ typedef struct {
 PyAPI_FUNC(void) _PyCoreConfig_Init(_PyCoreConfig *config);
 
 
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
 PyAPI_FUNC(int) _PyCoreConfig_Copy(
@@ -383,9 +379,9 @@ PyAPI_FUNC(int) _PyCoreConfig_GetEnvDup(
 /* Used by _testcapi.get_global_config() and _testcapi.get_core_config() */
 PyAPI_FUNC(PyObject *) _Py_GetGlobalVariablesAsDict(void);
 PyAPI_FUNC(PyObject *) _PyCoreConfig_AsDict(const _PyCoreConfig *config);
-#endif
 
 #ifdef __cplusplus
 }
 #endif
+#endif /* !Py_LIMITED_API */
 #endif /* !Py_PYCORECONFIG_H */
