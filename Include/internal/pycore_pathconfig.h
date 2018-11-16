@@ -63,7 +63,7 @@ PyAPI_FUNC(void) _PyPathConfig_ClearGlobal(void);
 PyAPI_FUNC(_PyInitError) _PyPathConfig_SetGlobal(
     const _PyPathConfig *config);
 
-PyAPI_FUNC(_PyPathConfig*) _PyPathConfig_GetGlobal();
+PyAPI_FUNC(_PyPathConfig*) _PyPathConfig_GetGlobal(void);
 
 PyAPI_FUNC(_PyInitError) _PyPathConfig_Calculate_impl(
     _PyPathConfig *config,
