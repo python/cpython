@@ -206,8 +206,10 @@ symtable_new(void)
     struct symtable *st;
 
     st = (struct symtable *)PyMem_Malloc(sizeof(struct symtable));
-    if (st == NULL)
+    if (st == NULL) {
+        PyErr_NoMemory();
         return NULL;
+    }
 
     st->st_filename = NULL;
     st->st_blocks = NULL;
