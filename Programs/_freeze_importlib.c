@@ -77,16 +77,16 @@ main(int argc, char *argv[])
     text[text_size] = '\0';
 
     _PyPreConfig preconfig = _PyPreConfig_INIT;
-    _PyCoreConfig config = _PyCoreConfig_INIT;
-    config.user_site_directory = 0;
-    config.site_import = 0;
-    config.use_environment = 0;
-    config.program_name = L"./_freeze_importlib";
+    _PyCoreConfig *config = &preconfig.core_config;
+    config->user_site_directory = 0;
+    config->site_import = 0;
+    config->use_environment = 0;
+    preconfig.program_name = L"./_freeze_importlib";
     /* Don't install importlib, since it could execute outdated bytecode. */
-    config._install_importlib = 0;
-    config._frozen = 1;
+    config->_install_importlib = 0;
+    config->_frozen = 1;
 
-    _PyInitError err = _Py_InitializeFromConfig(&preconfig, &config, NULL);
+    _PyInitError err = _Py_InitializeFromConfig(&preconfig, NULL);
     /* No need to call _PyCoreConfig_Clear() since we didn't allocate any
        memory: program_name is a constant string. */
     if (_Py_INIT_FAILED(err)) {
