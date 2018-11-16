@@ -1044,9 +1044,11 @@ _Py_CheckPython3(void)
     }
     python3_checked = 1;
 
+
     /* If there is a python3.dll next to the python3y.dll,
        assume this is a build tree; use that DLL */
-    wcscpy(py3path, _Py_path_config.dll_path);
+    _PyPathConfig* path_config = _PyPathConfig_GetGlobal();
+    wcscpy(py3path, path_config->dll_path);
     s = wcsrchr(py3path, L'\\');
     if (!s) {
         s = py3path;

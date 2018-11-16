@@ -13,7 +13,8 @@ extern "C" {
 #endif
 
 
-_PyPathConfig _Py_path_config = _PyPathConfig_STATIC_INIT;
+/* static initializes all fields to 0/NULL */
+static _PyPathConfig global_path_config;
 
 
 void
@@ -27,11 +28,11 @@ _PyPathConfig_StaticInit(_PyPathConfig *config)
 static void
 pathconfig_global_static_init(void)
 {
-    if (_Py_path_config.ctx.raw_alloc.malloc != NULL) {
+    if (global_path_config.ctx.raw_alloc.malloc != NULL) {
         /* Already initialized */
         return;
     }
-    _PyPathConfig_StaticInit(&_Py_path_config);
+    _PyPathConfig_StaticInit(&global_path_config);
 }
 
 static int
@@ -149,9 +150,9 @@ _PyPathConfig_SetGlobal(const _PyPathConfig *config)
     COPY_ATTR(program_name);
     COPY_ATTR(home);
 
-    _PyPathConfig_Clear(&_Py_path_config);
+    _PyPathConfig_Clear(&global_path_config);
     /* Steal new_config strings; don't clear new_config */
-    _Py_path_config = new_config;
+    global_path_config = new_config;
 
     err = _Py_INIT_OK();
 
@@ -160,12 +161,19 @@ done:
     return err;
 }
 
+_PyPathConfig*
+_PyPathConfig_GetGlobal(void)
+{
+    pathconfig_global_static_init();
+    return &global_path_config;
+}
+
 
 void
 _PyPathConfig_ClearGlobal(void)
 {
     pathconfig_global_static_init();
-    _PyPathConfig_Clear(&_Py_path_config);
+    _PyPathConfig_Clear(&global_path_config);
 }
 
 
@@ -411,7 +419,7 @@ pathconfig_global_init(void)
 {
     pathconfig_global_static_init();
 
-    if (_Py_path_config.module_search_path != NULL) {
+    if (global_path_config.module_search_path != NULL) {
         /* Already initialized */
         return;
     }
@@ -447,7 +455,7 @@ Py_SetPath(const wchar_t *path)
     pathconfig_global_static_init();
 
     if (path == NULL) {
-        _PyPathConfig_Clear(&_Py_path_config);
+        _PyPathConfig_Clear(&global_path_config);
         return;
     }
 
@@ -471,13 +479,13 @@ Py_SetPath(const wchar_t *path)
     alloc_error |= (new_config.module_search_path == NULL);
 
     /* steal the home and program_name values (to leave them unchanged) */
-    new_config.home = _Py_path_config.home;
-    _Py_path_config.home = NULL;
-    new_config.program_name = _Py_path_config.program_name;
-    _Py_path_config.program_name = NULL;
+    new_config.home = global_path_config.home;
+    global_path_config.home = NULL;
+    new_config.program_name = global_path_config.program_name;
+    global_path_config.program_name = NULL;
 
-    _PyPathConfig_Clear(&_Py_path_config);
-    _Py_path_config = new_config;
+    _PyPathConfig_Clear(&global_path_config);
+    global_path_config = new_config;
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
@@ -499,12 +507,12 @@ Py_SetPythonHome(const wchar_t *home)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    _PyMem_RawFreeCtx(&_Py_path_config.ctx, _Py_path_config.home);
-    _Py_path_config.home = _PyMem_RawWcsdup(&_Py_path_config.ctx, home);
+    _PyMem_RawFreeCtx(&global_path_config.ctx, global_path_config.home);
+    global_path_config.home = _PyMem_RawWcsdup(&global_path_config.ctx, home);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    if (_Py_path_config.home == NULL) {
+    if (global_path_config.home == NULL) {
         Py_FatalError("Py_SetPythonHome() failed: out of memory");
     }
 }
@@ -522,12 +530,12 @@ Py_SetProgramName(const wchar_t *program_name)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    _PyMem_RawFreeCtx(&_Py_path_config.ctx, _Py_path_config.program_name);
-    _Py_path_config.program_name = _PyMem_RawWcsdup(&_Py_path_config.ctx, program_name);
+    _PyMem_RawFreeCtx(&global_path_config.ctx, global_path_config.program_name);
+    global_path_config.program_name = _PyMem_RawWcsdup(&global_path_config.ctx, program_name);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    if (_Py_path_config.program_name == NULL) {
+    if (global_path_config.program_name == NULL) {
         Py_FatalError("Py_SetProgramName() failed: out of memory");
     }
 }
@@ -537,7 +545,7 @@ wchar_t *
 Py_GetPath(void)
 {
     pathconfig_global_init();
-    return _Py_path_config.module_search_path;
+    return global_path_config.module_search_path;
 }
 
 
@@ -545,7 +553,7 @@ wchar_t *
 Py_GetPrefix(void)
 {
     pathconfig_global_init();
-    return _Py_path_config.prefix;
+    return global_path_config.prefix;
 }
 
 
@@ -556,7 +564,7 @@ Py_GetExecPrefix(void)
     return Py_GetPrefix();
 #else
     pathconfig_global_init();
-    return _Py_path_config.exec_prefix;
+    return global_path_config.exec_prefix;
 #endif
 }
 
@@ -565,7 +573,7 @@ wchar_t *
 Py_GetProgramFullPath(void)
 {
     pathconfig_global_init();
-    return _Py_path_config.program_full_path;
+    return global_path_config.program_full_path;
 }
 
 
@@ -573,7 +581,7 @@ wchar_t*
 Py_GetPythonHome(void)
 {
     pathconfig_global_init();
-    return _Py_path_config.home;
+    return global_path_config.home;
 }
 
 
@@ -581,7 +589,7 @@ wchar_t *
 Py_GetProgramName(void)
 {
     pathconfig_global_init();
-    return _Py_path_config.program_name;
+    return global_path_config.program_name;
 }
 
 /* Compute argv[0] which will be prepended to sys.argv */

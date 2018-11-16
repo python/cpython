@@ -622,8 +622,10 @@ config_init_program_name(_PyCoreConfig *config)
 {
     assert(config->program_name == NULL);
 
+    _PyPathConfig* path_config = _PyPathConfig_GetGlobal();
+
     /* If Py_SetProgramName() was called, use its value */
-    const wchar_t *program_name = _Py_path_config.program_name;
+    const wchar_t *program_name = path_config->program_name;
     if (program_name != NULL) {
         config->program_name = _PyMem_RawWcsdup(&config->ctx, program_name);
         if (config->program_name == NULL) {
@@ -723,9 +725,10 @@ static _PyInitError
 config_init_home(_PyCoreConfig *config)
 {
     wchar_t *home;
+    _PyPathConfig* path_config = _PyPathConfig_GetGlobal();
 
     /* If Py_SetPythonHome() was called, use its value */
-    home = _Py_path_config.home;
+    home = path_config->home;
     if (home) {
         config->home = _PyMem_RawWcsdup(&config->ctx, home);
         if (config->home == NULL) {

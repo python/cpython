@@ -1666,10 +1666,9 @@ typedef struct {
     _Py_PreInitEntry list;
 } _Py_PreInit;
 
-#define _Py_PreInit_STATIC_INIT (_Py_PreInit){.list = NULL}
-
-static _Py_PreInit _preinit_warnoptions = _Py_PreInit_STATIC_INIT;
-static _Py_PreInit _preinit_xoptions = _Py_PreInit_STATIC_INIT;
+/* "static" initializes all fields to 0/NULL */
+static _Py_PreInit _preinit_warnoptions;
+static _Py_PreInit _preinit_xoptions;
 
 static void
 preinit_static_init(_Py_PreInit *preinit)
