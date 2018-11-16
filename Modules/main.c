@@ -1097,6 +1097,7 @@ pymain_run_file(_PyMain *pymain, _PyMainInterpreterConfig *config, PyCompilerFla
         else {
             PySys_WriteStderr("<undecodable filename>");
         }
+        PySys_WriteStderr(": can't open file [Errno %d]", err);
 
         PyObject* errmsg_obj;
         char *errmsg = strerror(err);
@@ -1107,11 +1108,11 @@ pymain_run_file(_PyMain *pymain, _PyMainInterpreterConfig *config, PyCompilerFla
             errmsg_obj = NULL;
         }
         if (errmsg_obj != NULL) {
-            PySys_FormatStderr(": [Errno %d] %U\n", err, errmsg_obj);
+            PySys_FormatStderr(" %U\n", errmsg_obj);
             Py_DECREF(errmsg_obj);
         }
         else {
-            PySys_WriteStderr(": [Errno %d]\n", err);
+            PySys_WriteStderr("\n");
         }
 
         pymain->status = 2;
