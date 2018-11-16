@@ -513,6 +513,7 @@ PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator)
     _PyObject_Arena = *allocator;
 }
 
+
 void *
 PyMem_RawMalloc(size_t size)
 {
@@ -551,6 +552,44 @@ void PyMem_RawFree(void *ptr)
 }
 
 
+void*
+_PyMem_RawMallocCtx(const _PyConfigCtx *ctx, size_t size)
+{
+    const PyMemAllocatorEx *alloc = &ctx->raw_alloc;
+    /* see PyMem_RawMalloc() */
+    if (size > (size_t)PY_SSIZE_T_MAX)
+        return NULL;
+    return alloc->malloc(alloc->ctx, size);
+}
+
+void*
+_PyMem_RawCallocCtx(const _PyConfigCtx *ctx, size_t nelem, size_t elsize)
+{
+    const PyMemAllocatorEx *alloc = &ctx->raw_alloc;
+    /* see PyMem_RawMalloc() */
+    if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
+        return NULL;
+    return alloc->calloc(alloc->ctx, nelem, elsize);
+}
+
+void*
+_PyMem_RawReallocCtx(const _PyConfigCtx *ctx, void *ptr, size_t new_size)
+{
+    const PyMemAllocatorEx *alloc = &ctx->raw_alloc;
+    /* see PyMem_RawMalloc() */
+    if (new_size > (size_t)PY_SSIZE_T_MAX)
+        return NULL;
+    return alloc->realloc(alloc->ctx, ptr, new_size);
+}
+
+void
+_PyMem_RawFreeCtx(const _PyConfigCtx *ctx, void *ptr)
+{
+    const PyMemAllocatorEx *alloc = &ctx->raw_alloc;
+    alloc->free(alloc->ctx, ptr);
+}
+
+
 void *
 PyMem_Malloc(size_t size)
 {
@@ -586,7 +625,7 @@ PyMem_Free(void *ptr)
 
 
 wchar_t*
-_PyMem_RawWcsdup(const wchar_t *str)
+_PyMem_RawWcsdup(const _PyConfigCtx *ctx, const wchar_t *str)
 {
     assert(str != NULL);
 
@@ -596,7 +635,13 @@ _PyMem_RawWcsdup(const wchar_t *str)
     }
 
     size_t size = (len + 1) * sizeof(wchar_t);
-    wchar_t *str2 = PyMem_RawMalloc(size);
+    wchar_t *str2;
+    if (ctx != NULL) {
+        str2 = _PyMem_RawMallocCtx(ctx, size);
+    }
+    else {
+        str2 = PyMem_RawMalloc(size);
+    }
     if (str2 == NULL) {
         return NULL;
     }

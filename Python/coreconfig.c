@@ -55,6 +55,21 @@ int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
 #endif
 
 
+void _PyConfigCtx_Init(_PyConfigCtx *ctx)
+{
+    /* FIXME: don't magically initialize the runtime? */
+    _PyInitError err;
+    err = _PyRuntime_Initialize();
+    if (_Py_INIT_FAILED(err)) {
+        _Py_FatalInitError(err);
+    }
+
+    ctx->utf8_mode = -1;
+
+    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &ctx->raw_alloc);
+}
+
+
 PyObject *
 _Py_GetGlobalVariablesAsDict(void)
 {
@@ -128,28 +143,28 @@ fail:
 
 
 void
-_Py_wstrlist_clear(int len, wchar_t **list)
+_Py_wstrlist_clear(const _PyConfigCtx *ctx, int len, wchar_t **list)
 {
     for (int i=0; i < len; i++) {
-        PyMem_RawFree(list[i]);
+        _PyMem_RawFreeCtx(ctx, list[i]);
     }
-    PyMem_RawFree(list);
+    _PyMem_RawFreeCtx(ctx, list);
 }
 
 
 wchar_t**
-_Py_wstrlist_copy(int len, wchar_t **list)
+_Py_wstrlist_copy(const _PyConfigCtx *ctx, int len, wchar_t **list)
 {
     assert((len > 0 && list != NULL) || len == 0);
     size_t size = len * sizeof(list[0]);
-    wchar_t **list_copy = PyMem_RawMalloc(size);
+    wchar_t **list_copy = _PyMem_RawMallocCtx(ctx, size);
     if (list_copy == NULL) {
         return NULL;
     }
     for (int i=0; i < len; i++) {
-        wchar_t* arg = _PyMem_RawWcsdup(list[i]);
+        wchar_t* arg = _PyMem_RawWcsdup(ctx, list[i]);
         if (arg == NULL) {
-            _Py_wstrlist_clear(i, list_copy);
+            _Py_wstrlist_clear(ctx, i, list_copy);
             return NULL;
         }
         list_copy[i] = arg;
@@ -281,18 +296,26 @@ _Py_ClearStandardStreamEncoding(void)
 }
 
 
+void
+_PyCoreConfig_Init(_PyCoreConfig *config)
+{
+    *config = _PyCoreConfig_STATIC_INIT;
+    _PyConfigCtx_Init(&config->ctx);
+}
+
+
 /* Free memory allocated in config, but don't clear all attributes */
 void
 _PyCoreConfig_Clear(_PyCoreConfig *config)
 {
 #define CLEAR(ATTR) \
     do { \
-        PyMem_RawFree(ATTR); \
+        _PyMem_RawFreeCtx(&config->ctx, ATTR); \
         ATTR = NULL; \
     } while (0)
 #define CLEAR_WSTRLIST(LEN, LIST) \
     do { \
-        _Py_wstrlist_clear(LEN, LIST); \
+        _Py_wstrlist_clear(&config->ctx, LEN, LIST); \
         LEN = 0; \
         LIST = NULL; \
     } while (0)
@@ -334,6 +357,8 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
 {
     _PyCoreConfig_Clear(config);
 
+    memcpy(&config->ctx, &config2->ctx, sizeof(config->ctx));
+
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
 #define COPY_STR_ATTR(ATTR) \
     do { \
@@ -347,16 +372,17 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
 #define COPY_WSTR_ATTR(ATTR) \
     do { \
         if (config2->ATTR != NULL) { \
-            config->ATTR = _PyMem_RawWcsdup(config2->ATTR); \
+            config->ATTR = _PyMem_RawWcsdup(&config->ctx, config2->ATTR); \
             if (config->ATTR == NULL) { \
                 return -1; \
             } \
         } \
     } while (0)
+    /* Pass the context of the current config, not of the copied config */
 #define COPY_WSTRLIST(LEN, LIST) \
     do { \
         if (config2->LIST != NULL) { \
-            config->LIST = _Py_wstrlist_copy(config2->LEN, config2->LIST); \
+            config->LIST = _Py_wstrlist_copy(&config->ctx, config2->LEN, config2->LIST); \
             if (config->LIST == NULL) { \
                 return -1; \
             } \
@@ -381,7 +407,6 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
 
     COPY_ATTR(coerce_c_locale);
     COPY_ATTR(coerce_c_locale_warn);
-    COPY_ATTR(utf8_mode);
 
     COPY_WSTR_ATTR(pycache_prefix);
     COPY_WSTR_ATTR(module_search_path_env);
@@ -472,7 +497,7 @@ _PyCoreConfig_GetEnvDup(const _PyCoreConfig *config,
         return 0;
     }
 
-    wchar_t *copy = _PyMem_RawWcsdup(var);
+    wchar_t *copy = _PyMem_RawWcsdup(&config->ctx, var);
     if (copy == NULL) {
         return -1;
     }
@@ -486,7 +511,7 @@ _PyCoreConfig_GetEnvDup(const _PyCoreConfig *config,
     }
 
     size_t len;
-    wchar_t *wvar = Py_DecodeLocale(var, &len);
+    wchar_t *wvar = _Py_DecodeLocaleCtx(&config->ctx, var, &len);
     if (!wvar) {
         if (len == (size_t)-2) {
             return -2;
@@ -513,7 +538,7 @@ _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config)
             config->ATTR = !(VALUE); \
         }
 
-    COPY_FLAG(utf8_mode, Py_UTF8Mode);
+    COPY_FLAG(ctx.utf8_mode, Py_UTF8Mode);
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_FLAG(bytes_warning, Py_BytesWarningFlag);
     COPY_FLAG(inspect, Py_InspectFlag);
@@ -552,7 +577,7 @@ _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
             VAR = !config->ATTR; \
         }
 
-    COPY_FLAG(utf8_mode, Py_UTF8Mode);
+    COPY_FLAG(ctx.utf8_mode, Py_UTF8Mode);
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_FLAG(bytes_warning, Py_BytesWarningFlag);
     COPY_FLAG(inspect, Py_InspectFlag);
@@ -592,7 +617,7 @@ config_init_program_name(_PyCoreConfig *config)
     /* If Py_SetProgramName() was called, use its value */
     const wchar_t *program_name = _Py_path_config.program_name;
     if (program_name != NULL) {
-        config->program_name = _PyMem_RawWcsdup(program_name);
+        config->program_name = _PyMem_RawWcsdup(&config->ctx, program_name);
         if (config->program_name == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
@@ -612,7 +637,7 @@ config_init_program_name(_PyCoreConfig *config)
     const char *p = _PyCoreConfig_GetEnv(config, "PYTHONEXECUTABLE");
     if (p != NULL) {
         size_t len;
-        wchar_t* program_name = Py_DecodeLocale(p, &len);
+        wchar_t* program_name = _Py_DecodeLocaleCtx(&config->ctx, p, &len);
         if (program_name == NULL) {
             return DECODE_LOCALE_ERR("PYTHONEXECUTABLE environment "
                                      "variable", (Py_ssize_t)len);
@@ -628,7 +653,7 @@ config_init_program_name(_PyCoreConfig *config)
              * the argv0 of the stub executable
              */
             size_t len;
-            wchar_t* program_name = Py_DecodeLocale(pyvenv_launcher, &len);
+            wchar_t* program_name = _Py_DecodeLocaleCtx(&config->ctx, pyvenv_launcher, &len);
             if (program_name == NULL) {
                 return DECODE_LOCALE_ERR("__PYVENV_LAUNCHER__ environment "
                                          "variable", (Py_ssize_t)len);
@@ -642,7 +667,7 @@ config_init_program_name(_PyCoreConfig *config)
 
     /* Use argv[0] by default, if available */
     if (config->program != NULL) {
-        config->program_name = _PyMem_RawWcsdup(config->program);
+        config->program_name = _PyMem_RawWcsdup(&config->ctx, config->program);
         if (config->program_name == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
@@ -655,7 +680,7 @@ config_init_program_name(_PyCoreConfig *config)
 #else
     const wchar_t *default_program_name = L"python3";
 #endif
-    config->program_name = _PyMem_RawWcsdup(default_program_name);
+    config->program_name = _PyMem_RawWcsdup(&config->ctx, default_program_name);
     if (config->program_name == NULL) {
         return _Py_INIT_NO_MEMORY();
     }
@@ -694,7 +719,7 @@ config_init_home(_PyCoreConfig *config)
     /* If Py_SetPythonHome() was called, use its value */
     home = _Py_path_config.home;
     if (home) {
-        config->home = _PyMem_RawWcsdup(home);
+        config->home = _PyMem_RawWcsdup(&config->ctx, home);
         if (config->home == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
@@ -752,17 +777,17 @@ config_init_utf8_mode(_PyCoreConfig *config)
         if (sep) {
             xopt = sep + 1;
             if (wcscmp(xopt, L"1") == 0) {
-                config->utf8_mode = 1;
+                config->ctx.utf8_mode = 1;
             }
             else if (wcscmp(xopt, L"0") == 0) {
-                config->utf8_mode = 0;
+                config->ctx.utf8_mode = 0;
             }
             else {
                 return _Py_INIT_USER_ERR("invalid -X utf8 option value");
             }
         }
         else {
-            config->utf8_mode = 1;
+            config->ctx.utf8_mode = 1;
         }
         return _Py_INIT_OK();
     }
@@ -770,10 +795,10 @@ config_init_utf8_mode(_PyCoreConfig *config)
     const char *opt = _PyCoreConfig_GetEnv(config, "PYTHONUTF8");
     if (opt) {
         if (strcmp(opt, "1") == 0) {
-            config->utf8_mode = 1;
+            config->ctx.utf8_mode = 1;
         }
         else if (strcmp(opt, "0") == 0) {
-            config->utf8_mode = 0;
+            config->ctx.utf8_mode = 0;
         }
         else {
             return _Py_INIT_USER_ERR("invalid PYTHONUTF8 environment "
@@ -976,7 +1001,7 @@ config_init_pycache_prefix(_PyCoreConfig *config)
     if (xoption) {
         const wchar_t *sep = wcschr(xoption, L'=');
         if (sep && wcslen(sep) > 1) {
-            config->pycache_prefix = _PyMem_RawWcsdup(sep + 1);
+            config->pycache_prefix = _PyMem_RawWcsdup(&config->ctx, sep + 1);
             if (config->pycache_prefix == NULL) {
                 return _Py_INIT_NO_MEMORY();
             }
@@ -1052,14 +1077,14 @@ config_init_locale(_PyCoreConfig *config)
     }
 
 #ifndef MS_WINDOWS
-    if (config->utf8_mode < 0) {
+    if (config->ctx.utf8_mode < 0) {
         /* The C locale and the POSIX locale enable the UTF-8 Mode (PEP 540) */
         const char *ctype_loc = setlocale(LC_CTYPE, NULL);
         if (ctype_loc != NULL
            && (strcmp(ctype_loc, "C") == 0
                || strcmp(ctype_loc, "POSIX") == 0))
         {
-            config->utf8_mode = 1;
+            config->ctx.utf8_mode = 1;
         }
     }
 #endif
@@ -1187,7 +1212,7 @@ config_init_stdio_encoding(_PyCoreConfig *config)
     }
 
     /* UTF-8 Mode uses UTF-8/surrogateescape */
-    if (config->utf8_mode) {
+    if (config->ctx.utf8_mode) {
         if (config->stdio_encoding == NULL) {
             config->stdio_encoding = _PyMem_RawStrdup("utf-8");
             if (config->stdio_encoding == NULL) {
@@ -1260,7 +1285,7 @@ config_init_fs_encoding(_PyCoreConfig *config)
     }
 #else
     if (config->filesystem_encoding == NULL) {
-        if (config->utf8_mode) {
+        if (config->ctx.utf8_mode) {
             /* UTF-8 Mode use: utf-8/surrogateescape */
             config->filesystem_encoding = _PyMem_RawStrdup("utf-8");
             /* errors defaults to surrogateescape above */
@@ -1325,7 +1350,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
 
 #ifdef MS_WINDOWS
     if (config->legacy_windows_fs_encoding) {
-        config->utf8_mode = 0;
+        config->ctx.utf8_mode = 0;
     }
 #endif
 
@@ -1349,7 +1374,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         return err;
     }
 
-    if (config->utf8_mode < 0) {
+    if (config->ctx.utf8_mode < 0) {
         err = config_init_utf8_mode(config);
         if (_Py_INIT_FAILED(err)) {
             return err;
@@ -1370,7 +1395,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         }
     }
 
-    if (config->utf8_mode < 0 || config->coerce_c_locale < 0) {
+    if (config->ctx.utf8_mode < 0 || config->coerce_c_locale < 0) {
         config_init_locale(config);
     }
 
@@ -1403,8 +1428,8 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     if (config->coerce_c_locale < 0) {
         config->coerce_c_locale = 0;
     }
-    if (config->utf8_mode < 0) {
-        config->utf8_mode = 0;
+    if (config->ctx.utf8_mode < 0) {
+        config->ctx.utf8_mode = 0;
     }
     if (config->argc < 0) {
         config->argc = 0;
@@ -1492,7 +1517,7 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
     SET_ITEM_INT(coerce_c_locale_warn);
     SET_ITEM_STR(filesystem_encoding);
     SET_ITEM_STR(filesystem_errors);
-    SET_ITEM_INT(utf8_mode);
+    SET_ITEM("utf8_mode", PyLong_FromLong(config->ctx.utf8_mode));
     SET_ITEM_WSTR(pycache_prefix);
     SET_ITEM_WSTR(program_name);
     SET_ITEM_WSTRLIST(argc, argv);

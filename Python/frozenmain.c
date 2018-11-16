@@ -41,7 +41,8 @@ Py_FrozenMain(int argc, char **argv)
         }
     }
 
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    _PyCoreConfig config;
+    _PyCoreConfig_Init(&config);
     config._frozen = 1;   /* Suppress errors from getpath.c */
 
     if ((p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')

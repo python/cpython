@@ -579,6 +579,8 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
         return _Py_INIT_ERR("failed to copy core config");
     }
     core_config = &interp->core_config;
+    /* FIXME: update ctx just after _PyMem_SetupAllocators() */
+    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &interp->core_config.ctx.raw_alloc);
 
     PyThreadState *tstate = PyThreadState_New(interp);
     if (tstate == NULL)
@@ -706,7 +708,8 @@ _Py_InitializeCore(PyInterpreterState **interp_p,
 
     /* Copy the configuration, since _PyCoreConfig_Read() modifies it
        (and the input configuration is read only). */
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    _PyCoreConfig config;
+    _PyCoreConfig_Init(&config);
 
     /* Set LC_CTYPE to the user preferred locale */
     _Py_SetLocaleFromEnv(LC_CTYPE);
@@ -898,7 +901,9 @@ Py_InitializeEx(int install_sigs)
     }
 
     _PyInitError err;
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    _PyCoreConfig config;
+
+    _PyCoreConfig_Init(&config);
     config.install_signal_handlers = install_sigs;
 
     err = _Py_InitializeFromConfig(&config);

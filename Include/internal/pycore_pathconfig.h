@@ -9,12 +9,15 @@ extern "C" {
 #endif
 
 PyAPI_FUNC(void) _Py_wstrlist_clear(
+    const _PyConfigCtx *ctx,
     int len,
     wchar_t **list);
 PyAPI_FUNC(wchar_t**) _Py_wstrlist_copy(
+    const _PyConfigCtx *ctx,
     int len,
     wchar_t **list);
 PyAPI_FUNC(_PyInitError) _Py_wstrlist_append(
+    const _PyConfigCtx *ctx,
     int *len,
     wchar_t ***list,
     const wchar_t *str);
@@ -23,6 +26,8 @@ PyAPI_FUNC(PyObject*) _Py_wstrlist_as_pylist(
     wchar_t **list);
 
 typedef struct _PyPathConfig {
+    _PyConfigCtx ctx;
+
     /* Full path to the Python program */
     wchar_t *program_full_path;
     wchar_t *prefix;
@@ -44,17 +49,21 @@ typedef struct _PyPathConfig {
     int site_import;
 } _PyPathConfig;
 
-#define _PyPathConfig_INIT \
-    {.module_search_path = NULL, \
-     .isolated = -1, \
-     .site_import = -1}
-/* Note: _PyPathConfig_INIT sets other fields to 0/NULL */
+#define _PyPathConfig_STATIC_INIT \
+    (_PyPathConfig){ \
+         .module_search_path = NULL, \
+         .isolated = -1, \
+         .site_import = -1}
+/* Note: _PyPathConfig_STATIC_INIT sets other fields to 0/NULL */
+
+PyAPI_FUNC(void) _PyPathConfig_StaticInit(
+    _PyPathConfig *config);
 
 PyAPI_DATA(_PyPathConfig) _Py_path_config;
 
 PyAPI_FUNC(void) _PyPathConfig_ClearGlobal(void);
 PyAPI_FUNC(_PyInitError) _PyPathConfig_SetGlobal(
-    const struct _PyPathConfig *config);
+    const _PyPathConfig *config);
 
 PyAPI_FUNC(_PyInitError) _PyPathConfig_Calculate_impl(
     _PyPathConfig *config,

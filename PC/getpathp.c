@@ -118,6 +118,8 @@
 #endif
 
 typedef struct {
+    _PyConfigCtx ctx;
+
     const wchar_t *path_env;           /* PATH environment variable */
     const wchar_t *home;               /* PYTHONHOME environment variable */
 
@@ -353,7 +355,7 @@ extern const char *PyWin_DLLVersionString;
    in advance.  It could be simplied now Win16/Win32s is dead!
 */
 static wchar_t *
-getpythonregpath(HKEY keyBase, int skipcore)
+getpythonregpath(_PyConfigCtx *ctx, HKEY keyBase, int skipcore)
 {
     HKEY newKey = 0;
     DWORD dataSize = 0;
@@ -375,7 +377,7 @@ getpythonregpath(HKEY keyBase, int skipcore)
     keyBufLen = sizeof(keyPrefix) +
                 sizeof(WCHAR)*(versionLen-1) +
                 sizeof(keySuffix);
-    keyBuf = keyBufPtr = PyMem_RawMalloc(keyBufLen);
+    keyBuf = keyBufPtr = _PyMem_RawMallocCtx(ctx, keyBufLen);
     if (keyBuf==NULL) {
         goto done;
     }
@@ -407,7 +409,7 @@ getpythonregpath(HKEY keyBase, int skipcore)
     /* Allocate a temp array of char buffers, so we only need to loop
        reading the registry once
     */
-    ppPaths = PyMem_RawMalloc( sizeof(WCHAR *) * numKeys );
+    ppPaths = _PyMem_RawMallocCtx(ctx, sizeof(WCHAR *) * numKeys);
     if (ppPaths==NULL) {
         goto done;
     }
@@ -435,7 +437,7 @@ getpythonregpath(HKEY keyBase, int skipcore)
         /* Find the value of the buffer size, malloc, then read it */
         RegQueryValueExW(subKey, NULL, 0, NULL, NULL, &reqdSize);
         if (reqdSize) {
-            ppPaths[index] = PyMem_RawMalloc(reqdSize);
+            ppPaths[index] = _PyMem_RawMallocCtx(ctx, reqdSize);
             if (ppPaths[index]) {
                 RegQueryValueExW(subKey, NULL, 0, NULL,
                                 (LPBYTE)ppPaths[index],
@@ -452,7 +454,7 @@ getpythonregpath(HKEY keyBase, int skipcore)
     }
 
     /* original datasize from RegQueryInfo doesn't include the \0 */
-    dataBuf = PyMem_RawMalloc((dataSize+1) * sizeof(WCHAR));
+    dataBuf = _PyMem_RawMallocCtx(ctx, (dataSize+1) * sizeof(WCHAR));
     if (dataBuf) {
         WCHAR *szCur = dataBuf;
         /* Copy our collected strings */
@@ -484,7 +486,7 @@ getpythonregpath(HKEY keyBase, int skipcore)
             rc = RegQueryValueExW(newKey, NULL, 0, NULL,
                                   (LPBYTE)szCur, &dataSize);
             if (rc != ERROR_SUCCESS) {
-                PyMem_RawFree(dataBuf);
+                _PyMem_RawFreeCtx(ctx, dataBuf);
                 goto done;
             }
         }
@@ -494,14 +496,15 @@ getpythonregpath(HKEY keyBase, int skipcore)
 done:
     /* Loop freeing my temp buffers */
     if (ppPaths) {
-        for(index=0; index<numKeys; index++)
-            PyMem_RawFree(ppPaths[index]);
-        PyMem_RawFree(ppPaths);
+        for(index=0; index<numKeys; index++) {
+            _PyMem_RawFreeCtx(ctx, ppPaths[index]);
+        }
+        _PyMem_RawFreeCtx(ctx, ppPaths);
     }
     if (newKey) {
         RegCloseKey(newKey);
     }
-    PyMem_RawFree(keyBuf);
+    _PyMem_RawFreeCtx(ctx, keyBuf);
     return retval;
 }
 #endif /* Py_ENABLE_SHARED */
@@ -524,7 +527,7 @@ get_dll_path(PyCalculatePath *calculate, _PyPathConfig *config)
     dll_path[0] = 0;
 #endif
 
-    config->dll_path = _PyMem_RawWcsdup(dll_path);
+    config->dll_path = _PyMem_RawWcsdup(&config->ctx, dll_path);
     if (config->dll_path == NULL) {
         return _Py_INIT_NO_MEMORY();
     }
@@ -544,7 +547,7 @@ get_program_full_path(const _PyCoreConfig *core_config,
         return _Py_INIT_ERR("Cannot determine program path");
     }
 
-    config->program_full_path = PyMem_RawMalloc(
+    config->program_full_path = _PyMem_RawMallocCtx(&config->ctx,
         sizeof(wchar_t) * (MAXPATHLEN + 1));
 
     return canonicalize(config->program_full_path,
@@ -568,7 +571,7 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path)
     size_t bufsiz = MAXPATHLEN;
     size_t prefixlen = wcslen(prefix);
 
-    wchar_t *buf = (wchar_t*)PyMem_RawMalloc(bufsiz * sizeof(wchar_t));
+    wchar_t *buf = _PyMem_RawMallocCtx(&config->ctx, bufsiz * sizeof(wchar_t));
     buf[0] = '\0';
 
     while (!feof(sp_file)) {
@@ -596,16 +599,16 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path)
         }
 
         DWORD wn = MultiByteToWideChar(CP_UTF8, 0, line, -1, NULL, 0);
-        wchar_t *wline = (wchar_t*)PyMem_RawMalloc((wn + 1) * sizeof(wchar_t));
+        wchar_t *wline = _PyMem_RawMallocCtx(&config->ctx, (wn + 1) * sizeof(wchar_t));
         wn = MultiByteToWideChar(CP_UTF8, 0, line, -1, wline, wn + 1);
         wline[wn] = '\0';
 
         size_t usedsiz = wcslen(buf);
         while (usedsiz + wn + prefixlen + 4 > bufsiz) {
             bufsiz += MAXPATHLEN;
-            buf = (wchar_t*)PyMem_RawRealloc(buf, (bufsiz + 1) * sizeof(wchar_t));
+            buf = _PyMem_RawReallocCtx(&config->ctx, buf, (bufsiz + 1) * sizeof(wchar_t));
             if (!buf) {
-                PyMem_RawFree(wline);
+                _PyMem_RawFreeCtx(&config->ctx, wline);
                 goto error;
             }
         }
@@ -627,7 +630,7 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path)
         wchar_t *b = &buf[usedsiz];
         join(b, wline);
 
-        PyMem_RawFree(wline);
+        _PyMem_RawFreeCtx(&config->ctx, wline);
     }
 
     fclose(sp_file);
@@ -635,7 +638,7 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path)
     return 1;
 
 error:
-    PyMem_RawFree(buf);
+    _PyMem_RawFreeCtx(&config->ctx, buf);
     fclose(sp_file);
     return 0;
 }
@@ -756,8 +759,8 @@ calculate_module_search_path(const _PyCoreConfig *core_config,
 {
     int skiphome = calculate->home==NULL ? 0 : 1;
 #ifdef Py_ENABLE_SHARED
-    calculate->machine_path = getpythonregpath(HKEY_LOCAL_MACHINE, skiphome);
-    calculate->user_path = getpythonregpath(HKEY_CURRENT_USER, skiphome);
+    calculate->machine_path = getpythonregpath(&calculate->ctx, HKEY_LOCAL_MACHINE, skiphome);
+    calculate->user_path = getpythonregpath(&calculate->ctx, HKEY_CURRENT_USER, skiphome);
 #endif
     /* We only use the default relative PYTHONPATH if we haven't
        anything better to use! */
@@ -805,7 +808,7 @@ calculate_module_search_path(const _PyCoreConfig *core_config,
     }
 
     wchar_t *buf, *start_buf;
-    buf = PyMem_RawMalloc(bufsz * sizeof(wchar_t));
+    buf = _PyMem_RawMallocCtx(&config->ctx, bufsz * sizeof(wchar_t));
     if (buf == NULL) {
         /* We can't exit, so print a warning and limp along */
         fprintf(stderr, "Can't malloc dynamic PYTHONPATH.\n");
@@ -978,7 +981,7 @@ calculate_path_impl(const _PyCoreConfig *core_config,
     }
 
 done:
-    config->prefix = _PyMem_RawWcsdup(prefix);
+    config->prefix = _PyMem_RawWcsdup(&config->ctx, prefix);
     if (config->prefix == NULL) {
         return _Py_INIT_NO_MEMORY();
     }
@@ -990,8 +993,14 @@ done:
 static void
 calculate_free(PyCalculatePath *calculate)
 {
-    PyMem_RawFree(calculate->machine_path);
-    PyMem_RawFree(calculate->user_path);
+    _PyMem_RawFreeCtx(&calculate->ctx, calculate->machine_path);
+    _PyMem_RawFreeCtx(&calculate->ctx, calculate->user_path);
+}
+
+
+static void
+_PyCalculatePath_Init(PyCalculatePath *calculate)
+{
 }
 
 
@@ -1000,6 +1009,7 @@ _PyPathConfig_Calculate_impl(_PyPathConfig *config, const _PyCoreConfig *core_co
 {
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));
+    _PyConfigCtx_Init(&calculate.ctx);
 
     calculate_init(&calculate, core_config);
 

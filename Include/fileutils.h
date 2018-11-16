@@ -34,7 +34,9 @@ typedef enum {
 
 PyAPI_FUNC(_Py_error_handler) _Py_GetErrorHandler(const char *errors);
 
+
 PyAPI_FUNC(int) _Py_DecodeLocaleEx(
+    const _PyConfigCtx *ctx,
     const char *arg,
     wchar_t **wstr,
     size_t *wlen,
@@ -43,6 +45,7 @@ PyAPI_FUNC(int) _Py_DecodeLocaleEx(
     _Py_error_handler errors);
 
 PyAPI_FUNC(int) _Py_EncodeLocaleEx(
+    const _PyConfigCtx *ctx,
     const wchar_t *text,
     char **str,
     size_t *error_pos,
@@ -50,6 +53,7 @@ PyAPI_FUNC(int) _Py_EncodeLocaleEx(
     int current_locale,
     _Py_error_handler errors);
 #endif
+
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _Py_device_encoding(int);

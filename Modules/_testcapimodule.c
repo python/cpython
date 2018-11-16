@@ -4622,7 +4622,8 @@ encode_locale_ex(PyObject *self, PyObject *args)
     char *str = NULL;
     size_t error_pos;
     const char *reason = NULL;
-    int ret = _Py_EncodeLocaleEx(wstr,
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    int ret = _Py_EncodeLocaleEx(&interp->core_config.ctx, wstr,
                                  &str, &error_pos, &reason,
                                  current_locale, error_handler);
     PyMem_Free(wstr);
@@ -4666,7 +4667,8 @@ decode_locale_ex(PyObject *self, PyObject *args)
     wchar_t *wstr = NULL;
     size_t wlen = 0;
     const char *reason = NULL;
-    int ret = _Py_DecodeLocaleEx(str,
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    int ret = _Py_DecodeLocaleEx(&interp->core_config.ctx, str,
                                  &wstr, &wlen, &reason,
                                  current_locale, error_handler);
 

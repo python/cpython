@@ -148,7 +148,7 @@ PyInterpreterState_New(void)
     interp->codec_error_registry = NULL;
     interp->codecs_initialized = 0;
     interp->fscodec_initialized = 0;
-    interp->core_config = _PyCoreConfig_INIT;
+    _PyCoreConfig_Init(&interp->core_config);
     interp->config = _PyMainInterpreterConfig_INIT;
     interp->importlib = NULL;
     interp->import_func = NULL;

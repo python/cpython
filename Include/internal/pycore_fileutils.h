@@ -8,7 +8,13 @@ extern "C" {
 #  error "Py_BUILD_CORE must be defined to include this header"
 #endif
 
+PyAPI_FUNC(wchar_t*) _Py_DecodeLocaleCtx(
+    const _PyConfigCtx *ctx,
+    const char* arg,
+    size_t *wlen);
+
 PyAPI_FUNC(int) _Py_DecodeUTF8Ex(
+    const _PyConfigCtx *ctx,
     const char *arg,
     Py_ssize_t arglen,
     wchar_t **wstr,
@@ -17,6 +23,7 @@ PyAPI_FUNC(int) _Py_DecodeUTF8Ex(
     _Py_error_handler errors);
 
 PyAPI_FUNC(int) _Py_EncodeUTF8Ex(
+    const _PyConfigCtx *ctx,
     const wchar_t *text,
     char **str,
     size_t *error_pos,

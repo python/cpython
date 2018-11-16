@@ -36,6 +36,30 @@ typedef struct {
 
 
 typedef struct {
+    /* Enable UTF-8 mode?
+       Set by -X utf8 command line option and PYTHONUTF8 environment variable.
+       If set to -1 (default), inherit Py_UTF8Mode value. */
+    int utf8_mode;
+
+    PyMemAllocatorEx raw_alloc;
+} _PyConfigCtx;
+
+PyAPI_FUNC(void) _PyConfigCtx_Init(_PyConfigCtx *ctx);
+
+
+#ifndef Py_LIMITED_API
+/* Functions implemented in obmalloc.c */
+PyAPI_FUNC(void *) _PyMem_RawMallocCtx(const _PyConfigCtx *ctx, size_t size);
+PyAPI_FUNC(void *) _PyMem_RawCallocCtx(const _PyConfigCtx *ctx, size_t nelem, size_t elsize);
+PyAPI_FUNC(void *) _PyMem_RawReallocCtx(const _PyConfigCtx *ctx, void *ptr, size_t new_size);
+PyAPI_FUNC(void) _PyMem_RawFreeCtx(const _PyConfigCtx *ctx, void *ptr);
+PyAPI_FUNC(wchar_t*) _PyMem_RawWcsdup(const _PyConfigCtx *ctx, const wchar_t *str);
+#endif   /* !Py_LIMITED_API */
+
+
+typedef struct {
+    _PyConfigCtx ctx;
+
     /* Install signal handlers? Yes by default. */
     int install_signal_handlers;
 
@@ -101,11 +125,6 @@ typedef struct {
        */
     char *filesystem_encoding;
     char *filesystem_errors;
-
-    /* Enable UTF-8 mode?
-       Set by -X utf8 command line option and PYTHONUTF8 environment variable.
-       If set to -1 (default), inherit Py_UTF8Mode value. */
-    int utf8_mode;
 
     wchar_t *pycache_prefix; /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
 
@@ -309,7 +328,8 @@ typedef struct {
 #  define _PyCoreConfig_WINDOWS_INIT
 #endif
 
-#define _PyCoreConfig_INIT \
+/* _PyCoreConfig_STATIC_INIT must not be used: use _PyCoreConfig_Init() */
+#define _PyCoreConfig_STATIC_INIT \
     (_PyCoreConfig){ \
         .install_signal_handlers = 1, \
         .use_environment = -1, \
@@ -317,7 +337,6 @@ typedef struct {
         .faulthandler = -1, \
         .tracemalloc = -1, \
         .coerce_c_locale = -1, \
-        .utf8_mode = -1, \
         .argc = -1, \
         .nmodule_search_path = -1, \
         .isolated = -1, \
@@ -336,7 +355,9 @@ typedef struct {
         ._install_importlib = 1, \
         ._check_hash_pycs_mode = "default", \
         ._frozen = -1}
-/* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
+/* Note: _PyCoreConfig_STATIC_INIT sets other fields to 0/NULL */
+
+PyAPI_FUNC(void) _PyCoreConfig_Init(_PyCoreConfig *config);
 
 
 #ifndef Py_LIMITED_API

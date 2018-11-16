@@ -118,6 +118,8 @@ extern "C" {
      : _Py_INIT_NO_MEMORY()
 
 typedef struct {
+    _PyConfigCtx ctx;
+
     wchar_t *path_env;                 /* PATH environment variable */
 
     wchar_t *pythonpath;               /* PYTHONPATH define */
@@ -142,6 +144,7 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
 {
     int err;
     char *fname;
+    /* FIXME: use ctx? */
     fname = _Py_EncodeLocaleRaw(path, NULL);
     if (fname == NULL) {
         errno = EINVAL;
@@ -337,7 +340,7 @@ add_exe_suffix(wchar_t *progpath)
    bytes long.
 */
 static int
-search_for_prefix(const _PyCoreConfig *core_config,
+search_for_prefix(const _PyCoreConfig *core_config, _PyPathConfig *config,
                   PyCalculatePath *calculate, wchar_t *prefix)
 {
     size_t n;
@@ -362,12 +365,12 @@ search_for_prefix(const _PyCoreConfig *core_config,
     joinpath(prefix, L"Modules/Setup.local");
     if (isfile(prefix)) {
         /* Check VPATH to see if argv0_path is in the build directory. */
-        vpath = Py_DecodeLocale(VPATH, NULL);
+        vpath = _Py_DecodeLocaleCtx(&config->ctx, VPATH, NULL);
         if (vpath != NULL) {
             wcsncpy(prefix, calculate->argv0_path, MAXPATHLEN);
             prefix[MAXPATHLEN] = L'\0';
             joinpath(prefix, vpath);
-            PyMem_RawFree(vpath);
+            _PyMem_RawFreeCtx(&config->ctx, vpath);
             joinpath(prefix, L"Lib");
             joinpath(prefix, LANDMARK);
             if (ismodule(prefix)) {
@@ -404,10 +407,10 @@ search_for_prefix(const _PyCoreConfig *core_config,
 
 
 static void
-calculate_prefix(const _PyCoreConfig *core_config,
+calculate_prefix(const _PyCoreConfig *core_config, _PyPathConfig *config,
                  PyCalculatePath *calculate, wchar_t *prefix)
 {
-    calculate->prefix_found = search_for_prefix(core_config, calculate, prefix);
+    calculate->prefix_found = search_for_prefix(core_config, config, calculate, prefix);
     if (!calculate->prefix_found) {
         if (!core_config->_frozen) {
             fprintf(stderr,
@@ -599,12 +602,12 @@ calculate_program_full_path(const _PyCoreConfig *core_config,
             execpath[0] == SEP)
     {
         size_t len;
-        wchar_t *path = Py_DecodeLocale(execpath, &len);
+        wchar_t *path = _Py_DecodeLocaleCtx(&config->ctx, execpath, &len);
         if (path == NULL) {
             return DECODE_LOCALE_ERR("executable path", len);
         }
         wcsncpy(program_full_path, path, MAXPATHLEN);
-        PyMem_RawFree(path);
+        _PyMem_RawFreeCtx(&config->ctx, path);
     }
 #endif /* __APPLE__ */
     else if (calculate->path_env) {
@@ -653,7 +656,7 @@ calculate_program_full_path(const _PyCoreConfig *core_config,
     }
 #endif
 
-    config->program_full_path = _PyMem_RawWcsdup(program_full_path);
+    config->program_full_path = _PyMem_RawWcsdup(&config->ctx, program_full_path);
     if (config->program_full_path == NULL) {
         return _Py_INIT_NO_MEMORY();
     }
@@ -662,7 +665,10 @@ calculate_program_full_path(const _PyCoreConfig *core_config,
 
 
 static _PyInitError
-calculate_argv0_path(PyCalculatePath *calculate, const wchar_t *program_full_path)
+calculate_argv0_path(PyCalculatePath *calculate,
+                     const _PyCoreConfig *core_config,
+                     _PyPathConfig *config,
+                     const wchar_t *program_full_path)
 {
     wcsncpy(calculate->argv0_path, program_full_path, MAXPATHLEN);
     calculate->argv0_path[MAXPATHLEN] = '\0';
@@ -688,7 +694,7 @@ calculate_argv0_path(PyCalculatePath *calculate, const wchar_t *program_full_pat
         ** build-directory-specific logic to find Lib and such.
         */
         size_t len;
-        wchar_t* wbuf = Py_DecodeLocale(modPath, &len);
+        wchar_t* wbuf = _Py_DecodeLocaleCtx(&config->ctx, modPath, &len);
         if (wbuf == NULL) {
             return DECODE_LOCALE_ERR("framework location", len);
         }
@@ -706,7 +712,7 @@ calculate_argv0_path(PyCalculatePath *calculate, const wchar_t *program_full_pat
             /* Use the location of the library as the program_full_path */
             wcsncpy(calculate->argv0_path, wbuf, MAXPATHLEN);
         }
-        PyMem_RawFree(wbuf);
+        _PyMem_RawFreeCtx(&config->ctx, wbuf);
     }
 #endif
 
@@ -834,7 +840,7 @@ calculate_module_search_path(const _PyCoreConfig *core_config,
     bufsz += wcslen(exec_prefix) + 1;
 
     /* Allocate the buffer */
-    wchar_t *buf = PyMem_RawMalloc(bufsz * sizeof(wchar_t));
+    wchar_t *buf = _PyMem_RawMallocCtx(&config->ctx, bufsz * sizeof(wchar_t));
     if (buf == NULL) {
         return _Py_INIT_NO_MEMORY();
     }
@@ -891,30 +897,31 @@ calculate_module_search_path(const _PyCoreConfig *core_config,
 
 static _PyInitError
 calculate_init(PyCalculatePath *calculate,
+               _PyPathConfig *config,
                const _PyCoreConfig *core_config)
 {
     size_t len;
     const char *path = getenv("PATH");
     if (path) {
-        calculate->path_env = Py_DecodeLocale(path, &len);
+        calculate->path_env = _Py_DecodeLocaleCtx(&calculate->ctx, path, &len);
         if (!calculate->path_env) {
             return DECODE_LOCALE_ERR("PATH environment variable", len);
         }
     }
 
-    calculate->pythonpath = Py_DecodeLocale(PYTHONPATH, &len);
+    calculate->pythonpath = _Py_DecodeLocaleCtx(&config->ctx, PYTHONPATH, &len);
     if (!calculate->pythonpath) {
         return DECODE_LOCALE_ERR("PYTHONPATH define", len);
     }
-    calculate->prefix = Py_DecodeLocale(PREFIX, &len);
+    calculate->prefix = _Py_DecodeLocaleCtx(&config->ctx, PREFIX, &len);
     if (!calculate->prefix) {
         return DECODE_LOCALE_ERR("PREFIX define", len);
     }
-    calculate->exec_prefix = Py_DecodeLocale(EXEC_PREFIX, &len);
+    calculate->exec_prefix = _Py_DecodeLocaleCtx(&config->ctx, EXEC_PREFIX, &len);
     if (!calculate->prefix) {
         return DECODE_LOCALE_ERR("EXEC_PREFIX define", len);
     }
-    calculate->lib_python = Py_DecodeLocale("lib/python" VERSION, &len);
+    calculate->lib_python = _Py_DecodeLocaleCtx(&config->ctx, "lib/python" VERSION, &len);
     if (!calculate->lib_python) {
         return DECODE_LOCALE_ERR("EXEC_PREFIX define", len);
     }
@@ -925,11 +932,11 @@ calculate_init(PyCalculatePath *calculate,
 static void
 calculate_free(PyCalculatePath *calculate)
 {
-    PyMem_RawFree(calculate->pythonpath);
-    PyMem_RawFree(calculate->prefix);
-    PyMem_RawFree(calculate->exec_prefix);
-    PyMem_RawFree(calculate->lib_python);
-    PyMem_RawFree(calculate->path_env);
+    _PyMem_RawFreeCtx(&calculate->ctx, calculate->pythonpath);
+    _PyMem_RawFreeCtx(&calculate->ctx, calculate->prefix);
+    _PyMem_RawFreeCtx(&calculate->ctx, calculate->exec_prefix);
+    _PyMem_RawFreeCtx(&calculate->ctx, calculate->lib_python);
+    _PyMem_RawFreeCtx(&calculate->ctx, calculate->path_env);
 }
 
 
@@ -944,7 +951,7 @@ calculate_path_impl(const _PyCoreConfig *core_config,
         return err;
     }
 
-    err = calculate_argv0_path(calculate, config->program_full_path);
+    err = calculate_argv0_path(calculate, core_config, config, config->program_full_path);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -953,7 +960,7 @@ calculate_path_impl(const _PyCoreConfig *core_config,
 
     wchar_t prefix[MAXPATHLEN+1];
     memset(prefix, 0, sizeof(prefix));
-    calculate_prefix(core_config, calculate, prefix);
+    calculate_prefix(core_config, config, calculate, prefix);
 
     calculate_zip_path(calculate, prefix);
 
@@ -976,14 +983,14 @@ calculate_path_impl(const _PyCoreConfig *core_config,
 
     calculate_reduce_prefix(calculate, prefix);
 
-    config->prefix = _PyMem_RawWcsdup(prefix);
+    config->prefix = _PyMem_RawWcsdup(&config->ctx, prefix);
     if (config->prefix == NULL) {
         return _Py_INIT_NO_MEMORY();
     }
 
     calculate_reduce_exec_prefix(calculate, exec_prefix);
 
-    config->exec_prefix = _PyMem_RawWcsdup(exec_prefix);
+    config->exec_prefix = _PyMem_RawWcsdup(&config->ctx, exec_prefix);
     if (config->exec_prefix == NULL) {
         return _Py_INIT_NO_MEMORY();
     }
@@ -997,8 +1004,9 @@ _PyPathConfig_Calculate_impl(_PyPathConfig *config, const _PyCoreConfig *core_co
 {
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));
+    _PyConfigCtx_Init(&calculate.ctx);
 
-    _PyInitError err = calculate_init(&calculate, core_config);
+    _PyInitError err = calculate_init(&calculate, config, core_config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }

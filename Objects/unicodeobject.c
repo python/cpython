@@ -3424,7 +3424,8 @@ unicode_encode_locale(PyObject *unicode, const char *errors,
     char *str;
     size_t error_pos;
     const char *reason;
-    int res = _Py_EncodeLocaleEx(wstr, &str, &error_pos, &reason,
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    int res = _Py_EncodeLocaleEx(&interp->core_config.ctx, wstr, &str, &error_pos, &reason,
                                  current_locale, error_handler);
     if (res != 0) {
         if (res == -2) {
@@ -3636,7 +3637,10 @@ unicode_decode_locale(const char *str, Py_ssize_t len, const char *errors,
     wchar_t *wstr;
     size_t wlen;
     const char *reason;
-    int res = _Py_DecodeLocaleEx(str, &wstr, &wlen, &reason,
+
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    int res = _Py_DecodeLocaleEx(&interp->core_config.ctx,
+                                 str, &wstr, &wlen, &reason,
                                  current_locale, error_handler);
     if (res != 0) {
         if (res == -2) {
@@ -4904,7 +4908,8 @@ onError:
    non-NULL, write the start of the illegal byte sequence into *wlen. If reason
    is not NULL, write the decoding error message into *reason. */
 int
-_Py_DecodeUTF8Ex(const char *s, Py_ssize_t size, wchar_t **wstr, size_t *wlen,
+_Py_DecodeUTF8Ex(const _PyConfigCtx *ctx, const char *s, Py_ssize_t size,
+                 wchar_t **wstr, size_t *wlen,
                  const char **reason, _Py_error_handler errors)
 {
     const char *orig_s = s;
@@ -4934,7 +4939,7 @@ _Py_DecodeUTF8Ex(const char *s, Py_ssize_t size, wchar_t **wstr, size_t *wlen,
         return -1;
     }
 
-    unicode = PyMem_RawMalloc((size + 1) * sizeof(wchar_t));
+    unicode = _PyMem_RawMallocCtx(ctx, (size + 1) * sizeof(wchar_t));
     if (!unicode) {
         return -1;
     }
@@ -4980,7 +4985,7 @@ _Py_DecodeUTF8Ex(const char *s, Py_ssize_t size, wchar_t **wstr, size_t *wlen,
                     unicode[outpos++] = ch;
                 }
                 else {
-                    PyMem_RawFree(unicode );
+                    _PyMem_RawFreeCtx(ctx, unicode);
                     if (reason != NULL) {
                         switch (ch) {
                         case 0:
@@ -5011,11 +5016,15 @@ _Py_DecodeUTF8Ex(const char *s, Py_ssize_t size, wchar_t **wstr, size_t *wlen,
     return 0;
 }
 
+/* FIXME: add ctx parameter */
 wchar_t*
 _Py_DecodeUTF8_surrogateescape(const char *arg, Py_ssize_t arglen)
 {
     wchar_t *wstr;
-    int res = _Py_DecodeUTF8Ex(arg, arglen, &wstr, NULL, NULL, 1);
+    _PyConfigCtx ctx;
+
+    _PyConfigCtx_Init(&ctx);
+    int res = _Py_DecodeUTF8Ex(&ctx, arg, arglen, &wstr, NULL, NULL, 1);
     if (res != 0) {
         return NULL;
     }
@@ -5034,7 +5043,8 @@ _Py_DecodeUTF8_surrogateescape(const char *arg, Py_ssize_t arglen)
 
    On memory allocation failure, return -1. */
 int
-_Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *error_pos,
+_Py_EncodeUTF8Ex(const _PyConfigCtx *ctx, const wchar_t *text,
+                 char **str, size_t *error_pos,
                  const char **reason, int raw_malloc, _Py_error_handler errors)
 {
     const Py_ssize_t max_char_size = 4;
@@ -5063,7 +5073,7 @@ _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *error_pos,
     }
     char *bytes;
     if (raw_malloc) {
-        bytes = PyMem_RawMalloc((len + 1) * max_char_size);
+        bytes = _PyMem_RawMallocCtx(ctx, (len + 1) * max_char_size);
     }
     else {
         bytes = PyMem_Malloc((len + 1) * max_char_size);
@@ -5108,7 +5118,7 @@ _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *error_pos,
                     *reason = "encoding error";
                 }
                 if (raw_malloc) {
-                    PyMem_RawFree(bytes);
+                    _PyMem_RawFreeCtx(ctx, bytes);
                 }
                 else {
                     PyMem_Free(bytes);
@@ -5136,7 +5146,7 @@ _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *error_pos,
     size_t final_size = (p - bytes);
     char *bytes2;
     if (raw_malloc) {
-        bytes2 = PyMem_RawRealloc(bytes, final_size);
+        bytes2 = _PyMem_RawReallocCtx(ctx, bytes, final_size);
     }
     else {
         bytes2 = PyMem_Realloc(bytes, final_size);
@@ -5146,7 +5156,7 @@ _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *error_pos,
             *error_pos = (size_t)-1;
         }
         if (raw_malloc) {
-            PyMem_RawFree(bytes);
+            _PyMem_RawFreeCtx(ctx, bytes);
         }
         else {
             PyMem_Free(bytes);

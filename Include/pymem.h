@@ -79,9 +79,6 @@ PyAPI_FUNC(char *) _PyMem_RawStrdup(const char *str);
 
 /* strdup() using PyMem_Malloc() */
 PyAPI_FUNC(char *) _PyMem_Strdup(const char *str);
-
-/* wcsdup() using PyMem_RawMalloc() */
-PyAPI_FUNC(wchar_t*) _PyMem_RawWcsdup(const wchar_t *str);
 #endif
 
 /* Macros. */
@@ -197,6 +194,7 @@ PyAPI_FUNC(void) PyMem_SetAllocator(PyMemAllocatorDomain domain,
    The function does nothing if Python is not compiled is debug mode. */
 PyAPI_FUNC(void) PyMem_SetupDebugHooks(void);
 #endif   /* Py_LIMITED_API */
+
 
 /* bpo-35053: expose _Py_tracemalloc_config for performance:
    _Py_NewReference() needs an efficient check to test if tracemalloc is

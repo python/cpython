@@ -427,7 +427,8 @@ static int test_init_global_config(void)
 static int test_init_from_config(void)
 {
     /* Test _Py_InitializeFromConfig() */
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    _PyCoreConfig config;
+    _PyCoreConfig_Init(&config);
     config.install_signal_handlers = 0;
 
     /* FIXME: test use_environment */
@@ -461,7 +462,7 @@ static int test_init_from_config(void)
 
     putenv("PYTHONUTF8=0");
     Py_UTF8Mode = 0;
-    config.utf8_mode = 1;
+    config.ctx.utf8_mode = 1;
 
     putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
     config.pycache_prefix = L"conf_pycache_prefix";
@@ -604,11 +605,12 @@ static int test_init_env(void)
 static int test_init_isolated(void)
 {
     /* Test _PyCoreConfig.isolated=1 */
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    _PyCoreConfig config;
+    _PyCoreConfig_Init(&config);
 
     /* Set coerce_c_locale and utf8_mode to not depend on the locale */
     config.coerce_c_locale = 0;
-    config.utf8_mode = 0;
+    config.ctx.utf8_mode = 0;
     /* Use path starting with "./" avoids a search along the PATH */
     config.program_name = L"./_testembed";
 
@@ -628,7 +630,8 @@ static int test_init_isolated(void)
 
 static int test_init_dev_mode(void)
 {
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    _PyCoreConfig config;
+    _PyCoreConfig_Init(&config);
     putenv("PYTHONFAULTHANDLER=");
     putenv("PYTHONMALLOC=");
     config.dev_mode = 1;
