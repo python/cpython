@@ -1,11 +1,17 @@
 #include "Python.h"
 #include "structmember.h"
+#include "clinic/_collectionsmodule.c.h"
 
 #ifdef STDC_HEADERS
 #include <stddef.h>
 #else
 #include <sys/types.h>          /* For size_t */
 #endif
+
+/*[clinic input]
+class _tuplegetter "_tuplegetterobject *" "&tuplegetter_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ee5ed5baabe35068]*/
 
 /* collections module implementation of a deque() datatype
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
@@ -2336,40 +2342,28 @@ typedef struct {
     PyObject* doc;
 } _tuplegetterobject;
 
+/*[clinic input]
+@classmethod
+_tuplegetter.__new__ as tuplegetter_new
+
+    index: Py_ssize_t
+    doc: object
+
+[clinic start generated code]*/
+
 static PyObject *
-tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+tuplegetter_new_impl(PyTypeObject *type, Py_ssize_t index, PyObject *doc)
+/*[clinic end generated code: output=014be444ad80263f input=bed3e2ac189db22a]*/
 {
     _tuplegetterobject* self;
     self = (_tuplegetterobject *)type->tp_alloc(type, 0);
     if (self == NULL) {
         return NULL;
     }
-    self->index = 0;
-    Py_INCREF(Py_None);
-    self->doc = Py_None;
-    return (PyObject *)self;
-}
-
-
-static int
-tuplegetter_init(_tuplegetterobject *self, PyObject *args, PyObject *kwds)
-{
-    Py_ssize_t index;
-    PyObject *doc, *tmp;
-
-    static char *kwlist[] = {"index", "doc", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "n$O", kwlist,
-                                     &index, &doc)){
-        return -1;
-    }
     self->index = index;
-    if (doc) {
-        tmp = self->doc;
-        Py_INCREF(doc);
-        self->doc = doc;
-        Py_DECREF(tmp);
-    }
-    return 0;
+    Py_INCREF(doc);
+    self->doc = doc;
+    return (PyObject *)self;
 }
 
 static PyObject *
@@ -2380,8 +2374,12 @@ tuplegetterdescr_get(PyObject *self, PyObject *obj, PyObject *type)
         Py_INCREF(self);
         return self;
     }
-    if (!PyTuple_Check(obj)){
-        PyErr_SetString(PyExc_TypeError, "_tuplegetter must be used with tuples");
+    if (!PyTuple_Check(obj)) {
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor for index '%d' for tuple subclasses "
+                     "doesn't apply to '%s' object",
+                     ((_tuplegetterobject*)self)->index,
+                     obj->ob_type->tp_name);
         return NULL;
     }
     result = PyTuple_GetItem(obj, ((_tuplegetterobject*)self)->index);
@@ -2457,7 +2455,7 @@ static PyTypeObject tuplegetter_type = {
     tuplegetterdescr_get,                       /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    (initproc)tuplegetter_init,                 /* tp_init */
+    0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     tuplegetter_new,                            /* tp_new */
     0,
