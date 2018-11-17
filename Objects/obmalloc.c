@@ -651,6 +651,19 @@ _PyMem_RawWcsdup(const _PyConfigCtx *ctx, const wchar_t *str)
 }
 
 char *
+_PyMem_RawStrdupCtx(const _PyConfigCtx *ctx, const char *str)
+{
+    assert(str != NULL);
+    size_t size = strlen(str) + 1;
+    char *copy = _PyMem_RawMallocCtx(ctx, size);
+    if (copy == NULL) {
+        return NULL;
+    }
+    memcpy(copy, str, size);
+    return copy;
+}
+
+char *
 _PyMem_RawStrdup(const char *str)
 {
     assert(str != NULL);

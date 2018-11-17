@@ -57,15 +57,12 @@ int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
 
 void _PyConfigCtx_Init(_PyConfigCtx *ctx)
 {
-    /* FIXME: don't magically initialize the runtime? */
-    _PyInitError err;
-    err = _PyRuntime_Initialize();
+    _PyInitError err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
         _Py_FatalInitError(err);
     }
 
     ctx->utf8_mode = -1;
-
     PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &ctx->raw_alloc);
 }
 
@@ -371,7 +368,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
 #define COPY_STR_ATTR(ATTR) \
     do { \
         if (config2->ATTR != NULL) { \
-            config->ATTR = _PyMem_RawStrdup(config2->ATTR); \
+            config->ATTR = _PyMem_RawStrdupCtx(&config->ctx, config2->ATTR); \
             if (config->ATTR == NULL) { \
                 return -1; \
             } \
@@ -1130,7 +1127,7 @@ get_stdio_errors(const _PyCoreConfig *config)
 
 
 static _PyInitError
-get_locale_encoding(char **locale_encoding)
+get_locale_encoding(_PyConfigCtx *ctx, char **locale_encoding)
 {
 #ifdef MS_WINDOWS
     char encoding[20];
@@ -1144,7 +1141,7 @@ get_locale_encoding(char **locale_encoding)
                                  "nl_langinfo(CODESET) failed");
     }
 #endif
-    *locale_encoding = _PyMem_RawStrdup(encoding);
+    *locale_encoding = _PyMem_RawStrdupCtx(ctx, encoding);
     if (*locale_encoding == NULL) {
         return _Py_INIT_NO_MEMORY();
     }
@@ -1158,14 +1155,14 @@ config_init_stdio_encoding(_PyCoreConfig *config)
     /* If Py_SetStandardStreamEncoding() have been called, use these
         parameters. */
     if (config->stdio_encoding == NULL && _Py_StandardStreamEncoding != NULL) {
-        config->stdio_encoding = _PyMem_RawStrdup(_Py_StandardStreamEncoding);
+        config->stdio_encoding = _PyMem_RawStrdupCtx(&config->ctx, _Py_StandardStreamEncoding);
         if (config->stdio_encoding == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
     }
 
     if (config->stdio_errors == NULL && _Py_StandardStreamErrors != NULL) {
-        config->stdio_errors = _PyMem_RawStrdup(_Py_StandardStreamErrors);
+        config->stdio_errors = _PyMem_RawStrdupCtx(&config->ctx, _Py_StandardStreamErrors);
         if (config->stdio_errors == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
@@ -1195,7 +1192,7 @@ config_init_stdio_encoding(_PyCoreConfig *config)
         /* Does PYTHONIOENCODING contain an encoding? */
         if (pythonioencoding[0]) {
             if (config->stdio_encoding == NULL) {
-                config->stdio_encoding = _PyMem_RawStrdup(pythonioencoding);
+                config->stdio_encoding = _PyMem_RawStrdupCtx(&config->ctx, pythonioencoding);
                 if (config->stdio_encoding == NULL) {
                     PyMem_RawFree(pythonioencoding);
                     return _Py_INIT_NO_MEMORY();
@@ -1212,7 +1209,7 @@ config_init_stdio_encoding(_PyCoreConfig *config)
         }
 
         if (config->stdio_errors == NULL && err != NULL) {
-            config->stdio_errors = _PyMem_RawStrdup(err);
+            config->stdio_errors = _PyMem_RawStrdupCtx(&config->ctx, err);
             if (config->stdio_errors == NULL) {
                 PyMem_RawFree(pythonioencoding);
                 return _Py_INIT_NO_MEMORY();
@@ -1225,13 +1222,13 @@ config_init_stdio_encoding(_PyCoreConfig *config)
     /* UTF-8 Mode uses UTF-8/surrogateescape */
     if (config->ctx.utf8_mode) {
         if (config->stdio_encoding == NULL) {
-            config->stdio_encoding = _PyMem_RawStrdup("utf-8");
+            config->stdio_encoding = _PyMem_RawStrdupCtx(&config->ctx, "utf-8");
             if (config->stdio_encoding == NULL) {
                 return _Py_INIT_NO_MEMORY();
             }
         }
         if (config->stdio_errors == NULL) {
-            config->stdio_errors = _PyMem_RawStrdup("surrogateescape");
+            config->stdio_errors = _PyMem_RawStrdupCtx(&config->ctx, "surrogateescape");
             if (config->stdio_errors == NULL) {
                 return _Py_INIT_NO_MEMORY();
             }
@@ -1240,14 +1237,14 @@ config_init_stdio_encoding(_PyCoreConfig *config)
 
     /* Choose the default error handler based on the current locale. */
     if (config->stdio_encoding == NULL) {
-        _PyInitError err = get_locale_encoding(&config->stdio_encoding);
+        _PyInitError err = get_locale_encoding(&config->ctx, &config->stdio_encoding);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
     }
     if (config->stdio_errors == NULL) {
         const char *errors = get_stdio_errors(config);
-        config->stdio_errors = _PyMem_RawStrdup(errors);
+        config->stdio_errors = _PyMem_RawStrdupCtx(&config->ctx, errors);
         if (config->stdio_errors == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
@@ -1264,13 +1261,13 @@ config_init_fs_encoding(_PyCoreConfig *config)
     if (config->legacy_windows_fs_encoding) {
         /* Legacy Windows filesystem encoding: mbcs/replace */
         if (config->filesystem_encoding == NULL) {
-            config->filesystem_encoding = _PyMem_RawStrdup("mbcs");
+            config->filesystem_encoding = _PyMem_RawStrdupCtx(&config->ctx, "mbcs");
             if (config->filesystem_encoding == NULL) {
                 return _Py_INIT_NO_MEMORY();
             }
         }
         if (config->filesystem_errors == NULL) {
-            config->filesystem_errors = _PyMem_RawStrdup("replace");
+            config->filesystem_errors = _PyMem_RawStrdupCtx(&config->ctx, "replace");
             if (config->filesystem_errors == NULL) {
                 return _Py_INIT_NO_MEMORY();
             }
@@ -1282,14 +1279,14 @@ config_init_fs_encoding(_PyCoreConfig *config)
        Note: UTF-8 Mode takes the same code path and the Legacy Windows FS
              encoding has the priortiy over UTF-8 Mode. */
     if (config->filesystem_encoding == NULL) {
-        config->filesystem_encoding = _PyMem_RawStrdup("utf-8");
+        config->filesystem_encoding = _PyMem_RawStrdupCtx(&config->ctx, "utf-8");
         if (config->filesystem_encoding == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
     }
 
     if (config->filesystem_errors == NULL) {
-        config->filesystem_errors = _PyMem_RawStrdup("surrogatepass");
+        config->filesystem_errors = _PyMem_RawStrdupCtx(&config->ctx, "surrogatepass");
         if (config->filesystem_errors == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
@@ -1298,19 +1295,19 @@ config_init_fs_encoding(_PyCoreConfig *config)
     if (config->filesystem_encoding == NULL) {
         if (config->ctx.utf8_mode) {
             /* UTF-8 Mode use: utf-8/surrogateescape */
-            config->filesystem_encoding = _PyMem_RawStrdup("utf-8");
+            config->filesystem_encoding = _PyMem_RawStrdupCtx(&config->ctx, "utf-8");
             /* errors defaults to surrogateescape above */
         }
         else if (_Py_GetForceASCII()) {
-            config->filesystem_encoding = _PyMem_RawStrdup("ascii");
+            config->filesystem_encoding = _PyMem_RawStrdupCtx(&config->ctx, "ascii");
         }
         else {
             /* macOS and Android use UTF-8,
                other platforms use the locale encoding. */
 #if defined(__APPLE__) || defined(__ANDROID__)
-            config->filesystem_encoding = _PyMem_RawStrdup("utf-8");
+            config->filesystem_encoding = _PyMem_RawStrdupCtx(&config->ctx, "utf-8");
 #else
-            _PyInitError err = get_locale_encoding(&config->filesystem_encoding);
+            _PyInitError err = get_locale_encoding(&config->ctx, &config->filesystem_encoding);
             if (_Py_INIT_FAILED(err)) {
                 return err;
             }
@@ -1324,7 +1321,7 @@ config_init_fs_encoding(_PyCoreConfig *config)
 
     if (config->filesystem_errors == NULL) {
         /* by default, use the "surrogateescape" error handler */
-        config->filesystem_errors = _PyMem_RawStrdup("surrogateescape");
+        config->filesystem_errors = _PyMem_RawStrdupCtx(&config->ctx, "surrogateescape");
         if (config->filesystem_errors == NULL) {
             return _Py_INIT_NO_MEMORY();
         }

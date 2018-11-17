@@ -51,6 +51,7 @@ PyAPI_FUNC(void *) _PyMem_RawMallocCtx(const _PyConfigCtx *ctx, size_t size);
 PyAPI_FUNC(void *) _PyMem_RawCallocCtx(const _PyConfigCtx *ctx, size_t nelem, size_t elsize);
 PyAPI_FUNC(void *) _PyMem_RawReallocCtx(const _PyConfigCtx *ctx, void *ptr, size_t new_size);
 PyAPI_FUNC(void) _PyMem_RawFreeCtx(const _PyConfigCtx *ctx, void *ptr);
+PyAPI_FUNC(char *) _PyMem_RawStrdupCtx(const _PyConfigCtx *ctx, const char *str);
 PyAPI_FUNC(wchar_t*) _PyMem_RawWcsdup(const _PyConfigCtx *ctx, const wchar_t *str);
 
 
