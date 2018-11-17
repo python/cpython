@@ -305,6 +305,7 @@ error:
 /* Main program */
 
 typedef struct {
+    _PyConfigCtx ctx;
     wchar_t **argv;
     int nwarnoption;             /* Number of -W command line options */
     wchar_t **warnoptions;       /* Command line -W options */
@@ -369,7 +370,7 @@ pymain_init_cmdline_argv(_PyMain *pymain, _PyCoreConfig *config,
     if (pymain->use_bytes_argv) {
         /* +1 for a the NULL terminator */
         size_t size = sizeof(wchar_t*) * (pymain->argc + 1);
-        wchar_t** argv = (wchar_t **)PyMem_RawMalloc(size);
+        wchar_t** argv = (wchar_t **)_PyMem_RawMallocCtx(&cmdline->ctx, size);
         if (argv == NULL) {
             pymain->err = _Py_INIT_NO_MEMORY();
             return -1;
@@ -377,9 +378,9 @@ pymain_init_cmdline_argv(_PyMain *pymain, _PyCoreConfig *config,
 
         for (int i = 0; i < pymain->argc; i++) {
             size_t len;
-            wchar_t *arg = _Py_DecodeLocaleCtx(&config->ctx, pymain->bytes_argv[i], &len);
+            wchar_t *arg = _Py_DecodeLocaleCtx(&cmdline->ctx, pymain->bytes_argv[i], &len);
             if (arg == NULL) {
-                _Py_wstrlist_clear(&config->ctx, i, argv);
+                _Py_wstrlist_clear(&cmdline->ctx, i, argv);
                 pymain->err = DECODE_LOCALE_ERR("command line arguments",
                                                 (Py_ssize_t)len);
                 return -1;
@@ -411,25 +412,23 @@ pymain_init_cmdline_argv(_PyMain *pymain, _PyCoreConfig *config,
 
 
 static void
-pymain_clear_cmdline(_PyMain *pymain, _PyCoreConfig *config, _PyCmdline *cmdline)
+pymain_clear_cmdline(_PyMain *pymain, _PyCmdline *cmdline)
 {
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    _Py_wstrlist_clear(&config->ctx, cmdline->nwarnoption, cmdline->warnoptions);
+    _Py_wstrlist_clear(&cmdline->ctx, cmdline->nwarnoption, cmdline->warnoptions);
     cmdline->nwarnoption = 0;
     cmdline->warnoptions = NULL;
 
-    _Py_wstrlist_clear(&config->ctx, cmdline->nenv_warnoption, cmdline->env_warnoptions);
+    _Py_wstrlist_clear(&cmdline->ctx, cmdline->nenv_warnoption, cmdline->env_warnoptions);
     cmdline->nenv_warnoption = 0;
     cmdline->env_warnoptions = NULL;
 
     if (pymain->use_bytes_argv && cmdline->argv != NULL) {
-        _Py_wstrlist_clear(&config->ctx, pymain->argc, cmdline->argv);
+        _Py_wstrlist_clear(&cmdline->ctx, pymain->argc, cmdline->argv);
     }
     cmdline->argv = NULL;
 
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    memset(cmdline, 0, sizeof(*cmdline));
+    _PyConfigCtx_Init(&cmdline->ctx);
 }
 
 
@@ -1311,7 +1310,9 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
 
         /* bpo-34207: Py_DecodeLocale() and Py_EncodeLocale() depend
            on Py_UTF8Mode and Py_LegacyWindowsFSEncodingFlag. */
+        cmdline->ctx.utf8_mode = config->ctx.utf8_mode;
         Py_UTF8Mode = config->ctx.utf8_mode;
+        /* FIXME: put legacy_windows_fs_encoding into ctx */
 #ifdef MS_WINDOWS
         Py_LegacyWindowsFSEncodingFlag = config->legacy_windows_fs_encoding;
 #endif
@@ -1366,8 +1367,7 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
             pymain->err = _Py_INIT_NO_MEMORY();
             goto done;
         }
-        pymain_clear_cmdline(pymain, config, cmdline);
-        memset(cmdline, 0, sizeof(*cmdline));
+        pymain_clear_cmdline(pymain, cmdline);
         config->ctx.utf8_mode = new_utf8_mode;
         config->coerce_c_locale = new_coerce_c_locale;
 
@@ -1722,27 +1722,13 @@ pymain_cmdline_impl(_PyMain *pymain, _PyCoreConfig *config,
 static int
 pymain_cmdline(_PyMain *pymain, _PyCoreConfig *config)
 {
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-#ifdef Py_DEBUG
-    PyMemAllocatorEx default_alloc;
-    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &default_alloc);
-#endif
-
     _PyCmdline cmdline;
     memset(&cmdline, 0, sizeof(cmdline));
+    _PyConfigCtx_Init(&cmdline.ctx);
 
     int res = pymain_cmdline_impl(pymain, config, &cmdline);
 
-    pymain_clear_cmdline(pymain, config, &cmdline);
-
-#ifdef Py_DEBUG
-    /* Make sure that PYMEM_DOMAIN_RAW has not been modified */
-    PyMemAllocatorEx cur_alloc;
-    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &cur_alloc);
-    assert(memcmp(&cur_alloc, &default_alloc, sizeof(cur_alloc)) == 0);
-#endif
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    pymain_clear_cmdline(pymain, &cmdline);
     return res;
 }
 
