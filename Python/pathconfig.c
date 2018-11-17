@@ -83,9 +83,6 @@ _PyPathConfig_Calculate(_PyPathConfig *path_config,
     _PyPathConfig new_config;
     _PyPathConfig_StaticInit(&new_config);
 
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     /* Calculate program_full_path, prefix, exec_prefix (Unix)
        or dll_path (Windows), and module_search_path */
     err = _PyPathConfig_Calculate_impl(&new_config, core_config);
@@ -106,14 +103,10 @@ _PyPathConfig_Calculate(_PyPathConfig *path_config,
     _PyPathConfig_Clear(path_config);
     *path_config = new_config;
 
-    err = _Py_INIT_OK();
-    goto done;
+    return _Py_INIT_OK();
 
 err:
     _PyPathConfig_Clear(&new_config);
-
-done:
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return err;
 }
 
