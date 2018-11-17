@@ -144,7 +144,6 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
 {
     int err;
     char *fname;
-    /* FIXME: use ctx? */
     fname = _Py_EncodeLocaleRaw(path, NULL);
     if (fname == NULL) {
         errno = EINVAL;
@@ -365,12 +364,12 @@ search_for_prefix(const _PyCoreConfig *core_config, _PyPathConfig *config,
     joinpath(prefix, L"Modules/Setup.local");
     if (isfile(prefix)) {
         /* Check VPATH to see if argv0_path is in the build directory. */
-        vpath = _Py_DecodeLocaleCtx(&config->ctx, VPATH, NULL);
+        vpath = Py_DecodeLocale(VPATH, NULL);
         if (vpath != NULL) {
             wcsncpy(prefix, calculate->argv0_path, MAXPATHLEN);
             prefix[MAXPATHLEN] = L'\0';
             joinpath(prefix, vpath);
-            _PyMem_RawFreeCtx(&config->ctx, vpath);
+            PyMem_RawFree(vpath);
             joinpath(prefix, L"Lib");
             joinpath(prefix, LANDMARK);
             if (ismodule(prefix)) {
@@ -602,12 +601,12 @@ calculate_program_full_path(const _PyCoreConfig *core_config,
             execpath[0] == SEP)
     {
         size_t len;
-        wchar_t *path = _Py_DecodeLocaleCtx(&config->ctx, execpath, &len);
+        wchar_t *path = Py_DecodeLocaleCtx(execpath, &len);
         if (path == NULL) {
             return DECODE_LOCALE_ERR("executable path", len);
         }
         wcsncpy(program_full_path, path, MAXPATHLEN);
-        _PyMem_RawFreeCtx(&config->ctx, path);
+        PyMem_RawFree(path);
     }
 #endif /* __APPLE__ */
     else if (calculate->path_env) {
@@ -694,7 +693,7 @@ calculate_argv0_path(PyCalculatePath *calculate,
         ** build-directory-specific logic to find Lib and such.
         */
         size_t len;
-        wchar_t* wbuf = _Py_DecodeLocaleCtx(&config->ctx, modPath, &len);
+        wchar_t* wbuf = Py_DecodeLocaleCtx(modPath, &len);
         if (wbuf == NULL) {
             return DECODE_LOCALE_ERR("framework location", len);
         }
@@ -712,7 +711,7 @@ calculate_argv0_path(PyCalculatePath *calculate,
             /* Use the location of the library as the program_full_path */
             wcsncpy(calculate->argv0_path, wbuf, MAXPATHLEN);
         }
-        _PyMem_RawFreeCtx(&config->ctx, wbuf);
+        PyMem_RawFree(wbuf);
     }
 #endif
 
@@ -900,28 +899,29 @@ calculate_init(PyCalculatePath *calculate,
                _PyPathConfig *config,
                const _PyCoreConfig *core_config)
 {
+    _PyConfigCtx *ctx = &calculate->ctx;
     size_t len;
     const char *path = getenv("PATH");
     if (path) {
-        calculate->path_env = _Py_DecodeLocaleCtx(&calculate->ctx, path, &len);
+        calculate->path_env = _Py_DecodeLocaleCtx(ctx, path, &len);
         if (!calculate->path_env) {
             return DECODE_LOCALE_ERR("PATH environment variable", len);
         }
     }
 
-    calculate->pythonpath = _Py_DecodeLocaleCtx(&config->ctx, PYTHONPATH, &len);
+    calculate->pythonpath = _Py_DecodeLocaleCtx(ctx, PYTHONPATH, &len);
     if (!calculate->pythonpath) {
         return DECODE_LOCALE_ERR("PYTHONPATH define", len);
     }
-    calculate->prefix = _Py_DecodeLocaleCtx(&config->ctx, PREFIX, &len);
+    calculate->prefix = _Py_DecodeLocaleCtx(ctx, PREFIX, &len);
     if (!calculate->prefix) {
         return DECODE_LOCALE_ERR("PREFIX define", len);
     }
-    calculate->exec_prefix = _Py_DecodeLocaleCtx(&config->ctx, EXEC_PREFIX, &len);
+    calculate->exec_prefix = _Py_DecodeLocaleCtx(ctx, EXEC_PREFIX, &len);
     if (!calculate->prefix) {
         return DECODE_LOCALE_ERR("EXEC_PREFIX define", len);
     }
-    calculate->lib_python = _Py_DecodeLocaleCtx(&config->ctx, "lib/python" VERSION, &len);
+    calculate->lib_python = _Py_DecodeLocaleCtx(ctx, "lib/python" VERSION, &len);
     if (!calculate->lib_python) {
         return DECODE_LOCALE_ERR("EXEC_PREFIX define", len);
     }
