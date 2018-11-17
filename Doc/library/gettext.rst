@@ -96,6 +96,18 @@ class-based API instead.
    Like :func:`ngettext`, but look the message up in the specified *domain*.
 
 
+.. function:: pgettext(context, message)
+.. function:: dpgettext(domain, context, message)
+.. function:: npgettext(context, singular, plural, n)
+.. function:: dnpgettext(domain, context, singular, plural, n)
+
+   Similar to the corresponding functions without the ``p`` in the prefix (that
+   is, :func:`gettext`, :func:`dgettext`, :func:`ngettext`, :func:`dngettext`),
+   but the translation is restricted to the given message *context*.
+
+   .. versionadded:: 3.8
+
+
 .. function:: lgettext(message)
 .. function:: ldgettext(domain, message)
 .. function:: lngettext(singular, plural, n)
@@ -266,6 +278,22 @@ are the methods of :class:`!NullTranslations`:
       Overridden in derived classes.
 
 
+   .. method:: pgettext(context, message)
+
+      If a fallback has been set, forward :meth:`pgettext` to the fallback.
+      Otherwise, return the translated message.  Overridden in derived classes.
+
+      .. versionadded:: 3.8
+
+
+   .. method:: npgettext(context, singular, plural, n)
+
+      If a fallback has been set, forward :meth:`npgettext` to the fallback.
+      Otherwise, return the translated message.  Overridden in derived classes.
+
+      .. versionadded:: 3.8
+
+
    .. method:: lgettext(message)
    .. method:: lngettext(singular, plural, n)
 
@@ -316,7 +344,7 @@ are the methods of :class:`!NullTranslations`:
       If the *names* parameter is given, it must be a sequence containing the
       names of functions you want to install in the builtins namespace in
       addition to :func:`_`.  Supported names are ``'gettext'``, ``'ngettext'``,
-      ``'lgettext'`` and ``'lngettext'``.
+      ``'pgettext'``, ``'npgettext'``, ``'lgettext'``, and ``'lngettext'``.
 
       Note that this is only one way, albeit the most convenient way, to make
       the :func:`_` function available to your application.  Because it affects
@@ -330,6 +358,9 @@ are the methods of :class:`!NullTranslations`:
 
       This puts :func:`_` only in the module's global namespace and so only
       affects calls within this module.
+
+      .. versionchanged:: 3.8
+         Added ``'pgettext'`` and ``'npgettext'``.
 
 
 The :class:`GNUTranslations` class
@@ -392,6 +423,31 @@ unexpected, or if other problems occur while reading the file, instantiating a
              'There is %(num)d file in this directory',
              'There are %(num)d files in this directory',
              n) % {'num': n}
+
+
+   .. method:: pgettext(context, message)
+
+      Look up the *context* and *message* id in the catalog and return the
+      corresponding message string, as a Unicode string.  If there is no
+      entry in the catalog for the *message* id and *context*, and a fallback
+      has been set, the look up is forwarded to the fallback's
+      :meth:`pgettext` method.  Otherwise, the *message* id is returned.
+
+      .. versionadded:: 3.8
+
+
+   .. method:: npgettext(context, singular, plural, n)
+
+      Do a plural-forms lookup of a message id.  *singular* is used as the
+      message id for purposes of lookup in the catalog, while *n* is used to
+      determine which plural form to use.
+
+      If the message id for *context* is not found in the catalog, and a
+      fallback is specified, the request is forwarded to the fallback's
+      :meth:`npgettext` method.  Otherwise, when *n* is 1 *singular* is
+      returned, and *plural* is returned in all other cases.
+
+      .. versionadded:: 3.8
 
 
    .. method:: lgettext(message)

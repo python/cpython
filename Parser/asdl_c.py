@@ -1239,7 +1239,16 @@ def main(srcfile, dump_module=False):
     if H_FILE:
         with open(H_FILE, "w") as f:
             f.write(auto_gen_msg)
-            f.write('#include "asdl.h"\n\n')
+            f.write('#ifndef Py_PYTHON_AST_H\n')
+            f.write('#define Py_PYTHON_AST_H\n')
+            f.write('#ifdef __cplusplus\n')
+            f.write('extern "C" {\n')
+            f.write('#endif\n')
+            f.write('\n')
+            f.write('#include "asdl.h"\n')
+            f.write('\n')
+            f.write('#undef Yield /* undefine macro conflicting with winbase.h */\n')
+            f.write('\n')
             c = ChainOfVisitors(TypeDefVisitor(f),
                                 StructVisitor(f),
                                 PrototypeVisitor(f),
@@ -1248,6 +1257,11 @@ def main(srcfile, dump_module=False):
             f.write("PyObject* PyAST_mod2obj(mod_ty t);\n")
             f.write("mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);\n")
             f.write("int PyAST_Check(PyObject* obj);\n")
+            f.write('\n')
+            f.write('#ifdef __cplusplus\n')
+            f.write('}\n')
+            f.write('#endif\n')
+            f.write('#endif /* !Py_PYTHON_AST_H */\n')
 
     if C_FILE:
         with open(C_FILE, "w") as f:

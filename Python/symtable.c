@@ -1,10 +1,5 @@
 #include "Python.h"
-#include "pycore_state.h"
-#ifdef Yield
-#undef Yield /* undefine conflicting macro from winbase.h */
-#endif
-#include "Python-ast.h"
-#include "code.h"
+#include "pycore_pystate.h"
 #include "symtable.h"
 #include "structmember.h"
 
@@ -215,8 +210,10 @@ symtable_new(void)
     struct symtable *st;
 
     st = (struct symtable *)PyMem_Malloc(sizeof(struct symtable));
-    if (st == NULL)
+    if (st == NULL) {
+        PyErr_NoMemory();
         return NULL;
+    }
 
     st->st_filename = NULL;
     st->st_blocks = NULL;

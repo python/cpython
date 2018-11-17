@@ -32,15 +32,14 @@
 
 #include "Python.h"                     /* general Python API             */
 #include "Python-ast.h"                 /* mod_ty */
+#include "ast.h"
 #include "graminit.h"                   /* symbols defined in the grammar */
 #include "node.h"                       /* internal parser structure      */
 #include "errcode.h"                    /* error codes for PyNode_*()     */
 #include "token.h"                      /* token definitions              */
+                                        /* ISTERMINAL() / ISNONTERMINAL() */
 #include "grammar.h"
 #include "parsetok.h"
-                                        /* ISTERMINAL() / ISNONTERMINAL() */
-#undef Yield
-#include "ast.h"
 
 extern grammar _PyParser_Grammar; /* From graminit.c */
 

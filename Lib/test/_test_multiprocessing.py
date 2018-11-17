@@ -5,7 +5,6 @@
 import unittest
 import unittest.mock
 import queue as pyqueue
-import contextlib
 import time
 import io
 import itertools

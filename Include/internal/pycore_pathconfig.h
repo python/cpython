@@ -4,6 +4,10 @@
 extern "C" {
 #endif
 
+#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
+#  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
+#endif
+
 PyAPI_FUNC(void) _Py_wstrlist_clear(
     int len,
     wchar_t **list);

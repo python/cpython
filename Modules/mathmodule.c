@@ -2043,7 +2043,7 @@ Given an *n* length *vec* of values and a value *max*, compute:
     max * sqrt(sum((x / max) ** 2 for x in vec))
 
 The value of the *max* variable must be non-negative and
-at least equal to the absolute value of the largest magnitude
+equal to the absolute value of the largest magnitude
 entry in the vector.  If n==0, then *max* should be 0.0.
 If an infinity is present in the vec, *max* should be INF.
 
