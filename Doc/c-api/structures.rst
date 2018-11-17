@@ -292,7 +292,8 @@ definition with the same method name.
 
    :attr:`flags` can be ``0`` for write and read access or :c:macro:`READONLY` for
    read-only access.  Using :c:macro:`T_STRING` for :attr:`type` implies
-   :c:macro:`READONLY`.  Only :c:macro:`T_OBJECT` and :c:macro:`T_OBJECT_EX`
+   :c:macro:`READONLY`.  :c:macro:`T_STRING` data is interpreted as UTF-8.
+   Only :c:macro:`T_OBJECT` and :c:macro:`T_OBJECT_EX`
    members can be deleted.  (They are set to *NULL*).
 
 
