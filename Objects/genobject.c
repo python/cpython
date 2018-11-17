@@ -1152,8 +1152,7 @@ compute_cr_origin(int origin_depth)
 PyObject *
 PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 {
-    PyCoroObject *coro = (PyCoroObject *)gen_new_with_qualname(
-                         &PyCoro_Type, f, name, qualname);
+    PyObject *coro = gen_new_with_qualname(&PyCoro_Type, f, name, qualname);
     if (!coro) {
         return NULL;
     }
@@ -1162,14 +1161,17 @@ PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
     int origin_depth = tstate->coroutine_origin_tracking_depth;
 
     if (origin_depth == 0) {
-        coro->cr_origin = NULL;
-    }
-    else if ((coro->cr_origin = compute_cr_origin(origin_depth)) == NULL) {
-        Py_DECREF(coro);
-        return NULL;
+        ((PyCoroObject *)coro)->cr_origin = NULL;
+    } else {
+        PyObject *cr_origin = compute_cr_origin(origin_depth);
+        ((PyCoroObject *)coro)->cr_origin = cr_origin;
+        if (!cr_origin) {
+            Py_DECREF(coro);
+            return NULL;
+        }
     }
 
-    return (PyObject *)coro;
+    return coro;
 }
 
 
