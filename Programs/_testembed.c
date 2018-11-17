@@ -139,6 +139,8 @@ static int test_forced_io_encoding(void)
 
 static int test_pre_initialization_api(void)
 {
+    unsetenv("PYTHONMALLOC");
+
     /* Leading "./" ensures getpath.c can still find the standard library */
     _Py_EMBED_PREINIT_CHECK("Checking Py_DecodeLocale\n");
     wchar_t *program = Py_DecodeLocale("./spam", NULL);
@@ -235,6 +237,8 @@ static void bpo20891_thread(void *lockp)
 
 static int test_bpo20891(void)
 {
+    unsetenv("PYTHONMALLOC");
+
     /* bpo-20891: Calling PyGILState_Ensure in a non-Python thread before
        calling PyEval_InitThreads() must not crash. PyGILState_Ensure() must
        call PyEval_InitThreads() for us in this case. */
@@ -278,6 +282,8 @@ static int test_initialize_twice(void)
 
 static int test_initialize_pymain(void)
 {
+    unsetenv("PYTHONMALLOC");
+
     wchar_t *argv[] = {L"PYTHON", L"-c",
                        L"import sys; print(f'Py_Main() after Py_Initialize: sys.argv={sys.argv}')",
                        L"arg2"};
