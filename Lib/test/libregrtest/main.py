@@ -555,11 +555,7 @@ class Regrtest:
         if self.ns.tempdir:
             TEMPDIR = self.ns.tempdir
 
-        if not os.path.isdir(TEMPDIR):
-            try:
-                os.makedirs(TEMPDIR)
-            except FileExistsError:
-                pass
+        os.makedirs(TEMPDIR, exist_ok=True)
 
         # Define a writable temp dir that will be used as cwd while running
         # the tests. The name of the dir includes the pid to allow parallel
