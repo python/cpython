@@ -263,7 +263,7 @@ class Cmd:
             endidx = readline.get_endidx() - stripped
             if begidx>0:
                 cmd, args, foo = self.parseline(line)
-                if cmd == '':
+                if not cmd:
                     compfunc = self.completedefault
                 else:
                     try:

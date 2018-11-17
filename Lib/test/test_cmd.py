@@ -9,6 +9,13 @@ import sys
 import unittest
 import io
 from test import support
+from unittest.mock import patch
+
+try:
+    import readline
+except ImportError:
+    readline = None
+
 
 class samplecmdclass(cmd.Cmd):
     """
@@ -217,6 +224,22 @@ class TestAlternateInput(unittest.TestCase):
             ("(Cmd) \n"
              "(Cmd) \n"
              "(Cmd) *** Unknown syntax: EOF\n"))
+
+    @unittest.skipIf(readline is None, 'No readline module')
+    @patch('readline.get_line_buffer', return_value='foo')
+    @patch('readline.get_begidx', return_value=2)
+    @patch('readline.get_endidx', return_value=2)
+    def test_complete_with_None_from_parseline(self, *args):
+
+        class CustomCmd(cmd.Cmd):
+            def parseline(self, line):
+                return None, None, line
+
+            def completedefault(self, *args):
+                return ['via_completedefault']
+
+        c = CustomCmd()
+        self.assertEqual(c.complete("", 0), "via_completedefault")
 
 
 def test_main(verbose=None):
