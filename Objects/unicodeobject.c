@@ -6042,7 +6042,7 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
             }
 
             message = "malformed \\N character escape";
-            if (*s == '{') {
+            if (s < end && *s == '{') {
                 const char *start = ++s;
                 size_t namelen;
                 /* look for the closing brace */

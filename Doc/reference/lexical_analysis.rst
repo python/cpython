@@ -65,6 +65,7 @@ Comments
 --------
 
 .. index:: comment, hash character
+   single: # (hash); comment
 
 A comment starts with a hash character (``#``) that is not part of a string
 literal, and ends at the end of the physical line.  A comment signifies the end
@@ -78,6 +79,7 @@ Encoding declarations
 ---------------------
 
 .. index:: source character set, encoding declarations (source file)
+   single: # (hash); source encoding declaration
 
 If a comment in the first or second line of the Python script matches the
 regular expression ``coding[=:]\s*([-\w.]+)``, this comment is processed as an
@@ -349,6 +351,9 @@ exactly as written here:
    assert     del        global     not        with
    async      elif       if         or         yield
 
+.. index::
+   single: _, identifiers
+   single: __, identifiers
 .. _id-classes:
 
 Reserved classes of identifiers
@@ -395,12 +400,15 @@ Literals
 Literals are notations for constant values of some built-in types.
 
 
+.. index:: string literal, bytes literal, ASCII
+   single: ' (single quote); string literal
+   single: " (double quote); string literal
+   single: u'; string literal
+   single: u"; string literal
 .. _strings:
 
 String and Bytes literals
 -------------------------
-
-.. index:: string literal, bytes literal, ASCII
 
 String literals are described by the following lexical definitions:
 
@@ -434,6 +442,8 @@ declaration; it is UTF-8 if no encoding declaration is given in the source file;
 see section :ref:`encodings`.
 
 .. index:: triple-quoted string, Unicode Consortium, raw string
+   single: """; string literal
+   single: '''; string literal
 
 In plain English: Both types of literals can be enclosed in matching single quotes
 (``'``) or double quotes (``"``).  They can also be enclosed in matching groups
@@ -442,10 +452,18 @@ of three single or double quotes (these are generally referred to as
 characters that otherwise have a special meaning, such as newline, backslash
 itself, or the quote character.
 
+.. index::
+   single: b'; bytes literal
+   single: b"; bytes literal
+
 Bytes literals are always prefixed with ``'b'`` or ``'B'``; they produce an
 instance of the :class:`bytes` type instead of the :class:`str` type.  They
 may only contain ASCII characters; bytes with a numeric value of 128 or greater
 must be expressed with escapes.
+
+.. index::
+   single: r'; raw string literal
+   single: r"; raw string literal
 
 Both string and bytes literals may optionally be prefixed with a letter ``'r'``
 or ``'R'``; such strings are called :dfn:`raw strings` and treat backslashes as
@@ -463,6 +481,10 @@ is not supported.
    to simplify the maintenance of dual Python 2.x and 3.x codebases.
    See :pep:`414` for more information.
 
+.. index::
+   single: f'; formatted string literal
+   single: f"; formatted string literal
+
 A string literal with ``'f'`` or ``'F'`` in its prefix is a
 :dfn:`formatted string literal`; see :ref:`f-strings`.  The ``'f'`` may be
 combined with ``'r'``, but not with ``'b'`` or ``'u'``, therefore raw
@@ -473,6 +495,19 @@ retained), except that three unescaped quotes in a row terminate the literal.  (
 "quote" is the character used to open the literal, i.e. either ``'`` or ``"``.)
 
 .. index:: physical line, escape sequence, Standard C, C
+   single: \ (backslash); escape sequence
+   single: \\; escape sequence
+   single: \a; escape sequence
+   single: \b; escape sequence
+   single: \f; escape sequence
+   single: \n; escape sequence
+   single: \r; escape sequence
+   single: \t; escape sequence
+   single: \v; escape sequence
+   single: \x; escape sequence
+   single: \N; escape sequence
+   single: \u; escape sequence
+   single: \U; escape sequence
 
 Unless an ``'r'`` or ``'R'`` prefix is present, escape sequences in string and
 bytes literals are interpreted according to rules similar to those used by
@@ -601,6 +636,9 @@ and formatted string literals may be concatenated with plain string literals.
    single: string; formatted literal
    single: string; interpolated literal
    single: f-string
+   single: {} (curly brackets); in formatted string literal
+   single: ! (exclamation); in formatted string literal
+   single: : (colon); in formatted string literal
 .. _f-strings:
 
 Formatted string literals
@@ -735,6 +773,12 @@ actually an expression composed of the unary operator '``-``' and the literal
 ``1``.
 
 
+.. index::
+   single: 0b; integer literal
+   single: 0o; integer literal
+   single: 0x; integer literal
+   single: _ (underscore); in numeric literal
+
 .. _integers:
 
 Integer literals
@@ -775,6 +819,10 @@ Some examples of integer literals::
    Underscores are now allowed for grouping purposes in literals.
 
 
+.. index::
+   single: . (dot); in numeric literal
+   single: e; in numeric literal
+   single: _ (underscore); in numeric literal
 .. _floating:
 
 Floating point literals
@@ -803,6 +851,8 @@ Some examples of floating point literals::
    Underscores are now allowed for grouping purposes in literals.
 
 
+.. index::
+   single: j; in numeric literal
 .. _imaginary:
 
 Imaginary literals

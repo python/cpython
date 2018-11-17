@@ -769,7 +769,7 @@ conflict.
    This may also be enabled at runtime with
    :func:`sys._enablelegacywindowsfsencoding()`.
 
-   Availability: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.6
       See :pep:`529` for more details.
@@ -783,7 +783,7 @@ conflict.
    This variable is ignored if the standard streams are redirected (to files
    or pipes) rather than referring to console buffers.
 
-   Availability: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.6
 
@@ -834,7 +834,7 @@ conflict.
    order to force the interpreter to use ``ASCII`` instead of ``UTF-8`` for
    system interfaces.
 
-   Availability: \*nix
+   .. availability:: \*nix.
 
    .. versionadded:: 3.7
       See :pep:`538` for more details.
@@ -895,7 +895,7 @@ conflict.
 
    Also available as the :option:`-X` ``utf8`` option.
 
-   Availability: \*nix
+   .. availability:: \*nix.
 
    .. versionadded:: 3.7
       See :pep:`540` for more details.

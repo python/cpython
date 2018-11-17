@@ -187,7 +187,7 @@ EVP_copy(EVPobject *self, PyObject *unused)
 }
 
 PyDoc_STRVAR(EVP_digest__doc__,
-"Return the digest value as a string of binary data.");
+"Return the digest value as a bytes object.");
 
 static PyObject *
 EVP_digest(EVPobject *self, PyObject *unused)

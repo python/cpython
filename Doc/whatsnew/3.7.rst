@@ -432,7 +432,7 @@ and size) with source metadata saved in the cache file header when it was
 generated. While effective, this invalidation method has its drawbacks.  When
 filesystem timestamps are too coarse, Python can miss source updates, leading to
 user confusion. Additionally, having a timestamp in the cache file is
-problematic for `build reproduciblity <https://reproducible-builds.org/>`_ and
+problematic for `build reproducibility <https://reproducible-builds.org/>`_ and
 content-based build systems.
 
 :pep:`552` extends the pyc format to allow the hash of the source file to be
@@ -1030,7 +1030,7 @@ support the loading of resources from packages.  See also
 lacks a spec.
 (Contributed by Garvit Khatri in :issue:`29851`.)
 
-:func:`importlib.find_spec` now raises ``ModuleNotFoundError`` instead of
+:func:`importlib.find_spec` now raises :exc:`ModuleNotFoundError` instead of
 :exc:`AttributeError` if the specified parent module is not a package (i.e.
 lacks a ``__path__`` attribute).
 (Contributed by Milan Oberkirch in :issue:`30436`.)
@@ -2523,3 +2523,8 @@ In 3.7.1 the C API for Context Variables
 
 :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
 external entities by default. See also :issue:`17239`.
+
+In 3.7.1 the :mod:`tokenize` module now implicitly emits a ``NEWLINE`` token
+when provided with input that does not have a trailing new line.  This behavior
+now matches what the C tokenizer does internally.
+(Contributed by Ammar Askar in :issue:`33899`.)

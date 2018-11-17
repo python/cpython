@@ -50,9 +50,9 @@ lastn_const_start(const _Py_CODEUNIT *codestr, Py_ssize_t i, Py_ssize_t n)
 
 /* Scans through EXTENDED ARGs, seeking the index of the effective opcode */
 static Py_ssize_t
-find_op(const _Py_CODEUNIT *codestr, Py_ssize_t i)
+find_op(const _Py_CODEUNIT *codestr, Py_ssize_t codelen, Py_ssize_t i)
 {
-    while (_Py_OPCODE(codestr[i]) == EXTENDED_ARG) {
+    while (i < codelen && _Py_OPCODE(codestr[i]) == EXTENDED_ARG) {
         i++;
     }
     return i;
@@ -128,8 +128,9 @@ copy_op_arg(_Py_CODEUNIT *codestr, Py_ssize_t i, unsigned char op,
    Called with codestr pointing to the first LOAD_CONST.
 */
 static Py_ssize_t
-fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
-                        Py_ssize_t opcode_end, PyObject *consts, int n)
+fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t codelen,
+                        Py_ssize_t c_start, Py_ssize_t opcode_end,
+                        PyObject *consts, int n)
 {
     /* Pre-conditions */
     assert(PyList_CheckExact(consts));
@@ -142,7 +143,7 @@ fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
 
     for (Py_ssize_t i = 0, pos = c_start; i < n; i++, pos++) {
         assert(pos < opcode_end);
-        pos = find_op(codestr, pos);
+        pos = find_op(codestr, codelen, pos);
         assert(_Py_OPCODE(codestr[pos]) == LOAD_CONST);
 
         unsigned int arg = get_arg(codestr, pos);
@@ -267,7 +268,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         goto exitError;
     assert(PyList_Check(consts));
 
-    for (i=find_op(codestr, 0) ; i<codelen ; i=nexti) {
+    for (i=find_op(codestr, codelen, 0) ; i<codelen ; i=nexti) {
         opcode = _Py_OPCODE(codestr[i]);
         op_start = i;
         while (op_start >= 1 && _Py_OPCODE(codestr[op_start-1]) == EXTENDED_ARG) {
@@ -305,7 +306,8 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 if (j > 0 && lastlc >= j) {
                     h = lastn_const_start(codestr, op_start, j);
                     if (ISBASICBLOCK(blocks, h, op_start)) {
-                        h = fold_tuple_on_constants(codestr, h, i+1, consts, j);
+                        h = fold_tuple_on_constants(codestr, codelen,
+                                                    h, i+1, consts, j);
                         break;
                     }
                 }
@@ -342,7 +344,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case JUMP_IF_FALSE_OR_POP:
             case JUMP_IF_TRUE_OR_POP:
                 h = get_arg(codestr, i) / sizeof(_Py_CODEUNIT);
-                tgt = find_op(codestr, h);
+                tgt = find_op(codestr, codelen, h);
 
                 j = _Py_OPCODE(codestr[tgt]);
                 if (CONDITIONAL_JUMP(j)) {
@@ -383,7 +385,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case SETUP_WITH:
             case SETUP_ASYNC_WITH:
                 h = GETJUMPTGT(codestr, i);
-                tgt = find_op(codestr, h);
+                tgt = find_op(codestr, codelen, h);
                 /* Replace JUMP_* to a RETURN into just a RETURN */
                 if (UNCONDITIONAL_JUMP(opcode) &&
                     _Py_OPCODE(codestr[tgt]) == RETURN_VALUE) {
@@ -412,7 +414,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 }
                 if (h > i + 1) {
                     fill_nops(codestr, i + 1, h);
-                    nexti = find_op(codestr, h);
+                    nexti = find_op(codestr, codelen, h);
                 }
                 break;
         }

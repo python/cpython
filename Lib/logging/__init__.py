@@ -1033,8 +1033,8 @@ class StreamHandler(Handler):
         try:
             msg = self.format(record)
             stream = self.stream
-            stream.write(msg)
-            stream.write(self.terminator)
+            # issue 35046: merged two stream.writes into one.
+            stream.write(msg + self.terminator)
             self.flush()
         except Exception:
             self.handleError(record)

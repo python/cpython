@@ -174,12 +174,10 @@ class DateTimeTests(unittest.TestCase):
             '1980-01-01 00:61:00',
             '01-01-1980 00:00:62',
             '01-01-1980T00:00:62',
-            '19800101T250000Z'
-            '1980-01-01 00:00:00 -2500',
+            '19800101T250000Z',
             ]:
             self.assertIsNone(iso2time(test),
-                              "iso2time(%s) is not None\n"
-                              "iso2time(test) %s" % (test, iso2time(test)))
+                              "iso2time(%r)" % test)
 
 
 class HeaderTests(unittest.TestCase):

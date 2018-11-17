@@ -161,7 +161,9 @@ always available.
 
 .. data:: dllhandle
 
-   Integer specifying the handle of the Python DLL. Availability: Windows.
+   Integer specifying the handle of the Python DLL.
+
+   .. availability:: Windows.
 
 
 .. function:: displayhook(value)
@@ -457,7 +459,7 @@ always available.
 
    Return the build time API version of Android as an integer.
 
-   Availability: Android.
+   .. availability:: Android.
 
    .. versionadded:: 3.7
 
@@ -481,7 +483,9 @@ always available.
    Return the current value of the flags that are used for
    :c:func:`dlopen` calls.  Symbolic names for the flag values can be
    found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
-   :data:`os.RTLD_LAZY`).  Availability: Unix.
+   :data:`os.RTLD_LAZY`).
+
+   .. availability:: Unix.
 
 
 .. function:: getfilesystemencoding()
@@ -649,7 +653,7 @@ always available.
    is being emulated for the process. It is intended for use in logging rather
    than for feature detection.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
    .. versionchanged:: 3.2
       Changed to a named tuple and added *service_pack_minor*,
@@ -1040,6 +1044,8 @@ always available.
    .. index::
       single: interpreter prompts
       single: prompts, interpreter
+      single: >>>; interpreter prompt
+      single: ...; interpreter prompt
 
    Strings specifying the primary and secondary prompt of the interpreter.  These
    are only defined if the interpreter is in interactive mode.  Their initial
@@ -1074,7 +1080,7 @@ always available.
    can be found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
    :data:`os.RTLD_LAZY`).
 
-   Availability: Unix.
+   .. availability:: Unix.
 
 .. function:: setprofile(profilefunc)
 
@@ -1320,7 +1326,7 @@ always available.
    This is equivalent to defining the :envvar:`PYTHONLEGACYWINDOWSFSENCODING`
    environment variable before launching Python.
 
-   Availability: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.6
       See :pep:`529` for more details.
@@ -1466,7 +1472,9 @@ always available.
    stored as string resource 1000 in the Python DLL.  The value is normally the
    first three characters of :const:`version`.  It is provided in the :mod:`sys`
    module for informational purposes; modifying this value has no effect on the
-   registry keys used by Python. Availability: Windows.
+   registry keys used by Python.
+
+   .. availability:: Windows.
 
 
 .. data:: _xoptions

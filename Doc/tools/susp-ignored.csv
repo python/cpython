@@ -14,7 +14,7 @@ faq/programming,,:chr,">=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,
 faq/programming,,::,for x in sequence[::-1]:
 faq/programming,,:reduce,"print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,"
 faq/programming,,:reduce,"Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,"
-faq/windows,,:bd8afb90ebf2,"Python 3.3.0 (v3.3.0:bd8afb90ebf2, Sep 29 2012, 10:55:48) [MSC v.1600 32 bit (Intel)] on win32"
+faq/windows,,:d48eceb,"Python 3.6.4 (v3.6.4:d48eceb, Dec 19 2017, 06:04:45) [MSC v.1900 32 bit (Intel)] on win32"
 howto/cporting,,:encode,"if (!PyArg_ParseTuple(args, ""O:encode_object"", &myobj))"
 howto/cporting,,:say,"if (!PyArg_ParseTuple(args, ""U:say_hello"", &name))"
 howto/curses,,:black,"colors when it activates color mode.  They are: 0:black, 1:red,"
@@ -180,9 +180,17 @@ library/pathlib,,:Program,>>> PureWindowsPath('c:Program Files/').anchor
 library/pdb,,:lineno,filename:lineno
 library/pickle,,:memory,"conn = sqlite3.connect("":memory:"")"
 library/posix,,`,"CFLAGS=""`getconf LFS_CFLAGS`"" OPT=""-g -O2 $CFLAGS"""
-library/pprint,,::,"'Programming Language :: Python :: 2 :: Only'],"
 library/pprint,,::,"'Programming Language :: Python :: 2.6',"
 library/pprint,,::,"'Programming Language :: Python :: 2.7',"
+library/pprint,225,::,"'classifiers': ['Development Status :: 3 - Alpha',"
+library/pprint,225,::,"'Intended Audience :: Developers',"
+library/pprint,225,::,"'License :: OSI Approved :: MIT License',"
+library/pprint,225,::,"'Programming Language :: Python :: 2',"
+library/pprint,225,::,"'Programming Language :: Python :: 3',"
+library/pprint,225,::,"'Programming Language :: Python :: 3.2',"
+library/pprint,225,::,"'Programming Language :: Python :: 3.3',"
+library/pprint,225,::,"'Programming Language :: Python :: 3.4',"
+library/pprint,225,::,"'Topic :: Software Development :: Build Tools'],"
 library/profile,,:lineno,filename:lineno(function)
 library/pyexpat,,:elem1,<py:elem1 />
 library/pyexpat,,:py,"xmlns:py = ""http://www.python.org/ns/"">"

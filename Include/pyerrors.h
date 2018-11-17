@@ -94,9 +94,9 @@ PyAPI_FUNC(void) PyErr_SetExcInfo(PyObject *, PyObject *, PyObject *);
 #endif
 
 #if defined(__clang__) || \
-    (defined(__GNUC_MAJOR__) && \
-     ((__GNUC_MAJOR__ >= 3) || \
-      (__GNUC_MAJOR__ == 2) && (__GNUC_MINOR__ >= 5)))
+    (defined(__GNUC__) && \
+     ((__GNUC__ >= 3) || \
+      (__GNUC__ == 2) && (__GNUC_MINOR__ >= 5)))
 #define _Py_NO_RETURN __attribute__((__noreturn__))
 #else
 #define _Py_NO_RETURN

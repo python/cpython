@@ -4711,10 +4711,15 @@ _ssl_MemoryBIO_read_impl(PySSLMemoryBIO *self, int len)
         return result;
 
     nbytes = BIO_read(self->bio, PyBytes_AS_STRING(result), len);
-    /* There should never be any short reads but check anyway. */
-    if ((nbytes < len) && (_PyBytes_Resize(&result, len) < 0)) {
+    if (nbytes < 0) {
         Py_DECREF(result);
+        _setSSLError(NULL, 0, __FILE__, __LINE__);
         return NULL;
+    }
+
+    /* There should never be any short reads but check anyway. */
+    if (nbytes < len) {
+        _PyBytes_Resize(&result, nbytes);
     }
 
     return result;

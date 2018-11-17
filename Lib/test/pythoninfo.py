@@ -142,7 +142,7 @@ def collect_platform(info_add):
     info_add('platform.python_implementation',
              platform.python_implementation())
     info_add('platform.platform',
-             platform.platform(aliased=True, terse=True))
+             platform.platform(aliased=True))
 
 
 def collect_locale(info_add):
@@ -525,6 +525,33 @@ def collect_cc(info_add):
     info_add('CC.version', text)
 
 
+def collect_gdbm(info_add):
+    try:
+        from _gdbm import _GDBM_VERSION
+    except ImportError:
+        return
+
+    info_add('gdbm.GDBM_VERSION', '.'.join(map(str, _GDBM_VERSION)))
+
+
+def collect_get_config(info_add):
+    # Dump global configuration variables, _PyCoreConfig
+    # and _PyMainInterpreterConfig
+    try:
+        from _testcapi import get_global_config, get_core_config, get_main_config
+    except ImportError:
+        return
+
+    for prefix, get_config_func in (
+        ('global_config', get_global_config),
+        ('core_config', get_core_config),
+        ('main_config', get_main_config),
+    ):
+        config = get_config_func()
+        for key in sorted(config):
+            info_add('%s[%s]' % (prefix, key), repr(config[key]))
+
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -552,6 +579,8 @@ def collect_info(info):
         collect_testcapi,
         collect_resource,
         collect_cc,
+        collect_gdbm,
+        collect_get_config,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,
