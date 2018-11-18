@@ -1121,7 +1121,14 @@ class Popen(object):
 
             if isinstance(args, str):
                 pass
-            elif not shell and isinstance(args, os.PathLike):
+            elif isinstance(args, bytes):
+                if shell:
+                    raise TypeError('bytes args is not allowed on Windows')
+                args = list2cmdline([args])
+            elif isinstance(args, os.PathLike):
+                if shell:
+                    raise TypeError('path-like args is not allowed when '
+                                    'shell is true')
                 args = list2cmdline([args])
             else:
                 args = list2cmdline(args)
@@ -1400,8 +1407,12 @@ class Popen(object):
                            restore_signals, start_new_session):
             """Execute program (POSIX version)"""
 
-            if (isinstance(args, (str, bytes)) or
-                not shell and isinstance(args, os.PathLike)):
+            if isinstance(args, (str, bytes)):
+                args = [args]
+            elif isinstance(args, os.PathLike):
+                if shell:
+                    raise TypeError('path-like args is not allowed when '
+                                    'shell is true')
                 args = [args]
             else:
                 args = list(args)
