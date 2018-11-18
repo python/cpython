@@ -20,8 +20,8 @@ def dumb_range__str(a_range):
     """Pure python implementation of the range.__str__ function.
     """
     if len(a_range) > 4:
-        return f"[{a_range[0]}, {a_range[1]}, ..., {a_range[-2]}, {a_range[-1]}]"
-    return str(list(a_range))
+        return f"{a_range[0]}, {a_range[1]}, ..., {a_range[-2]}, {a_range[-1]}"
+    return str(list(a_range))[1:-1]
 
 
 def pyrange_reversed(start, stop, step):

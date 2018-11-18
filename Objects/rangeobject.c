@@ -595,21 +595,21 @@ range_str(rangeobject *r)
     switch (length) {
     case 4:
         return PyUnicode_FromFormat(
-            "[%zi, %zi, %zi, %zi]",
+            "%zi, %zi, %zi, %zi",
             start, start + step, start + 2 * step, last_value);
     case 3:
         return PyUnicode_FromFormat(
-            "[%zi, %zi, %zi]",
+            "%zi, %zi, %zi",
             start, start + step, last_value);
     case 2:
-        return PyUnicode_FromFormat("[%zi, %zi]", start, last_value);
+        return PyUnicode_FromFormat("%zi, %zi", start, last_value);
     case 1:
-        return PyUnicode_FromFormat("[%zi]", start);
+        return PyUnicode_FromFormat("%zi", start);
     case 0:
-        return PyUnicode_FromString("[]");
+        return PyUnicode_FromString("");
     default:
         return PyUnicode_FromFormat(
-            "[%zi, %zi, ..., %zi, %zi]",
+            "%zi, %zi, ..., %zi, %zi",
             start, start + step, last_value - step, last_value);
     }
 }
