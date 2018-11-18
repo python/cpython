@@ -2,7 +2,7 @@
 /* Module object implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 
 static Py_ssize_t max_module_number;

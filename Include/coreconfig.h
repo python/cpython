@@ -358,20 +358,11 @@ PyAPI_FUNC(int) _PyCoreConfig_GetEnvDup(
     wchar_t **dest,
     wchar_t *wname,
     char *name);
+
+/* Used by _testcapi.get_global_config() and _testcapi.get_core_config() */
+PyAPI_FUNC(PyObject *) _Py_GetGlobalVariablesAsDict(void);
+PyAPI_FUNC(PyObject *) _PyCoreConfig_AsDict(const _PyCoreConfig *config);
 #endif
-
-
-#ifdef Py_BUILD_CORE
-PyAPI_FUNC(int) _Py_SetFileSystemEncoding(
-    const char *encoding,
-    const char *errors);
-PyAPI_FUNC(void) _Py_ClearFileSystemEncoding(void);
-#endif
-
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject*) _Py_wstrlist_as_pylist(int len, wchar_t **list);
-#endif
-
 
 #ifdef __cplusplus
 }

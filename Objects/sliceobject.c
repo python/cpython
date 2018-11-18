@@ -14,8 +14,8 @@ this type and there is exactly one in existence.
 */
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 
 static PyObject *

@@ -1,9 +1,9 @@
 #include "Python.h"
 
 #include "structmember.h"
-#include "internal/pystate.h"
-#include "internal/context.h"
-#include "internal/hamt.h"
+#include "pycore_pystate.h"
+#include "pycore_context.h"
+#include "pycore_hamt.h"
 
 
 #define CONTEXT_FREELIST_MAXLEN 255
@@ -112,7 +112,7 @@ PyContext_Enter(PyObject *octx)
         return -1;
     }
 
-    PyThreadState *ts = PyThreadState_GET();
+    PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
 
     ctx->ctx_prev = (PyContext *)ts->context;  /* borrow */
@@ -138,7 +138,7 @@ PyContext_Exit(PyObject *octx)
         return -1;
     }
 
-    PyThreadState *ts = PyThreadState_GET();
+    PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
 
     if (ts->context != (PyObject *)ctx) {
@@ -178,7 +178,7 @@ PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
     ENSURE_ContextVar(ovar, -1)
     PyContextVar *var = (PyContextVar *)ovar;
 
-    PyThreadState *ts = PyThreadState_GET();
+    PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
     if (ts->context == NULL) {
         goto not_found;
@@ -382,7 +382,7 @@ context_new_from_vars(PyHamtObject *vars)
 static inline PyContext *
 context_get(void)
 {
-    PyThreadState *ts = PyThreadState_GET();
+    PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
     PyContext *current_ctx = (PyContext *)ts->context;
     if (current_ctx == NULL) {

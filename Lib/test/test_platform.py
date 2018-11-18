@@ -1,4 +1,3 @@
-from unittest import mock
 import os
 import platform
 import subprocess

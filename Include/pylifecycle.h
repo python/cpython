@@ -7,21 +7,12 @@
 extern "C" {
 #endif
 
-PyAPI_FUNC(void) Py_SetProgramName(const wchar_t *);
-PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);
-
-PyAPI_FUNC(void) Py_SetPythonHome(const wchar_t *);
-PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
-
 #ifndef Py_LIMITED_API
 /* Only used by applications that embed the interpreter and need to
  * override the standard encoding determination mechanism
  */
 PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
                                              const char *errors);
-#endif
-#ifdef Py_BUILD_CORE
-PyAPI_FUNC(void) _Py_ClearStandardStreamEncoding(void);
 #endif
 
 
@@ -40,6 +31,9 @@ PyAPI_FUNC(void) _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *);
 PyAPI_FUNC(int) _PyMainInterpreterConfig_Copy(
     _PyMainInterpreterConfig *config,
     const _PyMainInterpreterConfig *config2);
+/* Used by _testcapi.get_main_config() */
+PyAPI_FUNC(PyObject*) _PyMainInterpreterConfig_AsDict(
+    const _PyMainInterpreterConfig *config);
 
 PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(
     PyInterpreterState *interp,
@@ -82,27 +76,22 @@ PyAPI_FUNC(int) Py_FdIsInteractive(FILE *, const char *);
 
 /* Bootstrap __main__ (defined in Modules/main.c) */
 PyAPI_FUNC(int) Py_Main(int argc, wchar_t **argv);
-#ifdef Py_BUILD_CORE
-PyAPI_FUNC(int) _Py_UnixMain(int argc, char **argv);
-#endif
 
-/* In getpath.c */
+/* In pathconfig.c */
+PyAPI_FUNC(void) Py_SetProgramName(const wchar_t *);
+PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);
+
+PyAPI_FUNC(void) Py_SetPythonHome(const wchar_t *);
+PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
+
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(void) _Py_SetProgramFullPath(const wchar_t *);
+#endif
 PyAPI_FUNC(wchar_t *) Py_GetProgramFullPath(void);
+
 PyAPI_FUNC(wchar_t *) Py_GetPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetExecPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetPath(void);
-#ifdef Py_BUILD_CORE
-struct _PyPathConfig;
-
-PyAPI_FUNC(_PyInitError) _PyPathConfig_SetGlobal(
-    const struct _PyPathConfig *config);
-PyAPI_FUNC(PyObject*) _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv);
-PyAPI_FUNC(int) _Py_FindEnvConfigValue(
-    FILE *env_file,
-    const wchar_t *key,
-    wchar_t *value,
-    size_t value_size);
-#endif
 PyAPI_FUNC(void)      Py_SetPath(const wchar_t *);
 #ifdef MS_WINDOWS
 int _Py_CheckPython3(void);
@@ -133,16 +122,6 @@ PyAPI_FUNC(_PyInitError) _Py_HashRandomization_Init(const _PyCoreConfig *);
 #endif
 
 /* Various internal finalizers */
-
-#ifdef Py_BUILD_CORE
-PyAPI_FUNC(void) _PyExc_Fini(void);
-PyAPI_FUNC(void) _PyImport_Fini(void);
-PyAPI_FUNC(void) _PyImport_Fini2(void);
-PyAPI_FUNC(void) _PyGC_DumpShutdownStats(void);
-PyAPI_FUNC(void) _PyGC_Fini(void);
-PyAPI_FUNC(void) _PyType_Fini(void);
-PyAPI_FUNC(void) _Py_HashRandomization_Fini(void);
-#endif   /* Py_BUILD_CORE */
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) PyMethod_Fini(void);
@@ -178,9 +157,6 @@ PyAPI_FUNC(int) _PyOS_URandomNonblock(void *buffer, Py_ssize_t size);
 PyAPI_FUNC(void) _Py_CoerceLegacyLocale(int warn);
 PyAPI_FUNC(int) _Py_LegacyLocaleDetected(void);
 PyAPI_FUNC(char *) _Py_SetLocaleFromEnv(int category);
-#endif
-#ifdef Py_BUILD_CORE
-PyAPI_FUNC(int) _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 #endif
 
 #ifdef __cplusplus

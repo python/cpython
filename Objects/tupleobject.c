@@ -2,8 +2,8 @@
 /* Tuple object implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
-#include "accu.h"
+#include "pycore_pystate.h"
+#include "pycore_accu.h"
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
