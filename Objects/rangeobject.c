@@ -570,55 +570,69 @@ static PySequenceMethods range_as_sequence = {
 };
 
 static PyObject *
+range_str(rangeobject *r)
+{
+    long start, stop, step, length, last_value;
+
+    start = PyLong_AsLong(r->start);
+    if (start == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    stop = PyLong_AsLong(r->stop);
+    if (stop == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    step = PyLong_AsLong(r->step);
+    if (step == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    length = PyLong_AsLong(r->length);
+    if (length == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    last_value = start + (length - 1) * step;
+
+    switch (length) {
+    case 4:
+        return PyUnicode_FromFormat(
+            "[%zi, %zi, %zi, %zi]",
+            start, start + step, start + 2 * step, last_value);
+    case 3:
+        return PyUnicode_FromFormat(
+            "[%zi, %zi, %zi]",
+            start, start + step, last_value);
+    case 2:
+        return PyUnicode_FromFormat("[%zi, %zi]", start, last_value);
+    case 1:
+        return PyUnicode_FromFormat("[%zi]", start);
+    case 0:
+        return PyUnicode_FromString("[]");
+    default:
+        return PyUnicode_FromFormat(
+            "[%zi, %zi, ..., %zi, %zi]",
+            start, start + step, last_value - step, last_value);
+    }
+}
+
+
+static PyObject *
 range_repr(rangeobject *r)
 {
-    Py_ssize_t istart, istop, istep;
-    Py_ssize_t expected_len, expected_end;
+    Py_ssize_t istep;
 
-    istart = PyNumber_AsSsize_t(r->start, NULL);
-    if (istart == -1 && PyErr_Occurred()) {
-        assert(!PyErr_ExceptionMatches(PyExc_OverflowError));
-        return NULL;
-    }
-    istop = PyNumber_AsSsize_t(r->stop, NULL);
-    if (istop == -1 && PyErr_Occurred()) {
-        assert(!PyErr_ExceptionMatches(PyExc_OverflowError));
-        return NULL;
-    }
-
+    /* Check for special case values for printing.  We don't always
+       need the step value.  We don't care about overflow. */
     istep = PyNumber_AsSsize_t(r->step, NULL);
     if (istep == -1 && PyErr_Occurred()) {
         assert(!PyErr_ExceptionMatches(PyExc_OverflowError));
         return NULL;
     }
-    expected_len = ceil((istop - istart) / (float)istep);
-    expected_len = Py_MAX(0, expected_len);
-    expected_end = istart + (expected_len - 1) * istep;
-    switch (expected_len) {
-    case 4:
-        return PyUnicode_FromFormat(
-            "<range object [%zi, %zi, %zi, %zi]>",
-            istart, istart + istep, istart + 2 * istep, istart + 3 * istep);
-    case 3:
-        return PyUnicode_FromFormat(
-            "<range object [%zi, %zi, %zi]>",
-            istart, istart + istep, expected_end);
-    case 2:
-        return PyUnicode_FromFormat(
-            "<range object [%zi, %zi]>",
-            istart, expected_end);
-    case 1:
-        return PyUnicode_FromFormat(
-            "<range object [%zi]>",
-            istart);
-    case 0:
-        return PyUnicode_FromFormat(
-            "<range object []>");
-    default:
-        return PyUnicode_FromFormat(
-            "<range object [%zi, %zi, ..., %zi, %zi]>",
-            istart, istart + istep, expected_end - istep, expected_end);
-    }
+
+    if (istep == 1)
+        return PyUnicode_FromFormat("range(%R, %R)", r->start, r->stop);
+    else
+        return PyUnicode_FromFormat("range(%R, %R, %R)",
+                                    r->start, r->stop, r->step);
 }
 
 /* Pickling support */
@@ -711,7 +725,7 @@ PyTypeObject PyRange_Type = {
         &range_as_mapping,      /* tp_as_mapping */
         (hashfunc)range_hash,   /* tp_hash */
         0,                      /* tp_call */
-        0,                      /* tp_str */
+        (reprfunc)range_str,    /* tp_str */
         PyObject_GenericGetAttr,  /* tp_getattro */
         0,                      /* tp_setattro */
         0,                      /* tp_as_buffer */
