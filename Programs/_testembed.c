@@ -292,102 +292,77 @@ static int test_initialize_pymain(void)
 }
 
 
+static int
+dump_config_impl(void)
+{
+    PyObject *config = NULL;
+    PyObject *dict = NULL;
+
+    config = PyDict_New();
+    if (config == NULL) {
+        goto error;
+    }
+
+    /* global config */
+    dict = _Py_GetGlobalVariablesAsDict();
+    if (dict == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(config, "global_config", dict) < 0) {
+        goto error;
+    }
+    Py_CLEAR(dict);
+
+    /* core config */
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    const _PyCoreConfig *core_config = &interp->core_config;
+    dict = _PyCoreConfig_AsDict(core_config);
+    if (dict == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(config, "core_config", dict) < 0) {
+        goto error;
+    }
+    Py_CLEAR(dict);
+
+    /* main config */
+    const _PyMainInterpreterConfig *main_config = &interp->config;
+    dict = _PyMainInterpreterConfig_AsDict(main_config);
+    if (dict == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(config, "main_config", dict) < 0) {
+        goto error;
+    }
+    Py_CLEAR(dict);
+
+    PyObject *json = PyImport_ImportModule("json");
+    PyObject *res = PyObject_CallMethod(json, "dumps", "O", config);
+    Py_DECREF(json);
+    Py_CLEAR(config);
+    if (res == NULL) {
+        goto error;
+    }
+
+    PySys_FormatStdout("%S\n", res);
+    Py_DECREF(res);
+
+    return 0;
+
+error:
+    Py_XDECREF(config);
+    Py_XDECREF(dict);
+    return -1;
+}
+
+
 static void
 dump_config(void)
 {
-#define ASSERT_EQUAL(a, b) \
-    if ((a) != (b)) { \
-        printf("ERROR: %s != %s (%i != %i)\n", #a, #b, (a), (b)); \
-        exit(1); \
+    if (dump_config_impl() < 0) {
+        fprintf(stderr, "failed to dump the configuration:\n");
+        PyErr_Print();
     }
-#define ASSERT_STR_EQUAL(a, b) \
-    if ((a) == NULL || (b == NULL) || wcscmp((a), (b)) != 0) { \
-        printf("ERROR: %s != %s ('%ls' != '%ls')\n", #a, #b, (a), (b)); \
-        exit(1); \
-    }
-
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    _PyCoreConfig *config = &interp->core_config;
-
-    printf("install_signal_handlers = %i\n", config->install_signal_handlers);
-
-    printf("use_environment = %i\n", config->use_environment);
-    ASSERT_EQUAL(config->use_environment, !Py_IgnoreEnvironmentFlag);
-
-    printf("use_hash_seed = %i\n", config->use_hash_seed);
-    printf("hash_seed = %lu\n", config->hash_seed);
-
-    printf("allocator = %s\n", config->allocator);
-
-    printf("dev_mode = %i\n", config->dev_mode);
-    printf("faulthandler = %i\n", config->faulthandler);
-    printf("tracemalloc = %i\n", config->tracemalloc);
-    printf("import_time = %i\n", config->import_time);
-    printf("show_ref_count = %i\n", config->show_ref_count);
-    printf("show_alloc_count = %i\n", config->show_alloc_count);
-    printf("dump_refs = %i\n", config->dump_refs);
-    printf("malloc_stats = %i\n", config->malloc_stats);
-
-    printf("filesystem_encoding = %s\n", config->filesystem_encoding);
-    printf("filesystem_errors = %s\n", config->filesystem_errors);
-    printf("coerce_c_locale = %i\n", config->coerce_c_locale);
-    printf("coerce_c_locale_warn = %i\n", config->coerce_c_locale_warn);
-    printf("utf8_mode = %i\n", config->utf8_mode);
-
-    printf("pycache_prefix = %ls\n", config->pycache_prefix);
-    printf("program_name = %ls\n", config->program_name);
-    ASSERT_STR_EQUAL(config->program_name, Py_GetProgramName());
-
-    printf("argc = %i\n", config->argc);
-    printf("argv = [");
-    for (int i=0; i < config->argc; i++) {
-        if (i) {
-            printf(", ");
-        }
-        printf("\"%ls\"", config->argv[i]);
-    }
-    printf("]\n");
-
-    printf("program = %ls\n", config->program);
-    /* FIXME: test xoptions */
-    /* FIXME: test warnoptions */
-    /* FIXME: test module_search_path_env */
-    /* FIXME: test home */
-    /* FIXME: test module_search_paths */
-    /* FIXME: test executable */
-    /* FIXME: test prefix */
-    /* FIXME: test base_prefix */
-    /* FIXME: test exec_prefix */
-    /* FIXME: test base_exec_prefix */
-    /* FIXME: test dll_path */
-
-    printf("isolated = %i\n", config->isolated);
-    ASSERT_EQUAL(config->isolated, Py_IsolatedFlag);
-    printf("site_import = %i\n", config->site_import);
-    printf("bytes_warning = %i\n", config->bytes_warning);
-    printf("inspect = %i\n", config->inspect);
-    printf("interactive = %i\n", config->interactive);
-    printf("optimization_level = %i\n", config->optimization_level);
-    printf("parser_debug = %i\n", config->parser_debug);
-    printf("write_bytecode = %i\n", config->write_bytecode);
-    printf("verbose = %i\n", config->verbose);
-    ASSERT_EQUAL(config->verbose, Py_VerboseFlag);
-    printf("quiet = %i\n", config->quiet);
-    printf("user_site_directory = %i\n", config->user_site_directory);
-    printf("buffered_stdio = %i\n", config->buffered_stdio);
-    ASSERT_EQUAL(config->buffered_stdio, !Py_UnbufferedStdioFlag);
-    printf("stdio_encoding = %s\n", config->stdio_encoding);
-    printf("stdio_errors = %s\n", config->stdio_errors);
-
-    /* FIXME: test legacy_windows_fs_encoding */
-    /* FIXME: test legacy_windows_stdio */
-
-    printf("_install_importlib = %i\n", config->_install_importlib);
-    printf("_check_hash_pycs_mode = %s\n", config->_check_hash_pycs_mode);
-    printf("_frozen = %i\n", config->_frozen);
-
-#undef ASSERT_EQUAL
-#undef ASSERT_STR_EQUAL
 }
 
 
@@ -494,10 +469,30 @@ static int test_init_from_config(void)
     Py_SetProgramName(L"./globalvar");
     config.program_name = L"./conf_program_name";
 
-    /* FIXME: test argc/argv */
+    static wchar_t* argv[2] = {
+        L"-c",
+        L"pass",
+    };
+    config.argc = Py_ARRAY_LENGTH(argv);
+    config.argv = argv;
+
     config.program = L"conf_program";
-    /* FIXME: test xoptions */
-    /* FIXME: test warnoptions */
+
+    static wchar_t* xoptions[3] = {
+        L"core_xoption1=3",
+        L"core_xoption2=",
+        L"core_xoption3",
+    };
+    config.nxoption = Py_ARRAY_LENGTH(xoptions);
+    config.xoptions = xoptions;
+
+    static wchar_t* warnoptions[2] = {
+        L"default",
+        L"error::ResourceWarning",
+    };
+    config.nwarnoption = Py_ARRAY_LENGTH(warnoptions);
+    config.warnoptions = warnoptions;
+
     /* FIXME: test module_search_path_env */
     /* FIXME: test home */
     /* FIXME: test path config: module_search_path .. dll_path */
@@ -538,6 +533,11 @@ static int test_init_from_config(void)
 
     putenv("PYTHONIOENCODING=cp424");
     Py_SetStandardStreamEncoding("ascii", "ignore");
+#ifdef MS_WINDOWS
+    /* Py_SetStandardStreamEncoding() sets Py_LegacyWindowsStdioFlag to 1.
+       Force it to 0 through the config. */
+    config.legacy_windows_stdio = 0;
+#endif
     config.stdio_encoding = "iso8859-1";
     config.stdio_errors = "replace";
 

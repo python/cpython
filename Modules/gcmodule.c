@@ -25,8 +25,8 @@
 
 #include "Python.h"
 #include "pycore_context.h"
-#include "pycore_mem.h"
-#include "pycore_state.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "frameobject.h"        /* for PyFrame_ClearFreeList */
 #include "pydtrace.h"
 #include "pytime.h"             /* for _PyTime_GetMonotonicClock() */

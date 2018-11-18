@@ -1609,38 +1609,40 @@ successive matches::
     import collections
     import re
 
-    Token = collections.namedtuple('Token', ['typ', 'value', 'line', 'column'])
+    Token = collections.namedtuple('Token', ['type', 'value', 'line', 'column'])
 
     def tokenize(code):
         keywords = {'IF', 'THEN', 'ENDIF', 'FOR', 'NEXT', 'GOSUB', 'RETURN'}
         token_specification = [
-            ('NUMBER',  r'\d+(\.\d*)?'),  # Integer or decimal number
-            ('ASSIGN',  r':='),           # Assignment operator
-            ('END',     r';'),            # Statement terminator
-            ('ID',      r'[A-Za-z]+'),    # Identifiers
-            ('OP',      r'[+\-*/]'),      # Arithmetic operators
-            ('NEWLINE', r'\n'),           # Line endings
-            ('SKIP',    r'[ \t]+'),       # Skip over spaces and tabs
-            ('MISMATCH',r'.'),            # Any other character
+            ('NUMBER',   r'\d+(\.\d*)?'),  # Integer or decimal number
+            ('ASSIGN',   r':='),           # Assignment operator
+            ('END',      r';'),            # Statement terminator
+            ('ID',       r'[A-Za-z]+'),    # Identifiers
+            ('OP',       r'[+\-*/]'),      # Arithmetic operators
+            ('NEWLINE',  r'\n'),           # Line endings
+            ('SKIP',     r'[ \t]+'),       # Skip over spaces and tabs
+            ('MISMATCH', r'.'),            # Any other character
         ]
         tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
         line_num = 1
         line_start = 0
         for mo in re.finditer(tok_regex, code):
             kind = mo.lastgroup
-            value = mo.group(kind)
-            if kind == 'NEWLINE':
+            value = mo.group()
+            column = mo.start() - line_start
+            if kind == 'NUMBER':
+                value = float(value) if '.' in value else int(value)
+            elif kind == 'ID' and value in keywords:
+                kind = value
+            elif kind == 'NEWLINE':
                 line_start = mo.end()
                 line_num += 1
+                continue
             elif kind == 'SKIP':
-                pass
+                continue
             elif kind == 'MISMATCH':
                 raise RuntimeError(f'{value!r} unexpected on line {line_num}')
-            else:
-                if kind == 'ID' and value in keywords:
-                    kind = value
-                column = mo.start() - line_start
-                yield Token(kind, value, line_num, column)
+            yield Token(kind, value, line_num, column)
 
     statements = '''
         IF quantity THEN
@@ -1654,25 +1656,25 @@ successive matches::
 
 The tokenizer produces the following output::
 
-    Token(typ='IF', value='IF', line=2, column=4)
-    Token(typ='ID', value='quantity', line=2, column=7)
-    Token(typ='THEN', value='THEN', line=2, column=16)
-    Token(typ='ID', value='total', line=3, column=8)
-    Token(typ='ASSIGN', value=':=', line=3, column=14)
-    Token(typ='ID', value='total', line=3, column=17)
-    Token(typ='OP', value='+', line=3, column=23)
-    Token(typ='ID', value='price', line=3, column=25)
-    Token(typ='OP', value='*', line=3, column=31)
-    Token(typ='ID', value='quantity', line=3, column=33)
-    Token(typ='END', value=';', line=3, column=41)
-    Token(typ='ID', value='tax', line=4, column=8)
-    Token(typ='ASSIGN', value=':=', line=4, column=12)
-    Token(typ='ID', value='price', line=4, column=15)
-    Token(typ='OP', value='*', line=4, column=21)
-    Token(typ='NUMBER', value='0.05', line=4, column=23)
-    Token(typ='END', value=';', line=4, column=27)
-    Token(typ='ENDIF', value='ENDIF', line=5, column=4)
-    Token(typ='END', value=';', line=5, column=9)
+    Token(type='IF', value='IF', line=2, column=4)
+    Token(type='ID', value='quantity', line=2, column=7)
+    Token(type='THEN', value='THEN', line=2, column=16)
+    Token(type='ID', value='total', line=3, column=8)
+    Token(type='ASSIGN', value=':=', line=3, column=14)
+    Token(type='ID', value='total', line=3, column=17)
+    Token(type='OP', value='+', line=3, column=23)
+    Token(type='ID', value='price', line=3, column=25)
+    Token(type='OP', value='*', line=3, column=31)
+    Token(type='ID', value='quantity', line=3, column=33)
+    Token(type='END', value=';', line=3, column=41)
+    Token(type='ID', value='tax', line=4, column=8)
+    Token(type='ASSIGN', value=':=', line=4, column=12)
+    Token(type='ID', value='price', line=4, column=15)
+    Token(type='OP', value='*', line=4, column=21)
+    Token(type='NUMBER', value=0.05, line=4, column=23)
+    Token(type='END', value=';', line=4, column=27)
+    Token(type='ENDIF', value='ENDIF', line=5, column=4)
+    Token(type='END', value=';', line=5, column=9)
 
 
 .. [Frie09] Friedl, Jeffrey. Mastering Regular Expressions. 3rd ed., O'Reilly

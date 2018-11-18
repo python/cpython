@@ -819,6 +819,8 @@ enable_optimizations
 with_lto
 with_hash_algorithm
 with_address_sanitizer
+with_memory_sanitizer
+with_undefined_behavior_sanitizer
 with_libs
 with_system_expat
 with_system_ffi
@@ -1515,7 +1517,10 @@ Optional Packages:
   --with-hash-algorithm=[fnv|siphash24]
                           select hash algorithm
   --with-address-sanitizer
-                          enable AddressSanitizer
+                          enable AddressSanitizer (asan)
+  --with-memory-sanitizer enable MemorySanitizer (msan)
+  --with-undefined-behavior-sanitizer
+                          enable UndefinedBehaviorSanitizer (ubsan)
   --with-libs='lib1 ...'  link against additional libs
   --with-system-expat     build pyexpat module using an installed expat
                           library
@@ -10038,6 +10043,44 @@ if test "${with_address_sanitizer+set}" = set; then :
 $as_echo "$withval" >&6; }
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
+# ASan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-memory-sanitizer" >&5
+$as_echo_n "checking for --with-memory-sanitizer... " >&6; }
+
+# Check whether --with-memory_sanitizer was given.
+if test "${with_memory_sanitizer+set}" = set; then :
+  withval=$with_memory_sanitizer;
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+$as_echo "$withval" >&6; }
+BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+# MSan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-undefined-behavior-sanitizer" >&5
+$as_echo_n "checking for --with-undefined-behavior-sanitizer... " >&6; }
+
+# Check whether --with-undefined_behavior_sanitizer was given.
+if test "${with_undefined_behavior_sanitizer+set}" = set; then :
+  withval=$with_undefined_behavior_sanitizer;
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+$as_echo "$withval" >&6; }
+BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
+LDFLAGS="-fsanitize=undefined $LDFLAGS"
 
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
