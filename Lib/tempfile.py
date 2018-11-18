@@ -791,16 +791,17 @@ class TemporaryDirectory(object):
     def _rmtree(cls, name):
         def onerror(func, path, exc_info):
             if issubclass(exc_info[0], PermissionError):
-                try:
+                def resetperms(path):
                     try:
-                        if path != name:
-                            _os.chflags(_os.path.dirname(path), 0)
                         _os.chflags(path, 0)
                     except AttributeError:
                         pass
-                    if path != name:
-                        _os.chmod(_os.path.dirname(path), 0o700)
                     _os.chmod(path, 0o700)
+
+                try:
+                    if path != name:
+                        resetperms(_os.path.dirname(path))
+                    resetperms(path)
 
                     try:
                         _os.unlink(path)
