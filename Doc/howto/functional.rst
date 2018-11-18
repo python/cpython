@@ -1114,9 +1114,9 @@ small functions is to use the :keyword:`lambda` statement.  ``lambda`` takes a
 number of parameters and an expression combining these parameters, and creates
 an anonymous function that returns the value of the expression::
 
-    adder = lambda x, y: x+y
+    lambda x, y: x+y
 
-    print_assign = lambda name, value: name + '=' + str(value)
+    lambda name, value: name + '=' + str(value)
 
 An alternative is to just use the ``def`` statement and define a function in the
 usual way::
@@ -1128,7 +1128,10 @@ usual way::
         return name + '=' + str(value)
 
 Which alternative is preferable?  That's a style question; my usual course is to
-avoid using ``lambda``.
+avoid using ``lambda``.  The `PEP 8 style guide`_ has a small section regarding the use
+of ``lambda`` expressions which is quite instructive.
+
+.. _PEP 8 style guide: https://www.python.org/dev/peps/pep-0008/#programming-recommendations
 
 One reason for my preference is that ``lambda`` is quite limited in the
 functions it can define.  The result has to be computable as a single
