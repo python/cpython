@@ -1206,6 +1206,25 @@ config_init_program_name(_PyCoreConfig *config)
 }
 
 
+static _PyInitError
+config_init_executable(_PyCoreConfig *config)
+{
+    assert(config->executable == NULL);
+
+    /* If Py_SetProgramFullPath() was called, use its value */
+    const wchar_t *program_full_path = _Py_path_config.program_full_path;
+    if (program_full_path != NULL) {
+        config->executable = _PyMem_RawWcsdup(program_full_path);
+        if (config->executable == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+        return _Py_INIT_OK();
+    }
+
+    return _Py_INIT_OK();
+}
+
+
 static void
 pymain_header(_PyMain *pymain)
 {
@@ -2345,6 +2364,13 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
 
     if (config->program_name == NULL) {
         err = config_init_program_name(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+
+    if (config->executable == NULL) {
+        err = config_init_executable(config);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
