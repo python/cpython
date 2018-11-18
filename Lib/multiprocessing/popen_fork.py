@@ -1,5 +1,4 @@
 import os
-import sys
 import signal
 
 from . import util

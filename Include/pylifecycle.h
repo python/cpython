@@ -7,12 +7,6 @@
 extern "C" {
 #endif
 
-PyAPI_FUNC(void) Py_SetProgramName(const wchar_t *);
-PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);
-
-PyAPI_FUNC(void) Py_SetPythonHome(const wchar_t *);
-PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
-
 #ifndef Py_LIMITED_API
 /* Only used by applications that embed the interpreter and need to
  * override the standard encoding determination mechanism
@@ -37,6 +31,9 @@ PyAPI_FUNC(void) _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *);
 PyAPI_FUNC(int) _PyMainInterpreterConfig_Copy(
     _PyMainInterpreterConfig *config,
     const _PyMainInterpreterConfig *config2);
+/* Used by _testcapi.get_main_config() */
+PyAPI_FUNC(PyObject*) _PyMainInterpreterConfig_AsDict(
+    const _PyMainInterpreterConfig *config);
 
 PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(
     PyInterpreterState *interp,
@@ -80,8 +77,18 @@ PyAPI_FUNC(int) Py_FdIsInteractive(FILE *, const char *);
 /* Bootstrap __main__ (defined in Modules/main.c) */
 PyAPI_FUNC(int) Py_Main(int argc, wchar_t **argv);
 
-/* In getpath.c */
+/* In pathconfig.c */
+PyAPI_FUNC(void) Py_SetProgramName(const wchar_t *);
+PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);
+
+PyAPI_FUNC(void) Py_SetPythonHome(const wchar_t *);
+PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
+
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(void) _Py_SetProgramFullPath(const wchar_t *);
+#endif
 PyAPI_FUNC(wchar_t *) Py_GetProgramFullPath(void);
+
 PyAPI_FUNC(wchar_t *) Py_GetPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetExecPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetPath(void);

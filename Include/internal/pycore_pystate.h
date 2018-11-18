@@ -4,16 +4,16 @@
 extern "C" {
 #endif
 
-#ifndef Py_BUILD_CORE
-#  error "Py_BUILD_CORE must be defined to include this header"
+#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
+#  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
 #endif
 
 #include "pystate.h"
 #include "pythread.h"
 
 #include "pycore_ceval.h"
-#include "pycore_mem.h"
 #include "pycore_pathconfig.h"
+#include "pycore_pymem.h"
 #include "pycore_warnings.h"
 
 

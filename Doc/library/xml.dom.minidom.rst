@@ -143,6 +143,9 @@ module documentation.  This section lists the differences between the API and
    For the :class:`Document` node, an additional keyword argument *encoding* can
    be used to specify the encoding field of the XML header.
 
+   .. versionchanged:: 3.8
+      The :meth:`writexml` method now preserves the attribute order specified
+      by the user.
 
 .. method:: Node.toxml(encoding=None)
 
@@ -156,6 +159,10 @@ module documentation.  This section lists the differences between the API and
    encoding. Encoding this string in an encoding other than UTF-8 is
    likely incorrect, since UTF-8 is the default encoding of XML.
 
+   .. versionchanged:: 3.8
+      The :meth:`toxml` method now preserves the attribute order specified
+      by the user.
+
 .. method:: Node.toprettyxml(indent="", newl="", encoding="")
 
    Return a pretty-printed version of the document. *indent* specifies the
@@ -164,6 +171,10 @@ module documentation.  This section lists the differences between the API and
 
    The *encoding* argument behaves like the corresponding argument of
    :meth:`toxml`.
+
+   .. versionchanged:: 3.8
+      The :meth:`toprettyxml` method now preserves the attribute order specified
+      by the user.
 
 
 .. _dom-example:

@@ -18,7 +18,6 @@ At large scale, the structure of the module is following:
 * Wrapper submodules for re and io related types.
 """
 
-import abc
 from abc import abstractmethod, abstractproperty
 import collections
 import collections.abc

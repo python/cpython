@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "code.h"
 #include "structmember.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 
 /* Holder for co_extra information */
 typedef struct {
@@ -39,7 +39,7 @@ intern_strings(PyObject *tuple)
         if (v == NULL || !PyUnicode_CheckExact(v)) {
             Py_FatalError("non-string found in code slot");
         }
-        PyUnicode_InternInPlace(&PyTuple_GET_ITEM(tuple, i));
+        PyUnicode_InternInPlace(&_PyTuple_ITEMS(tuple)[i]);
     }
 }
 
