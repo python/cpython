@@ -1,0 +1,1 @@
+Fix hardcoded rpmbuild paths in Lib/distutils/command/bdist_rpm.py
