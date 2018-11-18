@@ -15,22 +15,13 @@ def pyrange(start, stop, step):
             yield start
             start += step
 
-def dumb_range_repr(a_range):
+
+def dumb_range__str(a_range):
     """Pure python implementation of the range_repr function.
     """
-    r = list(a_range)
-    if len(r) > 4:
-        return (f"<range object [{r[0]}, {r[1]}, ..., {r[-2]}, {r[-1]}]>")
-    elif len(r) == 4:
-        return (f"<range object [{r[0]}, {r[1]}, {r[-2]}, {r[-1]}]>")
-    elif len(r) == 3:
-        return (f"<range object [{r[0]}, {r[1]}, {r[2]}]>")
-    elif len(r) == 2:
-        return (f"<range object [{r[0]}, {r[1]}]>")
-    elif len(r) == 1:
-        return (f"<range object [{r[0]}]>")
-    elif len(r) == 0:
-        return (f"<range object []>")
+    if len(a_range) > 4:
+        return f"{a_range[0]}, {a_range[1]}, ..., {a_range[-2]}, {a_range[-1]}"
+    return ", ".join(a_range)
 
 
 def pyrange_reversed(start, stop, step):
@@ -371,13 +362,18 @@ class RangeTest(unittest.TestCase):
         self.assertEqual(len(range(sys.maxsize, sys.maxsize+10)), 10)
 
     def test_repr(self):
-        for start in range(-10, 25):
-            for stop in range(-10, 25):
-                for step in range(-10, 5):
+        self.assertEqual(repr(range(1)), 'range(0, 1)')
+        self.assertEqual(repr(range(1, 2)), 'range(1, 2)')
+        self.assertEqual(repr(range(1, 2, 3)), 'range(1, 2, 3)')
+
+    def test_str(self):
+        for start in range(-5, 15):
+            for stop in range(-5, 15):
+                for step in range(-5, 5):
                     if step == 0:
                         continue  # range() arg 3 must not be zero
-                    self.assertEqual(repr(range(start, stop, step)),
-                                     dumb_range_repr(range(start, stop, step)),
+                    self.assertEqual(str(range(start, stop, step)),
+                                     dumb_range__str(range(start, stop, step)),
                                      f"For range({start}, {stop}, {step})")
 
     def test_pickling(self):

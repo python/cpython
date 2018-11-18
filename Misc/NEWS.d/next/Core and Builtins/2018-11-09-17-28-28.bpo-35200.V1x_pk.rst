@@ -1,1 +1,1 @@
-Enhance the representation of range() objects.
+Create a dedicated __str__ for range() objects.
