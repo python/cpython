@@ -451,7 +451,8 @@ Here's the simplest example of a generator function:
 
 Any function containing a :keyword:`yield` keyword is a generator function;
 this is detected by Python's :term:`bytecode` compiler which compiles the
-function specially as a result.
+function specially as a result.  The :keyword:`yield` keyword can only used
+in the body of a generator function.
 
 When you call a generator function, it doesn't return a single value; instead it
 returns a generator object that supports the iterator protocol.  On executing
@@ -532,7 +533,8 @@ In Python 2.5 there's a simple way to pass values into a generator.
 :keyword:`yield` became an expression, returning a value that can be assigned to
 a variable or otherwise operated on::
 
-    val = (yield i)
+    def gen():
+        val = (yield i)
 
 I recommend that you **always** put parentheses around a ``yield`` expression
 when you're doing something with the returned value, as in the above example.
