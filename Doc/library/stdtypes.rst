@@ -659,11 +659,11 @@ made available to Python as the :attr:`modulus` attribute of
 
 Here are the rules in detail:
 
-- If ``x = m / n`` is a non-negative rational number and ``n`` is not divisible
+- If ``x = m / n`` is a nonnegative rational number and ``n`` is not divisible
   by ``P``, define ``hash(x)`` as ``m * invmod(n, P) % P``, where ``invmod(n,
   P)`` gives the inverse of ``n`` modulo ``P``.
 
-- If ``x = m / n`` is a non-negative rational number and ``n`` is
+- If ``x = m / n`` is a nonnegative rational number and ``n`` is
   divisible by ``P`` (but ``m`` is not) then ``n`` has no inverse
   modulo ``P`` and the rule above doesn't apply; in this case define
   ``hash(x)`` to be the constant value ``sys.hash_info.inf``.

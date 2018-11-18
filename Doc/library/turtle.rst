@@ -1722,8 +1722,8 @@ Animation control
 
 .. function:: tracer(n=None, delay=None)
 
-   :param n: non-negative integer
-   :param delay: non-negative integer
+   :param n: nonnegative integer
+   :param delay: nonnegative integer
 
    Turn turtle animation on/off and set delay for update drawings.  If
    *n* is given, only each n-th regular screen update is really

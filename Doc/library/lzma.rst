@@ -245,7 +245,7 @@ Compressing and decompressing data in memory
       returned data should be concatenated with the output of any
       previous calls to :meth:`decompress`.
 
-      If *max_length* is non-negative, returns at most *max_length*
+      If *max_length* is nonnegative, returns at most *max_length*
       bytes of decompressed data. If this limit is reached and further
       output can be produced, the :attr:`~.needs_input` attribute will
       be set to ``False``. In this case, the next call to

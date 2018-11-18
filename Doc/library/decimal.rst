@@ -1366,7 +1366,7 @@ In addition to the three supplied contexts, new contexts can be created with the
       form, the following restrictions on the arguments hold:
 
          - all three arguments must be integral
-         - ``y`` must be non-negative
+         - ``y`` must be nonnegative
          - at least one of ``x`` or ``y`` must be nonzero
          - ``modulo`` must be nonzero and have at most 'precision' digits
 

@@ -253,7 +253,7 @@ Numbers
 -------
 
 ``b`` (:class:`int`) [unsigned char]
-   Convert a non-negative Python integer to an unsigned tiny int, stored in a C
+   Convert a nonnegative Python integer to an unsigned tiny int, stored in a C
    :c:type:`unsigned char`.
 
 ``B`` (:class:`int`) [unsigned char]

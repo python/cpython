@@ -815,7 +815,7 @@ The formal syntax makes no special provision for negative indices in
 sequences; however, built-in sequences all provide a :meth:`__getitem__`
 method that interprets negative indices by adding the length of the sequence
 to the index (so that ``x[-1]`` selects the last item of ``x``).  The
-resulting value must be a non-negative integer less than the number of items in
+resulting value must be a nonnegative integer less than the number of items in
 the sequence, and the subscription selects the item whose index is that value
 (counting from zero). Since the support for negative indices and slicing
 occurs in the object's :meth:`__getitem__` method, subclasses overriding
