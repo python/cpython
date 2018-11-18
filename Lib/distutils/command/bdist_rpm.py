@@ -9,6 +9,7 @@ from distutils.debug import DEBUG
 from distutils.util import get_platform
 from distutils.file_util import write_file
 from distutils.errors import *
+from distutils.spawn import find_executable
 from distutils.sysconfig import get_python_version
 from distutils import log
 
@@ -310,8 +311,7 @@ class bdist_rpm(Command):
         # build package
         log.info("building RPMs")
         rpm_cmd = ['rpm']
-        if os.path.exists('/usr/bin/rpmbuild') or \
-           os.path.exists('/bin/rpmbuild'):
+        if find_executable('rpmbuild'):
             rpm_cmd = ['rpmbuild']
 
         if self.source_only: # what kind of RPMs?
