@@ -26,10 +26,9 @@ typedef struct _PyPathConfig {
     /* Full path to the Python program */
     wchar_t *program_full_path;
     wchar_t *prefix;
+    wchar_t *exec_prefix;
 #ifdef MS_WINDOWS
     wchar_t *dll_path;
-#else
-    wchar_t *exec_prefix;
 #endif
     /* Set by Py_SetPath(), or computed by _PyPathConfig_Init() */
     wchar_t *module_search_path;
