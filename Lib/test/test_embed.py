@@ -492,6 +492,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'faulthandler': 1,
         }
         global_config = {
+            'Py_FileSystemDefaultEncodeErrors': self.UTF8_MODE_ERRORS,
+            'Py_FileSystemDefaultEncoding': 'utf-8',
             'Py_NoUserSiteDirectory': 0,
         }
         self.check_config("init_from_config", core_config, global_config)
@@ -510,13 +512,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         global_config = {
             'Py_DontWriteBytecodeFlag': 1,
+            'Py_FileSystemDefaultEncodeErrors': self.UTF8_MODE_ERRORS,
+            'Py_FileSystemDefaultEncoding': 'utf-8',
             'Py_InspectFlag': 1,
             'Py_NoUserSiteDirectory': 1,
             'Py_OptimizeFlag': 2,
             'Py_UnbufferedStdioFlag': 1,
             'Py_VerboseFlag': 1,
-            'Py_FileSystemDefaultEncoding': 'utf-8',
-            'Py_FileSystemDefaultEncodeErrors': self.UTF8_MODE_ERRORS,
         }
         self.check_config("init_env", core_config, global_config)
 
