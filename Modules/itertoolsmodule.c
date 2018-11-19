@@ -734,15 +734,14 @@ tee_fromiterable(PyObject *iterable)
     to = PyObject_GC_New(teeobject, &tee_type);
     if (to == NULL)
         goto done;
+    to->weakreflist = NULL;
     to->dataobj = (teedataobject *)teedataobject_newinternal(it);
     if (!to->dataobj) {
-        PyObject_GC_Del(to);
-        to = NULL;
+        Py_CLEAR(to);
         goto done;
     }
 
     to->index = 0;
-    to->weakreflist = NULL;
     PyObject_GC_Track(to);
 done:
     Py_XDECREF(it);
