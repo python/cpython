@@ -303,6 +303,7 @@ class Chrome(UnixBrowser):
     background = True
 
 Chromium = Chrome
+Yandex = Chrome 
 
 
 class Opera(UnixBrowser):
