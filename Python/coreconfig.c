@@ -587,11 +587,10 @@ _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
 static _PyInitError
 config_init_program_name(_PyCoreConfig *config)
 {
-    const wchar_t *program_name;
     assert(config->program_name == NULL);
 
     /* If Py_SetProgramName() was called, use its value */
-    program_name = _Py_path_config.program_name;
+    const wchar_t *program_name = _Py_path_config.program_name;
     if (program_name != NULL) {
         config->program_name = _PyMem_RawWcsdup(program_name);
         if (config->program_name == NULL) {
