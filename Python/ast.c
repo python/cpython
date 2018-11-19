@@ -912,18 +912,6 @@ static const char * const FORBIDDEN[] = {
 };
 
 static int
-is_forbidden_name(const char *name)
-{
-    const char * const *p = FORBIDDEN;
-    for (p = FORBIDDEN; *p; p++) {
-        if (strcmp(name, *p) == 0) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-static int
 forbidden_name(struct compiling *c, identifier name, const node *n,
                int full_checks)
 {
@@ -2827,7 +2815,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func, bool allowgen)
                         break;
                     expr_node = CHILD(expr_node, 0);
                 }
-                if (TYPE(expr_node) != NAME || is_forbidden_name(STR(expr_node))) {
+                if (TYPE(expr_node) != NAME) {
                     ast_error(c, chch,
                               "expression cannot contain assignment, "
                               "perhaps you meant \"==\"?");
@@ -2835,6 +2823,9 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func, bool allowgen)
                 }
                 key = new_identifier(STR(expr_node), c);
                 if (key == NULL) {
+                    return NULL;
+                }
+                if (forbidden_name(c, key, chch, 1)) {
                     return NULL;
                 }
                 for (k = 0; k < nkeywords; k++) {

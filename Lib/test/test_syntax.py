@@ -308,6 +308,12 @@ SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
 >>> f((x)=2)
 Traceback (most recent call last):
 SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f(True=2)
+Traceback (most recent call last):
+SyntaxError: cannot assign to True
+>>> f(__debug__=1)
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
 
 
 More set_context():
