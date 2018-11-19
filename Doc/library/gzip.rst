@@ -157,13 +157,15 @@ The module defines the following items:
       Accepts a :term:`path-like object`.
 
 
-.. function:: compress(data, compresslevel=9)
+.. function:: compress(data, compresslevel=9, *, mtime=None)
 
    Compress the *data*, returning a :class:`bytes` object containing
-   the compressed data.  *compresslevel* has the same meaning as in
+   the compressed data.  *compresslevel* and *mtime* have the same meaning as in
    the :class:`GzipFile` constructor above.
 
    .. versionadded:: 3.2
+   .. versionchanged:: 3.8
+      Added the *mtime* parameter for reproducible output.
 
 .. function:: decompress(data)
 
@@ -210,6 +212,9 @@ Example of how to GZIP compress a binary string::
    Module :mod:`zlib`
       The basic data compression module needed to support the :program:`gzip` file
       format.
+
+
+.. program:: gzip
 
 Command Line Interface
 ----------------------

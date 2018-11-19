@@ -10,7 +10,7 @@
 #define PY_LOCAL_AGGRESSIVE
 
 #include "Python.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 
 #include "code.h"
 #include "dictobject.h"
@@ -4662,7 +4662,7 @@ do_call_core(PyObject *func, PyObject *callargs, PyObject *kwdict)
             }
 
             C_TRACE(result, _PyCFunction_FastCallDict(func,
-                                                      &PyTuple_GET_ITEM(callargs, 1),
+                                                      &_PyTuple_ITEMS(callargs)[1],
                                                       nargs - 1,
                                                       kwdict));
             Py_DECREF(func);

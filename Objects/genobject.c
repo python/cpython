@@ -1,7 +1,7 @@
 /* Generator object implementation */
 
 #include "Python.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 #include "frameobject.h"
 #include "structmember.h"
 #include "opcode.h"
@@ -1164,11 +1164,11 @@ PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
         ((PyCoroObject *)coro)->cr_origin = NULL;
     } else {
         PyObject *cr_origin = compute_cr_origin(origin_depth);
+        ((PyCoroObject *)coro)->cr_origin = cr_origin;
         if (!cr_origin) {
             Py_DECREF(coro);
             return NULL;
         }
-        ((PyCoroObject *)coro)->cr_origin = cr_origin;
     }
 
     return coro;

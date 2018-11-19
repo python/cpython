@@ -4,8 +4,8 @@
 extern "C" {
 #endif
 
-#ifndef Py_BUILD_CORE
-#  error "Py_BUILD_CORE must be defined to include this header"
+#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
+#  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN defined"
 #endif
 
 #include "objimpl.h"
@@ -146,8 +146,6 @@ struct _gc_runtime_state {
 };
 
 PyAPI_FUNC(void) _PyGC_Initialize(struct _gc_runtime_state *);
-
-#define _PyGC_generation0 _PyRuntime.gc.generation0
 
 
 /* Set the memory allocator of the specified domain to the default.

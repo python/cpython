@@ -3,8 +3,8 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "pycore_mem.h"
-#include "pycore_state.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 
 #include "bytes_methods.h"
 #include "pystrhex.h"

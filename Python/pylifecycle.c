@@ -3,13 +3,12 @@
 #include "Python.h"
 
 #include "Python-ast.h"
-#undef Yield /* undefine macro conflicting with winbase.h */
 #include "pycore_context.h"
 #include "pycore_hamt.h"
-#include "pycore_lifecycle.h"
-#include "pycore_mem.h"
 #include "pycore_pathconfig.h"
-#include "pycore_state.h"
+#include "pycore_pylifecycle.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "grammar.h"
 #include "node.h"
 #include "token.h"
@@ -837,8 +836,8 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
     }
 
     /* Initialize warnings. */
-    if (interp->config.warnoptions != NULL &&
-        PyList_Size(interp->config.warnoptions) > 0)
+    PyObject *warnoptions = PySys_GetObject("warnoptions");
+    if (warnoptions != NULL && PyList_Size(warnoptions) > 0)
     {
         PyObject *warnings_module = PyImport_ImportModule("warnings");
         if (warnings_module == NULL) {
