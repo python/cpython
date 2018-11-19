@@ -23,19 +23,6 @@ const wchar_t *PROGNAME = L"python.exe";
 #endif
 #endif
 
-/************************************************
- Bare minimum definition of the struct to let us
- override the full path directly, at least until
- we get a proper API for it.
-************************************************/
-typedef struct _PyPathConfig {
-    /* Full path to the Python program */
-    const wchar_t *program_full_path;
-} _PyPathConfig;
-
-extern "C" PyAPI_DATA(_PyPathConfig) _Py_path_config;
-/***********************************************/
-
 static void
 set_user_base()
 {
@@ -214,7 +201,7 @@ wmain(int argc, wchar_t **argv)
 
     /* Override program_full_path from here so that
        sys.executable is set correctly. */
-    _Py_path_config.program_full_path = wcsdup(new_argv[0]);
+    _Py_SetProgramFullPath(new_argv[0]);
 
     int result = Py_Main(new_argc, (wchar_t **)new_argv);
 
