@@ -447,6 +447,8 @@ _CookiePattern = re.compile(r"""
     )                                # End of group 'val'
     )?                             # End of optional value group
     \s*                            # Any number of spaces.
+                                   # We allow comma as separator as some user-agents
+                                   # send badly formed cookies (see bpo-23930)
     (\s+|;|,|$)                    # Ending either at space, comma, semicolon, or EOS.
     """, re.ASCII | re.VERBOSE)    # re.ASCII may be removed if safe.
 
