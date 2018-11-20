@@ -138,8 +138,6 @@ locale_is_ascii(const char *str)
 static int
 locale_decode_monetary(PyObject *dict, struct lconv *lc)
 {
-    int res = -1;
-
     int change_locale;
     change_locale = (!locale_is_ascii(lc->int_curr_symbol)
                      || !locale_is_ascii(lc->currency_symbol)
@@ -151,7 +149,8 @@ locale_decode_monetary(PyObject *dict, struct lconv *lc)
     if (change_locale) {
         oldloc = setlocale(LC_CTYPE, NULL);
         if (!oldloc) {
-            PyErr_SetString(PyExc_RuntimeWarning, "faild to get LC_CTYPE locale");
+            PyErr_SetString(PyExc_RuntimeWarning,
+                            "failed to get LC_CTYPE locale");
             return -1;
         }
 
@@ -174,16 +173,18 @@ locale_decode_monetary(PyObject *dict, struct lconv *lc)
         }
     }
 
+    int res = -1;
+
 #define RESULT_STRING(ATTR) \
     do { \
         PyObject *obj; \
         obj = PyUnicode_DecodeLocale(lc->ATTR, NULL); \
         if (obj == NULL) { \
-            goto error; \
+            goto done; \
         } \
         if (PyDict_SetItemString(dict, Py_STRINGIFY(ATTR), obj) < 0) { \
             Py_DECREF(obj); \
-            goto error; \
+            goto done; \
         } \
         Py_DECREF(obj); \
     } while (0)
@@ -196,7 +197,7 @@ locale_decode_monetary(PyObject *dict, struct lconv *lc)
 
     res = 0;
 
-error:
+done:
     if (loc != NULL) {
         setlocale(LC_CTYPE, oldloc);
     }
@@ -211,7 +212,7 @@ static PyObject*
 PyLocale_localeconv(PyObject* self, PyObject *Py_UNUSED(ignored))
 {
     PyObject* result;
-    struct lconv *l;
+    struct lconv *lc;
     PyObject *x;
 
     result = PyDict_New();
@@ -220,7 +221,7 @@ PyLocale_localeconv(PyObject* self, PyObject *Py_UNUSED(ignored))
     }
 
     /* if LC_NUMERIC is different in the C library, use saved value */
-    l = localeconv();
+    lc = localeconv();
 
     /* hopefully, the localeconv result survives the C library calls
        involved herein */
@@ -238,21 +239,21 @@ PyLocale_localeconv(PyObject* self, PyObject *Py_UNUSED(ignored))
 
 #define RESULT_STRING(s)\
     do { \
-        x = PyUnicode_DecodeLocale(l->s, NULL); \
+        x = PyUnicode_DecodeLocale(lc->s, NULL); \
         RESULT(#s, x); \
     } while (0)
 
 #define RESULT_INT(i)\
     do { \
-        x = PyLong_FromLong(l->i); \
+        x = PyLong_FromLong(lc->i); \
         RESULT(#i, x); \
     } while (0)
 
     /* Monetary information: LC_MONETARY encoding */
-    if (locale_decode_monetary(result, l) < 0) {
+    if (locale_decode_monetary(result, lc) < 0) {
         goto failed;
     }
-    x = copy_grouping(l->mon_grouping);
+    x = copy_grouping(lc->mon_grouping);
     RESULT("mon_grouping", x);
 
     RESULT_STRING(positive_sign);
@@ -268,10 +269,7 @@ PyLocale_localeconv(PyObject* self, PyObject *Py_UNUSED(ignored))
 
     /* Numeric information: LC_NUMERIC encoding */
     PyObject *decimal_point, *thousands_sep;
-    const char *grouping;
-    if (_Py_GetLocaleconvNumeric(l, &decimal_point,
-                                 &thousands_sep,
-                                 &grouping) < 0) {
+    if (_Py_GetLocaleconvNumeric(lc, &decimal_point, &thousands_sep) < 0) {
         goto failed;
     }
 
@@ -288,7 +286,7 @@ PyLocale_localeconv(PyObject* self, PyObject *Py_UNUSED(ignored))
     }
     Py_DECREF(thousands_sep);
 
-    x = copy_grouping(grouping);
+    x = copy_grouping(lc->grouping);
     RESULT("grouping", x);
 
     return result;

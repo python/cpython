@@ -35,8 +35,7 @@ PyAPI_FUNC(int) _Py_GetForceASCII(void);
 PyAPI_FUNC(int) _Py_GetLocaleconvNumeric(
     struct lconv *lc,
     PyObject **decimal_point,
-    PyObject **thousands_sep,
-    const char **grouping);
+    PyObject **thousands_sep);
 
 #ifdef __cplusplus
 }

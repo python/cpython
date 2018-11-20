@@ -1869,14 +1869,10 @@ error:
 
 int
 _Py_GetLocaleconvNumeric(struct lconv *lc,
-                         PyObject **decimal_point, PyObject **thousands_sep,
-                         const char **grouping)
+                         PyObject **decimal_point, PyObject **thousands_sep)
 {
     assert(decimal_point != NULL);
     assert(thousands_sep != NULL);
-    assert(grouping != NULL);
-
-    int res = -1;
 
     int change_locale = 0;
     if ((strlen(lc->decimal_point) > 1 || ((unsigned char)lc->decimal_point[0]) > 127)) {
@@ -1891,7 +1887,8 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
     if (change_locale) {
         oldloc = setlocale(LC_CTYPE, NULL);
         if (!oldloc) {
-            PyErr_SetString(PyExc_RuntimeWarning, "faild to get LC_CTYPE locale");
+            PyErr_SetString(PyExc_RuntimeWarning,
+                            "failed to get LC_CTYPE locale");
             return -1;
         }
 
@@ -1915,21 +1912,21 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
         }
     }
 
+    int res = -1;
+
     *decimal_point = PyUnicode_DecodeLocale(lc->decimal_point, NULL);
     if (*decimal_point == NULL) {
-        goto error;
+        goto done;
     }
 
     *thousands_sep = PyUnicode_DecodeLocale(lc->thousands_sep, NULL);
     if (*thousands_sep == NULL) {
-        goto error;
+        goto done;
     }
-
-    *grouping = lc->grouping;
 
     res = 0;
 
-error:
+done:
     if (loc != NULL) {
         setlocale(LC_CTYPE, oldloc);
     }
