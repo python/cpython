@@ -288,10 +288,7 @@ typedef struct {
 #define _PyObject_GC_MAY_BE_TRACKED(obj) \
     (PyObject_IS_GC(obj) && \
         (!PyTuple_CheckExact(obj) || _PyObject_GC_IS_TRACKED(obj)))
-#endif
 
-
-#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
 
 /* Bit flags for _gc_prev */
 /* Bit 0 is set when tp_finalize is called */
@@ -324,7 +321,10 @@ typedef struct {
     _PyGCHead_FINALIZED(_Py_AS_GC(o))
 #define _PyGC_SET_FINALIZED(o) \
     _PyGCHead_SET_FINALIZED(_Py_AS_GC(o))
+#endif   /* !defined(Py_LIMITED_API) */
 
+
+#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
 /* Tell the GC to track this object.
  *
  * NB: While the object is tracked by the collector, it must be safe to call the
