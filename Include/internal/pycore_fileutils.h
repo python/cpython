@@ -8,6 +8,8 @@ extern "C" {
 #  error "Py_BUILD_CORE must be defined to include this header"
 #endif
 
+#include <locale.h>   /* struct lconv */
+
 PyAPI_FUNC(int) _Py_DecodeUTF8Ex(
     const char *arg,
     Py_ssize_t arglen,
@@ -29,6 +31,11 @@ PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(
     Py_ssize_t arglen);
 
 PyAPI_FUNC(int) _Py_GetForceASCII(void);
+
+PyAPI_FUNC(int) _Py_GetLocaleconvNumeric(
+    struct lconv *lc,
+    PyObject **decimal_point,
+    PyObject **thousands_sep);
 
 #ifdef __cplusplus
 }
