@@ -301,7 +301,7 @@ class RefactoringTool(object):
                     os.path.splitext(name)[1] == py_ext):
                     fullname = os.path.join(dirpath, name)
                     if self.refactor_file(fullname, write, doctests_only):
-                      changed.append(fullname)
+                        changed.append(fullname)
             # Modify dirnames in-place to remove subdirs with leading dots
             dirnames[:] = [dn for dn in dirnames if not dn.startswith(".")]
         return changed

@@ -196,7 +196,7 @@ from __future__ import print_function"""
         write_unchanged = options and options.get(
             "write_unchanged_files", False)
         if expected_return and not write_unchanged:
-          self.assertNotEqual(old_contents, new_contents)
+            self.assertNotEqual(old_contents, new_contents)
         self.assertEqual(ret, expected_return)
         return new_contents
 
