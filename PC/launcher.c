@@ -1453,7 +1453,7 @@ show_python_list(wchar_t ** argv)
         fwprintf(stderr, L"\n\nCan't find a Default Python.\n\n");
     else
         fwprintf(stderr, L"\n\n"); /* End with a blank line */
-    return(FALSE); /* If this has been called we cannot continue */
+    return FALSE; /* If this has been called we cannot continue */
 }
 
 static int
@@ -1600,11 +1600,12 @@ process(int argc, wchar_t ** argv)
     else {
         p = argv[1];
         plen = wcslen(p);
-        if ((argc == 2) && 
-            (!wcsncmp(p, L"-0", wcslen(L"-0")) || /* Starts with -0 or --list */
+        if ((argc == 2) && // list version args
+            (!wcsncmp(p, L"-0", wcslen(L"-0")) ||
             !wcsncmp(p, L"--list", wcslen(L"--list"))))
         {
-            valid = show_python_list(argv); /* Check for -0 or --list FIRST */
+            show_python_list(argv);
+            return rc;
         }
         valid = valid && (*p == L'-') && validate_version(&p[1]);
         if (valid) {
