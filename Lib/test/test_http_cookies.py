@@ -220,6 +220,12 @@ class CookieTests(unittest.TestCase):
         with self.assertRaises(cookies.CookieError):
             C.load(rawdata)
 
+    def test_badly_formed_cookies(self):
+        for rawdata in ('a=b; c;d=e', 'a=b; c,d=e'):
+            C = cookies.SimpleCookie()
+            C.load(rawdata)
+            self.assertEquals(dict(C), {})
+
     def test_comma_separator(self):
         rawdata = "a=b,z=zz"  # , is accepted as a cookie separator
         C = cookies.SimpleCookie()
