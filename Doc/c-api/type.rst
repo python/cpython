@@ -102,6 +102,8 @@ Type Objects
 
    See :c:member:`PyType_Slot.slot` for possible values of the *slot* argument.
 
+   An exception is raised if *type* is not a heap type.
+
    .. versionadded:: 3.4
 
 
