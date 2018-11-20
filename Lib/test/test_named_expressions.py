@@ -31,7 +31,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
     def test_named_expression_invalid_06(self):
         code = """((a, b) := (1, 2))"""
 
-        with self.assertRaisesRegex(SyntaxError, "can't use named assignment with tuple"):
+        with self.assertRaisesRegex(SyntaxError, "cannot use named assignment with tuple"):
             exec(code, {}, {})
 
     def test_named_expression_invalid_07(self):
@@ -89,7 +89,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         code = """(lambda: x := 1)"""
 
         with self.assertRaisesRegex(SyntaxError,
-            "can't use named assignment with lambda"):
+            "cannot use named assignment with lambda"):
             exec(code, {}, {})
 
     def test_named_expression_invalid_16(self):
