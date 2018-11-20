@@ -397,9 +397,10 @@ typedef struct {
     PyObject *decimal_point;
     PyObject *thousands_sep;
     const char *grouping;
+    char *grouping_buffer;
 } LocaleInfo;
 
-#define STATIC_LOCALE_INFO_INIT {0, 0, 0}
+#define STATIC_LOCALE_INFO_INIT {0, 0, 0, 0}
 
 /* describes the layout for an integer, see the comment in
    calc_number_widths() for details */
@@ -708,11 +709,22 @@ get_locale_info(enum LocaleType type, LocaleInfo *locale_info)
 {
     switch (type) {
     case LT_CURRENT_LOCALE: {
+        const char *grouping;
         if (_Py_GetLocaleconvNumeric(&locale_info->decimal_point,
                                      &locale_info->thousands_sep,
-                                     &locale_info->grouping) < 0) {
+                                     &grouping) < 0) {
             return -1;
         }
+
+        /* localeconv() grouping can become a dangling pointer or point
+           to a different string if another thread calls localeconv() during
+           the string formatting. Copy the string to avoid this risk. */
+        locale_info->grouping_buffer = _PyMem_Strdup(grouping);
+        if (locale_info->grouping_buffer == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        locale_info->grouping = locale_info->grouping_buffer;
         break;
     }
     case LT_DEFAULT_LOCALE:
@@ -746,6 +758,7 @@ free_locale_info(LocaleInfo *locale_info)
 {
     Py_XDECREF(locale_info->decimal_point);
     Py_XDECREF(locale_info->thousands_sep);
+    PyMem_Free(locale_info->grouping_buffer);
 }
 
 /************************************************************************/
