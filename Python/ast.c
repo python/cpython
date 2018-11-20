@@ -647,21 +647,25 @@ new_identifier(const char *n, struct compiling *c)
 #define NEW_IDENTIFIER(n) new_identifier(STR(n), c)
 
 static int
-ast_error(struct compiling *c, const node *n, const char *errmsg)
+ast_error(struct compiling *c, const node *n, const char *errmsg, ...)
 {
     PyObject *value, *errstr, *loc, *tmp;
+    va_list va;
 
+    va_start(va, errmsg);
+    errstr = PyUnicode_FromFormatV(errmsg, va);
+    va_end(va);
+    if (!errstr) {
+        return 0;
+    }
     loc = PyErr_ProgramTextObject(c->c_filename, LINENO(n));
     if (!loc) {
         Py_INCREF(Py_None);
         loc = Py_None;
     }
     tmp = Py_BuildValue("(OiiN)", c->c_filename, LINENO(n), n->n_col_offset + 1, loc);
-    if (!tmp)
-        return 0;
-    errstr = PyUnicode_FromString(errmsg);
-    if (!errstr) {
-        Py_DECREF(tmp);
+    if (!tmp) {
+        Py_DECREF(errstr);
         return 0;
     }
     value = PyTuple_Pack(2, errstr, tmp);
@@ -903,6 +907,7 @@ static const char * const FORBIDDEN[] = {
     "None",
     "True",
     "False",
+    "__debug__",
     NULL,
 };
 
@@ -911,17 +916,16 @@ forbidden_name(struct compiling *c, identifier name, const node *n,
                int full_checks)
 {
     assert(PyUnicode_Check(name));
-    if (_PyUnicode_EqualToASCIIString(name, "__debug__")) {
-        ast_error(c, n, "assignment to keyword");
-        return 1;
+    const char * const *p = FORBIDDEN;
+    if (!full_checks) {
+        /* In most cases, the parser will protect True, False, and None
+           from being assign to. */
+        p += 3;
     }
-    if (full_checks) {
-        const char * const *p;
-        for (p = FORBIDDEN; *p; p++) {
-            if (_PyUnicode_EqualToASCIIString(name, *p)) {
-                ast_error(c, n, "assignment to keyword");
-                return 1;
-            }
+    for (; *p; p++) {
+        if (_PyUnicode_EqualToASCIIString(name, *p)) {
+            ast_error(c, n, "cannot assign to %U", name);
+            return 1;
         }
     }
     return 0;
@@ -1012,22 +1016,25 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
             expr_name = "dict comprehension";
             break;
         case Dict_kind:
+            expr_name = "dict display";
+            break;
         case Set_kind:
+            expr_name = "set display";
+            break;
         case JoinedStr_kind:
         case FormattedValue_kind:
-            expr_name = "literal";
+            expr_name = "f-string expression";
             break;
         case Constant_kind: {
             PyObject *value = e->v.Constant.value;
-            if (value == Py_None || value == Py_False || value == Py_True) {
-                expr_name = "keyword";
+            if (value == Py_None || value == Py_False || value == Py_True
+                    || value == Py_Ellipsis)
+            {
+                return ast_error(c, n, "cannot %s %R",
+                                 ctx == Store ? "assign to" : "delete",
+                                 value);
             }
-            else if (value == Py_Ellipsis) {
-                expr_name = "Ellipsis";
-            }
-            else {
-                expr_name = "literal";
-            }
+            expr_name = "literal";
             break;
         }
         case Compare_kind:
@@ -1044,12 +1051,9 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
     }
     /* Check for error string set by switch */
     if (expr_name) {
-        char buf[300];
-        PyOS_snprintf(buf, sizeof(buf),
-                      "can't %s %s",
-                      ctx == Store ? "assign to" : "delete",
-                      expr_name);
-        return ast_error(c, n, buf);
+        return ast_error(c, n, "cannot %s %s",
+                         ctx == Store ? "assign to" : "delete",
+                         expr_name);
     }
 
     /* If the LHS is a list or tuple, we need to set the assignment
@@ -2083,21 +2087,17 @@ ast_for_atom(struct compiling *c, const node *n)
             else if (PyErr_ExceptionMatches(PyExc_ValueError))
                 errtype = "value error";
             if (errtype) {
-                char buf[128];
-                const char *s = NULL;
                 PyObject *type, *value, *tback, *errstr;
                 PyErr_Fetch(&type, &value, &tback);
                 errstr = PyObject_Str(value);
-                if (errstr)
-                    s = PyUnicode_AsUTF8(errstr);
-                if (s) {
-                    PyOS_snprintf(buf, sizeof(buf), "(%s) %s", errtype, s);
-                } else {
-                    PyErr_Clear();
-                    PyOS_snprintf(buf, sizeof(buf), "(%s) unknown error", errtype);
+                if (errstr) {
+                    ast_error(c, n, "(%s) %U", errtype, errstr);
+                    Py_DECREF(errstr);
                 }
-                Py_XDECREF(errstr);
-                ast_error(c, n, buf);
+                else {
+                    PyErr_Clear();
+                    ast_error(c, n, "(%s) unknown error", errtype);
+                }
                 Py_DECREF(type);
                 Py_XDECREF(value);
                 Py_XDECREF(tback);
@@ -2815,18 +2815,10 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func, bool allowgen)
                         break;
                     expr_node = CHILD(expr_node, 0);
                 }
-                if (TYPE(expr_node) == lambdef) {
-                    // f(lambda x: x[0] = 3) ends up getting parsed with LHS
-                    // test = lambda x: x[0], and RHS test = 3.  Issue #132313
-                    // points out that complaining about a keyword then is very
-                    // confusing.
+                if (TYPE(expr_node) != NAME) {
                     ast_error(c, chch,
-                            "lambda cannot contain assignment");
-                    return NULL;
-                }
-                else if (TYPE(expr_node) != NAME) {
-                    ast_error(c, chch,
-                              "keyword can't be an expression");
+                              "expression cannot contain assignment, "
+                              "perhaps you meant \"==\"?");
                     return NULL;
                 }
                 key = new_identifier(STR(expr_node), c);
@@ -4127,16 +4119,10 @@ warn_invalid_escape_sequence(struct compiling *c, const node *n,
                                    NULL, NULL) < 0)
     {
         if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
-            const char *s;
-
             /* Replace the SyntaxWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
-
-            s = PyUnicode_AsUTF8(msg);
-            if (s != NULL) {
-                ast_error(c, n, s);
-            }
+            ast_error(c, n, "%U", msg);
         }
         Py_DECREF(msg);
         return -1;
