@@ -5630,6 +5630,7 @@ remove_unused_constants(struct compiler *c, struct assembler *a, int keepFirst)
         }
     }
     Py_SETREF(c->u->u_consts_list, consts);
+    PyMem_Del(indices);
     return 1;
 }
 
