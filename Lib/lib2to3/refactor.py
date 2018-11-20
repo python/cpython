@@ -287,8 +287,11 @@ class RefactoringTool(object):
         Python files are assumed to have a .py extension.
 
         Files and subdirectories starting with '.' are skipped.
+
+        Returns a list of changed files.
         """
         py_ext = os.extsep + "py"
+        changed = []
         for dirpath, dirnames, filenames in os.walk(dir_name):
             self.log_debug("Descending into %s", dirpath)
             dirnames.sort()
@@ -297,9 +300,11 @@ class RefactoringTool(object):
                 if (not name.startswith(".") and
                     os.path.splitext(name)[1] == py_ext):
                     fullname = os.path.join(dirpath, name)
-                    self.refactor_file(fullname, write, doctests_only)
+                    if self.refactor_file(fullname, write, doctests_only):
+                      changed.append(fullname)
             # Modify dirnames in-place to remove subdirs with leading dots
             dirnames[:] = [dn for dn in dirnames if not dn.startswith(".")]
+        return changed
 
     def _read_python_source(self, filename):
         """
@@ -322,23 +327,27 @@ class RefactoringTool(object):
         input, encoding = self._read_python_source(filename)
         if input is None:
             # Reading the file failed.
-            return
+            return None
         input += "\n" # Silence certain parse errors
         if doctests_only:
             self.log_debug("Refactoring doctests in %s", filename)
             output = self.refactor_docstring(input, filename)
             if self.write_unchanged_files or output != input:
                 self.processed_file(output, filename, input, write, encoding)
+                return True
             else:
                 self.log_debug("No doctest changes in %s", filename)
+                return False
         else:
             tree = self.refactor_string(input, filename)
             if self.write_unchanged_files or (tree and tree.was_changed):
                 # The [:-1] is to take off the \n we added earlier
                 self.processed_file(str(tree)[:-1], filename,
                                     write=write, encoding=encoding)
+                return True
             else:
                 self.log_debug("No changes in %s", filename)
+                return False
 
     def refactor_string(self, data, name):
         """Refactor a given input string.

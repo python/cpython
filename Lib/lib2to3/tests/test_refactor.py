@@ -179,7 +179,7 @@ from __future__ import print_function"""
 
     def check_file_refactoring(self, test_file, fixers=_2TO3_FIXERS,
                                options=None, mock_log_debug=None,
-                               actually_write=True):
+                               actually_write=True, expected_return=True):
         test_file = self.init_test_file(test_file)
         old_contents = self.read_file(test_file)
         rt = self.rt(fixers=fixers, options=options)
@@ -191,9 +191,13 @@ from __future__ import print_function"""
 
         if not actually_write:
             return
-        rt.refactor_file(test_file, True)
+        ret = rt.refactor_file(test_file, True)
         new_contents = self.read_file(test_file)
-        self.assertNotEqual(old_contents, new_contents)
+        write_unchanged = options and options.get(
+            "write_unchanged_files", False)
+        if expected_return and not write_unchanged:
+          self.assertNotEqual(old_contents, new_contents)
+        self.assertEqual(ret, expected_return)
         return new_contents
 
     def init_test_file(self, test_file):
@@ -220,6 +224,14 @@ from __future__ import print_function"""
         test_file = os.path.join(FIXER_DIR, "parrot_example.py")
         self.check_file_refactoring(test_file, _DEFAULT_FIXERS)
 
+    def test_refactor_file_return_false(self):
+        test_file = os.path.join(FIXER_DIR, "parrot_example.py")
+        self.check_file_refactoring(test_file, fixers=(), expected_return=False)
+
+    def test_refactor_file_return_true(self):
+        test_file = os.path.join(TEST_DATA_DIR, "different_encoding.py")
+        self.check_file_refactoring(test_file, expected_return=True)
+
     def test_refactor_file_write_unchanged_file(self):
         test_file = os.path.join(FIXER_DIR, "parrot_example.py")
         debug_messages = []
@@ -241,9 +253,11 @@ from __future__ import print_function"""
             self.fail("%r not matched in %r" % (message_regex, debug_messages))
 
     def test_refactor_dir(self):
-        def check(structure, expected):
+        files_to_refactor = {"stuff.py"}
+        def check(structure, expected, expected_return):
             def mock_refactor_file(self, f, *args):
                 got.append(f)
+                return os.path.basename(f) in files_to_refactor
             save_func = refactor.RefactoringTool.refactor_file
             refactor.RefactoringTool.refactor_file = mock_refactor_file
             rt = self.rt()
@@ -253,13 +267,17 @@ from __future__ import print_function"""
                 os.mkdir(os.path.join(dir, "a_dir"))
                 for fn in structure:
                     open(os.path.join(dir, fn), "wb").close()
-                rt.refactor_dir(dir)
+                ret =rt.refactor_dir(dir)
+                # Just check the basenames since we are working with tempdirs
+                self.assertEqual(
+                    list(map(os.path.basename, ret)),
+                    expected_return)
             finally:
                 refactor.RefactoringTool.refactor_file = save_func
                 shutil.rmtree(dir)
             self.assertEqual(got,
                              [os.path.join(dir, path) for path in expected])
-        check([], [])
+        check([], [], [])
         tree = ["nothing",
                 "hi.py",
                 ".dumb",
@@ -267,10 +285,11 @@ from __future__ import print_function"""
                 "notpy.npy",
                 "sappy"]
         expected = ["hi.py"]
-        check(tree, expected)
+        check(tree, expected, [])
         tree = ["hi.py",
                 os.path.join("a_dir", "stuff.py")]
-        check(tree, tree)
+        # stuff.py returns True from refactor_file and so is in expected_return
+        check(tree, tree, ["stuff.py"])
 
     def test_file_encoding(self):
         fn = os.path.join(TEST_DATA_DIR, "different_encoding.py")
