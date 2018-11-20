@@ -1,0 +1,6 @@
+:func: `lib2to3.refactor.refactor_file` now returns a status: * True: The
+file was written to. * False: The file was not written to. * None: The file
+could not be read.
+
+:func: `lib2to3.refactor.refactor_dir` now returns a list of all written
+files.
