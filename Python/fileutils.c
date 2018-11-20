@@ -1868,22 +1868,21 @@ error:
 
 
 int
-_Py_GetLocaleconvNumeric(PyObject **decimal_point, PyObject **thousands_sep,
+_Py_GetLocaleconvNumeric(struct lconv *lc,
+                         PyObject **decimal_point, PyObject **thousands_sep,
                          const char **grouping)
 {
+    assert(decimal_point != NULL);
+    assert(thousands_sep != NULL);
+    assert(grouping != NULL);
+
     int res = -1;
 
-    struct lconv *lc = localeconv();
-
     int change_locale = 0;
-    if (decimal_point != NULL &&
-        (strlen(lc->decimal_point) > 1 || ((unsigned char)lc->decimal_point[0]) > 127))
-    {
+    if ((strlen(lc->decimal_point) > 1 || ((unsigned char)lc->decimal_point[0]) > 127)) {
         change_locale = 1;
     }
-    if (thousands_sep != NULL &&
-        (strlen(lc->thousands_sep) > 1 || ((unsigned char)lc->thousands_sep[0]) > 127))
-    {
+    if ((strlen(lc->thousands_sep) > 1 || ((unsigned char)lc->thousands_sep[0]) > 127)) {
         change_locale = 1;
     }
 
@@ -1908,7 +1907,7 @@ _Py_GetLocaleconvNumeric(PyObject **decimal_point, PyObject **thousands_sep,
         }
 
         if (loc != NULL) {
-            /* Only set the locale temporarilty the LC_CTYPE locale
+            /* Only set the locale temporarily the LC_CTYPE locale
                if LC_NUMERIC locale is different than LC_CTYPE locale and
                decimal_point and/or thousands_sep are non-ASCII or longer than
                1 byte */
@@ -1916,22 +1915,17 @@ _Py_GetLocaleconvNumeric(PyObject **decimal_point, PyObject **thousands_sep,
         }
     }
 
-    if (decimal_point != NULL) {
-        *decimal_point = PyUnicode_DecodeLocale(lc->decimal_point, NULL);
-        if (*decimal_point == NULL) {
-            goto error;
-        }
-    }
-    if (thousands_sep != NULL) {
-        *thousands_sep = PyUnicode_DecodeLocale(lc->thousands_sep, NULL);
-        if (*thousands_sep == NULL) {
-            goto error;
-        }
+    *decimal_point = PyUnicode_DecodeLocale(lc->decimal_point, NULL);
+    if (*decimal_point == NULL) {
+        goto error;
     }
 
-    if (grouping != NULL) {
-        *grouping = lc->grouping;
+    *thousands_sep = PyUnicode_DecodeLocale(lc->thousands_sep, NULL);
+    if (*thousands_sep == NULL) {
+        goto error;
     }
+
+    *grouping = lc->grouping;
 
     res = 0;
 

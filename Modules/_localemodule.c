@@ -11,6 +11,7 @@ This software comes with no warranty. Use at your own risk.
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_fileutils.h"
 
 #include <stdio.h>
 #include <locale.h>
@@ -128,6 +129,81 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
     return result_object;
 }
 
+static int
+locale_is_ascii(const char *str)
+{
+    return (strlen(str) == 1 && ((unsigned char)str[0]) <= 127);
+}
+
+static int
+locale_decode_monetary(PyObject *dict, struct lconv *lc)
+{
+    int res = -1;
+
+    int change_locale;
+    change_locale = (!locale_is_ascii(lc->int_curr_symbol)
+                     || !locale_is_ascii(lc->currency_symbol)
+                     || !locale_is_ascii(lc->mon_decimal_point)
+                     || !locale_is_ascii(lc->mon_thousands_sep));
+
+    /* Keep a copy of the LC_CTYPE locale */
+    char *oldloc = NULL, *loc = NULL;
+    if (change_locale) {
+        oldloc = setlocale(LC_CTYPE, NULL);
+        if (!oldloc) {
+            PyErr_SetString(PyExc_RuntimeWarning, "faild to get LC_CTYPE locale");
+            return -1;
+        }
+
+        oldloc = _PyMem_Strdup(oldloc);
+        if (!oldloc) {
+            PyErr_NoMemory();
+            return -1;
+        }
+
+        loc = setlocale(LC_MONETARY, NULL);
+        if (loc != NULL && strcmp(loc, oldloc) == 0) {
+            loc = NULL;
+        }
+
+        if (loc != NULL) {
+            /* Only set the locale temporarily the LC_CTYPE locale
+               to the LC_MONETARY locale if the two locales are different and
+               at least one string is non-ASCII. */
+            setlocale(LC_CTYPE, loc);
+        }
+    }
+
+#define RESULT_STRING(ATTR) \
+    do { \
+        PyObject *obj; \
+        obj = PyUnicode_DecodeLocale(lc->ATTR, NULL); \
+        if (obj == NULL) { \
+            goto error; \
+        } \
+        if (PyDict_SetItemString(dict, Py_STRINGIFY(ATTR), obj) < 0) { \
+            Py_DECREF(obj); \
+            goto error; \
+        } \
+        Py_DECREF(obj); \
+    } while (0)
+
+    RESULT_STRING(int_curr_symbol);
+    RESULT_STRING(currency_symbol);
+    RESULT_STRING(mon_decimal_point);
+    RESULT_STRING(mon_thousands_sep);
+#undef RESULT_STRING
+
+    res = 0;
+
+error:
+    if (loc != NULL) {
+        setlocale(LC_CTYPE, oldloc);
+    }
+    PyMem_Free(oldloc);
+    return res;
+}
+
 PyDoc_STRVAR(localeconv__doc__,
 "() -> dict. Returns numeric and monetary locale-specific parameters.");
 
@@ -172,11 +248,10 @@ PyLocale_localeconv(PyObject* self, PyObject *Py_UNUSED(ignored))
         RESULT(#i, x); \
     } while (0)
 
-    /* Monetary information */
-    RESULT_STRING(int_curr_symbol);
-    RESULT_STRING(currency_symbol);
-    RESULT_STRING(mon_decimal_point);
-    RESULT_STRING(mon_thousands_sep);
+    /* Monetary information: LC_MONETARY encoding */
+    if (locale_decode_monetary(result, l) < 0) {
+        goto failed;
+    }
     x = copy_grouping(l->mon_grouping);
     RESULT("mon_grouping", x);
 
@@ -191,10 +266,10 @@ PyLocale_localeconv(PyObject* self, PyObject *Py_UNUSED(ignored))
     RESULT_INT(p_sign_posn);
     RESULT_INT(n_sign_posn);
 
-    /* Numeric information */
+    /* Numeric information: LC_NUMERIC encoding */
     PyObject *decimal_point, *thousands_sep;
     const char *grouping;
-    if (_Py_GetLocaleconvNumeric(&decimal_point,
+    if (_Py_GetLocaleconvNumeric(l, &decimal_point,
                                  &thousands_sep,
                                  &grouping) < 0) {
         goto failed;
@@ -221,6 +296,10 @@ PyLocale_localeconv(PyObject* self, PyObject *Py_UNUSED(ignored))
   failed:
     Py_DECREF(result);
     return NULL;
+
+#undef RESULT
+#undef RESULT_STRING
+#undef RESULT_INT
 }
 
 #if defined(HAVE_WCSCOLL)
