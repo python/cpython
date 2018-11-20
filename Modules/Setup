@@ -120,7 +120,7 @@ time -DPy_BUILD_CORE -I$(srcdir)/Include/internal timemodule.c	# -lm # time oper
 _thread -DPy_BUILD_CORE -I$(srcdir)/Include/internal _threadmodule.c	# low-level threading interface
 
 # access to ISO C locale support
-_locale _localemodule.c  # -lintl
+_locale -DPy_BUILD_CORE _localemodule.c  # -lintl
 
 # Standard I/O baseline
 _io -DPy_BUILD_CORE -I$(srcdir)/Include/internal -I$(srcdir)/Modules/_io _io/_iomodule.c _io/iobase.c _io/fileio.c _io/bytesio.c _io/bufferedio.c _io/textio.c _io/stringio.c
