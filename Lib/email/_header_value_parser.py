@@ -1875,7 +1875,7 @@ def get_group(value):
     if not value:
         group.defects.append(errors.InvalidHeaderDefect(
             "end of header in group"))
-    if value[0] != ';':
+    elif value[0] != ';':
         raise errors.HeaderParseError(
             "expected ';' at end of group but found {}".format(value))
     group.append(ValueTerminal(';', 'group-terminator'))
@@ -2209,8 +2209,8 @@ def get_section(value):
         digits += value[0]
         value = value[1:]
     if digits[0] == '0' and digits != '0':
-        section.defects.append(errors.InvalidHeaderError("section number"
-            "has an invalid leading 0"))
+        section.defects.append(errors.InvalidHeaderError(
+                "section number has an invalid leading 0"))
     section.number = int(digits)
     section.append(ValueTerminal(digits, 'digits'))
     return section, value

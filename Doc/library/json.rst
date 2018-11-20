@@ -188,6 +188,11 @@ Basic Usage
    .. versionchanged:: 3.6
       All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
+   .. note::
+
+      Unlike :mod:`pickle` and :mod:`marshal`, JSON is not a framed protocol,
+      so trying to serialize multiple objects with repeated calls to
+      :func:`dump` using the same *fp* will result in an invalid JSON file.
 
 .. function:: dumps(obj, *, skipkeys=False, ensure_ascii=True, \
                     check_circular=True, allow_nan=True, cls=None, \
@@ -197,12 +202,6 @@ Basic Usage
    Serialize *obj* to a JSON formatted :class:`str` using this :ref:`conversion
    table <py-to-json-table>`.  The arguments have the same meaning as in
    :func:`dump`.
-
-   .. note::
-
-      Unlike :mod:`pickle` and :mod:`marshal`, JSON is not a framed protocol,
-      so trying to serialize multiple objects with repeated calls to
-      :func:`dump` using the same *fp* will result in an invalid JSON file.
 
    .. note::
 
@@ -649,7 +648,9 @@ when serializing Python :class:`int` values of extremely large magnitude, or
 when serializing instances of "exotic" numerical types such as
 :class:`decimal.Decimal`.
 
+
 .. _json-commandline:
+.. program:: json.tool
 
 Command Line Interface
 ----------------------
@@ -680,6 +681,7 @@ specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively:
    The output is now in the same order as the input. Use the
    :option:`--sort-keys` option to sort the output of dictionaries
    alphabetically by key.
+
 
 Command line options
 ^^^^^^^^^^^^^^^^^^^^
@@ -714,6 +716,12 @@ Command line options
    Sort the output of dictionaries alphabetically by key.
 
    .. versionadded:: 3.5
+
+.. cmdoption:: --json-lines
+
+   Parse every input line as separate JSON object.
+
+   .. versionadded:: 3.8
 
 .. cmdoption:: -h, --help
 

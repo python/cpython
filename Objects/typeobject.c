@@ -1,7 +1,7 @@
 /* Type object implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include "frameobject.h"
 #include "structmember.h"
 
@@ -134,15 +134,19 @@ skip_signature(const char *doc)
 static int
 _PyType_CheckConsistency(PyTypeObject *type)
 {
+#define ASSERT(expr) _PyObject_ASSERT((PyObject *)type, (expr))
+
     if (!(type->tp_flags & Py_TPFLAGS_READY)) {
         /* don't check types before PyType_Ready() */
         return 1;
     }
 
-    assert(!(type->tp_flags & Py_TPFLAGS_READYING));
-    assert(type->tp_mro != NULL && PyTuple_Check(type->tp_mro));
-    assert(type->tp_dict != NULL);
+    ASSERT(!(type->tp_flags & Py_TPFLAGS_READYING));
+    ASSERT(type->tp_mro != NULL && PyTuple_Check(type->tp_mro));
+    ASSERT(type->tp_dict != NULL);
     return 1;
+
+#undef ASSERT
 }
 #endif
 
@@ -1111,12 +1115,12 @@ subtype_dealloc(PyObject *self)
 {
     PyTypeObject *type, *base;
     destructor basedealloc;
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     int has_finalizer;
 
     /* Extract the type; we expect it to be a heap type */
     type = Py_TYPE(self);
-    assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
+    _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 
     /* Test whether the type has GC exactly once */
 
@@ -2208,17 +2212,19 @@ subtype_getweakref(PyObject *obj, void *context)
 {
     PyObject **weaklistptr;
     PyObject *result;
+    PyTypeObject *type = Py_TYPE(obj);
 
-    if (Py_TYPE(obj)->tp_weaklistoffset == 0) {
+    if (type->tp_weaklistoffset == 0) {
         PyErr_SetString(PyExc_AttributeError,
                         "This object has no __weakref__");
         return NULL;
     }
-    assert(Py_TYPE(obj)->tp_weaklistoffset > 0);
-    assert(Py_TYPE(obj)->tp_weaklistoffset + sizeof(PyObject *) <=
-           (size_t)(Py_TYPE(obj)->tp_basicsize));
-    weaklistptr = (PyObject **)
-        ((char *)obj + Py_TYPE(obj)->tp_weaklistoffset);
+    _PyObject_ASSERT((PyObject *)type,
+                     type->tp_weaklistoffset > 0);
+    _PyObject_ASSERT((PyObject *)type,
+                     ((type->tp_weaklistoffset + sizeof(PyObject *))
+                      <= (size_t)(type->tp_basicsize)));
+    weaklistptr = (PyObject **)((char *)obj + type->tp_weaklistoffset);
     if (*weaklistptr == NULL)
         result = Py_None;
     else
@@ -2295,6 +2301,9 @@ type_init(PyObject *cls, PyObject *args, PyObject *kwds)
     /* Call object.__init__(self) now. */
     /* XXX Could call super(type, cls).__init__() but what's the point? */
     args = PyTuple_GetSlice(args, 0, 0);
+    if (args == NULL) {
+        return -1;
+    }
     res = object_init(cls, args, NULL);
     Py_DECREF(args);
     return res;
@@ -2837,12 +2846,34 @@ static const short slotoffsets[] = {
 PyObject *
 PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 {
-    PyHeapTypeObject *res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, 0);
-    PyTypeObject *type, *base;
+    PyHeapTypeObject *res;
+    PyMemberDef *memb;
     PyObject *modname;
-    char *s;
-    char *res_start = (char*)res;
+    PyTypeObject *type, *base;
+
     PyType_Slot *slot;
+    Py_ssize_t nmembers;
+    char *s, *res_start;
+
+    nmembers = 0;
+    for (slot = spec->slots; slot->slot; slot++) {
+        if (slot->slot == Py_tp_members) {
+            for (memb = slot->pfunc; memb->name != NULL; memb++) {
+                nmembers++;
+            }
+        }
+    }
+
+    res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, nmembers);
+    if (res == NULL)
+        return NULL;
+    res_start = (char*)res;
+
+    if (spec->name == NULL) {
+        PyErr_SetString(PyExc_SystemError,
+                        "Type spec does not define the name field.");
+        goto fail;
+    }
 
     /* Set the type name and qualname */
     s = strrchr(spec->name, '.');
@@ -2851,8 +2882,6 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     else
         s++;
 
-    if (res == NULL)
-        return NULL;
     type = &res->ht_type;
     /* The flags must be initialized early, before the GC traverses us */
     type->tp_flags = spec->flags | Py_TPFLAGS_HEAPTYPE;
@@ -2862,8 +2891,6 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     res->ht_qualname = res->ht_name;
     Py_INCREF(res->ht_qualname);
     type->tp_name = spec->name;
-    if (!type->tp_name)
-        goto fail;
 
     /* Adjust for empty tuple bases */
     if (!bases) {
@@ -2935,6 +2962,13 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
             }
             memcpy(tp_doc, old_doc, len);
             type->tp_doc = tp_doc;
+        }
+
+        /* Move the slots to the heap type itself */
+        if (slot->slot == Py_tp_members) {
+            size_t len = Py_TYPE(type)->tp_itemsize * nmembers;
+            memcpy(PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
+            type->tp_members = PyHeapType_GET_MEMBERS(res);
         }
     }
     if (type->tp_dealloc == NULL) {
@@ -3137,6 +3171,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
     PyTypeObject *metatype = Py_TYPE(type);
     PyObject *meta_attribute, *attribute;
     descrgetfunc meta_get;
+    PyObject* res;
 
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
@@ -3158,6 +3193,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
     meta_attribute = _PyType_Lookup(metatype, name);
 
     if (meta_attribute != NULL) {
+        Py_INCREF(meta_attribute);
         meta_get = Py_TYPE(meta_attribute)->tp_descr_get;
 
         if (meta_get != NULL && PyDescr_IsData(meta_attribute)) {
@@ -3165,10 +3201,11 @@ type_getattro(PyTypeObject *type, PyObject *name)
              * writes. Assume the attribute is not overridden in
              * type's tp_dict (and bases): call the descriptor now.
              */
-            return meta_get(meta_attribute, (PyObject *)type,
-                            (PyObject *)metatype);
+            res = meta_get(meta_attribute, (PyObject *)type,
+                           (PyObject *)metatype);
+            Py_DECREF(meta_attribute);
+            return res;
         }
-        Py_INCREF(meta_attribute);
     }
 
     /* No data descriptor found on metatype. Look in tp_dict of this
@@ -3176,6 +3213,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
     attribute = _PyType_Lookup(type, name);
     if (attribute != NULL) {
         /* Implement descriptor functionality, if any */
+        Py_INCREF(attribute);
         descrgetfunc local_get = Py_TYPE(attribute)->tp_descr_get;
 
         Py_XDECREF(meta_attribute);
@@ -3183,11 +3221,12 @@ type_getattro(PyTypeObject *type, PyObject *name)
         if (local_get != NULL) {
             /* NULL 2nd argument indicates the descriptor was
              * found on the target object itself (or a base)  */
-            return local_get(attribute, (PyObject *)NULL,
-                             (PyObject *)type);
+            res = local_get(attribute, (PyObject *)NULL,
+                            (PyObject *)type);
+            Py_DECREF(attribute);
+            return res;
         }
 
-        Py_INCREF(attribute);
         return attribute;
     }
 
@@ -3266,7 +3305,7 @@ type_dealloc(PyTypeObject *type)
     PyObject *tp, *val, *tb;
 
     /* Assert this is a heap-allocated type object */
-    assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
+    _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
     _PyObject_GC_UNTRACK(type);
     PyErr_Fetch(&tp, &val, &tb);
     remove_all_subclasses(type, type->tp_bases);
@@ -3490,7 +3529,7 @@ type_clear(PyTypeObject *type)
     PyDictKeysObject *cached_keys;
     /* Because of type_is_gc(), the collector only calls this
        for heaptypes. */
-    assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
+    _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 
     /* We need to invalidate the method cache carefully before clearing
        the dict, so that other objects caught in a reference cycle
@@ -4103,7 +4142,7 @@ _PyObject_GetState(PyObject *obj, int required)
 
         if (required && obj->ob_type->tp_itemsize) {
             PyErr_Format(PyExc_TypeError,
-                         "can't pickle %.200s objects",
+                         "cannot pickle '%.200s' object",
                          Py_TYPE(obj)->tp_name);
             return NULL;
         }
@@ -4144,7 +4183,7 @@ _PyObject_GetState(PyObject *obj, int required)
                 Py_DECREF(slotnames);
                 Py_DECREF(state);
                 PyErr_Format(PyExc_TypeError,
-                             "can't pickle %.200s objects",
+                             "cannot pickle '%.200s' object",
                              Py_TYPE(obj)->tp_name);
                 return NULL;
             }
@@ -4381,7 +4420,7 @@ reduce_newobj(PyObject *obj)
 
     if (Py_TYPE(obj)->tp_new == NULL) {
         PyErr_Format(PyExc_TypeError,
-                     "can't pickle %.200s objects",
+                     "cannot pickle '%.200s' object",
                      Py_TYPE(obj)->tp_name);
         return NULL;
     }
@@ -5104,7 +5143,8 @@ PyType_Ready(PyTypeObject *type)
         assert(_PyType_CheckConsistency(type));
         return 0;
     }
-    assert((type->tp_flags & Py_TPFLAGS_READYING) == 0);
+    _PyObject_ASSERT((PyObject *)type,
+                     (type->tp_flags & Py_TPFLAGS_READYING) == 0);
 
     type->tp_flags |= Py_TPFLAGS_READYING;
 
@@ -7658,7 +7698,7 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
         PyFrameObject *f;
         PyCodeObject *co;
         Py_ssize_t i, n;
-        f = PyThreadState_GET()->frame;
+        f = _PyThreadState_GET()->frame;
         if (f == NULL) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no current frame");

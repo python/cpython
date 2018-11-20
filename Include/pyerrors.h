@@ -94,16 +94,18 @@ PyAPI_FUNC(void) PyErr_SetExcInfo(PyObject *, PyObject *, PyObject *);
 #endif
 
 #if defined(__clang__) || \
-    (defined(__GNUC_MAJOR__) && \
-     ((__GNUC_MAJOR__ >= 3) || \
-      (__GNUC_MAJOR__ == 2) && (__GNUC_MINOR__ >= 5)))
-#define _Py_NO_RETURN __attribute__((__noreturn__))
+    (defined(__GNUC__) && \
+     ((__GNUC__ >= 3) || \
+      (__GNUC__ == 2) && (__GNUC_MINOR__ >= 5)))
+#  define _Py_NO_RETURN __attribute__((__noreturn__))
+#elif defined(_MSC_VER)
+#  define _Py_NO_RETURN __declspec(noreturn)
 #else
-#define _Py_NO_RETURN
+#  define _Py_NO_RETURN
 #endif
 
 /* Defined in Python/pylifecycle.c */
-PyAPI_FUNC(void) Py_FatalError(const char *message) _Py_NO_RETURN;
+PyAPI_FUNC(void) _Py_NO_RETURN Py_FatalError(const char *message);
 
 #if defined(Py_DEBUG) || defined(Py_LIMITED_API)
 #define _PyErr_OCCURRED() PyErr_Occurred()

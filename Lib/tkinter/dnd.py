@@ -201,7 +201,6 @@ class DndHandler:
             source.dnd_end(target, event)
 
 
-
 # ----------------------------------------------------------------------
 # The rest is here for testing and demonstration purposes only!
 
@@ -265,6 +264,7 @@ class Icon:
     def dnd_end(self, target, event):
         pass
 
+
 class Tester:
 
     def __init__(self, root):
@@ -299,6 +299,7 @@ class Tester:
         x, y = source.where(self.canvas, event)
         source.attach(self.canvas, x, y)
 
+
 def test():
     root = tkinter.Tk()
     root.geometry("+1+1")
@@ -316,6 +317,7 @@ def test():
     i2.attach(t2.canvas)
     i3.attach(t3.canvas)
     root.mainloop()
+
 
 if __name__ == '__main__':
     test()

@@ -20,6 +20,10 @@
 #  endif
 #endif
 
+#ifdef _Py_MEMORY_SANITIZER
+#  include <sanitizer/msan_interface.h>
+#endif
+
 #ifdef Py_DEBUG
 int _Py_HashSecret_Initialized = 0;
 #else
@@ -143,6 +147,11 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
         else {
             n = syscall(SYS_getrandom, dest, n, flags);
         }
+#  ifdef _Py_MEMORY_SANITIZER
+        if (n > 0) {
+             __msan_unpoison(dest, n);
+        }
+#  endif
 #endif
 
         if (n < 0) {
@@ -536,35 +545,6 @@ int
 _PyOS_URandomNonblock(void *buffer, Py_ssize_t size)
 {
     return pyurandom(buffer, size, 0, 1);
-}
-
-int
-_Py_ReadHashSeed(const char *seed_text,
-                 int *use_hash_seed,
-                 unsigned long *hash_seed)
-{
-    Py_BUILD_ASSERT(sizeof(_Py_HashSecret_t) == sizeof(_Py_HashSecret.uc));
-    /* Convert a text seed to a numeric one */
-    if (seed_text && *seed_text != '\0' && strcmp(seed_text, "random") != 0) {
-        const char *endptr = seed_text;
-        unsigned long seed;
-        seed = strtoul(seed_text, (char **)&endptr, 10);
-        if (*endptr != '\0'
-            || seed > 4294967295UL
-            || (errno == ERANGE && seed == ULONG_MAX))
-        {
-            return -1;
-        }
-        /* Use a specific hash */
-        *use_hash_seed = 1;
-        *hash_seed = seed;
-    }
-    else {
-        /* Use a random hash */
-        *use_hash_seed = 0;
-        *hash_seed = 0;
-    }
-    return 0;
 }
 
 

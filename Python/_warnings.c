@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include "frameobject.h"
 #include "clinic/_warnings.c.h"
 
@@ -78,7 +78,7 @@ get_warnings_attr(_Py_Identifier *attr_id, int try_import)
            gone, then we can't even use PyImport_GetModule without triggering
            an interpreter abort.
         */
-        if (!PyThreadState_GET()->interp->modules) {
+        if (!_PyInterpreterState_GET_UNSAFE()->modules) {
             return NULL;
         }
         warnings_module = PyImport_GetModule(warnings_str);
@@ -671,7 +671,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     PyObject *globals;
 
     /* Setup globals, filename and lineno. */
-    PyFrameObject *f = PyThreadState_GET()->frame;
+    PyFrameObject *f = _PyThreadState_GET()->frame;
     // Stack level comparisons to Python code is off by one as there is no
     // warnings-related stack level to avoid.
     if (stack_level <= 0 || is_internal_frame(f)) {
@@ -686,7 +686,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
 
     if (f == NULL) {
-        globals = PyThreadState_Get()->interp->sysdict;
+        globals = _PyInterpreterState_GET_UNSAFE()->sysdict;
         *filename = PyUnicode_FromString("sys");
         *lineno = 1;
     }
@@ -1004,7 +1004,7 @@ PyErr_WarnEx(PyObject *category, const char *text, Py_ssize_t stack_level)
 
 #undef PyErr_Warn
 
-PyAPI_FUNC(int)
+int
 PyErr_Warn(PyObject *category, const char *text)
 {
     return PyErr_WarnEx(category, text, 1);

@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
 #include "pythread.h"
+#include "coreconfig.h"
 
 /* This limitation is for performance and simplicity. If needed it can be
 removed (with effort). */
@@ -23,68 +24,6 @@ struct _frame; /* Forward declaration for PyFrameObject. */
 typedef struct _is PyInterpreterState;
 #else
 typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
-
-
-typedef struct {
-    int install_signal_handlers;  /* Install signal handlers? -1 means unset */
-
-    int ignore_environment; /* -E, Py_IgnoreEnvironmentFlag */
-    int use_hash_seed;      /* PYTHONHASHSEED=x */
-    unsigned long hash_seed;
-    const char *allocator;  /* Memory allocator: _PyMem_SetupAllocators() */
-    int dev_mode;           /* PYTHONDEVMODE, -X dev */
-    int faulthandler;       /* PYTHONFAULTHANDLER, -X faulthandler */
-    int tracemalloc;        /* PYTHONTRACEMALLOC, -X tracemalloc=N */
-    int import_time;        /* PYTHONPROFILEIMPORTTIME, -X importtime */
-    int show_ref_count;     /* -X showrefcount */
-    int show_alloc_count;   /* -X showalloccount */
-    int dump_refs;          /* PYTHONDUMPREFS */
-    int malloc_stats;       /* PYTHONMALLOCSTATS */
-    int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
-    int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
-    int utf8_mode;          /* PYTHONUTF8, -X utf8; -1 means unknown */
-    wchar_t *pycache_prefix; /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
-
-    wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
-    int argc;               /* Number of command line arguments,
-                               -1 means unset */
-    wchar_t **argv;         /* Command line arguments */
-    wchar_t *program;       /* argv[0] or "" */
-
-    int nxoption;           /* Number of -X options */
-    wchar_t **xoptions;     /* -X options */
-
-    int nwarnoption;        /* Number of warnings options */
-    wchar_t **warnoptions;  /* Warnings options */
-
-    /* Path configuration inputs */
-    wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
-    wchar_t *home;          /* PYTHONHOME environment variable,
-                               see also Py_SetPythonHome(). */
-
-    /* Path configuration outputs */
-    int nmodule_search_path;        /* Number of sys.path paths,
-                                       -1 means unset */
-    wchar_t **module_search_paths;  /* sys.path paths */
-    wchar_t *executable;    /* sys.executable */
-    wchar_t *prefix;        /* sys.prefix */
-    wchar_t *base_prefix;   /* sys.base_prefix */
-    wchar_t *exec_prefix;   /* sys.exec_prefix */
-    wchar_t *base_exec_prefix;  /* sys.base_exec_prefix */
-
-    /* Private fields */
-    int _disable_importlib; /* Needed by freeze_importlib */
-} _PyCoreConfig;
-
-#define _PyCoreConfig_INIT \
-    (_PyCoreConfig){ \
-        .install_signal_handlers = -1, \
-        .use_hash_seed = -1, \
-        .coerce_c_locale = -1, \
-        .utf8_mode = -1, \
-        .argc = -1, \
-        .nmodule_search_path = -1}
-/* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 /* Placeholders while working on the new configuration API
  *
@@ -269,8 +208,8 @@ typedef struct _ts {
      * if the thread holds the last reference to the lock, decref'ing the
      * lock will delete the lock, and that may trigger arbitrary Python code
      * if there's a weakref, with a callback, to the lock.  But by this time
-     * _PyThreadState_Current is already NULL, so only the simplest of C code
-     * can be allowed to run (in particular it must not be possible to
+     * _PyRuntime.gilstate.tstate_current is already NULL, so only the simplest
+     * of C code can be allowed to run (in particular it must not be possible to
      * release the GIL).
      * So instead of holding the lock directly, the tstate holds a weakref to
      * the lock:  that's the value of on_delete_data below.  Decref'ing a
@@ -306,6 +245,17 @@ typedef struct _ts {
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
+
+#if !defined(Py_LIMITED_API)
+/* Get the current interpreter state.
+
+   Issue a fatal error if there no current Python thread state or no current
+   interpreter. It cannot return NULL.
+
+   The caller must hold the GIL.*/
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
+#endif
+
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
 /* New in 3.7 */
 PyAPI_FUNC(int64_t) PyInterpreterState_GetID(PyInterpreterState *);
@@ -338,10 +288,26 @@ PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 PyAPI_FUNC(void) _PyGILState_Reinit(void);
 #endif /* !Py_LIMITED_API */
 
-/* Return the current thread state. The global interpreter lock must be held.
- * When the current thread state is NULL, this issues a fatal error (so that
- * the caller needn't check for NULL). */
+/* Get the current thread state.
+
+   When the current thread state is NULL, this issues a fatal error (so that
+   the caller needn't check for NULL).
+
+   The caller must hold the GIL.
+
+   See also PyThreadState_GET() and _PyThreadState_GET(). */
 PyAPI_FUNC(PyThreadState *) PyThreadState_Get(void);
+
+/* Get the current Python thread state.
+
+   Macro using PyThreadState_Get() or _PyThreadState_GET() depending if
+   pycore_pystate.h is included or not (this header redefines the macro).
+
+   If PyThreadState_Get() is used, issue a fatal error if the current thread
+   state is NULL.
+
+   See also PyThreadState_Get() and _PyThreadState_GET(). */
+#define PyThreadState_GET() PyThreadState_Get()
 
 #ifndef Py_LIMITED_API
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
@@ -352,19 +318,6 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Swap(PyThreadState *);
 PyAPI_FUNC(PyObject *) PyThreadState_GetDict(void);
 PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
-
-
-/* Variable and macro for in-line access to current thread state */
-
-/* Assuming the current thread holds the GIL, this is the
-   PyThreadState for the current thread. */
-#ifdef Py_BUILD_CORE
-#  define _PyThreadState_Current _PyRuntime.gilstate.tstate_current
-#  define PyThreadState_GET() \
-             ((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
-#else
-#  define PyThreadState_GET() PyThreadState_Get()
-#endif
 
 typedef
     enum {PyGILState_LOCKED, PyGILState_UNLOCKED}
@@ -419,11 +372,13 @@ PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
    The function returns 1 if _PyGILState_check_enabled is non-zero. */
 PyAPI_FUNC(int) PyGILState_Check(void);
 
-/* Unsafe function to get the single PyInterpreterState used by this process'
-   GILState implementation.
+/* Get the single PyInterpreterState used by this process' GILState
+   implementation.
 
-   Return NULL before _PyGILState_Init() is called and after _PyGILState_Fini()
-   is called. */
+   This function doesn't check for error. Return NULL before _PyGILState_Init()
+   is called and after _PyGILState_Fini() is called.
+
+   See also _PyInterpreterState_Get() and _PyInterpreterState_GET_UNSAFE(). */
 PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
 #endif   /* !Py_LIMITED_API */
 

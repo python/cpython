@@ -15,7 +15,6 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
-import threading
 import unittest
 from test import libregrtest
 from test import support
@@ -67,10 +66,10 @@ class ParseArgsTestCase(unittest.TestCase):
         ns = libregrtest._parse_args(['--wait'])
         self.assertTrue(ns.wait)
 
-    def test_slaveargs(self):
-        ns = libregrtest._parse_args(['--slaveargs', '[[], {}]'])
-        self.assertEqual(ns.slaveargs, '[[], {}]')
-        self.checkError(['--slaveargs'], 'expected one argument')
+    def test_worker_args(self):
+        ns = libregrtest._parse_args(['--worker-args', '[[], {}]'])
+        self.assertEqual(ns.worker_args, '[[], {}]')
+        self.checkError(['--worker-args'], 'expected one argument')
 
     def test_start(self):
         for opt in '-S', '--start':

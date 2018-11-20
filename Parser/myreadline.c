@@ -10,7 +10,7 @@
 */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #ifdef MS_WINDOWS
 #define WIN32_LEAN_AND_MEAN
 #include "windows.h"
@@ -109,7 +109,7 @@ _PyOS_WindowsConsoleReadline(HANDLE hStdIn)
     char *buf = NULL;
     int err = 0;
 
-    n_read = 0;
+    n_read = (DWORD)-1;
     total_read = 0;
     wbuf = wbuf_local;
     wbuflen = sizeof(wbuf_local) / sizeof(wbuf_local[0]) - 1;
@@ -120,6 +120,9 @@ _PyOS_WindowsConsoleReadline(HANDLE hStdIn)
         if (!ReadConsoleW(hStdIn, &wbuf[total_read], wbuflen - total_read, &n_read, NULL)) {
             err = GetLastError();
             goto exit;
+        }
+        if (n_read == (DWORD)-1 && (err = GetLastError()) == ERROR_OPERATION_ABORTED) {
+            break;
         }
         if (n_read == 0) {
             int s;
@@ -298,7 +301,7 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     char *rv, *res;
     size_t len;
 
-    if (_PyOS_ReadlineTState == PyThreadState_GET()) {
+    if (_PyOS_ReadlineTState == _PyThreadState_GET()) {
         PyErr_SetString(PyExc_RuntimeError,
                         "can't re-enter readline");
         return NULL;
@@ -313,7 +316,7 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
         _PyOS_ReadlineLock = PyThread_allocate_lock();
     }
 
-    _PyOS_ReadlineTState = PyThreadState_GET();
+    _PyOS_ReadlineTState = _PyThreadState_GET();
     Py_BEGIN_ALLOW_THREADS
     PyThread_acquire_lock(_PyOS_ReadlineLock, 1);
 

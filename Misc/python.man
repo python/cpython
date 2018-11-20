@@ -437,6 +437,76 @@ values.
 
 The integer must be a decimal number in the range [0,4294967295].  Specifying
 the value 0 will disable hash randomization.
+.IP PYTHONMALLOC
+Set the Python memory allocators and/or install debug hooks. The available
+memory allocators are
+.IR malloc
+and
+.IR pymalloc .
+The available debug hooks are
+.IR debug ,
+.IR malloc_debug ,
+and
+.IR pymalloc_debug .
+.IP
+When Python is compiled in debug mode, the default is
+.IR pymalloc_debug
+and the debug hooks are automatically used. Otherwise, the default is
+.IR pymalloc .
+.IP PYTHONMALLOCSTATS
+If set to a non-empty string, Python will print statistics of the pymalloc
+memory allocator every time a new pymalloc object arena is created, and on
+shutdown.
+.IP
+This variable is ignored if the
+.RB $ PYTHONMALLOC
+environment variable is used to force the
+.BR malloc (3)
+allocator of the C library, or if Python is configured without pymalloc support.
+.IP PYTHONASYNCIODEBUG
+If this environment variable is set to a non-empty string, enable the debug
+mode of the asyncio module.
+.IP PYTHONTRACEMALLOC
+If this environment variable is set to a non-empty string, start tracing
+Python memory allocations using the tracemalloc module.
+.IP
+The value of the variable is the maximum number of frames stored in a
+traceback of a trace. For example,
+.IB PYTHONTRACEMALLOC=1
+stores only the most recent frame.
+.IP PYTHONFAULTHANDLER
+If this environment variable is set to a non-empty string,
+.IR faulthandler.enable()
+is called at startup: install a handler for SIGSEGV, SIGFPE, SIGABRT, SIGBUS
+and SIGILL signals to dump the Python traceback.
+.IP
+This is equivalent to the \fB-X faulthandler\fP option.
+.IP PYTHONEXECUTABLE
+If this environment variable is set,
+.IB sys.argv[0]
+will be set to its value instead of the value got through the C runtime. Only
+works on Mac OS X.
+.IP PYTHONUSERBASE
+Defines the user base directory, which is used to compute the path of the user
+.IR site-packages
+directory and Distutils installation paths for
+.IR "python setup\.py install \-\-user" .
+.IP PYTHONPROFILEIMPORTTIME
+If this environment variable is set to a non-empty string, Python will
+show how long each import takes. This is exactly equivalent to setting
+\fB\-X importtime\fP on the command line.
+.IP PYTHONBREAKPOINT
+If this environment variable is set to 0, it disables the default debugger. It
+can be set to the callable of your debugger of choice.
+.SS Debug-mode variables
+Setting these variables only has an effect in a debug build of Python, that is,
+if Python was configured with the
+\fB\--with-pydebug\fP build option.
+.IP PYTHONTHREADDEBUG
+If this environment variable is set, Python will print threading debug info.
+.IP PYTHONDUMPREFS
+If this environment variable is set, Python will dump objects and reference
+counts still alive after shutting down the interpreter.
 .SH AUTHOR
 The Python Software Foundation: https://www.python.org/psf/
 .SH INTERNET RESOURCES

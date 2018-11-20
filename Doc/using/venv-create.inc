@@ -20,11 +20,6 @@ directory is specified, it will be re-used.
 .. versionchanged:: 3.5
    The use of ``venv`` is now recommended for creating virtual environments.
 
-.. seealso::
-
-   `Python Packaging User Guide: Creating and using virtual environments
-   <https://packaging.python.org/installing/#creating-virtual-environments>`__
-
 .. highlight:: none
 
 On Windows, invoke the ``venv`` command as follows::

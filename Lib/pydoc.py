@@ -958,8 +958,7 @@ class HTMLDoc(Doc):
         if name == realname:
             title = '<a name="%s"><strong>%s</strong></a>' % (anchor, realname)
         else:
-            if (cl and realname in cl.__dict__ and
-                cl.__dict__[realname] is object):
+            if cl and inspect.getattr_static(cl, realname, []) is object:
                 reallink = '<a href="#%s">%s</a>' % (
                     cl.__name__ + '-' + realname, realname)
                 skipdocs = 1
@@ -1254,6 +1253,24 @@ location listed above.
                 push('    ' + makename(base))
             push('')
 
+        # List the built-in subclasses, if any:
+        subclasses = sorted(
+            (str(cls.__name__) for cls in object.__subclasses__()
+             if not cls.__name__.startswith("_") and cls.__module__ == "builtins"),
+            key=str.lower
+        )
+        no_of_subclasses = len(subclasses)
+        MAX_SUBCLASSES_TO_DISPLAY = 4
+        if subclasses:
+            push("Built-in subclasses:")
+            for subclassname in subclasses[:MAX_SUBCLASSES_TO_DISPLAY]:
+                push('    ' + subclassname)
+            if no_of_subclasses > MAX_SUBCLASSES_TO_DISPLAY:
+                push('    ... and ' +
+                     str(no_of_subclasses - MAX_SUBCLASSES_TO_DISPLAY) +
+                     ' other subclasses')
+            push('')
+
         # Cute little class to pump out a horizontal rule between sections.
         class HorizontalRule:
             def __init__(self):
@@ -1375,8 +1392,7 @@ location listed above.
         if name == realname:
             title = self.bold(realname)
         else:
-            if (cl and realname in cl.__dict__ and
-                cl.__dict__[realname] is object):
+            if cl and inspect.getattr_static(cl, realname, []) is object:
                 skipdocs = 1
             title = self.bold(name) + ' = ' + realname
         argspec = None
@@ -2028,14 +2044,15 @@ module "pydoc_data.topics" could not be found.
         except KeyError:
             self.output.write('no documentation found for %s\n' % repr(topic))
             return
-        pager(doc.strip() + '\n')
+        doc = doc.strip() + '\n'
         if more_xrefs:
             xrefs = (xrefs or '') + ' ' + more_xrefs
         if xrefs:
             import textwrap
             text = 'Related help topics: ' + ', '.join(xrefs.split()) + '\n'
             wrapped_text = textwrap.wrap(text, 72)
-            self.output.write('\n%s\n' % ''.join(wrapped_text))
+            doc += '\n%s\n' % '\n'.join(wrapped_text)
+        pager(doc)
 
     def _gettopic(self, topic, more_xrefs=''):
         """Return unbuffered tuple of (topic, xrefs).

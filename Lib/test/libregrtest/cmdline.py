@@ -170,7 +170,7 @@ def _create_parser():
     group.add_argument('--wait', action='store_true',
                        help='wait for user input, e.g., allow a debugger '
                             'to be attached')
-    group.add_argument('--slaveargs', metavar='ARGS')
+    group.add_argument('--worker-args', metavar='ARGS')
     group.add_argument('-S', '--start', metavar='START',
                        help='the name of the test at which to start.' +
                             more_details)
@@ -268,6 +268,11 @@ def _create_parser():
                        help='if a test file alters the environment, mark '
                             'the test as failed')
 
+    group.add_argument('--junit-xml', dest='xmlpath', metavar='FILENAME',
+                       help='writes JUnit-style XML results to the specified '
+                            'file')
+    group.add_argument('--tempdir', dest='tempdir', metavar='PATH',
+                       help='override the working directory for the test run')
     return parser
 
 
@@ -379,8 +384,7 @@ def _parse_args(args, **kwargs):
     if ns.match_filename:
         if ns.match_tests is None:
             ns.match_tests = []
-        filename = os.path.join(support.SAVEDCWD, ns.match_filename)
-        with open(filename) as fp:
+        with open(ns.match_filename) as fp:
             for line in fp:
                 ns.match_tests.append(line.strip())
 

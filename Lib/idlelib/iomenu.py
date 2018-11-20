@@ -40,8 +40,8 @@ else:
             # resulting codeset may be unknown to Python. We ignore all
             # these problems, falling back to ASCII
             locale_encoding = locale.nl_langinfo(locale.CODESET)
-            if locale_encoding is None or locale_encoding is '':
-                # situation occurs on Mac OS X
+            if locale_encoding is None or locale_encoding == '':
+                # situation occurs on macOS
                 locale_encoding = 'ascii'
             codecs.lookup(locale_encoding)
         except (NameError, AttributeError, LookupError):
@@ -50,8 +50,8 @@ else:
             # bugs that can cause ValueError.
             try:
                 locale_encoding = locale.getdefaultlocale()[1]
-                if locale_encoding is None or locale_encoding is '':
-                    # situation occurs on Mac OS X
+                if locale_encoding is None or locale_encoding == '':
+                    # situation occurs on macOS
                     locale_encoding = 'ascii'
                 codecs.lookup(locale_encoding)
             except (ValueError, LookupError):

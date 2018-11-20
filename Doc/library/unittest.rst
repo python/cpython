@@ -56,7 +56,7 @@ test runner
       Kent Beck's original paper on testing frameworks using the pattern shared
       by :mod:`unittest`.
 
-   `Nose <https://nose.readthedocs.io/>`_ and `py.test <https://docs.pytest.org/>`_
+   `Nose <https://nose.readthedocs.io/>`_ and `pytest <https://docs.pytest.org/>`_
       Third-party unittest frameworks with a lighter-weight syntax for writing
       tests.  For example, ``assert func(10) == 42``.
 
@@ -412,7 +412,7 @@ run whether the test method succeeded or not.
 Such a working environment for the testing code is called a
 :dfn:`test fixture`.  A new TestCase instance is created as a unique
 test fixture used to execute each individual test method.  Thus
-`~TestCase.setUp`, `~TestCase.tearDown`, and `~TestCase.__init__`
+:meth:`~TestCase.setUp`, :meth:`~TestCase.tearDown`, and :meth:`~TestCase.__init__`
 will be called once per test.
 
 It is recommended that you use TestCase implementations to group tests together
@@ -607,7 +607,7 @@ Distinguishing test iterations using subtests
 
 .. versionadded:: 3.4
 
-When some of your tests differ only by a some very small differences, for
+When there are very small differences among your tests, for
 instance some parameters, unittest allows you to distinguish them inside
 the body of a test method using the :meth:`~TestCase.subTest` context manager.
 
@@ -724,7 +724,7 @@ Test cases
 
    .. method:: setUpClass()
 
-      A class method called before tests in an individual class run.
+      A class method called before tests in an individual class are run.
       ``setUpClass`` is called with the class as the only argument
       and must be decorated as a :func:`classmethod`::
 
@@ -944,7 +944,7 @@ Test cases
    +---------------------------------------------------------+--------------------------------------+------------+
 
    .. method:: assertRaises(exception, callable, *args, **kwds)
-               assertRaises(exception, msg=None)
+               assertRaises(exception, *, msg=None)
 
       Test that an exception is raised when *callable* is called with any
       positional or keyword arguments that are also passed to
@@ -984,7 +984,7 @@ Test cases
 
 
    .. method:: assertRaisesRegex(exception, regex, callable, *args, **kwds)
-               assertRaisesRegex(exception, regex, msg=None)
+               assertRaisesRegex(exception, regex, *, msg=None)
 
       Like :meth:`assertRaises` but also tests that *regex* matches
       on the string representation of the raised exception.  *regex* may be
@@ -1010,7 +1010,7 @@ Test cases
 
 
    .. method:: assertWarns(warning, callable, *args, **kwds)
-               assertWarns(warning, msg=None)
+               assertWarns(warning, *, msg=None)
 
       Test that a warning is triggered when *callable* is called with any
       positional or keyword arguments that are also passed to
@@ -1051,7 +1051,7 @@ Test cases
 
 
    .. method:: assertWarnsRegex(warning, regex, callable, *args, **kwds)
-               assertWarnsRegex(warning, regex, msg=None)
+               assertWarnsRegex(warning, regex, *, msg=None)
 
       Like :meth:`assertWarns` but also tests that *regex* matches on the
       message of the triggered warning.  *regex* may be a regular expression
@@ -1161,7 +1161,7 @@ Test cases
       If *delta* is supplied instead of *places* then the difference
       between *first* and *second* must be less or equal to (or greater than) *delta*.
 
-      Supplying both *delta* and *places* raises a ``TypeError``.
+      Supplying both *delta* and *places* raises a :exc:`TypeError`.
 
       .. versionchanged:: 3.2
          :meth:`assertAlmostEqual` automatically considers almost equal objects
@@ -1447,6 +1447,39 @@ Test cases
       functions one at a time, so it can be called at any time.
 
       .. versionadded:: 3.1
+
+   .. classmethod:: addClassCleanup(function, *args, **kwargs)
+
+      Add a function to be called after :meth:`tearDownClass` to cleanup
+      resources used during the test class. Functions will be called in reverse
+      order to the order they are added (:abbr:`LIFO (last-in, first-out)`).
+      They are called with any arguments and keyword arguments passed into
+      :meth:`addClassCleanup` when they are added.
+
+      If :meth:`setUpClass` fails, meaning that :meth:`tearDownClass` is not
+      called, then any cleanup functions added will still be called.
+
+      .. versionadded:: 3.8
+
+
+   .. classmethod:: doClassCleanups()
+
+      This method is called unconditionally after :meth:`tearDownClass`, or
+      after :meth:`setUpClass` if :meth:`setUpClass` raises an exception.
+
+      It is responsible for calling all the cleanup functions added by
+      :meth:`addCleanupClass`. If you need cleanup functions to be called
+      *prior* to :meth:`tearDownClass` then you can call
+      :meth:`doCleanupsClass` yourself.
+
+      :meth:`doCleanupsClass` pops methods off the stack of cleanup
+      functions one at a time, so it can be called at any time.
+
+      .. versionadded:: 3.8
+
+
+
+
 
 
 .. class:: FunctionTestCase(testFunc, setUp=None, tearDown=None, description=None)
@@ -2268,6 +2301,38 @@ module will be run and the ``tearDownModule`` will not be run. If the exception 
 :exc:`SkipTest` exception then the module will be reported as having been skipped
 instead of as an error.
 
+To add cleanup code that must be run even in the case of an exception, use
+``addModuleCleanup``:
+
+
+.. function:: addModuleCleanup(function, *args, **kwargs)
+
+   Add a function to be called after :func:`tearDownModule` to cleanup
+   resources used during the test class. Functions will be called in reverse
+   order to the order they are added (:abbr:`LIFO (last-in, first-out)`).
+   They are called with any arguments and keyword arguments passed into
+   :meth:`addModuleCleanup` when they are added.
+
+   If :meth:`setUpModule` fails, meaning that :func:`tearDownModule` is not
+   called, then any cleanup functions added will still be called.
+
+   .. versionadded:: 3.8
+
+
+.. function:: doModuleCleanups()
+
+   This function is called unconditionally after :func:`tearDownModule`, or
+   after :func:`setUpModule` if :func:`setUpModule` raises an exception.
+
+   It is responsible for calling all the cleanup functions added by
+   :func:`addCleanupModule`. If you need cleanup functions to be called
+   *prior* to :func:`tearDownModule` then you can call
+   :func:`doModuleCleanups` yourself.
+
+   :func:`doModuleCleanups` pops methods off the stack of cleanup
+   functions one at a time, so it can be called at any time.
+
+   .. versionadded:: 3.8
 
 Signal Handling
 ---------------

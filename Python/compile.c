@@ -24,7 +24,6 @@
 #include "Python.h"
 
 #include "Python-ast.h"
-#include "node.h"
 #include "ast.h"
 #include "code.h"
 #include "symtable.h"
@@ -175,6 +174,7 @@ static int compiler_addop(struct compiler *, int);
 static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
 static int compiler_addop_j(struct compiler *, int, basicblock *, int);
 static int compiler_error(struct compiler *, const char *);
+static int compiler_warn(struct compiler *, const char *);
 static int compiler_nameop(struct compiler *, identifier, expr_context_ty);
 
 static PyCodeObject *compiler_mod(struct compiler *, mod_ty);
@@ -1124,6 +1124,12 @@ stack_effect(int opcode, int oparg, int jump)
 }
 
 int
+PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump)
+{
+    return stack_effect(opcode, oparg, jump);
+}
+
+int
 PyCompile_OpcodeStackEffect(int opcode, int oparg)
 {
     return stack_effect(opcode, oparg, -1);
@@ -1402,43 +1408,6 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
             return 0; \
         } \
     } \
-}
-
-static int
-is_const(expr_ty e)
-{
-    switch (e->kind) {
-    case Constant_kind:
-    case Num_kind:
-    case Str_kind:
-    case Bytes_kind:
-    case Ellipsis_kind:
-    case NameConstant_kind:
-        return 1;
-    default:
-        return 0;
-    }
-}
-
-static PyObject *
-get_const_value(expr_ty e)
-{
-    switch (e->kind) {
-    case Constant_kind:
-        return e->v.Constant.value;
-    case Num_kind:
-        return e->v.Num.n;
-    case Str_kind:
-        return e->v.Str.s;
-    case Bytes_kind:
-        return e->v.Bytes.s;
-    case Ellipsis_kind:
-        return Py_Ellipsis;
-    case NameConstant_kind:
-        return e->v.NameConstant.value;
-    default:
-        Py_UNREACHABLE();
-    }
 }
 
 /* Search if variable annotations are present statically in a block. */
@@ -1992,6 +1961,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     Py_ssize_t i, funcflags;
     int annotations;
     int scope_type;
+    int firstlineno;
 
     if (is_async) {
         assert(s->kind == AsyncFunctionDef_kind);
@@ -2018,6 +1988,11 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     if (!compiler_decorators(c, decos))
         return 0;
 
+    firstlineno = s->lineno;
+    if (asdl_seq_LEN(decos)) {
+        firstlineno = ((expr_ty)asdl_seq_GET(decos, 0))->lineno;
+    }
+
     funcflags = compiler_default_arguments(c, args);
     if (funcflags == -1) {
         return 0;
@@ -2031,7 +2006,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         funcflags |= 0x04;
     }
 
-    if (!compiler_enter_scope(c, name, scope_type, (void *)s, s->lineno)) {
+    if (!compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno)) {
         return 0;
     }
 
@@ -2074,11 +2049,16 @@ compiler_class(struct compiler *c, stmt_ty s)
 {
     PyCodeObject *co;
     PyObject *str;
-    int i;
+    int i, firstlineno;
     asdl_seq* decos = s->v.ClassDef.decorator_list;
 
     if (!compiler_decorators(c, decos))
         return 0;
+
+    firstlineno = s->lineno;
+    if (asdl_seq_LEN(decos)) {
+        firstlineno = ((expr_ty)asdl_seq_GET(decos, 0))->lineno;
+    }
 
     /* ultimately generate code for:
          <name> = __build_class__(<func>, <name>, *<bases>, **<keywords>)
@@ -2094,7 +2074,7 @@ compiler_class(struct compiler *c, stmt_ty s)
 
     /* 1. compile the class body into a code object */
     if (!compiler_enter_scope(c, s->v.ClassDef.name,
-                              COMPILER_SCOPE_CLASS, (void *)s, s->lineno))
+                              COMPILER_SCOPE_CLASS, (void *)s, firstlineno))
         return 0;
     /* this block represents what we do in the new scope */
     {
@@ -2574,7 +2554,7 @@ static int
 compiler_return(struct compiler *c, stmt_ty s)
 {
     int preserve_tos = ((s->v.Return.value != NULL) &&
-                        !is_const(s->v.Return.value));
+                        (s->v.Return.value->kind != Constant_kind));
     if (c->u->u_ste->ste_type != FunctionBlock)
         return compiler_error(c, "'return' outside function");
     if (s->v.Return.value != NULL &&
@@ -2781,8 +2761,9 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
             cleanup_end = compiler_new_block(c);
             cleanup_body = compiler_new_block(c);
-            if (!(cleanup_end || cleanup_body))
+            if (cleanup_end == NULL || cleanup_body == NULL) {
                 return 0;
+            }
 
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             ADDOP(c, POP_TOP);
@@ -3013,7 +2994,6 @@ compiler_assert(struct compiler *c, stmt_ty s)
 {
     static PyObject *assertion_error = NULL;
     basicblock *end;
-    PyObject* msg;
 
     if (c->c_optimize)
         return 1;
@@ -3023,18 +3003,13 @@ compiler_assert(struct compiler *c, stmt_ty s)
             return 0;
     }
     if (s->v.Assert.test->kind == Tuple_kind &&
-        asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0) {
-        msg = PyUnicode_FromString("assertion is always true, "
-                                   "perhaps remove parentheses?");
-        if (msg == NULL)
-            return 0;
-        if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg,
-                                     c->c_filename, c->u->u_lineno,
-                                     NULL, NULL) == -1) {
-            Py_DECREF(msg);
+        asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0)
+    {
+        if (!compiler_warn(c, "assertion is always true, "
+                              "perhaps remove parentheses?"))
+        {
             return 0;
         }
-        Py_DECREF(msg);
     }
     end = compiler_new_block(c);
     if (end == NULL)
@@ -3060,7 +3035,7 @@ compiler_visit_stmt_expr(struct compiler *c, expr_ty value)
         return 1;
     }
 
-    if (is_const(value)) {
+    if (value->kind == Constant_kind) {
         /* ignore constant statement */
         return 1;
     }
@@ -3508,7 +3483,7 @@ are_all_items_const(asdl_seq *seq, Py_ssize_t begin, Py_ssize_t end)
     Py_ssize_t i;
     for (i = begin; i < end; i++) {
         expr_ty key = (expr_ty)asdl_seq_GET(seq, i);
-        if (key == NULL || !is_const(key))
+        if (key == NULL || key->kind != Constant_kind)
             return 0;
     }
     return 1;
@@ -3528,7 +3503,7 @@ compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end
             return 0;
         }
         for (i = begin; i < end; i++) {
-            key = get_const_value((expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
+            key = ((expr_ty)asdl_seq_GET(e->v.Dict.keys, i))->v.Constant.value;
             Py_INCREF(key);
             PyTuple_SET_ITEM(keys, i - begin, key);
         }
@@ -4101,10 +4076,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     is_async_generator = c->u->u_ste->ste_coroutine;
 
     if (is_async_generator && !is_async_function && type != COMP_GENEXP) {
-        if (e->lineno > c->u->u_lineno) {
-            c->u->u_lineno = e->lineno;
-            c->u->u_lineno_set = 0;
-        }
         compiler_error(c, "asynchronous comprehension outside of "
                           "an asynchronous function");
         goto error_in_scope;
@@ -4254,8 +4225,8 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
 static int
 expr_constant(expr_ty e)
 {
-    if (is_const(e)) {
-        return PyObject_IsTrue(get_const_value(e));
+    if (e->kind == Constant_kind) {
+        return PyObject_IsTrue(e->v.Constant.value);
     }
     return -1;
 }
@@ -4442,17 +4413,8 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 }
 
 static int
-compiler_visit_expr(struct compiler *c, expr_ty e)
+compiler_visit_expr1(struct compiler *c, expr_ty e)
 {
-    /* If expr e has a different line number than the last expr/stmt,
-       set a new line number for the next instruction.
-    */
-    if (e->lineno > c->u->u_lineno) {
-        c->u->u_lineno = e->lineno;
-        c->u->u_lineno_set = 0;
-    }
-    /* Updating the column offset is always harmless. */
-    c->u->u_col_offset = e->col_offset;
     switch (e->kind) {
     case BoolOp_kind:
         return compiler_boolop(c, e);
@@ -4524,25 +4486,10 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
     case Constant_kind:
         ADDOP_LOAD_CONST(c, e->v.Constant.value);
         break;
-    case Num_kind:
-        ADDOP_LOAD_CONST(c, e->v.Num.n);
-        break;
-    case Str_kind:
-        ADDOP_LOAD_CONST(c, e->v.Str.s);
-        break;
     case JoinedStr_kind:
         return compiler_joined_str(c, e);
     case FormattedValue_kind:
         return compiler_formatted_value(c, e);
-    case Bytes_kind:
-        ADDOP_LOAD_CONST(c, e->v.Bytes.s);
-        break;
-    case Ellipsis_kind:
-        ADDOP_LOAD_CONST(c, Py_Ellipsis);
-        break;
-    case NameConstant_kind:
-        ADDOP_LOAD_CONST(c, e->v.NameConstant.value);
-        break;
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
         if (e->v.Attribute.ctx != AugStore)
@@ -4619,6 +4566,31 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         return compiler_tuple(c, e);
     }
     return 1;
+}
+
+static int
+compiler_visit_expr(struct compiler *c, expr_ty e)
+{
+    /* If expr e has a different line number than the last expr/stmt,
+       set a new line number for the next instruction.
+    */
+    int old_lineno = c->u->u_lineno;
+    int old_col_offset = c->u->u_col_offset;
+    if (e->lineno != c->u->u_lineno) {
+        c->u->u_lineno = e->lineno;
+        c->u->u_lineno_set = 0;
+    }
+    /* Updating the column offset is always harmless. */
+    c->u->u_col_offset = e->col_offset;
+
+    int res = compiler_visit_expr1(c, e);
+
+    if (old_lineno != c->u->u_lineno) {
+        c->u->u_lineno = old_lineno;
+        c->u->u_lineno_set = 0;
+    }
+    c->u->u_col_offset = old_col_offset;
+    return res;
 }
 
 static int
@@ -4824,7 +4796,7 @@ compiler_error(struct compiler *c, const char *errstr)
         loc = Py_None;
     }
     u = Py_BuildValue("(OiiO)", c->c_filename, c->u->u_lineno,
-                      c->u->u_col_offset, loc);
+                      c->u->u_col_offset + 1, loc);
     if (!u)
         goto exit;
     v = Py_BuildValue("(zO)", errstr, u);
@@ -4836,6 +4808,31 @@ compiler_error(struct compiler *c, const char *errstr)
     Py_XDECREF(u);
     Py_XDECREF(v);
     return 0;
+}
+
+/* Emits a SyntaxWarning and returns 1 on success.
+   If a SyntaxWarning raised as error, replaces it with a SyntaxError
+   and returns 0.
+*/
+static int
+compiler_warn(struct compiler *c, const char *errstr)
+{
+    PyObject *msg = PyUnicode_FromString(errstr);
+    if (msg == NULL) {
+        return 0;
+    }
+    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, c->c_filename,
+                                 c->u->u_lineno, NULL, NULL) < 0)
+    {
+        Py_DECREF(msg);
+        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
+            PyErr_Clear();
+            return compiler_error(c, errstr);
+        }
+        return 0;
+    }
+    Py_DECREF(msg);
+    return 1;
 }
 
 static int
@@ -5704,7 +5701,7 @@ assemble(struct compiler *c, int addNone, int keepFirst)
 }
 
 #undef PyAST_Compile
-PyAPI_FUNC(PyCodeObject *)
+PyCodeObject *
 PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
               PyArena *arena)
 {
