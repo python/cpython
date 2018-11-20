@@ -1801,7 +1801,7 @@ _Py_GetLocaleconvNumeric(PyObject **decimal_point, PyObject **thousands_sep,
     if (change_locale) {
         oldloc = setlocale(LC_CTYPE, NULL);
         if (!oldloc) {
-            PyErr_SetString(PyExc_RuntimeWarning, "faild to get LC_CTYPE locale");
+            PyErr_SetString(PyExc_RuntimeWarning, "failed to get LC_CTYPE locale");
             return -1;
         }
 
@@ -1817,7 +1817,7 @@ _Py_GetLocaleconvNumeric(PyObject **decimal_point, PyObject **thousands_sep,
         }
 
         if (loc != NULL) {
-            /* Only set the locale temporarilty the LC_CTYPE locale
+            /* Only set the locale temporarily the LC_CTYPE locale
                if LC_NUMERIC locale is different than LC_CTYPE locale and
                decimal_point and/or thousands_sep are non-ASCII or longer than
                1 byte */
