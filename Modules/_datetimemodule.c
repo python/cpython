@@ -1522,19 +1522,23 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     pnew = PyBytes_AsString(newfmt);
     usednew = 0;
 
-    while ((ch = *pin++) != '\0') {
+    while ((ch = *pin++) != '\0')
+    {
         if (ch != '%') {
             ptoappend = pin - 1;
             ntoappend = 1;
         }
-        else if ((ch = *pin++) == '\0') {
+//        else if ((ch = *pin++) == '\0') {
             /* There's a lone trailing %; doesn't make sense. */
-            PyErr_SetString(PyExc_ValueError, "strftime format "
-                            "ends with raw %");
-            goto Done;
-        }
+//            PyErr_SetString(PyExc_ValueError, "strftime format "
+//                            "ends with raw %");
+//            goto Done;
+//            ptoappend = pin - 2;
+//            ntoappend = 2;
+//        }
+
         /* A % has been seen and ch is the character after it. */
-        else if (ch == 'z') {
+        else if ((ch = *pin++) == 'z') {
             if (zreplacement == NULL) {
                 /* format utcoffset */
                 char buf[100];
@@ -1615,6 +1619,10 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         pnew += ntoappend;
         usednew += ntoappend;
         assert(usednew <= totalnew);
+
+        printf("%s\n", PyUnicode_AsUTF8(PyObject_Repr(newfmt)));
+        if (ch == '\0')
+            break;
     }  /* end while() */
 
     if (_PyBytes_Resize(&newfmt, usednew) < 0)
@@ -1626,7 +1634,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         if (time == NULL)
             goto Done;
         format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
-        if (format != NULL) {
+
+
+        if (format != NULL)
+        {
+
             result = _PyObject_CallMethodIdObjArgs(time, &PyId_strftime,
                                                    format, timetuple, NULL);
             Py_DECREF(format);
