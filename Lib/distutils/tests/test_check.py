@@ -1,4 +1,5 @@
 """Tests for distutils.command.check."""
+import os
 import textwrap
 import unittest
 from pathlib import Path
@@ -15,7 +16,6 @@ except ImportError:
 
 
 HERE = Path(__file__).parent
-INCLUDE_TEST_PATH = (HERE / 'includetest.rst').relative_to(Path.cwd())
 
 
 class CheckTestCase(support.LoggingSilencer,
@@ -105,7 +105,8 @@ class CheckTestCase(support.LoggingSilencer,
         self.assertEqual(cmd._warnings, 0)
 
         # check that includes work to test #31292
-        metadata['long_description'] = 'title\n=====\n\n.. include:: {}'.format(INCLUDE_TEST_PATH)
+        os.chdir(HERE)
+        metadata['long_description'] = 'title\n=====\n\n.. include:: includetest.rst'
         cmd = self._run(metadata, strict=1, restructuredtext=1)
         self.assertEqual(cmd._warnings, 0)
 
