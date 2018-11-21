@@ -1,9 +1,10 @@
 #include "Python.h"
 
-#include "structmember.h"
-#include "pycore_pystate.h"
 #include "pycore_context.h"
 #include "pycore_hamt.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
+#include "structmember.h"
 
 
 #define CONTEXT_FREELIST_MAXLEN 255

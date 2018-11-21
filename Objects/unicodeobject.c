@@ -41,6 +41,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_fileutils.h"
+#include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "ucnhash.h"
 #include "bytes_methods.h"
