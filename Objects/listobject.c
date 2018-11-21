@@ -1,6 +1,7 @@
 /* List object implementation */
 
 #include "Python.h"
+#include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "pycore_accu.h"
 
