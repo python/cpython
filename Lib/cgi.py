@@ -140,7 +140,7 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
 
     # field keys and values (except for files) are returned as strings
     # an encoding is required to decode the bytes read from self.fp
-    if hasattr(fp,'encoding'):
+    if hasattr(fp, 'encoding'):
         encoding = fp.encoding
     else:
         encoding = 'latin-1'
@@ -202,7 +202,7 @@ def parse_multipart(fp, pdict, encoding="utf-8", errors="replace"):
     headers.set_type(ctype)
     headers['Content-Length'] = pdict['CONTENT-LENGTH']
     fs = FieldStorage(fp, headers=headers, encoding=encoding, errors=errors,
-        environ={'REQUEST_METHOD': 'POST'})
+                      environ={'REQUEST_METHOD': 'POST'})
     return {k: fs.getlist(k) for k in fs}
 
 def _parseparam(s):
@@ -259,7 +259,6 @@ class MiniFieldStorage:
         """Constructor from field name and value."""
         self.name = name
         self.value = value
-        # self.file = StringIO(value)
 
     def __repr__(self):
         """Return printable representation."""
@@ -456,7 +455,7 @@ class FieldStorage:
             if maxlen and clen > maxlen:
                 raise ValueError('Maximum content length exceeded')
         self.length = clen
-        if self.limit is None and clen:
+        if self.limit is None and clen >= 0:
             self.limit = clen
 
         self.list = self.file = None
@@ -633,8 +632,10 @@ class FieldStorage:
             if 'content-length' in headers:
                 del headers['content-length']
 
+            limit = None if self.limit is None \
+                else self.limit - self.bytes_read
             part = klass(self.fp, headers, ib, environ, keep_blank_values,
-                         strict_parsing,self.limit-self.bytes_read,
+                         strict_parsing, limit,
                          self.encoding, self.errors)
             self.bytes_read += part.bytes_read
             self.list.append(part)
@@ -651,7 +652,7 @@ class FieldStorage:
             self.read_lines()
         self.file.seek(0)
 
-    bufsize = 8*1024            # I/O buffering size for copy to file
+    bufsize = 8 * 1024            # I/O buffering size for copy to file
 
     def read_binary(self):
         """Internal: read binary data."""
@@ -699,7 +700,7 @@ class FieldStorage:
     def read_lines_to_eof(self):
         """Internal: read lines until EOF."""
         while 1:
-            line = self.fp.readline(1<<16) # bytes
+            line = self.fp.readline(1 << 16) # bytes
             self.bytes_read += len(line)
             if not line:
                 self.done = -1
@@ -717,9 +718,9 @@ class FieldStorage:
         last_line_lfend = True
         _read = 0
         while 1:
-            if _read >= self.limit:
+            if self.limit is not None and _read >= self.limit:
                 break
-            line = self.fp.readline(1<<16) # bytes
+            line = self.fp.readline(1 << 16) # bytes
             self.bytes_read += len(line)
             _read += len(line)
             if not line:
@@ -763,7 +764,7 @@ class FieldStorage:
         last_boundary = next_boundary + b"--"
         last_line_lfend = True
         while True:
-            line = self.fp.readline(1<<16)
+            line = self.fp.readline(1 << 16)
             self.bytes_read += len(line)
             if not line:
                 self.done = -1
@@ -805,7 +806,7 @@ class FieldStorage:
             return tempfile.TemporaryFile("wb+")
         else:
             return tempfile.TemporaryFile("w+",
-                encoding=self.encoding, newline = '\n')
+                encoding=self.encoding, newline='\n')
 
 
 # Test/debug code

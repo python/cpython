@@ -364,6 +364,23 @@ Larry
         with self.assertRaisesRegex(ValueError, 'I/O operation on closed file'):
             fs.file.read()
 
+    def test_field_storage_multipart_no_content_length(self):
+        fp = BytesIO(b"""--MyBoundary
+Content-Disposition: form-data; name="my-arg"; filename="foo"
+
+Test
+
+--MyBoundary--
+""")
+        env = {
+            "REQUEST_METHOD": "POST",
+            "CONTENT_TYPE": "multipart/form-data; boundary=MyBoundary",
+            "wsgi.input": fp,
+        }
+        fields = cgi.FieldStorage(fp, environ=env)
+
+        assert len(fields["my-arg"].file.read()) == 5
+
     _qs_result = {
         'key1': 'value1',
         'key2': ['value2x', 'value2y'],
