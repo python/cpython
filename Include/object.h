@@ -1158,8 +1158,8 @@ _PyObject_DebugTypeStats(FILE *out);
      ((expr)                                           \
       ? (void)(0)                                      \
       : _PyObject_AssertFailed((obj),                  \
-                               (msg),                  \
                                Py_STRINGIFY(expr),     \
+                               (msg),                  \
                                __FILE__,               \
                                __LINE__,               \
                                __func__))
@@ -1169,11 +1169,13 @@ _PyObject_DebugTypeStats(FILE *out);
 
 /* Declare and define _PyObject_AssertFailed() even when NDEBUG is defined,
    to avoid causing compiler/linker errors when building extensions without
-   NDEBUG against a Python built with NDEBUG defined. */
+   NDEBUG against a Python built with NDEBUG defined.
+
+   msg, expr and function can be NULL. */
 PyAPI_FUNC(void) _PyObject_AssertFailed(
     PyObject *obj,
-    const char *msg,
     const char *expr,
+    const char *msg,
     const char *file,
     int line,
     const char *function);

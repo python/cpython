@@ -205,8 +205,7 @@ void _Py_dec_count(PyTypeObject *tp)
 void
 _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
 {
-    _PyObject_AssertFailed(op, "object has negative ref count",
-                           "op->ob_refcnt >= 0",
+    _PyObject_AssertFailed(op, NULL, "object has negative ref count",
                            filename, lineno, __func__);
 }
 
@@ -2219,20 +2218,25 @@ _PyTrash_thread_destroy_chain(void)
 
 
 void
-_PyObject_AssertFailed(PyObject *obj, const char *msg, const char *expr,
+_PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
                        const char *file, int line, const char *function)
 {
-    fprintf(stderr,
-            "%s:%d: %s: Assertion \"%s\" failed",
-            file, line, function, expr);
+    fprintf(stderr, "%s:%d: ", file, line);
+    if (function) {
+        fprintf(stderr, "%s: ", function);
+    }
     fflush(stderr);
-
-    if (msg) {
-        fprintf(stderr, "; %s.\n", msg);
+    if (expr) {
+        fprintf(stderr, "Assertion \"%s\" failed", expr);
     }
     else {
-        fprintf(stderr, ".\n");
+        fprintf(stderr, "Assertion failed");
     }
+    fflush(stderr);
+    if (msg) {
+        fprintf(stderr, ": %s", msg);
+    }
+    fprintf(stderr, "\n");
     fflush(stderr);
 
     if (obj == NULL) {
