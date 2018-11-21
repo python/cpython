@@ -1,8 +1,8 @@
 """Tests for distutils.command.check."""
 import os
+import os.path
 import textwrap
 import unittest
-from pathlib import Path
 from test.support import run_unittest
 
 from distutils.command.check import check, HAS_DOCUTILS
@@ -15,7 +15,7 @@ except ImportError:
     pygments = None
 
 
-HERE = Path(__file__).parent
+HERE = os.path.dirname(__file__)
 
 
 class CheckTestCase(support.LoggingSilencer,
