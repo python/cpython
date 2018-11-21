@@ -120,6 +120,7 @@ class check(Command):
 
     def _check_rst_data(self, data):
         """Returns warnings when the provided data doesn't compile."""
+        # the include and csv_table directives need this to be a path
         source_path = self.distribution.script_name or 'setup.py'
         parser = Parser()
         settings = frontend.OptionParser(components=(Parser,)).get_default_values()
@@ -135,7 +136,6 @@ class check(Command):
                           error_handler=settings.error_encoding_error_handler)
 
         document = nodes.document(settings, reporter, source=source_path)
-        # the include and csv_table directives need this to be a path
         document.note_source(source_path, -1)
         try:
             parser.parse(data, document)
