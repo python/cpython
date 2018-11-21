@@ -1136,7 +1136,7 @@ _PyObject_DebugTypeStats(FILE *out);
 
 #ifndef Py_LIMITED_API
 /* Define a pair of assertion macros:
-   _PyObject_ASSERT_WITH_MSG() and _PyObject_ASSERT().
+   _PyObject_ASSERT_FROM(), _PyObject_ASSERT_WITH_MSG() and _PyObject_ASSERT().
 
    These work like the regular C assert(), in that they will abort the
    process with a message on stderr if the given condition fails to hold,
@@ -1151,21 +1151,24 @@ _PyObject_DebugTypeStats(FILE *out);
    will attempt to print to stderr, after the object dump. */
 #ifdef NDEBUG
    /* No debugging: compile away the assertions: */
-#  define _PyObject_ASSERT_WITH_MSG(obj, expr, msg) ((void)0)
+#  define _PyObject_ASSERT_FROM(obj, expr, msg, filename, lineno, func) \
+    ((void)0)
 #else
    /* With debugging: generate checks: */
-#  define _PyObject_ASSERT_WITH_MSG(obj, expr, msg)     \
-     ((expr)                                           \
-      ? (void)(0)                                      \
-      : _PyObject_AssertFailed((obj),                  \
-                               Py_STRINGIFY(expr),     \
-                               (msg),                  \
-                               __FILE__,               \
-                               __LINE__,               \
-                               __func__))
+#  define _PyObject_ASSERT_FROM(obj, expr, msg, filename, lineno, func) \
+    ((expr) \
+      ? (void)(0) \
+      : _PyObject_AssertFailed((obj), Py_STRINGIFY(expr), \
+                               (msg), (filename), (lineno), (func)))
 #endif
 
-#define _PyObject_ASSERT(obj, expr) _PyObject_ASSERT_WITH_MSG(obj, expr, NULL)
+#define _PyObject_ASSERT_WITH_MSG(obj, expr, msg) \
+    _PyObject_ASSERT_FROM(obj, expr, msg, __FILE__, __LINE__, __func__)
+#define _PyObject_ASSERT(obj, expr) \
+    _PyObject_ASSERT_WITH_MSG(obj, expr, NULL)
+
+#define _PyObject_ASSERT_FAILED_MSG(obj, msg) \
+    _PyObject_AssertFailed((obj), NULL, (msg), __FILE__, __LINE__, __func__)
 
 /* Declare and define _PyObject_AssertFailed() even when NDEBUG is defined,
    to avoid causing compiler/linker errors when building extensions without
