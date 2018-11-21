@@ -8,7 +8,7 @@ import sysconfig
 import shutil
 from collections import namedtuple
 
-import test.support
+from test import support
 from test.support.script_helper import (
     run_python_until_end,
     interpreter_requires_environment,
@@ -27,7 +27,7 @@ EXPECT_COERCION_IN_DEFAULT_LOCALE = True
 
 # Apply some platform dependent overrides
 if sys.platform.startswith("linux"):
-    if test.support.is_android:
+    if support.is_android:
         # Android defaults to using UTF-8 for all system interfaces
         EXPECTED_C_LOCALE_STREAM_ENCODING = "utf-8"
         EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
@@ -203,6 +203,15 @@ def setUpModule():
         CLI_COERCION_TARGET = AVAILABLE_TARGETS[0]
         CLI_COERCION_WARNING = CLI_COERCION_WARNING_FMT.format(CLI_COERCION_TARGET)
 
+    if support.verbose:
+        print(f"AVAILABLE_TARGETS = {AVAILABLE_TARGETS!r}")
+        print(f"EXPECTED_C_LOCALE_EQUIVALENTS = {EXPECTED_C_LOCALE_EQUIVALENTS!r}")
+        print(f"EXPECTED_C_LOCALE_STREAM_ENCODING = {EXPECTED_C_LOCALE_STREAM_ENCODING!r}")
+        print(f"EXPECTED_C_LOCALE_FS_ENCODING = {EXPECTED_C_LOCALE_FS_ENCODING!r}")
+        print(f"EXPECT_COERCION_IN_DEFAULT_LOCALE = {EXPECT_COERCION_IN_DEFAULT_LOCALE!r}")
+        print(f"_C_UTF8_LOCALES = {_C_UTF8_LOCALES!r}")
+        print(f"_check_nl_langinfo_CODESET = {_check_nl_langinfo_CODESET!r}")
+
 
 class _LocaleHandlingTestCase(unittest.TestCase):
     # Base class to check expected locale handling behaviour
@@ -279,7 +288,7 @@ class LocaleConfigurationTests(_LocaleHandlingTestCase):
 
 
 
-@test.support.cpython_only
+@support.cpython_only
 @unittest.skipUnless(sysconfig.get_config_var("PY_COERCE_C_LOCALE"),
                      "C locale coercion disabled at build time")
 class LocaleCoercionTests(_LocaleHandlingTestCase):
@@ -335,7 +344,7 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
             # locale environment variables are undefined or empty. When
             # this code path is run with environ['LC_ALL'] == 'C', then
             # LEGACY_LOCALE_WARNING is printed.
-            if (test.support.is_android and
+            if (support.is_android and
                     _expected_warnings == [CLI_COERCION_WARNING]):
                 _expected_warnings = None
             self._check_child_encoding_details(base_var_dict,
@@ -405,11 +414,11 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
                                       coercion_expected=False)
 
 def test_main():
-    test.support.run_unittest(
+    support.run_unittest(
         LocaleConfigurationTests,
         LocaleCoercionTests
     )
-    test.support.reap_children()
+    support.reap_children()
 
 if __name__ == "__main__":
     test_main()
