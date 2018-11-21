@@ -82,7 +82,8 @@ path.
 
 Once a virtual environment has been created, it can be "activated" using a
 script in the virtual environment's binary directory. The invocation of the
-script is platform-specific:
+script is platform-specific (`<venv>` must be replaced by the path of the
+directory containing the virtual environment):
 
 +-------------+-----------------+-----------------------------------------+
 | Platform    | Shell           | Command to activate virtual environment |
