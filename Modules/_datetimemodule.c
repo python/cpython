@@ -1528,14 +1528,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ptoappend = pin - 1;
             ntoappend = 1;
         }
-//        else if ((ch = *pin++) == '\0') {
-            /* There's a lone trailing %; doesn't make sense. */
-//            PyErr_SetString(PyExc_ValueError, "strftime format "
-//                            "ends with raw %");
-//            goto Done;
-//            ptoappend = pin - 2;
-//            ntoappend = 2;
-//        }
 
         /* A % has been seen and ch is the character after it. */
         else if ((ch = *pin++) == 'z') {
@@ -1620,7 +1612,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         usednew += ntoappend;
         assert(usednew <= totalnew);
 
-        printf("%s\n", PyUnicode_AsUTF8(PyObject_Repr(newfmt)));
         if (ch == '\0')
             break;
     }  /* end while() */
