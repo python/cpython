@@ -1496,8 +1496,23 @@ class RequestTests(unittest.TestCase):
         Request = urllib.request.Request
         request = Request("http://www.python.org")
         self.assertEqual(request.get_method(), 'GET')
+        request = Request("http://www.python.org", None)
+        self.assertEqual(request.get_method(), 'GET')
         request = Request("http://www.python.org", {})
         self.assertEqual(request.get_method(), 'POST')
+        request = Request("http://www.python.org", b'')
+        self.assertEqual(request.get_method(), 'POST')
+
+    def test_invalid_param_type(self):
+        Request = urllib.request.Request
+        with self.assertRaisesRegex(TypeError, "URL should be of type str"):
+            request = Request(b"http://www.python.org")
+        error_msg = "POST data cannot be of type str. "
+        error_msg += "It should be bytes-like object"
+        with self.assertRaisesRegex(TypeError, error_msg):
+            request = Request("http://www.python.org", '')
+        with self.assertRaisesRegex(TypeError, "Key should be of type bytes in POST data"):
+            request = Request("http://www.python.org", {'abc': 42})
 
     def test_with_method_arg(self):
         Request = urllib.request.Request

@@ -30,9 +30,9 @@ The :mod:`urllib.request` module defines the following functions:
    Open the URL *url*, which can be either a string or a
    :class:`Request` object.
 
-   *data* must be an object specifying additional data to be sent to the
-   server, or ``None`` if no such data is needed.  See :class:`Request`
-   for details.
+   *data* must be a :term:`bytes-like object <bytes-like object>` specifying
+   additional data to send to the server, or ``None`` if no such data is
+   needed.  See :class:`Request` for details.
 
    urllib.request module uses HTTP/1.1 and includes ``Connection:close`` header
    in its HTTP requests.
@@ -199,7 +199,11 @@ The following classes are provided:
    bytes objects, while ``Transfer-Encoding: chunked`` as specified in
    :rfc:`7230`, Section 3.3.1 will be used to send files and other iterables.
 
-   For an HTTP POST request method, *data* should be a buffer in the
+   For an HTTP POST request method, *data* must be either
+   :term:`bytes-like object <bytes-like object>` or an iterable of it,
+   including a dict with key of this type (this is not supported
+   for HTTPS), and in that case Content-Length value must be specified
+   in the headers.  *data* should be a buffer in the
    standard :mimetype:`application/x-www-form-urlencoded` format.  The
    :func:`urllib.parse.urlencode` function takes a mapping or sequence
    of 2-tuples and returns an ASCII string in this format. It should
