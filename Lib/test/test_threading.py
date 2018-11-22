@@ -173,6 +173,8 @@ class ThreadTests(BaseTestCase):
         self.assertIsInstance(threading._active[tid], threading._DummyThread)
         #Issue 29376
         self.assertTrue(threading._active[tid].is_alive())
+        #Issue 35283
+        self.assertTrue(threading._active[tid].isAlive())
         self.assertRegex(repr(threading._active[tid]), '_DummyThread')
         del threading._active[tid]
 
