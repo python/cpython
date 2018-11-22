@@ -3,6 +3,7 @@
 #include "Python.h"
 #include <ctype.h>
 #include "ast.h"
+#undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "pycore_pystate.h"
 
 _Py_IDENTIFIER(__builtins__);
