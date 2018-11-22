@@ -1,0 +1,1 @@
+Rename ``local`` variables to ``global`` variables in Lib/inspect.py.
