@@ -1846,15 +1846,16 @@ _PyGC_Dump(PyGC_Head *g)
 /* extension modules might be compiled with GC support so these
    functions must always be available */
 
-#undef PyObject_GC_Track
-#undef PyObject_GC_UnTrack
-#undef PyObject_GC_Del
-#undef _PyObject_GC_Malloc
-
 void
 PyObject_GC_Track(void *op)
 {
-    _PyObject_GC_TRACK(op);
+    PyObject *obj = (PyObject *)op;
+    if (_PyObject_GC_IS_TRACKED(op)) {
+        _PyObject_ASSERT_FAILED_MSG(op,
+                                    "object already tracked "
+                                    "by the garbage collector");
+    }
+    _PyObject_GC_TRACK(obj);
 }
 
 void
