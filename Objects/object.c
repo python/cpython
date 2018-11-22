@@ -423,6 +423,10 @@ _Py_BreakPoint(void)
 int
 _PyObject_IsFreed(PyObject *op)
 {
+    uintptr_t ptr = (uintptr_t)op;
+    if (_PyMem_IsFreed(&ptr, sizeof(ptr))) {
+        return 1;
+    }
     int freed = _PyMem_IsFreed(&op->ob_type, sizeof(op->ob_type));
     /* ignore op->ob_ref: the value can have be modified
        by Py_INCREF() and Py_DECREF(). */
@@ -448,6 +452,7 @@ _PyObject_Dump(PyObject* op)
         /* It seems like the object memory has been freed:
            don't access it to prevent a segmentation fault. */
         fprintf(stderr, "<freed object>\n");
+        return;
     }
 
     PyGILState_STATE gil;
