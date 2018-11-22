@@ -41,6 +41,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_fileutils.h"
+#include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "ucnhash.h"
 #include "bytes_methods.h"
@@ -1170,14 +1171,17 @@ unicode_kind_name(PyObject *unicode)
 
 #ifdef Py_DEBUG
 /* Functions wrapping macros for use in debugger */
-char *_PyUnicode_utf8(void *unicode){
+char *_PyUnicode_utf8(void *unicode_raw){
+    PyObject *unicode = _PyObject_CAST(unicode_raw);
     return PyUnicode_UTF8(unicode);
 }
 
-void *_PyUnicode_compact_data(void *unicode) {
+void *_PyUnicode_compact_data(void *unicode_raw) {
+    PyObject *unicode = _PyObject_CAST(unicode_raw);
     return _PyUnicode_COMPACT_DATA(unicode);
 }
-void *_PyUnicode_data(void *unicode){
+void *_PyUnicode_data(void *unicode_raw) {
+    PyObject *unicode = _PyObject_CAST(unicode_raw);
     printf("obj %p\n", unicode);
     printf("compact %d\n", PyUnicode_IS_COMPACT(unicode));
     printf("compact ascii %d\n", PyUnicode_IS_COMPACT_ASCII(unicode));

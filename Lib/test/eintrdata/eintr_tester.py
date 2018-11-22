@@ -44,27 +44,32 @@ class EINTRBaseTest(unittest.TestCase):
     # sleep_time > signal_period
     sleep_time = 0.2
 
-    @classmethod
-    def setUpClass(cls):
-        cls.orig_handler = signal.signal(signal.SIGALRM, lambda *args: None)
-        signal.setitimer(signal.ITIMER_REAL, cls.signal_delay,
-                         cls.signal_period)
+    def sighandler(self, signum, frame):
+        self.signals += 1
 
-        # Issue #25277: Use faulthandler to try to debug a hang on FreeBSD
+    def setUp(self):
+        self.signals = 0
+        self.orig_handler = signal.signal(signal.SIGALRM, self.sighandler)
+        signal.setitimer(signal.ITIMER_REAL, self.signal_delay,
+                         self.signal_period)
+
+        # Use faulthandler as watchdog to debug when a test hangs
+        # (timeout of 10 minutes)
         if hasattr(faulthandler, 'dump_traceback_later'):
             faulthandler.dump_traceback_later(10 * 60, exit=True,
                                               file=sys.__stderr__)
 
-    @classmethod
-    def stop_alarm(cls):
+    @staticmethod
+    def stop_alarm():
         signal.setitimer(signal.ITIMER_REAL, 0, 0)
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.stop_alarm()
-        signal.signal(signal.SIGALRM, cls.orig_handler)
+    def tearDown(self):
+        self.stop_alarm()
+        signal.signal(signal.SIGALRM, self.orig_handler)
         if hasattr(faulthandler, 'cancel_dump_traceback_later'):
             faulthandler.cancel_dump_traceback_later()
+        # make sure that at least one signal has been received
+        self.assertGreater(self.signals, 0)
 
     def subprocess(self, *args, **kw):
         cmd_args = (sys.executable, '-c') + args
@@ -481,14 +486,5 @@ class SelectEINTRTest(EINTRBaseTest):
         self.assertGreaterEqual(dt, self.sleep_time)
 
 
-def test_main():
-    support.run_unittest(
-        OSEINTRTest,
-        SocketEINTRTest,
-        TimeEINTRTest,
-        SignalEINTRTest,
-        SelectEINTRTest)
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
