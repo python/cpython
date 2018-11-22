@@ -258,7 +258,7 @@ PyAPI_FUNC(Py_ssize_t) _PyGC_CollectIfEnabled(void);
 
 PyAPI_FUNC(PyVarObject *) _PyObject_GC_Resize(PyVarObject *, Py_ssize_t);
 #define PyObject_GC_Resize(type, op, n) \
-                ( (type *) _PyObject_GC_Resize((PyVarObject *)(op), (n)) )
+                ( (type *) _PyObject_GC_Resize(_PyVarObject_CAST(op), (n)) )
 
 
 #ifndef Py_LIMITED_API
@@ -356,7 +356,7 @@ PyAPI_FUNC(void) PyObject_GC_Del(void *);
 #define Py_VISIT(op)                                                    \
     do {                                                                \
         if (op) {                                                       \
-            int vret = visit((PyObject *)(op), arg);                    \
+            int vret = visit(_PyObject_CAST(op), arg);                  \
             if (vret)                                                   \
                 return vret;                                            \
         }                                                               \
