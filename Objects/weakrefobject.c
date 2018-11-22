@@ -833,8 +833,7 @@ PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
                        to avoid violating the invariants of the list
                        of weakrefs for ob. */
                     Py_DECREF(result);
-                    result = proxy;
-                    Py_INCREF(result);
+                    Py_INCREF(result = proxy);
                     goto skip_insert;
                 }
                 prev = ref;

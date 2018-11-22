@@ -112,16 +112,37 @@ typedef struct _object {
     struct _typeobject *ob_type;
 } PyObject;
 
-/* Cast argument to PyObject* type. */
-#define _PyObject_CAST(op) ((PyObject*)(op))
-
 typedef struct {
     PyObject ob_base;
     Py_ssize_t ob_size; /* Number of items in variable part */
 } PyVarObject;
 
-/* Cast argument to PyVarObject* type. */
-#define _PyVarObject_CAST(op) ((PyVarObject*)(op))
+/* sizeof(*op) doesn't work on Visual Studio with void*:
+   sizeof(void) raises a compilation error.
+
+   sizeof(*op) is incompatible with Py_LIMITED_API which doesn't define
+   structures. */
+#if !defined(_MSC_VER) && !defined(Py_LIMITED_API)
+/* _PyObject_CAST(op): Cast argument to PyObject* type.
+
+   Raise a compilation error if the argument type is PyObject or PyObject**.
+
+   Detect for example the bug "&item" instead of "item" in:
+
+   const char *func(PyObject *item) { return Py_TYPE(&item)->tp_name; }
+
+   Note: sizeof(op) doesn't evaluate 'op', so sizeof(op) has no side effect. */
+#  define _PyObject_CAST(op) \
+    ((PyObject*)(op) + Py_BUILD_ASSERT_EXPR(sizeof(*(op)) != sizeof(op)))
+
+/* _PyVarObject_CAST(op): Cast argument to PyVarObject* type.
+   Similar to _PyObject_CAST(). */
+#  define _PyVarObject_CAST(op) \
+    ((PyVarObject*)(op) + Py_BUILD_ASSERT_EXPR(sizeof(*(op)) != sizeof(op)))
+#else
+#  define _PyObject_CAST(op) ((PyObject*)(op))
+#  define _PyVarObject_CAST(op) ((PyVarObject*)(op))
+#endif   /* defined(_MSC_VER) */
 
 #define Py_REFCNT(ob)           (_PyObject_CAST(ob)->ob_refcnt)
 #define Py_TYPE(ob)             (_PyObject_CAST(ob)->ob_type)
