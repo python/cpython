@@ -8,7 +8,7 @@ extern "C" {
 
 #include "asdl.h"
 
-#undef Yield /* undefine macro conflicting with winbase.h */
+#undef Yield   /* undefine macro conflicting with <winbase.h> */
 
 typedef struct _mod *mod_ty;
 
