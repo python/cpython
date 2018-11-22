@@ -42,7 +42,7 @@ static inline void _PyObject_GC_TRACK_impl(const char *filename, int lineno,
 }
 
 #define _PyObject_GC_TRACK(op) \
-    _PyObject_GC_TRACK_impl(__FILE__, __LINE__, (PyObject *)(op))
+    _PyObject_GC_TRACK_impl(__FILE__, __LINE__, _PyObject_CAST(op))
 
 /* Tell the GC to stop tracking this object.
  *
@@ -70,7 +70,7 @@ static inline void _PyObject_GC_UNTRACK_impl(const char *filename, int lineno,
 }
 
 #define _PyObject_GC_UNTRACK(op) \
-    _PyObject_GC_UNTRACK_impl(__FILE__, __LINE__, (PyObject *)(op))
+    _PyObject_GC_UNTRACK_impl(__FILE__, __LINE__, _PyObject_CAST(op))
 
 #ifdef __cplusplus
 }

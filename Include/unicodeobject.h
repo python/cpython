@@ -380,7 +380,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
     (assert(PyUnicode_Check(op)),                    \
      (((PyASCIIObject *)(op))->wstr) ?               \
       PyUnicode_WSTR_LENGTH(op) :                    \
-      ((void)PyUnicode_AsUnicode((PyObject *)(op)),  \
+      ((void)PyUnicode_AsUnicode(_PyObject_CAST(op)),\
        assert(((PyASCIIObject *)(op))->wstr),        \
        PyUnicode_WSTR_LENGTH(op)))
     /* Py_DEPRECATED(3.3) */
@@ -397,7 +397,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 #define PyUnicode_AS_UNICODE(op) \
     (assert(PyUnicode_Check(op)), \
      (((PyASCIIObject *)(op))->wstr) ? (((PyASCIIObject *)(op))->wstr) : \
-      PyUnicode_AsUnicode((PyObject *)(op)))
+      PyUnicode_AsUnicode(_PyObject_CAST(op)))
     /* Py_DEPRECATED(3.3) */
 
 #define PyUnicode_AS_DATA(op) \
@@ -549,7 +549,7 @@ enum PyUnicode_Kind {
 #define PyUnicode_READY(op)                        \
     (assert(PyUnicode_Check(op)),                       \
      (PyUnicode_IS_READY(op) ?                          \
-      0 : _PyUnicode_Ready((PyObject *)(op))))
+      0 : _PyUnicode_Ready(_PyObject_CAST(op))))
 
 /* Return a maximum character value which is suitable for creating another
    string based on op.  This is always an approximation but more efficient
