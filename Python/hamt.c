@@ -373,10 +373,11 @@ hamt_node_collision_count(PyHamtNode_Collision *node);
 
 #ifdef Py_DEBUG
 static void
-_hamt_node_array_validate(void *o)
+_hamt_node_array_validate(void *obj_raw)
 {
-    assert(IS_ARRAY_NODE(o));
-    PyHamtNode_Array *node = (PyHamtNode_Array*)(o);
+    PyObject *obj = _PyObject_CAST(obj_raw);
+    assert(IS_ARRAY_NODE(obj));
+    PyHamtNode_Array *node = (PyHamtNode_Array*)obj;
     Py_ssize_t i = 0, count = 0;
     for (; i < HAMT_ARRAY_NODE_SIZE; i++) {
         if (node->a_array[i] != NULL) {

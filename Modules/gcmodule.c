@@ -1847,20 +1847,21 @@ _PyGC_Dump(PyGC_Head *g)
    functions must always be available */
 
 void
-PyObject_GC_Track(void *op)
+PyObject_GC_Track(void *op_raw)
 {
-    PyObject *obj = (PyObject *)op;
+    PyObject *op = _PyObject_CAST(op_raw);
     if (_PyObject_GC_IS_TRACKED(op)) {
         _PyObject_ASSERT_FAILED_MSG(op,
                                     "object already tracked "
                                     "by the garbage collector");
     }
-    _PyObject_GC_TRACK(obj);
+    _PyObject_GC_TRACK(op);
 }
 
 void
-PyObject_GC_UnTrack(void *op)
+PyObject_GC_UnTrack(void *op_raw)
 {
+    PyObject *op = _PyObject_CAST(op_raw);
     /* Obscure:  the Py_TRASHCAN mechanism requires that we be able to
      * call PyObject_GC_UnTrack twice on an object.
      */
