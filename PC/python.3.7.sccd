@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CustomCapabilityDescriptor xmlns="http://schemas.microsoft.com/appx/2016/sccd" xmlns:s="http://schemas.microsoft.com/appx/2016/sccd">
+    <CustomCapabilities>
+        <CustomCapability Name="Microsoft.classicAppCompat_8wekyb3d8bbwe" />
+    </CustomCapabilities>
+    <AuthorizedEntities>
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.7_qbz5n2kfra8p0" CertificateSignatureHash="c2fcd055566586aad35ee49cf80e2ec3f02f3a18269e897b1e21f05d66785cc1"/>
+    </AuthorizedEntities>
+    <Catalog>FFFF</Catalog>
+</CustomCapabilityDescriptor>

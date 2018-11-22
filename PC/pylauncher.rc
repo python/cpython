@@ -7,6 +7,11 @@
 #include <winuser.h>
 1 RT_MANIFEST "python.manifest"
 
+#if defined(PY_ICON)
+1 ICON DISCARDABLE "icons\python.ico"
+#elif defined(PYW_ICON)
+1 ICON DISCARDABLE "icons\pythonw.ico"
+#else
 1 ICON DISCARDABLE "icons\launcher.ico" 
 2 ICON DISCARDABLE "icons\py.ico" 
 3 ICON DISCARDABLE "icons\pyc.ico" 
@@ -14,6 +19,7 @@
 5 ICON DISCARDABLE "icons\python.ico"
 6 ICON DISCARDABLE "icons\pythonw.ico"
 7 ICON DISCARDABLE "icons\setup.ico" 
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 //
