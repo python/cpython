@@ -61,7 +61,7 @@ Contents of the :mod:`email` package documentation:
    email.charset.rst
    email.encoders.rst
    email.errors.rst
-   email.util.rst
+   email.utils.rst
    email.iterators.rst
    email-examples.rst
 
