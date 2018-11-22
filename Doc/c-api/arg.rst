@@ -358,6 +358,10 @@ Other objects
    This accepts any valid Python value.  See :ref:`truth` for more
    information about how Python tests values for truth.
 
+   .. note::
+      Passing the address of a :c:type`bool` variable results in undefined
+      behavior. The address must point to an :c:type:`int` value.
+
    .. versionadded:: 3.3
 
 ``(items)`` (:class:`tuple`) [*matching-items*]
