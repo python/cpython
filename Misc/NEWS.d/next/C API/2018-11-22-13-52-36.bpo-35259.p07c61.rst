@@ -1,0 +1,2 @@
+Conditionally declare Py_FinalizeEx(void) (New in 3.6) based on
+Py_LIMITED_API
