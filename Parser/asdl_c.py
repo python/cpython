@@ -1247,7 +1247,7 @@ def main(srcfile, dump_module=False):
             f.write('\n')
             f.write('#include "asdl.h"\n')
             f.write('\n')
-            f.write('#undef Yield /* undefine macro conflicting with winbase.h */\n')
+            f.write('#undef Yield   /* undefine macro conflicting with <winbase.h> */\n')
             f.write('\n')
             c = ChainOfVisitors(TypeDefVisitor(f),
                                 StructVisitor(f),
