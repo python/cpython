@@ -1171,8 +1171,9 @@ This function is meant for internal and specialized purposes only.\n\
 In most applications `threading.enumerate()` should be used instead.");
 
 static void
-release_sentinel(void *wr)
+release_sentinel(void *wr_raw)
 {
+    PyObject *wr = _PyObject_CAST(wr_raw);
     /* Tricky: this function is called when the current thread state
        is being deleted.  Therefore, only simple C code can safely
        execute here. */
