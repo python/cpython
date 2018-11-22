@@ -22,7 +22,7 @@ static int validate_expr(expr_ty, expr_context_ty);
 static int
 validate_comprehension(asdl_seq *gens)
 {
-    int i;
+    Py_ssize_t i;
     if (!asdl_seq_LEN(gens)) {
         PyErr_SetString(PyExc_ValueError, "comprehension with no generators");
         return 0;
@@ -46,7 +46,7 @@ validate_slice(slice_ty slice)
             (!slice->v.Slice.upper || validate_expr(slice->v.Slice.upper, Load)) &&
             (!slice->v.Slice.step || validate_expr(slice->v.Slice.step, Load));
     case ExtSlice_kind: {
-        int i;
+        Py_ssize_t i;
         if (!validate_nonempty_seq(slice->v.ExtSlice.dims, "dims", "ExtSlice"))
             return 0;
         for (i = 0; i < asdl_seq_LEN(slice->v.ExtSlice.dims); i++)
@@ -65,7 +65,7 @@ validate_slice(slice_ty slice)
 static int
 validate_keywords(asdl_seq *keywords)
 {
-    int i;
+    Py_ssize_t i;
     for (i = 0; i < asdl_seq_LEN(keywords); i++)
         if (!validate_expr(((keyword_ty)asdl_seq_GET(keywords, i))->value, Load))
             return 0;
@@ -75,7 +75,7 @@ validate_keywords(asdl_seq *keywords)
 static int
 validate_args(asdl_seq *args)
 {
-    int i;
+    Py_ssize_t i;
     for (i = 0; i < asdl_seq_LEN(args); i++) {
         arg_ty arg = asdl_seq_GET(args, i);
         if (arg->annotation && !validate_expr(arg->annotation, Load))
@@ -348,7 +348,7 @@ validate_body(asdl_seq *body, const char *owner)
 static int
 validate_stmt(stmt_ty stmt)
 {
-    int i;
+    Py_ssize_t i;
     switch (stmt->kind) {
     case FunctionDef_kind:
         return validate_body(stmt->v.FunctionDef.body, "FunctionDef") &&
@@ -490,7 +490,7 @@ validate_stmt(stmt_ty stmt)
 static int
 validate_stmts(asdl_seq *seq)
 {
-    int i;
+    Py_ssize_t i;
     for (i = 0; i < asdl_seq_LEN(seq); i++) {
         stmt_ty stmt = asdl_seq_GET(seq, i);
         if (stmt) {
@@ -509,7 +509,7 @@ validate_stmts(asdl_seq *seq)
 static int
 validate_exprs(asdl_seq *exprs, expr_context_ty ctx, int null_ok)
 {
-    int i;
+    Py_ssize_t i;
     for (i = 0; i < asdl_seq_LEN(exprs); i++) {
         expr_ty expr = asdl_seq_GET(exprs, i);
         if (expr) {
@@ -1060,7 +1060,7 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
        context for all the contained elements.
     */
     if (s) {
-        int i;
+        Py_ssize_t i;
 
         for (i = 0; i < asdl_seq_LEN(s); i++) {
             if (!set_context(c, (expr_ty)asdl_seq_GET(s, i), ctx, n))
@@ -2355,7 +2355,7 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
                by treating the sequence as a tuple literal if there are
                no slice features.
             */
-            int j;
+            Py_ssize_t j;
             slice_ty slc;
             expr_ty e;
             int simple = 1;
