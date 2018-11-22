@@ -1178,7 +1178,8 @@ xmlparse_dealloc(xmlparseobject *self)
 static PyObject *
 xmlparse_handler_getter(xmlparseobject *self, struct HandlerInfo *hi)
 {
-    int handlernum = hi - handler_info;
+    assert((hi - handler_info) < (Py_ssize_t)Py_ARRAY_LENGTH(handler_info));
+    int handlernum = (int)(hi - handler_info);
     PyObject *result = self->handlers[handlernum];
     if (result == NULL)
         result = Py_None;
@@ -1189,7 +1190,8 @@ xmlparse_handler_getter(xmlparseobject *self, struct HandlerInfo *hi)
 static int
 xmlparse_handler_setter(xmlparseobject *self, PyObject *v, struct HandlerInfo *hi)
 {
-    int handlernum = hi - handler_info;
+    assert((hi - handler_info) < (Py_ssize_t)Py_ARRAY_LENGTH(handler_info));
+    int handlernum = (int)(hi - handler_info);
     if (v == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot delete attribute");
         return -1;
