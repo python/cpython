@@ -923,8 +923,8 @@ _multibytecodec_MultibyteIncrementalEncoder_getstate_impl(MultibyteIncrementalEn
             PyErr_SetString(PyExc_UnicodeError, "pending buffer too large");
             return NULL;
         }
-        statebytes[0] = pendingsize;
-        memcpy(statebytes+1, pendingbuffer, pendingsize);
+        statebytes[0] = (unsigned char)pendingsize;
+        memcpy(statebytes + 1, pendingbuffer, pendingsize);
         statesize = 1 + pendingsize;
     } else {
         statebytes[0] = 0;
