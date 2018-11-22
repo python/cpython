@@ -1521,10 +1521,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     if (newfmt == NULL) goto Done;
     pnew = PyBytes_AsString(newfmt);
     usednew = 0;
+    ch = *pin;
 
-    while ((ch = *pin++) != '\0')
+    do
     {
-        if (ch != '%') {
+        if ((ch = *pin++) != '%') {
             ptoappend = pin - 1;
             ntoappend = 1;
         }
@@ -1611,10 +1612,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         pnew += ntoappend;
         usednew += ntoappend;
         assert(usednew <= totalnew);
-
-        if (ch == '\0')
-            break;
-    }  /* end while() */
+    } while (ch != '\0');
+  /* end do while */
 
     if (_PyBytes_Resize(&newfmt, usednew) < 0)
         goto Done;
