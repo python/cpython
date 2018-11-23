@@ -70,7 +70,7 @@ def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
     if workers is not None:
         if workers < 0:
             raise ValueError('workers must be greater or equal to 0')
-        elif workers > 1:
+        elif workers != 1:
             try:
                 # Only import when needed, as low resource platforms may
                 # fail to import it
@@ -80,7 +80,7 @@ def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
     files = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels,
                       ddir=ddir)
     success = True
-    if ProcessPoolExecutor:
+    if workers is not None and workers != 1 and ProcessPoolExecutor is not None:
         workers = workers or None
         with ProcessPoolExecutor(max_workers=workers) as executor:
             results = executor.map(partial(compile_file,
