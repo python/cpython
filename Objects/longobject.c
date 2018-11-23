@@ -211,7 +211,7 @@ _PyLong_New(Py_ssize_t size)
         PyErr_NoMemory();
         return NULL;
     }
-    return (PyLongObject*)PyObject_INIT_VAR((PyVarObject *)result, &PyLong_Type, size);
+    return (PyLongObject*)PyObject_INIT_VAR(result, &PyLong_Type, size);
 }
 
 PyObject *
@@ -5620,7 +5620,7 @@ _PyLong_Init(void)
             assert(v->ob_digit[0] == (digit)abs(ival));
         }
         else {
-            (void)PyObject_INIT((PyObject *)v, &PyLong_Type);
+            (void)PyObject_INIT(v, &PyLong_Type);
         }
         Py_SIZE(v) = size;
         v->ob_digit[0] = (digit)abs(ival);
