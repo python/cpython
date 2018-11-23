@@ -104,7 +104,7 @@ APPXMANIFEST_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
         <Resource Language="en-US" />
     </Resources>
     <Dependencies>
-        <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="" />
+        <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17134.0" MaxVersionTested="" />
     </Dependencies>
     <Capabilities>
         <rescap:Capability Name="runFullTrust"/>
@@ -126,18 +126,21 @@ REGISTRY = {
             "SysVersion": VER_DOT,
             "Version": "{}.{}.{}".format(VER_MAJOR, VER_MINOR, VER_MICRO),
             "InstallPath": {
-                "": "{PackageRoot}",
-                "ExecutablePath": "{PackageRoot}\\python.exe",
-                "WindowedExecutablePath": "{PackageRoot}\\pythonw.exe",
+                # I have no idea why the trailing spaces are needed, but they seem to be needed.
+                "": "[{AppVPackageRoot}][                    ]",
+                "ExecutablePath": "[{AppVPackageRoot}]python.exe[                    ]",
+                "WindowedExecutablePath": "[{AppVPackageRoot}]pythonw.exe[                    ]",
             },
             "Help": {
                 "Main Python Documentation": {
                     "_condition": lambda ns: ns.include_chm,
-                    "": "{{PackageRoot}}\\Doc\\{}".format(PYTHON_CHM_NAME),
+                    "": "[{{AppVPackageRoot}}]Doc\\{}[                    ]".format(
+                        PYTHON_CHM_NAME
+                    ),
                 },
                 "Local Python Documentation": {
                     "_condition": lambda ns: ns.include_html_doc,
-                    "": "{PackageRoot}\\Doc\\html\\index.html",
+                    "": "[{AppVPackageRoot}]Doc\\html\\index.html[                    ]",
                 },
                 "Online Python Documentation": {
                     "": "https://docs.python.org/{}".format(VER_DOT)
@@ -145,7 +148,7 @@ REGISTRY = {
             },
             "Idle": {
                 "_condition": lambda ns: ns.include_idle,
-                "": "{PackageRoot}\\Lib\\idlelib\\idle.pyw",
+                "": "[{AppVPackageRoot}]Lib\\idlelib\\idle.pyw[                    ]",
             },
         }
     }
@@ -155,23 +158,25 @@ REGISTRY = {
 def get_packagefamilyname(name, publisher_id):
     class PACKAGE_ID(ctypes.Structure):
         _fields_ = [
-            ('reserved', ctypes.c_uint32),
-            ('processorArchitecture', ctypes.c_uint32),
-            ('version', ctypes.c_uint64),
-            ('name', ctypes.c_wchar_p),
-            ('publisher', ctypes.c_wchar_p),
-            ('resourceId', ctypes.c_wchar_p),
-            ('publisherId', ctypes.c_wchar_p),
+            ("reserved", ctypes.c_uint32),
+            ("processorArchitecture", ctypes.c_uint32),
+            ("version", ctypes.c_uint64),
+            ("name", ctypes.c_wchar_p),
+            ("publisher", ctypes.c_wchar_p),
+            ("resourceId", ctypes.c_wchar_p),
+            ("publisherId", ctypes.c_wchar_p),
         ]
         _pack_ = 4
 
     pid = PACKAGE_ID(0, 0, 0, name, publisher_id, None, None)
     result = ctypes.create_unicode_buffer(256)
     result_len = ctypes.c_uint32(256)
-    r = ctypes.windll.kernel32.PackageFamilyNameFromId(pid, ctypes.byref(result_len), result)
+    r = ctypes.windll.kernel32.PackageFamilyNameFromId(
+        pid, ctypes.byref(result_len), result
+    )
     if r:
         raise OSError(r, "failed to get package family name")
-    return result.value[:result_len.value]
+    return result.value[: result_len.value]
 
 
 @public
@@ -191,6 +196,7 @@ def get_appx_layout(ns):
     yield "_resources/pythonwx150.png.targetsize-150_altform-unplated", icons / "pythonwx150.png"
     sccd = ns.source / "PC" / "python.{}.sccd".format(VER_DOT)
     if sccd.is_file():
+        # This should only be set for side-loading purposes.
         new_hash = os.getenv("APPX_DATA_SHA256")
         if new_hash:
             NS = dict(s="http://schemas.microsoft.com/appx/2016/sccd")
@@ -355,8 +361,7 @@ def get_appxmanifest(ns):
     if winver < (10, 0, 17763):
         winver = 10, 0, 17763
     find_or_add(xml, "m:Dependencies/m:TargetDeviceFamily").set(
-        "MaxVersionTested",
-        "{}.{}.{}.0".format(*winver),
+        "MaxVersionTested", "{}.{}.{}.0".format(*winver)
     )
 
     app = add_application(
