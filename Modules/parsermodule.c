@@ -32,15 +32,15 @@
 
 #include "Python.h"                     /* general Python API             */
 #include "Python-ast.h"                 /* mod_ty */
+#undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "ast.h"
 #include "graminit.h"                   /* symbols defined in the grammar */
 #include "node.h"                       /* internal parser structure      */
 #include "errcode.h"                    /* error codes for PyNode_*()     */
 #include "token.h"                      /* token definitions              */
+                                        /* ISTERMINAL() / ISNONTERMINAL() */
 #include "grammar.h"
 #include "parsetok.h"
-                                        /* ISTERMINAL() / ISNONTERMINAL() */
-#undef Yield
-#include "ast.h"
 
 extern grammar _PyParser_Grammar; /* From graminit.c */
 
@@ -135,18 +135,18 @@ node2tuple(node *n,                     /* node to convert               */
             goto error;
         (void) addelem(result, 1, w);
 
-        if (lineno == 1) {
+        if (lineno) {
             w = PyLong_FromLong(n->n_lineno);
             if (w == NULL)
                 goto error;
             (void) addelem(result, 2, w);
         }
 
-        if (col_offset == 1) {
+        if (col_offset) {
             w = PyLong_FromLong(n->n_col_offset);
             if (w == NULL)
                 goto error;
-            (void) addelem(result, 3, w);
+            (void) addelem(result, 2 + lineno, w);
         }
     }
     else {

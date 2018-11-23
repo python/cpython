@@ -1,0 +1,4 @@
+Add TLSVersion constants and SSLContext.maximum_version / minimum_version
+attributes. The new API wraps OpenSSL 1.1
+https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_set_min_proto_version.html
+feature.

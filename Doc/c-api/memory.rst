@@ -35,7 +35,7 @@ operate within the bounds of the private heap.
 
 It is important to understand that the management of the Python heap is
 performed by the interpreter itself and that the user has no control over it,
-even if she regularly manipulates object pointers to memory blocks inside that
+even if they regularly manipulate object pointers to memory blocks inside that
 heap.  The allocation of heap space for Python objects and other internal
 buffers is performed on demand by the Python memory manager through the Python/C
 API functions listed in this document.
@@ -530,7 +530,7 @@ tracemalloc C API
 
    Track an allocated memory block in the :mod:`tracemalloc` module.
 
-   Return 0 on success, return ``-1`` on error (failed to allocate memory to
+   Return ``0`` on success, return ``-1`` on error (failed to allocate memory to
    store the trace). Return ``-2`` if tracemalloc is disabled.
 
    If memory block is already tracked, update the existing trace.

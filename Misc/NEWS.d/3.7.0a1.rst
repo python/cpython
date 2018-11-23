@@ -49,8 +49,8 @@ Upgrade expat copy from 2.2.0 to 2.2.1 to get fixes of multiple security
 vulnerabilities including: CVE-2017-9233 (External entity infinite loop
 DoS), CVE-2016-9063 (Integer overflow, re-fix), CVE-2016-0718 (Fix
 regression bugs from 2.2.0's fix to CVE-2016-0718) and CVE-2012-0876
-(Counter hash flooding with SipHash). Note: the CVE-2016-5300 (Use os-
-specific entropy sources like getrandom) doesn't impact Python, since Python
+(Counter hash flooding with SipHash). Note: the CVE-2016-5300 (Use
+os-specific entropy sources like getrandom) doesn't impact Python, since Python
 already gets entropy from the OS to set the expat secret using
 ``XML_SetHashSalt()``.
 
@@ -65,7 +65,7 @@ already gets entropy from the OS to set the expat secret using
 Fix urllib.parse.splithost() to correctly parse fragments. For example,
 ``splithost('//127.0.0.1#@evil.com/')`` now correctly returns the
 ``127.0.0.1`` host, instead of treating ``@evil.com`` as the host in an
-authentification (``login@host``).
+authentication (``login@host``).
 
 ..
 
@@ -336,8 +336,8 @@ ImportError rather than SystemError.
 
 Improve signal delivery.
 
-Avoid using Py_AddPendingCall from signal handler, to avoid calling signal-
-unsafe functions. The tests I'm adding here fail without the rest of the
+Avoid using Py_AddPendingCall from signal handler, to avoid calling
+signal-unsafe functions. The tests I'm adding here fail without the rest of the
 patch, on Linux and OS X. This means our signal delivery logic had defects
 (some signals could be lost).
 
@@ -426,7 +426,7 @@ expression, and generator expressions and comprehensions.
 .. nonce: f_IHor
 .. section: Core and Builtins
 
-Implement PEP 538 (legacy C locale coercion). This means that when a
+Implement :pep:`538` (legacy C locale coercion). This means that when a
 suitable coercion target locale is available, both the core interpreter and
 locale-aware C extensions will assume the use of UTF-8 as the default text
 encoding, rather than ASCII.
@@ -788,7 +788,7 @@ objects.
 Add ``docstring`` field to Module, ClassDef, FunctionDef, and
 AsyncFunctionDef ast nodes.  docstring is not first stmt in their body
 anymore.  It affects ``co_firstlineno`` and ``co_lnotab`` of code object for
-module and class.
+module and class. (Reverted in :issue:`32911`.)
 
 ..
 
@@ -948,7 +948,7 @@ The preferred encoding is UTF-8 on Android. Patch written by Chi Hsuan Yen.
 .. nonce: 2a8zxB
 .. section: Core and Builtins
 
-Clean up interpreter startup (see PEP 432).
+Clean up interpreter startup (see :pep:`432`).
 
 ..
 
@@ -1153,8 +1153,8 @@ Improve speed of the STORE_DEREF opcode by 40%.
 .. nonce: RYbEGH
 .. section: Core and Builtins
 
-Extra slash no longer added to sys.path components in case of empty compile-
-time PYTHONPATH components.
+Extra slash no longer added to sys.path components in case of empty
+compile-time PYTHONPATH components.
 
 ..
 
@@ -1774,7 +1774,7 @@ Fix ``fileinput.FileInput(files, inplace=True)`` when ``files`` contain
 .. nonce: nmAvfu
 .. section: Library
 
-Fix ctypes producing wrong PEP 3118 type codes for integer types.
+Fix ctypes producing wrong :pep:`3118` type codes for integer types.
 
 ..
 
@@ -2274,8 +2274,8 @@ LF. Patch by Dong-hee Na.
 .. nonce: N3KI-o
 .. section: Library
 
-os.listdir() and os.scandir() now emit bytes names when called with bytes-
-like argument.
+os.listdir() and os.scandir() now emit bytes names when called with
+bytes-like argument.
 
 ..
 
@@ -2440,8 +2440,8 @@ leaving a fd in a bad state in case of error. Patch by Giampaolo Rodola'.
 .. nonce: d0nRRA
 .. section: Library
 
-multiprocessing.Queue.get() with a timeout now polls its reader in non-
-blocking mode if it succeeded to acquire the lock but the acquire took
+multiprocessing.Queue.get() with a timeout now polls its reader in
+non-blocking mode if it succeeded to acquire the lock but the acquire took
 longer than the timeout.
 
 ..
@@ -2815,8 +2815,8 @@ of space.
 .. section: Library
 
 Various updates to typing module: add typing.NoReturn type, use
-WrapperDescriptorType, minor bug-fixes.  Original PRs by Jim Fasarakis-
-Hilliard and Ivan Levkivskyi.
+WrapperDescriptorType, minor bug-fixes.  Original PRs by Jim
+Fasarakis-Hilliard and Ivan Levkivskyi.
 
 ..
 
@@ -3406,7 +3406,7 @@ Patch by Nikolay Kim.
 .. nonce: 4f5gbp
 .. section: Library
 
-urrlib.parse.quote is now based on RFC 3986 and hence includes '~' in the
+urllib.parse.quote is now based on RFC 3986 and hence includes '~' in the
 set of characters that is not quoted by default. Patch by Christian Theune
 and Ratnadeep Debnath.
 
@@ -3634,8 +3634,8 @@ Removed deprecated features in the http.cookies module.
 .. nonce: CgcjEx
 .. section: Library
 
-A format string argument for string.Formatter.format() is now positional-
-only.
+A format string argument for string.Formatter.format() is now
+positional-only.
 
 ..
 
@@ -4877,7 +4877,7 @@ Fix Python 2 syntax in code for building the documentation.
 
 The data model reference and the porting section in the 3.6 What's New guide
 now cover the additional ``__classcell__`` handling needed for custom
-metaclasses to fully support PEP 487 and zero-argument ``super()``.
+metaclasses to fully support :pep:`487` and zero-argument ``super()``.
 
 ..
 
@@ -5106,7 +5106,7 @@ difficult to maintain low-level internal code.
 .. nonce: XLuZFk
 .. section: Build
 
-Per PEP 11, support for the IRIX operating system was removed.
+Per :pep:`11`, support for the IRIX operating system was removed.
 
 ..
 
@@ -5164,8 +5164,8 @@ Fix out-of-tree builds of Python when configured with ``--with--dtrace``.
 .. section: Build
 
 Prevent unnecessary rebuilding of Python during ``make test``, ``make
-install`` and some other make targets when configured with ``--enable-
-optimizations``.
+install`` and some other make targets when configured with
+``--enable-optimizations``.
 
 ..
 
@@ -5213,9 +5213,9 @@ Update Windows build and OS X installers to use OpenSSL 1.0.2k.
 .. nonce: i8UzRC
 .. section: Build
 
-Prohibit implicit C function declarations: use -Werror=implicit-function-
-declaration when possible (GCC and Clang, but it depends on the compiler
-version). Patch written by Chi Hsuan Yen.
+Prohibit implicit C function declarations: use
+``-Werror=implicit-function-declaration`` when possible (GCC and Clang,
+but it depends on the compiler version). Patch written by Chi Hsuan Yen.
 
 ..
 
@@ -5711,7 +5711,7 @@ IDLE - make tests pass with zzdummy extension disabled by default.
 Document how IDLE runs tkinter programs. IDLE calls tcl/tk update in the
 background in order to make live
 
-interaction and experimentatin with tkinter applications much easier.
+interaction and experimentation with tkinter applications much easier.
 
 ..
 
@@ -5730,7 +5730,7 @@ not the same as deleting and inserting because int('') will fail.
 .. nonce: 50Jp_Q
 .. section: IDLE
 
-Rearrange IDLE condigdialog GenPage into Window, Editor, and Help sections.
+Rearrange IDLE configdialog GenPage into Window, Editor, and Help sections.
 
 ..
 
@@ -5769,14 +5769,14 @@ for maintenance.  Hence the conversion.
 The main difference for users is that user configurable key bindings for
 builtin features are now handled uniformly.  Now, editing a binding in a
 keyset only affects its value in the keyset.  All bindings are defined
-together in the system-specific default keysets in config- extensions.def.
-All custom keysets are saved as a whole in config- extension.cfg.  All take
+together in the system-specific default keysets in config-extensions.def.
+All custom keysets are saved as a whole in config-extension.cfg.  All take
 effect as soon as one clicks Apply or Ok.
 
 The affected events are '<<force-open-completions>>', '<<expand-word>>',
-'<<force-open-calltip>>', '<<flash-paren>>', '<<format-paragraph>>', '<<run-
-module>>', '<<check-module>>', and '<<zoom-height>>'.  Any (global)
-customizations made before 3.6.3 will not affect their keyset- specific
+'<<force-open-calltip>>', '<<flash-paren>>', '<<format-paragraph>>',
+'<<run-module>>', '<<check-module>>', and '<<zoom-height>>'.  Any (global)
+customizations made before 3.6.3 will not affect their keyset-specific
 customization after 3.6.3. and vice versa.
 
 Initial patch by Charles Wohlganger.
@@ -6225,7 +6225,7 @@ description of the configuration system.
 .. section: Tools/Demos
 
 gdb integration commands (py-bt, etc.) work on optimized shared builds now,
-too.  PEP 523 introduced _PyEval_EvalFrameDefault which inlines
+too.  :pep:`523` introduced _PyEval_EvalFrameDefault which inlines
 PyEval_EvalFrameEx on non-debug shared builds.  This broke the ability to
 use py-bt, py-up, and a few other Python-specific gdb integrations. The
 problem is fixed by only looking for _PyEval_EvalFrameDefault frames in

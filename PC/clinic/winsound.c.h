@@ -20,7 +20,7 @@ static PyObject *
 winsound_PlaySound_impl(PyObject *module, PyObject *sound, int flags);
 
 static PyObject *
-winsound_PlaySound(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+winsound_PlaySound(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sound", "flags", NULL};
@@ -57,7 +57,7 @@ static PyObject *
 winsound_Beep_impl(PyObject *module, int frequency, int duration);
 
 static PyObject *
-winsound_Beep(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+winsound_Beep(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"frequency", "duration", NULL};
@@ -90,7 +90,7 @@ static PyObject *
 winsound_MessageBeep_impl(PyObject *module, int type);
 
 static PyObject *
-winsound_MessageBeep(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+winsound_MessageBeep(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"type", NULL};
@@ -106,4 +106,4 @@ winsound_MessageBeep(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObje
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d22e41446929d3ef input=a9049054013a1b77]*/
+/*[clinic end generated code: output=beeee8be95667b7d input=a9049054013a1b77]*/

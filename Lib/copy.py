@@ -75,24 +75,20 @@ def copy(x):
     if copier:
         return copier(x)
 
-    try:
-        issc = issubclass(cls, type)
-    except TypeError: # cls is not a class
-        issc = False
-    if issc:
+    if issubclass(cls, type):
         # treat it as a regular class:
         return _copy_immutable(x)
 
     copier = getattr(cls, "__copy__", None)
-    if copier:
+    if copier is not None:
         return copier(x)
 
     reductor = dispatch_table.get(cls)
-    if reductor:
+    if reductor is not None:
         rv = reductor(x)
     else:
         reductor = getattr(x, "__reduce_ex__", None)
-        if reductor:
+        if reductor is not None:
             rv = reductor(4)
         else:
             reductor = getattr(x, "__reduce__", None)
@@ -146,18 +142,14 @@ def deepcopy(x, memo=None, _nil=[]):
     cls = type(x)
 
     copier = _deepcopy_dispatch.get(cls)
-    if copier:
+    if copier is not None:
         y = copier(x, memo)
     else:
-        try:
-            issc = issubclass(cls, type)
-        except TypeError: # cls is not a class (old Boost; see SF #502085)
-            issc = 0
-        if issc:
+        if issubclass(cls, type):
             y = _deepcopy_atomic(x, memo)
         else:
             copier = getattr(x, "__deepcopy__", None)
-            if copier:
+            if copier is not None:
                 y = copier(memo)
             else:
                 reductor = dispatch_table.get(cls)
@@ -165,7 +157,7 @@ def deepcopy(x, memo=None, _nil=[]):
                     rv = reductor(x)
                 else:
                     reductor = getattr(x, "__reduce_ex__", None)
-                    if reductor:
+                    if reductor is not None:
                         rv = reductor(4)
                     else:
                         reductor = getattr(x, "__reduce__", None)
@@ -198,10 +190,7 @@ d[bool] = _deepcopy_atomic
 d[complex] = _deepcopy_atomic
 d[bytes] = _deepcopy_atomic
 d[str] = _deepcopy_atomic
-try:
-    d[types.CodeType] = _deepcopy_atomic
-except AttributeError:
-    pass
+d[types.CodeType] = _deepcopy_atomic
 d[type] = _deepcopy_atomic
 d[types.BuiltinFunctionType] = _deepcopy_atomic
 d[types.FunctionType] = _deepcopy_atomic

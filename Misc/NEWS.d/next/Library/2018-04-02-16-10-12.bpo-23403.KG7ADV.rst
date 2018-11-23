@@ -1,0 +1,4 @@
+``DEFAULT_PROTOCOL`` in :mod:`pickle` was bumped to 4. Protocol 4 is
+described in :pep:`3154` and available since Python 3.4. It offers
+better performance and smaller size compared to protocol 3 introduced
+in Python 3.0.

@@ -1,0 +1,2 @@
+Add :func:`copy.copy` and :func:`copy.deepcopy` support to zlib compressors
+and decompressors.  Patch by Zackery Spytz.

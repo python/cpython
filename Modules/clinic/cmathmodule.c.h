@@ -647,7 +647,7 @@ static PyObject *
 cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj);
 
 static PyObject *
-cmath_log(PyObject *module, PyObject **args, Py_ssize_t nargs)
+cmath_log(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_complex x;
@@ -732,7 +732,7 @@ static PyObject *
 cmath_rect_impl(PyObject *module, double r, double phi);
 
 static PyObject *
-cmath_rect(PyObject *module, PyObject **args, Py_ssize_t nargs)
+cmath_rect(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     double r;
@@ -858,7 +858,7 @@ cmath_isclose_impl(PyObject *module, Py_complex a, Py_complex b,
                    double rel_tol, double abs_tol);
 
 static PyObject *
-cmath_isclose(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
@@ -882,4 +882,4 @@ cmath_isclose(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=51ba28d27d10264e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dd93c3a6aeb42ebb input=a9049054013a1b77]*/

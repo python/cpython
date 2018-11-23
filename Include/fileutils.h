@@ -1,6 +1,5 @@
 #ifndef Py_FILEUTILS_H
 #define Py_FILEUTILS_H
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,11 +12,60 @@ PyAPI_FUNC(wchar_t *) Py_DecodeLocale(
 PyAPI_FUNC(char*) Py_EncodeLocale(
     const wchar_t *text,
     size_t *error_pos);
+
+PyAPI_FUNC(char*) _Py_EncodeLocaleRaw(
+    const wchar_t *text,
+    size_t *error_pos);
+#endif
+
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
+typedef enum {
+    _Py_ERROR_UNKNOWN=0,
+    _Py_ERROR_STRICT,
+    _Py_ERROR_SURROGATEESCAPE,
+    _Py_ERROR_REPLACE,
+    _Py_ERROR_IGNORE,
+    _Py_ERROR_BACKSLASHREPLACE,
+    _Py_ERROR_SURROGATEPASS,
+    _Py_ERROR_XMLCHARREFREPLACE,
+    _Py_ERROR_OTHER
+} _Py_error_handler;
+
+PyAPI_FUNC(_Py_error_handler) _Py_GetErrorHandler(const char *errors);
+
+PyAPI_FUNC(int) _Py_DecodeLocaleEx(
+    const char *arg,
+    wchar_t **wstr,
+    size_t *wlen,
+    const char **reason,
+    int current_locale,
+    _Py_error_handler errors);
+
+PyAPI_FUNC(int) _Py_EncodeLocaleEx(
+    const wchar_t *text,
+    char **str,
+    size_t *error_pos,
+    const char **reason,
+    int current_locale,
+    _Py_error_handler errors);
 #endif
 
 #ifndef Py_LIMITED_API
-
 PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
+
+#if defined(MS_WINDOWS) || defined(__APPLE__)
+    /* On Windows, the count parameter of read() is an int (bpo-9015, bpo-9611).
+       On macOS 10.13, read() and write() with more than INT_MAX bytes
+       fail with EINVAL (bpo-24658). */
+#   define _PY_READ_MAX  INT_MAX
+#   define _PY_WRITE_MAX INT_MAX
+#else
+    /* write() should truncate the input to PY_SSIZE_T_MAX bytes,
+       but it's safer to do it ourself to have a portable behaviour */
+#   define _PY_READ_MAX  PY_SSIZE_T_MAX
+#   define _PY_WRITE_MAX PY_SSIZE_T_MAX
+#endif
 
 #ifdef MS_WINDOWS
 struct _Py_stat_struct {
@@ -111,6 +159,9 @@ PyAPI_FUNC(int) _Py_get_inheritable(int fd);
 PyAPI_FUNC(int) _Py_set_inheritable(int fd, int inheritable,
                                     int *atomic_flag_works);
 
+PyAPI_FUNC(int) _Py_set_inheritable_async_safe(int fd, int inheritable,
+                                               int *atomic_flag_works);
+
 PyAPI_FUNC(int) _Py_dup(int fd);
 
 #ifndef MS_WINDOWS
@@ -124,5 +175,4 @@ PyAPI_FUNC(int) _Py_set_blocking(int fd, int blocking);
 #ifdef __cplusplus
 }
 #endif
-
 #endif /* !Py_FILEUTILS_H */

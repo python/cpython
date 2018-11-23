@@ -1,6 +1,7 @@
 """Selector event loop for Unix with signal handling."""
 
 import errno
+import io
 import os
 import selectors
 import signal
@@ -17,8 +18,10 @@ from . import base_subprocess
 from . import constants
 from . import coroutines
 from . import events
+from . import exceptions
 from . import futures
 from . import selector_events
+from . import tasks
 from . import transports
 from .log import logger
 
@@ -51,8 +54,17 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
     def close(self):
         super().close()
-        for sig in list(self._signal_handlers):
-            self.remove_signal_handler(sig)
+        if not sys.is_finalizing():
+            for sig in list(self._signal_handlers):
+                self.remove_signal_handler(sig)
+        else:
+            if self._signal_handlers:
+                warnings.warn(f"Closing the loop {self!r} "
+                              f"on interpreter shutdown "
+                              f"stage, skipping signal handlers removal",
+                              ResourceWarning,
+                              source=self)
+                self._signal_handlers.clear()
 
     def _process_self_data(self, data):
         for signum in data:
@@ -82,7 +94,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         except (ValueError, OSError) as exc:
             raise RuntimeError(str(exc))
 
-        handle = events.Handle(callback, args, self)
+        handle = events.Handle(callback, args, self, None)
         self._signal_handlers[sig] = handle
 
         try:
@@ -157,8 +169,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         if not isinstance(sig, int):
             raise TypeError(f'sig must be an int, not {sig!r}')
 
-        if not (1 <= sig < signal.NSIG):
-            raise ValueError(f'sig {sig} out of range(1, {signal.NSIG})')
+        if sig not in signal.valid_signals():
+            raise ValueError(f'invalid signal number {sig}')
 
     def _make_read_pipe_transport(self, pipe, protocol, waiter=None,
                                   extra=None):
@@ -192,9 +204,11 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     def _child_watcher_callback(self, pid, returncode, transp):
         self.call_soon_threadsafe(transp._process_exited, returncode)
 
-    async def create_unix_connection(self, protocol_factory, path=None, *,
-                                     ssl=None, sock=None,
-                                     server_hostname=None):
+    async def create_unix_connection(
+            self, protocol_factory, path=None, *,
+            ssl=None, sock=None,
+            server_hostname=None,
+            ssl_handshake_timeout=None):
         assert server_hostname is None or isinstance(server_hostname, str)
         if ssl:
             if server_hostname is None:
@@ -203,6 +217,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         else:
             if server_hostname is not None:
                 raise ValueError('server_hostname is only meaningful with ssl')
+            if ssl_handshake_timeout is not None:
+                raise ValueError(
+                    'ssl_handshake_timeout is only meaningful with ssl')
 
         if path is not None:
             if sock is not None:
@@ -222,19 +239,27 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             if sock is None:
                 raise ValueError('no path and sock were specified')
             if (sock.family != socket.AF_UNIX or
-                    not base_events._is_stream_socket(sock)):
+                    sock.type != socket.SOCK_STREAM):
                 raise ValueError(
                     f'A UNIX Domain Stream Socket was expected, got {sock!r}')
             sock.setblocking(False)
 
         transport, protocol = await self._create_connection_transport(
-            sock, protocol_factory, ssl, server_hostname)
+            sock, protocol_factory, ssl, server_hostname,
+            ssl_handshake_timeout=ssl_handshake_timeout)
         return transport, protocol
 
-    async def create_unix_server(self, protocol_factory, path=None, *,
-                                 sock=None, backlog=100, ssl=None):
+    async def create_unix_server(
+            self, protocol_factory, path=None, *,
+            sock=None, backlog=100, ssl=None,
+            ssl_handshake_timeout=None,
+            start_serving=True):
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
+
+        if ssl_handshake_timeout is not None and not ssl:
+            raise ValueError(
+                'ssl_handshake_timeout is only meaningful with ssl')
 
         if path is not None:
             if sock is not None:
@@ -276,15 +301,123 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     'path was not specified, and no sock specified')
 
             if (sock.family != socket.AF_UNIX or
-                    not base_events._is_stream_socket(sock)):
+                    sock.type != socket.SOCK_STREAM):
                 raise ValueError(
                     f'A UNIX Domain Stream Socket was expected, got {sock!r}')
 
-        server = base_events.Server(self, [sock])
-        sock.listen(backlog)
         sock.setblocking(False)
-        self._start_serving(protocol_factory, sock, ssl, server)
+        server = base_events.Server(self, [sock], protocol_factory,
+                                    ssl, backlog, ssl_handshake_timeout)
+        if start_serving:
+            server._start_serving()
+            # Skip one loop iteration so that all 'loop.add_reader'
+            # go through.
+            await tasks.sleep(0, loop=self)
+
         return server
+
+    async def _sock_sendfile_native(self, sock, file, offset, count):
+        try:
+            os.sendfile
+        except AttributeError as exc:
+            raise exceptions.SendfileNotAvailableError(
+                "os.sendfile() is not available")
+        try:
+            fileno = file.fileno()
+        except (AttributeError, io.UnsupportedOperation) as err:
+            raise exceptions.SendfileNotAvailableError("not a regular file")
+        try:
+            fsize = os.fstat(fileno).st_size
+        except OSError as err:
+            raise exceptions.SendfileNotAvailableError("not a regular file")
+        blocksize = count if count else fsize
+        if not blocksize:
+            return 0  # empty file
+
+        fut = self.create_future()
+        self._sock_sendfile_native_impl(fut, None, sock, fileno,
+                                        offset, count, blocksize, 0)
+        return await fut
+
+    def _sock_sendfile_native_impl(self, fut, registered_fd, sock, fileno,
+                                   offset, count, blocksize, total_sent):
+        fd = sock.fileno()
+        if registered_fd is not None:
+            # Remove the callback early.  It should be rare that the
+            # selector says the fd is ready but the call still returns
+            # EAGAIN, and I am willing to take a hit in that case in
+            # order to simplify the common case.
+            self.remove_writer(registered_fd)
+        if fut.cancelled():
+            self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+            return
+        if count:
+            blocksize = count - total_sent
+            if blocksize <= 0:
+                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+                fut.set_result(total_sent)
+                return
+
+        try:
+            sent = os.sendfile(fd, fileno, offset, blocksize)
+        except (BlockingIOError, InterruptedError):
+            if registered_fd is None:
+                self._sock_add_cancellation_callback(fut, sock)
+            self.add_writer(fd, self._sock_sendfile_native_impl, fut,
+                            fd, sock, fileno,
+                            offset, count, blocksize, total_sent)
+        except OSError as exc:
+            if (registered_fd is not None and
+                    exc.errno == errno.ENOTCONN and
+                    type(exc) is not ConnectionError):
+                # If we have an ENOTCONN and this isn't a first call to
+                # sendfile(), i.e. the connection was closed in the middle
+                # of the operation, normalize the error to ConnectionError
+                # to make it consistent across all Posix systems.
+                new_exc = ConnectionError(
+                    "socket is not connected", errno.ENOTCONN)
+                new_exc.__cause__ = exc
+                exc = new_exc
+            if total_sent == 0:
+                # We can get here for different reasons, the main
+                # one being 'file' is not a regular mmap(2)-like
+                # file, in which case we'll fall back on using
+                # plain send().
+                err = exceptions.SendfileNotAvailableError(
+                    "os.sendfile call failed")
+                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+                fut.set_exception(err)
+            else:
+                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+                fut.set_exception(exc)
+        except Exception as exc:
+            self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+            fut.set_exception(exc)
+        else:
+            if sent == 0:
+                # EOF
+                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+                fut.set_result(total_sent)
+            else:
+                offset += sent
+                total_sent += sent
+                if registered_fd is None:
+                    self._sock_add_cancellation_callback(fut, sock)
+                self.add_writer(fd, self._sock_sendfile_native_impl, fut,
+                                fd, sock, fileno,
+                                offset, count, blocksize, total_sent)
+
+    def _sock_sendfile_update_filepos(self, fileno, offset, total_sent):
+        if total_sent > 0:
+            os.lseek(fileno, offset, os.SEEK_SET)
+
+    def _sock_add_cancellation_callback(self, fut, sock):
+        def cb(fut):
+            if fut.cancelled():
+                fd = sock.fileno()
+                if fd != -1:
+                    self.remove_writer(fd)
+        fut.add_done_callback(cb)
 
 
 class _UnixReadPipeTransport(transports.ReadTransport):

@@ -16,7 +16,7 @@ warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
                    Py_ssize_t stacklevel, PyObject *source);
 
 static PyObject *
-warnings_warn(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+warnings_warn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"message", "category", "stacklevel", "source", NULL};
@@ -35,4 +35,4 @@ warnings_warn(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=74b1a7d1ee41816d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=86369ece63001d78 input=a9049054013a1b77]*/

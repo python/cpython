@@ -3,6 +3,7 @@
    of int.__float__, etc., that take and return unicode objects */
 
 #include "Python.h"
+#include "pycore_fileutils.h"
 #include <locale.h>
 
 /* Raises an exception about an unknown presentation type for this
@@ -28,16 +29,17 @@ unknown_presentation_type(Py_UCS4 presentation_type,
 }
 
 static void
-invalid_comma_type(Py_UCS4 presentation_type)
+invalid_thousands_separator_type(char specifier, Py_UCS4 presentation_type)
 {
+    assert(specifier == ',' || specifier == '_');
     if (presentation_type > 32 && presentation_type < 128)
         PyErr_Format(PyExc_ValueError,
-                     "Cannot specify ',' with '%c'.",
-                     (char)presentation_type);
+                     "Cannot specify '%c' with '%c'.",
+                     specifier, (char)presentation_type);
     else
         PyErr_Format(PyExc_ValueError,
-                     "Cannot specify ',' with '\\x%x'.",
-                     (unsigned int)presentation_type);
+                     "Cannot specify '%c' with '\\x%x'.",
+                     specifier, (unsigned int)presentation_type);
 }
 
 static void
@@ -117,8 +119,8 @@ is_sign_element(Py_UCS4 c)
 /* Locale type codes. LT_NO_LOCALE must be zero. */
 enum LocaleType {
     LT_NO_LOCALE = 0,
-    LT_DEFAULT_LOCALE,
-    LT_UNDERSCORE_LOCALE,
+    LT_DEFAULT_LOCALE = ',',
+    LT_UNDERSCORE_LOCALE = '_',
     LT_UNDER_FOUR_LOCALE,
     LT_CURRENT_LOCALE
 };
@@ -314,7 +316,7 @@ parse_internal_render_format_spec(PyObject *format_spec,
             }
             /* fall through */
         default:
-            invalid_comma_type(format->type);
+            invalid_thousands_separator_type(format->thousands_separators, format->type);
             return 0;
         }
     }
@@ -395,9 +397,10 @@ typedef struct {
     PyObject *decimal_point;
     PyObject *thousands_sep;
     const char *grouping;
+    char *grouping_buffer;
 } LocaleInfo;
 
-#define STATIC_LOCALE_INFO_INIT {0, 0, 0}
+#define LocaleInfo_STATIC_INIT {0, 0, 0, 0}
 
 /* describes the layout for an integer, see the comment in
    calc_number_widths() for details */
@@ -704,18 +707,22 @@ get_locale_info(enum LocaleType type, LocaleInfo *locale_info)
 {
     switch (type) {
     case LT_CURRENT_LOCALE: {
-        struct lconv *locale_data = localeconv();
-        locale_info->decimal_point = PyUnicode_DecodeLocale(
-                                         locale_data->decimal_point,
-                                         NULL);
-        if (locale_info->decimal_point == NULL)
+        struct lconv *lc = localeconv();
+        if (_Py_GetLocaleconvNumeric(lc,
+                                     &locale_info->decimal_point,
+                                     &locale_info->thousands_sep) < 0) {
             return -1;
-        locale_info->thousands_sep = PyUnicode_DecodeLocale(
-                                         locale_data->thousands_sep,
-                                         NULL);
-        if (locale_info->thousands_sep == NULL)
+        }
+
+        /* localeconv() grouping can become a dangling pointer or point
+           to a different string if another thread calls localeconv() during
+           the string formatting. Copy the string to avoid this risk. */
+        locale_info->grouping_buffer = _PyMem_Strdup(lc->grouping);
+        if (locale_info->grouping_buffer == NULL) {
+            PyErr_NoMemory();
             return -1;
-        locale_info->grouping = locale_data->grouping;
+        }
+        locale_info->grouping = locale_info->grouping_buffer;
         break;
     }
     case LT_DEFAULT_LOCALE:
@@ -749,6 +756,7 @@ free_locale_info(LocaleInfo *locale_info)
 {
     Py_XDECREF(locale_info->decimal_point);
     Py_XDECREF(locale_info->thousands_sep);
+    PyMem_Free(locale_info->grouping_buffer);
 }
 
 /************************************************************************/
@@ -861,7 +869,7 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
 
     /* Locale settings, either from the actual locale or
        from a hard-code pseudo-locale */
-    LocaleInfo locale = STATIC_LOCALE_INFO_INIT;
+    LocaleInfo locale = LocaleInfo_STATIC_INIT;
 
     /* no precision allowed on integers */
     if (format->precision != -1) {
@@ -1033,7 +1041,7 @@ format_float_internal(PyObject *value,
 
     /* Locale settings, either from the actual locale or
        from a hard-code pseudo-locale */
-    LocaleInfo locale = STATIC_LOCALE_INFO_INIT;
+    LocaleInfo locale = LocaleInfo_STATIC_INIT;
 
     if (format->precision > INT_MAX) {
         PyErr_SetString(PyExc_ValueError, "precision too big");
@@ -1196,7 +1204,7 @@ format_complex_internal(PyObject *value,
 
     /* Locale settings, either from the actual locale or
        from a hard-code pseudo-locale */
-    LocaleInfo locale = STATIC_LOCALE_INFO_INIT;
+    LocaleInfo locale = LocaleInfo_STATIC_INIT;
 
     if (format->precision > INT_MAX) {
         PyErr_SetString(PyExc_ValueError, "precision too big");

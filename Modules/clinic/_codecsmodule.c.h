@@ -62,7 +62,7 @@ _codecs_encode_impl(PyObject *module, PyObject *obj, const char *encoding,
                     const char *errors);
 
 static PyObject *
-_codecs_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"obj", "encoding", "errors", NULL};
@@ -101,7 +101,7 @@ _codecs_decode_impl(PyObject *module, PyObject *obj, const char *encoding,
                     const char *errors);
 
 static PyObject *
-_codecs_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_codecs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"obj", "encoding", "errors", NULL};
@@ -160,7 +160,7 @@ _codecs_escape_decode_impl(PyObject *module, Py_buffer *data,
                            const char *errors);
 
 static PyObject *
-_codecs_escape_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -194,7 +194,7 @@ _codecs_escape_encode_impl(PyObject *module, PyObject *data,
                            const char *errors);
 
 static PyObject *
-_codecs_escape_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_escape_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *data;
@@ -223,7 +223,7 @@ _codecs_unicode_internal_decode_impl(PyObject *module, PyObject *obj,
                                      const char *errors);
 
 static PyObject *
-_codecs_unicode_internal_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_unicode_internal_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *obj;
@@ -252,7 +252,7 @@ _codecs_utf_7_decode_impl(PyObject *module, Py_buffer *data,
                           const char *errors, int final);
 
 static PyObject *
-_codecs_utf_7_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_7_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -287,7 +287,7 @@ _codecs_utf_8_decode_impl(PyObject *module, Py_buffer *data,
                           const char *errors, int final);
 
 static PyObject *
-_codecs_utf_8_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_8_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -322,7 +322,7 @@ _codecs_utf_16_decode_impl(PyObject *module, Py_buffer *data,
                            const char *errors, int final);
 
 static PyObject *
-_codecs_utf_16_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_16_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -357,7 +357,7 @@ _codecs_utf_16_le_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int final);
 
 static PyObject *
-_codecs_utf_16_le_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_16_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -392,7 +392,7 @@ _codecs_utf_16_be_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int final);
 
 static PyObject *
-_codecs_utf_16_be_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_16_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -428,7 +428,7 @@ _codecs_utf_16_ex_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int byteorder, int final);
 
 static PyObject *
-_codecs_utf_16_ex_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_16_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -464,7 +464,7 @@ _codecs_utf_32_decode_impl(PyObject *module, Py_buffer *data,
                            const char *errors, int final);
 
 static PyObject *
-_codecs_utf_32_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_32_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -499,7 +499,7 @@ _codecs_utf_32_le_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int final);
 
 static PyObject *
-_codecs_utf_32_le_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_32_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -534,7 +534,7 @@ _codecs_utf_32_be_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int final);
 
 static PyObject *
-_codecs_utf_32_be_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_32_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -570,7 +570,7 @@ _codecs_utf_32_ex_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int byteorder, int final);
 
 static PyObject *
-_codecs_utf_32_ex_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_32_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -606,7 +606,7 @@ _codecs_unicode_escape_decode_impl(PyObject *module, Py_buffer *data,
                                    const char *errors);
 
 static PyObject *
-_codecs_unicode_escape_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -640,7 +640,7 @@ _codecs_raw_unicode_escape_decode_impl(PyObject *module, Py_buffer *data,
                                        const char *errors);
 
 static PyObject *
-_codecs_raw_unicode_escape_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -674,7 +674,7 @@ _codecs_latin_1_decode_impl(PyObject *module, Py_buffer *data,
                             const char *errors);
 
 static PyObject *
-_codecs_latin_1_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_latin_1_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -708,7 +708,7 @@ _codecs_ascii_decode_impl(PyObject *module, Py_buffer *data,
                           const char *errors);
 
 static PyObject *
-_codecs_ascii_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_ascii_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -742,7 +742,7 @@ _codecs_charmap_decode_impl(PyObject *module, Py_buffer *data,
                             const char *errors, PyObject *mapping);
 
 static PyObject *
-_codecs_charmap_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_charmap_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -779,7 +779,7 @@ _codecs_mbcs_decode_impl(PyObject *module, Py_buffer *data,
                          const char *errors, int final);
 
 static PyObject *
-_codecs_mbcs_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_mbcs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -818,7 +818,7 @@ _codecs_oem_decode_impl(PyObject *module, Py_buffer *data,
                         const char *errors, int final);
 
 static PyObject *
-_codecs_oem_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_oem_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -857,7 +857,7 @@ _codecs_code_page_decode_impl(PyObject *module, int codepage,
                               Py_buffer *data, const char *errors, int final);
 
 static PyObject *
-_codecs_code_page_decode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_code_page_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int codepage;
@@ -895,7 +895,7 @@ _codecs_readbuffer_encode_impl(PyObject *module, Py_buffer *data,
                                const char *errors);
 
 static PyObject *
-_codecs_readbuffer_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_readbuffer_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -929,7 +929,7 @@ _codecs_unicode_internal_encode_impl(PyObject *module, PyObject *obj,
                                      const char *errors);
 
 static PyObject *
-_codecs_unicode_internal_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_unicode_internal_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *obj;
@@ -958,7 +958,7 @@ _codecs_utf_7_encode_impl(PyObject *module, PyObject *str,
                           const char *errors);
 
 static PyObject *
-_codecs_utf_7_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_7_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
@@ -987,7 +987,7 @@ _codecs_utf_8_encode_impl(PyObject *module, PyObject *str,
                           const char *errors);
 
 static PyObject *
-_codecs_utf_8_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_8_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
@@ -1016,7 +1016,7 @@ _codecs_utf_16_encode_impl(PyObject *module, PyObject *str,
                            const char *errors, int byteorder);
 
 static PyObject *
-_codecs_utf_16_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_16_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
@@ -1046,7 +1046,7 @@ _codecs_utf_16_le_encode_impl(PyObject *module, PyObject *str,
                               const char *errors);
 
 static PyObject *
-_codecs_utf_16_le_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_16_le_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
@@ -1075,7 +1075,7 @@ _codecs_utf_16_be_encode_impl(PyObject *module, PyObject *str,
                               const char *errors);
 
 static PyObject *
-_codecs_utf_16_be_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_16_be_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
@@ -1104,7 +1104,7 @@ _codecs_utf_32_encode_impl(PyObject *module, PyObject *str,
                            const char *errors, int byteorder);
 
 static PyObject *
-_codecs_utf_32_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_32_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
@@ -1134,7 +1134,7 @@ _codecs_utf_32_le_encode_impl(PyObject *module, PyObject *str,
                               const char *errors);
 
 static PyObject *
-_codecs_utf_32_le_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_32_le_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
@@ -1163,7 +1163,7 @@ _codecs_utf_32_be_encode_impl(PyObject *module, PyObject *str,
                               const char *errors);
 
 static PyObject *
-_codecs_utf_32_be_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_utf_32_be_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
@@ -1192,7 +1192,7 @@ _codecs_unicode_escape_encode_impl(PyObject *module, PyObject *str,
                                    const char *errors);
 
 static PyObject *
-_codecs_unicode_escape_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_unicode_escape_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
@@ -1221,7 +1221,7 @@ _codecs_raw_unicode_escape_encode_impl(PyObject *module, PyObject *str,
                                        const char *errors);
 
 static PyObject *
-_codecs_raw_unicode_escape_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_raw_unicode_escape_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
@@ -1250,7 +1250,7 @@ _codecs_latin_1_encode_impl(PyObject *module, PyObject *str,
                             const char *errors);
 
 static PyObject *
-_codecs_latin_1_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_latin_1_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
@@ -1279,7 +1279,7 @@ _codecs_ascii_encode_impl(PyObject *module, PyObject *str,
                           const char *errors);
 
 static PyObject *
-_codecs_ascii_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_ascii_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
@@ -1308,7 +1308,7 @@ _codecs_charmap_encode_impl(PyObject *module, PyObject *str,
                             const char *errors, PyObject *mapping);
 
 static PyObject *
-_codecs_charmap_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_charmap_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
@@ -1365,7 +1365,7 @@ static PyObject *
 _codecs_mbcs_encode_impl(PyObject *module, PyObject *str, const char *errors);
 
 static PyObject *
-_codecs_mbcs_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_mbcs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
@@ -1397,7 +1397,7 @@ static PyObject *
 _codecs_oem_encode_impl(PyObject *module, PyObject *str, const char *errors);
 
 static PyObject *
-_codecs_oem_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_oem_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *str;
@@ -1430,7 +1430,7 @@ _codecs_code_page_encode_impl(PyObject *module, int code_page, PyObject *str,
                               const char *errors);
 
 static PyObject *
-_codecs_code_page_encode(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_code_page_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int code_page;
@@ -1467,7 +1467,7 @@ _codecs_register_error_impl(PyObject *module, const char *errors,
                             PyObject *handler);
 
 static PyObject *
-_codecs_register_error(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_codecs_register_error(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *errors;
@@ -1536,4 +1536,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=894910ed4900eeae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=06fa0d6803103c62 input=a9049054013a1b77]*/

@@ -1,0 +1,1 @@
+Fixed tarfile.itn handling of out-of-bounds float values. Patch by Joffrey Fuhrer.

@@ -1,0 +1,3 @@
+Enable theme-specific color configuration for Code Context.
+Use the Highlights tab to see the setting for built-in themes
+or add settings to custom themes.

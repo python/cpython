@@ -2,8 +2,9 @@
 /* Function object implementation */
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "code.h"
 #include "structmember.h"
 
@@ -523,23 +524,31 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
     return (PyObject *)newfunc;
 }
 
+static int
+func_clear(PyFunctionObject *op)
+{
+    Py_CLEAR(op->func_code);
+    Py_CLEAR(op->func_globals);
+    Py_CLEAR(op->func_module);
+    Py_CLEAR(op->func_name);
+    Py_CLEAR(op->func_defaults);
+    Py_CLEAR(op->func_kwdefaults);
+    Py_CLEAR(op->func_doc);
+    Py_CLEAR(op->func_dict);
+    Py_CLEAR(op->func_closure);
+    Py_CLEAR(op->func_annotations);
+    Py_CLEAR(op->func_qualname);
+    return 0;
+}
+
 static void
 func_dealloc(PyFunctionObject *op)
 {
     _PyObject_GC_UNTRACK(op);
-    if (op->func_weakreflist != NULL)
+    if (op->func_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) op);
-    Py_DECREF(op->func_code);
-    Py_DECREF(op->func_globals);
-    Py_XDECREF(op->func_module);
-    Py_DECREF(op->func_name);
-    Py_XDECREF(op->func_defaults);
-    Py_XDECREF(op->func_kwdefaults);
-    Py_XDECREF(op->func_doc);
-    Py_XDECREF(op->func_dict);
-    Py_XDECREF(op->func_closure);
-    Py_XDECREF(op->func_annotations);
-    Py_XDECREF(op->func_qualname);
+    }
+    (void)func_clear(op);
     PyObject_GC_Del(op);
 }
 
@@ -573,7 +582,7 @@ function_call(PyObject *func, PyObject *args, PyObject *kwargs)
     PyObject **stack;
     Py_ssize_t nargs;
 
-    stack = &PyTuple_GET_ITEM(args, 0);
+    stack = _PyTuple_ITEMS(args);
     nargs = PyTuple_GET_SIZE(args);
     return _PyFunction_FastCallDict(func, stack, nargs, kwargs);
 }
@@ -612,7 +621,7 @@ PyTypeObject PyFunction_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     func_new__doc__,                            /* tp_doc */
     (traverseproc)func_traverse,                /* tp_traverse */
-    0,                                          /* tp_clear */
+    (inquiry)func_clear,                        /* tp_clear */
     0,                                          /* tp_richcompare */
     offsetof(PyFunctionObject, func_weakreflist), /* tp_weaklistoffset */
     0,                                          /* tp_iter */
@@ -709,7 +718,7 @@ cm_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_UnpackTuple(args, "classmethod", 1, 1, &callable))
         return -1;
     Py_INCREF(callable);
-    cm->cm_callable = callable;
+    Py_XSETREF(cm->cm_callable, callable);
     return 0;
 }
 
@@ -890,7 +899,7 @@ sm_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_UnpackTuple(args, "staticmethod", 1, 1, &callable))
         return -1;
     Py_INCREF(callable);
-    sm->sm_callable = callable;
+    Py_XSETREF(sm->sm_callable, callable);
     return 0;
 }
 

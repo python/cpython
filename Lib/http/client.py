@@ -321,7 +321,7 @@ class HTTPResponse(io.BufferedIOBase):
 
         if self.debuglevel > 0:
             for hdr in self.headers:
-                print("header:", hdr, end=" ")
+                print("header:", hdr + ":", self.headers.get(hdr))
 
         # are we using the chunked-style of transfer encoding?
         tr_enc = self.headers.get("transfer-encoding")
@@ -538,7 +538,7 @@ class HTTPResponse(io.BufferedIOBase):
         chunk_left = self.chunk_left
         if not chunk_left: # Can be 0 or None
             if chunk_left is not None:
-                # We are at the end of chunk. dicard chunk end
+                # We are at the end of chunk, discard chunk end
                 self._safe_read(2)  # toss the CRLF at the end of the chunk
             try:
                 chunk_left = self._read_next_chunk_size()
@@ -1375,7 +1375,8 @@ else:
             if key_file or cert_file:
                 context.load_cert_chain(cert_file, key_file)
             self._context = context
-            self._check_hostname = check_hostname
+            if check_hostname is not None:
+                self._context.check_hostname = check_hostname
 
         def connect(self):
             "Connect to a host on a given (SSL) port."
@@ -1389,13 +1390,6 @@ else:
 
             self.sock = self._context.wrap_socket(self.sock,
                                                   server_hostname=server_hostname)
-            if not self._context.check_hostname and self._check_hostname:
-                try:
-                    ssl.match_hostname(self.sock.getpeercert(), server_hostname)
-                except Exception:
-                    self.sock.shutdown(socket.SHUT_RDWR)
-                    self.sock.close()
-                    raise
 
     __all__.append("HTTPSConnection")
 

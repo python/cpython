@@ -27,7 +27,7 @@ marshal_dump_impl(PyObject *module, PyObject *value, PyObject *file,
                   int version);
 
 static PyObject *
-marshal_dump(PyObject *module, PyObject **args, Py_ssize_t nargs)
+marshal_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *value;
@@ -84,7 +84,7 @@ static PyObject *
 marshal_dumps_impl(PyObject *module, PyObject *value, int version);
 
 static PyObject *
-marshal_dumps(PyObject *module, PyObject **args, Py_ssize_t nargs)
+marshal_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *value;
@@ -134,4 +134,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=15e284a34abfd26a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=584eb2222d86fdc3 input=a9049054013a1b77]*/

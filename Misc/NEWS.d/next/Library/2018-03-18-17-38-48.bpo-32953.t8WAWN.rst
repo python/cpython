@@ -1,0 +1,4 @@
+If a non-dataclass inherits from a frozen dataclass, allow attributes to be
+added to the derived class.  Only attributes from the frozen dataclass
+cannot be assigned to.  Require all dataclasses in a hierarchy to be either
+all frozen or all non-frozen.

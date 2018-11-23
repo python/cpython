@@ -1,5 +1,6 @@
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
 #include "frameobject.h"
 
 
@@ -81,7 +82,7 @@ _Py_CheckFunctionResult(PyObject *callable, PyObject *result, const char *where)
 /* --- Core PyObject call functions ------------------------------- */
 
 PyObject *
-_PyObject_FastCallDict(PyObject *callable, PyObject **args, Py_ssize_t nargs,
+_PyObject_FastCallDict(PyObject *callable, PyObject *const *args, Py_ssize_t nargs,
                        PyObject *kwargs)
 {
     /* _PyObject_FastCallDict() must not be called with an exception set,
@@ -134,7 +135,7 @@ _PyObject_FastCallDict(PyObject *callable, PyObject **args, Py_ssize_t nargs,
 
 
 PyObject *
-_PyObject_FastCallKeywords(PyObject *callable, PyObject **stack, Py_ssize_t nargs,
+_PyObject_FastCallKeywords(PyObject *callable, PyObject *const *stack, Py_ssize_t nargs,
                            PyObject *kwnames)
 {
     /* _PyObject_FastCallKeywords() must not be called with an exception set,
@@ -224,7 +225,7 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 
     if (PyFunction_Check(callable)) {
         return _PyFunction_FastCallDict(callable,
-                                        &PyTuple_GET_ITEM(args, 0),
+                                        _PyTuple_ITEMS(args),
                                         PyTuple_GET_SIZE(args),
                                         kwargs);
     }
@@ -254,11 +255,11 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 /* --- PyFunction call functions ---------------------------------- */
 
 static PyObject* _Py_HOT_FUNCTION
-function_code_fastcall(PyCodeObject *co, PyObject **args, Py_ssize_t nargs,
+function_code_fastcall(PyCodeObject *co, PyObject *const *args, Py_ssize_t nargs,
                        PyObject *globals)
 {
     PyFrameObject *f;
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     PyObject **fastlocals;
     Py_ssize_t i;
     PyObject *result;
@@ -296,7 +297,7 @@ function_code_fastcall(PyCodeObject *co, PyObject **args, Py_ssize_t nargs,
 
 
 PyObject *
-_PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
+_PyFunction_FastCallDict(PyObject *func, PyObject *const *args, Py_ssize_t nargs,
                          PyObject *kwargs)
 {
     PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
@@ -325,7 +326,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
                  && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
-            args = &PyTuple_GET_ITEM(argdefs, 0);
+            args = _PyTuple_ITEMS(argdefs);
             return function_code_fastcall(co, args, PyTuple_GET_SIZE(argdefs),
                                           globals);
         }
@@ -342,7 +343,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
             return NULL;
         }
 
-        k = &PyTuple_GET_ITEM(kwtuple, 0);
+        k = _PyTuple_ITEMS(kwtuple);
         pos = i = 0;
         while (PyDict_Next(kwargs, &pos, &k[i], &k[i+1])) {
             /* We must hold strong references because keyword arguments can be
@@ -352,7 +353,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
             Py_INCREF(k[i+1]);
             i += 2;
         }
-        nk = i / 2;
+        assert(i / 2 == nk);
     }
     else {
         kwtuple = NULL;
@@ -365,7 +366,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
     qualname = ((PyFunctionObject *)func) -> func_qualname;
 
     if (argdefs != NULL) {
-        d = &PyTuple_GET_ITEM(argdefs, 0);
+        d = _PyTuple_ITEMS(argdefs);
         nd = PyTuple_GET_SIZE(argdefs);
     }
     else {
@@ -383,7 +384,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 }
 
 PyObject *
-_PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
+_PyFunction_FastCallKeywords(PyObject *func, PyObject *const *stack,
                              Py_ssize_t nargs, PyObject *kwnames)
 {
     PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
@@ -411,7 +412,7 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
                  && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
-            stack = &PyTuple_GET_ITEM(argdefs, 0);
+            stack = _PyTuple_ITEMS(argdefs);
             return function_code_fastcall(co, stack, PyTuple_GET_SIZE(argdefs),
                                           globals);
         }
@@ -423,7 +424,7 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
     qualname = ((PyFunctionObject *)func) -> func_qualname;
 
     if (argdefs != NULL) {
-        d = &PyTuple_GET_ITEM(argdefs, 0);
+        d = _PyTuple_ITEMS(argdefs);
         nd = PyTuple_GET_SIZE(argdefs);
     }
     else {
@@ -432,7 +433,7 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
     }
     return _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
                                     stack, nargs,
-                                    nkwargs ? &PyTuple_GET_ITEM(kwnames, 0) : NULL,
+                                    nkwargs ? _PyTuple_ITEMS(kwnames) : NULL,
                                     stack + nargs,
                                     nkwargs, 1,
                                     d, (int)nd, kwdefs,
@@ -443,8 +444,9 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
 /* --- PyCFunction call functions --------------------------------- */
 
 PyObject *
-_PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self, PyObject **args,
-                             Py_ssize_t nargs, PyObject *kwargs)
+_PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self,
+                             PyObject *const *args, Py_ssize_t nargs,
+                             PyObject *kwargs)
 {
     /* _PyMethodDef_RawFastCallDict() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
@@ -532,7 +534,7 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self, PyObject **arg
 
     case METH_FASTCALL | METH_KEYWORDS:
     {
-        PyObject **stack;
+        PyObject *const *stack;
         PyObject *kwnames;
         _PyCFunctionFastWithKeywords fastmeth = (_PyCFunctionFastWithKeywords)meth;
 
@@ -542,7 +544,7 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self, PyObject **arg
 
         result = (*fastmeth) (self, stack, nargs, kwnames);
         if (stack != args) {
-            PyMem_Free(stack);
+            PyMem_Free((PyObject **)stack);
         }
         Py_XDECREF(kwnames);
         break;
@@ -569,7 +571,8 @@ exit:
 
 
 PyObject *
-_PyCFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
+_PyCFunction_FastCallDict(PyObject *func,
+                          PyObject *const *args, Py_ssize_t nargs,
                           PyObject *kwargs)
 {
     PyObject *result;
@@ -586,8 +589,9 @@ _PyCFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 
 
 PyObject *
-_PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self, PyObject **args,
-                                 Py_ssize_t nargs, PyObject *kwnames)
+_PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self,
+                                 PyObject *const *args, Py_ssize_t nargs,
+                                 PyObject *kwnames)
 {
     /* _PyMethodDef_RawFastCallKeywords() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
@@ -715,8 +719,9 @@ exit:
 
 
 PyObject *
-_PyCFunction_FastCallKeywords(PyObject *func, PyObject **args,
-                              Py_ssize_t nargs, PyObject *kwnames)
+_PyCFunction_FastCallKeywords(PyObject *func,
+                              PyObject *const *args, Py_ssize_t nargs,
+                              PyObject *kwnames)
 {
     PyObject *result;
 
@@ -781,7 +786,7 @@ PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwargs)
     }
     else {
         return _PyCFunction_FastCallDict(func,
-                                         &PyTuple_GET_ITEM(args, 0),
+                                         _PyTuple_ITEMS(args),
                                          PyTuple_GET_SIZE(args),
                                          kwargs);
     }
@@ -834,8 +839,8 @@ PyObject_CallObject(PyObject *callable, PyObject *args)
 /* Positional arguments are obj followed by args:
    call callable(obj, *args, **kwargs) */
 PyObject *
-_PyObject_FastCall_Prepend(PyObject *callable,
-                           PyObject *obj, PyObject **args, Py_ssize_t nargs)
+_PyObject_FastCall_Prepend(PyObject *callable, PyObject *obj,
+                           PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
     PyObject **args2;
@@ -894,8 +899,8 @@ _PyObject_Call_Prepend(PyObject *callable,
     /* use borrowed references */
     stack[0] = obj;
     memcpy(&stack[1],
-              &PyTuple_GET_ITEM(args, 0),
-              argcount * sizeof(PyObject *));
+           _PyTuple_ITEMS(args),
+           argcount * sizeof(PyObject *));
 
     result = _PyObject_FastCallDict(callable,
                                     stack, argcount + 1,
@@ -946,7 +951,7 @@ _PyObject_CallFunctionVa(PyObject *callable, const char *format,
              func(*(arg1, arg2, arg3)): func(arg1, arg2, arg3) */
         PyObject *args = stack[0];
         result = _PyObject_FastCall(callable,
-                                    &PyTuple_GET_ITEM(args, 0),
+                                    _PyTuple_ITEMS(args),
                                     PyTuple_GET_SIZE(args));
     }
     else {
@@ -1267,8 +1272,8 @@ PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 
 /* Issue #29234: Inlining _PyStack_AsTuple() into callers increases their
    stack consumption, Disable inlining to optimize the stack consumption. */
-PyObject* _Py_NO_INLINE
-_PyStack_AsTuple(PyObject **stack, Py_ssize_t nargs)
+_Py_NO_INLINE PyObject *
+_PyStack_AsTuple(PyObject *const *stack, Py_ssize_t nargs)
 {
     PyObject *args;
     Py_ssize_t i;
@@ -1288,7 +1293,7 @@ _PyStack_AsTuple(PyObject **stack, Py_ssize_t nargs)
 
 
 PyObject*
-_PyStack_AsTupleSlice(PyObject **stack, Py_ssize_t nargs,
+_PyStack_AsTupleSlice(PyObject *const *stack, Py_ssize_t nargs,
                       Py_ssize_t start, Py_ssize_t end)
 {
     PyObject *args;
@@ -1313,7 +1318,7 @@ _PyStack_AsTupleSlice(PyObject **stack, Py_ssize_t nargs,
 
 
 PyObject *
-_PyStack_AsDict(PyObject **values, PyObject *kwnames)
+_PyStack_AsDict(PyObject *const *values, PyObject *kwnames)
 {
     Py_ssize_t nkwargs;
     PyObject *kwdict;
@@ -1340,8 +1345,8 @@ _PyStack_AsDict(PyObject **values, PyObject *kwnames)
 
 
 int
-_PyStack_UnpackDict(PyObject **args, Py_ssize_t nargs, PyObject *kwargs,
-                    PyObject ***p_stack, PyObject **p_kwnames)
+_PyStack_UnpackDict(PyObject *const *args, Py_ssize_t nargs, PyObject *kwargs,
+                    PyObject *const **p_stack, PyObject **p_kwnames)
 {
     PyObject **stack, **kwstack;
     Py_ssize_t nkwargs;

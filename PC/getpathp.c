@@ -80,7 +80,7 @@
 
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include "osdefs.h"
 #include <wchar.h>
 
@@ -89,7 +89,7 @@
 #endif
 
 #include <windows.h>
-#include <Shlwapi.h>
+#include <shlwapi.h>
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -264,6 +264,41 @@ join(wchar_t *buffer, const wchar_t *stuff)
             Py_FatalError("buffer overflow in getpathp.c's join()");
         }
     }
+}
+
+static int _PathCchCanonicalizeEx_Initialized = 0;
+typedef HRESULT(__stdcall *PPathCchCanonicalizeEx) (PWSTR pszPathOut, size_t cchPathOut,
+    PCWSTR pszPathIn, unsigned long dwFlags);
+static PPathCchCanonicalizeEx _PathCchCanonicalizeEx;
+
+static _PyInitError canonicalize(wchar_t *buffer, const wchar_t *path)
+{
+    if (buffer == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
+
+    if (_PathCchCanonicalizeEx_Initialized == 0) {
+        HMODULE pathapi = LoadLibraryW(L"api-ms-win-core-path-l1-1-0.dll");
+        if (pathapi) {
+            _PathCchCanonicalizeEx = (PPathCchCanonicalizeEx)GetProcAddress(pathapi, "PathCchCanonicalizeEx");
+        }
+        else {
+            _PathCchCanonicalizeEx = NULL;
+        }
+        _PathCchCanonicalizeEx_Initialized = 1;
+    }
+
+    if (_PathCchCanonicalizeEx) {
+        if (FAILED(_PathCchCanonicalizeEx(buffer, MAXPATHLEN + 1, path, 0))) {
+            return _Py_INIT_ERR("buffer overflow in getpathp.c's canonicalize()");
+        }
+    }
+    else {
+        if (!PathCanonicalizeW(buffer, path)) {
+            return _Py_INIT_ERR("buffer overflow in getpathp.c's canonicalize()");
+        }
+    }
+    return _Py_INIT_OK();
 }
 
 
@@ -504,121 +539,21 @@ get_program_full_path(const _PyCoreConfig *core_config,
     wchar_t program_full_path[MAXPATHLEN+1];
     memset(program_full_path, 0, sizeof(program_full_path));
 
-    if (GetModuleFileNameW(NULL, program_full_path, MAXPATHLEN)) {
-        goto done;
+    if (!GetModuleFileNameW(NULL, program_full_path, MAXPATHLEN)) {
+        /* GetModuleFileName should never fail when passed NULL */
+        return _Py_INIT_ERR("Cannot determine program path");
     }
 
-    /* If there is no slash in the argv0 path, then we have to
-     * assume python is on the user's $PATH, since there's no
-     * other way to find a directory to start the search from.  If
-     * $PATH isn't exported, you lose.
-     */
-#ifdef ALTSEP
-    if (wcschr(core_config->program_name, SEP) ||
-        wcschr(core_config->program_name, ALTSEP))
-#else
-    if (wcschr(core_config->program_name, SEP))
-#endif
-    {
-        wcsncpy(program_full_path, core_config->program_name, MAXPATHLEN);
-    }
-    else if (calculate->path_env) {
-        const wchar_t *path = calculate->path_env;
-        while (1) {
-            const wchar_t *delim = wcschr(path, DELIM);
+    config->program_full_path = PyMem_RawMalloc(
+        sizeof(wchar_t) * (MAXPATHLEN + 1));
 
-            if (delim) {
-                size_t len = delim - path;
-                /* ensure we can't overwrite buffer */
-                len = min(MAXPATHLEN,len);
-                wcsncpy(program_full_path, path, len);
-                program_full_path[len] = '\0';
-            }
-            else {
-                wcsncpy(program_full_path, path, MAXPATHLEN);
-            }
-
-            /* join() is safe for MAXPATHLEN+1 size buffer */
-            join(program_full_path, core_config->program_name);
-            if (exists(program_full_path)) {
-                break;
-            }
-
-            if (!delim) {
-                program_full_path[0] = '\0';
-                break;
-            }
-            path = delim + 1;
-        }
-    }
-    else {
-        program_full_path[0] = '\0';
-    }
-
-done:
-    config->program_full_path = _PyMem_RawWcsdup(program_full_path);
-    if (config->program_full_path == NULL) {
-        return _Py_INIT_NO_MEMORY();
-    }
-    return _Py_INIT_OK();
+    return canonicalize(config->program_full_path,
+                        program_full_path);
 }
 
 
 static int
-find_env_config_value(FILE * env_file, const wchar_t * key, wchar_t * value)
-{
-    int result = 0; /* meaning not found */
-    char buffer[MAXPATHLEN*2+1];  /* allow extra for key, '=', etc. */
-
-    fseek(env_file, 0, SEEK_SET);
-    while (!feof(env_file)) {
-        char * p = fgets(buffer, MAXPATHLEN*2, env_file);
-        wchar_t tmpbuffer[MAXPATHLEN*2+1];
-        PyObject * decoded;
-        size_t n;
-
-        if (p == NULL) {
-            break;
-        }
-        n = strlen(p);
-        if (p[n - 1] != '\n') {
-            /* line has overflowed - bail */
-            break;
-        }
-        if (p[0] == '#') {
-            /* Comment - skip */
-            continue;
-        }
-        decoded = PyUnicode_DecodeUTF8(buffer, n, "surrogateescape");
-        if (decoded != NULL) {
-            Py_ssize_t k;
-            k = PyUnicode_AsWideChar(decoded,
-                                     tmpbuffer, MAXPATHLEN * 2);
-            Py_DECREF(decoded);
-            if (k >= 0) {
-                wchar_t * context = NULL;
-                wchar_t * tok = wcstok_s(tmpbuffer, L" \t\r\n", &context);
-                if ((tok != NULL) && !wcscmp(tok, key)) {
-                    tok = wcstok_s(NULL, L" \t", &context);
-                    if ((tok != NULL) && !wcscmp(tok, L"=")) {
-                        tok = wcstok_s(NULL, L"\r\n", &context);
-                        if (tok != NULL) {
-                            wcsncpy(value, tok, MAXPATHLEN);
-                            result = 1;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return result;
-}
-
-
-static int
-read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path,
-              int *isolated, int *nosite)
+read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path)
 {
     FILE *sp_file = _Py_wfopen(path, L"r");
     if (sp_file == NULL) {
@@ -627,8 +562,8 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path,
 
     wcscpy_s(prefix, MAXPATHLEN+1, path);
     reduce(prefix);
-    *isolated = 1;
-    *nosite = 1;
+    config->isolated = 1;
+    config->site_import = 0;
 
     size_t bufsiz = MAXPATHLEN;
     size_t prefixlen = wcslen(prefix);
@@ -653,9 +588,10 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path,
         }
 
         if (strcmp(line, "import site") == 0) {
-            *nosite = 0;
+            config->site_import = 1;
             continue;
-        } else if (strncmp(line, "import ", 7) == 0) {
+        }
+        else if (strncmp(line, "import ", 7) == 0) {
             Py_FatalError("only 'import site' is supported in ._pth file");
         }
 
@@ -744,8 +680,7 @@ calculate_pth_file(_PyPathConfig *config, wchar_t *prefix)
         return 0;
     }
 
-    return read_pth_file(config, prefix, spbuffer,
-                         &Py_IsolatedFlag, &Py_NoSiteFlag);
+    return read_pth_file(config, prefix, spbuffer);
 }
 
 
@@ -765,9 +700,11 @@ calculate_pyvenv_file(PyCalculatePath *calculate)
     FILE *env_file = _Py_wfopen(envbuffer, L"r");
     if (env_file == NULL) {
         errno = 0;
+
         reduce(envbuffer);
         reduce(envbuffer);
         join(envbuffer, env_cfg);
+
         env_file = _Py_wfopen(envbuffer, L"r");
         if (env_file == NULL) {
             errno = 0;
@@ -780,7 +717,7 @@ calculate_pyvenv_file(PyCalculatePath *calculate)
 
     /* Look for a 'home' variable and set argv0_path to it, if found */
     wchar_t tmpbuffer[MAXPATHLEN+1];
-    if (find_env_config_value(env_file, L"home", tmpbuffer)) {
+    if (_Py_FindEnvConfigValue(env_file, L"home", tmpbuffer, MAXPATHLEN)) {
         wcscpy_s(calculate->argv0_path, MAXPATHLEN+1, tmpbuffer);
     }
     fclose(env_file);
@@ -1045,6 +982,10 @@ done:
     if (config->prefix == NULL) {
         return _Py_INIT_NO_MEMORY();
     }
+    config->exec_prefix = _PyMem_RawWcsdup(prefix);
+    if (config->exec_prefix == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
 
     return _Py_INIT_OK();
 }
@@ -1059,7 +1000,7 @@ calculate_free(PyCalculatePath *calculate)
 
 
 _PyInitError
-_PyPathConfig_Calculate(_PyPathConfig *config, const _PyCoreConfig *core_config)
+_PyPathConfig_Calculate_impl(_PyPathConfig *config, const _PyCoreConfig *core_config)
 {
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));

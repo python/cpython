@@ -254,11 +254,15 @@ and the remainder indicates the call/return hierarchy as the script executes.
 
 For a `--enable-shared` build of CPython, the markers are contained within the
 libpython shared library, and the probe's dotted path needs to reflect this. For
-example, this line from the above example::
+example, this line from the above example:
+
+.. code-block:: none
 
    probe process("python").mark("function__entry") {
 
-should instead read::
+should instead read:
+
+.. code-block:: none
 
    probe process("python").library("libpython3.6dm.so.1.0").mark("function__entry") {
 
@@ -365,13 +369,13 @@ available:
 .. c:function:: python.function.entry(str filename, str funcname, int lineno, frameptr)
 
    This probe point indicates that execution of a Python function has begun.
-   It is only triggered for pure-python (bytecode) functions.
+   It is only triggered for pure-Python (bytecode) functions.
 
 .. c:function:: python.function.return(str filename, str funcname, int lineno, frameptr)
 
    This probe point is the converse of :c:func:`python.function.return`, and
    indicates that execution of a Python function has ended (either via
-   ``return``, or via an exception).  It is only triggered for pure-python
+   ``return``, or via an exception).  It is only triggered for pure-Python
    (bytecode) functions.
 
 

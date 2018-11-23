@@ -2203,11 +2203,10 @@ array_array___reduce_ex__(arrayobject *self, PyObject *value)
     if (protocol == -1 && PyErr_Occurred())
         return NULL;
 
-    dict = _PyObject_GetAttrId((PyObject *)self, &PyId___dict__);
+    if (_PyObject_LookupAttrId((PyObject *)self, &PyId___dict__, &dict) < 0) {
+        return NULL;
+    }
     if (dict == NULL) {
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError))
-            return NULL;
-        PyErr_Clear();
         dict = Py_None;
         Py_INCREF(dict);
     }
@@ -2773,26 +2772,26 @@ the type of objects stored in them is constrained. The type is specified\n\
 at object creation time by using a type code, which is a single character.\n\
 The following type codes are defined:\n\
 \n\
-    Type code   C Type             Minimum size in bytes \n\
-    'b'         signed integer     1 \n\
-    'B'         unsigned integer   1 \n\
-    'u'         Unicode character  2 (see note) \n\
-    'h'         signed integer     2 \n\
-    'H'         unsigned integer   2 \n\
-    'i'         signed integer     2 \n\
-    'I'         unsigned integer   2 \n\
-    'l'         signed integer     4 \n\
-    'L'         unsigned integer   4 \n\
-    'q'         signed integer     8 (see note) \n\
-    'Q'         unsigned integer   8 (see note) \n\
-    'f'         floating point     4 \n\
-    'd'         floating point     8 \n\
+    Type code   C Type             Minimum size in bytes\n\
+    'b'         signed integer     1\n\
+    'B'         unsigned integer   1\n\
+    'u'         Unicode character  2 (see note)\n\
+    'h'         signed integer     2\n\
+    'H'         unsigned integer   2\n\
+    'i'         signed integer     2\n\
+    'I'         unsigned integer   2\n\
+    'l'         signed integer     4\n\
+    'L'         unsigned integer   4\n\
+    'q'         signed integer     8 (see note)\n\
+    'Q'         unsigned integer   8 (see note)\n\
+    'f'         floating point     4\n\
+    'd'         floating point     8\n\
 \n\
-NOTE: The 'u' typecode corresponds to Python's unicode character. On \n\
+NOTE: The 'u' typecode corresponds to Python's unicode character. On\n\
 narrow builds this is 2-bytes on wide builds this is 4-bytes.\n\
 \n\
-NOTE: The 'q' and 'Q' type codes are only available if the platform \n\
-C compiler used to build Python supports 'long long', or, on Windows, \n\
+NOTE: The 'q' and 'Q' type codes are only available if the platform\n\
+C compiler used to build Python supports 'long long', or, on Windows,\n\
 '__int64'.\n\
 \n\
 Methods:\n\

@@ -15,7 +15,7 @@ static PyObject *
 OrderedDict_fromkeys_impl(PyTypeObject *type, PyObject *seq, PyObject *value);
 
 static PyObject *
-OrderedDict_fromkeys(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "value", NULL};
@@ -49,7 +49,7 @@ OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
                             PyObject *default_value);
 
 static PyObject *
-OrderedDict_setdefault(PyODictObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_setdefault(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "default", NULL};
@@ -82,7 +82,7 @@ static PyObject *
 OrderedDict_popitem_impl(PyODictObject *self, int last);
 
 static PyObject *
-OrderedDict_popitem(PyODictObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_popitem(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"last", NULL};
@@ -114,7 +114,7 @@ static PyObject *
 OrderedDict_move_to_end_impl(PyODictObject *self, PyObject *key, int last);
 
 static PyObject *
-OrderedDict_move_to_end(PyODictObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_move_to_end(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "last", NULL};
@@ -131,4 +131,4 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject **args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b2f82eca6e8c8084 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7f23d569eda2a558 input=a9049054013a1b77]*/

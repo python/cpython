@@ -625,7 +625,7 @@ Notes:
 
 (7)
     The valid classifiers are listed on
-    `PyPI <http://pypi.python.org/pypi?:action=list_classifiers>`_.
+    `PyPI <https://pypi.org/classifiers>`_.
 
 (8)
     To preserve backward compatibility, this field also accepts a string. If
@@ -682,9 +682,8 @@ information is sometimes used to indicate sub-releases.  These are
           )
 
 .. versionchanged:: 3.7
-   :class:`~distutils.core.setup` now raises a :exc:`TypeError` if
-   ``classifiers``, ``keywords`` and ``platforms`` fields are not specified
-   as a list.
+   :class:`~distutils.core.setup` now warns when ``classifiers``, ``keywords``
+   or ``platforms`` fields are not specified as a list or a string.
 
 .. _debug-setup-script:
 
