@@ -303,6 +303,12 @@ _Py_GetForceASCII(void)
 {
     return 0;
 }
+
+void
+_Py_ResetForceASCII(void)
+{
+    /* nothing to do */
+}
 #endif   /* !defined(__APPLE__) && !defined(__ANDROID__) && !defined(MS_WINDOWS) */
 
 
