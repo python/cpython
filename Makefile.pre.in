@@ -1446,10 +1446,20 @@ inclinstall:
 		else	true; \
 		fi; \
 	done
+	@if test ! -d $(DESTDIR)$(INCLUDEPY)/internal; then \
+		echo "Creating directory $(DESTDIR)$(INCLUDEPY)/internal"; \
+		$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(INCLUDEPY)/internal; \
+	else	true; \
+	fi
 	@for i in $(srcdir)/Include/*.h; \
 	do \
 		echo $(INSTALL_DATA) $$i $(INCLUDEPY); \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY); \
+	done
+	@for i in $(srcdir)/Include/internal/*.h; \
+	do \
+		echo $(INSTALL_DATA) $$i $(INCLUDEPY)/internal; \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/internal; \
 	done
 	$(INSTALL_DATA) pyconfig.h $(DESTDIR)$(CONFINCLUDEPY)/pyconfig.h
 

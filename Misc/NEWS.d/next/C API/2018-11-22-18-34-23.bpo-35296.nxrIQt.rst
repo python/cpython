@@ -1,0 +1,2 @@
+``make install`` now also installs the internal API:
+``Include/internal/*.h`` header files.
