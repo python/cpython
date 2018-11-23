@@ -60,6 +60,19 @@ PyAPI_FUNC(int) _Py_EncodeLocaleEx(
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
 
+#if defined(MS_WINDOWS) || defined(__APPLE__)
+    /* On Windows, the count parameter of read() is an int (bpo-9015, bpo-9611).
+       On macOS 10.13, read() and write() with more than INT_MAX bytes
+       fail with EINVAL (bpo-24658). */
+#   define _PY_READ_MAX  INT_MAX
+#   define _PY_WRITE_MAX INT_MAX
+#else
+    /* write() should truncate the input to PY_SSIZE_T_MAX bytes,
+       but it's safer to do it ourself to have a portable behaviour */
+#   define _PY_READ_MAX  PY_SSIZE_T_MAX
+#   define _PY_WRITE_MAX PY_SSIZE_T_MAX
+#endif
+
 #ifdef MS_WINDOWS
 struct _Py_stat_struct {
     unsigned long st_dev;
@@ -169,6 +182,17 @@ PyAPI_FUNC(int) _Py_GetLocaleconvNumeric(
     const char **grouping);
 
 #endif   /* Py_LIMITED_API */
+
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(int) _Py_GetForceASCII(void);
+
+/* Reset "force ASCII" mode (if it was initialized).
+
+   This function should be called when Python changes the LC_CTYPE locale,
+   so the "force ASCII" mode can be detected again on the new locale
+   encoding. */
+PyAPI_FUNC(void) _Py_ResetForceASCII(void);
+#endif
 
 #ifdef __cplusplus
 }

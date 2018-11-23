@@ -2,6 +2,7 @@
 
 import logging
 import socket
+import sys
 import unittest
 from unittest import mock
 try:
@@ -426,6 +427,12 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         server_context = test_utils.simple_server_sslcontext()
         client_context = test_utils.simple_client_sslcontext()
+        if sys.platform.startswith('freebsd'):
+            # bpo-35031: Some FreeBSD buildbots fail to run this test
+            # as the eof was not being received by the server if the payload
+            # size is not big enough. This behaviour only appears if the
+            # client is using TLS1.3.
+            client_context.options |= ssl.OP_NO_TLSv1_3
 
         def client(sock, addr):
             sock.settimeout(self.TIMEOUT)

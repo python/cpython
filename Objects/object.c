@@ -411,34 +411,71 @@ _Py_BreakPoint(void)
 }
 
 
+/* Heuristic checking if the object memory has been deallocated.
+   Rely on the debug hooks on Python memory allocators which fills the memory
+   with DEADBYTE (0xDB) when memory is deallocated.
+
+   The function can be used to prevent segmentation fault on dereferencing
+   pointers like 0xdbdbdbdbdbdbdbdb. Such pointer is very unlikely to be mapped
+   in memory. */
+int
+_PyObject_IsFreed(PyObject *op)
+{
+    uintptr_t ptr = (uintptr_t)op;
+    if (_PyMem_IsFreed(&ptr, sizeof(ptr))) {
+        return 1;
+    }
+    int freed = _PyMem_IsFreed(&op->ob_type, sizeof(op->ob_type));
+    /* ignore op->ob_ref: the value can have be modified
+       by Py_INCREF() and Py_DECREF(). */
+#ifdef Py_TRACE_REFS
+    freed &= _PyMem_IsFreed(&op->_ob_next, sizeof(op->_ob_next));
+    freed &= _PyMem_IsFreed(&op->_ob_prev, sizeof(op->_ob_prev));
+#endif
+    return freed;
+}
+
+
 /* For debugging convenience.  See Misc/gdbinit for some useful gdb hooks */
 void
 _PyObject_Dump(PyObject* op)
 {
-    if (op == NULL)
-        fprintf(stderr, "NULL\n");
-    else {
-        PyGILState_STATE gil;
-        PyObject *error_type, *error_value, *error_traceback;
-
-        fprintf(stderr, "object  : ");
-        gil = PyGILState_Ensure();
-
-        PyErr_Fetch(&error_type, &error_value, &error_traceback);
-        (void)PyObject_Print(op, stderr, 0);
-        PyErr_Restore(error_type, error_value, error_traceback);
-
-        PyGILState_Release(gil);
-        /* XXX(twouters) cast refcount to long until %zd is
-           universally available */
-        fprintf(stderr, "\n"
-            "type    : %s\n"
-            "refcount: %ld\n"
-            "address : %p\n",
-            Py_TYPE(op)==NULL ? "NULL" : Py_TYPE(op)->tp_name,
-            (long)op->ob_refcnt,
-            op);
+    if (op == NULL) {
+        fprintf(stderr, "<NULL object>\n");
+        fflush(stderr);
+        return;
     }
+
+    if (_PyObject_IsFreed(op)) {
+        /* It seems like the object memory has been freed:
+           don't access it to prevent a segmentation fault. */
+        fprintf(stderr, "<freed object>\n");
+        return;
+    }
+
+    PyGILState_STATE gil;
+    PyObject *error_type, *error_value, *error_traceback;
+
+    fprintf(stderr, "object  : ");
+    fflush(stderr);
+    gil = PyGILState_Ensure();
+
+    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    (void)PyObject_Print(op, stderr, 0);
+    fflush(stderr);
+    PyErr_Restore(error_type, error_value, error_traceback);
+
+    PyGILState_Release(gil);
+    /* XXX(twouters) cast refcount to long until %zd is
+       universally available */
+    fprintf(stderr, "\n"
+        "type    : %s\n"
+        "refcount: %ld\n"
+        "address : %p\n",
+        Py_TYPE(op)==NULL ? "NULL" : Py_TYPE(op)->tp_name,
+        (long)op->ob_refcnt,
+        op);
+    fflush(stderr);
 }
 
 PyObject *

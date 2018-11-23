@@ -295,6 +295,8 @@ On top of the core functionality, :class:`ConfigParser` supports
 interpolation.  This means values can be preprocessed before returning them
 from ``get()`` calls.
 
+.. index:: single: % (percent); interpolation in configuration files
+
 .. class:: BasicInterpolation()
 
    The default implementation used by :class:`ConfigParser`.  It enables
@@ -322,6 +324,8 @@ from ``get()`` calls.
    With ``interpolation`` set to ``None``, the parser would simply return
    ``%(my_dir)s/Pictures`` as the value of ``my_pictures`` and
    ``%(home_dir)s/lumberjack`` as the value of ``my_dir``.
+
+.. index:: single: $ (dollar); interpolation in configuration files
 
 .. class:: ExtendedInterpolation()
 
@@ -397,11 +401,11 @@ However, there are a few differences that should be taken into account:
   because default values cannot be deleted from the section (because technically
   they are not there).  If they are overridden in the section, deleting causes
   the default value to be visible again.  Trying to delete a default value
-  causes a ``KeyError``.
+  causes a :exc:`KeyError`.
 
 * ``DEFAULTSECT`` cannot be removed from the parser:
 
-  * trying to delete it raises ``ValueError``,
+  * trying to delete it raises :exc:`ValueError`,
 
   * ``parser.clear()`` leaves it intact,
 
@@ -695,7 +699,7 @@ More advanced customization may be achieved by overriding default values of
 these parser attributes.  The defaults are defined on the classes, so they may
 be overridden by subclasses or by attribute assignment.
 
-.. attribute:: BOOLEAN_STATES
+.. attribute:: ConfigParser.BOOLEAN_STATES
 
   By default when using :meth:`~ConfigParser.getboolean`, config parsers
   consider the following values ``True``: ``'1'``, ``'yes'``, ``'true'``,
@@ -718,7 +722,7 @@ be overridden by subclasses or by attribute assignment.
   Other typical Boolean pairs include ``accept``/``reject`` or
   ``enabled``/``disabled``.
 
-.. method:: optionxform(option)
+.. method:: ConfigParser.optionxform(option)
 
   This method transforms option names on every read, get, or set
   operation.  The default converts the name to lowercase.  This also
@@ -749,7 +753,7 @@ be overridden by subclasses or by attribute assignment.
      >>> list(custom['Section2'].keys())
      ['AnotherKey']
 
-.. attribute:: SECTCRE
+.. attribute:: ConfigParser.SECTCRE
 
   A compiled regular expression used to parse section headers.  The default
   matches ``[section]`` to the name ``"section"``.  Whitespace is considered

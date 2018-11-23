@@ -75,6 +75,10 @@
 #include <alloca.h>
 #endif
 
+#ifdef _Py_MEMORY_SANITIZER
+#include <sanitizer/msan_interface.h>
+#endif
+
 #if defined(_DEBUG) || defined(__MINGW32__)
 /* Don't use structured exception handling on Windows if this is defined.
    MingW, AFAIK, doesn't support it.
@@ -1125,6 +1129,13 @@ PyObject *_ctypes_callproc(PPROC pProc,
     rtype = _ctypes_get_ffi_type(restype);
     resbuf = alloca(max(rtype->size, sizeof(ffi_arg)));
 
+#ifdef _Py_MEMORY_SANITIZER
+    /* ffi_call actually initializes resbuf, but from asm, which
+     * MemorySanitizer can't detect. Avoid false positives from MSan. */
+    if (resbuf != NULL) {
+        __msan_unpoison(resbuf, max(rtype->size, sizeof(ffi_arg)));
+    }
+#endif
     avalues = (void **)alloca(sizeof(void *) * argcount);
     atypes = (ffi_type **)alloca(sizeof(ffi_type *) * argcount);
     if (!resbuf || !avalues || !atypes) {

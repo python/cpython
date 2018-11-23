@@ -44,6 +44,8 @@ PyAPI_FUNC(void) Py_SetPythonHome(const wchar_t *);
 PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
 
 #ifndef Py_LIMITED_API
+PyAPI_FUNC(void) _Py_SetProgramFullPath(const wchar_t *);
+
 /* Only used by applications that embed the interpreter and need to
  * override the standard encoding determination mechanism
  */
@@ -61,11 +63,14 @@ PyAPI_FUNC(_PyInitError) _Py_InitializeFromConfig(
 PyAPI_FUNC(void) _Py_Initialize_ReadEnvVarsNoAlloc(void);
 #endif
 
+PyAPI_FUNC(PyObject *) _Py_GetGlobalVariablesAsDict(void);
+
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *);
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
 PyAPI_FUNC(int) _PyCoreConfig_Copy(
     _PyCoreConfig *config,
     const _PyCoreConfig *config2);
+PyAPI_FUNC(PyObject *) _PyCoreConfig_AsDict(const _PyCoreConfig *config);
 PyAPI_FUNC(void) _PyCoreConfig_SetGlobalConfig(
     const _PyCoreConfig *config);
 
@@ -77,6 +82,9 @@ PyAPI_FUNC(void) _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *);
 PyAPI_FUNC(int) _PyMainInterpreterConfig_Copy(
     _PyMainInterpreterConfig *config,
     const _PyMainInterpreterConfig *config2);
+/* Used by _testcapi.get_main_config() */
+PyAPI_FUNC(PyObject*) _PyMainInterpreterConfig_AsDict(
+    const _PyMainInterpreterConfig *config);
 
 PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(
         PyInterpreterState *interp,

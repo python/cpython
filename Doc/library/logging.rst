@@ -882,7 +882,7 @@ re-entrant, and so cannot be invoked from such signal handlers.
 Module-Level Functions
 ----------------------
 
-In addition to the classes described above, there are a number of module- level
+In addition to the classes described above, there are a number of module-level
 functions.
 
 
@@ -931,8 +931,8 @@ functions.
    There are three keyword arguments in *kwargs* which are inspected: *exc_info*
    which, if it does not evaluate as false, causes exception information to be
    added to the logging message. If an exception tuple (in the format returned by
-   :func:`sys.exc_info`) is provided, it is used; otherwise, :func:`sys.exc_info`
-   is called to get the exception information.
+   :func:`sys.exc_info`) or an exception instance is provided, it is used;
+   otherwise, :func:`sys.exc_info` is called to get the exception information.
 
    The second optional keyword argument is *stack_info*, which defaults to
    ``False``. If true, stack information is added to the logging

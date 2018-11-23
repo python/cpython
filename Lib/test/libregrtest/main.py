@@ -550,12 +550,12 @@ class Regrtest:
 
     def main(self, tests=None, **kwargs):
         global TEMPDIR
+        self.ns = self.parse_args(kwargs)
 
-        if sysconfig.is_python_build():
-            try:
-                os.mkdir(TEMPDIR)
-            except FileExistsError:
-                pass
+        if self.ns.tempdir:
+            TEMPDIR = self.ns.tempdir
+
+        os.makedirs(TEMPDIR, exist_ok=True)
 
         # Define a writable temp dir that will be used as cwd while running
         # the tests. The name of the dir includes the pid to allow parallel
@@ -571,8 +571,6 @@ class Regrtest:
             self._main(tests, kwargs)
 
     def _main(self, tests, kwargs):
-        self.ns = self.parse_args(kwargs)
-
         if self.ns.huntrleaks:
             warmup, repetitions, _ = self.ns.huntrleaks
             if warmup < 1 or repetitions < 1:

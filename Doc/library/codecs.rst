@@ -312,6 +312,14 @@ defined and implemented by all standard Python codecs:
 The following error handlers are only applicable to
 :term:`text encodings <text encoding>`:
 
+.. index::
+   single: ? (question mark); replacement character
+   single: \ (backslash); escape sequence
+   single: \x; escape sequence
+   single: \u; escape sequence
+   single: \U; escape sequence
+   single: \N; escape sequence
+
 +-------------------------+-----------------------------------------------+
 | Value                   | Meaning                                       |
 +=========================+===============================================+
@@ -1113,10 +1121,10 @@ particular, the following variants typically exist:
 |                 | ks_c-5601, ks_c-5601-1987,     |                                |
 |                 | ksx1001, ks_x-1001             |                                |
 +-----------------+--------------------------------+--------------------------------+
-| gb2312          | chinese, csiso58gb231280, euc- | Simplified Chinese             |
-|                 | cn, euccn, eucgb2312-cn,       |                                |
-|                 | gb2312-1980, gb2312-80, iso-   |                                |
-|                 | ir-58                          |                                |
+| gb2312          | chinese, csiso58gb231280,      | Simplified Chinese             |
+|                 | euc-cn, euccn, eucgb2312-cn,   |                                |
+|                 | gb2312-1980, gb2312-80,        |                                |
+|                 | iso-ir-58                      |                                |
 +-----------------+--------------------------------+--------------------------------+
 | gbk             | 936, cp936, ms936              | Unified Chinese                |
 +-----------------+--------------------------------+--------------------------------+
@@ -1471,7 +1479,7 @@ functions can be used directly if desired.
 
 Encode operand according to the ANSI codepage (CP_ACP).
 
-Availability: Windows only.
+.. availability:: Windows only.
 
 .. versionchanged:: 3.3
    Support any error handler.

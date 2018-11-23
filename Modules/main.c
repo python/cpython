@@ -1206,6 +1206,25 @@ config_init_program_name(_PyCoreConfig *config)
 }
 
 
+static _PyInitError
+config_init_executable(_PyCoreConfig *config)
+{
+    assert(config->executable == NULL);
+
+    /* If Py_SetProgramFullPath() was called, use its value */
+    const wchar_t *program_full_path = _Py_path_config.program_full_path;
+    if (program_full_path != NULL) {
+        config->executable = _PyMem_RawWcsdup(program_full_path);
+        if (config->executable == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+        return _Py_INIT_OK();
+    }
+
+    return _Py_INIT_OK();
+}
+
+
 static void
 pymain_header(_PyMain *pymain)
 {
@@ -1297,7 +1316,7 @@ pymain_init_core_argv(_PyMain *pymain, _PyCoreConfig *config,
 
 
 static PyObject*
-wstrlist_as_pylist(int len, wchar_t **list)
+_Py_wstrlist_as_pylist(int len, wchar_t **list)
 {
     assert(list != NULL || len < 1);
 
@@ -1358,6 +1377,77 @@ pymain_update_sys_path(_PyMain *pymain, PyObject *path0)
         return -1;
     }
     return 0;
+}
+
+
+PyObject *
+_Py_GetGlobalVariablesAsDict(void)
+{
+    PyObject *dict, *obj;
+
+    dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+
+#define SET_ITEM(KEY, EXPR) \
+        do { \
+            obj = (EXPR); \
+            if (obj == NULL) { \
+                return NULL; \
+            } \
+            int res = PyDict_SetItemString(dict, (KEY), obj); \
+            Py_DECREF(obj); \
+            if (res < 0) { \
+                goto fail; \
+            } \
+        } while (0)
+#define SET_ITEM_INT(VAR) \
+    SET_ITEM(#VAR, PyLong_FromLong(VAR))
+#define FROM_STRING(STR) \
+    ((STR != NULL) ? \
+        PyUnicode_FromString(STR) \
+        : (Py_INCREF(Py_None), Py_None))
+#define SET_ITEM_STR(VAR) \
+    SET_ITEM(#VAR, FROM_STRING(VAR))
+
+    SET_ITEM_STR(Py_FileSystemDefaultEncoding);
+    SET_ITEM_INT(Py_HasFileSystemDefaultEncoding);
+    SET_ITEM_STR(Py_FileSystemDefaultEncodeErrors);
+
+    SET_ITEM_INT(Py_UTF8Mode);
+    SET_ITEM_INT(Py_DebugFlag);
+    SET_ITEM_INT(Py_VerboseFlag);
+    SET_ITEM_INT(Py_QuietFlag);
+    SET_ITEM_INT(Py_InteractiveFlag);
+    SET_ITEM_INT(Py_InspectFlag);
+
+    SET_ITEM_INT(Py_OptimizeFlag);
+    SET_ITEM_INT(Py_NoSiteFlag);
+    SET_ITEM_INT(Py_BytesWarningFlag);
+    SET_ITEM_INT(Py_FrozenFlag);
+    SET_ITEM_INT(Py_IgnoreEnvironmentFlag);
+    SET_ITEM_INT(Py_DontWriteBytecodeFlag);
+    SET_ITEM_INT(Py_NoUserSiteDirectory);
+    SET_ITEM_INT(Py_UnbufferedStdioFlag);
+    SET_ITEM_INT(Py_HashRandomizationFlag);
+    SET_ITEM_INT(Py_IsolatedFlag);
+
+#ifdef MS_WINDOWS
+    SET_ITEM_INT(Py_LegacyWindowsFSEncodingFlag);
+    SET_ITEM_INT(Py_LegacyWindowsStdioFlag);
+#endif
+
+    return dict;
+
+fail:
+    Py_DECREF(dict);
+    return NULL;
+
+#undef FROM_STRING
+#undef SET_ITEM
+#undef SET_ITEM_INT
+#undef SET_ITEM_STR
 }
 
 
@@ -2279,6 +2369,13 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         }
     }
 
+    if (config->executable == NULL) {
+        err = config_init_executable(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+
     if (config->utf8_mode < 0 || config->coerce_c_locale < 0) {
         config_init_locale(config);
     }
@@ -2432,6 +2529,95 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
 }
 
 
+PyObject *
+_PyCoreConfig_AsDict(const _PyCoreConfig *config)
+{
+    PyObject *dict, *obj;
+
+    dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+
+#define SET_ITEM(KEY, EXPR) \
+        do { \
+            obj = (EXPR); \
+            if (obj == NULL) { \
+                return NULL; \
+            } \
+            int res = PyDict_SetItemString(dict, (KEY), obj); \
+            Py_DECREF(obj); \
+            if (res < 0) { \
+                goto fail; \
+            } \
+        } while (0)
+#define FROM_STRING(STR) \
+    ((STR != NULL) ? \
+        PyUnicode_FromString(STR) \
+        : (Py_INCREF(Py_None), Py_None))
+#define SET_ITEM_INT(ATTR) \
+    SET_ITEM(#ATTR, PyLong_FromLong(config->ATTR))
+#define SET_ITEM_UINT(ATTR) \
+    SET_ITEM(#ATTR, PyLong_FromUnsignedLong(config->ATTR))
+#define SET_ITEM_STR(ATTR) \
+    SET_ITEM(#ATTR, FROM_STRING(config->ATTR))
+#define FROM_WSTRING(STR) \
+    ((STR != NULL) ? \
+        PyUnicode_FromWideChar(STR, -1) \
+        : (Py_INCREF(Py_None), Py_None))
+#define SET_ITEM_WSTR(ATTR) \
+    SET_ITEM(#ATTR, FROM_WSTRING(config->ATTR))
+#define SET_ITEM_WSTRLIST(NOPTION, OPTIONS) \
+    SET_ITEM(#OPTIONS, _Py_wstrlist_as_pylist(config->NOPTION, config->OPTIONS))
+
+    SET_ITEM_INT(install_signal_handlers);
+    SET_ITEM_INT(ignore_environment);
+    SET_ITEM_INT(use_hash_seed);
+    SET_ITEM_UINT(hash_seed);
+    SET_ITEM_STR(allocator);
+    SET_ITEM_INT(dev_mode);
+    SET_ITEM_INT(faulthandler);
+    SET_ITEM_INT(tracemalloc);
+    SET_ITEM_INT(import_time);
+    SET_ITEM_INT(show_ref_count);
+    SET_ITEM_INT(show_alloc_count);
+    SET_ITEM_INT(dump_refs);
+    SET_ITEM_INT(malloc_stats);
+    SET_ITEM_INT(coerce_c_locale);
+    SET_ITEM_INT(coerce_c_locale_warn);
+    SET_ITEM_INT(utf8_mode);
+    SET_ITEM_WSTR(program_name);
+    SET_ITEM_WSTRLIST(argc, argv);
+    SET_ITEM_WSTR(program);
+    SET_ITEM_WSTRLIST(nxoption, xoptions);
+    SET_ITEM_WSTRLIST(nwarnoption, warnoptions);
+    SET_ITEM_WSTR(module_search_path_env);
+    SET_ITEM_WSTR(home);
+    SET_ITEM_WSTRLIST(nmodule_search_path, module_search_paths);
+    SET_ITEM_WSTR(executable);
+    SET_ITEM_WSTR(prefix);
+    SET_ITEM_WSTR(base_prefix);
+    SET_ITEM_WSTR(exec_prefix);
+    SET_ITEM_WSTR(base_exec_prefix);
+    SET_ITEM_INT(_disable_importlib);
+
+    return dict;
+
+fail:
+    Py_DECREF(dict);
+    return NULL;
+
+#undef FROM_STRING
+#undef FROM_WSTRING
+#undef SET_ITEM
+#undef SET_ITEM_INT
+#undef SET_ITEM_UINT
+#undef SET_ITEM_STR
+#undef SET_ITEM_WSTR
+#undef SET_ITEM_WSTRLIST
+}
+
+
 void
 _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
 {
@@ -2477,7 +2663,8 @@ _PyMainInterpreterConfig_Copy(_PyMainInterpreterConfig *config,
 {
     _PyMainInterpreterConfig_Clear(config);
 
-#define COPY_ATTR(ATTR) \
+#define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
+#define COPY_OBJ_ATTR(ATTR) \
     do { \
         if (config2->ATTR != NULL) { \
             config->ATTR = config_copy_attr(config2->ATTR); \
@@ -2487,20 +2674,77 @@ _PyMainInterpreterConfig_Copy(_PyMainInterpreterConfig *config,
         } \
     } while (0)
 
-    COPY_ATTR(argv);
-    COPY_ATTR(executable);
-    COPY_ATTR(prefix);
-    COPY_ATTR(base_prefix);
-    COPY_ATTR(exec_prefix);
-    COPY_ATTR(base_exec_prefix);
-    COPY_ATTR(warnoptions);
-    COPY_ATTR(xoptions);
-    COPY_ATTR(module_search_path);
+    COPY_ATTR(install_signal_handlers);
+    COPY_OBJ_ATTR(argv);
+    COPY_OBJ_ATTR(executable);
+    COPY_OBJ_ATTR(prefix);
+    COPY_OBJ_ATTR(base_prefix);
+    COPY_OBJ_ATTR(exec_prefix);
+    COPY_OBJ_ATTR(base_exec_prefix);
+    COPY_OBJ_ATTR(warnoptions);
+    COPY_OBJ_ATTR(xoptions);
+    COPY_OBJ_ATTR(module_search_path);
 #undef COPY_ATTR
+#undef COPY_OBJ_ATTR
     return 0;
 }
 
 
+PyObject*
+_PyMainInterpreterConfig_AsDict(const _PyMainInterpreterConfig *config)
+{
+    PyObject *dict, *obj;
+    int res;
+
+    dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+
+#define SET_ITEM_INT(ATTR) \
+    do { \
+        obj = PyLong_FromLong(config->ATTR); \
+        if (obj == NULL) { \
+            goto fail; \
+        } \
+        res = PyDict_SetItemString(dict, #ATTR, obj); \
+        Py_DECREF(obj); \
+        if (res < 0) { \
+            goto fail; \
+        } \
+    } while (0)
+
+#define SET_ITEM_OBJ(ATTR) \
+    do { \
+        obj = config->ATTR; \
+        if (obj == NULL) { \
+            obj = Py_None; \
+        } \
+        res = PyDict_SetItemString(dict, #ATTR, obj); \
+        if (res < 0) { \
+            goto fail; \
+        } \
+    } while (0)
+
+    SET_ITEM_INT(install_signal_handlers);
+    SET_ITEM_OBJ(argv);
+    SET_ITEM_OBJ(executable);
+    SET_ITEM_OBJ(prefix);
+    SET_ITEM_OBJ(base_prefix);
+    SET_ITEM_OBJ(exec_prefix);
+    SET_ITEM_OBJ(base_exec_prefix);
+    SET_ITEM_OBJ(warnoptions);
+    SET_ITEM_OBJ(xoptions);
+    SET_ITEM_OBJ(module_search_path);
+
+    return dict;
+
+fail:
+    Py_DECREF(dict);
+    return NULL;
+
+#undef SET_ITEM_OBJ
+}
 
 
 _PyInitError
@@ -2530,7 +2774,7 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
 #define COPY_WSTRLIST(ATTR, LEN, LIST) \
     do { \
         if (ATTR == NULL) { \
-            ATTR = wstrlist_as_pylist(LEN, LIST); \
+            ATTR = _Py_wstrlist_as_pylist(LEN, LIST); \
             if (ATTR == NULL) { \
                 return _Py_INIT_NO_MEMORY(); \
             } \

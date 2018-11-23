@@ -1,0 +1,7 @@
+.. bpo: 34970
+.. date: 2018-10-13-11-14-13
+.. nonce: SrJTY7
+.. release date: 2018-10-20
+.. section: Library
+
+Protect tasks weak set manipulation in ``asyncio.all_tasks()``

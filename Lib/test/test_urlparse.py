@@ -879,6 +879,13 @@ class UrlParseTestCase(unittest.TestCase):
                                                           errors="ignore")
         self.assertEqual(result, [('key', '\u0141-')])
 
+    def test_parse_qsl_max_num_fields(self):
+        with self.assertRaises(ValueError):
+            urllib.parse.parse_qs('&'.join(['a=a']*11), max_num_fields=10)
+        with self.assertRaises(ValueError):
+            urllib.parse.parse_qs(';'.join(['a=a']*11), max_num_fields=10)
+        urllib.parse.parse_qs('&'.join(['a=a']*10), max_num_fields=10)
+
     def test_urlencode_sequences(self):
         # Other tests incidentally urlencode things; test non-covered cases:
         # Sequence and object values.
