@@ -36,7 +36,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    is raised.
 
    For normal use, you should only require the initialization/connect,
-   :meth:`sendmail`, and :meth:`~smtplib.quit` methods.
+   :meth:`sendmail`, and :meth:`SMTP.quit` methods.
    An example is included below.
 
    .. versionchanged:: 2.6
