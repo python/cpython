@@ -95,6 +95,25 @@ def get_lib_layout(ns):
         yield Path("distutils/command/bdist_wininst.py"), src
 
 
+def get_tcltk_lib(ns):
+    if not ns.include_tcltk:
+        return
+
+    tcl_lib = os.getenv("TCL_LIBRARY")
+    if not tcl_lib or not os.path.isdir(tcl_lib):
+        try:
+            with open(ns.build / "TCL_LIBRARY.env", "r", encoding="utf-8-sig") as f:
+                tcl_lib = f.read().strip()
+        except FileNotFoundError:
+            pass
+        if not tcl_lib or not os.path.isdir(tcl_lib):
+            warn("Failed to find TCL_LIBRARY")
+            return
+
+    for dest, src in rglob(Path(tcl_lib).parent, "**/*"):
+        yield "tcl/{}".format(dest), src
+
+
 def get_layout(ns):
     def in_build(f, dest="", new_name=None):
         n, _, x = f.rpartition(".")
@@ -177,6 +196,9 @@ def get_layout(ns):
             yield "include/{}".format(dest), src
         src = ns.source / "PC" / "pyconfig.h"
         yield "include/pyconfig.h", src
+
+    for dest, src in get_tcltk_lib(ns):
+        yield dest, src
 
     if ns.include_pip:
         pip_dir = get_pip_dir(ns)
