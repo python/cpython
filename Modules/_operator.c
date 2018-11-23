@@ -1057,6 +1057,7 @@ methodcaller_repr(methodcallerobject *mc)
                 goto done;
             if (i >= numtotalargs) {
                 i = -1;
+                Py_DECREF(onerepr);
                 break;
             }
             PyTuple_SET_ITEM(argreprs, i, onerepr);
