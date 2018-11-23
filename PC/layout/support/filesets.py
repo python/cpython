@@ -74,7 +74,7 @@ def _rglob(root, pattern, condition):
         pattern = pattern[3:]
 
     while dirs:
-        d = queue.pop(0)
+        d = dirs.pop(0)
         if recurse:
             dirs.extend(
                 filter(
