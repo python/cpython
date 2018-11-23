@@ -1021,9 +1021,13 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/unicodeobject.h \
 		$(srcdir)/Include/warnings.h \
 		$(srcdir)/Include/weakrefobject.h \
+		\
 		pyconfig.h \
 		$(PARSER_HEADERS) \
 		$(srcdir)/Include/Python-ast.h \
+		\
+		$(srcdir)/Include/cpython/objimpl.h \
+		\
 		$(srcdir)/Include/internal/pycore_accu.h \
 		$(srcdir)/Include/internal/pycore_atomic.h \
 		$(srcdir)/Include/internal/pycore_ceval.h \
@@ -1446,6 +1450,11 @@ inclinstall:
 		else	true; \
 		fi; \
 	done
+	@if test ! -d $(DESTDIR)$(INCLUDEPY)/cpython; then \
+		echo "Creating directory $(DESTDIR)$(INCLUDEPY)/cpython"; \
+		$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(INCLUDEPY)/cpython; \
+	else	true; \
+	fi
 	@if test ! -d $(DESTDIR)$(INCLUDEPY)/internal; then \
 		echo "Creating directory $(DESTDIR)$(INCLUDEPY)/internal"; \
 		$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(INCLUDEPY)/internal; \
@@ -1455,6 +1464,11 @@ inclinstall:
 	do \
 		echo $(INSTALL_DATA) $$i $(INCLUDEPY); \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY); \
+	done
+	@for i in $(srcdir)/Include/cpython/*.h; \
+	do \
+		echo $(INSTALL_DATA) $$i $(INCLUDEPY)/cpython; \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/cpython; \
 	done
 	@for i in $(srcdir)/Include/internal/*.h; \
 	do \
