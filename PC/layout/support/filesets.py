@@ -74,18 +74,27 @@ def _rglob(root, pattern, condition):
         pattern = pattern[3:]
 
     while dirs:
-        d = dirs.pop(0)
-        for f in d.glob(pattern):
-            if not condition or condition(f):
-                if recurse and f.is_dir():
-                    dirs.append(f)
-                elif f.is_file():
-                    yield f.relative_to(root), f
+        d = queue.pop(0)
+        if recurse:
+            dirs.extend(
+                filter(
+                    condition, (type(root)(f2) for f2 in os.scandir(d) if f2.is_dir())
+                )
+            )
+        yield from (
+            (f.relative_to(root), f)
+            for f in d.glob(pattern)
+            if f.is_file() and condition(f)
+        )
+
+
+def _return_true(f):
+    return True
 
 
 def rglob(root, patterns, condition=None):
     if isinstance(patterns, tuple):
         for p in patterns:
-            yield from _rglob(root, p, condition)
+            yield from _rglob(root, p, condition or _return_true)
     else:
-        yield from _rglob(root, patterns, condition)
+        yield from _rglob(root, patterns, condition or _return_true)

@@ -190,7 +190,7 @@ wmain(int argc, wchar_t **argv)
 
             if (moduleName) {
                 new_argc += 2;
-                for (int i = argc; i >= argc; --i) {
+                for (int i = argc; i >= 1; --i) {
                     new_argv[i + 2] = new_argv[i];
                 }
                 new_argv[1] = L"-m";

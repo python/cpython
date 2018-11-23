@@ -167,7 +167,13 @@ def get_layout(ns):
         yield PYTHON_PTH_NAME, ns.temp / PYTHON_PTH_NAME
 
     if ns.include_dev:
-        for dest, src in rglob(ns.source / "Include", "**/*.h"):
+
+        def _c(d):
+            if d.is_dir():
+                return d.name != "internal"
+            return True
+
+        for dest, src in rglob(ns.source / "Include", "**/*.h", _c):
             yield "include/{}".format(dest), src
         src = ns.source / "PC" / "pyconfig.h"
         yield "include/pyconfig.h", src
