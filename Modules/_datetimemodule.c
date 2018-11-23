@@ -1529,7 +1529,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ptoappend = pin - 1;
             ntoappend = 1;
         }
-
         /* A % has been seen and ch is the character after it. */
         else if ((ch = *pin++) == 'z') {
             if (zreplacement == NULL) {
@@ -1612,8 +1611,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         pnew += ntoappend;
         usednew += ntoappend;
         assert(usednew <= totalnew);
-    } while (ch != '\0');
-  /* end do while */
+    } while (ch != '\0'); /* end do while */
 
     if (_PyBytes_Resize(&newfmt, usednew) < 0)
         goto Done;
