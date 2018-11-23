@@ -1,13 +1,14 @@
+import errno
 import importlib
-import shutil
-import stat
-import sys
 import os
-import unittest
+import shutil
 import socket
+import stat
+import subprocess
+import sys
 import tempfile
 import textwrap
-import errno
+import unittest
 from test import support
 from test.support import script_helper
 
@@ -394,6 +395,65 @@ class TestSupport(unittest.TestCase):
 
         self.assertRaises(AssertionError, support.check__all__, self, unittest)
 
+    def check_options(self, args, func, expected=None):
+        code = f'from test.support import {func}; print(repr({func}()))'
+        cmd = [sys.executable, *args, '-c', code]
+        env = {key: value for key, value in os.environ.items()
+               if not key.startswith('PYTHON')}
+        proc = subprocess.run(cmd,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.DEVNULL,
+                              universal_newlines=True,
+                              env=env)
+        if expected is None:
+            expected = args
+        self.assertEqual(proc.stdout.rstrip(), repr(expected))
+        self.assertEqual(proc.returncode, 0)
+
+    def test_args_from_interpreter_flags(self):
+        # Test test.support.args_from_interpreter_flags()
+        for opts in (
+            # no option
+            [],
+            # single option
+            ['-B'],
+            ['-s'],
+            ['-S'],
+            ['-E'],
+            ['-v'],
+            ['-b'],
+            ['-q'],
+            ['-I'],
+            # same option multiple times
+            ['-bb'],
+            ['-vvv'],
+            # -W options
+            ['-Wignore'],
+            # -X options
+            ['-X', 'faulthandler'],
+            ['-X', 'showalloccount'],
+            ['-X', 'showrefcount'],
+            ['-X', 'tracemalloc'],
+            ['-X', 'tracemalloc=3'],
+        ):
+            with self.subTest(opts=opts):
+                self.check_options(opts, 'args_from_interpreter_flags')
+
+        self.check_options(['-I', '-E', '-s'], 'args_from_interpreter_flags',
+                           ['-I'])
+
+    def test_optim_args_from_interpreter_flags(self):
+        # Test test.support.optim_args_from_interpreter_flags()
+        for opts in (
+            # no option
+            [],
+            ['-O'],
+            ['-OO'],
+            ['-OOOO'],
+        ):
+            with self.subTest(opts=opts):
+                self.check_options(opts, 'optim_args_from_interpreter_flags')
+
     def test_match_test(self):
         class Test:
             def __init__(self, test_id):
@@ -485,7 +545,6 @@ class TestSupport(unittest.TestCase):
     # reap_threads
     # reap_children
     # strip_python_stderr
-    # args_from_interpreter_flags
     # can_symlink
     # skip_unless_symlink
     # SuppressCrashReport
