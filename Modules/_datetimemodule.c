@@ -1523,8 +1523,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     usednew = 0;
     ch = *pin;
 
-    do
-    {
+    do {
         if ((ch = *pin++) != '%') {
             ptoappend = pin - 1;
             ntoappend = 1;
