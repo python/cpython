@@ -459,7 +459,7 @@ PyHKEY_FromHKEY(HKEY h)
     op = (PyHKEYObject *) PyObject_MALLOC(sizeof(PyHKEYObject));
     if (op == NULL)
         return PyErr_NoMemory();
-    PyObject_INIT((PyObject *)op, &PyHKEY_Type);
+    PyObject_INIT(op, &PyHKEY_Type);
     op->hkey = h;
     return (PyObject *)op;
 }
