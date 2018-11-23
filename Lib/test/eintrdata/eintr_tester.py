@@ -10,6 +10,7 @@ sub-second periodicity (contrarily to signal()).
 
 import contextlib
 import faulthandler
+import fcntl
 import os
 import select
 import signal
@@ -484,6 +485,44 @@ class SelectEINTRTest(EINTRBaseTest):
         dt = time.monotonic() - t0
         self.stop_alarm()
         self.assertGreaterEqual(dt, self.sleep_time)
+
+
+class FNTLEINTRTest(EINTRBaseTest):
+    def _lock(self, lock_func, lock_name):
+        self.addCleanup(support.unlink, support.TESTFN)
+        code = '\n'.join((
+            "import fcntl, time",
+            "with open('%s', 'wb') as f:" % support.TESTFN,
+            "   fcntl.%s(f, fcntl.LOCK_EX)" % lock_name,
+            "   time.sleep(%s)" % self.sleep_time))
+        start_time = time.monotonic()
+        proc = self.subprocess(code)
+        with kill_on_error(proc):
+            with open(support.TESTFN, 'wb') as f:
+                while True:  # synchronize the subprocess
+                    dt = time.monotonic() - start_time
+                    if dt > 60.0:
+                        raise Exception("failed to sync child in %.1f sec" % dt)
+                    try:
+                        lock_func(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                        lock_func(f, fcntl.LOCK_UN)
+                        time.sleep(0.01)
+                    except BlockingIOError:
+                        break
+                # the child locked the file just a moment ago for 'sleep_time' seconds
+                # that means that the lock below will block for 'sleep_time' minus some
+                # potential context switch delay
+                lock_func(f, fcntl.LOCK_EX)
+                dt = time.monotonic() - start_time
+                self.assertGreaterEqual(dt, self.sleep_time)
+                self.stop_alarm()
+            proc.wait()
+
+    def test_lockf(self):
+        self._lock(fcntl.lockf, "lockf")
+
+    def test_flock(self):
+        self._lock(fcntl.flock, "flock")
 
 
 if __name__ == "__main__":
