@@ -191,6 +191,12 @@ _Py_GetForceASCII(void)
 }
 
 
+void
+_Py_ResetForceASCII(void)
+{
+    force_ascii = -1;
+}
+
 
 static int
 encode_ascii(const wchar_t *text, char **str,
@@ -251,6 +257,12 @@ int
 _Py_GetForceASCII(void)
 {
     return 0;
+}
+
+void
+_Py_ResetForceASCII(void)
+{
+    /* nothing to do */
 }
 #endif   /* !defined(__APPLE__) && !defined(__ANDROID__) && !defined(MS_WINDOWS) */
 
