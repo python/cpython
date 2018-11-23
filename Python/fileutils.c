@@ -231,6 +231,13 @@ _Py_GetForceASCII(void)
 }
 
 
+void
+_Py_ResetForceASCII(void)
+{
+    force_ascii = -1;
+}
+
+
 static int
 encode_ascii(const wchar_t *text, char **str,
              size_t *error_pos, const char **reason,
