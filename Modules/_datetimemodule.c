@@ -1611,7 +1611,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         pnew += ntoappend;
         usednew += ntoappend;
         assert(usednew <= totalnew);
-    } while (ch != '\0'); /* end do while */
+    } while (ch != '\0');
 
     if (_PyBytes_Resize(&newfmt, usednew) < 0)
         goto Done;
@@ -1622,11 +1622,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         if (time == NULL)
             goto Done;
         format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
-
-
-        if (format != NULL)
-        {
-
+        if (format != NULL) {
             result = _PyObject_CallMethodIdObjArgs(time, &PyId_strftime,
                                                    format, timetuple, NULL);
             Py_DECREF(format);
