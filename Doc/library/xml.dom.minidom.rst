@@ -173,7 +173,7 @@ module documentation.  This section lists the differences between the API and
    indentation string and defaults to a tabulator; *newl* specifies the string
    emitted at the end of each line and defaults to ``\n``.
 
-   The *encoding* and *sort_attrs* argument behave like the corresponding
+   The *encoding* and *sort_attrs* arguments behave like the corresponding
    arguments of :meth:`toxml`.
 
    .. versionchanged:: 3.8
