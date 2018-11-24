@@ -599,7 +599,7 @@ Functions
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *short_empty_elements* and *sort_attrs* has the same meaning as in
+   *short_empty_elements* and *sort_attrs* have the same meaning as in
    :meth:`ElementTree.write`.
    Returns an (optionally) encoded string containing the XML data.
 
