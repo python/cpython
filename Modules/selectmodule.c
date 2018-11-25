@@ -335,8 +335,8 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
         if (tvp) {
             timeout = deadline - _PyTime_GetMonotonicClock();
             if (timeout < 0) {
-                n = 0;
-                break;
+                timeout = 0;
+                /* retry select() with a non-blocking call */
             }
             _PyTime_AsTimeval_noraise(timeout, &tv, _PyTime_ROUND_CEILING);
             /* retry select() with the recomputed timeout */

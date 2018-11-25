@@ -1,0 +1,3 @@
+Fix a bug in ``select.select()`` where a retry does not occur on EINTR if the
+deadline has already passed after running the signal handlers.  Patch by Oran
+Avraham.
