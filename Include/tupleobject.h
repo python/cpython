@@ -61,10 +61,6 @@ PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 #define PyTuple_GET_ITEM(op, i) (_PyTuple_CAST(op)->ob_item[i])
 #define PyTuple_GET_SIZE(op)    (assert(PyTuple_Check(op)), Py_SIZE(op))
 
-#ifdef Py_BUILD_CORE
-#  define _PyTuple_ITEMS(op) (_PyTuple_CAST(op)->ob_item)
-#endif
-
 /* Macro, *only* to be used to fill in brand new tuples */
 #define PyTuple_SET_ITEM(op, i, v) (_PyTuple_CAST(op)->ob_item[i] = v)
 #endif
