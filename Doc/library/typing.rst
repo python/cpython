@@ -101,7 +101,7 @@ accidentally creating a ``UserId`` in an invalid way::
    # 'output' is of type 'int', not 'UserId'
    output = UserId(23413) + UserId(54341)
 
-Note that these checks are enforced only by the static type checker. At runtime
+Note that these checks are enforced only by the static type checker. At runtime,
 the statement ``Derived = NewType('Derived', Base)`` will make ``Derived`` a
 function that immediately returns whatever parameter you pass it. That means
 the expression ``Derived(some_value)`` does not create a new class or introduce
@@ -110,7 +110,7 @@ any overhead beyond that of a regular function call.
 More precisely, the expression ``some_value is Derived(some_value)`` is always
 true at runtime.
 
-This also means that it is not possible to create a subtype of ``Derived``
+This also means that it is not possible to create a subtype of ``Derived``,
 since it is an identity function at runtime, not an actual type::
 
    from typing import NewType
