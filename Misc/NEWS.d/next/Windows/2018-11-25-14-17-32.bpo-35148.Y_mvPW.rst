@@ -1,0 +1,3 @@
+On international Windows versions, venv script ``activate.bat`` was fixed to
+correctly reset original codepage and prevent corresponding user-facing
+error message.
