@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_object.h"
 #include "pycore_pystate.h"
+#include "pycore_tupleobject.h"
 #include "frameobject.h"
 
 

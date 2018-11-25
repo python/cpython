@@ -180,6 +180,9 @@
     <ClInclude Include="..\Include\internal\pycore_pystate.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_tupleobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_warnings.h">
       <Filter>Include</Filter>
     </ClInclude>
