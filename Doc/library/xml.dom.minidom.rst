@@ -161,7 +161,7 @@ module documentation.  This section lists the differences between the API and
    encoding. Encoding this string in an encoding other than UTF-8 is
    likely incorrect, since UTF-8 is the default encoding of XML.
 
-   The *sort_attrs* argument behaves like the corresponding arguments of
+   The *sort_attrs* argument behaves like the corresponding argument of
    :meth:`writexml`.
 
    .. versionchanged:: 3.8
