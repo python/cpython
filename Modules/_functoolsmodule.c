@@ -1,7 +1,7 @@
-
 #include "Python.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
+#include "pycore_tupleobject.h"
 #include "structmember.h"
 
 /* _functools module written and maintained
