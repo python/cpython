@@ -56,7 +56,7 @@ PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 /* Macro, trading safety for speed */
 #ifndef Py_LIMITED_API
 /* Cast argument to PyTupleObject* type. */
-#define _PyTuple_CAST(op) ((PyTupleObject *)(op))
+#define _PyTuple_CAST(op) (assert(PyTuple_Check(op)), (PyTupleObject *)(op))
 
 #define PyTuple_GET_ITEM(op, i) (_PyTuple_CAST(op)->ob_item[i])
 #define PyTuple_GET_SIZE(op)    (assert(PyTuple_Check(op)), Py_SIZE(op))

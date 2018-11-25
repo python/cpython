@@ -226,7 +226,8 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
 
     /* Make sure that the first argument is acceptable as 'self' */
     assert(PyTuple_Check(args));
-    nargs = PyTuple_GET_SIZE(args);
+    PyTupleObject *args_tuple = _PyTuple_CAST(args);
+    nargs = PyTuple_GET_SIZE(args_tuple);
     if (nargs < 1) {
         PyErr_Format(PyExc_TypeError,
                      "descriptor '%V' of '%.100s' "
@@ -235,7 +236,7 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
                      PyDescr_TYPE(descr)->tp_name);
         return NULL;
     }
-    self = PyTuple_GET_ITEM(args, 0);
+    self = PyTuple_GET_ITEM(args_tuple, 0);
     if (!_PyObject_RealIsSubclass((PyObject *)Py_TYPE(self),
                                   (PyObject *)PyDescr_TYPE(descr))) {
         PyErr_Format(PyExc_TypeError,
@@ -249,7 +250,8 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
     }
 
     result = _PyMethodDef_RawFastCallDict(descr->d_method, self,
-                                          &_PyTuple_ITEMS(args)[1], nargs - 1,
+                                          &_PyTuple_ITEMS(args_tuple)[1],
+                                          nargs - 1,
                                           kwargs);
     result = _Py_CheckFunctionResult((PyObject *)descr, result, NULL);
     return result;
@@ -302,7 +304,8 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
 
     /* Make sure that the first argument is acceptable as 'self' */
     assert(PyTuple_Check(args));
-    argc = PyTuple_GET_SIZE(args);
+    PyTupleObject *args_tuple = _PyTuple_CAST(args);
+    argc = PyTuple_GET_SIZE(args_tuple);
     if (argc < 1) {
         PyErr_Format(PyExc_TypeError,
                      "descriptor '%V' of '%.100s' "
@@ -311,7 +314,7 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
                      PyDescr_TYPE(descr)->tp_name);
         return NULL;
     }
-    self = PyTuple_GET_ITEM(args, 0);
+    self = PyTuple_GET_ITEM(args_tuple, 0);
     if (!PyType_Check(self)) {
         PyErr_Format(PyExc_TypeError,
                      "descriptor '%V' requires a type "
@@ -333,7 +336,8 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
     }
 
     result = _PyMethodDef_RawFastCallDict(descr->d_method, self,
-                                          &_PyTuple_ITEMS(args)[1], argc - 1,
+                                          &_PyTuple_ITEMS(args_tuple)[1],
+                                          argc - 1,
                                           kwds);
     result = _Py_CheckFunctionResult((PyObject *)descr, result, NULL);
     return result;

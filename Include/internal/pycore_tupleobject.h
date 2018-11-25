@@ -10,7 +10,10 @@ extern "C" {
 
 #include "tupleobject.h"
 
-#define _PyTuple_ITEMS(op) (_PyTuple_CAST(op)->ob_item)
+static inline PyObject** _PyTuple_ITEMS(PyTupleObject *op)
+{
+    return op->ob_item;
+}
 
 #ifdef __cplusplus
 }

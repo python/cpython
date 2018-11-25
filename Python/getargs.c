@@ -422,9 +422,9 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
                 "new style getargs format but argument is not a tuple");
             return 0;
         }
-
-        stack = _PyTuple_ITEMS(args);
-        nargs = PyTuple_GET_SIZE(args);
+        PyTupleObject *args_tuple = (PyTupleObject *)args;
+        stack = _PyTuple_ITEMS(args_tuple);
+        nargs = PyTuple_GET_SIZE(args_tuple);
     }
     else {
         stack = NULL;
@@ -2244,9 +2244,6 @@ static int
 vgetargskeywordsfast(PyObject *args, PyObject *keywords,
                      struct _PyArg_Parser *parser, va_list *p_va, int flags)
 {
-    PyObject **stack;
-    Py_ssize_t nargs;
-
     if (args == NULL
         || !PyTuple_Check(args)
         || (keywords != NULL && !PyDict_Check(keywords)))
@@ -2254,9 +2251,9 @@ vgetargskeywordsfast(PyObject *args, PyObject *keywords,
         PyErr_BadInternalCall();
         return 0;
     }
-
-    stack = _PyTuple_ITEMS(args);
-    nargs = PyTuple_GET_SIZE(args);
+    PyTupleObject *args_tuple = (PyTupleObject *)args;
+    PyObject **stack = _PyTuple_ITEMS(args_tuple);
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args_tuple);
     return vgetargskeywordsfast_impl(stack, nargs, keywords, NULL,
                                      parser, p_va, flags);
 }
@@ -2462,8 +2459,9 @@ PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t m
             "PyArg_UnpackTuple() argument list is not a tuple");
         return 0;
     }
-    stack = _PyTuple_ITEMS(args);
-    nargs = PyTuple_GET_SIZE(args);
+    PyTupleObject *args_tuple = (PyTupleObject *)args;
+    stack = _PyTuple_ITEMS(args_tuple);
+    nargs = PyTuple_GET_SIZE(args_tuple);
 
 #ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, max);

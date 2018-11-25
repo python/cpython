@@ -225,9 +225,10 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
     assert(kwargs == NULL || PyDict_Check(kwargs));
 
     if (PyFunction_Check(callable)) {
+        PyTupleObject *args_tuple = (PyTupleObject *)args;
         return _PyFunction_FastCallDict(callable,
-                                        _PyTuple_ITEMS(args),
-                                        PyTuple_GET_SIZE(args),
+                                        _PyTuple_ITEMS(args_tuple),
+                                        PyTuple_GET_SIZE(args_tuple),
                                         kwargs);
     }
     else if (PyCFunction_Check(callable)) {
@@ -305,8 +306,8 @@ _PyFunction_FastCallDict(PyObject *func, PyObject *const *args, Py_ssize_t nargs
     PyObject *globals = PyFunction_GET_GLOBALS(func);
     PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
     PyObject *kwdefs, *closure, *name, *qualname;
-    PyObject *kwtuple, **k;
-    PyObject **d;
+    PyTupleObject *kwtuple;
+    PyObject **k, **d;
     Py_ssize_t nd, nk;
     PyObject *result;
 
@@ -327,9 +328,10 @@ _PyFunction_FastCallDict(PyObject *func, PyObject *const *args, Py_ssize_t nargs
                  && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
-            args = _PyTuple_ITEMS(argdefs);
-            return function_code_fastcall(co, args, PyTuple_GET_SIZE(argdefs),
-                                          globals);
+            PyTupleObject *argdefs_tuple = _PyTuple_CAST(argdefs);
+            args = _PyTuple_ITEMS(argdefs_tuple);
+            nargs = PyTuple_GET_SIZE(argdefs_tuple);
+            return function_code_fastcall(co, args, nargs, globals);
         }
     }
 
@@ -339,7 +341,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject *const *args, Py_ssize_t nargs
 
         /* bpo-29318, bpo-27840: Caller and callee functions must not share
            the dictionary: kwargs must be copied. */
-        kwtuple = PyTuple_New(2 * nk);
+        kwtuple = (PyTupleObject *)PyTuple_New(2 * nk);
         if (kwtuple == NULL) {
             return NULL;
         }
@@ -367,8 +369,9 @@ _PyFunction_FastCallDict(PyObject *func, PyObject *const *args, Py_ssize_t nargs
     qualname = ((PyFunctionObject *)func) -> func_qualname;
 
     if (argdefs != NULL) {
-        d = _PyTuple_ITEMS(argdefs);
-        nd = PyTuple_GET_SIZE(argdefs);
+        PyTupleObject *argdefs_tuple = _PyTuple_CAST(argdefs);
+        d = _PyTuple_ITEMS(argdefs_tuple);
+        nd = PyTuple_GET_SIZE(argdefs_tuple);
     }
     else {
         d = NULL;
@@ -388,20 +391,28 @@ PyObject *
 _PyFunction_FastCallKeywords(PyObject *func, PyObject *const *stack,
                              Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
-    PyObject *globals = PyFunction_GET_GLOBALS(func);
-    PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
-    PyObject *kwdefs, *closure, *name, *qualname;
-    PyObject **d;
-    Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
-    Py_ssize_t nd;
-
-    assert(PyFunction_Check(func));
     assert(nargs >= 0);
     assert(kwnames == NULL || PyTuple_CheckExact(kwnames));
+
+    PyTupleObject *kwnames_tuple;
+    Py_ssize_t nkwargs;
+    if (kwnames) {
+        kwnames_tuple = _PyTuple_CAST(kwnames);
+        nkwargs = PyTuple_GET_SIZE(kwnames_tuple);
+    }
+    else {
+        kwnames_tuple = NULL;
+        nkwargs =  0;
+    }
+
     assert((nargs == 0 && nkwargs == 0) || stack != NULL);
     /* kwnames must only contains str strings, no subclass, and all keys must
        be unique */
+
+    assert(PyFunction_Check(func));
+    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
+    PyObject *globals = PyFunction_GET_GLOBALS(func);
+    PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
 
     if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
         (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
@@ -411,32 +422,42 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject *const *stack,
         }
         else if (nargs == 0 && argdefs != NULL
                  && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
+            PyTupleObject *argdefs_tuple = _PyTuple_CAST(argdefs);
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
-            stack = _PyTuple_ITEMS(argdefs);
-            return function_code_fastcall(co, stack, PyTuple_GET_SIZE(argdefs),
-                                          globals);
+            stack = _PyTuple_ITEMS(argdefs_tuple);
+            nargs = PyTuple_GET_SIZE(argdefs_tuple);
+            return function_code_fastcall(co, stack, nargs, globals);
         }
     }
 
-    kwdefs = PyFunction_GET_KW_DEFAULTS(func);
-    closure = PyFunction_GET_CLOSURE(func);
-    name = ((PyFunctionObject *)func) -> func_name;
-    qualname = ((PyFunctionObject *)func) -> func_qualname;
+    PyObject *kwdefs = PyFunction_GET_KW_DEFAULTS(func);
+    PyObject *closure = PyFunction_GET_CLOSURE(func);
+    PyObject *name = ((PyFunctionObject *)func) -> func_name;
+    PyObject *qualname = ((PyFunctionObject *)func) -> func_qualname;
 
+    PyObject **d;
+    Py_ssize_t nd;
     if (argdefs != NULL) {
-        d = _PyTuple_ITEMS(argdefs);
-        nd = PyTuple_GET_SIZE(argdefs);
+        PyTupleObject *argdefs_tuple = _PyTuple_CAST(argdefs);
+        d = _PyTuple_ITEMS(argdefs_tuple);
+        nd = PyTuple_GET_SIZE(argdefs_tuple);
     }
     else {
         d = NULL;
         nd = 0;
     }
+
+    PyObject **kwnames_array;
+    if (nkwargs) {
+        kwnames_array = _PyTuple_ITEMS(_PyTuple_CAST(kwnames_tuple));
+    }
+    else {
+        kwnames_array = NULL;
+    }
     return _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
                                     stack, nargs,
-                                    nkwargs ? _PyTuple_ITEMS(kwnames) : NULL,
-                                    stack + nargs,
-                                    nkwargs, 1,
+                                    kwnames_array, stack + nargs, nkwargs, 1,
                                     d, (int)nd, kwdefs,
                                     closure, name, qualname);
 }
@@ -779,6 +800,9 @@ cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs)
 PyObject *
 PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwargs)
 {
+    assert(PyTuple_Check(args));
+    PyTupleObject *args_tuple = (PyTupleObject *)args;
+
     /* first try METH_VARARGS to pass directly args tuple unchanged.
        _PyMethodDef_RawFastCallDict() creates a new temporary tuple
        for METH_VARARGS. */
@@ -787,8 +811,8 @@ PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwargs)
     }
     else {
         return _PyCFunction_FastCallDict(func,
-                                         _PyTuple_ITEMS(args),
-                                         PyTuple_GET_SIZE(args),
+                                         _PyTuple_ITEMS(args_tuple),
+                                         PyTuple_GET_SIZE(args_tuple),
                                          kwargs);
     }
 }
@@ -884,8 +908,9 @@ _PyObject_Call_Prepend(PyObject *callable,
     PyObject *result;
 
     assert(PyTuple_Check(args));
+    PyTupleObject *args_tuple = (PyTupleObject *)args;
 
-    argcount = PyTuple_GET_SIZE(args);
+    argcount = PyTuple_GET_SIZE(args_tuple);
     if (argcount + 1 <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
         stack = small_stack;
     }
@@ -900,7 +925,7 @@ _PyObject_Call_Prepend(PyObject *callable,
     /* use borrowed references */
     stack[0] = obj;
     memcpy(&stack[1],
-           _PyTuple_ITEMS(args),
+           _PyTuple_ITEMS(args_tuple),
            argcount * sizeof(PyObject *));
 
     result = _PyObject_FastCallDict(callable,
@@ -950,7 +975,7 @@ _PyObject_CallFunctionVa(PyObject *callable, const char *format,
            - PyObject_CallFunction(func, "O", tuple) calls func(*tuple)
            - PyObject_CallFunction(func, "(OOO)", arg1, arg2, arg3) calls
              func(*(arg1, arg2, arg3)): func(arg1, arg2, arg3) */
-        PyObject *args = stack[0];
+        PyTupleObject *args = _PyTuple_CAST(stack[0]);
         result = _PyObject_FastCall(callable,
                                     _PyTuple_ITEMS(args),
                                     PyTuple_GET_SIZE(args));

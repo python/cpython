@@ -580,11 +580,9 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
 static PyObject *
 function_call(PyObject *func, PyObject *args, PyObject *kwargs)
 {
-    PyObject **stack;
-    Py_ssize_t nargs;
-
-    stack = _PyTuple_ITEMS(args);
-    nargs = PyTuple_GET_SIZE(args);
+    PyTupleObject *args_tuple = _PyTuple_CAST(args);
+    PyObject **stack = _PyTuple_ITEMS(args_tuple);
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args_tuple);
     return _PyFunction_FastCallDict(func, stack, nargs, kwargs);
 }
 

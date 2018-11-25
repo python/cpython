@@ -134,15 +134,16 @@ partial_fastcall(partialobject *pto, PyObject **args, Py_ssize_t nargs,
     PyObject *ret;
     PyObject **stack, **stack_buf = NULL;
     Py_ssize_t nargs2, pto_nargs;
+    PyTupleObject *pto_args_tuple = _PyTuple_CAST(pto->args);
 
-    pto_nargs = PyTuple_GET_SIZE(pto->args);
+    pto_nargs = PyTuple_GET_SIZE(pto_args_tuple);
     nargs2 = pto_nargs + nargs;
 
     if (pto_nargs == 0) {
         stack = args;
     }
     else if (nargs == 0) {
-        stack = _PyTuple_ITEMS(pto->args);
+        stack = _PyTuple_ITEMS(pto_args_tuple);
     }
     else {
         if (nargs2 <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
@@ -159,7 +160,7 @@ partial_fastcall(partialobject *pto, PyObject **args, Py_ssize_t nargs,
 
         /* use borrowed references */
         memcpy(stack,
-               _PyTuple_ITEMS(pto->args),
+               _PyTuple_ITEMS(pto_args_tuple),
                pto_nargs * sizeof(PyObject*));
         memcpy(&stack[pto_nargs],
                args,
@@ -221,9 +222,10 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
 
 
     if (pto->use_fastcall) {
+        PyTupleObject *args_tuple = _PyTuple_CAST(args);
         res = partial_fastcall(pto,
-                               _PyTuple_ITEMS(args),
-                               PyTuple_GET_SIZE(args),
+                               _PyTuple_ITEMS(args_tuple),
+                               PyTuple_GET_SIZE(args_tuple),
                                kwargs2);
     }
     else {

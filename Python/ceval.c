@@ -4648,7 +4648,8 @@ do_call_core(PyObject *func, PyObject *callargs, PyObject *kwdict)
     }
     else if (Py_TYPE(func) == &PyMethodDescr_Type) {
         PyThreadState *tstate = _PyThreadState_GET();
-        Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
+        PyTupleObject *callargs_tuple = _PyTuple_CAST(callargs);
+        Py_ssize_t nargs = PyTuple_GET_SIZE(callargs_tuple);
         if (nargs > 0 && tstate->use_tracing) {
             /* We need to create a temporary bound method as argument
                for profiling.
@@ -4657,15 +4658,15 @@ do_call_core(PyObject *func, PyObject *callargs, PyObject *kwdict)
                "self". In any case, the call itself would raise
                TypeError (foo needs an argument), so we just skip
                profiling. */
-            PyObject *self = PyTuple_GET_ITEM(callargs, 0);
+            PyObject *self = PyTuple_GET_ITEM(callargs_tuple, 0);
             func = Py_TYPE(func)->tp_descr_get(func, self, (PyObject*)Py_TYPE(self));
             if (func == NULL) {
                 return NULL;
             }
 
+            PyObject **args = &_PyTuple_ITEMS(callargs_tuple)[1];
             C_TRACE(result, _PyCFunction_FastCallDict(func,
-                                                      &_PyTuple_ITEMS(callargs)[1],
-                                                      nargs - 1,
+                                                      args, nargs - 1,
                                                       kwdict));
             Py_DECREF(func);
             return result;

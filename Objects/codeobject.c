@@ -31,7 +31,7 @@ all_name_chars(PyObject *o)
 }
 
 static void
-intern_strings(PyObject *tuple)
+intern_strings(PyTupleObject *tuple)
 {
     Py_ssize_t i;
 
@@ -126,10 +126,10 @@ PyCode_New(int argcount, int kwonlyargcount,
     if (PyUnicode_READY(filename) < 0)
         return NULL;
 
-    intern_strings(names);
-    intern_strings(varnames);
-    intern_strings(freevars);
-    intern_strings(cellvars);
+    intern_strings(_PyTuple_CAST(names));
+    intern_strings(_PyTuple_CAST(varnames));
+    intern_strings(_PyTuple_CAST(freevars));
+    intern_strings(_PyTuple_CAST(cellvars));
     intern_string_constants(consts);
 
     /* Check for any inner or outer closure references */
