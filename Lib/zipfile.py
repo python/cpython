@@ -402,7 +402,7 @@ class ZipInfo (object):
         return ''.join(result)
 
     def FileHeader(self, zip64=None):
-        """Return the per-file header as a string."""
+        """Return the per-file header as a bytes object."""
         dt = self.date_time
         dosdate = (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
         dostime = dt[3] << 11 | dt[4] << 5 | (dt[5] // 2)
@@ -1424,7 +1424,7 @@ class ZipFile:
         self._didModify = True
 
     def read(self, name, pwd=None):
-        """Return file bytes (as a string) for name."""
+        """Return file bytes for name."""
         with self.open(name, "r", pwd) as fp:
             return fp.read()
 
