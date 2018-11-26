@@ -5498,10 +5498,7 @@ compute_code_flags(struct compiler *c)
 static int
 merge_const_tuple(struct compiler *c, PyObject **tuple)
 {
-    Py_ssize_t len = PyTuple_GET_SIZE(*tuple);
-    if (len == 0) {
-        return 1;
-    }
+    assert(PyTuple_CheckExact(*tuple));
 
     PyObject *key = _PyCode_ConstantKey(*tuple);
     if (key == NULL) {
