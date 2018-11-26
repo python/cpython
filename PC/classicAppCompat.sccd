@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CustomCapabilityDescriptor xmlns="http://schemas.microsoft.com/appx/2016/sccd" xmlns:s="http://schemas.microsoft.com/appx/2016/sccd">
+    <CustomCapabilities>
+        <CustomCapability Name="Microsoft.classicAppCompat_8wekyb3d8bbwe" />
+    </CustomCapabilities>
+    <AuthorizedEntities>
+        <!--PFN for store installation-->
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.7_qbz5n2kfra8p0" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.8_qbz5n2kfra8p0" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.9_qbz5n2kfra8p0" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.14_qbz5n2kfra8p0" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.15_qbz5n2kfra8p0" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+        <!--PFN for side-loading when signed with the PSF certificate-->
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.7_3847v3x7pw1km" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.8_3847v3x7pw1km" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.9_3847v3x7pw1km" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.10_3847v3x7pw1km" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.11_3847v3x7pw1km" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.12_3847v3x7pw1km" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.13_3847v3x7pw1km" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.14_3847v3x7pw1km" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+        <AuthorizedEntity AppPackageFamilyName="PythonSoftwareFoundation.Python.3.15_3847v3x7pw1km" CertificateSignatureHash="0000000000000000000000000000000000000000000000000000000000000000"/>
+    </AuthorizedEntities>
+    <!--Once signed, this file can no longer be modified-->
+    <Catalog>FFFF</Catalog>
+</CustomCapabilityDescriptor>

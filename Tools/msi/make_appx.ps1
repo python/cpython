@@ -32,7 +32,10 @@ Import-Module $tools\sdktools.psm1 -WarningAction SilentlyContinue -Force
 
 Set-Alias makeappx (Find-Tool "makeappx.exe") -Scope Script
 
-mkdir -Force ($msix | Split-Path -parent);
+$msixdir = ($msix | Split-Path -parent);
+if ($msixdir) {
+    mkdir -Force $msixdir;
+}
 makeappx pack /f $mapfile /o /p $msix
 if (-not $?) {
     throw "makeappx step failed"
