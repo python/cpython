@@ -2636,9 +2636,13 @@ class BufferWriteTest(TarTest, unittest.TestCase):
 
     def test_buffer_write(self):
         with tarfile.open(tmpname, self.mode) as tar:
-            buf = io.BytesIO(b'foobar')
-            tarinfo = tar.gettarinfo(name='foo', fileobj=buf)
-            tar.addbuffer(tarinfo, buf)
+            r, w = os.pipe()
+            r, w = open(r, 'rb'), open(w, 'wb')
+            w.write(b'foobar')
+            w.close()
+            tarinfo = tar.gettarinfo(name='foo', fileobj=r)
+            tar.addbuffer(tarinfo, r)
+            r.close()
 
         tar = tarfile.open(tmpname)
         try:

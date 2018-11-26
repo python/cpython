@@ -2024,6 +2024,8 @@ class TarFile(object):
             raise ValueError("addbuffer can only be used on seekable media")
 
         tarinfo = copy.copy(tarinfo)
+        # we record the stream as a plain file
+        tarinfo.type = REGTYPE
         previous_position = self.fileobj.tell()
         self._write_header(tarinfo)
 
