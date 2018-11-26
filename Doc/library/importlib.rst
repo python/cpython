@@ -420,30 +420,34 @@ ABC hierarchy::
         reloaded):
 
         - :attr:`__name__`
-            The name of the module.
+            The module's fully-qualified name.
 
         - :attr:`__file__`
-            The path to where the module data is stored (not set for built-in
-            modules).
+            The location of the module's source code.
+            It is not set for built-in modules and frozen modules
+            and ``None`` for namespace packages.
 
         - :attr:`__cached__`
-            The path to where a compiled version of the module is/should be
-            stored (not set when the attribute would be inappropriate).
+            The location of the module's compiled code.
+            It is not set for built-in modules, frozen modules
+            and namespace packages.
 
         - :attr:`__path__`
-            A list of strings specifying the search path within a
-            package. This attribute is not set on modules.
+            The iterable (possibly empty) of the locations of the module's
+            submodules.
+            It is not set for non-package modules.
 
         - :attr:`__package__`
-            The parent package for the module/package. If the module is
-            top-level then it has a value of the empty string. The
-            :func:`importlib.util.module_for_loader` decorator can handle the
-            details for :attr:`__package__`.
+            The module's ``__name__`` attribute for a package, the parent
+            package's ``__name__`` attribute for a non-package submodule and
+            the empty string ``''`` for a non-package top-level module.
+            The :func:`importlib.util.module_for_loader` decorator can handle
+            the details for :attr:`__package__`.
 
         - :attr:`__loader__`
-            The loader used to load the module. The
-            :func:`importlib.util.module_for_loader` decorator can handle the
-            details for :attr:`__package__`.
+            The module's loader.
+            The :func:`importlib.util.module_for_loader` decorator can handle
+            the details for :attr:`__package__`.
 
         When :meth:`exec_module` is available then backwards-compatible
         functionality is provided.
@@ -1285,11 +1289,12 @@ find and load modules.
    typically exposed as the module's ``__spec__`` attribute.  In the
    descriptions below, the names in parentheses give the corresponding
    attribute available directly on the module object.
-   E.g. ``module.__spec__.origin == module.__file__``.  Note however that
-   while the *values* are usually equivalent, they can differ since there is
-   no synchronization between the two objects.  Thus it is possible to update
-   the module's ``__path__`` at runtime, and this will not be automatically
-   reflected in ``__spec__.submodule_search_locations``.
+   E.g., ``module.__spec__.name == module.__name__``.  Note however that
+   while the *values* are usually equivalent, they can differ since there
+   is no synchronization between the two objects.  Thus it is possible
+   to update the module's ``__path__`` at runtime for instance, and this
+   will not be automatically reflected in the module's
+   ``__spec__.submodule_search_locations``.
 
    .. versionadded:: 3.4
 
@@ -1297,52 +1302,53 @@ find and load modules.
 
    (``__name__``)
 
-   Fully-qualified name of the module.
+   The module's fully-qualified name.
 
    .. attribute:: loader
 
    (``__loader__``)
 
-   Loader object to use for loading the module.
+   The module's loader.
 
    .. attribute:: origin
 
    (``__file__``)
 
-   Path to the code from where the module should be loaded.
-   It is ``None`` for builtin modules and namespace package modules.
+   The location of the module's source code.
+   It is ``'built-in'`` for built-in modules, ``'frozen'`` for
+   frozen modules and ``None`` for namespace packages.
 
    .. attribute:: submodule_search_locations
 
    (``__path__``)
 
-   Iterable (possibly empty) of locations to search for submodules of a
-   package module during import. It is `None` for non-package modules.
+   The iterable (possibly empty) of the locations of the module's
+   submodules.
+   It is ``None`` for non-package modules.
 
    .. attribute:: loader_state
 
-   Container of extra module-specific data for use during loading (or
-   ``None``).
+   The container of module's extra data.
 
    .. attribute:: cached
 
    (``__cached__``)
-
-   Path to the compiled code from where the module should be loaded.
-   It is ``None`` for builtin modules and namespace package modules.
+   The location of the module's compiled code.
+   It is ``None`` for built-in modules, frozen modules and
+   namespace packages.
 
    .. attribute:: parent
 
    (``__package__``)
 
-   The ``__name__`` attribute of the module for package modules.
-   The empty string `''` for non-package top-level modules or the
-   parent package's ``__name__`` attribute for non-package submodules.
+   The module's ``__name__`` attribute for a package, the parent
+   package's ``__name__`` attribute for a non-package submodule and
+   the empty string ``''`` for a non-package top-level module.
 
    .. attribute:: has_location
 
-   Boolean indicating whether or not the module's ``origin``
-   attribute refers to a loadable location.
+   The flag indicating whether or not the module's ``__origin__`` attribute
+   refers to a location.
 
 :mod:`importlib.util` -- Utility code for importers
 ---------------------------------------------------
