@@ -220,30 +220,36 @@ static PyObject *unicode_empty = NULL;
         return unicode_empty;                           \
     } while (0)
 
-#define FILL(kind, data, value, start, length) \
-    do { \
-        Py_ssize_t i_ = 0; \
-        assert(0 <= start); \
-        assert(kind != PyUnicode_WCHAR_KIND); \
-        switch ((kind)) { \
-        case PyUnicode_1BYTE_KIND: { \
-            unsigned char * to_ = (unsigned char *)((data)) + (start); \
-            memset(to_, (unsigned char)value, (length)); \
-            break; \
-        } \
-        case PyUnicode_2BYTE_KIND: { \
-            Py_UCS2 * to_ = (Py_UCS2 *)((data)) + (start); \
-            for (; i_ < (length); ++i_, ++to_) *to_ = (value); \
-            break; \
-        } \
-        case PyUnicode_4BYTE_KIND: { \
-            Py_UCS4 * to_ = (Py_UCS4 *)((data)) + (start); \
-            for (; i_ < (length); ++i_, ++to_) *to_ = (value); \
-            break; \
-        } \
-        default: Py_UNREACHABLE(); \
-        } \
-    } while (0)
+static inline void
+unicode_fill(enum PyUnicode_Kind kind, void *data, Py_UCS4 value,
+             Py_ssize_t start, Py_ssize_t length)
+{
+    assert(0 <= start);
+    assert(kind != PyUnicode_WCHAR_KIND);
+    switch (kind) {
+    case PyUnicode_1BYTE_KIND: {
+        Py_UCS1 ch = (unsigned char)value;
+        Py_UCS1 *to = (Py_UCS1 *)data + start;
+        memset(to, ch, length);
+        break;
+    }
+    case PyUnicode_2BYTE_KIND: {
+        Py_UCS2 ch = (Py_UCS2)value;
+        Py_UCS2 *to = (Py_UCS2 *)data + start;
+        const Py_UCS2 *end = to + length;
+        for (; to < end; ++to) *to = ch;
+        break;
+    }
+    case PyUnicode_4BYTE_KIND: {
+        Py_UCS4 ch = value;
+        Py_UCS4 * to = (Py_UCS4 *)data + start;
+        const Py_UCS4 *end = to + length;
+        for (; to < end; ++to) *to = ch;
+        break;
+    }
+    default: Py_UNREACHABLE();
+    }
+}
 
 
 /* Forward declaration */
@@ -10117,7 +10123,7 @@ _PyUnicode_FastFill(PyObject *unicode, Py_ssize_t start, Py_ssize_t length,
     assert(fill_char <= PyUnicode_MAX_CHAR_VALUE(unicode));
     assert(start >= 0);
     assert(start + length <= PyUnicode_GET_LENGTH(unicode));
-    FILL(kind, data, fill_char, start, length);
+    unicode_fill(kind, data, fill_char, start, length);
 }
 
 Py_ssize_t
@@ -10188,9 +10194,9 @@ pad(PyObject *self,
     kind = PyUnicode_KIND(u);
     data = PyUnicode_DATA(u);
     if (left)
-        FILL(kind, data, fill, 0, left);
+        unicode_fill(kind, data, fill, 0, left);
     if (right)
-        FILL(kind, data, fill, left + _PyUnicode_LENGTH(self), right);
+        unicode_fill(kind, data, fill, left + _PyUnicode_LENGTH(self), right);
     _PyUnicode_FastCopyCharacters(u, left, self, 0, _PyUnicode_LENGTH(self));
     assert(_PyUnicode_CheckConsistency(u, 1));
     return u;
@@ -11577,7 +11583,7 @@ unicode_expandtabs_impl(PyObject *self, int tabsize)
             if (tabsize > 0) {
                 incr = tabsize - (line_pos % tabsize);
                 line_pos += incr;
-                FILL(kind, dest_data, ' ', j, incr);
+                unicode_fill(kind, dest_data, ' ', j, incr);
                 j += incr;
             }
         }
@@ -14853,7 +14859,7 @@ unicode_format_arg_output(struct unicode_formatter_t *ctx,
     /* Pad left with the fill character if needed */
     if (arg->width > len && !(arg->flags & F_LJUST)) {
         sublen = arg->width - len;
-        FILL(writer->kind, writer->data, fill, writer->pos, sublen);
+        unicode_fill(writer->kind, writer->data, fill, writer->pos, sublen);
         writer->pos += sublen;
         arg->width = len;
     }
@@ -14885,7 +14891,7 @@ unicode_format_arg_output(struct unicode_formatter_t *ctx,
     /* Pad right with the fill character if needed */
     if (arg->width > len) {
         sublen = arg->width - len;
-        FILL(writer->kind, writer->data, ' ', writer->pos, sublen);
+        unicode_fill(writer->kind, writer->data, ' ', writer->pos, sublen);
         writer->pos += sublen;
     }
     return 0;
