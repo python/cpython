@@ -2135,10 +2135,10 @@ PyAPI_FUNC(PyObject *) _PyUnicode_XStrip(
    see Objects/stringlib/localeutil.h */
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_ssize_t) _PyUnicode_InsertThousandsGrouping(
-    PyObject *unicode,
-    Py_ssize_t index,
+    _PyUnicodeWriter *writer,
     Py_ssize_t n_buffer,
-    void *digits,
+    PyObject *digits,
+    Py_ssize_t d_pos,
     Py_ssize_t n_digits,
     Py_ssize_t min_width,
     const char *grouping,
