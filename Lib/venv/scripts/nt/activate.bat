@@ -1,9 +1,14 @@
 @echo off
 
 rem This file is UTF-8 encoded, so we need to update the current code page while executing it
-for /f "tokens=2 delims=:." %%a in ('"%SystemRoot%\System32\chcp.com"') do (
+for /f "tokens=2 delims=:" %%a in ('"%SystemRoot%\System32\chcp.com"') do (
     set "_OLD_CODEPAGE=%%a"
 )
+
+rem Some international Windows versions put a period at the end of the codepage number,
+rem so erase it if existent.
+set "_OLD_CODEPAGE=%_OLD_CODEPAGE:.=%"
+
 if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
