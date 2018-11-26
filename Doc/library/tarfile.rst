@@ -472,6 +472,15 @@ be finalized; only the internally used file object will be closed. See the
    ``tarinfo.size`` bytes are read from it and added to the archive.  You can
    create :class:`TarInfo` objects directly, or by using :meth:`gettarinfo`.
 
+.. method:: TarFile.addbuffer(tarinfo, buf)
+
+   Add the :class:`TarInfo` object *tarinfo* to the archive reading data from
+   *buf*. The size of *buf* needs not to be known beforehand and *tarinfo.size*
+   will be overwritten by the amount of data read.
+
+   This method cannot be used on compressed archives or unseekable media.
+
+   .. versionadded:: 3.8
 
 .. method:: TarFile.gettarinfo(name=None, arcname=None, fileobj=None)
 
@@ -482,7 +491,8 @@ be finalized; only the internally used file object will be closed. See the
    given, *arcname* specifies an alternative name for the file in the
    archive, otherwise, the name is taken from *fileobj*’s
    :attr:`~io.FileIO.name` attribute, or the *name* argument.  The name
-   should be a text string.
+   should be a text string. If *fileobj* is an in-memory buffer, a default file
+   status will be used.
 
    You can modify
    some of the :class:`TarInfo`’s attributes before you add it using :meth:`addfile`.
@@ -495,6 +505,8 @@ be finalized; only the internally used file object will be closed. See the
    .. versionchanged:: 3.6
       The *name* parameter accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.8
+      The *fileobj* attribute can now be an in-memory buffer
 
 .. method:: TarFile.close()
 
@@ -800,6 +812,16 @@ parameter in :meth:`TarFile.add`::
     tar.add("foo", filter=reset)
     tar.close()
 
+
+How to create an archive and add a file of unknown size:
+
+   import tarfile
+   import urllib.request
+   tf = tarfile.open('tarfile.tar', 'w')
+   response = urllib.request.urlopen('http://www.example.com/huge-page.html')
+   tarinfo = tf.gettarinfo(name='foo', fileobj=response)
+   tf.addbuffer(tarinfo, response)
+   tf.close()
 
 .. _tar-formats:
 

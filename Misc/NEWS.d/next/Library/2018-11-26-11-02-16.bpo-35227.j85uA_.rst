@@ -1,0 +1,2 @@
+Add support for adding file objects of unknown size to tarfile (contributed
+by Rémi Lapeyre).

@@ -46,6 +46,7 @@ import time
 import struct
 import copy
 import re
+import datetime
 
 try:
     import pwd
@@ -237,10 +238,12 @@ def copyfileobj(src, dst, length=None, exception=OSError, bufsize=None):
     """
     bufsize = bufsize or 16 * 1024
     if length == 0:
-        return
+        return 0
+
     if length is None:
+        start_pos = dst.tell()
         shutil.copyfileobj(src, dst, bufsize)
-        return
+        return dst.tell() - start_pos
 
     blocks, remainder = divmod(length, bufsize)
     for b in range(blocks):
@@ -254,7 +257,7 @@ def copyfileobj(src, dst, length=None, exception=OSError, bufsize=None):
         if len(buf) < remainder:
             raise exception("unexpected end of data")
         dst.write(buf)
-    return
+    return length + remainder
 
 def _safe_print(s):
     encoding = getattr(sys.stdout, 'encoding', None)
@@ -1757,6 +1760,24 @@ class TarFile(object):
         """
         return [tarinfo.name for tarinfo in self.getmembers()]
 
+    def _getdefaultstat(self):
+        time = int(datetime.datetime.now().timestamp())
+        # st_size will be replaced later,
+        # no need to set st_ino and st_dev as st_nlink will always be 1
+        # and (st_ino, st_dev) will not be used key for the cache dict.
+        return os.stat_result((
+            stat.S_IFREG | 0o644,  # st_mode
+            0,                     # st_ino
+            0,                     # st_dev
+            1,                     # st_nlink
+            os.getgid(),           # st_uid
+            os.getuid(),           # st_gid
+            0,                     # st_size
+            time,                  # st_atime
+            time,                  # st_mtime
+            time                   # st_ctime
+        ))
+
     def gettarinfo(self, name=None, arcname=None, fileobj=None):
         """Create a TarInfo object from the result of os.stat or equivalent
            on an existing file. The file is either named by `name', or
@@ -1770,7 +1791,7 @@ class TarFile(object):
 
         # When fileobj is given, replace name by
         # fileobj's real name.
-        if fileobj is not None:
+        if fileobj is not None and name is None:
             name = fileobj.name
 
         # Building the name of the member in the archive.
@@ -1795,7 +1816,12 @@ class TarFile(object):
             else:
                 statres = os.stat(name)
         else:
-            statres = os.fstat(fileobj.fileno())
+            try:
+                statres = os.fstat(fileobj.fileno())
+            except io.UnsupportedOperation:
+                # fileobj may be a buffer and we use a default stat
+                statres = self._getdefaultstat()
+
         linkname = ""
 
         stmd = statres.st_mode
@@ -1824,6 +1850,8 @@ class TarFile(object):
             type = CHRTYPE
         elif stat.S_ISBLK(stmd):
             type = BLKTYPE
+        elif stat.S_ISSOCK(stmd):
+            type = REGTYPE
         else:
             return None
 
@@ -1940,6 +1968,19 @@ class TarFile(object):
         else:
             self.addfile(tarinfo)
 
+    def _write_header(self, tarinfo):
+        buf = tarinfo.tobuf(self.format, self.encoding, self.errors)
+        self.fileobj.write(buf)
+        self.offset += len(buf)
+
+    def _pad_file(self, written_size):
+        blocks, remainder = divmod(written_size, BLOCKSIZE)
+        if remainder > 0:
+            self.fileobj.write(NUL * (BLOCKSIZE - remainder))
+            blocks += 1
+        self.offset += blocks * BLOCKSIZE
+
+
     def addfile(self, tarinfo, fileobj=None):
         """Add the TarInfo object `tarinfo' to the archive. If `fileobj' is
            given, it should be a binary file, and tarinfo.size bytes are read
@@ -1950,18 +1991,45 @@ class TarFile(object):
 
         tarinfo = copy.copy(tarinfo)
 
-        buf = tarinfo.tobuf(self.format, self.encoding, self.errors)
-        self.fileobj.write(buf)
-        self.offset += len(buf)
-        bufsize=self.copybufsize
+        self._write_header(tarinfo)
+        bufsize = self.copybufsize
         # If there's data to follow, append it.
         if fileobj is not None:
             copyfileobj(fileobj, self.fileobj, tarinfo.size, bufsize=bufsize)
-            blocks, remainder = divmod(tarinfo.size, BLOCKSIZE)
-            if remainder > 0:
-                self.fileobj.write(NUL * (BLOCKSIZE - remainder))
-                blocks += 1
-            self.offset += blocks * BLOCKSIZE
+            self._pad_file(tarinfo.size)
+
+        self.members.append(tarinfo)
+
+    def addbuffer(self, tarinfo, fileobj):
+        """Add the TarInfo object `tarinfo` to the archive.
+
+        This method can be used when the size of fileobj cannot be know
+        beforehand and will read from fileobj until it is exhausted.
+        Once fileobj is fully written to the archive, the size metadata will
+        be overwritten.
+
+        It is not possible to use this method when compression is used or when
+        the underlying device is not seekable.
+        """
+        self._check('awx')
+
+        if not self.fileobj.seekable():
+            raise ValueError("addbuffer can only be used on seekable media")
+
+        tarinfo = copy.copy(tarinfo)
+        previous_position = self.fileobj.tell()
+        self._write_header(tarinfo)
+
+        bufsize = self.copybufsize
+        tarinfo.size = copyfileobj(fileobj, self.fileobj, bufsize=bufsize)
+        self._pad_file(tarinfo.size)
+
+        # we need to go back in the file and overwrite the header and save the
+        # the actual size
+        previous_position, _ = self.fileobj.tell(), self.fileobj.seek(previous_position)
+        buf = tarinfo.tobuf(self.format, self.encoding, self.errors)
+        self.fileobj.write(buf)
+        self.fileobj.seek(previous_position)
 
         self.members.append(tarinfo)
 

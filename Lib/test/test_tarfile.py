@@ -2631,6 +2631,46 @@ class NumericOwnerTest(unittest.TestCase):
                               tarfl.extract, filename_1, TEMPDIR, False, True)
 
 
+class BufferWriteTest(TarTest, unittest.TestCase):
+    prefix = 'w:'
+
+    def test_buffer_write(self):
+        with tarfile.open(tmpname, self.mode) as tar:
+            buf = io.BytesIO(b'foobar')
+            tarinfo = tar.gettarinfo(name='foo', fileobj=buf)
+            tar.addbuffer(tarinfo, buf)
+
+        tar = tarfile.open(tmpname)
+        try:
+            tarinfo = tar.getmember('foo')
+            self.assertEqual(tarinfo.size, 6)
+            self.assertTrue(tarinfo.isfile())
+            fd = tar.extractfile(tarinfo)
+            self.assertEqual(fd.read(), b'foobar')
+        finally:
+            tar.close()
+
+
+class UnseekableBufferWriteTest:
+    prefix = 'w:'
+
+    def test_unseekable_buffer_write(self):
+        with tarfile.open(tmpname, self.mode) as tar:
+            buf = io.BytesIO(b'foobar')
+            tarinfo = tar.gettarinfo(name='foo', fileobj=buf)
+            with self.assertRaises(ValueError):
+                tar.addbuffer(tarinfo, buf)
+
+
+class GzipUnseekableBufferWriteTest(GzipTest, UnseekableBufferWriteTest):
+    pass
+
+class Bz2UnseekableBufferWriteTest(Bz2Test, UnseekableBufferWriteTest):
+    pass
+
+class LzmaUnseekableBufferWriteTest(LzmaTest, UnseekableBufferWriteTest):
+    pass
+
 def setUpModule():
     support.unlink(TEMPDIR)
     os.makedirs(TEMPDIR)
