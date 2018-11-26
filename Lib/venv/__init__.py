@@ -315,7 +315,7 @@ class EnvBuilder:
                 dstfile = os.path.join(dstdir, f)
                 with open(srcfile, 'rb') as f:
                     data = f.read()
-                if not srcfile.endswith('.exe'):
+                if not srcfile.endswith(('.exe', '.pdb')):
                     try:
                         data = data.decode('utf-8')
                         data = self.replace_variables(data, context)

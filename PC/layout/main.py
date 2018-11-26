@@ -52,7 +52,7 @@ EXCLUDE_FROM_PACKAGED_LIB = FileNameSet("readme.txt")
 EXCLUDE_FROM_COMPILE = FileNameSet("badsyntax_*", "bad_*")
 EXCLUDE_FROM_CATALOG = FileSuffixSet(".exe", ".pyd", ".dll")
 
-REQUIRED_DLLS = FileStemSet("libcrypto*", "libssl*", "vcruntime*")
+REQUIRED_DLLS = FileStemSet("libcrypto*", "libssl*")
 
 LIB2TO3_GRAMMAR_FILES = FileNameSet("Grammar.txt", "PatternGrammar.txt")
 
@@ -148,6 +148,9 @@ def get_layout(ns):
 
     if ns.include_stable:
         yield from in_build(PYTHON_STABLE_DLL_NAME)
+
+    for dest, src in rglob(ns.build, "vcruntime*.dll"):
+        yield dest, src
 
     for dest, src in rglob(ns.build, ("*.pyd", "*.dll")):
         if src.stem.endswith("_d") != bool(ns.debug) and src not in REQUIRED_DLLS:
