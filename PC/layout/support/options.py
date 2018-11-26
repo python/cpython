@@ -74,13 +74,7 @@ PRESETS = {
     },
     "embed": {
         "help": "embeddable package",
-        "options": [
-            "stable",
-            "zip-lib",
-            "flat-dlls",
-            "underpth",
-            "precompile",
-        ],
+        "options": ["stable", "zip-lib", "flat-dlls", "underpth", "precompile"],
     },
 }
 

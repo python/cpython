@@ -179,6 +179,34 @@ def get_packagefamilyname(name, publisher_id):
     return result.value[: result_len.value]
 
 
+def _fixup_sccd(ns, sccd, new_hash=None):
+    if not new_hash:
+        return sccd
+
+    NS = dict(s="http://schemas.microsoft.com/appx/2016/sccd")
+    with open(sccd, "rb") as f:
+        xml = ET.parse(f)
+
+    pfn = get_packagefamilyname(APPX_DATA["Name"], APPX_DATA["Publisher"])
+
+    ae = xml.find("s:AuthorizedEntities", NS)
+    ae.clear()
+
+    e = ET.SubElement(ae, ET.QName(NS["s"], "AuthorizedEntity"))
+    e.set("AppPackageFamilyName", pfn)
+    e.set("CertificateSignatureHash", new_hash)
+
+    for e in xml.findall("s:Catalog", NS):
+        e.text = "FFFF"
+
+    sccd = ns.temp / sccd.name
+    sccd.parent.mkdir(parents=True, exist_ok=True)
+    with open(sccd, "wb") as f:
+        xml.write(f, encoding="utf-8")
+
+    return sccd
+
+
 @public
 def get_appx_layout(ns):
     if not ns.include_appxmanifest:
@@ -194,24 +222,10 @@ def get_appx_layout(ns):
     yield "_resources/pythonwx44.png.targetsize-44_altform-unplated", icons / "pythonwx44.png"
     yield "_resources/pythonwx150.png", icons / "pythonwx150.png"
     yield "_resources/pythonwx150.png.targetsize-150_altform-unplated", icons / "pythonwx150.png"
-    sccd = ns.source / "PC" / "python.{}.sccd".format(VER_DOT)
+    sccd = ns.source / "PC" / "classicAppCompat.sccd"
     if sccd.is_file():
         # This should only be set for side-loading purposes.
-        new_hash = os.getenv("APPX_DATA_SHA256")
-        if new_hash:
-            NS = dict(s="http://schemas.microsoft.com/appx/2016/sccd")
-            with open(sccd, "rb") as f:
-                xml = ET.parse(f)
-            pfn = get_packagefamilyname(APPX_DATA["Name"], APPX_DATA["Publisher"])
-            for e in xml.findall("s:AuthorizedEntities/s:AuthorizedEntity", NS):
-                e.set("AppPackageFamilyName", pfn)
-                e.set("CertificateSignatureHash", new_hash)
-            for e in xml.findall("s:Catalog", NS):
-                e.text = "FFFF"
-            sccd = ns.temp / "python.{}.sccd".format(VER_DOT)
-            sccd.parent.mkdir(parents=True, exist_ok=True)
-            with open(sccd, "wb") as f:
-                xml.write(f, encoding="utf-8")
+        sccd = _fixup_sccd(ns, sccd, os.getenv("APPX_DATA_SHA256"))
         yield sccd.name, sccd
 
 
