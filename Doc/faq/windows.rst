@@ -301,14 +301,3 @@ In 2.7 and 3.2, :func:`os.kill` is implemented similar to the above function,
 with the additional feature of being able to send :kbd:`Ctrl+C` and :kbd:`Ctrl+Break`
 to console subprocesses which are designed to handle those signals. See
 :func:`os.kill` for further details.
-
-How do I extract the downloaded documentation on Windows?
----------------------------------------------------------
-
-Sometimes, when you download the documentation package to a Windows machine
-using a web browser, the file extension of the saved file ends up being .EXE.
-This is a mistake; the extension should be .TGZ.
-
-Simply rename the downloaded file to have the .TGZ extension, and WinZip will be
-able to handle it.  (If your copy of WinZip doesn't, get a newer one from
-https://www.winzip.com.)
