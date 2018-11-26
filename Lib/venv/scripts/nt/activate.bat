@@ -4,11 +4,6 @@ rem This file is UTF-8 encoded, so we need to update the current code page while
 for /f "tokens=2 delims=:" %%a in ('"%SystemRoot%\System32\chcp.com"') do (
     set "_OLD_CODEPAGE=%%a"
 )
-
-rem Some international Windows versions put a period at the end of the codepage number,
-rem so erase it if existent.
-set "_OLD_CODEPAGE=%_OLD_CODEPAGE:.=%"
-
 if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
@@ -45,6 +40,8 @@ set "PATH=%VIRTUAL_ENV%\__VENV_BIN_NAME__;%PATH%"
 
 :END
 if defined _OLD_CODEPAGE (
-    "%SystemRoot%\System32\chcp.com" %_OLD_CODEPAGE% > nul
+    rem Some Windows versions put a period at the end of the codepage number,
+    rem so erase it if existent.
+    "%SystemRoot%\System32\chcp.com" %_OLD_CODEPAGE:.=% > nul
     set "_OLD_CODEPAGE="
 )
