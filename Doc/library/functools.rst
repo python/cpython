@@ -85,6 +85,11 @@ The :mod:`functools` module defines the following functions:
    The cache's size limit assures that the cache does not grow without bound on
    long-running processes such as web servers.
 
+   In general, the LRU cache should only be used when you want to reuse
+   previously computed values.  Accordingly, it doesn't make sense to cache
+   functions with side-effects, functions that need to create distinct mutable
+   objects on each call, or impure functions such as time() or random().
+
    Example of an LRU cache for static web content::
 
         @lru_cache(maxsize=32)
