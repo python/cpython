@@ -1344,6 +1344,7 @@ find and load modules.
    The module's ``__name__`` attribute for a package, the parent
    package's ``__name__`` attribute for a non-package submodule and
    the empty string ``''`` for a non-package top-level module.
+   It is a read-only attribute.
 
    .. attribute:: has_location
 
