@@ -408,7 +408,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         code = textwrap.dedent('''
             import json
-            import locale
             import sys
 
             data = {
@@ -449,8 +448,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 expected[key] = config[key]
         return expected
 
-    def check_core_config(self, config, expected, env):
-        expected = self.get_expected_config(expected, env)
+    def check_core_config(self, config, expected):
         core_config = dict(config['core_config'])
         for key in self.UNTESTED_CORE_CONFIG:
             core_config.pop(key, None)
@@ -485,7 +483,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # Ignore err
         config = json.loads(out)
 
-        self.check_core_config(config, expected, env)
+        expected = self.get_expected_config(expected, env)
+        self.check_core_config(config, expected)
         self.check_main_config(config)
         self.check_global_config(config)
 
