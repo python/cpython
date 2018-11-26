@@ -1359,7 +1359,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             failed = True
         if not failed:
             self.assertEqual(t.strftime('%'), '%')
-            self.assertEqual(t.strftime("m:%m d:%d y:%y %"), "m:03 d:02 y:05 %")        
+            self.assertEqual(t.strftime("m:%m d:%d y:%y %"), "m:03 d:02 y:05 %")
 
     def test_format(self):
         dt = self.theclass(2007, 9, 10)
