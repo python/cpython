@@ -9,6 +9,7 @@ import platform
 import re
 import subprocess
 import sys
+import textwrap
 
 
 MS_WINDOWS = (os.name == 'nt')
@@ -265,6 +266,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'executable',
         'module_search_paths',
     )
+    # Mark config which should be get by get_default_config()
+    GET_DEFAULT_CONFIG = object()
     DEFAULT_CORE_CONFIG = {
         'install_signal_handlers': 1,
         'use_environment': 1,
@@ -280,9 +283,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'dump_refs': 0,
         'malloc_stats': 0,
 
-        # None means that the value is get by get_locale_encoding()
-        'filesystem_encoding': None,
-        'filesystem_errors': None,
+        'filesystem_encoding': GET_DEFAULT_CONFIG,
+        'filesystem_errors': GET_DEFAULT_CONFIG,
 
         'utf8_mode': 0,
         'coerce_c_locale': 0,
@@ -298,10 +300,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         'module_search_path_env': None,
         'home': None,
-        'prefix': sys.prefix,
-        'base_prefix': sys.base_prefix,
-        'exec_prefix': sys.exec_prefix,
-        'base_exec_prefix': sys.base_exec_prefix,
+
+        'prefix': GET_DEFAULT_CONFIG,
+        'base_prefix': GET_DEFAULT_CONFIG,
+        'exec_prefix': GET_DEFAULT_CONFIG,
+        'base_exec_prefix': GET_DEFAULT_CONFIG,
 
         'isolated': 0,
         'site_import': 1,
@@ -316,9 +319,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'user_site_directory': 1,
         'buffered_stdio': 1,
 
-        # None means that the value is get by get_stdio_encoding()
-        'stdio_encoding': None,
-        'stdio_errors': None,
+        'stdio_encoding': GET_DEFAULT_CONFIG,
+        'stdio_errors': GET_DEFAULT_CONFIG,
 
         '_install_importlib': 1,
         '_check_hash_pycs_mode': 'default',
@@ -379,35 +381,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             ('Py_LegacyWindowsStdioFlag', 'legacy_windows_stdio'),
         ))
 
-    def get_stdio_encoding(self, env):
-        code = 'import sys; print(sys.stdout.encoding, sys.stdout.errors)'
-        args = (sys.executable, '-c', code)
-        proc = subprocess.run(args, env=env, text=True,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT)
-        if proc.returncode:
-            raise Exception(f"failed to get the stdio encoding: stdout={proc.stdout!r}")
-        out = proc.stdout.rstrip()
-        return out.split()
-
-    def get_filesystem_encoding(self, isolated, env):
-        code = ('import codecs, locale, sys; '
-                'print(sys.getfilesystemencoding(), '
-                'sys.getfilesystemencodeerrors())')
-        args = (sys.executable, '-c', code)
-        env = dict(env)
-        if not isolated:
-            env['PYTHONCOERCECLOCALE'] = '0'
-            env['PYTHONUTF8'] = '0'
-        proc = subprocess.run(args, text=True, env=env,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-        if proc.returncode:
-            raise Exception(f"failed to get the locale encoding: "
-                            f"stdout={proc.stdout!r} stderr={proc.stderr!r}")
-        out = proc.stdout.rstrip()
-        return out.split()
-
     def main_xoptions(self, xoptions_list):
         xoptions = {}
         for opt in xoptions_list:
@@ -423,27 +396,61 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         main_config = config['main_config']
 
         # main config
-        expected_main = {}
+        expected = {}
         for key in self.COPY_MAIN_CONFIG:
-            expected_main[key] = core_config[key]
-        expected_main['module_search_path'] = core_config['module_search_paths']
-        expected_main['xoptions'] = self.main_xoptions(core_config['xoptions'])
-        self.assertEqual(main_config, expected_main)
+            expected[key] = core_config[key]
+        expected['module_search_path'] = core_config['module_search_paths']
+        expected['xoptions'] = self.main_xoptions(core_config['xoptions'])
+        self.assertEqual(main_config, expected)
+
+    def get_expected_config(self, expected, env):
+        expected = dict(self.DEFAULT_CORE_CONFIG, **expected)
+
+        code = textwrap.dedent('''
+            import json
+            import locale
+            import sys
+
+            data = {
+                'stdio_encoding': sys.stdout.encoding,
+                'stdio_errors': sys.stdout.errors,
+                'prefix': sys.prefix,
+                'base_prefix': sys.base_prefix,
+                'exec_prefix': sys.exec_prefix,
+                'base_exec_prefix': sys.base_exec_prefix,
+                'filesystem_encoding': sys.getfilesystemencoding(),
+                'filesystem_errors': sys.getfilesystemencodeerrors(),
+            }
+
+            data = json.dumps(data)
+            data = data.encode('utf-8')
+            sys.stdout.buffer.write(data)
+            sys.stdout.buffer.flush()
+        ''')
+
+        # Use -S to not import the site module: get the proper configuration
+        # when test_embed is run from a venv (bpo-35313)
+        args = (sys.executable, '-S', '-c', code)
+        env = dict(env)
+        if not expected['isolated']:
+            env['PYTHONCOERCECLOCALE'] = '0'
+            env['PYTHONUTF8'] = '0'
+        proc = subprocess.run(args, env=env,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT)
+        if proc.returncode:
+            raise Exception(f"failed to get the default config: "
+                            f"stdout={proc.stdout!r} stderr={proc.stderr!r}")
+        stdout = proc.stdout.decode('utf-8')
+        config = json.loads(stdout)
+
+        for key, value in expected.items():
+            if value is self.GET_DEFAULT_CONFIG:
+                expected[key] = config[key]
+        return expected
 
     def check_core_config(self, config, expected, env):
-        if expected['stdio_encoding'] is None or expected['stdio_errors'] is None:
-            res = self.get_stdio_encoding(env)
-            if expected['stdio_encoding'] is None:
-                expected['stdio_encoding'] = res[0]
-            if expected['stdio_errors'] is None:
-                expected['stdio_errors'] = res[1]
-        if expected['filesystem_encoding'] is None or expected['filesystem_errors'] is None:
-            res = self.get_filesystem_encoding(expected['isolated'], env)
-            if expected['filesystem_encoding'] is None:
-                expected['filesystem_encoding'] = res[0]
-            if expected['filesystem_errors'] is None:
-                expected['filesystem_errors'] = res[1]
-
+        expected = self.get_expected_config(expected, env)
         core_config = dict(config['core_config'])
         for key in self.UNTESTED_CORE_CONFIG:
             core_config.pop(key, None)
@@ -452,20 +459,18 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def check_global_config(self, config):
         core_config = config['core_config']
 
-        expected_global = dict(self.DEFAULT_GLOBAL_CONFIG)
+        expected = dict(self.DEFAULT_GLOBAL_CONFIG)
         for item in self.COPY_GLOBAL_CONFIG:
             if len(item) == 3:
                 global_key, core_key, opposite = item
-                expected_global[global_key] = 0 if core_config[core_key] else 1
+                expected[global_key] = 0 if core_config[core_key] else 1
             else:
                 global_key, core_key = item
-                expected_global[global_key] = core_config[core_key]
+                expected[global_key] = core_config[core_key]
 
-        self.assertEqual(config['global_config'], expected_global)
+        self.assertEqual(config['global_config'], expected)
 
     def check_config(self, testname, expected):
-        expected = dict(self.DEFAULT_CORE_CONFIG, **expected)
-
         env = dict(os.environ)
         # Remove PYTHON* environment variables to get deterministic environment
         for key in list(env):
