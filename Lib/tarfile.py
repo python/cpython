@@ -1779,7 +1779,7 @@ class TarFile(object):
             1,                     # st_nlink
             uid,                   # st_uid
             gid,                   # st_gid
-            0,                     # st_size
+            -1,                    # st_size
             time,                  # st_atime
             time,                  # st_mtime
             time                   # st_ctime
@@ -2022,6 +2022,9 @@ class TarFile(object):
 
         if not self.fileobj.seekable():
             raise ValueError("addbuffer can only be used on seekable media")
+
+        if self.format == PAX_FORMAT:
+            raise ValueError("addbuffer cannot be use with pax header format")
 
         tarinfo = copy.copy(tarinfo)
         # we record the stream as a plain file

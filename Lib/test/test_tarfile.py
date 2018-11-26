@@ -2654,6 +2654,13 @@ class BufferWriteTest(TarTest, unittest.TestCase):
         finally:
             tar.close()
 
+    def test_pax_header(self):
+        with tarfile.open(tmpname, self.mode, format=tarfile.PAX_FORMAT) as tar:
+            buf = io.BytesIO(b'foobar')
+            tarinfo = tar.gettarinfo(name='foo', fileobj=buf)
+            with self.assertRaises(ValueError):
+                tar.addbuffer(tarinfo, buf)
+
 
 class UnseekableBufferWriteTest:
     prefix = 'w:'
