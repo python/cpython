@@ -59,13 +59,6 @@ PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 #define _PyTuple_CAST(op) (assert(PyTuple_Check(op)), (PyTupleObject *)(op))
 
 #define PyTuple_GET_ITEM(op, i) (_PyTuple_CAST(op)->ob_item[i])
-
-/* Get the size of the tuple.
-
-   The argument must be non-NULL and point to a tuple; no error checking
-   is performed (in release mode).
-
-   Use _PyTuple_CAST() to assert that the argument is a tuple. */
 #define PyTuple_GET_SIZE(op)    Py_SIZE(_PyTuple_CAST(op))
 
 /* Macro, *only* to be used to fill in brand new tuples */
