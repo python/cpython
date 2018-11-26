@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import sys
+import textwrap
 
 
 MS_WINDOWS = (os.name == 'nt')
@@ -264,6 +265,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'executable',
         'module_search_paths',
     )
+    # Mark config which should be get by get_default_config()
+    GET_DEFAULT_CONFIG = object()
     DEFAULT_CORE_CONFIG = {
         'install_signal_handlers': 1,
         'ignore_environment': 0,
@@ -292,10 +295,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         'module_search_path_env': None,
         'home': None,
-        'prefix': sys.prefix,
-        'base_prefix': sys.base_prefix,
-        'exec_prefix': sys.exec_prefix,
-        'base_exec_prefix': sys.base_exec_prefix,
+
+        'prefix': GET_DEFAULT_CONFIG,
+        'base_prefix': GET_DEFAULT_CONFIG,
+        'exec_prefix': GET_DEFAULT_CONFIG,
+        'base_exec_prefix': GET_DEFAULT_CONFIG,
 
         '_disable_importlib': 0,
     }
@@ -329,9 +333,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'Py_BytesWarningFlag': 0,
         'Py_DebugFlag': 0,
         'Py_DontWriteBytecodeFlag': 0,
-        # None means that the value is get by get_filesystem_encoding()
-        'Py_FileSystemDefaultEncodeErrors': None,
-        'Py_FileSystemDefaultEncoding': None,
+        'Py_FileSystemDefaultEncodeErrors': GET_DEFAULT_CONFIG,
+        'Py_FileSystemDefaultEncoding': GET_DEFAULT_CONFIG,
         'Py_FrozenFlag': 0,
         'Py_HashRandomizationFlag': 1,
         'Py_InspectFlag': 0,
@@ -356,24 +359,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         ('Py_UTF8Mode', 'utf8_mode'),
     ]
 
-    def get_filesystem_encoding(self, isolated, env):
-        code = ('import codecs, locale, sys; '
-                'print(sys.getfilesystemencoding(), '
-                'sys.getfilesystemencodeerrors())')
-        args = (sys.executable, '-c', code)
-        env = dict(env)
-        if not isolated:
-            env['PYTHONCOERCECLOCALE'] = '0'
-            env['PYTHONUTF8'] = '0'
-        proc = subprocess.run(args, text=True, env=env,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-        if proc.returncode:
-            raise Exception(f"failed to get the locale encoding: "
-                            f"stdout={proc.stdout!r} stderr={proc.stderr!r}")
-        out = proc.stdout.rstrip()
-        return out.split()
-
     def main_xoptions(self, xoptions_list):
         xoptions = {}
         for opt in xoptions_list:
@@ -392,29 +377,66 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         for key in self.UNTESTED_MAIN_CONFIG:
             del main_config[key]
 
-        expected_main = {}
+        expected = {}
         for key in self.COPY_MAIN_CONFIG:
-            expected_main[key] = core_config[key]
-        expected_main['xoptions'] = self.main_xoptions(core_config['xoptions'])
-        self.assertEqual(main_config, expected_main)
+            expected[key] = core_config[key]
+        expected['xoptions'] = self.main_xoptions(core_config['xoptions'])
+        self.assertEqual(main_config, expected)
+
+    def get_expected_config(self, expected_core, expected_global, env):
+        expected_core = dict(self.DEFAULT_CORE_CONFIG, **expected_core)
+        expected_global = dict(self.DEFAULT_GLOBAL_CONFIG, **expected_global)
+
+        code = textwrap.dedent('''
+            import json
+            import sys
+
+            data = {
+                'prefix': sys.prefix,
+                'base_prefix': sys.base_prefix,
+                'exec_prefix': sys.exec_prefix,
+                'base_exec_prefix': sys.base_exec_prefix,
+                'Py_FileSystemDefaultEncoding': sys.getfilesystemencoding(),
+                'Py_FileSystemDefaultEncodeErrors': sys.getfilesystemencodeerrors(),
+            }
+
+            data = json.dumps(data)
+            data = data.encode('utf-8')
+            sys.stdout.buffer.write(data)
+            sys.stdout.buffer.flush()
+        ''')
+
+        # Use -S to not import the site module: get the proper configuration
+        # when test_embed is run from a venv (bpo-35313)
+        args = (sys.executable, '-S', '-c', code)
+        env = dict(env)
+        if not expected_global['Py_IsolatedFlag']:
+            env['PYTHONCOERCECLOCALE'] = '0'
+            env['PYTHONUTF8'] = '0'
+        proc = subprocess.run(args, env=env,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT)
+        if proc.returncode:
+            raise Exception(f"failed to get the default config: "
+                            f"stdout={proc.stdout!r} stderr={proc.stderr!r}")
+        stdout = proc.stdout.decode('utf-8')
+        config = json.loads(stdout)
+
+        for key, value in expected_core.items():
+            if value is self.GET_DEFAULT_CONFIG:
+                expected_core[key] = config[key]
+        for key, value in expected_global.items():
+            if value is self.GET_DEFAULT_CONFIG:
+                expected_global[key] = config[key]
+        return (expected_core, expected_global)
 
     def check_core_config(self, config, expected):
-        expected = dict(self.DEFAULT_CORE_CONFIG, **expected)
         core_config = dict(config['core_config'])
         for key in self.UNTESTED_CORE_CONFIG:
             core_config.pop(key, None)
         self.assertEqual(core_config, expected)
 
     def check_global_config(self, config, expected, env):
-        expected = dict(self.DEFAULT_GLOBAL_CONFIG, **expected)
-
-        if expected['Py_FileSystemDefaultEncoding'] is None or expected['Py_FileSystemDefaultEncodeErrors'] is None:
-            res = self.get_filesystem_encoding(expected['Py_IsolatedFlag'], env)
-            if expected['Py_FileSystemDefaultEncoding'] is None:
-                expected['Py_FileSystemDefaultEncoding'] = res[0]
-            if expected['Py_FileSystemDefaultEncodeErrors'] is None:
-                expected['Py_FileSystemDefaultEncodeErrors'] = res[1]
-
         core_config = config['core_config']
 
         for item in self.COPY_GLOBAL_CONFIG:
@@ -445,6 +467,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # Ignore err
         config = json.loads(out)
 
+        expected_core, expected_global = self.get_expected_config(expected_core, expected_global, env)
         self.check_core_config(config, expected_core)
         self.check_main_config(config)
         self.check_global_config(config, expected_global, env)
