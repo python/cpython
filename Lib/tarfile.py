@@ -1762,6 +1762,13 @@ class TarFile(object):
 
     def _getdefaultstat(self):
         time = int(datetime.datetime.now().timestamp())
+        try:
+            uid = os.getuid()
+            gid = os.getgid()
+        except AttributeError:
+            # some systems do not define getuid and getgid
+            uid = 0
+            gid = 0
         # st_size will be replaced later,
         # no need to set st_ino and st_dev as st_nlink will always be 1
         # and (st_ino, st_dev) will not be used key for the cache dict.
@@ -1770,8 +1777,8 @@ class TarFile(object):
             0,                     # st_ino
             0,                     # st_dev
             1,                     # st_nlink
-            os.getgid(),           # st_uid
-            os.getuid(),           # st_gid
+            uid,                   # st_uid
+            gid,                   # st_gid
             0,                     # st_size
             time,                  # st_atime
             time,                  # st_mtime
