@@ -2026,7 +2026,7 @@ class TarFile(object):
         tarinfo = copy.copy(tarinfo)
         # we record the stream as a plain file
         tarinfo.type = REGTYPE
-        previous_position = self.fileobj.tell()
+        header_position = self.fileobj.tell()
         self._write_header(tarinfo)
 
         bufsize = self.copybufsize
@@ -2035,10 +2035,11 @@ class TarFile(object):
 
         # we need to go back in the file and overwrite the header and save the
         # the actual size
-        previous_position, _ = self.fileobj.tell(), self.fileobj.seek(previous_position)
+        end_position = self.fileobj.tell()
+        self.fileobj.seek(header_position)
         buf = tarinfo.tobuf(self.format, self.encoding, self.errors)
         self.fileobj.write(buf)
-        self.fileobj.seek(previous_position)
+        self.fileobj.seek(end_position)
 
         self.members.append(tarinfo)
 
