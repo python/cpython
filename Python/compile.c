@@ -1240,56 +1240,6 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
             Py_DECREF(u);
         }
     }
-    else if (PyFrozenSet_CheckExact(o)) {
-        // We register items in the frozenset, but don't rewrite
-        // the frozenset when the item is already registered
-        // because frozenset is rare and difficult.
-
-        // *key* is tuple. And it's first item is frozenset of
-        // constant keys.
-        // See _PyCode_ConstantKey() for detail.
-        assert(PyTuple_CheckExact(key));
-        assert(PyTuple_GET_SIZE(key) == 2);
-
-        Py_ssize_t len = PySet_GET_SIZE(o);
-        if (len == 0) {
-            return key;
-        }
-        PyObject *tuple = PyTuple_New(len);
-        if (tuple == NULL) {
-            Py_DECREF(key);
-            return NULL;
-        }
-        Py_ssize_t i = 0, pos = 0;
-        PyObject *item;
-        Py_hash_t hash;
-        while (_PySet_NextEntry(o, &pos, &item, &hash)) {
-            PyObject *k = merge_consts_recursive(c, item);
-            if (k == NULL) {
-                Py_DECREF(tuple);
-                Py_DECREF(key);
-                return NULL;
-            }
-            PyObject *u;
-            if (PyTuple_CheckExact(k)) {
-                u = PyTuple_GET_ITEM(k, 1);
-            }
-            else {
-                u = k;
-            }
-            Py_INCREF(u);
-            PyTuple_SET_ITEM(tuple, i, u);
-            i++;
-        }
-
-        PyObject *new = PyFrozenSet_New(tuple);
-        Py_DECREF(tuple);
-        if (new == NULL) {
-            Py_DECREF(key);
-            return NULL;
-        }
-        PyTuple_SET_ITEM(key, 1, new);
-    }
 
     return key;
 }
