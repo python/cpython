@@ -4201,7 +4201,7 @@ dictviews_isdisjoint(PyObject *self, PyObject *other)
 PyDoc_STRVAR(isdisjoint_doc,
 "Return True if the view and the given iterable have a null intersection.");
 
-static PyObject* dictkeys_reversed(_PyDictViewObject *dv);
+static PyObject* dictkeys_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored));
 
 PyDoc_STRVAR(reversed_keys_doc,
 "Return a reverse iterator over the dict keys.");
@@ -4254,7 +4254,7 @@ dictkeys_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-dictkeys_reversed(_PyDictViewObject *dv)
+dictkeys_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored))
 {
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
