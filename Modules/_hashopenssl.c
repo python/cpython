@@ -1011,7 +1011,7 @@ generate_hash_name_list(void)
 
 /* a PyMethodDef structure for the constructor */
 #define CONSTRUCTOR_METH_DEF(NAME)  \
-    {"openssl_" #NAME, (PyCFunction)EVP_new_ ## NAME, METH_FASTCALL, \
+    {"openssl_" #NAME, (PyCFunction)(void(*)(void))EVP_new_ ## NAME, METH_FASTCALL, \
         PyDoc_STR("Returns a " #NAME \
                   " hash object; optionally initialized with a string") \
     }
@@ -1034,9 +1034,9 @@ GEN_CONSTRUCTOR(sha512)
 /* List of functions exported by this module */
 
 static struct PyMethodDef EVP_functions[] = {
-    {"new", (PyCFunction)EVP_new, METH_VARARGS|METH_KEYWORDS, EVP_new__doc__},
+    {"new", (PyCFunction)(void(*)(void))EVP_new, METH_VARARGS|METH_KEYWORDS, EVP_new__doc__},
 #ifdef PY_PBKDF2_HMAC
-    {"pbkdf2_hmac", (PyCFunction)pbkdf2_hmac, METH_VARARGS|METH_KEYWORDS,
+    {"pbkdf2_hmac", (PyCFunction)(void(*)(void))pbkdf2_hmac, METH_VARARGS|METH_KEYWORDS,
      pbkdf2_hmac__doc__},
 #endif
     _HASHLIB_SCRYPT_METHODDEF

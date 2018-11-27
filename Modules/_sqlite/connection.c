@@ -1764,7 +1764,7 @@ static PyGetSetDef connection_getset[] = {
 };
 
 static PyMethodDef connection_methods[] = {
-    {"cursor", (PyCFunction)pysqlite_connection_cursor, METH_VARARGS|METH_KEYWORDS,
+    {"cursor", (PyCFunction)(void(*)(void))pysqlite_connection_cursor, METH_VARARGS|METH_KEYWORDS,
         PyDoc_STR("Return a cursor for the connection.")},
     {"close", (PyCFunction)pysqlite_connection_close, METH_NOARGS,
         PyDoc_STR("Closes the connection.")},
@@ -1772,11 +1772,11 @@ static PyMethodDef connection_methods[] = {
         PyDoc_STR("Commit the current transaction.")},
     {"rollback", (PyCFunction)pysqlite_connection_rollback, METH_NOARGS,
         PyDoc_STR("Roll back the current transaction.")},
-    {"create_function", (PyCFunction)pysqlite_connection_create_function, METH_VARARGS|METH_KEYWORDS,
+    {"create_function", (PyCFunction)(void(*)(void))pysqlite_connection_create_function, METH_VARARGS|METH_KEYWORDS,
         PyDoc_STR("Creates a new function. Non-standard.")},
-    {"create_aggregate", (PyCFunction)pysqlite_connection_create_aggregate, METH_VARARGS|METH_KEYWORDS,
+    {"create_aggregate", (PyCFunction)(void(*)(void))pysqlite_connection_create_aggregate, METH_VARARGS|METH_KEYWORDS,
         PyDoc_STR("Creates a new aggregate. Non-standard.")},
-    {"set_authorizer", (PyCFunction)pysqlite_connection_set_authorizer, METH_VARARGS|METH_KEYWORDS,
+    {"set_authorizer", (PyCFunction)(void(*)(void))pysqlite_connection_set_authorizer, METH_VARARGS|METH_KEYWORDS,
         PyDoc_STR("Sets authorizer callback. Non-standard.")},
     #ifdef HAVE_LOAD_EXTENSION
     {"enable_load_extension", (PyCFunction)pysqlite_enable_load_extension, METH_VARARGS,
@@ -1784,9 +1784,9 @@ static PyMethodDef connection_methods[] = {
     {"load_extension", (PyCFunction)pysqlite_load_extension, METH_VARARGS,
         PyDoc_STR("Load SQLite extension module. Non-standard.")},
     #endif
-    {"set_progress_handler", (PyCFunction)pysqlite_connection_set_progress_handler, METH_VARARGS|METH_KEYWORDS,
+    {"set_progress_handler", (PyCFunction)(void(*)(void))pysqlite_connection_set_progress_handler, METH_VARARGS|METH_KEYWORDS,
         PyDoc_STR("Sets progress handler callback. Non-standard.")},
-    {"set_trace_callback", (PyCFunction)pysqlite_connection_set_trace_callback, METH_VARARGS|METH_KEYWORDS,
+    {"set_trace_callback", (PyCFunction)(void(*)(void))pysqlite_connection_set_trace_callback, METH_VARARGS|METH_KEYWORDS,
         PyDoc_STR("Sets a trace callback called for each SQL statement (passed as unicode). Non-standard.")},
     {"execute", (PyCFunction)pysqlite_connection_execute, METH_VARARGS,
         PyDoc_STR("Executes a SQL statement. Non-standard.")},
@@ -1801,7 +1801,7 @@ static PyMethodDef connection_methods[] = {
     {"iterdump", (PyCFunction)pysqlite_connection_iterdump, METH_NOARGS,
         PyDoc_STR("Returns iterator to the dump of the database in an SQL text format. Non-standard.")},
     #ifdef HAVE_BACKUP_API
-    {"backup", (PyCFunction)pysqlite_connection_backup, METH_VARARGS | METH_KEYWORDS,
+    {"backup", (PyCFunction)(void(*)(void))pysqlite_connection_backup, METH_VARARGS | METH_KEYWORDS,
         PyDoc_STR("Makes a backup of the database. Non-standard.")},
     #endif
     {"__enter__", (PyCFunction)pysqlite_connection_enter, METH_NOARGS,

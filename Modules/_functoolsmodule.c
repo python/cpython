@@ -1236,7 +1236,7 @@ PyDoc_STRVAR(module_doc,
 
 static PyMethodDef module_methods[] = {
     {"reduce",          functools_reduce,     METH_VARARGS, functools_reduce_doc},
-    {"cmp_to_key",      (PyCFunction)functools_cmp_to_key,
+    {"cmp_to_key",      (PyCFunction)(void(*)(void))functools_cmp_to_key,
      METH_VARARGS | METH_KEYWORDS, functools_cmp_to_key_doc},
     {NULL,              NULL}           /* sentinel */
 };
