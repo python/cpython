@@ -4675,7 +4675,6 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             ADDOP(c, ROT_TWO);
             /* Fall through */
         case Store:
-        case NamedStore:
             ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         case Del:
@@ -4701,10 +4700,6 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         case AugStore:
             VISIT_SLICE(c, e->v.Subscript.slice, AugStore);
             break;
-        case NamedStore:
-            VISIT(c, expr, e->v.Subscript.value);
-            VISIT_SLICE(c, e->v.Subscript.slice, NamedStore);
-            break;
         case Store:
             VISIT(c, expr, e->v.Subscript.value);
             VISIT_SLICE(c, e->v.Subscript.slice, Store);
@@ -4723,7 +4718,6 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case Starred_kind:
         switch (e->v.Starred.ctx) {
         case Store:
-        case NamedStore:
             /* In all legitimate cases, the Starred node was already replaced
              * by compiler_list/compiler_tuple. XXX: is that okay? */
             return compiler_error(c,
