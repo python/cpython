@@ -7588,7 +7588,9 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     /* if src is a directory, ensure flags==1 (target_is_directory bit) */
-    flags |= target_is_directory | _check_dirW(src->wide, dst->wide);
+    if (target_is_directory || _check_dirW(src->wide, dst->wide)) {
+        flags |= SYMBOLIC_LINK_FLAG_DIRECTORY;
+    }
 
     result = CreateSymbolicLinkW(dst->wide, src->wide, flags);
     _Py_END_SUPPRESS_IPH
