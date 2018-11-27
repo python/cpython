@@ -1026,7 +1026,7 @@ Close the devpoll file descriptor. Further operations on the devpoll\n\
 object will raise an exception.");
 
 static PyObject*
-devpoll_get_closed(devpollObject *self)
+devpoll_get_closed(devpollObject *self, void *Py_UNUSED(ignored))
 {
     if (self->fd_devpoll < 0)
         Py_RETURN_TRUE;
@@ -1345,7 +1345,7 @@ Close the epoll control file descriptor. Further operations on the epoll\n\
 object will raise an exception.");
 
 static PyObject*
-pyepoll_get_closed(pyEpoll_Object *self)
+pyepoll_get_closed(pyEpoll_Object *self, void *Py_UNUSED(ignored))
 {
     if (self->epfd < 0)
         Py_RETURN_TRUE;
@@ -2091,7 +2091,7 @@ Close the kqueue control file descriptor. Further operations on the kqueue\n\
 object will raise an exception.");
 
 static PyObject*
-kqueue_queue_get_closed(kqueue_queue_Object *self)
+kqueue_queue_get_closed(kqueue_queue_Object *self, void *Py_UNUSED(ignored))
 {
     if (self->kqfd < 0)
         Py_RETURN_TRUE;
