@@ -346,7 +346,7 @@ wrapperdescr_raw_call(PyWrapperDescrObject *descr, PyObject *self,
     wrapperfunc wrapper = descr->d_base->wrapper;
 
     if (descr->d_base->flags & PyWrapperFlag_KEYWORDS) {
-        wrapperfunc_kwds wk = (wrapperfunc_kwds)wrapper;
+        wrapperfunc_kwds wk = (wrapperfunc_kwds)(void(*)(void))wrapper;
         return (*wk)(self, args, descr->d_wrapped, kwds);
     }
 
