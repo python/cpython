@@ -947,7 +947,7 @@ class CLanguage(Language):
         if flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
             methoddef_cast = "(PyCFunction)"
         else:
-            methoddef_cast = "(PyCFunction)(void *)"
+            methoddef_cast = "(PyCFunction)(void(*)(void))"
 
         if f.methoddef_flags:
             flags += '|' + f.methoddef_flags
