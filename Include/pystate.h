@@ -14,25 +14,28 @@ extern "C" {
 removed (with effort). */
 #define MAX_CO_EXTRA_USERS 255
 
-/* State shared between threads */
+/* Forward declarations for PyFrameObject, PyThreadState
+   and PyInterpreterState */
+struct _frame;
+struct _ts;
+struct _is;
 
-struct _ts; /* Forward */
-struct _is; /* Forward */
-struct _frame; /* Forward declaration for PyFrameObject. */
-
+#ifdef Py_LIMITED_API
+typedef struct _ts PyThreadState;
 typedef struct _is PyInterpreterState;
+#else
+/* PyThreadState and PyInterpreterState are defined in cpython/pystate.h */
+#endif
 
 /* State unique per thread */
 
-typedef struct _ts PyThreadState;
-
-PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
-PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
-PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
+PyAPI_FUNC(struct _is *) PyInterpreterState_New(void);
+PyAPI_FUNC(void) PyInterpreterState_Clear(struct _is *);
+PyAPI_FUNC(void) PyInterpreterState_Delete(struct _is *);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
 /* New in 3.7 */
-PyAPI_FUNC(int64_t) PyInterpreterState_GetID(PyInterpreterState *);
+PyAPI_FUNC(int64_t) PyInterpreterState_GetID(struct _is *);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 /* New in 3.3 */
@@ -41,9 +44,9 @@ PyAPI_FUNC(int) PyState_RemoveModule(struct PyModuleDef*);
 #endif
 PyAPI_FUNC(PyObject*) PyState_FindModule(struct PyModuleDef*);
 
-PyAPI_FUNC(PyThreadState *) PyThreadState_New(PyInterpreterState *);
-PyAPI_FUNC(void) PyThreadState_Clear(PyThreadState *);
-PyAPI_FUNC(void) PyThreadState_Delete(PyThreadState *);
+PyAPI_FUNC(struct _ts *) PyThreadState_New(struct _is *);
+PyAPI_FUNC(void) PyThreadState_Clear(struct _ts *);
+PyAPI_FUNC(void) PyThreadState_Delete(struct _ts *);
 PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
 /* Get the current thread state.
@@ -54,7 +57,7 @@ PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
    The caller must hold the GIL.
 
    See also PyThreadState_GET() and _PyThreadState_GET(). */
-PyAPI_FUNC(PyThreadState *) PyThreadState_Get(void);
+PyAPI_FUNC(struct _ts *) PyThreadState_Get(void);
 
 /* Get the current Python thread state.
 
@@ -67,7 +70,7 @@ PyAPI_FUNC(PyThreadState *) PyThreadState_Get(void);
    See also PyThreadState_Get() and _PyThreadState_GET(). */
 #define PyThreadState_GET() PyThreadState_Get()
 
-PyAPI_FUNC(PyThreadState *) PyThreadState_Swap(PyThreadState *);
+PyAPI_FUNC(struct _ts *) PyThreadState_Swap(struct _ts *);
 PyAPI_FUNC(PyObject *) PyThreadState_GetDict(void);
 PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 
@@ -115,7 +118,7 @@ PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
    thread-state, even if no auto-thread-state call has been made
    on the main thread.
 */
-PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
+PyAPI_FUNC(struct _ts *) PyGILState_GetThisThreadState(void);
 
 
 #ifndef Py_LIMITED_API
