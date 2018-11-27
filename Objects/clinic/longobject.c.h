@@ -167,7 +167,7 @@ PyDoc_STRVAR(int_to_bytes__doc__,
 "    is raised.");
 
 #define INT_TO_BYTES_METHODDEF    \
-    {"to_bytes", (PyCFunction)int_to_bytes, METH_FASTCALL|METH_KEYWORDS, int_to_bytes__doc__},
+    {"to_bytes", (PyCFunction)(void(*)(void))int_to_bytes, METH_FASTCALL|METH_KEYWORDS, int_to_bytes__doc__},
 
 static PyObject *
 int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
@@ -214,7 +214,7 @@ PyDoc_STRVAR(int_from_bytes__doc__,
 "    Indicates whether two\'s complement is used to represent the integer.");
 
 #define INT_FROM_BYTES_METHODDEF    \
-    {"from_bytes", (PyCFunction)int_from_bytes, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, int_from_bytes__doc__},
+    {"from_bytes", (PyCFunction)(void(*)(void))int_from_bytes, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, int_from_bytes__doc__},
 
 static PyObject *
 int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
@@ -239,4 +239,4 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6d5e92d7dc803751 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=403ccd096555fd1e input=a9049054013a1b77]*/
