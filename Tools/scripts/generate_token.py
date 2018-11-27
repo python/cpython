@@ -22,7 +22,9 @@ def load_tokens(path):
                 line = line[:i].strip()
             if not line:
                 continue
-            name, *strings = line.split()
+            strings = line.split()
+            name = strings[0]
+            del strings[0]
             value = len(tok_names)
             if name == 'ERRORTOKEN':
                 ERRORTOKEN = value
@@ -92,7 +94,7 @@ def make_h(infile, outfile='Include/token.h'):
             len(tok_names),
             NT_OFFSET
         )):
-        print("%s regenerated from %s" % (outfile, infile), file=sys.stderr)
+        print("%s regenerated from %s" % (outfile, infile))
 
 
 token_c_template = """\
