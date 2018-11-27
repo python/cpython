@@ -577,7 +577,8 @@ static stmt_ty ast_for_with_stmt(struct compiling *, const node *, bool);
 static stmt_ty ast_for_for_stmt(struct compiling *, const node *, bool);
 
 /* Note different signature for ast_for_call */
-static expr_ty ast_for_call(struct compiling *, const node *, expr_ty, bool);
+static expr_ty ast_for_call(struct compiling *, const node *, expr_ty,
+                            const node *);
 
 static PyObject *parsenumber(struct compiling *, const char *);
 static expr_ty parsestrplus(struct compiling *, const node *n);
@@ -929,6 +930,16 @@ forbidden_name(struct compiling *c, identifier name, const node *n,
         }
     }
     return 0;
+}
+
+static expr_ty
+copy_location(expr_ty e, const node *n)
+{
+    if (e) {
+        e->lineno = LINENO(n);
+        e->col_offset = n->n_col_offset;
+    }
+    return e;
 }
 
 /* Set the context ctx for expr_ty e, recursively traversing e.
@@ -1519,7 +1530,7 @@ ast_for_decorator(struct compiling *c, const node *n)
         name_expr = NULL;
     }
     else {
-        d = ast_for_call(c, CHILD(n, 3), name_expr, true);
+        d = ast_for_call(c, CHILD(n, 3), name_expr, CHILD(n, 2));
         if (!d)
             return NULL;
         name_expr = NULL;
@@ -2129,10 +2140,16 @@ ast_for_atom(struct compiling *c, const node *n)
             return ast_for_expr(c, ch);
 
         /* testlist_comp: test ( comp_for | (',' test)* [','] ) */
-        if ((NCH(ch) > 1) && (TYPE(CHILD(ch, 1)) == comp_for))
-            return ast_for_genexp(c, ch);
+        if (NCH(ch) == 1) {
+            return ast_for_testlist(c, ch);
+        }
 
-        return ast_for_testlist(c, ch);
+        if (TYPE(CHILD(ch, 1)) == comp_for) {
+            return copy_location(ast_for_genexp(c, ch), n);
+        }
+        else {
+            return copy_location(ast_for_testlist(c, ch), n);
+        }
     case LSQB: /* list (or list comprehension) */
         ch = CHILD(n, 1);
 
@@ -2147,8 +2164,9 @@ ast_for_atom(struct compiling *c, const node *n)
 
             return List(elts, Load, LINENO(n), n->n_col_offset, c->c_arena);
         }
-        else
-            return ast_for_listcomp(c, ch);
+        else {
+            return copy_location(ast_for_listcomp(c, ch), n);
+        }
     case LBRACE: {
         /* dictorsetmaker: ( ((test ':' test | '**' test)
          *                    (comp_for | (',' (test ':' test | '**' test))* [','])) |
@@ -2187,11 +2205,7 @@ ast_for_atom(struct compiling *c, const node *n)
                 /* It's a dictionary display. */
                 res = ast_for_dictdisplay(c, ch);
             }
-            if (res) {
-                res->lineno = LINENO(n);
-                res->col_offset = n->n_col_offset;
-            }
-            return res;
+            return copy_location(res, n);
         }
     }
     default:
@@ -2330,7 +2344,7 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
             return Call(left_expr, NULL, NULL, LINENO(n),
                         n->n_col_offset, c->c_arena);
         else
-            return ast_for_call(c, CHILD(n, 1), left_expr, true);
+            return ast_for_call(c, CHILD(n, 1), left_expr, CHILD(n, 0));
     }
     else if (TYPE(CHILD(n, 0)) == DOT) {
         PyObject *attr_id = NEW_IDENTIFIER(CHILD(n, 1));
@@ -2667,7 +2681,8 @@ ast_for_expr(struct compiling *c, const node *n)
 }
 
 static expr_ty
-ast_for_call(struct compiling *c, const node *n, expr_ty func, bool allowgen)
+ast_for_call(struct compiling *c, const node *n, expr_ty func,
+             const node *maybegenbeg)
 {
     /*
       arglist: argument (',' argument)*  [',']
@@ -2690,7 +2705,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func, bool allowgen)
                 nargs++;
             else if (TYPE(CHILD(ch, 1)) == comp_for) {
                 nargs++;
-                if (!allowgen) {
+                if (!maybegenbeg) {
                     ast_error(c, ch, "invalid syntax");
                     return NULL;
                 }
@@ -2775,7 +2790,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func, bool allowgen)
             }
             else if (TYPE(CHILD(ch, 1)) == comp_for) {
                 /* the lone generator expression */
-                e = ast_for_genexp(c, ch);
+                e = copy_location(ast_for_genexp(c, ch), maybegenbeg);
                 if (!e)
                     return NULL;
                 asdl_seq_SET(args, nargs++, e);
@@ -3935,7 +3950,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         if (!dummy_name)
             return NULL;
         dummy = Name(dummy_name, Load, LINENO(n), n->n_col_offset, c->c_arena);
-        call = ast_for_call(c, CHILD(n, 3), dummy, false);
+        call = ast_for_call(c, CHILD(n, 3), dummy, NULL);
         if (!call)
             return NULL;
     }
