@@ -19,7 +19,7 @@ PyDoc_STRVAR(fcntl_fcntl__doc__,
 "corresponding to the return value of the fcntl call in the C code.");
 
 #define FCNTL_FCNTL_METHODDEF    \
-    {"fcntl", (PyCFunction)fcntl_fcntl, METH_FASTCALL, fcntl_fcntl__doc__},
+    {"fcntl", (PyCFunction)(void(*)(void))fcntl_fcntl, METH_FASTCALL, fcntl_fcntl__doc__},
 
 static PyObject *
 fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg);
@@ -76,7 +76,7 @@ PyDoc_STRVAR(fcntl_ioctl__doc__,
 "code.");
 
 #define FCNTL_IOCTL_METHODDEF    \
-    {"ioctl", (PyCFunction)fcntl_ioctl, METH_FASTCALL, fcntl_ioctl__doc__},
+    {"ioctl", (PyCFunction)(void(*)(void))fcntl_ioctl, METH_FASTCALL, fcntl_ioctl__doc__},
 
 static PyObject *
 fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
@@ -111,7 +111,7 @@ PyDoc_STRVAR(fcntl_flock__doc__,
 "function is emulated using fcntl()).");
 
 #define FCNTL_FLOCK_METHODDEF    \
-    {"flock", (PyCFunction)fcntl_flock, METH_FASTCALL, fcntl_flock__doc__},
+    {"flock", (PyCFunction)(void(*)(void))fcntl_flock, METH_FASTCALL, fcntl_flock__doc__},
 
 static PyObject *
 fcntl_flock_impl(PyObject *module, int fd, int code);
@@ -161,7 +161,7 @@ PyDoc_STRVAR(fcntl_lockf__doc__,
 "    2 - relative to the end of the file (SEEK_END)");
 
 #define FCNTL_LOCKF_METHODDEF    \
-    {"lockf", (PyCFunction)fcntl_lockf, METH_FASTCALL, fcntl_lockf__doc__},
+    {"lockf", (PyCFunction)(void(*)(void))fcntl_lockf, METH_FASTCALL, fcntl_lockf__doc__},
 
 static PyObject *
 fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
@@ -186,4 +186,4 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2f6e70ae67ec8ac9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fc1a781750750a14 input=a9049054013a1b77]*/

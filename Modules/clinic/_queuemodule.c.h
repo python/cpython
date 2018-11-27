@@ -40,7 +40,7 @@ PyDoc_STRVAR(_queue_SimpleQueue_put__doc__,
 "never blocks.  They are provided for compatibility with the Queue class.");
 
 #define _QUEUE_SIMPLEQUEUE_PUT_METHODDEF    \
-    {"put", (PyCFunction)_queue_SimpleQueue_put, METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_put__doc__},
+    {"put", (PyCFunction)(void(*)(void))_queue_SimpleQueue_put, METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_put__doc__},
 
 static PyObject *
 _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item,
@@ -76,7 +76,7 @@ PyDoc_STRVAR(_queue_SimpleQueue_put_nowait__doc__,
 "for compatibility with the Queue class.");
 
 #define _QUEUE_SIMPLEQUEUE_PUT_NOWAIT_METHODDEF    \
-    {"put_nowait", (PyCFunction)_queue_SimpleQueue_put_nowait, METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_put_nowait__doc__},
+    {"put_nowait", (PyCFunction)(void(*)(void))_queue_SimpleQueue_put_nowait, METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_put_nowait__doc__},
 
 static PyObject *
 _queue_SimpleQueue_put_nowait_impl(simplequeueobject *self, PyObject *item);
@@ -114,7 +114,7 @@ PyDoc_STRVAR(_queue_SimpleQueue_get__doc__,
 "in that case).");
 
 #define _QUEUE_SIMPLEQUEUE_GET_METHODDEF    \
-    {"get", (PyCFunction)_queue_SimpleQueue_get, METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_get__doc__},
+    {"get", (PyCFunction)(void(*)(void))_queue_SimpleQueue_get, METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_get__doc__},
 
 static PyObject *
 _queue_SimpleQueue_get_impl(simplequeueobject *self, int block,
@@ -215,4 +215,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8badc3bb85263689 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c12ce9050f153304 input=a9049054013a1b77]*/

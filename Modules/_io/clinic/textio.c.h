@@ -46,7 +46,7 @@ PyDoc_STRVAR(_io_IncrementalNewlineDecoder_decode__doc__,
 "\n");
 
 #define _IO_INCREMENTALNEWLINEDECODER_DECODE_METHODDEF    \
-    {"decode", (PyCFunction)_io_IncrementalNewlineDecoder_decode, METH_FASTCALL|METH_KEYWORDS, _io_IncrementalNewlineDecoder_decode__doc__},
+    {"decode", (PyCFunction)(void(*)(void))_io_IncrementalNewlineDecoder_decode, METH_FASTCALL|METH_KEYWORDS, _io_IncrementalNewlineDecoder_decode__doc__},
 
 static PyObject *
 _io_IncrementalNewlineDecoder_decode_impl(nldecoder_object *self,
@@ -186,7 +186,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_reconfigure__doc__,
 "This also does an implicit stream flush.");
 
 #define _IO_TEXTIOWRAPPER_RECONFIGURE_METHODDEF    \
-    {"reconfigure", (PyCFunction)_io_TextIOWrapper_reconfigure, METH_FASTCALL|METH_KEYWORDS, _io_TextIOWrapper_reconfigure__doc__},
+    {"reconfigure", (PyCFunction)(void(*)(void))_io_TextIOWrapper_reconfigure, METH_FASTCALL|METH_KEYWORDS, _io_TextIOWrapper_reconfigure__doc__},
 
 static PyObject *
 _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
@@ -265,7 +265,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_read__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_READ_METHODDEF    \
-    {"read", (PyCFunction)_io_TextIOWrapper_read, METH_FASTCALL, _io_TextIOWrapper_read__doc__},
+    {"read", (PyCFunction)(void(*)(void))_io_TextIOWrapper_read, METH_FASTCALL, _io_TextIOWrapper_read__doc__},
 
 static PyObject *
 _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n);
@@ -292,7 +292,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_readline__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_READLINE_METHODDEF    \
-    {"readline", (PyCFunction)_io_TextIOWrapper_readline, METH_FASTCALL, _io_TextIOWrapper_readline__doc__},
+    {"readline", (PyCFunction)(void(*)(void))_io_TextIOWrapper_readline, METH_FASTCALL, _io_TextIOWrapper_readline__doc__},
 
 static PyObject *
 _io_TextIOWrapper_readline_impl(textio *self, Py_ssize_t size);
@@ -319,7 +319,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_seek__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_SEEK_METHODDEF    \
-    {"seek", (PyCFunction)_io_TextIOWrapper_seek, METH_FASTCALL, _io_TextIOWrapper_seek__doc__},
+    {"seek", (PyCFunction)(void(*)(void))_io_TextIOWrapper_seek, METH_FASTCALL, _io_TextIOWrapper_seek__doc__},
 
 static PyObject *
 _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence);
@@ -364,7 +364,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_truncate__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_TRUNCATE_METHODDEF    \
-    {"truncate", (PyCFunction)_io_TextIOWrapper_truncate, METH_FASTCALL, _io_TextIOWrapper_truncate__doc__},
+    {"truncate", (PyCFunction)(void(*)(void))_io_TextIOWrapper_truncate, METH_FASTCALL, _io_TextIOWrapper_truncate__doc__},
 
 static PyObject *
 _io_TextIOWrapper_truncate_impl(textio *self, PyObject *pos);
@@ -504,4 +504,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=b5be870b0039d577 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a811badd76bfe92e input=a9049054013a1b77]*/

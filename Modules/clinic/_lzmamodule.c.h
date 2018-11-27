@@ -81,7 +81,7 @@ PyDoc_STRVAR(_lzma_LZMADecompressor_decompress__doc__,
 "the unused_data attribute.");
 
 #define _LZMA_LZMADECOMPRESSOR_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)_lzma_LZMADecompressor_decompress, METH_FASTCALL|METH_KEYWORDS, _lzma_LZMADecompressor_decompress__doc__},
+    {"decompress", (PyCFunction)(void(*)(void))_lzma_LZMADecompressor_decompress, METH_FASTCALL|METH_KEYWORDS, _lzma_LZMADecompressor_decompress__doc__},
 
 static PyObject *
 _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
@@ -229,7 +229,7 @@ PyDoc_STRVAR(_lzma__decode_filter_properties__doc__,
 "The result does not include the filter ID itself, only the options.");
 
 #define _LZMA__DECODE_FILTER_PROPERTIES_METHODDEF    \
-    {"_decode_filter_properties", (PyCFunction)_lzma__decode_filter_properties, METH_FASTCALL, _lzma__decode_filter_properties__doc__},
+    {"_decode_filter_properties", (PyCFunction)(void(*)(void))_lzma__decode_filter_properties, METH_FASTCALL, _lzma__decode_filter_properties__doc__},
 
 static PyObject *
 _lzma__decode_filter_properties_impl(PyObject *module, lzma_vli filter_id,
@@ -256,4 +256,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=38c2d52362bf3712 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2acfd7c4b68530a6 input=a9049054013a1b77]*/

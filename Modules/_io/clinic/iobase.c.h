@@ -174,7 +174,7 @@ PyDoc_STRVAR(_io__IOBase_readline__doc__,
 "terminator(s) recognized.");
 
 #define _IO__IOBASE_READLINE_METHODDEF    \
-    {"readline", (PyCFunction)_io__IOBase_readline, METH_FASTCALL, _io__IOBase_readline__doc__},
+    {"readline", (PyCFunction)(void(*)(void))_io__IOBase_readline, METH_FASTCALL, _io__IOBase_readline__doc__},
 
 static PyObject *
 _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit);
@@ -206,7 +206,7 @@ PyDoc_STRVAR(_io__IOBase_readlines__doc__,
 "lines so far exceeds hint.");
 
 #define _IO__IOBASE_READLINES_METHODDEF    \
-    {"readlines", (PyCFunction)_io__IOBase_readlines, METH_FASTCALL, _io__IOBase_readlines__doc__},
+    {"readlines", (PyCFunction)(void(*)(void))_io__IOBase_readlines, METH_FASTCALL, _io__IOBase_readlines__doc__},
 
 static PyObject *
 _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint);
@@ -241,7 +241,7 @@ PyDoc_STRVAR(_io__RawIOBase_read__doc__,
 "\n");
 
 #define _IO__RAWIOBASE_READ_METHODDEF    \
-    {"read", (PyCFunction)_io__RawIOBase_read, METH_FASTCALL, _io__RawIOBase_read__doc__},
+    {"read", (PyCFunction)(void(*)(void))_io__RawIOBase_read, METH_FASTCALL, _io__RawIOBase_read__doc__},
 
 static PyObject *
 _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n);
@@ -279,4 +279,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=64989ec3dbf44a7c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cde4b0e96a4e69e3 input=a9049054013a1b77]*/

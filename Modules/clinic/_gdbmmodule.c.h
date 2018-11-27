@@ -9,7 +9,7 @@ PyDoc_STRVAR(_gdbm_gdbm_get__doc__,
 "Get the value for key, or default if not present.");
 
 #define _GDBM_GDBM_GET_METHODDEF    \
-    {"get", (PyCFunction)_gdbm_gdbm_get, METH_FASTCALL, _gdbm_gdbm_get__doc__},
+    {"get", (PyCFunction)(void(*)(void))_gdbm_gdbm_get, METH_FASTCALL, _gdbm_gdbm_get__doc__},
 
 static PyObject *
 _gdbm_gdbm_get_impl(dbmobject *self, PyObject *key, PyObject *default_value);
@@ -39,7 +39,7 @@ PyDoc_STRVAR(_gdbm_gdbm_setdefault__doc__,
 "Get value for key, or set it to default and return default if not present.");
 
 #define _GDBM_GDBM_SETDEFAULT_METHODDEF    \
-    {"setdefault", (PyCFunction)_gdbm_gdbm_setdefault, METH_FASTCALL, _gdbm_gdbm_setdefault__doc__},
+    {"setdefault", (PyCFunction)(void(*)(void))_gdbm_gdbm_setdefault, METH_FASTCALL, _gdbm_gdbm_setdefault__doc__},
 
 static PyObject *
 _gdbm_gdbm_setdefault_impl(dbmobject *self, PyObject *key,
@@ -231,7 +231,7 @@ PyDoc_STRVAR(dbmopen__doc__,
 "when the database has to be created.  It defaults to octal 0o666.");
 
 #define DBMOPEN_METHODDEF    \
-    {"open", (PyCFunction)dbmopen, METH_FASTCALL, dbmopen__doc__},
+    {"open", (PyCFunction)(void(*)(void))dbmopen, METH_FASTCALL, dbmopen__doc__},
 
 static PyObject *
 dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
@@ -254,4 +254,4 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dec05ff9c5aeaeae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5ca4361417bf96cb input=a9049054013a1b77]*/
