@@ -161,7 +161,7 @@ script:
     fi
     $XVFB_RUN make buildbottest TESTOPTS="-j4 -uall,-cpu"
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      $XVFB_RUN make PYTHON=../python SPHINXOPTS="-q -W -j4" -C Doc/ venv doctest
+      make PYTHON=../python SPHINXOPTS="-q -W -j4" -C Doc/ venv doctest
     fi
 notifications:
   email: false
