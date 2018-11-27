@@ -22,14 +22,15 @@ def load_tokens(path):
                 line = line[:i].strip()
             if not line:
                 continue
-            strings = line.split()
-            name = strings[0]
-            del strings[0]
+            fields = line.split()
+            name = fields[0]
             value = len(tok_names)
             if name == 'ERRORTOKEN':
                 ERRORTOKEN = value
-            for x in strings:
-                string_to_tok[x] = value
+            string = fields[1] if len(fields) > 1 else None
+            if string:
+                string = eval(string)
+                string_to_tok[string] = value
             tok_names.append(name)
     return tok_names, ERRORTOKEN, string_to_tok
 
@@ -39,8 +40,8 @@ def update_file(file, content):
         with open(file, 'r') as fobj:
             if fobj.read() == content:
                 return False
-    except FileNotFound:
-        return False
+    except (OSError, ValueError):
+        pass
     with open(file, 'w') as fobj:
         fobj.write(content)
     return True
