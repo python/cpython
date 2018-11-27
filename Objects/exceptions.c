@@ -181,7 +181,7 @@ static PyMethodDef BaseException_methods[] = {
 };
 
 static PyObject *
-BaseException_get_args(PyBaseExceptionObject *self)
+BaseException_get_args(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
 {
     if (self->args == NULL) {
         Py_INCREF(Py_None);
@@ -192,7 +192,7 @@ BaseException_get_args(PyBaseExceptionObject *self)
 }
 
 static int
-BaseException_set_args(PyBaseExceptionObject *self, PyObject *val)
+BaseException_set_args(PyBaseExceptionObject *self, PyObject *val, void *Py_UNUSED(ignored))
 {
     PyObject *seq;
     if (val == NULL) {
@@ -207,7 +207,7 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val)
 }
 
 static PyObject *
-BaseException_get_tb(PyBaseExceptionObject *self)
+BaseException_get_tb(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
 {
     if (self->traceback == NULL) {
         Py_INCREF(Py_None);
@@ -218,7 +218,7 @@ BaseException_get_tb(PyBaseExceptionObject *self)
 }
 
 static int
-BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb)
+BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb, void *Py_UNUSED(ignored))
 {
     if (tb == NULL) {
         PyErr_SetString(PyExc_TypeError, "__traceback__ may not be deleted");
@@ -236,7 +236,8 @@ BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb)
 }
 
 static PyObject *
-BaseException_get_context(PyObject *self) {
+BaseException_get_context(PyObject *self, void *Py_UNUSED(ignored))
+{
     PyObject *res = PyException_GetContext(self);
     if (res)
         return res;  /* new reference already returned above */
@@ -244,7 +245,8 @@ BaseException_get_context(PyObject *self) {
 }
 
 static int
-BaseException_set_context(PyObject *self, PyObject *arg) {
+BaseException_set_context(PyObject *self, PyObject *arg, void *Py_UNUSED(ignored))
+{
     if (arg == NULL) {
         PyErr_SetString(PyExc_TypeError, "__context__ may not be deleted");
         return -1;
@@ -263,7 +265,8 @@ BaseException_set_context(PyObject *self, PyObject *arg) {
 }
 
 static PyObject *
-BaseException_get_cause(PyObject *self) {
+BaseException_get_cause(PyObject *self, void *Py_UNUSED(ignored))
+{
     PyObject *res = PyException_GetCause(self);
     if (res)
         return res;  /* new reference already returned above */
@@ -271,7 +274,8 @@ BaseException_get_cause(PyObject *self) {
 }
 
 static int
-BaseException_set_cause(PyObject *self, PyObject *arg) {
+BaseException_set_cause(PyObject *self, PyObject *arg, void *Py_UNUSED(ignored))
+{
     if (arg == NULL) {
         PyErr_SetString(PyExc_TypeError, "__cause__ may not be deleted");
         return -1;
@@ -294,10 +298,10 @@ static PyGetSetDef BaseException_getset[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
     {"__traceback__", (getter)BaseException_get_tb, (setter)BaseException_set_tb},
-    {"__context__", (getter)BaseException_get_context,
-     (setter)BaseException_set_context, PyDoc_STR("exception context")},
-    {"__cause__", (getter)BaseException_get_cause,
-     (setter)BaseException_set_cause, PyDoc_STR("exception cause")},
+    {"__context__", BaseException_get_context,
+     BaseException_set_context, PyDoc_STR("exception context")},
+    {"__cause__", BaseException_get_cause,
+     BaseException_set_cause, PyDoc_STR("exception cause")},
     {NULL},
 };
 
@@ -312,7 +316,7 @@ PyException_GetTraceback(PyObject *self) {
 
 int
 PyException_SetTraceback(PyObject *self, PyObject *tb) {
-    return BaseException_set_tb((PyBaseExceptionObject *)self, tb);
+    return BaseException_set_tb((PyBaseExceptionObject *)self, tb, NULL);
 }
 
 PyObject *

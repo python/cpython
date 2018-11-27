@@ -378,7 +378,7 @@ calculate_qualname(PyDescrObject *descr)
 }
 
 static PyObject *
-descr_get_qualname(PyDescrObject *descr)
+descr_get_qualname(PyDescrObject *descr, void *Py_UNUSED(ignored))
 {
     if (descr->d_qualname == NULL)
         descr->d_qualname = calculate_qualname(descr);
@@ -1118,7 +1118,7 @@ static PyMemberDef wrapper_members[] = {
 };
 
 static PyObject *
-wrapper_objclass(wrapperobject *wp)
+wrapper_objclass(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
     PyObject *c = (PyObject *)PyDescr_TYPE(wp->descr);
 
@@ -1127,7 +1127,7 @@ wrapper_objclass(wrapperobject *wp)
 }
 
 static PyObject *
-wrapper_name(wrapperobject *wp)
+wrapper_name(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
     const char *s = wp->descr->d_base->name;
 
@@ -1135,21 +1135,21 @@ wrapper_name(wrapperobject *wp)
 }
 
 static PyObject *
-wrapper_doc(wrapperobject *wp, void *closure)
+wrapper_doc(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
     return _PyType_GetDocFromInternalDoc(wp->descr->d_base->name, wp->descr->d_base->doc);
 }
 
 static PyObject *
-wrapper_text_signature(wrapperobject *wp, void *closure)
+wrapper_text_signature(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
     return _PyType_GetTextSignatureFromInternalDoc(wp->descr->d_base->name, wp->descr->d_base->doc);
 }
 
 static PyObject *
-wrapper_qualname(wrapperobject *wp)
+wrapper_qualname(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
-    return descr_get_qualname((PyDescrObject *)wp->descr);
+    return descr_get_qualname((PyDescrObject *)wp->descr, NULL);
 }
 
 static PyGetSetDef wrapper_getsets[] = {

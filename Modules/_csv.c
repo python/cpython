@@ -160,31 +160,31 @@ get_nullchar_as_None(Py_UCS4 c)
 }
 
 static PyObject *
-Dialect_get_lineterminator(DialectObj *self)
+Dialect_get_lineterminator(DialectObj *self, void *Py_UNUSED(ignored))
 {
     return get_string(self->lineterminator);
 }
 
 static PyObject *
-Dialect_get_delimiter(DialectObj *self)
+Dialect_get_delimiter(DialectObj *self, void *Py_UNUSED(ignored))
 {
     return get_nullchar_as_None(self->delimiter);
 }
 
 static PyObject *
-Dialect_get_escapechar(DialectObj *self)
+Dialect_get_escapechar(DialectObj *self, void *Py_UNUSED(ignored))
 {
     return get_nullchar_as_None(self->escapechar);
 }
 
 static PyObject *
-Dialect_get_quotechar(DialectObj *self)
+Dialect_get_quotechar(DialectObj *self, void *Py_UNUSED(ignored))
 {
     return get_nullchar_as_None(self->quotechar);
 }
 
 static PyObject *
-Dialect_get_quoting(DialectObj *self)
+Dialect_get_quoting(DialectObj *self, void *Py_UNUSED(ignored))
 {
     return PyLong_FromLong(self->quoting);
 }
