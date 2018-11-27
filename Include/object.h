@@ -175,8 +175,12 @@ typedef int (*initproc)(PyObject *, PyObject *, PyObject *);
 typedef PyObject *(*newfunc)(struct _typeobject *, PyObject *, PyObject *);
 typedef PyObject *(*allocfunc)(struct _typeobject *, Py_ssize_t);
 
+#ifdef Py_LIMITED_API
 /* In Py_LIMITED_API, PyTypeObject is an opaque structure. */
 typedef struct _typeobject PyTypeObject;
+#else
+/* PyTypeObject is defined in cpython/object.h */
+#endif
 
 typedef struct{
     int slot;    /* slot id, see below */
@@ -196,30 +200,30 @@ PyAPI_FUNC(PyObject*) PyType_FromSpec(PyType_Spec*);
 PyAPI_FUNC(PyObject*) PyType_FromSpecWithBases(PyType_Spec*, PyObject*);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03040000
-PyAPI_FUNC(void*) PyType_GetSlot(PyTypeObject*, int);
+PyAPI_FUNC(void*) PyType_GetSlot(struct _typeobject*, int);
 #endif
 
 /* Generic type check */
-PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
+PyAPI_FUNC(int) PyType_IsSubtype(struct _typeobject *, struct _typeobject *);
 #define PyObject_TypeCheck(ob, tp) \
     (Py_TYPE(ob) == (tp) || PyType_IsSubtype(Py_TYPE(ob), (tp)))
 
-PyAPI_DATA(PyTypeObject) PyType_Type; /* built-in 'type' */
-PyAPI_DATA(PyTypeObject) PyBaseObject_Type; /* built-in 'object' */
-PyAPI_DATA(PyTypeObject) PySuper_Type; /* built-in 'super' */
+PyAPI_DATA(struct _typeobject) PyType_Type; /* built-in 'type' */
+PyAPI_DATA(struct _typeobject) PyBaseObject_Type; /* built-in 'object' */
+PyAPI_DATA(struct _typeobject) PySuper_Type; /* built-in 'super' */
 
-PyAPI_FUNC(unsigned long) PyType_GetFlags(PyTypeObject*);
+PyAPI_FUNC(unsigned long) PyType_GetFlags(struct _typeobject*);
 
 #define PyType_Check(op) \
     PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_TYPE_SUBCLASS)
 #define PyType_CheckExact(op) (Py_TYPE(op) == &PyType_Type)
 
-PyAPI_FUNC(int) PyType_Ready(PyTypeObject *);
-PyAPI_FUNC(PyObject *) PyType_GenericAlloc(PyTypeObject *, Py_ssize_t);
-PyAPI_FUNC(PyObject *) PyType_GenericNew(PyTypeObject *,
+PyAPI_FUNC(int) PyType_Ready(struct _typeobject *);
+PyAPI_FUNC(PyObject *) PyType_GenericAlloc(struct _typeobject *, Py_ssize_t);
+PyAPI_FUNC(PyObject *) PyType_GenericNew(struct _typeobject *,
                                                PyObject *, PyObject *);
 PyAPI_FUNC(unsigned int) PyType_ClearCache(void);
-PyAPI_FUNC(void) PyType_Modified(PyTypeObject *);
+PyAPI_FUNC(void) PyType_Modified(struct _typeobject *);
 
 /* Generic operations on objects */
 PyAPI_FUNC(PyObject *) PyObject_Repr(PyObject *);
@@ -397,8 +401,8 @@ PyAPI_FUNC(void) _PyDebug_PrintTotalRefs(void);
 #endif /* Py_REF_DEBUG */
 
 #ifdef COUNT_ALLOCS
-PyAPI_FUNC(void) _Py_inc_count(PyTypeObject *);
-PyAPI_FUNC(void) _Py_dec_count(PyTypeObject *);
+PyAPI_FUNC(void) _Py_inc_count(struct _typeobject *);
+PyAPI_FUNC(void) _Py_dec_count(struct _typeobject *);
 #define _Py_INC_TPALLOCS(OP)    _Py_inc_count(Py_TYPE(OP))
 #define _Py_INC_TPFREES(OP)     _Py_dec_count(Py_TYPE(OP))
 #define _Py_DEC_TPFREES(OP)     Py_TYPE(OP)->tp_frees--
