@@ -1803,7 +1803,7 @@ done:
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling");
 
 static PyObject *
-odictiter_reduce(odictiterobject *di)
+odictiter_reduce(odictiterobject *di, PyObject *Py_UNUSED(ignored))
 {
     /* copy the iterator state */
     odictiterobject tmp = *di;
