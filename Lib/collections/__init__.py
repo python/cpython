@@ -464,7 +464,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
             doc = f'Alias for field number {index}'
             cache[index] = doc
 
-        tuplegetter_object = _tuplegetter(index, doc=doc)
+        tuplegetter_object = _tuplegetter(index, doc)
         class_namespace[name] = tuplegetter_object
 
     result = type(typename, (tuple,), class_namespace)

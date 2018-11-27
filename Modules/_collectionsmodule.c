@@ -1,6 +1,5 @@
 #include "Python.h"
 #include "structmember.h"
-#include "clinic/_collectionsmodule.c.h"
 
 #ifdef STDC_HEADERS
 #include <stddef.h>
@@ -12,6 +11,9 @@
 class _tuplegetter "_tuplegetterobject *" "&tuplegetter_type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ee5ed5baabe35068]*/
+
+static PyTypeObject tuplegetter_type;
+#include "clinic/_collectionsmodule.c.h"
 
 /* collections module implementation of a deque() datatype
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
@@ -2348,12 +2350,12 @@ _tuplegetter.__new__ as tuplegetter_new
 
     index: Py_ssize_t
     doc: object
-
+    /
 [clinic start generated code]*/
 
 static PyObject *
 tuplegetter_new_impl(PyTypeObject *type, Py_ssize_t index, PyObject *doc)
-/*[clinic end generated code: output=014be444ad80263f input=bed3e2ac189db22a]*/
+/*[clinic end generated code: output=014be444ad80263f input=87c576a5bdbc0bbb]*/
 {
     _tuplegetterobject* self;
     self = (_tuplegetterobject *)type->tp_alloc(type, 0);
@@ -2386,7 +2388,6 @@ tuplegetterdescr_get(PyObject *self, PyObject *obj, PyObject *type)
     Py_XINCREF(result);
     return result;
 }
-
 
 static int
 tuplegetter_traverse(PyObject *self, visitproc visit, void *arg)

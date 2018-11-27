@@ -9,12 +9,14 @@ static PyObject *
 tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"index", "doc", NULL};
-    static _PyArg_Parser _parser = {"nO:_tuplegetter", _keywords, 0};
     Py_ssize_t index;
     PyObject *doc;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if ((type == &tuplegetter_type) &&
+        !_PyArg_NoKeywords("_tuplegetter", kwargs)) {
+        goto exit;
+    }
+    if (!PyArg_ParseTuple(args, "nO:_tuplegetter",
         &index, &doc)) {
         goto exit;
     }
@@ -23,4 +25,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=add072a2dd2c77dc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=83746071eacc28d3 input=a9049054013a1b77]*/
