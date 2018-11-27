@@ -1310,7 +1310,7 @@ deque_traverse(dequeobject *deque, visitproc visit, void *arg)
 }
 
 static PyObject *
-deque_reduce(dequeobject *deque)
+deque_reduce(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
     PyObject *dict, *it;
     _Py_IDENTIFIER(__dict__);
