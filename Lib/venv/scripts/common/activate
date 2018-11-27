@@ -28,6 +28,7 @@ deactivate () {
     fi
 
     unset VIRTUAL_ENV
+    unset VIRTUAL_ENV_PROMPT
     if [ ! "$1" = "nondestructive" ] ; then
     # Self destruct!
         unset -f deactivate
@@ -55,8 +56,10 @@ fi
 if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ] ; then
     _OLD_VIRTUAL_PS1="${PS1:-}"
     if [ "x__VENV_PROMPT__" != x ] ; then
-	PS1="__VENV_PROMPT__${PS1:-}"
+    VIRTUAL_ENV_PROMPT="__VENV_PROMPT__"
+    PS1="__VENV_PROMPT__${PS1:-}"
     else
+    VIRTUAL_ENV_PROMPT="`basename \"$VIRTUAL_ENV\"`"
     if [ "`basename \"$VIRTUAL_ENV\"`" = "__" ] ; then
         # special case for Aspen magic directories
         # see http://www.zetadev.com/software/aspen/
@@ -65,6 +68,7 @@ if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ] ; then
         PS1="(`basename \"$VIRTUAL_ENV\"`)$PS1"
     fi
     fi
+    export VIRTUAL_ENV_PROMPT
     export PS1
 fi
 
