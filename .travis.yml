@@ -57,6 +57,20 @@ matrix:
         - python -m pip install sphinx==1.8.2 blurb python-docs-theme
       script:
         - make check suspicious html SPHINXOPTS="-q -W -j4"
+    - os: linux
+      language: c
+      compiler: clang
+      env: TESTING=doctest
+      addons:
+        apt:
+          packages:
+            - xvfb
+      before_script:
+        - ./configure
+        - make -j4
+        - make -C Doc/ PYTHON=../python venv
+      script:
+        xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W -j4" doctest
     - os: osx
       language: c
       compiler: clang
@@ -96,7 +110,7 @@ before_install:
   - set -e
   - |
       # Check short-circuit conditions
-      if [[ "${TESTING}" != "docs" ]]
+      if [[ "${TESTING}" != "docs" && "${TESTING}" != "doctest" ]]
       then
         if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]
         then
@@ -121,6 +135,7 @@ before_install:
 install:
   - |
       # Install OpenSSL as necessary
+      # Note: doctest needs OpenSSL
       if [[ "${TESTING}" != "docs" ]]
       then
         # clang complains about unused-parameter a lot, redirect stderr
@@ -160,9 +175,6 @@ script:
       XVFB_RUN=xvfb-run;
     fi
     $XVFB_RUN make buildbottest TESTOPTS="-j4 -uall,-cpu"
-    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      $XVFB_RUN make PYTHON=../python SPHINXOPTS="-q -W -j4" -C Doc/ venv doctest
-    fi
 notifications:
   email: false
   irc:
