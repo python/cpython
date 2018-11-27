@@ -204,13 +204,13 @@ static PyObject* pysqlite_row_richcompare(pysqlite_Row *self, PyObject *_other, 
 }
 
 PyMappingMethods pysqlite_row_as_mapping = {
-    /* mp_length        */ (lenfunc)pysqlite_row_length,
-    /* mp_subscript     */ (binaryfunc)pysqlite_row_subscript,
+    /* mp_length        */ _Py_CAST_FUNC(lenfunc, pysqlite_row_length),
+    /* mp_subscript     */ _Py_CAST_FUNC(binaryfunc, pysqlite_row_subscript),
     /* mp_ass_subscript */ (objobjargproc)0,
 };
 
 static PySequenceMethods pysqlite_row_as_sequence = {
-   /* sq_length */         (lenfunc)pysqlite_row_length,
+   /* sq_length */         _Py_CAST_FUNC(lenfunc, pysqlite_row_length),
    /* sq_concat */         0,
    /* sq_repeat */         0,
    /* sq_item */           (ssizeargfunc)pysqlite_row_item,
@@ -229,7 +229,7 @@ PyTypeObject pysqlite_RowType = {
         MODULE_NAME ".Row",                             /* tp_name */
         sizeof(pysqlite_Row),                           /* tp_basicsize */
         0,                                              /* tp_itemsize */
-        (destructor)pysqlite_row_dealloc,               /* tp_dealloc */
+        _Py_CAST_FUNC(destructor, pysqlite_row_dealloc),               /* tp_dealloc */
         0,                                              /* tp_print */
         0,                                              /* tp_getattr */
         0,                                              /* tp_setattr */

@@ -1757,9 +1757,9 @@ static const char connection_doc[] =
 PyDoc_STR("SQLite database connection object.");
 
 static PyGetSetDef connection_getset[] = {
-    {"isolation_level",  (getter)pysqlite_connection_get_isolation_level, (setter)pysqlite_connection_set_isolation_level},
-    {"total_changes",  (getter)pysqlite_connection_get_total_changes, (setter)0},
-    {"in_transaction",  (getter)pysqlite_connection_get_in_transaction, (setter)0},
+    {"isolation_level",  _Py_CAST_FUNC(getter, pysqlite_connection_get_isolation_level), _Py_CAST_FUNC(setter, pysqlite_connection_set_isolation_level)},
+    {"total_changes",  _Py_CAST_FUNC(getter, pysqlite_connection_get_total_changes), _Py_CAST_FUNC(setter, 0)},
+    {"in_transaction",  _Py_CAST_FUNC(getter, pysqlite_connection_get_in_transaction), _Py_CAST_FUNC(setter, 0)},
     {NULL}
 };
 

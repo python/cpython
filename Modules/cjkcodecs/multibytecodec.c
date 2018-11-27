@@ -153,8 +153,8 @@ codecctx_errors_set(MultibyteStatefulCodecContext *self, PyObject *value,
 
 /* This getset handlers list is used by all the stateful codec objects */
 static PyGetSetDef codecctx_getsets[] = {
-    {"errors",          (getter)codecctx_errors_get,
-                    (setter)codecctx_errors_set,
+    {"errors",          _Py_CAST_FUNC(getter, codecctx_errors_get),
+                    _Py_CAST_FUNC(setter, codecctx_errors_set),
                     PyDoc_STR("how to treat errors")},
     {NULL,}
 };
@@ -706,7 +706,7 @@ static PyTypeObject MultibyteCodec_Type = {
     sizeof(MultibyteCodecObject),       /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)multibytecodec_dealloc, /* tp_dealloc */
+    _Py_CAST_FUNC(destructor, multibytecodec_dealloc), /* tp_dealloc */
     0,                                  /* tp_print */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -1083,7 +1083,7 @@ static PyTypeObject MultibyteIncrementalEncoder_Type = {
     sizeof(MultibyteIncrementalEncoderObject), /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /*  methods  */
-    (destructor)mbiencoder_dealloc, /* tp_dealloc */
+    _Py_CAST_FUNC(destructor, mbiencoder_dealloc), /* tp_dealloc */
     0,                                  /* tp_print */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -1382,7 +1382,7 @@ static PyTypeObject MultibyteIncrementalDecoder_Type = {
     sizeof(MultibyteIncrementalDecoderObject), /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /*  methods  */
-    (destructor)mbidecoder_dealloc, /* tp_dealloc */
+    _Py_CAST_FUNC(destructor, mbidecoder_dealloc), /* tp_dealloc */
     0,                                  /* tp_print */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -1729,7 +1729,7 @@ static PyTypeObject MultibyteStreamReader_Type = {
     sizeof(MultibyteStreamReaderObject), /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /*  methods  */
-    (destructor)mbstreamreader_dealloc, /* tp_dealloc */
+    _Py_CAST_FUNC(destructor, mbstreamreader_dealloc), /* tp_dealloc */
     0,                                  /* tp_print */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -1975,7 +1975,7 @@ static PyTypeObject MultibyteStreamWriter_Type = {
     sizeof(MultibyteStreamWriterObject), /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /*  methods  */
-    (destructor)mbstreamwriter_dealloc, /* tp_dealloc */
+    _Py_CAST_FUNC(destructor, mbstreamwriter_dealloc), /* tp_dealloc */
     0,                                  /* tp_print */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */

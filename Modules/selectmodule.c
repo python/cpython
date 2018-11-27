@@ -1055,7 +1055,7 @@ select_devpoll_fileno_impl(devpollObject *self)
 }
 
 static PyGetSetDef devpoll_getsetlist[] = {
-    {"closed", (getter)devpoll_get_closed, NULL,
+    {"closed", _Py_CAST_FUNC(getter, devpoll_get_closed), NULL,
      "True if the devpoll object is closed"},
     {0},
 };
@@ -1638,7 +1638,7 @@ select_epoll___exit___impl(pyEpoll_Object *self, PyObject *exc_type,
 }
 
 static PyGetSetDef pyepoll_getsetlist[] = {
-    {"closed", (getter)pyepoll_get_closed, NULL,
+    {"closed", _Py_CAST_FUNC(getter, pyepoll_get_closed), NULL,
      "True if the epoll handler is closed"},
     {0},
 };
@@ -2188,7 +2188,7 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
 }
 
 static PyGetSetDef kqueue_queue_getsetlist[] = {
-    {"closed", (getter)kqueue_queue_get_closed, NULL,
+    {"closed", _Py_CAST_FUNC(getter, kqueue_queue_get_closed), NULL,
      "True if the kqueue handler is closed"},
     {0},
 };
@@ -2218,7 +2218,7 @@ static PyTypeObject poll_Type = {
     sizeof(pollObject),         /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     /* methods */
-    (destructor)poll_dealloc, /*tp_dealloc*/
+    _Py_CAST_FUNC(destructor, poll_dealloc), /*tp_dealloc*/
     0,                          /*tp_print*/
     0,                          /*tp_getattr*/
     0,                      /*tp_setattr*/
@@ -2264,7 +2264,7 @@ static PyTypeObject devpoll_Type = {
     sizeof(devpollObject),      /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     /* methods */
-    (destructor)devpoll_dealloc, /*tp_dealloc*/
+    _Py_CAST_FUNC(destructor, devpoll_dealloc), /*tp_dealloc*/
     0,                          /*tp_print*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
@@ -2316,7 +2316,7 @@ static PyTypeObject pyEpoll_Type = {
     "select.epoll",                                     /* tp_name */
     sizeof(pyEpoll_Object),                             /* tp_basicsize */
     0,                                                  /* tp_itemsize */
-    (destructor)pyepoll_dealloc,                        /* tp_dealloc */
+    _Py_CAST_FUNC(destructor, pyepoll_dealloc),                        /* tp_dealloc */
     0,                                                  /* tp_print */
     0,                                                  /* tp_getattr */
     0,                                                  /* tp_setattr */
@@ -2367,7 +2367,7 @@ static PyTypeObject kqueue_event_Type = {
     0,                                                  /* tp_getattr */
     0,                                                  /* tp_setattr */
     0,                                                  /* tp_reserved */
-    (reprfunc)kqueue_event_repr,                        /* tp_repr */
+    _Py_CAST_FUNC(reprfunc, kqueue_event_repr),                        /* tp_repr */
     0,                                                  /* tp_as_number */
     0,                                                  /* tp_as_sequence */
     0,                                                  /* tp_as_mapping */
@@ -2412,7 +2412,7 @@ static PyTypeObject kqueue_queue_Type = {
     "select.kqueue",                                    /* tp_name */
     sizeof(kqueue_queue_Object),                        /* tp_basicsize */
     0,                                                  /* tp_itemsize */
-    (destructor)kqueue_queue_dealloc,                   /* tp_dealloc */
+    _Py_CAST_FUNC(destructor, kqueue_queue_dealloc),                   /* tp_dealloc */
     0,                                                  /* tp_print */
     0,                                                  /* tp_getattr */
     0,                                                  /* tp_setattr */

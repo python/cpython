@@ -698,11 +698,11 @@ gen_getyieldfrom(PyGenObject *gen)
 }
 
 static PyGetSetDef gen_getsetlist[] = {
-    {"__name__", (getter)gen_get_name, (setter)gen_set_name,
+    {"__name__", _Py_CAST_FUNC(getter, gen_get_name), _Py_CAST_FUNC(setter, gen_set_name),
      PyDoc_STR("name of the generator")},
-    {"__qualname__", (getter)gen_get_qualname, (setter)gen_set_qualname,
+    {"__qualname__", _Py_CAST_FUNC(getter, gen_get_qualname), _Py_CAST_FUNC(setter, gen_set_qualname),
      PyDoc_STR("qualified name of the generator")},
-    {"gi_yieldfrom", (getter)gen_getyieldfrom, NULL,
+    {"gi_yieldfrom", _Py_CAST_FUNC(getter, gen_getyieldfrom), NULL,
      PyDoc_STR("object being iterated by yield from, or None")},
     {NULL} /* Sentinel */
 };
@@ -935,11 +935,11 @@ coro_get_cr_await(PyCoroObject *coro)
 }
 
 static PyGetSetDef coro_getsetlist[] = {
-    {"__name__", (getter)gen_get_name, (setter)gen_set_name,
+    {"__name__", _Py_CAST_FUNC(getter, gen_get_name), _Py_CAST_FUNC(setter, gen_set_name),
      PyDoc_STR("name of the coroutine")},
-    {"__qualname__", (getter)gen_get_qualname, (setter)gen_set_qualname,
+    {"__qualname__", _Py_CAST_FUNC(getter, gen_get_qualname), _Py_CAST_FUNC(setter, gen_set_qualname),
      PyDoc_STR("qualified name of the coroutine")},
-    {"cr_await", (getter)coro_get_cr_await, NULL,
+    {"cr_await", _Py_CAST_FUNC(getter, coro_get_cr_await), NULL,
      PyDoc_STR("object being awaited on, or None")},
     {NULL} /* Sentinel */
 };
@@ -1333,11 +1333,11 @@ async_gen_athrow(PyAsyncGenObject *o, PyObject *args)
 
 
 static PyGetSetDef async_gen_getsetlist[] = {
-    {"__name__", (getter)gen_get_name, (setter)gen_set_name,
+    {"__name__", _Py_CAST_FUNC(getter, gen_get_name), _Py_CAST_FUNC(setter, gen_set_name),
      PyDoc_STR("name of the async generator")},
-    {"__qualname__", (getter)gen_get_qualname, (setter)gen_set_qualname,
+    {"__qualname__", _Py_CAST_FUNC(getter, gen_get_qualname), _Py_CAST_FUNC(setter, gen_set_qualname),
      PyDoc_STR("qualified name of the async generator")},
-    {"ag_await", (getter)coro_get_cr_await, NULL,
+    {"ag_await", _Py_CAST_FUNC(getter, coro_get_cr_await), NULL,
      PyDoc_STR("object being awaited on, or None")},
     {NULL} /* Sentinel */
 };

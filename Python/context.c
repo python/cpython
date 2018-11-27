@@ -1159,8 +1159,8 @@ token_get_old_value(PyContextToken *self)
 }
 
 static PyGetSetDef PyContextTokenType_getsetlist[] = {
-    {"var", (getter)token_get_var, NULL, NULL},
-    {"old_value", (getter)token_get_old_value, NULL, NULL},
+    {"var", _Py_CAST_FUNC(getter, token_get_var), NULL, NULL},
+    {"old_value", _Py_CAST_FUNC(getter, token_get_old_value), NULL, NULL},
     {NULL}
 };
 

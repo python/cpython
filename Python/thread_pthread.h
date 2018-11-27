@@ -194,7 +194,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #else
                              (pthread_attr_t*)NULL,
 #endif
-                             (void* (*)(void *))func,
+                             _Py_CAST_FUNC(void* (*)(void *), func),
                              (void *)arg
                              );
 

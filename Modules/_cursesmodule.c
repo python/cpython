@@ -2409,8 +2409,8 @@ static PyMethodDef PyCursesWindow_Methods[] = {
 
 static PyGetSetDef PyCursesWindow_getsets[] = {
     {"encoding",
-     (getter)PyCursesWindow_get_encoding,
-     (setter)PyCursesWindow_set_encoding,
+     _Py_CAST_FUNC(getter, PyCursesWindow_get_encoding),
+     _Py_CAST_FUNC(setter, PyCursesWindow_set_encoding),
      "the typecode character used to create the array"},
     {NULL, NULL, NULL, NULL }  /* sentinel */
 };

@@ -95,7 +95,7 @@ spamlist_state_get(spamlistobject *self)
 }
 
 static PyGetSetDef spamlist_getsets[] = {
-    {"state", (getter)spamlist_state_get, NULL,
+    {"state", _Py_CAST_FUNC(getter, spamlist_state_get), NULL,
      PyDoc_STR("an int variable for demonstration purposes")},
     {0}
 };

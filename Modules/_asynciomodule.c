@@ -1398,16 +1398,16 @@ static PyMethodDef FutureType_methods[] = {
 };
 
 #define FUTURE_COMMON_GETSETLIST                                              \
-    {"_state", (getter)FutureObj_get_state, NULL, NULL},                      \
-    {"_asyncio_future_blocking", (getter)FutureObj_get_blocking,              \
-                                 (setter)FutureObj_set_blocking, NULL},       \
-    {"_loop", (getter)FutureObj_get_loop, NULL, NULL},                        \
-    {"_callbacks", (getter)FutureObj_get_callbacks, NULL, NULL},              \
-    {"_result", (getter)FutureObj_get_result, NULL, NULL},                    \
-    {"_exception", (getter)FutureObj_get_exception, NULL, NULL},              \
-    {"_log_traceback", (getter)FutureObj_get_log_traceback,                   \
-                       (setter)FutureObj_set_log_traceback, NULL},            \
-    {"_source_traceback", (getter)FutureObj_get_source_traceback, NULL, NULL},
+    {"_state", _Py_CAST_FUNC(getter, FutureObj_get_state), NULL, NULL},                      \
+    {"_asyncio_future_blocking", _Py_CAST_FUNC(getter, FutureObj_get_blocking),              \
+                                 _Py_CAST_FUNC(setter, FutureObj_set_blocking), NULL},       \
+    {"_loop", _Py_CAST_FUNC(getter, FutureObj_get_loop), NULL, NULL},                        \
+    {"_callbacks", _Py_CAST_FUNC(getter, FutureObj_get_callbacks), NULL, NULL},              \
+    {"_result", _Py_CAST_FUNC(getter, FutureObj_get_result), NULL, NULL},                    \
+    {"_exception", _Py_CAST_FUNC(getter, FutureObj_get_exception), NULL, NULL},              \
+    {"_log_traceback", _Py_CAST_FUNC(getter, FutureObj_get_log_traceback),                   \
+                       _Py_CAST_FUNC(setter, FutureObj_set_log_traceback), NULL},            \
+    {"_source_traceback", _Py_CAST_FUNC(getter, FutureObj_get_source_traceback), NULL, NULL},
 
 static PyGetSetDef FutureType_getsetlist[] = {
     FUTURE_COMMON_GETSETLIST
@@ -1724,7 +1724,7 @@ TaskStepMethWrapper_get___self__(TaskStepMethWrapper *o)
 }
 
 static PyGetSetDef TaskStepMethWrapper_getsetlist[] = {
-    {"__self__", (getter)TaskStepMethWrapper_get___self__, NULL, NULL},
+    {"__self__", _Py_CAST_FUNC(getter, TaskStepMethWrapper_get___self__), NULL, NULL},
     {NULL} /* Sentinel */
 };
 
@@ -2434,11 +2434,11 @@ static PyMethodDef TaskType_methods[] = {
 
 static PyGetSetDef TaskType_getsetlist[] = {
     FUTURE_COMMON_GETSETLIST
-    {"_log_destroy_pending", (getter)TaskObj_get_log_destroy_pending,
-                             (setter)TaskObj_set_log_destroy_pending, NULL},
-    {"_must_cancel", (getter)TaskObj_get_must_cancel, NULL, NULL},
-    {"_coro", (getter)TaskObj_get_coro, NULL, NULL},
-    {"_fut_waiter", (getter)TaskObj_get_fut_waiter, NULL, NULL},
+    {"_log_destroy_pending", _Py_CAST_FUNC(getter, TaskObj_get_log_destroy_pending),
+                             _Py_CAST_FUNC(setter, TaskObj_set_log_destroy_pending), NULL},
+    {"_must_cancel", _Py_CAST_FUNC(getter, TaskObj_get_must_cancel), NULL, NULL},
+    {"_coro", _Py_CAST_FUNC(getter, TaskObj_get_coro), NULL, NULL},
+    {"_fut_waiter", _Py_CAST_FUNC(getter, TaskObj_get_fut_waiter), NULL, NULL},
     {NULL} /* Sentinel */
 };
 

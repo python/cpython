@@ -792,4 +792,9 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #define WITH_THREAD
 #endif
 
+/* Cast a function pointer to new_type.
+
+   Use a temporary cast to (void*) see avoid compiler warning (bpo-33012). */
+#define _Py_CAST_FUNC(new_type, func) ((new_type)(void *)(func))
+
 #endif /* Py_PYPORT_H */

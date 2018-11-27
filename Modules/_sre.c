@@ -2579,7 +2579,7 @@ static PyMethodDef pattern_methods[] = {
 };
 
 static PyGetSetDef pattern_getset[] = {
-    {"groupindex", (getter)pattern_groupindex, (setter)NULL,
+    {"groupindex", _Py_CAST_FUNC(getter, pattern_groupindex), (setter)NULL,
       "A dictionary mapping group names to group numbers."},
     {NULL}  /* Sentinel */
 };
@@ -2649,11 +2649,11 @@ static PyMethodDef match_methods[] = {
 };
 
 static PyGetSetDef match_getset[] = {
-    {"lastindex", (getter)match_lastindex_get, (setter)NULL,
+    {"lastindex", _Py_CAST_FUNC(getter, match_lastindex_get), (setter)NULL,
      "The integer index of the last matched capturing group."},
-    {"lastgroup", (getter)match_lastgroup_get, (setter)NULL,
+    {"lastgroup", _Py_CAST_FUNC(getter, match_lastgroup_get), (setter)NULL,
      "The name of the last matched capturing group."},
-    {"regs",      (getter)match_regs_get,      (setter)NULL},
+    {"regs",      _Py_CAST_FUNC(getter, match_regs_get),      (setter)NULL},
     {NULL}
 };
 

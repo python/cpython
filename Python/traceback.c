@@ -155,7 +155,7 @@ static PyMemberDef tb_memberlist[] = {
 };
 
 static PyGetSetDef tb_getsetters[] = {
-    {"tb_next", (getter)tb_next_get, (setter)tb_next_set, NULL, NULL},
+    {"tb_next", _Py_CAST_FUNC(getter, tb_next_get), _Py_CAST_FUNC(setter, tb_next_set), NULL, NULL},
     {NULL}      /* Sentinel */
 };
 
@@ -190,7 +190,7 @@ PyTypeObject PyTraceBack_Type = {
     "traceback",
     sizeof(PyTracebackObject),
     0,
-    (destructor)tb_dealloc, /*tp_dealloc*/
+    _Py_CAST_FUNC(destructor, tb_dealloc), /*tp_dealloc*/
     0,                  /*tp_print*/
     0,    /*tp_getattr*/
     0,                  /*tp_setattr*/
@@ -208,7 +208,7 @@ PyTypeObject PyTraceBack_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     tb_new__doc__,                              /* tp_doc */
     (traverseproc)tb_traverse,                  /* tp_traverse */
-    (inquiry)tb_clear,                          /* tp_clear */
+    _Py_CAST_FUNC(inquiry, tb_clear),                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */

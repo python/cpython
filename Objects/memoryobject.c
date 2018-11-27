@@ -140,7 +140,7 @@ PyTypeObject _PyManagedBuffer_Type = {
     "managedbuffer",
     sizeof(_PyManagedBufferObject),
     0,
-    (destructor)mbuf_dealloc,                /* tp_dealloc */
+    _Py_CAST_FUNC(destructor, mbuf_dealloc),                /* tp_dealloc */
     0,                                       /* tp_print */
     0,                                       /* tp_getattr */
     0,                                       /* tp_setattr */
@@ -158,7 +158,7 @@ PyTypeObject _PyManagedBuffer_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
     0,                                       /* tp_doc */
     (traverseproc)mbuf_traverse,             /* tp_traverse */
-    (inquiry)mbuf_clear                      /* tp_clear */
+    _Py_CAST_FUNC(inquiry, mbuf_clear)                      /* tp_clear */
 };
 
 
@@ -1507,8 +1507,8 @@ memory_releasebuf(PyMemoryViewObject *self, Py_buffer *view)
 
 /* Buffer methods */
 static PyBufferProcs memory_as_buffer = {
-    (getbufferproc)memory_getbuf,         /* bf_getbuffer */
-    (releasebufferproc)memory_releasebuf, /* bf_releasebuffer */
+    _Py_CAST_FUNC(getbufferproc, memory_getbuf),         /* bf_getbuffer */
+    _Py_CAST_FUNC(releasebufferproc, memory_releasebuf), /* bf_releasebuffer */
 };
 
 
@@ -3041,18 +3041,18 @@ PyDoc_STRVAR(memory_contiguous_doc,
 
 
 static PyGetSetDef memory_getsetlist[] = {
-    {"obj",             (getter)memory_obj_get,        NULL, memory_obj_doc},
-    {"nbytes",          (getter)memory_nbytes_get,     NULL, memory_nbytes_doc},
-    {"readonly",        (getter)memory_readonly_get,   NULL, memory_readonly_doc},
-    {"itemsize",        (getter)memory_itemsize_get,   NULL, memory_itemsize_doc},
-    {"format",          (getter)memory_format_get,     NULL, memory_format_doc},
-    {"ndim",            (getter)memory_ndim_get,       NULL, memory_ndim_doc},
-    {"shape",           (getter)memory_shape_get,      NULL, memory_shape_doc},
-    {"strides",         (getter)memory_strides_get,    NULL, memory_strides_doc},
-    {"suboffsets",      (getter)memory_suboffsets_get, NULL, memory_suboffsets_doc},
-    {"c_contiguous",    (getter)memory_c_contiguous,   NULL, memory_c_contiguous_doc},
-    {"f_contiguous",    (getter)memory_f_contiguous,   NULL, memory_f_contiguous_doc},
-    {"contiguous",      (getter)memory_contiguous,     NULL, memory_contiguous_doc},
+    {"obj",             _Py_CAST_FUNC(getter, memory_obj_get),        NULL, memory_obj_doc},
+    {"nbytes",          _Py_CAST_FUNC(getter, memory_nbytes_get),     NULL, memory_nbytes_doc},
+    {"readonly",        _Py_CAST_FUNC(getter, memory_readonly_get),   NULL, memory_readonly_doc},
+    {"itemsize",        _Py_CAST_FUNC(getter, memory_itemsize_get),   NULL, memory_itemsize_doc},
+    {"format",          _Py_CAST_FUNC(getter, memory_format_get),     NULL, memory_format_doc},
+    {"ndim",            _Py_CAST_FUNC(getter, memory_ndim_get),       NULL, memory_ndim_doc},
+    {"shape",           _Py_CAST_FUNC(getter, memory_shape_get),      NULL, memory_shape_doc},
+    {"strides",         _Py_CAST_FUNC(getter, memory_strides_get),    NULL, memory_strides_doc},
+    {"suboffsets",      _Py_CAST_FUNC(getter, memory_suboffsets_get), NULL, memory_suboffsets_doc},
+    {"c_contiguous",    _Py_CAST_FUNC(getter, memory_c_contiguous),   NULL, memory_c_contiguous_doc},
+    {"f_contiguous",    _Py_CAST_FUNC(getter, memory_f_contiguous),   NULL, memory_f_contiguous_doc},
+    {"contiguous",      _Py_CAST_FUNC(getter, memory_contiguous),     NULL, memory_contiguous_doc},
     {NULL, NULL, NULL, NULL},
 };
 
@@ -3099,12 +3099,12 @@ PyTypeObject PyMemoryView_Type = {
     "memoryview",                             /* tp_name */
     offsetof(PyMemoryViewObject, ob_array),   /* tp_basicsize */
     sizeof(Py_ssize_t),                       /* tp_itemsize */
-    (destructor)memory_dealloc,               /* tp_dealloc */
+    _Py_CAST_FUNC(destructor, memory_dealloc),               /* tp_dealloc */
     0,                                        /* tp_print */
     0,                                        /* tp_getattr */
     0,                                        /* tp_setattr */
     0,                                        /* tp_reserved */
-    (reprfunc)memory_repr,                    /* tp_repr */
+    _Py_CAST_FUNC(reprfunc, memory_repr),                    /* tp_repr */
     0,                                        /* tp_as_number */
     &memory_as_sequence,                      /* tp_as_sequence */
     &memory_as_mapping,                       /* tp_as_mapping */
@@ -3117,7 +3117,7 @@ PyTypeObject PyMemoryView_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,  /* tp_flags */
     memory_doc,                               /* tp_doc */
     (traverseproc)memory_traverse,            /* tp_traverse */
-    (inquiry)memory_clear,                    /* tp_clear */
+    _Py_CAST_FUNC(inquiry, memory_clear),                    /* tp_clear */
     memory_richcompare,                       /* tp_richcompare */
     offsetof(PyMemoryViewObject, weakreflist),/* tp_weaklistoffset */
     0,                                        /* tp_iter */

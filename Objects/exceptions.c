@@ -291,12 +291,12 @@ BaseException_set_cause(PyObject *self, PyObject *arg) {
 
 static PyGetSetDef BaseException_getset[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
-    {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
-    {"__traceback__", (getter)BaseException_get_tb, (setter)BaseException_set_tb},
-    {"__context__", (getter)BaseException_get_context,
-     (setter)BaseException_set_context, PyDoc_STR("exception context")},
-    {"__cause__", (getter)BaseException_get_cause,
-     (setter)BaseException_set_cause, PyDoc_STR("exception cause")},
+    {"args", _Py_CAST_FUNC(getter, BaseException_get_args), _Py_CAST_FUNC(setter, BaseException_set_args)},
+    {"__traceback__", _Py_CAST_FUNC(getter, BaseException_get_tb), _Py_CAST_FUNC(setter, BaseException_set_tb)},
+    {"__context__", _Py_CAST_FUNC(getter, BaseException_get_context),
+     _Py_CAST_FUNC(setter, BaseException_set_context), PyDoc_STR("exception context")},
+    {"__cause__", _Py_CAST_FUNC(getter, BaseException_get_cause),
+     _Py_CAST_FUNC(setter, BaseException_set_cause), PyDoc_STR("exception cause")},
     {NULL},
 };
 
@@ -363,18 +363,18 @@ static PyTypeObject _PyExc_BaseException = {
     "BaseException", /*tp_name*/
     sizeof(PyBaseExceptionObject), /*tp_basicsize*/
     0,                          /*tp_itemsize*/
-    (destructor)BaseException_dealloc, /*tp_dealloc*/
+    _Py_CAST_FUNC(destructor, BaseException_dealloc), /*tp_dealloc*/
     0,                          /*tp_print*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
     0,                          /* tp_reserved; */
-    (reprfunc)BaseException_repr, /*tp_repr*/
+    _Py_CAST_FUNC(reprfunc, BaseException_repr), /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
     0,                          /*tp_as_mapping*/
     0,                          /*tp_hash */
     0,                          /*tp_call*/
-    (reprfunc)BaseException_str,  /*tp_str*/
+    _Py_CAST_FUNC(reprfunc, BaseException_str),  /*tp_str*/
     PyObject_GenericGetAttr,    /*tp_getattro*/
     PyObject_GenericSetAttr,    /*tp_setattro*/
     0,                          /*tp_as_buffer*/
@@ -412,7 +412,7 @@ static PyTypeObject _PyExc_ ## EXCNAME = { \
     PyVarObject_HEAD_INIT(NULL, 0) \
     # EXCNAME, \
     sizeof(PyBaseExceptionObject), \
-    0, (destructor)BaseException_dealloc, 0, 0, 0, 0, 0, 0, 0, \
+    0, _Py_CAST_FUNC(destructor, BaseException_dealloc), 0, 0, 0, 0, 0, 0, 0, \
     0, 0, 0, 0, 0, 0, 0, \
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, \
     PyDoc_STR(EXCDOC), (traverseproc)BaseException_traverse, \
@@ -427,7 +427,7 @@ static PyTypeObject _PyExc_ ## EXCNAME = { \
     PyVarObject_HEAD_INIT(NULL, 0) \
     # EXCNAME, \
     sizeof(Py ## EXCSTORE ## Object), \
-    0, (destructor)EXCSTORE ## _dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
+    0, _Py_CAST_FUNC(destructor, EXCSTORE ## _dealloc), 0, 0, 0, 0, 0, 0, 0, 0, 0, \
     0, 0, 0, 0, 0, \
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, \
     PyDoc_STR(EXCDOC), (traverseproc)EXCSTORE ## _traverse, \
@@ -444,8 +444,8 @@ static PyTypeObject _PyExc_ ## EXCNAME = { \
     PyVarObject_HEAD_INIT(NULL, 0) \
     # EXCNAME, \
     sizeof(Py ## EXCSTORE ## Object), 0, \
-    (destructor)EXCSTORE ## _dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-    (reprfunc)EXCSTR, 0, 0, 0, \
+    _Py_CAST_FUNC(destructor, EXCSTORE ## _dealloc), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
+    _Py_CAST_FUNC(reprfunc, EXCSTR), 0, 0, 0, \
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, \
     PyDoc_STR(EXCDOC), (traverseproc)EXCSTORE ## _traverse, \
     (inquiry)EXCSTORE ## _clear, 0, 0, 0, 0, EXCMETHODS, \
@@ -1948,8 +1948,8 @@ static PyTypeObject _PyExc_UnicodeEncodeError = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "UnicodeEncodeError",
     sizeof(PyUnicodeErrorObject), 0,
-    (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    (reprfunc)UnicodeEncodeError_str, 0, 0, 0,
+    _Py_CAST_FUNC(destructor, UnicodeError_dealloc), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    _Py_CAST_FUNC(reprfunc, UnicodeEncodeError_str), 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     PyDoc_STR("Unicode encoding error."), (traverseproc)UnicodeError_traverse,
     (inquiry)UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
@@ -2064,8 +2064,8 @@ static PyTypeObject _PyExc_UnicodeDecodeError = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "UnicodeDecodeError",
     sizeof(PyUnicodeErrorObject), 0,
-    (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    (reprfunc)UnicodeDecodeError_str, 0, 0, 0,
+    _Py_CAST_FUNC(destructor, UnicodeError_dealloc), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    _Py_CAST_FUNC(reprfunc, UnicodeDecodeError_str), 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     PyDoc_STR("Unicode decoding error."), (traverseproc)UnicodeError_traverse,
     (inquiry)UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
@@ -2161,8 +2161,8 @@ static PyTypeObject _PyExc_UnicodeTranslateError = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "UnicodeTranslateError",
     sizeof(PyUnicodeErrorObject), 0,
-    (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    (reprfunc)UnicodeTranslateError_str, 0, 0, 0,
+    _Py_CAST_FUNC(destructor, UnicodeError_dealloc), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    _Py_CAST_FUNC(reprfunc, UnicodeTranslateError_str), 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     PyDoc_STR("Unicode translation error."), (traverseproc)UnicodeError_traverse,
     (inquiry)UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
@@ -2320,7 +2320,7 @@ static PyTypeObject _PyExc_MemoryError = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "MemoryError",
     sizeof(PyBaseExceptionObject),
-    0, (destructor)MemoryError_dealloc, 0, 0, 0, 0, 0, 0, 0,
+    0, _Py_CAST_FUNC(destructor, MemoryError_dealloc), 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     PyDoc_STR("Out of memory."), (traverseproc)BaseException_traverse,

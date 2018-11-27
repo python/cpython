@@ -4667,10 +4667,10 @@ static PyMemberDef Pickler_members[] = {
 };
 
 static PyGetSetDef Pickler_getsets[] = {
-    {"memo",          (getter)Pickler_get_memo,
-                      (setter)Pickler_set_memo},
-    {"persistent_id", (getter)Pickler_get_persid,
-                      (setter)Pickler_set_persid},
+    {"memo",          _Py_CAST_FUNC(getter, Pickler_get_memo),
+                      _Py_CAST_FUNC(setter, Pickler_set_memo)},
+    {"persistent_id", _Py_CAST_FUNC(getter, Pickler_get_persid),
+                      _Py_CAST_FUNC(setter, Pickler_set_persid)},
     {NULL}
 };
 
@@ -7114,9 +7114,9 @@ Unpickler_set_persload(UnpicklerObject *self, PyObject *value)
 }
 
 static PyGetSetDef Unpickler_getsets[] = {
-    {"memo", (getter)Unpickler_get_memo, (setter)Unpickler_set_memo},
-    {"persistent_load", (getter)Unpickler_get_persload,
-                        (setter)Unpickler_set_persload},
+    {"memo", _Py_CAST_FUNC(getter, Unpickler_get_memo), _Py_CAST_FUNC(setter, Unpickler_set_memo)},
+    {"persistent_load", _Py_CAST_FUNC(getter, Unpickler_get_persload),
+                        _Py_CAST_FUNC(setter, Unpickler_set_persload)},
     {NULL}
 };
 

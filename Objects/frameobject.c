@@ -347,10 +347,10 @@ frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
 
 
 static PyGetSetDef frame_getsetlist[] = {
-    {"f_locals",        (getter)frame_getlocals, NULL, NULL},
-    {"f_lineno",        (getter)frame_getlineno,
-                    (setter)frame_setlineno, NULL},
-    {"f_trace",         (getter)frame_gettrace, (setter)frame_settrace, NULL},
+    {"f_locals",        _Py_CAST_FUNC(getter, frame_getlocals), NULL, NULL},
+    {"f_lineno",        _Py_CAST_FUNC(getter, frame_getlineno),
+                    _Py_CAST_FUNC(setter, frame_setlineno), NULL},
+    {"f_trace",         _Py_CAST_FUNC(getter, frame_gettrace), _Py_CAST_FUNC(setter, frame_settrace), NULL},
     {0}
 };
 
@@ -559,12 +559,12 @@ PyTypeObject PyFrame_Type = {
     "frame",
     sizeof(PyFrameObject),
     sizeof(PyObject *),
-    (destructor)frame_dealloc,                  /* tp_dealloc */
+    _Py_CAST_FUNC(destructor, frame_dealloc),                  /* tp_dealloc */
     0,                                          /* tp_print */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_reserved */
-    (reprfunc)frame_repr,                       /* tp_repr */
+    _Py_CAST_FUNC(reprfunc, frame_repr),                       /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
@@ -577,7 +577,7 @@ PyTypeObject PyFrame_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)frame_traverse,               /* tp_traverse */
-    (inquiry)frame_tp_clear,                    /* tp_clear */
+    _Py_CAST_FUNC(inquiry, frame_tp_clear),                    /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */

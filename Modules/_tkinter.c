@@ -899,16 +899,16 @@ get_typename(PyTclObject* obj, void* ignored)
 
 
 static PyGetSetDef PyTclObject_getsetlist[] = {
-    {"typename", (getter)get_typename, NULL, get_typename__doc__},
-    {"string", (getter)PyTclObject_string, NULL,
+    {"typename", _Py_CAST_FUNC(getter, get_typename), NULL, get_typename__doc__},
+    {"string", _Py_CAST_FUNC(getter, PyTclObject_string), NULL,
      PyTclObject_string__doc__},
     {0},
 };
 
 static PyType_Slot PyTclObject_Type_slots[] = {
-    {Py_tp_dealloc, (destructor)PyTclObject_dealloc},
-    {Py_tp_repr, (reprfunc)PyTclObject_repr},
-    {Py_tp_str, (reprfunc)PyTclObject_str},
+    {Py_tp_dealloc, _Py_CAST_FUNC(destructor, PyTclObject_dealloc)},
+    {Py_tp_repr, _Py_CAST_FUNC(reprfunc, PyTclObject_repr)},
+    {Py_tp_str, _Py_CAST_FUNC(reprfunc, PyTclObject_str)},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_richcompare, PyTclObject_richcompare},
     {Py_tp_getset, PyTclObject_getsetlist},

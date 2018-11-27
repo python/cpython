@@ -346,7 +346,7 @@ wrapperdescr_raw_call(PyWrapperDescrObject *descr, PyObject *self,
     wrapperfunc wrapper = descr->d_base->wrapper;
 
     if (descr->d_base->flags & PyWrapperFlag_KEYWORDS) {
-        wrapperfunc_kwds wk = (wrapperfunc_kwds)wrapper;
+        wrapperfunc_kwds wk = _Py_CAST_FUNC(wrapperfunc_kwds, wrapper);
         return (*wk)(self, args, descr->d_wrapped, kwds);
     }
 
@@ -474,9 +474,9 @@ static PyMemberDef descr_members[] = {
 };
 
 static PyGetSetDef method_getset[] = {
-    {"__doc__", (getter)method_get_doc},
-    {"__qualname__", (getter)descr_get_qualname},
-    {"__text_signature__", (getter)method_get_text_signature},
+    {"__doc__", _Py_CAST_FUNC(getter, method_get_doc)},
+    {"__qualname__", _Py_CAST_FUNC(getter, descr_get_qualname)},
+    {"__text_signature__", _Py_CAST_FUNC(getter, method_get_text_signature)},
     {0}
 };
 
@@ -490,8 +490,8 @@ member_get_doc(PyMemberDescrObject *descr, void *closure)
 }
 
 static PyGetSetDef member_getset[] = {
-    {"__doc__", (getter)member_get_doc},
-    {"__qualname__", (getter)descr_get_qualname},
+    {"__doc__", _Py_CAST_FUNC(getter, member_get_doc)},
+    {"__qualname__", _Py_CAST_FUNC(getter, descr_get_qualname)},
     {0}
 };
 
@@ -505,8 +505,8 @@ getset_get_doc(PyGetSetDescrObject *descr, void *closure)
 }
 
 static PyGetSetDef getset_getset[] = {
-    {"__doc__", (getter)getset_get_doc},
-    {"__qualname__", (getter)descr_get_qualname},
+    {"__doc__", _Py_CAST_FUNC(getter, getset_get_doc)},
+    {"__qualname__", _Py_CAST_FUNC(getter, descr_get_qualname)},
     {0}
 };
 
@@ -523,9 +523,9 @@ wrapperdescr_get_text_signature(PyWrapperDescrObject *descr, void *closure)
 }
 
 static PyGetSetDef wrapperdescr_getset[] = {
-    {"__doc__", (getter)wrapperdescr_get_doc},
-    {"__qualname__", (getter)descr_get_qualname},
-    {"__text_signature__", (getter)wrapperdescr_get_text_signature},
+    {"__doc__", _Py_CAST_FUNC(getter, wrapperdescr_get_doc)},
+    {"__qualname__", _Py_CAST_FUNC(getter, descr_get_qualname)},
+    {"__text_signature__", _Py_CAST_FUNC(getter, wrapperdescr_get_text_signature)},
     {0}
 };
 
@@ -1142,11 +1142,11 @@ wrapper_qualname(wrapperobject *wp)
 }
 
 static PyGetSetDef wrapper_getsets[] = {
-    {"__objclass__", (getter)wrapper_objclass},
-    {"__name__", (getter)wrapper_name},
-    {"__qualname__", (getter)wrapper_qualname},
-    {"__doc__", (getter)wrapper_doc},
-    {"__text_signature__", (getter)wrapper_text_signature},
+    {"__objclass__", _Py_CAST_FUNC(getter, wrapper_objclass)},
+    {"__name__", _Py_CAST_FUNC(getter, wrapper_name)},
+    {"__qualname__", _Py_CAST_FUNC(getter, wrapper_qualname)},
+    {"__doc__", _Py_CAST_FUNC(getter, wrapper_doc)},
+    {"__text_signature__", _Py_CAST_FUNC(getter, wrapper_text_signature)},
     {0}
 };
 
@@ -1534,7 +1534,7 @@ property_get___isabstractmethod__(propertyobject *prop, void *closure)
 
 static PyGetSetDef property_getsetlist[] = {
     {"__isabstractmethod__",
-     (getter)property_get___isabstractmethod__, NULL,
+     _Py_CAST_FUNC(getter, property_get___isabstractmethod__), NULL,
      NULL,
      NULL},
     {NULL} /* Sentinel */

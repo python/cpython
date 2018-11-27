@@ -300,11 +300,11 @@ static struct PyMemberDef Dialect_memberlist[] = {
 };
 
 static PyGetSetDef Dialect_getsetlist[] = {
-    { "delimiter",          (getter)Dialect_get_delimiter},
-    { "escapechar",             (getter)Dialect_get_escapechar},
-    { "lineterminator",         (getter)Dialect_get_lineterminator},
-    { "quotechar",              (getter)Dialect_get_quotechar},
-    { "quoting",                (getter)Dialect_get_quoting},
+    { "delimiter",          _Py_CAST_FUNC(getter, Dialect_get_delimiter)},
+    { "escapechar",             _Py_CAST_FUNC(getter, Dialect_get_escapechar)},
+    { "lineterminator",         _Py_CAST_FUNC(getter, Dialect_get_lineterminator)},
+    { "quotechar",              _Py_CAST_FUNC(getter, Dialect_get_quotechar)},
+    { "quoting",                _Py_CAST_FUNC(getter, Dialect_get_quoting)},
     {NULL},
 };
 

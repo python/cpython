@@ -719,7 +719,7 @@ static struct PyMethodDef mmap_object_methods[] = {
 };
 
 static PyGetSetDef mmap_object_getset[] = {
-    {"closed", (getter) mmap_closed_get, NULL, NULL},
+    {"closed", _Py_CAST_FUNC(getter, mmap_closed_get), NULL, NULL},
     {NULL}
 };
 
@@ -949,8 +949,8 @@ static PyMappingMethods mmap_as_mapping = {
 };
 
 static PyBufferProcs mmap_as_buffer = {
-    (getbufferproc)mmap_buffer_getbuf,
-    (releasebufferproc)mmap_buffer_releasebuf,
+    _Py_CAST_FUNC(getbufferproc, mmap_buffer_getbuf),
+    _Py_CAST_FUNC(releasebufferproc, mmap_buffer_releasebuf),
 };
 
 static PyObject *

@@ -407,16 +407,16 @@ func_set_annotations(PyFunctionObject *op, PyObject *value)
 }
 
 static PyGetSetDef func_getsetlist[] = {
-    {"__code__", (getter)func_get_code, (setter)func_set_code},
-    {"__defaults__", (getter)func_get_defaults,
-     (setter)func_set_defaults},
-    {"__kwdefaults__", (getter)func_get_kwdefaults,
-     (setter)func_set_kwdefaults},
-    {"__annotations__", (getter)func_get_annotations,
-     (setter)func_set_annotations},
+    {"__code__", _Py_CAST_FUNC(getter, func_get_code), _Py_CAST_FUNC(setter, func_set_code)},
+    {"__defaults__", _Py_CAST_FUNC(getter, func_get_defaults),
+     _Py_CAST_FUNC(setter, func_set_defaults)},
+    {"__kwdefaults__", _Py_CAST_FUNC(getter, func_get_kwdefaults),
+     _Py_CAST_FUNC(setter, func_set_kwdefaults)},
+    {"__annotations__", _Py_CAST_FUNC(getter, func_get_annotations),
+     _Py_CAST_FUNC(setter, func_set_annotations)},
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
-    {"__name__", (getter)func_get_name, (setter)func_set_name},
-    {"__qualname__", (getter)func_get_qualname, (setter)func_set_qualname},
+    {"__name__", _Py_CAST_FUNC(getter, func_get_name), _Py_CAST_FUNC(setter, func_set_name)},
+    {"__qualname__", _Py_CAST_FUNC(getter, func_get_qualname), _Py_CAST_FUNC(setter, func_set_qualname)},
     {NULL} /* Sentinel */
 };
 
@@ -604,12 +604,12 @@ PyTypeObject PyFunction_Type = {
     "function",
     sizeof(PyFunctionObject),
     0,
-    (destructor)func_dealloc,                   /* tp_dealloc */
+    _Py_CAST_FUNC(destructor, func_dealloc),                   /* tp_dealloc */
     0,                                          /* tp_print */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_reserved */
-    (reprfunc)func_repr,                        /* tp_repr */
+    _Py_CAST_FUNC(reprfunc, func_repr),                        /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
@@ -622,7 +622,7 @@ PyTypeObject PyFunction_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     func_new__doc__,                            /* tp_doc */
     (traverseproc)func_traverse,                /* tp_traverse */
-    (inquiry)func_clear,                        /* tp_clear */
+    _Py_CAST_FUNC(inquiry, func_clear),                        /* tp_clear */
     0,                                          /* tp_richcompare */
     offsetof(PyFunctionObject, func_weakreflist), /* tp_weaklistoffset */
     0,                                          /* tp_iter */
@@ -743,7 +743,7 @@ cm_get___isabstractmethod__(classmethod *cm, void *closure)
 
 static PyGetSetDef cm_getsetlist[] = {
     {"__isabstractmethod__",
-     (getter)cm_get___isabstractmethod__, NULL,
+     _Py_CAST_FUNC(getter, cm_get___isabstractmethod__), NULL,
      NULL,
      NULL},
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict, NULL, NULL},
@@ -777,7 +777,7 @@ PyTypeObject PyClassMethod_Type = {
     "classmethod",
     sizeof(classmethod),
     0,
-    (destructor)cm_dealloc,                     /* tp_dealloc */
+    _Py_CAST_FUNC(destructor, cm_dealloc),                     /* tp_dealloc */
     0,                                          /* tp_print */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -795,7 +795,7 @@ PyTypeObject PyClassMethod_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     classmethod_doc,                            /* tp_doc */
     (traverseproc)cm_traverse,                  /* tp_traverse */
-    (inquiry)cm_clear,                          /* tp_clear */
+    _Py_CAST_FUNC(inquiry, cm_clear),                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
@@ -924,7 +924,7 @@ sm_get___isabstractmethod__(staticmethod *sm, void *closure)
 
 static PyGetSetDef sm_getsetlist[] = {
     {"__isabstractmethod__",
-     (getter)sm_get___isabstractmethod__, NULL,
+     _Py_CAST_FUNC(getter, sm_get___isabstractmethod__), NULL,
      NULL,
      NULL},
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict, NULL, NULL},
@@ -955,7 +955,7 @@ PyTypeObject PyStaticMethod_Type = {
     "staticmethod",
     sizeof(staticmethod),
     0,
-    (destructor)sm_dealloc,                     /* tp_dealloc */
+    _Py_CAST_FUNC(destructor, sm_dealloc),                     /* tp_dealloc */
     0,                                          /* tp_print */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -973,7 +973,7 @@ PyTypeObject PyStaticMethod_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     staticmethod_doc,                           /* tp_doc */
     (traverseproc)sm_traverse,                  /* tp_traverse */
-    (inquiry)sm_clear,                          /* tp_clear */
+    _Py_CAST_FUNC(inquiry, sm_clear),                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */

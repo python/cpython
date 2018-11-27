@@ -1544,8 +1544,8 @@ ndarray_releasebuf(NDArrayObject *self, Py_buffer *view)
 }
 
 static PyBufferProcs ndarray_as_buffer = {
-    (getbufferproc)ndarray_getbuf,        /* bf_getbuffer */
-    (releasebufferproc)ndarray_releasebuf /* bf_releasebuffer */
+    _Py_CAST_FUNC(getbufferproc, ndarray_getbuf),        /* bf_getbuffer */
+    _Py_CAST_FUNC(releasebufferproc, ndarray_releasebuf) /* bf_releasebuffer */
 };
 
 
@@ -2130,21 +2130,21 @@ ndarray_contig(PyObject *self, PyObject *dummy)
 static PyGetSetDef ndarray_getset [] =
 {
   /* ndbuf */
-  { "flags",        (getter)ndarray_get_flags,      NULL, NULL, NULL},
-  { "offset",       (getter)ndarray_get_offset,     NULL, NULL, NULL},
+  { "flags",        _Py_CAST_FUNC(getter, ndarray_get_flags),      NULL, NULL, NULL},
+  { "offset",       _Py_CAST_FUNC(getter, ndarray_get_offset),     NULL, NULL, NULL},
   /* ndbuf.base */
-  { "obj",          (getter)ndarray_get_obj,        NULL, NULL, NULL},
-  { "nbytes",       (getter)ndarray_get_nbytes,     NULL, NULL, NULL},
-  { "readonly",     (getter)ndarray_get_readonly,   NULL, NULL, NULL},
-  { "itemsize",     (getter)ndarray_get_itemsize,   NULL, NULL, NULL},
-  { "format",       (getter)ndarray_get_format,     NULL, NULL, NULL},
-  { "ndim",         (getter)ndarray_get_ndim,       NULL, NULL, NULL},
-  { "shape",        (getter)ndarray_get_shape,      NULL, NULL, NULL},
-  { "strides",      (getter)ndarray_get_strides,    NULL, NULL, NULL},
-  { "suboffsets",   (getter)ndarray_get_suboffsets, NULL, NULL, NULL},
-  { "c_contiguous", (getter)ndarray_c_contig,       NULL, NULL, NULL},
-  { "f_contiguous", (getter)ndarray_fortran_contig, NULL, NULL, NULL},
-  { "contiguous",   (getter)ndarray_contig,         NULL, NULL, NULL},
+  { "obj",          _Py_CAST_FUNC(getter, ndarray_get_obj),        NULL, NULL, NULL},
+  { "nbytes",       _Py_CAST_FUNC(getter, ndarray_get_nbytes),     NULL, NULL, NULL},
+  { "readonly",     _Py_CAST_FUNC(getter, ndarray_get_readonly),   NULL, NULL, NULL},
+  { "itemsize",     _Py_CAST_FUNC(getter, ndarray_get_itemsize),   NULL, NULL, NULL},
+  { "format",       _Py_CAST_FUNC(getter, ndarray_get_format),     NULL, NULL, NULL},
+  { "ndim",         _Py_CAST_FUNC(getter, ndarray_get_ndim),       NULL, NULL, NULL},
+  { "shape",        _Py_CAST_FUNC(getter, ndarray_get_shape),      NULL, NULL, NULL},
+  { "strides",      _Py_CAST_FUNC(getter, ndarray_get_strides),    NULL, NULL, NULL},
+  { "suboffsets",   _Py_CAST_FUNC(getter, ndarray_get_suboffsets), NULL, NULL, NULL},
+  { "c_contiguous", _Py_CAST_FUNC(getter, ndarray_c_contig),       NULL, NULL, NULL},
+  { "f_contiguous", _Py_CAST_FUNC(getter, ndarray_fortran_contig), NULL, NULL, NULL},
+  { "contiguous",   _Py_CAST_FUNC(getter, ndarray_contig),         NULL, NULL, NULL},
   {NULL}
 };
 
@@ -2758,7 +2758,7 @@ staticarray_getbuf(StaticArrayObject *self, Py_buffer *view, int flags)
 }
 
 static PyBufferProcs staticarray_as_buffer = {
-    (getbufferproc)staticarray_getbuf, /* bf_getbuffer */
+    _Py_CAST_FUNC(getbufferproc, staticarray_getbuf), /* bf_getbuffer */
     NULL,                              /* bf_releasebuffer */
 };
 

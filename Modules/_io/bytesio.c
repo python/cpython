@@ -966,7 +966,7 @@ bytesio_clear(bytesio *self)
 #include "clinic/bytesio.c.h"
 
 static PyGetSetDef bytesio_getsetlist[] = {
-    {"closed",  (getter)bytesio_get_closed, NULL,
+    {"closed",  _Py_CAST_FUNC(getter, bytesio_get_closed), NULL,
      "True if the file is closed."},
     {NULL},            /* sentinel */
 };

@@ -1240,9 +1240,9 @@ CharArray_set_value(CDataObject *self, PyObject *value)
 }
 
 static PyGetSetDef CharArray_getsets[] = {
-    { "raw", (getter)CharArray_get_raw, (setter)CharArray_set_raw,
+    { "raw", _Py_CAST_FUNC(getter, CharArray_get_raw), _Py_CAST_FUNC(setter, CharArray_set_raw),
       "value", NULL },
-    { "value", (getter)CharArray_get_value, (setter)CharArray_set_value,
+    { "value", _Py_CAST_FUNC(getter, CharArray_get_value), _Py_CAST_FUNC(setter, CharArray_set_value),
       "string value"},
     { NULL, NULL }
 };
@@ -1300,7 +1300,7 @@ WCharArray_set_value(CDataObject *self, PyObject *value)
 }
 
 static PyGetSetDef WCharArray_getsets[] = {
-    { "value", (getter)WCharArray_get_value, (setter)WCharArray_set_value,
+    { "value", _Py_CAST_FUNC(getter, WCharArray_get_value), _Py_CAST_FUNC(setter, WCharArray_set_value),
       "string value"},
     { NULL, NULL }
 };
@@ -3159,12 +3159,12 @@ PyCFuncPtr_get_argtypes(PyCFuncPtrObject *self)
 }
 
 static PyGetSetDef PyCFuncPtr_getsets[] = {
-    { "errcheck", (getter)PyCFuncPtr_get_errcheck, (setter)PyCFuncPtr_set_errcheck,
+    { "errcheck", _Py_CAST_FUNC(getter, PyCFuncPtr_get_errcheck), _Py_CAST_FUNC(setter, PyCFuncPtr_set_errcheck),
       "a function to check for errors", NULL },
-    { "restype", (getter)PyCFuncPtr_get_restype, (setter)PyCFuncPtr_set_restype,
+    { "restype", _Py_CAST_FUNC(getter, PyCFuncPtr_get_restype), _Py_CAST_FUNC(setter, PyCFuncPtr_set_restype),
       "specify the result type", NULL },
-    { "argtypes", (getter)PyCFuncPtr_get_argtypes,
-      (setter)PyCFuncPtr_set_argtypes,
+    { "argtypes", _Py_CAST_FUNC(getter, PyCFuncPtr_get_argtypes),
+      _Py_CAST_FUNC(setter, PyCFuncPtr_set_argtypes),
       "specify the argument types", NULL },
     { NULL, NULL }
 };
@@ -4727,7 +4727,7 @@ Simple_get_value(CDataObject *self)
 }
 
 static PyGetSetDef Simple_getsets[] = {
-    { "value", (getter)Simple_get_value, (setter)Simple_set_value,
+    { "value", _Py_CAST_FUNC(getter, Simple_get_value), _Py_CAST_FUNC(setter, Simple_set_value),
       "current value", NULL },
     { NULL, NULL }
 };
@@ -4969,8 +4969,8 @@ Pointer_set_contents(CDataObject *self, PyObject *value, void *closure)
 }
 
 static PyGetSetDef Pointer_getsets[] = {
-    { "contents", (getter)Pointer_get_contents,
-      (setter)Pointer_set_contents,
+    { "contents", _Py_CAST_FUNC(getter, Pointer_get_contents),
+      _Py_CAST_FUNC(setter, Pointer_set_contents),
       "the object this pointer points to (read-write)", NULL },
     { NULL, NULL }
 };
