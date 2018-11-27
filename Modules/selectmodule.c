@@ -1031,7 +1031,7 @@ select_devpoll_close_impl(devpollObject *self)
 }
 
 static PyObject*
-devpoll_get_closed(devpollObject *self)
+devpoll_get_closed(devpollObject *self, void *Py_UNUSED(ignored))
 {
     if (self->fd_devpoll < 0)
         Py_RETURN_TRUE;
@@ -1333,7 +1333,7 @@ select_epoll_close_impl(pyEpoll_Object *self)
 
 
 static PyObject*
-pyepoll_get_closed(pyEpoll_Object *self)
+pyepoll_get_closed(pyEpoll_Object *self, void *Py_UNUSED(ignored))
 {
     if (self->epfd < 0)
         Py_RETURN_TRUE;
@@ -1979,7 +1979,7 @@ select_kqueue_close_impl(kqueue_queue_Object *self)
 }
 
 static PyObject*
-kqueue_queue_get_closed(kqueue_queue_Object *self)
+kqueue_queue_get_closed(kqueue_queue_Object *self, void *Py_UNUSED(ignored))
 {
     if (self->kqfd < 0)
         Py_RETURN_TRUE;

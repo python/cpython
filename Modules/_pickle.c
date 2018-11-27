@@ -4561,13 +4561,13 @@ PicklerMemoProxy_New(PicklerObject *pickler)
 /*****************************************************************************/
 
 static PyObject *
-Pickler_get_memo(PicklerObject *self)
+Pickler_get_memo(PicklerObject *self, void *Py_UNUSED(ignored))
 {
     return PicklerMemoProxy_New(self);
 }
 
 static int
-Pickler_set_memo(PicklerObject *self, PyObject *obj)
+Pickler_set_memo(PicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored))
 {
     PyMemoTable *new_memo = NULL;
 
@@ -4629,7 +4629,7 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj)
 }
 
 static PyObject *
-Pickler_get_persid(PicklerObject *self)
+Pickler_get_persid(PicklerObject *self, void *Py_UNUSED(ignored))
 {
     if (self->pers_func == NULL) {
         PyErr_SetString(PyExc_AttributeError, "persistent_id");
@@ -4639,7 +4639,7 @@ Pickler_get_persid(PicklerObject *self)
 }
 
 static int
-Pickler_set_persid(PicklerObject *self, PyObject *value)
+Pickler_set_persid(PicklerObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -6999,13 +6999,13 @@ UnpicklerMemoProxy_New(UnpicklerObject *unpickler)
 
 
 static PyObject *
-Unpickler_get_memo(UnpicklerObject *self)
+Unpickler_get_memo(UnpicklerObject *self, void *Py_UNUSED(ignored))
 {
     return UnpicklerMemoProxy_New(self);
 }
 
 static int
-Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
+Unpickler_set_memo(UnpicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored))
 {
     PyObject **new_memo;
     size_t new_memo_size = 0;
@@ -7082,7 +7082,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
 }
 
 static PyObject *
-Unpickler_get_persload(UnpicklerObject *self)
+Unpickler_get_persload(UnpicklerObject *self, void *Py_UNUSED(ignored))
 {
     if (self->pers_func == NULL) {
         PyErr_SetString(PyExc_AttributeError, "persistent_load");
@@ -7092,7 +7092,7 @@ Unpickler_get_persload(UnpicklerObject *self)
 }
 
 static int
-Unpickler_set_persload(UnpicklerObject *self, PyObject *value)
+Unpickler_set_persload(UnpicklerObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,

@@ -89,7 +89,7 @@ spamlist_init(spamlistobject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-spamlist_state_get(spamlistobject *self)
+spamlist_state_get(spamlistobject *self, void *Py_UNUSED(ignored))
 {
     return PyLong_FromLong(self->state);
 }

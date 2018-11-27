@@ -2288,7 +2288,7 @@ PyCursesWindow_get_encoding(PyCursesWindowObject *self, void *closure)
 }
 
 static int
-PyCursesWindow_set_encoding(PyCursesWindowObject *self, PyObject *value)
+PyCursesWindow_set_encoding(PyCursesWindowObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     PyObject *ascii;
     char *encoding;

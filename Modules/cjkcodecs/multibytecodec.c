@@ -108,7 +108,7 @@ call_error_callback(PyObject *errors, PyObject *exc)
 }
 
 static PyObject *
-codecctx_errors_get(MultibyteStatefulCodecContext *self)
+codecctx_errors_get(MultibyteStatefulCodecContext *self, void *Py_UNUSED(ignored))
 {
     const char *errors;
 
