@@ -228,12 +228,14 @@ unicode_fill(enum PyUnicode_Kind kind, void *data, Py_UCS4 value,
     assert(kind != PyUnicode_WCHAR_KIND);
     switch (kind) {
     case PyUnicode_1BYTE_KIND: {
+        assert(value <= 0xff);
         Py_UCS1 ch = (unsigned char)value;
         Py_UCS1 *to = (Py_UCS1 *)data + start;
         memset(to, ch, length);
         break;
     }
     case PyUnicode_2BYTE_KIND: {
+        assert(value <= 0xffff);
         Py_UCS2 ch = (Py_UCS2)value;
         Py_UCS2 *to = (Py_UCS2 *)data + start;
         const Py_UCS2 *end = to + length;
@@ -241,6 +243,7 @@ unicode_fill(enum PyUnicode_Kind kind, void *data, Py_UCS4 value,
         break;
     }
     case PyUnicode_4BYTE_KIND: {
+        assert(value <= MAX_UNICODE);
         Py_UCS4 ch = value;
         Py_UCS4 * to = (Py_UCS4 *)data + start;
         const Py_UCS4 *end = to + length;
@@ -10117,7 +10120,7 @@ _PyUnicode_FastFill(PyObject *unicode, Py_ssize_t start, Py_ssize_t length,
                     Py_UCS4 fill_char)
 {
     const enum PyUnicode_Kind kind = PyUnicode_KIND(unicode);
-    const void *data = PyUnicode_DATA(unicode);
+    void *data = PyUnicode_DATA(unicode);
     assert(PyUnicode_IS_READY(unicode));
     assert(unicode_modifiable(unicode));
     assert(fill_char <= PyUnicode_MAX_CHAR_VALUE(unicode));
