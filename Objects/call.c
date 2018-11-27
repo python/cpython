@@ -514,7 +514,7 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self,
         }
 
         if (flags & METH_KEYWORDS) {
-            result = (*(PyCFunctionWithKeywords)meth) (self, argstuple, kwargs);
+            result = (*(PyCFunctionWithKeywords)(void(*)(void))meth) (self, argstuple, kwargs);
         }
         else {
             result = (*meth) (self, argstuple);
@@ -529,7 +529,7 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self,
             goto no_keyword_error;
         }
 
-        result = (*(_PyCFunctionFast)meth) (self, args, nargs);
+        result = (*(_PyCFunctionFast)(void(*)(void))meth) (self, args, nargs);
         break;
     }
 
@@ -537,7 +537,7 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self,
     {
         PyObject *const *stack;
         PyObject *kwnames;
-        _PyCFunctionFastWithKeywords fastmeth = (_PyCFunctionFastWithKeywords)meth;
+        _PyCFunctionFastWithKeywords fastmeth = (_PyCFunctionFastWithKeywords)(void(*)(void))meth;
 
         if (_PyStack_UnpackDict(args, nargs, kwargs, &stack, &kwnames) < 0) {
             goto exit;
@@ -650,12 +650,12 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self,
         if (nkwargs) {
             goto no_keyword_error;
         }
-        result = ((_PyCFunctionFast)meth) (self, args, nargs);
+        result = ((_PyCFunctionFast)(void(*)(void))meth) (self, args, nargs);
         break;
 
     case METH_FASTCALL | METH_KEYWORDS:
         /* Fast-path: avoid temporary dict to pass keyword arguments */
-        result = ((_PyCFunctionFastWithKeywords)meth) (self, args, nargs, kwnames);
+        result = ((_PyCFunctionFastWithKeywords)(void(*)(void))meth) (self, args, nargs, kwnames);
         break;
 
     case METH_VARARGS:
@@ -689,7 +689,7 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self,
                 kwdict = NULL;
             }
 
-            result = (*(PyCFunctionWithKeywords)meth) (self, argtuple, kwdict);
+            result = (*(PyCFunctionWithKeywords)(void(*)(void))meth) (self, argtuple, kwdict);
             Py_XDECREF(kwdict);
         }
         else {
@@ -752,7 +752,7 @@ cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs)
             return NULL;
         }
 
-        result = (*(PyCFunctionWithKeywords)meth)(self, args, kwargs);
+        result = (*(PyCFunctionWithKeywords)(void(*)(void))meth)(self, args, kwargs);
 
         Py_LeaveRecursiveCall();
     }

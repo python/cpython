@@ -581,11 +581,11 @@ semlock_afterfork(SemLockObject *self, PyObject *Py_UNUSED(ignored))
  */
 
 static PyMethodDef semlock_methods[] = {
-    {"acquire", (PyCFunction)semlock_acquire, METH_VARARGS | METH_KEYWORDS,
+    {"acquire", (PyCFunction)(void(*)(void))semlock_acquire, METH_VARARGS | METH_KEYWORDS,
      "acquire the semaphore/lock"},
     {"release", (PyCFunction)semlock_release, METH_NOARGS,
      "release the semaphore/lock"},
-    {"__enter__", (PyCFunction)semlock_acquire, METH_VARARGS | METH_KEYWORDS,
+    {"__enter__", (PyCFunction)(void(*)(void))semlock_acquire, METH_VARARGS | METH_KEYWORDS,
      "enter the semaphore/lock"},
     {"__exit__", (PyCFunction)semlock_release, METH_VARARGS,
      "exit the semaphore/lock"},
