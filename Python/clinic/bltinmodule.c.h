@@ -82,7 +82,7 @@ PyDoc_STRVAR(builtin_format__doc__,
 "details.");
 
 #define BUILTIN_FORMAT_METHODDEF    \
-    {"format", (PyCFunction)builtin_format, METH_FASTCALL, builtin_format__doc__},
+    {"format", (PyCFunction)(void(*)(void))builtin_format, METH_FASTCALL, builtin_format__doc__},
 
 static PyObject *
 builtin_format_impl(PyObject *module, PyObject *value, PyObject *format_spec);
@@ -150,7 +150,7 @@ PyDoc_STRVAR(builtin_compile__doc__,
 "in addition to any features explicitly specified.");
 
 #define BUILTIN_COMPILE_METHODDEF    \
-    {"compile", (PyCFunction)builtin_compile, METH_FASTCALL|METH_KEYWORDS, builtin_compile__doc__},
+    {"compile", (PyCFunction)(void(*)(void))builtin_compile, METH_FASTCALL|METH_KEYWORDS, builtin_compile__doc__},
 
 static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
@@ -187,7 +187,7 @@ PyDoc_STRVAR(builtin_divmod__doc__,
 "Return the tuple (x//y, x%y).  Invariant: div*y + mod == x.");
 
 #define BUILTIN_DIVMOD_METHODDEF    \
-    {"divmod", (PyCFunction)builtin_divmod, METH_FASTCALL, builtin_divmod__doc__},
+    {"divmod", (PyCFunction)(void(*)(void))builtin_divmod, METH_FASTCALL, builtin_divmod__doc__},
 
 static PyObject *
 builtin_divmod_impl(PyObject *module, PyObject *x, PyObject *y);
@@ -223,7 +223,7 @@ PyDoc_STRVAR(builtin_eval__doc__,
 "If only globals is given, locals defaults to it.");
 
 #define BUILTIN_EVAL_METHODDEF    \
-    {"eval", (PyCFunction)builtin_eval, METH_FASTCALL, builtin_eval__doc__},
+    {"eval", (PyCFunction)(void(*)(void))builtin_eval, METH_FASTCALL, builtin_eval__doc__},
 
 static PyObject *
 builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
@@ -261,7 +261,7 @@ PyDoc_STRVAR(builtin_exec__doc__,
 "If only globals is given, locals defaults to it.");
 
 #define BUILTIN_EXEC_METHODDEF    \
-    {"exec", (PyCFunction)builtin_exec, METH_FASTCALL, builtin_exec__doc__},
+    {"exec", (PyCFunction)(void(*)(void))builtin_exec, METH_FASTCALL, builtin_exec__doc__},
 
 static PyObject *
 builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
@@ -316,7 +316,7 @@ PyDoc_STRVAR(builtin_hasattr__doc__,
 "This is done by calling getattr(obj, name) and catching AttributeError.");
 
 #define BUILTIN_HASATTR_METHODDEF    \
-    {"hasattr", (PyCFunction)builtin_hasattr, METH_FASTCALL, builtin_hasattr__doc__},
+    {"hasattr", (PyCFunction)(void(*)(void))builtin_hasattr, METH_FASTCALL, builtin_hasattr__doc__},
 
 static PyObject *
 builtin_hasattr_impl(PyObject *module, PyObject *obj, PyObject *name);
@@ -360,7 +360,7 @@ PyDoc_STRVAR(builtin_setattr__doc__,
 "setattr(x, \'y\', v) is equivalent to ``x.y = v\'\'");
 
 #define BUILTIN_SETATTR_METHODDEF    \
-    {"setattr", (PyCFunction)builtin_setattr, METH_FASTCALL, builtin_setattr__doc__},
+    {"setattr", (PyCFunction)(void(*)(void))builtin_setattr, METH_FASTCALL, builtin_setattr__doc__},
 
 static PyObject *
 builtin_setattr_impl(PyObject *module, PyObject *obj, PyObject *name,
@@ -394,7 +394,7 @@ PyDoc_STRVAR(builtin_delattr__doc__,
 "delattr(x, \'y\') is equivalent to ``del x.y\'\'");
 
 #define BUILTIN_DELATTR_METHODDEF    \
-    {"delattr", (PyCFunction)builtin_delattr, METH_FASTCALL, builtin_delattr__doc__},
+    {"delattr", (PyCFunction)(void(*)(void))builtin_delattr, METH_FASTCALL, builtin_delattr__doc__},
 
 static PyObject *
 builtin_delattr_impl(PyObject *module, PyObject *obj, PyObject *name);
@@ -503,7 +503,7 @@ PyDoc_STRVAR(builtin_pow__doc__,
 "invoked using the three argument form.");
 
 #define BUILTIN_POW_METHODDEF    \
-    {"pow", (PyCFunction)builtin_pow, METH_FASTCALL, builtin_pow__doc__},
+    {"pow", (PyCFunction)(void(*)(void))builtin_pow, METH_FASTCALL, builtin_pow__doc__},
 
 static PyObject *
 builtin_pow_impl(PyObject *module, PyObject *x, PyObject *y, PyObject *z);
@@ -540,7 +540,7 @@ PyDoc_STRVAR(builtin_input__doc__,
 "On *nix systems, readline is used if available.");
 
 #define BUILTIN_INPUT_METHODDEF    \
-    {"input", (PyCFunction)builtin_input, METH_FASTCALL, builtin_input__doc__},
+    {"input", (PyCFunction)(void(*)(void))builtin_input, METH_FASTCALL, builtin_input__doc__},
 
 static PyObject *
 builtin_input_impl(PyObject *module, PyObject *prompt);
@@ -583,7 +583,7 @@ PyDoc_STRVAR(builtin_round__doc__,
 "the return value has the same type as the number.  ndigits may be negative.");
 
 #define BUILTIN_ROUND_METHODDEF    \
-    {"round", (PyCFunction)builtin_round, METH_FASTCALL|METH_KEYWORDS, builtin_round__doc__},
+    {"round", (PyCFunction)(void(*)(void))builtin_round, METH_FASTCALL|METH_KEYWORDS, builtin_round__doc__},
 
 static PyObject *
 builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits);
@@ -618,7 +618,7 @@ PyDoc_STRVAR(builtin_sum__doc__,
 "reject non-numeric types.");
 
 #define BUILTIN_SUM_METHODDEF    \
-    {"sum", (PyCFunction)builtin_sum, METH_FASTCALL|METH_KEYWORDS, builtin_sum__doc__},
+    {"sum", (PyCFunction)(void(*)(void))builtin_sum, METH_FASTCALL|METH_KEYWORDS, builtin_sum__doc__},
 
 static PyObject *
 builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start);
@@ -653,7 +653,7 @@ PyDoc_STRVAR(builtin_isinstance__doc__,
 "or ...`` etc.");
 
 #define BUILTIN_ISINSTANCE_METHODDEF    \
-    {"isinstance", (PyCFunction)builtin_isinstance, METH_FASTCALL, builtin_isinstance__doc__},
+    {"isinstance", (PyCFunction)(void(*)(void))builtin_isinstance, METH_FASTCALL, builtin_isinstance__doc__},
 
 static PyObject *
 builtin_isinstance_impl(PyObject *module, PyObject *obj,
@@ -688,7 +688,7 @@ PyDoc_STRVAR(builtin_issubclass__doc__,
 "or ...`` etc.");
 
 #define BUILTIN_ISSUBCLASS_METHODDEF    \
-    {"issubclass", (PyCFunction)builtin_issubclass, METH_FASTCALL, builtin_issubclass__doc__},
+    {"issubclass", (PyCFunction)(void(*)(void))builtin_issubclass, METH_FASTCALL, builtin_issubclass__doc__},
 
 static PyObject *
 builtin_issubclass_impl(PyObject *module, PyObject *cls,
@@ -711,4 +711,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=eb6d08a32e7c83b6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fa8d97ac8695363b input=a9049054013a1b77]*/
