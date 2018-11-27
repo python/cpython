@@ -778,7 +778,7 @@ profiler_init(ProfilerObject *pObj, PyObject *args, PyObject *kw)
 static PyMethodDef profiler_methods[] = {
     {"getstats",    (PyCFunction)profiler_getstats,
                     METH_NOARGS,                        getstats_doc},
-    {"enable",          (PyCFunction)profiler_enable,
+    {"enable",          (PyCFunction)(void(*)(void))profiler_enable,
                     METH_VARARGS | METH_KEYWORDS,       enable_doc},
     {"disable",         (PyCFunction)profiler_disable,
                     METH_NOARGS,                        disable_doc},

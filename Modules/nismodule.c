@@ -423,13 +423,13 @@ nis_maps (PyObject *self, PyObject *args, PyObject *kwdict)
 }
 
 static PyMethodDef nis_methods[] = {
-    {"match",                   (PyCFunction)nis_match,
+    {"match",                   (PyCFunction)(void(*)(void))nis_match,
                                     METH_VARARGS | METH_KEYWORDS,
                                     match__doc__},
-    {"cat",                     (PyCFunction)nis_cat,
+    {"cat",                     (PyCFunction)(void(*)(void))nis_cat,
                                     METH_VARARGS | METH_KEYWORDS,
                                     cat__doc__},
-    {"maps",                    (PyCFunction)nis_maps,
+    {"maps",                    (PyCFunction)(void(*)(void))nis_maps,
                                     METH_VARARGS | METH_KEYWORDS,
                                     maps__doc__},
     {"get_default_domain",      nis_get_default_domain,
