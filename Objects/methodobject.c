@@ -2,6 +2,7 @@
 /* Method object implementation */
 
 #include "Python.h"
+#include "pycore_object.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
 #include "structmember.h"
@@ -31,7 +32,7 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
     op = free_list;
     if (op != NULL) {
         free_list = (PyCFunctionObject *)(op->m_self);
-        (void)PyObject_INIT((PyObject *)op, &PyCFunction_Type);
+        (void)PyObject_INIT(op, &PyCFunction_Type);
         numfree--;
     }
     else {

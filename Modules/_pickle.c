@@ -5858,14 +5858,20 @@ load_extension(UnpicklerObject *self, int nbytes)
     /* Since the extension registry is manipulable via Python code,
      * confirm that pair is really a 2-tuple of strings.
      */
-    if (!PyTuple_Check(pair) || PyTuple_Size(pair) != 2 ||
-        !PyUnicode_Check(module_name = PyTuple_GET_ITEM(pair, 0)) ||
-        !PyUnicode_Check(class_name = PyTuple_GET_ITEM(pair, 1))) {
-        Py_DECREF(py_code);
-        PyErr_Format(PyExc_ValueError, "_inverted_registry[%ld] "
-                     "isn't a 2-tuple of strings", code);
-        return -1;
+    if (!PyTuple_Check(pair) || PyTuple_Size(pair) != 2) {
+        goto error;
     }
+
+    module_name = PyTuple_GET_ITEM(pair, 0);
+    if (!PyUnicode_Check(module_name)) {
+        goto error;
+    }
+
+    class_name = PyTuple_GET_ITEM(pair, 1);
+    if (!PyUnicode_Check(class_name)) {
+        goto error;
+    }
+
     /* Load the object. */
     obj = find_class(self, module_name, class_name);
     if (obj == NULL) {
@@ -5881,6 +5887,12 @@ load_extension(UnpicklerObject *self, int nbytes)
     }
     PDATA_PUSH(self->stack, obj, -1);
     return 0;
+
+error:
+    Py_DECREF(py_code);
+    PyErr_Format(PyExc_ValueError, "_inverted_registry[%ld] "
+                 "isn't a 2-tuple of strings", code);
+    return -1;
 }
 
 static int

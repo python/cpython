@@ -55,15 +55,14 @@ PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 
 /* Macro, trading safety for speed */
 #ifndef Py_LIMITED_API
-#define PyTuple_GET_ITEM(op, i) (((PyTupleObject *)(op))->ob_item[i])
-#define PyTuple_GET_SIZE(op)    (assert(PyTuple_Check(op)),Py_SIZE(op))
+/* Cast argument to PyTupleObject* type. */
+#define _PyTuple_CAST(op) (assert(PyTuple_Check(op)), (PyTupleObject *)(op))
 
-#ifdef Py_BUILD_CORE
-#  define _PyTuple_ITEMS(op) ((((PyTupleObject *)(op))->ob_item))
-#endif
+#define PyTuple_GET_ITEM(op, i) (_PyTuple_CAST(op)->ob_item[i])
+#define PyTuple_GET_SIZE(op)    Py_SIZE(_PyTuple_CAST(op))
 
 /* Macro, *only* to be used to fill in brand new tuples */
-#define PyTuple_SET_ITEM(op, i, v) (((PyTupleObject *)(op))->ob_item[i] = v)
+#define PyTuple_SET_ITEM(op, i, v) (_PyTuple_CAST(op)->ob_item[i] = v)
 #endif
 
 PyAPI_FUNC(int) PyTuple_ClearFreeList(void);
