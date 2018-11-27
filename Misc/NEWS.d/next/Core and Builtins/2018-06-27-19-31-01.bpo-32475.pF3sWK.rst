@@ -1,0 +1,2 @@
+New optional argument to `BufferedReader.peek`: `allow_read` prevents reads of
+the underlying file when set to False.
