@@ -111,7 +111,7 @@ cell_get_contents(PyCellObject *op, void *closure)
 }
 
 static int
-cell_set_contents(PyCellObject *op, PyObject *obj)
+cell_set_contents(PyCellObject *op, PyObject *obj, void *Py_UNUSED(ignored))
 {
     Py_XINCREF(obj);
     Py_XSETREF(op->ob_ref, obj);
