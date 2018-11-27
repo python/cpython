@@ -1350,16 +1350,16 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         #check that this standard extension works
         t.strftime("%f")
 
-        # bpo-35066: make sure trailing '%' don't cause
-        # datetime's strftime to complain
-        failed = False
+    def test_strftime_trailing_percent(self):
+    # bpo-35066: make sure trailing '%' doesn't cause
+    # datetime's strftime to complain
+        t = self.theclass(2005, 3, 2)
         try:
-            t.strftime('%')
+            _time.strftime('%')
         except ValueError:
-            failed = True
-        if not failed:
-            self.assertEqual(t.strftime('%'), '%')
-            self.assertEqual(t.strftime("m:%m d:%d y:%y %"), "m:03 d:02 y:05 %")
+            self.skipTest('time module does not support trailing %')
+        self.assertEqual(t.strftime('%'), '%')
+        self.assertEqual(t.strftime("m:%m d:%d y:%y %"), "m:03 d:02 y:05 %")
 
     def test_format(self):
         dt = self.theclass(2007, 9, 10)
