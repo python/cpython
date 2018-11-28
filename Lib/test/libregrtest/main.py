@@ -460,21 +460,27 @@ class Regrtest:
               % (locale.getpreferredencoding(False),
                  sys.getfilesystemencoding()))
 
+    def only_test_that_did_not_run(self):
+
+        return (self.run_no_tests and
+                not any((self.good, self.bad, self.skipped,
+                         self.interrupted, self.environment_changed)))
+
     def get_tests_result(self):
         result = []
         if self.bad:
             result.append("FAILURE")
         elif self.ns.fail_env_changed and self.environment_changed:
             result.append("ENV CHANGED")
-        elif not any((self.good, self.bad, self.skipped, self.interrupted,
-            self.environment_changed)):
-            result.append("NO TEST RUN")
 
         if self.interrupted:
             result.append("INTERRUPTED")
 
-        if not result:
+        if not result and not self.only_test_that_did_not_run():
             result.append("SUCCESS")
+
+        if self.run_no_tests:
+            result.append("NO TEST RUN")
 
         result = ', '.join(result)
         if self.first_result:
