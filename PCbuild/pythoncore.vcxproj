@@ -95,7 +95,15 @@
     <ClInclude Include="..\Include\complexobject.h" />
     <ClInclude Include="..\Include\context.h" />
     <ClInclude Include="..\Include\coreconfig.h" />
+    <ClInclude Include="..\Include\cpython\abstract.h" />
+    <ClInclude Include="..\Include\cpython\dictobject.h" />
+    <ClInclude Include="..\Include\cpython\object.h" />
     <ClInclude Include="..\Include\cpython\objimpl.h" />
+    <ClInclude Include="..\Include\cpython\pyerrors.h" />
+    <ClInclude Include="..\Include\cpython\pylifecycle.h" />
+    <ClInclude Include="..\Include\cpython\pystate.h" />
+    <ClInclude Include="..\Include\cpython\tupleobject.h" />
+    <ClInclude Include="..\Include\cpython\unicodeobject.h" />
     <ClInclude Include="..\Include\datetime.h" />
     <ClInclude Include="..\Include\descrobject.h" />
     <ClInclude Include="..\Include\dictobject.h" />
