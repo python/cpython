@@ -1189,58 +1189,125 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
     return arg;
 }
 
+/* Forward declaration */
+static PyObject* merge_consts_recursive(struct compiler *c, PyObject *o);
+
+static PyObject*
+merge_consts_frozenset(struct compiler *c, PyObject *frozenset)
+{
+    assert(PyFrozenSet_CheckExact(frozenset));
+
+    Py_ssize_t len = PySet_GET_SIZE(frozenset);
+    PyObject *tuple = PyTuple_New(len);
+    if (tuple == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t i = 0, pos = 0;
+    PyObject *item;
+    Py_hash_t hash;
+    while (_PySet_NextEntry(frozenset, &pos, &item, &hash)) {
+        PyObject *key = merge_consts_recursive(c, item);
+        if (key == NULL) {
+            Py_DECREF(tuple);
+            return NULL;
+        }
+
+        PyObject *new_item;
+        if (PyTuple_CheckExact(key)) {
+            new_item = PyTuple_GET_ITEM(key, 1);
+            Py_INCREF(new_item);
+            Py_DECREF(key);
+        }
+        else {
+            new_item = key;
+        }
+        PyTuple_SET_ITEM(tuple, i, new_item);
+        i++;
+    }
+
+    PyObject *new_frozenset = PyFrozenSet_New(tuple);
+    Py_DECREF(tuple);
+    return new_frozenset;
+}
+
+static PyObject*
+merge_consts_tuple(struct compiler *c, PyObject *tuple)
+{
+    assert(PyTuple_CheckExact(tuple));
+
+    Py_ssize_t len = PyTuple_GET_SIZE(tuple);
+    PyObject *new_tuple = PyTuple_New(len);
+    if (new_tuple == NULL) {
+        return NULL;
+    }
+
+    for (Py_ssize_t i = 0; i < len; i++) {
+        PyObject *item = PyTuple_GET_ITEM(tuple, i);
+        PyObject *key = merge_consts_recursive(c, item);
+        if (key == NULL) {
+            Py_DECREF(new_tuple);
+            return NULL;
+        }
+
+        PyObject *new_item;
+        if (PyTuple_CheckExact(key)) {
+            // See _PyCode_ConstantKey()
+            new_item = PyTuple_GET_ITEM(key, 1);
+            Py_INCREF(new_item);
+            Py_DECREF(key);
+        }
+        else {
+            new_item = key;
+        }
+        PyTuple_SET_ITEM(new_tuple, i, new_item);
+    }
+    return new_tuple;
+}
+
 // Merge const *o* recursively and return constant key object.
 static PyObject*
-merge_consts_recursive(struct compiler *c, PyObject *o)
+merge_consts_recursive(struct compiler *c, PyObject *obj)
 {
     // None and Ellipsis are singleton, and key is the singleton.
     // No need to merge object and key.
-    if (o == Py_None || o == Py_Ellipsis) {
-        Py_INCREF(o);
-        return o;
+    if (obj == Py_None || obj == Py_Ellipsis) {
+        Py_INCREF(obj);
+        return obj;
     }
 
-    PyObject *key = _PyCode_ConstantKey(o);
+    PyObject *merged_obj;
+    if (PyTuple_CheckExact(obj)) {
+        merged_obj = merge_consts_tuple(c, obj);
+        if (merged_obj == NULL) {
+            return NULL;
+        }
+    }
+    else if (PyFrozenSet_CheckExact(obj) && PySet_GET_SIZE(obj) > 0) {
+        merged_obj = merge_consts_frozenset(c, obj);
+        if (merged_obj == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        Py_INCREF(obj);
+        merged_obj = obj;
+    }
+
+    PyObject *key = _PyCode_ConstantKey(merged_obj);
+    Py_DECREF(merged_obj);
     if (key == NULL) {
         return NULL;
     }
 
-    // t is borrowed reference
-    PyObject *t = PyDict_SetDefault(c->c_const_cache, key, key);
-    if (t != key) {
-        Py_INCREF(t);
+    // key2 is borrowed reference
+    PyObject *key2 = PyDict_SetDefault(c->c_const_cache, key, key);
+    if (key2 != key) {
+        /* Already cached: get the cached key */
+        Py_INCREF(key2);
         Py_DECREF(key);
-        return t;
+        return key2;
     }
-
-    if (PyTuple_CheckExact(o)) {
-        Py_ssize_t i, len = PyTuple_GET_SIZE(o);
-        for (i = 0; i < len; i++) {
-            PyObject *item = PyTuple_GET_ITEM(o, i);
-            PyObject *u = merge_consts_recursive(c, item);
-            if (u == NULL) {
-                Py_DECREF(key);
-                return NULL;
-            }
-
-            // See _PyCode_ConstantKey()
-            PyObject *v;  // borrowed
-            if (PyTuple_CheckExact(u)) {
-                v = PyTuple_GET_ITEM(u, 1);
-            }
-            else {
-                v = u;
-            }
-            if (v != item) {
-                Py_INCREF(v);
-                PyTuple_SET_ITEM(o, i, v);
-                Py_DECREF(item);
-            }
-
-            Py_DECREF(u);
-        }
-    }
-
     return key;
 }
 
