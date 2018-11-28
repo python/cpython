@@ -2522,6 +2522,7 @@ class _TestPool(BaseTestCase):
         with self.Pool(1) as p:
             with self.assertRaises(RuntimeError):
                 p.apply(self._test_wrapped_exception)
+        p.join()
 
     def test_map_no_failfast(self):
         # Issue #23992: the fail-fast behaviour when an exception is raised
@@ -2557,6 +2558,7 @@ class _TestPool(BaseTestCase):
         # they were released too.
         self.assertEqual(CountedObject.n_instances, 0)
 
+    @support.reap_threads
     def test_del_pool(self):
         p = self.Pool(1)
         wr = weakref.ref(p)
