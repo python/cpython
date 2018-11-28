@@ -3290,9 +3290,9 @@ class LocaleCodecTest(unittest.TestCase):
                     expected = text.encode(self.ENCODING, errors)
                 except UnicodeEncodeError:
                     with self.assertRaises(RuntimeError) as cm:
-                        self.encode(self.SURROGATES)
+                        self.encode(text, errors)
                     errmsg = str(cm.exception)
-                    self.assertTrue(errmsg.startswith("encode error: pos=0, reason="), errmsg)
+                    self.assertRegex(errmsg, r"encode error: pos=[0-9]+, reason=")
                 else:
                     encoded = self.encode(text, errors)
                     self.assertEqual(encoded, expected)
@@ -3314,6 +3314,11 @@ class LocaleCodecTest(unittest.TestCase):
                 raise
 
         self.check_encode_strings("surrogatepass")
+
+    def test_encode_unsupported_error_handler(self):
+        with self.assertRaises(ValueError) as cm:
+            self.encode('', 'backslashreplace')
+        self.assertEqual(str(cm.exception), 'unsupported error handler')
 
     def decode(self, encoded, errors="strict"):
         return _testcapi.DecodeLocaleEx(encoded, 0, errors)
@@ -3369,6 +3374,11 @@ class LocaleCodecTest(unittest.TestCase):
                 raise
 
         self.check_decode_strings("surrogatepass")
+
+    def test_decode_unsupported_error_handler(self):
+        with self.assertRaises(ValueError) as cm:
+            self.decode(b'', 'backslashreplace')
+        self.assertEqual(str(cm.exception), 'unsupported error handler')
 
 
 if __name__ == "__main__":
