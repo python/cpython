@@ -1208,14 +1208,18 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
     // t is borrowed reference
     PyObject *t = PyDict_SetDefault(c->c_const_cache, key, key);
     if (t != key) {
+        // o is registered in c_const_cache.  Just use it.
         Py_INCREF(t);
         Py_DECREF(key);
         return t;
     }
 
+    // We registered o in c_const_cache.
+    // When o is a tuple or frozenset, we want to merge it's
+    // items too.
     if (PyTuple_CheckExact(o)) {
-        Py_ssize_t i, len = PyTuple_GET_SIZE(o);
-        for (i = 0; i < len; i++) {
+        Py_ssize_t len = PyTuple_GET_SIZE(o);
+        for (Py_ssize_t i = 0; i < len; i++) {
             PyObject *item = PyTuple_GET_ITEM(o, i);
             PyObject *u = merge_consts_recursive(c, item);
             if (u == NULL) {
@@ -1241,10 +1245,6 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
         }
     }
     else if (PyFrozenSet_CheckExact(o)) {
-        // We register items in the frozenset, but don't rewrite
-        // the frozenset when the item is already registered
-        // because frozenset is rare and difficult.
-
         // *key* is tuple. And it's first item is frozenset of
         // constant keys.
         // See _PyCode_ConstantKey() for detail.
@@ -1252,9 +1252,6 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
         assert(PyTuple_GET_SIZE(key) == 2);
 
         Py_ssize_t len = PySet_GET_SIZE(o);
-        if (len == 0) {
-            return key;
-        }
         PyObject *tuple = PyTuple_New(len);
         if (tuple == NULL) {
             Py_DECREF(key);
@@ -1273,21 +1270,26 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
             PyObject *u;
             if (PyTuple_CheckExact(k)) {
                 u = PyTuple_GET_ITEM(k, 1);
+                Py_INCREF(u);
+                Py_DECREF(k);
             }
             else {
                 u = k;
             }
-            Py_INCREF(u);
-            PyTuple_SET_ITEM(tuple, i, u);
+            PyTuple_SET_ITEM(tuple, i, u);  // Steals reference of u.
             i++;
         }
 
+        // Instead of rewriting o, we create new frozenset and embed in the
+        // key tuple.  Caller should get merged frozenset from the key tuple.
         PyObject *new = PyFrozenSet_New(tuple);
         Py_DECREF(tuple);
         if (new == NULL) {
             Py_DECREF(key);
             return NULL;
         }
+        assert(PyTuple_GET_ITEM(key, 1) == o);
+        Py_DECREF(o);
         PyTuple_SET_ITEM(key, 1, new);
     }
 
