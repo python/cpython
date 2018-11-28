@@ -616,14 +616,12 @@ if 1:
         self.assertEqual(repr(f1()), repr(Ellipsis))
 
         # Merge constants in tuple or frozenset
-        # NOTE: frozenset can't reuse previous const, but frozenset
-        # item can be reused later.
-        f3 = lambda x: x in {("not a name",)}
         f1, f2 = lambda: "not a name", lambda: ("not a name",)
-        self.assertIs(next(iter(f3.__code__.co_consts[1])),
-                      f2.__code__.co_consts[1])
+        f3 = lambda x: x in {("not a name",)}
         self.assertIs(f1.__code__.co_consts[1],
                       f2.__code__.co_consts[1][0])
+        self.assertIs(next(iter(f3.__code__.co_consts[1])),
+                      f2.__code__.co_consts[1])
 
         # {0} is converted to a constant frozenset({0}) by the peephole
         # optimizer
