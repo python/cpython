@@ -48,6 +48,22 @@ class DateTimeTests(unittest.TestCase):
             utils.parsedate_to_datetime(self.datestring + ' -0000'),
             self.naive_dt)
 
+    def test_parsedate_to_datetime_with_invalid_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            utils.parsedate_to_datetime('')
+        with self.assertRaises(TypeError):
+            utils.parsedate_to_datetime('0')
+        with self.assertRaises(TypeError):
+            utils.parsedate_to_datetime('A Complete Waste of Time')
+
+    def test_parsedate_to_datetime_with_invalid_raises_valueerror(self):
+        with self.assertRaises(ValueError):
+            utils.parsedate_to_datetime('Tue, 06 Jun 2017 27:39:33 +0600')
+        with self.assertRaises(ValueError):
+            utils.parsedate_to_datetime('Tue, 06 Jun 2017 07:39:33 +2600')
+        with self.assertRaises(ValueError):
+            utils.parsedate_to_datetime('Tue, 06 Jun 2017 27:39:33')
+
 
 class LocaltimeTests(unittest.TestCase):
 
