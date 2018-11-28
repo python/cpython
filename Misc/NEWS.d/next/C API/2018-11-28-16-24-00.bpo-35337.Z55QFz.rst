@@ -1,0 +1,2 @@
+:c:func:`PyTuple_GET_ITEM` and :c:func:`PyTuple_SET_ITEM` now check the
+index using an assertion.
