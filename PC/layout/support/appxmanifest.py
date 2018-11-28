@@ -108,7 +108,6 @@ APPXMANIFEST_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
     </Dependencies>
     <Capabilities>
         <rescap:Capability Name="runFullTrust"/>
-        <uap4:CustomCapability Name="Microsoft.classicAppCompat_8wekyb3d8bbwe"/>
     </Capabilities>
     <Applications>
     </Applications>
@@ -116,6 +115,8 @@ APPXMANIFEST_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
     </Extensions>
 </Package>"""
 
+
+SCCD_FILENAME = "PC/classicAppCompat.sccd"
 
 REGISTRY = {
     "HKCU\\Software\\Python\\PythonCore": {
@@ -222,7 +223,7 @@ def get_appx_layout(ns):
     yield "_resources/pythonwx44.png.targetsize-44_altform-unplated", icons / "pythonwx44.png"
     yield "_resources/pythonwx150.png", icons / "pythonwx150.png"
     yield "_resources/pythonwx150.png.targetsize-150_altform-unplated", icons / "pythonwx150.png"
-    sccd = ns.source / "PC" / "classicAppCompat.sccd"
+    sccd = ns.source / SCCD_FILENAME
     if sccd.is_file():
         # This should only be set for side-loading purposes.
         sccd = _fixup_sccd(ns, sccd, os.getenv("APPX_DATA_SHA256"))
@@ -424,7 +425,11 @@ def get_appxmanifest(ns):
             None,
         )
 
-    add_registry_entries(ns, xml)
+    if (ns.source / SCCD_FILENAME).is_file():
+        add_registry_entries(ns, xml)
+        node = xml.find("m:Capabilities", NS)
+        node = ET.SubElement(node, QN(NS["uap4"], "CustomCapability"))
+        node.set("Name", "Microsoft.classicAppCompat_8wekyb3d8bbwe")
 
     buffer = io.BytesIO()
     xml.write(buffer, encoding="utf-8", xml_declaration=True)
