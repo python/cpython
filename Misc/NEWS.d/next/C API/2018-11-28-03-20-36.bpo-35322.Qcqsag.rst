@@ -1,0 +1,2 @@
+Fix memory leak in :c:func:`PyUnicode_EncodeLocale` and
+:c:func:`PyUnicode_EncodeFSDefault` on error handling.
