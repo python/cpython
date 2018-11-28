@@ -443,7 +443,7 @@ Notes:
 (4)
    Performing these calculations with at least one extra sign extension bit in
    a finite two's complement representation (a working bit-width of
-   ``1 + max(x.bit_length(), y.bit_length()`` or more) is sufficient to get the
+   ``1 + max(x.bit_length(), y.bit_length())`` or more) is sufficient to get the
    same result as if there were an infinite number of sign bits.
 
 
