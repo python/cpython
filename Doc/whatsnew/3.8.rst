@@ -175,6 +175,13 @@ characters or bytes unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
 
+platform
+--------
+
+The function `platform.popen` has been removed, it was deprecated since Python
+3.3: use :func:`os.popen` instead.
+
+
 ncurses
 -------
 
@@ -413,6 +420,9 @@ Changes in Python behavior
 
 Changes in the Python API
 -------------------------
+
+* The function `platform.popen` has been removed, it was deprecated since
+  Python 3.3: use :func:`os.popen` instead.
 
 * The :meth:`~tkinter.ttk.Treeview.selection` method of the
   :class:`tkinter.ttk.Treeview` class no longer takes arguments.  Using it with
