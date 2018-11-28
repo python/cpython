@@ -480,14 +480,11 @@ class BaseTestCase(unittest.TestCase):
             result.append('ENV CHANGED')
         if interrupted:
             result.append('INTERRUPTED')
-
-        only_no_test_run = (no_test_ran and not any((good, failed, skipped,
-                            interrupted, env_changed)))
-
-        if not result and not only_no_test_run:
-            result.append('SUCCESS')
-        if no_test_ran:
+        if not any((good, result, failed, interrupted, skipped,
+                    env_changed, fail_env_changed)):
             result.append("NO TEST RUN")
+        elif not result:
+            result.append('SUCCESS')
         result = ', '.join(result)
         if rerun:
             self.check_line(output, 'Tests result: %s' % result)
