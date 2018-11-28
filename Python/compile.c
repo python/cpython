@@ -1252,6 +1252,9 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
         assert(PyTuple_GET_SIZE(key) == 2);
 
         Py_ssize_t len = PySet_GET_SIZE(o);
+        if (len == 0) {  // empty frozenset should not be re-created.
+            return key;
+        }
         PyObject *tuple = PyTuple_New(len);
         if (tuple == NULL) {
             Py_DECREF(key);
