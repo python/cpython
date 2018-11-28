@@ -62,7 +62,8 @@ Tuple Objects
 
 .. c:function:: PyObject* PyTuple_GET_ITEM(PyObject *p, Py_ssize_t pos)
 
-   Like :c:func:`PyTuple_GetItem`, but does no checking of its arguments.
+   Like :c:func:`PyTuple_GetItem`, but does no checking of its arguments (in
+   release mode).
 
 
 .. c:function:: PyObject* PyTuple_GetSlice(PyObject *p, Py_ssize_t low, Py_ssize_t high)
@@ -83,12 +84,15 @@ Tuple Objects
 
 .. c:function:: void PyTuple_SET_ITEM(PyObject *p, Py_ssize_t pos, PyObject *o)
 
-   Like :c:func:`PyTuple_SetItem`, but does no error checking, and should *only* be
-   used to fill in brand new tuples.
+   Like :c:func:`PyTuple_SetItem`, but does no error checking (in release
+   mode), and should *only* be used to fill in brand new tuples.
 
    .. note::
 
       This function "steals" a reference to *o*.
+
+   .. versionchanged:: 3.8
+      Arguments are now checked in debug mode.
 
 
 .. c:function:: int _PyTuple_Resize(PyObject **p, Py_ssize_t newsize)
@@ -196,6 +200,9 @@ type.
 .. c:function:: PyObject* PyStructSequence_GET_ITEM(PyObject *p, Py_ssize_t pos)
 
    Macro equivalent of :c:func:`PyStructSequence_GetItem`.
+
+   .. versionchanged:: 3.8
+      Arguments are now checked in debug mode.
 
 
 .. c:function:: void PyStructSequence_SetItem(PyObject *p, Py_ssize_t pos, PyObject *o)

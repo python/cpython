@@ -34,10 +34,15 @@ PyAPI_FUNC(PyObject *) PyStructSequence_New(PyTypeObject* type);
 #ifndef Py_LIMITED_API
 typedef PyTupleObject PyStructSequence;
 
-/* Macro, *only* to be used to fill in brand new objects */
-#define PyStructSequence_SET_ITEM(op, i, v) PyTuple_SET_ITEM(op, i, v)
+/* Macro, *only* to be used to fill in brand new objects.
 
-#define PyStructSequence_GET_ITEM(op, i) PyTuple_GET_ITEM(op, i)
+   PyTuple_SET_ITEM() checks the size and so cannot be used here, since a
+   structseq with unnamed fields can be smaller size than the real size. */
+#define PyStructSequence_SET_ITEM(op, i, v) (_PyTuple_CAST(op)->ob_item[i] = v)
+
+/* PyTuple_GET_ITEM() checks the size and so cannot be used here, since a
+   structseq with unnamed fields can be smaller size than the real size. */
+#define PyStructSequence_GET_ITEM(op, i) (_PyTuple_CAST(op)->ob_item[i])
 #endif
 
 PyAPI_FUNC(void) PyStructSequence_SetItem(PyObject*, Py_ssize_t, PyObject*);
