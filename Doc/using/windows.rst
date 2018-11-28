@@ -617,7 +617,7 @@ same directory as the launcher. The same .ini files are used for both the
 
 Customization specified in the "application directory" will have precedence over
 the one next to the executable, so a user, who may not have write access to the
-.ini file next to the launcher, can override commands in that global .ini file)
+.ini file next to the launcher, can override commands in that global .ini file.
 
 Customizing default Python versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

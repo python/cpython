@@ -1645,7 +1645,7 @@ argument.  This is sometimes useful, e.g., if ``s`` is a string that should be
 replaced by a default value if it is empty, the expression ``s or 'foo'`` yields
 the desired value.  Because :keyword:`not` has to create a new value, it
 returns a boolean value regardless of the type of its argument
-(for example, ``not 'foo'`` produces ``False`` rather than ``''``.)
+(for example, ``not 'foo'`` produces ``False`` rather than ``''``.))
 
 
 Conditional expressions
