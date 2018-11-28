@@ -3449,10 +3449,9 @@ unicode_encode_locale(PyObject *unicode, const char *errors,
         return NULL;
     }
 
-    Py_ssize_t wlen2 = wcslen(wstr);
-    if (wlen2 != wlen) {
-        PyMem_Free(wstr);
+    if ((size_t)wlen != wcslen(wstr)) {
         PyErr_SetString(PyExc_ValueError, "embedded null character");
+        PyMem_Free(wstr);
         return NULL;
     }
 
@@ -3461,6 +3460,8 @@ unicode_encode_locale(PyObject *unicode, const char *errors,
     const char *reason;
     int res = _Py_EncodeLocaleEx(wstr, &str, &error_pos, &reason,
                                  current_locale, error_handler);
+    PyMem_Free(wstr);
+
     if (res != 0) {
         if (res == -2) {
             PyObject *exc;
@@ -3473,18 +3474,15 @@ unicode_encode_locale(PyObject *unicode, const char *errors,
                 PyCodec_StrictErrors(exc);
                 Py_DECREF(exc);
             }
-            return NULL;
         }
         else if (res == -3) {
             PyErr_SetString(PyExc_ValueError, "unsupported error handler");
         }
         else {
             PyErr_NoMemory();
-            PyMem_Free(wstr);
-            return NULL;
         }
+        return NULL;
     }
-    PyMem_Free(wstr);
 
     PyObject *bytes = PyBytes_FromString(str);
     PyMem_RawFree(str);
