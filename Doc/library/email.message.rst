@@ -92,7 +92,7 @@ message objects.
 
    .. method:: __str__()
 
-      Equivalent to `as_string(policy=self.policy.clone(utf8=True))`.  Allows
+      Equivalent to ``as_string(policy=self.policy.clone(utf8=True))``.  Allows
       ``str(msg)`` to produce a string containing the serialized message in a
       readable format.
 
