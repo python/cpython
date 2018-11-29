@@ -1351,8 +1351,8 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         t.strftime("%f")
 
     def test_strftime_trailing_percent(self):
-    # bpo-35066: make sure trailing '%' doesn't cause
-    # datetime's strftime to complain
+        # bpo-35066: make sure trailing '%' doesn't cause
+        # datetime's strftime to complain
         t = self.theclass(2005, 3, 2)
         try:
             _time.strftime('%')
