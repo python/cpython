@@ -672,6 +672,9 @@ class ArgsTestCase(BaseTestCase):
         subset = ['test_method1', 'test_method3']
         self.assertEqual(methods, subset)
 
+    # bpo-34021: The test fails randomly for an unknown reason
+    # on "x86 Windows XP VS9.0 2.7" buildbot worker.
+    @unittest.skipIf(sys.platform == "win32", "test fails randomly on Windows")
     def test_env_changed(self):
         code = textwrap.dedent("""
             import unittest
