@@ -227,15 +227,6 @@ def libc_ver(executable=sys.executable, lib='', version='', chunksize=16384):
             pos = m.end()
     return lib, version
 
-def popen(cmd, mode='r', bufsize=-1):
-
-    """ Portable popen() interface.
-    """
-    import warnings
-    warnings.warn('use os.popen instead', DeprecationWarning, stacklevel=2)
-    return os.popen(cmd, mode, bufsize)
-
-
 def _norm_version(version, build=''):
 
     """ Normalize the version and build strings and return a single
