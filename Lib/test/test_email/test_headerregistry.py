@@ -209,7 +209,7 @@ class TestDateHeader(TestHeaderBase):
         self.assertEqual(h, s)
         self.assertIsNone(h.datetime)
         self.assertEqual(len(h.defects), 1)
-        self.assertIsInstance(h.defects[0], errors.InvalidHeaderDefect)
+        self.assertIsInstance(h.defects[0], errors.InvalidDateDefect)
 
     def test_invalid_date_value(self):
         s = 'Tue, 06 Jun 2017 27:39:33 +0600'
@@ -217,7 +217,7 @@ class TestDateHeader(TestHeaderBase):
         self.assertEqual(h, s)
         self.assertIsNone(h.datetime)
         self.assertEqual(len(h.defects), 1)
-        self.assertIsInstance(h.defects[0], errors.InvalidHeaderDefect)
+        self.assertIsInstance(h.defects[0], errors.InvalidDateDefect)
 
     def test_datetime_read_only(self):
         h = self.make_header('date', self.datestring)
