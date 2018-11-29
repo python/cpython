@@ -1,0 +1,2 @@
+Fix ``ResourceWarning`` in :func:`platform.dist` on SuSE and Caldera
+OpenLinux. Patch by Ville Skyttä.

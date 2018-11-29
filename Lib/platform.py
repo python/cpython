@@ -243,27 +243,29 @@ def _dist_try_harder(distname, version, id):
     if os.path.exists('/var/adm/inst-log/info'):
         # SuSE Linux stores distribution information in that file
         distname = 'SuSE'
-        for line in open('/var/adm/inst-log/info'):
-            tv = line.split()
-            if len(tv) == 2:
-                tag, value = tv
-            else:
-                continue
-            if tag == 'MIN_DIST_VERSION':
-                version = value.strip()
-            elif tag == 'DIST_IDENT':
-                values = value.split('-')
-                id = values[2]
+        with open('/var/adm/inst-log/info') as f:
+            for line in f:
+                tv = line.split()
+                if len(tv) == 2:
+                    tag, value = tv
+                else:
+                    continue
+                if tag == 'MIN_DIST_VERSION':
+                    version = value.strip()
+                elif tag == 'DIST_IDENT':
+                    values = value.split('-')
+                    id = values[2]
         return distname, version, id
 
     if os.path.exists('/etc/.installed'):
         # Caldera OpenLinux has some infos in that file (thanks to Colin Kong)
-        for line in open('/etc/.installed'):
-            pkg = line.split('-')
-            if len(pkg) >= 2 and pkg[0] == 'OpenLinux':
-                # XXX does Caldera support non Intel platforms ? If yes,
-                #     where can we find the needed id ?
-                return 'OpenLinux', pkg[1], id
+        with open('/etc/.installed') as f:
+            for line in f:
+                pkg = line.split('-')
+                if len(pkg) >= 2 and pkg[0] == 'OpenLinux':
+                    # XXX does Caldera support non Intel platforms ? If yes,
+                    #     where can we find the needed id ?
+                    return 'OpenLinux', pkg[1], id
 
     if os.path.isdir('/usr/lib/setup'):
         # Check for slackware version tag file (thanks to Greg Andruk)
