@@ -19,6 +19,7 @@ SKIPPED = -2
 RESOURCE_DENIED = -3
 INTERRUPTED = -4
 CHILD_ERROR = -5   # error in a child process
+TEST_DID_NOT_RUN = -6   # error in a child process
 
 _FORMAT_TEST_RESULT = {
     PASSED: '%s passed',
@@ -28,6 +29,7 @@ _FORMAT_TEST_RESULT = {
     RESOURCE_DENIED: '%s skipped (resource denied)',
     INTERRUPTED: '%s interrupted',
     CHILD_ERROR: '%s crashed',
+    TEST_DID_NOT_RUN: '%s run no tests',
 }
 
 # Minimum duration of a test to display its duration or to mention that
@@ -94,6 +96,7 @@ def runtest(ns, test):
         ENV_CHANGED      test failed because it changed the execution environment
         FAILED           test failed
         PASSED           test passed
+        EMPTY_TEST_SUITE test ran no subtests.
 
     If ns.xmlpath is not None, xml_data is a list containing each
     generated testsuite element.
@@ -197,6 +200,8 @@ def runtest_inner(ns, test, display_failure=True):
             else:
                 print("test", test, "failed", file=sys.stderr, flush=True)
         return FAILED, test_time
+    except support.TestDidNotRun:
+        return TEST_DID_NOT_RUN, test_time
     except:
         msg = traceback.format_exc()
         if not ns.pgo:
