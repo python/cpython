@@ -198,8 +198,8 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       indicates that no de-referencing should occur (striding in a contiguous
       memory block).
 
-      If all suboffsets are negative (i.e. no de-referencing is needed, then
-      this field must be NULL (the default value)).
+      If all suboffsets are negative (i.e. no de-referencing is needed), then
+      this field must be NULL (the default value).
 
       This type of array representation is used by the Python Imaging Library
       (PIL). See `complex arrays`_ for further information how to access elements
