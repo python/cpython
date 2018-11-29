@@ -227,54 +227,6 @@ def libc_ver(executable=sys.executable, lib='', version='', chunksize=16384):
             pos = m.end()
     return lib, version
 
-def _dist_try_harder(distname, version, id):
-
-    """ Tries some special tricks to get the distribution
-        information in case the default method fails.
-
-        Currently supports older SuSE Linux, Caldera OpenLinux and
-        Slackware Linux distributions.
-
-    """
-    if os.path.exists('/var/adm/inst-log/info'):
-        # SuSE Linux stores distribution information in that file
-        distname = 'SuSE'
-        for line in open('/var/adm/inst-log/info'):
-            tv = line.split()
-            if len(tv) == 2:
-                tag, value = tv
-            else:
-                continue
-            if tag == 'MIN_DIST_VERSION':
-                version = value.strip()
-            elif tag == 'DIST_IDENT':
-                values = value.split('-')
-                id = values[2]
-        return distname, version, id
-
-    if os.path.exists('/etc/.installed'):
-        # Caldera OpenLinux has some infos in that file (thanks to Colin Kong)
-        for line in open('/etc/.installed'):
-            pkg = line.split('-')
-            if len(pkg) >= 2 and pkg[0] == 'OpenLinux':
-                # XXX does Caldera support non Intel platforms ? If yes,
-                #     where can we find the needed id ?
-                return 'OpenLinux', pkg[1], id
-
-    if os.path.isdir('/usr/lib/setup'):
-        # Check for slackware version tag file (thanks to Greg Andruk)
-        verfiles = os.listdir('/usr/lib/setup')
-        for n in range(len(verfiles)-1, -1, -1):
-            if verfiles[n][:14] != 'slack-version-':
-                del verfiles[n]
-        if verfiles:
-            verfiles.sort()
-            distname = 'slackware'
-            version = verfiles[-1][14:]
-            return distname, version, id
-
-    return distname, version, id
-
 def popen(cmd, mode='r', bufsize=-1):
 
     """ Portable popen() interface.
