@@ -269,6 +269,10 @@ by the local file.
    Move the current frame *count* (default one) levels up in the stack trace (to
    an older frame).
 
+.. pdbcommand:: fr(ame) [index]
+
+   Switch to frame *index* in the stack trace.
+
 .. pdbcommand:: b(reak) [([filename:]lineno | function) [, condition]]
 
    With a *lineno* argument, set a break there in the current file.  With a

@@ -1,0 +1,2 @@
+Added `fr(ame)` command to pdb to directly jump to stack frame.
+Frame indexes are shown in stack trace.

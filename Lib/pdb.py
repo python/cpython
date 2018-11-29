@@ -80,6 +80,7 @@ import signal
 import inspect
 import traceback
 import linecache
+import math
 
 
 class Restart(Exception):
@@ -969,6 +970,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self._select_frame(newframe)
     do_d = do_down
 
+    def do_frame(self, arg):
+        try:
+            frameno = int(arg)
+        except ValueError:
+            self.error('Invalid frame count (%s)' % arg)
+            return
+        if frameno < 0 or frameno >= len(self.stack):
+            self.error('Invalid frame')
+            return
+        self._select_frame(frameno)
+    do_fr = do_frame
+
     def do_until(self, arg):
         """unt(il) [lineno]
         Without argument, continue execution until the line with a
@@ -1438,17 +1451,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def print_stack_trace(self):
         try:
-            for frame_lineno in self.stack:
-                self.print_stack_entry(frame_lineno)
+            for frameno, frame_lineno in enumerate(self.stack):
+                self.print_stack_entry(frame_lineno, frameno=frameno)
         except KeyboardInterrupt:
             pass
 
-    def print_stack_entry(self, frame_lineno, prompt_prefix=line_prefix):
+    def print_stack_entry(self, frame_lineno, prompt_prefix=line_prefix, frameno=None):
         frame, lineno = frame_lineno
         if frame is self.curframe:
             prefix = '> '
         else:
             prefix = '  '
+        if frameno is not None:
+            prefix += '[%*d] ' % (int(math.log10(len(self.stack))) + 1, frameno)
         self.message(prefix +
                      self.format_stack_entry(frame_lineno, prompt_prefix))
 
