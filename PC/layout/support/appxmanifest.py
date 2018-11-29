@@ -27,7 +27,7 @@ def public(f):
 
 APPX_DATA = dict(
     Name="PythonSoftwareFoundation.Python.{}".format(VER_DOT),
-    Version="{}.{}.{}.{}".format(VER_MAJOR, VER_MINOR, VER_MICRO, VER_FIELD3),
+    Version="{}.{}.{}".format(VER_MAJOR, VER_MINOR, VER_FIELD3),
     Publisher=os.getenv(
         "APPX_DATA_PUBLISHER", "CN=4975D53F-AA7E-49A5-8B49-EA4FDC1BB66B"
     ),
@@ -77,6 +77,7 @@ APPXMANIFEST_NS = {
     "rescap": "http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities",
     "rescap4": "http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities/4",
     "desktop4": "http://schemas.microsoft.com/appx/manifest/desktop/windows10/4",
+    "desktop6": "http://schemas.microsoft.com/appx/manifest/desktop/windows10/6",
     "uap3": "http://schemas.microsoft.com/appx/manifest/uap/windows10/3",
     "uap4": "http://schemas.microsoft.com/appx/manifest/uap/windows10/4",
     "uap5": "http://schemas.microsoft.com/appx/manifest/uap/windows10/5",
@@ -99,15 +100,17 @@ APPXMANIFEST_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
         <PublisherDisplayName>Python Software Foundation</PublisherDisplayName>
         <Description></Description>
         <Logo>_resources/pythonx150.png</Logo>
+        <desktop6:RegistryWriteVirtualization>disabled</desktop6:RegistryWriteVirtualization>
     </Properties>
     <Resources>
         <Resource Language="en-US" />
     </Resources>
     <Dependencies>
-        <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17134.0" MaxVersionTested="" />
+        <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17135.0" MaxVersionTested="" />
     </Dependencies>
     <Capabilities>
         <rescap:Capability Name="runFullTrust"/>
+        <rescap:Capability Name="unvirtualizedResources"/>
     </Capabilities>
     <Applications>
     </Applications>
