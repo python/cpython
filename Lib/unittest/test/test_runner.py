@@ -256,7 +256,7 @@ class TestClassCleanup(unittest.TestCase):
         TestableTest.addClassCleanup(cleanup2)
         with self.assertRaises(Exception) as e:
             TestableTest.doClassCleanups()
-            self.assertEquals(e, 'cleanup1')
+            self.assertEqual(e, 'cleanup1')
 
     def test_with_errors_addCleanUp(self):
         ordering = []
