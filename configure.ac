@@ -1196,7 +1196,6 @@ fi
 
 AC_MSG_RESULT($LDLIBRARY)
 
-AC_PROG_RANLIB
 AC_SUBST(AR)
 AC_CHECK_TOOLS(AR, ar aal, ar)
 
@@ -1204,7 +1203,7 @@ AC_CHECK_TOOLS(AR, ar aal, ar)
 AC_SUBST(ARFLAGS)
 if test -z "$ARFLAGS"
 then
-        ARFLAGS="rc"
+        ARFLAGS="rcs"
 fi
 
 AC_CHECK_TOOLS([READELF], [readelf], [:])
