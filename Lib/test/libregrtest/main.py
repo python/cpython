@@ -14,7 +14,7 @@ from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
     findtests, runtest, get_abs_module,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
-    INTERRUPTED, CHILD_ERROR,
+    INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN,
     PROGRESS_MIN_TIME, format_test_result)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import removepy, count, format_duration, printlist
@@ -79,6 +79,7 @@ class Regrtest:
         self.resource_denieds = []
         self.environment_changed = []
         self.rerun = []
+        self.run_no_tests = []
         self.first_result = None
         self.interrupted = False
 
@@ -118,6 +119,8 @@ class Regrtest:
         elif ok == RESOURCE_DENIED:
             self.skipped.append(test)
             self.resource_denieds.append(test)
+        elif ok == TEST_DID_NOT_RUN:
+            self.run_no_tests.append(test)
         elif ok != INTERRUPTED:
             raise ValueError("invalid test result: %r" % ok)
 
@@ -368,6 +371,11 @@ class Regrtest:
             print("%s:" % count(len(self.rerun), "re-run test"))
             printlist(self.rerun)
 
+        if self.run_no_tests:
+            print()
+            print(count(len(self.run_no_tests), "test"), "run no tests:")
+            printlist(self.run_no_tests)
+
     def run_tests_sequential(self):
         if self.ns.trace:
             import trace
@@ -458,6 +466,9 @@ class Regrtest:
             result.append("FAILURE")
         elif self.ns.fail_env_changed and self.environment_changed:
             result.append("ENV CHANGED")
+        elif not any((self.good, self.bad, self.skipped, self.interrupted,
+            self.environment_changed)):
+            result.append("NO TEST RUN")
 
         if self.interrupted:
             result.append("INTERRUPTED")
@@ -580,9 +591,9 @@ class Regrtest:
                 print(msg, file=sys.stderr, flush=True)
                 sys.exit(2)
 
-        if self.ns.slaveargs is not None:
-            from test.libregrtest.runtest_mp import run_tests_slave
-            run_tests_slave(self.ns.slaveargs)
+        if self.ns.worker_args is not None:
+            from test.libregrtest.runtest_mp import run_tests_worker
+            run_tests_worker(self.ns.worker_args)
 
         if self.ns.wait:
             input("Press any key to continue...")
