@@ -44,6 +44,9 @@ Type Objects
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.4
+      The return type is now ``unsigned long`` rather than ``long``.
+
 
 .. c:function:: void PyType_Modified(PyTypeObject *type)
 
