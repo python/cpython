@@ -373,8 +373,13 @@ Deprecated
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
 
-Removed
-=======
+API and Feature Removals
+========================
+
+The following features and APIs have been removed from Python 3.8:
+
+* The function :func:`platform.popen` has been removed, it was deprecated since
+  Python 3.3: use :func:`os.popen` instead.
 
 * The ``pyvenv`` script has been removed in favor of ``python3.8 -m venv``
   to help eliminate confusion as to what Python interpreter the ``pyvenv``
@@ -413,6 +418,9 @@ Changes in Python behavior
 
 Changes in the Python API
 -------------------------
+
+* The function :func:`platform.popen` has been removed, it was deprecated since
+  Python 3.3: use :func:`os.popen` instead.
 
 * The :meth:`~tkinter.ttk.Treeview.selection` method of the
   :class:`tkinter.ttk.Treeview` class no longer takes arguments.  Using it with
