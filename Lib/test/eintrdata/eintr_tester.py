@@ -69,8 +69,6 @@ class EINTRBaseTest(unittest.TestCase):
         signal.signal(signal.SIGALRM, self.orig_handler)
         if hasattr(faulthandler, 'cancel_dump_traceback_later'):
             faulthandler.cancel_dump_traceback_later()
-        # make sure that at least one signal has been received
-        self.assertGreater(self.signals, 0)
 
     def subprocess(self, *args, **kw):
         cmd_args = (sys.executable, '-c') + args
