@@ -1,0 +1,2 @@
+The function `platform.popen` has been removed, it was deprecated since Python
+3.3: use :func:`os.popen` instead.
