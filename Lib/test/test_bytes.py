@@ -161,13 +161,13 @@ class BaseBytesTest(unittest.TestCase):
         # exceptions.
         class BadInt:
             def __index__(self):
-                1/0
+                1//0
         self.assertRaises(ZeroDivisionError, self.type2test, BadInt())
         self.assertRaises(ZeroDivisionError, self.type2test, [BadInt()])
 
         class BadIterable:
             def __iter__(self):
-                1/0
+                1//0
         self.assertRaises(ZeroDivisionError, self.type2test, BadIterable())
 
     def test_compare(self):
