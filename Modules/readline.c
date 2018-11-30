@@ -1239,7 +1239,7 @@ static char *
 call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 {
     size_t n;
-    char *p, *q;
+    char *p;
     int signal;
 
 #ifdef SAVE_LOCALE
@@ -1296,10 +1296,10 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     }
     /* Copy the malloc'ed buffer into a PyMem_Malloc'ed one and
        release the original. */
-    q = p;
+    char *q = p;
     p = PyMem_RawMalloc(n+2);
     if (p != NULL) {
-        strncpy(p, q, n);
+        memcpy(p, q, n);
         p[n] = '\n';
         p[n+1] = '\0';
     }
