@@ -353,8 +353,8 @@ class Cmd:
             self.stdout.write("<empty>\n")
             return
 
-        nonstrings = [i for i in range(len(list))
-                        if not isinstance(list[i], str)]
+        nonstrings = [i for i, val in enumerate(list)
+                      if not isinstance(val, str)]
         if nonstrings:
             raise TypeError("list[i] not a string for i in %s"
                             % ", ".join(map(str, nonstrings)))
@@ -396,6 +396,6 @@ class Cmd:
                 texts.append(x)
             while texts and not texts[-1]:
                 del texts[-1]
-            for col in range(len(texts)):
-                texts[col] = texts[col].ljust(colwidths[col])
+            texts = [line.ljust(width)
+                     for line, width in zip(texts, colwidths)]
             self.stdout.write("%s\n"%str("  ".join(texts)))

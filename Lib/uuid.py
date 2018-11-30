@@ -386,8 +386,8 @@ def _find_mac(command, args, hw_identifiers, get_index):
         with proc:
             for line in proc.stdout:
                 words = line.lower().rstrip().split()
-                for i in range(len(words)):
-                    if words[i] in hw_identifiers:
+                for i, word in enumerate(words):
+                    if word in hw_identifiers:
                         try:
                             word = words[get_index(i)]
                             mac = int(word.replace(b':', b''), 16)

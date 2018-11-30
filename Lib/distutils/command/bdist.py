@@ -125,11 +125,10 @@ class bdist(Command):
                 raise DistutilsOptionError("invalid format '%s'" % format)
 
         # Reinitialize and run each command.
-        for i in range(len(self.formats)):
-            cmd_name = commands[i]
+        for i, (cmd_name, format_) in zip(self.formats, commands):
             sub_cmd = self.reinitialize_command(cmd_name)
             if cmd_name not in self.no_format_option:
-                sub_cmd.format = self.formats[i]
+                sub_cmd.format = format_
 
             # passing the owner and group names for tar archiving
             if cmd_name == 'bdist_dumb':

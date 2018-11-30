@@ -86,12 +86,12 @@ class Table:
 class _Unspecified:pass
 def change_sequence(seq, action, seqno=_Unspecified, cond = _Unspecified):
     "Change the sequence number of an action in a sequence list"
-    for i in range(len(seq)):
-        if seq[i][0] == action:
+    for i, value in enumerate(seq):
+        if value[0] == action:
             if cond is _Unspecified:
-                cond = seq[i][1]
+                cond = value[1]
             if seqno is _Unspecified:
-                seqno = seq[i][2]
+                seqno = value[2]
             seq[i] = (action, cond, seqno)
             return
     raise ValueError("Action not found in sequence")

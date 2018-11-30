@@ -205,8 +205,8 @@ def do_shorts(opts, optstring, shortopts, args):
     return opts, args
 
 def short_has_arg(opt, shortopts):
-    for i in range(len(shortopts)):
-        if opt == shortopts[i] != ':':
+    for i, value in enumerate(shortopts):
+        if opt == value != ':':
             return shortopts.startswith(':', i+1)
     raise GetoptError(_('option -%s not recognized') % opt, opt)
 

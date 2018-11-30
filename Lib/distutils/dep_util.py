@@ -41,10 +41,10 @@ def newer_pairwise (sources, targets):
     # build a pair of lists (sources, targets) where  source is newer
     n_sources = []
     n_targets = []
-    for i in range(len(sources)):
-        if newer(sources[i], targets[i]):
-            n_sources.append(sources[i])
-            n_targets.append(targets[i])
+    for src, targ in zip(sources, targets):
+        if newer(src, targ):
+            n_sources.append(src)
+            n_targets.append(targ)
 
     return (n_sources, n_targets)
 

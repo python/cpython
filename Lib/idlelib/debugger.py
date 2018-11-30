@@ -389,8 +389,7 @@ class StackViewer(ScrolledList):
     def load_stack(self, stack, index=None):
         self.stack = stack
         self.clear()
-        for i in range(len(stack)):
-            frame, lineno = stack[i]
+        for i, (frame, lineno) in enumerate(stack):
             try:
                 modname = frame.f_globals["__name__"]
             except:

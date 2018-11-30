@@ -564,8 +564,8 @@ class install(Command):
             outputs = self.get_outputs()
             if self.root:               # strip any package prefix
                 root_len = len(self.root)
-                for counter in range(len(outputs)):
-                    outputs[counter] = outputs[counter][root_len:]
+                outputs = [value[root_len:] for value in outputs]
+
             self.execute(write_file,
                          (self.record, outputs),
                          "writing list of installed files to '%s'" %

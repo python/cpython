@@ -2026,8 +2026,8 @@ class HtmlDiff(object):
         s = []
         fmt = '            <tr><td class="diff_next"%s>%s</td>%s' + \
               '<td class="diff_next">%s</td>%s</tr>\n'
-        for i in range(len(flaglist)):
-            if flaglist[i] is None:
+        for i, flag in enumerate(flaglist):
+            if flag is None:
                 # mdiff yields None on separator lines skip the bogus ones
                 # generated for the first line
                 if i > 0:

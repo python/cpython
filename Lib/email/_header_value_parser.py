@@ -980,8 +980,8 @@ def _get_ptext_to_endchars(value, endchars):
     vchars = []
     escape = False
     had_qp = False
-    for pos in range(len(fragment)):
-        if fragment[pos] == '\\':
+    for pos, value in enumerate(fragment):
+        if value == '\\':
             if escape:
                 escape = False
                 had_qp = True
@@ -990,9 +990,9 @@ def _get_ptext_to_endchars(value, endchars):
                 continue
         if escape:
             escape = False
-        elif fragment[pos] in endchars:
+        elif value in endchars:
             break
-        vchars.append(fragment[pos])
+        vchars.append(value)
     else:
         pos = pos + 1
     return ''.join(vchars), ''.join([fragment[pos:]] + remainder), had_qp

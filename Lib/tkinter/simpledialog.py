@@ -49,8 +49,7 @@ class SimpleDialog:
         self.cancel = cancel
         self.default = default
         self.root.bind('<Return>', self.return_event)
-        for num in range(len(buttons)):
-            s = buttons[num]
+        for num, s in enumerate(buttons):
             b = Button(self.frame, text=s,
                        command=(lambda self=self, num=num: self.done(num)))
             if num == default:

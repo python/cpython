@@ -99,8 +99,7 @@ def _readmailcapfile(fp, lineno):
             lineno += 1
         # Normalize the key
         types = key.split('/')
-        for j in range(len(types)):
-            types[j] = types[j].strip()
+        types = [val.strip() for val in types]
         key = '/'.join(types).lower()
         # Update the database
         if key in caps:

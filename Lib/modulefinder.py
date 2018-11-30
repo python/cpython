@@ -554,10 +554,9 @@ class ModuleFinder:
                                     % (original_filename,))
             self.processed_paths.append(original_filename)
 
-        consts = list(co.co_consts)
-        for i in range(len(consts)):
-            if isinstance(consts[i], type(co)):
-                consts[i] = self.replace_paths_in_code(consts[i])
+        consts = [self.replace_paths_in_code(value)
+                  if isinstance(value, type(co)) else value
+                  for value in co.co_consts]
 
         return types.CodeType(co.co_argcount, co.co_kwonlyargcount,
                               co.co_nlocals, co.co_stacksize, co.co_flags,
