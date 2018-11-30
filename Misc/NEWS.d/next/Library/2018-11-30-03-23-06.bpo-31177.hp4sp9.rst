@@ -1,0 +1,4 @@
+unittest.mock: reset_mock() now works on Mock objects that had attributes
+deleted. The deletion of an attribute is now forgotten after a reset_mock()
+call. Accessing the deleted attribute after a reset_mock() call behaves like
+its first access.
