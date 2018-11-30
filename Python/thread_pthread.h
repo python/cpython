@@ -210,13 +210,14 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
     pthread_attr_setscope(&attrs, PTHREAD_SCOPE_SYSTEM);
 #endif
 
-    pythread_callback *fn = PyMem_RawMalloc(sizeof(pythread_callback));
+    pythread_callback *callback = PyMem_RawMalloc(sizeof(pythread_callback));
 
-    if (fn == NULL)
+    if (callback == NULL) {
       return PYTHREAD_INVALID_THREAD_ID;
+    }
 
-    fn->func = func;
-    fn->arg = arg;
+    callback->func = func;
+    callback->arg = arg;
 
     status = pthread_create(&th,
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
@@ -224,14 +225,14 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #else
                              (pthread_attr_t*)NULL,
 #endif
-                             pythread_wrapper, fn);
+                             pythread_wrapper, callback);
 
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
     pthread_attr_destroy(&attrs);
 #endif
 
     if (status != 0) {
-        PyMem_RawFree((void *)fn);
+        PyMem_RawFree(callback);
         return PYTHREAD_INVALID_THREAD_ID;
     }
 
