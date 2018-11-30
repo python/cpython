@@ -1,11 +1,12 @@
 # Tests the attempted automatic coercion of the C locale to a UTF-8 locale
 
-import unittest
 import locale
 import os
+import shutil
+import subprocess
 import sys
 import sysconfig
-import shutil
+import unittest
 from collections import namedtuple
 
 import test.support
@@ -24,6 +25,8 @@ EXPECTED_C_LOCALE_FS_ENCODING = "ascii"
 
 # Set our expectation for the default locale used when none is specified
 EXPECT_COERCION_IN_DEFAULT_LOCALE = True
+
+TARGET_LOCALES = ["C.UTF-8", "C.utf8", "UTF-8"]
 
 # Apply some platform dependent overrides
 if sys.platform.startswith("linux"):
@@ -403,6 +406,27 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
                                       LC_ALL="C",
                                       expected_warnings=[LEGACY_LOCALE_WARNING],
                                       coercion_expected=False)
+
+    def test_PYTHONCOERCECLOCALE_set_to_one(self):
+        # skip the test if the LC_CTYPE locale is C or coerced
+        old_loc = locale.setlocale(locale.LC_CTYPE, None)
+        self.addCleanup(locale.setlocale, locale.LC_CTYPE, old_loc)
+        loc = locale.setlocale(locale.LC_CTYPE, "")
+        if loc == "C":
+            self.skipTest("test requires LC_CTYPE locale different than C")
+        if loc in TARGET_LOCALES :
+            self.skipTest("coerced LC_CTYPE locale: %s" % loc)
+
+        # bpo-35336: PYTHONCOERCECLOCALE=1 must not coerce the LC_CTYPE locale
+        # if it's not equal to "C"
+        code = 'import locale; print(locale.setlocale(locale.LC_CTYPE, None))'
+        env = dict(os.environ, PYTHONCOERCECLOCALE='1')
+        cmd = subprocess.run([sys.executable, '-c', code],
+                             stdout=subprocess.PIPE,
+                             env=env,
+                             text=True)
+        self.assertEqual(cmd.stdout.rstrip(), loc)
+
 
 def test_main():
     test.support.run_unittest(
