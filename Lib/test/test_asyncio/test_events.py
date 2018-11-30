@@ -32,21 +32,11 @@ from asyncio import proactor_events
 from asyncio import selector_events
 from asyncio import sslproto
 from asyncio import test_utils
+from asyncio.test_utils import ONLYKEY, ONLYCERT, data_file
 try:
     from test import support
 except ImportError:
     from asyncio import test_support as support
-
-
-def data_file(filename):
-    if hasattr(support, 'TEST_HOME_DIR'):
-        fullname = os.path.join(support.TEST_HOME_DIR, filename)
-        if os.path.isfile(fullname):
-            return fullname
-    fullname = os.path.join(os.path.dirname(__file__), filename)
-    if os.path.isfile(fullname):
-        return fullname
-    raise FileNotFoundError(filename)
 
 
 def osx_tiger():
@@ -67,10 +57,8 @@ def _test_get_event_loop_new_process__sub_proc():
     return loop.run_until_complete(doit())
 
 
-ONLYCERT = data_file('ssl_cert.pem')
-ONLYKEY = data_file('ssl_key.pem')
-SIGNED_CERTFILE = data_file('keycert3.pem')
-SIGNING_CA = data_file('pycacert.pem')
+SIGNED_CERTFILE = test_utils.data_file('keycert3.pem')
+SIGNING_CA = test_utils.data_file('pycacert.pem')
 PEERCERT = {
     'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
     'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
