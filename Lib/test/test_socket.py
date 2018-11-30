@@ -35,6 +35,7 @@ except ImportError:
 
 HOST = support.HOST
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8') ## test unicode string and carriage return
+MAIN_TIMEOUT = 60.0
 
 VSOCKPORT = 1234
 
@@ -4214,6 +4215,7 @@ class BasicSocketPairTest(SocketPairTest):
 class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     def __init__(self, methodName='runTest'):
+        self.event = threading.Event()
         ThreadedTCPSocketTest.__init__(self, methodName=methodName)
 
     def testSetBlocking(self):
@@ -4326,22 +4328,27 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
     def testAccept(self):
         # Testing non-blocking accept
         self.serv.setblocking(0)
-        try:
+
+        # connect() didn't start: non-blocking accept() fails
+        with self.assertRaises(BlockingIOError):
             conn, addr = self.serv.accept()
-        except OSError:
-            pass
-        else:
-            self.fail("Error trying to do non-blocking accept.")
-        read, write, err = select.select([self.serv], [], [])
-        if self.serv in read:
-            conn, addr = self.serv.accept()
-            self.assertIsNone(conn.gettimeout())
-            conn.close()
-        else:
+
+        self.event.set()
+
+        read, write, err = select.select([self.serv], [], [], MAIN_TIMEOUT)
+        if self.serv not in read:
             self.fail("Error trying to do accept after select.")
 
+        # connect() completed: non-blocking accept() doesn't block
+        conn, addr = self.serv.accept()
+        self.addCleanup(conn.close)
+        self.assertIsNone(conn.gettimeout())
+
     def _testAccept(self):
-        time.sleep(0.1)
+        # don't connect before event is set to check
+        # that non-blocking accept() raises BlockingIOError
+        self.event.wait()
+
         self.cli.connect((HOST, self.port))
 
     def testConnect(self):
@@ -4356,25 +4363,32 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
     def testRecv(self):
         # Testing non-blocking recv
         conn, addr = self.serv.accept()
+        self.addCleanup(conn.close)
         conn.setblocking(0)
-        try:
+
+        # the server didn't send data yet: non-blocking recv() fails
+        with self.assertRaises(BlockingIOError):
             msg = conn.recv(len(MSG))
-        except OSError:
-            pass
-        else:
-            self.fail("Error trying to do non-blocking recv.")
-        read, write, err = select.select([conn], [], [])
-        if conn in read:
-            msg = conn.recv(len(MSG))
-            conn.close()
-            self.assertEqual(msg, MSG)
-        else:
+
+        self.event.set()
+
+        read, write, err = select.select([conn], [], [], MAIN_TIMEOUT)
+        if conn not in read:
             self.fail("Error during select call to non-blocking socket.")
+
+        # the server sent data yet: non-blocking recv() doesn't block
+        msg = conn.recv(len(MSG))
+        self.assertEqual(msg, MSG)
 
     def _testRecv(self):
         self.cli.connect((HOST, self.port))
-        time.sleep(0.1)
-        self.cli.send(MSG)
+
+        # don't send anything before event is set to check
+        # that non-blocking recv() raises BlockingIOError
+        self.event.wait()
+
+        # send data: recv() will no longer block
+        self.cli.sendall(MSG)
 
 
 class FileObjectClassTestCase(SocketConnectedTest):
