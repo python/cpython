@@ -40,7 +40,7 @@ def data_file(filename):
         fullname = os.path.join(support.TEST_HOME_DIR, filename)
         if os.path.isfile(fullname):
             return fullname
-    fullname = os.path.join(os.path.dirname(__file__), filename)
+    fullname = os.path.join(os.path.dirname(__file__), '..', filename)
     if os.path.isfile(fullname):
         return fullname
     raise FileNotFoundError(filename)
@@ -156,14 +156,8 @@ class SSLWSGIServerMixin:
         # contains the ssl key and certificate files) differs
         # between the stdlib and stand-alone asyncio.
         # Prefer our own if we can find it.
-        here = os.path.join(os.path.dirname(__file__), '..', 'tests')
-        if not os.path.isdir(here):
-            here = os.path.join(os.path.dirname(os.__file__),
-                                'test', 'test_asyncio')
-        keyfile = os.path.join(here, 'ssl_key.pem')
-        certfile = os.path.join(here, 'ssl_cert.pem')
         context = ssl.SSLContext()
-        context.load_cert_chain(certfile, keyfile)
+        context.load_cert_chain(ONLYCERT, ONLYKEY)
 
         ssock = context.wrap_socket(request, server_side=True)
         try:
