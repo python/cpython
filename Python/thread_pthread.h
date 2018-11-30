@@ -152,29 +152,26 @@ PyThread__init_thread(void)
  * Thread support.
  */
 
-/* The thread function argument passed to PyThread_start_new_thread has a
- * different type compared to the thread function passed to the POSIX
- * pthread_create function and the result of forcibly casting it to the latter
- * type is undefined.  The pythread_fn struct and the pythread_helper_fn below
- * help work around this in a conforming manner by wrapping around the thread
- * function.
- */
+/* bpo-33015: pythread_callback struct and pythread_wrapper() cast
+   "void func(void *)" to "void* func(void *)": always return NULL.
+
+   PyThread_start_new_thread() uses "void func(void *)" type, whereas
+   pthread_create() requires a void* return value. */
 typedef struct {
     void (*func) (void *);
     void *arg;
-} pythread_fn;
+} pythread_callback;
 
 static void *
-pythread_helper_fn(void *fn)
+pythread_wrapper(void *arg)
 {
-    pythread_fn *pfn = fn;
+    /* copy func and func_arg and free the temporary structure */
+    pythread_callback *callback = arg;
+    void (*func)(void *) = callback->func;
+    void *func_arg = callback->arg;
+    PyMem_RawFree(arg);
 
-    void (*func)(void *) = pfn->func;
-    void *arg = pfn->arg;
-
-    PyMem_RawFree((void *)fn);
-    func(arg);
-
+    func(func_arg);
     return NULL;
 }
 
@@ -213,7 +210,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
     pthread_attr_setscope(&attrs, PTHREAD_SCOPE_SYSTEM);
 #endif
 
-    pythread_fn *fn = (pythread_fn *)PyMem_RawMalloc(sizeof (pythread_fn));
+    pythread_callback *fn = PyMem_RawMalloc(sizeof(pythread_callback));
 
     if (fn == NULL)
       return PYTHREAD_INVALID_THREAD_ID;
@@ -227,9 +224,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #else
                              (pthread_attr_t*)NULL,
 #endif
-                             pythread_helper_fn,
-                             fn
-                             );
+                             pythread_wrapper, fn);
 
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
     pthread_attr_destroy(&attrs);
