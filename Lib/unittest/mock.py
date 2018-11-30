@@ -541,6 +541,9 @@ class NonCallableMock(Base):
         if side_effect:
             self._mock_side_effect = None
 
+        # Forget that children were deleted
+        self._mock_children = {k: v for k, v in self._mock_children.items() if v is not _deleted}
+
         for child in self._mock_children.values():
             if isinstance(child, _SpecState):
                 continue

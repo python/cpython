@@ -202,11 +202,13 @@ class MockTest(unittest.TestCase):
 
     def test_reset_mock(self):
         parent = Mock()
-        spec = ["something"]
+        spec = ["something", "deleted"]
         mock = Mock(name="child", parent=parent, spec=spec)
         mock(sentinel.Something, something=sentinel.SomethingElse)
         something = mock.something
         mock.something()
+        mock.deleted
+        del mock.deleted
         mock.side_effect = sentinel.SideEffect
         return_value = mock.return_value
         return_value()
@@ -234,10 +236,11 @@ class MockTest(unittest.TestCase):
         self.assertEqual(mock.return_value, return_value,
                           "return_value incorrectly reset")
         self.assertFalse(return_value.called, "return value mock not reset")
-        self.assertEqual(mock._mock_children, {'something': something},
+        self.assertEqual(list(mock._mock_children), ['something'],
                           "children reset incorrectly")
         self.assertEqual(mock.something, something,
                           "children incorrectly cleared")
+        mock.deleted  # available again
         self.assertFalse(mock.something.called, "child not reset")
 
 
