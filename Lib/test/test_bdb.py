@@ -868,7 +868,7 @@ class BreakpointTestCase(BaseTestCase):
         with create_modules(modules):
             self.expect_set = [
                 ('line', 2, 'tfunc_import'),
-                    break_in_func('func', TEST_MODULE_FNAME, False, '1 / 0'),
+                    break_in_func('func', TEST_MODULE_FNAME, False, '1 // 0'),
                 ('None', 2, 'tfunc_import'),       ('continue', ),
                 ('line', 3, 'func', ({1:1}, [])),  ('quit', ),
             ]
