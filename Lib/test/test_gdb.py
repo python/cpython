@@ -423,7 +423,7 @@ except RuntimeError, e:
         # Test division by zero:
         gdb_repr, gdb_output = self.get_gdb_repr('''
 try:
-    a = 1 / 0
+    a = 1 // 0
 except ZeroDivisionError, e:
     print e
 ''')
