@@ -173,7 +173,7 @@ pythread_wrapper(void *arg)
     pythread_callback *callback = arg;
     void (*func)(void *) = callback->func;
     void *func_arg = callback->arg;
-    PyMem_Free(arg);
+    free(arg);
 
     func(func_arg);
     return NULL;
@@ -213,7 +213,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
     pthread_attr_setscope(&attrs, PTHREAD_SCOPE_SYSTEM);
 #endif
 
-    pythread_callback *callback = PyMem_Malloc(sizeof(pythread_callback));
+    pythread_callback *callback = malloc(sizeof(pythread_callback));
 
     if (callback == NULL) {
         return -1;
@@ -235,7 +235,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #endif
 
     if (status != 0) {
-        PyMem_Free(callback);
+        free(callback);
         return -1;
     }
 
