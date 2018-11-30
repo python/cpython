@@ -1,0 +1,2 @@
+unittest.mock: reset_mock() now works on Mock objects that had attributes
+deleted.

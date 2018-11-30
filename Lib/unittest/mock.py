@@ -544,6 +544,8 @@ class NonCallableMock(Base):
         for child in self._mock_children.values():
             if isinstance(child, _SpecState):
                 continue
+            if child is _deleted:
+                continue
             child.reset_mock(visited)
 
         ret = self._mock_return_value
