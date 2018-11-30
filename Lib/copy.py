@@ -75,10 +75,6 @@ def copy(x):
     if copier:
         return copier(x)
 
-    if issubclass(cls, type):
-        # treat it as a regular class:
-        return _copy_immutable(x)
-
     copier = getattr(cls, "__copy__", None)
     if copier is not None:
         return copier(x)
@@ -95,7 +91,12 @@ def copy(x):
             if reductor:
                 rv = reductor()
             else:
-                raise Error("un(shallow)copyable object of type %s" % cls)
+                if issubclass(cls, type):
+                    # x is a class, and it's metaclass does not implement
+                    # any of the methods above.
+                    return _copy_immutable(x)
+                else:
+                    raise Error("un(shallow)copyable object of type %s" % cls)
 
     if isinstance(rv, str):
         return x
@@ -145,31 +146,33 @@ def deepcopy(x, memo=None, _nil=[]):
     if copier is not None:
         y = copier(x, memo)
     else:
-        if issubclass(cls, type):
-            y = _deepcopy_atomic(x, memo)
+        copier = getattr(x, "__deepcopy__", None)
+        if copier is not None:
+            y = copier(memo)
         else:
-            copier = getattr(x, "__deepcopy__", None)
-            if copier is not None:
-                y = copier(memo)
+            reductor = dispatch_table.get(cls)
+            if reductor:
+                rv = reductor(x)
             else:
-                reductor = dispatch_table.get(cls)
-                if reductor:
-                    rv = reductor(x)
+                reductor = getattr(x, "__reduce_ex__", None)
+                if reductor is not None:
+                    rv = reductor(4)
                 else:
-                    reductor = getattr(x, "__reduce_ex__", None)
-                    if reductor is not None:
-                        rv = reductor(4)
+                    reductor = getattr(x, "__reduce__", None)
+                    if reductor:
+                        rv = reductor()
                     else:
-                        reductor = getattr(x, "__reduce__", None)
-                        if reductor:
-                            rv = reductor()
+                        if issubclass(cls, type):
+                             # x is a class, and it's metaclass does not implement
+                             # any of the methods above.
+                             return _deepcopy_atomic(x, memo)
                         else:
-                            raise Error(
-                                "un(deep)copyable object of type %s" % cls)
-                if isinstance(rv, str):
-                    y = x
-                else:
-                    y = _reconstruct(x, memo, *rv)
+                          raise Error(
+                              "un(deep)copyable object of type %s" % cls)
+            if isinstance(rv, str):
+                y = x
+            else:
+                y = _reconstruct(x, memo, *rv)
 
     # If is its own copy, don't memoize.
     if y is not x:
@@ -191,7 +194,6 @@ d[complex] = _deepcopy_atomic
 d[bytes] = _deepcopy_atomic
 d[str] = _deepcopy_atomic
 d[types.CodeType] = _deepcopy_atomic
-d[type] = _deepcopy_atomic
 d[types.BuiltinFunctionType] = _deepcopy_atomic
 d[types.FunctionType] = _deepcopy_atomic
 d[weakref.ref] = _deepcopy_atomic
