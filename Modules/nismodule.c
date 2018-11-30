@@ -412,6 +412,7 @@ nis_maps (PyObject *self, PyObject *args, PyObject *kwdict)
         PyObject *str = PyUnicode_FromString(maps->map);
         if (!str || PyList_Append(list, str) < 0)
         {
+            Py_XDECREF(str);
             Py_DECREF(list);
             list = NULL;
             break;
