@@ -272,7 +272,7 @@ call_registrycleared(PyObject *registry)
     return 0;
 
 error:
-    Py_XDECREF(_registrycleared);
+    Py_DECREF(_registrycleared);
     return -1;
 }
 
