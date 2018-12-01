@@ -1573,6 +1573,7 @@ class MockTest(unittest.TestCase):
         mock.child = True
         del mock.child
         mock.reset_mock()
+        self.assertFalse(hasattr(mock, 'child'))
 
 
     def test_class_assignable(self):
