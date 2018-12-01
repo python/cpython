@@ -1596,6 +1596,16 @@ class MockTest(unittest.TestCase):
             self.assertRaises(AttributeError, getattr, mock, 'f')
 
 
+    def test_reset_mock_does_not_raise_on_attr_deletion(self):
+        # bpo-31177: reset_mock should not raise AttributeError when attributes
+        # were deleted in a mock instance
+        mock = Mock()
+        mock.child = True
+        del mock.child
+        mock.reset_mock()
+        self.assertFalse(hasattr(mock, 'child'))
+
+
     def test_class_assignable(self):
         for mock in Mock(), MagicMock():
             self.assertNotIsInstance(mock, int)
