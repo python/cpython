@@ -4689,7 +4689,6 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
     int result;
 #endif
 
-    PyObject *return_value = NULL;
     utime_t utime;
 
     memset(&utime, 0, sizeof(utime_t));
@@ -4698,7 +4697,7 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
         PyErr_SetString(PyExc_ValueError,
                      "utime: you may specify either 'times'"
                      " or 'ns' but not both");
-        goto exit;
+        return NULL;
     }
 
     if (times && (times != Py_None)) {
@@ -4708,14 +4707,14 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
             PyErr_SetString(PyExc_TypeError,
                          "utime: 'times' must be either"
                          " a tuple of two ints or None");
-            goto exit;
+            return NULL;
         }
         utime.now = 0;
         if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(times, 0),
                                      &a_sec, &a_nsec, _PyTime_ROUND_FLOOR) == -1 ||
             _PyTime_ObjectToTimespec(PyTuple_GET_ITEM(times, 1),
                                      &m_sec, &m_nsec, _PyTime_ROUND_FLOOR) == -1) {
-            goto exit;
+            return NULL;
         }
         utime.atime_s = a_sec;
         utime.atime_ns = a_nsec;
@@ -4726,14 +4725,14 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
         if (!PyTuple_CheckExact(ns) || (PyTuple_Size(ns) != 2)) {
             PyErr_SetString(PyExc_TypeError,
                          "utime: 'ns' must be a tuple of two ints");
-            goto exit;
+            return NULL;
         }
         utime.now = 0;
         if (!split_py_long_to_s_and_ns(PyTuple_GET_ITEM(ns, 0),
                                       &utime.atime_s, &utime.atime_ns) ||
             !split_py_long_to_s_and_ns(PyTuple_GET_ITEM(ns, 1),
                                        &utime.mtime_s, &utime.mtime_ns)) {
-            goto exit;
+            return NULL;
         }
     }
     else {
@@ -4743,20 +4742,20 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
 
 #if !defined(UTIME_HAVE_NOFOLLOW_SYMLINKS)
     if (follow_symlinks_specified("utime", follow_symlinks))
-        goto exit;
+        return NULL;
 #endif
 
     if (path_and_dir_fd_invalid("utime", path, dir_fd) ||
         dir_fd_and_fd_invalid("utime", dir_fd, path->fd) ||
         fd_and_follow_symlinks_invalid("utime", path->fd, follow_symlinks))
-        goto exit;
+        return NULL;
 
 #if !defined(HAVE_UTIMENSAT)
     if ((dir_fd != DEFAULT_DIR_FD) && (!follow_symlinks)) {
         PyErr_SetString(PyExc_ValueError,
                      "utime: cannot use dir_fd and follow_symlinks "
                      "together on this platform");
-        goto exit;
+        return NULL;
     }
 #endif
 
@@ -4768,7 +4767,7 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
     Py_END_ALLOW_THREADS
     if (hFile == INVALID_HANDLE_VALUE) {
         path_error(path);
-        goto exit;
+        return NULL;
     }
 
     if (utime.now) {
@@ -4785,8 +4784,10 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
            something is wrong with the file, when it also
            could be the time stamp that gives a problem. */
         PyErr_SetFromWindowsErr(0);
-        goto exit;
+        CloseHandle(hFile);
+        return NULL;
     }
+    CloseHandle(hFile);
 #else /* MS_WINDOWS */
     Py_BEGIN_ALLOW_THREADS
 
@@ -4814,21 +4815,13 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
 
     if (result < 0) {
         /* see previous comment about not putting filename in error here */
-        return_value = posix_error();
-        goto exit;
+        posix_error();
+        return NULL;
     }
 
 #endif /* MS_WINDOWS */
 
-    Py_INCREF(Py_None);
-    return_value = Py_None;
-
-exit:
-#ifdef MS_WINDOWS
-    if (hFile != INVALID_HANDLE_VALUE)
-        CloseHandle(hFile);
-#endif
-    return return_value;
+    Py_RETURN_NONE;
 }
 
 /* Process operations */
