@@ -699,7 +699,7 @@ class ApplyResult(object):
             self._error_callback(self._value)
         self._event.set()
         del self._cache[self._job]
-        self._pool = None
+        self._pool = self._cache = None
 
 AsyncResult = ApplyResult       # create alias -- see #17805
 
@@ -719,6 +719,7 @@ class MapResult(ApplyResult):
             self._number_left = 0
             self._event.set()
             del self._cache[self._job]
+            self._pool = self._cache = None
         else:
             self._number_left = length//chunksize + bool(length % chunksize)
 
@@ -732,7 +733,7 @@ class MapResult(ApplyResult):
                     self._callback(self._value)
                 del self._cache[self._job]
                 self._event.set()
-                self._pool = None
+                self._pool = self._cache = None
         else:
             if not success and self._success:
                 # only store first exception
@@ -744,7 +745,7 @@ class MapResult(ApplyResult):
                     self._error_callback(self._value)
                 del self._cache[self._job]
                 self._event.set()
-                self._pool = None
+                self._pool = self._cache = None
 
 #
 # Class whose instances are returned by `Pool.imap()`
@@ -772,14 +773,13 @@ class IMapIterator(object):
                 item = self._items.popleft()
             except IndexError:
                 if self._index == self._length:
-                    self._pool = None
+                    self._pool = self._cache = None
                     raise StopIteration from None
                 self._cond.wait(timeout)
                 try:
                     item = self._items.popleft()
                 except IndexError:
                     if self._index == self._length:
-                        self._pool = None
                         raise StopIteration from None
                     raise TimeoutError from None
 
@@ -805,7 +805,7 @@ class IMapIterator(object):
 
             if self._index == self._length:
                 del self._cache[self._job]
-                self._pool = None
+                self._pool = self._cache = None
 
     def _set_length(self, length):
         with self._cond:
@@ -813,7 +813,7 @@ class IMapIterator(object):
             if self._index == self._length:
                 self._cond.notify()
                 del self._cache[self._job]
-                self._pool = None
+                self._pool = self._cache = None
 
 #
 # Class whose instances are returned by `Pool.imap_unordered()`
@@ -828,7 +828,7 @@ class IMapUnorderedIterator(IMapIterator):
             self._cond.notify()
             if self._index == self._length:
                 del self._cache[self._job]
-                self._pool = None
+                self._pool = self._cache = None
 
 #
 #

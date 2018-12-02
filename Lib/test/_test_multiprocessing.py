@@ -2594,10 +2594,11 @@ class _TestPool(BaseTestCase):
                 ("apply_async", (str, [10]),lambda result: result.get()),
                 ("map_async", (str, range(100)),lambda result: result.get()),
                 ]
+
         for args in test_functions:
             p = threading.Thread(target=_test_func, args=args)
             p.start()
-            p.join(timeout=1)
+            p.join(timeout=TIMEOUT)
             self.assertFalse(p.is_alive())
 
 def raising():
