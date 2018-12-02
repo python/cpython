@@ -6,9 +6,9 @@
 This program converts a textual Uniforum-style message catalog (.po file) into
 a binary GNU catalog (.mo file).  This is essentially the same function as the
 GNU msgfmt program, however, it is a simpler implementation.  Currently it
-does not handle plural forms but it does handle message contexts.
+handles plural forms and message contexts, but does not generate hash table.
 
-Usage: msgfmt.py [OPTIONS] filename.po
+Usage: msgfmt.py [OPTIONS] filename.po [filename.po ...]
 
 Options:
     -o file
@@ -23,6 +23,14 @@ Options:
     -V
     --version
         Display version information and exit.
+
+If more than one input file is given, and if an output file is passed with
+-o option, then all the input files are merged. If keys are repeated (common
+for "" key for the header) the one from last file is used.
+
+If more than one input file is given, and no -o option is present, then
+every input file is compiled in its corresponding mo file (same name with mo
+replacing po)
 """
 
 import os
@@ -95,6 +103,15 @@ def generate(messages):
 
 
 def make(filenames, outfile):
+    """This function is now member of the public interface.
+    filenames is a string or an iterable of strings representing input file(s)
+    outfile is a string for the name of an input file or None.
+
+    If it is not None, the output file receives a merge of the input files
+    If it is None, then each input file is separately compiled into its
+    corresponding output file (same name with po replaced with mo).
+    Both ways are for compatibility reasons with previous behaviour.
+    """
     messages = {}
     if isinstance(filenames, str):
         infile, outfile = get_names(filenames, outfile)
