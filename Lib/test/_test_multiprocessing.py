@@ -2566,6 +2566,40 @@ class _TestPool(BaseTestCase):
         gc.collect()
         self.assertIsNone(wr())
 
+    @support.reap_threads
+    def test_pool_iterators_and_results_keeps_alive_the_pool_and_does_not_hang(self):
+        # Check bpo35378
+        def _test_func(func, args, test_body):
+            result = getattr(self.Pool(), func)(*args)
+            # If the pool is used as a context manager, *result* is a proxy object,
+            # but then we won't need to close and join as the context manager will do
+            # it for us.
+            if hasattr(result, "_pool"):
+                close_func = result._pool.close
+                join_func = result._pool.join
+            else:
+                close_func = lambda: None
+                join_func = lambda: None
+
+            try:
+                test_body(result)
+            finally:
+                close_func()
+                join_func()
+                del result
+
+        test_functions = [
+                ("imap", (str, range(100)),lambda result: list(result)),
+                ("imap_unordered", (str, range(100)),lambda result: list(result)),
+                ("apply_async", (str, [10]),lambda result: result.get()),
+                ("map_async", (str, range(100)),lambda result: result.get()),
+                ]
+        for args in test_functions:
+            p = threading.Thread(target=_test_func, args=args)
+            p.start()
+            p.join(timeout=1)
+            self.assertFalse(p.is_alive())
+
 def raising():
     raise KeyError("key")
 
