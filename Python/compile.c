@@ -788,30 +788,6 @@ compiler_use_next_block(struct compiler *c, basicblock *block)
     return block;
 }
 
-static basicblock *
-compiler_split_block(struct compiler *c, basicblock *b, int off)
-{
-    basicblock *b2 = compiler_new_block(c);
-    if (b2 == NULL) {
-        return NULL;
-    }
-    assert(off < b->b_iused);
-    int size = b->b_iused - off;
-    b2->b_instr = (struct instr *)PyObject_Malloc(sizeof(struct instr) * size);
-    if (b2->b_instr == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    b2->b_iused = b2->b_ialloc = size;
-    memcpy(b2->b_instr, b->b_instr + off, sizeof(struct instr) * size);
-    b->b_iused = off;
-    b2->b_next = b->b_next;
-    b->b_next = b2;
-    b->b_return = 0;
-
-    return b2;
-}
-
 /* Returns the offset of the next instruction in the current block's
    b_instr array.  Resizes the b_instr as necessary.
    Returns -1 on failure.
@@ -2412,6 +2388,7 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
             ADDOP_I(c, COMPARE_OP,
                    cmpop((cmpop_ty)(asdl_seq_GET(e->v.Compare.ops, n))));
             ADDOP_JABS(c, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+            NEXT_BLOCK(c);
             basicblock *end = compiler_new_block(c);
             if (end == NULL)
                 return 0;
@@ -2432,6 +2409,7 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
         if (constant >= 0) {
             if (constant == cond) {
                 ADDOP_JABS(c, JUMP_ABSOLUTE, next);
+                NEXT_BLOCK(c);
             }
             return 1;
         }
@@ -2443,6 +2421,7 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
     /* general implementation */
     VISIT(c, expr, e);
     ADDOP_JABS(c, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+    NEXT_BLOCK(c);
     return 1;
 }
 
@@ -2684,6 +2663,8 @@ compiler_while(struct compiler *c, stmt_ty s)
 
     if (constant == -1)
         compiler_use_next_block(c, anchor);
+    else if (orelse != NULL)
+        NEXT_BLOCK(c);
     compiler_pop_fblock(c, WHILE_LOOP, loop);
 
     if (orelse != NULL) /* what if orelse is just pass? */
@@ -2736,6 +2717,7 @@ compiler_break(struct compiler *c)
             return 0;
         if (info->fb_type == WHILE_LOOP || info->fb_type == FOR_LOOP) {
             ADDOP_JABS(c, JUMP_ABSOLUTE, info->fb_exit);
+            NEXT_BLOCK(c);
             return 1;
         }
     }
@@ -2750,6 +2732,7 @@ compiler_continue(struct compiler *c)
 
         if (info->fb_type == WHILE_LOOP || info->fb_type == FOR_LOOP) {
             ADDOP_JABS(c, JUMP_ABSOLUTE, info->fb_block);
+            NEXT_BLOCK(c);
             return 1;
         }
         if (!compiler_unwind_fblock(c, info, 0))
@@ -2897,6 +2880,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             VISIT(c, expr, handler->v.ExceptHandler.type);
             ADDOP_I(c, COMPARE_OP, PyCmp_EXC_MATCH);
             ADDOP_JABS(c, POP_JUMP_IF_FALSE, except);
+            NEXT_BLOCK(c);
         }
         ADDOP(c, POP_TOP);
         if (handler->v.ExceptHandler.name) {
@@ -3511,6 +3495,7 @@ compiler_boolop(struct compiler *c, expr_ty e)
     for (i = 0; i < n; ++i) {
         VISIT(c, expr, (expr_ty)asdl_seq_GET(s, i));
         ADDOP_JABS(c, jumpi, end);
+        NEXT_BLOCK(c);
     }
     VISIT(c, expr, (expr_ty)asdl_seq_GET(s, n));
     compiler_use_next_block(c, end);
@@ -5483,8 +5468,9 @@ optimize_jumps(struct compiler *c)
             case JUMP_FORWARD:
             case JUMP_ABSOLUTE:
                 assert(instr->i_target != NULL);
-                while (1) {
-                    /* Skip empty blocks */
+                int count = 10;
+                while (count--) {
+                    /* Skip empty blocks. */
                     while (!instr->i_target->b_iused) {
                         assert(instr->i_target->b_next);
                         instr->i_target = instr->i_target->b_next;
@@ -5495,7 +5481,7 @@ optimize_jumps(struct compiler *c)
                         break;
                     }
 
-                    /* Replace jumps to unconditional jumps */
+                    /* Replace jumps to unconditional jumps. */
                     if (UNCONDITIONAL_JUMP(tgt->i_opcode)) {
                         if (instr->i_opcode == JUMP_FORWARD) {
                             /* JUMP_ABSOLUTE can go backwards */
@@ -5507,7 +5493,8 @@ optimize_jumps(struct compiler *c)
                         continue;
                     }
 
-                    /* Replace JUMP_* to a RETURN into just a RETURN */
+                    /* Replace JUMP_* to a RETURN into just a RETURN.
+                       Arises in code like "return a if b else c". */
                     if (UNCONDITIONAL_JUMP(instr->i_opcode)) {
                         if (tgt->i_opcode == RETURN_VALUE) {
                             *instr = *tgt;
@@ -5537,32 +5524,16 @@ optimize_jumps(struct compiler *c)
                         if (JUMPS_ON_TRUE(tgt->i_opcode) == JUMPS_ON_TRUE(instr->i_opcode)) {
                             /* The second jump will be taken iff the first is.
                                The current opcode inherits its target's
-                               stack effect */
+                               stack effect. */
                             instr->i_target = tgt->i_target;
                             continue;
                         }
-                        else {
+                        else if (instr->i_target->b_iused == 1) {
                             /* The second jump is not taken if the first is (so
                                jump past it), and all conditional jumps pop their
                                argument when they're not taken (so change the
                                first jump to pop its argument when it's taken). */
-                            basicblock *b2;
-                            if (instr->i_target->b_iused > 1) {
-                                b2 = compiler_split_block(c, instr->i_target, 1);
-                                if (!b2) {
-                                    PyErr_Clear();
-                                    break;
-                                }
-                                /* Move b2 after b so it will be processed in future iterations */
-                                assert(c->u->u_blocks == b2);
-                                c->u->u_blocks = b2->b_list;
-                                b2->b_list = b->b_list;
-                                b->b_list = b2;
-                            }
-                            else {
-                                b2 = instr->i_target->b_next;
-                            }
-                            instr->i_target = b2;
+                            instr->i_target = instr->i_target->b_next;
                             instr->i_opcode = instr->i_opcode == JUMP_IF_TRUE_OR_POP ?
                                     POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE;
                             continue;
