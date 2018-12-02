@@ -1314,7 +1314,7 @@ find and load modules.
 
    (``__file__``)
 
-   The location of the module's source code.
+   The origin of the module's source code.
    It is ``'built-in'`` for built-in modules, ``'frozen'`` for
    frozen modules and ``None`` for namespace packages.
 
@@ -1328,7 +1328,8 @@ find and load modules.
 
    .. attribute:: loader_state
 
-   The container of module's extra data.
+   The container of the module's additional data meant for use by
+   the finder and corresponding loader.
 
    .. attribute:: cached
 
@@ -1350,6 +1351,8 @@ find and load modules.
 
    The flag indicating whether or not the module's ``__origin__`` attribute
    refers to a location.
+   It is ``False`` for built-in modules, frozen modules,
+   namespace packages and modules dynamically created in code.
 
 :mod:`importlib.util` -- Utility code for importers
 ---------------------------------------------------
