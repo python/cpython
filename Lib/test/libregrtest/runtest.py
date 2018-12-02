@@ -181,7 +181,7 @@ def runtest_inner(ns, test, display_failure=True):
             else:
                 test_runner()
             test_time = time.time() - start_time
-        post_test_cleanup()
+            post_test_cleanup()
     except support.ResourceDenied as msg:
         if not ns.quiet and not ns.pgo:
             print(test, "skipped --", msg, flush=True)
