@@ -424,3 +424,35 @@ msgstr "Au revoir ..."
                              'file1_fr.po', 'file2_fr.po')
             with open('file1.mo', 'rb') as fin:
                 self.assertEqual(self.file12_fr_mo, fin.read())
+
+    def test_both_without_outputfile(self):
+        """Test script without -o option and 2 input files"""
+        # msgfmt.py version 1.2 behaviour was that second mo file
+        # also merged previous po files
+        with temp_cwd(None):
+            with open("file1_fr.po", "wb") as out:
+                out.write(self.file1_fr_po)
+            with open("file2_fr.po", "wb") as out:
+                out.write(self.file2_fr_po)
+            assert_python_ok(self.script, 'file1_fr.po', 'file2_fr.po')
+            with open('file1_fr.mo', 'rb') as fin:
+                self.assertEqual(self.file1_fr_mo, fin.read())
+            with open('file2_fr.mo', 'rb') as fin:
+                self.assertEqual(self.file2_fr_mo, fin.read())
+
+    def test_consecutive_make_calls(self):
+        """Directly calls make twice to prove bpo-9741 is fixed"""
+        sys.path.append(os.path.join(toolsdir,'i18n'))
+        from msgfmt import make
+        with temp_cwd(None):
+            with open("file1_fr.po", "wb") as out:
+                out.write(self.file1_fr_po)
+            with open("file2_fr.po", "wb") as out:
+                out.write(self.file2_fr_po)
+            make("file1_fr.po", "file1_fr.mo")
+            make("file2_fr.po", "file2_fr.mo")
+            with open('file1_fr.mo', 'rb') as fin:
+                self.assertEqual(self.file1_fr_mo, fin.read())
+            with open('file2_fr.mo', 'rb') as fin:
+                self.assertEqual(self.file2_fr_mo, fin.read())
+        sys.path.pop()
