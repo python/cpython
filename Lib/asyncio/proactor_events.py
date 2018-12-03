@@ -13,6 +13,7 @@ import warnings
 
 from . import base_events
 from . import constants
+from . import events
 from . import futures
 from . import protocols
 from . import sslproto
