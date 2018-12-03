@@ -1516,7 +1516,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         goto Done;
     }
 
-totalnew = flen + 1;        /* realistic if no %z/%Z */
+    totalnew = flen + 1;        /* realistic if no %z/%Z */
     newfmt = PyBytes_FromStringAndSize(NULL, totalnew);
     if (newfmt == NULL) goto Done;
     pnew = PyBytes_AsString(newfmt);
