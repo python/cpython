@@ -1555,8 +1555,19 @@ PyInit_timezone(PyObject *m)
 #endif
     PyModule_AddIntConstant(m, "daylight", daylight);
     otz0 = PyUnicode_DecodeLocale(tzname[0], "surrogateescape");
+    if (otz0 == NULL) {
+        return -1;
+    }
     otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
-    PyModule_AddObject(m, "tzname", Py_BuildValue("(NN)", otz0, otz1));
+    if (otz1 == NULL) {
+        Py_DECREF(otz0);
+        return -1;
+    }
+    PyObject *tzname_obj = Py_BuildValue("(NN)", otz0, otz1);
+    if (tzname_obj == NULL) {
+        return -1;
+    }
+    PyModule_AddObject(m, "tzname", tzname_obj);
 #else /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
     {
 #define YEAR ((time_t)((365 * 24 + 6) * 3600))
@@ -1615,6 +1626,10 @@ PyInit_timezone(PyObject *m)
                        Py_BuildValue("(zz)", _tzname[0], _tzname[1]));
 #endif /* __CYGWIN__ */
 #endif /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
+
+    if (PyErr_Occurred()) {
+        return -1;
+    }
     return 0;
 }
 
