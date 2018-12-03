@@ -1019,7 +1019,7 @@ of the timezone or altzone attributes on the time module.");
 #endif /* HAVE_MKTIME */
 
 #ifdef HAVE_WORKING_TZSET
-static int PyInit_timezone(PyObject *module);
+static int init_timezone(PyObject *module);
 
 static PyObject *
 time_tzset(PyObject *self, PyObject *unused)
@@ -1034,7 +1034,7 @@ time_tzset(PyObject *self, PyObject *unused)
     tzset();
 
     /* Reset timezone, altzone, daylight and tzname */
-    if (PyInit_timezone(m) < 0) {
+    if (init_timezone(m) < 0) {
          return NULL;
     }
     Py_DECREF(m);
@@ -1549,7 +1549,7 @@ get_gmtoff(time_t t, struct tm *p)
 #endif // !HAVE_DECL_TZNAME
 
 static int
-PyInit_timezone(PyObject *m)
+init_timezone(PyObject *m)
 {
     assert(!PyErr_Occurred());
 
@@ -1745,7 +1745,7 @@ PyInit_time(void)
         return NULL;
 
     /* Set, or reset, module variables like time.timezone */
-    if (PyInit_timezone(m) < 0) {
+    if (init_timezone(m) < 0) {
         return NULL;
     }
 
@@ -1798,6 +1798,9 @@ PyInit_time(void)
         utc_string = tm.tm_zone;
 #endif
 
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
     return m;
 }
 
