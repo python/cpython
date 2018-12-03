@@ -49,7 +49,7 @@ Some were true standards, defined by the International Organization for
 Standardization, and some were *de facto* conventions that were invented by one
 company or another and managed to catch on.
 
-255 characters aren't very many.  For example, you can't fit both the accented
+256 characters aren't very many.  For example, you can't fit both the accented
 characters used in Western Europe and the Cyrillic alphabet used for Russian
 into the 128--255 range because there are more than 128 such characters.
 
