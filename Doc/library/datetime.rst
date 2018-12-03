@@ -742,6 +742,8 @@ Other constructors, all class methods:
    If *tz* is not ``None``, it must be an instance of a :class:`tzinfo` subclass, and the
    current date and time are converted to *tz*’s time zone.  In this case the
    result is equivalent to ``tz.fromutc(datetime.utcnow().replace(tzinfo=tz))``.
+   It is recommended to create aware datetime object for current UTC time by
+   calling ``datetime.now(timezone.utc)``.
    See also :meth:`today`, :meth:`utcnow`.
 
 
@@ -1134,7 +1136,10 @@ Instance methods:
    of the result is set according to the :meth:`dst` method: :attr:`.tzinfo` is
    ``None`` or :meth:`dst` returns ``None``, :attr:`tm_isdst` is set to ``-1``;
    else if :meth:`dst` returns a non-zero value, :attr:`tm_isdst` is set to ``1``;
-   else :attr:`tm_isdst` is set to ``0``.
+   else :attr:`tm_isdst` is set to ``0``. To obtain UTC timetuple, it is
+   recommended to use ``datetime.astimezone(timezone.utc).timetuple()`` because
+   unlike :meth:`utctimetuple` method, :meth:`timetuple` method does not force
+   :attr:`tm_isdst` to ``0``.
 
 
 .. method:: datetime.utctimetuple()
