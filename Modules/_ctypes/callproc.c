@@ -485,11 +485,7 @@ PyCArg_repr(PyCArgObject *self)
     case 'q':
     case 'Q':
         sprintf(buffer,
-#ifdef MS_WIN32
-            "<cparam '%c' (%I64d)>",
-#else
-            "<cparam '%c' (%lld)>",
-#endif
+            "<cparam '%c' (%" PY_FORMAT_LONG_LONG "d)>",
             self->tag, self->value.q);
         break;
 #endif
