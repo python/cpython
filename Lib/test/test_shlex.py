@@ -304,9 +304,14 @@ class ShlexTest(unittest.TestCase):
         for u in unsafe:
             self.assertEqual(shlex.quote('test%sname' % u),
                              "'test%sname'" % u)
+            self.assertEqual(shlex.quote(b'test%sname' % u.encode('utf-8')),
+                             b"'test%sname'" % u.encode('utf-8'))
         for u in unsafe:
             self.assertEqual(shlex.quote("test%s'name'" % u),
                              "'test%s'\"'\"'name'\"'\"''" % u)
+            self.assertEqual(shlex.quote(b"test%s'name'" % u.encode('utf-8')),
+                             b"'test%s'\"'\"'name'\"'\"''" % u.encode('utf-8'))
+
 
 # Allow this test to be used with old shlex.py
 if not getattr(shlex, "split", None):

@@ -306,17 +306,23 @@ def split(s, comments=False, posix=True):
 
 
 _find_unsafe = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search
+_find_unsafe_bytes = re.compile(b'[^\w@%+=:,./-]').search
 
 def quote(s):
     """Return a shell-escaped version of the string *s*."""
     if not s:
         return "''"
-    if _find_unsafe(s) is None:
-        return s
 
     # use single quotes, and put single quotes into double quotes
     # the string $'b is then quoted as '$'"'"'b'
-    return "'" + s.replace("'", "'\"'\"'") + "'"
+    if isinstance(s, bytes):
+        if _find_unsafe_bytes(s) is None:
+            return s
+        return b"'" + s.replace(b"'", b"'\"'\"'") + b"'"
+    else:
+        if _find_unsafe(s) is None:
+            return s
+        return "'" + s.replace("'", "'\"'\"'") + "'"
 
 
 def _print_tokens(lexer):

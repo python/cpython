@@ -39,9 +39,12 @@ The :mod:`shlex` module defines the following functions:
 
 .. function:: quote(s)
 
-   Return a shell-escaped version of the string *s*.  The returned value is a
-   string that can safely be used as one token in a shell command line, for
-   cases where you cannot use a list.
+   Return a shell-escaped version of the string *s* or the bytes object.  The
+   returned value is a string literal or bytes  that can safely be used as one
+   token in a shell command line, for cases where you cannot use a list.
+
+   .. versionchanged:: 3.8
+       The *s* parameter can be a bytes object.
 
    This idiom would be unsafe:
 
