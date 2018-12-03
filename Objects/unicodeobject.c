@@ -7176,7 +7176,7 @@ decode_code_page_strict(UINT code_page,
         goto error;
 
     /* Extend a wchar_t* buffer */
-    Py_ssize_t n = *bufsize;
+    Py_ssize_t n = *bufsize;   /* Get the current length */
     if (widechar_resize(buf, bufsize, n + outsize) < 0) {
         return -1;
     }
@@ -7246,7 +7246,7 @@ decode_code_page_errors(UINT code_page,
     }
 
     /* Extend a wchar_t* buffer */
-    Py_ssize_t n = *bufsize;
+    Py_ssize_t n = *bufsize;   /* Get the current length */
     if (size > (PY_SSIZE_T_MAX - n) / (Py_ssize_t)Py_ARRAY_LENGTH(buffer)) {
         PyErr_NoMemory();
         goto error;
