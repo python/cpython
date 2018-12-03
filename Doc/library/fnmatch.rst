@@ -72,12 +72,17 @@ patterns.
    :const:`False`; the comparison is case-sensitive and does not apply
    :func:`os.path.normcase`.
 
+   .. versionchanged:: 3.8
+      Accepts a :term:`path-like object` as *filename*.
 
 .. function:: filter(names, pattern)
 
    Return the subset of the list of *names* that match *pattern*. It is the same as
    ``[n for n in names if fnmatch(n, pattern)]``, but implemented more efficiently.
 
+   .. versionchanged:: 3.8
+      Accepts :term:`path-like objects <path-like object>` as items of the iterable
+      *names*.
 
 .. function:: translate(pattern)
 

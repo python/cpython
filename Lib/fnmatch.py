@@ -53,7 +53,7 @@ def filter(names, pat):
     if os.path is posixpath:
         # normcase on posix is NOP. Optimize it away from the loop.
         for name in names:
-            if match(name):
+            if match(os.fspath(name)):
                 result.append(name)
     else:
         for name in names:
@@ -68,7 +68,7 @@ def fnmatchcase(name, pat):
     its arguments.
     """
     match = _compile_pattern(pat)
-    return match(name) is not None
+    return match(os.fspath(name)) is not None
 
 
 def translate(pat):

@@ -6,6 +6,13 @@ import warnings
 
 from fnmatch import fnmatch, fnmatchcase, translate, filter
 
+class Path:
+    def __init__(self, path):
+        self.path = path
+
+    def __fspath__(self):
+        return self.path
+
 class FnmatchTestCase(unittest.TestCase):
 
     def check_match(self, filename, pattern, should_match=True, fn=fnmatch):
@@ -95,6 +102,11 @@ class FnmatchTestCase(unittest.TestCase):
             check(',', '[a-z+--A-Z]')
             check('.', '[a-z--/A-Z]')
 
+    def test_fspath(self):
+        check = self.check_match
+        check(Path('foo.txt'), '*.txt', fn=fnmatch)
+        check(Path('foo.txt'), '*.txt', fn=fnmatchcase)
+
 
 class TranslateTestCase(unittest.TestCase):
 
@@ -134,6 +146,12 @@ class FilterTestCase(unittest.TestCase):
                          ['usr/bin', 'usr\\lib'] if normsep else ['usr/bin'])
         self.assertEqual(filter(['usr/bin', 'usr', 'usr\\lib'], 'usr\\*'),
                          ['usr/bin', 'usr\\lib'] if normsep else ['usr\\lib'])
+
+    def test_fspath(self):
+        path = Path('foo.txt')
+
+        self.assertEqual(filter([path], '*.txt*'), [path])
+        self.assertEqual(filter([path, 'bar.txt'], '*.txt'), [path, 'bar.txt'])
 
 
 if __name__ == "__main__":
