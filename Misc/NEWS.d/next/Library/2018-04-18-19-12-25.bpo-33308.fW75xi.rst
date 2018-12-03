@@ -1,0 +1,2 @@
+Fixed a crash in the :mod:`parser` module when converting an ST object to a
+tree of tuples or lists with ``line_info=False`` and ``col_info=True``.

@@ -1,17 +1,15 @@
-'''Test idlelib.textview.
+"""Test textview, coverage 100%.
 
 Since all methods and functions create (or destroy) a ViewWindow, which
 is a widget containing a widget, etcetera, all tests must be gui tests.
 Using mock Text would not change this.  Other mocks are used to retrieve
 information about calls.
-
-Coverage: 100%.
-'''
+"""
 from idlelib import textview as tv
+import unittest
 from test.support import requires
 requires('gui')
 
-import unittest
 import os
 from tkinter import Tk
 from tkinter.ttk import Button
@@ -75,7 +73,6 @@ class TextFrameTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        "By itself, this tests that file parsed without exception."
         cls.root = root = Tk()
         root.withdraw()
         cls.frame = tv.TextFrame(root, 'test text')
@@ -109,7 +106,7 @@ class ViewFunctionTest(unittest.TestCase):
         view = tv.view_text(root, 'Title', 'test text', modal=False)
         self.assertIsInstance(view, tv.ViewWindow)
         self.assertIsInstance(view.viewframe, tv.ViewFrame)
-        view.ok()
+        view.viewframe.ok()
 
     def test_view_file(self):
         view = tv.view_file(root, 'Title', __file__, 'ascii', modal=False)
@@ -128,10 +125,14 @@ class ViewFunctionTest(unittest.TestCase):
     def test_bad_encoding(self):
         p = os.path
         fn = p.abspath(p.join(p.dirname(__file__), '..', 'CREDITS.txt'))
-        tv.showerror.title = None
         view = tv.view_file(root, 'Title', fn, 'ascii', modal=False)
         self.assertIsNone(view)
         self.assertEqual(tv.showerror.title, 'Unicode Decode Error')
+
+    def test_nowrap(self):
+        view = tv.view_text(root, 'Title', 'test', modal=False, wrap='none')
+        text_widget = view.viewframe.textframe.text
+        self.assertEqual(text_widget.cget('wrap'), 'none')
 
 
 # Call ViewWindow with _utest=True.

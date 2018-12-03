@@ -593,7 +593,7 @@ class IOTest(unittest.TestCase):
             self.large_file_ops(f)
 
     def test_with_open(self):
-        for bufsize in (0, 1, 100):
+        for bufsize in (0, 100):
             f = None
             with self.open(support.TESTFN, "wb", bufsize) as f:
                 f.write(b"xxx")
@@ -967,6 +967,16 @@ class IOTest(unittest.TestCase):
                 unused = (UNUSED_BYTE,) * (request - result)
                 self.assertSequenceEqual(buffer[result:], unused)
                 self.assertEqual(len(reader.avail), avail - result)
+
+    def test_close_assert(self):
+        class R(self.IOBase):
+            def __setattr__(self, name, value):
+                pass
+            def flush(self):
+                raise OSError()
+        f = R()
+        # This would cause an assertion failure.
+        self.assertRaises(OSError, f.close)
 
 
 class CIOTest(IOTest):
@@ -1516,6 +1526,7 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     def test_garbage_collection(self):
         # C BufferedReader objects are collected.
         # The Python version has __del__, so it ends into gc.garbage instead
+        self.addCleanup(support.unlink, support.TESTFN)
         with support.check_warnings(('', ResourceWarning)):
             rawio = self.FileIO(support.TESTFN, "w+b")
             f = self.tp(rawio)
@@ -1718,6 +1729,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
 
     def test_truncate(self):
         # Truncate implicitly flushes the buffer.
+        self.addCleanup(support.unlink, support.TESTFN)
         with self.open(support.TESTFN, self.write_mode, buffering=0) as raw:
             bufio = self.tp(raw, 8)
             bufio.write(b"abcdef")
@@ -1730,6 +1742,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         # Ensure that truncate preserves the file position after
         # writes longer than the buffer size.
         # Issue: https://bugs.python.org/issue32228
+        self.addCleanup(support.unlink, support.TESTFN)
         with self.open(support.TESTFN, "wb") as f:
             # Fill with some buffer
             f.write(b'\x00' * 10000)
@@ -1851,6 +1864,7 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
         # C BufferedWriter objects are collected, and collecting them flushes
         # all data to disk.
         # The Python version has __del__, so it ends into gc.garbage instead
+        self.addCleanup(support.unlink, support.TESTFN)
         with support.check_warnings(('', ResourceWarning)):
             rawio = self.FileIO(support.TESTFN, "w+b")
             f = self.tp(rawio)
@@ -2957,6 +2971,34 @@ class TextIOWrapperTest(unittest.TestCase):
         finally:
             StatefulIncrementalDecoder.codecEnabled = 0
 
+    def test_multibyte_seek_and_tell(self):
+        f = self.open(support.TESTFN, "w", encoding="euc_jp")
+        f.write("AB\n\u3046\u3048\n")
+        f.close()
+
+        f = self.open(support.TESTFN, "r", encoding="euc_jp")
+        self.assertEqual(f.readline(), "AB\n")
+        p0 = f.tell()
+        self.assertEqual(f.readline(), "\u3046\u3048\n")
+        p1 = f.tell()
+        f.seek(p0)
+        self.assertEqual(f.readline(), "\u3046\u3048\n")
+        self.assertEqual(f.tell(), p1)
+        f.close()
+
+    def test_seek_with_encoder_state(self):
+        f = self.open(support.TESTFN, "w", encoding="euc_jis_2004")
+        f.write("\u00e6\u0300")
+        p0 = f.tell()
+        f.write("\u00e6")
+        f.seek(p0)
+        f.write("\u0300")
+        f.close()
+
+        f = self.open(support.TESTFN, "r", encoding="euc_jis_2004")
+        self.assertEqual(f.readline(), "\u00e6\u0300\u0300")
+        f.close()
+
     def test_encoded_writes(self):
         data = "1234567890"
         tests = ("utf-16",
@@ -3545,6 +3587,17 @@ class TextIOWrapperTest(unittest.TestCase):
         expected = 'linesep' + os.linesep + 'LF\nLF\nCR\rCRLF\r\n'
         self.assertEqual(txt.detach().getvalue().decode('ascii'), expected)
 
+    def test_issue25862(self):
+        # Assertion failures occurred in tell() after read() and write().
+        t = self.TextIOWrapper(self.BytesIO(b'test'), encoding='ascii')
+        t.read(1)
+        t.read()
+        t.tell()
+        t = self.TextIOWrapper(self.BytesIO(b'test'), encoding='ascii')
+        t.read(1)
+        t.write('x')
+        t.tell()
+
 
 class MemviewBytesIO(io.BytesIO):
     '''A BytesIO object whose read method returns memoryviews
@@ -3722,6 +3775,16 @@ class IncrementalNewlineDecoderTest(unittest.TestCase):
         _check(dec)
         dec = self.IncrementalNewlineDecoder(None, translate=True)
         _check(dec)
+
+    def test_translate(self):
+        # issue 35062
+        for translate in (-2, -1, 1, 2):
+            decoder = codecs.getincrementaldecoder("utf-8")()
+            decoder = self.IncrementalNewlineDecoder(decoder, translate)
+            self.check_newline_decoding_utf8(decoder)
+        decoder = codecs.getincrementaldecoder("utf-8")()
+        decoder = self.IncrementalNewlineDecoder(decoder, translate=0)
+        self.assertEqual(decoder.decode(b"\r\r\n"), "\r\r\n")
 
 class CIncrementalNewlineDecoderTest(IncrementalNewlineDecoderTest):
     pass

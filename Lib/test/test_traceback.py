@@ -110,7 +110,7 @@ class TracebackCases(unittest.TestCase):
         # Test that tracebacks are correctly printed for encoded source files:
         # - correct line number (Issue2384)
         # - respect file encoding (Issue3975)
-        import tempfile, sys, subprocess, os
+        import sys, subprocess
 
         # The spawned subprocess has its stdout redirected to a PIPE, and its
         # encoding may be different from the current interpreter, on Windows
@@ -373,7 +373,7 @@ class TracebackFormatTests(unittest.TestCase):
             '    return g(count-1)\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
-            '  [Previous line repeated 6 more times]\n'
+            '  [Previous line repeated 7 more times]\n'
             f'  File "{__file__}", line {lineno_g+3}, in g\n'
             '    raise ValueError\n'
             'ValueError\n'
@@ -412,12 +412,69 @@ class TracebackFormatTests(unittest.TestCase):
             '    return h(count-1)\n'
             f'  File "{__file__}", line {lineno_h+2}, in h\n'
             '    return h(count-1)\n'
-            '  [Previous line repeated 6 more times]\n'
+            '  [Previous line repeated 7 more times]\n'
             f'  File "{__file__}", line {lineno_h+3}, in h\n'
             '    g()\n'
         )
         expected = (result_h + result_g).splitlines()
         actual = stderr_h.getvalue().splitlines()
+        self.assertEqual(actual, expected)
+
+        # Check the boundary conditions. First, test just below the cutoff.
+        with captured_output("stderr") as stderr_g:
+            try:
+                g(traceback._RECURSIVE_CUTOFF)
+            except ValueError as exc:
+                render_exc()
+            else:
+                self.fail("no error raised")
+        result_g = (
+            f'  File "{__file__}", line {lineno_g+2}, in g\n'
+            '    return g(count-1)\n'
+            f'  File "{__file__}", line {lineno_g+2}, in g\n'
+            '    return g(count-1)\n'
+            f'  File "{__file__}", line {lineno_g+2}, in g\n'
+            '    return g(count-1)\n'
+            f'  File "{__file__}", line {lineno_g+3}, in g\n'
+            '    raise ValueError\n'
+            'ValueError\n'
+        )
+        tb_line = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {lineno_g+71}, in _check_recursive_traceback_display\n'
+            '    g(traceback._RECURSIVE_CUTOFF)\n'
+        )
+        expected = (tb_line + result_g).splitlines()
+        actual = stderr_g.getvalue().splitlines()
+        self.assertEqual(actual, expected)
+
+        # Second, test just above the cutoff.
+        with captured_output("stderr") as stderr_g:
+            try:
+                g(traceback._RECURSIVE_CUTOFF + 1)
+            except ValueError as exc:
+                render_exc()
+            else:
+                self.fail("no error raised")
+        result_g = (
+            f'  File "{__file__}", line {lineno_g+2}, in g\n'
+            '    return g(count-1)\n'
+            f'  File "{__file__}", line {lineno_g+2}, in g\n'
+            '    return g(count-1)\n'
+            f'  File "{__file__}", line {lineno_g+2}, in g\n'
+            '    return g(count-1)\n'
+            '  [Previous line repeated 1 more time]\n'
+            f'  File "{__file__}", line {lineno_g+3}, in g\n'
+            '    raise ValueError\n'
+            'ValueError\n'
+        )
+        tb_line = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {lineno_g+99}, in _check_recursive_traceback_display\n'
+            '    g(traceback._RECURSIVE_CUTOFF + 1)\n'
+        )
+        expected = (tb_line + result_g).splitlines()
+        actual = stderr_g.getvalue().splitlines()
         self.assertEqual(actual, expected)
 
     def test_recursive_traceback_python(self):
@@ -811,6 +868,7 @@ class MiscTracebackCases(unittest.TestCase):
             (__file__, lineno+2, 'test_extract_stack', 'result = extract()'),
             (__file__, lineno+1, 'extract', 'return traceback.extract_stack()'),
             ])
+        self.assertEqual(len(result[0]), 4)
 
 
 class TestFrame(unittest.TestCase):
@@ -842,6 +900,10 @@ class TestFrame(unittest.TestCase):
     def test_explicit_line(self):
         f = traceback.FrameSummary("f", 1, "dummy", line="line")
         self.assertEqual("line", f.line)
+
+    def test_len(self):
+        f = traceback.FrameSummary("f", 1, "dummy", line="line")
+        self.assertEqual(len(f), 4)
 
 
 class TestStack(unittest.TestCase):
@@ -933,11 +995,11 @@ class TestStack(unittest.TestCase):
         s = some_inner(3, 4)
         self.assertEqual(
             ['  File "%s", line %d, in some_inner\n'
-             '    traceback.walk_stack(None), capture_locals=True, limit=1)\n'
+             '    return traceback.StackSummary.extract(\n'
              '    a = 1\n'
              '    b = 2\n'
              '    k = 3\n'
-             '    v = 4\n' % (__file__, some_inner.__code__.co_firstlineno + 4)
+             '    v = 4\n' % (__file__, some_inner.__code__.co_firstlineno + 3)
             ], s.format())
 
 class TestTracebackException(unittest.TestCase):

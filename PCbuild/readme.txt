@@ -165,7 +165,7 @@ _lzma
     Homepage:
         http://tukaani.org/xz/
 _ssl
-    Python wrapper for version 1.0.2k of the OpenSSL secure sockets
+    Python wrapper for version 1.1.0h of the OpenSSL secure sockets
     library, which is downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 

@@ -57,11 +57,13 @@ if __name__ == '__main__':
     p = Pool(5)
     results = []
     p.map_async(f, [1, 2, 3], callback=results.extend)
-    deadline = time.time() + 60 # up to 60 s to report the results
+    start_time = time.monotonic()
     while not results:
         time.sleep(0.05)
-        if time.time() > deadline:
-            raise RuntimeError("Timed out waiting for results")
+        # up to 1 min to report the results
+        dt = time.monotonic() - start_time
+        if dt > 60.0:
+            raise RuntimeError("Timed out waiting for results (%.1f sec)" % dt)
     results.sort()
     print(start_method, "->", results)
 """
@@ -85,11 +87,13 @@ set_start_method(start_method)
 p = Pool(5)
 results = []
 p.map_async(int, [1, 4, 9], callback=results.extend)
-deadline = time.time() + 10 # up to 10 s to report the results
+start_time = time.monotonic()
 while not results:
     time.sleep(0.05)
-    if time.time() > deadline:
-        raise RuntimeError("Timed out waiting for results")
+    # up to 1 min to report the results
+    dt = time.monotonic() - start_time
+    if dt > 60.0:
+        raise RuntimeError("Timed out waiting for results (%.1f sec)" % dt)
 results.sort()
 print(start_method, "->", results)
 """

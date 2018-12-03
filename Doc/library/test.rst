@@ -392,7 +392,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: make_legacy_pyc(source)
 
-   Move a PEP 3147/488 pyc file to its legacy pyc location and return the file
+   Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return the file
    system path to the legacy pyc file.  The *source* value is the file system
    path to the source file.  It does not need to exist, however the PEP
    3147/488 pyc file must exist.
@@ -746,7 +746,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: wait_threads_exit(timeout=60.0)
 
-   Context manager to wait until all threads created in the ``with`` statment
+   Context manager to wait until all threads created in the ``with`` statement
    exit.
 
 
@@ -1076,7 +1076,7 @@ The :mod:`test.support` module defines the following functions:
    Either this method or :func:`bind_port` should be used for any tests
    where a server socket needs to be bound to a particular port for the
    duration of the test.
-   Which one to use depends on whether the calling code is creating a python
+   Which one to use depends on whether the calling code is creating a Python
    socket, or if an unused port needs to be provided in a constructor
    or passed to an external program (i.e. the ``-accept`` argument to
    openssl's s_server mode).  Always prefer :func:`bind_port` over
@@ -1153,7 +1153,7 @@ The :mod:`test.support` module defines the following functions:
    *module*.
 
    The *name_of_module* argument can specify (as a string or tuple thereof) what
-   module(s) an API could be defined in in order to be detected as a public
+   module(s) an API could be defined in order to be detected as a public
    API. One case for this is when *module* imports part of its public API from
    other modules, possibly a C backend (like ``csv`` and its ``_csv``).
 
@@ -1332,8 +1332,8 @@ script execution tests.
 .. function:: run_python_until_end(*args, **env_vars)
 
    Set up the environment based on *env_vars* for running the interpreter
-   in a subprocess.  The values can include ``__isolated``, ``__cleavenv``,
-   and ``TERM``.
+   in a subprocess.  The values can include ``__isolated``, ``__cleanenv``,
+   ``__cwd``, and ``TERM``.
 
 
 .. function:: assert_python_ok(*args, **env_vars)

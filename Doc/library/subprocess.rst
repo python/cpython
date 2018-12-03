@@ -38,8 +38,9 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
-                  shell=False, cwd=None, timeout=None, check=False, \
-                  encoding=None, errors=None, text=None)
+                  capture_output=False, shell=False, cwd=None, timeout=None, \
+                  check=False, encoding=None, errors=None, text=None, env=None, \
+                  universal_newlines=None)
 
    Run the command described by *args*.  Wait for command to complete, then
    return a :class:`CompletedProcess` instance.
@@ -77,6 +78,11 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    specified *encoding* and *errors* or the :class:`io.TextIOWrapper` default.
    The *universal_newlines* argument is equivalent  to *text* and is provided
    for backwards compatibility. By default, file objects are opened in binary mode.
+
+   If *env* is not ``None``, it must be a mapping that defines the environment
+   variables for the new process; these are used instead of the default
+   behavior of inheriting the current process' environment. It is passed directly
+   to :class:`Popen`.
 
    Examples::
 
@@ -329,7 +335,7 @@ functions.
 
 .. class:: Popen(args, bufsize=-1, executable=None, stdin=None, stdout=None, \
                  stderr=None, preexec_fn=None, close_fds=True, shell=False, \
-                 cwd=None, env=None, universal_newlines=False, \
+                 cwd=None, env=None, universal_newlines=None, \
                  startupinfo=None, creationflags=0, restore_signals=True, \
                  start_new_session=False, pass_fds=(), *, \
                  encoding=None, errors=None, text=None)
@@ -459,7 +465,10 @@ functions.
       common use of *preexec_fn* to call os.setsid() in the child.
 
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
-   :const:`2` will be closed before the child process is executed.
+   :const:`2` will be closed before the child process is executed.  Otherwise
+   when *close_fds* is false, file descriptors obey their inheritable flag
+   as described in :ref:`fd_inheritance`.
+
    On Windows, if *close_fds* is true then no handles will be inherited by the
    child process unless explicitly passed in the ``handle_list`` element of
    :attr:`STARTUPINFO.lpAttributeList`, or by standard handle redirection.
@@ -477,7 +486,7 @@ functions.
    between the parent and child.  Providing any *pass_fds* forces
    *close_fds* to be :const:`True`.  (POSIX only)
 
-   .. versionadded:: 3.2
+   .. versionchanged:: 3.2
       The *pass_fds* parameter was added.
 
    If *cwd* is not ``None``, the function changes the working directory to
@@ -1047,7 +1056,7 @@ calls these functions.
 
 .. function:: check_output(args, *, stdin=None, stderr=None, shell=False, \
                            cwd=None, encoding=None, errors=None, \
-                           universal_newlines=False, timeout=None)
+                           universal_newlines=None, timeout=None, text=None)
 
    Run command with arguments and return its output.
 
@@ -1092,6 +1101,10 @@ calls these functions.
 
    .. versionchanged:: 3.6
       *encoding* and *errors* were added.  See :func:`run` for details.
+
+   .. versionadded:: 3.7
+      *text* was added as a more readable alias for *universal_newlines*.
+
 
 .. _subprocess-replacements:
 
@@ -1322,26 +1335,27 @@ handling consistency are valid for these functions.
       >>> subprocess.getstatusoutput('/bin/kill $$')
       (-15, '')
 
-   Availability: POSIX & Windows
+   .. availability:: POSIX & Windows.
 
    .. versionchanged:: 3.3.4
       Windows support was added.
 
       The function now returns (exitcode, output) instead of (status, output)
-      as it did in Python 3.3.3 and earlier.  See :func:`WEXITSTATUS`.
+      as it did in Python 3.3.3 and earlier.  exitcode has the same value as
+      :attr:`~Popen.returncode`.
 
 
 .. function:: getoutput(cmd)
 
    Return output (stdout and stderr) of executing *cmd* in a shell.
 
-   Like :func:`getstatusoutput`, except the exit status is ignored and the return
+   Like :func:`getstatusoutput`, except the exit code is ignored and the return
    value is a string containing the command's output.  Example::
 
       >>> subprocess.getoutput('ls /bin/ls')
       '/bin/ls'
 
-   Availability: POSIX & Windows
+   .. availability:: POSIX & Windows.
 
    .. versionchanged:: 3.3.4
       Windows support added

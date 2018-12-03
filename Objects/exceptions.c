@@ -6,8 +6,9 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 #include "osdefs.h"
 
@@ -126,7 +127,7 @@ BaseException_repr(PyBaseExceptionObject *self)
 
 /* Pickling support */
 static PyObject *
-BaseException_reduce(PyBaseExceptionObject *self)
+BaseException_reduce(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ignored))
 {
     if (self->args && self->dict)
         return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
@@ -181,7 +182,7 @@ static PyMethodDef BaseException_methods[] = {
 };
 
 static PyObject *
-BaseException_get_args(PyBaseExceptionObject *self)
+BaseException_get_args(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
 {
     if (self->args == NULL) {
         Py_RETURN_NONE;
@@ -191,7 +192,7 @@ BaseException_get_args(PyBaseExceptionObject *self)
 }
 
 static int
-BaseException_set_args(PyBaseExceptionObject *self, PyObject *val)
+BaseException_set_args(PyBaseExceptionObject *self, PyObject *val, void *Py_UNUSED(ignored))
 {
     PyObject *seq;
     if (val == NULL) {
@@ -206,7 +207,7 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val)
 }
 
 static PyObject *
-BaseException_get_tb(PyBaseExceptionObject *self)
+BaseException_get_tb(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
 {
     if (self->traceback == NULL) {
         Py_RETURN_NONE;
@@ -216,7 +217,7 @@ BaseException_get_tb(PyBaseExceptionObject *self)
 }
 
 static int
-BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb)
+BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb, void *Py_UNUSED(ignored))
 {
     if (tb == NULL) {
         PyErr_SetString(PyExc_TypeError, "__traceback__ may not be deleted");
@@ -234,7 +235,8 @@ BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb)
 }
 
 static PyObject *
-BaseException_get_context(PyObject *self) {
+BaseException_get_context(PyObject *self, void *Py_UNUSED(ignored))
+{
     PyObject *res = PyException_GetContext(self);
     if (res)
         return res;  /* new reference already returned above */
@@ -242,7 +244,8 @@ BaseException_get_context(PyObject *self) {
 }
 
 static int
-BaseException_set_context(PyObject *self, PyObject *arg) {
+BaseException_set_context(PyObject *self, PyObject *arg, void *Py_UNUSED(ignored))
+{
     if (arg == NULL) {
         PyErr_SetString(PyExc_TypeError, "__context__ may not be deleted");
         return -1;
@@ -261,7 +264,8 @@ BaseException_set_context(PyObject *self, PyObject *arg) {
 }
 
 static PyObject *
-BaseException_get_cause(PyObject *self) {
+BaseException_get_cause(PyObject *self, void *Py_UNUSED(ignored))
+{
     PyObject *res = PyException_GetCause(self);
     if (res)
         return res;  /* new reference already returned above */
@@ -269,7 +273,8 @@ BaseException_get_cause(PyObject *self) {
 }
 
 static int
-BaseException_set_cause(PyObject *self, PyObject *arg) {
+BaseException_set_cause(PyObject *self, PyObject *arg, void *Py_UNUSED(ignored))
+{
     if (arg == NULL) {
         PyErr_SetString(PyExc_TypeError, "__cause__ may not be deleted");
         return -1;
@@ -292,10 +297,10 @@ static PyGetSetDef BaseException_getset[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
     {"__traceback__", (getter)BaseException_get_tb, (setter)BaseException_set_tb},
-    {"__context__", (getter)BaseException_get_context,
-     (setter)BaseException_set_context, PyDoc_STR("exception context")},
-    {"__cause__", (getter)BaseException_get_cause,
-     (setter)BaseException_set_cause, PyDoc_STR("exception cause")},
+    {"__context__", BaseException_get_context,
+     BaseException_set_context, PyDoc_STR("exception context")},
+    {"__cause__", BaseException_get_cause,
+     BaseException_set_cause, PyDoc_STR("exception cause")},
     {NULL},
 };
 
@@ -310,7 +315,7 @@ PyException_GetTraceback(PyObject *self) {
 
 int
 PyException_SetTraceback(PyObject *self, PyObject *tb) {
-    return BaseException_set_tb((PyBaseExceptionObject *)self, tb);
+    return BaseException_set_tb((PyBaseExceptionObject *)self, tb, NULL);
 }
 
 PyObject *
@@ -342,6 +347,13 @@ PyException_SetContext(PyObject *self, PyObject *context)
     Py_XSETREF(((PyBaseExceptionObject *)self)->context, context);
 }
 
+#undef PyExceptionClass_Name
+
+const char *
+PyExceptionClass_Name(PyObject *ob)
+{
+    return ((PyTypeObject*)ob)->tp_name;
+}
 
 static struct PyMemberDef BaseException_members[] = {
     {"__suppress_context__", T_BOOL,
@@ -713,7 +725,7 @@ ImportError_getstate(PyImportErrorObject *self)
 
 /* Pickling support */
 static PyObject *
-ImportError_reduce(PyImportErrorObject *self)
+ImportError_reduce(PyImportErrorObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *res;
     PyObject *args;
@@ -1123,7 +1135,7 @@ OSError_str(PyOSErrorObject *self)
 }
 
 static PyObject *
-OSError_reduce(PyOSErrorObject *self)
+OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *args = self->args;
     PyObject *res = NULL, *tmp;
@@ -2899,7 +2911,7 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
      */
     static PyObject *print_prefix = NULL;
     static PyObject *exec_prefix = NULL;
-    Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text);
+    Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text), match;
     int kind = PyUnicode_KIND(self->text);
     void *data = PyUnicode_DATA(self->text);
 
@@ -2922,9 +2934,12 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
             return -1;
         }
     }
-    if (PyUnicode_Tailmatch(self->text, print_prefix,
-                            start, text_len, -1)) {
-
+    match = PyUnicode_Tailmatch(self->text, print_prefix,
+                                start, text_len, -1);
+    if (match == -1) {
+        return -1;
+    }
+    if (match) {
         return _set_legacy_print_statement_msg(self, start);
     }
 
@@ -2935,10 +2950,17 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
             return -1;
         }
     }
-    if (PyUnicode_Tailmatch(self->text, exec_prefix,
-                            start, text_len, -1)) {
-        Py_XSETREF(self->msg,
-                  PyUnicode_FromString("Missing parentheses in call to 'exec'"));
+    match = PyUnicode_Tailmatch(self->text, exec_prefix, start, text_len, -1);
+    if (match == -1) {
+        return -1;
+    }
+    if (match) {
+        PyObject *msg = PyUnicode_FromString("Missing parentheses in call "
+                                             "to 'exec'");
+        if (msg == NULL) {
+            return -1;
+        }
+        Py_XSETREF(self->msg, msg);
         return 1;
     }
     /* Fall back to the default error message */

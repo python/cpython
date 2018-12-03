@@ -87,6 +87,7 @@ class _PythonRunResult(collections.namedtuple("_PythonRunResult",
 # Executing the interpreter in a subprocess
 def run_python_until_end(*args, **env_vars):
     env_required = interpreter_requires_environment()
+    cwd = env_vars.pop('__cwd', None)
     if '__isolated' in env_vars:
         isolated = env_vars.pop('__isolated')
     else:
@@ -125,7 +126,7 @@ def run_python_until_end(*args, **env_vars):
     cmd_line.extend(args)
     proc = subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         env=env)
+                         env=env, cwd=cwd)
     with proc:
         try:
             out, err = proc.communicate()

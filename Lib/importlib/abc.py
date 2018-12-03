@@ -66,7 +66,7 @@ class MetaPathFinder(Finder):
 
         """
         warnings.warn("MetaPathFinder.find_module() is deprecated since Python "
-                      "3.4 in favor of MetaPathFinder.find_spec()"
+                      "3.4 in favor of MetaPathFinder.find_spec() "
                       "(available since 3.4)",
                       DeprecationWarning,
                       stacklevel=2)
@@ -381,8 +381,8 @@ class ResourceReader(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def contents(self):
-        """Return an iterator of strings over the contents of the package."""
-        return iter([])
+        """Return an iterable of strings over the contents of the package."""
+        return []
 
 
 _register(ResourceReader, machinery.SourceFileLoader)

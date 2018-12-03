@@ -158,7 +158,7 @@ PyDoc_STRVAR(_io_BytesIO_read__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO_BYTESIO_READ_METHODDEF    \
-    {"read", (PyCFunction)_io_BytesIO_read, METH_FASTCALL, _io_BytesIO_read__doc__},
+    {"read", (PyCFunction)(void(*)(void))_io_BytesIO_read, METH_FASTCALL, _io_BytesIO_read__doc__},
 
 static PyObject *
 _io_BytesIO_read_impl(bytesio *self, Py_ssize_t size);
@@ -189,7 +189,7 @@ PyDoc_STRVAR(_io_BytesIO_read1__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO_BYTESIO_READ1_METHODDEF    \
-    {"read1", (PyCFunction)_io_BytesIO_read1, METH_FASTCALL, _io_BytesIO_read1__doc__},
+    {"read1", (PyCFunction)(void(*)(void))_io_BytesIO_read1, METH_FASTCALL, _io_BytesIO_read1__doc__},
 
 static PyObject *
 _io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size);
@@ -221,7 +221,7 @@ PyDoc_STRVAR(_io_BytesIO_readline__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO_BYTESIO_READLINE_METHODDEF    \
-    {"readline", (PyCFunction)_io_BytesIO_readline, METH_FASTCALL, _io_BytesIO_readline__doc__},
+    {"readline", (PyCFunction)(void(*)(void))_io_BytesIO_readline, METH_FASTCALL, _io_BytesIO_readline__doc__},
 
 static PyObject *
 _io_BytesIO_readline_impl(bytesio *self, Py_ssize_t size);
@@ -253,7 +253,7 @@ PyDoc_STRVAR(_io_BytesIO_readlines__doc__,
 "total number of bytes in the lines returned.");
 
 #define _IO_BYTESIO_READLINES_METHODDEF    \
-    {"readlines", (PyCFunction)_io_BytesIO_readlines, METH_FASTCALL, _io_BytesIO_readlines__doc__},
+    {"readlines", (PyCFunction)(void(*)(void))_io_BytesIO_readlines, METH_FASTCALL, _io_BytesIO_readlines__doc__},
 
 static PyObject *
 _io_BytesIO_readlines_impl(bytesio *self, PyObject *arg);
@@ -320,7 +320,7 @@ PyDoc_STRVAR(_io_BytesIO_truncate__doc__,
 "The current file position is unchanged.  Returns the new size.");
 
 #define _IO_BYTESIO_TRUNCATE_METHODDEF    \
-    {"truncate", (PyCFunction)_io_BytesIO_truncate, METH_FASTCALL, _io_BytesIO_truncate__doc__},
+    {"truncate", (PyCFunction)(void(*)(void))_io_BytesIO_truncate, METH_FASTCALL, _io_BytesIO_truncate__doc__},
 
 static PyObject *
 _io_BytesIO_truncate_impl(bytesio *self, Py_ssize_t size);
@@ -354,7 +354,7 @@ PyDoc_STRVAR(_io_BytesIO_seek__doc__,
 "Returns the new absolute position.");
 
 #define _IO_BYTESIO_SEEK_METHODDEF    \
-    {"seek", (PyCFunction)_io_BytesIO_seek, METH_FASTCALL, _io_BytesIO_seek__doc__},
+    {"seek", (PyCFunction)(void(*)(void))_io_BytesIO_seek, METH_FASTCALL, _io_BytesIO_seek__doc__},
 
 static PyObject *
 _io_BytesIO_seek_impl(bytesio *self, Py_ssize_t pos, int whence);
@@ -444,4 +444,4 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9ba9a68c8c5669e7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=89538a941ae1267a input=a9049054013a1b77]*/

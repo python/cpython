@@ -120,8 +120,8 @@ results to a file by specifying a filename to the :func:`run` function::
 The :class:`pstats.Stats` class reads profile results from a file and formats
 them in various ways.
 
-The file :mod:`cProfile` can also be invoked as a script to profile another
-script.  For example::
+The files :mod:`cProfile` and :mod:`profile` can also be invoked as a script to
+profile another script.  For example::
 
    python -m cProfile [-o output_file] [-s sort_order] (-m module | myscript.py)
 
@@ -133,7 +133,10 @@ the output by. This only applies when ``-o`` is not supplied.
 ``-m`` specifies that a module is being profiled instead of a script.
 
    .. versionadded:: 3.7
-      Added the ``-m`` option.
+      Added the ``-m`` option to :mod:`cProfile`.
+
+   .. versionadded:: 3.8
+      Added the ``-m`` option to :mod:`profile`.
 
 The :mod:`pstats` module's :class:`~pstats.Stats` class has a variety of methods
 for manipulating and printing the data saved into a profile results file::
@@ -262,6 +265,19 @@ functions:
       ps.print_stats()
       print(s.getvalue())
 
+   The :class:`Profile` class can also be used as a context manager (see
+   :ref:`typecontextmanager`)::
+
+      import cProfile
+
+      with cProfile.Profile() as pr:
+          # ... do something ...
+
+      pr.print_stats()
+
+   .. versionchanged:: 3.8
+      Added context manager support.
+
    .. method:: enable()
 
       Start collecting profiling data.
@@ -297,6 +313,11 @@ functions:
 
       Profile ``func(*args, **kwargs)``
 
+Note that profiling will only work if the called command/function actually
+returns.  If the interpreter is terminated (e.g. via a :func:`sys.exit` call
+during the called command/function execution) no profiling results will be
+printed.
+
 .. _profile-stats:
 
 The :class:`Stats` Class
@@ -317,11 +338,12 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
    corresponding version of :mod:`profile` or :mod:`cProfile`.  To be specific,
    there is *no* file compatibility guaranteed with future versions of this
    profiler, and there is no compatibility with files produced by other
-   profilers.  If several files are provided, all the statistics for identical
-   functions will be coalesced, so that an overall view of several processes can
-   be considered in a single report.  If additional files need to be combined
-   with data in an existing :class:`~pstats.Stats` object, the
-   :meth:`~pstats.Stats.add` method can be used.
+   profilers, or the same profiler run on a different operating system.  If
+   several files are provided, all the statistics for identical functions will
+   be coalesced, so that an overall view of several processes can be considered
+   in a single report.  If additional files need to be combined with data in an
+   existing :class:`~pstats.Stats` object, the :meth:`~pstats.Stats.add` method
+   can be used.
 
    Instead of reading the profile data from a file, a :class:`cProfile.Profile`
    or :class:`profile.Profile` object can be used as the profile data source.
