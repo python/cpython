@@ -484,7 +484,7 @@ PyCArg_repr(PyCArgObject *self)
 #ifdef MS_WIN32
             "<cparam '%c' (%I64d)>",
 #else
-            "<cparam '%c' (%qd)>",
+            "<cparam '%c' (%lld)>",
 #endif
             self->tag, self->value.q);
         break;
