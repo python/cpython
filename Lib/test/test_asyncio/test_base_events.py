@@ -1,6 +1,7 @@
 """Tests for base_events.py"""
 
 import errno
+import logging
 import math
 import os
 import socket
@@ -13,6 +14,7 @@ from unittest import mock
 import asyncio
 from asyncio import base_events
 from asyncio import constants
+from asyncio import events
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support.script_helper import assert_python_ok
