@@ -1516,20 +1516,28 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         goto Done;
     }
 
-    totalnew = flen + 1;        /* realistic if no %z/%Z */
+totalnew = flen + 1;        /* realistic if no %z/%Z */
     newfmt = PyBytes_FromStringAndSize(NULL, totalnew);
     if (newfmt == NULL) goto Done;
     pnew = PyBytes_AsString(newfmt);
     usednew = 0;
-    ch = *pin;
 
-    do {
-        if ((ch = *pin++) != '%') {
+    while ((ch = *pin++) != '\0') {
+        if (ch != '%') {
+            ptoappend = pin - 1;
+            ntoappend = 1;
+        }
+        else if ((ch = *pin++) == '\0') {
+        /* Null byte follows %, copy only '%'. 
+         * 
+         * Back the pin up one char so that we catch the null check
+         * the next time through the loop.*/
+            pin--;
             ptoappend = pin - 1;
             ntoappend = 1;
         }
         /* A % has been seen and ch is the character after it. */
-        else if ((ch = *pin++) == 'z') {
+        else if (ch == 'z') {
             if (zreplacement == NULL) {
                 /* format utcoffset */
                 char buf[100];
@@ -1583,12 +1591,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ptoappend = PyBytes_AS_STRING(freplacement);
             ntoappend = PyBytes_GET_SIZE(freplacement);
         }
-        else if (ch == '\0') {
-            /* percent followed by null char, copy only
-             * the '%' */
-            ptoappend = pin - 2;
-            ntoappend = 1;
-        }
         else {
             /* percent followed by neither z nor Z */
             ptoappend = pin - 2;
@@ -1616,8 +1618,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         pnew += ntoappend;
         usednew += ntoappend;
         assert(usednew <= totalnew);
-    } while (ch != '\0');
-
+    }  /* end while() */
+    
     if (_PyBytes_Resize(&newfmt, usednew) < 0)
         goto Done;
     {
