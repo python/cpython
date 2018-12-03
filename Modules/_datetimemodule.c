@@ -1583,6 +1583,12 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ptoappend = PyBytes_AS_STRING(freplacement);
             ntoappend = PyBytes_GET_SIZE(freplacement);
         }
+        else if (ch == '\0') {
+            /* percent followed by null char, copy only
+             * the '%' */
+            ptoappend = pin - 2;
+            ntoappend = 1;
+        }
         else {
             /* percent followed by neither z nor Z */
             ptoappend = pin - 2;
