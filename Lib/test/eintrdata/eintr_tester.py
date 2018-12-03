@@ -39,8 +39,6 @@ class EINTRBaseTest(unittest.TestCase):
 
     # delay for initial signal delivery
     signal_delay = 0.1
-    # signal handler run time duration
-    signal_duration = 0.05
     # signal delivery periodicity
     signal_period = 0.1
     # default sleep time for tests - should obviously have:
@@ -48,7 +46,6 @@ class EINTRBaseTest(unittest.TestCase):
     sleep_time = 0.2
 
     def sighandler(self, signum, frame):
-        time.sleep(self.signal_duration)
         self.signals += 1
 
     def setUp(self):
@@ -443,16 +440,6 @@ class SelectEINTRTest(EINTRBaseTest):
         dt = time.monotonic() - t0
         self.stop_alarm()
         self.assertGreaterEqual(dt, self.sleep_time)
-
-    def test_select_long_signal(self):
-        rd, wr = os.pipe()
-        self.addCleanup(os.close, rd)
-        self.addCleanup(os.close, wr)
-        # timeout is enough for signal to fire, but not for it to return
-        timeout = self.signal_delay + self.signal_duration/2
-        rlist, _, _ = select.select([rd], [], [], timeout)
-        self.stop_alarm()
-        self.assertNotIn(rd, rlist)
 
     @unittest.skipIf(sys.platform == "darwin",
                      "poll may fail on macOS; see issue #28087")
