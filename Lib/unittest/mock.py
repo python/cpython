@@ -542,7 +542,7 @@ class NonCallableMock(Base):
             self._mock_side_effect = None
 
         for child in self._mock_children.values():
-            if isinstance(child, _SpecState):
+            if isinstance(child, _SpecState) or child is _deleted:
                 continue
             child.reset_mock(visited)
 
@@ -1772,7 +1772,7 @@ _all_magics = _magics | _non_defaults
 
 _unsupported_magics = {
     '__getattr__', '__setattr__',
-    '__init__', '__new__', '__prepare__'
+    '__init__', '__new__', '__prepare__',
     '__instancecheck__', '__subclasscheck__',
     '__del__'
 }

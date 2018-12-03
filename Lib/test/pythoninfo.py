@@ -199,32 +199,73 @@ def collect_os(info_add):
     call_func(info_add, 'os.cpu_count', os, 'cpu_count')
     call_func(info_add, 'os.loadavg', os, 'getloadavg')
 
-    # Get environment variables: filter to list
-    # to not leak sensitive information
-    ENV_VARS = (
+    # Environment variables used by the stdlib and tests. Don't log the full
+    # environment: filter to list to not leak sensitive information.
+    #
+    # HTTP_PROXY is not logged because it can contain a password.
+    ENV_VARS = frozenset((
+        "APPDATA",
+        "AR",
+        "ARCHFLAGS",
+        "ARFLAGS",
+        "AUDIODEV",
         "CC",
+        "CFLAGS",
+        "COLUMNS",
+        "COMPUTERNAME",
         "COMSPEC",
+        "CPP",
+        "CPPFLAGS",
         "DISPLAY",
+        "DISTUTILS_DEBUG",
         "DISTUTILS_USE_SDK",
         "DYLD_LIBRARY_PATH",
+        "ENSUREPIP_OPTIONS",
+        "HISTORY_FILE",
         "HOME",
         "HOMEDRIVE",
         "HOMEPATH",
+        "IDLESTARTUP",
         "LANG",
+        "LDFLAGS",
+        "LDSHARED",
         "LD_LIBRARY_PATH",
+        "LINES",
         "MACOSX_DEPLOYMENT_TARGET",
+        "MAILCAPS",
         "MAKEFLAGS",
+        "MIXERDEV",
         "MSSDK",
         "PATH",
+        "PATHEXT",
+        "PIP_CONFIG_FILE",
+        "PLAT",
+        "POSIXLY_CORRECT",
+        "PY_SAX_PARSER",
+        "ProgramFiles",
+        "ProgramFiles(x86)",
+        "RUNNING_ON_VALGRIND",
         "SDK_TOOLS_BIN",
+        "SERVER_SOFTWARE",
         "SHELL",
+        "SOURCE_DATE_EPOCH",
+        "SYSTEMROOT",
         "TEMP",
         "TERM",
+        "TILE_LIBRARY",
+        "TIX_LIBRARY",
         "TMP",
         "TMPDIR",
+        "TZ",
         "USERPROFILE",
+        "VIRTUAL_ENV",
         "WAYLAND_DISPLAY",
-    )
+        "WINDIR",
+        "_PYTHON_HOST_PLATFORM",
+        "_PYTHON_PROJECT_BASE",
+        "_PYTHON_SYSCONFIGDATA_NAME",
+        "__PYVENV_LAUNCHER__",
+    ))
     for name, value in os.environ.items():
         uname = name.upper()
         if (uname in ENV_VARS
@@ -534,15 +575,22 @@ def collect_gdbm(info_add):
     info_add('gdbm.GDBM_VERSION', '.'.join(map(str, _GDBM_VERSION)))
 
 
-def collect_get_coreconfig(info_add):
+def collect_get_config(info_add):
+    # Dump global configuration variables, _PyCoreConfig
+    # and _PyMainInterpreterConfig
     try:
-        from _testcapi import get_coreconfig
+        from _testcapi import get_global_config, get_core_config, get_main_config
     except ImportError:
         return
 
-    config = get_coreconfig()
-    for key in sorted(config):
-        info_add('coreconfig[%s]' % key, repr(config[key]))
+    for prefix, get_config_func in (
+        ('global_config', get_global_config),
+        ('core_config', get_core_config),
+        ('main_config', get_main_config),
+    ):
+        config = get_config_func()
+        for key in sorted(config):
+            info_add('%s[%s]' % (prefix, key), repr(config[key]))
 
 
 def collect_info(info):
@@ -573,7 +621,7 @@ def collect_info(info):
         collect_resource,
         collect_cc,
         collect_gdbm,
-        collect_get_coreconfig,
+        collect_get_config,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,

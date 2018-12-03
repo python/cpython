@@ -1,8 +1,9 @@
 /* List object implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
-#include "accu.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
+#include "pycore_accu.h"
 
 #ifdef STDC_HEADERS
 #include <stddef.h>

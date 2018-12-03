@@ -25,6 +25,7 @@ simple statements is:
               : | `break_stmt`
               : | `continue_stmt`
               : | `import_stmt`
+              : | `future_stmt`
               : | `global_stmt`
               : | `nonlocal_stmt`
 
@@ -120,13 +121,10 @@ given with the definition of the object types (see section :ref:`types`).
 Assignment of an object to a target list, optionally enclosed in parentheses or
 square brackets, is recursively defined as follows.
 
-* If the target list is empty: The object must also be an empty iterable.
+* If the target list is a single target with no trailing comma,
+  optionally in parentheses, the object is assigned to that target.
 
-* If the target list is a single target in parentheses: The object is assigned
-  to that target.
-
-* If the target list is a comma-separated list of targets, or a single target
-  in square brackets: The object must be an iterable with the same number of
+* Else: The object must be an iterable with the same number of
   items as there are targets in the target list, and the items are assigned,
   from left to right, to the corresponding targets.
 
@@ -402,7 +400,7 @@ The extended form, ``assert expression1, expression2``, is equivalent to ::
 These equivalences assume that :const:`__debug__` and :exc:`AssertionError` refer to
 the built-in variables with those names.  In the current implementation, the
 built-in variable :const:`__debug__` is ``True`` under normal circumstances,
-``False`` when optimization is requested (command line option -O).  The current
+``False`` when optimization is requested (command line option :option:`-O`).  The current
 code generator emits no code for an assert statement when optimization is
 requested at compile time.  Note that it is unnecessary to include the source
 code for the expression that failed in the error message; it will be displayed

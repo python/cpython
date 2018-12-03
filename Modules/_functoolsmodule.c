@@ -1,7 +1,7 @@
-
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
+#include "pycore_tupleobject.h"
 #include "structmember.h"
 
 /* _functools module written and maintained
@@ -142,7 +142,7 @@ partial_fastcall(partialobject *pto, PyObject **args, Py_ssize_t nargs,
         stack = args;
     }
     else if (nargs == 0) {
-        stack = &PyTuple_GET_ITEM(pto->args, 0);
+        stack = _PyTuple_ITEMS(pto->args);
     }
     else {
         if (nargs2 <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
@@ -159,7 +159,7 @@ partial_fastcall(partialobject *pto, PyObject **args, Py_ssize_t nargs,
 
         /* use borrowed references */
         memcpy(stack,
-               &PyTuple_GET_ITEM(pto->args, 0),
+               _PyTuple_ITEMS(pto->args),
                pto_nargs * sizeof(PyObject*));
         memcpy(&stack[pto_nargs],
                args,
@@ -222,7 +222,7 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
 
     if (pto->use_fastcall) {
         res = partial_fastcall(pto,
-                               &PyTuple_GET_ITEM(args, 0),
+                               _PyTuple_ITEMS(args),
                                PyTuple_GET_SIZE(args),
                                kwargs2);
     }
@@ -1236,7 +1236,7 @@ PyDoc_STRVAR(module_doc,
 
 static PyMethodDef module_methods[] = {
     {"reduce",          functools_reduce,     METH_VARARGS, functools_reduce_doc},
-    {"cmp_to_key",      (PyCFunction)functools_cmp_to_key,
+    {"cmp_to_key",      (PyCFunction)(void(*)(void))functools_cmp_to_key,
      METH_VARARGS | METH_KEYWORDS, functools_cmp_to_key_doc},
     {NULL,              NULL}           /* sentinel */
 };

@@ -95,7 +95,7 @@ PyDoc_STRVAR(_winapi_ConnectNamedPipe__doc__,
 "\n");
 
 #define _WINAPI_CONNECTNAMEDPIPE_METHODDEF    \
-    {"ConnectNamedPipe", (PyCFunction)_winapi_ConnectNamedPipe, METH_FASTCALL|METH_KEYWORDS, _winapi_ConnectNamedPipe__doc__},
+    {"ConnectNamedPipe", (PyCFunction)(void(*)(void))_winapi_ConnectNamedPipe, METH_FASTCALL|METH_KEYWORDS, _winapi_ConnectNamedPipe__doc__},
 
 static PyObject *
 _winapi_ConnectNamedPipe_impl(PyObject *module, HANDLE handle,
@@ -128,7 +128,7 @@ PyDoc_STRVAR(_winapi_CreateFile__doc__,
 "\n");
 
 #define _WINAPI_CREATEFILE_METHODDEF    \
-    {"CreateFile", (PyCFunction)_winapi_CreateFile, METH_FASTCALL, _winapi_CreateFile__doc__},
+    {"CreateFile", (PyCFunction)(void(*)(void))_winapi_CreateFile, METH_FASTCALL, _winapi_CreateFile__doc__},
 
 static HANDLE
 _winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
@@ -173,7 +173,7 @@ PyDoc_STRVAR(_winapi_CreateJunction__doc__,
 "\n");
 
 #define _WINAPI_CREATEJUNCTION_METHODDEF    \
-    {"CreateJunction", (PyCFunction)_winapi_CreateJunction, METH_FASTCALL, _winapi_CreateJunction__doc__},
+    {"CreateJunction", (PyCFunction)(void(*)(void))_winapi_CreateJunction, METH_FASTCALL, _winapi_CreateJunction__doc__},
 
 static PyObject *
 _winapi_CreateJunction_impl(PyObject *module, LPWSTR src_path,
@@ -204,7 +204,7 @@ PyDoc_STRVAR(_winapi_CreateNamedPipe__doc__,
 "\n");
 
 #define _WINAPI_CREATENAMEDPIPE_METHODDEF    \
-    {"CreateNamedPipe", (PyCFunction)_winapi_CreateNamedPipe, METH_FASTCALL, _winapi_CreateNamedPipe__doc__},
+    {"CreateNamedPipe", (PyCFunction)(void(*)(void))_winapi_CreateNamedPipe, METH_FASTCALL, _winapi_CreateNamedPipe__doc__},
 
 static HANDLE
 _winapi_CreateNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD open_mode,
@@ -256,7 +256,7 @@ PyDoc_STRVAR(_winapi_CreatePipe__doc__,
 "Returns a 2-tuple of handles, to the read and write ends of the pipe.");
 
 #define _WINAPI_CREATEPIPE_METHODDEF    \
-    {"CreatePipe", (PyCFunction)_winapi_CreatePipe, METH_FASTCALL, _winapi_CreatePipe__doc__},
+    {"CreatePipe", (PyCFunction)(void(*)(void))_winapi_CreatePipe, METH_FASTCALL, _winapi_CreatePipe__doc__},
 
 static PyObject *
 _winapi_CreatePipe_impl(PyObject *module, PyObject *pipe_attrs, DWORD size);
@@ -295,7 +295,7 @@ PyDoc_STRVAR(_winapi_CreateProcess__doc__,
 "process ID, and thread ID.");
 
 #define _WINAPI_CREATEPROCESS_METHODDEF    \
-    {"CreateProcess", (PyCFunction)_winapi_CreateProcess, METH_FASTCALL, _winapi_CreateProcess__doc__},
+    {"CreateProcess", (PyCFunction)(void(*)(void))_winapi_CreateProcess, METH_FASTCALL, _winapi_CreateProcess__doc__},
 
 static PyObject *
 _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
@@ -342,7 +342,7 @@ PyDoc_STRVAR(_winapi_DuplicateHandle__doc__,
 "through both handles.");
 
 #define _WINAPI_DUPLICATEHANDLE_METHODDEF    \
-    {"DuplicateHandle", (PyCFunction)_winapi_DuplicateHandle, METH_FASTCALL, _winapi_DuplicateHandle__doc__},
+    {"DuplicateHandle", (PyCFunction)(void(*)(void))_winapi_DuplicateHandle, METH_FASTCALL, _winapi_DuplicateHandle__doc__},
 
 static HANDLE
 _winapi_DuplicateHandle_impl(PyObject *module, HANDLE source_process_handle,
@@ -604,7 +604,7 @@ PyDoc_STRVAR(_winapi_OpenProcess__doc__,
 "\n");
 
 #define _WINAPI_OPENPROCESS_METHODDEF    \
-    {"OpenProcess", (PyCFunction)_winapi_OpenProcess, METH_FASTCALL, _winapi_OpenProcess__doc__},
+    {"OpenProcess", (PyCFunction)(void(*)(void))_winapi_OpenProcess, METH_FASTCALL, _winapi_OpenProcess__doc__},
 
 static HANDLE
 _winapi_OpenProcess_impl(PyObject *module, DWORD desired_access,
@@ -642,7 +642,7 @@ PyDoc_STRVAR(_winapi_PeekNamedPipe__doc__,
 "\n");
 
 #define _WINAPI_PEEKNAMEDPIPE_METHODDEF    \
-    {"PeekNamedPipe", (PyCFunction)_winapi_PeekNamedPipe, METH_FASTCALL, _winapi_PeekNamedPipe__doc__},
+    {"PeekNamedPipe", (PyCFunction)(void(*)(void))_winapi_PeekNamedPipe, METH_FASTCALL, _winapi_PeekNamedPipe__doc__},
 
 static PyObject *
 _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size);
@@ -670,7 +670,7 @@ PyDoc_STRVAR(_winapi_ReadFile__doc__,
 "\n");
 
 #define _WINAPI_READFILE_METHODDEF    \
-    {"ReadFile", (PyCFunction)_winapi_ReadFile, METH_FASTCALL|METH_KEYWORDS, _winapi_ReadFile__doc__},
+    {"ReadFile", (PyCFunction)(void(*)(void))_winapi_ReadFile, METH_FASTCALL|METH_KEYWORDS, _winapi_ReadFile__doc__},
 
 static PyObject *
 _winapi_ReadFile_impl(PyObject *module, HANDLE handle, DWORD size,
@@ -703,7 +703,7 @@ PyDoc_STRVAR(_winapi_SetNamedPipeHandleState__doc__,
 "\n");
 
 #define _WINAPI_SETNAMEDPIPEHANDLESTATE_METHODDEF    \
-    {"SetNamedPipeHandleState", (PyCFunction)_winapi_SetNamedPipeHandleState, METH_FASTCALL, _winapi_SetNamedPipeHandleState__doc__},
+    {"SetNamedPipeHandleState", (PyCFunction)(void(*)(void))_winapi_SetNamedPipeHandleState, METH_FASTCALL, _winapi_SetNamedPipeHandleState__doc__},
 
 static PyObject *
 _winapi_SetNamedPipeHandleState_impl(PyObject *module, HANDLE named_pipe,
@@ -737,7 +737,7 @@ PyDoc_STRVAR(_winapi_TerminateProcess__doc__,
 "Terminate the specified process and all of its threads.");
 
 #define _WINAPI_TERMINATEPROCESS_METHODDEF    \
-    {"TerminateProcess", (PyCFunction)_winapi_TerminateProcess, METH_FASTCALL, _winapi_TerminateProcess__doc__},
+    {"TerminateProcess", (PyCFunction)(void(*)(void))_winapi_TerminateProcess, METH_FASTCALL, _winapi_TerminateProcess__doc__},
 
 static PyObject *
 _winapi_TerminateProcess_impl(PyObject *module, HANDLE handle,
@@ -766,7 +766,7 @@ PyDoc_STRVAR(_winapi_WaitNamedPipe__doc__,
 "\n");
 
 #define _WINAPI_WAITNAMEDPIPE_METHODDEF    \
-    {"WaitNamedPipe", (PyCFunction)_winapi_WaitNamedPipe, METH_FASTCALL, _winapi_WaitNamedPipe__doc__},
+    {"WaitNamedPipe", (PyCFunction)(void(*)(void))_winapi_WaitNamedPipe, METH_FASTCALL, _winapi_WaitNamedPipe__doc__},
 
 static PyObject *
 _winapi_WaitNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD timeout);
@@ -795,7 +795,7 @@ PyDoc_STRVAR(_winapi_WaitForMultipleObjects__doc__,
 "\n");
 
 #define _WINAPI_WAITFORMULTIPLEOBJECTS_METHODDEF    \
-    {"WaitForMultipleObjects", (PyCFunction)_winapi_WaitForMultipleObjects, METH_FASTCALL, _winapi_WaitForMultipleObjects__doc__},
+    {"WaitForMultipleObjects", (PyCFunction)(void(*)(void))_winapi_WaitForMultipleObjects, METH_FASTCALL, _winapi_WaitForMultipleObjects__doc__},
 
 static PyObject *
 _winapi_WaitForMultipleObjects_impl(PyObject *module, PyObject *handle_seq,
@@ -830,7 +830,7 @@ PyDoc_STRVAR(_winapi_WaitForSingleObject__doc__,
 "in milliseconds.");
 
 #define _WINAPI_WAITFORSINGLEOBJECT_METHODDEF    \
-    {"WaitForSingleObject", (PyCFunction)_winapi_WaitForSingleObject, METH_FASTCALL, _winapi_WaitForSingleObject__doc__},
+    {"WaitForSingleObject", (PyCFunction)(void(*)(void))_winapi_WaitForSingleObject, METH_FASTCALL, _winapi_WaitForSingleObject__doc__},
 
 static long
 _winapi_WaitForSingleObject_impl(PyObject *module, HANDLE handle,
@@ -864,7 +864,7 @@ PyDoc_STRVAR(_winapi_WriteFile__doc__,
 "\n");
 
 #define _WINAPI_WRITEFILE_METHODDEF    \
-    {"WriteFile", (PyCFunction)_winapi_WriteFile, METH_FASTCALL|METH_KEYWORDS, _winapi_WriteFile__doc__},
+    {"WriteFile", (PyCFunction)(void(*)(void))_winapi_WriteFile, METH_FASTCALL|METH_KEYWORDS, _winapi_WriteFile__doc__},
 
 static PyObject *
 _winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
@@ -914,7 +914,7 @@ PyDoc_STRVAR(_winapi_GetFileType__doc__,
 "\n");
 
 #define _WINAPI_GETFILETYPE_METHODDEF    \
-    {"GetFileType", (PyCFunction)_winapi_GetFileType, METH_FASTCALL|METH_KEYWORDS, _winapi_GetFileType__doc__},
+    {"GetFileType", (PyCFunction)(void(*)(void))_winapi_GetFileType, METH_FASTCALL|METH_KEYWORDS, _winapi_GetFileType__doc__},
 
 static DWORD
 _winapi_GetFileType_impl(PyObject *module, HANDLE handle);
@@ -941,4 +941,4 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=baaf3d379b91be0a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=915dd640329de0c0 input=a9049054013a1b77]*/
