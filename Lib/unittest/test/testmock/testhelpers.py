@@ -8,6 +8,7 @@ from unittest.mock import (
 )
 
 from datetime import datetime
+from functools import partial
 
 class SomeClass(object):
     def one(self, a, b):
@@ -869,6 +870,19 @@ class SpecSignatureTest(unittest.TestCase):
         mocked.reset_mock()
         mocked(4, 5, 6)
         mocked.assert_called_once_with(4, 5, 6)
+
+
+    def test_autospec_getattr_partial_function(self):
+        # bpo-32153 : getattr returning partial functions without
+        # __name__ should not create AttributeError in create_autospec
+        class Foo:
+
+            def __getattr__(self, attribute):
+                return partial(lambda name: name, attribute)
+
+        proxy = Foo()
+        autospec = create_autospec(proxy)
+        self.assertFalse(hasattr(autospec, '__name__'))
 
 
 class TestCallList(unittest.TestCase):
