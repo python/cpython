@@ -680,6 +680,19 @@ the *new_callable* argument to :func:`patch`.
         unpacked as tuples to get at the individual arguments. See
         :ref:`calls as tuples <calls-as-tuples>`.
 
+        .. note::
+
+            The way :attr:`mock_calls` are recorded means that where nested
+            calls are made, the parameters of ancestor calls are not recorded
+            and so will always compare equal:
+
+                >>> mock = MagicMock()
+                >>> mock.top(a=3).bottom()
+                <MagicMock name='mock.top().bottom()' id='...'>
+                >>> mock.mock_calls
+                [call.top(a=3), call.top().bottom()]
+                >>> mock.mock_calls[-1] == call.top(a=-1).bottom()
+                True
 
     .. attribute:: __class__
 
