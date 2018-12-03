@@ -11999,7 +11999,7 @@ os_set_blocking_impl(PyObject *module, int fd, int blocking)
 /*[clinic input]
 class os.DirEntry "DirEntry *" "DirEntryType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3138f09f7c683f1d]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c18c7a448247980]*/
 
 typedef struct {
     PyObject_HEAD
