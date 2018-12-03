@@ -1,6 +1,7 @@
 """Tests for base_events.py"""
 
 import errno
+import logging
 import math
 import os
 import socket
