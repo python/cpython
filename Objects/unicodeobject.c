@@ -7218,7 +7218,7 @@ decode_code_page_errors(UINT code_page,
                          "in the target code page.";
     /* each step cannot decode more than 1 character, but a character can be
        represented as a surrogate pair */
-    wchar_t buffer[2], *startout, *out;
+    wchar_t buffer[2], *out;
     int insize;
     Py_ssize_t outsize;
     PyObject *errorHandler = NULL;
@@ -7254,10 +7254,8 @@ decode_code_page_errors(UINT code_page,
     if (widechar_resize(buf, bufsize, n + size * Py_ARRAY_LENGTH(buffer)) < 0) {
         goto error;
     }
-    startout = *buf + n;
 
     /* Decode the byte string character per character */
-    out = startout;
     while (in < endin)
     {
         /* Decode a character */
@@ -7309,7 +7307,7 @@ decode_code_page_errors(UINT code_page,
     }
 
     /* Shrink the buffer */
-    outsize = out - startout;
+    outsize = out - *buf;
     assert(outsize <= *bufsize);
     *bufsize = outsize;
     /* (in - startin) <= size and size is an int */
