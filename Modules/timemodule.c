@@ -860,7 +860,7 @@ of the timezone or altzone attributes on the time module.");
 #endif /* HAVE_MKTIME */
 
 #ifdef HAVE_WORKING_TZSET
-static int PyInit_timezone(PyObject *module);
+static int init_timezone(PyObject *module);
 
 static PyObject *
 time_tzset(PyObject *self, PyObject *unused)
@@ -875,7 +875,7 @@ time_tzset(PyObject *self, PyObject *unused)
     tzset();
 
     /* Reset timezone, altzone, daylight and tzname */
-    if (PyInit_timezone(m) < 0) {
+    if (init_timezone(m) < 0) {
          return NULL;
     }
     Py_DECREF(m);
@@ -1187,7 +1187,7 @@ get_gmtoff(time_t t, struct tm *p)
 }
 
 static int
-PyInit_timezone(PyObject *m)
+init_timezone(PyObject *m)
 {
     assert(!PyErr_Occurred());
 
@@ -1218,8 +1218,19 @@ PyInit_timezone(PyObject *m)
 #endif
     PyModule_AddIntConstant(m, "daylight", daylight);
     otz0 = PyUnicode_DecodeLocale(tzname[0], "surrogateescape");
+    if (otz0 == NULL) {
+        return -1;
+    }
     otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
-    PyModule_AddObject(m, "tzname", Py_BuildValue("(NN)", otz0, otz1));
+    if (otz1 == NULL) {
+        Py_DECREF(otz0);
+        return -1;
+    }
+    PyObject *tzname_obj = Py_BuildValue("(NN)", otz0, otz1);
+    if (tzname_obj == NULL) {
+        return -1;
+    }
+    PyModule_AddObject(m, "tzname", tzname_obj);
 #else /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
     {
 #define YEAR ((time_t)((365 * 24 + 6) * 3600))
@@ -1278,6 +1289,10 @@ PyInit_timezone(PyObject *m)
                        Py_BuildValue("(zz)", _tzname[0], _tzname[1]));
 #endif /* __CYGWIN__ */
 #endif /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
+
+    if (PyErr_Occurred()) {
+        return -1;
+    }
     return 0;
 }
 
@@ -1366,7 +1381,7 @@ PyInit_time(void)
         return NULL;
 
     /* Set, or reset, module variables like time.timezone */
-    if (PyInit_timezone(m) < 0) {
+    if (init_timezone(m) < 0) {
         return NULL;
     }
 
@@ -1402,6 +1417,10 @@ PyInit_time(void)
     PyModule_AddIntConstant(m, "_STRUCT_TM_ITEMS", 11);
     PyModule_AddObject(m, "struct_time", (PyObject*) &StructTimeType);
     initialized = 1;
+
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
     return m;
 }
 
