@@ -7254,6 +7254,7 @@ decode_code_page_errors(UINT code_page,
     if (widechar_resize(buf, bufsize, n + size * Py_ARRAY_LENGTH(buffer)) < 0) {
         goto error;
     }
+    out = *buf + n;
 
     /* Decode the byte string character per character */
     while (in < endin)
@@ -7307,9 +7308,8 @@ decode_code_page_errors(UINT code_page,
     }
 
     /* Shrink the buffer */
-    outsize = out - *buf;
-    assert(outsize <= *bufsize);
-    *bufsize = outsize;
+    assert(out - *buf <= *bufsize);
+    *bufsize = out - *buf;
     /* (in - startin) <= size and size is an int */
     ret = Py_SAFE_DOWNCAST(in - startin, Py_ssize_t, int);
 
