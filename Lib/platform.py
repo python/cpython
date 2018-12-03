@@ -194,7 +194,10 @@ def libc_ver(executable=sys.executable,lib='',version='', chunksize=2048):
         binary = f.read(chunksize)
         pos = 0
         while pos < len(binary):
-            m = _libc_search.search(binary,pos)
+            if 'libc' in binary or 'GLIBC' in binary:
+                m = _libc_search.search(binary, pos)
+            else:
+                m = None
             if not m or m.end() == len(binary):
                 chunk = f.read(chunksize)
                 if chunk:
