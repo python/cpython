@@ -1581,16 +1581,17 @@ PyInit_timezone(PyObject *m)
     PyModule_AddIntConstant(m, "daylight", daylight);
     otz0 = PyUnicode_DecodeLocale(tzname[0], "surrogateescape");
     if (otz0 == NULL) {
-        return;
+        return -1;
     }
     otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
     if (otz1 == NULL) {
         Py_DECREF(otz0);
-        return;
+        return -1;
     }
     PyObject *tzname_obj = Py_BuildValue("(NN)", otz0, otz1);
-    if (tzname_obj == NULL)
-        return;
+    if (tzname_obj == NULL) {
+        return -1;
+    }
     PyModule_AddObject(m, "tzname", tzname_obj);
 #else // !HAVE_DECL_TZNAME
     static const time_t YEAR = (365 * 24 + 6) * 3600;
