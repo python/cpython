@@ -1078,8 +1078,9 @@ PyGILState_Check(void)
 {
     PyThreadState *tstate;
 
-    if (!_PyGILState_check_enabled)
+    if (!_PyRuntime.gilstate.check_enabled) {
         return 1;
+    }
 
     if (!PyThread_tss_is_created(&_PyRuntime.gilstate.autoTSSkey)) {
         return 1;

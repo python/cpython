@@ -1358,6 +1358,9 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
     poolp next;
     uint size;
 
+    /* pymalloc is protected by the GIL */
+    assert(PyGILState_Check());
+
 #ifdef WITH_VALGRIND
     if (UNLIKELY(running_on_valgrind == -1)) {
         running_on_valgrind = RUNNING_ON_VALGRIND;
@@ -1589,6 +1592,9 @@ pymalloc_free(void *ctx, void *p)
     uint size;
 
     assert(p != NULL);
+
+    /* pymalloc is protected by the GIL */
+    assert(PyGILState_Check());
 
 #ifdef WITH_VALGRIND
     if (UNLIKELY(running_on_valgrind > 0)) {
@@ -1823,6 +1829,9 @@ pymalloc_realloc(void *ctx, void **newptr_p, void *p, size_t nbytes)
     size_t size;
 
     assert(p != NULL);
+
+    /* pymalloc is protected by the GIL */
+    assert(PyGILState_Check());
 
 #ifdef WITH_VALGRIND
     /* Treat running_on_valgrind == -1 the same as 0 */
@@ -2193,9 +2202,10 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 static void
 _PyMem_DebugCheckGIL(void)
 {
-    if (!PyGILState_Check())
+    if (!PyGILState_Check()) {
         Py_FatalError("Python memory allocator called "
                       "without holding the GIL");
+    }
 }
 
 static void *

@@ -20,6 +20,8 @@ extern "C" {
 /* GIL state */
 
 struct _gilstate_runtime_state {
+    /* Issue #26558: Flag to disable PyGILState_Check().
+       If set to non-zero, PyGILState_Check() always return 1. */
     int check_enabled;
     /* Assuming the current thread holds the GIL, this is the
        PyThreadState for the current thread. */
@@ -35,10 +37,6 @@ struct _gilstate_runtime_state {
 
 /* hook for PyEval_GetFrame(), requested for Psyco */
 #define _PyThreadState_GetFrame _PyRuntime.gilstate.getframe
-
-/* Issue #26558: Flag to disable PyGILState_Check().
-   If set to non-zero, PyGILState_Check() always return 1. */
-#define _PyGILState_check_enabled _PyRuntime.gilstate.check_enabled
 
 
 /* interpreter state */
