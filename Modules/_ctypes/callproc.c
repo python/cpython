@@ -499,7 +499,8 @@ PyCArg_repr(PyCArgObject *self)
 
     case 'c':
         if ((unsigned char)self->value.c < 128
-            && _PyUnicode_IsPrintable(self->value.c)
+            && _PyUnicode_IsPrintable((unsigned char)self->value.c)
+            && self->value.c != '\\'
             && self->value.c != '\'')
         {
             sprintf(buffer, "<cparam '%c' ('%c')>",
@@ -522,7 +523,7 @@ PyCArg_repr(PyCArgObject *self)
         break;
 
     default:
-        sprintf(buffer, "<cparam %02x' at %p>",
+        sprintf(buffer, "<cparam 0x%02x at %p>",
             (unsigned char)self->tag, self);
         break;
     }
