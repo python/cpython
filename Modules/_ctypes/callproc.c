@@ -498,9 +498,17 @@ PyCArg_repr(PyCArgObject *self)
         break;
 
     case 'c':
-        sprintf(buffer, "<cparam '%c' (%c)>",
-            self->tag, self->value.c);
-        break;
+        if ((unsigned char)self->value.c < 128
+            && _PyUnicode_IsPrintable(self->value.c)
+            && self->value.c != '\'')
+        {
+            sprintf(buffer, "<cparam '%c' ('%c')>",
+                self->tag, self->value.c);
+        }
+        else {
+            sprintf(buffer, "<cparam '%c' ('\\x%02x')>",
+                self->tag, (unsigned char)self->value.c);
+        }
 
 /* Hm, are these 'z' and 'Z' codes useful at all?
    Shouldn't they be replaced by the functionality of c_string
@@ -514,8 +522,8 @@ PyCArg_repr(PyCArgObject *self)
         break;
 
     default:
-        sprintf(buffer, "<cparam '%c' at %p>",
-            self->tag, self);
+        sprintf(buffer, "<cparam %02x' at %p>",
+            (unsigned char)self->tag, self);
         break;
     }
     return PyUnicode_FromString(buffer);
