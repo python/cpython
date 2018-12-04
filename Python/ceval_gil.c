@@ -665,6 +665,7 @@ static int
 _push_pending_call(struct _pending_calls *pending,
                    _Py_pending_call_func func, void *arg, int flags)
 {
+    // XXX Drop the limit?
     if (pending->npending == NPENDINGCALLS) {
         return -1; /* Queue full */
     }
