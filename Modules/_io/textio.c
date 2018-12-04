@@ -1466,6 +1466,7 @@ textiowrapper_read_chunk(textio *self)
         /* At the snapshot point, len(dec_buffer) bytes before the read, the
          * next input to be decoded is dec_buffer + input_chunk.
          */
+        PyObject *snapshot;
         PyObject *next_input = PyNumber_Add(dec_buffer, input_chunk);
         if (next_input == NULL)
             goto fail;
@@ -1477,7 +1478,7 @@ textiowrapper_read_chunk(textio *self)
             Py_DECREF(next_input);
             goto fail;
         }
-        PyObject *snapshot = Py_BuildValue("NN", dec_flags, next_input);
+        snapshot = Py_BuildValue("NN", dec_flags, next_input);
         if (snapshot == NULL) {
             dec_flags = NULL;
             goto fail;
