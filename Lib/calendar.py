@@ -132,21 +132,21 @@ def monthlen(year, month):
 
 
 def prevmonth(year, month):
-    if not 1 <= month <= 12:
-        raise IllegalMonthError(month)
     if month == 1:
         return year-1, 12
-    else:
+    elif 1 < month <= 12:
         return year, month-1
+    else:
+        raise IllegalMonthError(month)
 
 
 def nextmonth(year, month):
-    if not 1 <= month <= 12:
-        raise IllegalMonthError(month)
     if month == 12:
         return year+1, 1
-    else:
+    elif 1 <= month < 12:
         return year, month+1
+    else:
+        raise IllegalMonthError(month)
 
 
 class Calendar(object):
