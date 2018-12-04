@@ -326,14 +326,14 @@ class ModuleFinder:
         else:
             if fromlist:
                 for sub in fromlist:
-                    if sub in self.badmodules:
-                        self._add_badmodule(sub, caller)
+                    fullname = name + "." + sub
+                    if fullname in self.badmodules:
+                        self._add_badmodule(fullname, caller)
                         continue
                     try:
                         self.import_hook(name, caller, [sub], level=level)
                     except ImportError as msg:
                         self.msg(2, "ImportError:", str(msg))
-                        fullname = name + "." + sub
                         self._add_badmodule(fullname, caller)
 
     def scan_opcodes(self, co):
