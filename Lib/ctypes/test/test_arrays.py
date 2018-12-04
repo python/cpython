@@ -1,4 +1,6 @@
 import unittest
+from test.support import precisionbigmemtest, _2G
+import sys
 from ctypes import *
 
 from ctypes.test import need_symbol
@@ -131,6 +133,11 @@ class ArrayTestCase(unittest.TestCase):
         t1 = my_int * 1
         t2 = my_int * 1
         self.assertIs(t1, t2)
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @precisionbigmemtest(size=_2G, memuse=1, dry_run=False)
+    def test_large_array(self, size):
+        a = c_char * size
 
 if __name__ == '__main__':
     unittest.main()
