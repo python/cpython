@@ -1,0 +1,4 @@
+`calendar.prevmonth` and `calendar.nextmonth` functions 
+now checks if the given month is valid and raises
+`calendar.IllegalMonthError` for non-valid month values.
+Patch by Şahin Akkaya.
