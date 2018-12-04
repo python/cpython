@@ -22,8 +22,27 @@ except ImportError:
 CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "keycert3.pem")
 CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "pycacert.pem")
 
+class DummyIMAP(imaplib.IMAP4):
+
+    def __init__(self):
+        """Skip connections, for testing."""
+        self.utf8_enabled = False
+
+    def _simple_command(self, name, *args):
+        """Return self.literal, for testing methods affecting literal."""
+        return self.literal
+
 
 class TestImaplib(unittest.TestCase):
+
+    # CR, LF in literal should not be replaced by CRLF, issue 5430
+    def test_cr_lf_literal_preservation(self):
+        dummy_imap = DummyIMAP()
+        msg_string = 'one\rtwo\nthree\r\n'
+        result = dummy_imap.append(
+            None, None, None, msg_string.encode('utf-8'))
+
+        self.assertEqual(str.encode(msg_string), result)
 
     def test_Internaldate2tuple(self):
         t0 = calendar.timegm((2000, 1, 1, 0, 0, 0, -1, -1, -1))

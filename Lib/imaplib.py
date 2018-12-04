@@ -111,7 +111,6 @@ InternalDate = re.compile(br'.*INTERNALDATE "'
         br'"')
 # Literal is no longer used; kept for backward compatibility.
 Literal = re.compile(br'.*{(?P<size>\d+)}$', re.ASCII)
-MapCRLF = re.compile(br'\r\n|\r|\n')
 # We no longer exclude the ']' character from the data portion of the response
 # code, even though it violates the RFC.  Popular IMAP servers such as Gmail
 # allow flags with ']', and there are programs (including imaplib!) that can
@@ -396,7 +395,7 @@ class IMAP4:
             date_time = Time2Internaldate(date_time)
         else:
             date_time = None
-        literal = MapCRLF.sub(CRLF, message)
+        literal = message
         if self.utf8_enabled:
             literal = b'UTF8 (' + literal + b')'
         self.literal = literal

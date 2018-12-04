@@ -1,0 +1,1 @@
+Preserve LF, CR in the ``imaplib.IMAP4.append`` method.
