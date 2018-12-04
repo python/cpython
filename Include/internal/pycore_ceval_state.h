@@ -13,21 +13,24 @@ extern "C" {
 
 typedef int (*_Py_pending_call_func)(void *);
 
+struct _pending_call;
+
 struct _pending_call {
     _Py_pending_call_func func;
     void *arg;
     int flags;
+    struct _pending_call *next;
 };
+
+#define NPENDINGCALLS 32
 
 struct _pending_calls {
     int busy;
     PyThread_type_lock lock;
-    /* Request for running pending calls. */
-    int32_t calls_to_do;
-#define NPENDINGCALLS 32
-    struct _pending_call calls[NPENDINGCALLS];
-    int first;
-    int last;
+    /* The number of pending calls. */
+    int32_t npending;
+    struct _pending_call *head;
+    struct _pending_call *tail;
 };
 
 typedef enum {
