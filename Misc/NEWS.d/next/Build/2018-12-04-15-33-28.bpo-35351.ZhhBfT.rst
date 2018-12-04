@@ -1,0 +1,2 @@
+When building Python with clang and LTO, LTO flags are no longer passed into
+CFLAGS to build third-party C extensions through distutils.
