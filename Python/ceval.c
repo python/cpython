@@ -325,6 +325,7 @@ _PyEval_SignalReceived(void)
 int
 _add_pending_call(int (*func)(void *), void *arg)
 {
+    // TODO: Drop the limit?
     if (_PyRuntime.ceval.pending.ncalls == NPENDINGCALLS) {
         return -1; /* Queue full */
     }
