@@ -333,7 +333,7 @@ class Random(_random.Random):
         # preferred since the list takes less space than the
         # set and it doesn't suffer from frequent reselections.
 
-        # The number of calls to _randbelow() kept at or near k, the
+        # The number of calls to _randbelow() is kept at or near k, the
         # theoretical minimum.  This is important because running time
         # is dominated by _randbelow() and because it extracts the
         # least entropy from the underlying random number generators.
