@@ -269,6 +269,22 @@ class CallTest(unittest.TestCase):
         self.assertEqual(mock.mock_calls, last_call.call_list())
 
 
+    def test_extended_not_equal(self):
+        a = call(x=1).foo
+        b = call(x=2).foo
+        self.assertEqual(a, a)
+        self.assertEqual(b, b)
+        self.assertNotEqual(a, b)
+
+
+    def test_nested_calls_not_equal(self):
+        a = call(x=1).foo().bar
+        b = call(x=2).foo().bar
+        self.assertEqual(a, a)
+        self.assertEqual(b, b)
+        self.assertNotEqual(a, b)
+
+
     def test_call_list(self):
         mock = MagicMock()
         mock(1)

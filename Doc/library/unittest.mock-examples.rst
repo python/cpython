@@ -153,6 +153,15 @@ You use the :data:`call` object to construct lists for comparing with
     >>> mock.mock_calls == expected
     True
 
+However, parameters to calls that return mocks are not recorded, which means it is not
+possible to track nested calls where the parameters used to create ancestors are important:
+
+    >>> m = Mock()
+    >>> m.factory(important=True).deliver()
+    <Mock name='mock.factory().deliver()' id='...'>
+    >>> m.mock_calls[-1] == call.factory(important=False).deliver()
+    True
+
 
 Setting Return Values and Attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

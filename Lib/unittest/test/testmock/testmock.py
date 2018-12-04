@@ -8,7 +8,7 @@ from unittest import mock
 from unittest.mock import (
     call, DEFAULT, patch, sentinel,
     MagicMock, Mock, NonCallableMock,
-    NonCallableMagicMock, _CallList,
+    NonCallableMagicMock, _Call, _CallList,
     create_autospec
 )
 
@@ -916,6 +916,57 @@ class MockTest(unittest.TestCase):
                              call().__int__().call_list())
 
 
+    def test_child_mock_call_equal(self):
+        m = Mock()
+        result = m()
+        result.wibble()
+        # parent looks like this:
+        self.assertEqual(m.mock_calls, [call(), call().wibble()])
+        # but child should look like this:
+        self.assertEqual(result.mock_calls, [call.wibble()])
+
+
+    def test_mock_call_not_equal_leaf(self):
+        m = Mock()
+        m.foo().something()
+        self.assertNotEqual(m.mock_calls[1], call.foo().different())
+        self.assertEqual(m.mock_calls[0], call.foo())
+
+
+    def test_mock_call_not_equal_non_leaf(self):
+        m = Mock()
+        m.foo().bar()
+        self.assertNotEqual(m.mock_calls[1], call.baz().bar())
+        self.assertNotEqual(m.mock_calls[0], call.baz())
+
+
+    def test_mock_call_not_equal_non_leaf_params_different(self):
+        m = Mock()
+        m.foo(x=1).bar()
+        # This isn't ideal, but there's no way to fix it without breaking backwards compatibility:
+        self.assertEqual(m.mock_calls[1], call.foo(x=2).bar())
+
+
+    def test_mock_call_not_equal_non_leaf_attr(self):
+        m = Mock()
+        m.foo.bar()
+        self.assertNotEqual(m.mock_calls[0], call.baz.bar())
+
+
+    def test_mock_call_not_equal_non_leaf_call_versus_attr(self):
+        m = Mock()
+        m.foo.bar()
+        self.assertNotEqual(m.mock_calls[0], call.foo().bar())
+
+
+    def test_mock_call_repr(self):
+        m = Mock()
+        m.foo().bar().baz.bob()
+        self.assertEqual(repr(m.mock_calls[0]), 'call.foo()')
+        self.assertEqual(repr(m.mock_calls[1]), 'call.foo().bar()')
+        self.assertEqual(repr(m.mock_calls[2]), 'call.foo().bar().baz.bob()')
+
+
     def test_subclassing(self):
         class Subclass(Mock):
             pass
@@ -1573,6 +1624,20 @@ class MockTest(unittest.TestCase):
             mock.__class__ = int
             self.assertIsInstance(mock, int)
             mock.foo
+
+    def test_name_attribute_of_call(self):
+        # bpo-35357: _Call should not disclose any attributes whose names
+        # may clash with popular ones (such as ".name")
+        self.assertIsNotNone(call.name)
+        self.assertEqual(type(call.name), _Call)
+        self.assertEqual(type(call.name().name), _Call)
+
+    def test_parent_attribute_of_call(self):
+        # bpo-35357: _Call should not disclose any attributes whose names
+        # may clash with popular ones (such as ".parent")
+        self.assertIsNotNone(call.parent)
+        self.assertEqual(type(call.parent), _Call)
+        self.assertEqual(type(call.parent().parent), _Call)
 
 
 if __name__ == '__main__':
