@@ -206,8 +206,8 @@ Module functions and constants
    Registers a callable to convert a bytestring from the database into a custom
    Python type. The callable will be invoked for all database values that are of
    the type *typename*. Confer the parameter *detect_types* of the :func:`connect`
-   function for how the type detection works. Note that the case of *typename* and
-   the name of the type in your query must match!
+   function for how the type detection works. Note that *typename* and the name of
+   the type in your query are matched in case-insensitive manner.
 
 
 .. function:: register_adapter(type, callable)

@@ -499,8 +499,10 @@ element(PyObject* self, PyObject* args, PyObject* kw)
         attrib = (attrib) ? PyDict_Copy(attrib) : PyDict_New();
         if (!attrib)
             return NULL;
-        if (kw)
-            PyDict_Update(attrib, kw);
+        if (kw != NULL && PyDict_Update(attrib, kw) < 0) {
+            Py_DECREF(attrib);
+            return NULL;
+        }
     } else {
         Py_INCREF(Py_None);
         attrib = Py_None;
@@ -530,8 +532,10 @@ subelement(PyObject* self, PyObject* args, PyObject* kw)
         attrib = (attrib) ? PyDict_Copy(attrib) : PyDict_New();
         if (!attrib)
             return NULL;
-        if (kw)
-            PyDict_Update(attrib, kw);
+        if (kw != NULL && PyDict_Update(attrib, kw) < 0) {
+            Py_DECREF(attrib);
+            return NULL;
+        }
     } else {
         Py_INCREF(Py_None);
         attrib = Py_None;
@@ -1347,7 +1351,7 @@ element_subscr(PyObject* self_, PyObject* item)
     ElementObject* self = (ElementObject*) self_;
 
 #if (PY_VERSION_HEX < 0x02050000)
-    if (PyInt_Check(item) || PyLong_Check(item)) {
+    if (_PyAnyInt_Check(item)) {
         long i = PyInt_AsLong(item);
 #else
     if (PyIndex_Check(item)) {
@@ -1404,7 +1408,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
     ElementObject* self = (ElementObject*) self_;
 
 #if (PY_VERSION_HEX < 0x02050000)
-    if (PyInt_Check(item) || PyLong_Check(item)) {
+    if (_PyAnyInt_Check(item)) {
         long i = PyInt_AsLong(item);
 #else
     if (PyIndex_Check(item)) {
@@ -1727,12 +1731,16 @@ treebuilder_new(void)
 
     self->data = NULL;
 
-    self->stack = PyList_New(20);
     self->index = 0;
 
     self->events = NULL;
     self->start_event_obj = self->end_event_obj = NULL;
     self->start_ns_event_obj = self->end_ns_event_obj = NULL;
+    self->stack = PyList_New(20);
+    if (self->stack == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
 
     ALLOC(sizeof(TreeBuilderObject), "create treebuilder");
 
@@ -1756,7 +1764,7 @@ treebuilder_dealloc(TreeBuilderObject* self)
     Py_XDECREF(self->end_event_obj);
     Py_XDECREF(self->start_event_obj);
     Py_XDECREF(self->events);
-    Py_DECREF(self->stack);
+    Py_XDECREF(self->stack);
     Py_XDECREF(self->data);
     Py_DECREF(self->last);
     Py_DECREF(self->this);
@@ -2549,16 +2557,28 @@ xmlparser(PyObject* self_, PyObject* args, PyObject* kw)
     if (self == NULL)
         return NULL;
 
+    /* Init to NULL to keep the error handling below manageable. */
+    self->parser = NULL;
+    self->names =
+        self->target =
+        self->handle_xml =
+        self->handle_start =
+        self->handle_data =
+        self->handle_end =
+        self->handle_comment =
+        self->handle_pi =
+        self->handle_close =
+        NULL;
+
     self->entity = PyDict_New();
     if (!self->entity) {
-        PyObject_Del(self);
+        Py_DECREF(self);
         return NULL;
     }
-     
+
     self->names = PyDict_New();
     if (!self->names) {
-        PyObject_Del(self->entity);
-        PyObject_Del(self);
+        Py_DECREF(self);
         return NULL;
     }
 
@@ -2568,25 +2588,17 @@ xmlparser(PyObject* self_, PyObject* args, PyObject* kw)
 
     self->parser = EXPAT(ParserCreate_MM)(encoding, &memory_handler, "}");
     if (!self->parser) {
-        PyObject_Del(self->names);
-        PyObject_Del(self->entity);
-        PyObject_Del(self);
+        Py_DECREF(self);
         PyErr_NoMemory();
         return NULL;
     }
+    /* expat < 2.1.0 has no XML_SetHashSalt() */
+    if (EXPAT(SetHashSalt) != NULL) {
+        EXPAT(SetHashSalt)(self->parser,
+                           (unsigned long)_Py_HashSecret.prefix);
+    }
 
     ALLOC(sizeof(XMLParserObject), "create expatparser");
-
-    /* Init to NULL to keep the error handling below manageable. */
-    self->target =
-        self->handle_xml =
-        self->handle_start =
-        self->handle_data =
-        self->handle_end =
-        self->handle_comment =
-        self->handle_pi =
-        self->handle_close =
-        NULL;
 
     /* setup target handlers */
     if (!target) {
@@ -2673,7 +2685,9 @@ xmlparser(PyObject* self_, PyObject* args, PyObject* kw)
 static void
 xmlparser_dealloc(XMLParserObject* self)
 {
-    EXPAT(ParserFree)(self->parser);
+    if (self->parser != NULL) {
+        EXPAT(ParserFree)(self->parser);
+    }
 
     Py_XDECREF(self->handle_close);
     Py_XDECREF(self->handle_pi);
@@ -2683,9 +2697,9 @@ xmlparser_dealloc(XMLParserObject* self)
     Py_XDECREF(self->handle_start);
     Py_XDECREF(self->handle_xml);
 
-    Py_DECREF(self->target);
-    Py_DECREF(self->entity);
-    Py_DECREF(self->names);
+    Py_XDECREF(self->target);
+    Py_XDECREF(self->entity);
+    Py_XDECREF(self->names);
 
     RELEASE(sizeof(XMLParserObject), "destroy expatparser");
 

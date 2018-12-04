@@ -1893,7 +1893,7 @@ _encoded_const(PyObject *obj)
         if (s_null == NULL) {
             s_null = PyString_InternFromString("null");
         }
-        Py_INCREF(s_null);
+        Py_XINCREF(s_null);
         return s_null;
     }
     else if (obj == Py_True) {
@@ -1901,7 +1901,7 @@ _encoded_const(PyObject *obj)
         if (s_true == NULL) {
             s_true = PyString_InternFromString("true");
         }
-        Py_INCREF(s_true);
+        Py_XINCREF(s_true);
         return s_true;
     }
     else if (obj == Py_False) {
@@ -1909,7 +1909,7 @@ _encoded_const(PyObject *obj)
         if (s_false == NULL) {
             s_false = PyString_InternFromString("false");
         }
-        Py_INCREF(s_false);
+        Py_XINCREF(s_false);
         return s_false;
     }
     else {
@@ -1981,7 +1981,7 @@ encoder_listencode_obj(PyEncoderObject *s, PyObject *rval, PyObject *obj, Py_ssi
             return -1;
         return _steal_list_append(rval, encoded);
     }
-    else if (PyInt_Check(obj) || PyLong_Check(obj)) {
+    else if (_PyAnyInt_Check(obj)) {
         PyObject *encoded = PyObject_Str(obj);
         if (encoded == NULL)
             return -1;
@@ -2131,7 +2131,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
             if (kstr == NULL)
                 goto bail;
         }
-        else if (PyInt_Check(key) || PyLong_Check(key)) {
+        else if (_PyAnyInt_Check(key)) {
             kstr = PyObject_Str(key);
             if (kstr == NULL)
                 goto bail;

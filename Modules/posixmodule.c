@@ -6121,7 +6121,7 @@ posix_setgroups(PyObject *self, PyObject *groups)
         elem = PySequence_GetItem(groups, i);
         if (!elem)
             return NULL;
-        if (!PyInt_Check(elem) && !PyLong_Check(elem)) {
+        if (!_PyAnyInt_Check(elem)) {
             PyErr_SetString(PyExc_TypeError,
                             "groups must be integers");
             Py_DECREF(elem);

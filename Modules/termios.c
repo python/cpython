@@ -120,11 +120,11 @@ termios_tcgetattr(PyObject *self, PyObject *args)
     PyList_SetItem(v, 3, PyInt_FromLong((long)mode.c_lflag));
     PyList_SetItem(v, 4, PyInt_FromLong((long)ispeed));
     PyList_SetItem(v, 5, PyInt_FromLong((long)ospeed));
-    PyList_SetItem(v, 6, cc);
-    if (PyErr_Occurred()){
+    if (PyErr_Occurred()) {
         Py_DECREF(v);
         goto err;
     }
+    PyList_SetItem(v, 6, cc);
     return v;
   err:
     Py_DECREF(cc);
@@ -185,7 +185,7 @@ termios_tcsetattr(PyObject *self, PyObject *args)
 
         if (PyString_Check(v) && PyString_Size(v) == 1)
             mode.c_cc[i] = (cc_t) * PyString_AsString(v);
-        else if (PyInt_Check(v) || PyLong_Check(v)) {
+        else if (_PyAnyInt_Check(v)) {
             mode.c_cc[i] = (cc_t) PyInt_AsLong(v);
             if (mode.c_cc[i] == (cc_t) -1 && PyErr_Occurred())
                 return NULL;

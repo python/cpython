@@ -859,11 +859,20 @@ deque_traverse(dequeobject *deque, visitproc visit, void *arg)
 static PyObject *
 deque_copy(PyObject *deque)
 {
+    PyObject *result;
     if (((dequeobject *)deque)->maxlen == -1)
-        return PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "O", deque, NULL);
+        result = PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "O", deque, NULL);
     else
-        return PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "Oi",
+        result = PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "Oi",
             deque, ((dequeobject *)deque)->maxlen, NULL);
+    if (result != NULL && !PyObject_TypeCheck(result, &deque_type)) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s() must return a deque, not %.200s",
+                     Py_TYPE(deque)->tp_name, Py_TYPE(result)->tp_name);
+        Py_DECREF(result);
+        return NULL;
+    }
+    return result;
 }
 
 PyDoc_STRVAR(copy_doc, "Return a shallow copy of a deque.");

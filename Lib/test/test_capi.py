@@ -2,6 +2,7 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 from __future__ import with_statement
+import string
 import sys
 import time
 import random
@@ -101,6 +102,20 @@ class TestPendingCalls(unittest.TestCase):
         self.pendingcalls_wait(l, n)
 
 
+class TestGetIndices(unittest.TestCase):
+
+    def test_get_indices(self):
+        self.assertEqual(_testcapi.get_indices(slice(10L, 20, 1), 100), (0, 10, 20, 1))
+        self.assertEqual(_testcapi.get_indices(slice(10.1, 20, 1), 100), None)
+        self.assertEqual(_testcapi.get_indices(slice(10, 20L, 1), 100), (0, 10, 20, 1))
+        self.assertEqual(_testcapi.get_indices(slice(10, 20.1, 1), 100), None)
+
+        self.assertEqual(_testcapi.get_indices(slice(10L, 20, 1L), 100), (0, 10, 20, 1))
+        self.assertEqual(_testcapi.get_indices(slice(10.1, 20, 1L), 100), None)
+        self.assertEqual(_testcapi.get_indices(slice(10, 20L, 1L), 100), (0, 10, 20, 1))
+        self.assertEqual(_testcapi.get_indices(slice(10, 20.1, 1L), 100), None)
+
+
 @unittest.skipUnless(threading and thread, 'Threading required for this test.')
 class TestThreadState(unittest.TestCase):
 
@@ -126,18 +141,15 @@ class TestThreadState(unittest.TestCase):
         t.join()
 
 
-def test_main():
-    for name in dir(_testcapi):
-        if name.startswith('test_'):
-            test = getattr(_testcapi, name)
-            if support.verbose:
-                print "internal", name
-            try:
-                test()
-            except _testcapi.error:
-                raise support.TestFailed, sys.exc_info()[1]
+class Test_testcapi(unittest.TestCase):
+    locals().update((name, getattr(_testcapi, name))
+                    for name in dir(_testcapi)
+                    if name.startswith('test_') and not name.endswith('_code'))
 
-    support.run_unittest(CAPITest, TestPendingCalls, TestThreadState)
+
+def test_main():
+    support.run_unittest(CAPITest, TestPendingCalls,
+                         TestThreadState, TestGetIndices, Test_testcapi)
 
 if __name__ == "__main__":
     test_main()

@@ -8,6 +8,12 @@ from distutils.command.check import check, HAS_DOCUTILS
 from distutils.tests import support
 from distutils.errors import DistutilsSetupError
 
+try:
+    import pygments
+except ImportError:
+    pygments = None
+
+
 class CheckTestCase(support.LoggingSilencer,
                     support.TempdirManager,
                     unittest.TestCase):
@@ -120,9 +126,15 @@ class CheckTestCase(support.LoggingSilencer,
             pkg_info, dist = self.create_dist(long_description=rest_with_code)
             cmd = check(dist)
             cmd.check_restructuredtext()
-            self.assertEqual(cmd._warnings, 0)
             msgs = cmd._check_rst_data(rest_with_code)
-            self.assertEqual(len(msgs), 0)
+            if pygments is not None:
+                self.assertEqual(len(msgs), 0)
+            else:
+                self.assertEqual(len(msgs), 1)
+                self.assertEqual(
+                    str(msgs[0][1]),
+                    'Cannot analyze code. Pygments package not found.'
+                )
 
     def test_check_all(self):
 

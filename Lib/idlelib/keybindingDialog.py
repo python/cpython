@@ -217,10 +217,12 @@ class GetKeysDialog(Toplevel):
     def OK(self, event=None):
         if self.advanced or self.KeysOK():  # doesn't check advanced string yet
             self.result=self.keyString.get()
+            self.grab_release()
             self.destroy()
 
     def Cancel(self, event=None):
         self.result=''
+        self.grab_release()
         self.destroy()
 
     def KeysOK(self):

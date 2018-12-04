@@ -31,6 +31,10 @@ matrix:
       # compiler here and the other to run the coverage build. Clang is preferred
       # in this instance for its better error messages.
       env: TESTING=cpython
+      addons:
+        apt:
+          packages:
+            - xvfb
     - os: linux
       language: python
       python: 2.7
@@ -91,7 +95,7 @@ script:
   # Check that all symbols exported by libpython start with "Py" or "_Py"
   - make smelly
   # `-r -w` implicitly provided through `make buildbottest`.
-  - make buildbottest TESTOPTS="-j4 -uall,-cpu"
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then XVFB_RUN=xvfb-run; fi; $XVFB_RUN make buildbottest TESTOPTS="-j4 -uall,-cpu"
 
 notifications:
   email: false

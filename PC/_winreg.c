@@ -641,7 +641,7 @@ PyHKEY_AsHKEY(PyObject *ob, HKEY *pHANDLE, BOOL bNoneOK)
         PyHKEYObject *pH = (PyHKEYObject *)ob;
         *pHANDLE = pH->hkey;
     }
-    else if (PyInt_Check(ob) || PyLong_Check(ob)) {
+    else if (_PyAnyInt_Check(ob)) {
         /* We also support integers */
         PyErr_Clear();
         *pHANDLE = (HKEY)PyLong_AsVoidPtr(ob);
@@ -753,8 +753,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
     Py_ssize_t i,j;
     switch (typ) {
         case REG_DWORD:
-            if (value != Py_None &&
-                !(PyInt_Check(value) || PyLong_Check(value)))
+            if (value != Py_None && !_PyAnyInt_Check(value))
                 return FALSE;
             *retDataBuf = (BYTE *)PyMem_NEW(DWORD, 1);
             if (*retDataBuf==NULL){

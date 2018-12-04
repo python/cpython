@@ -76,9 +76,10 @@ if '%build_tkinter%'=='true' (
 )
 if '%build_tkinter%'=='true' (
     if not exist "%tcltkdir%\bin\tcl85%tcl_dbg_ext%.dll" (
-        @rem all and install need to be separate invocations, otherwise nmakehlp is not found on install
+        @rem clean, all and install need to be separate invocations, otherwise nmakehlp is not found on install
         pushd "%tcldir%\win"
-        nmake -f makefile.vc MACHINE=%machine% DEBUG=%debug_flag% INSTALLDIR="%tcltkdir%" clean all
+        nmake -f makefile.vc MACHINE=%machine% DEBUG=%debug_flag% INSTALLDIR="%tcltkdir%" clean
+        nmake -f makefile.vc MACHINE=%machine% DEBUG=%debug_flag% INSTALLDIR="%tcltkdir%" all
         nmake -f makefile.vc MACHINE=%machine% DEBUG=%debug_flag% INSTALLDIR="%tcltkdir%" install
         popd
     )

@@ -1413,6 +1413,38 @@ pool_is_in_list(const poolp target, poolp list)
 
 #endif  /* Py_DEBUG */
 
+static void *
+_PyMem_Malloc(size_t nbytes)
+{
+    if (nbytes > (size_t)PY_SSIZE_T_MAX) {
+        return NULL;
+    }
+    if (nbytes == 0) {
+        nbytes = 1;
+    }
+    return malloc(nbytes);
+}
+
+static void *
+_PyMem_Realloc(void *p, size_t nbytes)
+{
+    if (nbytes > (size_t)PY_SSIZE_T_MAX) {
+        return NULL;
+    }
+    if (nbytes == 0) {
+        nbytes = 1;
+    }
+    return realloc(p, nbytes);
+}
+
+
+static void
+_PyMem_Free(void *p)
+{
+    free(p);
+}
+
+
 /* Let S = sizeof(size_t).  The debug malloc asks for 4*S extra bytes and
    fills them with useful stuff, here calling the underlying malloc's result p:
 
@@ -1479,7 +1511,7 @@ _PyObject_DebugCheckAddress(const void *p)
 
 /* generic debug memory api, with an "id" to identify the API in use */
 void *
-_PyObject_DebugMallocApi(char id, size_t nbytes)
+_PyObject_DebugMallocApi(char api, size_t nbytes)
 {
     uchar *p;           /* base address of malloc'ed block */
     uchar *tail;        /* p + 2*SST + nbytes == pointer to tail pad bytes */
@@ -1491,13 +1523,18 @@ _PyObject_DebugMallocApi(char id, size_t nbytes)
         /* overflow:  can't represent total as a size_t */
         return NULL;
 
-    p = (uchar *)PyObject_Malloc(total);
+    if (api == _PYMALLOC_OBJ_ID) {
+        p = (uchar *)PyObject_Malloc(total);
+    }
+    else {
+        p = (uchar *)_PyMem_Malloc(total);
+    }
     if (p == NULL)
         return NULL;
 
-    /* at p, write size (SST bytes), id (1 byte), pad (SST-1 bytes) */
+    /* at p, write size (SST bytes), api (1 byte), pad (SST-1 bytes) */
     write_size_t(p, nbytes);
-    p[SST] = (uchar)id;
+    p[SST] = (uchar)api;
     memset(p + SST + 1 , FORBIDDENBYTE, SST-1);
 
     if (nbytes > 0)
@@ -1529,7 +1566,12 @@ _PyObject_DebugFreeApi(char api, void *p)
     nbytes += 4*SST;
     if (nbytes > 0)
         memset(q, DEADBYTE, nbytes);
-    PyObject_Free(q);
+    if (api == _PYMALLOC_OBJ_ID) {
+        PyObject_Free(q);
+    }
+    else {
+        _PyMem_Free(q);
+    }
 }
 
 void *
@@ -1561,7 +1603,12 @@ _PyObject_DebugReallocApi(char api, void *p, size_t nbytes)
      * case we didn't get the chance to mark the old memory with DEADBYTE,
      * but we live with that.
      */
-    q = (uchar *)PyObject_Realloc(q - 2*SST, total);
+    if (api == _PYMALLOC_OBJ_ID) {
+        q = (uchar *)PyObject_Realloc(q - 2*SST, total);
+    }
+    else {
+        q = (uchar *)_PyMem_Realloc(q - 2*SST, total);
+    }
     if (q == NULL) {
         if (nbytes <= original_nbytes) {
             /* bpo-31626: the memset() above expects that realloc never fails

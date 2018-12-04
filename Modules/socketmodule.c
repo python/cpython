@@ -4194,7 +4194,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
                         "getaddrinfo() argument 1 must be string or None");
         return NULL;
     }
-    if (PyInt_Check(pobj) || PyLong_Check(pobj)) {
+    if (_PyAnyInt_Check(pobj)) {
         long value = PyLong_AsLong(pobj);
         if (value == -1 && PyErr_Occurred())
             return NULL;
@@ -4249,9 +4249,11 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
         if (single == NULL)
             goto err;
 
-        if (PyList_Append(all, single))
+        if (PyList_Append(all, single)) {
+            Py_DECREF(single);
             goto err;
-        Py_XDECREF(single);
+        }
+        Py_DECREF(single);
     }
     Py_XDECREF(idna);
     if (res0)

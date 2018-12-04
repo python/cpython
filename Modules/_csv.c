@@ -224,7 +224,7 @@ _set_int(const char *name, int *target, PyObject *src, int dflt)
     if (src == NULL)
         *target = dflt;
     else {
-        if (!PyInt_Check(src) && !PyLong_Check(src)) {
+        if (!_PyAnyInt_Check(src)) {
             PyErr_Format(PyExc_TypeError,
                          "\"%s\" must be an integer", name);
             return -1;
@@ -565,24 +565,23 @@ parse_save_field(ReaderObj *self)
 static int
 parse_grow_buff(ReaderObj *self)
 {
-    if (self->field_size == 0) {
-        self->field_size = 4096;
-        if (self->field != NULL)
-            PyMem_Free(self->field);
-        self->field = PyMem_Malloc(self->field_size);
-    }
-    else {
-        if (self->field_size > INT_MAX / 2) {
-            PyErr_NoMemory();
-            return 0;
-        }
-        self->field_size *= 2;
-        self->field = PyMem_Realloc(self->field, self->field_size);
-    }
-    if (self->field == NULL) {
+    unsigned field_size_new;
+    char *field_new;
+
+    assert((unsigned)self->field_size <= INT_MAX);
+
+    field_size_new = self->field_size ? 2 * (unsigned)self->field_size : 4096;
+    if (field_size_new > INT_MAX) {
         PyErr_NoMemory();
         return 0;
     }
+    field_new = (char *)PyMem_Realloc(self->field, field_size_new);
+    if (field_new == NULL) {
+        PyErr_NoMemory();
+        return 0;
+    }
+    self->field = field_new;
+    self->field_size = (int)field_size_new;
     return 1;
 }
 
@@ -1088,31 +1087,24 @@ join_append_data(WriterObj *self, char *field, int quote_empty,
 static int
 join_check_rec_size(WriterObj *self, int rec_len)
 {
+    unsigned rec_size_new;
+    char *rec_new;
 
-    if (rec_len < 0 || rec_len > INT_MAX - MEM_INCR) {
-        PyErr_NoMemory();
-        return 0;
-    }
+    assert(rec_len >= 0);
 
     if (rec_len > self->rec_size) {
-        if (self->rec_size == 0) {
-            self->rec_size = (rec_len / MEM_INCR + 1) * MEM_INCR;
-            if (self->rec != NULL)
-                PyMem_Free(self->rec);
-            self->rec = PyMem_Malloc(self->rec_size);
-        }
-        else {
-            char *old_rec = self->rec;
-
-            self->rec_size = (rec_len / MEM_INCR + 1) * MEM_INCR;
-            self->rec = PyMem_Realloc(self->rec, self->rec_size);
-            if (self->rec == NULL)
-                PyMem_Free(old_rec);
-        }
-        if (self->rec == NULL) {
+        rec_size_new = (unsigned)(rec_len / MEM_INCR + 1) * MEM_INCR;
+        if (rec_size_new > INT_MAX) {
             PyErr_NoMemory();
             return 0;
         }
+        rec_new = (char *)PyMem_Realloc(self->rec, rec_size_new);
+        if (rec_new == NULL) {
+            PyErr_NoMemory();
+            return 0;
+        }
+        self->rec = rec_new;
+        self->rec_size = (int)rec_size_new;
     }
     return 1;
 }
@@ -1452,7 +1444,7 @@ csv_field_size_limit(PyObject *module, PyObject *args)
     if (!PyArg_UnpackTuple(args, "field_size_limit", 0, 1, &new_limit))
         return NULL;
     if (new_limit != NULL) {
-        if (!PyInt_Check(new_limit) && !PyLong_Check(new_limit)) {
+        if (!_PyAnyInt_Check(new_limit)) {
             PyErr_Format(PyExc_TypeError,
                          "limit must be an integer");
             return NULL;

@@ -1,0 +1,3 @@
+``imaplib`` now allows ``MOVE`` command in ``IMAP4.uid()`` (RFC 
+6851: IMAP MOVE Extension) and potentially as a name of supported 
+method of ``IMAP4`` object.

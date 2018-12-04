@@ -917,7 +917,7 @@ def generate_license():
     shutil.copyfileobj(open(os.path.join(srcdir, "LICENSE")), out)
     shutil.copyfileobj(open("crtlicense.txt"), out)
     for name, pat, file in (("bzip2","bzip2-*", "LICENSE"),
-                      ("Berkeley DB", "db-*", "LICENSE"),
+                      ("Berkeley DB", "bsddb-*", "LICENSE"),
                       ("openssl", "openssl-*", "LICENSE"),
                       ("Tcl", "tcl-8*", "license.terms"),
                       ("Tk", "tk-8*", "license.terms"),

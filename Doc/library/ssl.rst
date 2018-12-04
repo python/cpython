@@ -24,6 +24,9 @@ sockets, both client-side and server-side.  This module uses the OpenSSL
 library. It is available on all modern Unix systems, Windows, Mac OS X, and
 probably additional platforms, as long as OpenSSL is installed on that platform.
 
+.. versionchanged:: 2.7.13
+   Updated to support linking with OpenSSL 1.1.0
+
 .. note::
 
    Some behavior may be platform dependent, since calls are made to the
@@ -211,7 +214,7 @@ instead.
 
    The *ciphers* parameter sets the available ciphers for this SSL object.
    It should be a string in the `OpenSSL cipher list format
-   <https://wiki.openssl.org/index.php/Manual:Ciphers(1)#CIPHER_LIST_FORMAT>`_.
+   <https://www.openssl.org/docs/manmaster/man1/ciphers.html>`_.
 
    The parameter ``do_handshake_on_connect`` specifies whether to do the SSL
    handshake automatically after doing a :meth:`socket.connect`, or whether the
@@ -1167,7 +1170,7 @@ to speed up repeated connections from the same clients.
 
    Set the available ciphers for sockets created with this context.
    It should be a string in the `OpenSSL cipher list format
-   <https://wiki.openssl.org/index.php/Manual:Ciphers(1)#CIPHER_LIST_FORMAT>`_.
+   <https://www.openssl.org/docs/manmaster/man1/ciphers.html>`_.
    If no cipher can be selected (because compile-time options or other
    configuration forbids use of all the specified ciphers), an
    :class:`SSLError` will be raised.
@@ -1392,7 +1395,7 @@ message with one of the parts, you can decrypt it with the other part, and
 
 A certificate contains information about two principals.  It contains the name
 of a *subject*, and the subject's public key.  It also contains a statement by a
-second principal, the *issuer*, that the subject is who he claims to be, and
+second principal, the *issuer*, that the subject is who they claim to be, and
 that this is indeed the subject's public key.  The issuer's statement is signed
 with the issuer's private key, which only the issuer knows.  However, anyone can
 verify the issuer's statement by finding the issuer's public key, decrypting the

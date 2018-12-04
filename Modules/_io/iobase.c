@@ -177,17 +177,25 @@ _PyIOBase_check_closed(PyObject *self, PyObject *args)
 static PyObject *
 iobase_close(PyObject *self, PyObject *args)
 {
-    PyObject *res;
+    PyObject *res, *exc, *val, *tb;
+    int rc;
 
     if (IS_CLOSED(self))
         Py_RETURN_NONE;
 
     res = PyObject_CallMethodObjArgs(self, _PyIO_str_flush, NULL);
-    PyObject_SetAttrString(self, "__IOBase_closed", Py_True);
+
+    PyErr_Fetch(&exc, &val, &tb);
+    rc = PyObject_SetAttrString(self, "__IOBase_closed", Py_True);
+    _PyErr_ReplaceException(exc, val, tb);
+    if (rc < 0) {
+        Py_CLEAR(res);
+    }
+
     if (res == NULL) {
         return NULL;
     }
-    Py_XDECREF(res);
+    Py_DECREF(res);
     Py_RETURN_NONE;
 }
 

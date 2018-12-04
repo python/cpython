@@ -174,20 +174,21 @@ Pattern examples:
 import StringIO
 import datetime
 import getopt
+import imp
 import json
+import math
 import os
+import platform
 import random
 import re
 import shutil
 import sys
+import sysconfig
+import tempfile
 import time
 import traceback
-import warnings
 import unittest
-import tempfile
-import imp
-import platform
-import sysconfig
+import warnings
 
 
 # Some times __path__ and __file__ are not absolute (e.g. while running from
@@ -240,6 +241,7 @@ SKIPPED = -2
 RESOURCE_DENIED = -3
 INTERRUPTED = -4
 CHILD_ERROR = -5   # error in a child process
+TEST_DID_NOT_RUN = -6   # error in a child process
 
 # Minimum duration of a test to display its duration or to mention that
 # the test is running in background
@@ -270,17 +272,25 @@ def usage(code, msg=''):
 
 
 def format_duration(seconds):
-    if seconds < 1.0:
-        return '%.0f ms' % (seconds * 1e3)
-    if seconds < 60.0:
-        return '%.0f sec' % seconds
+    ms = int(math.ceil(seconds * 1e3))
+    seconds, ms = divmod(ms, 1000)
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
 
-    minutes, seconds = divmod(seconds, 60.0)
-    hours, minutes = divmod(minutes, 60.0)
+    parts = []
     if hours:
-        return '%.0f hour %.0f min' % (hours, minutes)
-    else:
-        return '%.0f min %.0f sec' % (minutes, seconds)
+        parts.append('%s hour' % hours)
+    if minutes:
+        parts.append('%s min' % minutes)
+    if seconds:
+        parts.append('%s sec' % seconds)
+    if ms:
+        parts.append('%s ms' % ms)
+    if not parts:
+        return '0 ms'
+
+    parts = parts[:2]
+    return ' '.join(parts)
 
 
 _FORMAT_TEST_RESULT = {
@@ -291,6 +301,7 @@ _FORMAT_TEST_RESULT = {
     RESOURCE_DENIED: '%s skipped (resource denied)',
     INTERRUPTED: '%s interrupted',
     CHILD_ERROR: '%s crashed',
+    TEST_DID_NOT_RUN: '%s run no tests',
 }
 
 
@@ -507,6 +518,15 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         except ValueError:
             pass
 
+    if huntrleaks:
+        warmup, repetitions, _ = huntrleaks
+        if warmup < 1 or repetitions < 1:
+            msg = ("Invalid values for the --huntrleaks/-R parameters. The "
+                   "number of warmups and repetitions must be at least 1 "
+                   "each (1:1).")
+            print >>sys.stderr, msg
+            sys.exit(2)
+
     if slaveargs is not None:
         args, kwargs = json.loads(slaveargs)
         if kwargs['huntrleaks']:
@@ -530,6 +550,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     resource_denieds = []
     environment_changed = []
     rerun = []
+    run_no_tests = []
+    first_result = None
     interrupted = False
 
     if findleaks:
@@ -577,6 +599,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             nottests.add(arg)
         args = []
 
+    if huntrleaks:
+        # FIXME: bpo-31731: test_io hangs with --huntrleaks
+        print("Warning: bpo-31731: test_io hangs with --huntrleaks: "
+              "exclude the test")
+        nottests.add('test_io')
+
     display_header = (verbose or header or not (quiet or single or tests or args)) and (not pgo)
     alltests = findtests(testdir, stdtests, nottests)
     selected = tests or args or alltests
@@ -619,6 +647,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         elif ok == RESOURCE_DENIED:
             skipped.append(test)
             resource_denieds.append(test)
+        elif ok == TEST_DID_NOT_RUN:
+            run_no_tests.append(test)
         elif ok != INTERRUPTED:
             raise ValueError("invalid test result: %r" % ok)
 
@@ -674,6 +704,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         ncpu = cpu_count()
         if ncpu:
             print "== CPU count:", ncpu
+
+    if huntrleaks:
+        warmup, repetitions, _ = huntrleaks
+        if warmup < 3:
+            print("WARNING: Running tests with --huntrleaks/-R and less than "
+                  "3 warmup repetitions can give false positives!")
 
     if randomize:
         random.seed(random_seed)
@@ -802,7 +838,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     if (ok not in (CHILD_ERROR, INTERRUPTED)
                         and test_time >= PROGRESS_MIN_TIME
                         and not pgo):
-                        text += ' (%.0f sec)' % test_time
+                        text += ' (%s)' % format_duration(test_time)
                     running = get_running(workers)
                     if running and not pgo:
                         text += ' -- running: %s' % ', '.join(running)
@@ -894,6 +930,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             result.append("FAILURE")
         elif fail_env_changed and environment_changed:
             result.append("ENV CHANGED")
+        elif not any((good, bad, skipped, interrupted, environment_changed)):
+            result.append("NO TEST RUN")
 
         if interrupted:
             result.append("INTERRUPTED")
@@ -901,7 +939,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         if not result:
             result.append("SUCCESS")
 
-        return ', '.join(result)
+        result = ', '.join(result)
+        if first_result:
+            result = '%s then %s' % (first_result, result)
+        return result
 
 
     def display_result():
@@ -960,14 +1001,21 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 print "expected to get skipped on", plat + "."
 
         if rerun:
-            print
+            print("")
             print("%s:" % count(len(rerun), "re-run test"))
             printlist(rerun)
+
+        if run_no_tests:
+            print("")
+            print("%s run no tests:" % count(len(run_no_tests), "test"))
+            printlist(run_no_tests)
 
 
     display_result()
 
     if verbose2 and bad:
+        first_result = get_tests_result()
+
         print
         print "Re-running failed tests in verbose mode"
         rerun = bad[:]
@@ -1073,6 +1121,7 @@ def runtest(test, verbose, quiet,
         ENV_CHANGED      test failed because it changed the execution environment
         FAILED           test failed
         PASSED           test passed
+        EMPTY_TEST_SUITE test ran no subtests.
     """
 
     support.verbose = verbose  # Tell tests to be moderately quiet
@@ -1281,11 +1330,12 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False, testdir=Non
                 # being imported.  For tests based on unittest or doctest,
                 # explicitly invoke their test_main() function (if it exists).
                 indirect_test = getattr(the_module, "test_main", None)
-                if indirect_test is not None:
-                    indirect_test()
                 if huntrleaks:
                     refleak = dash_R(the_module, test, indirect_test,
                         huntrleaks)
+                else:
+                    if indirect_test is not None:
+                        indirect_test()
                 test_time = time.time() - start_time
             post_test_cleanup()
         finally:
@@ -1307,6 +1357,8 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False, testdir=Non
             print >>sys.stderr, "test", test, "failed --", msg
         sys.stderr.flush()
         return FAILED, test_time
+    except support.TestDidNotRun:
+        return TEST_DID_NOT_RUN, test_time
     except:
         type, value = sys.exc_info()[:2]
         if not pgo:

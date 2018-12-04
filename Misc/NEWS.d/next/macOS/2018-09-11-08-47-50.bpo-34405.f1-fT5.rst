@@ -1,0 +1,1 @@
+Update to OpenSSL 1.0.2p for macOS installer builds.
