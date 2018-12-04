@@ -6626,7 +6626,7 @@ $as_echo "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
       LTOFLAGS="$LTOFLAGS -g"
   fi
 
-  BASECFLAGS="$BASECFLAGS $LTOFLAGS"
+  CFLAGS_NODIST="$CFLAGS_NODIST $LTOFLAGS"
   LDFLAGS="$LDFLAGS $LTOFLAGS"
 fi
 
