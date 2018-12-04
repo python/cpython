@@ -2075,6 +2075,22 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsSubclass(MyDefDict, collections.defaultdict)
         self.assertNotIsSubclass(collections.defaultdict, MyDefDict)
 
+    def test_ordereddict_instantiation(self):
+        self.assertIs(type(typing.OrderedDict()), collections.OrderedDict)
+        self.assertIs(type(typing.OrderedDict[KT, VT]()), collections.OrderedDict)
+        self.assertIs(type(typing.OrderedDict[str, int]()), collections.OrderedDict)
+
+    def test_ordereddict_subclass(self):
+
+        class MyOrdDict(typing.OrderedDict[str, int]):
+            pass
+
+        od = MyOrdDict()
+        self.assertIsInstance(od, MyOrdDict)
+
+        self.assertIsSubclass(MyOrdDict, collections.OrderedDict)
+        self.assertNotIsSubclass(collections.OrderedDict, MyOrdDict)
+
     @skipUnless(sys.version_info >= (3, 3), 'ChainMap was added in 3.3')
     def test_chainmap_instantiation(self):
         self.assertIs(type(typing.ChainMap()), collections.ChainMap)

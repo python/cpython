@@ -81,13 +81,13 @@ class LockTests(test_utils.TestCase):
 
         @asyncio.coroutine
         def test(lock):
-            yield from asyncio.sleep(0.01, loop=loop)
+            yield from asyncio.sleep(0.01)
             self.assertFalse(lock.locked())
             with self.assertWarns(DeprecationWarning):
                 with (yield from lock) as _lock:
                     self.assertIs(_lock, None)
                     self.assertTrue(lock.locked())
-                    yield from asyncio.sleep(0.01, loop=loop)
+                    yield from asyncio.sleep(0.01)
                     self.assertTrue(lock.locked())
                 self.assertFalse(lock.locked())
 
@@ -819,8 +819,7 @@ class ConditionTests(test_utils.TestCase):
             condition = asyncio.Condition(loop=loop)
             async with condition:
                 with self.assertRaises(asyncio.TimeoutError):
-                    await asyncio.wait_for(condition.wait(), timeout=0.5,
-                                           loop=loop)
+                    await asyncio.wait_for(condition.wait(), timeout=0.5)
 
         loop.run_until_complete(task_timeout())
 

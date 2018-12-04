@@ -31,7 +31,7 @@ be used for each of them.  A concrete object belonging to any of these
 categories is called a :term:`file object`.  Other common terms are *stream*
 and *file-like object*.
 
-Independently of its category, each concrete stream object will also have
+Independent of its category, each concrete stream object will also have
 various capabilities: it can be read-only, write-only, or read-write. It can
 also allow arbitrary random access (seeking forwards or backwards to any
 location), or only sequential access (for example in the case of a socket or
@@ -39,7 +39,7 @@ pipe).
 
 All streams are careful about the type of data you give to them.  For example
 giving a :class:`str` object to the ``write()`` method of a binary stream
-will raise a ``TypeError``.  So will giving a :class:`bytes` object to the
+will raise a :exc:`TypeError`.  So will giving a :class:`bytes` object to the
 ``write()`` method of a text stream.
 
 .. versionchanged:: 3.3

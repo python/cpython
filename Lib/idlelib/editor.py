@@ -2,9 +2,7 @@ import importlib.abc
 import importlib.util
 import os
 import platform
-import re
 import string
-import sys
 import tokenize
 import traceback
 import webbrowser
@@ -50,7 +48,6 @@ class EditorWindow(object):
     from idlelib.undo import UndoDelegator
     from idlelib.iomenu import IOBinding, encoding
     from idlelib import mainmenu
-    from tkinter import Toplevel, EventType
     from idlelib.statusbar import MultiStatusBar
     from idlelib.autocomplete import AutoComplete
     from idlelib.autoexpand import AutoExpand
@@ -59,6 +56,7 @@ class EditorWindow(object):
     from idlelib.paragraph import FormatParagraph
     from idlelib.parenmatch import ParenMatch
     from idlelib.rstrip import Rstrip
+    from idlelib.squeezer import Squeezer
     from idlelib.zoomheight import ZoomHeight
 
     filesystemencoding = sys.getfilesystemencoding()  # for file names
@@ -319,6 +317,9 @@ class EditorWindow(object):
         text.bind("<<zoom-height>>", self.ZoomHeight(self).zoom_height_event)
         text.bind("<<toggle-code-context>>",
                   self.CodeContext(self).toggle_code_context_event)
+        squeezer = self.Squeezer(self)
+        text.bind("<<squeeze-current-text>>",
+                  squeezer.squeeze_current_text_event)
 
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so diplayable in Tk."""

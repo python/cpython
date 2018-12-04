@@ -602,6 +602,13 @@ class NonConnectingTests(unittest.TestCase):
         self.assertRaises(OSError, smtplib.SMTP,
                           "localhost:bogus")
 
+    def testSockAttributeExists(self):
+        # check that sock attribute is present outside of a connect() call
+        # (regression test, the previous behavior raised an
+        #  AttributeError: 'SMTP' object has no attribute 'sock')
+        with smtplib.SMTP() as smtp:
+            self.assertIsNone(smtp.sock)
+
 
 class DefaultArgumentsTests(unittest.TestCase):
 
@@ -798,7 +805,7 @@ class SimSMTPChannel(smtpd.SMTPChannel):
             try:
                 user, hashed_pass = logpass.split()
             except ValueError as e:
-                self.push('535 Splitting response {!r} into user and password'
+                self.push('535 Splitting response {!r} into user and password '
                           'failed: {}'.format(logpass, e))
                 return False
             valid_hashed_pass = hmac.HMAC(

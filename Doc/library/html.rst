@@ -24,7 +24,7 @@ This module defines utilities to manipulate HTML.
 .. function:: unescape(s)
 
    Convert all named and numeric character references (e.g. ``&gt;``,
-   ``&#62;``, ``&x3e;``) in the string *s* to the corresponding unicode
+   ``&#62;``, ``&#x3e;``) in the string *s* to the corresponding Unicode
    characters.  This function uses the rules defined by the HTML 5 standard
    for both valid and invalid character references, and the :data:`list of
    HTML 5 named character references <html.entities.html5>`.

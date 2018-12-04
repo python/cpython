@@ -13,6 +13,7 @@ import sys
 import os
 import pickle
 import random
+import re
 import struct
 import unittest
 
@@ -302,6 +303,8 @@ class TestTimeZone(unittest.TestCase):
         self.assertEqual('UTC+09:30', timezone(9.5 * HOUR).tzname(None))
         self.assertEqual('UTC-00:01', timezone(timedelta(minutes=-1)).tzname(None))
         self.assertEqual('XYZ', timezone(-5 * HOUR, 'XYZ').tzname(None))
+        # bpo-34482: Check that surrogates are handled properly.
+        self.assertEqual('\ud800', timezone(ZERO, '\ud800').tzname(None))
 
         # Sub-minute offsets:
         self.assertEqual('UTC+01:06:40', timezone(timedelta(0, 4000)).tzname(None))
@@ -893,19 +896,50 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         class BadInt(int):
             def __mul__(self, other):
                 return Prod()
+            def __rmul__(self, other):
+                return Prod()
+            def __floordiv__(self, other):
+                return Prod()
+            def __rfloordiv__(self, other):
+                return Prod()
 
         class Prod:
+            def __add__(self, other):
+                return Sum()
             def __radd__(self, other):
                 return Sum()
 
         class Sum(int):
             def __divmod__(self, other):
-                # negative remainder
-                return (0, -1)
+                return divmodresult
 
-        timedelta(microseconds=BadInt(1))
-        timedelta(hours=BadInt(1))
-        timedelta(weeks=BadInt(1))
+        for divmodresult in [None, (), (0, 1, 2), (0, -1)]:
+            with self.subTest(divmodresult=divmodresult):
+                # The following examples should not crash.
+                try:
+                    timedelta(microseconds=BadInt(1))
+                except TypeError:
+                    pass
+                try:
+                    timedelta(hours=BadInt(1))
+                except TypeError:
+                    pass
+                try:
+                    timedelta(weeks=BadInt(1))
+                except (TypeError, ValueError):
+                    pass
+                try:
+                    timedelta(1) * BadInt(1)
+                except (TypeError, ValueError):
+                    pass
+                try:
+                    BadInt(1) * timedelta(1)
+                except TypeError:
+                    pass
+                try:
+                    timedelta(1) // BadInt(1)
+                except TypeError:
+                    pass
 
 
 #############################################################################
@@ -1306,6 +1340,12 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 t.strftime(f)
             except ValueError:
                 pass
+
+        # bpo-34482: Check that surrogates don't cause a crash.
+        try:
+            t.strftime('%y\ud800%m')
+        except UnicodeEncodeError:
+            pass
 
         #check that this standard extension works
         t.strftime("%f")
@@ -1746,6 +1786,9 @@ class TestDateTime(TestDate):
         self.assertEqual(t.isoformat('T'), "0001-02-03T04:05:01.000123")
         self.assertEqual(t.isoformat(' '), "0001-02-03 04:05:01.000123")
         self.assertEqual(t.isoformat('\x00'), "0001-02-03\x0004:05:01.000123")
+        # bpo-34482: Check that surrogates are handled properly.
+        self.assertEqual(t.isoformat('\ud800'),
+                         "0001-02-03\ud80004:05:01.000123")
         self.assertEqual(t.isoformat(timespec='hours'), "0001-02-03T04")
         self.assertEqual(t.isoformat(timespec='minutes'), "0001-02-03T04:05")
         self.assertEqual(t.isoformat(timespec='seconds'), "0001-02-03T04:05:01")
@@ -1754,6 +1797,8 @@ class TestDateTime(TestDate):
         self.assertEqual(t.isoformat(timespec='auto'), "0001-02-03T04:05:01.000123")
         self.assertEqual(t.isoformat(sep=' ', timespec='minutes'), "0001-02-03 04:05")
         self.assertRaises(ValueError, t.isoformat, timespec='foo')
+        # bpo-34482: Check that surrogates are handled properly.
+        self.assertRaises(ValueError, t.isoformat, timespec='\ud800')
         # str is ISO format with the separator forced to a blank.
         self.assertEqual(str(t), "0001-02-03 04:05:01.000123")
 
@@ -2285,6 +2330,19 @@ class TestDateTime(TestDate):
         self.assertIs(type(expected), self.theclass)
         self.assertIs(type(got), self.theclass)
 
+        # bpo-34482: Check that surrogates are handled properly.
+        inputs = [
+            ('2004-12-01\ud80013:02:47.197', '%Y-%m-%d\ud800%H:%M:%S.%f'),
+            ('2004\ud80012-01 13:02:47.197', '%Y\ud800%m-%d %H:%M:%S.%f'),
+            ('2004-12-01 13:02\ud80047.197', '%Y-%m-%d %H:%M\ud800%S.%f'),
+        ]
+        for string, format in inputs:
+            with self.subTest(string=string, format=format):
+                expected = _strptime._strptime_datetime(self.theclass, string,
+                                                        format)
+                got = self.theclass.strptime(string, format)
+                self.assertEqual(expected, got)
+
         strptime = self.theclass.strptime
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
         self.assertEqual(strptime("-0002", "%z").utcoffset(), -2 * MINUTE)
@@ -2351,6 +2409,12 @@ class TestDateTime(TestDate):
             tz = timezone(-timedelta(hours=2, seconds=s, microseconds=us))
             t = t.replace(tzinfo=tz)
             self.assertEqual(t.strftime("%z"), "-0200" + z)
+
+        # bpo-34482: Check that surrogates don't cause a crash.
+        try:
+            t.strftime('%y\ud800%m %H\ud800%M')
+        except UnicodeEncodeError:
+            pass
 
     def test_extract(self):
         dt = self.theclass(2002, 3, 4, 18, 45, 3, 1234)
@@ -2676,6 +2740,14 @@ class TestDateTime(TestDate):
                 with self.assertRaises(ValueError):
                     self.theclass.fromisoformat(bad_str)
 
+    def test_fromisoformat_fails_surrogate(self):
+        # Test that when fromisoformat() fails with a surrogate character as
+        # the separator, the error message contains the original string
+        dtstr = "2018-01-03\ud80001:0113"
+
+        with self.assertRaisesRegex(ValueError, re.escape(repr(dtstr))):
+            self.theclass.fromisoformat(dtstr)
+
     def test_fromisoformat_utc(self):
         dt_str = '2014-04-19T13:21:13+00:00'
         dt = self.theclass.fromisoformat(dt_str)
@@ -2869,6 +2941,8 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.isoformat(timespec='microseconds'), "12:34:56.123456")
         self.assertEqual(t.isoformat(timespec='auto'), "12:34:56.123456")
         self.assertRaises(ValueError, t.isoformat, timespec='monkey')
+        # bpo-34482: Check that surrogates are handled properly.
+        self.assertRaises(ValueError, t.isoformat, timespec='\ud800')
 
         t = self.theclass(hour=12, minute=34, second=56, microsecond=999500)
         self.assertEqual(t.isoformat(timespec='milliseconds'), "12:34:56.999")
@@ -2918,6 +2992,12 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime('%H %M %S %f'), "01 02 03 000004")
         # A naive object replaces %z and %Z with empty strings.
         self.assertEqual(t.strftime("'%z' '%Z'"), "'' ''")
+
+        # bpo-34482: Check that surrogates don't cause a crash.
+        try:
+            t.strftime('%H\ud800%M')
+        except UnicodeEncodeError:
+            pass
 
     def test_format(self):
         t = self.theclass(1, 2, 3, 4)

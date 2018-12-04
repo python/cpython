@@ -137,7 +137,7 @@ Running and stopping the loop
 
    Close the event loop.
 
-   The loop must be running when this function is called.
+   The loop must not be running when this function is called.
    Any pending callbacks will be discarded.
 
    This method clears all queues and shuts down the executor, but does
@@ -510,7 +510,7 @@ Opening network connections
    See the documentation of the :meth:`loop.create_connection` method
    for information about arguments to this method.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -630,7 +630,7 @@ Creating network servers
    See the documentation of the :meth:`loop.create_server` method
    for information about arguments to this method.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -756,7 +756,7 @@ Watching file descriptors
    writing.
 
    Use :func:`functools.partial` :ref:`to pass keyword arguments
-   <asyncio-pass-keywords>` to *func*.
+   <asyncio-pass-keywords>` to *callback*.
 
 .. method:: loop.remove_writer(fd)
 
@@ -970,7 +970,7 @@ Unix signals
    Raise :exc:`RuntimeError` if there is a problem setting up the handler.
 
    Use :func:`functools.partial` :ref:`to pass keyword arguments
-   <asyncio-pass-keywords>` to *func*.
+   <asyncio-pass-keywords>` to *callback*.
 
 .. method:: loop.remove_signal_handler(sig)
 
@@ -979,7 +979,7 @@ Unix signals
    Return ``True`` if the signal handler was removed, or ``False`` if
    no handler was set for the given signal.
 
-Availability: Unix.
+   .. availability:: Unix.
 
 .. seealso::
 
@@ -1423,23 +1423,14 @@ on all platforms.
       asyncio.set_event_loop(loop)
 
 
-   Availability: Unix, Windows.
+   .. availability:: Unix, Windows.
 
 
 .. class:: ProactorEventLoop
 
    An event loop for Windows that uses "I/O Completion Ports" (IOCP).
 
-   Availability: Windows.
-
-   An example how to use :class:`ProactorEventLoop` on Windows::
-
-        import asyncio
-        import sys
-
-        if sys.platform == 'win32':
-            loop = asyncio.ProactorEventLoop()
-            asyncio.set_event_loop(loop)
+   .. availability:: Windows.
 
    .. seealso::
 

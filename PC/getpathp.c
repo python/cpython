@@ -80,7 +80,7 @@
 
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include "osdefs.h"
 #include <wchar.h>
 
@@ -980,6 +980,10 @@ calculate_path_impl(const _PyCoreConfig *core_config,
 done:
     config->prefix = _PyMem_RawWcsdup(prefix);
     if (config->prefix == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
+    config->exec_prefix = _PyMem_RawWcsdup(prefix);
+    if (config->exec_prefix == NULL) {
         return _Py_INIT_NO_MEMORY();
     }
 

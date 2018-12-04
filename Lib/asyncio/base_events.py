@@ -18,7 +18,6 @@ import collections.abc
 import concurrent.futures
 import heapq
 import itertools
-import logging
 import os
 import socket
 import subprocess
@@ -167,6 +166,17 @@ def _run_until_complete_cb(fut):
             # stop it.
             return
     futures._get_loop(fut).stop()
+
+
+if hasattr(socket, 'TCP_NODELAY'):
+    def _set_nodelay(sock):
+        if (sock.family in {socket.AF_INET, socket.AF_INET6} and
+                sock.type == socket.SOCK_STREAM and
+                sock.proto == socket.IPPROTO_TCP):
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+else:
+    def _set_nodelay(sock):
+        pass
 
 
 class _SendfileFallbackProtocol(protocols.Protocol):
@@ -477,10 +487,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     def _asyncgen_finalizer_hook(self, agen):
         self._asyncgens.discard(agen)
         if not self.is_closed():
-            self.create_task(agen.aclose())
-            # Wake up the loop if the finalizer was called from
-            # a different thread.
-            self._write_to_self()
+            self.call_soon_threadsafe(self.create_task, agen.aclose())
 
     def _asyncgen_firstiter_hook(self, agen):
         if self._asyncgens_shutdown_called:
@@ -1719,28 +1726,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             when = self._scheduled[0]._when
             timeout = min(max(0, when - self.time()), MAXIMUM_SELECT_TIMEOUT)
 
-        if self._debug and timeout != 0:
-            t0 = self.time()
-            event_list = self._selector.select(timeout)
-            dt = self.time() - t0
-            if dt >= 1.0:
-                level = logging.INFO
-            else:
-                level = logging.DEBUG
-            nevent = len(event_list)
-            if timeout is None:
-                logger.log(level, 'poll took %.3f ms: %s events',
-                           dt * 1e3, nevent)
-            elif nevent:
-                logger.log(level,
-                           'poll %.3f ms took %.3f ms: %s events',
-                           timeout * 1e3, dt * 1e3, nevent)
-            elif dt >= 1.0:
-                logger.log(level,
-                           'poll %.3f ms took %.3f ms: timeout',
-                           timeout * 1e3, dt * 1e3)
-        else:
-            event_list = self._selector.select(timeout)
+        event_list = self._selector.select(timeout)
         self._process_events(event_list)
 
         # Handle 'later' callbacks that are ready.

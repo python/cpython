@@ -42,7 +42,9 @@ def all_tasks(loop=None):
     """Return a set of all tasks for the loop."""
     if loop is None:
         loop = events.get_running_loop()
-    return {t for t in _all_tasks
+    # NB: set(_all_tasks) is required to protect
+    # from https://bugs.python.org/issue34970 bug
+    return {t for t in list(_all_tasks)
             if futures._get_loop(t) is loop and not t.done()}
 
 
@@ -52,7 +54,9 @@ def _all_tasks_compat(loop=None):
     # method.
     if loop is None:
         loop = events.get_event_loop()
-    return {t for t in _all_tasks if futures._get_loop(t) is loop}
+    # NB: set(_all_tasks) is required to protect
+    # from https://bugs.python.org/issue34970 bug
+    return {t for t in list(_all_tasks) if futures._get_loop(t) is loop}
 
 
 def _set_task_name(task, name):
@@ -382,7 +386,11 @@ async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
         raise ValueError(f'Invalid return_when value: {return_when}')
 
     if loop is None:
-        loop = events.get_event_loop()
+        loop = events.get_running_loop()
+    else:
+        warnings.warn("The loop argument is deprecated and scheduled for "
+                      "removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
 
     fs = {ensure_future(f, loop=loop) for f in set(fs)}
 
@@ -408,7 +416,11 @@ async def wait_for(fut, timeout, *, loop=None):
     This function is a coroutine.
     """
     if loop is None:
-        loop = events.get_event_loop()
+        loop = events.get_running_loop()
+    else:
+        warnings.warn("The loop argument is deprecated and scheduled for "
+                      "removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
 
     if timeout is None:
         return await fut
@@ -585,7 +597,12 @@ async def sleep(delay, result=None, *, loop=None):
         return result
 
     if loop is None:
-        loop = events.get_event_loop()
+        loop = events.get_running_loop()
+    else:
+        warnings.warn("The loop argument is deprecated and scheduled for "
+                      "removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
+
     future = loop.create_future()
     h = loop.call_later(delay,
                         futures._set_result_unless_cancelled,

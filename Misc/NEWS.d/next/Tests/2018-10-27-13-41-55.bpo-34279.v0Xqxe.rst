@@ -1,0 +1,3 @@
+regrtest issue a warning when no tests have been executed in a particular
+test file. Also, a new final result state is issued if no test have been
+executed across all test files. Patch by Pablo Galindo.

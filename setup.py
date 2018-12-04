@@ -678,7 +678,9 @@ class PyBuildExt(build_ext):
         # atexit
         exts.append( Extension("atexit", ["atexitmodule.c"]) )
         # _json speedups
-        exts.append( Extension("_json", ["_json.c"]) )
+        exts.append( Extension("_json", ["_json.c"],
+                               # pycore_accu.h requires Py_BUILD_CORE_BUILTIN
+                               extra_compile_args=['-DPy_BUILD_CORE_BUILTIN']) )
         # Python C API test module
         exts.append( Extension('_testcapi', ['_testcapimodule.c'],
                                depends=['testcapi_long.h']) )

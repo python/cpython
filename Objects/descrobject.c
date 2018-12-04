@@ -1,7 +1,9 @@
 /* Descriptors -- a new, flexible way to describe attributes */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
+#include "pycore_tupleobject.h"
 #include "structmember.h" /* Why is this not included in Python.h? */
 
 /*[clinic input]
@@ -247,7 +249,7 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
     }
 
     result = _PyMethodDef_RawFastCallDict(descr->d_method, self,
-                                          &PyTuple_GET_ITEM(args, 1), nargs - 1,
+                                          &_PyTuple_ITEMS(args)[1], nargs - 1,
                                           kwargs);
     result = _Py_CheckFunctionResult((PyObject *)descr, result, NULL);
     return result;
@@ -331,7 +333,7 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
     }
 
     result = _PyMethodDef_RawFastCallDict(descr->d_method, self,
-                                          &PyTuple_GET_ITEM(args, 1), argc - 1,
+                                          &_PyTuple_ITEMS(args)[1], argc - 1,
                                           kwds);
     result = _Py_CheckFunctionResult((PyObject *)descr, result, NULL);
     return result;
@@ -344,7 +346,7 @@ wrapperdescr_raw_call(PyWrapperDescrObject *descr, PyObject *self,
     wrapperfunc wrapper = descr->d_base->wrapper;
 
     if (descr->d_base->flags & PyWrapperFlag_KEYWORDS) {
-        wrapperfunc_kwds wk = (wrapperfunc_kwds)wrapper;
+        wrapperfunc_kwds wk = (wrapperfunc_kwds)(void(*)(void))wrapper;
         return (*wk)(self, args, descr->d_wrapped, kwds);
     }
 
@@ -439,7 +441,7 @@ calculate_qualname(PyDescrObject *descr)
 }
 
 static PyObject *
-descr_get_qualname(PyDescrObject *descr)
+descr_get_qualname(PyDescrObject *descr, void *Py_UNUSED(ignored))
 {
     if (descr->d_qualname == NULL)
         descr->d_qualname = calculate_qualname(descr);
@@ -1105,7 +1107,7 @@ static PyMemberDef wrapper_members[] = {
 };
 
 static PyObject *
-wrapper_objclass(wrapperobject *wp)
+wrapper_objclass(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
     PyObject *c = (PyObject *)PyDescr_TYPE(wp->descr);
 
@@ -1114,7 +1116,7 @@ wrapper_objclass(wrapperobject *wp)
 }
 
 static PyObject *
-wrapper_name(wrapperobject *wp)
+wrapper_name(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
     const char *s = wp->descr->d_base->name;
 
@@ -1122,21 +1124,21 @@ wrapper_name(wrapperobject *wp)
 }
 
 static PyObject *
-wrapper_doc(wrapperobject *wp, void *closure)
+wrapper_doc(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
     return _PyType_GetDocFromInternalDoc(wp->descr->d_base->name, wp->descr->d_base->doc);
 }
 
 static PyObject *
-wrapper_text_signature(wrapperobject *wp, void *closure)
+wrapper_text_signature(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
     return _PyType_GetTextSignatureFromInternalDoc(wp->descr->d_base->name, wp->descr->d_base->doc);
 }
 
 static PyObject *
-wrapper_qualname(wrapperobject *wp)
+wrapper_qualname(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
-    return descr_get_qualname((PyDescrObject *)wp->descr);
+    return descr_get_qualname((PyDescrObject *)wp->descr, NULL);
 }
 
 static PyGetSetDef wrapper_getsets[] = {
@@ -1331,42 +1333,19 @@ property_dealloc(PyObject *self)
 static PyObject *
 property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
-    static PyObject * volatile cached_args = NULL;
-    PyObject *args;
-    PyObject *ret;
-    propertyobject *gs = (propertyobject *)self;
-
     if (obj == NULL || obj == Py_None) {
         Py_INCREF(self);
         return self;
     }
+
+    propertyobject *gs = (propertyobject *)self;
     if (gs->prop_get == NULL) {
         PyErr_SetString(PyExc_AttributeError, "unreadable attribute");
         return NULL;
     }
-    args = cached_args;
-    cached_args = NULL;
-    if (!args) {
-        args = PyTuple_New(1);
-        if (!args)
-            return NULL;
-        _PyObject_GC_UNTRACK(args);
-    }
-    Py_INCREF(obj);
-    PyTuple_SET_ITEM(args, 0, obj);
-    ret = PyObject_Call(gs->prop_get, args, NULL);
-    if (cached_args == NULL && Py_REFCNT(args) == 1) {
-        assert(PyTuple_GET_SIZE(args) == 1);
-        assert(PyTuple_GET_ITEM(args, 0) == obj);
-        cached_args = args;
-        Py_DECREF(obj);
-    }
-    else {
-        assert(Py_REFCNT(args) >= 1);
-        _PyObject_GC_TRACK(args);
-        Py_DECREF(args);
-    }
-    return ret;
+
+    PyObject *args[1] = {obj};
+    return _PyObject_FastCall(gs->prop_get, args, 1);
 }
 
 static int
