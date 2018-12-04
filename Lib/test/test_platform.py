@@ -3,7 +3,9 @@ import platform
 import subprocess
 import sys
 import sysconfig
+import tempfile
 import unittest
+from unittest import mock
 
 from test import support
 
@@ -313,6 +315,29 @@ class PlatformTest(unittest.TestCase):
         self.assertLess(V('0.4'), V('0.4.0'))
         self.assertLess(V('1.13++'), V('5.5.kw'))
         self.assertLess(V('0.960923'), V('2.2beta29'))
+
+    def test_libc_ver(self):
+        with mock.patch('os.confstr', create=True, return_value='mock 1.0'):
+            self.assertEqual(platform.libc_ver(), ('mock', '1.0'))
+
+            tmpname = tempfile.mktemp()
+            try:
+                for data, expected in (
+                    (b'__libc_init', ('libc', '')),
+                    (b'GLIBC_2.9xxxGLIBC_2.10', ('glibc', '2.10')),
+                    (b'libc.so.1.2.5', ('libc', '1.2.5')),
+                    (b'libc_pthread.so.1.2.5', ('libc', '1.2.5_pthread')),
+                    (b'', ('', '')),
+                ):
+                    with open(tmpname, 'wb') as fp:
+                        fp.write(b'[xxx%sxxx]' % data)
+                        fp.flush()
+
+                    # os.confstr() must not be used if executable is set
+                    self.assertEqual(platform.libc_ver(executable=tmpname),
+                                     expected)
+            finally:
+                support.unlink(tmpname)
 
 
 if __name__ == '__main__':
