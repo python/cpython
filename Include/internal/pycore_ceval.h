@@ -11,6 +11,11 @@ extern "C" {
 #include "pycore_atomic.h"
 #include "pythread.h"
 
+struct _pending_call {
+    int (*func)(void *);
+    void *arg;
+};
+
 struct _pending_calls {
     unsigned long main_thread;
     PyThread_type_lock lock;
@@ -21,10 +26,7 @@ struct _pending_calls {
        Guarded by the GIL. */
     int async_exc;
 #define NPENDINGCALLS 32
-    struct {
-        int (*func)(void *);
-        void *arg;
-    } calls[NPENDINGCALLS];
+    struct _pending_call calls[NPENDINGCALLS];
     int first;
     int last;
 };
