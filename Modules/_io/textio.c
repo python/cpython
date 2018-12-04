@@ -1466,6 +1466,7 @@ textiowrapper_read_chunk(textio *self)
         /* At the snapshot point, len(dec_buffer) bytes before the read, the
          * next input to be decoded is dec_buffer + input_chunk.
          */
+        PyObject *snapshot;
         PyObject *next_input = PyNumber_Add(dec_buffer, input_chunk);
         if (next_input == NULL)
             goto fail;
@@ -1477,8 +1478,13 @@ textiowrapper_read_chunk(textio *self)
             Py_DECREF(next_input);
             goto fail;
         }
+        snapshot = Py_BuildValue("NN", dec_flags, next_input);
+        if (snapshot == NULL) {
+            dec_flags = NULL;
+            goto fail;
+        }
+        Py_XSETREF(self->snapshot, snapshot);
         Py_DECREF(dec_buffer);
-        Py_XSETREF(self->snapshot, Py_BuildValue("NN", dec_flags, next_input));
     }
     Py_DECREF(input_chunk);
 
@@ -2013,6 +2019,7 @@ textiowrapper_seek(textio *self, PyObject *args)
     int whence = 0;
     PyObject *res;
     int cmp;
+    PyObject *snapshot;
 
     CHECK_ATTACHED(self);
 
@@ -2149,11 +2156,11 @@ textiowrapper_seek(textio *self, PyObject *args)
             goto fail;
         }
 
-        self->snapshot = Py_BuildValue("iN", cookie.dec_flags, input_chunk);
-        if (self->snapshot == NULL) {
-            Py_DECREF(input_chunk);
+        snapshot = Py_BuildValue("iN", cookie.dec_flags, input_chunk);
+        if (snapshot == NULL) {
             goto fail;
         }
+        Py_XSETREF(self->snapshot, snapshot);
 
         decoded = PyObject_CallMethod(self->decoder, "decode",
                                       "Oi", input_chunk, (int)cookie.need_eof);
@@ -2171,9 +2178,10 @@ textiowrapper_seek(textio *self, PyObject *args)
         self->decoded_chars_used = cookie.chars_to_skip;
     }
     else {
-        self->snapshot = Py_BuildValue("is", cookie.dec_flags, "");
-        if (self->snapshot == NULL)
+        snapshot = Py_BuildValue("is", cookie.dec_flags, "");
+        if (snapshot == NULL)
             goto fail;
+        Py_XSETREF(self->snapshot, snapshot);
     }
 
     /* Finally, reset the encoder (merely useful for proper BOM handling) */
