@@ -720,8 +720,8 @@ CXX
 SED
 GREP
 CPP
-OBJEXT
 EXEEXT
+OBJEXT
 ac_ct_CC
 CPPFLAGS
 LDFLAGS
@@ -1734,8 +1734,27 @@ fi
 ac_fn_c_try_link ()
 {
   as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  rm -f conftest.$ac_objext conftest$ac_exeext
-  if { { ac_try="$ac_link"
+  rm -f conftest.$ac_object conftest.$ac_objext conftest$ac_exeext
+  if { { ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
+$as_echo "$ac_try_echo"; } >&5
+  (eval "$ac_compile") 2>conftest.err
+  ac_status=$?
+  if test -s conftest.err; then
+    grep -v '^ *+' conftest.err >conftest.er1
+    cat conftest.er1 >&5
+    mv -f conftest.er1 conftest.err
+  fi
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext &&
+         { { ac_try="$ac_link"
 case "(($ac_try" in
   *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
   *) ac_try_echo=$ac_try;;
@@ -2692,8 +2711,8 @@ fi
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+ac_link='$LD -o conftest$ac_exeext $LDFLAGS $LDFLAGS_STATIC $LDFLAGS_EXE conftest.$ac_objext $LIBS >&5'
+ac_compiler_gnu=no
 
 
 
@@ -3268,6 +3287,9 @@ then
 	*-*-cygwin*)
 		ac_sys_system=Cygwin
 		;;
+	*-*-vxworks*)
+	    ac_sys_system=VxWorks
+	    ;;
 	*)
 		# for now, limit cross builds to known configurations
 		MACHDEP="unknown"
@@ -3311,6 +3333,9 @@ if test "$cross_compiling" = yes; then
 		;;
 	*-*-cygwin*)
 		_host_cpu=
+		;;
+	*-*-vxworks*)
+		_host_cpu=$host_cpu
 		;;
 	*)
 		# for now, limit cross builds to known configurations
@@ -3397,6 +3422,11 @@ $as_echo "#define _BSD_SOURCE 1" >>confdefs.h
   # On QNX 6.3.2, defining _XOPEN_SOURCE prevents netdb.h from
   # defining NI_NUMERICHOST.
   QNX/6.3.2)
+    define_xopen_source=no
+    ;;
+  # On VxWorks, defining _XOPEN_SOURCE causes compile failures
+  # in network headers still using system V types.
+  VxWorks/*)
     define_xopen_source=no
     ;;
 
@@ -3529,8 +3559,8 @@ fi
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+ac_link='$LD -o conftest$ac_exeext $LDFLAGS $LDFLAGS_STATIC $LDFLAGS_EXE conftest.$ac_objext $LIBS >&5'
+ac_compiler_gnu=no
 if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}gcc", so it can be a program name with args.
 set dummy ${ac_tool_prefix}gcc; ac_word=$2
@@ -3886,6 +3916,38 @@ do
   esac
 done
 rm -f $ac_rmfiles
+
+rm -f conftest.o conftest.obj
+if { { ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
+$as_echo "$ac_try_echo"; } >&5
+  (eval "$ac_compile") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then :
+  for ac_file in conftest.o conftest.obj conftest.*; do
+  test -f "$ac_file" || continue;
+  case $ac_file in
+    *.$ac_ext | *.xcoff | *.tds | *.d | *.pdb | *.xSYM | *.bb | *.bbg | *.map | *.inf | *.dSYM ) ;;
+    *) ac_cv_objext=`expr "$ac_file" : '.*\.\(.*\)'`
+       break;;
+  esac
+done
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot create object files: cannot compile
+See \`config.log' for more details" "$LINENO" 5; }
+fi
+OBJEXT=$ac_cv_objext
+ac_objext=$OBJEXT
 
 if { { ac_try="$ac_link_default"
 case "(($ac_try" in
@@ -4312,14 +4374,14 @@ fi
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+ac_link='$LD -o conftest$ac_exeext $LDFLAGS $LDFLAGS_STATIC $LDFLAGS_EXE conftest.$ac_objext $LIBS >&5'
+ac_compiler_gnu=no
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+ac_link='$LD -o conftest$ac_exeext $LDFLAGS $LDFLAGS_STATIC $LDFLAGS_EXE conftest.$ac_objext $LIBS >&5'
+ac_compiler_gnu=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking how to run the C preprocessor" >&5
 $as_echo_n "checking how to run the C preprocessor... " >&6; }
 # On Suns, sometimes $CPP names a directory.
@@ -4449,8 +4511,8 @@ fi
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+ac_link='$LD -o conftest$ac_exeext $LDFLAGS $LDFLAGS_STATIC $LDFLAGS_EXE conftest.$ac_objext $LIBS >&5'
+ac_compiler_gnu=no
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for grep that handles long lines and -e" >&5
 $as_echo_n "checking for grep that handles long lines and -e... " >&6; }
@@ -5749,20 +5811,24 @@ LDVERSION="$VERSION"
 $as_echo_n "checking LINKCC... " >&6; }
 if test -z "$LINKCC"
 then
-	LINKCC='$(PURIFY) $(MAINCC)'
-	case $ac_sys_system in
-	AIX*)
-	   exp_extra="\"\""
-	   if test $ac_sys_release -ge 5 -o \
-		   $ac_sys_release -eq 4 -a `uname -r` -ge 2 ; then
-	       exp_extra="."
-	   fi
-	   LINKCC="\$(srcdir)/Modules/makexp_aix Modules/python.exp $exp_extra \$(LIBRARY); $LINKCC";;
-	QNX*)
-	   # qcc must be used because the other compilers do not
-	   # support -N.
-	   LINKCC=qcc;;
-	esac
+    if test "$ac_sys_system" == "VxWorks" ; then
+        LINKCC="$LD"
+    else
+        LINKCC='$(PURIFY) $(MAINCC)'
+        case $ac_sys_system in
+        AIX*)
+           exp_extra="\"\""
+           if test $ac_sys_release -ge 5 -o \
+               $ac_sys_release -eq 4 -a `uname -r` -ge 2 ; then
+               exp_extra="."
+           fi
+           LINKCC="\$(srcdir)/Modules/makexp_aix Modules/python.exp $exp_extra \$(LIBRARY); $LINKCC";;
+        QNX*)
+           # qcc must be used because the other compilers do not
+           # support -N.
+           LINKCC=qcc;;
+        esac
+    fi
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LINKCC" >&5
 $as_echo "$LINKCC" >&6; }
@@ -9530,6 +9596,8 @@ then
 		# to 2048 kilobytes so that the stack doesn't overflow
 		# when running test_compile.py.
 		LINKFORSHARED='-Wl,-E -N 2048K';;
+	VxWorks*)
+		LINKFORSHARED='--export-dynamic';;
 	esac
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LINKFORSHARED" >&5
