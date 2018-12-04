@@ -325,29 +325,42 @@ _PyEval_SignalReceived(void)
 int
 _add_pending_call(int (*func)(void *), void *arg)
 {
-    int i = _PyRuntime.ceval.pending.last;
-    int j = (i + 1) % NPENDINGCALLS;
-    if (j == _PyRuntime.ceval.pending.first) {
+    if (_PyRuntime.ceval.pending.ncalls == NPENDINGCALLS) {
         return -1; /* Queue full */
     }
-    _PyRuntime.ceval.pending.calls[i].func = func;
-    _PyRuntime.ceval.pending.calls[i].arg = arg;
-    _PyRuntime.ceval.pending.last = j;
+
+    struct _pending_call *call = PyMem_RawMalloc(sizeof(struct _pending_call));
+    if (call == NULL) {
+        return -1;
+    }
+    call->func = func;
+    call->arg = arg;
+    call->next = NULL;
+
+    if (_PyRuntime.ceval.pending.head == NULL) {
+        _PyRuntime.ceval.pending.head = call;
+    }
+    else {
+        _PyRuntime.ceval.pending.last->next = call;
+    }
+    _PyRuntime.ceval.pending.last = call;
+    _PyRuntime.ceval.pending.ncalls++;
     return 0;
 }
 
 void
 _pop_pending_call(int (**func)(void *), void **arg)
 {
-    /* pop one item off the queue while holding the lock */
-    int i = _PyRuntime.ceval.pending.first;
-    if (i == _PyRuntime.ceval.pending.last) {
+    struct _pending_call *call = _PyRuntime.ceval.pending.head;
+    if (call == NULL) {
         return; /* Queue empty */
     }
+    _PyRuntime.ceval.pending.head = call->next;
+    _PyRuntime.ceval.pending.ncalls--;
 
-    *func = _PyRuntime.ceval.pending.calls[i].func;
-    *arg = _PyRuntime.ceval.pending.calls[i].arg;
-    _PyRuntime.ceval.pending.first = (i + 1) % NPENDINGCALLS;
+    *func = call->func;
+    *arg = call->arg;
+    PyMem_RawFree(call);
 }
 
 /* This implementation is thread-safe.  It allows

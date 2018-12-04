@@ -11,10 +11,15 @@ extern "C" {
 #include "pycore_atomic.h"
 #include "pythread.h"
 
+struct _pending_call;
+
 struct _pending_call {
     int (*func)(void *);
     void *arg;
+    struct _pending_call *next;
 };
+
+#define NPENDINGCALLS 32
 
 struct _pending_calls {
     unsigned long main_thread;
@@ -25,10 +30,9 @@ struct _pending_calls {
        thread state.
        Guarded by the GIL. */
     int async_exc;
-#define NPENDINGCALLS 32
-    struct _pending_call calls[NPENDINGCALLS];
-    int first;
-    int last;
+    int ncalls;
+    struct _pending_call *head;
+    struct _pending_call *last;
 };
 
 #include "pycore_gil.h"
