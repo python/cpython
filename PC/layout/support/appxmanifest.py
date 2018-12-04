@@ -99,7 +99,7 @@ APPXMANIFEST_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
         <DisplayName></DisplayName>
         <PublisherDisplayName>Python Software Foundation</PublisherDisplayName>
         <Description></Description>
-        <Logo>_resources/pythonx150.png</Logo>
+        <Logo>_resources/pythonx50.png</Logo>
     </Properties>
     <Resources>
         <Resource Language="en-US" />
@@ -218,6 +218,8 @@ def get_appx_layout(ns):
     icons = ns.source / "PC" / "icons"
     yield "_resources/pythonx44.png", icons / "pythonx44.png"
     yield "_resources/pythonx44.png.targetsize-44_altform-unplated", icons / "pythonx44.png"
+    yield "_resources/pythonx50.png", icons / "pythonx50.png"
+    yield "_resources/pythonx50.png.targetsize-50_altform-unplated", icons / "pythonx50.png"
     yield "_resources/pythonx150.png", icons / "pythonx150.png"
     yield "_resources/pythonx150.png.targetsize-150_altform-unplated", icons / "pythonx150.png"
     yield "_resources/pythonwx44.png", icons / "pythonwx44.png"
