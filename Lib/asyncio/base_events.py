@@ -185,7 +185,7 @@ def _ensure_resolved(address, *, family=0, type=socket.SOCK_STREAM, proto=0,
 if hasattr(socket, 'TCP_NODELAY'):
     def _set_nodelay(sock):
         if (sock.family in {socket.AF_INET, socket.AF_INET6} and
-                sock.type == socket.SOCK_STREAM and
+                _is_stream_socket(sock.type) and
                 sock.proto == socket.IPPROTO_TCP):
             sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 else:
