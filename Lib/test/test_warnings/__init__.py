@@ -960,12 +960,27 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
                 func()
             """))
 
-        res = assert_python_ok('-Wd', '-X', 'tracemalloc=2', support.TESTFN)
+        def run(*args):
+            res = assert_python_ok(*args)
+            stderr = res.err.decode('ascii', 'replace')
+            stderr = '\n'.join(stderr.splitlines())
 
-        stderr = res.err.decode('ascii', 'replace')
-        # normalize newlines
-        stderr = '\n'.join(stderr.splitlines())
-        stderr = re.sub('<.*>', '<...>', stderr)
+            # normalize newlines
+            stderr = re.sub('<.*>', '<...>', stderr)
+            return stderr
+
+        # tracemalloc disabled
+        stderr = run('-Wd', support.TESTFN)
+        expected = textwrap.dedent('''
+            {fname}:5: ResourceWarning: unclosed file <...>
+              f = None
+            ResourceWarning: Enable tracemalloc to get the object allocation traceback
+        ''')
+        expected = expected.format(fname=support.TESTFN).strip()
+        self.assertEqual(stderr, expected)
+
+        # tracemalloc enabled
+        stderr = run('-Wd', '-X', 'tracemalloc=2', support.TESTFN)
         expected = textwrap.dedent('''
             {fname}:5: ResourceWarning: unclosed file <...>
               f = None
