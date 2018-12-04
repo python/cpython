@@ -24,6 +24,12 @@ cflags = sysconfig.get_config_var('CFLAGS')
 py_cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST')
 sysconfig.get_config_vars()['CFLAGS'] = cflags + ' ' + py_cflags_nodist
 
+# Add special LDFLAGS reserved for building the interpreter and the stdlib
+# modules (Issue #35257).
+ldflags = sysconfig.get_config_var('LDFLAGS')
+py_ldflags_nodist = sysconfig.get_config_var('PY_LDFLAGS_NODIST')
+sysconfig.get_config_vars()['LDFLAGS'] = ldflags + ' ' + py_ldflags_nodist
+
 class Dummy:
     """Hack for parallel build"""
     ProcessPoolExecutor = None

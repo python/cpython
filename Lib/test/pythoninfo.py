@@ -412,6 +412,7 @@ def collect_sysconfig(info_add):
         'PY_CFLAGS',
         'PY_CFLAGS_NODIST',
         'PY_LDFLAGS',
+        'PY_LDFLAGS_NODIST',
         'Py_DEBUG',
         'Py_ENABLE_SHARED',
         'SHELL',
