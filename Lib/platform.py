@@ -113,9 +113,9 @@ __copyright__ = """
 __version__ = '1.0.8'
 
 import collections
-import sys, os, re, subprocess
-
-import warnings
+import os
+import re
+import sys
 
 ### Globals & Constants
 
@@ -612,11 +612,13 @@ def _syscmd_file(target, default=''):
     if sys.platform in ('dos', 'win32', 'win16'):
         # XXX Others too ?
         return default
+
+    import subprocess
     target = _follow_symlinks(target)
     try:
         proc = subprocess.Popen(['file', target],
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
     except (AttributeError, OSError):
         return default
     output = proc.communicate()[0].decode('latin-1')
