@@ -2642,16 +2642,17 @@ class TestDateTime(TestDate):
         ts = base_d.timestamp()
 
         test_cases = [
-            ('fromtimestamp', (ts,)),
+            ('fromtimestamp', (ts,), base_d),
             # See https://bugs.python.org/issue32417
-            # ('fromtimestamp', (ts, timezone.utc)),
-            ('utcfromtimestamp', (utc_ts,)),
-            ('fromisoformat', (d_isoformat,)),
-            ('strptime', (d_isoformat, '%Y-%m-%dT%H:%M:%S.%f')),
-            ('combine', (date(*args[0:3]), time(*args[3:]))),
+            ('fromtimestamp', (ts, timezone.utc),
+                               base_d.astimezone(timezone.utc)),
+            ('utcfromtimestamp', (utc_ts,), base_d),
+            ('fromisoformat', (d_isoformat,), base_d),
+            ('strptime', (d_isoformat, '%Y-%m-%dT%H:%M:%S.%f'), base_d),
+            ('combine', (date(*args[0:3]), time(*args[3:])), base_d),
         ]
 
-        for constr_name, constr_args in test_cases:
+        for constr_name, constr_args, exp in test_cases:
             for base_obj in (DateTimeSubclass, base_d):
                 # Test both the classmethod and method
                 with self.subTest(base_obj_type=type(base_obj),
@@ -2664,7 +2665,7 @@ class TestDateTime(TestDate):
                     self.assertIsInstance(dt, DateTimeSubclass)
 
                     # Test that it's equal to the base object
-                    self.assertEqual(dt, base_d.replace(tzinfo=None))
+                    self.assertEqual(dt, exp)
 
                     # Test that it called the constructor
                     self.assertEqual(dt.extra, 7)
