@@ -360,7 +360,7 @@ class CoverageResults:
         try:
             outfile = open(path, "w")
         except IOError, err:
-            print >> sys.stderr, ("trace: Could not open %r for writing: %s"
+            print >> sys.stderr, ("trace: Could not open %r for writing: %s "
                                   "- skipping" % (path, err))
             return 0, 0
 

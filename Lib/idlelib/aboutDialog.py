@@ -141,6 +141,7 @@ class AboutDialog(Toplevel):
         textView.view_file(self, title, fn, encoding)
 
     def Ok(self, event=None):
+        self.grab_release()
         self.destroy()
 
 if __name__ == '__main__':

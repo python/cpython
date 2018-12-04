@@ -1780,7 +1780,7 @@ get_range_long_argument(PyObject *arg, const char *name)
 {
     PyObject *v;
     PyNumberMethods *nb;
-    if (PyInt_Check(arg) || PyLong_Check(arg)) {
+    if (_PyAnyInt_Check(arg)) {
         Py_INCREF(arg);
         return arg;
     }
@@ -1795,7 +1795,7 @@ get_range_long_argument(PyObject *arg, const char *name)
     v = nb->nb_int(arg);
     if (v == NULL)
         return NULL;
-    if (PyInt_Check(v) || PyLong_Check(v))
+    if (_PyAnyInt_Check(v))
         return v;
     Py_DECREF(v);
     PyErr_SetString(PyExc_TypeError,
@@ -2363,6 +2363,11 @@ builtin_sum(PyObject *self, PyObject *args)
             }
             /* Either overflowed or is not an int. Restore real objects and process normally */
             result = PyInt_FromLong(i_result);
+            if (result == NULL) {
+                Py_DECREF(item);
+                Py_DECREF(iter);
+                return NULL;
+            }
             temp = PyNumber_Add(result, item);
             Py_DECREF(result);
             Py_DECREF(item);
@@ -2401,6 +2406,11 @@ builtin_sum(PyObject *self, PyObject *args)
                 continue;
             }
             result = PyFloat_FromDouble(f_result);
+            if (result == NULL) {
+                Py_DECREF(item);
+                Py_DECREF(iter);
+                return NULL;
+            }
             temp = PyNumber_Add(result, item);
             Py_DECREF(result);
             Py_DECREF(item);

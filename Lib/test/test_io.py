@@ -690,6 +690,16 @@ class IOTest(unittest.TestCase):
         self.assertEqual(stream.readinto(buffer), 5)
         self.assertEqual(buffer.tobytes(), b"12345")
 
+    def test_close_assert(self):
+        class R(self.IOBase):
+            def __setattr__(self, name, value):
+                pass
+            def flush(self):
+                raise OSError()
+        f = R()
+        # This would cause an assertion failure.
+        self.assertRaises(OSError, f.close)
+
 
 class CIOTest(IOTest):
 
@@ -2911,6 +2921,16 @@ class IncrementalNewlineDecoderTest(unittest.TestCase):
         _check(dec)
         dec = self.IncrementalNewlineDecoder(None, translate=True)
         _check(dec)
+
+    def test_translate(self):
+        # issue 35062
+        for translate in (-2, -1, 1, 2):
+            decoder = codecs.getincrementaldecoder("utf-8")()
+            decoder = self.IncrementalNewlineDecoder(decoder, translate)
+            self.check_newline_decoding_utf8(decoder)
+        decoder = codecs.getincrementaldecoder("utf-8")()
+        decoder = self.IncrementalNewlineDecoder(decoder, translate=0)
+        self.assertEqual(decoder.decode(b"\r\r\n"), "\r\r\n")
 
 class CIncrementalNewlineDecoderTest(IncrementalNewlineDecoderTest):
     pass

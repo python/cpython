@@ -1361,7 +1361,7 @@ z_set(void *ptr, PyObject *value, Py_ssize_t size)
             return NULL;
         *(char **)ptr = PyString_AS_STRING(str);
         return str;
-    } else if (PyInt_Check(value) || PyLong_Check(value)) {
+    } else if (_PyAnyInt_Check(value)) {
 #if SIZEOF_VOID_P == SIZEOF_LONG_LONG
         *(char **)ptr = (char *)PyInt_AsUnsignedLongLongMask(value);
 #else
@@ -1410,7 +1410,7 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
                                             _ctypes_conversion_errors);
         if (!value)
             return NULL;
-    } else if (PyInt_Check(value) || PyLong_Check(value)) {
+    } else if (_PyAnyInt_Check(value)) {
 #if SIZEOF_VOID_P == SIZEOF_LONG_LONG
         *(wchar_t **)ptr = (wchar_t *)PyInt_AsUnsignedLongLongMask(value);
 #else
@@ -1565,7 +1565,7 @@ P_set(void *ptr, PyObject *value, Py_ssize_t size)
         _RET(value);
     }
 
-    if (!PyInt_Check(value) && !PyLong_Check(value)) {
+    if (!_PyAnyInt_Check(value)) {
         PyErr_SetString(PyExc_TypeError,
                         "cannot be converted to pointer");
         return NULL;

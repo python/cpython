@@ -110,7 +110,7 @@ get_pylong(PyObject *v)
     PyObject *r, *w;
     int converted = 0;
     assert(v != NULL);
-    if (!PyInt_Check(v) && !PyLong_Check(v)) {
+    if (!_PyAnyInt_Check(v)) {
         PyNumberMethods *m;
         /* Not an integer; first try to use __index__ to
            convert to an integer.  If the __index__ method
@@ -150,7 +150,7 @@ get_pylong(PyObject *v)
             v = m->nb_int(v);
             if (v == NULL)
                 return NULL;
-            if (!PyInt_Check(v) && !PyLong_Check(v)) {
+            if (!_PyAnyInt_Check(v)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "__int__ method returned "
                                 "non-integer");
@@ -169,7 +169,7 @@ get_pylong(PyObject *v)
         /* Ensure we own a reference to v. */
         Py_INCREF(v);
 
-    assert(PyInt_Check(v) || PyLong_Check(v));
+    assert(_PyAnyInt_Check(v));
     if (PyInt_Check(v)) {
         r = PyLong_FromLong(PyInt_AS_LONG(v));
         Py_DECREF(v);

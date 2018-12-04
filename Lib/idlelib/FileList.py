@@ -107,8 +107,10 @@ class FileList:
 
 def _test():
     from idlelib.EditorWindow import fixwordbreaks
+    from idlelib.run import fix_scaling
     import sys
     root = Tk()
+    fix_scaling(root)
     fixwordbreaks(root)
     root.withdraw()
     flist = FileList(root)

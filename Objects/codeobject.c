@@ -423,10 +423,9 @@ _PyCode_ConstantKey(PyObject *op)
 
     /* Py_None is a singleton */
     if (op == Py_None
-       || PyInt_CheckExact(op)
-       || PyLong_CheckExact(op)
-       || PyBool_Check(op)
-       || PyBytes_CheckExact(op)
+        || _PyAnyInt_CheckExact(op)
+        || PyBool_Check(op)
+        || PyBytes_CheckExact(op)
 #ifdef Py_USING_UNICODE
        || PyUnicode_CheckExact(op)
 #endif

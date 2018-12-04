@@ -31,6 +31,9 @@ PyAPI_DATA(PyTypeObject) PyInt_Type;
 		 PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_INT_SUBCLASS)
 #define PyInt_CheckExact(op) (Py_TYPE(op) == &PyInt_Type)
 
+#define _PyAnyInt_Check(op) (PyInt_Check(op) || PyLong_Check(op))
+#define _PyAnyInt_CheckExact(op) (PyInt_CheckExact(op) || PyLong_CheckExact(op))
+
 PyAPI_FUNC(PyObject *) PyInt_FromString(char*, char**, int);
 #ifdef Py_USING_UNICODE
 PyAPI_FUNC(PyObject *) PyInt_FromUnicode(Py_UNICODE*, Py_ssize_t, int);

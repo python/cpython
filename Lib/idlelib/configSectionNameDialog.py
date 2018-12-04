@@ -80,10 +80,13 @@ class GetCfgSectionNameDialog(Toplevel):
         name = self.name_ok()
         if name:
             self.result = name
+            self.grab_release()
             self.destroy()
     def Cancel(self, event=None):
         self.result = ''
+        self.grab_release()
         self.destroy()
+
 if __name__ == '__main__':
     import unittest
     unittest.main('idlelib.idle_test.test_config_name', verbosity=2, exit=False)

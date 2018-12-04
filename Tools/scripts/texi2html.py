@@ -1808,7 +1808,7 @@ class HTMLHelp:
             print>>fp, '<!-- This file defines the table of contents -->'
             print>>fp, '<HTML>'
             print>>fp, '<HEAD>'
-            print>>fp, ('<meta name="GENERATOR"'
+            print>>fp, ('<meta name="GENERATOR" '
                         'content="Microsoft&reg; HTML Help Workshop 4.1">')
             print>>fp, '<!-- Sitemap 1.0 -->'
             print>>fp, '</HEAD>'
@@ -1833,7 +1833,7 @@ class HTMLHelp:
             print>>fp, '<!-- This file defines the index -->'
             print>>fp, '<HTML>'
             print>>fp, '<HEAD>'
-            print>>fp, ('<meta name="GENERATOR"'
+            print>>fp, ('<meta name="GENERATOR" '
                         'content="Microsoft&reg; HTML Help Workshop 4.1">')
             print>>fp, '<!-- Sitemap 1.0 -->'
             print>>fp, '</HEAD>'

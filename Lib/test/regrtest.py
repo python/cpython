@@ -241,6 +241,7 @@ SKIPPED = -2
 RESOURCE_DENIED = -3
 INTERRUPTED = -4
 CHILD_ERROR = -5   # error in a child process
+TEST_DID_NOT_RUN = -6   # error in a child process
 
 # Minimum duration of a test to display its duration or to mention that
 # the test is running in background
@@ -300,6 +301,7 @@ _FORMAT_TEST_RESULT = {
     RESOURCE_DENIED: '%s skipped (resource denied)',
     INTERRUPTED: '%s interrupted',
     CHILD_ERROR: '%s crashed',
+    TEST_DID_NOT_RUN: '%s run no tests',
 }
 
 
@@ -548,6 +550,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     resource_denieds = []
     environment_changed = []
     rerun = []
+    run_no_tests = []
     first_result = None
     interrupted = False
 
@@ -644,6 +647,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         elif ok == RESOURCE_DENIED:
             skipped.append(test)
             resource_denieds.append(test)
+        elif ok == TEST_DID_NOT_RUN:
+            run_no_tests.append(test)
         elif ok != INTERRUPTED:
             raise ValueError("invalid test result: %r" % ok)
 
@@ -925,6 +930,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             result.append("FAILURE")
         elif fail_env_changed and environment_changed:
             result.append("ENV CHANGED")
+        elif not any((good, bad, skipped, interrupted, environment_changed)):
+            result.append("NO TEST RUN")
 
         if interrupted:
             result.append("INTERRUPTED")
@@ -994,9 +1001,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 print "expected to get skipped on", plat + "."
 
         if rerun:
-            print
+            print("")
             print("%s:" % count(len(rerun), "re-run test"))
             printlist(rerun)
+
+        if run_no_tests:
+            print("")
+            print("%s run no tests:" % count(len(run_no_tests), "test"))
+            printlist(run_no_tests)
 
 
     display_result()
@@ -1109,6 +1121,7 @@ def runtest(test, verbose, quiet,
         ENV_CHANGED      test failed because it changed the execution environment
         FAILED           test failed
         PASSED           test passed
+        EMPTY_TEST_SUITE test ran no subtests.
     """
 
     support.verbose = verbose  # Tell tests to be moderately quiet
@@ -1344,6 +1357,8 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False, testdir=Non
             print >>sys.stderr, "test", test, "failed --", msg
         sys.stderr.flush()
         return FAILED, test_time
+    except support.TestDidNotRun:
+        return TEST_DID_NOT_RUN, test_time
     except:
         type, value = sys.exc_info()[:2]
         if not pgo:

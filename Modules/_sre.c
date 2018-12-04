@@ -3327,7 +3327,7 @@ match_getindex(MatchObject* self, PyObject* index)
 {
     Py_ssize_t i;
 
-    if (PyInt_Check(index) || PyLong_Check(index))
+    if (_PyAnyInt_Check(index))
         return PyInt_AsSsize_t(index);
 
     i = -1;
@@ -3335,7 +3335,7 @@ match_getindex(MatchObject* self, PyObject* index)
     if (self->pattern->groupindex) {
         index = PyObject_GetItem(self->pattern->groupindex, index);
         if (index) {
-            if (PyInt_Check(index) || PyLong_Check(index))
+            if (_PyAnyInt_Check(index))
                 i = PyInt_AsSsize_t(index);
             Py_DECREF(index);
         } else

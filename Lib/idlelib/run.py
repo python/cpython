@@ -155,6 +155,7 @@ def show_socket_error(err, address):
     import Tkinter
     import tkMessageBox
     root = Tkinter.Tk()
+    fix_scaling(root)
     root.withdraw()
     if err.args[0] == 61: # connection refused
         msg = "IDLE's subprocess can't connect to %s:%d.  This may be due "\
@@ -239,6 +240,19 @@ def exit():
             pass
     capture_warnings(False)
     sys.exit(0)
+
+
+def fix_scaling(root):
+    """Scale fonts on HiDPI displays."""
+    import tkFont
+    scaling = float(root.tk.call('tk', 'scaling'))
+    if scaling > 1.4:
+        for name in tkFont.names(root):
+            font = tkFont.Font(root=root, name=name, exists=True)
+            size = int(font['size'])
+            if size < 0:
+                font['size'] = int(round(-0.75*size))
+
 
 class MyRPCServer(rpc.RPCServer):
 
