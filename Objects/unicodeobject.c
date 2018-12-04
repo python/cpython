@@ -4059,6 +4059,21 @@ onError:
 }
 
 #ifdef MS_WINDOWS
+static int
+widechar_resize(wchar_t **buf, Py_ssize_t *size, Py_ssize_t newsize)
+{
+    if (newsize > *size) {
+        wchar_t *newbuf = *buf;
+        if (PyMem_Resize(newbuf, wchar_t, newsize) == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        *buf = newbuf;
+    }
+    *size = newsize;
+    return 0;
+}
+
 /* error handling callback helper:
    build arguments, call the callback and check the arguments,
    if no exception occurred, copy the replacement to the output
@@ -4072,7 +4087,7 @@ unicode_decode_call_errorhandler_wchar(
     const char *encoding, const char *reason,
     const char **input, const char **inend, Py_ssize_t *startinpos,
     Py_ssize_t *endinpos, PyObject **exceptionObject, const char **inptr,
-    PyObject **output, Py_ssize_t *outpos)
+    wchar_t **buf, Py_ssize_t *bufsize, Py_ssize_t *outpos)
 {
     static const char *argparse = "Un;decoding error handler must return (str, int) tuple";
 
@@ -4085,9 +4100,6 @@ unicode_decode_call_errorhandler_wchar(
     PyObject *inputobj = NULL;
     wchar_t *repwstr;
     Py_ssize_t repwlen;
-
-    assert (_PyUnicode_KIND(*output) == PyUnicode_WCHAR_KIND);
-    outsize = _PyUnicode_WSTR_LENGTH(*output);
 
     if (*errorHandler == NULL) {
         *errorHandler = PyCodec_LookupError(errors);
@@ -4146,13 +4158,15 @@ unicode_decode_call_errorhandler_wchar(
     if (requiredsize > PY_SSIZE_T_MAX - (insize - newpos))
         goto overflow;
     requiredsize += insize - newpos;
+    outsize = *bufsize;
     if (requiredsize > outsize) {
         if (outsize <= PY_SSIZE_T_MAX/2 && requiredsize < 2*outsize)
             requiredsize = 2*outsize;
-        if (unicode_resize(output, requiredsize) < 0)
+        if (widechar_resize(buf, bufsize, requiredsize) < 0) {
             goto onError;
+        }
     }
-    wcsncpy(_PyUnicode_WSTR(*output) + *outpos, repwstr, repwlen);
+    wcsncpy(*buf + *outpos, repwstr, repwlen);
     *outpos += repwlen;
     *endinpos = newpos;
     *inptr = *input + newpos;
@@ -7146,7 +7160,8 @@ decode_code_page_flags(UINT code_page)
  */
 static int
 decode_code_page_strict(UINT code_page,
-                        PyObject **v,
+                        wchar_t **buf,
+                        Py_ssize_t *bufsize,
                         const char *in,
                         int insize)
 {
@@ -7160,21 +7175,12 @@ decode_code_page_strict(UINT code_page,
     if (outsize <= 0)
         goto error;
 
-    if (*v == NULL) {
-        /* Create unicode object */
-        /* FIXME: don't use _PyUnicode_New(), but allocate a wchar_t* buffer */
-        *v = (PyObject*)_PyUnicode_New(outsize);
-        if (*v == NULL)
-            return -1;
-        out = PyUnicode_AS_UNICODE(*v);
+    /* Extend a wchar_t* buffer */
+    Py_ssize_t n = *bufsize;   /* Get the current length */
+    if (widechar_resize(buf, bufsize, n + outsize) < 0) {
+        return -1;
     }
-    else {
-        /* Extend unicode object */
-        Py_ssize_t n = PyUnicode_GET_SIZE(*v);
-        if (unicode_resize(v, n + outsize) < 0)
-            return -1;
-        out = PyUnicode_AS_UNICODE(*v) + n;
-    }
+    out = *buf + n;
 
     /* Do the conversion */
     outsize = MultiByteToWideChar(code_page, flags, in, insize, out, outsize);
@@ -7198,7 +7204,8 @@ error:
  */
 static int
 decode_code_page_errors(UINT code_page,
-                        PyObject **v,
+                        wchar_t **buf,
+                        Py_ssize_t *bufsize,
                         const char *in, const int size,
                         const char *errors, int final)
 {
@@ -7238,29 +7245,16 @@ decode_code_page_errors(UINT code_page,
         goto error;
     }
 
-    if (*v == NULL) {
-        /* Create unicode object */
-        if (size > PY_SSIZE_T_MAX / (Py_ssize_t)Py_ARRAY_LENGTH(buffer)) {
-            PyErr_NoMemory();
-            goto error;
-        }
-        /* FIXME: don't use _PyUnicode_New(), but allocate a wchar_t* buffer */
-        *v = (PyObject*)_PyUnicode_New(size * Py_ARRAY_LENGTH(buffer));
-        if (*v == NULL)
-            goto error;
-        out = PyUnicode_AS_UNICODE(*v);
+    /* Extend a wchar_t* buffer */
+    Py_ssize_t n = *bufsize;   /* Get the current length */
+    if (size > (PY_SSIZE_T_MAX - n) / (Py_ssize_t)Py_ARRAY_LENGTH(buffer)) {
+        PyErr_NoMemory();
+        goto error;
     }
-    else {
-        /* Extend unicode object */
-        Py_ssize_t n = PyUnicode_GET_SIZE(*v);
-        if (size > (PY_SSIZE_T_MAX - n) / (Py_ssize_t)Py_ARRAY_LENGTH(buffer)) {
-            PyErr_NoMemory();
-            goto error;
-        }
-        if (unicode_resize(v, n + size * Py_ARRAY_LENGTH(buffer)) < 0)
-            goto error;
-        out = PyUnicode_AS_UNICODE(*v) + n;
+    if (widechar_resize(buf, bufsize, n + size * Py_ARRAY_LENGTH(buffer)) < 0) {
+        goto error;
     }
+    out = *buf + n;
 
     /* Decode the byte string character per character */
     while (in < endin)
@@ -7295,16 +7289,16 @@ decode_code_page_errors(UINT code_page,
 
             startinpos = in - startin;
             endinpos = startinpos + 1;
-            outpos = out - PyUnicode_AS_UNICODE(*v);
+            outpos = out - *buf;
             if (unicode_decode_call_errorhandler_wchar(
                     errors, &errorHandler,
                     encoding, reason,
                     &startin, &endin, &startinpos, &endinpos, &exc, &in,
-                    v, &outpos))
+                    buf, bufsize, &outpos))
             {
                 goto error;
             }
-            out = PyUnicode_AS_UNICODE(*v) + outpos;
+            out = *buf + outpos;
         }
         else {
             in += insize;
@@ -7313,14 +7307,9 @@ decode_code_page_errors(UINT code_page,
         }
     }
 
-    /* write a NUL character at the end */
-    *out = 0;
-
-    /* Extend unicode object */
-    outsize = out - PyUnicode_AS_UNICODE(*v);
-    assert(outsize <= PyUnicode_WSTR_LENGTH(*v));
-    if (unicode_resize(v, outsize) < 0)
-        goto error;
+    /* Shrink the buffer */
+    assert(out - *buf <= *bufsize);
+    *bufsize = out - *buf;
     /* (in - startin) <= size and size is an int */
     ret = Py_SAFE_DOWNCAST(in - startin, Py_ssize_t, int);
 
@@ -7336,7 +7325,8 @@ decode_code_page_stateful(int code_page,
                           const char *s, Py_ssize_t size,
                           const char *errors, Py_ssize_t *consumed)
 {
-    PyObject *v = NULL;
+    wchar_t *buf = NULL;
+    Py_ssize_t bufsize = 0;
     int chunk_size, final, converted, done;
 
     if (code_page < 0) {
@@ -7368,21 +7358,21 @@ decode_code_page_stateful(int code_page,
         }
 
         if (chunk_size == 0 && done) {
-            if (v != NULL)
+            if (buf != NULL)
                 break;
             _Py_RETURN_UNICODE_EMPTY();
         }
 
-        converted = decode_code_page_strict(code_page, &v,
+        converted = decode_code_page_strict(code_page, &buf, &bufsize,
                                             s, chunk_size);
         if (converted == -2)
-            converted = decode_code_page_errors(code_page, &v,
+            converted = decode_code_page_errors(code_page, &buf, &bufsize,
                                                 s, chunk_size,
                                                 errors, final);
         assert(converted != 0 || done);
 
         if (converted < 0) {
-            Py_XDECREF(v);
+            PyMem_Free(buf);
             return NULL;
         }
 
@@ -7393,7 +7383,9 @@ decode_code_page_stateful(int code_page,
         size -= converted;
     } while (!done);
 
-    return unicode_result(v);
+    PyObject *v = PyUnicode_FromWideChar(buf, bufsize);
+    PyMem_Free(buf);
+    return v;
 }
 
 PyObject *
