@@ -1700,7 +1700,6 @@ class GeneralModuleTests(unittest.TestCase):
             s.setblocking(False)
             self.assertEqual(s.type, socket.SOCK_STREAM)
 
-    @unittest.skipIf(os.name == 'nt', 'Will not work on Windows')
     def test_unknown_socket_family_repr(self):
         # Test that when created with a family that's not one of the known
         # AF_*/SOCK_* constants, socket.family just returns the number.
@@ -1708,10 +1707,8 @@ class GeneralModuleTests(unittest.TestCase):
         # To do this we fool socket.socket into believing it already has an
         # open fd because on this path it doesn't actually verify the family and
         # type and populates the socket object.
-        #
-        # On Windows this trick won't work, so the test is skipped.
-        fd, path = tempfile.mkstemp()
-        self.addCleanup(os.unlink, path)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        fileno = sock.detach()
         unknown_family = max(socket.AddressFamily.__members__.values()) + 1
 
         unknown_type = max(
@@ -1722,7 +1719,7 @@ class GeneralModuleTests(unittest.TestCase):
 
         with socket.socket(
                 family=unknown_family, type=unknown_type, proto=23,
-                fileno=fd) as s:
+                fileno=fileno) as s:
             self.assertEqual(s.family, unknown_family)
             self.assertEqual(s.type, unknown_type)
             # some OS like macOS ignore proto
@@ -1789,6 +1786,10 @@ class GeneralModuleTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=42.5)
 
+    def test_socket_fileno_rejects_other_types(self):
+        with self.assertRaises(TypeError):
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno="foo")
+
     def test_socket_fileno_rejects_invalid_socket(self):
         with self.assertRaises(ValueError):
             socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=-1)
@@ -1797,6 +1798,27 @@ class GeneralModuleTests(unittest.TestCase):
     def test_socket_fileno_rejects_negative(self):
         with self.assertRaises(ValueError):
             socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=-42)
+
+    def test_socket_fileno_requires_valid_fd(self):
+        with self.assertRaises(OSError):
+            socket.socket(fileno=support.make_bad_fd())
+
+        with self.assertRaises(OSError):
+            socket.socket(
+                socket.AF_INET,
+                socket.SOCK_STREAM,
+                fileno=support.make_bad_fd())
+
+    def test_socket_fileno_requires_socket_fd(self):
+        with tempfile.NamedTemporaryFile() as afile:
+            with self.assertRaises(OSError):
+                socket.socket(fileno=afile.fileno())
+
+            with self.assertRaises(OSError):
+                socket.socket(
+                    socket.AF_INET,
+                    socket.SOCK_STREAM,
+                    fileno=afile.fileno())
 
 
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')

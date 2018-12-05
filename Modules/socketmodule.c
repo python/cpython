@@ -5031,19 +5031,25 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
                 return -1;
             }
 
-            if (family == -1) {
-                sock_addr_t addrbuf;
-                socklen_t addrlen = sizeof(sock_addr_t);
+            /* validate that passed file descriptor is valid and a socket. */
+            sock_addr_t addrbuf;
+            socklen_t addrlen = sizeof(sock_addr_t);
 
-                memset(&addrbuf, 0, addrlen);
-                if (getsockname(fd, SAS2SA(&addrbuf), &addrlen) == 0) {
+            memset(&addrbuf, 0, addrlen);
+            if (getsockname(fd, SAS2SA(&addrbuf), &addrlen) == 0) {
+                if (family == -1) {
                     family = SAS2SA(&addrbuf)->sa_family;
-                } else {
+                }
+            } else {
 #ifdef MS_WINDOWS
-                    PyErr_SetFromWindowsErrWithFilename(0, "family");
+                /* getsockname() on an unbound socket is an error on Windows.
+                   Invalid descriptor and not a socket is same error code.
+                   Error out if family must be resolved, or bad descriptor. */
+                if (family == -1 || CHECK_ERRNO(ENOTSOCK)) {
 #else
-                    PyErr_SetFromErrnoWithFilename(PyExc_OSError, "family");
+                if (1) {
 #endif
+                    set_error();
                     return -1;
                 }
             }
@@ -5056,11 +5062,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
                 {
                     type = tmp;
                 } else {
-#ifdef MS_WINDOWS
-                    PyErr_SetFromWindowsErrWithFilename(0, "type");
-#else
-                    PyErr_SetFromErrnoWithFilename(PyExc_OSError, "type");
-#endif
+                    set_error();
                     return -1;
                 }
             }
@@ -5076,11 +5078,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
                 {
                     proto = tmp;
                 } else {
-#ifdef MS_WINDOWS
-                    PyErr_SetFromWindowsErrWithFilename(0, "protocol");
-#else
-                    PyErr_SetFromErrnoWithFilename(PyExc_OSError, "protocol");
-#endif
+                    set_error();
                     return -1;
                 }
             }
