@@ -6,6 +6,7 @@ executing have not been removed.
 """
 import unittest
 import test.support
+from test import support
 from test.support import (captured_stderr, TESTFN, EnvironmentVarGuard,
                           change_cwd)
 import builtins
@@ -18,6 +19,7 @@ import urllib.error
 import shutil
 import subprocess
 import sysconfig
+from unittest import mock
 from copy import copy
 
 # These tests are not particularly useful if Python was invoked with -S.
@@ -243,6 +245,7 @@ class HelperFunctionsTests(unittest.TestCase):
         # the call sets USER_BASE *and* USER_SITE
         self.assertEqual(site.USER_SITE, user_site)
         self.assertTrue(user_site.startswith(site.USER_BASE), user_site)
+        self.assertEqual(site.USER_BASE, site.getuserbase())
 
     def test_getsitepackages(self):
         site.PREFIXES = ['xoxo']
@@ -272,6 +275,41 @@ class HelperFunctionsTests(unittest.TestCase):
             self.assertEqual(dirs[0], 'xoxo')
             wanted = os.path.join('xoxo', 'lib', 'site-packages')
             self.assertEqual(dirs[1], wanted)
+
+    def test_no_home_directory(self):
+        # bpo-10496: getuserbase() and getusersitepackages() must not fail if
+        # the current user has no home directory (if expanduser() returns the
+        # path unchanged).
+        site.USER_SITE = None
+        site.USER_BASE = None
+        sysconfig._CONFIG_VARS = None
+
+        with EnvironmentVarGuard() as environ, \
+             mock.patch('os.path.expanduser', lambda path: path):
+
+            del environ['PYTHONUSERBASE']
+            del environ['APPDATA']
+
+            user_base = site.getuserbase()
+            self.assertTrue(user_base.startswith('~' + os.sep),
+                            user_base)
+
+            user_site = site.getusersitepackages()
+            self.assertTrue(user_site.startswith(user_base), user_site)
+
+        with mock.patch('os.path.isdir', return_value=False) as mock_isdir, \
+             mock.patch.object(site, 'addsitedir') as mock_addsitedir, \
+             support.swap_attr(site, 'ENABLE_USER_SITE', True):
+
+            # addusersitepackages() must not add user_site to sys.path
+            # if it is not an existing directory
+            known_paths = set()
+            site.addusersitepackages(known_paths)
+
+            mock_isdir.assert_called_once_with(user_site)
+            mock_addsitedir.assert_not_called()
+            self.assertFalse(known_paths)
+
 
 class PthFile(object):
     """Helper class for handling testing of .pth files"""
