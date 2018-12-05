@@ -108,8 +108,8 @@ def make(filenames, outfile):
     outfile is a string for the name of an input file or None.
 
     If it is not None, the output file receives a merge of the input files
-    If it is None, then each input file is separately compiled into its
-    corresponding output file (same name with po replaced with mo).
+    If it is None, then filenames must be a string and the name of the output
+    file is obtained by replacing the po extension with mo.
     Both ways are for compatibility reasons with previous behaviour.
     """
     messages = {}
@@ -117,13 +117,7 @@ def make(filenames, outfile):
         infile, outfile = get_names(filenames, outfile)
         process(infile, messages)
     elif outfile is None:
-        for filename in filenames:
-            infile, outfile = get_names(filename, None)
-            messages.clear()
-            process(infile, messages)
-            output = generate(messages)
-            writefile(outfile, output)
-        return
+        raise TypeError("outfile cannot be None with more than one infile")
     else:
         for filename in filenames:
             infile, _ = get_names(filename, outfile)
@@ -272,7 +266,11 @@ def main(argv):
         print('No input file given', file=sys.stderr)
         print("Try `msgfmt --help' for more information.", file=sys.stderr)
         return
-    make(args, outfile)
+    if outfile is None:
+        for filename in args:
+            make(filename, None)
+    else:
+        make(args, outfile)
 
 
 if __name__ == '__main__':
