@@ -1182,6 +1182,14 @@ def platform(aliased=0, terse=0):
     if aliased:
         system, release, version = system_alias(system, release, version)
 
+    if system == 'Darwin':
+        # macOS (darwin kernel)
+        macos_release = mac_ver()[0]
+        if macos_release:
+            # note: 'macOS' is different than 'MacOS' used below
+            system = 'macOS'
+            release = macos_release
+
     if system == 'Windows':
         # MS platforms
         rel, vers, csd, ptype = win32_ver(version)
