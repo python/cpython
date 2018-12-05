@@ -827,18 +827,17 @@ PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObjec
         return NULL;
     }
 
+    if (PyDict_SetItem(self->function_pinboard, func, Py_None) == -1) {
+        return NULL;
+    }
     rc = sqlite3_create_function(self->db, name, narg, SQLITE_UTF8, (void*)func, _pysqlite_func_callback, NULL, NULL);
 
     if (rc != SQLITE_OK) {
         /* Workaround for SQLite bug: no error code or string is available here */
         PyErr_SetString(pysqlite_OperationalError, "Error creating function");
         return NULL;
-    } else {
-        if (PyDict_SetItem(self->function_pinboard, func, Py_None) == -1)
-            return NULL;
-
-        Py_RETURN_NONE;
     }
+    Py_RETURN_NONE;
 }
 
 PyObject* pysqlite_connection_create_aggregate(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
@@ -859,17 +858,16 @@ PyObject* pysqlite_connection_create_aggregate(pysqlite_Connection* self, PyObje
         return NULL;
     }
 
+    if (PyDict_SetItem(self->function_pinboard, aggregate_class, Py_None) == -1) {
+        return NULL;
+    }
     rc = sqlite3_create_function(self->db, name, n_arg, SQLITE_UTF8, (void*)aggregate_class, 0, &_pysqlite_step_callback, &_pysqlite_final_callback);
     if (rc != SQLITE_OK) {
         /* Workaround for SQLite bug: no error code or string is available here */
         PyErr_SetString(pysqlite_OperationalError, "Error creating aggregate");
         return NULL;
-    } else {
-        if (PyDict_SetItem(self->function_pinboard, aggregate_class, Py_None) == -1)
-            return NULL;
-
-        Py_RETURN_NONE;
     }
+    Py_RETURN_NONE;
 }
 
 static int _authorizer_callback(void* user_arg, int action, const char* arg1, const char* arg2 , const char* dbname, const char* access_attempt_source)
@@ -982,17 +980,15 @@ static PyObject* pysqlite_connection_set_authorizer(pysqlite_Connection* self, P
         return NULL;
     }
 
+    if (PyDict_SetItem(self->function_pinboard, authorizer_cb, Py_None) == -1) {
+        return NULL;
+    }
     rc = sqlite3_set_authorizer(self->db, _authorizer_callback, (void*)authorizer_cb);
-
     if (rc != SQLITE_OK) {
         PyErr_SetString(pysqlite_OperationalError, "Error setting authorizer callback");
         return NULL;
-    } else {
-        if (PyDict_SetItem(self->function_pinboard, authorizer_cb, Py_None) == -1)
-            return NULL;
-
-        Py_RETURN_NONE;
     }
+    Py_RETURN_NONE;
 }
 
 static PyObject* pysqlite_connection_set_progress_handler(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
@@ -1015,9 +1011,9 @@ static PyObject* pysqlite_connection_set_progress_handler(pysqlite_Connection* s
         /* None clears the progress handler previously set */
         sqlite3_progress_handler(self->db, 0, 0, (void*)0);
     } else {
-        sqlite3_progress_handler(self->db, n, _progress_handler, progress_handler);
         if (PyDict_SetItem(self->function_pinboard, progress_handler, Py_None) == -1)
             return NULL;
+        sqlite3_progress_handler(self->db, n, _progress_handler, progress_handler);
     }
 
     Py_RETURN_NONE;
