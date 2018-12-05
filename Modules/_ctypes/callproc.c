@@ -146,7 +146,7 @@ _ctypes_get_errobj(int **pspace)
         if (error_object_name == NULL)
             return NULL;
     }
-    errobj = PyDict_GetItem(dict, error_object_name);
+    errobj = PyDict_GetItemWithError(dict, error_object_name);
     if (errobj) {
         if (!PyCapsule_IsValid(errobj, CTYPES_CAPSULE_NAME_PYMEM)) {
             PyErr_SetString(PyExc_RuntimeError,
@@ -155,7 +155,7 @@ _ctypes_get_errobj(int **pspace)
         }
         Py_INCREF(errobj);
     }
-    else {
+    else if (!PyErr_Occurred()) {
         void *space = PyMem_Malloc(sizeof(int) * 2);
         if (space == NULL)
             return NULL;
@@ -170,6 +170,9 @@ _ctypes_get_errobj(int **pspace)
             Py_DECREF(errobj);
             return NULL;
         }
+    }
+    else {
+        return NULL;
     }
     *pspace = (int *)PyCapsule_GetPointer(errobj, CTYPES_CAPSULE_NAME_PYMEM);
     return errobj;
@@ -685,8 +688,11 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 #endif
 
     {
+        _Py_IDENTIFIER(_as_parameter_);
         PyObject *arg;
-        arg = PyObject_GetAttrString(obj, "_as_parameter_");
+        if (_PyObject_LookupAttrId(obj, &PyId__as_parameter_, &arg) < 0) {
+            return -1;
+        }
         /* Which types should we exactly allow here?
            integers are required for using Python classes
            as parameters (they have to expose the '_as_parameter_'
@@ -1685,10 +1691,13 @@ POINTER(PyObject *self, PyObject *cls)
     PyObject *key;
     char *buf;
 
-    result = PyDict_GetItem(_ctypes_ptrtype_cache, cls);
+    result = PyDict_GetItemWithError(_ctypes_ptrtype_cache, cls);
     if (result) {
         Py_INCREF(result);
         return result;
+    }
+    else if (PyErr_Occurred()) {
+        return NULL;
     }
     if (PyUnicode_CheckExact(cls)) {
         const char *name = PyUnicode_AsUTF8(cls);
@@ -1745,12 +1754,16 @@ pointer(PyObject *self, PyObject *arg)
     PyObject *result;
     PyObject *typ;
 
-    typ = PyDict_GetItem(_ctypes_ptrtype_cache, (PyObject *)Py_TYPE(arg));
-    if (typ)
+    typ = PyDict_GetItemWithError(_ctypes_ptrtype_cache, (PyObject *)Py_TYPE(arg));
+    if (typ) {
         return PyObject_CallFunctionObjArgs(typ, arg, NULL);
+    }
+    else if (PyErr_Occurred()) {
+        return NULL;
+    }
     typ = POINTER(NULL, (PyObject *)Py_TYPE(arg));
     if (typ == NULL)
-                    return NULL;
+        return NULL;
     result = PyObject_CallFunctionObjArgs(typ, arg, NULL);
     Py_DECREF(typ);
     return result;
