@@ -2146,6 +2146,8 @@ through the container; for mappings, :meth:`__iter__` should be the same as
    .. versionadded:: 3.4
 
 
+.. index:: object: slice
+
 .. note::
 
    Slicing is done exclusively with the following three methods.  A call like ::
@@ -2160,8 +2162,6 @@ through the container; for mappings, :meth:`__iter__` should be the same as
 
 
 .. method:: object.__getitem__(self, key)
-
-   .. index:: object: slice
 
    Called to implement evaluation of ``self[key]``. For sequence types, the
    accepted keys should be integers and slice objects.  Note that the special
