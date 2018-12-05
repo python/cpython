@@ -1644,7 +1644,7 @@ returned; otherwise, *y* is evaluated and the resulting value is returned.
 The expression ``x or y`` first evaluates *x*; if *x* is true, its value is
 returned; otherwise, *y* is evaluated and the resulting value is returned.
 
-(Note that neither :keyword:`and` nor :keyword:`or` restrict the value and type
+Note that neither :keyword:`and` nor :keyword:`or` restrict the value and type
 they return to ``False`` and ``True``, but rather return the last evaluated
 argument.  This is sometimes useful, e.g., if ``s`` is a string that should be
 replaced by a default value if it is empty, the expression ``s or 'foo'`` yields
