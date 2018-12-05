@@ -2178,12 +2178,6 @@ through the container; for mappings, :meth:`__iter__` should be the same as
       indexes to allow proper detection of the end of the sequence.
 
 
-.. method:: object.__missing__(self, key)
-
-   Called by :class:`dict`\ .\ :meth:`__getitem__` to implement ``self[key]`` for dict subclasses
-   when key is not in the dictionary.
-
-
 .. method:: object.__setitem__(self, key, value)
 
    Called to implement assignment to ``self[key]``.  Same note as for
@@ -2200,6 +2194,12 @@ through the container; for mappings, :meth:`__iter__` should be the same as
    objects support removal of keys, or for sequences if elements can be removed
    from the sequence.  The same exceptions should be raised for improper *key*
    values as for the :meth:`__getitem__` method.
+
+
+.. method:: object.__missing__(self, key)
+
+   Called by :class:`dict`\ .\ :meth:`__getitem__` to implement ``self[key]`` for dict subclasses
+   when key is not in the dictionary.
 
 
 .. method:: object.__iter__(self)
