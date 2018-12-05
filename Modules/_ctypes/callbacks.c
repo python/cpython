@@ -107,9 +107,14 @@ static void
 TryAddRef(StgDictObject *dict, CDataObject *obj)
 {
     IUnknown *punk;
+    _Py_IDENTIFIER(_needs_com_addref_);
 
-    if (NULL == PyDict_GetItemString((PyObject *)dict, "_needs_com_addref_"))
+    if (!_PyDict_GetItemIdWithError((PyObject *)dict, &PyId__needs_com_addref_)) {
+        if (PyErr_Occurred()) {
+            PrintError("getting _needs_com_addref_");
+        }
         return;
+    }
 
     punk = *(IUnknown **)obj->b_ptr;
     if (punk)
