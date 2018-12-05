@@ -4,6 +4,7 @@ import sys
 import unittest
 from copy import copy
 from test.support import run_unittest
+from unittest import mock
 
 from distutils.errors import DistutilsPlatformError, DistutilsByteCompileError
 from distutils.util import (get_platform, convert_path, change_root,
@@ -234,8 +235,7 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
 
     def test_check_environ(self):
         util._environ_checked = 0
-        if 'HOME' in os.environ:
-            del os.environ['HOME']
+        os.environ.pop('HOME', None)
 
         # posix without HOME
         if os.name == 'posix':  # this test won't run on windows
@@ -247,6 +247,16 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
 
         self.assertEqual(os.environ['PLAT'], get_platform())
         self.assertEqual(util._environ_checked, 1)
+
+    @unittest.skipUnless(os.name == 'posix', 'specific to posix')
+    def test_check_environ_getpwuid_error(self):
+        util._environ_checked = 0
+        os.environ.pop('HOME', None)
+
+        # bpo-10496: Catch pwd.getpwuid() error
+        with mock.patch('pwd.getpwuid', side_effect=KeyError):
+            check_environ()
+            self.assertNotIn('HOME', os.environ)
 
     def test_split_quoted(self):
         self.assertEqual(split_quoted('""one"" "two" \'three\' \\four'),
