@@ -1,0 +1,3 @@
+It is now possible to  merge more than one single po file into a compiled mo
+file. When an entry exists in more than on input file, the last file wins.
+It is also possible to directly call ``make`` more than once
