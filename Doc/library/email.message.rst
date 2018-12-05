@@ -92,7 +92,7 @@ message objects.
 
    .. method:: __str__()
 
-      Equivalent to `as_string(policy=self.policy.clone(utf8=True)`.  Allows
+      Equivalent to ``as_string(policy=self.policy.clone(utf8=True))``.  Allows
       ``str(msg)`` to produce a string containing the serialized message in a
       readable format.
 
@@ -379,7 +379,7 @@ message objects.
 
       Note that existing parameter values of headers may be accessed through
       the :attr:`~email.headerregistry.BaseHeader.params` attribute of the
-      header value (for example, ``msg['Content-Type'].params['charset']``.
+      header value (for example, ``msg['Content-Type'].params['charset']``).
 
       .. versionchanged:: 3.4 ``replace`` keyword was added.
 
@@ -679,7 +679,7 @@ message objects.
       specified by the current :mod:`~email.policy`.  If the added part
       has no :mailheader:`Content-Disposition` header, add one with the value
       ``attachment``.  This method can be used both for explicit attachments
-      (:mailheader:`Content-Disposition: attachment` and ``inline`` attachments
+      (:mailheader:`Content-Disposition: attachment`) and ``inline`` attachments
       (:mailheader:`Content-Disposition: inline`), by passing appropriate
       options to the ``content_manager``.
 
