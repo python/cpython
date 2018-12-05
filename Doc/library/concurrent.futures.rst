@@ -141,7 +141,7 @@ And::
    each worker thread; *initargs* is a tuple of arguments passed to the
    initializer.  Should *initializer* raise an exception, all currently
    pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
-   as well any attempt to submit more jobs to the pool.
+   as well as any attempt to submit more jobs to the pool.
 
    .. versionchanged:: 3.5
       If *max_workers* is ``None`` or
@@ -153,7 +153,7 @@ And::
 
    .. versionadded:: 3.6
       The *thread_name_prefix* argument was added to allow users to
-      control the threading.Thread names for worker threads created by
+      control the :class:`threading.Thread` names for worker threads created by
       the pool for easier debugging.
 
    .. versionchanged:: 3.7
