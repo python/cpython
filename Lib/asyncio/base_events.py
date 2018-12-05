@@ -182,6 +182,17 @@ def _ensure_resolved(address, *, family=0, type=socket.SOCK_STREAM, proto=0,
                                 proto=proto, flags=flags)
 
 
+if hasattr(socket, 'TCP_NODELAY'):
+    def _set_nodelay(sock):
+        if (sock.family in {socket.AF_INET, socket.AF_INET6} and
+                _is_stream_socket(sock.type) and
+                sock.proto == socket.IPPROTO_TCP):
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+else:
+    def _set_nodelay(sock):
+        pass
+
+
 def _run_until_complete_cb(fut):
     exc = fut._exception
     if (isinstance(exc, BaseException)

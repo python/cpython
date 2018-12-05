@@ -350,6 +350,11 @@ class _ProactorSocketTransport(_ProactorReadPipeTransport,
                                transports.Transport):
     """Transport for connected sockets."""
 
+    def __init__(self, loop, sock, protocol, waiter=None,
+                 extra=None, server=None):
+        super().__init__(loop, sock, protocol, waiter, extra, server)
+        base_events._set_nodelay(sock)
+
     def _set_extra(self, sock):
         self._extra['socket'] = sock
         try:
