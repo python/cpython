@@ -1708,7 +1708,7 @@ class GeneralModuleTests(unittest.TestCase):
         # open fd because on this path it doesn't actually verify the family and
         # type and populates the socket object.
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        fileno = sock.detach()
+        fd = sock.detach()
         unknown_family = max(socket.AddressFamily.__members__.values()) + 1
 
         unknown_type = max(
@@ -1719,7 +1719,7 @@ class GeneralModuleTests(unittest.TestCase):
 
         with socket.socket(
                 family=unknown_family, type=unknown_type, proto=23,
-                fileno=fileno) as s:
+                fileno=fd) as s:
             self.assertEqual(s.family, unknown_family)
             self.assertEqual(s.type, unknown_type)
             # some OS like macOS ignore proto
