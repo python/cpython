@@ -451,13 +451,11 @@ error:
 int
 Py_MakePendingCalls(void)
 {
-    int res = 0;
-
     assert(PyGILState_Check());
 
     /* Python signal handler doesn't really queue a callback: it only signals
        that a signal was received, see _PyEval_SignalReceived(). */
-    res = handle_signals();
+    int res = handle_signals();
     if (res != 0) {
         return res;
     }
