@@ -85,7 +85,7 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
         if (single_line_comment && (*p == '\n')) {
             single_line_comment = 0;
             continue;
-        } else if (multi_line_comment && PyOS_strnicmp(p, "*/", 2) == 0) {
+        } else if (multi_line_comment && strcmp(p, "*/") == 0) {
             multi_line_comment = 0;
             p++;
             continue;
@@ -94,10 +94,10 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
             continue;
         }
         // detect leading comments
-        if (PyOS_strnicmp(p, "--", 2) == 0) {
+        if (strcmp(p, "--") == 0) {
             single_line_comment = 1;
             continue;
-        } else if (PyOS_strnicmp(p, "/*", 2) == 0) {
+        } else if (strcmp(p, "/*") == 0) {
             multi_line_comment = 1;
             p++;
             continue;
