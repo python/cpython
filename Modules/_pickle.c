@@ -3840,7 +3840,10 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
 
         if (obj != NULL) {
             obj_class = get_class(obj);
-            p = obj_class != cls;    /* true iff a problem */
+            if (obj_class == NULL) {
+                return -1;
+            }
+            p = obj_class != cls;
             Py_DECREF(obj_class);
             if (p) {
                 PyErr_SetString(st->PicklingError, "args[0] from "
