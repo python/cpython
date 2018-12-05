@@ -1785,6 +1785,19 @@ class GeneralModuleTests(unittest.TestCase):
             s.bind(os.path.join(tmpdir, 'socket'))
             self._test_socket_fileno(s, socket.AF_UNIX, socket.SOCK_STREAM)
 
+    def test_socket_fileno_rejects_float(self):
+        with self.assertRaises(TypeError):
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=42.5)
+
+    def test_socket_fileno_rejects_invalid_socket(self):
+        with self.assertRaises(ValueError):
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=-1)
+
+    @unittest.skipIf(os.name == "nt", "Windows disallows -1 only")
+    def test_socket_fileno_rejects_negative(self):
+        with self.assertRaises(ValueError):
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=-42)
+
 
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')
 class BasicCANTest(unittest.TestCase):

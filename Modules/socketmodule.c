@@ -5012,12 +5012,22 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
         else
 #endif
         {
+
+            if (PyFloat_Check(fdobj)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "integer argument expected, got float");
+                return -1;
+            }
+
             fd = PyLong_AsSocket_t(fdobj);
             if (fd == (SOCKET_T)(-1) && PyErr_Occurred())
                 return -1;
+#ifdef MS_WINDOWS
             if (fd == INVALID_SOCKET) {
-                PyErr_SetString(PyExc_ValueError,
-                                "can't use invalid socket value");
+#else
+            if (fd < 0) {
+#endif
+                PyErr_SetString(PyExc_ValueError, "negative file descriptor");
                 return -1;
             }
 
