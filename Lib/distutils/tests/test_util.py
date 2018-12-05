@@ -237,24 +237,30 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         util._environ_checked = 0
         os.environ.pop('HOME', None)
 
-        # posix without HOME
-        if os.name == 'posix':  # this test won't run on windows
-            check_environ()
-            import pwd
-            self.assertEqual(os.environ['HOME'], pwd.getpwuid(os.getuid())[5])
-        else:
-            check_environ()
+        check_environ()
 
         self.assertEqual(os.environ['PLAT'], get_platform())
         self.assertEqual(util._environ_checked, 1)
 
     @unittest.skipUnless(os.name == 'posix', 'specific to posix')
-    def test_check_environ_getpwuid_error(self):
+    def test_check_environ_getpwuid(self):
+        util._environ_checked = 0
+        os.environ.pop('HOME', None)
+
+        import pwd
+
+        # only set pw_dir field, other fields are not used
+        result = pwd.struct_passwd((None, None, None, None, None,
+                                    '/home/distutils', None))
+        with mock.patch.object(pwd, 'getpwuid', return_value=result):
+            check_environ()
+            self.assertEqual(os.environ['HOME'], '/home/distutils')
+
         util._environ_checked = 0
         os.environ.pop('HOME', None)
 
         # bpo-10496: Catch pwd.getpwuid() error
-        with mock.patch('pwd.getpwuid', side_effect=KeyError):
+        with mock.patch.object(pwd, 'getpwuid', side_effect=KeyError):
             check_environ()
             self.assertNotIn('HOME', os.environ)
 
