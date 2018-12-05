@@ -532,6 +532,7 @@ PyState_RemoveModule(struct PyModuleDef* def)
         Py_FatalError("PyState_RemoveModule: Module index out of bounds.");
         return -1;
     }
+    Py_INCREF(Py_None);
     return PyList_SetItem(state->modules_by_index, index, Py_None);
 }
 
