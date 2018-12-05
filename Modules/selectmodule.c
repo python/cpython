@@ -279,6 +279,10 @@ select_select(PyObject *self, PyObject *args)
         if (tvp) {
             timeout = deadline - _PyTime_GetMonotonicClock();
             if (timeout < 0) {
+                /* bpo-35310: lists were unmodified -- clear them explicitly */
+                FD_ZERO(&ifdset);
+                FD_ZERO(&ofdset);
+                FD_ZERO(&efdset);
                 n = 0;
                 break;
             }
