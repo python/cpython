@@ -10,6 +10,11 @@ from unittest import mock
 from test import support
 
 class PlatformTest(unittest.TestCase):
+    def clear_caches(self):
+        platform._platform_cache.clear()
+        platform._sys_version_cache.clear()
+        platform._uname_cache = None
+
     def test_architecture(self):
         res = platform.architecture()
 
@@ -342,6 +347,34 @@ class PlatformTest(unittest.TestCase):
         self.assertLess(V('0.4'), V('0.4.0'))
         self.assertLess(V('1.13++'), V('5.5.kw'))
         self.assertLess(V('0.960923'), V('2.2beta29'))
+
+
+    def test_macos(self):
+        self.addCleanup(self.clear_caches)
+
+        uname = ('Darwin', 'hostname', '17.7.0',
+                 ('Darwin Kernel Version 17.7.0: '
+                  'Thu Jun 21 22:53:14 PDT 2018; '
+                  'root:xnu-4570.71.2~1/RELEASE_X86_64'),
+                 'x86_64', 'i386')
+        arch = ('64bit', '')
+        with mock.patch.object(platform, 'uname', return_value=uname), \
+             mock.patch.object(platform, 'architecture', return_value=arch):
+            for mac_ver, expected_terse, expected in [
+                # darwin: mac_ver() returns empty strings
+                (('', '', ''),
+                 'Darwin-17.7.0',
+                 'Darwin-17.7.0-x86_64-i386-64bit'),
+                # macOS: mac_ver() returns macOS version
+                (('10.13.6', ('', '', ''), 'x86_64'),
+                 'macOS-10.13.6',
+                 'macOS-10.13.6-x86_64-i386-64bit'),
+            ]:
+                with mock.patch.object(platform, 'mac_ver',
+                                       return_value=mac_ver):
+                    self.clear_caches()
+                    self.assertEqual(platform.platform(terse=1), expected_terse)
+                    self.assertEqual(platform.platform(), expected)
 
 
 if __name__ == '__main__':
