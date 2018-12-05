@@ -5047,7 +5047,8 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
                    Error out if family must be resolved, or bad descriptor. */
                 if (family == -1 || CHECK_ERRNO(ENOTSOCK)) {
 #else
-                if (1) {
+                /* getsockname() is not supported for SOL_ALG on Linux. */
+                if (family == -1 || CHECK_ERRNO(EBADF) || CHECK_ERRNO(ENOTSOCK)) {
 #endif
                     set_error();
                     return -1;
