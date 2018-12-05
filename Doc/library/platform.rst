@@ -79,6 +79,11 @@ Cross Platform
    Setting *terse* to true causes the function to return only the absolute minimum
    information needed to identify the platform.
 
+   .. versionchanged:: 3.8
+      On macOS, the function now uses :func:`mac_ver`, if it returns a
+      non-empty release string, to get the macOS version rather than the darwin
+      version.
+
 
 .. function:: processor()
 
