@@ -3,7 +3,9 @@ import platform
 import subprocess
 import sys
 import sysconfig
+import tempfile
 import unittest
+from unittest import mock
 
 from test import support
 
@@ -263,19 +265,46 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(sts, 0)
 
     def test_libc_ver(self):
+        # check that libc_ver(executable) doesn't raise an exception
         if os.path.isdir(sys.executable) and \
            os.path.exists(sys.executable+'.exe'):
             # Cygwin horror
             executable = sys.executable + '.exe'
         else:
             executable = sys.executable
-        res = platform.libc_ver(executable)
+        platform.libc_ver(executable)
 
-        self.addCleanup(support.unlink, support.TESTFN)
-        with open(support.TESTFN, 'wb') as f:
-            f.write(b'x'*(16384-10))
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+
+        with mock.patch('os.confstr', create=True, return_value='mock 1.0'):
+            # test os.confstr() code path
+            self.assertEqual(platform.libc_ver(), ('mock', '1.0'))
+
+            # test the different regular expressions
+            for data, expected in (
+                (b'__libc_init', ('libc', '')),
+                (b'GLIBC_2.9', ('glibc', '2.9')),
+                (b'libc.so.1.2.5', ('libc', '1.2.5')),
+                (b'libc_pthread.so.1.2.5', ('libc', '1.2.5_pthread')),
+                (b'', ('', '')),
+            ):
+                with open(filename, 'wb') as fp:
+                    fp.write(b'[xxx%sxxx]' % data)
+                    fp.flush()
+
+                # os.confstr() must not be used if executable is set
+                self.assertEqual(platform.libc_ver(executable=filename),
+                                 expected)
+
+        # binary containing multiple versions: get the most recent,
+        # make sure that 1.9 is seen as older than 1.23.4
+        chunksize = 16384
+        with open(filename, 'wb') as f:
+            # test match at chunk boundary
+            f.write(b'x'*(chunksize - 10))
             f.write(b'GLIBC_1.23.4\0GLIBC_1.9\0GLIBC_1.21\0')
-        self.assertEqual(platform.libc_ver(support.TESTFN),
+        self.assertEqual(platform.libc_ver(filename, chunksize=chunksize),
                          ('glibc', '1.23.4'))
 
     @support.cpython_only
