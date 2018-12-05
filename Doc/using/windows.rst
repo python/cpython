@@ -613,11 +613,11 @@ user's "application data" directory (i.e. the directory returned by calling the
 Windows function ``SHGetFolderPath`` with ``CSIDL_LOCAL_APPDATA``) and ``py.ini`` in the
 same directory as the launcher. The same .ini files are used for both the
 'console' version of the launcher (i.e. py.exe) and for the 'windows' version
-(i.e. pyw.exe)
+(i.e. pyw.exe).
 
 Customization specified in the "application directory" will have precedence over
 the one next to the executable, so a user, who may not have write access to the
-.ini file next to the launcher, can override commands in that global .ini file)
+.ini file next to the launcher, can override commands in that global .ini file.
 
 Customizing default Python versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
