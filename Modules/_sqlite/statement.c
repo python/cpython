@@ -55,6 +55,8 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     const char* sql_cstr;
     Py_ssize_t sql_cstr_len;
     const char* p;
+	unsigned char multi_line_comment;
+	unsigned char single_line_comment;
 
     self->st = NULL;
     self->in_use = 0;
@@ -76,7 +78,31 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     /* Determine if the statement is a DML statement.
        SELECT is the only exception. See #9924. */
     self->is_dml = 0;
+	single_line_comment = 0;
+	multi_line_comment = 0;
     for (p = sql_cstr; *p != 0; p++) {
+		// skip leading comments
+		if (single_line_comment && (*p == '\n')) {
+			single_line_comment = 0;
+			continue;
+	    } else if (multi_line_comment && PyOS_strnicmp(p, "*/", 2) == 0) {
+		    multi_line_comment = 0;
+			p++;
+			continue;
+	    }
+		if (single_line_comment || multi_line_comment) {
+			continue;
+		}
+		// detect leading comments
+		if (PyOS_strnicmp(p, "--", 2) == 0) {
+		    single_line_comment = 1;
+			continue;
+	    } else if (PyOS_strnicmp(p, "/*", 2) == 0) {
+		    multi_line_comment = 1;
+			p++;			
+			continue;
+	    }
+		// skip leading whitespace 
         switch (*p) {
             case ' ':
             case '\r':
