@@ -219,13 +219,12 @@ class PlatformTest(unittest.TestCase):
         if platform.uname().system == 'Darwin':
             # We're on a MacOSX system, check that
             # the right version information is returned
-            fd = os.popen('sw_vers', 'r')
-            real_ver = None
-            for ln in fd:
-                if ln.startswith('ProductVersion:'):
-                    real_ver = ln.strip().split()[-1]
-                    break
-            fd.close()
+            with os.popen('sw_vers') as fd:
+                real_ver = None
+                for ln in fd:
+                    if ln.startswith('ProductVersion:'):
+                        real_ver = ln.strip().split()[-1]
+                        break
             self.assertFalse(real_ver is None)
             result_list = res[0].split('.')
             expect_list = real_ver.split('.')
