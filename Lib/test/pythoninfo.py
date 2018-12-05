@@ -144,6 +144,10 @@ def collect_platform(info_add):
     info_add('platform.platform',
              platform.platform(aliased=True))
 
+    libc_ver = ('%s %s' % platform.libc_ver()).strip()
+    if libc_ver:
+        info_add('platform.libc_ver', libc_ver)
+
 
 def collect_locale(info_add):
     import locale
