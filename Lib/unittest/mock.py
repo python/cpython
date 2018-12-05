@@ -25,6 +25,7 @@ __all__ = (
 __version__ = '1.0'
 
 
+import functools
 import inspect
 import pprint
 import sys
@@ -68,21 +69,22 @@ def _get_signature_object(func, as_instance, eat_self):
     signature object.
     Return a (reduced func, signature) tuple, or None.
     """
-    if isinstance(func, type) and not as_instance:
-        # If it's a type and should be modelled as a type, use __init__.
-        try:
-            func = func.__init__
-        except AttributeError:
-            return None
-        # Skip the `self` argument in __init__
-        eat_self = True
-    elif not isinstance(func, FunctionTypes):
-        # If we really want to model an instance of the passed type,
-        # __call__ should be looked up, not __init__.
-        try:
-            func = func.__call__
-        except AttributeError:
-            return None
+    if not isinstance(func, functools.partial):
+        if isinstance(func, type) and not as_instance:
+            # If it's a type and should be modelled as a type, use __init__.
+            try:
+                func = func.__init__
+            except AttributeError:
+                return None
+            # Skip the `self` argument in __init__
+            eat_self = True
+        elif not isinstance(func, FunctionTypes):
+            # If we really want to model an instance of the passed type,
+            # __call__ should be looked up, not __init__.
+            try:
+                func = func.__call__
+            except AttributeError:
+                return None
     if eat_self:
         sig_func = partial(func, None)
     else:
@@ -103,6 +105,7 @@ def _check_signature(func, mock, skipfirst, instance=False):
         sig.bind(*args, **kwargs)
     _copy_func_details(func, checksig)
     type(mock)._mock_check_sig = checksig
+    type(mock).__signature__ = sig
 
 
 def _copy_func_details(func, funcopy):
@@ -172,11 +175,11 @@ def _set_signature(mock, original, instance=False):
     return mock(*args, **kwargs)""" % name
     exec (src, context)
     funcopy = context[name]
-    _setup_func(funcopy, mock)
+    _setup_func(funcopy, mock, sig)
     return funcopy
 
 
-def _setup_func(funcopy, mock):
+def _setup_func(funcopy, mock, sig):
     funcopy.mock = mock
 
     # can't use isinstance with mocks
@@ -224,6 +227,7 @@ def _setup_func(funcopy, mock):
     funcopy.assert_called = assert_called
     funcopy.assert_not_called = assert_not_called
     funcopy.assert_called_once = assert_called_once
+    funcopy.__signature__ = sig
 
     mock._mock_delegate = funcopy
 
@@ -2303,6 +2307,8 @@ def _must_skip(spec, entry, is_type):
             # Normal method => skip if looked up on type
             # (if looked up on instance, self is already skipped)
             return is_type
+        elif isinstance(result, functools.partialmethod):
+            return True
         else:
             return False
 
