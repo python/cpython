@@ -156,7 +156,7 @@ module documentation.  This section lists the differences between the API and
    encoding. Encoding this string in an encoding other than UTF-8 is
    likely incorrect, since UTF-8 is the default encoding of XML.
 
-.. method:: Node.toprettyxml(indent="\t", newl="\n", encoding=None)
+.. method:: Node.toprettyxml(indent="\\t", newl="\\n", encoding=None)
 
    Return a pretty-printed version of the document. *indent* specifies the
    indentation string and defaults to a tabulator; *newl* specifies the string
