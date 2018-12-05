@@ -18,14 +18,13 @@ def mkrealfile(name):
     st = os.stat(name) # Get the mode
     mode = S_IMODE(st[ST_MODE])
     linkto = os.readlink(name) # Make sure again it's a symlink
-    f_in = open(name, 'r') # This ensures it's a file
-    os.unlink(name)
-    f_out = open(name, 'w')
-    while 1:
-        buf = f_in.read(BUFSIZE)
-        if not buf: break
-        f_out.write(buf)
-    del f_out # Flush data to disk before changing mode
+    with open(name, 'rb') as f_in: # This ensures it's a file
+        os.unlink(name)
+        with open(name, 'wb') as f_out:
+            while 1:
+                buf = f_in.read(BUFSIZE)
+                if not buf: break
+                f_out.write(buf)
     os.chmod(name, mode)
 
 def mkrealdir(name):
