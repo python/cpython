@@ -54,7 +54,7 @@ attribute to ``True``, so that using ``raise new_exc from None``
 effectively replaces the old exception with the new one for display
 purposes (e.g. converting :exc:`KeyError` to :exc:`AttributeError`), while
 leaving the old exception available in :attr:`__context__` for introspection
-when debugging).
+when debugging.
 
 The default traceback display code shows these chained exceptions in
 addition to the traceback for the exception itself. An explicitly chained
