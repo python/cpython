@@ -1043,9 +1043,10 @@ class CallableMixin(Base):
 
             ret_val = effect(*args, **kwargs)
 
-        if (self._mock_wraps is not None and
-             self._mock_return_value is DEFAULT):
+        elif (self._mock_wraps is not None and
+                self._mock_return_value is DEFAULT):
             return self._mock_wraps(*args, **kwargs)
+
         if ret_val is DEFAULT:
             ret_val = self.return_value
         return ret_val
