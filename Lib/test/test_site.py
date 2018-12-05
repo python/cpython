@@ -257,7 +257,7 @@ class HelperFunctionsTests(unittest.TestCase):
         # the call sets USER_BASE *and* USER_SITE
         self.assertEqual(site.USER_SITE, user_site)
         self.assertTrue(user_site.startswith(site.USER_BASE), user_site)
-        self.assertTrue(site.USER_BASE, site.getuserbase())
+        self.assertEqual(site.USER_BASE, site.getuserbase())
 
     def test_getsitepackages(self):
         site.PREFIXES = ['xoxo']

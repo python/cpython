@@ -246,6 +246,13 @@ class PosixPathTest(unittest.TestCase):
 
     def test_expanduser_home_envvar(self):
         with support.EnvironmentVarGuard() as env:
+            env['HOME'] = '/home/victor'
+            self.assertEqual(posixpath.expanduser("~"), "/home/victor")
+
+            # expanduser() strips trailing slash
+            env['HOME'] = '/home/victor/'
+            self.assertEqual(posixpath.expanduser("~"), "/home/victor")
+
             for home in '/', '', '//', '///':
                 with self.subTest(home=home):
                     env['HOME'] = home
@@ -254,10 +261,7 @@ class PosixPathTest(unittest.TestCase):
                     self.assertEqual(posixpath.expanduser("~/foo"), "/foo")
 
     def test_expanduser_pwd(self):
-        try:
-            import pwd
-        except ImportError:
-            self.skipTest("need pwd module")
+        pwd = support.import_module('pwd')
 
         self.assertIsInstance(posixpath.expanduser("~/"), str)
         self.assertIsInstance(posixpath.expanduser(b"~/"), bytes)
