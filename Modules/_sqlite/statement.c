@@ -81,7 +81,7 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     single_line_comment = 0;
     multi_line_comment = 0;
     for (p = sql_cstr; *p != 0; p++) {
-		// skip leading comments
+        // skip leading comments
         if (single_line_comment && (*p == '\n')) {
             single_line_comment = 0;
             continue;
