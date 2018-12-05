@@ -256,6 +256,7 @@ def collect_os(info_add):
         "TIX_LIBRARY",
         "TMP",
         "TMPDIR",
+        "TRAVIS",
         "TZ",
         "USERPROFILE",
         "VIRTUAL_ENV",
