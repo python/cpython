@@ -6,6 +6,7 @@ executing have not been removed.
 """
 import unittest
 import test.support
+from test import support
 from test.support import (captured_stderr, TESTFN, EnvironmentVarGuard,
                           change_cwd)
 import builtins
@@ -297,7 +298,8 @@ class HelperFunctionsTests(unittest.TestCase):
             self.assertTrue(user_site.startswith(user_base), user_site)
 
         with mock.patch('os.path.isdir', return_value=False) as mock_isdir, \
-             mock.patch.object(site, 'addsitedir') as mock_addsitedir:
+             mock.patch.object(site, 'addsitedir') as mock_addsitedir, \
+             support.swap_attr(site, 'ENABLE_USER_SITE', True):
 
             # addusersitepackages() must not add user_site to sys.path
             # if it is not an existing directory
