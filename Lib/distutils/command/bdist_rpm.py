@@ -537,7 +537,8 @@ class bdist_rpm(Command):
                     '',
                     '%' + rpm_opt,])
                 if val:
-                    spec_file.extend(open(val, 'r').read().split('\n'))
+                    with open(val) as f:
+                        spec_file.extend(f.read().split('\n'))
                 else:
                     spec_file.append(default)
 
