@@ -39,6 +39,7 @@
 #include "parsetok.h"
 
 extern grammar _PyParser_Grammar; /* From graminit.c */
+extern grammar ValidationGrammar; /* From gramvalid.c */
 
 #ifdef lint
 #include <note.h>
@@ -649,11 +650,11 @@ validate_node(node *tree)
 
     assert(ISNONTERMINAL(type));
     type -= NT_OFFSET;
-    if (type >= _PyParser_Grammar.g_ndfas) {
+    if (type >= ValidationGrammar.g_ndfas) {
         PyErr_Format(parser_error, "Unrecognized node type %d.", TYPE(tree));
         return 0;
     }
-    const dfa *nt_dfa = &_PyParser_Grammar.g_dfa[type];
+    const dfa *nt_dfa = &ValidationGrammar.g_dfa[type];
     REQ(tree, nt_dfa->d_type);
 
     /* Run the DFA for this nonterminal. */

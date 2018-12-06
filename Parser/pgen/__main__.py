@@ -21,6 +21,11 @@ def main():
         type=argparse.FileType('w'),
         help="The path to write the grammar as initialized data",
     )
+    parser.add_argument(
+        "gramvalid_c",
+        type=argparse.FileType('w'),
+        help="The path to write the validation grammar as initialized data",
+    )
 
     parser.add_argument("--verbose", "-v", action="count")
     args = parser.parse_args()
@@ -28,7 +33,9 @@ def main():
     p = ParserGenerator(args.grammar, args.tokens, verbose=args.verbose)
     grammar = p.make_grammar()
     grammar.produce_graminit_h(args.graminit_h.write)
-    grammar.produce_graminit_c(args.graminit_c.write)
+    grammar.produce_graminit_c(args.graminit_c.write, "_PyParser_Grammar")
+    grammar.extend_for_validation()
+    grammar.produce_graminit_c(args.gramvalid_c.write, "ValidationGrammar")
 
 
 if __name__ == "__main__":

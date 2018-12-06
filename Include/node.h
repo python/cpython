@@ -22,6 +22,7 @@ PyAPI_FUNC(node *) PyNode_New(int type);
 PyAPI_FUNC(int) PyNode_AddChild(node *n, int type,
                                 char *str, int lineno, int col_offset,
                                 int end_lineno, int end_col_offset);
+PyAPI_FUNC(void) PyNode_Compress(node *n);
 PyAPI_FUNC(void) PyNode_Free(node *n);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_ssize_t) _PyNode_SizeOf(node *n);

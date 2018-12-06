@@ -56,12 +56,12 @@ s_pop(stack *s)
 {
     if (s_empty(s))
         Py_FatalError("s_pop: parser stack underflow -- FATAL");
-    s->s_top++;
+    PyNode_Compress(s->s_top++->s_parent);
 }
 
 #else /* !Py_DEBUG */
 
-#define s_pop(s) (s)->s_top++
+#define s_pop(s) PyNode_Compress((s)->s_top++->s_parent)
 
 #endif
 

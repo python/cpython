@@ -293,6 +293,7 @@
     <ClCompile Include="..\Modules\errnomodule.c" />
     <ClCompile Include="..\Modules\faulthandler.c" />
     <ClCompile Include="..\Modules\gcmodule.c" />
+    <ClCompile Include="..\Modules\gramvalid.c" />
     <ClCompile Include="..\Modules\hashtable.c" />
     <ClCompile Include="..\Modules\itertoolsmodule.c" />
     <ClCompile Include="..\Modules\main.c" />

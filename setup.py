@@ -774,7 +774,7 @@ class PyBuildExt(build_ext):
         self.add(Extension('select', ['selectmodule.c']))
 
         # Fred Drake's interface to the Python parser
-        self.add(Extension('parser', ['parsermodule.c']))
+        self.add(Extension('parser', ['parsermodule.c', 'gramvalid.c']))
 
         # Memory-mapped files (also works on Win32).
         self.add(Extension('mmap', ['mmapmodule.c']))

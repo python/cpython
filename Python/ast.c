@@ -14,6 +14,11 @@
 #include <stdbool.h>
 
 #define MAXLEVEL 200    /* Max parentheses level */
+#define case_EXPR case comparison: case lambdef: \
+    case term: case factor: case power: case namedexpr_test: \
+    case test: case test_nocond: case and_test: case or_test: case not_test: \
+    case expr: case xor_expr: case and_expr: case shift_expr: \
+    case arith_expr: case star_expr: case atom_expr: case atom
 
 static int validate_stmts(asdl_seq *);
 static int validate_exprs(asdl_seq *, expr_context_ty, int);
@@ -728,7 +733,7 @@ num_stmts(const node *n)
             l = 0;
             for (i = 0; i < NCH(n); i++) {
                 ch = CHILD(n, i);
-                if (TYPE(ch) == stmt)
+                if (TYPE(ch) == stmt || TYPE(ch) == simple_stmt || TYPE(ch) == compound_stmt)
                     l += num_stmts(ch);
             }
             return l;
@@ -742,17 +747,14 @@ num_stmts(const node *n)
         case func_body_suite:
             /* func_body_suite: simple_stmt | NEWLINE [TYPE_COMMENT NEWLINE] INDENT stmt+ DEDENT */
             /* suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT */
-            if (NCH(n) == 1)
-                return num_stmts(CHILD(n, 0));
-            else {
-                i = 2;
-                l = 0;
-                if (TYPE(CHILD(n, 1)) == TYPE_COMMENT)
-                    i += 2;
-                for (; i < (NCH(n) - 1); i++)
-                    l += num_stmts(CHILD(n, i));
-                return l;
-            }
+            assert(NCH(n) > 1);
+            i = 2;
+            l = 0;
+            if (TYPE(CHILD(n, 1)) == TYPE_COMMENT)
+                i += 2;
+            for (; i < (NCH(n) - 1); i++)
+                l += num_stmts(CHILD(n, i));
+            return l;
         default: {
             char buf[128];
 
@@ -800,7 +802,7 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
                 ch = CHILD(n, i);
                 if (TYPE(ch) == NEWLINE)
                     continue;
-                REQ(ch, stmt);
+                assert(TYPE(ch) == stmt || TYPE(ch) == simple_stmt || TYPE(ch) == compound_stmt);
                 num = num_stmts(ch);
                 if (num == 1) {
                     s = ast_for_stmt(&c, ch);
@@ -809,7 +811,6 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
                     asdl_seq_SET(stmts, k++, s);
                 }
                 else {
-                    ch = CHILD(ch, 0);
                     REQ(ch, simple_stmt);
                     for (j = 0; j < num; j++) {
                         s = ast_for_stmt(&c, CHILD(ch, j * 2));
@@ -897,7 +898,7 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
                  * stars on the args -- just parse them into an ordered list */
                 num = 0;
                 for (i = 0; i < NCH(ch); i++) {
-                    if (TYPE(CHILD(ch, i)) == test) {
+                    if (TYPE(CHILD(ch, i)) >= NT_OFFSET) {
                         num++;
                     }
                 }
@@ -908,7 +909,7 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
 
                 j = 0;
                 for (i = 0; i < NCH(ch); i++) {
-                    if (TYPE(CHILD(ch, i)) == test) {
+                    if (TYPE(CHILD(ch, i)) >= NT_OFFSET) {
                         arg = ast_for_expr(&c, CHILD(ch, i));
                         if (!arg)
                             goto out;
@@ -1235,9 +1236,7 @@ ast_for_comp_op(struct compiling *c, const node *n)
     /* comp_op: '<'|'>'|'=='|'>='|'<='|'!='|'in'|'not' 'in'|'is'
                |'is' 'not'
     */
-    REQ(n, comp_op);
-    if (NCH(n) == 1) {
-        n = CHILD(n, 0);
+    if (NCH(n) == 0) {
         switch (TYPE(n)) {
             case LESS:
                 return Lt;
@@ -1263,7 +1262,8 @@ ast_for_comp_op(struct compiling *c, const node *n)
                 return (cmpop_ty)0;
         }
     }
-    else if (NCH(n) == 2) {
+    REQ(n, comp_op);
+    if (NCH(n) == 2) {
         /* handle "not in" and "is not" */
         switch (TYPE(CHILD(n, 0))) {
             case NAME:
@@ -1300,7 +1300,11 @@ seq_for_testlist(struct compiling *c, const node *n)
 
     for (i = 0; i < NCH(n); i += 2) {
         const node *ch = CHILD(n, i);
-        assert(TYPE(ch) == test || TYPE(ch) == test_nocond || TYPE(ch) == star_expr || TYPE(ch) == namedexpr_test);
+        switch (TYPE(ch)) {
+        case_EXPR: break;
+        default: assert(0 && "unexpected type in testlist");
+        }
+
 
         expression = ast_for_expr(c, ch);
         if (!expression)
@@ -2475,47 +2479,51 @@ ast_for_slice(struct compiling *c, const node *n)
     node *ch;
     expr_ty lower = NULL, upper = NULL, step = NULL;
 
-    REQ(n, subscript);
-
     /*
        subscript: test | [test] ':' [test] [sliceop]
        sliceop: ':' [test]
     */
-    ch = CHILD(n, 0);
-    if (NCH(n) == 1 && TYPE(ch) == test) {
+    switch (TYPE(n)) {
+    case_EXPR:
         /* 'step' variable hold no significance in terms of being used over
            other vars */
-        step = ast_for_expr(c, ch);
+        step = ast_for_expr(c, n);
         if (!step)
             return NULL;
 
         return Index(step, c->c_arena);
+    case COLON:
+        return Slice(NULL, NULL, NULL, c->c_arena);
     }
 
-    if (TYPE(ch) == test) {
+    REQ(n, subscript);
+    assert(NCH(n) > 1);
+    ch = CHILD(n, 0);
+    if (TYPE(ch) != COLON) {
         lower = ast_for_expr(c, ch);
         if (!lower)
             return NULL;
-    }
 
-    /* If there's an upper bound it's in the second or third position. */
-    if (TYPE(ch) == COLON) {
-        if (NCH(n) > 1) {
-            node *n2 = CHILD(n, 1);
+        /* If there's an upper bound it's in the second or third position. */
+        if (NCH(n) > 2) {
+            node *n2 = CHILD(n, 2);
 
-            if (TYPE(n2) == test) {
+            if (TYPE(n2) != sliceop) {
                 upper = ast_for_expr(c, n2);
                 if (!upper)
                     return NULL;
             }
         }
-    } else if (NCH(n) > 2) {
-        node *n2 = CHILD(n, 2);
+    } else {
+        REQ(ch, COLON);
+        if (NCH(n) > 1) {
+            node *n2 = CHILD(n, 1);
 
-        if (TYPE(n2) == test) {
-            upper = ast_for_expr(c, n2);
-            if (!upper)
-                return NULL;
+            if (TYPE(n2) != sliceop) {
+                upper = ast_for_expr(c, n2);
+                if (!upper)
+                    return NULL;
+            }
         }
     }
 
@@ -2523,11 +2531,9 @@ ast_for_slice(struct compiling *c, const node *n)
     if (TYPE(ch) == sliceop) {
         if (NCH(ch) != 1) {
             ch = CHILD(ch, 1);
-            if (TYPE(ch) == test) {
-                step = ast_for_expr(c, ch);
-                if (!step)
-                    return NULL;
-            }
+            step = ast_for_expr(c, ch);
+            if (!step)
+                return NULL;
         }
     }
 
@@ -2707,6 +2713,7 @@ ast_for_atom_expr(struct compiling *c, const node *n)
 
     REQ(n, atom_expr);
     nch = NCH(n);
+    assert(nch > 1);
 
     if (TYPE(CHILD(n, 0)) == AWAIT) {
         if (c->c_feature_version < 5) {
@@ -2715,14 +2722,11 @@ ast_for_atom_expr(struct compiling *c, const node *n)
             return NULL;
         }
         start = 1;
-        assert(nch > 1);
     }
 
     e = ast_for_atom(c, CHILD(n, start));
     if (!e)
         return NULL;
-    if (nch == 1)
-        return e;
     if (start && nch == 2) {
         return Await(e, LINENO(n), n->n_col_offset,
                      n->n_end_lineno, n->n_end_col_offset, c->c_arena);
@@ -2756,13 +2760,17 @@ ast_for_power(struct compiling *c, const node *n)
     /* power: atom trailer* ('**' factor)*
      */
     expr_ty e;
+    node *ch;
     REQ(n, power);
-    e = ast_for_atom_expr(c, CHILD(n, 0));
+    assert(NCH(n) > 1);
+    ch = CHILD(n, 0);
+    if (TYPE(ch) == atom)
+        e = ast_for_atom(c, ch);
+    else
+        e = ast_for_atom_expr(c, ch);
     if (!e)
         return NULL;
-    if (NCH(n) == 1)
-        return e;
-    if (TYPE(CHILD(n, NCH(n) - 1)) == factor) {
+    if (TYPE(CHILD(n, NCH(n) - 2)) == DOUBLESTAR) {
         expr_ty f = ast_for_expr(c, CHILD(n, NCH(n) - 1));
         if (!f)
             return NULL;
@@ -2814,29 +2822,25 @@ ast_for_expr(struct compiling *c, const node *n)
        yield_expr: 'yield' [yield_arg]
     */
 
-    asdl_seq *seq;
+    asdl_seq *seq, *cmps;
+    asdl_int_seq *ops;
+    expr_ty expression;
     int i;
 
- loop:
     switch (TYPE(n)) {
+        case lambdef:
+        case lambdef_nocond:
+            return ast_for_lambdef(c, n);
         case namedexpr_test:
-            if (NCH(n) == 3)
-                return ast_for_namedexpr(c, n);
-            /* Fallthrough */
+            assert(NCH(n) == 3);
+            return ast_for_namedexpr(c, n);
         case test:
         case test_nocond:
-            if (TYPE(CHILD(n, 0)) == lambdef ||
-                TYPE(CHILD(n, 0)) == lambdef_nocond)
-                return ast_for_lambdef(c, CHILD(n, 0));
-            else if (NCH(n) > 1)
-                return ast_for_ifexpr(c, n);
-            /* Fallthrough */
+            assert(NCH(n) > 1);
+            return ast_for_ifexpr(c, n);
         case or_test:
         case and_test:
-            if (NCH(n) == 1) {
-                n = CHILD(n, 0);
-                goto loop;
-            }
+            assert(NCH(n) > 1);
             seq = _Py_asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
             if (!seq)
                 return NULL;
@@ -2854,60 +2858,46 @@ ast_for_expr(struct compiling *c, const node *n)
             return BoolOp(Or, seq, LINENO(n), n->n_col_offset,
                           n->n_end_lineno, n->n_end_col_offset, c->c_arena);
         case not_test:
-            if (NCH(n) == 1) {
-                n = CHILD(n, 0);
-                goto loop;
-            }
-            else {
-                expr_ty expression = ast_for_expr(c, CHILD(n, 1));
-                if (!expression)
-                    return NULL;
+            assert(NCH(n) > 1);
+            expression = ast_for_expr(c, CHILD(n, 1));
+            if (!expression)
+                return NULL;
 
-                return UnaryOp(Not, expression, LINENO(n), n->n_col_offset,
-                               n->n_end_lineno, n->n_end_col_offset,
-                               c->c_arena);
-            }
+            return UnaryOp(Not, expression, LINENO(n), n->n_col_offset,
+                           n->n_end_lineno, n->n_end_col_offset,
+                           c->c_arena);
         case comparison:
-            if (NCH(n) == 1) {
-                n = CHILD(n, 0);
-                goto loop;
+            assert(NCH(n) > 1);
+            ops = _Py_asdl_int_seq_new(NCH(n) / 2, c->c_arena);
+            if (!ops)
+                return NULL;
+            cmps = _Py_asdl_seq_new(NCH(n) / 2, c->c_arena);
+            if (!cmps) {
+                return NULL;
             }
-            else {
-                expr_ty expression;
-                asdl_int_seq *ops;
-                asdl_seq *cmps;
-                ops = _Py_asdl_int_seq_new(NCH(n) / 2, c->c_arena);
-                if (!ops)
-                    return NULL;
-                cmps = _Py_asdl_seq_new(NCH(n) / 2, c->c_arena);
-                if (!cmps) {
+            for (i = 1; i < NCH(n); i += 2) {
+                cmpop_ty newoperator;
+
+                newoperator = ast_for_comp_op(c, CHILD(n, i));
+                if (!newoperator) {
                     return NULL;
                 }
-                for (i = 1; i < NCH(n); i += 2) {
-                    cmpop_ty newoperator;
 
-                    newoperator = ast_for_comp_op(c, CHILD(n, i));
-                    if (!newoperator) {
-                        return NULL;
-                    }
-
-                    expression = ast_for_expr(c, CHILD(n, i + 1));
-                    if (!expression) {
-                        return NULL;
-                    }
-
-                    asdl_seq_SET(ops, i / 2, newoperator);
-                    asdl_seq_SET(cmps, i / 2, expression);
-                }
-                expression = ast_for_expr(c, CHILD(n, 0));
+                expression = ast_for_expr(c, CHILD(n, i + 1));
                 if (!expression) {
                     return NULL;
                 }
 
-                return Compare(expression, ops, cmps, LINENO(n), n->n_col_offset,
-                               n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                asdl_seq_SET(ops, i / 2, newoperator);
+                asdl_seq_SET(cmps, i / 2, expression);
             }
-            break;
+            expression = ast_for_expr(c, CHILD(n, 0));
+            if (!expression) {
+                return NULL;
+            }
+
+            return Compare(expression, ops, cmps, LINENO(n), n->n_col_offset,
+                           n->n_end_lineno, n->n_end_col_offset, c->c_arena);
 
         case star_expr:
             return ast_for_starred(c, n);
@@ -2921,10 +2911,7 @@ ast_for_expr(struct compiling *c, const node *n)
         case shift_expr:
         case arith_expr:
         case term:
-            if (NCH(n) == 1) {
-                n = CHILD(n, 0);
-                goto loop;
-            }
+            assert(NCH(n) > 1);
             return ast_for_binop(c, n);
         case yield_expr: {
             node *an = NULL;
@@ -2951,13 +2938,14 @@ ast_for_expr(struct compiling *c, const node *n)
                          n->n_end_lineno, n->n_end_col_offset, c->c_arena);
         }
         case factor:
-            if (NCH(n) == 1) {
-                n = CHILD(n, 0);
-                goto loop;
-            }
+            assert(NCH(n) > 1);
             return ast_for_factor(c, n);
         case power:
             return ast_for_power(c, n);
+        case atom:
+            return ast_for_atom(c, n);
+        case atom_expr:
+            return ast_for_atom_expr(c, n);
         default:
             PyErr_Format(PyExc_SystemError, "unhandled expr: %d", TYPE(n));
             return NULL;
@@ -3114,32 +3102,9 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 // To remain LL(1), the grammar accepts any test (basically, any
                 // expression) in the keyword slot of a call site.  So, we need
                 // to manually enforce that the keyword is a NAME here.
-                static const int name_tree[] = {
-                    test,
-                    or_test,
-                    and_test,
-                    not_test,
-                    comparison,
-                    expr,
-                    xor_expr,
-                    and_expr,
-                    shift_expr,
-                    arith_expr,
-                    term,
-                    factor,
-                    power,
-                    atom_expr,
-                    atom,
-                    0,
-                };
                 node *expr_node = chch;
-                for (int i = 0; name_tree[i]; i++) {
-                    if (TYPE(expr_node) != name_tree[i])
-                        break;
-                    if (NCH(expr_node) != 1)
-                        break;
+                if (TYPE(expr_node) == atom && NCH(expr_node) == 1)
                     expr_node = CHILD(expr_node, 0);
-                }
                 if (TYPE(expr_node) != NAME) {
                     ast_error(c, chch,
                               "expression cannot contain assignment, "
@@ -3181,24 +3146,31 @@ ast_for_testlist(struct compiling *c, const node* n)
 {
     /* testlist_comp: test (comp_for | (',' test)* [',']) */
     /* testlist: test (',' test)* [','] */
+    asdl_seq *tmp;
     assert(NCH(n) > 0);
-    if (TYPE(n) == testlist_comp) {
-        if (NCH(n) > 1)
+    switch (TYPE(n)) {
+    case testlist_comp:
+        if (NCH(n) > 1) {
             assert(TYPE(CHILD(n, 1)) != comp_for);
+            break;
+        }
+        n = CHILD(n, 0);
+        /* Fallthrough */
+    case_EXPR:
+        return ast_for_expr(c, n);
+    case testlist:
+    case testlist_star_expr:
+        assert(NCH(n) > 1);
+        break;
+    default:
+        PyErr_SetString(PyExc_SystemError, "unexpected testlist type");
+        return NULL;
     }
-    else {
-        assert(TYPE(n) == testlist ||
-               TYPE(n) == testlist_star_expr);
-    }
-    if (NCH(n) == 1)
-        return ast_for_expr(c, CHILD(n, 0));
-    else {
-        asdl_seq *tmp = seq_for_testlist(c, n);
-        if (!tmp)
-            return NULL;
-        return Tuple(tmp, Load, LINENO(n), n->n_col_offset,
-                     n->n_end_lineno, n->n_end_col_offset, c->c_arena);
-    }
+    tmp = seq_for_testlist(c, n);
+    if (!tmp)
+        return NULL;
+    return Tuple(tmp, Load, LINENO(n), n->n_col_offset,
+                 n->n_end_lineno, n->n_end_col_offset, c->c_arena);
 }
 
 static stmt_ty
@@ -3513,8 +3485,9 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
       dotted_name: NAME ('.' NAME)*
     */
     identifier str, name;
+    node *asname_node;
+    alias_ty a;
 
- loop:
     switch (TYPE(n)) {
         case import_as_name: {
             node *name_node = CHILD(n, 0);
@@ -3537,24 +3510,18 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
             return alias(name, str, c->c_arena);
         }
         case dotted_as_name:
-            if (NCH(n) == 1) {
-                n = CHILD(n, 0);
-                goto loop;
-            }
-            else {
-                node *asname_node = CHILD(n, 2);
-                alias_ty a = alias_for_import_name(c, CHILD(n, 0), 0);
-                if (!a)
-                    return NULL;
-                assert(!a->asname);
-                a->asname = NEW_IDENTIFIER(asname_node);
-                if (!a->asname)
-                    return NULL;
-                if (forbidden_name(c, a->asname, asname_node, 0))
-                    return NULL;
-                return a;
-            }
-            break;
+            assert(NCH(n) > 1);
+            asname_node = CHILD(n, 2);
+            a = alias_for_import_name(c, CHILD(n, 0), 0);
+            if (!a)
+                return NULL;
+            assert(!a->asname);
+            a->asname = NEW_IDENTIFIER(asname_node);
+            if (!a->asname)
+                return NULL;
+            if (forbidden_name(c, a->asname, asname_node, 0))
+                return NULL;
+            return a;
         case dotted_name:
             if (NCH(n) == 1) {
                 node *name_node = CHILD(n, 0);
@@ -3827,16 +3794,14 @@ ast_for_suite(struct compiling *c, const node *n)
     int i, total, num, end, pos = 0;
     node *ch;
 
-    if (TYPE(n) != func_body_suite) {
-        REQ(n, suite);
-    }
+    assert(TYPE(n) == suite || TYPE(n) == func_body_suite ||
+           TYPE(n) == simple_stmt);
 
     total = num_stmts(n);
     seq = _Py_asdl_seq_new(total, c->c_arena);
     if (!seq)
         return NULL;
-    if (TYPE(CHILD(n, 0)) == simple_stmt) {
-        n = CHILD(n, 0);
+    if (TYPE(n) == simple_stmt) {
         /* simple_stmt always ends with a NEWLINE,
            and may have a trailing SEMI
         */
@@ -3861,7 +3826,7 @@ ast_for_suite(struct compiling *c, const node *n)
 
         for (; i < (NCH(n) - 1); i++) {
             ch = CHILD(n, i);
-            REQ(ch, stmt);
+            assert(TYPE(ch) == stmt || TYPE(ch) == simple_stmt || TYPE(ch) == compound_stmt);
             num = num_stmts(ch);
             if (num == 1) {
                 /* small_stmt or compound_stmt with only one child */
@@ -3872,7 +3837,6 @@ ast_for_suite(struct compiling *c, const node *n)
             }
             else {
                 int j;
-                ch = CHILD(ch, 0);
                 REQ(ch, simple_stmt);
                 for (j = 0; j < NCH(ch); j += 2) {
                     /* statement terminates with a semi-colon ';' */
@@ -4161,7 +4125,7 @@ ast_for_except_clause(struct compiling *c, const node *exc, node *body)
     /* except_clause: 'except' [test ['as' test]] */
     int end_lineno, end_col_offset;
     REQ(exc, except_clause);
-    REQ(body, suite);
+    assert(TYPE(body) == suite || TYPE(body) == simple_stmt);
 
     if (NCH(exc) == 1) {
         asdl_seq *suite_seq = ast_for_suite(c, body);
@@ -4447,10 +4411,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 static stmt_ty
 ast_for_stmt(struct compiling *c, const node *n)
 {
-    if (TYPE(n) == stmt) {
-        assert(NCH(n) == 1);
-        n = CHILD(n, 0);
-    }
+    assert(TYPE(n) != stmt); // must have been compressed
     if (TYPE(n) == simple_stmt) {
         assert(num_stmts(n) == 1);
         n = CHILD(n, 0);
@@ -5844,4 +5805,42 @@ _PyAST_GetDocString(asdl_seq *body)
         return e->v.Constant.value;
     }
     return NULL;
+}
+
+void PyNode_Compress(node* n) {
+    if (NCH(n) == 1) {
+        node* ch;
+        switch (TYPE(n)) {
+        case func_body_suite:
+        case suite:
+        case comp_op:
+        case subscript:
+        case atom_expr:
+        case power:
+        case factor:
+        case expr:
+        case xor_expr:
+        case and_expr:
+        case shift_expr:
+        case arith_expr:
+        case term:
+        case comparison:
+        case testlist_star_expr:
+        case testlist:
+        case namedexpr_test:
+        case test:
+        case test_nocond:
+        case or_test:
+        case and_test:
+        case not_test:
+        case dotted_as_name:
+        case stmt:
+            if (STR(n) != NULL)
+                PyObject_FREE(STR(n));
+            ch = CHILD(n, 0);
+            *n = *ch;
+            // All grandchildren are now adopted; don't need to free them, so no need for PyNode_Free
+            PyObject_FREE(ch);
+        }
+    }
 }

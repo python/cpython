@@ -1,0 +1,3 @@
+Reduce peak memory consumption by the parser, by compressing some
+branchless stretches in the parse tree into a single node. AST is
+not affected.
