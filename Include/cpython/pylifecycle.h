@@ -90,9 +90,10 @@ PyAPI_FUNC(int) _PyOS_URandom(void *buffer, Py_ssize_t size);
 PyAPI_FUNC(int) _PyOS_URandomNonblock(void *buffer, Py_ssize_t size);
 
 /* Legacy locale support */
+PyAPI_FUNC(int) _Py_LegacyLocaleDetected(void);
+PyAPI_FUNC(int) _Py_LegacyLocaleCoercionEnabled(int argc, char **argv);
 PyAPI_FUNC(int) _Py_CoerceLegacyLocale(const char **coercion_target,
                                        const char **coercion_warning);
-PyAPI_FUNC(int) _Py_LegacyLocaleDetected(void);
 PyAPI_FUNC(char *) _Py_SetLocaleFromEnv(int category);
 
 

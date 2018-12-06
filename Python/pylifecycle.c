@@ -248,7 +248,7 @@ initexternalimport(PyInterpreterState *interp)
  * Accordingly, when the CLI detects it, it attempts to coerce it to a
  * more capable UTF-8 based alternative as follows:
  *
- *     if (_Py_LegacyLocaleDetected()) {
+ *     if (_Py_LegacyLocaleDetected() && _Py_LegacyLocaleCoercionEnabled(argc, argv)) {
  *         _Py_CoerceLegacyLocale();
  *     }
  *
@@ -281,6 +281,56 @@ _Py_LegacyLocaleDetected(void)
     return 0;
 #endif
 }
+
+int
+_Py_LegacyLocaleCoercionEnabled(int argc, char **argv)
+{
+    int enable_coercion = -1;
+    if (argc >= 1 && argv != NULL) {
+        /* Rudimentary arg parsing to allow -E and -I to disable
+         * PYTHONCOERCECLOCALE, even though locale coercion occurs
+         * well in advance of the main arg parsing loop.
+         *
+         * Ignore argv[0], as that's the program name.
+         */
+        for (int i = 1; i < argc; i++) {
+            const char* arg = argv[i];
+            if (arg[0] != '-') {
+                /* Non-option arg is a path to execute */
+                break;
+            } else {
+                size_t arg_len = strlen(arg);
+                if (arg_len == 1) {
+                    /* '-' is the end of the Python arg list */
+                    break;
+                }
+                if (arg_len == 2) {
+                    char option = arg[1];
+                    if (option == 'X' || option == 'W') {
+                        /* Skip argument to -X or -W, and check next arg */
+                        i++;
+                        continue;
+                    }
+                    if (option == 'E' || option == 'I') {
+                        /* If the environment is ignored, locale coercion is always on */
+                        enable_coercion = 1;
+                        break;
+                    }
+                    if (option == 'c' || option == 'm') {
+                        /* -c and -m also mark the end of the Python arg list */
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    if (enable_coercion < 0) {
+        const char *coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
+        enable_coercion = (coerce_c_locale == NULL || strncmp(coerce_c_locale, "0", 2) != 0);
+    }
+    return enable_coercion;
+}
+
 
 static const char *_C_LOCALE_WARNING =
     "Python runtime initialized with a legacy locale that uses a default ASCII "
