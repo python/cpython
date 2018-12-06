@@ -335,6 +335,10 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
         if (tvp) {
             timeout = deadline - _PyTime_GetMonotonicClock();
             if (timeout < 0) {
+                /* bpo-35310: lists were unmodified -- clear them explicitly */
+                FD_ZERO(&ifdset);
+                FD_ZERO(&ofdset);
+                FD_ZERO(&efdset);
                 n = 0;
                 break;
             }
@@ -846,8 +850,6 @@ static PyObject *
 select_devpoll_modify_impl(devpollObject *self, int fd,
                            unsigned short eventmask)
 /*[clinic end generated code: output=bc2e6d23aaff98b4 input=48a820fc5967165d]*/
-static PyObject *
-devpoll_modify(devpollObject *self, PyObject *args)
 {
     return internal_devpoll_register(self, fd, eventmask, 1);
 }
@@ -895,7 +897,7 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
 /*[clinic end generated code: output=2654e5457cca0b3c input=fd0db698d84f0333]*/
 {
     struct dvpoll dvp;
-    PyObject *result_list = NULL, *timeout_obj = NULL;
+    PyObject *result_list = NULL;
     int poll_result, i;
     PyObject *value, *num1, *num2;
     _PyTime_t timeout, ms, deadline = 0;
@@ -1033,7 +1035,7 @@ select_devpoll_close_impl(devpollObject *self)
 }
 
 static PyObject*
-devpoll_get_closed(devpollObject *self)
+devpoll_get_closed(devpollObject *self, void *Py_UNUSED(ignored))
 {
     if (self->fd_devpoll < 0)
         Py_RETURN_TRUE;
@@ -1335,7 +1337,7 @@ select_epoll_close_impl(pyEpoll_Object *self)
 
 
 static PyObject*
-pyepoll_get_closed(pyEpoll_Object *self)
+pyepoll_get_closed(pyEpoll_Object *self, void *Py_UNUSED(ignored))
 {
     if (self->epfd < 0)
         Py_RETURN_TRUE;
@@ -1500,17 +1502,12 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
     int nfds, i;
     PyObject *elist = NULL, *etuple = NULL;
     struct epoll_event *evs = NULL;
-    _PyTime_t timeout, ms, deadline;
+    _PyTime_t timeout = -1, ms = -1, deadline = 0;
 
     if (self->epfd < 0)
         return pyepoll_err_closed();
 
-    if (timeout_obj == Py_None) {
-        timeout = -1;
-        ms = -1;
-        deadline = 0;   /* initialize to prevent gcc warning */
-    }
-    else {
+    if (timeout_obj != Py_None) {
         /* epoll_wait() has a resolution of 1 millisecond, round towards
            infinity to wait at least timeout seconds. */
         if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
@@ -1527,8 +1524,20 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
             PyErr_SetString(PyExc_OverflowError, "timeout is too large");
             return NULL;
         }
+        /* epoll_wait(2) treats all arbitrary negative numbers the same
+           for the timeout argument, but -1 is the documented way to block
+           indefinitely in the epoll_wait(2) documentation, so we set ms
+           to -1 if the value of ms is a negative number.
 
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+           Note that we didn't use INFTIM here since it's non-standard and
+           isn't available under Linux. */
+        if (ms < 0) {
+            ms = -1;
+        }
+
+        if (timeout >= 0) {
+            deadline = _PyTime_GetMonotonicClock() + timeout;
+        }
     }
 
     if (maxevents == -1) {
@@ -1974,7 +1983,7 @@ select_kqueue_close_impl(kqueue_queue_Object *self)
 }
 
 static PyObject*
-kqueue_queue_get_closed(kqueue_queue_Object *self)
+kqueue_queue_get_closed(kqueue_queue_Object *self, void *Py_UNUSED(ignored))
 {
     if (self->kqfd < 0)
         Py_RETURN_TRUE;

@@ -21,6 +21,7 @@ also syntactically compound statements.
 .. index::
    single: clause
    single: suite
+   single: ; (semicolon)
 
 A compound statement consists of one or more 'clauses.'  A clause consists of a
 header and a 'suite.'  The clause headers of a particular compound statement are
@@ -84,8 +85,7 @@ The :keyword:`if` statement
    statement: if
    keyword: elif
    keyword: else
-           keyword: elif
-           keyword: else
+   single: : (colon); compound statement
 
 The :keyword:`if` statement is used for conditional execution:
 
@@ -111,6 +111,7 @@ The :keyword:`while` statement
    keyword: else
    pair: loop; statement
    keyword: else
+   single: : (colon); compound statement
 
 The :keyword:`while` statement is used for repeated execution as long as an
 expression is true:
@@ -149,6 +150,7 @@ The :keyword:`for` statement
    keyword: else
    pair: target; list
    object: sequence
+   single: : (colon); compound statement
 
 The :keyword:`for` statement is used to iterate over the elements of a sequence
 (such as a string, tuple or list) or other iterable object:
@@ -203,7 +205,7 @@ returns the list ``[0, 1, 2]``.
       single: mutable sequence; loop over
 
    There is a subtlety when the sequence is being modified by the loop (this can
-   only occur for mutable sequences, i.e. lists).  An internal counter is used
+   only occur for mutable sequences, e.g. lists).  An internal counter is used
    to keep track of which item is used next, and this is incremented on each
    iteration.  When this counter has reached the length of the sequence the loop
    terminates.  This means that if the suite deletes the current (or a previous)
@@ -229,7 +231,9 @@ The :keyword:`try` statement
    statement: try
    keyword: except
    keyword: finally
-.. index:: keyword: except
+   keyword: else
+   keyword: as
+   single: : (colon); compound statement
 
 The :keyword:`try` statement specifies exception handlers and/or cleanup code
 for a group of statements:
@@ -262,6 +266,8 @@ If the evaluation of an expression in the header of an except clause raises an
 exception, the original search for a handler is canceled and a search starts for
 the new exception in the surrounding code and on the call stack (it is treated
 as if the entire :keyword:`try` statement raised the exception).
+
+.. index:: single: as; except clause
 
 When a matching except clause is found, the exception is assigned to the target
 specified after the :keyword:`as` keyword in that except clause, if present, and
@@ -308,9 +314,11 @@ from a function that handled an exception.
    statement: break
    statement: continue
 
-The optional :keyword:`else` clause is executed if and when control flows off
-the end of the :keyword:`try` clause. [#]_ Exceptions in the :keyword:`else`
-clause are not handled by the preceding :keyword:`except` clauses.
+The optional :keyword:`else` clause is executed if the control flow leaves the
+:keyword:`try` suite, no exception was raised, and no :keyword:`return`,
+:keyword:`continue`, or :keyword:`break` statement was executed.  Exceptions in
+the :keyword:`else` clause are not handled by the preceding :keyword:`except`
+clauses.
 
 .. index:: keyword: finally
 
@@ -375,8 +383,11 @@ The :keyword:`with` statement
 =============================
 
 .. index::
-    statement: with
-    single: as; with statement
+   statement: with
+   keyword: as
+   single: as; with statement
+   single: , (comma); with statement
+   single: : (colon); compound statement
 
 The :keyword:`with` statement is used to wrap the execution of a block with
 methods defined by a context manager (see section :ref:`context-managers`).
@@ -463,6 +474,9 @@ Function definitions
    object: function
    pair: function; name
    pair: name; binding
+   single: () (parentheses); function definition
+   single: , (comma); parameter list
+   single: : (colon); compound statement
 
 A function definition defines a user-defined function object (see section
 :ref:`types`):
@@ -492,7 +506,7 @@ The function definition does not execute the function body; this gets executed
 only when the function is called. [#]_
 
 .. index::
-  statement: @
+   single: @ (at); function definition
 
 A function definition may be wrapped by one or more :term:`decorator` expressions.
 Decorator expressions are evaluated when the function is defined, in the scope
@@ -515,6 +529,7 @@ except that the original function is not temporarily bound to the name ``func``.
 .. index::
    triple: default; parameter; value
    single: argument; function definition
+   single: = (equals); function definition
 
 When one or more :term:`parameters <parameter>` have the form *parameter* ``=``
 *expression*, the function is said to have "default parameter values."  For a
@@ -541,8 +556,8 @@ e.g.::
        return penguin
 
 .. index::
-  statement: *
-  statement: **
+   single: * (asterisk); function definition
+   single: **; function definition
 
 Function call semantics are described in more detail in section :ref:`calls`. A
 function call always assigns values to all parameters mentioned in the parameter
@@ -555,7 +570,10 @@ new empty mapping of the same type.  Parameters after "``*``" or
 "``*identifier``" are keyword-only parameters and may only be passed
 used keyword arguments.
 
-.. index:: pair: function; annotations
+.. index::
+   pair: function; annotations
+   single: ->; function annotations
+   single: : (colon); function annotations
 
 Parameters may have annotations of the form "``: expression``" following the
 parameter name.  Any parameter may have an annotation even those of the form
@@ -617,6 +635,9 @@ Class definitions
    pair: execution; frame
    single: inheritance
    single: docstring
+   single: () (parentheses); class definition
+   single: , (comma); expression list
+   single: : (colon); compound statement
 
 A class definition defines a class object (see section :ref:`types`):
 
@@ -655,6 +676,9 @@ the definition syntax.
 
 Class creation can be customized heavily using :ref:`metaclasses <metaclasses>`.
 
+.. index::
+   single: @ (at); class definition
+
 Classes can also be decorated: just like when decorating functions, ::
 
    @f1(arg)
@@ -681,8 +705,14 @@ can be used to create instance variables with different implementation details.
 
 .. seealso::
 
-   :pep:`3115` - Metaclasses in Python 3
+   :pep:`3115` - Metaclasses in Python 3000
+      The proposal that changed the declaration of metaclasses to the current
+      syntax, and the semantics for how classes with metaclasses are
+      constructed.
+
    :pep:`3129` - Class Decorators
+      The proposal that added class decorators.  Function and method decorators
+      were introduced in :pep:`318`.
 
 
 .. _async:
@@ -707,16 +737,16 @@ Coroutine function definition
    keyword: await
 
 Execution of Python coroutines can be suspended and resumed at many points
-(see :term:`coroutine`).  In the body of a coroutine, any ``await`` and
+(see :term:`coroutine`).  Inside the body of a coroutine function, ``await`` and
 ``async`` identifiers become reserved keywords; :keyword:`await` expressions,
 :keyword:`async for` and :keyword:`async with` can only be used in
-coroutine bodies.
+coroutine function bodies.
 
 Functions defined with ``async def`` syntax are always coroutine functions,
 even if they do not contain ``await`` or ``async`` keywords.
 
-It is a :exc:`SyntaxError` to use ``yield from`` expressions in
-``async def`` coroutines.
+It is a :exc:`SyntaxError` to use a ``yield from`` expression inside the body
+of a coroutine function.
 
 An example of a coroutine function::
 
@@ -765,8 +795,8 @@ Is semantically equivalent to::
 
 See also :meth:`__aiter__` and :meth:`__anext__` for details.
 
-It is a :exc:`SyntaxError` to use ``async for`` statement outside of an
-:keyword:`async def` function.
+It is a :exc:`SyntaxError` to use an ``async for`` statement outside the
+body of a coroutine function.
 
 
 .. index:: statement: async with
@@ -803,12 +833,14 @@ Is semantically equivalent to::
 
 See also :meth:`__aenter__` and :meth:`__aexit__` for details.
 
-It is a :exc:`SyntaxError` to use ``async with`` statement outside of an
-:keyword:`async def` function.
+It is a :exc:`SyntaxError` to use an ``async with`` statement outside the
+body of a coroutine function.
 
 .. seealso::
 
    :pep:`492` - Coroutines with async and await syntax
+      The proposal that made coroutines a proper standalone concept in Python,
+      and added supporting syntax.
 
 
 .. rubric:: Footnotes
@@ -816,10 +848,6 @@ It is a :exc:`SyntaxError` to use ``async with`` statement outside of an
 .. [#] The exception is propagated to the invocation stack unless
    there is a :keyword:`finally` clause which happens to raise another
    exception. That new exception causes the old one to be lost.
-
-.. [#] Currently, control "flows off the end" except in the case of an exception
-   or the execution of a :keyword:`return`, :keyword:`continue`, or
-   :keyword:`break` statement.
 
 .. [#] A string literal appearing as the first statement in the function body is
    transformed into the function's ``__doc__`` attribute and therefore the

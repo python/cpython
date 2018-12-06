@@ -9,7 +9,8 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 #include "pythread.h"
 #include "_iomodule.h"
@@ -403,7 +404,7 @@ buffered_dealloc(buffered *self)
 }
 
 static PyObject *
-buffered_sizeof(buffered *self, void *unused)
+buffered_sizeof(buffered *self, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t res;
 
@@ -540,7 +541,7 @@ end:
 /* detach */
 
 static PyObject *
-buffered_detach(buffered *self, PyObject *args)
+buffered_detach(buffered *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *raw, *res;
     CHECK_INITIALIZED(self)
@@ -558,21 +559,21 @@ buffered_detach(buffered *self, PyObject *args)
 /* Inquiries */
 
 static PyObject *
-buffered_seekable(buffered *self, PyObject *args)
+buffered_seekable(buffered *self, PyObject *Py_UNUSED(ignored))
 {
     CHECK_INITIALIZED(self)
     return PyObject_CallMethodObjArgs(self->raw, _PyIO_str_seekable, NULL);
 }
 
 static PyObject *
-buffered_readable(buffered *self, PyObject *args)
+buffered_readable(buffered *self, PyObject *Py_UNUSED(ignored))
 {
     CHECK_INITIALIZED(self)
     return PyObject_CallMethodObjArgs(self->raw, _PyIO_str_readable, NULL);
 }
 
 static PyObject *
-buffered_writable(buffered *self, PyObject *args)
+buffered_writable(buffered *self, PyObject *Py_UNUSED(ignored))
 {
     CHECK_INITIALIZED(self)
     return PyObject_CallMethodObjArgs(self->raw, _PyIO_str_writable, NULL);
@@ -595,27 +596,17 @@ buffered_mode_get(buffered *self, void *context)
 /* Lower-level APIs */
 
 static PyObject *
-buffered_fileno(buffered *self, PyObject *args)
+buffered_fileno(buffered *self, PyObject *Py_UNUSED(ignored))
 {
     CHECK_INITIALIZED(self)
     return PyObject_CallMethodObjArgs(self->raw, _PyIO_str_fileno, NULL);
 }
 
 static PyObject *
-buffered_isatty(buffered *self, PyObject *args)
+buffered_isatty(buffered *self, PyObject *Py_UNUSED(ignored))
 {
     CHECK_INITIALIZED(self)
     return PyObject_CallMethodObjArgs(self->raw, _PyIO_str_isatty, NULL);
-}
-
-/* Serialization */
-
-static PyObject *
-buffered_getstate(buffered *self, PyObject *args)
-{
-    PyErr_Format(PyExc_TypeError,
-                 "cannot serialize '%s' object", Py_TYPE(self)->tp_name);
-    return NULL;
 }
 
 /* Forward decls */
@@ -1202,7 +1193,7 @@ _io__Buffered_readline_impl(buffered *self, Py_ssize_t size)
 
 
 static PyObject *
-buffered_tell(buffered *self, PyObject *args)
+buffered_tell(buffered *self, PyObject *Py_UNUSED(ignored))
 {
     Py_off_t pos;
 
@@ -2207,33 +2198,33 @@ bufferedrwpair_write(rwpair *self, PyObject *args)
 }
 
 static PyObject *
-bufferedrwpair_flush(rwpair *self, PyObject *args)
+bufferedrwpair_flush(rwpair *self, PyObject *Py_UNUSED(ignored))
 {
-    return _forward_call(self->writer, &PyId_flush, args);
+    return _forward_call(self->writer, &PyId_flush, NULL);
 }
 
 static PyObject *
-bufferedrwpair_readable(rwpair *self, PyObject *args)
+bufferedrwpair_readable(rwpair *self, PyObject *Py_UNUSED(ignored))
 {
-    return _forward_call(self->reader, &PyId_readable, args);
+    return _forward_call(self->reader, &PyId_readable, NULL);
 }
 
 static PyObject *
-bufferedrwpair_writable(rwpair *self, PyObject *args)
+bufferedrwpair_writable(rwpair *self, PyObject *Py_UNUSED(ignored))
 {
-    return _forward_call(self->writer, &PyId_writable, args);
+    return _forward_call(self->writer, &PyId_writable, NULL);
 }
 
 static PyObject *
-bufferedrwpair_close(rwpair *self, PyObject *args)
+bufferedrwpair_close(rwpair *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *exc = NULL, *val, *tb;
-    PyObject *ret = _forward_call(self->writer, &PyId_close, args);
+    PyObject *ret = _forward_call(self->writer, &PyId_close, NULL);
     if (ret == NULL)
         PyErr_Fetch(&exc, &val, &tb);
     else
         Py_DECREF(ret);
-    ret = _forward_call(self->reader, &PyId_close, args);
+    ret = _forward_call(self->reader, &PyId_close, NULL);
     if (exc != NULL) {
         _PyErr_ChainExceptions(exc, val, tb);
         Py_CLEAR(ret);
@@ -2242,9 +2233,9 @@ bufferedrwpair_close(rwpair *self, PyObject *args)
 }
 
 static PyObject *
-bufferedrwpair_isatty(rwpair *self, PyObject *args)
+bufferedrwpair_isatty(rwpair *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *ret = _forward_call(self->writer, &PyId_isatty, args);
+    PyObject *ret = _forward_call(self->writer, &PyId_isatty, NULL);
 
     if (ret != Py_False) {
         /* either True or exception */
@@ -2252,7 +2243,7 @@ bufferedrwpair_isatty(rwpair *self, PyObject *args)
     }
     Py_DECREF(ret);
 
-    return _forward_call(self->reader, &PyId_isatty, args);
+    return _forward_call(self->reader, &PyId_isatty, NULL);
 }
 
 static PyObject *
@@ -2394,7 +2385,6 @@ static PyMethodDef bufferedreader_methods[] = {
     {"fileno", (PyCFunction)buffered_fileno, METH_NOARGS},
     {"isatty", (PyCFunction)buffered_isatty, METH_NOARGS},
     {"_dealloc_warn", (PyCFunction)buffered_dealloc_warn, METH_O},
-    {"__getstate__", (PyCFunction)buffered_getstate, METH_NOARGS},
 
     _IO__BUFFERED_READ_METHODDEF
     _IO__BUFFERED_PEEK_METHODDEF
@@ -2485,7 +2475,6 @@ static PyMethodDef bufferedwriter_methods[] = {
     {"fileno", (PyCFunction)buffered_fileno, METH_NOARGS},
     {"isatty", (PyCFunction)buffered_isatty, METH_NOARGS},
     {"_dealloc_warn", (PyCFunction)buffered_dealloc_warn, METH_O},
-    {"__getstate__", (PyCFunction)buffered_getstate, METH_NOARGS},
 
     _IO_BUFFEREDWRITER_WRITE_METHODDEF
     _IO__BUFFERED_TRUNCATE_METHODDEF
@@ -2579,8 +2568,6 @@ static PyMethodDef bufferedrwpair_methods[] = {
     {"close", (PyCFunction)bufferedrwpair_close, METH_NOARGS},
     {"isatty", (PyCFunction)bufferedrwpair_isatty, METH_NOARGS},
 
-    {"__getstate__", (PyCFunction)buffered_getstate, METH_NOARGS},
-
     {NULL, NULL}
 };
 
@@ -2652,7 +2639,6 @@ static PyMethodDef bufferedrandom_methods[] = {
     {"fileno", (PyCFunction)buffered_fileno, METH_NOARGS},
     {"isatty", (PyCFunction)buffered_isatty, METH_NOARGS},
     {"_dealloc_warn", (PyCFunction)buffered_dealloc_warn, METH_O},
-    {"__getstate__", (PyCFunction)buffered_getstate, METH_NOARGS},
 
     {"flush", (PyCFunction)buffered_flush, METH_NOARGS},
 

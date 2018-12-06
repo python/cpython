@@ -1,38 +1,10 @@
 /* Built-in functions */
 
 #include "Python.h"
-#include "Python-ast.h"
-
-#include "node.h"
-#include "code.h"
-
-#include "asdl.h"
-#include "ast.h"
-
 #include <ctype.h>
-
-/* The default encoding used by the platform file system APIs
-   Can remain NULL for all platforms that don't have such a concept
-
-   Don't forget to modify PyUnicode_DecodeFSDefault() if you touch any of the
-   values for Py_FileSystemDefaultEncoding!
-*/
-#if defined(__APPLE__)
-const char *Py_FileSystemDefaultEncoding = "utf-8";
-int Py_HasFileSystemDefaultEncoding = 1;
-#elif defined(MS_WINDOWS)
-/* may be changed by initfsencoding(), but should never be free()d */
-const char *Py_FileSystemDefaultEncoding = "utf-8";
-int Py_HasFileSystemDefaultEncoding = 1;
-#else
-const char *Py_FileSystemDefaultEncoding = NULL; /* set by initfsencoding() */
-int Py_HasFileSystemDefaultEncoding = 0;
-#endif
-const char *Py_FileSystemDefaultEncodeErrors = "surrogateescape";
-/* UTF-8 mode (PEP 540): if equals to 1, use the UTF-8 encoding, and change
-   stdin and stdout error handler to "surrogateescape". It is equal to
-   -1 by default: unknown, will be set by Py_Main() */
-int Py_UTF8Mode = -1;
+#include "ast.h"
+#undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "pycore_pystate.h"
 
 _Py_IDENTIFIER(__builtins__);
 _Py_IDENTIFIER(__dict__);
@@ -2223,7 +2195,7 @@ PyDoc_STRVAR(builtin_sorted__doc__,
 "reverse flag can be set to request the result in descending order.");
 
 #define BUILTIN_SORTED_METHODDEF    \
-    {"sorted", (PyCFunction)builtin_sorted, METH_FASTCALL | METH_KEYWORDS, builtin_sorted__doc__},
+    {"sorted", (PyCFunction)(void(*)(void))builtin_sorted, METH_FASTCALL | METH_KEYWORDS, builtin_sorted__doc__},
 
 static PyObject *
 builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2294,8 +2266,8 @@ With an argument, equivalent to object.__dict__.");
 sum as builtin_sum
 
     iterable: object
-    start: object(c_default="NULL") = 0
     /
+    start: object(c_default="NULL") = 0
 
 Return the sum of a 'start' value (default: 0) plus an iterable of numbers
 
@@ -2306,7 +2278,7 @@ reject non-numeric types.
 
 static PyObject *
 builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
-/*[clinic end generated code: output=df758cec7d1d302f input=3b5b7a9d7611c73a]*/
+/*[clinic end generated code: output=df758cec7d1d302f input=162b50765250d222]*/
 {
     PyObject *result = start;
     PyObject *temp, *item, *iter;
@@ -2424,6 +2396,11 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 }
             }
             result = PyFloat_FromDouble(f_result);
+            if (result == NULL) {
+                Py_DECREF(item);
+                Py_DECREF(iter);
+                return NULL;
+            }
             temp = PyNumber_Add(result, item);
             Py_DECREF(result);
             Py_DECREF(item);
@@ -2714,15 +2691,15 @@ PyTypeObject PyZip_Type = {
 
 
 static PyMethodDef builtin_methods[] = {
-    {"__build_class__", (PyCFunction)builtin___build_class__,
+    {"__build_class__", (PyCFunction)(void(*)(void))builtin___build_class__,
      METH_FASTCALL | METH_KEYWORDS, build_class_doc},
-    {"__import__",      (PyCFunction)builtin___import__, METH_VARARGS | METH_KEYWORDS, import_doc},
+    {"__import__",      (PyCFunction)(void(*)(void))builtin___import__, METH_VARARGS | METH_KEYWORDS, import_doc},
     BUILTIN_ABS_METHODDEF
     BUILTIN_ALL_METHODDEF
     BUILTIN_ANY_METHODDEF
     BUILTIN_ASCII_METHODDEF
     BUILTIN_BIN_METHODDEF
-    {"breakpoint",      (PyCFunction)builtin_breakpoint, METH_FASTCALL | METH_KEYWORDS, breakpoint_doc},
+    {"breakpoint",      (PyCFunction)(void(*)(void))builtin_breakpoint, METH_FASTCALL | METH_KEYWORDS, breakpoint_doc},
     BUILTIN_CALLABLE_METHODDEF
     BUILTIN_CHR_METHODDEF
     BUILTIN_COMPILE_METHODDEF
@@ -2732,7 +2709,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_EVAL_METHODDEF
     BUILTIN_EXEC_METHODDEF
     BUILTIN_FORMAT_METHODDEF
-    {"getattr",         (PyCFunction)builtin_getattr, METH_FASTCALL, getattr_doc},
+    {"getattr",         (PyCFunction)(void(*)(void))builtin_getattr, METH_FASTCALL, getattr_doc},
     BUILTIN_GLOBALS_METHODDEF
     BUILTIN_HASATTR_METHODDEF
     BUILTIN_HASH_METHODDEF
@@ -2744,13 +2721,13 @@ static PyMethodDef builtin_methods[] = {
     {"iter",            builtin_iter,       METH_VARARGS, iter_doc},
     BUILTIN_LEN_METHODDEF
     BUILTIN_LOCALS_METHODDEF
-    {"max",             (PyCFunction)builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},
-    {"min",             (PyCFunction)builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
-    {"next",            (PyCFunction)builtin_next,       METH_FASTCALL, next_doc},
+    {"max",             (PyCFunction)(void(*)(void))builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},
+    {"min",             (PyCFunction)(void(*)(void))builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
+    {"next",            (PyCFunction)(void(*)(void))builtin_next,       METH_FASTCALL, next_doc},
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF
-    {"print",           (PyCFunction)builtin_print,      METH_FASTCALL | METH_KEYWORDS, print_doc},
+    {"print",           (PyCFunction)(void(*)(void))builtin_print,      METH_FASTCALL | METH_KEYWORDS, print_doc},
     BUILTIN_REPR_METHODDEF
     BUILTIN_ROUND_METHODDEF
     BUILTIN_SETATTR_METHODDEF
@@ -2782,6 +2759,8 @@ PyObject *
 _PyBuiltin_Init(void)
 {
     PyObject *mod, *dict, *debug;
+
+    const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
 
     if (PyType_Ready(&PyFilter_Type) < 0 ||
         PyType_Ready(&PyMap_Type) < 0 ||
@@ -2841,7 +2820,7 @@ _PyBuiltin_Init(void)
     SETBUILTIN("tuple",                 &PyTuple_Type);
     SETBUILTIN("type",                  &PyType_Type);
     SETBUILTIN("zip",                   &PyZip_Type);
-    debug = PyBool_FromLong(Py_OptimizeFlag == 0);
+    debug = PyBool_FromLong(config->optimization_level == 0);
     if (PyDict_SetItemString(dict, "__debug__", debug) < 0) {
         Py_DECREF(debug);
         return NULL;

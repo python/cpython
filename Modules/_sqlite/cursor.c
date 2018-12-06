@@ -42,11 +42,7 @@ static int pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject*
     Py_XSETREF(self->connection, connection);
     Py_CLEAR(self->statement);
     Py_CLEAR(self->next_row);
-
-    Py_XSETREF(self->row_cast_map, PyList_New(0));
-    if (!self->row_cast_map) {
-        return -1;
-    }
+    Py_CLEAR(self->row_cast_map);
 
     Py_INCREF(Py_None);
     Py_XSETREF(self->description, Py_None);
@@ -253,6 +249,7 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
 
     for (i = 0; i < numcols; i++) {
         if (self->connection->detect_types) {
+            assert(self->row_cast_map != NULL);
             converter = PyList_GetItem(self->row_cast_map, i);
             if (!converter) {
                 converter = Py_None;
@@ -911,7 +908,7 @@ static PyMethodDef cursor_methods[] = {
         PyDoc_STR("Executes a multiple SQL statements at once. Non-standard.")},
     {"fetchone", (PyCFunction)pysqlite_cursor_fetchone, METH_NOARGS,
         PyDoc_STR("Fetches one row from the resultset.")},
-    {"fetchmany", (PyCFunction)pysqlite_cursor_fetchmany, METH_VARARGS|METH_KEYWORDS,
+    {"fetchmany", (PyCFunction)(void(*)(void))pysqlite_cursor_fetchmany, METH_VARARGS|METH_KEYWORDS,
         PyDoc_STR("Fetches several rows from the resultset.")},
     {"fetchall", (PyCFunction)pysqlite_cursor_fetchall, METH_NOARGS,
         PyDoc_STR("Fetches all rows from the resultset.")},

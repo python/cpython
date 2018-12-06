@@ -8,10 +8,11 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include <float.h>
-#include "structmember.h"
 #include "datetime.h"
 #include "marshal.h"
+#include "pythread.h"
+#include "structmember.h"
+#include <float.h>
 #include <signal.h>
 
 #ifdef MS_WINDOWS
@@ -22,7 +23,10 @@
 #include <sys/wait.h>           /* For W_STOPCODE */
 #endif
 
-#include "pythread.h"
+#ifdef Py_BUILD_CORE
+#  error "_testcapi must test the public Python C API, not CPython internal C API"
+#endif
+
 static PyObject *TestError;     /* set to exception object in init */
 
 /* Raise TestError with test_name + ": " + msg, and return NULL. */
@@ -943,7 +947,7 @@ test_buildvalue_N_error(const char *fmt)
 }
 
 static PyObject *
-test_buildvalue_N(PyObject *self, PyObject *noargs)
+test_buildvalue_N(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *arg, *res;
 
@@ -2453,7 +2457,7 @@ pending_threadfunc(PyObject *self, PyObject *arg)
 
 /* Some tests of PyUnicode_FromFormat().  This needs more tests. */
 static PyObject *
-test_string_from_format(PyObject *self, PyObject *args)
+test_string_from_format(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *result;
     char *msg;
@@ -2593,7 +2597,7 @@ typedef struct {
 } known_capsule;
 
 static PyObject *
-test_capsule(PyObject *self, PyObject *args)
+test_capsule(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *object;
     const char *error = NULL;
@@ -2964,7 +2968,7 @@ make_memoryview_from_NULL_pointer(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-test_from_contiguous(PyObject* self, PyObject *noargs)
+test_from_contiguous(PyObject* self, PyObject *Py_UNUSED(ignored))
 {
     int data[9] = {-1,-1,-1,-1,-1,-1,-1,-1,-1};
     int init[5] = {0, 1, 2, 3, 4};
@@ -3017,7 +3021,7 @@ test_from_contiguous(PyObject* self, PyObject *noargs)
 extern PyTypeObject _PyBytesIOBuffer_Type;
 
 static PyObject *
-test_pep3118_obsolete_write_locks(PyObject* self, PyObject *noargs)
+test_pep3118_obsolete_write_locks(PyObject* self, PyObject *Py_UNUSED(ignored))
 {
     PyTypeObject *type = &_PyBytesIOBuffer_Type;
     PyObject *b;
@@ -3306,6 +3310,31 @@ static PyObject *
 test_decref_doesnt_leak(PyObject *ob, PyObject *Py_UNUSED(ignored))
 {
     Py_DECREF(PyLong_FromLong(0));
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_structseq_newtype_doesnt_leak(PyObject *Py_UNUSED(self),
+                              PyObject *Py_UNUSED(args))
+{
+    PyStructSequence_Desc descr;
+    PyStructSequence_Field descr_fields[3];
+
+    descr_fields[0] = (PyStructSequence_Field){"foo", "foo value"};
+    descr_fields[1] = (PyStructSequence_Field){NULL, "some hidden value"};
+    descr_fields[2] = (PyStructSequence_Field){0, NULL};
+
+    descr.name = "_testcapi.test_descr";
+    descr.doc = "This is used to test for memory leaks in NewType";
+    descr.fields = descr_fields;
+    descr.n_in_sequence = 1;
+
+    PyTypeObject* structseq_type = PyStructSequence_NewType(&descr);
+    assert(structseq_type != NULL);
+    assert(PyType_Check(structseq_type));
+    assert(PyType_FastSubclass(structseq_type, Py_TPFLAGS_TUPLE_SUBCLASS));
+    Py_DECREF(structseq_type);
+
     Py_RETURN_NONE;
 }
 
@@ -4160,7 +4189,7 @@ test_PyTime_AsMicroseconds(PyObject *self, PyObject *args)
 static PyObject*
 get_recursion_depth(PyObject *self, PyObject *args)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = PyThreadState_Get();
 
     /* subtract one to ignore the frame of the get_recursion_depth() call */
     return PyLong_FromLong(tstate->recursion_depth - 1);
@@ -4357,7 +4386,7 @@ fastcall_args(PyObject *args, PyObject ***stack, Py_ssize_t *nargs)
         *nargs = 0;
     }
     else if (PyTuple_Check(args)) {
-        *stack = &PyTuple_GET_ITEM(args, 0);
+        *stack = ((PyTupleObject *)args)->ob_item;
         *nargs = PyTuple_GET_SIZE(args);
     }
     else {
@@ -4550,6 +4579,164 @@ new_hamt(PyObject *self, PyObject *args)
 }
 
 
+/* def bad_get(self, obj, cls):
+       cls()
+       return repr(self)
+*/
+static PyObject*
+bad_get(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *self, *obj, *cls;
+    if (!_PyArg_UnpackStack(args, nargs, "bad_get", 3, 3, &self, &obj, &cls)) {
+        return NULL;
+    }
+
+    PyObject *res = PyObject_CallObject(cls, NULL);
+    if (res == NULL) {
+        return NULL;
+    }
+    Py_DECREF(res);
+
+    return PyObject_Repr(self);
+}
+
+
+static PyObject *
+encode_locale_ex(PyObject *self, PyObject *args)
+{
+    PyObject *unicode;
+    int current_locale = 0;
+    wchar_t *wstr;
+    PyObject *res = NULL;
+    const char *errors = NULL;
+
+    if (!PyArg_ParseTuple(args, "U|is", &unicode, &current_locale, &errors)) {
+        return NULL;
+    }
+    wstr = PyUnicode_AsWideCharString(unicode, NULL);
+    if (wstr == NULL) {
+        return NULL;
+    }
+    _Py_error_handler error_handler = _Py_GetErrorHandler(errors);
+
+    char *str = NULL;
+    size_t error_pos;
+    const char *reason = NULL;
+    int ret = _Py_EncodeLocaleEx(wstr,
+                                 &str, &error_pos, &reason,
+                                 current_locale, error_handler);
+    PyMem_Free(wstr);
+
+    switch(ret) {
+    case 0:
+        res = PyBytes_FromString(str);
+        PyMem_RawFree(str);
+        break;
+    case -1:
+        PyErr_NoMemory();
+        break;
+    case -2:
+        PyErr_Format(PyExc_RuntimeError, "encode error: pos=%zu, reason=%s",
+                     error_pos, reason);
+        break;
+    case -3:
+        PyErr_SetString(PyExc_ValueError, "unsupported error handler");
+        break;
+    default:
+        PyErr_SetString(PyExc_ValueError, "unknow error code");
+        break;
+    }
+    return res;
+}
+
+
+static PyObject *
+decode_locale_ex(PyObject *self, PyObject *args)
+{
+    char *str;
+    int current_locale = 0;
+    PyObject *res = NULL;
+    const char *errors = NULL;
+
+    if (!PyArg_ParseTuple(args, "y|is", &str, &current_locale, &errors)) {
+        return NULL;
+    }
+    _Py_error_handler error_handler = _Py_GetErrorHandler(errors);
+
+    wchar_t *wstr = NULL;
+    size_t wlen = 0;
+    const char *reason = NULL;
+    int ret = _Py_DecodeLocaleEx(str,
+                                 &wstr, &wlen, &reason,
+                                 current_locale, error_handler);
+
+    switch(ret) {
+    case 0:
+        res = PyUnicode_FromWideChar(wstr, wlen);
+        PyMem_RawFree(wstr);
+        break;
+    case -1:
+        PyErr_NoMemory();
+        break;
+    case -2:
+        PyErr_Format(PyExc_RuntimeError, "decode error: pos=%zu, reason=%s",
+                     wlen, reason);
+        break;
+    case -3:
+        PyErr_SetString(PyExc_ValueError, "unsupported error handler");
+        break;
+    default:
+        PyErr_SetString(PyExc_ValueError, "unknow error code");
+        break;
+    }
+    return res;
+}
+
+
+static PyObject *
+get_global_config(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return _Py_GetGlobalVariablesAsDict();
+}
+
+
+static PyObject *
+get_core_config(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    const _PyCoreConfig *config = &interp->core_config;
+    return _PyCoreConfig_AsDict(config);
+}
+
+
+static PyObject *
+get_main_config(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    const _PyMainInterpreterConfig *config = &interp->config;
+    return _PyMainInterpreterConfig_AsDict(config);
+}
+
+
+#ifdef Py_REF_DEBUG
+static PyObject *
+negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *obj = PyUnicode_FromString("negative_refcount");
+    if (obj == NULL) {
+        return NULL;
+    }
+    assert(Py_REFCNT(obj) == 1);
+
+    Py_REFCNT(obj) = 0;
+    /* Py_DECREF() must call _Py_NegativeRefcount() and abort Python */
+    Py_DECREF(obj);
+
+    Py_RETURN_NONE;
+}
+#endif
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
@@ -4575,6 +4762,8 @@ static PyMethodDef TestMethods[] = {
     {"test_incref_doesnt_leak", test_incref_doesnt_leak,         METH_NOARGS},
     {"test_xdecref_doesnt_leak",test_xdecref_doesnt_leak,        METH_NOARGS},
     {"test_decref_doesnt_leak", test_decref_doesnt_leak,         METH_NOARGS},
+    {"test_structseq_newtype_doesnt_leak",
+        test_structseq_newtype_doesnt_leak, METH_NOARGS},
     {"test_incref_decref_API",  test_incref_decref_API,          METH_NOARGS},
     {"test_long_and_overflow",  test_long_and_overflow,          METH_NOARGS},
     {"test_long_as_double",     test_long_as_double,             METH_NOARGS},
@@ -4598,14 +4787,14 @@ static PyMethodDef TestMethods[] = {
     {"getbuffer_with_null_view", getbuffer_with_null_view, METH_O},
     {"test_buildvalue_N",       test_buildvalue_N,               METH_NOARGS},
     {"get_args", get_args, METH_VARARGS},
-    {"get_kwargs", (PyCFunction)get_kwargs, METH_VARARGS|METH_KEYWORDS},
+    {"get_kwargs", (PyCFunction)(void(*)(void))get_kwargs, METH_VARARGS|METH_KEYWORDS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
-    {"getargs_keywords", (PyCFunction)getargs_keywords,
+    {"getargs_keywords", (PyCFunction)(void(*)(void))getargs_keywords,
       METH_VARARGS|METH_KEYWORDS},
-    {"getargs_keyword_only", (PyCFunction)getargs_keyword_only,
+    {"getargs_keyword_only", (PyCFunction)(void(*)(void))getargs_keyword_only,
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_positional_only_and_keywords",
-      (PyCFunction)getargs_positional_only_and_keywords,
+      (PyCFunction)(void(*)(void))getargs_positional_only_and_keywords,
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_b",               getargs_b,                       METH_VARARGS},
     {"getargs_B",               getargs_B,                       METH_VARARGS},
@@ -4674,7 +4863,7 @@ static PyMethodDef TestMethods[] = {
     {"set_exc_info",            test_set_exc_info,               METH_VARARGS},
     {"argparsing",              argparsing,                      METH_VARARGS},
     {"code_newempty",           code_newempty,                   METH_VARARGS},
-    {"make_exception_with_doc", (PyCFunction)make_exception_with_doc,
+    {"make_exception_with_doc", (PyCFunction)(void(*)(void))make_exception_with_doc,
      METH_VARARGS | METH_KEYWORDS},
     {"make_memoryview_from_NULL_pointer", make_memoryview_from_NULL_pointer,
      METH_NOARGS},
@@ -4771,6 +4960,15 @@ static PyMethodDef TestMethods[] = {
     {"get_mapping_items", get_mapping_items, METH_O},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {"hamt", new_hamt, METH_NOARGS},
+    {"bad_get", (PyCFunction)(void(*)(void))bad_get, METH_FASTCALL},
+    {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
+    {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
+    {"get_global_config", get_global_config, METH_NOARGS},
+    {"get_core_config", get_core_config, METH_NOARGS},
+    {"get_main_config", get_main_config, METH_NOARGS},
+#ifdef Py_REF_DEBUG
+    {"negative_refcount", negative_refcount, METH_NOARGS},
+#endif
     {NULL, NULL} /* sentinel */
 };
 
@@ -5190,7 +5388,7 @@ generic_alias_mro_entries(PyGenericAliasObject *self, PyObject *bases)
 }
 
 static PyMethodDef generic_alias_methods[] = {
-    {"__mro_entries__", (PyCFunction) generic_alias_mro_entries, METH_O, NULL},
+    {"__mro_entries__", (PyCFunction)(void(*)(void))generic_alias_mro_entries, METH_O, NULL},
     {NULL}  /* sentinel */
 };
 

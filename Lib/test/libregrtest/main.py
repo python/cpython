@@ -14,7 +14,7 @@ from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
     findtests, runtest, get_abs_module,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
-    INTERRUPTED, CHILD_ERROR,
+    INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN,
     PROGRESS_MIN_TIME, format_test_result)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import removepy, count, format_duration, printlist
@@ -79,6 +79,7 @@ class Regrtest:
         self.resource_denieds = []
         self.environment_changed = []
         self.rerun = []
+        self.run_no_tests = []
         self.first_result = None
         self.interrupted = False
 
@@ -100,8 +101,11 @@ class Regrtest:
         self.next_single_test = None
         self.next_single_filename = None
 
+        # used by --junit-xml
+        self.testsuite_xml = None
+
     def accumulate_result(self, test, result):
-        ok, test_time = result
+        ok, test_time, xml_data = result
         if ok not in (CHILD_ERROR, INTERRUPTED):
             self.test_times.append((test_time, test))
         if ok == PASSED:
@@ -115,8 +119,19 @@ class Regrtest:
         elif ok == RESOURCE_DENIED:
             self.skipped.append(test)
             self.resource_denieds.append(test)
+        elif ok == TEST_DID_NOT_RUN:
+            self.run_no_tests.append(test)
         elif ok != INTERRUPTED:
             raise ValueError("invalid test result: %r" % ok)
+
+        if xml_data:
+            import xml.etree.ElementTree as ET
+            for e in xml_data:
+                try:
+                    self.testsuite_xml.append(ET.fromstring(e))
+                except ET.ParseError:
+                    print(xml_data, file=sys.__stderr__)
+                    raise
 
     def display_progress(self, test_index, test):
         if self.ns.quiet:
@@ -163,6 +178,9 @@ class Regrtest:
                 print('No GC available, disabling --findleaks',
                       file=sys.stderr)
                 ns.findleaks = False
+
+        if ns.xmlpath:
+            support.junit_xml_list = self.testsuite_xml = []
 
         # Strip .py extensions.
         removepy(ns.args)
@@ -353,6 +371,11 @@ class Regrtest:
             print("%s:" % count(len(self.rerun), "re-run test"))
             printlist(self.rerun)
 
+        if self.run_no_tests:
+            print()
+            print(count(len(self.run_no_tests), "test"), "run no tests:")
+            printlist(self.run_no_tests)
+
     def run_tests_sequential(self):
         if self.ns.trace:
             import trace
@@ -384,7 +407,7 @@ class Regrtest:
                     result = runtest(self.ns, test)
                 except KeyboardInterrupt:
                     self.interrupted = True
-                    self.accumulate_result(test, (INTERRUPTED, None))
+                    self.accumulate_result(test, (INTERRUPTED, None, None))
                     break
                 else:
                     self.accumulate_result(test, result)
@@ -443,6 +466,9 @@ class Regrtest:
             result.append("FAILURE")
         elif self.ns.fail_env_changed and self.environment_changed:
             result.append("ENV CHANGED")
+        elif not any((self.good, self.bad, self.skipped, self.interrupted,
+            self.environment_changed)):
+            result.append("NO TEST RUN")
 
         if self.interrupted:
             result.append("INTERRUPTED")
@@ -508,14 +534,39 @@ class Regrtest:
         if self.ns.runleaks:
             os.system("leaks %d" % os.getpid())
 
+    def save_xml_result(self):
+        if not self.ns.xmlpath and not self.testsuite_xml:
+            return
+
+        import xml.etree.ElementTree as ET
+        root = ET.Element("testsuites")
+
+        # Manually count the totals for the overall summary
+        totals = {'tests': 0, 'errors': 0, 'failures': 0}
+        for suite in self.testsuite_xml:
+            root.append(suite)
+            for k in totals:
+                try:
+                    totals[k] += int(suite.get(k, 0))
+                except ValueError:
+                    pass
+
+        for k, v in totals.items():
+            root.set(k, str(v))
+
+        xmlpath = os.path.join(support.SAVEDCWD, self.ns.xmlpath)
+        with open(xmlpath, 'wb') as f:
+            for s in ET.tostringlist(root):
+                f.write(s)
+
     def main(self, tests=None, **kwargs):
         global TEMPDIR
+        self.ns = self.parse_args(kwargs)
 
-        if sysconfig.is_python_build():
-            try:
-                os.mkdir(TEMPDIR)
-            except FileExistsError:
-                pass
+        if self.ns.tempdir:
+            TEMPDIR = self.ns.tempdir
+
+        os.makedirs(TEMPDIR, exist_ok=True)
 
         # Define a writable temp dir that will be used as cwd while running
         # the tests. The name of the dir includes the pid to allow parallel
@@ -531,8 +582,6 @@ class Regrtest:
             self._main(tests, kwargs)
 
     def _main(self, tests, kwargs):
-        self.ns = self.parse_args(kwargs)
-
         if self.ns.huntrleaks:
             warmup, repetitions, _ = self.ns.huntrleaks
             if warmup < 1 or repetitions < 1:
@@ -542,9 +591,9 @@ class Regrtest:
                 print(msg, file=sys.stderr, flush=True)
                 sys.exit(2)
 
-        if self.ns.slaveargs is not None:
-            from test.libregrtest.runtest_mp import run_tests_slave
-            run_tests_slave(self.ns.slaveargs)
+        if self.ns.worker_args is not None:
+            from test.libregrtest.runtest_mp import run_tests_worker
+            run_tests_worker(self.ns.worker_args)
 
         if self.ns.wait:
             input("Press any key to continue...")
@@ -570,6 +619,9 @@ class Regrtest:
             self.rerun_failed_tests()
 
         self.finalize()
+
+        self.save_xml_result()
+
         if self.bad:
             sys.exit(2)
         if self.interrupted:

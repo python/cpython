@@ -6,6 +6,7 @@ if __name__ != 'test.support':
 import asyncio.events
 import collections.abc
 import contextlib
+import datetime
 import errno
 import faulthandler
 import fnmatch
@@ -13,6 +14,7 @@ import functools
 import gc
 import importlib
 import importlib.util
+import io
 import logging.handlers
 import nntplib
 import os
@@ -33,6 +35,8 @@ import types
 import unittest
 import urllib.error
 import warnings
+
+from .testresult import get_test_runner
 
 try:
     import multiprocessing.process
@@ -68,7 +72,7 @@ __all__ = [
     # globals
     "PIPE_MAX_SIZE", "verbose", "max_memuse", "use_resources", "failfast",
     # exceptions
-    "Error", "TestFailed", "ResourceDenied",
+    "Error", "TestFailed", "TestDidNotRun", "ResourceDenied",
     # imports
     "import_module", "import_fresh_module", "CleanImport",
     # modules
@@ -89,6 +93,7 @@ __all__ = [
     "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_unless_bind_unix_socket",
+    "ignore_warnings",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
     "setswitchinterval",
@@ -102,7 +107,8 @@ __all__ = [
     # threads
     "threading_setup", "threading_cleanup", "reap_threads", "start_threads",
     # miscellaneous
-    "check_warnings", "check_no_resource_warning", "EnvironmentVarGuard",
+    "check_warnings", "check_no_resource_warning", "check_no_warnings",
+    "EnvironmentVarGuard",
     "run_with_locale", "swap_item",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
@@ -113,6 +119,9 @@ class Error(Exception):
 
 class TestFailed(Error):
     """Test failed."""
+
+class TestDidNotRun(Error):
+    """Test did not run any subtests."""
 
 class ResourceDenied(unittest.SkipTest):
     """Test skipped because it requested a disallowed resource.
@@ -136,6 +145,22 @@ def _ignore_deprecated_imports(ignore=True):
             yield
     else:
         yield
+
+
+def ignore_warnings(*, category):
+    """Decorator to suppress deprecation warnings.
+
+    Use of context managers to hide warnings make diffs
+    more noisy and tools like 'git blame' less useful.
+    """
+    def decorator(test):
+        @functools.wraps(test)
+        def wrapper(self, *args, **kwargs):
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', category=category)
+                return test(self, *args, **kwargs)
+        return wrapper
+    return decorator
 
 
 def import_module(name, deprecated=False, *, required_on=()):
@@ -278,6 +303,7 @@ use_resources = None     # Flag set to [] by regrtest.py
 max_memuse = 0           # Disable bigmem tests (they will still be run with
                          # small sizes, to make sure they work.)
 real_max_memuse = 0
+junit_xml_list = None    # list of testsuite XML elements
 failfast = False
 
 # _original_stdout is meant to hold stdout at the time regrtest began.
@@ -845,7 +871,11 @@ for character in (
     '\u20AC',
 ):
     try:
-        os.fsdecode(os.fsencode(character))
+        # If Python is set up to use the legacy 'mbcs' in Windows,
+        # 'replace' error mode is used, and encode() returns b'?'
+        # for characters missing in the ANSI codepage
+        if os.fsdecode(os.fsencode(character)) != character:
+            raise UnicodeError
     except UnicodeError:
         pass
     else:
@@ -1231,6 +1261,30 @@ def check_warnings(*filters, **kwargs):
 
 
 @contextlib.contextmanager
+def check_no_warnings(testcase, message='', category=Warning, force_gc=False):
+    """Context manager to check that no warnings are emitted.
+
+    This context manager enables a given warning within its scope
+    and checks that no warnings are emitted even with that warning
+    enabled.
+
+    If force_gc is True, a garbage collection is attempted before checking
+    for warnings. This may help to catch warnings emitted when objects
+    are deleted, such as ResourceWarning.
+
+    Other keyword arguments are passed to warnings.filterwarnings().
+    """
+    with warnings.catch_warnings(record=True) as warns:
+        warnings.filterwarnings('always',
+                                message=message,
+                                category=category)
+        yield
+        if force_gc:
+            gc_collect()
+    testcase.assertEqual(warns, [])
+
+
+@contextlib.contextmanager
 def check_no_resource_warning(testcase):
     """Context manager to check that no ResourceWarning is emitted.
 
@@ -1244,11 +1298,8 @@ def check_no_resource_warning(testcase):
     You must remove the object which may emit ResourceWarning before
     the end of the context manager.
     """
-    with warnings.catch_warnings(record=True) as warns:
-        warnings.filterwarnings('always', category=ResourceWarning)
+    with check_no_warnings(testcase, category=ResourceWarning, force_gc=True):
         yield
-        gc_collect()
-    testcase.assertEqual(warns, [])
 
 
 class CleanImport(object):
@@ -1404,6 +1455,9 @@ def transient_internet(resource_name, *, timeout=30.0, errnos=()):
         ('EHOSTUNREACH', 113),
         ('ENETUNREACH', 101),
         ('ETIMEDOUT', 110),
+        # socket.create_connection() fails randomly with
+        # EADDRNOTAVAIL on Travis CI.
+        ('EADDRNOTAVAIL', 99),
     ]
     default_gai_errnos = [
         ('EAI_AGAIN', -3),
@@ -1874,13 +1928,17 @@ def _filter_suite(suite, pred):
 
 def _run_suite(suite):
     """Run tests from a unittest.TestSuite-derived class."""
-    if verbose:
-        runner = unittest.TextTestRunner(sys.stdout, verbosity=2,
-                                         failfast=failfast)
-    else:
-        runner = BasicTestRunner()
+    runner = get_test_runner(sys.stdout,
+                             verbosity=verbose,
+                             capture_output=(junit_xml_list is not None))
 
     result = runner.run(suite)
+
+    if junit_xml_list is not None:
+        junit_xml_list.append(result.get_xml_element())
+
+    if not result.testsRun:
+        raise TestDidNotRun
     if not result.wasSuccessful():
         if len(result.errors) == 1 and not result.failures:
             err = result.errors[0][1]
@@ -1938,8 +1996,8 @@ def set_match_tests(patterns):
 
         def match_test_regex(test_id):
             if regex_match(test_id):
-                # The regex matchs the whole identifier like
-                # 'test.test_os.FileTests.test_access'
+                # The regex matches the whole identifier, for example
+                # 'test.test_os.FileTests.test_access'.
                 return True
             else:
                 # Try to match parts of the test identifier.

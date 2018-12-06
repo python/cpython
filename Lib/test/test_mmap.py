@@ -1,4 +1,4 @@
-from test.support import (TESTFN, run_unittest, import_module, unlink,
+from test.support import (TESTFN, import_module, unlink,
                           requires, _2G, _4G, gc_collect, cpython_only)
 import unittest
 import os
@@ -741,6 +741,19 @@ class MmapTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             m * 2
 
+    def test_flush_return_value(self):
+        # mm.flush() should return None on success, raise an
+        # exception on error under all platforms.
+        mm = mmap.mmap(-1, 16)
+        self.addCleanup(mm.close)
+        mm.write(b'python')
+        result = mm.flush()
+        self.assertIsNone(result)
+        if sys.platform.startswith('linux'):
+            # 'offset' must be a multiple of mmap.PAGESIZE on Linux.
+            # See bpo-34754 for details.
+            self.assertRaises(OSError, mm.flush, 1, len(b'python'))
+
 
 class LargeMmapTests(unittest.TestCase):
 
@@ -803,8 +816,5 @@ class LargeMmapTests(unittest.TestCase):
         self._test_around_boundary(_4G)
 
 
-def test_main():
-    run_unittest(MmapTests, LargeMmapTests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

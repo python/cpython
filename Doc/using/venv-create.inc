@@ -20,11 +20,6 @@ directory is specified, it will be re-used.
 .. versionchanged:: 3.5
    The use of ``venv`` is now recommended for creating virtual environments.
 
-.. seealso::
-
-   `Python Packaging User Guide: Creating and using virtual environments
-   <https://packaging.python.org/installing/#creating-virtual-environments>`__
-
 .. highlight:: none
 
 On Windows, invoke the ``venv`` command as follows::
@@ -87,7 +82,8 @@ path.
 
 Once a virtual environment has been created, it can be "activated" using a
 script in the virtual environment's binary directory. The invocation of the
-script is platform-specific:
+script is platform-specific (`<venv>` must be replaced by the path of the
+directory containing the virtual environment):
 
 +-------------+-----------------+-----------------------------------------+
 | Platform    | Shell           | Command to activate virtual environment |

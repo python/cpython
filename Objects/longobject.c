@@ -42,7 +42,7 @@ PyObject *_PyLong_One = NULL;
 */
 static PyLongObject small_ints[NSMALLNEGINTS + NSMALLPOSINTS];
 #ifdef COUNT_ALLOCS
-Py_ssize_t quick_int_allocs, quick_neg_int_allocs;
+Py_ssize_t _Py_quick_int_allocs, _Py_quick_neg_int_allocs;
 #endif
 
 static PyObject *
@@ -54,9 +54,9 @@ get_small_int(sdigit ival)
     Py_INCREF(v);
 #ifdef COUNT_ALLOCS
     if (ival >= 0)
-        quick_int_allocs++;
+        _Py_quick_int_allocs++;
     else
-        quick_neg_int_allocs++;
+        _Py_quick_neg_int_allocs++;
 #endif
     return v;
 }
@@ -5261,6 +5261,36 @@ long_is_finite(PyObject *v)
 #endif
 
 /*[clinic input]
+int.as_integer_ratio
+
+Return integer ratio.
+
+Return a pair of integers, whose ratio is exactly equal to the original int
+and with a positive denominator.
+
+>>> (10).as_integer_ratio()
+(10, 1)
+>>> (-10).as_integer_ratio()
+(-10, 1)
+>>> (0).as_integer_ratio()
+(0, 1)
+[clinic start generated code]*/
+
+static PyObject *
+int_as_integer_ratio_impl(PyObject *self)
+/*[clinic end generated code: output=e60803ae1cc8621a input=55ce3058e15de393]*/
+{
+    PyObject *ratio_tuple;
+    PyObject *numerator = long_long(self);
+    if (numerator == NULL) {
+        return NULL;
+    }
+    ratio_tuple = PyTuple_Pack(2, numerator, _PyLong_One);
+    Py_DECREF(numerator);
+    return ratio_tuple;
+}
+
+/*[clinic input]
 int.to_bytes
 
     length: Py_ssize_t
@@ -5368,7 +5398,7 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
         little_endian, is_signed);
     Py_DECREF(bytes);
 
-    if (type != &PyLong_Type) {
+    if (long_obj != NULL && type != &PyLong_Type) {
         Py_SETREF(long_obj, PyObject_CallFunctionObjArgs((PyObject *)type,
                                                          long_obj, NULL));
     }
@@ -5392,6 +5422,7 @@ static PyMethodDef long_methods[] = {
 #endif
     INT_TO_BYTES_METHODDEF
     INT_FROM_BYTES_METHODDEF
+    INT_AS_INTEGER_RATIO_METHODDEF
     {"__trunc__",       long_long_meth, METH_NOARGS,
      "Truncating an Integral returns itself."},
     {"__floor__",       long_long_meth, METH_NOARGS,

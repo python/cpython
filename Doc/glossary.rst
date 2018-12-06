@@ -13,10 +13,14 @@ Glossary
       examples which can be executed interactively in the interpreter.
 
    ``...``
-      The default Python prompt of the interactive shell when entering code for
-      an indented code block, when within a pair of matching left and right
-      delimiters (parentheses, square brackets, curly braces or triple quotes),
-      or after specifying a decorator.
+      Can refer to:
+
+      * The default Python prompt of the interactive shell when entering code for
+        an indented code block, when within a pair of matching left and right
+        delimiters (parentheses, square brackets, curly braces or triple quotes),
+        or after specifying a decorator.
+
+      * The :const:`Ellipsis` built-in constant.
 
    2to3
       A tool that tries to convert Python 2.x code to Python 3.x code by
@@ -95,7 +99,7 @@ Glossary
       that it contains :keyword:`yield` expressions for producing a series of
       values usable in an :keyword:`async for` loop.
 
-      Usually refers to a asynchronous generator function, but may refer to an
+      Usually refers to an asynchronous generator function, but may refer to an
       *asynchronous generator iterator* in some contexts.  In cases where the
       intended meaning isn't clear, using the full terms avoids ambiguity.
 
@@ -108,8 +112,8 @@ Glossary
 
       This is an :term:`asynchronous iterator` which when called using the
       :meth:`__anext__` method returns an awaitable object which will execute
-      that the body of the asynchronous generator function until the
-      next :keyword:`yield` expression.
+      the body of the asynchronous generator function until the next
+      :keyword:`yield` expression.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
       location execution state (including local variables and pending
@@ -123,10 +127,10 @@ Glossary
       :meth:`__aiter__` method.  Introduced by :pep:`492`.
 
    asynchronous iterator
-      An object that implements :meth:`__aiter__` and :meth:`__anext__`
+      An object that implements the :meth:`__aiter__` and :meth:`__anext__`
       methods.  ``__anext__`` must return an :term:`awaitable` object.
-      :keyword:`async for` resolves awaitable returned from asynchronous
-      iterator's :meth:`__anext__` method until it raises
+      :keyword:`async for` resolves the awaitables returned by an asynchronous
+      iterator's :meth:`__anext__` method until it raises a
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
 
    attribute
@@ -200,7 +204,7 @@ Glossary
       ``int(3.15)`` converts the floating point number to the integer ``3``, but
       in ``3+4.5``, each argument is of a different type (one int, one float),
       and both must be converted to the same type before they can be added or it
-      will raise a ``TypeError``.  Without coercion, all arguments of even
+      will raise a :exc:`TypeError`.  Without coercion, all arguments of even
       compatible types would have to be normalized to the same value by the
       programmer, e.g., ``float(3)+4.5`` rather than just ``3+4.5``.
 
@@ -389,7 +393,7 @@ Glossary
       An :term:`annotation` of a function parameter or return value.
 
       Function annotations are usually used for
-      :term:`type hints <type hint>`: for example this function is expected to take two
+      :term:`type hints <type hint>`: for example, this function is expected to take two
       :class:`int` arguments and is also expected to have an :class:`int`
       return value::
 
@@ -1012,7 +1016,7 @@ Glossary
 
    struct sequence
       A tuple with named elements. Struct sequences expose an interface similar
-      to :term:`named tuple` in that elements can either be accessed either by
+      to :term:`named tuple` in that elements can be accessed either by
       index or as an attribute. However, they do not have any of the named tuple
       methods like :meth:`~collections.somenamedtuple._make` or
       :meth:`~collections.somenamedtuple._asdict`. Examples of struct sequences

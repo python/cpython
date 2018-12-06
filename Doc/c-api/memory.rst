@@ -342,7 +342,7 @@ Configuration                    Name                  PyMem_RawMalloc     PyMem
 Release build                    ``"pymalloc"``        ``malloc``          ``pymalloc``           ``pymalloc``
 Debug build                      ``"pymalloc_debug"``  ``malloc`` + debug  ``pymalloc`` + debug   ``pymalloc`` + debug
 Release build, without pymalloc  ``"malloc"``          ``malloc``          ``malloc``             ``malloc``
-Release build, without pymalloc  ``"malloc_debug"``    ``malloc`` + debug  ``malloc`` + debug     ``malloc`` + debug
+Debug build, without pymalloc    ``"malloc_debug"``    ``malloc`` + debug  ``malloc`` + debug     ``malloc`` + debug
 ===============================  ====================  ==================  =====================  ====================
 
 Legend:
