@@ -20,12 +20,13 @@ class EINTRTests(unittest.TestCase):
         args = ["-u", tester, "-v"]
         if support.verbose:
             print()
-            print("--- run eintr_tester.py ---")
+            print("--- run eintr_tester.py ---", flush=True)
             # In verbose mode, the child process inherit stdout and stdout,
             # to see output in realtime and reduce the risk of loosing output.
             args = [sys.executable, "-E", "-X", "faulthandler", *args]
             proc = subprocess.run(args)
-            print(f"--- eintr_tester.py completed: exit code {proc.returncode} ---")
+            print(f"--- eintr_tester.py completed: "
+                  f"exit code {proc.returncode} ---", flush=True)
             if proc.returncode:
                 self.fail("eintr_tester.py failed")
         else:
