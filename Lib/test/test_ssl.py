@@ -341,6 +341,7 @@ class BasicSocketTests(unittest.TestCase):
             self.assertRaises(socket.error, ss.recvfrom_into, bytearray(b'x'), 1)
             self.assertRaises(socket.error, ss.send, b'x')
             self.assertRaises(socket.error, ss.sendto, b'x', ('0.0.0.0', 0))
+            self.assertRaises(NotImplementedError, ss.dup)
 
     def test_timeout(self):
         # Issue #8524: when creating an SSL socket, the timeout of the
@@ -2645,6 +2646,7 @@ else:
                 self.assertEqual(s.read(-1, buffer), len(data))
                 self.assertEqual(buffer, data)
 
+                self.assertRaises(NotImplementedError, s.dup)
                 s.write(b"over\n")
 
                 self.assertRaises(ValueError, s.recv, -1)
