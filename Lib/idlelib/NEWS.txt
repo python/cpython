@@ -3,6 +3,38 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-35213: Where appropriate, use 'macOS' in idlelib.
+
+bpo-34864: Document two IDLE on MacOS issues.  The System Preferences
+Dock "prefer tabs always" setting disables some IDLE features.
+Menus are a bit different than as described for Windows and Linux.
+
+bpo-35202: Remove unused imports in idlelib.
+
+bpo-33000: Document that IDLE's shell has no line limit.
+A program that runs indefinitely can overfill memory.
+
+bpo-23220: Explain how IDLE's Shell displays output.
+Add new subsection "User output in Shell".
+
+bpo-35099: Improve the doc about IDLE running user code.
+"IDLE -- console differences" is renamed "Running user code".
+It mostly covers the implications of using custom sys.stdxxx objects.
+
+bpo-35097: Add IDLE doc subsection explaining editor windows.
+Topics include opening, title and status bars, .py* extension, and running.
+
+Issue 35093: Document the IDLE document viewer in the IDLE doc.
+Add a paragraph in "Help and preferences", "Help sources" subsection.
+
+bpo-1529353: Explain Shell text squeezing in the IDLE doc.
+
+bpo-35088: Update idlelib.help.copy_string docstring.
+We now use git and backporting instead of hg and forward merging.
+
+bpo-35087: Update idlelib help files for the current doc build.
+The main change is the elimination of chapter-section numbers.
+
 bpo-1529353: Output over N lines (50 by default) is squeezed down to a button.
 N can be changed in the PyShell section of the General page of the
 Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
