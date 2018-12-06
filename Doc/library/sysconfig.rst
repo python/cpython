@@ -188,7 +188,7 @@ Other functions
 
    Windows will return one of:
 
-   - win-amd64 (64bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
+   - win-amd64 (64bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
    - win-ia64 (64bit Windows on Itanium)
    - win32 (all others - specifically, sys.platform is returned)
 
