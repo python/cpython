@@ -1518,8 +1518,7 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
     SET_ITEM_INT(show_alloc_count);
     SET_ITEM_INT(dump_refs);
     SET_ITEM_INT(malloc_stats);
-    SET_ITEM_INT(coerce_c_locale);
-    SET_ITEM_INT(coerce_c_locale_warn);
+    SET_ITEM_INT(warn_on_c_locale);
     SET_ITEM_STR(filesystem_encoding);
     SET_ITEM_STR(filesystem_errors);
     SET_ITEM_INT(utf8_mode);
