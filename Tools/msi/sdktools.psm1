@@ -13,7 +13,7 @@ function Find-Tool {
 Set-Alias SignTool (Find-Tool "signtool.exe") -Scope Script
 
 function Sign-File {
-    param([string]$certname, [string]$certsha1, [string]$description, [string[]]$files)
+    param([string]$certname, [string]$certsha1, [string]$certfile, [string]$description, [string[]]$files)
 
     if (-not $description) {
         $description = $env:SigningDescription;
@@ -24,12 +24,17 @@ function Sign-File {
     if (-not $certname) {
         $certname = $env:SigningCertificate;
     }
+    if (-not $certfile) {
+        $certfile = $env:SigningCertificateFile;
+    }
 
     foreach ($a in $files) {
         if ($certsha1) {
             SignTool sign /sha1 $certsha1 /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d $description $a
         } elseif ($certname) {
             SignTool sign /n $certname /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d $description $a
+        } elseif ($certfile) {
+            SignTool sign /f $certfile /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d $description $a
         } else {
             SignTool sign /a /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d $description $a
         }

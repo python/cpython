@@ -24,7 +24,8 @@ param(
     [switch]$sign,
     [string]$description,
     [string]$certname,
-    [string]$certsha1
+    [string]$certsha1,
+    [string]$certfile
 )
 
 $tools = $script:MyInvocation.MyCommand.Path | Split-Path -parent;
@@ -61,7 +62,7 @@ try {
 }
 
 if ($sign) {
-    Sign-File -certname $certname -certsha1 $certsha1 -description $description -files $msix
+    Sign-File -certname $certname -certsha1 $certsha1 -certfile $certfile -description $description -files $msix
 
     if (-not $?) {
         throw "Package signing failed"

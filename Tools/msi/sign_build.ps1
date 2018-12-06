@@ -19,7 +19,8 @@ param(
     [string[]]$patterns=@("*.exe", "*.dll", "*.pyd"),
     [string]$description,
     [string]$certname,
-    [string]$certsha1
+    [string]$certsha1,
+    [string]$certfile
 )
 
 $tools = $script:MyInvocation.MyCommand.Path | Split-Path -parent;
@@ -27,7 +28,7 @@ Import-Module $tools\sdktools.psm1 -WarningAction SilentlyContinue -Force
 
 pushd $root
 try {
-    Sign-File -certname $certname -certsha1 $certsha1 -description $description -files (gci -r $patterns)
+    Sign-File -certname $certname -certsha1 $certsha1 -certfile $certfile -description $description -files (gci -r $patterns)
 } finally {
     popd
 }
