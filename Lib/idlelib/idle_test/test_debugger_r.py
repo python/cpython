@@ -25,7 +25,7 @@ class Test(unittest.TestCase):
         adapter = debugger_r.IdbAdapter(None)
 
         with self.assertRaises(NotImplementedError):
-            adapter.dict_keys()
+            adapter.dict_keys(None)
 
 
 # Classes GUIProxy, IdbAdapter, FrameProxy, CodeProxy, DictProxy,
