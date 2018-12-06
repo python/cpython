@@ -243,8 +243,8 @@ process more convenient:
    *errors* tell pickle how to decode 8-bit string instances pickled by Python
    2; these default to 'ASCII' and 'strict', respectively.  The *encoding* can
    be 'bytes' to read these 8-bit string instances as bytes objects.
-   Using ``errors='surrogateescape'`` is required for unpickling instances of
-   :class:`~datetime.datetime`, :class:`~datetime.date` and
+   Using ``encoding='latin1'`` is required for unpickling NumPy arrays and
+   instances of :class:`~datetime.datetime`, :class:`~datetime.date` and
    :class:`~datetime.time` pickled by Python 2.
 
 .. function:: loads(bytes_object, \*, fix_imports=True, encoding="ASCII", errors="strict")
@@ -263,8 +263,8 @@ process more convenient:
    *errors* tell pickle how to decode 8-bit string instances pickled by Python
    2; these default to 'ASCII' and 'strict', respectively.  The *encoding* can
    be 'bytes' to read these 8-bit string instances as bytes objects.
-   Using ``errors='surrogateescape'`` is required for unpickling instances of
-   :class:`~datetime.datetime`, :class:`~datetime.date` and
+   Using ``encoding='latin1'`` is required for unpickling NumPy arrays and
+   instances of :class:`~datetime.datetime`, :class:`~datetime.date` and
    :class:`~datetime.time` pickled by Python 2.
 
 

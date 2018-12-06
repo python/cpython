@@ -1445,7 +1445,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         expected = self.theclass(*args)
         for data in tests:
             for loads in pickle_loads:
-                derived = loads(data, errors='surrogateescape')
+                derived = loads(data, encoding='latin1')
                 self.assertEqual(derived, expected)
 
     def test_compare(self):
@@ -2127,7 +2127,7 @@ class TestDateTime(TestDate):
         expected = self.theclass(*args)
         for data in tests:
             for loads in pickle_loads:
-                derived = loads(data, errors='surrogateescape')
+                derived = loads(data, encoding='latin1')
                 self.assertEqual(derived, expected)
 
     def test_more_compare(self):
@@ -3111,7 +3111,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         expected = self.theclass(*args)
         for data in tests:
             for loads in pickle_loads:
-                derived = loads(data, errors='surrogateescape')
+                derived = loads(data, encoding='latin1')
                 self.assertEqual(derived, expected)
 
     def test_bool(self):
@@ -3514,7 +3514,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         expected = self.theclass(5, 6, 7, 123456, tzinfo=tinfo)
         for data in tests:
             for loads in pickle_loads:
-                derived = loads(data, errors='surrogateescape')
+                derived = loads(data, encoding='latin1')
                 self.assertEqual(derived, expected, repr(data))
                 self.assertIsInstance(derived.tzinfo, PicklableFixedOffset)
                 self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
@@ -3899,7 +3899,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         expected = self.theclass(*args, **{'tzinfo': tinfo})
         for data in tests:
             for loads in pickle_loads:
-                derived = loads(data, errors='surrogateescape')
+                derived = loads(data, encoding='latin1')
                 self.assertEqual(derived, expected)
                 self.assertIsInstance(derived.tzinfo, PicklableFixedOffset)
                 self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
