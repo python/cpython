@@ -259,7 +259,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     Py_ssize_t codesize = PyBytes_GET_SIZE(code);
     assert(codesize % sizeof(_Py_CODEUNIT) == 0);
     Py_ssize_t codelen = codesize / sizeof(_Py_CODEUNIT);
-    if ((size_t)codelen > INT_MAX) {
+    if (codelen > INT_MAX) {
         /* Python assembler is limited to INT_MAX: see assembler.a_offset in
            compile.c. */
         goto exitUnchanged;
@@ -400,17 +400,17 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                     codestr[op_start] = PACKOPARG(RETURN_VALUE, 0);
                     fill_nops(codestr, op_start + 1, i + 1);
                 } else if (UNCONDITIONAL_JUMP(_Py_OPCODE(codestr[tgt]))) {
-                    Py_ssize_t arg = GETJUMPTGT(codestr, tgt);
+                    size_t arg = GETJUMPTGT(codestr, tgt);
                     if (opcode == JUMP_FORWARD) { /* JMP_ABS can go backwards */
                         opcode = JUMP_ABSOLUTE;
                     } else if (!ABSOLUTE_JUMP(opcode)) {
-                        if (arg < i + 1) {
+                        if (arg < (size_t)(i + 1)) {
                             break;           /* No backward relative jumps */
                         }
                         arg -= i + 1;          /* Calc relative jump addr */
                     }
                     /* cannot overflow: codelen <= INT_MAX */
-                    assert((size_t)arg <= (UINT_MAX / sizeof(_Py_CODEUNIT)));
+                    assert(arg <= (UINT_MAX / sizeof(_Py_CODEUNIT)));
                     arg *= sizeof(_Py_CODEUNIT);
                     copy_op_arg(codestr, op_start, opcode,
                                 (unsigned int)arg, i + 1);
@@ -447,13 +447,14 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
     /* Fixup lnotab */
     for (i = 0, nops = 0; i < codelen; i++) {
-        Py_ssize_t block = i - nops;
+        size_t block = (size_t)i - nops;
         /* cannot overflow: codelen <= INT_MAX */
         assert(block <= UINT_MAX);
         /* original code offset => new code offset */
         blocks[i] = (unsigned int)block;
-        if (_Py_OPCODE(codestr[i]) == NOP)
+        if (_Py_OPCODE(codestr[i]) == NOP) {
             nops++;
+        }
     }
     cum_orig_offset = 0;
     last_offset = 0;
