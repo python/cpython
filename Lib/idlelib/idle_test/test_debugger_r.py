@@ -21,6 +21,12 @@ class Test(unittest.TestCase):
     def test_init(self):
         self.assertTrue(True)  # Get coverage of import
 
+    def test_idbadapter_dict_keys(self):
+        adapter = debugger_r.IdbAdapter(None)
+
+        with self.assertRaises(NotImplementedError):
+            adapter.dict_keys()
+
 
 # Classes GUIProxy, IdbAdapter, FrameProxy, CodeProxy, DictProxy,
 # GUIAdapter, IdbProxy plus 7 module functions.

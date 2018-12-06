@@ -3531,6 +3531,10 @@ class ThreadedTests(unittest.TestCase):
         server.close()
         # Sanity checks.
         self.assertIsInstance(remote, ssl.SSLSocket)
+
+        with self.assertRaises(NotImplementedError):
+            remote.dup()
+
         self.assertEqual(peer, client_addr)
 
     def test_getpeercert_enotconn(self):
