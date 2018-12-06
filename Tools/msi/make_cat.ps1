@@ -18,7 +18,8 @@ param(
     [Parameter(Mandatory=$true)][string]$catalog,
     [string]$description,
     [string]$certname,
-    [string]$certsha1
+    [string]$certsha1,
+    [string]$certfile
 )
 
 $tools = $script:MyInvocation.MyCommand.Path | Split-Path -parent;
@@ -30,4 +31,4 @@ MakeCat $catalog
 if (-not $?) {
     throw "Catalog compilation failed"
 }
-Sign-File -certname $certname -certsha1 $certsha1 -description $description -files @($catalog -replace 'cdf$', 'cat')
+Sign-File -certname $certname -certsha1 $certsha1 -certfile $certfile -description $description -files @($catalog -replace 'cdf$', 'cat')
