@@ -596,6 +596,16 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.check_config("init_isolated", config)
 
+class NoImplicitLocaleCoercion(EmbeddingTestsMixin, unittest.TestCase):
+
+    def test_no_implicit_locale_coercion_in_Py_Initialize(self):
+        out, err = self.run_embedded_interpreter("init_api_does_not_coerce_c_locale")
+        self.assertEqual(err, '')
+
+    def test_no_implicit_locale_coercion_in_Py_Main(self):
+        out, err = self.run_embedded_interpreter("main_api_does_not_coerce_c_locale")
+        self.assertTrue(out.startswith('Python '))
+        self.assertEqual(err, '')
 
 if __name__ == "__main__":
     unittest.main()

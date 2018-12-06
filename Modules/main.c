@@ -1318,7 +1318,7 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
     /* Set LC_CTYPE to the user preferred locale */
     _Py_SetLocaleFromEnv(LC_CTYPE);
 
-    /* TODO: With locale coercion moved back to _PyUnix_Main, this can
+    /* TODO: With locale coercion moved back to _PyUnixMain, this can
      * potentially be simplified now that it only needs to handle UTF-8 mode
      */
     while (1) {

@@ -1,6 +1,7 @@
 #include <Python.h>
 #include "pythread.h"
 #include <inttypes.h>
+#include <locale.h>
 #include <stdio.h>
 #include <wchar.h>
 
@@ -457,7 +458,7 @@ static int test_init_from_config(void)
     putenv("PYTHONMALLOCSTATS=0");
     config.malloc_stats = 1;
 
-    /* FIXME: test coerce_c_locale and coerce_c_locale_warn */
+    /* FIXME: explcitily test warn_on_c_locale */
 
     putenv("PYTHONUTF8=0");
     Py_UTF8Mode = 0;
@@ -643,6 +644,46 @@ static int test_init_dev_mode(void)
 }
 
 
+/* C locale coercion is a property of the Python CLI only when running
+ * as a standalone application, NOT when used as a support library (as
+ * arbitrary other code may have executed in the original locale before
+ * the Python runtime is started).
+ *
+ * Accordingly, the follow tests ensure C locale coercion does NOT occur as a
+ * side effect of initialising the library.
+ */
+static int _c_locale_is_active(void)
+{
+    const char *ctype_loc = setlocale(LC_CTYPE, NULL);
+    return (ctype_loc != NULL && strcmp(ctype_loc, "C") == 0);
+}
+
+static int test_init_api_does_not_coerce_c_locale(void)
+{
+    putenv("PYTHONCOERCECLOCALE=1");
+    putenv("LANG=C");
+    putenv("LC_CTYPE=C");
+    _testembed_Py_Initialize();
+    Py_Finalize();
+    return _c_locale_is_active() ? 0 : -1;
+}
+
+static int test_main_api_does_not_coerce_c_locale(void)
+{
+    int result = 0;
+    wchar_t *argv[] = {L"./_testembed", L"-V"};
+
+    putenv("PYTHONCOERCECLOCALE=1");
+    putenv("LANG=C");
+    putenv("LC_CTYPE=C");
+    result = Py_Main(Py_ARRAY_LENGTH(argv), argv);
+    if (result) {
+        return result;
+    }
+    return _c_locale_is_active() ? 0 : -1;
+}
+
+
 /* *********************************************************
  * List of test cases and the function that implements it.
  *
@@ -675,6 +716,8 @@ static struct TestCase TestCases[] = {
     { "init_env", test_init_env },
     { "init_dev_mode", test_init_dev_mode },
     { "init_isolated", test_init_isolated },
+    { "init_api_does_not_coerce_c_locale", test_init_api_does_not_coerce_c_locale },
+    { "main_api_does_not_coerce_c_locale", test_main_api_does_not_coerce_c_locale },
     { NULL, NULL }
 };
 
