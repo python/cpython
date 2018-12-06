@@ -117,6 +117,37 @@ APPXMANIFEST_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
 </Package>"""
 
 
+RESOURCES_XML_TEMPLATE = r"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--This file is input for makepri.exe. It should be excluded from the final package.-->
+<resources targetOsVersion="10.0.0" majorVersion="1">
+    <packaging>
+        <autoResourcePackage qualifier="Language"/>
+        <autoResourcePackage qualifier="Scale"/>
+        <autoResourcePackage qualifier="DXFeatureLevel"/>
+    </packaging>
+    <index root="\" startIndexAt="\">
+        <default>
+            <qualifier name="Language" value="en-US"/>
+            <qualifier name="Contrast" value="standard"/>
+            <qualifier name="Scale" value="100"/>
+            <qualifier name="HomeRegion" value="001"/>
+            <qualifier name="TargetSize" value="256"/>
+            <qualifier name="LayoutDirection" value="LTR"/>
+            <qualifier name="Theme" value="dark"/>
+            <qualifier name="AlternateForm" value=""/>
+            <qualifier name="DXFeatureLevel" value="DX9"/>
+            <qualifier name="Configuration" value=""/>
+            <qualifier name="DeviceFamily" value="Universal"/>
+            <qualifier name="Custom" value=""/>
+        </default>
+        <indexer-config type="folder" foldernameAsQualifier="true" filenameAsQualifier="true" qualifierDelimiter="$"/>
+        <indexer-config type="resw" convertDotsToSlashes="true" initialPath=""/>
+        <indexer-config type="resjson" initialPath=""/>
+        <indexer-config type="PRI"/>
+    </index>
+</resources>"""
+
+
 SCCD_FILENAME = "PC/classicAppCompat.sccd"
 
 REGISTRY = {
@@ -215,17 +246,18 @@ def get_appx_layout(ns):
         return
 
     yield "AppxManifest.xml", ns.temp / "AppxManifest.xml"
+    yield "_resources.xml", ns.temp / "_resources.xml"
     icons = ns.source / "PC" / "icons"
     yield "_resources/pythonx44.png", icons / "pythonx44.png"
-    yield "_resources/pythonx44.png.targetsize-44_altform-unplated", icons / "pythonx44.png"
+    yield "_resources/pythonx44$targetsize-44_altform-unplated.png", icons / "pythonx44.png"
     yield "_resources/pythonx50.png", icons / "pythonx50.png"
-    yield "_resources/pythonx50.png.targetsize-50_altform-unplated", icons / "pythonx50.png"
+    yield "_resources/pythonx50$targetsize-50_altform-unplated.png", icons / "pythonx50.png"
     yield "_resources/pythonx150.png", icons / "pythonx150.png"
-    yield "_resources/pythonx150.png.targetsize-150_altform-unplated", icons / "pythonx150.png"
+    yield "_resources/pythonx150$targetsize-150_altform-unplated.png", icons / "pythonx150.png"
     yield "_resources/pythonwx44.png", icons / "pythonwx44.png"
-    yield "_resources/pythonwx44.png.targetsize-44_altform-unplated", icons / "pythonwx44.png"
+    yield "_resources/pythonwx44$targetsize-44_altform-unplated.png", icons / "pythonwx44.png"
     yield "_resources/pythonwx150.png", icons / "pythonwx150.png"
-    yield "_resources/pythonwx150.png.targetsize-150_altform-unplated", icons / "pythonwx150.png"
+    yield "_resources/pythonwx150$targetsize-150_altform-unplated.png", icons / "pythonwx150.png"
     sccd = ns.source / SCCD_FILENAME
     if sccd.is_file():
         # This should only be set for side-loading purposes.
@@ -448,3 +480,8 @@ def get_appxmanifest(ns):
     buffer = io.BytesIO()
     xml.write(buffer, encoding="utf-8", xml_declaration=True)
     return buffer.getbuffer()
+
+
+@public
+def get_resources_xml(ns):
+    return RESOURCES_XML_TEMPLATE.encode("utf-8")

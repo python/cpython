@@ -344,6 +344,9 @@ def generate_source_files(ns):
         with open(ns.temp / "AppxManifest.xml", "wb") as f:
             f.write(get_appxmanifest(ns))
 
+        with open(ns.temp / "_resources.xml", "wb") as f:
+            f.write(get_resources_xml(ns))
+
     if ns.include_pip:
         pip_dir = get_pip_dir(ns)
         if not (pip_dir / "pip").is_dir():
@@ -356,21 +359,6 @@ def generate_source_files(ns):
         ns.temp.mkdir(parents=True, exist_ok=True)
         with open(ns.temp / PYTHON_PROPS_NAME, "wb") as f:
             f.write(get_props(ns))
-
-
-def _create_mapping_file(ns):
-    if not ns.mapping:
-        return None
-
-    ns.mapping.parent.mkdir(parents=True, exist_ok=True)
-
-    map_file = open(ns.mapping, "w", encoding="utf-8")
-    try:
-        print("[Files]", file=map_file)
-        return map_file
-    except:
-        map_file.close()
-        raise
 
 
 def _create_zip_file(ns):
@@ -401,7 +389,6 @@ def copy_files(files, ns):
         total = None
     count = 0
 
-    map_file = _create_mapping_file(ns)
     zip_file = _create_zip_file(ns)
     try:
         need_compile = []
@@ -441,10 +428,6 @@ def copy_files(files, ns):
                 except shutil.SameFileError:
                     pass
 
-            if ns.mapping:
-                log_debug("Write ({}, {}) to mapping file {}", src, dest, ns.mapping)
-                print('"{}" "{}"'.format(src, Path(dest)), file=map_file)
-
             if ns.zip:
                 log_debug("Zip {} into {}", src, ns.zip)
                 zip_file.write(src, str(dest))
@@ -460,11 +443,6 @@ def copy_files(files, ns):
                     if not c:
                         continue
                     cdest = Path(dest).parent / Path(c).relative_to(src.parent)
-                    if ns.mapping:
-                        log_debug(
-                            "Write ({}, {}) to mapping file {}", c, cdest, ns.mapping
-                        )
-                        print('"{}" "{}"'.format(c, cdest), file=map_file)
                     if ns.zip:
                         log_debug("Zip {} into {}", c, ns.zip)
                         zip_file.write(c, str(cdest))
@@ -478,8 +456,6 @@ def copy_files(files, ns):
             write_catalog(ns.catalog, in_catalog)
 
     finally:
-        if map_file:
-            map_file.close()
         if zip_file:
             zip_file.close()
 
@@ -509,13 +485,6 @@ def main():
         "--copy",
         metavar="directory",
         help="The name of the directory to copy an extracted layout to",
-        type=Path,
-        default=None,
-    )
-    parser.add_argument(
-        "--mapping",
-        metavar="file",
-        help="The file to write mapping information to",
         type=Path,
         default=None,
     )
@@ -599,8 +568,6 @@ def main():
 
     if ns.copy and not ns.copy.is_absolute():
         ns.copy = (Path.cwd() / ns.copy).resolve()
-    if ns.mapping and not ns.mapping.is_absolute():
-        ns.mapping = (Path.cwd() / ns.mapping).resolve()
     if ns.zip and not ns.zip.is_absolute():
         ns.zip = (Path.cwd() / ns.zip).resolve()
     if ns.catalog and not ns.catalog.is_absolute():
@@ -615,7 +582,6 @@ Build:  {ns.build}
 Temp:   {ns.temp}
 
 Copy to: {ns.copy}
-Mapping: {ns.mapping}
 Zip to:  {ns.zip}
 Catalog: {ns.catalog}""",
         ns=ns,
