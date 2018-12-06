@@ -19,7 +19,7 @@
     The SHA1 hash of the certificate to sign with (optional).
 #>
 param(
-    [Parameter(Mandatory=$true)][string]$mapfile,
+    [Parameter(Mandatory=$true)][string]$layout,
     [Parameter(Mandatory=$true)][string]$msix,
     [switch]$sign,
     [string]$description,
@@ -31,14 +31,33 @@ $tools = $script:MyInvocation.MyCommand.Path | Split-Path -parent;
 Import-Module $tools\sdktools.psm1 -WarningAction SilentlyContinue -Force
 
 Set-Alias makeappx (Find-Tool "makeappx.exe") -Scope Script
+Set-Alias makepri (Find-Tool "makepri.exe") -Scope Script
 
-$msixdir = ($msix | Split-Path -parent);
+$msixdir = Split-Path $msix -Parent
 if ($msixdir) {
-    mkdir -Force $msixdir;
+    $msixdir = (mkdir -Force $msixdir).FullName
+} else {
+    $msixdir = Get-Location
 }
-makeappx pack /f $mapfile /o /p $msix
-if (-not $?) {
-    throw "makeappx step failed"
+$msix = Join-Path $msixdir (Split-Path $msix -Leaf)
+
+pushd $layout
+try {
+    if (Test-Path resources.pri) {
+        del resources.pri
+    }
+    makepri new /pr . /mn AppxManifest.xml /cf _resources.xml /of _resources.pri /mf appx /o
+    if (-not $? -or -not (Test-Path _resources.map.txt)) {
+        throw "makepri step failed"
+    }
+    $lines = gc _resources.map.txt
+    $lines | ?{ -not ($_ -match '"_resources[\w\.]+?"') } | Out-File _resources.map.txt -Encoding utf8
+    makeappx pack /f _resources.map.txt /m AppxManifest.xml /o /p $msix
+    if (-not $?) {
+        throw "makeappx step failed"
+    }
+} finally {
+    popd
 }
 
 if ($sign) {
