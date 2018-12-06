@@ -510,6 +510,7 @@ PyCArg_repr(PyCArgObject *self)
             sprintf(buffer, "<cparam '%c' ('\\x%02x')>",
                 self->tag, (unsigned char)self->value.c);
         }
+        break;
 
 /* Hm, are these 'z' and 'Z' codes useful at all?
    Shouldn't they be replaced by the functionality of c_string
