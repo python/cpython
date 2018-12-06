@@ -9,7 +9,7 @@ PyDoc_STRVAR(_heapq_heappush__doc__,
 "Push item onto heap, maintaining the heap invariant.");
 
 #define _HEAPQ_HEAPPUSH_METHODDEF    \
-    {"heappush", (PyCFunction)_heapq_heappush, METH_FASTCALL, _heapq_heappush__doc__},
+    {"heappush", (PyCFunction)(void(*)(void))_heapq_heappush, METH_FASTCALL, _heapq_heappush__doc__},
 
 static PyObject *
 _heapq_heappush_impl(PyObject *module, PyObject *heap, PyObject *item);
@@ -56,7 +56,7 @@ PyDoc_STRVAR(_heapq_heapreplace__doc__,
 "        item = heapreplace(heap, item)");
 
 #define _HEAPQ_HEAPREPLACE_METHODDEF    \
-    {"heapreplace", (PyCFunction)_heapq_heapreplace, METH_FASTCALL, _heapq_heapreplace__doc__},
+    {"heapreplace", (PyCFunction)(void(*)(void))_heapq_heapreplace, METH_FASTCALL, _heapq_heapreplace__doc__},
 
 static PyObject *
 _heapq_heapreplace_impl(PyObject *module, PyObject *heap, PyObject *item);
@@ -89,7 +89,7 @@ PyDoc_STRVAR(_heapq_heappushpop__doc__,
 "a separate call to heappop().");
 
 #define _HEAPQ_HEAPPUSHPOP_METHODDEF    \
-    {"heappushpop", (PyCFunction)_heapq_heappushpop, METH_FASTCALL, _heapq_heappushpop__doc__},
+    {"heappushpop", (PyCFunction)(void(*)(void))_heapq_heappushpop, METH_FASTCALL, _heapq_heappushpop__doc__},
 
 static PyObject *
 _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item);
@@ -137,7 +137,7 @@ PyDoc_STRVAR(_heapq__heapreplace_max__doc__,
 "Maxheap variant of heapreplace.");
 
 #define _HEAPQ__HEAPREPLACE_MAX_METHODDEF    \
-    {"_heapreplace_max", (PyCFunction)_heapq__heapreplace_max, METH_FASTCALL, _heapq__heapreplace_max__doc__},
+    {"_heapreplace_max", (PyCFunction)(void(*)(void))_heapq__heapreplace_max, METH_FASTCALL, _heapq__heapreplace_max__doc__},
 
 static PyObject *
 _heapq__heapreplace_max_impl(PyObject *module, PyObject *heap,
@@ -169,4 +169,4 @@ PyDoc_STRVAR(_heapq__heapify_max__doc__,
 
 #define _HEAPQ__HEAPIFY_MAX_METHODDEF    \
     {"_heapify_max", (PyCFunction)_heapq__heapify_max, METH_O, _heapq__heapify_max__doc__},
-/*[clinic end generated code: output=0bb0dd0df473ab14 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b73e874eeb9977b6 input=a9049054013a1b77]*/

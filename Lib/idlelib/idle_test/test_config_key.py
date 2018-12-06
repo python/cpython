@@ -2,11 +2,10 @@
 
 from idlelib import config_key
 from test.support import requires
-import sys
 import unittest
 from tkinter import Tk
 from idlelib.idle_test.mock_idle import Func
-from idlelib.idle_test.mock_tk import Var, Mbox_func
+from idlelib.idle_test.mock_tk import Mbox_func
 
 
 class ValidationTest(unittest.TestCase):

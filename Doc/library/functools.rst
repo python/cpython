@@ -118,6 +118,11 @@ The :mod:`functools` module defines the following functions:
    The cache's size limit assures that the cache does not grow without bound on
    long-running processes such as web servers.
 
+   In general, the LRU cache should only be used when you want to reuse
+   previously computed values.  Accordingly, it doesn't make sense to cache
+   functions with side-effects, functions that need to create distinct mutable
+   objects on each call, or impure functions such as time() or random().
+
    Example of an LRU cache for static web content::
 
         @lru_cache(maxsize=32)
@@ -205,10 +210,11 @@ The :mod:`functools` module defines the following functions:
 
 .. function:: partial(func, *args, **keywords)
 
-   Return a new :class:`partial` object which when called will behave like *func*
-   called with the positional arguments *args* and keyword arguments *keywords*. If
-   more arguments are supplied to the call, they are appended to *args*. If
-   additional keyword arguments are supplied, they extend and override *keywords*.
+   Return a new :ref:`partial object<partial-objects>` which when called
+   will behave like *func* called with the positional arguments *args*
+   and keyword arguments *keywords*. If more arguments are supplied to the
+   call, they are appended to *args*. If additional keyword arguments are
+   supplied, they extend and override *keywords*.
    Roughly equivalent to::
 
       def partial(func, *args, **keywords):
@@ -246,7 +252,7 @@ The :mod:`functools` module defines the following functions:
    :func:`classmethod`, :func:`staticmethod`, :func:`abstractmethod` or
    another instance of :class:`partialmethod`), calls to ``__get__`` are
    delegated to the underlying descriptor, and an appropriate
-   :class:`partial` object returned as the result.
+   :ref:`partial object<partial-objects>` returned as the result.
 
    When *func* is a non-descriptor callable, an appropriate bound method is
    created dynamically. This behaves like a normal Python function when

@@ -1226,6 +1226,9 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     """
     server_address = (bind, port)
 
+    if ':' in bind:
+        ServerClass.address_family = socket.AF_INET6
+
     HandlerClass.protocol_version = protocol
     with ServerClass(server_address, HandlerClass) as httpd:
         sa = httpd.socket.getsockname()

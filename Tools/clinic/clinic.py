@@ -680,7 +680,7 @@ class CLanguage(Language):
 
         methoddef_define = normalize_snippet("""
             #define {methoddef_name}    \\
-                {{"{name}", (PyCFunction){c_basename}, {methoddef_flags}, {c_basename}__doc__}},
+                {{"{name}", {methoddef_cast}{c_basename}, {methoddef_flags}, {c_basename}__doc__}},
             """)
         if new_or_init and not f.docstring:
             docstring_prototype = docstring_definition = ''
@@ -944,10 +944,16 @@ class CLanguage(Language):
                 parser_definition = insert_keywords(parser_definition)
 
 
+        if flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
+            methoddef_cast = "(PyCFunction)"
+        else:
+            methoddef_cast = "(PyCFunction)(void(*)(void))"
+
         if f.methoddef_flags:
             flags += '|' + f.methoddef_flags
 
         methoddef_define = methoddef_define.replace('{methoddef_flags}', flags)
+        methoddef_define = methoddef_define.replace('{methoddef_cast}', methoddef_cast)
 
         methoddef_ifndef = ''
         conditional = self.cpp.condition()

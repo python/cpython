@@ -1,8 +1,9 @@
 /* Class object implementation (dead now except for methods) */
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 
 #define TP_DESCR_GET(t) ((t)->tp_descr_get)
