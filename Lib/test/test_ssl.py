@@ -480,8 +480,12 @@ class BasicSocketTests(unittest.TestCase):
             self.assertRaises(OSError, ss.recvfrom_into, bytearray(b'x'), 1)
             self.assertRaises(OSError, ss.send, b'x')
             self.assertRaises(OSError, ss.sendto, b'x', ('0.0.0.0', 0))
+            self.assertRaises(NotImplementedError, ss.dup)
             self.assertRaises(NotImplementedError, ss.sendmsg,
                               [b'x'], (), 0, ('0.0.0.0', 0))
+            self.assertRaises(NotImplementedError, ss.recvmsg, 100)
+            self.assertRaises(NotImplementedError, ss.recvmsg_into,
+                              [bytearray(100)])
 
     def test_timeout(self):
         # Issue #8524: when creating an SSL socket, the timeout of the
@@ -3410,10 +3414,11 @@ class ThreadedTests(unittest.TestCase):
             # Make sure sendmsg et al are disallowed to avoid
             # inadvertent disclosure of data and/or corruption
             # of the encrypted data stream
+            self.assertRaises(NotImplementedError, s.dup)
             self.assertRaises(NotImplementedError, s.sendmsg, [b"data"])
             self.assertRaises(NotImplementedError, s.recvmsg, 100)
             self.assertRaises(NotImplementedError,
-                              s.recvmsg_into, bytearray(100))
+                              s.recvmsg_into, [bytearray(100)])
             s.write(b"over\n")
 
             self.assertRaises(ValueError, s.recv, -1)
