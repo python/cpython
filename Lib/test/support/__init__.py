@@ -657,8 +657,12 @@ if have_unicode:
         unichr(0x20AC),
     ):
         try:
-            character.encode(sys.getfilesystemencoding())\
-                     .decode(sys.getfilesystemencoding())
+            # In Windows, 'mbcs' is used, and encode() returns '?'
+            # for characters missing in the ANSI codepage
+            if character.encode(sys.getfilesystemencoding())\
+                        .decode(sys.getfilesystemencoding())\
+                    != character:
+                raise UnicodeError
         except UnicodeError:
             pass
         else:
