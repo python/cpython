@@ -24,7 +24,7 @@ PyDoc_STRVAR(SHA1Type_digest__doc__,
 "digest($self, /)\n"
 "--\n"
 "\n"
-"Return the digest value as a string of binary data.");
+"Return the digest value as a bytes object.");
 
 #define SHA1TYPE_DIGEST_METHODDEF    \
     {"digest", (PyCFunction)SHA1Type_digest, METH_NOARGS, SHA1Type_digest__doc__},
@@ -72,13 +72,13 @@ PyDoc_STRVAR(_sha1_sha1__doc__,
 "Return a new SHA1 hash object; optionally initialized with a string.");
 
 #define _SHA1_SHA1_METHODDEF    \
-    {"sha1", (PyCFunction)_sha1_sha1, METH_FASTCALL|METH_KEYWORDS, _sha1_sha1__doc__},
+    {"sha1", (PyCFunction)(void(*)(void))_sha1_sha1, METH_FASTCALL|METH_KEYWORDS, _sha1_sha1__doc__},
 
 static PyObject *
 _sha1_sha1_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha1_sha1(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sha1_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", NULL};
@@ -94,4 +94,4 @@ _sha1_sha1(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=594cf600d6ba4776 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3bae85313ee5a3b5 input=a9049054013a1b77]*/

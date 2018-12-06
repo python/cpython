@@ -2,8 +2,9 @@
 /* Tuple object implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
-#include "accu.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
+#include "pycore_accu.h"
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
@@ -28,8 +29,8 @@ static PyTupleObject *free_list[PyTuple_MAXSAVESIZE];
 static int numfree[PyTuple_MAXSAVESIZE];
 #endif
 #ifdef COUNT_ALLOCS
-Py_ssize_t fast_tuple_allocs;
-Py_ssize_t tuple_zero_allocs;
+Py_ssize_t _Py_fast_tuple_allocs;
+Py_ssize_t _Py_tuple_zero_allocs;
 #endif
 
 /* Debug statistic to count GC tracking of tuples.
@@ -44,15 +45,10 @@ static Py_ssize_t count_tracked = 0;
 static void
 show_track(void)
 {
-    PyObject *xoptions, *value;
-    _Py_IDENTIFIER(showalloccount);
-
-    xoptions = PySys_GetXOptions();
-    if (xoptions == NULL)
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    if (!interp->core_config.show_alloc_count) {
         return;
-    value = _PyDict_GetItemId(xoptions, &PyId_showalloccount);
-    if (value != Py_True)
-        return;
+    }
 
     fprintf(stderr, "Tuples created: %" PY_FORMAT_SIZE_T "d\n",
         count_tracked + count_untracked);
@@ -94,7 +90,7 @@ PyTuple_New(Py_ssize_t size)
         op = free_list[0];
         Py_INCREF(op);
 #ifdef COUNT_ALLOCS
-        tuple_zero_allocs++;
+        _Py_tuple_zero_allocs++;
 #endif
         return (PyObject *) op;
     }
@@ -102,7 +98,7 @@ PyTuple_New(Py_ssize_t size)
         free_list[size] = (PyTupleObject *) op->ob_item[0];
         numfree[size]--;
 #ifdef COUNT_ALLOCS
-        fast_tuple_allocs++;
+        _Py_fast_tuple_allocs++;
 #endif
         /* Inline PyObject_InitVar */
 #ifdef Py_TRACE_REFS
@@ -308,10 +304,7 @@ tuplerepr(PyTupleObject *v)
                 goto error;
         }
 
-        if (Py_EnterRecursiveCall(" while getting the repr of a tuple"))
-            goto error;
         s = PyObject_Repr(v->ob_item[i]);
-        Py_LeaveRecursiveCall();
         if (s == NULL)
             goto error;
 
@@ -341,39 +334,60 @@ error:
     return NULL;
 }
 
-/* The addend 82520, was selected from the range(0, 1000000) for
-   generating the greatest number of prime multipliers for tuples
-   upto length eight:
 
-     1082527, 1165049, 1082531, 1165057, 1247581, 1330103, 1082533,
-     1330111, 1412633, 1165069, 1247599, 1495177, 1577699
+/* Hash for tuples. This is a slightly simplified version of the xxHash
+   non-cryptographic hash:
+   - we do not use any parallellism, there is only 1 accumulator.
+   - we drop the final mixing since this is just a permutation of the
+     output space: it does not help against collisions.
+   - at the end, we mangle the length with a single constant.
+   For the xxHash specification, see
+   https://github.com/Cyan4973/xxHash/blob/master/doc/xxhash_spec.md
 
-   Tests have shown that it's not worth to cache the hash value, see
-   issue #9685.
+   Below are the official constants from the xxHash specification. Optimizing
+   compilers should emit a single "rotate" instruction for the
+   _PyHASH_XXROTATE() expansion. If that doesn't happen for some important
+   platform, the macro could be changed to expand to a platform-specific rotate
+   spelling instead.
 */
+#if SIZEOF_PY_UHASH_T > 4
+#define _PyHASH_XXPRIME_1 ((Py_uhash_t)11400714785074694791ULL)
+#define _PyHASH_XXPRIME_2 ((Py_uhash_t)14029467366897019727ULL)
+#define _PyHASH_XXPRIME_5 ((Py_uhash_t)2870177450012600261ULL)
+#define _PyHASH_XXROTATE(x) ((x << 31) | (x >> 33))  /* Rotate left 31 bits */
+#else
+#define _PyHASH_XXPRIME_1 ((Py_uhash_t)2654435761UL)
+#define _PyHASH_XXPRIME_2 ((Py_uhash_t)2246822519UL)
+#define _PyHASH_XXPRIME_5 ((Py_uhash_t)374761393UL)
+#define _PyHASH_XXROTATE(x) ((x << 13) | (x >> 19))  /* Rotate left 13 bits */
+#endif
 
+/* Tests have shown that it's not worth to cache the hash value, see
+   https://bugs.python.org/issue9685 */
 static Py_hash_t
 tuplehash(PyTupleObject *v)
 {
-    Py_uhash_t x;  /* Unsigned for defined overflow behavior. */
-    Py_hash_t y;
-    Py_ssize_t len = Py_SIZE(v);
-    PyObject **p;
-    Py_uhash_t mult = _PyHASH_MULTIPLIER;
-    x = 0x345678UL;
-    p = v->ob_item;
-    while (--len >= 0) {
-        y = PyObject_Hash(*p++);
-        if (y == -1)
+    Py_ssize_t i, len = Py_SIZE(v);
+    PyObject **item = v->ob_item;
+
+    Py_uhash_t acc = _PyHASH_XXPRIME_5;
+    for (i = 0; i < len; i++) {
+        Py_uhash_t lane = PyObject_Hash(item[i]);
+        if (lane == (Py_uhash_t)-1) {
             return -1;
-        x = (x ^ y) * mult;
-        /* the cast might truncate len; that doesn't change hash stability */
-        mult += (Py_hash_t)(82520UL + len + len);
+        }
+        acc += lane * _PyHASH_XXPRIME_2;
+        acc = _PyHASH_XXROTATE(acc);
+        acc *= _PyHASH_XXPRIME_1;
     }
-    x += 97531UL;
-    if (x == (Py_uhash_t)-1)
-        x = -2;
-    return x;
+
+    /* Add input length, mangled to keep the historical value of hash(()). */
+    acc += len ^ (_PyHASH_XXPRIME_5 ^ 3527539UL);
+
+    if (acc == (Py_uhash_t)-1) {
+        return 1546275796;
+    }
+    return acc;
 }
 
 static Py_ssize_t
@@ -647,23 +661,7 @@ tuplerichcompare(PyObject *v, PyObject *w, int op)
 
     if (i >= vlen || i >= wlen) {
         /* No more items to compare -- compare sizes */
-        int cmp;
-        PyObject *res;
-        switch (op) {
-        case Py_LT: cmp = vlen <  wlen; break;
-        case Py_LE: cmp = vlen <= wlen; break;
-        case Py_EQ: cmp = vlen == wlen; break;
-        case Py_NE: cmp = vlen != wlen; break;
-        case Py_GT: cmp = vlen >  wlen; break;
-        case Py_GE: cmp = vlen >= wlen; break;
-        default: return NULL; /* cannot happen */
-        }
-        if (cmp)
-            res = Py_True;
-        else
-            res = Py_False;
-        Py_INCREF(res);
-        return res;
+        Py_RETURN_RICHCOMPARE(vlen, wlen, op);
     }
 
     /* We have an item that differs -- shortcuts for EQ/NE */
@@ -1013,7 +1011,7 @@ tupleiter_next(tupleiterobject *it)
 }
 
 static PyObject *
-tupleiter_len(tupleiterobject *it)
+tupleiter_len(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t len = 0;
     if (it->it_seq)
@@ -1024,7 +1022,7 @@ tupleiter_len(tupleiterobject *it)
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-tupleiter_reduce(tupleiterobject *it)
+tupleiter_reduce(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     if (it->it_seq)
         return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),

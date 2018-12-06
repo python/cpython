@@ -111,8 +111,9 @@ def leapdays(y1, y2):
 
 
 def weekday(year, month, day):
-    """Return weekday (0-6 ~ Mon-Sun) for year (1970-...), month (1-12),
-       day (1-31)."""
+    """Return weekday (0-6 ~ Mon-Sun) for year, month (1-12), day (1-31)."""
+    if not datetime.MINYEAR <= year <= datetime.MAXYEAR:
+        year = 2000 + year % 400
     return datetime.date(year, month, day).weekday()
 
 
@@ -124,6 +125,24 @@ def monthrange(year, month):
     day1 = weekday(year, month, 1)
     ndays = mdays[month] + (month == February and isleap(year))
     return day1, ndays
+
+
+def monthlen(year, month):
+    return mdays[month] + (month == February and isleap(year))
+
+
+def prevmonth(year, month):
+    if month == 1:
+        return year-1, 12
+    else:
+        return year, month-1
+
+
+def nextmonth(year, month):
+    if month == 12:
+        return year+1, 1
+    else:
+        return year, month+1
 
 
 class Calendar(object):
@@ -157,28 +176,8 @@ class Calendar(object):
         values and will always iterate through complete weeks, so it will yield
         dates outside the specified month.
         """
-        date = datetime.date(year, month, 1)
-        # Go back to the beginning of the week
-        days = (date.weekday() - self.firstweekday) % 7
-        date -= datetime.timedelta(days=days)
-        oneday = datetime.timedelta(days=1)
-        while True:
-            yield date
-            try:
-                date += oneday
-            except OverflowError:
-                # Adding one day could fail after datetime.MAXYEAR
-                break
-            if date.month != month and date.weekday() == self.firstweekday:
-                break
-
-    def itermonthdays2(self, year, month):
-        """
-        Like itermonthdates(), but will yield (day number, weekday number)
-        tuples. For days outside the specified month the day number is 0.
-        """
-        for i, d in enumerate(self.itermonthdays(year, month), self.firstweekday):
-            yield d, i % 7
+        for y, m, d in self.itermonthdays3(year, month):
+            yield datetime.date(y, m, d)
 
     def itermonthdays(self, year, month):
         """
@@ -191,6 +190,40 @@ class Calendar(object):
         yield from range(1, ndays + 1)
         days_after = (self.firstweekday - day1 - ndays) % 7
         yield from repeat(0, days_after)
+
+    def itermonthdays2(self, year, month):
+        """
+        Like itermonthdates(), but will yield (day number, weekday number)
+        tuples. For days outside the specified month the day number is 0.
+        """
+        for i, d in enumerate(self.itermonthdays(year, month), self.firstweekday):
+            yield d, i % 7
+
+    def itermonthdays3(self, year, month):
+        """
+        Like itermonthdates(), but will yield (year, month, day) tuples.  Can be
+        used for dates outside of datetime.date range.
+        """
+        day1, ndays = monthrange(year, month)
+        days_before = (day1 - self.firstweekday) % 7
+        days_after = (self.firstweekday - day1 - ndays) % 7
+        y, m = prevmonth(year, month)
+        end = monthlen(y, m) + 1
+        for d in range(end-days_before, end):
+            yield y, m, d
+        for d in range(1, ndays + 1):
+            yield year, month, d
+        y, m = nextmonth(year, month)
+        for d in range(1, days_after + 1):
+            yield y, m, d
+
+    def itermonthdays4(self, year, month):
+        """
+        Like itermonthdates(), but will yield (year, month, day, day_of_week) tuples.
+        Can be used for dates outside of datetime.date range.
+        """
+        for i, (y, m, d) in enumerate(self.itermonthdays3(year, month)):
+            yield y, m, d, (self.firstweekday + i) % 7
 
     def monthdatescalendar(self, year, month):
         """

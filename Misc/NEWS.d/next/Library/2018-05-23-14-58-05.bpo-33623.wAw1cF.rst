@@ -1,0 +1,1 @@
+Fix possible SIGSGV when asyncio.Future is created in __del__

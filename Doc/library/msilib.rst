@@ -124,9 +124,9 @@ structures.
 
 .. seealso::
 
-   `FCICreateFile <https://msdn.microsoft.com/library?url=/library/en-us/devnotes/winprog/fcicreate.asp>`_
-   `UuidCreate <https://msdn.microsoft.com/library?url=/library/en-us/rpc/rpc/uuidcreate.asp>`_
-   `UuidToString <https://msdn.microsoft.com/library?url=/library/en-us/rpc/rpc/uuidtostring.asp>`_
+   `FCICreate <https://msdn.microsoft.com/en-us/library/bb432265.aspx>`_
+   `UuidCreate <https://msdn.microsoft.com/en-us/library/windows/desktop/aa379205.aspx>`_
+   `UuidToString <https://msdn.microsoft.com/en-us/library/windows/desktop/aa379352.aspx>`_
 
 .. _database-objects:
 
@@ -152,12 +152,18 @@ Database Objects
    :c:func:`MsiGetSummaryInformation`.  *count* is the maximum number of updated
    values.
 
+.. method:: Database.Close()
+
+   Close the database object, through :c:func:`MsiCloseHandle`.
+
+   .. versionadded:: 3.7
 
 .. seealso::
 
-   `MSIDatabaseOpenView <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msidatabaseopenview.asp>`_
-   `MSIDatabaseCommit <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msidatabasecommit.asp>`_
-   `MSIGetSummaryInformation <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msigetsummaryinformation.asp>`_
+   `MSIDatabaseOpenView <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370082.aspx>`_
+   `MSIDatabaseCommit <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370075.aspx>`_
+   `MSIGetSummaryInformation <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370301.aspx>`_
+   `MsiCloseHandle <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370067.aspx>`_
 
 .. _view-objects:
 
@@ -203,11 +209,11 @@ View Objects
 
 .. seealso::
 
-   `MsiViewExecute <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msiviewexecute.asp>`_
-   `MSIViewGetColumnInfo <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msiviewgetcolumninfo.asp>`_
-   `MsiViewFetch <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msiviewfetch.asp>`_
-   `MsiViewModify <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msiviewmodify.asp>`_
-   `MsiViewClose <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msiviewclose.asp>`_
+   `MsiViewExecute <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370513.aspx>`_
+   `MSIViewGetColumnInfo <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370516.aspx>`_
+   `MsiViewFetch <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370514.aspx>`_
+   `MsiViewModify <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370519.aspx>`_
+   `MsiViewClose <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370510.aspx>`_
 
 .. _summary-objects:
 
@@ -247,10 +253,10 @@ Summary Information Objects
 
 .. seealso::
 
-   `MsiSummaryInfoGetProperty <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msisummaryinfogetproperty.asp>`_
-   `MsiSummaryInfoGetPropertyCount <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msisummaryinfogetpropertycount.asp>`_
-   `MsiSummaryInfoSetProperty <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msisummaryinfosetproperty.asp>`_
-   `MsiSummaryInfoPersist <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msisummaryinfopersist.asp>`_
+   `MsiSummaryInfoGetProperty <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370409.aspx>`_
+   `MsiSummaryInfoGetPropertyCount <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370488.aspx>`_
+   `MsiSummaryInfoSetProperty <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370491.aspx>`_
+   `MsiSummaryInfoPersist <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370490.aspx>`_
 
 .. _record-objects:
 
@@ -301,11 +307,11 @@ Record Objects
 
 .. seealso::
 
-   `MsiRecordGetFieldCount <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msirecordgetfieldcount.asp>`_
-   `MsiRecordSetString <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msirecordsetstring.asp>`_
-   `MsiRecordSetStream <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msirecordsetstream.asp>`_
-   `MsiRecordSetInteger <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msirecordsetinteger.asp>`_
-   `MsiRecordClear <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/msirecordclear.asp>`_
+   `MsiRecordGetFieldCount <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370366.aspx>`_
+   `MsiRecordSetString <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370373.aspx>`_
+   `MsiRecordSetStream <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370372.aspx>`_
+   `MsiRecordSetInteger <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370371.aspx>`_
+   `MsiRecordClearData <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370364.aspx>`_
 
 .. _msi-errors:
 
@@ -392,15 +398,15 @@ Directory Objects
 
    .. method:: remove_pyc()
 
-      Remove ``.pyc``/``.pyo`` files on uninstall.
+      Remove ``.pyc`` files on uninstall.
 
 
 .. seealso::
 
-   `Directory Table <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/directory_table.asp>`_
-   `File Table <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/file_table.asp>`_
-   `Component Table <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/component_table.asp>`_
-   `FeatureComponents Table <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/featurecomponents_table.asp>`_
+   `Directory Table <https://msdn.microsoft.com/en-us/library/windows/desktop/aa368295.aspx>`_
+   `File Table <https://msdn.microsoft.com/en-us/library/windows/desktop/aa368596.aspx>`_
+   `Component Table <https://msdn.microsoft.com/en-us/library/windows/desktop/aa368007.aspx>`_
+   `FeatureComponents Table <https://msdn.microsoft.com/en-us/library/windows/desktop/aa368579.aspx>`_
 
 .. _features:
 
@@ -425,7 +431,7 @@ Features
 
 .. seealso::
 
-   `Feature Table <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/feature_table.asp>`_
+   `Feature Table <https://msdn.microsoft.com/en-us/library/windows/desktop/aa368585.aspx>`_
 
 .. _msi-gui:
 
@@ -520,13 +526,13 @@ for installing Python packages.
 
 .. seealso::
 
-   `Dialog Table <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/dialog_table.asp>`_
-   `Control Table <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/control_table.asp>`_
-   `Control Types <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/controls.asp>`_
-   `ControlCondition Table <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/controlcondition_table.asp>`_
-   `ControlEvent Table <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/controlevent_table.asp>`_
-   `EventMapping Table <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/eventmapping_table.asp>`_
-   `RadioButton Table <https://msdn.microsoft.com/library?url=/library/en-us/msi/setup/radiobutton_table.asp>`_
+   `Dialog Table <https://msdn.microsoft.com/en-us/library/windows/desktop/aa368286.aspx>`_
+   `Control Table <https://msdn.microsoft.com/en-us/library/windows/desktop/aa368044.aspx>`_
+   `Control Types <https://msdn.microsoft.com/en-us/library/windows/desktop/aa368039.aspx>`_
+   `ControlCondition Table <https://msdn.microsoft.com/en-us/library/windows/desktop/aa368035.aspx>`_
+   `ControlEvent Table <https://msdn.microsoft.com/en-us/library/windows/desktop/aa368037.aspx>`_
+   `EventMapping Table <https://msdn.microsoft.com/en-us/library/windows/desktop/aa368559.aspx>`_
+   `RadioButton Table <https://msdn.microsoft.com/en-us/library/windows/desktop/aa370962.aspx>`_
 
 .. _msi-tables:
 

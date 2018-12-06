@@ -32,15 +32,15 @@
 
 #include "Python.h"                     /* general Python API             */
 #include "Python-ast.h"                 /* mod_ty */
+#undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "ast.h"
 #include "graminit.h"                   /* symbols defined in the grammar */
 #include "node.h"                       /* internal parser structure      */
 #include "errcode.h"                    /* error codes for PyNode_*()     */
 #include "token.h"                      /* token definitions              */
+                                        /* ISTERMINAL() / ISNONTERMINAL() */
 #include "grammar.h"
 #include "parsetok.h"
-                                        /* ISTERMINAL() / ISNONTERMINAL() */
-#undef Yield
-#include "ast.h"
 
 extern grammar _PyParser_Grammar; /* From graminit.c */
 
@@ -135,18 +135,18 @@ node2tuple(node *n,                     /* node to convert               */
             goto error;
         (void) addelem(result, 1, w);
 
-        if (lineno == 1) {
+        if (lineno) {
             w = PyLong_FromLong(n->n_lineno);
             if (w == NULL)
                 goto error;
             (void) addelem(result, 2, w);
         }
 
-        if (col_offset == 1) {
+        if (col_offset) {
             w = PyLong_FromLong(n->n_col_offset);
             if (w == NULL)
                 goto error;
-            (void) addelem(result, 3, w);
+            (void) addelem(result, 2 + lineno, w);
         }
     }
     else {
@@ -206,15 +206,15 @@ static PyObject* parser_st2tuple(PyST_Object *, PyObject *, PyObject *);
 #define PUBLIC_METHOD_TYPE (METH_VARARGS|METH_KEYWORDS)
 
 static PyMethodDef parser_methods[] = {
-    {"compile",         (PyCFunction)parser_compilest,  PUBLIC_METHOD_TYPE,
+    {"compile",         (PyCFunction)(void(*)(void))parser_compilest,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Compile this ST object into a code object.")},
-    {"isexpr",          (PyCFunction)parser_isexpr,     PUBLIC_METHOD_TYPE,
+    {"isexpr",          (PyCFunction)(void(*)(void))parser_isexpr,     PUBLIC_METHOD_TYPE,
         PyDoc_STR("Determines if this ST object was created from an expression.")},
-    {"issuite",         (PyCFunction)parser_issuite,    PUBLIC_METHOD_TYPE,
+    {"issuite",         (PyCFunction)(void(*)(void))parser_issuite,    PUBLIC_METHOD_TYPE,
         PyDoc_STR("Determines if this ST object was created from a suite.")},
-    {"tolist",          (PyCFunction)parser_st2list,    PUBLIC_METHOD_TYPE,
+    {"tolist",          (PyCFunction)(void(*)(void))parser_st2list,    PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a list-tree representation of this ST.")},
-    {"totuple",         (PyCFunction)parser_st2tuple,   PUBLIC_METHOD_TYPE,
+    {"totuple",         (PyCFunction)(void(*)(void))parser_st2tuple,   PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a tuple-tree representation of this ST.")},
     {"__sizeof__",      (PyCFunction)parser_sizeof,     METH_NOARGS,
         PyDoc_STR("Returns size in memory, in bytes.")},
@@ -299,13 +299,10 @@ parser_compare_nodes(node *left, node *right)
  *
  */
 
-#define TEST_COND(cond) ((cond) ? Py_True : Py_False)
-
 static PyObject *
 parser_richcompare(PyObject *left, PyObject *right, int op)
 {
     int result;
-    PyObject *v;
 
     /* neither argument should be NULL, unless something's gone wrong */
     if (left == NULL || right == NULL) {
@@ -315,8 +312,7 @@ parser_richcompare(PyObject *left, PyObject *right, int op)
 
     /* both arguments should be instances of PyST_Object */
     if (!PyST_Object_Check(left) || !PyST_Object_Check(right)) {
-        v = Py_NotImplemented;
-        goto finished;
+        Py_RETURN_NOTIMPLEMENTED;
     }
 
     if (left == right)
@@ -326,33 +322,7 @@ parser_richcompare(PyObject *left, PyObject *right, int op)
         result = parser_compare_nodes(((PyST_Object *)left)->st_node,
                                       ((PyST_Object *)right)->st_node);
 
-    /* Convert return value to a Boolean */
-    switch (op) {
-      case Py_EQ:
-        v = TEST_COND(result == 0);
-        break;
-      case Py_NE:
-        v = TEST_COND(result != 0);
-        break;
-      case Py_LE:
-        v = TEST_COND(result <= 0);
-        break;
-      case Py_GE:
-        v = TEST_COND(result >= 0);
-        break;
-      case Py_LT:
-        v = TEST_COND(result < 0);
-        break;
-      case Py_GT:
-        v = TEST_COND(result > 0);
-        break;
-      default:
-        PyErr_BadArgument();
-        return NULL;
-    }
-  finished:
-    Py_INCREF(v);
-    return v;
+    Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
 /*  parser_newstobject(node* st)
@@ -1117,23 +1087,23 @@ parser__pickler(PyObject *self, PyObject *args)
  *  inheritance.
  */
 static PyMethodDef parser_functions[] =  {
-    {"compilest",      (PyCFunction)parser_compilest,  PUBLIC_METHOD_TYPE,
+    {"compilest",      (PyCFunction)(void(*)(void))parser_compilest,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Compiles an ST object into a code object.")},
-    {"expr",            (PyCFunction)parser_expr,      PUBLIC_METHOD_TYPE,
+    {"expr",            (PyCFunction)(void(*)(void))parser_expr,      PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from an expression.")},
-    {"isexpr",          (PyCFunction)parser_isexpr,    PUBLIC_METHOD_TYPE,
+    {"isexpr",          (PyCFunction)(void(*)(void))parser_isexpr,    PUBLIC_METHOD_TYPE,
         PyDoc_STR("Determines if an ST object was created from an expression.")},
-    {"issuite",         (PyCFunction)parser_issuite,   PUBLIC_METHOD_TYPE,
+    {"issuite",         (PyCFunction)(void(*)(void))parser_issuite,   PUBLIC_METHOD_TYPE,
         PyDoc_STR("Determines if an ST object was created from a suite.")},
-    {"suite",           (PyCFunction)parser_suite,     PUBLIC_METHOD_TYPE,
+    {"suite",           (PyCFunction)(void(*)(void))parser_suite,     PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from a suite.")},
-    {"sequence2st",     (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
+    {"sequence2st",     (PyCFunction)(void(*)(void))parser_tuple2st,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from a tree representation.")},
-    {"st2tuple",        (PyCFunction)parser_st2tuple,  PUBLIC_METHOD_TYPE,
+    {"st2tuple",        (PyCFunction)(void(*)(void))parser_st2tuple,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a tuple-tree representation of an ST.")},
-    {"st2list",         (PyCFunction)parser_st2list,   PUBLIC_METHOD_TYPE,
+    {"st2list",         (PyCFunction)(void(*)(void))parser_st2list,   PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a list-tree representation of an ST.")},
-    {"tuple2st",        (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
+    {"tuple2st",        (PyCFunction)(void(*)(void))parser_tuple2st,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from a tree representation.")},
 
     /* private stuff: support pickle module */

@@ -1,0 +1,1 @@
+Document that `asyncio.wait()` does not cancel its futures on timeout.

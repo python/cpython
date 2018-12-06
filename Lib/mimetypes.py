@@ -95,7 +95,7 @@ class MimeTypes:
             exts.append(ext)
 
     def guess_type(self, url, strict=True):
-        """Guess the type of a file based on its URL.
+        """Guess the type of a file which is either a URL or a path-like object.
 
         Return value is a tuple (type, encoding) where type is None if
         the type can't be guessed (no or unknown suffix) or a string
@@ -113,7 +113,8 @@ class MimeTypes:
         Optional `strict' argument when False adds a bunch of commonly found,
         but non-standard types.
         """
-        scheme, url = urllib.parse.splittype(url)
+        url = os.fspath(url)
+        scheme, url = urllib.parse._splittype(url)
         if scheme == 'data':
             # syntax of data URLs:
             # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
@@ -410,10 +411,8 @@ def _default_mime_types():
         '.bat'    : 'text/plain',
         '.bcpio'  : 'application/x-bcpio',
         '.bin'    : 'application/octet-stream',
-        '.bmp'    : 'image/x-ms-bmp',
+        '.bmp'    : 'image/bmp',
         '.c'      : 'text/plain',
-        # Duplicates :(
-        '.cdf'    : 'application/x-cdf',
         '.cdf'    : 'application/x-netcdf',
         '.cpio'   : 'application/x-cpio',
         '.csh'    : 'application/x-csh',
@@ -450,6 +449,7 @@ def _default_mime_types():
         '.mht'    : 'message/rfc822',
         '.mhtml'  : 'message/rfc822',
         '.mif'    : 'application/x-mif',
+        '.mjs'    : 'application/javascript',
         '.mov'    : 'video/quicktime',
         '.movie'  : 'video/x-sgi-movie',
         '.mp2'    : 'audio/mpeg',
@@ -516,14 +516,13 @@ def _default_mime_types():
         '.txt'    : 'text/plain',
         '.ustar'  : 'application/x-ustar',
         '.vcf'    : 'text/x-vcard',
+        '.wasm'   : 'application/wasm',
         '.wav'    : 'audio/x-wav',
         '.webm'   : 'video/webm',
         '.wiz'    : 'application/msword',
         '.wsdl'   : 'application/xml',
         '.xbm'    : 'image/x-xbitmap',
         '.xlb'    : 'application/vnd.ms-excel',
-        # Duplicates :(
-        '.xls'    : 'application/excel',
         '.xls'    : 'application/vnd.ms-excel',
         '.xml'    : 'text/xml',
         '.xpdl'   : 'application/xml',

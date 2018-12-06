@@ -1,5 +1,5 @@
 """
-A number of functions that enhance IDLE on Mac OSX.
+A number of functions that enhance IDLE on macOS.
 """
 from sys import platform  # Used in _init_tk_type, changed by test.
 
@@ -128,7 +128,7 @@ def overrideRootMenu(root, flist):
     # menu.
     from tkinter import Menu
     from idlelib import mainmenu
-    from idlelib import windows
+    from idlelib import window
 
     closeItem = mainmenu.menudefs[0][1][-2]
 
@@ -148,7 +148,7 @@ def overrideRootMenu(root, flist):
     root.configure(menu=menubar)
     menudict = {}
 
-    menudict['windows'] = menu = Menu(menubar, name='windows', tearoff=0)
+    menudict['window'] = menu = Menu(menubar, name='window', tearoff=0)
     menubar.add_cascade(label='Window', menu=menu, underline=0)
 
     def postwindowsmenu(menu=menu):
@@ -158,8 +158,8 @@ def overrideRootMenu(root, flist):
 
         if end > 0:
             menu.delete(0, end)
-        windows.add_windows_to_menu(menu)
-    windows.register_callback(postwindowsmenu)
+        window.add_windows_to_menu(menu)
+    window.register_callback(postwindowsmenu)
 
     def about_dialog(event=None):
         "Handle Help 'About IDLE' event."
@@ -192,7 +192,7 @@ def overrideRootMenu(root, flist):
         root.bind('<<close-all-windows>>', flist.close_all_callback)
 
         # The binding above doesn't reliably work on all versions of Tk
-        # on MacOSX. Adding command definition below does seem to do the
+        # on macOS. Adding command definition below does seem to do the
         # right thing for now.
         root.createcommand('exit', flist.close_all_callback)
 

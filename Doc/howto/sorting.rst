@@ -145,6 +145,17 @@ ascending *age*, do the *age* sort first and then sort again using *grade*:
     >>> sorted(s, key=attrgetter('grade'), reverse=True)       # now sort on primary key, descending
     [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
 
+This can be abstracted out into a wrapper function that can take a list and
+tuples of field and order to sort them on multiple passes.
+
+    >>> def multisort(xs, specs):
+    ...     for key, reverse in reversed(specs):
+    ...         xs.sort(key=attrgetter(key), reverse=reverse)
+    ...     return xs
+
+    >>> multisort(list(student_objects), (('grade', True), ('age', False)))
+    [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
+
 The `Timsort <https://en.wikipedia.org/wiki/Timsort>`_ algorithm used in Python
 does multiple sorts efficiently because it can take advantage of any ordering
 already present in a dataset.

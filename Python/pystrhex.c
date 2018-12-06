@@ -2,6 +2,8 @@
 
 #include "Python.h"
 
+#include "pystrhex.h"
+
 static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
                                  int return_bytes)
 {
@@ -16,14 +18,14 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
     if (return_bytes) {
         /* If _PyBytes_FromSize() were public we could avoid malloc+copy. */
         retbuf = (Py_UCS1*) PyMem_Malloc(arglen*2);
-	if (!retbuf)
-	    return PyErr_NoMemory();
+        if (!retbuf)
+            return PyErr_NoMemory();
         retval = NULL;  /* silence a compiler warning, assigned later. */
     } else {
-	retval = PyUnicode_New(arglen*2, 127);
-	if (!retval)
-	    return NULL;
-	retbuf = PyUnicode_1BYTE_DATA(retval);
+        retval = PyUnicode_New(arglen*2, 127);
+        if (!retval)
+            return NULL;
+        retbuf = PyUnicode_1BYTE_DATA(retval);
     }
 
     /* make hex version of string, taken from shamodule.c */
@@ -48,14 +50,14 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
     return retval;
 }
 
-PyAPI_FUNC(PyObject *) _Py_strhex(const char* argbuf, const Py_ssize_t arglen)
+PyObject * _Py_strhex(const char* argbuf, const Py_ssize_t arglen)
 {
     return _Py_strhex_impl(argbuf, arglen, 0);
 }
 
 /* Same as above but returns a bytes() instead of str() to avoid the
  * need to decode the str() when bytes are needed. */
-PyAPI_FUNC(PyObject *) _Py_strhex_bytes(const char* argbuf, const Py_ssize_t arglen)
+PyObject * _Py_strhex_bytes(const char* argbuf, const Py_ssize_t arglen)
 {
     return _Py_strhex_impl(argbuf, arglen, 1);
 }

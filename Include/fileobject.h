@@ -28,6 +28,10 @@ PyAPI_DATA(const char *) Py_FileSystemDefaultEncodeErrors;
 #endif
 PyAPI_DATA(int) Py_HasFileSystemDefaultEncoding;
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
+PyAPI_DATA(int) Py_UTF8Mode;
+#endif
+
 /* Internal API
 
    The std printer acts as a preliminary sys.stderr until the new io

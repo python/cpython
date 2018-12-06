@@ -29,7 +29,7 @@ class bdist_wininst(Command):
                     ('no-target-compile', 'c',
                      "do not compile .py to .pyc on the target system"),
                     ('no-target-optimize', 'o',
-                     "do not compile .py to .pyo (optimized)"
+                     "do not compile .py to .pyo (optimized) "
                      "on the target system"),
                     ('dist-dir=', 'd',
                      "directory to put final built distributions in"),
@@ -40,7 +40,7 @@ class bdist_wininst(Command):
                     ('skip-build', None,
                      "skip rebuilding everything (for testing/debugging)"),
                     ('install-script=', None,
-                     "basename of installation script to be run after"
+                     "basename of installation script to be run after "
                      "installation or before deinstallation"),
                     ('pre-install-script=', None,
                      "Fully qualified filename of a script to be run before "
@@ -337,11 +337,10 @@ class bdist_wininst(Command):
                 # cross-building, so assume the latest version
                 bv = '14.0'
             else:
-                bv = '.'.join(CRT_ASSEMBLY_VERSION.split('.', 2)[:2])
-                if bv == '14.11':
-                    # v141 and v140 are binary compatible,
-                    # so keep using the 14.0 stub.
-                    bv = '14.0'
+                # as far as we know, CRT is binary compatible based on
+                # the first field, so assume 'x.0' until proven otherwise
+                major = CRT_ASSEMBLY_VERSION.partition('.')[0]
+                bv = major + '.0'
 
 
         # wininst-x.y.exe is in the same directory as this file

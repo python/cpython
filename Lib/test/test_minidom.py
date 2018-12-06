@@ -2,6 +2,7 @@
 
 import copy
 import pickle
+import io
 from test.support import findfile
 import unittest
 
@@ -60,17 +61,7 @@ class MinidomTest(unittest.TestCase):
     def testDocumentAsyncAttr(self):
         doc = Document()
         self.assertFalse(doc.async_)
-        with self.assertWarns(DeprecationWarning):
-            self.assertFalse(getattr(doc, 'async', True))
-        with self.assertWarns(DeprecationWarning):
-            setattr(doc, 'async', True)
-        with self.assertWarns(DeprecationWarning):
-            self.assertTrue(getattr(doc, 'async', False))
-        self.assertTrue(doc.async_)
-
         self.assertFalse(Document.async_)
-        with self.assertWarns(DeprecationWarning):
-            self.assertFalse(getattr(Document, 'async', True))
 
     def testParseFromBinaryFile(self):
         with open(tstfile, 'rb') as file:
@@ -335,7 +326,7 @@ class MinidomTest(unittest.TestCase):
         node = child.getAttributeNode("spam")
         self.assertRaises(xml.dom.NotFoundErr, child.removeAttributeNode,
             None)
-        child.removeAttributeNode(node)
+        self.assertIs(node, child.removeAttributeNode(node))
         self.confirm(len(child.attributes) == 0
                 and child.getAttributeNode("spam") is None)
         dom2 = Document()
@@ -1569,6 +1560,25 @@ class MinidomTest(unittest.TestCase):
         doc = parse(tstfile)
         pi = doc.createProcessingInstruction("y", "z")
         pi.nodeValue = "crash"
+
+    def test_minidom_attribute_order(self):
+        xml_str = '<?xml version="1.0" ?><curriculum status="public" company="example"/>'
+        doc = parseString(xml_str)
+        output = io.StringIO()
+        doc.writexml(output)
+        self.assertEqual(output.getvalue(), xml_str)
+
+    def test_toxml_with_attributes_ordered(self):
+        xml_str = '<?xml version="1.0" ?><curriculum status="public" company="example"/>'
+        doc = parseString(xml_str)
+        self.assertEqual(doc.toxml(), xml_str)
+
+    def test_toprettyxml_with_attributes_ordered(self):
+        xml_str = '<?xml version="1.0" ?><curriculum status="public" company="example"/>'
+        doc = parseString(xml_str)
+        self.assertEqual(doc.toprettyxml(),
+                         '<?xml version="1.0" ?>\n'
+                         '<curriculum status="public" company="example"/>\n')
 
 if __name__ == "__main__":
     unittest.main()

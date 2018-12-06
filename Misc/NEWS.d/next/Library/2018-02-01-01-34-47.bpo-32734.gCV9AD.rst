@@ -1,0 +1,2 @@
+Fixed ``asyncio.Lock()`` safety issue which allowed acquiring and locking
+the same lock multiple times, without it being free. Patch by Bar Harel.

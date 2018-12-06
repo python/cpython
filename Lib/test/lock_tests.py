@@ -405,12 +405,13 @@ class EventTests(BaseTestCase):
         # cleared before the waiting thread is woken up.
         evt = self.eventtype()
         results = []
+        timeout = 0.250
         N = 5
         def f():
-            results.append(evt.wait(1))
+            results.append(evt.wait(timeout * 4))
         b = Bunch(f, N)
         b.wait_for_started()
-        time.sleep(0.5)
+        time.sleep(timeout)
         evt.set()
         evt.clear()
         b.wait_for_finished()
@@ -629,13 +630,14 @@ class BaseSemaphoreTests(BaseTestCase):
         sem = self.semtype(7)
         sem.acquire()
         N = 10
+        sem_results = []
         results1 = []
         results2 = []
         phase_num = 0
         def f():
-            sem.acquire()
+            sem_results.append(sem.acquire())
             results1.append(phase_num)
-            sem.acquire()
+            sem_results.append(sem.acquire())
             results2.append(phase_num)
         b = Bunch(f, 10)
         b.wait_for_started()
@@ -659,6 +661,7 @@ class BaseSemaphoreTests(BaseTestCase):
         # Final release, to let the last thread finish
         sem.release()
         b.wait_for_finished()
+        self.assertEqual(sem_results, [True] * (6 + 7 + 6 + 1))
 
     def test_try_acquire(self):
         sem = self.semtype(2)

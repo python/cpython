@@ -1,0 +1,2 @@
+Add OP_ENABLE_MIDDLEBOX_COMPAT and test workaround for TLSv1.3 for future
+compatibility with OpenSSL 1.1.1.

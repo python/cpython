@@ -9,13 +9,13 @@ PyDoc_STRVAR(list_insert__doc__,
 "Insert object before index.");
 
 #define LIST_INSERT_METHODDEF    \
-    {"insert", (PyCFunction)list_insert, METH_FASTCALL, list_insert__doc__},
+    {"insert", (PyCFunction)(void(*)(void))list_insert, METH_FASTCALL, list_insert__doc__},
 
 static PyObject *
 list_insert_impl(PyListObject *self, Py_ssize_t index, PyObject *object);
 
 static PyObject *
-list_insert(PyListObject *self, PyObject **args, Py_ssize_t nargs)
+list_insert(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t index;
@@ -94,13 +94,13 @@ PyDoc_STRVAR(list_pop__doc__,
 "Raises IndexError if list is empty or index is out of range.");
 
 #define LIST_POP_METHODDEF    \
-    {"pop", (PyCFunction)list_pop, METH_FASTCALL, list_pop__doc__},
+    {"pop", (PyCFunction)(void(*)(void))list_pop, METH_FASTCALL, list_pop__doc__},
 
 static PyObject *
 list_pop_impl(PyListObject *self, Py_ssize_t index);
 
 static PyObject *
-list_pop(PyListObject *self, PyObject **args, Py_ssize_t nargs)
+list_pop(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t index = -1;
@@ -122,13 +122,13 @@ PyDoc_STRVAR(list_sort__doc__,
 "Stable sort *IN PLACE*.");
 
 #define LIST_SORT_METHODDEF    \
-    {"sort", (PyCFunction)list_sort, METH_FASTCALL|METH_KEYWORDS, list_sort__doc__},
+    {"sort", (PyCFunction)(void(*)(void))list_sort, METH_FASTCALL|METH_KEYWORDS, list_sort__doc__},
 
 static PyObject *
 list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse);
 
 static PyObject *
-list_sort(PyListObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+list_sort(PyListObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "reverse", NULL};
@@ -173,14 +173,14 @@ PyDoc_STRVAR(list_index__doc__,
 "Raises ValueError if the value is not present.");
 
 #define LIST_INDEX_METHODDEF    \
-    {"index", (PyCFunction)list_index, METH_FASTCALL, list_index__doc__},
+    {"index", (PyCFunction)(void(*)(void))list_index, METH_FASTCALL, list_index__doc__},
 
 static PyObject *
 list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
                 Py_ssize_t stop);
 
 static PyObject *
-list_index(PyListObject *self, PyObject **args, Py_ssize_t nargs)
+list_index(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *value;
@@ -285,4 +285,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=4a4f72a5e7ff5068 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=652ae4ee63a9de71 input=a9049054013a1b77]*/

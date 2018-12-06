@@ -1,2 +1,0 @@
-Fix memory corruption due to allocator mix in getpath.c between Py_GetPath()
-and Py_SetPath()

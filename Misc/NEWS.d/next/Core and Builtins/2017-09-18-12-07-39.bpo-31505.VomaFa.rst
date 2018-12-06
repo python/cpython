@@ -1,2 +1,0 @@
-Fix an assertion failure in `json`, in case `_json.make_encoder()` received
-a bad `encoder()` argument. Patch by Oren Milman.

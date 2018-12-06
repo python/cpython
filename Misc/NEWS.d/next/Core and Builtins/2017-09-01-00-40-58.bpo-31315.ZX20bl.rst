@@ -1,2 +1,0 @@
-Fix an assertion failure in imp.create_dynamic(), when spec.name is not a
-string. Patch by Oren Milman.

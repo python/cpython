@@ -150,12 +150,13 @@ PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
     }
 }
 
-Py_ssize_t pysqlite_row_length(pysqlite_Row* self, PyObject* args, PyObject* kwargs)
+static Py_ssize_t
+pysqlite_row_length(pysqlite_Row* self)
 {
     return PyTuple_GET_SIZE(self->data);
 }
 
-PyObject* pysqlite_row_keys(pysqlite_Row* self, PyObject* args, PyObject* kwargs)
+PyObject* pysqlite_row_keys(pysqlite_Row* self, PyObject *Py_UNUSED(ignored))
 {
     PyObject* list;
     Py_ssize_t nitems, i;
@@ -174,11 +175,6 @@ PyObject* pysqlite_row_keys(pysqlite_Row* self, PyObject* args, PyObject* kwargs
     }
 
     return list;
-}
-
-static int pysqlite_row_print(pysqlite_Row* self, FILE *fp, int flags)
-{
-    return (&PyTuple_Type)->tp_print(self->data, fp, flags);
 }
 
 static PyObject* pysqlite_iter(pysqlite_Row* self)
@@ -235,7 +231,7 @@ PyTypeObject pysqlite_RowType = {
         sizeof(pysqlite_Row),                           /* tp_basicsize */
         0,                                              /* tp_itemsize */
         (destructor)pysqlite_row_dealloc,               /* tp_dealloc */
-        (printfunc)pysqlite_row_print,                  /* tp_print */
+        0,                                              /* tp_print */
         0,                                              /* tp_getattr */
         0,                                              /* tp_setattr */
         0,                                              /* tp_reserved */

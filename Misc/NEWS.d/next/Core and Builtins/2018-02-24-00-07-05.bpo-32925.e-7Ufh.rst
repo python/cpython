@@ -1,0 +1,3 @@
+Optimized iterating and containing test for literal lists consisting of
+non-constants: ``x in [a, b]`` and ``for x in [a, b]``. The case of all
+constant elements already was optimized.

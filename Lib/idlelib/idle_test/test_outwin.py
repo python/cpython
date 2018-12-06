@@ -1,12 +1,11 @@
-""" Test idlelib.outwin.
-"""
+"Test outwin, coverage 76%."
 
+from idlelib import outwin
 import unittest
+from test.support import requires
 from tkinter import Tk, Text
 from idlelib.idle_test.mock_tk import Mbox_func
 from idlelib.idle_test.mock_idle import Func
-from idlelib import outwin
-from test.support import requires
 from unittest import mock
 
 

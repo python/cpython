@@ -1,0 +1,2 @@
+The :class:`cProfile.Profile` class can now be used as a context manager. Patch
+by Scott Sanderson.

@@ -84,6 +84,30 @@ class _Outcome(object):
 def _id(obj):
     return obj
 
+
+_module_cleanups = []
+def addModuleCleanup(function, *args, **kwargs):
+    """Same as addCleanup, except the cleanup items are called even if
+    setUpModule fails (unlike tearDownModule)."""
+    _module_cleanups.append((function, args, kwargs))
+
+
+def doModuleCleanups():
+    """Execute all module cleanup functions. Normally called for you after
+    tearDownModule."""
+    exceptions = []
+    while _module_cleanups:
+        function, args, kwargs = _module_cleanups.pop()
+        try:
+            function(*args, **kwargs)
+        except Exception as exc:
+            exceptions.append(exc)
+    if exceptions:
+        # Swallows all but first exception. If a multi-exception handler
+        # gets written we should use that here instead.
+        raise exceptions[0]
+
+
 def skip(reason):
     """
     Unconditionally skip a test.
@@ -157,16 +181,11 @@ class _AssertRaisesBaseContext(_BaseTestCaseContext):
             if not _is_subtype(self.expected, self._base_type):
                 raise TypeError('%s() arg 1 must be %s' %
                                 (name, self._base_type_str))
-            if args and args[0] is None:
-                warnings.warn("callable is None",
-                              DeprecationWarning, 3)
-                args = ()
             if not args:
                 self.msg = kwargs.pop('msg', None)
                 if kwargs:
-                    warnings.warn('%r is an invalid keyword argument for '
-                                  'this function' % next(iter(kwargs)),
-                                  DeprecationWarning, 3)
+                    raise TypeError('%r is an invalid keyword argument for '
+                                    'this function' % (next(iter(kwargs)),))
                 return self
 
             callable_obj, *args = args
@@ -395,6 +414,8 @@ class TestCase(object):
 
     _classSetupFailed = False
 
+    _class_cleanups = []
+
     def __init__(self, methodName='runTest'):
         """Create an instance of the class that will use the named test
            method when executed. Raises a ValueError if the instance does
@@ -449,6 +470,12 @@ class TestCase(object):
 
         Cleanup items are called even if setUp fails (unlike tearDown)."""
         self._cleanups.append((function, args, kwargs))
+
+    @classmethod
+    def addClassCleanup(cls, function, *args, **kwargs):
+        """Same as addCleanup, except the cleanup items are called even if
+        setUpClass fails (unlike tearDownClass)."""
+        cls._class_cleanups.append((function, args, kwargs))
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
@@ -519,7 +546,7 @@ class TestCase(object):
         case as failed but resumes execution at the end of the enclosed
         block, allowing further test code to be executed.
         """
-        if not self._outcome.result_supports_subtests:
+        if self._outcome is None or not self._outcome.result_supports_subtests:
             yield
             return
         parent = self._subtest
@@ -656,8 +683,20 @@ class TestCase(object):
                 function(*args, **kwargs)
 
         # return this for backwards compatibility
-        # even though we no longer us it internally
+        # even though we no longer use it internally
         return outcome.success
+
+    @classmethod
+    def doClassCleanups(cls):
+        """Execute all class cleanup functions. Normally called for you after
+        tearDownClass."""
+        cls.tearDown_exceptions = []
+        while cls._class_cleanups:
+            function, args, kwargs = cls._class_cleanups.pop()
+            try:
+                function(*args, **kwargs)
+            except Exception as exc:
+                cls.tearDown_exceptions.append(sys.exc_info())
 
     def __call__(self, *args, **kwds):
         return self.run(*args, **kwds)
@@ -852,7 +891,8 @@ class TestCase(object):
         """Fail if the two objects are unequal as determined by their
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero, or by comparing that the
-           between the two objects is more than the given delta.
+           difference between the two objects is more than the given
+           delta.
 
            Note that decimal places (from zero) are usually not the same
            as significant digits (measured from the most significant digit).
@@ -896,7 +936,7 @@ class TestCase(object):
         """Fail if the two objects are equal as determined by their
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero, or by comparing that the
-           between the two objects is less than the given delta.
+           difference between the two objects is less than the given delta.
 
            Note that decimal places (from zero) are usually not the same
            as significant digits (measured from the most significant digit).

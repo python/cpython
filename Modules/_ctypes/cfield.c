@@ -1147,7 +1147,7 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
     }
     if (PyLong_Check(value))
     {
-        long longval = PyLong_AS_LONG(value);
+        long longval = PyLong_AsLong(value);
         if (longval < 0 || longval >= 256)
             goto error;
         *(char *)ptr = (char)longval;

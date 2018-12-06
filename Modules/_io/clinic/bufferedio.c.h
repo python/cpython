@@ -91,13 +91,13 @@ PyDoc_STRVAR(_io__Buffered_peek__doc__,
 "\n");
 
 #define _IO__BUFFERED_PEEK_METHODDEF    \
-    {"peek", (PyCFunction)_io__Buffered_peek, METH_FASTCALL, _io__Buffered_peek__doc__},
+    {"peek", (PyCFunction)(void(*)(void))_io__Buffered_peek, METH_FASTCALL, _io__Buffered_peek__doc__},
 
 static PyObject *
 _io__Buffered_peek_impl(buffered *self, Py_ssize_t size);
 
 static PyObject *
-_io__Buffered_peek(buffered *self, PyObject **args, Py_ssize_t nargs)
+_io__Buffered_peek(buffered *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = 0;
@@ -118,13 +118,13 @@ PyDoc_STRVAR(_io__Buffered_read__doc__,
 "\n");
 
 #define _IO__BUFFERED_READ_METHODDEF    \
-    {"read", (PyCFunction)_io__Buffered_read, METH_FASTCALL, _io__Buffered_read__doc__},
+    {"read", (PyCFunction)(void(*)(void))_io__Buffered_read, METH_FASTCALL, _io__Buffered_read__doc__},
 
 static PyObject *
 _io__Buffered_read_impl(buffered *self, Py_ssize_t n);
 
 static PyObject *
-_io__Buffered_read(buffered *self, PyObject **args, Py_ssize_t nargs)
+_io__Buffered_read(buffered *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t n = -1;
@@ -145,13 +145,13 @@ PyDoc_STRVAR(_io__Buffered_read1__doc__,
 "\n");
 
 #define _IO__BUFFERED_READ1_METHODDEF    \
-    {"read1", (PyCFunction)_io__Buffered_read1, METH_FASTCALL, _io__Buffered_read1__doc__},
+    {"read1", (PyCFunction)(void(*)(void))_io__Buffered_read1, METH_FASTCALL, _io__Buffered_read1__doc__},
 
 static PyObject *
 _io__Buffered_read1_impl(buffered *self, Py_ssize_t n);
 
 static PyObject *
-_io__Buffered_read1(buffered *self, PyObject **args, Py_ssize_t nargs)
+_io__Buffered_read1(buffered *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t n = -1;
@@ -234,13 +234,13 @@ PyDoc_STRVAR(_io__Buffered_readline__doc__,
 "\n");
 
 #define _IO__BUFFERED_READLINE_METHODDEF    \
-    {"readline", (PyCFunction)_io__Buffered_readline, METH_FASTCALL, _io__Buffered_readline__doc__},
+    {"readline", (PyCFunction)(void(*)(void))_io__Buffered_readline, METH_FASTCALL, _io__Buffered_readline__doc__},
 
 static PyObject *
 _io__Buffered_readline_impl(buffered *self, Py_ssize_t size);
 
 static PyObject *
-_io__Buffered_readline(buffered *self, PyObject **args, Py_ssize_t nargs)
+_io__Buffered_readline(buffered *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
@@ -261,13 +261,13 @@ PyDoc_STRVAR(_io__Buffered_seek__doc__,
 "\n");
 
 #define _IO__BUFFERED_SEEK_METHODDEF    \
-    {"seek", (PyCFunction)_io__Buffered_seek, METH_FASTCALL, _io__Buffered_seek__doc__},
+    {"seek", (PyCFunction)(void(*)(void))_io__Buffered_seek, METH_FASTCALL, _io__Buffered_seek__doc__},
 
 static PyObject *
 _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence);
 
 static PyObject *
-_io__Buffered_seek(buffered *self, PyObject **args, Py_ssize_t nargs)
+_io__Buffered_seek(buffered *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *targetobj;
@@ -289,13 +289,13 @@ PyDoc_STRVAR(_io__Buffered_truncate__doc__,
 "\n");
 
 #define _IO__BUFFERED_TRUNCATE_METHODDEF    \
-    {"truncate", (PyCFunction)_io__Buffered_truncate, METH_FASTCALL, _io__Buffered_truncate__doc__},
+    {"truncate", (PyCFunction)(void(*)(void))_io__Buffered_truncate, METH_FASTCALL, _io__Buffered_truncate__doc__},
 
 static PyObject *
 _io__Buffered_truncate_impl(buffered *self, PyObject *pos);
 
 static PyObject *
-_io__Buffered_truncate(buffered *self, PyObject **args, Py_ssize_t nargs)
+_io__Buffered_truncate(buffered *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *pos = Py_None;
@@ -476,4 +476,4 @@ _io_BufferedRandom___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2b817df0bf814ddc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cb4bf8d50533953b input=a9049054013a1b77]*/

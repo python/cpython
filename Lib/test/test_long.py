@@ -373,6 +373,10 @@ class LongTest(unittest.TestCase):
         for base in invalid_bases:
             self.assertRaises(ValueError, int, '42', base)
 
+        # Invalid unicode string
+        # See bpo-34087
+        self.assertRaises(ValueError, int, '\u3053\u3093\u306b\u3061\u306f')
+
 
     def test_conversion(self):
 
@@ -694,6 +698,9 @@ class LongTest(unittest.TestCase):
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, ',_')
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, '_,d')
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, ',_d')
+
+        self.assertRaisesRegex(ValueError, "Cannot specify ',' with 's'", format, 3, ',s')
+        self.assertRaisesRegex(ValueError, "Cannot specify '_' with 's'", format, 3, '_s')
 
         # ensure that only int and float type specifiers work
         for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +
@@ -1344,6 +1351,16 @@ class LongTest(unittest.TestCase):
             for shift in (0, 2):
                 self.assertEqual(type(value << shift), int)
                 self.assertEqual(type(value >> shift), int)
+
+    def test_as_integer_ratio(self):
+        class myint(int):
+            pass
+        tests = [10, 0, -10, 1, sys.maxsize + 1, True, False, myint(42)]
+        for value in tests:
+            numerator, denominator = value.as_integer_ratio()
+            self.assertEqual((numerator, denominator), (int(value), 1))
+            self.assertEqual(type(numerator), int)
+            self.assertEqual(type(denominator), int)
 
 
 if __name__ == "__main__":

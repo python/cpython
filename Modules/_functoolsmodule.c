@@ -1,7 +1,7 @@
-
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
+#include "pycore_tupleobject.h"
 #include "structmember.h"
 
 /* _functools module written and maintained
@@ -142,7 +142,7 @@ partial_fastcall(partialobject *pto, PyObject **args, Py_ssize_t nargs,
         stack = args;
     }
     else if (nargs == 0) {
-        stack = &PyTuple_GET_ITEM(pto->args, 0);
+        stack = _PyTuple_ITEMS(pto->args);
     }
     else {
         if (nargs2 <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
@@ -159,7 +159,7 @@ partial_fastcall(partialobject *pto, PyObject **args, Py_ssize_t nargs,
 
         /* use borrowed references */
         memcpy(stack,
-               &PyTuple_GET_ITEM(pto->args, 0),
+               _PyTuple_ITEMS(pto->args),
                pto_nargs * sizeof(PyObject*));
         memcpy(&stack[pto_nargs],
                args,
@@ -222,7 +222,7 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
 
     if (pto->use_fastcall) {
         res = partial_fastcall(pto,
-                               &PyTuple_GET_ITEM(args, 0),
+                               _PyTuple_ITEMS(args),
                                PyTuple_GET_SIZE(args),
                                kwargs2);
     }
@@ -677,26 +677,9 @@ typedef struct lru_list_elem {
 static void
 lru_list_elem_dealloc(lru_list_elem *link)
 {
-    _PyObject_GC_UNTRACK(link);
     Py_XDECREF(link->key);
     Py_XDECREF(link->result);
-    PyObject_GC_Del(link);
-}
-
-static int
-lru_list_elem_traverse(lru_list_elem *link, visitproc visit, void *arg)
-{
-    Py_VISIT(link->key);
-    Py_VISIT(link->result);
-    return 0;
-}
-
-static int
-lru_list_elem_clear(lru_list_elem *link)
-{
-    Py_CLEAR(link->key);
-    Py_CLEAR(link->result);
-    return 0;
+    PyObject_Del(link);
 }
 
 static PyTypeObject lru_list_elem_type = {
@@ -720,10 +703,7 @@ static PyTypeObject lru_list_elem_type = {
     0,                                  /* tp_getattro */
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,  /* tp_flags */
-    0,                                  /* tp_doc */
-    (traverseproc)lru_list_elem_traverse,  /* tp_traverse */
-    (inquiry)lru_list_elem_clear,       /* tp_clear */
+    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
 };
 
 
@@ -959,8 +939,8 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         }
     } else {
         /* Put result in a new link at the front of the queue. */
-        link = (lru_list_elem *)PyObject_GC_New(lru_list_elem,
-                                                &lru_list_elem_type);
+        link = (lru_list_elem *)PyObject_New(lru_list_elem,
+                                             &lru_list_elem_type);
         if (link == NULL) {
             Py_DECREF(key);
             Py_DECREF(result);
@@ -970,7 +950,6 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         link->hash = hash;
         link->key = key;
         link->result = result;
-        _PyObject_GC_TRACK(link);
         if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
                                       hash) < 0) {
             Py_DECREF(link);
@@ -1151,7 +1130,8 @@ lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
     lru_list_elem *link = self->root.next;
     while (link != &self->root) {
         lru_list_elem *next = link->next;
-        Py_VISIT(link);
+        Py_VISIT(link->key);
+        Py_VISIT(link->result);
         link = next;
     }
     Py_VISIT(self->maxsize_O);
@@ -1256,7 +1236,7 @@ PyDoc_STRVAR(module_doc,
 
 static PyMethodDef module_methods[] = {
     {"reduce",          functools_reduce,     METH_VARARGS, functools_reduce_doc},
-    {"cmp_to_key",      (PyCFunction)functools_cmp_to_key,
+    {"cmp_to_key",      (PyCFunction)(void(*)(void))functools_cmp_to_key,
      METH_VARARGS | METH_KEYWORDS, functools_cmp_to_key_doc},
     {NULL,              NULL}           /* sentinel */
 };

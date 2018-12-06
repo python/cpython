@@ -170,8 +170,8 @@ Functions
       Passing an invalid or expired *thread_id* may result in
       undefined behavior, such as segmentation fault.
 
-   Availability: Unix (see the man page for :manpage:`pthread_getcpuclockid(3)` for
-   further information)
+   .. availability:: Unix (see the man page for :manpage:`pthread_getcpuclockid(3)` for
+      further information).
 
    .. versionadded:: 3.7
 
@@ -180,29 +180,47 @@ Functions
    Return the resolution (precision) of the specified clock *clk_id*.  Refer to
    :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
 
-.. function:: clock_gettime(clk_id)
+.. function:: clock_gettime(clk_id) -> float
 
    Return the time of the specified clock *clk_id*.  Refer to
    :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
 
-.. function:: clock_settime(clk_id, time)
+.. function:: clock_gettime_ns(clk_id) -> int
+
+   Similar to :func:`clock_gettime` but return time as nanoseconds.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.7
+
+
+.. function:: clock_settime(clk_id, time: float)
 
    Set the time of the specified clock *clk_id*.  Currently,
    :data:`CLOCK_REALTIME` is the only accepted value for *clk_id*.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
+
+
+.. function:: clock_settime_ns(clk_id, time: int)
+
+   Similar to :func:`clock_settime` but set time with nanoseconds.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.7
 
 
 .. function:: ctime([secs])
@@ -223,6 +241,7 @@ Functions
    * ``'monotonic'``: :func:`time.monotonic`
    * ``'perf_counter'``: :func:`time.perf_counter`
    * ``'process_time'``: :func:`time.process_time`
+   * ``'thread_time'``: :func:`time.thread_time`
    * ``'time'``: :func:`time.time`
 
    The result has the following attributes:
@@ -267,7 +286,7 @@ Functions
    The earliest date for which it can generate a time is platform-dependent.
 
 
-.. function:: monotonic()
+.. function:: monotonic() -> float
 
    Return the value (in fractional seconds) of a monotonic clock, i.e. a clock
    that cannot go backwards.  The clock is not affected by system clock updates.
@@ -287,7 +306,16 @@ Functions
       The function is now always available.
 
 
-.. function:: perf_counter()
+.. function:: monotonic_ns() -> int
+
+   Similar to :func:`monotonic`, but return time as nanoseconds.
+
+   .. versionadded:: 3.7
+
+.. function:: perf_counter() -> float
+
+   .. index::
+      single: benchmarking
 
    Return the value (in fractional seconds) of a performance counter, i.e. a
    clock with the highest available resolution to measure a short duration.  It
@@ -297,8 +325,19 @@ Functions
 
    .. versionadded:: 3.3
 
+.. function:: perf_counter_ns() -> int
 
-.. function:: process_time()
+   Similar to :func:`perf_counter`, but return time as nanoseconds.
+
+   .. versionadded:: 3.7
+
+
+.. function:: process_time() -> float
+
+   .. index::
+      single: CPU time
+      single: processor time
+      single: benchmarking
 
    Return the value (in fractional seconds) of the sum of the system and user
    CPU time of the current process.  It does not include time elapsed during
@@ -307,6 +346,12 @@ Functions
    of consecutive calls is valid.
 
    .. versionadded:: 3.3
+
+.. function:: process_time_ns() -> int
+
+   Similar to :func:`process_time` but return time as nanoseconds.
+
+   .. versionadded:: 3.7
 
 .. function:: sleep(secs)
 
@@ -323,6 +368,9 @@ Functions
       by a signal, except if the signal handler raises an exception (see
       :pep:`475` for the rationale).
 
+
+.. index::
+   single: % (percent); datetime format
 
 .. function:: strftime(format[, t])
 
@@ -455,6 +503,9 @@ Functions
    it is 3.
 
 
+.. index::
+   single: % (percent); datetime format
+
 .. function:: strptime(string[, format])
 
    Parse a string representing a time according to a format.  The return value
@@ -533,7 +584,7 @@ Functions
    :class:`struct_time`, or having elements of the wrong type, a
    :exc:`TypeError` is raised.
 
-.. function:: time()
+.. function:: time() -> float
 
    Return the time in seconds since the epoch_ as a floating point
    number. The specific date of the epoch and the handling of
@@ -559,6 +610,39 @@ Functions
    of the calendar date may be accessed as attributes.
 
 
+.. function:: thread_time() -> float
+
+   .. index::
+      single: CPU time
+      single: processor time
+      single: benchmarking
+
+   Return the value (in fractional seconds) of the sum of the system and user
+   CPU time of the current thread.  It does not include time elapsed during
+   sleep.  It is thread-specific by definition.  The reference point of the
+   returned value is undefined, so that only the difference between the results
+   of consecutive calls in the same thread is valid.
+
+   .. availability::  Windows, Linux, Unix systems supporting
+      ``CLOCK_THREAD_CPUTIME_ID``.
+
+   .. versionadded:: 3.7
+
+
+.. function:: thread_time_ns() -> int
+
+   Similar to :func:`thread_time` but return time as nanoseconds.
+
+   .. versionadded:: 3.7
+
+
+.. function:: time_ns() -> int
+
+   Similar to :func:`time` but returns time as an integer number of nanoseconds
+   since the epoch_.
+
+   .. versionadded:: 3.7
+
 .. function:: tzset()
 
    Reset the time conversion rules used by the library routines. The environment
@@ -569,7 +653,7 @@ Functions
    nonzero if there is a time, past, present or future when daylight saving time
    applies).
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. note::
 
@@ -655,13 +739,28 @@ Clock ID Constants
 These constants are used as parameters for :func:`clock_getres` and
 :func:`clock_gettime`.
 
+.. data:: CLOCK_BOOTTIME
+
+   Identical to :data:`CLOCK_MONOTONIC`, except it also includes any time that
+   the system is suspended.
+
+   This allows applications to get a suspend-aware monotonic  clock  without
+   having to deal with the complications of :data:`CLOCK_REALTIME`, which may
+   have  discontinuities if the time is changed using ``settimeofday()`` or
+   similar.
+
+   .. availability:: Linux 2.6.39 or later.
+
+   .. versionadded:: 3.7
+
+
 .. data:: CLOCK_HIGHRES
 
    The Solaris OS has a ``CLOCK_HIGHRES`` timer that attempts to use an optimal
    hardware source, and may give close to nanosecond resolution.
    ``CLOCK_HIGHRES`` is the nonadjustable, high-resolution clock.
 
-   Availability: Solaris.
+   .. availability:: Solaris.
 
    .. versionadded:: 3.3
 
@@ -671,7 +770,7 @@ These constants are used as parameters for :func:`clock_getres` and
    Clock that cannot be set and represents monotonic time since some unspecified
    starting point.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -690,9 +789,18 @@ These constants are used as parameters for :func:`clock_getres` and
 
    High-resolution per-process timer from the CPU.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
+
+
+.. data:: CLOCK_PROF
+
+   High-resolution per-process timer from the CPU.
+
+   .. availability:: FreeBSD, NetBSD 7 or later, OpenBSD.
+
+   .. versionadded:: 3.7
 
 
 .. data:: CLOCK_THREAD_CPUTIME_ID
@@ -704,6 +812,17 @@ These constants are used as parameters for :func:`clock_getres` and
    .. versionadded:: 3.3
 
 
+.. data:: CLOCK_UPTIME
+
+   Time whose absolute value is the time the system has been running and not
+   suspended, providing accurate uptime measurement, both absolute and
+   interval.
+
+   .. availability:: FreeBSD, OpenBSD 5.5 or later.
+
+   .. versionadded:: 3.7
+
+
 The following constant is the only parameter that can be sent to
 :func:`clock_settime`.
 
@@ -712,7 +831,7 @@ The following constant is the only parameter that can be sent to
    System-wide real-time clock.  Setting this clock requires appropriate
    privileges.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 

@@ -162,38 +162,69 @@ find_po(PANEL *pan)
     return temp->po;
 }
 
-/* Function Prototype Macros - They are ugly but very, very useful. ;-)
+/*[clinic input]
+module _curses_panel
+class _curses_panel.panel "PyCursesPanelObject *" "&PyCursesPanel_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2f4ef263ca850a31]*/
 
-   X - function name
-   TYPE - parameter Type
-   ERGSTR - format string for construction of the return value
-   PARSESTR - format string for argument parsing */
-
-#define Panel_NoArgNoReturnFunction(X) \
-static PyObject *PyCursesPanel_##X(PyCursesPanelObject *self) \
-{ return PyCursesCheckERR(X(self->pan), # X); }
-
-#define Panel_NoArgTrueFalseFunction(X) \
-static PyObject *PyCursesPanel_##X(PyCursesPanelObject *self) \
-{ \
-  if (X (self->pan) == FALSE) { Py_RETURN_FALSE; } \
-  else { Py_RETURN_TRUE; } }
-
-#define Panel_TwoArgNoReturnFunction(X, TYPE, PARSESTR) \
-static PyObject *PyCursesPanel_##X(PyCursesPanelObject *self, PyObject *args) \
-{ \
-  TYPE arg1, arg2; \
-  if (!PyArg_ParseTuple(args, PARSESTR, &arg1, &arg2)) return NULL; \
-  return PyCursesCheckERR(X(self->pan, arg1, arg2), # X); }
+#include "clinic/_curses_panel.c.h"
 
 /* ------------- PANEL routines --------------- */
 
-Panel_NoArgNoReturnFunction(bottom_panel)
-Panel_NoArgNoReturnFunction(hide_panel)
-Panel_NoArgNoReturnFunction(show_panel)
-Panel_NoArgNoReturnFunction(top_panel)
-Panel_NoArgTrueFalseFunction(panel_hidden)
-Panel_TwoArgNoReturnFunction(move_panel, int, "ii;y,x")
+/*[clinic input]
+_curses_panel.panel.bottom
+
+Push the panel to the bottom of the stack.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_panel_panel_bottom_impl(PyCursesPanelObject *self)
+/*[clinic end generated code: output=7aa7d14d7e1d1ce6 input=b6c920c071b61e2e]*/
+{
+    return PyCursesCheckERR(bottom_panel(self->pan), "bottom");
+}
+
+/*[clinic input]
+_curses_panel.panel.hide
+
+Hide the panel.
+
+This does not delete the object, it just makes the window on screen invisible.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_panel_panel_hide_impl(PyCursesPanelObject *self)
+/*[clinic end generated code: output=a7bbbd523e1eab49 input=f6ab884e99386118]*/
+{
+    return PyCursesCheckERR(hide_panel(self->pan), "hide");
+}
+
+/*[clinic input]
+_curses_panel.panel.show
+
+Display the panel (which might have been hidden).
+[clinic start generated code]*/
+
+static PyObject *
+_curses_panel_panel_show_impl(PyCursesPanelObject *self)
+/*[clinic end generated code: output=6b4553ab45c97769 input=57b167bbefaa3755]*/
+{
+    return PyCursesCheckERR(show_panel(self->pan), "show");
+}
+
+/*[clinic input]
+_curses_panel.panel.top
+
+Push panel to the top of the stack.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_panel_panel_top_impl(PyCursesPanelObject *self)
+/*[clinic end generated code: output=0f5f2f8cdd2d1777 input=be33975ec3ca0e9a]*/
+{
+    return PyCursesCheckERR(top_panel(self->pan), "top");
+}
 
 /* Allocation and deallocation of Panel Objects */
 
@@ -234,8 +265,15 @@ PyCursesPanel_Dealloc(PyCursesPanelObject *po)
 
 /* panel_above(NULL) returns the bottom panel in the stack. To get
    this behaviour we use curses.panel.bottom_panel(). */
+/*[clinic input]
+_curses_panel.panel.above
+
+Return the panel above the current panel.
+[clinic start generated code]*/
+
 static PyObject *
-PyCursesPanel_above(PyCursesPanelObject *self)
+_curses_panel_panel_above_impl(PyCursesPanelObject *self)
+/*[clinic end generated code: output=70ac06d25fd3b4da input=c059994022976788]*/
 {
     PANEL *pan;
     PyCursesPanelObject *po;
@@ -258,8 +296,15 @@ PyCursesPanel_above(PyCursesPanelObject *self)
 
 /* panel_below(NULL) returns the top panel in the stack. To get
    this behaviour we use curses.panel.top_panel(). */
+/*[clinic input]
+_curses_panel.panel.below
+
+Return the panel below the current panel.
+[clinic start generated code]*/
+
 static PyObject *
-PyCursesPanel_below(PyCursesPanelObject *self)
+_curses_panel_panel_below_impl(PyCursesPanelObject *self)
+/*[clinic end generated code: output=282861122e06e3de input=cc08f61936d297c6]*/
 {
     PANEL *pan;
     PyCursesPanelObject *po;
@@ -280,27 +325,69 @@ PyCursesPanel_below(PyCursesPanelObject *self)
     return (PyObject *)po;
 }
 
+/*[clinic input]
+_curses_panel.panel.hidden
+
+Return True if the panel is hidden (not visible), False otherwise.
+[clinic start generated code]*/
+
 static PyObject *
-PyCursesPanel_window(PyCursesPanelObject *self)
+_curses_panel_panel_hidden_impl(PyCursesPanelObject *self)
+/*[clinic end generated code: output=66eebd1ab4501a71 input=453d4b4fce25e21a]*/
+{
+    if (panel_hidden(self->pan))
+        Py_RETURN_TRUE;
+    else
+        Py_RETURN_FALSE;
+}
+
+/*[clinic input]
+_curses_panel.panel.move
+
+    y: int
+    x: int
+    /
+
+Move the panel to the screen coordinates (y, x).
+[clinic start generated code]*/
+
+static PyObject *
+_curses_panel_panel_move_impl(PyCursesPanelObject *self, int y, int x)
+/*[clinic end generated code: output=d867535a89777415 input=e0b36b78acc03fba]*/
+{
+    return PyCursesCheckERR(move_panel(self->pan, y, x), "move_panel");
+}
+
+/*[clinic input]
+_curses_panel.panel.window
+
+Return the window object associated with the panel.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_panel_panel_window_impl(PyCursesPanelObject *self)
+/*[clinic end generated code: output=5f05940d4106b4cb input=6067353d2c307901]*/
 {
     Py_INCREF(self->wo);
     return (PyObject *)self->wo;
 }
 
+/*[clinic input]
+_curses_panel.panel.replace
+
+    win: object(type="PyCursesWindowObject *", subclass_of="&PyCursesWindow_Type")
+    /
+
+Change the window associated with the panel to the window win.
+[clinic start generated code]*/
+
 static PyObject *
-PyCursesPanel_replace_panel(PyCursesPanelObject *self, PyObject *args)
+_curses_panel_panel_replace_impl(PyCursesPanelObject *self,
+                                 PyCursesWindowObject *win)
+/*[clinic end generated code: output=2253a95f7b287255 input=4b1c4283987d9dfa]*/
 {
     PyCursesPanelObject *po;
-    PyCursesWindowObject *temp;
     int rtn;
-
-    if (PyTuple_Size(args) != 1) {
-        PyErr_SetString(PyExc_TypeError, "replace requires one argument");
-        return NULL;
-    }
-    if (!PyArg_ParseTuple(args, "O!;window object",
-                          &PyCursesWindow_Type, &temp))
-        return NULL;
 
     po = find_po(self->pan);
     if (po == NULL) {
@@ -309,18 +396,28 @@ PyCursesPanel_replace_panel(PyCursesPanelObject *self, PyObject *args)
         return NULL;
     }
 
-    rtn = replace_panel(self->pan, temp->win);
+    rtn = replace_panel(self->pan, win->win);
     if (rtn == ERR) {
         PyErr_SetString(_curses_panelstate_global->PyCursesError, "replace_panel() returned ERR");
         return NULL;
     }
-    Py_INCREF(temp);
-    Py_SETREF(po->wo, temp);
+    Py_INCREF(win);
+    Py_SETREF(po->wo, win);
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_curses_panel.panel.set_userptr
+
+    obj: object
+    /
+
+Set the panel’s user pointer to obj.
+[clinic start generated code]*/
+
 static PyObject *
-PyCursesPanel_set_panel_userptr(PyCursesPanelObject *self, PyObject *obj)
+_curses_panel_panel_set_userptr(PyCursesPanelObject *self, PyObject *obj)
+/*[clinic end generated code: output=6fb145b3af88cf4a input=2056be1cd148b05c]*/
 {
     PyObject *oldobj;
     int rc;
@@ -336,8 +433,15 @@ PyCursesPanel_set_panel_userptr(PyCursesPanelObject *self, PyObject *obj)
     return PyCursesCheckERR(rc, "set_panel_userptr");
 }
 
+/*[clinic input]
+_curses_panel.panel.userptr
+
+Return the user pointer for the panel.
+[clinic start generated code]*/
+
 static PyObject *
-PyCursesPanel_userptr(PyCursesPanelObject *self)
+_curses_panel_panel_userptr_impl(PyCursesPanelObject *self)
+/*[clinic end generated code: output=e849c307b5dc9237 input=f78b7a47aef0fd50]*/
 {
     PyObject *obj;
     PyCursesInitialised;
@@ -355,18 +459,18 @@ PyCursesPanel_userptr(PyCursesPanelObject *self)
 /* Module interface */
 
 static PyMethodDef PyCursesPanel_Methods[] = {
-    {"above",           (PyCFunction)PyCursesPanel_above, METH_NOARGS},
-    {"below",           (PyCFunction)PyCursesPanel_below, METH_NOARGS},
-    {"bottom",          (PyCFunction)PyCursesPanel_bottom_panel, METH_NOARGS},
-    {"hidden",          (PyCFunction)PyCursesPanel_panel_hidden, METH_NOARGS},
-    {"hide",            (PyCFunction)PyCursesPanel_hide_panel, METH_NOARGS},
-    {"move",            (PyCFunction)PyCursesPanel_move_panel, METH_VARARGS},
-    {"replace",         (PyCFunction)PyCursesPanel_replace_panel, METH_VARARGS},
-    {"set_userptr",     (PyCFunction)PyCursesPanel_set_panel_userptr, METH_O},
-    {"show",            (PyCFunction)PyCursesPanel_show_panel, METH_NOARGS},
-    {"top",             (PyCFunction)PyCursesPanel_top_panel, METH_NOARGS},
-    {"userptr",         (PyCFunction)PyCursesPanel_userptr, METH_NOARGS},
-    {"window",          (PyCFunction)PyCursesPanel_window, METH_NOARGS},
+    _CURSES_PANEL_PANEL_ABOVE_METHODDEF
+    _CURSES_PANEL_PANEL_BELOW_METHODDEF
+    _CURSES_PANEL_PANEL_BOTTOM_METHODDEF
+    _CURSES_PANEL_PANEL_HIDDEN_METHODDEF
+    _CURSES_PANEL_PANEL_HIDE_METHODDEF
+    _CURSES_PANEL_PANEL_MOVE_METHODDEF
+    _CURSES_PANEL_PANEL_REPLACE_METHODDEF
+    _CURSES_PANEL_PANEL_SET_USERPTR_METHODDEF
+    _CURSES_PANEL_PANEL_SHOW_METHODDEF
+    _CURSES_PANEL_PANEL_TOP_METHODDEF
+    _CURSES_PANEL_PANEL_USERPTR_METHODDEF
+    _CURSES_PANEL_PANEL_WINDOW_METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -379,7 +483,7 @@ static PyType_Slot PyCursesPanel_Type_slots[] = {
 };
 
 static PyType_Spec PyCursesPanel_Type_spec = {
-    "_curses_panel.curses panel",
+    "_curses_panel.panel",
     sizeof(PyCursesPanelObject),
     0,
     Py_TPFLAGS_DEFAULT,
@@ -390,8 +494,15 @@ static PyType_Spec PyCursesPanel_Type_spec = {
    panel of the stack, so it's renamed to bottom_panel().
    panel.above() *requires* a panel object in the first place which
    may be undesirable. */
+/*[clinic input]
+_curses_panel.bottom_panel
+
+Return the bottom panel in the panel stack.
+[clinic start generated code]*/
+
 static PyObject *
-PyCurses_bottom_panel(PyObject *self)
+_curses_panel_bottom_panel_impl(PyObject *module)
+/*[clinic end generated code: output=3aba9f985f4c2bd0 input=634c2a8078b3d7e4]*/
 {
     PANEL *pan;
     PyCursesPanelObject *po;
@@ -414,15 +525,20 @@ PyCurses_bottom_panel(PyObject *self)
     return (PyObject *)po;
 }
 
-static PyObject *
-PyCurses_new_panel(PyObject *self, PyObject *args)
-{
-    PyCursesWindowObject *win;
-    PANEL *pan;
+/*[clinic input]
+_curses_panel.new_panel
 
-    if (!PyArg_ParseTuple(args, "O!", &PyCursesWindow_Type, &win))
-        return NULL;
-    pan = new_panel(win->win);
+    win: object(type="PyCursesWindowObject *", subclass_of="&PyCursesWindow_Type")
+    /
+
+Return a panel object, associating it with the given window win.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_panel_new_panel_impl(PyObject *module, PyCursesWindowObject *win)
+/*[clinic end generated code: output=45e948e0176a9bd2 input=74d4754e0ebe4800]*/
+{
+    PANEL *pan = new_panel(win->win);
     if (pan == NULL) {
         PyErr_SetString(_curses_panelstate_global->PyCursesError, catchall_NULL);
         return NULL;
@@ -435,8 +551,15 @@ PyCurses_new_panel(PyObject *self, PyObject *args)
    of the stack, so it's renamed to top_panel(). panel.below()
    *requires* a panel object in the first place which may be
    undesirable. */
+/*[clinic input]
+_curses_panel.top_panel
+
+Return the top panel in the panel stack.
+[clinic start generated code]*/
+
 static PyObject *
-PyCurses_top_panel(PyObject *self)
+_curses_panel_top_panel_impl(PyObject *module)
+/*[clinic end generated code: output=86704988bea8508e input=e62d6278dba39e79]*/
 {
     PANEL *pan;
     PyCursesPanelObject *po;
@@ -459,7 +582,17 @@ PyCurses_top_panel(PyObject *self)
     return (PyObject *)po;
 }
 
-static PyObject *PyCurses_update_panels(PyObject *self)
+/*[clinic input]
+_curses_panel.update_panels
+
+Updates the virtual screen after changes in the panel stack.
+
+This does not call curses.doupdate(), so you’ll have to do this yourself.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_panel_update_panels_impl(PyObject *module)
+/*[clinic end generated code: output=2f3b4c2e03d90ded input=a127069202b0a097]*/
 {
     PyCursesInitialised;
     update_panels();
@@ -470,10 +603,10 @@ static PyObject *PyCurses_update_panels(PyObject *self)
 /* List of functions defined in the module */
 
 static PyMethodDef PyCurses_methods[] = {
-    {"bottom_panel",        (PyCFunction)PyCurses_bottom_panel,  METH_NOARGS},
-    {"new_panel",           (PyCFunction)PyCurses_new_panel,     METH_VARARGS},
-    {"top_panel",           (PyCFunction)PyCurses_top_panel,     METH_NOARGS},
-    {"update_panels",       (PyCFunction)PyCurses_update_panels, METH_NOARGS},
+    _CURSES_PANEL_BOTTOM_PANEL_METHODDEF
+    _CURSES_PANEL_NEW_PANEL_METHODDEF
+    _CURSES_PANEL_TOP_PANEL_METHODDEF
+    _CURSES_PANEL_UPDATE_PANELS_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -523,6 +656,9 @@ PyInit__curses_panel(void)
     PyDict_SetItemString(d, "version", v);
     PyDict_SetItemString(d, "__version__", v);
     Py_DECREF(v);
+
+    Py_INCREF(_curses_panelstate(m)->PyCursesPanel_Type);
+    PyModule_AddObject(m, "panel", (PyObject *)_curses_panelstate(m)->PyCursesPanel_Type);
     return m;
   fail:
     Py_XDECREF(m);
