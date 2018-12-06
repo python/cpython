@@ -56,6 +56,8 @@ elif sys.platform == "cygwin":
 # * Don't set the PY_COERCE_C_LOCALE preprocessor definition on
 #   such platforms (e.g. it isn't set on Windows)
 # * Fix the test expectations to match the actual platform behaviour
+# * Change the tests to be simply "Don't crash" tests when run on systems
+#   where we're less certain about the expected locale coercion behaviour
 
 # In order to get the warning messages to match up as expected, the candidate
 # order here must much the target locale order in Python/pylifecycle.c
