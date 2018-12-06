@@ -4245,7 +4245,8 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
    .. classmethod:: fromkeys(seq[, value])
 
-      Create a new dictionary with keys from *seq* and values set to *value*.
+      Create a new dictionary with keys from iterable *seq* and values set to
+      *value*.
 
       :meth:`fromkeys` is a class method that returns a new dictionary. *value*
       defaults to ``None``.
