@@ -218,7 +218,7 @@ class HelpFormatter(object):
                 return ''
 
             # add the heading if the section was non-empty
-            if self.heading is not SUPPRESS and self.heading is not None:
+            if self.heading != SUPPRESS and self.heading is not None:
                 current_indent = self.formatter._current_indent
                 heading = '%*s%s:\n' % (current_indent, '', self.heading)
             else:
@@ -244,16 +244,16 @@ class HelpFormatter(object):
         self._dedent()
 
     def add_text(self, text):
-        if text is not SUPPRESS and text is not None:
+        if text != SUPPRESS and text is not None:
             self._add_item(self._format_text, [text])
 
     def add_usage(self, usage, actions, groups, prefix=None):
-        if usage is not SUPPRESS:
+        if usage != SUPPRESS:
             args = usage, actions, groups, prefix
             self._add_item(self._format_usage, args)
 
     def add_argument(self, action):
-        if action.help is not SUPPRESS:
+        if action.help != SUPPRESS:
 
             # find all invocations
             get_invocation = self._format_action_invocation
@@ -287,7 +287,7 @@ class HelpFormatter(object):
     def _join_parts(self, part_strings):
         return ''.join([part
                         for part in part_strings
-                        if part and part is not SUPPRESS])
+                        if part and part != SUPPRESS])
 
     def _format_usage(self, usage, actions, groups, prefix):
         if prefix is None:
@@ -420,7 +420,7 @@ class HelpFormatter(object):
 
             # suppressed arguments are marked with None
             # remove | separators for suppressed arguments
-            if action.help is SUPPRESS:
+            if action.help == SUPPRESS:
                 parts.append(None)
                 if inserts.get(i) == '|':
                     inserts.pop(i)
@@ -600,7 +600,7 @@ class HelpFormatter(object):
     def _expand_help(self, action):
         params = dict(vars(action), prog=self._prog)
         for name in list(params):
-            if params[name] is SUPPRESS:
+            if params[name] == SUPPRESS:
                 del params[name]
         for name in list(params):
             if hasattr(params[name], '__name__'):
@@ -676,7 +676,7 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
     def _get_help_string(self, action):
         help = action.help
         if '%(default)' not in action.help:
-            if action.default is not SUPPRESS:
+            if action.default != SUPPRESS:
                 defaulting_nargs = [OPTIONAL, ZERO_OR_MORE]
                 if action.option_strings or action.nargs in defaulting_nargs:
                     help += ' (default: %(default)s)'
@@ -1127,7 +1127,7 @@ class _SubParsersAction(Action):
         arg_strings = values[1:]
 
         # set the parser name if requested
-        if self.dest is not SUPPRESS:
+        if self.dest != SUPPRESS:
             setattr(namespace, self.dest, parser_name)
 
         # select the parser
@@ -1763,9 +1763,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # add any action defaults that aren't present
         for action in self._actions:
-            if action.dest is not SUPPRESS:
+            if action.dest != SUPPRESS:
                 if not hasattr(namespace, action.dest):
-                    if action.default is not SUPPRESS:
+                    if action.default != SUPPRESS:
                         setattr(namespace, action.dest, action.default)
 
         # add any parser defaults that aren't present
@@ -1848,7 +1848,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
             # take the action if we didn't receive a SUPPRESS value
             # (e.g. from a default)
-            if argument_values is not SUPPRESS:
+            if argument_values != SUPPRESS:
                 action(self, namespace, argument_values, option_string)
 
         # function to convert arg_strings into an optional action
@@ -2023,7 +2023,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 else:
                     names = [_get_action_name(action)
                              for action in group._group_actions
-                             if action.help is not SUPPRESS]
+                             if action.help != SUPPRESS]
                     msg = _('one of the arguments %s is required')
                     self.error(msg % ' '.join(names))
 
