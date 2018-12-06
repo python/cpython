@@ -16,6 +16,7 @@ __all__ = ['Pool', 'ThreadPool']
 import threading
 import queue
 import itertools
+import functools
 import collections
 import os
 import time
@@ -40,11 +41,14 @@ TERMINATE = 2
 
 job_counter = itertools.count()
 
-def mapstar(args):
-    return list(map(*args))
+def mapstar(args, **kwargs):
+    return list(
+        map(functools.partial(args[0], **kwargs),
+            *args[1:]))
 
-def starmapstar(args):
-    return list(itertools.starmap(args[0], args[1]))
+def starmapstar(args, **kwargs):
+    return list(
+        itertools.starmap(functools.partial(args[0], **kwargs), args[1]))
 
 #
 # Hack to embed stringification of remote traceback in local traceback
@@ -90,11 +94,13 @@ class MaybeEncodingError(Exception):
         return "<%s: %s>" % (self.__class__.__name__, self)
 
 
-def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,
-           wrap_exception=False):
+def worker(inqueue, outqueue, initializer=None, initargs=(),
+           expect_initret=False, maxtasks=None, wrap_exception=False):
     if (maxtasks is not None) and not (isinstance(maxtasks, int)
                                        and maxtasks >= 1):
         raise AssertionError("Maxtasks {!r} is not valid".format(maxtasks))
+
+    initret = None
     put = outqueue.put
     get = inqueue.get
     if hasattr(inqueue, '_writer'):
@@ -102,7 +108,7 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,
         outqueue._reader.close()
 
     if initializer is not None:
-        initializer(*initargs)
+        initret = initializer(*initargs)
 
     completed = 0
     while maxtasks is None or (maxtasks and completed < maxtasks):
@@ -118,7 +124,11 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,
 
         job, i, func, args, kwds = task
         try:
-            result = (True, func(*args, **kwds))
+            if expect_initret and func is not _helper_reraises_exception:
+                result = (
+                    True, func(*args, **kwds, initret=initret))
+            else:
+                result = (True, func(*args, **kwds))
         except Exception as e:
             if wrap_exception and func is not _helper_reraises_exception:
                 e = ExceptionWithTraceback(e, e.__traceback__)
@@ -154,7 +164,7 @@ class Pool(object):
         return ctx.Process(*args, **kwds)
 
     def __init__(self, processes=None, initializer=None, initargs=(),
-                 maxtasksperchild=None, context=None):
+                 expect_initret=False, maxtasksperchild=None, context=None):
         self._ctx = context or get_context()
         self._setup_queues()
         self._taskqueue = queue.SimpleQueue()
@@ -162,6 +172,7 @@ class Pool(object):
         self._state = RUN
         self._maxtasksperchild = maxtasksperchild
         self._initializer = initializer
+        self._expect_initret = expect_initret
         self._initargs = initargs
 
         if processes is None:
@@ -171,6 +182,9 @@ class Pool(object):
 
         if initializer is not None and not callable(initializer):
             raise TypeError('initializer must be a callable')
+        if initializer is None and self._expect_initret:
+            raise ValueError(
+                "initializer can't be None if expect_initret is True")
 
         self._processes = processes
         self._pool = []
@@ -240,8 +254,10 @@ class Pool(object):
         return self._repopulate_pool_static(self._ctx, self.Process,
                                             self._processes,
                                             self._pool, self._inqueue,
-                                            self._outqueue, self._initializer,
+                                            self._outqueue,
+                                            self._initializer,
                                             self._initargs,
+                                            self._expect_initret,
                                             self._maxtasksperchild,
                                             self._wrap_exception)
 
@@ -252,11 +268,13 @@ class Pool(object):
         """Bring the number of pool processes up to the specified number,
         for use after reaping workers which have exited.
         """
+
         for i in range(processes - len(pool)):
             w = Process(ctx, target=worker,
                         args=(inqueue, outqueue,
-                              initializer,
-                              initargs, maxtasksperchild,
+                              initializer, initargs,
+                              expect_initret,
+                              maxtasksperchild,
                               wrap_exception)
                        )
             w.name = w.name.replace('Process', 'PoolWorker')
@@ -272,7 +290,10 @@ class Pool(object):
         """Clean up any exited workers and start replacements for them.
         """
         if Pool._join_exited_workers(pool):
-            Pool._repopulate_pool_static(ctx, Process, processes, pool,
+            Pool.
+            
+            
+            (ctx, Process, processes, pool,
                                          inqueue, outqueue, initializer,
                                          initargs, maxtasksperchild,
                                          wrap_exception)
@@ -832,8 +853,9 @@ class ThreadPool(Pool):
         from .dummy import Process
         return Process(*args, **kwds)
 
-    def __init__(self, processes=None, initializer=None, initargs=()):
-        Pool.__init__(self, processes, initializer, initargs)
+    def __init__(self, processes=None, initializer=None,
+                 initargs=(), expect_initret=False):
+        Pool.__init__(self, processes, initializer, initargs, expect_initret)
 
     def _setup_queues(self):
         self._inqueue = queue.SimpleQueue()

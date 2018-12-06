@@ -2076,7 +2076,7 @@ Process Pools
 One can create a pool of processes which will carry out tasks submitted to it
 with the :class:`Pool` class.
 
-.. class:: Pool([processes[, initializer[, initargs[, maxtasksperchild [, context]]]]])
+.. class:: Pool([processes[, initializer[, initargs[, expect_initret[, maxtasksperchild[, context]]]]])
 
    A process pool object which controls a pool of worker processes to which jobs
    can be submitted.  It supports asynchronous results with timeouts and
@@ -2087,6 +2087,11 @@ with the :class:`Pool` class.
 
    If *initializer* is not ``None`` then each worker process will call
    ``initializer(*initargs)`` when it starts.
+
+   If *expect_initret* is ``True``, the return value of *initializer* will be
+   passed to each process' applied fuction as a kwarg named `initret`.  This
+   can be used to pass data your Pool workers, as an alternative to declaring
+   globals.
 
    *maxtasksperchild* is the number of tasks a worker process can complete
    before it will exit and be replaced with a fresh worker process, to enable
@@ -2107,6 +2112,9 @@ with the :class:`Pool` class.
 
    .. versionadded:: 3.4
       *context*
+
+   .. versionadded:: 3.8
+      *expect_initret*
 
    .. note::
 
