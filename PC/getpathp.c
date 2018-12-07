@@ -536,16 +536,10 @@ static _PyInitError
 get_program_full_path(const _PyCoreConfig *core_config,
                       PyCalculatePath *calculate, _PyPathConfig *config)
 {
-    const wchar_t *pyvenv_launcher;
     wchar_t program_full_path[MAXPATHLEN+1];
     memset(program_full_path, 0, sizeof(program_full_path));
 
-    /* The launcher may need to force the executable path to a
-     * different environment, so override it here. */
-    pyvenv_launcher = _wgetenv(L"__PYVENV_LAUNCHER__");
-    if (pyvenv_launcher && pyvenv_launcher[0]) {
-        wcscpy_s(program_full_path, MAXPATHLEN+1, pyvenv_launcher);
-    } else if (!GetModuleFileNameW(NULL, program_full_path, MAXPATHLEN)) {
+    if (!GetModuleFileNameW(NULL, program_full_path, MAXPATHLEN)) {
         /* GetModuleFileName should never fail when passed NULL */
         return _Py_INIT_ERR("Cannot determine program path");
     }
