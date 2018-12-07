@@ -912,6 +912,11 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     PySSL_BEGIN_ALLOW_THREADS
     self->ssl = SSL_new(ctx);
     PySSL_END_ALLOW_THREADS
+    if (self->ssl == NULL) {
+        Py_DECREF(self);
+        _setSSLError(NULL, 0, __FILE__, __LINE__);
+        return NULL;
+    }
     SSL_set_app_data(self->ssl, self);
     if (sock) {
         SSL_set_fd(self->ssl, Py_SAFE_DOWNCAST(sock->sock_fd, SOCKET_T, int));
@@ -1241,6 +1246,10 @@ _get_peer_alt_names (X509 *certificate) {
 
     /* get a memory buffer */
     biobuf = BIO_new(BIO_s_mem());
+    if (biobuf == NULL) {
+        PyErr_SetString(PySSLErrorObject, "failed to allocate BIO");
+        return NULL;
+    }
 
     names = (GENERAL_NAMES *)X509_get_ext_d2i(
         certificate, NID_subject_alt_name, NULL, NULL);
@@ -1593,6 +1602,10 @@ _decode_certificate(X509 *certificate) {
 
     /* get a memory buffer */
     biobuf = BIO_new(BIO_s_mem());
+    if (biobuf == NULL) {
+        PyErr_SetString(PySSLErrorObject, "failed to allocate BIO");
+        goto fail0;
+    }
 
     (void) BIO_reset(biobuf);
     serialNumber = X509_get_serialNumber(certificate);
