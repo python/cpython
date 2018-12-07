@@ -113,9 +113,9 @@ __copyright__ = """
 __version__ = '1.0.8'
 
 import collections
-import sys, os, re, subprocess
-
-import warnings
+import os
+import re
+import sys
 
 ### Globals & Constants
 
@@ -169,7 +169,7 @@ _libc_search = re.compile(b'(__libc_init)'
                           b'|'
                           br'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)', re.ASCII)
 
-def libc_ver(executable=sys.executable, lib='', version='', chunksize=16384):
+def libc_ver(executable=None, lib='', version='', chunksize=16384):
 
     """ Tries to determine the libc version that the file executable
         (which defaults to the Python interpreter) is linked against.
@@ -184,6 +184,19 @@ def libc_ver(executable=sys.executable, lib='', version='', chunksize=16384):
         The file is read and scanned in chunks of chunksize bytes.
 
     """
+    if executable is None:
+        try:
+            ver = os.confstr('CS_GNU_LIBC_VERSION')
+            # parse 'glibc 2.28' as ('glibc', '2.28')
+            parts = ver.split(maxsplit=1)
+            if len(parts) == 2:
+                return tuple(parts)
+        except (AttributeError, ValueError, OSError):
+            # os.confstr() or CS_GNU_LIBC_VERSION value not available
+            pass
+
+        executable = sys.executable
+
     V = _comparable_version
     if hasattr(os.path, 'realpath'):
         # Python 2.2 introduced os.path.realpath(); it is used
@@ -226,63 +239,6 @@ def libc_ver(executable=sys.executable, lib='', version='', chunksize=16384):
                         version = version + threads
             pos = m.end()
     return lib, version
-
-def _dist_try_harder(distname, version, id):
-
-    """ Tries some special tricks to get the distribution
-        information in case the default method fails.
-
-        Currently supports older SuSE Linux, Caldera OpenLinux and
-        Slackware Linux distributions.
-
-    """
-    if os.path.exists('/var/adm/inst-log/info'):
-        # SuSE Linux stores distribution information in that file
-        distname = 'SuSE'
-        for line in open('/var/adm/inst-log/info'):
-            tv = line.split()
-            if len(tv) == 2:
-                tag, value = tv
-            else:
-                continue
-            if tag == 'MIN_DIST_VERSION':
-                version = value.strip()
-            elif tag == 'DIST_IDENT':
-                values = value.split('-')
-                id = values[2]
-        return distname, version, id
-
-    if os.path.exists('/etc/.installed'):
-        # Caldera OpenLinux has some infos in that file (thanks to Colin Kong)
-        for line in open('/etc/.installed'):
-            pkg = line.split('-')
-            if len(pkg) >= 2 and pkg[0] == 'OpenLinux':
-                # XXX does Caldera support non Intel platforms ? If yes,
-                #     where can we find the needed id ?
-                return 'OpenLinux', pkg[1], id
-
-    if os.path.isdir('/usr/lib/setup'):
-        # Check for slackware version tag file (thanks to Greg Andruk)
-        verfiles = os.listdir('/usr/lib/setup')
-        for n in range(len(verfiles)-1, -1, -1):
-            if verfiles[n][:14] != 'slack-version-':
-                del verfiles[n]
-        if verfiles:
-            verfiles.sort()
-            distname = 'slackware'
-            version = verfiles[-1][14:]
-            return distname, version, id
-
-    return distname, version, id
-
-def popen(cmd, mode='r', bufsize=-1):
-
-    """ Portable popen() interface.
-    """
-    import warnings
-    warnings.warn('use os.popen instead', DeprecationWarning, stacklevel=2)
-    return os.popen(cmd, mode, bufsize)
-
 
 def _norm_version(version, build=''):
 
@@ -669,11 +625,13 @@ def _syscmd_file(target, default=''):
     if sys.platform in ('dos', 'win32', 'win16'):
         # XXX Others too ?
         return default
+
+    import subprocess
     target = _follow_symlinks(target)
     try:
         proc = subprocess.Popen(['file', target],
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
     except (AttributeError, OSError):
         return default
     output = proc.communicate()[0].decode('latin-1')
@@ -1223,6 +1181,14 @@ def platform(aliased=0, terse=0):
         processor = ''
     if aliased:
         system, release, version = system_alias(system, release, version)
+
+    if system == 'Darwin':
+        # macOS (darwin kernel)
+        macos_release = mac_ver()[0]
+        if macos_release:
+            # note: 'macOS' is different than 'MacOS' used below
+            system = 'macOS'
+            release = macos_release
 
     if system == 'Windows':
         # MS platforms

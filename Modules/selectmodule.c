@@ -335,6 +335,10 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
         if (tvp) {
             timeout = deadline - _PyTime_GetMonotonicClock();
             if (timeout < 0) {
+                /* bpo-35310: lists were unmodified -- clear them explicitly */
+                FD_ZERO(&ifdset);
+                FD_ZERO(&ofdset);
+                FD_ZERO(&efdset);
                 n = 0;
                 break;
             }
@@ -1031,7 +1035,7 @@ select_devpoll_close_impl(devpollObject *self)
 }
 
 static PyObject*
-devpoll_get_closed(devpollObject *self)
+devpoll_get_closed(devpollObject *self, void *Py_UNUSED(ignored))
 {
     if (self->fd_devpoll < 0)
         Py_RETURN_TRUE;
@@ -1333,7 +1337,7 @@ select_epoll_close_impl(pyEpoll_Object *self)
 
 
 static PyObject*
-pyepoll_get_closed(pyEpoll_Object *self)
+pyepoll_get_closed(pyEpoll_Object *self, void *Py_UNUSED(ignored))
 {
     if (self->epfd < 0)
         Py_RETURN_TRUE;
@@ -1979,7 +1983,7 @@ select_kqueue_close_impl(kqueue_queue_Object *self)
 }
 
 static PyObject*
-kqueue_queue_get_closed(kqueue_queue_Object *self)
+kqueue_queue_get_closed(kqueue_queue_Object *self, void *Py_UNUSED(ignored))
 {
     if (self->kqfd < 0)
         Py_RETURN_TRUE;

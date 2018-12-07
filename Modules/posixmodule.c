@@ -32,7 +32,7 @@
 #else
 #include "winreparse.h"
 #endif
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 
 /* On android API level 21, 'AT_EACCESS' is not declared although
  * HAVE_FACCESSAT is defined. */
@@ -1948,14 +1948,14 @@ static PyStructSequence_Desc waitid_result_desc = {
     waitid_result_fields,
     5
 };
-static PyTypeObject WaitidResultType;
+static PyTypeObject* WaitidResultType;
 #endif
 
 static int initialized;
-static PyTypeObject StatResultType;
-static PyTypeObject StatVFSResultType;
+static PyTypeObject* StatResultType;
+static PyTypeObject* StatVFSResultType;
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
-static PyTypeObject SchedParamType;
+static PyTypeObject* SchedParamType;
 #endif
 static newfunc structseq_new;
 
@@ -2029,7 +2029,7 @@ static PyObject*
 _pystat_fromstructstat(STRUCT_STAT *st)
 {
     unsigned long ansec, mnsec, cnsec;
-    PyObject *v = PyStructSequence_New(&StatResultType);
+    PyObject *v = PyStructSequence_New(StatResultType);
     if (v == NULL)
         return NULL;
 
@@ -4407,7 +4407,7 @@ static PyStructSequence_Desc uname_result_desc = {
     5
 };
 
-static PyTypeObject UnameResultType;
+static PyTypeObject* UnameResultType;
 
 
 #ifdef HAVE_UNAME
@@ -4435,7 +4435,7 @@ os_uname_impl(PyObject *module)
     if (res < 0)
         return posix_error();
 
-    value = PyStructSequence_New(&UnameResultType);
+    value = PyStructSequence_New(UnameResultType);
     if (value == NULL)
         return NULL;
 
@@ -4689,7 +4689,6 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
     int result;
 #endif
 
-    PyObject *return_value = NULL;
     utime_t utime;
 
     memset(&utime, 0, sizeof(utime_t));
@@ -4698,7 +4697,7 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
         PyErr_SetString(PyExc_ValueError,
                      "utime: you may specify either 'times'"
                      " or 'ns' but not both");
-        goto exit;
+        return NULL;
     }
 
     if (times && (times != Py_None)) {
@@ -4708,14 +4707,14 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
             PyErr_SetString(PyExc_TypeError,
                          "utime: 'times' must be either"
                          " a tuple of two ints or None");
-            goto exit;
+            return NULL;
         }
         utime.now = 0;
         if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(times, 0),
                                      &a_sec, &a_nsec, _PyTime_ROUND_FLOOR) == -1 ||
             _PyTime_ObjectToTimespec(PyTuple_GET_ITEM(times, 1),
                                      &m_sec, &m_nsec, _PyTime_ROUND_FLOOR) == -1) {
-            goto exit;
+            return NULL;
         }
         utime.atime_s = a_sec;
         utime.atime_ns = a_nsec;
@@ -4726,14 +4725,14 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
         if (!PyTuple_CheckExact(ns) || (PyTuple_Size(ns) != 2)) {
             PyErr_SetString(PyExc_TypeError,
                          "utime: 'ns' must be a tuple of two ints");
-            goto exit;
+            return NULL;
         }
         utime.now = 0;
         if (!split_py_long_to_s_and_ns(PyTuple_GET_ITEM(ns, 0),
                                       &utime.atime_s, &utime.atime_ns) ||
             !split_py_long_to_s_and_ns(PyTuple_GET_ITEM(ns, 1),
                                        &utime.mtime_s, &utime.mtime_ns)) {
-            goto exit;
+            return NULL;
         }
     }
     else {
@@ -4743,20 +4742,20 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
 
 #if !defined(UTIME_HAVE_NOFOLLOW_SYMLINKS)
     if (follow_symlinks_specified("utime", follow_symlinks))
-        goto exit;
+        return NULL;
 #endif
 
     if (path_and_dir_fd_invalid("utime", path, dir_fd) ||
         dir_fd_and_fd_invalid("utime", dir_fd, path->fd) ||
         fd_and_follow_symlinks_invalid("utime", path->fd, follow_symlinks))
-        goto exit;
+        return NULL;
 
 #if !defined(HAVE_UTIMENSAT)
     if ((dir_fd != DEFAULT_DIR_FD) && (!follow_symlinks)) {
         PyErr_SetString(PyExc_ValueError,
                      "utime: cannot use dir_fd and follow_symlinks "
                      "together on this platform");
-        goto exit;
+        return NULL;
     }
 #endif
 
@@ -4768,7 +4767,7 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
     Py_END_ALLOW_THREADS
     if (hFile == INVALID_HANDLE_VALUE) {
         path_error(path);
-        goto exit;
+        return NULL;
     }
 
     if (utime.now) {
@@ -4785,8 +4784,10 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
            something is wrong with the file, when it also
            could be the time stamp that gives a problem. */
         PyErr_SetFromWindowsErr(0);
-        goto exit;
+        CloseHandle(hFile);
+        return NULL;
     }
+    CloseHandle(hFile);
 #else /* MS_WINDOWS */
     Py_BEGIN_ALLOW_THREADS
 
@@ -4814,21 +4815,13 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
 
     if (result < 0) {
         /* see previous comment about not putting filename in error here */
-        return_value = posix_error();
-        goto exit;
+        posix_error();
+        return NULL;
     }
 
 #endif /* MS_WINDOWS */
 
-    Py_INCREF(Py_None);
-    return_value = Py_None;
-
-exit:
-#ifdef MS_WINDOWS
-    if (hFile != INVALID_HANDLE_VALUE)
-        CloseHandle(hFile);
-#endif
-    return return_value;
+    Py_RETURN_NONE;
 }
 
 /* Process operations */
@@ -5941,7 +5934,7 @@ os_sched_getscheduler_impl(PyObject *module, pid_t pid)
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
 /*[clinic input]
-class os.sched_param "PyObject *" "&SchedParamType"
+class os.sched_param "PyObject *" "SchedParamType"
 
 @classmethod
 os.sched_param.__new__
@@ -5954,7 +5947,7 @@ Current has only one field: sched_priority");
 
 static PyObject *
 os_sched_param_impl(PyTypeObject *type, PyObject *sched_priority)
-/*[clinic end generated code: output=48f4067d60f48c13 input=73a4c22f7071fc62]*/
+/*[clinic end generated code: output=48f4067d60f48c13 input=ab4de35a9a7811f2]*/
 {
     PyObject *res;
 
@@ -5986,7 +5979,7 @@ convert_sched_param(PyObject *param, struct sched_param *res)
 {
     long priority;
 
-    if (Py_TYPE(param) != &SchedParamType) {
+    if (Py_TYPE(param) != SchedParamType) {
         PyErr_SetString(PyExc_TypeError, "must have a sched_param object");
         return 0;
     }
@@ -6057,7 +6050,7 @@ os_sched_getparam_impl(PyObject *module, pid_t pid)
 
     if (sched_getparam(pid, &param))
         return posix_error();
-    result = PyStructSequence_New(&SchedParamType);
+    result = PyStructSequence_New(SchedParamType);
     if (!result)
         return NULL;
     priority = PyLong_FromLong(param.sched_priority);
@@ -7422,7 +7415,7 @@ os_waitid_impl(PyObject *module, idtype_t idtype, id_t id, int options)
     if (si.si_pid == 0)
         Py_RETURN_NONE;
 
-    result = PyStructSequence_New(&WaitidResultType);
+    result = PyStructSequence_New(WaitidResultType);
     if (!result)
         return NULL;
 
@@ -7857,7 +7850,7 @@ static PyStructSequence_Desc times_result_desc = {
     5
 };
 
-static PyTypeObject TimesResultType;
+static PyTypeObject* TimesResultType;
 
 #ifdef MS_WINDOWS
 #define HAVE_TIMES  /* mandatory, for the method table */
@@ -7870,7 +7863,7 @@ build_times_result(double user, double system,
     double children_user, double children_system,
     double elapsed)
 {
-    PyObject *value = PyStructSequence_New(&TimesResultType);
+    PyObject *value = PyStructSequence_New(TimesResultType);
     if (value == NULL)
         return NULL;
 
@@ -8410,11 +8403,7 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
         return posix_error();
     }
 
-#ifdef MS_WINDOWS
-    /* On Windows, the count parameter of read() is an int */
-    if (length > INT_MAX)
-        length = INT_MAX;
-#endif
+    length = Py_MIN(length, _PY_READ_MAX);
 
     buffer = PyBytes_FromStringAndSize((char *)NULL, length);
     if (buffer == NULL)
@@ -9950,7 +9939,7 @@ os_WSTOPSIG_impl(PyObject *module, int status)
 
 static PyObject*
 _pystatvfs_fromstructstatvfs(struct statvfs st) {
-    PyObject *v = PyStructSequence_New(&StatVFSResultType);
+    PyObject *v = PyStructSequence_New(StatVFSResultType);
     if (v == NULL)
         return NULL;
 
@@ -11703,7 +11692,7 @@ os_urandom_impl(PyObject *module, Py_ssize_t size)
 
 /* Terminal size querying */
 
-static PyTypeObject TerminalSizeType;
+static PyTypeObject* TerminalSizeType;
 
 PyDoc_STRVAR(TerminalSize_docstring,
     "A tuple of (columns, lines) for holding terminal window size");
@@ -11795,7 +11784,7 @@ get_terminal_size(PyObject *self, PyObject *args)
     }
 #endif /* TERMSIZE_USE_CONIO */
 
-    termsize = PyStructSequence_New(&TerminalSizeType);
+    termsize = PyStructSequence_New(TerminalSizeType);
     if (termsize == NULL)
         return NULL;
     PyStructSequence_SET_ITEM(termsize, 0, PyLong_FromLong(columns));
@@ -13179,7 +13168,7 @@ static PyMethodDef posix_methods[] = {
     OS_PWRITE_METHODDEF
     OS_PWRITEV_METHODDEF
 #ifdef HAVE_SENDFILE
-    {"sendfile",        (PyCFunction)posix_sendfile, METH_VARARGS | METH_KEYWORDS,
+    {"sendfile",        (PyCFunction)(void(*)(void))posix_sendfile, METH_VARARGS | METH_KEYWORDS,
                             posix_sendfile__doc__},
 #endif
     OS_FSTAT_METHODDEF
@@ -13912,23 +13901,28 @@ INITFUNC(void)
     if (!initialized) {
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
         waitid_result_desc.name = MODNAME ".waitid_result";
-        if (PyStructSequence_InitType2(&WaitidResultType, &waitid_result_desc) < 0)
+        WaitidResultType = PyStructSequence_NewType(&waitid_result_desc);
+        if (WaitidResultType == NULL) {
             return NULL;
+        }
 #endif
 
         stat_result_desc.name = "os.stat_result"; /* see issue #19209 */
         stat_result_desc.fields[7].name = PyStructSequence_UnnamedField;
         stat_result_desc.fields[8].name = PyStructSequence_UnnamedField;
         stat_result_desc.fields[9].name = PyStructSequence_UnnamedField;
-        if (PyStructSequence_InitType2(&StatResultType, &stat_result_desc) < 0)
+        StatResultType = PyStructSequence_NewType(&stat_result_desc);
+        if (StatResultType == NULL) {
             return NULL;
-        structseq_new = StatResultType.tp_new;
-        StatResultType.tp_new = statresult_new;
+        }
+        structseq_new = StatResultType->tp_new;
+        StatResultType->tp_new = statresult_new;
 
         statvfs_result_desc.name = "os.statvfs_result"; /* see issue #19209 */
-        if (PyStructSequence_InitType2(&StatVFSResultType,
-                                       &statvfs_result_desc) < 0)
+        StatVFSResultType = PyStructSequence_NewType(&statvfs_result_desc);
+        if (StatVFSResultType == NULL) {
             return NULL;
+        }
 #ifdef NEED_TICKS_PER_SECOND
 #  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
         ticks_per_second = sysconf(_SC_CLK_TCK);
@@ -13941,15 +13935,18 @@ INITFUNC(void)
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
         sched_param_desc.name = MODNAME ".sched_param";
-        if (PyStructSequence_InitType2(&SchedParamType, &sched_param_desc) < 0)
+        SchedParamType = PyStructSequence_NewType(&sched_param_desc);
+        if (SchedParamType == NULL) {
             return NULL;
-        SchedParamType.tp_new = os_sched_param;
+        }
+        SchedParamType->tp_new = os_sched_param;
 #endif
 
         /* initialize TerminalSize_info */
-        if (PyStructSequence_InitType2(&TerminalSizeType,
-                                       &TerminalSize_desc) < 0)
+        TerminalSizeType = PyStructSequence_NewType(&TerminalSize_desc);
+        if (TerminalSizeType == NULL) {
             return NULL;
+        }
 
         /* initialize scandir types */
         if (PyType_Ready(&ScandirIteratorType) < 0)
@@ -13958,29 +13955,33 @@ INITFUNC(void)
             return NULL;
     }
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
-    Py_INCREF((PyObject*) &WaitidResultType);
-    PyModule_AddObject(m, "waitid_result", (PyObject*) &WaitidResultType);
+    Py_INCREF((PyObject*) WaitidResultType);
+    PyModule_AddObject(m, "waitid_result", (PyObject*) WaitidResultType);
 #endif
-    Py_INCREF((PyObject*) &StatResultType);
-    PyModule_AddObject(m, "stat_result", (PyObject*) &StatResultType);
-    Py_INCREF((PyObject*) &StatVFSResultType);
+    Py_INCREF((PyObject*) StatResultType);
+    PyModule_AddObject(m, "stat_result", (PyObject*) StatResultType);
+    Py_INCREF((PyObject*) StatVFSResultType);
     PyModule_AddObject(m, "statvfs_result",
-                       (PyObject*) &StatVFSResultType);
+                       (PyObject*) StatVFSResultType);
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
-    Py_INCREF(&SchedParamType);
-    PyModule_AddObject(m, "sched_param", (PyObject *)&SchedParamType);
+    Py_INCREF(SchedParamType);
+    PyModule_AddObject(m, "sched_param", (PyObject *)SchedParamType);
 #endif
 
     times_result_desc.name = MODNAME ".times_result";
-    if (PyStructSequence_InitType2(&TimesResultType, &times_result_desc) < 0)
+    TimesResultType = PyStructSequence_NewType(&times_result_desc);
+    if (TimesResultType == NULL) {
         return NULL;
-    PyModule_AddObject(m, "times_result", (PyObject *)&TimesResultType);
+    }
+    PyModule_AddObject(m, "times_result", (PyObject *)TimesResultType);
 
     uname_result_desc.name = MODNAME ".uname_result";
-    if (PyStructSequence_InitType2(&UnameResultType, &uname_result_desc) < 0)
+    UnameResultType = PyStructSequence_NewType(&uname_result_desc);
+    if (UnameResultType == NULL) {
         return NULL;
-    PyModule_AddObject(m, "uname_result", (PyObject *)&UnameResultType);
+    }
+    PyModule_AddObject(m, "uname_result", (PyObject *)UnameResultType);
 
 #ifdef __APPLE__
     /*
@@ -14020,8 +14021,8 @@ INITFUNC(void)
 
 #endif /* __APPLE__ */
 
-    Py_INCREF(&TerminalSizeType);
-    PyModule_AddObject(m, "terminal_size", (PyObject*) &TerminalSizeType);
+    Py_INCREF(TerminalSizeType);
+    PyModule_AddObject(m, "terminal_size", (PyObject*)TerminalSizeType);
 
     billion = PyLong_FromLong(1000000000);
     if (!billion)

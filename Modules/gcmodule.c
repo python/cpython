@@ -25,8 +25,9 @@
 
 #include "Python.h"
 #include "pycore_context.h"
-#include "pycore_mem.h"
-#include "pycore_state.h"
+#include "pycore_object.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "frameobject.h"        /* for PyFrame_ClearFreeList */
 #include "pydtrace.h"
 #include "pytime.h"             /* for _PyTime_GetMonotonicClock() */
@@ -1845,20 +1846,22 @@ _PyGC_Dump(PyGC_Head *g)
 /* extension modules might be compiled with GC support so these
    functions must always be available */
 
-#undef PyObject_GC_Track
-#undef PyObject_GC_UnTrack
-#undef PyObject_GC_Del
-#undef _PyObject_GC_Malloc
-
 void
-PyObject_GC_Track(void *op)
+PyObject_GC_Track(void *op_raw)
 {
+    PyObject *op = _PyObject_CAST(op_raw);
+    if (_PyObject_GC_IS_TRACKED(op)) {
+        _PyObject_ASSERT_FAILED_MSG(op,
+                                    "object already tracked "
+                                    "by the garbage collector");
+    }
     _PyObject_GC_TRACK(op);
 }
 
 void
-PyObject_GC_UnTrack(void *op)
+PyObject_GC_UnTrack(void *op_raw)
 {
+    PyObject *op = _PyObject_CAST(op_raw);
     /* Obscure:  the Py_TRASHCAN mechanism requires that we be able to
      * call PyObject_GC_UnTrack twice on an object.
      */

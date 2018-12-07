@@ -4,7 +4,6 @@ init = test_util.import_importlib('importlib')
 
 import sys
 import threading
-import unittest
 import weakref
 
 from test import support

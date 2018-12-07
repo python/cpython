@@ -465,7 +465,8 @@ later:
 */
 
 #include "Python.h"
-#include "pycore_state.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 #include "dict-common.h"
 #include <stddef.h>
@@ -1310,7 +1311,7 @@ static PyMethodDef odict_methods[] = {
     {"__reduce__",      (PyCFunction)odict_reduce,      METH_NOARGS,
      odict_reduce__doc__},
     ORDEREDDICT_SETDEFAULT_METHODDEF
-    {"pop",             (PyCFunction)odict_pop,
+    {"pop",             (PyCFunction)(void(*)(void))odict_pop,
      METH_VARARGS | METH_KEYWORDS, odict_pop__doc__},
     ORDEREDDICT_POPITEM_METHODDEF
     {"keys",            odictkeys_new,                  METH_NOARGS,
@@ -1319,7 +1320,7 @@ static PyMethodDef odict_methods[] = {
      odict_values__doc__},
     {"items",           odictitems_new,                 METH_NOARGS,
      odict_items__doc__},
-    {"update",          (PyCFunction)odict_update, METH_VARARGS | METH_KEYWORDS,
+    {"update",          (PyCFunction)(void(*)(void))odict_update, METH_VARARGS | METH_KEYWORDS,
      odict_update__doc__},
     {"clear",           (PyCFunction)odict_clear,       METH_NOARGS,
      odict_clear__doc__},
@@ -1803,7 +1804,7 @@ done:
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling");
 
 static PyObject *
-odictiter_reduce(odictiterobject *di)
+odictiter_reduce(odictiterobject *di, PyObject *Py_UNUSED(ignored))
 {
     /* copy the iterator state */
     odictiterobject tmp = *di;

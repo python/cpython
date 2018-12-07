@@ -1,5 +1,5 @@
 """
-A number of functions that enhance IDLE on Mac OSX.
+A number of functions that enhance IDLE on macOS.
 """
 from os.path import expanduser
 import plistlib
@@ -227,7 +227,7 @@ def overrideRootMenu(root, flist):
         root.bind('<<close-all-windows>>', flist.close_all_callback)
 
         # The binding above doesn't reliably work on all versions of Tk
-        # on MacOSX. Adding command definition below does seem to do the
+        # on macOS. Adding command definition below does seem to do the
         # right thing for now.
         root.createcommand('exit', flist.close_all_callback)
 

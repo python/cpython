@@ -152,6 +152,28 @@ PyThread__init_thread(void)
  * Thread support.
  */
 
+/* bpo-33015: pythread_callback struct and pythread_wrapper() cast
+   "void func(void *)" to "void* func(void *)": always return NULL.
+
+   PyThread_start_new_thread() uses "void func(void *)" type, whereas
+   pthread_create() requires a void* return value. */
+typedef struct {
+    void (*func) (void *);
+    void *arg;
+} pythread_callback;
+
+static void *
+pythread_wrapper(void *arg)
+{
+    /* copy func and func_arg and free the temporary structure */
+    pythread_callback *callback = arg;
+    void (*func)(void *) = callback->func;
+    void *func_arg = callback->arg;
+    PyMem_RawFree(arg);
+
+    func(func_arg);
+    return NULL;
+}
 
 unsigned long
 PyThread_start_new_thread(void (*func)(void *), void *arg)
@@ -188,21 +210,31 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
     pthread_attr_setscope(&attrs, PTHREAD_SCOPE_SYSTEM);
 #endif
 
+    pythread_callback *callback = PyMem_RawMalloc(sizeof(pythread_callback));
+
+    if (callback == NULL) {
+      return PYTHREAD_INVALID_THREAD_ID;
+    }
+
+    callback->func = func;
+    callback->arg = arg;
+
     status = pthread_create(&th,
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
                              &attrs,
 #else
                              (pthread_attr_t*)NULL,
 #endif
-                             (void* (*)(void *))func,
-                             (void *)arg
-                             );
+                             pythread_wrapper, callback);
 
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
     pthread_attr_destroy(&attrs);
 #endif
-    if (status != 0)
+
+    if (status != 0) {
+        PyMem_RawFree(callback);
         return PYTHREAD_INVALID_THREAD_ID;
+    }
 
     pthread_detach(th);
 
