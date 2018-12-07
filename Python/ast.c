@@ -4092,6 +4092,9 @@ parsenumber(struct compiling *c, const char *s)
     }
     /* Create a duplicate without underscores. */
     dup = PyMem_Malloc(strlen(s) + 1);
+    if (dup == NULL) {
+        return PyErr_NoMemory();
+    }
     end = dup;
     for (; *s; s++) {
         if (*s != '_') {
@@ -4326,8 +4329,10 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
     len = expr_end - expr_start;
     /* Allocate 3 extra bytes: open paren, close paren, null byte. */
     str = PyMem_RawMalloc(len + 3);
-    if (str == NULL)
+    if (str == NULL) {
+        PyErr_NoMemory();
         return NULL;
+    }
 
     str[0] = '(';
     memcpy(str+1, expr_start, len);
