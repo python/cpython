@@ -953,6 +953,11 @@ tok_nextc(struct tok_state *tok)
                 buflen = PyBytes_GET_SIZE(u);
                 buf = PyBytes_AS_STRING(u);
                 newtok = PyMem_MALLOC(buflen+1);
+                if (newtok == NULL) {
+                    Py_DECREF(u);
+                    tok->done = E_NOMEM;
+                    return EOF;
+                }
                 strcpy(newtok, buf);
                 Py_DECREF(u);
             }

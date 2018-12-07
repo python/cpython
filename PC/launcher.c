@@ -1763,6 +1763,9 @@ process(int argc, wchar_t ** argv)
         }
         cch += (DWORD)wcslen(PYTHON_EXECUTABLE) + 1 + 1; /* include sep and null */
         executable = (wchar_t *)malloc(cch * sizeof(wchar_t));
+        if (executable == NULL) {
+            error(RC_NO_MEMORY, L"A memory allocation failed");
+        }
         cch_actual = MultiByteToWideChar(CP_UTF8, 0, start, len, executable, cch);
         if (!cch_actual) {
             error(RC_BAD_VENV_CFG, L"Cannot decode home path in '%ls'",
