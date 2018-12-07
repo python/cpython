@@ -19,6 +19,7 @@
 
 # Specific binary files
 Lib/test/sndhdrdata/sndhdr.* binary
+PC/classicAppCompat.* binary
 
 # Text files that should not be subject to eol conversion
 Lib/test/cjkencodings/* -text
