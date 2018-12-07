@@ -808,9 +808,19 @@ class date:
 
         year, month, day (required, base 1)
         """
-        if month is None and isinstance(year, bytes) and len(year) == 4 and \
-                1 <= year[2] <= 12:
+        if (month is None and
+            isinstance(year, (bytes, str)) and len(year) == 4 and
+            1 <= ord(year[2:3]) <= 12):
             # Pickle support
+            if isinstance(year, str):
+                try:
+                    year = year.encode('latin1')
+                except UnicodeEncodeError:
+                    # More informative error message.
+                    raise ValueError(
+                        "Failed to encode latin1 string when unpickling "
+                        "a date object. "
+                        "pickle.load(data, encoding='latin1') is assumed.")
             self = object.__new__(cls)
             self.__setstate(year)
             self._hashcode = -1
@@ -1184,8 +1194,18 @@ class time:
         tzinfo (default to None)
         fold (keyword only, default to zero)
         """
-        if isinstance(hour, bytes) and len(hour) == 6 and hour[0]&0x7F < 24:
+        if (isinstance(hour, (bytes, str)) and len(hour) == 6 and
+            ord(hour[0:1])&0x7F < 24):
             # Pickle support
+            if isinstance(hour, str):
+                try:
+                    hour = hour.encode('latin1')
+                except UnicodeEncodeError:
+                    # More informative error message.
+                    raise ValueError(
+                        "Failed to encode latin1 string when unpickling "
+                        "a time object. "
+                        "pickle.load(data, encoding='latin1') is assumed.")
             self = object.__new__(cls)
             self.__setstate(hour, minute or None)
             self._hashcode = -1
@@ -1496,8 +1516,18 @@ class datetime(date):
 
     def __new__(cls, year, month=None, day=None, hour=0, minute=0, second=0,
                 microsecond=0, tzinfo=None, *, fold=0):
-        if isinstance(year, bytes) and len(year) == 10 and 1 <= year[2]&0x7F <= 12:
+        if (isinstance(year, (bytes, str)) and len(year) == 10 and
+            1 <= ord(year[2:3])&0x7F <= 12):
             # Pickle support
+            if isinstance(year, str):
+                try:
+                    year = bytes(year, 'latin1')
+                except UnicodeEncodeError:
+                    # More informative error message.
+                    raise ValueError(
+                        "Failed to encode latin1 string when unpickling "
+                        "a datetime object. "
+                        "pickle.load(data, encoding='latin1') is assumed.")
             self = object.__new__(cls)
             self.__setstate(year, month)
             self._hashcode = -1
