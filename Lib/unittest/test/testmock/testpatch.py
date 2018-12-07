@@ -9,6 +9,7 @@ import unittest
 from unittest.test.testmock import support
 from unittest.test.testmock.support import SomeClass, is_instance
 
+from test.test_importlib.util import uncache
 from unittest.mock import (
     NonCallableMock, CallableMixin, sentinel,
     MagicMock, Mock, NonCallableMagicMock, patch, _patch,
@@ -1660,20 +1661,19 @@ class PatchTest(unittest.TestCase):
 
 
     def test_patch_imports_lazily(self):
-        sys.modules.pop('squizz', None)
-
         p1 = patch('squizz.squozz')
         self.assertRaises(ImportError, p1.start)
 
-        squizz = Mock()
-        squizz.squozz = 6
-        sys.modules['squizz'] = squizz
-        p1 = patch('squizz.squozz')
-        squizz.squozz = 3
-        p1.start()
-        p1.stop()
-        self.assertEqual(squizz.squozz, 3)
+        with uncache('squizz'):
+            squizz = Mock()
+            sys.modules['squizz'] = squizz
 
+            squizz.squozz = 6
+            p1 = patch('squizz.squozz')
+            squizz.squozz = 3
+            p1.start()
+            p1.stop()
+        self.assertEqual(squizz.squozz, 3)
 
     def test_patch_propogrates_exc_on_exit(self):
         class holder:
@@ -1696,7 +1696,12 @@ class PatchTest(unittest.TestCase):
         def test(mock):
             raise RuntimeError
 
-        self.assertRaises(RuntimeError, test)
+        with uncache('squizz'):
+            squizz = Mock()
+            sys.modules['squizz'] = squizz
+
+            self.assertRaises(RuntimeError, test)
+
         self.assertIs(holder.exc_info[0], RuntimeError)
         self.assertIsNotNone(holder.exc_info[1],
                             'exception value not propgated')
