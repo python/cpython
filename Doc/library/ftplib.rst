@@ -33,7 +33,7 @@ Here's a sample session using the :mod:`ftplib` module::
    drwxr-sr-x    4 1176     1176         4096 Nov 17  2008 project
    drwxr-xr-x    3 1176     1176         4096 Oct 10  2012 tools
    '226 Directory send OK.'
-   >>> ftp.retrbinary('RETR README', open('README', 'wb').write)  # Download the file README 
+   >>> ftp.retrbinary('RETR README', open('README', 'wb').write)  # Download the file README
    '226 Transfer complete.'
    >>> ftp.storbinary('STOR README2', open('README', 'rb'))  # Upload the file README with new name README2
    '226 Transfer complete. 7906 bytes sent in 00:00 (462.09 KB/s)'
