@@ -234,17 +234,15 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
                             PyErr_NoMemory();
                             return NULL;
                         }
-                        else {
-                            wlen = MultiByteToWideChar(CP_UTF8, 0, prompt, -1,
-                                    wbuf, wlen);
-                            if (wlen) {
-                                DWORD n;
-                                fflush(stderr);
-                                /* wlen includes null terminator, so subtract 1 */
-                                WriteConsoleW(hStdErr, wbuf, wlen - 1, &n, NULL);
-                            }
-                            PyMem_RawFree(wbuf);
+                        wlen = MultiByteToWideChar(CP_UTF8, 0, prompt, -1,
+                                wbuf, wlen);
+                        if (wlen) {
+                            DWORD n;
+                            fflush(stderr);
+                            /* wlen includes null terminator, so subtract 1 */
+                            WriteConsoleW(hStdErr, wbuf, wlen - 1, &n, NULL);
                         }
+                        PyMem_RawFree(wbuf);
                     }
                 } else {
                     fprintf(stderr, "%s", prompt);
