@@ -119,19 +119,6 @@ import sys
 
 ### Globals & Constants
 
-# Determine the platform's /dev/null device
-try:
-    DEV_NULL = os.devnull
-except AttributeError:
-    # os.devnull was added in Python 2.4, so emulate it for earlier
-    # Python versions
-    if sys.platform in ('dos', 'win32', 'win16'):
-        # Use the old CP/M NUL as device name
-        DEV_NULL = 'NUL'
-    else:
-        # Standard Unix uses /dev/null
-        DEV_NULL = '/dev/null'
-
 # Helper for comparing two version number strings.
 # Based on the description of the PHP's version_compare():
 # http://php.net/manual/en/function.version-compare.php
@@ -288,16 +275,15 @@ def _syscmd_ver(system='', release='', version='',
         return system, release, version
 
     # Try some common cmd strings
+    import subprocess
     for cmd in ('ver', 'command /c ver', 'cmd /c ver'):
         try:
-            pipe = os.popen(cmd)
-            info = pipe.read()
-            if pipe.close():
-                raise OSError('command failed')
-            # XXX How can I suppress shell errors from being written
-            #     to stderr ?
-        except OSError as why:
-            #print 'Command %s failed: %s' % (cmd, why)
+            info = subprocess.check_output(cmd,
+                                           stderr=subprocess.DEVNULL,
+                                           text=True,
+                                           shell=True)
+        except (OSError, subprocess.CalledProcessError) as why:
+            #print('Command %s failed: %s' % (cmd, why))
             continue
         else:
             break
@@ -602,16 +588,15 @@ def _syscmd_uname(option, default=''):
     if sys.platform in ('dos', 'win32', 'win16'):
         # XXX Others too ?
         return default
+
+    import subprocess
     try:
-        f = os.popen('uname %s 2> %s' % (option, DEV_NULL))
-    except (AttributeError, OSError):
+        output = subprocess.check_output(('uname', option),
+                                         stderr=subprocess.DEVNULL,
+                                         text=True)
+    except (OSError, subprocess.CalledProcessError):
         return default
-    output = f.read().strip()
-    rc = f.close()
-    if not output or rc:
-        return default
-    else:
-        return output
+    return (output.strip() or default)
 
 def _syscmd_file(target, default=''):
 
@@ -629,17 +614,12 @@ def _syscmd_file(target, default=''):
     import subprocess
     target = _follow_symlinks(target)
     try:
-        proc = subprocess.Popen(['file', target],
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT)
-    except (AttributeError, OSError):
+        output = subprocess.check_output(['file', target],
+                                         stderr=subprocess.DEVNULL,
+                                         encoding='latin-1')
+    except (OSError, subprocess.CalledProcessError):
         return default
-    output = proc.communicate()[0].decode('latin-1')
-    rc = proc.wait()
-    if not output or rc:
-        return default
-    else:
-        return output
+    return (output or default)
 
 ### Information about the used architecture
 

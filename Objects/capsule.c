@@ -201,7 +201,7 @@ PyCapsule_Import(const char *name, int no_block)
     char *name_dup = (char *)PyMem_MALLOC(name_length);
 
     if (!name_dup) {
-        return NULL;
+        return PyErr_NoMemory();
     }
 
     memcpy(name_dup, name, name_length);
