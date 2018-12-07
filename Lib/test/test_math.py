@@ -523,6 +523,52 @@ class MathTests(unittest.TestCase):
         self.assertRaises(OverflowError, math.factorial, 10**100)
         self.assertRaises(OverflowError, math.factorial, 1e100)
 
+    def testBinomialFactorial(self):
+        """Test (n choose k) = n! / (k! (n-k)!) when 0 <= k <= n."""
+        for n in range(100):
+            for k in range(n+1):
+                self.assertEqual(math.binomial(n, k), factorial(n) // factorial(k) // factorial(n-k))
+
+    def testBinomialTriangle(self):
+        """Test (n+1 choose k+1) = (n choose k) + (n choose k+1)"""
+        for n in range(100):
+            for k in range(100):
+                self.assertEqual(math.binomial(n + 1, k + 1), math.binomial(n, k) + math.binomial(n, k + 1))
+
+    def testBinomialZero(self):
+        """Test (n choose k) = 0 when k>n"""
+        for k in range(100):
+            for n in range(k):
+                self.assertEqual(0, math.binomial(n, k))
+
+    def testBinomialOne(self):
+        """Test (n choose 0) = (n choose n) = 1"""
+        for n in range(100):
+            self.assertEqual(1, math.binomial(n, 0))
+            self.assertEqual(1, math.binomial(n, n))
+
+    def testBinomialValueErrors(self):
+        """Test math.binomial raises ValueError on negative or non-integral inputs."""
+        self.assertRaises(ValueError, math.binomial, 0, -1)
+        self.assertRaises(ValueError, math.binomial, 0, -1.0)
+        self.assertRaises(ValueError, math.binomial, 0, -10**100)
+        self.assertRaises(ValueError, math.binomial, 0, -1e100)
+        self.assertRaises(ValueError, math.binomial, 0, math.pi)
+
+        self.assertRaises(ValueError, math.binomial, -1,       0)
+        self.assertRaises(ValueError, math.binomial, -1.0,     0)
+        self.assertRaises(ValueError, math.binomial, -10**100, 0)
+        self.assertRaises(ValueError, math.binomial, -1e100,   0)
+        self.assertRaises(ValueError, math.binomial, math.pi,  0)
+
+    def testBinomialTypeErrors(self):
+        """Test math.binomial raises TypeError on non-int, non-float inputs."""
+        self.assertRaises(TypeError, math.binomial, 0, decimal.Decimal(5.2))
+        self.assertRaises(TypeError, math.binomial, 0, "5")
+
+        self.assertRaises(TypeError, math.binomial, decimal.Decimal(5.2), 0)
+        self.assertRaises(TypeError, math.binomial, "5",                  0)
+
     def testFloor(self):
         self.assertRaises(TypeError, math.floor)
         self.assertEqual(int, type(math.floor(0.5)))
