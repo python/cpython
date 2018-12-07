@@ -222,16 +222,16 @@ class PlatformTest(unittest.TestCase):
         res = platform.mac_ver()
 
         if platform.uname().system == 'Darwin':
-            # We're on a MacOSX system, check that
-            # the right version information is returned
-            fd = os.popen('sw_vers', 'r')
-            real_ver = None
-            for ln in fd:
-                if ln.startswith('ProductVersion:'):
-                    real_ver = ln.strip().split()[-1]
+            # We are on a macOS system, check that the right version
+            # information is returned
+            output = subprocess.check_output(['sw_vers'], text=True)
+            for line in output.splitlines():
+                if line.startswith('ProductVersion:'):
+                    real_ver = line.strip().split()[-1]
                     break
-            fd.close()
-            self.assertFalse(real_ver is None)
+            else:
+                self.fail(f"failed to parse sw_vers output: {output!r}")
+
             result_list = res[0].split('.')
             expect_list = real_ver.split('.')
             len_diff = len(result_list) - len(expect_list)
