@@ -3,6 +3,12 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-34864: When starting IDLE on MacOS, warn if the system setting
+"Prefer tabs when opening documents" is "Always".  As previous
+documented for this issue, running IDLE with this setting causes
+problems.  If the setting is changed while IDLE is running,
+there will be no warning until IDLE is restarted.
+
 bpo-35213: Where appropriate, use 'macOS' in idlelib.
 
 bpo-34864: Document two IDLE on MacOS issues.  The System Preferences
