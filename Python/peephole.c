@@ -498,14 +498,14 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 j *= sizeof(_Py_CODEUNIT);
                 break;
         }
-        nexti = i - op_start + 1;
-        if (instrsize(j) > nexti) {
+        Py_ssize_t ilen = i - op_start + 1;
+        if (instrsize(j) > ilen) {
             goto exitUnchanged;
         }
-        assert(nexti <= INT_MAX);
-        /* If instrsize(j) < nexti, we'll emit EXTENDED_ARG 0 */
-        write_op_arg(codestr + h, opcode, j, (int)nexti);
-        h += nexti;
+        assert(ilen <= INT_MAX);
+        /* If instrsize(j) < ilen, we'll emit EXTENDED_ARG 0 */
+        write_op_arg(codestr + h, opcode, j, (int)ilen);
+        h += ilen;
     }
     assert(h + (Py_ssize_t)nops == codelen);
 
