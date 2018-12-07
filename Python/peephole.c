@@ -365,15 +365,14 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                            stack effect */
                         h = set_arg(codestr, i, get_arg(codestr, tgt));
                     } else {
-                        Py_ssize_t arg = (tgt + 1);
-                        /* cannot overflow: codelen <= INT_MAX */
-                        assert((size_t)arg <= UINT_MAX / sizeof(_Py_CODEUNIT));
-                        arg *= sizeof(_Py_CODEUNIT);
-
                         /* The second jump is not taken if the first is (so
                            jump past it), and all conditional jumps pop their
                            argument when they're not taken (so change the
                            first jump to pop its argument when it's taken). */
+                        Py_ssize_t arg = (tgt + 1);
+                        /* cannot overflow: codelen <= INT_MAX */
+                        assert((size_t)arg <= UINT_MAX / sizeof(_Py_CODEUNIT));
+                        arg *= sizeof(_Py_CODEUNIT);
                         h = set_arg(codestr, i, (unsigned int)arg);
                         j = opcode == JUMP_IF_TRUE_OR_POP ?
                             POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE;
