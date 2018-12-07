@@ -44,7 +44,58 @@ matrix:
         apt:
           packages:
             - xvfb
+    - os: linux
+      language: python
+      # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
+      python: 3.6
+      env: TESTING=docs
+      before_script:
+        - env
+      script:
+        - env
+    - os: linux
+      language: c
+      compiler: clang
+      env: TESTING=doctest
+      addons:
+        apt:
+          packages:
+            - xvfb
+      before_script:
+        - env
+      script:
+        - env
+    - os: osx
+      language: c
+      compiler: clang
+      # Testing under macOS is optional until testing stability has been demonstrated.
+      env: OPTIONAL=true
+      before_install:
+        # Python 3 is needed for Argument Clinic and multissl
+        - HOMEBREW_NO_AUTO_UPDATE=1 brew install xz python3
+        - export PATH=$(brew --prefix)/bin:$(brew --prefix)/sbin:$PATH
+    - os: linux
+      language: c
+      compiler: gcc
+      env: OPTIONAL=true
+      addons:
+        apt:
+          packages:
+            - lcov
+            - xvfb
+      before_script:
+        - env
+      script:
+        - env
+      after_script:  # Probably should be after_success once test suite updated to run under coverage.py.
+        - env
 
+
+before_install:
+  - set -e
+
+before_script:
+  - env
 
 script:
   - env
