@@ -109,6 +109,7 @@ struct compiler_unit {
     PyObject *u_qualname;  /* dot-separated qualified name (lazy) */
     int u_scope_type;
 
+    PyObject *u_consts_list; /* list of all constants */
     /* The following fields are dicts that map objects to
        the index of them in co_XXX.      The index is used as
        the argument for opcodes that refer to those collections.
@@ -526,6 +527,7 @@ compiler_unit_free(struct compiler_unit *u)
     Py_CLEAR(u->u_ste);
     Py_CLEAR(u->u_name);
     Py_CLEAR(u->u_qualname);
+    Py_CLEAR(u->u_consts_list);
     Py_CLEAR(u->u_consts);
     Py_CLEAR(u->u_names);
     Py_CLEAR(u->u_varnames);
@@ -597,6 +599,11 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_lineno = 0;
     u->u_col_offset = 0;
     u->u_lineno_set = 0;
+    u->u_consts_list = PyList_New(0);
+    if (!u->u_consts_list) {
+        compiler_unit_free(u);
+        return 0;
+    }
     u->u_consts = PyDict_New();
     if (!u->u_consts) {
         compiler_unit_free(u);
@@ -1307,8 +1314,13 @@ compiler_add_const(struct compiler *c, PyObject *o)
         return -1;
     }
 
+    assert(PyList_GET_SIZE(c->u->u_consts_list) == PyDict_GET_SIZE(c->u->u_consts));
     Py_ssize_t arg = compiler_add_o(c, c->u->u_consts, key);
     Py_DECREF(key);
+    if (arg == PyList_GET_SIZE(c->u->u_consts_list)) {
+        if (PyList_Append(c->u->u_consts_list, o) < 0)
+            return -1;
+    }
     return arg;
 }
 
@@ -5446,31 +5458,6 @@ dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
     return tuple;
 }
 
-static PyObject *
-consts_dict_keys_inorder(PyObject *dict)
-{
-    PyObject *consts, *k, *v;
-    Py_ssize_t i, pos = 0, size = PyDict_GET_SIZE(dict);
-
-    consts = PyList_New(size);   /* PyCode_Optimize() requires a list */
-    if (consts == NULL)
-        return NULL;
-    while (PyDict_Next(dict, &pos, &k, &v)) {
-        i = PyLong_AS_LONG(v);
-        /* The keys of the dictionary can be tuples wrapping a contant.
-         * (see compiler_add_o and _PyCode_ConstantKey). In that case
-         * the object we want is always second. */
-        if (PyTuple_CheckExact(k)) {
-            k = PyTuple_GET_ITEM(k, 1);
-        }
-        Py_INCREF(k);
-        assert(i < size);
-        assert(i >= 0);
-        PyList_SET_ITEM(consts, i, k);
-    }
-    return consts;
-}
-
 static int
 compute_code_flags(struct compiler *c)
 {
@@ -5530,7 +5517,6 @@ merge_const_tuple(struct compiler *c, PyObject **tuple)
 static PyCodeObject *
 makecode(struct compiler *c, struct assembler *a)
 {
-    PyObject *tmp;
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
     PyObject *names = NULL;
@@ -5544,10 +5530,10 @@ makecode(struct compiler *c, struct assembler *a)
     int flags;
     int argcount, kwonlyargcount, maxdepth;
 
-    consts = consts_dict_keys_inorder(c->u->u_consts);
+    consts = c->u->u_consts_list;
     names = dict_keys_inorder(c->u->u_names, 0);
     varnames = dict_keys_inorder(c->u->u_varnames, 0);
-    if (!consts || !names || !varnames)
+    if (!names || !varnames)
         goto error;
 
     cellvars = dict_keys_inorder(c->u->u_cellvars, 0);
@@ -5577,11 +5563,9 @@ makecode(struct compiler *c, struct assembler *a)
     if (!bytecode)
         goto error;
 
-    tmp = PyList_AsTuple(consts); /* PyCode_New requires a tuple */
-    if (!tmp)
+    consts = PyList_AsTuple(consts); /* PyCode_New requires a tuple */
+    if (!consts)
         goto error;
-    Py_DECREF(consts);
-    consts = tmp;
     if (!merge_const_tuple(c, &consts)) {
         goto error;
     }
@@ -5590,6 +5574,7 @@ makecode(struct compiler *c, struct assembler *a)
     kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
     maxdepth = stackdepth(c);
     if (maxdepth < 0) {
+        Py_DECREF(consts);
         goto error;
     }
     co = PyCode_New(argcount, kwonlyargcount,
@@ -5599,8 +5584,8 @@ makecode(struct compiler *c, struct assembler *a)
                     c->c_filename, c->u->u_name,
                     c->u->u_firstlineno,
                     a->a_lnotab);
+    Py_DECREF(consts);
  error:
-    Py_XDECREF(consts);
     Py_XDECREF(names);
     Py_XDECREF(varnames);
     Py_XDECREF(name);
@@ -5645,6 +5630,67 @@ dump_basicblock(const basicblock *b)
 }
 #endif
 
+static void
+set_instr(basicblock *b, int off, int opcode, int oparg)
+{
+    b->b_instr[off].i_opcode = opcode;
+    b->b_instr[off].i_oparg = oparg;
+}
+
+static void
+remove_instr_range(basicblock *b, int start, int end)
+{
+    memmove(&b->b_instr[start],
+            &b->b_instr[end],
+            sizeof(struct instr) * (b->b_iused - end));
+    b->b_iused -= end - start;
+}
+
+static int
+fold_tuples_on_constants(struct compiler *c, basicblock *b)
+{
+    int i, j, n;
+    int nconsts = 0;  /* count of consequence LOAD_CONSTs */
+    Py_ssize_t arg;
+    PyObject *newconst, *item;
+
+    for (i = 0; i < b->b_iused; i++) {
+        struct instr *instr = &b->b_instr[i];
+        if (instr->i_opcode == LOAD_CONST) {
+            nconsts++;
+            continue;
+        }
+        if (instr->i_opcode == BUILD_TUPLE) {
+            n = instr->i_oparg;
+            if (n <= nconsts) {
+                /* Replace LOAD_CONST c1, ... LOAD_CONST cn, BUILD_TUPLE n
+                   with    LOAD_CONST (c1, ... cn).
+                */
+                newconst = PyTuple_New(n);
+                if (!newconst)
+                    return 0;
+                for (j = 0; j < n; j++) {
+                    arg = b->b_instr[i - n + j].i_oparg;
+                    item = PyList_GET_ITEM(c->u->u_consts_list, arg);
+                    Py_INCREF(item);
+                    PyTuple_SET_ITEM(newconst, j, item);
+                }
+                arg = compiler_add_const(c, newconst);
+                Py_DECREF(newconst);
+                if (arg < 0)
+                    return 0;
+                set_instr(b, i - n,  LOAD_CONST, arg);
+                remove_instr_range(b, i - n + 1, i + 1);
+                i -= n;
+                nconsts -= n - 1;
+                continue;
+            }
+        }
+        nconsts = 0;
+    }
+    return 1;
+}
+
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
 {
@@ -5681,6 +5727,12 @@ assemble(struct compiler *c, int addNone)
     if (!assemble_init(&a, nblocks, c->u->u_firstlineno))
         goto error;
     dfs(c, entryblock, &a, nblocks);
+
+    for (i = a.a_nblocks - 1; i >= 0; i--) {
+        b = a.a_postorder[i];
+        if (!fold_tuples_on_constants(c, b))
+            goto error;
+    }
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
