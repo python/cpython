@@ -47,7 +47,8 @@ try {
     if (Test-Path resources.pri) {
         del resources.pri
     }
-    makepri new /pr . /mn AppxManifest.xml /cf _resources.xml /of _resources.pri /mf appx /o
+    $name = ([xml](gc AppxManifest.xml)).Package.Identity.Name
+    makepri new /pr . /mn AppxManifest.xml /in $name /cf _resources.xml /of _resources.pri /mf appx /o
     if (-not $? -or -not (Test-Path _resources.map.txt)) {
         throw "makepri step failed"
     }
