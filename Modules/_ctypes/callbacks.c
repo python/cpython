@@ -309,7 +309,6 @@ static CThunkObject* CThunkObject_new(Py_ssize_t nArgs)
 
     p = PyObject_GC_NewVar(CThunkObject, &PyCThunk_Type, nArgs);
     if (p == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
 
