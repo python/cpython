@@ -35,25 +35,21 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{4946ECAC-2E69-4BF8-A90A-F5136F5094DF}</ProjectGuid>
-    <RootNamespace>_tkinter</RootNamespace>
-    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{9DE9E23D-C8D4-4817-92A9-920A8B1FE5FF}</ProjectGuid>
   </PropertyGroup>
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <CharacterSet>NotSet</CharacterSet>
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <PropertyGroup>
-    <TargetExt>.pyd</TargetExt>
-  </PropertyGroup>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="tcltk.props" />
+    <Import Project="pyproject.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -61,24 +57,22 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(tcltkDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WITH_APPINIT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(BuildForRelease)' != 'true'">Py_TCLTK_DIR="$(tcltkDir.TrimEnd('\').Replace('\', '\\'))";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/EHsc /std:c++17 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>$(tcltkLib);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\Modules\_tkinter.c" />
-    <ClCompile Include="..\Modules\tkappinit.c" />
+    <None Include="..\PC\pycon.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\PC\python_nt.rc" />
+    <ResourceCompile Include="..\PC\python_exe.rc" />
   </ItemGroup>
   <ItemGroup>
-    <_TclTkDLL Include="$(tcltkdir)\bin\$(tclDllName)" />
-    <_TclTkDLL Include="$(tcltkdir)\bin\$(tkDllName)" />
+    <ClCompile Include="..\PC\python_uwp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="pythoncore.vcxproj">
@@ -89,16 +83,4 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-  <Target Name="_CopyTclTkDLL" Inputs="@(_TclTkDLL)" Outputs="@(_TclTkDLL->'$(OutDir)%(Filename)%(Extension)')" AfterTargets="Build">
-    <Copy SourceFiles="@(_TclTkDLL)" DestinationFolder="$(OutDir)" />
-  </Target>
-  <Target Name="_CleanTclTkDLL" BeforeTargets="Clean">
-    <Delete Files="@(_TclTkDLL->'$(OutDir)%(Filename)%(Extension)')" />
-  </Target>
-  <Target Name="_WriteTCL_LIBRARY" Outputs="$(OutDir)TCL_LIBRARY.env" AfterTargets="Build">
-    <WriteLinesToFile File="$(OutDir)TCL_LIBRARY.env" Lines="$(tcltkdir)\lib\tcl$(TclMajorVersion).$(TclMinorVersion)" Encoding="utf-8" Overwrite="true" />
-  </Target>
-  <Target Name="_CleanTCL_LIBRARY" BeforeTargets="Clean">
-    <Delete Files="$(OutDir)TCL_LIBRARY.env" />
-  </Target>
 </Project>
