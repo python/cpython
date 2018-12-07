@@ -1,0 +1,2 @@
+:func:`platform.uname` now redirects ``stderr`` to :data:`os.devnull` when
+running external programs like ``cmd /c ver``.
