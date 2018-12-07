@@ -2528,3 +2528,13 @@ In 3.7.1 the :mod:`tokenize` module now implicitly emits a ``NEWLINE`` token
 when provided with input that does not have a trailing new line.  This behavior
 now matches what the C tokenizer does internally.
 (Contributed by Ammar Askar in :issue:`33899`.)
+
+Notable changes in Python 3.7.2
+===============================
+
+In 3.7.2, :mod:`venv` on Windows no longer copies the original binaries, but
+creates redirector scripts named ``python.exe`` and ``pythonw.exe`` instead.
+This resolves a long standing issue where all virtual environments would have
+to be upgraded or recreated with each Python update. However, note that this
+release will still require recreation of virtual environments in order to get
+the new scripts.

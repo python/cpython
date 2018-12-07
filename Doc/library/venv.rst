@@ -135,7 +135,6 @@ creation according to their needs, the :class:`EnvBuilder` class.
     .. versionadded:: 3.6
        Added the ``prompt`` parameter
 
-
     Creators of third-party virtual environment tools will be free to use the
     provided ``EnvBuilder`` class as a base class.
 
@@ -182,22 +181,26 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     .. method:: setup_python(context)
 
-        Creates a copy of the Python executable (and, under Windows, DLLs) in
-        the environment. On a POSIX system, if a specific executable
-        ``python3.x`` was used, symlinks to ``python`` and ``python3`` will be
-        created pointing to that executable, unless files with those names
-        already exist.
+        Creates a copy of the Python executable in the environment on POSIX
+        systems. If a specific executable ``python3.x`` was used, symlinks to
+        ``python`` and ``python3`` will be created pointing to that executable,
+        unless files with those names already exist.
 
     .. method:: setup_scripts(context)
 
         Installs activation scripts appropriate to the platform into the virtual
-        environment.
+        environment. On Windows, also installs the ``python[w].exe`` scripts.
 
     .. method:: post_setup(context)
 
         A placeholder method which can be overridden in third party
         implementations to pre-install packages in the virtual environment or
         perform other post-creation steps.
+
+    .. versionchanged:: 3.7.2
+       Windows now uses redirector scripts for ``python[w].exe`` instead of
+       copying the actual binaries, and so :meth:`setup_python` does nothing
+       unless running from a build in the source tree.
 
     In addition, :class:`EnvBuilder` provides this utility method that can be
     called from :meth:`setup_scripts` or :meth:`post_setup` in subclasses to
