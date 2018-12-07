@@ -152,12 +152,14 @@ fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t codelen,
         PyTuple_SET_ITEM(newconst, i, constant);
     }
 
+#if SIZEOF_SIZE_T > SIZEOF_INT
     Py_ssize_t index = PyList_GET_SIZE(consts);
     if ((size_t)index >= UINT_MAX - 1) {
         Py_DECREF(newconst);
         PyErr_SetString(PyExc_OverflowError, "too many constants");
         return -1;
     }
+#endif
 
     /* Append folded constant onto consts */
     if (PyList_Append(consts, newconst)) {
