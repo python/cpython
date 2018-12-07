@@ -2811,7 +2811,7 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     int day;
 
     /* Check for invocation from pickle with __getstate__ state */
-    if (PyTuple_GET_SIZE(args) >= 1) {
+    if (PyTuple_GET_SIZE(args) == 1) {
         PyObject *state = PyTuple_GET_ITEM(args, 0);
         if (PyBytes_Check(state)) {
             if (PyBytes_GET_SIZE(state) == _PyDateTime_DATE_DATASIZE &&
