@@ -677,11 +677,12 @@ r_string(Py_ssize_t n, RFILE *p)
         p->buf_size = n;
     }
     else if (p->buf_size < n) {
-        p->buf = PyMem_REALLOC(p->buf, n);
-        if (p->buf == NULL) {
+        char *tmp = PyMem_REALLOC(p->buf, n);
+        if (tmp == NULL) {
             PyErr_NoMemory();
             return NULL;
         }
+        p->buf = tmp;
         p->buf_size = n;
     }
 

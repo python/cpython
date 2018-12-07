@@ -309,7 +309,6 @@ static CThunkObject* CThunkObject_new(Py_ssize_t nArgs)
 
     p = PyObject_GC_NewVar(CThunkObject, &PyCThunk_Type, nArgs);
     if (p == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
 
@@ -347,7 +346,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     assert(CThunk_CheckExact((PyObject *)p));
 
     p->pcl_write = ffi_closure_alloc(sizeof(ffi_closure),
-									 &p->pcl_exec);
+                                                                         &p->pcl_exec);
     if (p->pcl_write == NULL) {
         PyErr_NoMemory();
         goto error;
@@ -397,8 +396,8 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     result = ffi_prep_closure(p->pcl_write, &p->cif, closure_fcn, p);
 #else
     result = ffi_prep_closure_loc(p->pcl_write, &p->cif, closure_fcn,
-				  p,
-				  p->pcl_exec);
+                                  p,
+                                  p->pcl_exec);
 #endif
     if (result != FFI_OK) {
         PyErr_Format(PyExc_RuntimeError,

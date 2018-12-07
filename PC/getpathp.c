@@ -586,6 +586,9 @@ read_pth_file(const wchar_t *path, wchar_t *prefix, int *isolated, int *nosite)
     size_t prefixlen = wcslen(prefix);
 
     wchar_t *buf = (wchar_t*)PyMem_RawMalloc(bufsiz * sizeof(wchar_t));
+    if (buf == NULL) {
+        goto error;
+    }
     buf[0] = '\0';
 
     while (!feof(sp_file)) {
@@ -611,17 +614,22 @@ read_pth_file(const wchar_t *path, wchar_t *prefix, int *isolated, int *nosite)
 
         DWORD wn = MultiByteToWideChar(CP_UTF8, 0, line, -1, NULL, 0);
         wchar_t *wline = (wchar_t*)PyMem_RawMalloc((wn + 1) * sizeof(wchar_t));
+        if (wline == NULL) {
+            goto error;
+        }
         wn = MultiByteToWideChar(CP_UTF8, 0, line, -1, wline, wn + 1);
         wline[wn] = '\0';
 
         size_t usedsiz = wcslen(buf);
         while (usedsiz + wn + prefixlen + 4 > bufsiz) {
             bufsiz += MAXPATHLEN;
-            buf = (wchar_t*)PyMem_RawRealloc(buf, (bufsiz + 1) * sizeof(wchar_t));
-            if (!buf) {
+            wchar_t *tmp = (wchar_t*)PyMem_RawRealloc(buf, (bufsiz + 1) *
+                                                            sizeof(wchar_t));
+            if (tmp == NULL) {
                 PyMem_RawFree(wline);
                 goto error;
             }
+            buf = tmp;
         }
 
         if (usedsiz) {
