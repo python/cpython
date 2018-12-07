@@ -282,47 +282,68 @@ _Py_LegacyLocaleDetected(void)
 #endif
 }
 
+static int
+_parse_arg_for_locale_coercion_options(const char *arg, int *enable_coercion)
+{
+    int skip_next_arg = 0;
+    size_t arg_len = strlen(arg);
+    if (arg_len < 2 || arg[0] != '-') {
+        /* Empty strings, '-', and a non-option string terminate the arg list */
+        skip_next_arg = -1;
+    } else if (arg[1] != '-') {
+        /* Short option string to check for locale coercion related settings */
+        for (size_t optind = 1; optind < arg_len; optind++) {
+            char option = arg[optind];
+            if (option == 'X' || option == 'W') {
+                /* Skip checking argument to -X or -W */
+                skip_next_arg = 1;
+                break;
+            }
+            if (option == 'c' || option == 'm') {
+                /* -c and -m also mark the end of the Python arg list */
+                skip_next_arg = -1;
+                break;
+            }
+            if (option == 'E' || option == 'I') {
+                /* If the environment is ignored, locale coercion is always on */
+                *enable_coercion = 1;
+                break;
+            }
+        }
+    }
+
+    return skip_next_arg;
+}
+
+static int
+_parse_cmdline_for_locale_coercion(int argc, char **argv)
+{
+    /* Rudimentary arg parsing to allow -E and -I to disable
+     * PYTHONCOERCECLOCALE, even though locale coercion occurs
+     * well in advance of the main arg parsing loop.
+     *
+     * Ignores argv[0], as that's the program name.
+     */
+    int enable_coercion = -1;
+    for (int i = 1; i < argc; i++) {
+        const char* arg = argv[i];
+        int skip_next_arg = _parse_arg_for_locale_coercion_options(arg, &enable_coercion);
+        if (skip_next_arg < 0) {
+            break; /* Skip checking all remaining args */
+        }
+        if (skip_next_arg) {
+            i++; /* Skip checking a single arg */
+        }
+    }
+    return enable_coercion;
+}
+
 int
 _Py_LegacyLocaleCoercionEnabled(int argc, char **argv)
 {
     int enable_coercion = -1;
     if (argc >= 1 && argv != NULL) {
-        /* Rudimentary arg parsing to allow -E and -I to disable
-         * PYTHONCOERCECLOCALE, even though locale coercion occurs
-         * well in advance of the main arg parsing loop.
-         *
-         * Ignore argv[0], as that's the program name.
-         */
-        for (int i = 1; i < argc; i++) {
-            const char* arg = argv[i];
-            if (arg[0] != '-') {
-                /* Non-option arg is a path to execute */
-                break;
-            } else {
-                size_t arg_len = strlen(arg);
-                if (arg_len == 1) {
-                    /* '-' is the end of the Python arg list */
-                    break;
-                }
-                if (arg_len == 2) {
-                    char option = arg[1];
-                    if (option == 'X' || option == 'W') {
-                        /* Skip argument to -X or -W, and check next arg */
-                        i++;
-                        continue;
-                    }
-                    if (option == 'E' || option == 'I') {
-                        /* If the environment is ignored, locale coercion is always on */
-                        enable_coercion = 1;
-                        break;
-                    }
-                    if (option == 'c' || option == 'm') {
-                        /* -c and -m also mark the end of the Python arg list */
-                        break;
-                    }
-                }
-            }
-        }
+        enable_coercion = _parse_cmdline_for_locale_coercion(argc, argv);
     }
     if (enable_coercion < 0) {
         const char *coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
@@ -414,6 +435,9 @@ _Py_CoerceLegacyLocale(const char **coercion_target,
 #ifdef PY_COERCE_C_LOCALE
     char *oldloc = NULL;
 
+    /* Everything the raw allocator needs is statically allocated, so it can
+     * be used here to preserve the original locale for possible restoration.
+     */
     oldloc = _PyMem_RawStrdup(setlocale(LC_CTYPE, NULL));
     if (oldloc == NULL) {
         return -1;
@@ -472,9 +496,6 @@ _Py_SetLocaleFromEnv(int category)
 #ifdef __ANDROID__
     const char *locale;
     const char **pvar;
-#ifdef PY_COERCE_C_LOCALE
-    const char *coerce_c_locale;
-#endif
     const char *utf8_locale = "C.UTF-8";
     const char *env_var_set[] = {
         "LC_ALL",
@@ -504,8 +525,7 @@ _Py_SetLocaleFromEnv(int category)
      * string, the implementation-defined default locale shall be used." */
 
 #ifdef PY_COERCE_C_LOCALE
-    coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
-    if (coerce_c_locale == NULL || strcmp(coerce_c_locale, "0") != 0) {
+    if (_Py_LegacyLocaleCoercionEnabled(0, NULL)) {
         /* Some other ported code may check the environment variables (e.g. in
          * extension modules), so we make sure that they match the locale
          * configuration */
@@ -515,6 +535,7 @@ _Py_SetLocaleFromEnv(int category)
         }
     }
 #endif
+
     res = setlocale(category, utf8_locale);
 #else /* !defined(__ANDROID__) */
     res = setlocale(category, "");

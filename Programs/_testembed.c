@@ -663,6 +663,7 @@ static int test_init_api_does_not_coerce_c_locale(void)
     putenv("PYTHONCOERCECLOCALE=1");
     putenv("LANG=C");
     putenv("LC_CTYPE=C");
+    putenv("LC_ALL=");
     _testembed_Py_Initialize();
     Py_Finalize();
     return _c_locale_is_active() ? 0 : -1;
@@ -676,6 +677,7 @@ static int test_main_api_does_not_coerce_c_locale(void)
     putenv("PYTHONCOERCECLOCALE=1");
     putenv("LANG=C");
     putenv("LC_CTYPE=C");
+    putenv("LC_ALL=");
     result = Py_Main(Py_ARRAY_LENGTH(argv), argv);
     if (result) {
         return result;

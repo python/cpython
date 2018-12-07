@@ -856,31 +856,6 @@ get_env_flag(_PyCoreConfig *config, int *flag, const char *name)
 }
 
 static _PyInitError
-config_read_unconditional_env_vars(_PyCoreConfig *config)
-{
-    if (config->warn_on_c_locale < 0) {
-        /* Special case: similar to the C level locale configuration variables
-        * like LANG, LC_CTYPE, and LC_ALL, PYTHONCOERCECLOCALE gets processed
-        * even when the environment is otherwise ignored.
-        *
-        * At the runtime level, we only need to determine whether to emit a
-        * warning or not - actually coercing the legacy C locale (or not) is
-        * the responsibility of the embedding application.
-        */
-        const char *env = getenv("PYTHONCOERCECLOCALE");
-        if (env) {
-            if (strcmp(env, "warn") == 0) {
-                config->warn_on_c_locale = 1;
-            } else {
-                config->warn_on_c_locale = 0;
-            }
-        }
-    }
-
-    return _Py_INIT_OK();
-}
-
-static _PyInitError
 config_read_env_vars(_PyCoreConfig *config)
 {
     /* Get environment variables */
@@ -913,6 +888,17 @@ config_read_env_vars(_PyCoreConfig *config)
     get_env_flag(config, &config->legacy_windows_stdio,
                  "PYTHONLEGACYWINDOWSSTDIO");
 #endif
+
+    if (config->warn_on_c_locale < 0) {
+        const char *env = _PyCoreConfig_GetEnv(config, "PYTHONCOERCECLOCALE");
+        if (env) {
+            if (strcmp(env, "warn") == 0) {
+                config->warn_on_c_locale = 1;
+            } else {
+                config->warn_on_c_locale = 0;
+            }
+        }
+    }
 
     if (config->allocator == NULL) {
         config->allocator = _PyCoreConfig_GetEnv(config, "PYTHONMALLOC");
@@ -1345,13 +1331,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     }
 #endif
 
-    /* Read env vars that cannot be masked with -E or -I */
-    err = config_read_unconditional_env_vars(config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
-    /* Read the remaining environment variables */
+    /* Read the environment variables */
     if (config->use_environment) {
         err = config_read_env_vars(config);
         if (_Py_INIT_FAILED(err)) {
