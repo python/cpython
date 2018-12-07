@@ -815,11 +815,13 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
             }
             bufsize = newsize;
 
-            buf = PyMem_Realloc(buf, (bufsize + 1) * sizeof(wchar_t));
-            if (!buf) {
+            wchar_t *tmp = PyMem_Realloc(buf,
+                                         (bufsize + 1) * sizeof(wchar_t));
+            if (tmp == NULL) {
                 PyMem_Free(buf);
                 return NULL;
             }
+            buf = tmp;
         }
 
         subbuf = read_console_w(self->handle, bufsize - len, &n);

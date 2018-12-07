@@ -449,8 +449,9 @@ semlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (!unlink) {
         name_copy = PyMem_Malloc(strlen(name) + 1);
-        if (name_copy == NULL)
-            goto failure;
+        if (name_copy == NULL) {
+            return PyErr_NoMemory();
+        }
         strcpy(name_copy, name);
     }
 
@@ -473,7 +474,9 @@ semlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (handle != SEM_FAILED)
         SEM_CLOSE(handle);
     PyMem_Free(name_copy);
-    _PyMp_SetError(NULL, MP_STANDARD_ERROR);
+    if (!PyErr_Occurred()) {
+        _PyMp_SetError(NULL, MP_STANDARD_ERROR);
+    }
     return NULL;
 }
 

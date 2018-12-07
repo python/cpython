@@ -305,8 +305,10 @@ _ctypes_alloc_format_string_for_type(char code, int big_endian)
     }
 
     result = PyMem_Malloc(3);
-    if (result == NULL)
+    if (result == NULL) {
+        PyErr_NoMemory();
         return NULL;
+    }
 
     result[0] = big_endian ? '>' : '<';
     result[1] = pep_code;
@@ -366,8 +368,10 @@ _ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
     if (prefix)
         prefix_len += strlen(prefix);
     new_prefix = PyMem_Malloc(prefix_len);
-    if (new_prefix == NULL)
+    if (new_prefix == NULL) {
+        PyErr_NoMemory();
         return NULL;
+    }
     new_prefix[0] = '\0';
     if (prefix)
         strcpy(new_prefix, prefix);
@@ -1851,6 +1855,10 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 #else
         suffix = PyUnicode_InternFromString("_be");
 #endif
+    if (suffix == NULL) {
+        Py_DECREF(swapped_args);
+        return NULL;
+    }
 
     newname = PyUnicode_Concat(name, suffix);
     if (newname == NULL) {
