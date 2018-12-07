@@ -52,8 +52,6 @@
     <ExtensionModules Include="_asyncio;_contextvars;_ctypes;_decimal;_elementtree;_msi;_multiprocessing;_overlapped;pyexpat;_queue;select;unicodedata;winsound" />
     <!-- Extension modules that require external sources -->
     <ExternalModules Include="_bz2;_lzma;_sqlite3" />
-    <!-- venv launchers -->
-    <Projects Include="venvlauncher.vcxproj;venvwlauncher.vcxproj" />
     <!-- _ssl will build _socket as well, which may cause conflicts in parallel builds -->
     <ExtensionModules Include="_socket" Condition="!$(IncludeSSL) or !$(IncludeExternals)" />
     <ExternalModules Include="_ssl;_hashlib" Condition="$(IncludeSSL)" />
@@ -72,7 +70,6 @@
     <Projects2 Include="_freeze_importlib.vcxproj" />
     <!-- python[w].exe -->
     <Projects2 Include="python.vcxproj;pythonw.vcxproj" />
-    <Projects2 Include="python_uwp.vcxproj;pythonw_uwp.vcxproj" />
   </ItemGroup>
 
   <Target Name="Build">
