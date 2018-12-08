@@ -1544,9 +1544,15 @@ array_array_fromlist(arrayobject *self, PyObject *list)
         if (array_resize(self, old_size + n) == -1)
             return NULL;
         for (i = 0; i < n; i++) {
-            PyObject *v = PyList_GetItem(list, i);
+            PyObject *v = PyList_GET_ITEM(list, i);
             if ((*self->ob_descr->setitem)(self,
                             Py_SIZE(self) - n + i, v) != 0) {
+                array_resize(self, old_size);
+                return NULL;
+            }
+            if (n != PyList_GET_SIZE(list)) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "list changed size during iteration");
                 array_resize(self, old_size);
                 return NULL;
             }
@@ -1574,8 +1580,7 @@ array_array_tolist_impl(arrayobject *self)
         PyObject *v = getarrayitem((PyObject *)self, i);
         if (v == NULL)
             goto error;
-        if (PyList_SetItem(list, i, v) < 0)
-            goto error;
+        PyList_SET_ITEM(list, i, v);
     }
     return list;
 
