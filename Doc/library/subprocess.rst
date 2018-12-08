@@ -473,10 +473,6 @@ functions.
    child process unless explicitly passed in the ``handle_list`` element of
    :attr:`STARTUPINFO.lpAttributeList`, or by standard handle redirection.
 
-   .. versionchanged:: 3.2
-      The default for *close_fds* was changed from :const:`False` to
-      what is described above.
-
    .. versionchanged:: 3.7
       On Windows the default for *close_fds* was changed from :const:`False` to
       :const:`True` when redirecting the standard handles. It's now possible to
