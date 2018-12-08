@@ -652,10 +652,7 @@ poll_poll(pollObject *self, PyObject *args)
             goto error;
         }
         PyTuple_SET_ITEM(value, 1, num);
-        if ((PyList_SetItem(result_list, j, value)) == -1) {
-            Py_DECREF(value);
-            goto error;
-        }
+        PyList_SET_ITEM(result_list, j, value);
         i++;
     }
     return result_list;
@@ -981,10 +978,7 @@ devpoll_poll(devpollObject *self, PyObject *args)
         Py_DECREF(num2);
         if (value == NULL)
             goto error;
-        if ((PyList_SetItem(result_list, i, value)) == -1) {
-            Py_DECREF(value);
-            goto error;
-        }
+        PyList_SET_ITEM(result_list, i, value);
     }
 
     return result_list;

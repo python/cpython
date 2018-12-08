@@ -757,9 +757,13 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
                         PyMem_Free(str);
                         return NULL;
                     }
-                    PyList_SetItem(obData,
-                                   index,
-                                   PyUnicode_FromWideChar(str[index], len));
+                    PyObject *uni = PyUnicode_FromWideChar(str[index], len);
+                    if (uni == NULL) {
+                        Py_DECREF(obData);
+                        PyMem_Free(str);
+                        return NULL;
+                    }
+                    PyList_SET_ITEM(obData, index, uni);
                 }
                 PyMem_Free(str);
 
