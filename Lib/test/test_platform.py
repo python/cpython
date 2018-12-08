@@ -10,6 +10,11 @@ from unittest import mock
 from test import support
 
 class PlatformTest(unittest.TestCase):
+    def clear_caches(self):
+        platform._platform_cache.clear()
+        platform._sys_version_cache.clear()
+        platform._uname_cache = None
+
     def test_architecture(self):
         res = platform.architecture()
 
@@ -217,15 +222,16 @@ class PlatformTest(unittest.TestCase):
         res = platform.mac_ver()
 
         if platform.uname().system == 'Darwin':
-            # We're on a MacOSX system, check that
-            # the right version information is returned
-            with os.popen('sw_vers') as fd:
-                real_ver = None
-                for ln in fd:
-                    if ln.startswith('ProductVersion:'):
-                        real_ver = ln.strip().split()[-1]
-                        break
-            self.assertFalse(real_ver is None)
+            # We are on a macOS system, check that the right version
+            # information is returned
+            output = subprocess.check_output(['sw_vers'], text=True)
+            for line in output.splitlines():
+                if line.startswith('ProductVersion:'):
+                    real_ver = line.strip().split()[-1]
+                    break
+            else:
+                self.fail(f"failed to parse sw_vers output: {output!r}")
+
             result_list = res[0].split('.')
             expect_list = real_ver.split('.')
             len_diff = len(result_list) - len(expect_list)
@@ -341,6 +347,34 @@ class PlatformTest(unittest.TestCase):
         self.assertLess(V('0.4'), V('0.4.0'))
         self.assertLess(V('1.13++'), V('5.5.kw'))
         self.assertLess(V('0.960923'), V('2.2beta29'))
+
+
+    def test_macos(self):
+        self.addCleanup(self.clear_caches)
+
+        uname = ('Darwin', 'hostname', '17.7.0',
+                 ('Darwin Kernel Version 17.7.0: '
+                  'Thu Jun 21 22:53:14 PDT 2018; '
+                  'root:xnu-4570.71.2~1/RELEASE_X86_64'),
+                 'x86_64', 'i386')
+        arch = ('64bit', '')
+        with mock.patch.object(platform, 'uname', return_value=uname), \
+             mock.patch.object(platform, 'architecture', return_value=arch):
+            for mac_ver, expected_terse, expected in [
+                # darwin: mac_ver() returns empty strings
+                (('', '', ''),
+                 'Darwin-17.7.0',
+                 'Darwin-17.7.0-x86_64-i386-64bit'),
+                # macOS: mac_ver() returns macOS version
+                (('10.13.6', ('', '', ''), 'x86_64'),
+                 'macOS-10.13.6',
+                 'macOS-10.13.6-x86_64-i386-64bit'),
+            ]:
+                with mock.patch.object(platform, 'mac_ver',
+                                       return_value=mac_ver):
+                    self.clear_caches()
+                    self.assertEqual(platform.platform(terse=1), expected_terse)
+                    self.assertEqual(platform.platform(), expected)
 
 
 if __name__ == '__main__':

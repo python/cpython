@@ -2142,7 +2142,7 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     if (n > NUM_STACK_ELEMS) {
         diffs = (double *) PyObject_Malloc(n * sizeof(double));
         if (diffs == NULL) {
-            return NULL;
+            return PyErr_NoMemory();
         }
     }
     for (i=0 ; i<n ; i++) {
@@ -2199,8 +2199,9 @@ math_hypot(PyObject *self, PyObject *args)
     n = PyTuple_GET_SIZE(args);
     if (n > NUM_STACK_ELEMS) {
         coordinates = (double *) PyObject_Malloc(n * sizeof(double));
-        if (coordinates == NULL)
-            return NULL;
+        if (coordinates == NULL) {
+            return PyErr_NoMemory();
+        }
     }
     for (i=0 ; i<n ; i++) {
         item = PyTuple_GET_ITEM(args, i);
