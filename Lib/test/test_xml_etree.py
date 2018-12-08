@@ -1627,10 +1627,9 @@ class BugsTest(unittest.TestCase):
         e = ET.Element("{default}elem")
         s = ET.SubElement(e, "{default}elem")
         s = ET.SubElement(e, "elem") # unprefixed name
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(ValueError,
+                'cannot use non-qualified name.* with default_namespace option'):
             serialize(e, default_namespace="default") # 3
-        self.assertEqual(str(cm.exception),
-                'cannot use non-qualified names with default_namespace option')
 
     def test_bug_200709_register_namespace(self):
         e = ET.Element("{http://namespace.invalid/does/not/exist/}title")

@@ -864,8 +864,8 @@ def _namespaces(elem, default_namespace=None):
                 if default_namespace:
                     # FIXME: can this be handled in XML 1.0?
                     raise ValueError(
-                        "cannot use non-qualified names with "
-                        "default_namespace option"
+                        "cannot use non-qualified name (%s) with "
+                        "default_namespace option" % qname
                         )
                 qnames[qname] = qname
         except TypeError:
