@@ -71,15 +71,12 @@ copy_grouping(const char* s)
     do {
         i++;
         val = PyLong_FromLong(s[i]);
-        if (!val)
-            break;
+        if (val == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
         PyList_SET_ITEM(result, i, val);
     } while (s[i] != '\0' && s[i] != CHAR_MAX);
-
-    if (!val) {
-        Py_DECREF(result);
-        return NULL;
-    }
 
     return result;
 }
