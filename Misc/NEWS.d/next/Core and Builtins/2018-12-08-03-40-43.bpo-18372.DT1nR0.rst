@@ -1,0 +1,2 @@
+Add missing :c:func:`PyObject_GC_Track` calls in the :mod:`pickle` module.
+Patch by Zackery Spytz.
