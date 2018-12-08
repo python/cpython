@@ -639,6 +639,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     server_version = "SimpleHTTP/" + __version__
 
+    extensions_map = {
+        '': 'application/octet-stream', # Default,
+        **mimetypes.types_map
+    }
+
     def __init__(self, *args, directory=None, **kwargs):
         if directory is None:
             directory = os.getcwd()
@@ -857,6 +862,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         slow) to look inside the data to make a better guess.
 
         """
+        if not mimetypes.inited:
+            mimetypes.init() # try to read system mime.types
+            self.extensions_map.update(mimetypes.types_map)
 
         base, ext = posixpath.splitext(path)
         if ext in self.extensions_map:
@@ -866,16 +874,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             return self.extensions_map[ext]
         else:
             return self.extensions_map['']
-
-    if not mimetypes.inited:
-        mimetypes.init() # try to read system mime.types
-    extensions_map = mimetypes.types_map.copy()
-    extensions_map.update({
-        '': 'application/octet-stream', # Default
-        '.py': 'text/plain',
-        '.c': 'text/plain',
-        '.h': 'text/plain',
-        })
 
 
 # Utilities for CGIHTTPRequestHandler
