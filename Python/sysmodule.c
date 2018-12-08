@@ -1555,7 +1555,7 @@ makepathobject(char *path, int delim)
             Py_DECREF(v);
             return NULL;
         }
-        PyList_SetItem(v, i, w);
+        PyList_SET_ITEM(v, i, w);
         if (*p == '\0')
             break;
         path = p+1;

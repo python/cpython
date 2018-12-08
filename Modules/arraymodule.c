@@ -1344,9 +1344,22 @@ array_fromlist(arrayobject *self, PyObject *list)
         Py_SIZE(self) += n;
         self->allocated = Py_SIZE(self);
         for (i = 0; i < n; i++) {
-            PyObject *v = PyList_GetItem(list, i);
+            PyObject *v = PyList_GET_ITEM(list, i);
             if ((*self->ob_descr->setitem)(self,
                             Py_SIZE(self) - n + i, v) != 0) {
+                Py_SIZE(self) -= n;
+                if (itemsize && (Py_SIZE(self) > PY_SSIZE_T_MAX / itemsize)) {
+                    return PyErr_NoMemory();
+                }
+                PyMem_RESIZE(item, char,
+                                  Py_SIZE(self) * itemsize);
+                self->ob_item = item;
+                self->allocated = Py_SIZE(self);
+                return NULL;
+            }
+            if (n != PyList_GET_SIZE(list)) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "list changed size during iteration");
                 Py_SIZE(self) -= n;
                 if (itemsize && (Py_SIZE(self) > PY_SSIZE_T_MAX / itemsize)) {
                     return PyErr_NoMemory();
@@ -1383,7 +1396,7 @@ array_tolist(arrayobject *self, PyObject *unused)
             Py_DECREF(list);
             return NULL;
         }
-        PyList_SetItem(list, i, v);
+        PyList_SET_ITEM(list, i, v);
     }
     return list;
 }
