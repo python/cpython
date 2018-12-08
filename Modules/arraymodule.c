@@ -1550,6 +1550,12 @@ array_array_fromlist(arrayobject *self, PyObject *list)
                 array_resize(self, old_size);
                 return NULL;
             }
+            if (n != PyList_GET_SIZE(list)) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "list changed size during iteration");
+                array_resize(self, old_size);
+                return NULL;
+            }
         }
     }
     Py_RETURN_NONE;
