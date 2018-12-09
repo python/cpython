@@ -202,7 +202,7 @@ class _ConnectionBase:
         """Send a (picklable) object"""
         self._check_closed()
         self._check_writable()
-        self._send_bytes(context.reduction.ForkingPickler.dumps(obj))
+        self._send_bytes(context.reduction.dumps(obj))
 
     def recv_bytes(self, maxlength=None):
         """
@@ -247,7 +247,7 @@ class _ConnectionBase:
         self._check_closed()
         self._check_readable()
         buf = self._recv_bytes()
-        return context.reduction.ForkingPickler.loads(buf.getbuffer())
+        return context.reduction.loads(buf.getbuffer())
 
     def poll(self, timeout=0.0):
         """Whether there is any input available to be read"""

@@ -1,9 +1,12 @@
 import os
+import pickle
 import sys
 import threading
 
 from . import process
 from . import reduction
+
+original_reducer = reduction
 
 __all__ = ()
 
@@ -206,6 +209,17 @@ class BaseContext(object):
         return globals().get('reduction')
 
     def set_reducer(self, reduction):
+        if reduction is original_reducer:
+            globals()['reduction'] = reduction
+            return
+
+        if not isinstance(reduction, original_reducer.AbstractReducer):
+            raise TypeError("Custom reducers must subclass "
+                            "multiprocessing.reduction.AbstractReducer")
+        if not isinstance(reduction.get_pickler_class(), pickle.Pickler):
+            raise TypeError("Custom reducers must return a subclass of "
+                            "pickler.Pickler in the get_pickler_class() method")
+
         globals()['reduction'] = reduction
 
     def _check_available(self):
