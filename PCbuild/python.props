@@ -82,9 +82,13 @@
 
     <!-- The minimum allowed SDK version to use for building -->
     <DefaultWindowsSDKVersion>10.0.10586.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$(_RegistryVersion.CompareTo($(DefaultWindowsSDKVersion))) >= 0">$(_RegistryVersion)</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$([System.Version]::Parse($(_RegistryVersion))) > $([System.Version]::Parse($(DefaultWindowsSDKVersion)))">$(_RegistryVersion)</DefaultWindowsSDKVersion>
   </PropertyGroup>
   
+  <PropertyGroup Condition="$(WindowsTargetPlatformVersion) == ''">
+    <WindowsTargetPlatformVersion>$(DefaultWindowsSDKVersion)</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(OverrideVersion)' == ''">
     <!--
     Read version information from Include\patchlevel.h. The following properties are set:
@@ -190,5 +194,6 @@
     <Message Importance="high" Text="Field3Value:         $(Field3Value)" />
     <Message Importance="high" Text="SysWinVer:           $(SysWinVer)" />
     <Message Importance="high" Text="PyDllName:           $(PyDllName)" />
+    <Message Importance="high" Text="WindowsSdkVersion:   $(TargetPlatformVersion)" />
   </Target>
 </Project>
