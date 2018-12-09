@@ -836,8 +836,10 @@ def _get_writer(file_or_filename, encoding):
 def _namespaces(elem, default_namespace=None):
     # identify namespaces used in this tree
 
-    # maps qnames to *encoded* prefix:local names
-    qnames = {None: None}
+    # maps qnames to *encoded* prefix:local names,
+    # value is a pair of prefix:local strings,
+    # second value is for attribute names
+    qnames = {None: (None, None)}
 
     # maps uri:s to prefixes
     namespaces = {}
@@ -870,7 +872,8 @@ def _namespaces(elem, default_namespace=None):
 
     def add_qname(qname):
         if qname not in qnames:
-            qnames[qname] = serialize_qname(qname)
+            serialized = serialize_qname(qname)
+            qnames[qname] = (serialized, serialized)
 
     # populate qname and namespaces table
     for elem in elem.iter():
@@ -903,7 +906,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
     elif tag is ProcessingInstruction:
         write("<?%s?>" % text)
     else:
-        tag = qnames[tag]
+        tag = qnames[tag][0]
         if tag is None:
             if text:
                 write(_escape_cdata(text))
@@ -927,10 +930,10 @@ def _serialize_xml(write, elem, qnames, namespaces,
                     if isinstance(k, QName):
                         k = k.text
                     if isinstance(v, QName):
-                        v = qnames[v.text]
+                        v = qnames[v.text][0]
                     else:
                         v = _escape_attrib(v)
-                    write(" %s=\"%s\"" % (qnames[k], v))
+                    write(" %s=\"%s\"" % (qnames[k][1], v))
             if text or len(elem) or not short_empty_elements:
                 write(">")
                 if text:
@@ -960,7 +963,7 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
     elif tag is ProcessingInstruction:
         write("<?%s?>" % _escape_cdata(text))
     else:
-        tag = qnames[tag]
+        tag = qnames[tag][0]
         if tag is None:
             if text:
                 write(_escape_cdata(text))
@@ -983,11 +986,11 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
                     if isinstance(k, QName):
                         k = k.text
                     if isinstance(v, QName):
-                        v = qnames[v.text]
+                        v = qnames[v.text][0]
                     else:
                         v = _escape_attrib_html(v)
                     # FIXME: handle boolean attributes
-                    write(" %s=\"%s\"" % (qnames[k], v))
+                    write(" %s=\"%s\"" % (qnames[k][1], v))
             write(">")
             ltag = tag.lower()
             if text:
