@@ -1,0 +1,2 @@
+test_multiprocessing_fork may crash on recent versions of macOS.  Until the
+issue is resolved, skip the test on macOS.
