@@ -903,9 +903,10 @@ def _namespaces(elem, default_namespace=None):
         if isinstance(text, QName):
             add_qname(text.text)
 
+    prefix_map = {prefix: ns for ns, prefix in namespaces.items()}
     if default_namespace:
-        namespaces[default_namespace] = ""
-    return qnames, namespaces
+        prefix_map[""] = default_namespace
+    return qnames, prefix_map
 
 def _serialize_xml(write, elem, qnames, namespaces,
                    short_empty_elements, **kwargs):
@@ -928,8 +929,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
             items = list(elem.items())
             if items or namespaces:
                 if namespaces:
-                    for v, k in sorted(namespaces.items(),
-                                       key=lambda x: x[1]):  # sort on prefix
+                    for k, v in sorted(namespaces.items()):
                         if k:
                             k = ":" + k
                         write(" xmlns%s=\"%s\"" % (
@@ -984,8 +984,7 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
             items = list(elem.items())
             if items or namespaces:
                 if namespaces:
-                    for v, k in sorted(namespaces.items(),
-                                       key=lambda x: x[1]):  # sort on prefix
+                    for k, v in sorted(namespaces.items()):
                         if k:
                             k = ":" + k
                         write(" xmlns%s=\"%s\"" % (
