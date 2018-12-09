@@ -374,7 +374,9 @@ class Request:
             )
 
         if type(data) is dict:
-            if any(not isinstance(k, bytes) for k in data.keys()):
+            if any(
+                    not (isinstance(k, bytes) or isinstance(k, memoryview))
+                    for k in data.keys()):
                 raise TypeError("Key should be of type bytes in POST data")
 
         if data != self._data:
