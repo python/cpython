@@ -846,30 +846,27 @@ def _namespaces(elem, default_namespace=None):
 
     def add_qname(qname):
         # calculate serialized qname representation
-        try:
-            if qname[:1] == "{":
-                uri, local = qname[1:].rsplit("}", 1)
-                prefix = namespaces.get(uri)
+        if qname[:1] == "{":
+            uri, local = qname[1:].rsplit("}", 1)
+            prefix = namespaces.get(uri)
+            if prefix is None:
+                prefix = _namespace_map.get(uri)
                 if prefix is None:
-                    prefix = _namespace_map.get(uri)
-                    if prefix is None:
-                        prefix = "ns%d" % len(namespaces)
-                    if prefix != "xml":
-                        namespaces[uri] = prefix
-                if prefix:
-                    qnames[qname] = "%s:%s" % (prefix, local)
-                else:
-                    qnames[qname] = local # default element
+                    prefix = "ns%d" % len(namespaces)
+                if prefix != "xml":
+                    namespaces[uri] = prefix
+            if prefix:
+                qnames[qname] = "%s:%s" % (prefix, local)
             else:
-                if default_namespace:
-                    # FIXME: can this be handled in XML 1.0?
-                    raise ValueError(
-                        "cannot use non-qualified name (%s) with "
-                        "default_namespace option" % qname
-                        )
-                qnames[qname] = qname
-        except TypeError:
-            _raise_serialization_error(qname)
+                qnames[qname] = local # default element
+        else:
+            if default_namespace:
+                # FIXME: can this be handled in XML 1.0?
+                raise ValueError(
+                    "cannot use non-qualified name (%s) with "
+                    "default_namespace option" % qname
+                    )
+            qnames[qname] = qname
 
     # populate qname and namespaces table
     for elem in elem.iter():
@@ -885,6 +882,8 @@ def _namespaces(elem, default_namespace=None):
         for key, value in elem.items():
             if isinstance(key, QName):
                 key = key.text
+            elif not isinstance(key, str):
+                _raise_serialization_error(key)
             if key not in qnames:
                 add_qname(key)
             if isinstance(value, QName) and value.text not in qnames:
