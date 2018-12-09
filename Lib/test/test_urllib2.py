@@ -1918,7 +1918,7 @@ class RequestTests(unittest.TestCase):
                 'http://docs.python.org/library/urllib2.html#OK',
                 'http://www.python.org/?qs=query#fragment=true']
         for url in urls:
-            req = Request(url, None)
+            req = Request(url)
             self.assertEqual(req.get_full_url(), req.full_url)
 
 
