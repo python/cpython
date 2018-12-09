@@ -1,0 +1,1 @@
+Removed redundant try-except block in urllib
