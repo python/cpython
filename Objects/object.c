@@ -17,7 +17,6 @@ _Py_IDENTIFIER(Py_Repr);
 _Py_IDENTIFIER(__bytes__);
 _Py_IDENTIFIER(__dir__);
 _Py_IDENTIFIER(__isabstractmethod__);
-_Py_IDENTIFIER(builtins);
 
 #ifdef Py_REF_DEBUG
 Py_ssize_t _Py_RefTotal;
@@ -1145,7 +1144,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     dictptr = _PyObject_GetDictPtr(obj);
     if (dictptr != NULL && (dict = *dictptr) != NULL) {
         Py_INCREF(dict);
-        attr = PyDict_GetItem(dict, name);
+        attr = PyDict_GetItemWithError(dict, name);
         if (attr != NULL) {
             Py_INCREF(attr);
             *method = attr;
@@ -1153,7 +1152,13 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
             Py_XDECREF(descr);
             return 0;
         }
-        Py_DECREF(dict);
+        else {
+            Py_DECREF(dict);
+            if (PyErr_Occurred()) {
+                Py_XDECREF(descr);
+                return 0;
+            }
+        }
     }
 
     if (meth_found) {
@@ -1250,13 +1255,23 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     }
     if (dict != NULL) {
         Py_INCREF(dict);
-        res = PyDict_GetItem(dict, name);
+        res = PyDict_GetItemWithError(dict, name);
         if (res != NULL) {
             Py_INCREF(res);
             Py_DECREF(dict);
             goto done;
         }
-        Py_DECREF(dict);
+        else {
+            Py_DECREF(dict);
+            if (PyErr_Occurred()) {
+                if (suppress && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                    PyErr_Clear();
+                }
+                else {
+                    goto done;
+                }
+            }
+        }
     }
 
     if (f != NULL) {
@@ -2061,8 +2076,11 @@ Py_ReprEnter(PyObject *obj)
        early on startup. */
     if (dict == NULL)
         return 0;
-    list = _PyDict_GetItemId(dict, &PyId_Py_Repr);
+    list = _PyDict_GetItemIdWithError(dict, &PyId_Py_Repr);
     if (list == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
         list = PyList_New(0);
         if (list == NULL)
             return -1;
@@ -2094,7 +2112,7 @@ Py_ReprLeave(PyObject *obj)
     if (dict == NULL)
         goto finally;
 
-    list = _PyDict_GetItemId(dict, &PyId_Py_Repr);
+    list = _PyDict_GetItemIdWithError(dict, &PyId_Py_Repr);
     if (list == NULL || !PyList_Check(list))
         goto finally;
 
