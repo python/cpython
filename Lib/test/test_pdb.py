@@ -1168,6 +1168,28 @@ def test_issue22577():
     (Pdb) continue
     """
 
+def test_local_variable_change():
+    """Test that local variable change persists after step.
+
+    >>> def test_function(x):
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     print(x)
+
+    >>> with PdbTestInput(['x = 123',
+    ...                   'step',
+    ...                   'continue']):
+    ...     test_function(1)
+    > <doctest test.test_pdb.test_local_variable_change[0]>(3)test_function()
+    -> print(x)
+    (Pdb) x = 123
+    (Pdb) step
+    123
+    --Return--
+    > <doctest test.test_pdb.test_local_variable_change[0]>(3)test_function()->None
+    -> print(x)
+    (Pdb) continue
+    """
+
 
 class PdbTestCase(unittest.TestCase):
     def tearDown(self):
