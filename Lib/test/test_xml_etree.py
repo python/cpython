@@ -1619,9 +1619,9 @@ class BugsTest(unittest.TestCase):
         s = ET.SubElement(e, "{default}elem")
         s = ET.SubElement(e, "{not-default}elem")
         self.assertEqual(serialize(e, default_namespace="default"), # 2
-            '<elem xmlns="default" xmlns:ns1="not-default">'
+            '<elem xmlns="default" xmlns:ns0="not-default">'
             '<elem />'
-            '<ns1:elem />'
+            '<ns0:elem />'
             '</elem>')
 
         e = ET.Element("{default}elem")

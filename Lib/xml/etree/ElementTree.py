@@ -843,20 +843,21 @@ def _namespaces(elem, default_namespace=None):
 
     # maps uri:s to prefixes
     namespaces = {}
-    if default_namespace:
-        namespaces[default_namespace] = ""
 
     def serialize_qname(qname):
         # calculate serialized qname representation
         if qname[:1] == "{":
             uri, local = qname[1:].rsplit("}", 1)
-            prefix = namespaces.get(uri)
-            if prefix is None:
-                prefix = _namespace_map.get(uri)
+            if uri == default_namespace:
+                prefix = ""
+            else:
+                prefix = namespaces.get(uri)
                 if prefix is None:
-                    prefix = "ns%d" % len(namespaces)
-                if prefix != "xml":
-                    namespaces[uri] = prefix
+                    prefix = _namespace_map.get(uri)
+                    if prefix is None:
+                        prefix = "ns%d" % len(namespaces)
+                    if prefix != "xml":
+                        namespaces[uri] = prefix
             if prefix:
                 return "%s:%s" % (prefix, local)
             else:
@@ -901,6 +902,9 @@ def _namespaces(elem, default_namespace=None):
         text = elem.text
         if isinstance(text, QName):
             add_qname(text.text)
+
+    if default_namespace:
+        namespaces[default_namespace] = ""
     return qnames, namespaces
 
 def _serialize_xml(write, elem, qnames, namespaces,
