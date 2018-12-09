@@ -7,7 +7,7 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-from abc import ABCMeta
+import abc
 import copyreg
 import functools
 import io
@@ -53,11 +53,25 @@ class ForkingPickler(pickle.Pickler):
 
     loads = pickle.loads
 
-register = ForkingPickler.register
+
+
+def register(type_, reduce_):
+    return ForkingPickler.register(type_, reduce_)
+
 
 def dump(obj, file, protocol=None):
     '''Replacement for pickle.dump() using ForkingPickler.'''
     ForkingPickler(file, protocol).dump(obj)
+
+
+def dumps(obj, protocol=None):
+    return ForkingPickler.dumps(obj, protocol=protocol)
+
+
+def loads(s, *, fix_imports=True, encoding="ASCII", errors="strict"):
+    return ForkingPickler.loads(s, fix_imports=fix_imports,
+                                   encoding=encoding, errors=errors)
+
 
 #
 # Platform specific definitions
@@ -248,30 +262,27 @@ else:
     register(socket.socket, _reduce_socket)
 
 
-class AbstractReducer(metaclass=ABCMeta):
+class AbstractReducer(metaclass=abc.ABCMeta):
     '''Abstract base class for use in implementing a Reduction class
     suitable for use in replacing the standard reduction mechanism
     used in multiprocessing.'''
-    ForkingPickler = ForkingPickler
-    register = register
-    dump = dump
     send_handle = send_handle
     recv_handle = recv_handle
 
     if sys.platform == 'win32':
-        steal_handle = steal_handle
-        duplicate = duplicate
+        steal_handle = staticmethod(steal_handle)
+        duplicate = staticmethod(duplicate)
         DupHandle = DupHandle
     else:
-        sendfds = sendfds
-        recvfds = recvfds
-        DupFd = DupFd
+        sendfds = staticmethod(sendfds)
+        recvfds = staticmethod(recvfds)
+        DupFd = staticmethod(DupFd)
 
-    _reduce_method = _reduce_method
-    _reduce_method_descriptor = _reduce_method_descriptor
-    _rebuild_partial = _rebuild_partial
-    _reduce_socket = _reduce_socket
-    _rebuild_socket = _rebuild_socket
+    _reduce_method = staticmethod(_reduce_method)
+    _reduce_method_descriptor = staticmethod(_reduce_method_descriptor)
+    _rebuild_partial = staticmethod(_rebuild_partial)
+    _reduce_socket = staticmethod(_reduce_socket)
+    _rebuild_socket = staticmethod(_rebuild_socket)
 
     def __init__(self, *args):
         register(type(_C().f), _reduce_method)
@@ -279,3 +290,28 @@ class AbstractReducer(metaclass=ABCMeta):
         register(type(int.__add__), _reduce_method_descriptor)
         register(functools.partial, _reduce_partial)
         register(socket.socket, _reduce_socket)
+
+    @property
+    def HAVE_SEND_HANDLE(self):
+        import sys
+        return (sys.platform == 'win32' or
+                (hasattr(socket, 'CMSG_LEN') and
+                 hasattr(socket, 'SCM_RIGHTS') and
+                 hasattr(socket.socket, 'sendmsg')))
+
+    @abc.abstractmethod
+    def get_pickler_class(self):
+        pass
+
+    def register(self, type_, reduce_):
+        return self.get_pickler_class().register(type_, reduce_)
+
+    def dump(self, obj, file, protocol=None):
+        self.get_pickler_class()(file, protocol).dump(obj)
+
+    def dumps(self, obj, protocol=None):
+        return self.get_pickler_class().dumps(obj, protocol=protocol)
+
+    def loads(self, s, *, fix_imports=True, encoding="ASCII", errors="strict"):
+        return self.get_pickler_class().loads(s, fix_imports=fix_imports,
+                                              encoding=encoding, errors=errors)

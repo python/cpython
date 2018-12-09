@@ -1209,17 +1209,10 @@ the reduction mechanism:
    Abstract base class for use in implementing a Reduction class suitable for use
    in replacing the standard reduction mechanism used in multiprocessing.
 
-   .. class:: ForkingPickler
+   .. function:: get_pickler_class():
 
-      A subclass of :class:`pickle.Pickler` to be used by multiprocessing.
-
-   .. function:: dump(obj, file, protocol=None)
-
-      Replacement for pickle.dump() to be used by multiprocessing.
-
-   .. function:: register(cls, type, reduce)
-
-      Register a reduce function for a type to be used by multiprocessing.
+      This method must return a subclass of :class:`pickle.Pickler` to be used by
+      the multiprocessing reducer mechanism.
 
 .. currentmodule:: multiprocessing
 
@@ -1238,26 +1231,17 @@ version 2 to be able to communicate with a Python 2.x programs.::
 
    import multiprocessing
    from multiprocessing.reduction import AbstractReducer, ForkingPickler
-   import pickle
 
-   class ForkingPickler2(ForkingPickler):
+   class ForkingPicklerProtocol2(ForkingPickler):
        @classmethod
        def dumps(cls, obj, pickle_protocol=2):
            return super().dumps(obj, protocol=pickle_protocol)
 
-      loads = pickle.loads
+   class PickleProtocol2Reducer(AbstractReducer):
+       def get_pickler_class(self):
+           return ForkingPicklerProtocol2
 
-
-   def dump(obj, file, protocol=2):
-       return ForkingPickler2(file, protocol).dump(obj)
-
-
-   class Pickle2Reducer(AbstractReducer):
-       ForkingPickler = ForkingPickler2
-       register = ForkingPickler2.register
-       dump = dump
-
-   multiprocessing.set_reducer(Pickle2Reducer)
+   multiprocessing.set_reducer(PickleProtocol2Reducer)
 
 Synchronization primitives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

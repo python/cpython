@@ -5429,10 +5429,15 @@ class _TestCustomReducer(BaseTestCase):
 
     def setUp(self):
         self.original_reducer = multiprocessing.get_reducer()
-        self.spy = unittest.mock.MagicMock(spec_set=self.original_reducer,
-                                           wraps=self.original_reducer)
-        multiprocessing.set_reducer(self.spy)
+        spy = unittest.mock.MagicMock(spec_set=self.original_reducer.ForkingPickler,
+                                      wraps=self.original_reducer.ForkingPickler)
+        self.spy = spy
 
+        class SpyReducer(reduction.AbstractReducer):
+            def get_pickler_class(self):
+                return spy
+
+        multiprocessing.set_reducer(SpyReducer())
 
     def tearDown(self):
         multiprocessing.set_reducer(self.original_reducer)
@@ -5448,8 +5453,8 @@ class _TestCustomReducer(BaseTestCase):
         if self.TYPE == 'processes':
             self.assertRaises(OSError, l.accept)
 
-        self.assertEqual(self.spy.ForkingPickler.dumps.call_count, 1)
-        self.assertEqual(self.spy.ForkingPickler.loads.call_count, 1)
+        self.assertEqual(self.spy.dumps.call_count, 1)
+        self.assertEqual(self.spy.loads.call_count, 1)
 
     @classmethod
     def _put_and_get_in_queue(cls, queue, parent_can_continue):
@@ -5472,9 +5477,32 @@ class _TestCustomReducer(BaseTestCase):
         p.join(timeout=TIMEOUT3)
         self.assertEqual(p.exitcode, 0)
         self.assertEqual(element, "Something")
-        self.assertEqual(self.spy.ForkingPickler.dumps.call_count, 1)
-        self.assertEqual(self.spy.ForkingPickler.loads.call_count, 1)
+        self.assertEqual(self.spy.dumps.call_count, 1)
+        self.assertEqual(self.spy.loads.call_count, 1)
         close_queue(queue)
+
+
+class _TestCustomReducerInvalidParameters(BaseTestCase):
+    def test_setting_invalid_reducer(self):
+        class BadReducer():
+            def get_pickler_class(self):
+                return
+
+        with self.assertRaises(TypeError):
+            multiprocessing.set_reducer(BadReducer())
+
+
+    def test_setting_valid_reducer_that_returns_ivalid_pickler(self):
+
+        class PicklerClass:
+            pass
+
+        class BadReducer(reduction.AbstractReducer):
+            def get_pickler_class(self):
+                return PicklerClass
+
+        with self.assertRaises(TypeError):
+            multiprocessing.set_reducer(BadReducer())
 
 #
 # Mixins
