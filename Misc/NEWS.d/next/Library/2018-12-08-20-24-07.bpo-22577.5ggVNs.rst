@@ -1,0 +1,2 @@
+Fix the loss of changes to local variables after a jump command in a PDB
+session. Patch by Henry Chen.
