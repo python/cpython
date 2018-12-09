@@ -51,7 +51,9 @@ This module provides an interface to the mechanisms used to implement the
    places are searched: the function tries to find a built-in module with the
    given name (:const:`C_BUILTIN`), then a frozen module (:const:`PY_FROZEN`),
    and on some systems some other places are looked in as well (on Windows, it
-   looks in the registry which may point to a specific file).
+   looks in the registry which may point to a specific file). If the path in
+   the built-in module or frozen module, the function will return None for *file*
+   and *file_path*.
 
    Otherwise, *path* must be a list of directory names; each directory is
    searched for files with any of the suffixes returned by :func:`get_suffixes`
@@ -66,12 +68,12 @@ This module provides an interface to the mechanisms used to implement the
    contained in the list returned by :func:`get_suffixes` describing the kind of
    module found.
 
-   If the module does not live in a file, the returned *file* is ``None``,
-   *pathname* is the empty string, and the *description* tuple contains empty
-   strings for its suffix and mode; the module type is indicated as given in
-   parentheses above.  If the search is unsuccessful, :exc:`ImportError` is
-   raised.  Other exceptions indicate problems with the arguments or
-   environment.
+   If the module does not live in a file or the path is in the built-in module or
+   frozen module, the returned *file* is ``None``, *pathname* is the empty string,
+   and the *description* tuple contains empty strings for its suffix and mode;
+   the module type is indicated as given in parentheses above.  If the search
+   is unsuccessful, :exc:`ImportError` is raised.  Other exceptions indicate
+   problems with the arguments or environment.
 
    If the module is a package, *file* is ``None``, *pathname* is the package
    path and the last item in the *description* tuple is :const:`PKG_DIRECTORY`.
