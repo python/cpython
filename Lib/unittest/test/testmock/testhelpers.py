@@ -918,6 +918,7 @@ class SpecSignatureTest(unittest.TestCase):
         mock = create_autospec(foo)
         assert inspect.getfullargspec(mock) == inspect.getfullargspec(foo)
         mock(1, 2, c=3)
+        mock(1, c=3)
         self.assertRaises(TypeError, mock, 1)
         self.assertRaises(TypeError, mock, 1, 2, 3, c=4)
 
@@ -930,6 +931,8 @@ class SpecSignatureTest(unittest.TestCase):
 
         partial_object = functools.partial(foo, 1)
         mock = create_autospec(partial_object)
+        mock(1, c=1)
+        mock(c=1)
         assert inspect.getfullargspec(mock) == inspect.getfullargspec(partial_object)
         self.assertRaises(TypeError, partial_object)
 
@@ -942,6 +945,7 @@ class SpecSignatureTest(unittest.TestCase):
 
         mock = create_autospec(Bar)
         mock.baz(1, c=2)
+        mock.baz(c=2)
         self.assertRaises(TypeError, mock.baz, 1)
         self.assertRaises(TypeError, mock.baz, 1, 2, c=2)
 
