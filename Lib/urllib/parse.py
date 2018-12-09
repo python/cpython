@@ -872,19 +872,16 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
     else:
         # It's a bother at times that strings and string-like objects are
         # sequences.
-        try:
-            # non-sequence items should not work with len()
-            # non-empty strings will fail this
-            if len(query) and not isinstance(query[0], tuple):
-                raise TypeError
-            # Zero-length sequences of all types will get here and succeed,
-            # but that's a minor nit.  Since the original implementation
-            # allowed empty dicts that type of behavior probably should be
-            # preserved for consistency
-        except TypeError:
+        # non-sequence items should not work with len()
+        # non-empty strings will fail this
+        if len(query) and not isinstance(query[0], tuple):
             ty, va, tb = sys.exc_info()
             raise TypeError("not a valid non-string sequence "
                             "or mapping object").with_traceback(tb)
+        # Zero-length sequences of all types will get here and succeed,
+        # but that's a minor nit.  Since the original implementation
+        # allowed empty dicts that type of behavior probably should be
+        # preserved for consistency
 
     l = []
     if not doseq:
