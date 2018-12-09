@@ -1144,6 +1144,30 @@ def test_pdb_issue_20766():
     pdb 2: <built-in function default_int_handler>
     """
 
+def test_issue22577():
+    """Test that local variable change not lost after jump.
+
+    >>> def test_function(x):
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     lineno = 3
+    ...     lineno = 4
+
+    >>> with PdbTestInput(['x = 123',
+    ...                    'jump 4',
+    ...                    'x',
+    ...                    'continue']):
+    ...     test_function(1)
+    > <doctest test.test_pdb.test_issue22577[0]>(3)test_function()
+    -> lineno = 3
+    (Pdb) x = 123
+    (Pdb) jump 4
+    > <doctest test.test_pdb.test_issue22577[0]>(4)test_function()
+    -> lineno = 4
+    (Pdb) x
+    123
+    (Pdb) continue
+    """
+
 
 class PdbTestCase(unittest.TestCase):
     def tearDown(self):

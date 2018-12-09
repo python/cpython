@@ -217,7 +217,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # The f_locals dictionary is updated from the actual frame
         # locals whenever the .f_locals accessor is called, so we
         # cache it here to ensure that modifications are not overwritten.
-        self.curframe_locals = self.curframe.f_locals
+        self.curframe_locals = dict(self.curframe.f_locals)
         return self.execRcLines()
 
     # Can be executed earlier than 'setup' if desired
