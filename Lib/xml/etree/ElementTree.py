@@ -844,7 +844,7 @@ def _namespaces(elem, default_namespace=None):
     if default_namespace:
         namespaces[default_namespace] = ""
 
-    def add_qname(qname):
+    def serialize_qname(qname):
         # calculate serialized qname representation
         if qname[:1] == "{":
             uri, local = qname[1:].rsplit("}", 1)
@@ -856,9 +856,9 @@ def _namespaces(elem, default_namespace=None):
                 if prefix != "xml":
                     namespaces[uri] = prefix
             if prefix:
-                qnames[qname] = "%s:%s" % (prefix, local)
+                return "%s:%s" % (prefix, local)
             else:
-                qnames[qname] = local # default element
+                return local # default element
         else:
             if default_namespace:
                 # FIXME: can this be handled in XML 1.0?
@@ -866,17 +866,19 @@ def _namespaces(elem, default_namespace=None):
                     "cannot use non-qualified name (%s) with "
                     "default_namespace option" % qname
                     )
-            qnames[qname] = qname
+            return qname
+
+    def add_qname(qname):
+        if qname not in qnames:
+            qnames[qname] = serialize_qname(qname)
 
     # populate qname and namespaces table
     for elem in elem.iter():
         tag = elem.tag
         if isinstance(tag, QName):
-            if tag.text not in qnames:
-                add_qname(tag.text)
+            add_qname(tag.text)
         elif isinstance(tag, str):
-            if tag not in qnames:
-                add_qname(tag)
+            add_qname(tag)
         elif tag is not None and tag is not Comment and tag is not PI:
             _raise_serialization_error(tag)
         for key, value in elem.items():
@@ -884,12 +886,11 @@ def _namespaces(elem, default_namespace=None):
                 key = key.text
             elif not isinstance(key, str):
                 _raise_serialization_error(key)
-            if key not in qnames:
-                add_qname(key)
-            if isinstance(value, QName) and value.text not in qnames:
+            add_qname(key)
+            if isinstance(value, QName):
                 add_qname(value.text)
         text = elem.text
-        if isinstance(text, QName) and text.text not in qnames:
+        if isinstance(text, QName):
             add_qname(text.text)
     return qnames, namespaces
 
