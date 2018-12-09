@@ -870,10 +870,16 @@ def _namespaces(elem, default_namespace=None):
                     )
             return qname
 
-    def add_qname(qname):
-        if qname not in qnames:
-            serialized = serialize_qname(qname)
-            qnames[qname] = (serialized, serialized)
+    def add_qname(qname, is_attr=False):
+        ser_tag, ser_attr = qnames.get(qname, (None, None))
+        if is_attr:
+            if ser_attr is None:
+                ser_attr = serialize_qname(qname)
+                qnames[qname] = (ser_tag, ser_attr)
+        else:
+            if ser_tag is None:
+                ser_tag = serialize_qname(qname)
+                qnames[qname] = (ser_tag, ser_attr)
 
     # populate qname and namespaces table
     for elem in elem.iter():
@@ -889,7 +895,7 @@ def _namespaces(elem, default_namespace=None):
                 key = key.text
             elif not isinstance(key, str):
                 _raise_serialization_error(key)
-            add_qname(key)
+            add_qname(key, is_attr=True)
             if isinstance(value, QName):
                 add_qname(value.text)
         text = elem.text
