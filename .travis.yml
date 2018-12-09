@@ -53,7 +53,7 @@ matrix:
         - cd Doc
         # Sphinx is pinned so that new versions that introduce new warnings won't suddenly cause build failures.
         # (Updating the version is fine as long as no warnings are raised by doing so.)
-        - python -m pip install sphinx~=1.6.1 blurb
+        - python -m pip install sphinx==1.8.2 blurb
       script:
         - make check suspicious html SPHINXOPTS="-q -W -j4"
     - os: linux
