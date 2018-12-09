@@ -1,0 +1,2 @@
+Set ``__signature__`` on mock for `inspect` to get signature. Fix signature
+check for partial and partialmethods. Patch by Karthikeyan Singaravelan.
