@@ -876,10 +876,14 @@ def _namespaces(elem, default_namespace=None):
         if is_attr:
             if ser_attr is None:
                 ser_attr = serialize_qname(qname, True)
+                if not default_namespace:
+                    ser_tag = ser_attr
                 qnames[qname] = (ser_tag, ser_attr)
         else:
             if ser_tag is None:
                 ser_tag = serialize_qname(qname, False)
+                if not default_namespace:
+                    ser_attr = ser_tag
                 qnames[qname] = (ser_tag, ser_attr)
 
     # populate qname and namespaces table
