@@ -844,11 +844,11 @@ def _namespaces(elem, default_namespace=None):
     # maps uri:s to prefixes
     namespaces = {}
 
-    def serialize_qname(qname):
+    def serialize_qname(qname, is_attr):
         # calculate serialized qname representation
         if qname[:1] == "{":
             uri, local = qname[1:].rsplit("}", 1)
-            if uri == default_namespace:
+            if not is_attr and uri == default_namespace:
                 prefix = ""
             else:
                 prefix = namespaces.get(uri)
@@ -863,10 +863,10 @@ def _namespaces(elem, default_namespace=None):
             else:
                 return local # default element
         else:
-            if default_namespace:
+            if not is_attr and default_namespace:
                 # FIXME: can this be handled in XML 1.0?
                 raise ValueError(
-                    "cannot use non-qualified name (%s) with "
+                    "cannot use non-qualified name (<%s>) with "
                     "default_namespace option" % qname
                     )
             return qname
@@ -875,11 +875,11 @@ def _namespaces(elem, default_namespace=None):
         ser_tag, ser_attr = qnames.get(qname, (None, None))
         if is_attr:
             if ser_attr is None:
-                ser_attr = serialize_qname(qname)
+                ser_attr = serialize_qname(qname, True)
                 qnames[qname] = (ser_tag, ser_attr)
         else:
             if ser_tag is None:
-                ser_tag = serialize_qname(qname)
+                ser_tag = serialize_qname(qname, False)
                 qnames[qname] = (ser_tag, ser_attr)
 
     # populate qname and namespaces table
