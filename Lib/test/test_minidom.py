@@ -3,7 +3,7 @@
 import copy
 import pickle
 import io
-from test.support import findfile
+from test import support
 import unittest
 
 import xml.dom.minidom
@@ -12,7 +12,7 @@ from xml.dom.minidom import parse, Node, Document, parseString
 from xml.dom.minidom import getDOMImplementation
 
 
-tstfile = findfile("test.xml", subdir="xmltestdata")
+tstfile = support.findfile("test.xml", subdir="xmltestdata")
 sample = ("<?xml version='1.0' encoding='us-ascii'?>\n"
           "<!DOCTYPE doc PUBLIC 'http://xml.python.org/public'"
           " 'http://xml.python.org/system' [\n"
@@ -837,7 +837,7 @@ class MinidomTest(unittest.TestCase):
     def testClonePIDeep(self):
         self.check_clone_pi(1, "testClonePIDeep")
 
-    def testCloneNodeEntity(self):
+    def check_clone_node_entity(self, clone_document):
         # bpo-35052: Test user data handler in cloneNode() on a document with
         # an entity
         document = xml.dom.minidom.parseString("""
@@ -858,19 +858,35 @@ class MinidomTest(unittest.TestCase):
                 self.dst = dst
 
         handler = Handler()
-        entity = document.doctype.entities['smile']
+        doctype = document.doctype
+        entity = doctype.entities['smile']
         entity.setUserData("key", "data", handler)
 
-        clone = document.cloneNode(deep=True)
-        self.assertEqual(handler.operation,
-                         xml.dom.UserDataHandler.NODE_IMPORTED)
+        if clone_document:
+            # clone Document
+            clone = document.cloneNode(deep=True)
+
+            self.assertEqual(clone.documentElement.firstChild.wholeText,
+                             "Don't let entities make you frown ☺")
+            operation = xml.dom.UserDataHandler.NODE_IMPORTED
+            dst = clone.doctype.entities['smile']
+        else:
+            # clone DocumentType
+            with support.swap_attr(doctype, 'ownerDocument', None):
+                clone = doctype.cloneNode(deep=True)
+
+            operation = xml.dom.UserDataHandler.NODE_CLONED
+            dst = clone.entities['smile']
+
+        self.assertEqual(handler.operation, operation)
         self.assertEqual(handler.key, "key")
         self.assertEqual(handler.data, "data")
         self.assertIs(handler.src, entity)
-        self.assertIs(handler.dst, clone.doctype.entities['smile'])
+        self.assertIs(handler.dst, dst)
 
-        self.assertEqual(clone.documentElement.firstChild.wholeText,
-                         "Don't let entities make you frown ☺")
+    def testCloneNodeEntity(self):
+        self.check_clone_node_entity(False)
+        self.check_clone_node_entity(True)
 
     def testNormalize(self):
         doc = parseString("<doc/>")
