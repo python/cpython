@@ -30,8 +30,7 @@ There are a number of different installers available for Windows, each with
 certain benefits and downsides.
 
 :ref:`windows-full` contains all components and is the best option for
-developers using Python for their projects. It may require administrative
-privileges to install.
+developers using Python for any kind of project.
 
 :ref:`windows-store` is a simple installation of Python that is suitable for
 running scripts and packages, and using IDLE or other development environments.
@@ -329,8 +328,8 @@ one from the Microsoft Store. To access the new installation, use
 
 To remove Python, open Settings and use Apps and Features, or else find
 Python in Start and right-click to select Uninstall. Uninstalling will
-remove all packages you installed directly into the package, but will not
-remove any virtual environments
+remove all packages you installed directly into this Python installation, but
+will not remove any virtual environments
 
 Known Issues
 ------------
