@@ -837,6 +837,41 @@ class MinidomTest(unittest.TestCase):
     def testClonePIDeep(self):
         self.check_clone_pi(1, "testClonePIDeep")
 
+    def testCloneNodeEntity(self):
+        # bpo-35052: Test user data handler in cloneNode() on a document with
+        # an entity
+        document = xml.dom.minidom.parseString("""
+            <?xml version="1.0" ?>
+            <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+                "http://www.w3.org/TR/html4/strict.dtd"
+                [ <!ENTITY smile "☺"> ]
+            >
+            <doc>Don't let entities make you frown &smile;</doc>
+        """.strip())
+
+        class Handler:
+            def handle(self, operation, key, data, src, dst):
+                self.operation = operation
+                self.key = key
+                self.data = data
+                self.src = src
+                self.dst = dst
+
+        handler = Handler()
+        entity = document.doctype.entities['smile']
+        entity.setUserData("key", "data", handler)
+
+        clone = document.cloneNode(deep=True)
+        self.assertEqual(handler.operation,
+                         xml.dom.UserDataHandler.NODE_IMPORTED)
+        self.assertEqual(handler.key, "key")
+        self.assertEqual(handler.data, "data")
+        self.assertIs(handler.src, entity)
+        self.assertIs(handler.dst, clone.doctype.entities['smile'])
+
+        self.assertEqual(clone.documentElement.firstChild.wholeText,
+                         "Don't let entities make you frown ☺")
+
     def testNormalize(self):
         doc = parseString("<doc/>")
         root = doc.documentElement
