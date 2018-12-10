@@ -2697,7 +2697,7 @@ features:
    morph to the target dynamically.  If the target is present, the type of the
    symlink will be created to match. Otherwise, the symlink will be created
    as a directory if *target_is_directory* is ``True`` or a file symlink (the
-   default) otherwise.  On non-Window platforms, *target_is_directory* is ignored.
+   default) otherwise.  On non-Windows platforms, *target_is_directory* is ignored.
 
    Symbolic link support was introduced in Windows 6.0 (Vista).  :func:`symlink`
    will raise a :exc:`NotImplementedError` on Windows versions earlier than 6.0.
@@ -3776,11 +3776,11 @@ written in Python, such as a mail server's external command delivery program.
 .. function:: wait3(options)
 
    Similar to :func:`waitpid`, except no process id argument is given and a
-   3-element tuple containing the child's process id, exit status indication, and
-   resource usage information is returned.  Refer to :mod:`resource`.\
-   :func:`~resource.getrusage` for details on resource usage information.  The
-   option argument is the same as that provided to :func:`waitpid` and
-   :func:`wait4`.
+   3-element tuple containing the child's process id, exit status indication,
+   and resource usage information is returned.  Refer to
+   :mod:`resource`.\ :func:`~resource.getrusage` for details on resource usage
+   information.  The option argument is the same as that provided to
+   :func:`waitpid` and :func:`wait4`.
 
    .. availability:: Unix.
 
@@ -4086,6 +4086,7 @@ are defined for all platforms.
 Higher-level operations on pathnames are defined in the :mod:`os.path` module.
 
 
+.. index:: single: . (dot); in pathnames
 .. data:: curdir
 
    The constant string used by the operating system to refer to the current
@@ -4093,6 +4094,7 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
    :mod:`os.path`.
 
 
+.. index:: single: ..; in pathnames
 .. data:: pardir
 
    The constant string used by the operating system to refer to the parent
@@ -4100,6 +4102,8 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
    :mod:`os.path`.
 
 
+.. index:: single: / (slash); in pathnames
+.. index:: single: \ (backslash); in pathnames (Windows)
 .. data:: sep
 
    The character used by the operating system to separate pathname components.
@@ -4109,6 +4113,7 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
    useful. Also available via :mod:`os.path`.
 
 
+.. index:: single: / (slash); in pathnames
 .. data:: altsep
 
    An alternative character used by the operating system to separate pathname
@@ -4117,12 +4122,15 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
    :mod:`os.path`.
 
 
+.. index:: single: . (dot); in pathnames
 .. data:: extsep
 
    The character which separates the base filename from the extension; for example,
    the ``'.'`` in :file:`os.py`. Also available via :mod:`os.path`.
 
 
+.. index:: single: : (colon); path separator (POSIX)
+   single: ; (semicolon)
 .. data:: pathsep
 
    The character conventionally used by the operating system to separate search

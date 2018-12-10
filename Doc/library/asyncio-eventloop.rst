@@ -137,7 +137,7 @@ Running and stopping the loop
 
    Close the event loop.
 
-   The loop must be running when this function is called.
+   The loop must not be running when this function is called.
    Any pending callbacks will be discarded.
 
    This method clears all queues and shuts down the executor, but does
@@ -756,7 +756,7 @@ Watching file descriptors
    writing.
 
    Use :func:`functools.partial` :ref:`to pass keyword arguments
-   <asyncio-pass-keywords>` to *func*.
+   <asyncio-pass-keywords>` to *callback*.
 
 .. method:: loop.remove_writer(fd)
 
@@ -970,7 +970,7 @@ Unix signals
    Raise :exc:`RuntimeError` if there is a problem setting up the handler.
 
    Use :func:`functools.partial` :ref:`to pass keyword arguments
-   <asyncio-pass-keywords>` to *func*.
+   <asyncio-pass-keywords>` to *callback*.
 
 .. method:: loop.remove_signal_handler(sig)
 

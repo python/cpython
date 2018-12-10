@@ -568,9 +568,9 @@ gettmarg(PyObject *args, struct tm *p, const char *format)
 #ifdef HAVE_STRUCT_TM_TM_ZONE
     if (Py_TYPE(args) == &StructTimeType) {
         PyObject *item;
-        item = PyTuple_GET_ITEM(args, 9);
+        item = PyStructSequence_GET_ITEM(args, 9);
         if (item != Py_None) {
-            p->tm_zone = PyUnicode_AsUTF8(item);
+            p->tm_zone = (char *)PyUnicode_AsUTF8(item);
             if (p->tm_zone == NULL) {
                 return 0;
             }
@@ -589,7 +589,7 @@ gettmarg(PyObject *args, struct tm *p, const char *format)
             }
 #endif
         }
-        item = PyTuple_GET_ITEM(args, 10);
+        item = PyStructSequence_GET_ITEM(args, 10);
         if (item != Py_None) {
             p->tm_gmtoff = PyLong_AsLong(item);
             if (PyErr_Occurred())
@@ -1019,7 +1019,7 @@ of the timezone or altzone attributes on the time module.");
 #endif /* HAVE_MKTIME */
 
 #ifdef HAVE_WORKING_TZSET
-static void PyInit_timezone(PyObject *module);
+static int init_timezone(PyObject *module);
 
 static PyObject *
 time_tzset(PyObject *self, PyObject *unused)
@@ -1034,7 +1034,9 @@ time_tzset(PyObject *self, PyObject *unused)
     tzset();
 
     /* Reset timezone, altzone, daylight and tzname */
-    PyInit_timezone(m);
+    if (init_timezone(m) < 0) {
+         return NULL;
+    }
     Py_DECREF(m);
     if (PyErr_Occurred())
         return NULL;
@@ -1535,7 +1537,7 @@ get_zone(char *zone, int n, struct tm *p)
 #endif
 }
 
-static int
+static time_t
 get_gmtoff(time_t t, struct tm *p)
 {
 #ifdef HAVE_STRUCT_TM_TM_ZONE
@@ -1546,8 +1548,11 @@ get_gmtoff(time_t t, struct tm *p)
 }
 #endif // !HAVE_DECL_TZNAME
 
-static void
-PyInit_timezone(PyObject *m) {
+static int
+init_timezone(PyObject *m)
+{
+    assert(!PyErr_Occurred());
+
     /* This code moved from PyInit_time wholesale to allow calling it from
     time_tzset. In the future, some parts of it can be moved back
     (for platforms that don't HAVE_WORKING_TZSET, when we know what they
@@ -1576,33 +1581,46 @@ PyInit_timezone(PyObject *m) {
     PyModule_AddIntConstant(m, "daylight", daylight);
     otz0 = PyUnicode_DecodeLocale(tzname[0], "surrogateescape");
     if (otz0 == NULL) {
-        return;
+        return -1;
     }
     otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
     if (otz1 == NULL) {
         Py_DECREF(otz0);
-        return;
+        return -1;
     }
     PyObject *tzname_obj = Py_BuildValue("(NN)", otz0, otz1);
-    if (tzname_obj == NULL)
-        return;
+    if (tzname_obj == NULL) {
+        return -1;
+    }
     PyModule_AddObject(m, "tzname", tzname_obj);
 #else // !HAVE_DECL_TZNAME
     static const time_t YEAR = (365 * 24 + 6) * 3600;
     time_t t;
     struct tm p;
-    long janzone, julyzone;
+    time_t janzone_t, julyzone_t;
     char janname[10], julyname[10];
     t = (time((time_t *)0) / YEAR) * YEAR;
     _PyTime_localtime(t, &p);
     get_zone(janname, 9, &p);
-    janzone = -get_gmtoff(t, &p);
+    janzone_t = -get_gmtoff(t, &p);
     janname[9] = '\0';
     t += YEAR/2;
     _PyTime_localtime(t, &p);
     get_zone(julyname, 9, &p);
-    julyzone = -get_gmtoff(t, &p);
+    julyzone_t = -get_gmtoff(t, &p);
     julyname[9] = '\0';
+
+    /* Sanity check, don't check for the validity of timezones.
+       In practice, it should be more in range -12 hours .. +14 hours. */
+#define MAX_TIMEZONE (48 * 3600)
+    if (janzone_t < -MAX_TIMEZONE || janzone_t > MAX_TIMEZONE
+        || julyzone_t < -MAX_TIMEZONE || julyzone_t > MAX_TIMEZONE)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "invalid GMT offset");
+        return -1;
+    }
+    int janzone = (int)janzone_t;
+    int julyzone = (int)julyzone_t;
 
     PyObject *tzname_obj;
     if (janzone < julyzone) {
@@ -1617,10 +1635,16 @@ PyInit_timezone(PyObject *m) {
         PyModule_AddIntConstant(m, "daylight", janzone != julyzone);
         tzname_obj = Py_BuildValue("(zz)", janname, julyname);
     }
-    if (tzname_obj == NULL)
-        return;
+    if (tzname_obj == NULL) {
+        return -1;
+    }
     PyModule_AddObject(m, "tzname", tzname_obj);
 #endif // !HAVE_DECL_TZNAME
+
+    if (PyErr_Occurred()) {
+        return -1;
+    }
+    return 0;
 }
 
 
@@ -1721,7 +1745,9 @@ PyInit_time(void)
         return NULL;
 
     /* Set, or reset, module variables like time.timezone */
-    PyInit_timezone(m);
+    if (init_timezone(m) < 0) {
+        return NULL;
+    }
 
 #if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES)
 
@@ -1772,6 +1798,9 @@ PyInit_time(void)
         utc_string = tm.tm_zone;
 #endif
 
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
     return m;
 }
 

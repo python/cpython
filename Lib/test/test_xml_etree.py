@@ -1044,6 +1044,22 @@ class ElementTreeTest(unittest.TestCase):
                                        method='html')
                 self.assertEqual(serialized, expected)
 
+    def test_dump_attribute_order(self):
+        # See BPO 34160
+        e = ET.Element('cirriculum', status='public', company='example')
+        with support.captured_stdout() as stdout:
+            ET.dump(e)
+        self.assertEqual(stdout.getvalue(),
+                         '<cirriculum status="public" company="example" />\n')
+
+    def test_tree_write_attribute_order(self):
+        # See BPO 34160
+        root = ET.Element('cirriculum', status='public', company='example')
+        self.assertEqual(serialize(root),
+                         '<cirriculum status="public" company="example" />')
+        self.assertEqual(serialize(root, method='html'),
+                '<cirriculum status="public" company="example"></cirriculum>')
+
 
 class XMLPullParserTest(unittest.TestCase):
 

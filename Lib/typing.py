@@ -18,7 +18,6 @@ At large scale, the structure of the module is following:
 * Wrapper submodules for re and io related types.
 """
 
-import abc
 from abc import abstractmethod, abstractproperty
 import collections
 import collections.abc
@@ -1242,6 +1241,7 @@ ContextManager = _alias(contextlib.AbstractContextManager, T_co)
 AsyncContextManager = _alias(contextlib.AbstractAsyncContextManager, T_co)
 Dict = _alias(dict, (KT, VT), inst=False)
 DefaultDict = _alias(collections.defaultdict, (KT, VT))
+OrderedDict = _alias(collections.OrderedDict, (KT, VT))
 Counter = _alias(collections.Counter, T)
 ChainMap = _alias(collections.ChainMap, (KT, VT))
 Generator = _alias(collections.abc.Generator, (T_co, T_contra, V_co))

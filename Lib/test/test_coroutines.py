@@ -2,7 +2,6 @@ import contextlib
 import copy
 import inspect
 import pickle
-import re
 import sys
 import types
 import unittest

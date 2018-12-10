@@ -60,7 +60,7 @@ PyDoc_STRVAR(resource_setrlimit__doc__,
 "\n");
 
 #define RESOURCE_SETRLIMIT_METHODDEF    \
-    {"setrlimit", (PyCFunction)resource_setrlimit, METH_FASTCALL, resource_setrlimit__doc__},
+    {"setrlimit", (PyCFunction)(void(*)(void))resource_setrlimit, METH_FASTCALL, resource_setrlimit__doc__},
 
 static PyObject *
 resource_setrlimit_impl(PyObject *module, int resource, PyObject *limits);
@@ -157,4 +157,4 @@ exit:
 #ifndef RESOURCE_PRLIMIT_METHODDEF
     #define RESOURCE_PRLIMIT_METHODDEF
 #endif /* !defined(RESOURCE_PRLIMIT_METHODDEF) */
-/*[clinic end generated code: output=2a69aca90631a582 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=637ed2c42bde5ca6 input=a9049054013a1b77]*/

@@ -16,10 +16,6 @@ import importlib.util
 import py_compile
 import struct
 
-try:
-    from concurrent.futures import ProcessPoolExecutor
-except ImportError:
-    ProcessPoolExecutor = None
 from functools import partial
 
 __all__ = ["compile_dir","compile_file","compile_path"]
@@ -70,9 +66,17 @@ def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
     workers:   maximum number of parallel workers
     invalidation_mode: how the up-to-dateness of the pyc will be checked
     """
-    if workers is not None and workers < 0:
-        raise ValueError('workers must be greater or equal to 0')
-
+    ProcessPoolExecutor = None
+    if workers is not None:
+        if workers < 0:
+            raise ValueError('workers must be greater or equal to 0')
+        elif workers != 1:
+            try:
+                # Only import when needed, as low resource platforms may
+                # fail to import it
+                from concurrent.futures import ProcessPoolExecutor
+            except ImportError:
+                workers = 1
     files = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels,
                       ddir=ddir)
     success = True

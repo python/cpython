@@ -485,7 +485,6 @@ static PyMethodDef dbm_methods[] = {
     _GDBM_GDBM_REORGANIZE_METHODDEF
     _GDBM_GDBM_SYNC_METHODDEF
     _GDBM_GDBM_GET_METHODDEF
-    _GDBM_GDBM_GET_METHODDEF
     _GDBM_GDBM_SETDEFAULT_METHODDEF
     {"__enter__", dbm__enter__, METH_NOARGS, NULL},
     {"__exit__",  dbm__exit__, METH_VARARGS, NULL},

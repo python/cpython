@@ -9,6 +9,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer, \
 from http import server, HTTPStatus
 
 import os
+import socket
 import sys
 import re
 import base64
@@ -1116,6 +1117,24 @@ class MiscTestCase(unittest.TestCase):
         self.assertCountEqual(server.__all__, expected)
 
 
+class ScriptTestCase(unittest.TestCase):
+    @mock.patch('builtins.print')
+    def test_server_test_ipv6(self, _):
+        mock_server = mock.MagicMock()
+        server.test(ServerClass=mock_server, bind="::")
+        self.assertEqual(mock_server.address_family, socket.AF_INET6)
+
+        mock_server.reset_mock()
+        server.test(ServerClass=mock_server,
+                    bind="2001:0db8:85a3:0000:0000:8a2e:0370:7334")
+        self.assertEqual(mock_server.address_family, socket.AF_INET6)
+
+        mock_server.reset_mock()
+        server.test(ServerClass=mock_server,
+                    bind="::1")
+        self.assertEqual(mock_server.address_family, socket.AF_INET6)
+
+
 def test_main(verbose=None):
     cwd = os.getcwd()
     try:
@@ -1127,6 +1146,7 @@ def test_main(verbose=None):
             CGIHTTPServerTestCase,
             SimpleHTTPRequestHandlerTestCase,
             MiscTestCase,
+            ScriptTestCase
         )
     finally:
         os.chdir(cwd)

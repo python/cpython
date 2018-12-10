@@ -1,8 +1,9 @@
 /* List object implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
-#include "accu.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
+#include "pycore_accu.h"
 
 #ifdef STDC_HEADERS
 #include <stddef.h>
@@ -73,6 +74,33 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     self->ob_item = items;
     Py_SIZE(self) = newsize;
     self->allocated = new_allocated;
+    return 0;
+}
+
+static int
+list_preallocate_exact(PyListObject *self, Py_ssize_t size)
+{
+    assert(self->ob_item == NULL);
+
+    PyObject **items;
+    size_t allocated;
+
+    allocated = (size_t)size;
+    if (allocated > (size_t)PY_SSIZE_T_MAX / sizeof(PyObject *)) {
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    if (size == 0) {
+        allocated = 0;
+    }
+    items = (PyObject **)PyMem_New(PyObject*, allocated);
+    if (items == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    self->ob_item = items;
+    self->allocated = allocated;
     return 0;
 }
 
@@ -2683,6 +2711,19 @@ list___init___impl(PyListObject *self, PyObject *iterable)
         (void)_list_clear(self);
     }
     if (iterable != NULL) {
+        if (_PyObject_HasLen(iterable)) {
+            Py_ssize_t iter_len = PyObject_Size(iterable);
+            if (iter_len == -1) {
+                if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
+                    return -1;
+                }
+                PyErr_Clear();
+            }
+            if (iter_len > 0 && self->ob_item == NULL
+                && list_preallocate_exact(self, iter_len)) {
+                return -1;
+            }
+        }
         PyObject *rv = list_extend(self, iterable);
         if (rv == NULL)
             return -1;
