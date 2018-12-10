@@ -70,6 +70,8 @@
     <Projects2 Include="_freeze_importlib.vcxproj" />
     <!-- python[w].exe -->
     <Projects2 Include="python.vcxproj;pythonw.vcxproj" />
+    <!-- venv[w]launcher.exe -->
+    <Projects2 Include="venvlauncher.vcxproj;venvwlauncher.vcxproj" />
   </ItemGroup>
 
   <Target Name="Build">
