@@ -1845,7 +1845,8 @@ int
 PySys_HasWarnOptions(void)
 {
     PyObject *warnoptions = _PySys_GetObjectId(&PyId_warnoptions);
-    return (warnoptions != NULL && (PyList_Size(warnoptions) > 0)) ? 1 : 0;
+    return (warnoptions != NULL && PyList_Check(warnoptions)
+            && PyList_GET_SIZE(warnoptions) > 0);
 }
 
 static PyObject *
