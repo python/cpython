@@ -1432,6 +1432,7 @@ finally:
 static PyObject *
 pysqlite_connection_iterdump(pysqlite_Connection* self, PyObject* args)
 {
+    _Py_IDENTIFIER(_iterdump);
     PyObject* retval = NULL;
     PyObject* module = NULL;
     PyObject* module_dict;
@@ -1451,9 +1452,12 @@ pysqlite_connection_iterdump(pysqlite_Connection* self, PyObject* args)
         goto finally;
     }
 
-    pyfn_iterdump = PyDict_GetItemString(module_dict, "_iterdump");
+    pyfn_iterdump = _PyDict_GetItemIdWithError(module_dict, &PyId__iterdump);
     if (!pyfn_iterdump) {
-        PyErr_SetString(pysqlite_OperationalError, "Failed to obtain _iterdump() reference");
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(pysqlite_OperationalError,
+                            "Failed to obtain _iterdump() reference");
+        }
         goto finally;
     }
 
