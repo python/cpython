@@ -30,6 +30,9 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#if !defined(_WIN32) && defined(HAVE_EXPAT_CONFIG_H)
+#  include <pyconfig.h>
+#endif
 #if !defined(_GNU_SOURCE)
 # define _GNU_SOURCE 1                  /* syscall prototype */
 #endif
