@@ -30,6 +30,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <pyconfig.h>
 #if !defined(_GNU_SOURCE)
 # define _GNU_SOURCE 1                  /* syscall prototype */
 #endif
