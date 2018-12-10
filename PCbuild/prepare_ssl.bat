@@ -23,8 +23,6 @@ setlocal
 if "%PCBUILD%"=="" (set PCBUILD=%~dp0)
 if "%EXTERNALS_DIR%"=="" (set EXTERNALS_DIR=%PCBUILD%\..\externals)
 
-set OUT=
-set SRC=
 set ORG_SETTING=
 
 :CheckOpts
