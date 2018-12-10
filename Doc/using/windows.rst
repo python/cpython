@@ -388,7 +388,7 @@ installed side-by-side and referenced using the full path. Alternatively,
 delete the package directory manually and install it again. Many CI systems
 will do this automatically if they do not preserve files between builds.
 
-Alongside the ``tools`` directory is a ``build\\native`` directory. This
+Alongside the ``tools`` directory is a ``build\native`` directory. This
 contains a MSBuild properties file ``python.props`` that can be used in a
 C++ project to reference the Python install. Including the settings will
 automatically use the headers and import libraries in your build.
