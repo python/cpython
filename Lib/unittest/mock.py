@@ -69,22 +69,23 @@ def _get_signature_object(func, as_instance, eat_self):
     signature object.
     Return a (reduced func, signature) tuple, or None.
     """
-    if not isinstance(func, functools.partial):
-        if isinstance(func, type) and not as_instance:
-            # If it's a type and should be modelled as a type, use __init__.
-            try:
-                func = func.__init__
-            except AttributeError:
-                return None
-            # Skip the `self` argument in __init__
-            eat_self = True
-        elif not isinstance(func, FunctionTypes):
-            # If we really want to model an instance of the passed type,
-            # __call__ should be looked up, not __init__.
-            try:
-                func = func.__call__
-            except AttributeError:
-                return None
+    if isinstance(func, functools.partial):
+        pass
+    elif isinstance(func, type) and not as_instance:
+        # If it's a type and should be modelled as a type, use __init__.
+        try:
+            func = func.__init__
+        except AttributeError:
+            return None
+        # Skip the `self` argument in __init__
+        eat_self = True
+    elif not isinstance(func, FunctionTypes):
+        # If we really want to model an instance of the passed type,
+        # __call__ should be looked up, not __init__.
+        try:
+            func = func.__call__
+        except AttributeError:
+            return None
     if eat_self:
         sig_func = partial(func, None)
     else:
