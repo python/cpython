@@ -1726,9 +1726,9 @@ math_trunc(PyObject *module, PyObject *x)
 
     number_type = (PyObject *)Py_TYPE(x);
     if (PyObject_HasAttrString(number_type, "__trunc__") == 0) {
-				PyErr_Format(PyExc_TypeError,
-										 "type %.100s doesn't define __trunc__ method",
-										 Py_TYPE(x)->tp_name);
+                                PyErr_Format(PyExc_TypeError,
+                                                                                 "type %.100s doesn't define __trunc__ method",
+                                                                                 Py_TYPE(x)->tp_name);
         return NULL;
     }
     return PyObject_CallMethod(number_type, "__trunc__", "(O)", x);
