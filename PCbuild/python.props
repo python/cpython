@@ -74,12 +74,17 @@
     possible version). Since we limit WINVER to Windows 7 anyway, it doesn't really
     matter which WinSDK version we use.
     -->
-    <_RegistryVersion>$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)</_RegistryVersion>
-    <_RegistryVersion Condition="$(_RegistryVersion) == ''">$(Registry:HKEY_LOCAL_MACHINE\WOW6432Node\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)</_RegistryVersion>
-    <DefaultWindowsSDKVersion>10.0.15063.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.14393'">10.0.14393.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.10586'">10.0.10586.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.10240'">10.0.10240.0</DefaultWindowsSDKVersion>
+    <_KitsRoot>$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@InstallationFolder)</_KitsRoot>
+    <_KitsRoot Condition="$(_KitsRoot) == ''">$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@InstallationFolder)</_KitsRoot>
+
+    <!-- The minimum allowed SDK version to use for building -->
+    <DefaultWindowsSDKVersion>10.0.10586.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="Exists('$(_KitsRoot)\Platforms\UAP\10.0.14393.0')">10.0.14393.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="Exists('$(_KitsRoot)\Platforms\UAP\10.0.15063.0')">10.0.15063.0</DefaultWindowsSDKVersion>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="$(WindowsTargetPlatformVersion) == ''">
+    <WindowsTargetPlatformVersion>$(DefaultWindowsSDKVersion)</WindowsTargetPlatformVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(OverrideVersion)' == ''">
@@ -187,5 +192,6 @@
     <Message Importance="high" Text="Field3Value:         $(Field3Value)" />
     <Message Importance="high" Text="SysWinVer:           $(SysWinVer)" />
     <Message Importance="high" Text="PyDllName:           $(PyDllName)" />
+    <Message Importance="high" Text="WindowsSdkVersion:   $(TargetPlatformVersion)" />
   </Target>
 </Project>
