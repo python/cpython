@@ -459,7 +459,7 @@ PyHKEY_FromHKEY(HKEY h)
     op = (PyHKEYObject *) PyObject_MALLOC(sizeof(PyHKEYObject));
     if (op == NULL)
         return PyErr_NoMemory();
-    PyObject_INIT((PyObject *)op, &PyHKEY_Type);
+    PyObject_INIT(op, &PyHKEY_Type);
     op->hkey = h;
     return (PyObject *)op;
 }
@@ -651,8 +651,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 
                     t = PyList_GET_ITEM(value, j);
                     wstr = PyUnicode_AsUnicodeAndSize(t, &len);
-                    if (wstr == NULL)
-                        return FALSE;
+                    assert(wstr);
                     wcscpy(P, wstr);
                     P += (len + 1);
                 }
@@ -757,9 +756,13 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
                         PyMem_Free(str);
                         return NULL;
                     }
-                    PyList_SetItem(obData,
-                                   index,
-                                   PyUnicode_FromWideChar(str[index], len));
+                    PyObject *uni = PyUnicode_FromWideChar(str[index], len);
+                    if (uni == NULL) {
+                        Py_DECREF(obData);
+                        PyMem_Free(str);
+                        return NULL;
+                    }
+                    PyList_SET_ITEM(obData, index, uni);
                 }
                 PyMem_Free(str);
 

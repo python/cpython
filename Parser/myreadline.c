@@ -10,7 +10,7 @@
 */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #ifdef MS_WINDOWS
 #define WIN32_LEAN_AND_MEAN
 #include "windows.h"
@@ -153,20 +153,37 @@ _PyOS_WindowsConsoleReadline(HANDLE hStdIn)
             wbuf = (wchar_t*)PyMem_RawMalloc(wbuflen * sizeof(wchar_t));
             if (wbuf)
                 wcscpy_s(wbuf, wbuflen, wbuf_local);
+            else {
+                PyErr_NoMemory();
+                goto exit;
+            }
         }
-        else
-            wbuf = (wchar_t*)PyMem_RawRealloc(wbuf, wbuflen * sizeof(wchar_t));
+        else {
+            wchar_t *tmp = PyMem_RawRealloc(wbuf, wbuflen * sizeof(wchar_t));
+            if (tmp == NULL) {
+                PyErr_NoMemory();
+                goto exit;
+            }
+            wbuf = tmp;
+        }
     }
 
     if (wbuf[0] == '\x1a') {
         buf = PyMem_RawMalloc(1);
         if (buf)
             buf[0] = '\0';
+        else {
+            PyErr_NoMemory();
+        }
         goto exit;
     }
 
     u8len = WideCharToMultiByte(CP_UTF8, 0, wbuf, total_read, NULL, 0, NULL, NULL);
     buf = PyMem_RawMalloc(u8len + 1);
+    if (buf == NULL) {
+        PyErr_NoMemory();
+        goto exit;
+    }
     u8len = WideCharToMultiByte(CP_UTF8, 0, wbuf, total_read, buf, u8len, NULL, NULL);
     buf[u8len] = '\0';
 
@@ -211,8 +228,12 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
                     int wlen;
                     wlen = MultiByteToWideChar(CP_UTF8, 0, prompt, -1,
                             NULL, 0);
-                    if (wlen &&
-                        (wbuf = PyMem_RawMalloc(wlen * sizeof(wchar_t)))) {
+                    if (wlen) {
+                        wbuf = PyMem_RawMalloc(wlen * sizeof(wchar_t));
+                        if (wbuf == NULL) {
+                            PyErr_NoMemory();
+                            return NULL;
+                        }
                         wlen = MultiByteToWideChar(CP_UTF8, 0, prompt, -1,
                                 wbuf, wlen);
                         if (wlen) {
@@ -236,8 +257,10 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 
     n = 100;
     p = (char *)PyMem_RawMalloc(n);
-    if (p == NULL)
+    if (p == NULL) {
+        PyErr_NoMemory();
         return NULL;
+    }
 
     fflush(sys_stdout);
     if (prompt)
@@ -301,7 +324,7 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     char *rv, *res;
     size_t len;
 
-    if (_PyOS_ReadlineTState == PyThreadState_GET()) {
+    if (_PyOS_ReadlineTState == _PyThreadState_GET()) {
         PyErr_SetString(PyExc_RuntimeError,
                         "can't re-enter readline");
         return NULL;
@@ -314,9 +337,13 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 
     if (_PyOS_ReadlineLock == NULL) {
         _PyOS_ReadlineLock = PyThread_allocate_lock();
+        if (_PyOS_ReadlineLock == NULL) {
+            PyErr_SetString(PyExc_MemoryError, "can't allocate lock");
+            return NULL;
+        }
     }
 
-    _PyOS_ReadlineTState = PyThreadState_GET();
+    _PyOS_ReadlineTState = _PyThreadState_GET();
     Py_BEGIN_ALLOW_THREADS
     PyThread_acquire_lock(_PyOS_ReadlineLock, 1);
 
@@ -341,8 +368,12 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 
     len = strlen(rv) + 1;
     res = PyMem_Malloc(len);
-    if (res != NULL)
+    if (res != NULL) {
         memcpy(res, rv, len);
+    }
+    else {
+        PyErr_NoMemory();
+    }
     PyMem_RawFree(rv);
 
     return res;

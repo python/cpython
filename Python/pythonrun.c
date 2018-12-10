@@ -11,8 +11,8 @@
 #include "Python.h"
 
 #include "Python-ast.h"
-#undef Yield /* undefine macro conflicting with winbase.h */
-#include "internal/pystate.h"
+#undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "pycore_pystate.h"
 #include "grammar.h"
 #include "node.h"
 #include "token.h"
@@ -434,8 +434,14 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
     Py_DECREF(v);
     ret = 0;
   done:
-    if (set_file_name && PyDict_DelItemString(d, "__file__"))
-        PyErr_Clear();
+    if (set_file_name) {
+        if (PyDict_DelItemString(d, "__file__")) {
+            PyErr_Clear();
+        }
+        if (PyDict_DelItemString(d, "__cached__")) {
+            PyErr_Clear();
+        }
+    }
     Py_XDECREF(m);
     return ret;
 }

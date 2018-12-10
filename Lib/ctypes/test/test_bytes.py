@@ -12,6 +12,7 @@ class BytesTest(unittest.TestCase):
             x.value = "y"
         c_char.from_param(b"x")
         self.assertRaises(TypeError, c_char.from_param, "x")
+        self.assertIn('xbd', repr(c_char.from_param(b"\xbd")))
         (c_char * 3)(b"a", b"b", b"c")
         self.assertRaises(TypeError, c_char * 3, "a", "b", "c")
 

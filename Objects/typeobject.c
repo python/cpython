@@ -1,7 +1,8 @@
 /* Type object implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
 #include "frameobject.h"
 #include "structmember.h"
 
@@ -1115,7 +1116,7 @@ subtype_dealloc(PyObject *self)
 {
     PyTypeObject *type, *base;
     destructor basedealloc;
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     int has_finalizer;
 
     /* Extract the type; we expect it to be a heap type */
@@ -2846,15 +2847,28 @@ static const short slotoffsets[] = {
 PyObject *
 PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 {
-    PyHeapTypeObject *res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, 0);
-    PyTypeObject *type, *base;
+    PyHeapTypeObject *res;
+    PyMemberDef *memb;
     PyObject *modname;
-    char *s;
-    char *res_start = (char*)res;
-    PyType_Slot *slot;
+    PyTypeObject *type, *base;
 
+    PyType_Slot *slot;
+    Py_ssize_t nmembers;
+    char *s, *res_start;
+
+    nmembers = 0;
+    for (slot = spec->slots; slot->slot; slot++) {
+        if (slot->slot == Py_tp_members) {
+            for (memb = slot->pfunc; memb->name != NULL; memb++) {
+                nmembers++;
+            }
+        }
+    }
+
+    res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, nmembers);
     if (res == NULL)
         return NULL;
+    res_start = (char*)res;
 
     if (spec->name == NULL) {
         PyErr_SetString(PyExc_SystemError,
@@ -2949,6 +2963,13 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
             }
             memcpy(tp_doc, old_doc, len);
             type->tp_doc = tp_doc;
+        }
+
+        /* Move the slots to the heap type itself */
+        if (slot->slot == Py_tp_members) {
+            size_t len = Py_TYPE(type)->tp_itemsize * nmembers;
+            memcpy(PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
+            type->tp_members = PyHeapType_GET_MEMBERS(res);
         }
     }
     if (type->tp_dealloc == NULL) {
@@ -3460,7 +3481,7 @@ type___sizeof___impl(PyTypeObject *self)
 static PyMethodDef type_methods[] = {
     TYPE_MRO_METHODDEF
     TYPE___SUBCLASSES___METHODDEF
-    {"__prepare__", (PyCFunction)type_prepare,
+    {"__prepare__", (PyCFunction)(void(*)(void))type_prepare,
      METH_FASTCALL | METH_KEYWORDS | METH_CLASS,
      PyDoc_STR("__prepare__() -> dict\n"
                "used to create the namespace for the class statement")},
@@ -4122,7 +4143,7 @@ _PyObject_GetState(PyObject *obj, int required)
 
         if (required && obj->ob_type->tp_itemsize) {
             PyErr_Format(PyExc_TypeError,
-                         "can't pickle %.200s objects",
+                         "cannot pickle '%.200s' object",
                          Py_TYPE(obj)->tp_name);
             return NULL;
         }
@@ -4163,7 +4184,7 @@ _PyObject_GetState(PyObject *obj, int required)
                 Py_DECREF(slotnames);
                 Py_DECREF(state);
                 PyErr_Format(PyExc_TypeError,
-                             "can't pickle %.200s objects",
+                             "cannot pickle '%.200s' object",
                              Py_TYPE(obj)->tp_name);
                 return NULL;
             }
@@ -4400,7 +4421,7 @@ reduce_newobj(PyObject *obj)
 
     if (Py_TYPE(obj)->tp_new == NULL) {
         PyErr_Format(PyExc_TypeError,
-                     "can't pickle %.200s objects",
+                     "cannot pickle '%.200s' object",
                      Py_TYPE(obj)->tp_name);
         return NULL;
     }
@@ -5923,7 +5944,7 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static struct PyMethodDef tp_new_methoddef[] = {
-    {"__new__", (PyCFunction)tp_new_wrapper, METH_VARARGS|METH_KEYWORDS,
+    {"__new__", (PyCFunction)(void(*)(void))tp_new_wrapper, METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("__new__($type, *args, **kwargs)\n--\n\n"
                "Create and return a new object.  "
                "See help(type) for accurate signature.")},
@@ -6801,7 +6822,7 @@ static slotdef slotdefs[] = {
            "__repr__($self, /)\n--\n\nReturn repr(self)."),
     TPSLOT("__hash__", tp_hash, slot_tp_hash, wrap_hashfunc,
            "__hash__($self, /)\n--\n\nReturn hash(self)."),
-    FLSLOT("__call__", tp_call, slot_tp_call, (wrapperfunc)wrap_call,
+    FLSLOT("__call__", tp_call, slot_tp_call, (wrapperfunc)(void(*)(void))wrap_call,
            "__call__($self, /, *args, **kwargs)\n--\n\nCall self as a function.",
            PyWrapperFlag_KEYWORDS),
     TPSLOT("__str__", tp_str, slot_tp_str, wrap_unaryfunc,
@@ -6837,7 +6858,7 @@ static slotdef slotdefs[] = {
     TPSLOT("__delete__", tp_descr_set, slot_tp_descr_set,
            wrap_descr_delete,
            "__delete__($self, instance, /)\n--\n\nDelete an attribute of instance."),
-    FLSLOT("__init__", tp_init, slot_tp_init, (wrapperfunc)wrap_init,
+    FLSLOT("__init__", tp_init, slot_tp_init, (wrapperfunc)(void(*)(void))wrap_init,
            "__init__($self, /, *args, **kwargs)\n--\n\n"
            "Initialize self.  See help(type(self)) for accurate signature.",
            PyWrapperFlag_KEYWORDS),
@@ -7119,7 +7140,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
         }
         else if (Py_TYPE(descr) == &PyCFunction_Type &&
                  PyCFunction_GET_FUNCTION(descr) ==
-                 (PyCFunction)tp_new_wrapper &&
+                 (PyCFunction)(void(*)(void))tp_new_wrapper &&
                  ptr == (void**)&type->tp_new)
         {
             /* The __new__ wrapper is not a wrapper descriptor,
@@ -7678,7 +7699,7 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
         PyFrameObject *f;
         PyCodeObject *co;
         Py_ssize_t i, n;
-        f = PyThreadState_GET()->frame;
+        f = _PyThreadState_GET()->frame;
         if (f == NULL) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no current frame");

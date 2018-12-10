@@ -728,6 +728,10 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
     // Weakref callback may remove entry from set.
     // So we take snapshot of registry first.
     PyObject **copy = PyMem_Malloc(sizeof(PyObject*) * registry_size);
+    if (copy == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
     PyObject *key;
     Py_ssize_t pos = 0;
     Py_hash_t hash;

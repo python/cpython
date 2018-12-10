@@ -13,7 +13,7 @@
 
 The :mod:`gettext` module provides internationalization (I18N) and localization
 (L10N) services for your Python modules and applications. It supports both the
-GNU ``gettext`` message catalog API and a higher level, class-based API that may
+GNU :program:`gettext` message catalog API and a higher level, class-based API that may
 be more appropriate for Python files.  The interface described below allows you
 to write your module and application messages in one natural language, and
 provide a catalog of translated messages for running under different natural
@@ -38,7 +38,7 @@ class-based API instead.
 
    Bind the *domain* to the locale directory *localedir*.  More concretely,
    :mod:`gettext` will look for binary :file:`.mo` files for the given domain using
-   the path (on Unix): :file:`localedir/language/LC_MESSAGES/domain.mo`, where
+   the path (on Unix): :file:`{localedir}/{language}/LC_MESSAGES/{domain}.mo`, where
    *languages* is searched for in the environment variables :envvar:`LANGUAGE`,
    :envvar:`LC_ALL`, :envvar:`LC_MESSAGES`, and :envvar:`LANG` respectively.
 
@@ -96,6 +96,18 @@ class-based API instead.
    Like :func:`ngettext`, but look the message up in the specified *domain*.
 
 
+.. function:: pgettext(context, message)
+.. function:: dpgettext(domain, context, message)
+.. function:: npgettext(context, singular, plural, n)
+.. function:: dnpgettext(domain, context, singular, plural, n)
+
+   Similar to the corresponding functions without the ``p`` in the prefix (that
+   is, :func:`gettext`, :func:`dgettext`, :func:`ngettext`, :func:`dngettext`),
+   but the translation is restricted to the given message *context*.
+
+   .. versionadded:: 3.8
+
+
 .. function:: lgettext(message)
 .. function:: ldgettext(domain, message)
 .. function:: lngettext(singular, plural, n)
@@ -138,17 +150,16 @@ Class-based API
 The class-based API of the :mod:`gettext` module gives you more flexibility and
 greater convenience than the GNU :program:`gettext` API.  It is the recommended
 way of localizing your Python applications and modules.  :mod:`!gettext` defines
-a "translations" class which implements the parsing of GNU :file:`.mo` format
-files, and has methods for returning strings. Instances of this "translations"
-class can also install themselves in the built-in namespace as the function
-:func:`_`.
+a :class:`GNUTranslations` class which implements the parsing of GNU :file:`.mo` format
+files, and has methods for returning strings. Instances of this class can also
+install themselves in the built-in namespace as the function :func:`_`.
 
 
 .. function:: find(domain, localedir=None, languages=None, all=False)
 
    This function implements the standard :file:`.mo` file search algorithm.  It
    takes a *domain*, identical to what :func:`textdomain` takes.  Optional
-   *localedir* is as in :func:`bindtextdomain`  Optional *languages* is a list of
+   *localedir* is as in :func:`bindtextdomain`. Optional *languages* is a list of
    strings, where each string is a language code.
 
    If *localedir* is not given, then the default system locale directory is used.
@@ -172,10 +183,10 @@ class can also install themselves in the built-in namespace as the function
 
 .. function:: translation(domain, localedir=None, languages=None, class_=None, fallback=False, codeset=None)
 
-   Return a :class:`Translations` instance based on the *domain*, *localedir*,
+   Return a :class:`*Translations` instance based on the *domain*, *localedir*,
    and *languages*, which are first passed to :func:`find` to get a list of the
    associated :file:`.mo` file paths.  Instances with identical :file:`.mo` file
-   names are cached.  The actual class instantiated is either *class_* if
+   names are cached.  The actual class instantiated is *class_* if
    provided, otherwise :class:`GNUTranslations`.  The class's constructor must
    take a single :term:`file object` argument.  If provided, *codeset* will change
    the charset used to encode translated strings in the
@@ -241,7 +252,7 @@ are the methods of :class:`!NullTranslations`:
 
    .. method:: _parse(fp)
 
-      No-op'd in the base class, this method takes file object *fp*, and reads
+      No-op in the base class, this method takes file object *fp*, and reads
       the data from the file, initializing its message catalog.  If you have an
       unsupported message catalog file format, you should override this method
       to parse your format.
@@ -267,6 +278,22 @@ are the methods of :class:`!NullTranslations`:
       Overridden in derived classes.
 
 
+   .. method:: pgettext(context, message)
+
+      If a fallback has been set, forward :meth:`pgettext` to the fallback.
+      Otherwise, return the translated message.  Overridden in derived classes.
+
+      .. versionadded:: 3.8
+
+
+   .. method:: npgettext(context, singular, plural, n)
+
+      If a fallback has been set, forward :meth:`npgettext` to the fallback.
+      Otherwise, return the translated message.  Overridden in derived classes.
+
+      .. versionadded:: 3.8
+
+
    .. method:: lgettext(message)
    .. method:: lngettext(singular, plural, n)
 
@@ -285,7 +312,8 @@ are the methods of :class:`!NullTranslations`:
 
    .. method:: info()
 
-      Return the "protected" :attr:`_info` variable.
+      Return the "protected" :attr:`_info` variable, a dictionary containing
+      the metadata found in the message catalog file.
 
 
    .. method:: charset()
@@ -316,7 +344,7 @@ are the methods of :class:`!NullTranslations`:
       If the *names* parameter is given, it must be a sequence containing the
       names of functions you want to install in the builtins namespace in
       addition to :func:`_`.  Supported names are ``'gettext'``, ``'ngettext'``,
-      ``'lgettext'`` and ``'lngettext'``.
+      ``'pgettext'``, ``'npgettext'``, ``'lgettext'``, and ``'lngettext'``.
 
       Note that this is only one way, albeit the most convenient way, to make
       the :func:`_` function available to your application.  Because it affects
@@ -331,6 +359,9 @@ are the methods of :class:`!NullTranslations`:
       This puts :func:`_` only in the module's global namespace and so only
       affects calls within this module.
 
+      .. versionchanged:: 3.8
+         Added ``'pgettext'`` and ``'npgettext'``.
+
 
 The :class:`GNUTranslations` class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -340,15 +371,15 @@ The :mod:`gettext` module provides one additional class derived from
 :meth:`_parse` to enable reading GNU :program:`gettext` format :file:`.mo` files
 in both big-endian and little-endian format.
 
-:class:`GNUTranslations` parses optional meta-data out of the translation
-catalog.  It is convention with GNU :program:`gettext` to include meta-data as
-the translation for the empty string.  This meta-data is in :rfc:`822`\ -style
+:class:`GNUTranslations` parses optional metadata out of the translation
+catalog. It is convention with GNU :program:`gettext` to include metadata as
+the translation for the empty string. This metadata is in :rfc:`822`\ -style
 ``key: value`` pairs, and should contain the ``Project-Id-Version`` key.  If the
 key ``Content-Type`` is found, then the ``charset`` property is used to
 initialize the "protected" :attr:`_charset` instance variable, defaulting to
 ``None`` if not found.  If the charset encoding is specified, then all message
 ids and message strings read from the catalog are converted to Unicode using
-this encoding, else ASCII encoding is assumed.
+this encoding, else ASCII is assumed.
 
 Since message ids are read as Unicode strings too, all :meth:`*gettext` methods
 will assume message ids as Unicode strings, not byte strings.
@@ -392,6 +423,31 @@ unexpected, or if other problems occur while reading the file, instantiating a
              'There is %(num)d file in this directory',
              'There are %(num)d files in this directory',
              n) % {'num': n}
+
+
+   .. method:: pgettext(context, message)
+
+      Look up the *context* and *message* id in the catalog and return the
+      corresponding message string, as a Unicode string.  If there is no
+      entry in the catalog for the *message* id and *context*, and a fallback
+      has been set, the look up is forwarded to the fallback's
+      :meth:`pgettext` method.  Otherwise, the *message* id is returned.
+
+      .. versionadded:: 3.8
+
+
+   .. method:: npgettext(context, singular, plural, n)
+
+      Do a plural-forms lookup of a message id.  *singular* is used as the
+      message id for purposes of lookup in the catalog, while *n* is used to
+      determine which plural form to use.
+
+      If the message id for *context* is not found in the catalog, and a
+      fallback is specified, the request is forwarded to the fallback's
+      :meth:`npgettext` method.  Otherwise, when *n* is 1 *singular* is
+      returned, and *plural* is returned in all other cases.
+
+      .. versionadded:: 3.8
 
 
    .. method:: lgettext(message)
@@ -452,7 +508,7 @@ take the following steps:
 
 #. run a suite of tools over your marked files to generate raw messages catalogs
 
-#. create language specific translations of the message catalogs
+#. create language-specific translations of the message catalogs
 
 #. use the :mod:`gettext` module so that message strings are properly translated
 
@@ -462,9 +518,8 @@ it in ``_('...')`` --- that is, a call to the function :func:`_`.  For example::
 
    filename = 'mylog.txt'
    message = _('writing a log message')
-   fp = open(filename, 'w')
-   fp.write(message)
-   fp.close()
+   with open(filename, 'w') as fp:
+       fp.write(message)
 
 In this example, the string ``'writing a log message'`` is marked as a candidate
 for translation, while the strings ``'mylog.txt'`` and ``'w'`` are not.
@@ -515,7 +570,7 @@ Localizing your module
 ^^^^^^^^^^^^^^^^^^^^^^
 
 If you are localizing your module, you must take care not to make global
-changes, e.g. to the built-in namespace.  You should not use the GNU ``gettext``
+changes, e.g. to the built-in namespace. You should not use the GNU :program:`gettext`
 API but instead the class-based API.
 
 Let's say your module is called "spam" and the module's various natural language
@@ -669,8 +724,9 @@ implementations, and valuable experience to the creation of this module:
 .. [#] The default locale directory is system dependent; for example, on RedHat Linux
    it is :file:`/usr/share/locale`, but on Solaris it is :file:`/usr/lib/locale`.
    The :mod:`gettext` module does not try to support these system dependent
-   defaults; instead its default is :file:`sys.prefix/share/locale`. For this
-   reason, it is always best to call :func:`bindtextdomain` with an explicit
-   absolute path at the start of your application.
+   defaults; instead its default is :file:`{sys.prefix}/share/locale` (see
+   :data:`sys.prefix`). For this reason, it is always best to call
+   :func:`bindtextdomain` with an explicit absolute path at the start of your
+   application.
 
 .. [#] See the footnote for :func:`bindtextdomain` above.

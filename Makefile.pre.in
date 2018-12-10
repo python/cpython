@@ -69,8 +69,7 @@ INSTALL_SCRIPT= @INSTALL_SCRIPT@
 INSTALL_DATA=	@INSTALL_DATA@
 # Shared libraries must be installed with executable mode on some systems;
 # rather than figuring out exactly which, we always give them executable mode.
-# Also, making them read-only seems to be a good idea...
-INSTALL_SHARED= ${INSTALL} -m 555
+INSTALL_SHARED= ${INSTALL} -m 755
 
 MKDIR_P=	@MKDIR_P@
 
@@ -91,7 +90,7 @@ CONFIGURE_LDFLAGS=	@LDFLAGS@
 # command line to append to these values without stomping the pre-set
 # values.
 PY_CFLAGS=	$(BASECFLAGS) $(OPT) $(CONFIGURE_CFLAGS) $(CFLAGS) $(EXTRA_CFLAGS)
-PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST)
+PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) -I$(srcdir)/Include/internal
 # Both CPPFLAGS and LDFLAGS need to contain the shell's value for setup.py to
 # be able to build extension modules using the directories specified in the
 # environment variables
@@ -106,6 +105,7 @@ ARFLAGS=	@ARFLAGS@
 CFLAGSFORSHARED=@CFLAGSFORSHARED@
 # C flags used for building the interpreter object files
 PY_STDMODULE_CFLAGS= $(PY_CFLAGS) $(PY_CFLAGS_NODIST) $(PY_CPPFLAGS) $(CFLAGSFORSHARED)
+PY_BUILTIN_MODULE_CFLAGS= $(PY_STDMODULE_CFLAGS) -DPy_BUILD_CORE_BUILTIN
 PY_CORE_CFLAGS=	$(PY_STDMODULE_CFLAGS) -DPy_BUILD_CORE
 # Strict or non-strict aliasing flags used to compile dtoa.c, see above
 CFLAGS_ALIASING=@CFLAGS_ALIASING@
@@ -935,7 +935,6 @@ regen-typeslots:
 PYTHON_HEADERS= \
 		$(srcdir)/Include/Python.h \
 		$(srcdir)/Include/abstract.h \
-		$(srcdir)/Include/accu.h \
 		$(srcdir)/Include/asdl.h \
 		$(srcdir)/Include/ast.h \
 		$(srcdir)/Include/bltinmodule.h \
@@ -988,7 +987,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pgen.h \
 		$(srcdir)/Include/pgenheaders.h \
 		$(srcdir)/Include/pyarena.h \
-		$(srcdir)/Include/pyatomic.h \
 		$(srcdir)/Include/pycapsule.h \
 		$(srcdir)/Include/pyctype.h \
 		$(srcdir)/Include/pydebug.h \
@@ -1023,16 +1021,38 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/unicodeobject.h \
 		$(srcdir)/Include/warnings.h \
 		$(srcdir)/Include/weakrefobject.h \
+		\
 		pyconfig.h \
 		$(PARSER_HEADERS) \
 		$(srcdir)/Include/Python-ast.h \
-		$(srcdir)/Include/internal/ceval.h \
-		$(srcdir)/Include/internal/gil.h \
-		$(srcdir)/Include/internal/mem.h \
-		$(srcdir)/Include/internal/pygetopt.h \
-		$(srcdir)/Include/internal/pystate.h \
-		$(srcdir)/Include/internal/context.h \
-		$(srcdir)/Include/internal/warnings.h \
+		\
+		$(srcdir)/Include/cpython/abstract.h \
+		$(srcdir)/Include/cpython/dictobject.h \
+		$(srcdir)/Include/cpython/object.h \
+		$(srcdir)/Include/cpython/objimpl.h \
+		$(srcdir)/Include/cpython/pyerrors.h \
+		$(srcdir)/Include/cpython/pylifecycle.h \
+		$(srcdir)/Include/cpython/pystate.h \
+		$(srcdir)/Include/cpython/tupleobject.h \
+		$(srcdir)/Include/cpython/unicodeobject.h \
+		\
+		$(srcdir)/Include/internal/pycore_accu.h \
+		$(srcdir)/Include/internal/pycore_atomic.h \
+		$(srcdir)/Include/internal/pycore_ceval.h \
+		$(srcdir)/Include/internal/pycore_condvar.h \
+		$(srcdir)/Include/internal/pycore_context.h \
+		$(srcdir)/Include/internal/pycore_fileutils.h \
+		$(srcdir)/Include/internal/pycore_getopt.h \
+		$(srcdir)/Include/internal/pycore_gil.h \
+		$(srcdir)/Include/internal/pycore_hamt.h \
+		$(srcdir)/Include/internal/pycore_object.h \
+		$(srcdir)/Include/internal/pycore_pathconfig.h \
+		$(srcdir)/Include/internal/pycore_pyhash.h \
+		$(srcdir)/Include/internal/pycore_pylifecycle.h \
+		$(srcdir)/Include/internal/pycore_pymem.h \
+		$(srcdir)/Include/internal/pycore_pystate.h \
+		$(srcdir)/Include/internal/pycore_tupleobject.h \
+		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(DTRACE_HEADERS)
 
 $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
@@ -1439,10 +1459,30 @@ inclinstall:
 		else	true; \
 		fi; \
 	done
+	@if test ! -d $(DESTDIR)$(INCLUDEPY)/cpython; then \
+		echo "Creating directory $(DESTDIR)$(INCLUDEPY)/cpython"; \
+		$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(INCLUDEPY)/cpython; \
+	else	true; \
+	fi
+	@if test ! -d $(DESTDIR)$(INCLUDEPY)/internal; then \
+		echo "Creating directory $(DESTDIR)$(INCLUDEPY)/internal"; \
+		$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(INCLUDEPY)/internal; \
+	else	true; \
+	fi
 	@for i in $(srcdir)/Include/*.h; \
 	do \
 		echo $(INSTALL_DATA) $$i $(INCLUDEPY); \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY); \
+	done
+	@for i in $(srcdir)/Include/cpython/*.h; \
+	do \
+		echo $(INSTALL_DATA) $$i $(INCLUDEPY)/cpython; \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/cpython; \
+	done
+	@for i in $(srcdir)/Include/internal/*.h; \
+	do \
+		echo $(INSTALL_DATA) $$i $(INCLUDEPY)/internal; \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/internal; \
 	done
 	$(INSTALL_DATA) pyconfig.h $(DESTDIR)$(CONFINCLUDEPY)/pyconfig.h
 
@@ -1634,7 +1674,7 @@ autoconf:
 
 # Create a tags file for vi
 tags::
-	ctags -w $(srcdir)/Include/*.h $(srcdir)/Include/internal/*.h
+	ctags -w $(srcdir)/Include/*.h $(srcdir)/Include/cpython/*.h $(srcdir)/Include/internal/*.h
 	for i in $(SRCDIRS); do ctags -f tags -w -a $(srcdir)/$$i/*.[ch]; done
 	ctags -f tags -w -a $(srcdir)/Modules/_ctypes/*.[ch]
 	LC_ALL=C sort -o tags tags
@@ -1642,7 +1682,7 @@ tags::
 # Create a tags file for GNU Emacs
 TAGS::
 	cd $(srcdir); \
-	etags Include/*.h Include/internal/*.h; \
+	etags Include/*.h Include/cpython/*.h Include/internal/*.h; \
 	for i in $(SRCDIRS); do etags -a $$i/*.[ch]; done
 
 # Sanitation targets -- clean leaves libraries, executables and tags

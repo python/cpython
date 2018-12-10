@@ -108,7 +108,7 @@
 <p>IDLE has the following features:</p>
 <ul class="simple">
 <li>coded in 100% pure Python, using the <a class="reference internal" href="tkinter.html#module-tkinter" title="tkinter: Interface to Tcl/Tk for graphical user interfaces"><code class="xref py py-mod docutils literal notranslate"><span class="pre">tkinter</span></code></a> GUI toolkit</li>
-<li>cross-platform: works mostly the same on Windows, Unix, and Mac OS X</li>
+<li>cross-platform: works mostly the same on Windows, Unix, and macOS</li>
 <li>Python shell window (interactive interpreter) with colorizing
 of code input, output, and error messages</li>
 <li>multi-window text editor with multiple undo, Python colorizing,
@@ -122,12 +122,15 @@ of global and local namespaces</li>
 <div class="section" id="menus">
 <h2>Menus<a class="headerlink" href="#menus" title="Permalink to this headline">¶</a></h2>
 <p>IDLE has two main window types, the Shell window and the Editor window.  It is
-possible to have multiple editor windows simultaneously.  Output windows, such
-as used for Edit / Find in Files, are a subtype of edit window.  They currently
-have the same top menu as Editor windows but a different default title and
-context menu.</p>
-<p>IDLE’s menus dynamically change based on which window is currently selected.
-Each menu documented below indicates which window type it is associated with.</p>
+possible to have multiple editor windows simultaneously.  On Windows and
+Linux, each has its own top menu.  Each menu documented below indicates
+which window type it is associated with.</p>
+<p>Output windows, such as used for Edit =&gt; Find in Files, are a subtype of editor
+window.  They currently have the same top menu but a different
+default title and context menu.</p>
+<p>On macOS, there is one application menu.  It dynamically changes according
+to the window currently selected.  It has an IDLE menu, and some entries
+described below are moved around to conform to Apple guidlines.</p>
 <div class="section" id="file-menu-shell-and-editor">
 <h3>File menu (Shell and Editor)<a class="headerlink" href="#file-menu-shell-and-editor" title="Permalink to this headline">¶</a></h3>
 <dl class="docutils">
@@ -301,7 +304,7 @@ access to locals and globals.</dd>
 <dt>Configure IDLE</dt>
 <dd><p class="first">Open a configuration dialog and change preferences for the following:
 fonts, indentation, keybindings, text color themes, startup windows and
-size, additional help sources, and extensions (see below).  On OS X,
+size, additional help sources, and extensions (see below).  On macOS,
 open the configuration dialog by selecting Preferences in the application
 menu.  To use a new built-in color theme (IDLE Dark) with older IDLEs,
 save it as a new custom theme.</p>
@@ -332,7 +335,7 @@ it to the foreground (deiconifying it if necessary).</p>
 <dt>About IDLE</dt>
 <dd>Display version, copyright, license, credits, and more.</dd>
 <dt>IDLE Help</dt>
-<dd>Display a help file for IDLE detailing the menu options, basic editing and
+<dd>Display this IDLE document, detailing the menu options, basic editing and
 navigation, and other tips.</dd>
 <dt>Python Docs</dt>
 <dd>Access local Python documentation, if installed, or start a web browser
@@ -341,11 +344,12 @@ and open docs.python.org showing the latest Python documentation.</dd>
 <dd>Run the turtledemo module with example Python code and turtle drawings.</dd>
 </dl>
 <p>Additional help sources may be added here with the Configure IDLE dialog under
-the General tab.</p>
+the General tab. See the “Help sources” subsection below for more
+on Help menu choices.</p>
 </div>
 <div class="section" id="context-menus">
 <span id="index-4"></span><h3>Context Menus<a class="headerlink" href="#context-menus" title="Permalink to this headline">¶</a></h3>
-<p>Open a context menu by right-clicking in a window (Control-click on OS X).
+<p>Open a context menu by right-clicking in a window (Control-click on macOS).
 Context menus have the standard clipboard functions also on the Edit menu.</p>
 <dl class="docutils">
 <dt>Cut</dt>
@@ -364,17 +368,38 @@ debugger.  Breakpoints for a file are saved in the user’s .idlerc directory.</
 <dt>Clear Breakpoint</dt>
 <dd>Clear the breakpoint on that line.</dd>
 </dl>
-<p>Shell and Output windows have the following.</p>
+<p>Shell and Output windows also have the following.</p>
 <dl class="docutils">
 <dt>Go to file/line</dt>
 <dd>Same as in Debug menu.</dd>
+</dl>
+<p>The Shell window also has an output squeezing facility explained in the
+the <em>Python Shell window</em> subsection below.</p>
+<dl class="docutils">
+<dt>Squeeze</dt>
+<dd>If the cursor is over an output line, squeeze all the output between
+the code above and the prompt below down to a ‘Squeezed text’ label.</dd>
 </dl>
 </div>
 </div>
 <div class="section" id="editing-and-navigation">
 <h2>Editing and navigation<a class="headerlink" href="#editing-and-navigation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="editor-windows">
+<h3>Editor windows<a class="headerlink" href="#editor-windows" title="Permalink to this headline">¶</a></h3>
+<p>IDLE may open editor windows when it starts, depending on settings
+and how you start IDLE.  Thereafter, use the File menu.  There can be only
+one open editor window for a given file.</p>
+<p>The title bar contains the name of the file, the full path, and the version
+of Python and IDLE running the window.  The status bar contains the line
+number (‘Ln’) and column number (‘Col’).  Line numbers start with 1;
+column numbers with 0.</p>
+<p>IDLE assumes that files with a known .py* extension contain Python code
+and that other files do not.  Run Python code with the Run menu.</p>
+</div>
+<div class="section" id="key-bindings">
+<h3>Key bindings<a class="headerlink" href="#key-bindings" title="Permalink to this headline">¶</a></h3>
 <p>In this section, ‘C’ refers to the <kbd class="kbd docutils literal notranslate">Control</kbd> key on Windows and Unix and
-the <kbd class="kbd docutils literal notranslate">Command</kbd> key on Mac OSX.</p>
+the <kbd class="kbd docutils literal notranslate">Command</kbd> key on macOS.</p>
 <ul>
 <li><p class="first"><kbd class="kbd docutils literal notranslate">Backspace</kbd> deletes to the left; <kbd class="kbd docutils literal notranslate">Del</kbd> deletes to the right</p>
 </li>
@@ -408,6 +433,7 @@ this)</li>
 </ul>
 <p>Standard keybindings (like <kbd class="kbd docutils literal notranslate">C-c</kbd> to copy and <kbd class="kbd docutils literal notranslate">C-v</kbd> to paste)
 may work.  Keybindings are selected in the Configure IDLE dialog.</p>
+</div>
 <div class="section" id="automatic-indentation">
 <h3>Automatic indentation<a class="headerlink" href="#automatic-indentation" title="Permalink to this headline">¶</a></h3>
 <p>After a block-opening statement, the next line is indented by 4 spaces (in the
@@ -478,6 +504,14 @@ or immediately run an existing file before editing.</p>
 </div>
 <div class="section" id="python-shell-window">
 <h3>Python Shell window<a class="headerlink" href="#python-shell-window" title="Permalink to this headline">¶</a></h3>
+<p>With IDLE’s Shell, one enters, edits, and recalls complete statements.
+Most consoles and terminals only work with a single physical line at a time.</p>
+<p>When one pastes code into Shell, it is not compiled and possibly executed
+until one hits <kbd class="kbd docutils literal notranslate">Return</kbd>.  One may edit pasted code first.
+If one pastes more that one statement into Shell, the result will be a
+<a class="reference internal" href="exceptions.html#SyntaxError" title="SyntaxError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">SyntaxError</span></code></a> when multiple statements are compiled as if they were one.</p>
+<p>The editing features described in previous subsections work when entering
+code interactively.  IDLE’s Shell window also responds to the following keys.</p>
 <ul>
 <li><p class="first"><kbd class="kbd docutils literal notranslate">C-c</kbd> interrupts executing command</p>
 </li>
@@ -487,8 +521,8 @@ or immediately run an existing file before editing.</p>
 <p>Command history</p>
 <ul class="simple">
 <li><kbd class="kbd docutils literal notranslate">Alt-p</kbd> retrieves previous command matching what you have typed. On
-OS X use <kbd class="kbd docutils literal notranslate">C-p</kbd>.</li>
-<li><kbd class="kbd docutils literal notranslate">Alt-n</kbd> retrieves next. On OS X use <kbd class="kbd docutils literal notranslate">C-n</kbd>.</li>
+macOS use <kbd class="kbd docutils literal notranslate">C-p</kbd>.</li>
+<li><kbd class="kbd docutils literal notranslate">Alt-n</kbd> retrieves next. On macOS use <kbd class="kbd docutils literal notranslate">C-n</kbd>.</li>
 <li><kbd class="kbd docutils literal notranslate">Return</kbd> while on any previous command retrieves that command</li>
 </ul>
 </li>
@@ -583,23 +617,72 @@ be to delete one or more of the configuration files.</p>
 <p>If IDLE quits with no message, and it was not started from a console, try
 starting from a console (<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">idlelib)</span></code> and see if a message appears.</p>
 </div>
-<div class="section" id="idle-console-differences">
-<h3>IDLE-console differences<a class="headerlink" href="#idle-console-differences" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="running-user-code">
+<h3>Running user code<a class="headerlink" href="#running-user-code" title="Permalink to this headline">¶</a></h3>
 <p>With rare exceptions, the result of executing Python code with IDLE is
-intended to be the same as executing the same code in a console window.
+intended to be the same as executing the same code by the default method,
+directly with Python in a text-mode system console or terminal window.
 However, the different interface and operation occasionally affect
-visible results.  For instance, <code class="docutils literal notranslate"><span class="pre">sys.modules</span></code> starts with more entries.</p>
-<p>IDLE also replaces <code class="docutils literal notranslate"><span class="pre">sys.stdin</span></code>, <code class="docutils literal notranslate"><span class="pre">sys.stdout</span></code>, and <code class="docutils literal notranslate"><span class="pre">sys.stderr</span></code> with
-objects that get input from and send output to the Shell window.
-When Shell has the focus, it controls the keyboard and screen.  This is
+visible results.  For instance, <code class="docutils literal notranslate"><span class="pre">sys.modules</span></code> starts with more entries,
+and <code class="docutils literal notranslate"><span class="pre">threading.activeCount()</span></code> returns 2 instead of 1.</p>
+<p>By default, IDLE runs user code in a separate OS process rather than in
+the user interface process that runs the shell and editor.  In the execution
+process, it replaces <code class="docutils literal notranslate"><span class="pre">sys.stdin</span></code>, <code class="docutils literal notranslate"><span class="pre">sys.stdout</span></code>, and <code class="docutils literal notranslate"><span class="pre">sys.stderr</span></code>
+with objects that get input from and send output to the Shell window.
+The original values stored in <code class="docutils literal notranslate"><span class="pre">sys.__stdin__</span></code>, <code class="docutils literal notranslate"><span class="pre">sys.__stdout__</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">sys.__stderr__</span></code> are not touched, but may be <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<p>When Shell has the focus, it controls the keyboard and screen.  This is
 normally transparent, but functions that directly access the keyboard
-and screen will not work.  If <code class="docutils literal notranslate"><span class="pre">sys</span></code> is reset with <code class="docutils literal notranslate"><span class="pre">importlib.reload(sys)</span></code>,
-IDLE’s changes are lost and things like <code class="docutils literal notranslate"><span class="pre">input</span></code>, <code class="docutils literal notranslate"><span class="pre">raw_input</span></code>, and
-<code class="docutils literal notranslate"><span class="pre">print</span></code> will not work correctly.</p>
-<p>With IDLE’s Shell, one enters, edits, and recalls complete statements.
-Some consoles only work with a single physical line at a time.  IDLE uses
-<code class="docutils literal notranslate"><span class="pre">exec</span></code> to run each statement.  As a result, <code class="docutils literal notranslate"><span class="pre">'__builtins__'</span></code> is always
-defined for each statement.</p>
+and screen will not work.  These include system-specific functions that
+determine whether a key has been pressed and if so, which.</p>
+<p>IDLE’s standard stream replacements are not inherited by subprocesses
+created in the execution process, whether directly by user code or by modules
+such as multiprocessing.  If such subprocess use <code class="docutils literal notranslate"><span class="pre">input</span></code> from sys.stdin
+or <code class="docutils literal notranslate"><span class="pre">print</span></code> or <code class="docutils literal notranslate"><span class="pre">write</span></code> to sys.stdout or sys.stderr,
+IDLE should be started in a command line window.  The secondary subprocess
+will then be attached to that window for input and output.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">sys</span></code> is reset by user code, such as with <code class="docutils literal notranslate"><span class="pre">importlib.reload(sys)</span></code>,
+IDLE’s changes are lost and input from the keyboard and output to the screen
+will not work correctly.</p>
+</div>
+<div class="section" id="user-output-in-shell">
+<h3>User output in Shell<a class="headerlink" href="#user-output-in-shell" title="Permalink to this headline">¶</a></h3>
+<p>When a program outputs text, the result is determined by the
+corresponding output device.  When IDLE executes user code, <code class="docutils literal notranslate"><span class="pre">sys.stdout</span></code>
+and <code class="docutils literal notranslate"><span class="pre">sys.stderr</span></code> are connected to the display area of IDLE’s Shell.  Some of
+its features are inherited from the underlying Tk Text widget.  Others
+are programmed additions.  Where it matters, Shell is designed for development
+rather than production runs.</p>
+<p>For instance, Shell never throws away output.  A program that sends unlimited
+output to Shell will eventually fill memory, resulting in a memory error.
+In contrast, some system text windows only keep the last n lines of output.
+A Windows console, for instance, keeps a user-settable 1 to 9999 lines,
+with 300 the default.</p>
+<p>Text widgets display a subset of Unicode, the Basic Multilingual Plane (BMP).
+Which characters get a proper glyph instead of a replacement box depends on
+the operating system and installed fonts.  Newline characters cause following
+text to appear on a new line, but other control characters are either
+replaced with a box or deleted.  However, <code class="docutils literal notranslate"><span class="pre">repr()</span></code>, which is used for
+interactive echo of expression values, replaces control characters,
+some BMP codepoints, and all non-BMP characters with escape codes
+before they are output.</p>
+<p>Normal and error output are generally kept separate (on separate lines)
+from code input and each other.  They each get different highlight colors.</p>
+<p>For SyntaxError tracebacks, the normal ‘^’ marking where the error was
+detected is replaced by coloring the text with an error highlight.
+When code run from a file causes other exceptions, one may right click
+on a traceback line to jump to the corresponding line in an IDLE editor.
+The file will be opened if necessary.</p>
+<p>Shell has a special facility for squeezing output lines down to a
+‘Squeezed text’ label.  This is done automatically
+for output over N lines (N = 50 by default).
+N can be changed in the PyShell section of the General
+page of the Settings dialog.  Output with fewer lines can be squeezed by
+right clicking on the output.  This can be useful lines long enough to slow
+down scrolling.</p>
+<p>Squeezed output is expanded in place by double-clicking the label.
+It can also be sent to the clipboard or a separate view window by
+right-clicking the label.</p>
 </div>
 <div class="section" id="developing-tkinter-applications">
 <h3>Developing tkinter applications<a class="headerlink" href="#developing-tkinter-applications" title="Permalink to this headline">¶</a></h3>
@@ -649,13 +732,22 @@ with the default subprocess if at all possible.</p>
 </div>
 <div class="section" id="help-and-preferences">
 <h2>Help and preferences<a class="headerlink" href="#help-and-preferences" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="additional-help-sources">
-<h3>Additional help sources<a class="headerlink" href="#additional-help-sources" title="Permalink to this headline">¶</a></h3>
-<p>IDLE includes a help menu entry called “Python Docs” that will open the
-extensive sources of help, including tutorials, available at docs.python.org.
-Selected URLs can be added or removed from the help menu at any time using the
-Configure IDLE dialog. See the IDLE help option in the help menu of IDLE for
-more information.</p>
+<div class="section" id="help-sources">
+<h3>Help sources<a class="headerlink" href="#help-sources" title="Permalink to this headline">¶</a></h3>
+<p>Help menu entry “IDLE Help” displays a formatted html version of the
+IDLE chapter of the Library Reference.  The result, in a read-only
+tkinter text window, is close to what one sees in a web browser.
+Navigate through the text with a mousewheel,
+the scrollbar, or up and down arrow keys held down.
+Or click the TOC (Table of Contents) button and select a section
+header in the opened box.</p>
+<p>Help menu entry “Python Docs” opens the extensive sources of help,
+including tutorials, available at docs.python.org/x.y, where ‘x.y’
+is the currently running Python version.  If your system
+has an off-line copy of the docs (this may be an installation option),
+that will be opened instead.</p>
+<p>Selected URLs can be added or removed from the help menu at any time using the
+General tab of the Configure IDLE dialog .</p>
 </div>
 <div class="section" id="setting-preferences">
 <h3>Setting preferences<a class="headerlink" href="#setting-preferences" title="Permalink to this headline">¶</a></h3>
@@ -663,6 +755,12 @@ more information.</p>
 changed via Configure IDLE on the Option menu.  Keys can be user defined;
 IDLE ships with four built-in key sets. In addition, a user can create a
 custom key set in the Configure IDLE dialog under the keys tab.</p>
+</div>
+<div class="section" id="idle-on-macos">
+<h3>IDLE on macOS<a class="headerlink" href="#idle-on-macos" title="Permalink to this headline">¶</a></h3>
+<p>Under System Preferences: Dock, one can set “Prefer tabs when opening
+documents” to “Always”.  This setting is not compatible with the tk/tkinter
+GUI framework used by IDLE, and it breaks a few IDLE features.</p>
 </div>
 <div class="section" id="extensions">
 <h3>Extensions<a class="headerlink" href="#extensions" title="Permalink to this headline">¶</a></h3>
@@ -698,6 +796,8 @@ also used for testing.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#editing-and-navigation">Editing and navigation</a><ul>
+<li><a class="reference internal" href="#editor-windows">Editor windows</a></li>
+<li><a class="reference internal" href="#key-bindings">Key bindings</a></li>
 <li><a class="reference internal" href="#automatic-indentation">Automatic indentation</a></li>
 <li><a class="reference internal" href="#completions">Completions</a></li>
 <li><a class="reference internal" href="#calltips">Calltips</a></li>
@@ -708,14 +808,16 @@ also used for testing.</p>
 <li><a class="reference internal" href="#startup-and-code-execution">Startup and code execution</a><ul>
 <li><a class="reference internal" href="#command-line-usage">Command line usage</a></li>
 <li><a class="reference internal" href="#startup-failure">Startup failure</a></li>
-<li><a class="reference internal" href="#idle-console-differences">IDLE-console differences</a></li>
+<li><a class="reference internal" href="#running-user-code">Running user code</a></li>
+<li><a class="reference internal" href="#user-output-in-shell">User output in Shell</a></li>
 <li><a class="reference internal" href="#developing-tkinter-applications">Developing tkinter applications</a></li>
 <li><a class="reference internal" href="#running-without-a-subprocess">Running without a subprocess</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#help-and-preferences">Help and preferences</a><ul>
-<li><a class="reference internal" href="#additional-help-sources">Additional help sources</a></li>
+<li><a class="reference internal" href="#help-sources">Help sources</a></li>
 <li><a class="reference internal" href="#setting-preferences">Setting preferences</a></li>
+<li><a class="reference internal" href="#idle-on-macos">IDLE on macOS</a></li>
 <li><a class="reference internal" href="#extensions">Extensions</a></li>
 </ul>
 </li>
@@ -797,7 +899,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Oct 27, 2018.
+    Last updated on Nov 12, 2018.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 

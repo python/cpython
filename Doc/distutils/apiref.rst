@@ -183,8 +183,9 @@ the full reference.
    | *sources*              | list of source filenames,      | a list of strings         |
    |                        | relative to the distribution   |                           |
    |                        | root (where the setup script   |                           |
-   |                        | lives), in Unix form (slash-   |                           |
-   |                        | separated) for portability.    |                           |
+   |                        | lives), in Unix form           |                           |
+   |                        | (slash-separated) for          |                           |
+   |                        | portability.                   |                           |
    |                        | Source files may be C, C++,    |                           |
    |                        | SWIG (.i), platform-specific   |                           |
    |                        | resource files, or whatever    |                           |
@@ -940,7 +941,7 @@ timestamp dependency analysis.
 .. function:: newer_group(sources, target[, missing='error'])
 
    Return true if *target* is out-of-date with respect to any file listed in
-   *sources*  In other words, if *target* exists and is newer than every file in
+   *sources*.  In other words, if *target* exists and is newer than every file in
    *sources*, return false; otherwise return true. *missing* controls what we do
    when a source file is missing; the default (``'error'``) is to blow up with an
    :exc:`OSError` from  inside :func:`os.stat`; if it is ``'ignore'``, we silently
@@ -1566,8 +1567,8 @@ lines, and joining lines with backslashes.
    +------------------+--------------------------------+---------+
    | option name      | description                    | default |
    +==================+================================+=========+
-   | *strip_comments* | strip from ``'#'`` to end-of-  | true    |
-   |                  | line, as well as any           |         |
+   | *strip_comments* | strip from ``'#'`` to          | true    |
+   |                  | end-of-line, as well as any    |         |
    |                  | whitespace leading up to the   |         |
    |                  | ``'#'``\ ---unless it is       |         |
    |                  | escaped by a backslash         |         |

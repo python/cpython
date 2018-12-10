@@ -1,8 +1,9 @@
 /* Iterator objects */
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 
 typedef struct {
     PyObject_HEAD

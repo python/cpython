@@ -1,10 +1,11 @@
 #ifndef Py_LIMITED_API
 #ifndef Py_SYMTABLE_H
 #define Py_SYMTABLE_H
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "Python-ast.h"   /* mod_ty */
 
 /* XXX(ncoghlan): This is a weird mix of public names and interpreter internal
  *                names.
@@ -115,4 +116,4 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 }
 #endif
 #endif /* !Py_SYMTABLE_H */
-#endif /* Py_LIMITED_API */
+#endif /* !Py_LIMITED_API */
