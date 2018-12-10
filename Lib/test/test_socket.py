@@ -5972,11 +5972,14 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
     def test_length_restriction(self):
         # bpo-35050, off-by-one error in length check
         sock = socket.socket(socket.AF_ALG, socket.SOCK_SEQPACKET, 0)
+        self.addCleanup(sock.close)
+
         # salg_type[14]
         with self.assertRaises(FileNotFoundError):
             sock.bind(("t" * 13, "name"))
         with self.assertRaisesRegex(ValueError, "type too long"):
             sock.bind(("t" * 14, "name"))
+
         # salg_name[64]
         with self.assertRaises(FileNotFoundError):
             sock.bind(("type", "n" * 63))

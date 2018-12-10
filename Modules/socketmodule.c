@@ -2245,8 +2245,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         {
             return 0;
         }
-        /* sockaddr_alg has fixed-sized char arrays for type and name
-         * both must be NULL terminated
+        /* sockaddr_alg has fixed-sized char arrays for type, and name
+         * both must be NULL terminated.
          */
         if (strlen(type) >= sizeof(sa->salg_type)) {
             PyErr_SetString(PyExc_ValueError, "AF_ALG type too long.");
