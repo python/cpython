@@ -135,12 +135,16 @@ def get_layout(ns):
             if lib.is_file():
                 yield "libs/" + n + ".lib", lib
 
-    yield from in_build("python_uwp.exe", new_name="python")
-    yield from in_build("pythonw_uwp.exe", new_name="pythonw")
+    if ns.include_appxmanifest:
+        yield from in_build("python_uwp.exe", new_name="python")
+        yield from in_build("pythonw_uwp.exe", new_name="pythonw")
+    else:
+        yield from in_build("python.exe", new_name="python")
+        yield from in_build("pythonw.exe", new_name="pythonw")
 
     yield from in_build(PYTHON_DLL_NAME)
 
-    if ns.include_launchers:
+    if ns.include_launchers and ns.include_appxmanifest:
         if ns.include_pip:
             yield from in_build("python_uwp.exe", new_name="pip")
         if ns.include_idle:
