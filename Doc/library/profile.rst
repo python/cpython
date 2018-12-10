@@ -540,9 +540,9 @@ less overhead (as the code does not need to be instrumented), but provides only
 relative indications of where time is being spent.
 
 In Python, since there is an interpreter active during execution, the presence
-of instrumented code is not required to do deterministic profiling.  Python
-automatically provides a :dfn:`hook` (optional callback) for each event.  In
-addition, the interpreted nature of Python tends to add so much overhead to
+of instrumented code is not required in order to do deterministic profiling.
+Python automatically provides a :dfn:`hook` (optional callback) for each event.
+In addition, the interpreted nature of Python tends to add so much overhead to
 execution, that deterministic profiling tends to only add small processing
 overhead in typical applications.  The result is that deterministic profiling is
 not that expensive, yet provides extensive run time statistics about the
