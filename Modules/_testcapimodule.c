@@ -3180,8 +3180,7 @@ test_pytime_object_to_timespec(PyObject *self, PyObject *args)
 static void
 slot_tp_del(PyObject *self)
 {
-    _Py_IDENTIFIER(__tp_del__);
-    PyObject *del, *res;
+    PyObject *res, *type;
     PyObject *error_type, *error_value, *error_traceback;
 
     /* Temporarily resurrect the object. */
@@ -3192,14 +3191,10 @@ slot_tp_del(PyObject *self)
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
 
     /* Execute __del__ method, if any. */
-    del = _PyObject_LookupSpecial(self, &PyId___tp_del__);
-    if (del != NULL) {
-        res = _PyObject_CallNoArg(del);
-        if (res == NULL)
-            PyErr_WriteUnraisable(del);
-        else
-            Py_DECREF(res);
-        Py_DECREF(del);
+    type = (PyObject *)Py_TYPE(self);
+    if (PyObject_HasAttrString(type, "__tp_del__") == 1) {
+        res = PyObject_CallMethod(type, "__tp_del__", "(O)", self);
+        Py_XDECREF(res);
     }
 
     /* Restore the saved exception. */

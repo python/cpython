@@ -1085,18 +1085,13 @@ static PyObject *
 math_ceil(PyObject *module, PyObject *number)
 /*[clinic end generated code: output=6c3b8a78bc201c67 input=2725352806399cab]*/
 {
-    _Py_IDENTIFIER(__ceil__);
-    PyObject *method, *result;
+    PyObject *number_type;
 
-    method = _PyObject_LookupSpecial(number, &PyId___ceil__);
-    if (method == NULL) {
-        if (PyErr_Occurred())
-            return NULL;
+    number_type = (PyObject *)Py_TYPE(number);
+    if (PyObject_HasAttrString(number_type, "__ceil__") == 0) {
         return math_1_to_int(number, ceil, 0);
     }
-    result = _PyObject_CallNoArg(method);
-    Py_DECREF(method);
-    return result;
+    return PyObject_CallMethod(number_type, "__ceil__", "(O)", number);
 }
 
 FUNC2(copysign, copysign,
@@ -1143,18 +1138,13 @@ static PyObject *
 math_floor(PyObject *module, PyObject *number)
 /*[clinic end generated code: output=c6a65c4884884b8a input=63af6b5d7ebcc3d6]*/
 {
-    _Py_IDENTIFIER(__floor__);
-    PyObject *method, *result;
+    PyObject *number_type;
 
-    method = _PyObject_LookupSpecial(number, &PyId___floor__);
-    if (method == NULL) {
-        if (PyErr_Occurred())
-            return NULL;
+    number_type = (PyObject *)Py_TYPE(number);
+    if (PyObject_HasAttrString(number_type, "__floor__") == 0) {
         return math_1_to_int(number, floor, 0);
     }
-    result = _PyObject_CallNoArg(method);
-    Py_DECREF(method);
-    return result;
+    return PyObject_CallMethod(number_type, "__floor__", "(O)", number);
 }
 
 FUNC1A(gamma, m_tgamma,
@@ -1732,25 +1722,16 @@ static PyObject *
 math_trunc(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=34b9697b707e1031 input=2168b34e0a09134d]*/
 {
-    _Py_IDENTIFIER(__trunc__);
-    PyObject *trunc, *result;
+    PyObject *number_type;
 
-    if (Py_TYPE(x)->tp_dict == NULL) {
-        if (PyType_Ready(Py_TYPE(x)) < 0)
-            return NULL;
-    }
-
-    trunc = _PyObject_LookupSpecial(x, &PyId___trunc__);
-    if (trunc == NULL) {
-        if (!PyErr_Occurred())
-            PyErr_Format(PyExc_TypeError,
-                         "type %.100s doesn't define __trunc__ method",
-                         Py_TYPE(x)->tp_name);
+    number_type = (PyObject *)Py_TYPE(x);
+    if (PyObject_HasAttrString(number_type, "__trunc__") == 0) {
+				PyErr_Format(PyExc_TypeError,
+										 "type %.100s doesn't define __trunc__ method",
+										 Py_TYPE(x)->tp_name);
         return NULL;
     }
-    result = _PyObject_CallNoArg(trunc);
-    Py_DECREF(trunc);
-    return result;
+    return PyObject_CallMethod(number_type, "__trunc__", "(O)", x);
 }
 
 

@@ -1,0 +1,2 @@
+Modify extension modules to remove the usage of the non-public
+`_PyObject_LookupSpecial` function

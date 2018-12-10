@@ -949,17 +949,16 @@ path_converter(PyObject *o, void *p)
 
     if (!is_index && !is_buffer && !is_unicode && !is_bytes) {
         /* Inline PyOS_FSPath() for better error messages. */
-        _Py_IDENTIFIER(__fspath__);
-        PyObject *func = NULL;
+        PyObject *type;
 
-        func = _PyObject_LookupSpecial(o, &PyId___fspath__);
-        if (NULL == func) {
+        type = (PyObject *)Py_TYPE(o);
+        if (PyObject_HasAttrString(type, "__fspath__") == 0) {
             goto error_format;
         }
         /* still owns a reference to the original object */
         Py_DECREF(o);
-        o = _PyObject_CallNoArg(func);
-        Py_DECREF(func);
+        o = PyObject_CallMethod(type, "__fspath__", "(O)", o);
+
         if (NULL == o) {
             goto error_exit;
         }
@@ -12934,25 +12933,21 @@ PyOS_FSPath(PyObject *path)
 {
     /* For error message reasons, this function is manually inlined in
        path_converter(). */
-    _Py_IDENTIFIER(__fspath__);
-    PyObject *func = NULL;
-    PyObject *path_repr = NULL;
+    PyObject *path_repr, *type;
 
     if (PyUnicode_Check(path) || PyBytes_Check(path)) {
         Py_INCREF(path);
         return path;
     }
 
-    func = _PyObject_LookupSpecial(path, &PyId___fspath__);
-    if (NULL == func) {
+    type = (PyObject *)Py_TYPE(path);
+    if (PyObject_HasAttrString(type, "__fspath__") == 0) {
         return PyErr_Format(PyExc_TypeError,
                             "expected str, bytes or os.PathLike object, "
                             "not %.200s",
                             Py_TYPE(path)->tp_name);
     }
-
-    path_repr = _PyObject_CallNoArg(func);
-    Py_DECREF(func);
+    path_repr = PyObject_CallMethod(type, "__fspath__", "(O)", path);
     if (NULL == path_repr) {
         return NULL;
     }
