@@ -14,7 +14,7 @@ class GetKeysDialog(Toplevel):
     keyerror_title = 'Key Sequence Error'
 
     def __init__(self, parent, title, action, currentKeySequences,
-                 _htest=False, _utest=False):
+                 *, _htest=False, _utest=False):
         """
         action - string, the name of the virtual event these keys will be
                  mapped to
@@ -235,10 +235,12 @@ class GetKeysDialog(Toplevel):
             return
         if (self.advanced or self.KeysOK(keys)) and self.bind_ok(keys):
             self.result = keys
+        self.grab_release()
         self.destroy()
 
     def Cancel(self, event=None):
         self.result=''
+        self.grab_release()
         self.destroy()
 
     def KeysOK(self, keys):
@@ -291,8 +293,8 @@ class GetKeysDialog(Toplevel):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_config_key', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_config_key', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(GetKeysDialog)

@@ -6,8 +6,9 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 #include "osdefs.h"
 
@@ -116,19 +117,17 @@ BaseException_str(PyBaseExceptionObject *self)
 static PyObject *
 BaseException_repr(PyBaseExceptionObject *self)
 {
-    const char *name;
-    const char *dot;
-
-    name = Py_TYPE(self)->tp_name;
-    dot = (const char *) strrchr(name, '.');
-    if (dot != NULL) name = dot+1;
-
-    return PyUnicode_FromFormat("%s%R", name, self->args);
+    const char *name = _PyType_Name(Py_TYPE(self));
+    if (PyTuple_GET_SIZE(self->args) == 1)
+        return PyUnicode_FromFormat("%s(%R)", name,
+                                    PyTuple_GET_ITEM(self->args, 0));
+    else
+        return PyUnicode_FromFormat("%s%R", name, self->args);
 }
 
 /* Pickling support */
 static PyObject *
-BaseException_reduce(PyBaseExceptionObject *self)
+BaseException_reduce(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ignored))
 {
     if (self->args && self->dict)
         return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
@@ -183,7 +182,7 @@ static PyMethodDef BaseException_methods[] = {
 };
 
 static PyObject *
-BaseException_get_args(PyBaseExceptionObject *self)
+BaseException_get_args(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
 {
     if (self->args == NULL) {
         Py_RETURN_NONE;
@@ -193,7 +192,7 @@ BaseException_get_args(PyBaseExceptionObject *self)
 }
 
 static int
-BaseException_set_args(PyBaseExceptionObject *self, PyObject *val)
+BaseException_set_args(PyBaseExceptionObject *self, PyObject *val, void *Py_UNUSED(ignored))
 {
     PyObject *seq;
     if (val == NULL) {
@@ -208,7 +207,7 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val)
 }
 
 static PyObject *
-BaseException_get_tb(PyBaseExceptionObject *self)
+BaseException_get_tb(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
 {
     if (self->traceback == NULL) {
         Py_RETURN_NONE;
@@ -218,7 +217,7 @@ BaseException_get_tb(PyBaseExceptionObject *self)
 }
 
 static int
-BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb)
+BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb, void *Py_UNUSED(ignored))
 {
     if (tb == NULL) {
         PyErr_SetString(PyExc_TypeError, "__traceback__ may not be deleted");
@@ -236,7 +235,8 @@ BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb)
 }
 
 static PyObject *
-BaseException_get_context(PyObject *self) {
+BaseException_get_context(PyObject *self, void *Py_UNUSED(ignored))
+{
     PyObject *res = PyException_GetContext(self);
     if (res)
         return res;  /* new reference already returned above */
@@ -244,7 +244,8 @@ BaseException_get_context(PyObject *self) {
 }
 
 static int
-BaseException_set_context(PyObject *self, PyObject *arg) {
+BaseException_set_context(PyObject *self, PyObject *arg, void *Py_UNUSED(ignored))
+{
     if (arg == NULL) {
         PyErr_SetString(PyExc_TypeError, "__context__ may not be deleted");
         return -1;
@@ -263,7 +264,8 @@ BaseException_set_context(PyObject *self, PyObject *arg) {
 }
 
 static PyObject *
-BaseException_get_cause(PyObject *self) {
+BaseException_get_cause(PyObject *self, void *Py_UNUSED(ignored))
+{
     PyObject *res = PyException_GetCause(self);
     if (res)
         return res;  /* new reference already returned above */
@@ -271,7 +273,8 @@ BaseException_get_cause(PyObject *self) {
 }
 
 static int
-BaseException_set_cause(PyObject *self, PyObject *arg) {
+BaseException_set_cause(PyObject *self, PyObject *arg, void *Py_UNUSED(ignored))
+{
     if (arg == NULL) {
         PyErr_SetString(PyExc_TypeError, "__cause__ may not be deleted");
         return -1;
@@ -294,10 +297,10 @@ static PyGetSetDef BaseException_getset[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
     {"__traceback__", (getter)BaseException_get_tb, (setter)BaseException_set_tb},
-    {"__context__", (getter)BaseException_get_context,
-     (setter)BaseException_set_context, PyDoc_STR("exception context")},
-    {"__cause__", (getter)BaseException_get_cause,
-     (setter)BaseException_set_cause, PyDoc_STR("exception cause")},
+    {"__context__", BaseException_get_context,
+     BaseException_set_context, PyDoc_STR("exception context")},
+    {"__cause__", BaseException_get_cause,
+     BaseException_set_cause, PyDoc_STR("exception cause")},
     {NULL},
 };
 
@@ -312,7 +315,7 @@ PyException_GetTraceback(PyObject *self) {
 
 int
 PyException_SetTraceback(PyObject *self, PyObject *tb) {
-    return BaseException_set_tb((PyBaseExceptionObject *)self, tb);
+    return BaseException_set_tb((PyBaseExceptionObject *)self, tb, NULL);
 }
 
 PyObject *
@@ -344,6 +347,13 @@ PyException_SetContext(PyObject *self, PyObject *context)
     Py_XSETREF(((PyBaseExceptionObject *)self)->context, context);
 }
 
+#undef PyExceptionClass_Name
+
+const char *
+PyExceptionClass_Name(PyObject *ob)
+{
+    return ((PyTypeObject*)ob)->tp_name;
+}
 
 static struct PyMemberDef BaseException_members[] = {
     {"__suppress_context__", T_BOOL,
@@ -715,7 +725,7 @@ ImportError_getstate(PyImportErrorObject *self)
 
 /* Pickling support */
 static PyObject *
-ImportError_reduce(PyImportErrorObject *self)
+ImportError_reduce(PyImportErrorObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *res;
     PyObject *args;
@@ -1125,7 +1135,7 @@ OSError_str(PyOSErrorObject *self)
 }
 
 static PyObject *
-OSError_reduce(PyOSErrorObject *self)
+OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *args = self->args;
     PyObject *res = NULL, *tmp;
@@ -2415,12 +2425,6 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 
 
 
-/* Pre-computed RecursionError instance for when recursion depth is reached.
-   Meant to be used when normalizing the exception for exceeding the recursion
-   depth will cause its own infinite recursion.
-*/
-PyObject *PyExc_RecursionErrorInst = NULL;
-
 #define PRE_INIT(TYPE) \
     if (!(_PyExc_ ## TYPE.tp_flags & Py_TPFLAGS_READY)) { \
         if (PyType_Ready(&_PyExc_ ## TYPE) < 0) \
@@ -2680,37 +2684,11 @@ _PyExc_Init(PyObject *bltinmod)
     ADD_ERRNO(TimeoutError, ETIMEDOUT)
 
     preallocate_memerrors();
-
-    if (!PyExc_RecursionErrorInst) {
-        PyExc_RecursionErrorInst = BaseException_new(&_PyExc_RecursionError, NULL, NULL);
-        if (!PyExc_RecursionErrorInst)
-            Py_FatalError("Cannot pre-allocate RecursionError instance for "
-                            "recursion errors");
-        else {
-            PyBaseExceptionObject *err_inst =
-                (PyBaseExceptionObject *)PyExc_RecursionErrorInst;
-            PyObject *args_tuple;
-            PyObject *exc_message;
-            exc_message = PyUnicode_FromString("maximum recursion depth exceeded");
-            if (!exc_message)
-                Py_FatalError("cannot allocate argument for RecursionError "
-                                "pre-allocation");
-            args_tuple = PyTuple_Pack(1, exc_message);
-            if (!args_tuple)
-                Py_FatalError("cannot allocate tuple for RecursionError "
-                                "pre-allocation");
-            Py_DECREF(exc_message);
-            if (BaseException_init(err_inst, args_tuple, NULL))
-                Py_FatalError("init of pre-allocated RecursionError failed");
-            Py_DECREF(args_tuple);
-        }
-    }
 }
 
 void
 _PyExc_Fini(void)
 {
-    Py_CLEAR(PyExc_RecursionErrorInst);
     free_preallocated_memerrors();
     Py_CLEAR(errnomap);
 }
@@ -2874,23 +2852,34 @@ _PyErr_TrySetFromCause(const char *format, ...)
 static int
 _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
 {
-    PyObject *strip_sep_obj = PyUnicode_FromString(" \t\r\n");
-    if (strip_sep_obj == NULL)
-        return -1;
-
-    // PRINT_OFFSET is to remove `print ` word from the data.
+    // PRINT_OFFSET is to remove the `print ` prefix from the data.
     const int PRINT_OFFSET = 6;
+    const int STRIP_BOTH = 2;
+    Py_ssize_t start_pos = start + PRINT_OFFSET;
     Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text);
-    PyObject *data = PyUnicode_Substring(self->text, PRINT_OFFSET, text_len);
+    Py_UCS4 semicolon = ';';
+    Py_ssize_t end_pos = PyUnicode_FindChar(self->text, semicolon,
+                                            start_pos, text_len, 1);
+    if (end_pos < -1) {
+      return -1;
+    } else if (end_pos == -1) {
+      end_pos = text_len;
+    }
 
+    PyObject *data = PyUnicode_Substring(self->text, start_pos, end_pos);
     if (data == NULL) {
-        Py_DECREF(strip_sep_obj);
         return -1;
     }
-    PyObject *new_data = _PyUnicode_XStrip(data, 2, strip_sep_obj);
+
+    PyObject *strip_sep_obj = PyUnicode_FromString(" \t\r\n");
+    if (strip_sep_obj == NULL) {
+        Py_DECREF(data);
+        return -1;
+    }
+
+    PyObject *new_data = _PyUnicode_XStrip(data, STRIP_BOTH, strip_sep_obj);
     Py_DECREF(data);
     Py_DECREF(strip_sep_obj);
-
     if (new_data == NULL) {
         return -1;
     }
@@ -2922,7 +2911,7 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
      */
     static PyObject *print_prefix = NULL;
     static PyObject *exec_prefix = NULL;
-    Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text);
+    Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text), match;
     int kind = PyUnicode_KIND(self->text);
     void *data = PyUnicode_DATA(self->text);
 
@@ -2945,9 +2934,12 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
             return -1;
         }
     }
-    if (PyUnicode_Tailmatch(self->text, print_prefix,
-                            start, text_len, -1)) {
-
+    match = PyUnicode_Tailmatch(self->text, print_prefix,
+                                start, text_len, -1);
+    if (match == -1) {
+        return -1;
+    }
+    if (match) {
         return _set_legacy_print_statement_msg(self, start);
     }
 
@@ -2958,10 +2950,17 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
             return -1;
         }
     }
-    if (PyUnicode_Tailmatch(self->text, exec_prefix,
-                            start, text_len, -1)) {
-        Py_XSETREF(self->msg,
-                  PyUnicode_FromString("Missing parentheses in call to 'exec'"));
+    match = PyUnicode_Tailmatch(self->text, exec_prefix, start, text_len, -1);
+    if (match == -1) {
+        return -1;
+    }
+    if (match) {
+        PyObject *msg = PyUnicode_FromString("Missing parentheses in call "
+                                             "to 'exec'");
+        if (msg == NULL) {
+            return -1;
+        }
+        Py_XSETREF(self->msg, msg);
         return 1;
     }
     /* Fall back to the default error message */

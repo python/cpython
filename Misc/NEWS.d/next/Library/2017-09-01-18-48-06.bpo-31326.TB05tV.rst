@@ -1,3 +1,0 @@
-concurrent.futures.ProcessPoolExecutor.shutdown() now explicitly closes the
-call queue. Moreover, shutdown(wait=True) now also join the call queue
-thread, to prevent leaking a dangling thread.

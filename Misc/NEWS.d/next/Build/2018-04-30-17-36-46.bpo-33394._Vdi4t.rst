@@ -1,0 +1,2 @@
+Enable the verbose build for extension modules, when GNU make is passed
+macros on the command line.

@@ -297,7 +297,7 @@ If the XML input has `namespaces
 with prefixes in the form ``prefix:sometag`` get expanded to
 ``{uri}sometag`` where the *prefix* is replaced by the full *URI*.
 Also, if there is a `default namespace
-<https://www.w3.org/TR/2006/REC-xml-names-20060816/#defaulting>`__,
+<https://www.w3.org/TR/xml-names/#defaulting>`__,
 that full URI gets prepended to all of the non-prefixed tags.
 
 Here is an XML example that incorporates two namespaces, one with the
@@ -437,6 +437,11 @@ Supported XPath syntax
 | ``[tag]``             | Selects all elements that have a child named         |
 |                       | ``tag``.  Only immediate children are supported.     |
 +-----------------------+------------------------------------------------------+
+| ``[.='text']``        | Selects all elements whose complete text content,    |
+|                       | including descendants, equals the given ``text``.    |
+|                       |                                                      |
+|                       | .. versionadded:: 3.7                                |
++-----------------------+------------------------------------------------------+
 | ``[tag='text']``      | Selects all elements that have a child named         |
 |                       | ``tag`` whose complete text content, including       |
 |                       | descendants, equals the given ``text``.              |
@@ -483,6 +488,10 @@ Functions
    written as an ordinary XML file.
 
    *elem* is an element tree or an individual element.
+
+   .. versionchanged:: 3.8
+      The :func:`dump` function now preserves the attribute order specified
+      by the user.
 
 
 .. function:: fromstring(text)
@@ -767,13 +776,13 @@ Element Objects
 
    .. method:: getchildren()
 
-      .. deprecated:: 3.2
+      .. deprecated-removed:: 3.2 3.9
          Use ``list(elem)`` or iteration.
 
 
    .. method:: getiterator(tag=None)
 
-      .. deprecated:: 3.2
+      .. deprecated-removed:: 3.2 3.9
          Use method :meth:`Element.iter` instead.
 
 
@@ -883,7 +892,7 @@ ElementTree Objects
 
    .. method:: getiterator(tag=None)
 
-      .. deprecated:: 3.2
+      .. deprecated-removed:: 3.2 3.9
          Use method :meth:`ElementTree.iter` instead.
 
 
@@ -941,6 +950,10 @@ ElementTree Objects
 
       .. versionadded:: 3.4
          The *short_empty_elements* parameter.
+
+      .. versionchanged:: 3.8
+         The :meth:`write` method now preserves the attribute order specified
+         by the user.
 
 
 This is the XML file that is going to be manipulated::
@@ -1045,33 +1058,26 @@ XMLParser Objects
 ^^^^^^^^^^^^^^^^^
 
 
-.. class:: XMLParser(html=0, target=None, encoding=None)
+.. class:: XMLParser(*, target=None, encoding=None)
 
    This class is the low-level building block of the module.  It uses
    :mod:`xml.parsers.expat` for efficient, event-based parsing of XML.  It can
    be fed XML data incrementally with the :meth:`feed` method, and parsing
    events are translated to a push API - by invoking callbacks on the *target*
    object.  If *target* is omitted, the standard :class:`TreeBuilder` is used.
-   The *html* argument was historically used for backwards compatibility and is
-   now deprecated.  If *encoding* [1]_ is given, the value overrides the
+   If *encoding* [1]_ is given, the value overrides the
    encoding specified in the XML file.
 
-   .. deprecated:: 3.4
-      The *html* argument.  The remaining arguments should be passed via
-      keyword to prepare for the removal of the *html* argument.
+   .. versionchanged:: 3.8
+      Parameters are now :ref:`keyword-only <keyword-only_parameter>`.
+      The *html* argument no longer supported.
+
 
    .. method:: close()
 
       Finishes feeding data to the parser.  Returns the result of calling the
       ``close()`` method of the *target* passed during construction; by default,
       this is the toplevel document element.
-
-
-   .. method:: doctype(name, pubid, system)
-
-      .. deprecated:: 3.2
-         Define the :meth:`TreeBuilder.doctype` method on a custom TreeBuilder
-         target.
 
 
    .. method:: feed(data)

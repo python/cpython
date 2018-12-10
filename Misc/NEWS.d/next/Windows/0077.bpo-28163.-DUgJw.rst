@@ -1,1 +1,0 @@
-WindowsConsoleIO fileno() passes wrong flags to _open_osfhandle

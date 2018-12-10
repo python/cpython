@@ -1,1 +1,0 @@
-Fix ctypes producing wrong PEP 3118 type codes for integer types.

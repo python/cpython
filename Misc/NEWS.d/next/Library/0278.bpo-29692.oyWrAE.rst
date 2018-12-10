@@ -1,2 +1,0 @@
-Fixed arbitrary unchaining of RuntimeError exceptions in
-contextlib.contextmanager.  Patch by Siddharth Velankar.

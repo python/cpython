@@ -1,2 +1,0 @@
-Closing transport during handshake process leaks open socket. Patch by
-Nikolay Kim

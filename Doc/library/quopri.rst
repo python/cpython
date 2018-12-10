@@ -34,9 +34,10 @@ sending a graphics file.
 
    Encode the contents of the *input* file and write the resulting quoted-printable
    data to the *output* file. *input* and *output* must be
-   :term:`binary file objects <file object>`. *quotetabs*, a flag which controls
-   whether to encode embedded spaces and tabs must be provideda and when true it
-   encodes such embedded whitespace, and when false it leaves them unencoded.
+   :term:`binary file objects <file object>`. *quotetabs*, a
+   non-optional flag which controls whether to encode embedded spaces
+   and tabs; when true it encodes such embedded whitespace, and when
+   false it leaves them unencoded.
    Note that spaces and tabs appearing at the end of lines are always encoded,
    as per :rfc:`1521`.  *header* is a flag which controls if spaces are encoded
    as underscores as per :rfc:`1522`.

@@ -1,8 +1,9 @@
 /* Iterator objects */
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 
 typedef struct {
     PyObject_HEAD
@@ -78,7 +79,7 @@ iter_iternext(PyObject *iterator)
 }
 
 static PyObject *
-iter_len(seqiterobject *it)
+iter_len(seqiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t seqsize, len;
 
@@ -101,7 +102,7 @@ iter_len(seqiterobject *it)
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-iter_reduce(seqiterobject *it)
+iter_reduce(seqiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     if (it->it_seq != NULL)
         return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
@@ -240,7 +241,7 @@ calliter_iternext(calliterobject *it)
 }
 
 static PyObject *
-calliter_reduce(calliterobject *it)
+calliter_reduce(calliterobject *it, PyObject *Py_UNUSED(ignored))
 {
     if (it->it_callable != NULL && it->it_sentinel != NULL)
         return Py_BuildValue("N(OO)", _PyObject_GetBuiltin("iter"),

@@ -83,15 +83,12 @@ __all__ = [
 ]
 
 
-import collections as _collections
-import copy as _copy
 import os as _os
 import re as _re
+import shutil as _shutil
 import sys as _sys
-import textwrap as _textwrap
 
 from gettext import gettext as _, ngettext
-
 
 SUPPRESS = '==SUPPRESS=='
 
@@ -137,10 +134,16 @@ class _AttributeHolder(object):
         return []
 
 
-def _ensure_value(namespace, name, value):
-    if getattr(namespace, name, None) is None:
-        setattr(namespace, name, value)
-    return getattr(namespace, name)
+def _copy_items(items):
+    if items is None:
+        return []
+    # The copy module is used only in the 'append' and 'append_const'
+    # actions, and it is needed only when the default value isn't a list.
+    # Delay its import for speeding up the common case.
+    if type(items) is list:
+        return items[:]
+    import copy
+    return copy.copy(items)
 
 
 # ===============
@@ -162,15 +165,11 @@ class HelpFormatter(object):
 
         # default setting for width
         if width is None:
-            try:
-                width = int(_os.environ['COLUMNS'])
-            except (KeyError, ValueError):
-                width = 80
+            width = _shutil.get_terminal_size().columns
             width -= 2
 
         self._prog = prog
         self._indent_increment = indent_increment
-        self._max_help_position = max_help_position
         self._max_help_position = min(max_help_position,
                                       max(width - 20, indent_increment * 2))
         self._width = width
@@ -325,7 +324,11 @@ class HelpFormatter(object):
             if len(prefix) + len(usage) > text_width:
 
                 # break usage into wrappable parts
-                part_regexp = r'\(.*?\)+|\[.*?\]+|\S+'
+                part_regexp = (
+                    r'\(.*?\)+(?=\s|$)|'
+                    r'\[.*?\]+(?=\s|$)|'
+                    r'\S+'
+                )
                 opt_usage = format(optionals, groups)
                 pos_usage = format(positionals, groups)
                 opt_parts = _re.findall(part_regexp, opt_usage)
@@ -619,12 +622,17 @@ class HelpFormatter(object):
 
     def _split_lines(self, text, width):
         text = self._whitespace_matcher.sub(' ', text).strip()
-        return _textwrap.wrap(text, width)
+        # The textwrap module is used only for formatting help.
+        # Delay its import for speeding up the common usage of argparse.
+        import textwrap
+        return textwrap.wrap(text, width)
 
     def _fill_text(self, text, width, indent):
         text = self._whitespace_matcher.sub(' ', text).strip()
-        return _textwrap.fill(text, width, initial_indent=indent,
-                                           subsequent_indent=indent)
+        import textwrap
+        return textwrap.fill(text, width,
+                             initial_indent=indent,
+                             subsequent_indent=indent)
 
     def _get_help_string(self, action):
         return action.help
@@ -952,7 +960,8 @@ class _AppendAction(Action):
             metavar=metavar)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        items = _copy.copy(_ensure_value(namespace, self.dest, []))
+        items = getattr(namespace, self.dest, None)
+        items = _copy_items(items)
         items.append(values)
         setattr(namespace, self.dest, items)
 
@@ -978,7 +987,8 @@ class _AppendConstAction(Action):
             metavar=metavar)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        items = _copy.copy(_ensure_value(namespace, self.dest, []))
+        items = getattr(namespace, self.dest, None)
+        items = _copy_items(items)
         items.append(self.const)
         setattr(namespace, self.dest, items)
 
@@ -1000,8 +1010,10 @@ class _CountAction(Action):
             help=help)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        new_count = _ensure_value(namespace, self.dest, 0) + 1
-        setattr(namespace, self.dest, new_count)
+        count = getattr(namespace, self.dest, None)
+        if count is None:
+            count = 0
+        setattr(namespace, self.dest, count + 1)
 
 
 class _HelpAction(Action):
@@ -1066,12 +1078,13 @@ class _SubParsersAction(Action):
                  prog,
                  parser_class,
                  dest=SUPPRESS,
+                 required=False,
                  help=None,
                  metavar=None):
 
         self._prog_prefix = prog
         self._parser_class = parser_class
-        self._name_parser_map = _collections.OrderedDict()
+        self._name_parser_map = {}
         self._choices_actions = []
 
         super(_SubParsersAction, self).__init__(
@@ -1079,6 +1092,7 @@ class _SubParsersAction(Action):
             dest=dest,
             nargs=PARSER,
             choices=self._name_parser_map,
+            required=required,
             help=help,
             metavar=metavar)
 

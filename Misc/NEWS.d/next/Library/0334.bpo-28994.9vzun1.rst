@@ -1,2 +1,0 @@
-The traceback no longer displayed for SystemExit raised in a callback
-registered by atexit.

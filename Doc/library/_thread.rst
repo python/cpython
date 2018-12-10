@@ -23,14 +23,10 @@ threading API built on top of this module.
    single: pthreads
    pair: threads; POSIX
 
-The module is optional.  It is supported on Windows, Linux, SGI IRIX, Solaris
-2.x, as well as on systems that have a POSIX thread (a.k.a. "pthread")
-implementation.  For systems lacking the :mod:`_thread` module, the
-:mod:`_dummy_thread` module is available. It duplicates this module's interface
-and can be used as a drop-in replacement.
+.. versionchanged:: 3.7
+   This module used to be optional, it is now always available.
 
-It defines the following constants and functions:
-
+This module defines the following constants and functions:
 
 .. exception:: error
 
@@ -105,7 +101,8 @@ It defines the following constants and functions:
    memory page size - platform documentation should be referred to for more
    information (4 KiB pages are common; using multiples of 4096 for the stack size is
    the suggested approach in the absence of more specific information).
-   Availability: Windows, systems with POSIX threads.
+
+   .. availability:: Windows, systems with POSIX threads.
 
 
 .. data:: TIMEOUT_MAX

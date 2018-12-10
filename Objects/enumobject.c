@@ -103,30 +103,40 @@ enum_next_long(enumobject *en, PyObject* next_item)
     PyObject *result = en->en_result;
     PyObject *next_index;
     PyObject *stepped_up;
+    PyObject *old_index;
+    PyObject *old_item;
 
     if (en->en_longindex == NULL) {
         en->en_longindex = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
-        if (en->en_longindex == NULL)
+        if (en->en_longindex == NULL) {
+            Py_DECREF(next_item);
             return NULL;
+        }
     }
     next_index = en->en_longindex;
     assert(next_index != NULL);
     stepped_up = PyNumber_Add(next_index, _PyLong_One);
-    if (stepped_up == NULL)
+    if (stepped_up == NULL) {
+        Py_DECREF(next_item);
         return NULL;
+    }
     en->en_longindex = stepped_up;
 
     if (result->ob_refcnt == 1) {
         Py_INCREF(result);
-        Py_DECREF(PyTuple_GET_ITEM(result, 0));
-        Py_DECREF(PyTuple_GET_ITEM(result, 1));
-    } else {
-        result = PyTuple_New(2);
-        if (result == NULL) {
-            Py_DECREF(next_index);
-            Py_DECREF(next_item);
-            return NULL;
-        }
+        old_index = PyTuple_GET_ITEM(result, 0);
+        old_item = PyTuple_GET_ITEM(result, 1);
+        PyTuple_SET_ITEM(result, 0, next_index);
+        PyTuple_SET_ITEM(result, 1, next_item);
+        Py_DECREF(old_index);
+        Py_DECREF(old_item);
+        return result;
+    }
+    result = PyTuple_New(2);
+    if (result == NULL) {
+        Py_DECREF(next_index);
+        Py_DECREF(next_item);
+        return NULL;
     }
     PyTuple_SET_ITEM(result, 0, next_index);
     PyTuple_SET_ITEM(result, 1, next_item);
@@ -140,6 +150,8 @@ enum_next(enumobject *en)
     PyObject *next_item;
     PyObject *result = en->en_result;
     PyObject *it = en->en_sit;
+    PyObject *old_index;
+    PyObject *old_item;
 
     next_item = (*Py_TYPE(it)->tp_iternext)(it);
     if (next_item == NULL)
@@ -157,15 +169,19 @@ enum_next(enumobject *en)
 
     if (result->ob_refcnt == 1) {
         Py_INCREF(result);
-        Py_DECREF(PyTuple_GET_ITEM(result, 0));
-        Py_DECREF(PyTuple_GET_ITEM(result, 1));
-    } else {
-        result = PyTuple_New(2);
-        if (result == NULL) {
-            Py_DECREF(next_index);
-            Py_DECREF(next_item);
-            return NULL;
-        }
+        old_index = PyTuple_GET_ITEM(result, 0);
+        old_item = PyTuple_GET_ITEM(result, 1);
+        PyTuple_SET_ITEM(result, 0, next_index);
+        PyTuple_SET_ITEM(result, 1, next_item);
+        Py_DECREF(old_index);
+        Py_DECREF(old_item);
+        return result;
+    }
+    result = PyTuple_New(2);
+    if (result == NULL) {
+        Py_DECREF(next_index);
+        Py_DECREF(next_item);
+        return NULL;
     }
     PyTuple_SET_ITEM(result, 0, next_index);
     PyTuple_SET_ITEM(result, 1, next_item);
@@ -173,7 +189,7 @@ enum_next(enumobject *en)
 }
 
 static PyObject *
-enum_reduce(enumobject *en)
+enum_reduce(enumobject *en, PyObject *Py_UNUSED(ignored))
 {
     if (en->en_longindex != NULL)
         return Py_BuildValue("O(OO)", Py_TYPE(en), en->en_sit, en->en_longindex);
@@ -333,7 +349,7 @@ reversed_next(reversedobject *ro)
 }
 
 static PyObject *
-reversed_len(reversedobject *ro)
+reversed_len(reversedobject *ro, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t position, seqsize;
 
@@ -349,7 +365,7 @@ reversed_len(reversedobject *ro)
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-reversed_reduce(reversedobject *ro)
+reversed_reduce(reversedobject *ro, PyObject *Py_UNUSED(ignored))
 {
     if (ro->seq)
         return Py_BuildValue("O(O)n", Py_TYPE(ro), ro->seq, ro->index);

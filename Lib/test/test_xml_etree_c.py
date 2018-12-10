@@ -65,6 +65,74 @@ class MiscTests(unittest.TestCase):
         del root
         support.gc_collect()
 
+    def test_parser_ref_cycle(self):
+        # bpo-31499: xmlparser_dealloc() crashed with a segmentation fault when
+        # xmlparser_gc_clear() was called previously by the garbage collector,
+        # when the parser was part of a reference cycle.
+
+        def parser_ref_cycle():
+            parser = cET.XMLParser()
+            # Create a reference cycle using an exception to keep the frame
+            # alive, so the parser will be destroyed by the garbage collector
+            try:
+                raise ValueError
+            except ValueError as exc:
+                err = exc
+
+        # Create a parser part of reference cycle
+        parser_ref_cycle()
+        # Trigger an explicit garbage collection to break the reference cycle
+        # and so destroy the parser
+        support.gc_collect()
+
+    def test_bpo_31728(self):
+        # A crash or an assertion failure shouldn't happen, in case garbage
+        # collection triggers a call to clear() or a reading of text or tail,
+        # while a setter or clear() or __setstate__() is already running.
+        elem = cET.Element('elem')
+        class X:
+            def __del__(self):
+                elem.text
+                elem.tail
+                elem.clear()
+
+        elem.text = X()
+        elem.clear()  # shouldn't crash
+
+        elem.tail = X()
+        elem.clear()  # shouldn't crash
+
+        elem.text = X()
+        elem.text = X()  # shouldn't crash
+        elem.clear()
+
+        elem.tail = X()
+        elem.tail = X()  # shouldn't crash
+        elem.clear()
+
+        elem.text = X()
+        elem.__setstate__({'tag': 42})  # shouldn't cause an assertion failure
+        elem.clear()
+
+        elem.tail = X()
+        elem.__setstate__({'tag': 42})  # shouldn't cause an assertion failure
+
+    def test_setstate_leaks(self):
+        # Test reference leaks
+        elem = cET.Element.__new__(cET.Element)
+        for i in range(100):
+            elem.__setstate__({'tag': 'foo', 'attrib': {'bar': 42},
+                               '_children': [cET.Element('child')],
+                               'text': 'text goes here',
+                               'tail': 'opposite of head'})
+
+        self.assertEqual(elem.tag, 'foo')
+        self.assertEqual(elem.text, 'text goes here')
+        self.assertEqual(elem.tail, 'opposite of head')
+        self.assertEqual(list(elem.attrib.items()), [('bar', 42)])
+        self.assertEqual(len(elem), 1)
+        self.assertEqual(elem[0].tag, 'child')
+
 
 @unittest.skipUnless(cET, 'requires _elementtree')
 class TestAliasWorking(unittest.TestCase):

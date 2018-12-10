@@ -1,2 +1,0 @@
-Make sure the 'Missing parentheses' syntax error message is only applied to
-SyntaxError, not to subclasses. Patch by Martijn Pieters.

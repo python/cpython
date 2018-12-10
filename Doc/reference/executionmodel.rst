@@ -22,7 +22,7 @@ The following are blocks: a module, a function body, and a class definition.
 Each command typed interactively is a block.  A script file (a file given as
 standard input to the interpreter or specified as a command line argument to the
 interpreter) is a code block.  A script command (a command specified on the
-interpreter command line with the '**-c**' option) is a code block.  The string
+interpreter command line with the :option:`-c` option) is a code block.  The string
 argument passed to the built-in functions :func:`eval` and :func:`exec` is a
 code block.
 
@@ -52,7 +52,7 @@ Binding of names
 
 :dfn:`Names` refer to objects.  Names are introduced by name binding operations.
 
-.. index:: statement: from
+.. index:: single: from; import statement
 
 The following constructs bind names: formal parameters to functions,
 :keyword:`import` statements, class and function definitions (these bind the

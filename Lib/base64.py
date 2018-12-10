@@ -231,21 +231,14 @@ def b32decode(s, casefold=False, map01=None):
             raise binascii.Error('Non-base32 digit found') from None
         decoded += acc.to_bytes(5, 'big')
     # Process the last, partial quanta
-    if padchars:
+    if l % 8 or padchars not in {0, 1, 3, 4, 6}:
+        raise binascii.Error('Incorrect padding')
+    if padchars and decoded:
         acc <<= 5 * padchars
         last = acc.to_bytes(5, 'big')
-        if padchars == 1:
-            decoded[-5:] = last[:-1]
-        elif padchars == 3:
-            decoded[-5:] = last[:-2]
-        elif padchars == 4:
-            decoded[-5:] = last[:-3]
-        elif padchars == 6:
-            decoded[-5:] = last[:-4]
-        else:
-            raise binascii.Error('Incorrect padding')
+        leftover = (43 - 5 * padchars) // 8  # 1: 4, 3: 3, 4: 2, 6: 1
+        decoded[-5:] = last[:leftover]
     return bytes(decoded)
-
 
 
 # RFC 3548, Base 16 Alphabet specifies uppercase, but hexlify() returns

@@ -1,0 +1,1 @@
+Added a 'force' keyword argument to logging.basicConfig().

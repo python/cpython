@@ -1,3 +1,4 @@
+import asyncio
 import builtins
 import locale
 import logging
@@ -65,7 +66,13 @@ class saved_test_environment:
                  'sysconfig._CONFIG_VARS', 'sysconfig._INSTALL_SCHEMES',
                  'files', 'locale', 'warnings.showwarning',
                  'shutil_archive_formats', 'shutil_unpack_formats',
+                 'asyncio.events._event_loop_policy',
                 )
+
+    def get_asyncio_events__event_loop_policy(self):
+        return support.maybe_get_event_loop_policy()
+    def restore_asyncio_events__event_loop_policy(self, policy):
+        asyncio.set_event_loop_policy(policy)
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]

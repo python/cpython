@@ -2,9 +2,8 @@ import os
 import unittest
 import random
 from test import support
-thread = support.import_module('_thread')
+import _thread as thread
 import time
-import sys
 import weakref
 
 from test import lock_tests

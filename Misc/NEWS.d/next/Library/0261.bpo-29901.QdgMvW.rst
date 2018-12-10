@@ -1,2 +1,0 @@
-The zipapp module now supports general path-like objects, not just
-pathlib.Path.

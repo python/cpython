@@ -28,7 +28,7 @@ rem     {msi}           MSI filename        core.msi
 set DOWNLOAD_URL=https://www.python.org/ftp/python/{version}/{arch}{releasename}/{msi}
 
 set D=%~dp0
-set PCBUILD=%D%..\..\PCBuild\
+set PCBUILD=%D%..\..\PCbuild\
 if "%Py_OutDir%"=="" set Py_OutDir=%PCBUILD%
 set EXTERNALS=%D%..\..\externals\windows-installer\
 

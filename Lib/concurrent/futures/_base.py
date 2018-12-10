@@ -53,6 +53,10 @@ class TimeoutError(Error):
     """The operation exceeded the given deadline."""
     pass
 
+class InvalidStateError(Error):
+    """The operation is not allowed in this state."""
+    pass
+
 class _Waiter(object):
     """Provides the event that wait() and as_completed() block on."""
     def __init__(self):
@@ -212,11 +216,10 @@ def as_completed(fs, timeout=None):
             before the given timeout.
     """
     if timeout is not None:
-        end_time = timeout + time.time()
-
-    total_futures = len(fs)
+        end_time = timeout + time.monotonic()
 
     fs = set(fs)
+    total_futures = len(fs)
     with _AcquireFutures(fs):
         finished = set(
                 f for f in fs
@@ -232,7 +235,7 @@ def as_completed(fs, timeout=None):
             if timeout is None:
                 wait_timeout = None
             else:
-                wait_timeout = end_time - time.time()
+                wait_timeout = end_time - time.monotonic()
                 if wait_timeout < 0:
                     raise TimeoutError(
                             '%d (of %d) futures unfinished' % (
@@ -514,6 +517,8 @@ class Future(object):
         Should only be used by Executor implementations and unit tests.
         """
         with self._condition:
+            if self._state in {CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED}:
+                raise InvalidStateError('{}: {!r}'.format(self._state, self))
             self._result = result
             self._state = FINISHED
             for waiter in self._waiters:
@@ -527,6 +532,8 @@ class Future(object):
         Should only be used by Executor implementations and unit tests.
         """
         with self._condition:
+            if self._state in {CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED}:
+                raise InvalidStateError('{}: {!r}'.format(self._state, self))
             self._exception = exception
             self._state = FINISHED
             for waiter in self._waiters:
@@ -571,7 +578,7 @@ class Executor(object):
             Exception: If fn(*args) raises for any values.
         """
         if timeout is not None:
-            end_time = timeout + time.time()
+            end_time = timeout + time.monotonic()
 
         fs = [self.submit(fn, *args) for args in zip(*iterables)]
 
@@ -586,7 +593,7 @@ class Executor(object):
                     if timeout is None:
                         yield fs.pop().result()
                     else:
-                        yield fs.pop().result(end_time - time.time())
+                        yield fs.pop().result(end_time - time.monotonic())
             finally:
                 for future in fs:
                     future.cancel()
@@ -611,3 +618,9 @@ class Executor(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.shutdown(wait=True)
         return False
+
+
+class BrokenExecutor(RuntimeError):
+    """
+    Raised when a executor has become non-functional after a severe failure.
+    """

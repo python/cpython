@@ -1,1 +1,0 @@
-Fix out of bounds write in `asyncio.CFuture.remove_done_callback()`.

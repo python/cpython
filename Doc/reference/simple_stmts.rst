@@ -25,6 +25,7 @@ simple statements is:
               : | `break_stmt`
               : | `continue_stmt`
               : | `import_stmt`
+              : | `future_stmt`
               : | `global_stmt`
               : | `nonlocal_stmt`
 
@@ -71,7 +72,7 @@ Assignment statements
 =====================
 
 .. index::
-   single: =; assignment statement
+   single: = (equals); assignment statement
    pair: assignment; statement
    pair: binding; name
    pair: rebinding; name
@@ -112,17 +113,18 @@ unacceptable.  The rules observed by various types and the exceptions raised are
 given with the definition of the object types (see section :ref:`types`).
 
 .. index:: triple: target; list; assignment
+   single: , (comma); in target list
+   single: * (asterisk); in assignment target list
+   single: [] (square brackets); in assignment target list
+   single: () (parentheses); in assignment target list
 
 Assignment of an object to a target list, optionally enclosed in parentheses or
 square brackets, is recursively defined as follows.
 
-* If the target list is empty: The object must also be an empty iterable.
+* If the target list is a single target with no trailing comma,
+  optionally in parentheses, the object is assigned to that target.
 
-* If the target list is a single target in parentheses: The object is assigned
-  to that target.
-
-* If the target list is a comma-separated list of targets, or a single target
-  in square brackets: The object must be an iterable with the same number of
+* Else: The object must be an iterable with the same number of
   items as there are targets in the target list, and the items are assigned,
   from left to right, to the corresponding targets.
 
@@ -321,6 +323,7 @@ Annotated assignment statements
 .. index::
    pair: annotated; assignment
    single: statement; assignment, annotated
+   single: : (colon); annotated variable
 
 Annotation assignment is the combination, in a single statement,
 of a variable or attribute annotation and an optional assignment statement:
@@ -353,8 +356,15 @@ target, then the interpreter evaluates the target except for the last
 
 .. seealso::
 
-   :pep:`526` - Variable and attribute annotation syntax
+   :pep:`526` - Syntax for Variable Annotations
+      The proposal that added syntax for annotating the types of variables
+      (including class variables and instance variables), instead of expressing
+      them through comments.
+
    :pep:`484` - Type hints
+      The proposal that added the :mod:`typing` module to provide a standard
+      syntax for type annotations that can be used in static analysis tools and
+      IDEs.
 
 
 .. _assert:
@@ -365,6 +375,7 @@ The :keyword:`assert` statement
 .. index::
    statement: assert
    pair: debugging; assertions
+   single: , (comma); expression list
 
 Assert statements are a convenient way to insert debugging assertions into a
 program:
@@ -389,7 +400,7 @@ The extended form, ``assert expression1, expression2``, is equivalent to ::
 These equivalences assume that :const:`__debug__` and :exc:`AssertionError` refer to
 the built-in variables with those names.  In the current implementation, the
 built-in variable :const:`__debug__` is ``True`` under normal circumstances,
-``False`` when optimization is requested (command line option -O).  The current
+``False`` when optimization is requested (command line option :option:`-O`).  The current
 code generator emits no code for an assert statement when optimization is
 requested at compile time.  Note that it is unnecessary to include the source
 code for the expression that failed in the error message; it will be displayed
@@ -686,9 +697,8 @@ The :keyword:`continue` statement
    continue_stmt: "continue"
 
 :keyword:`continue` may only occur syntactically nested in a :keyword:`for` or
-:keyword:`while` loop, but not nested in a function or class definition or
-:keyword:`finally` clause within that loop.  It continues with the next
-cycle of the nearest enclosing loop.
+:keyword:`while` loop, but not nested in a function or class definition within
+that loop.  It continues with the next cycle of the nearest enclosing loop.
 
 When :keyword:`continue` passes control out of a :keyword:`try` statement with a
 :keyword:`finally` clause, that :keyword:`finally` clause is executed before
@@ -706,17 +716,19 @@ The :keyword:`import` statement
    single: module; importing
    pair: name; binding
    keyword: from
+   keyword: as
+   exception: ImportError
+   single: , (comma); import statement
 
 .. productionlist::
-   import_stmt: "import" `module` ["as" `name`] ( "," `module` ["as" `name`] )*
-              : | "from" `relative_module` "import" `identifier` ["as" `name`]
-              : ( "," `identifier` ["as" `name`] )*
-              : | "from" `relative_module` "import" "(" `identifier` ["as" `name`]
-              : ( "," `identifier` ["as" `name`] )* [","] ")"
+   import_stmt: "import" `module` ["as" `identifier`] ("," `module` ["as" `identifier`])*
+              : | "from" `relative_module` "import" `identifier` ["as" `identifier`]
+              : ("," `identifier` ["as" `identifier`])*
+              : | "from" `relative_module` "import" "(" `identifier` ["as" `identifier`]
+              : ("," `identifier` ["as" `identifier`])* [","] ")"
               : | "from" `module` "import" "*"
    module: (`identifier` ".")* `identifier`
    relative_module: "."* `module` | "."+
-   name: `identifier`
 
 The basic import statement (no :keyword:`from` clause) is executed in two
 steps:
@@ -756,8 +768,7 @@ available in the local namespace in one of three ways:
 
 .. index::
    pair: name; binding
-   keyword: from
-   exception: ImportError
+   single: from; import statement
 
 The :keyword:`from` form uses a slightly more complex process:
 
@@ -780,6 +791,8 @@ Examples::
    import foo.bar.baz as fbb  # foo.bar.baz imported and bound as fbb
    from foo.bar import baz    # foo.bar.baz imported and bound as baz
    from foo import attr       # foo imported and foo.attr bound as attr
+
+.. index:: single: * (asterisk); import statement
 
 If the list of identifiers is replaced by a star (``'*'``), all public
 names defined in the module are bound in the local namespace for the scope
@@ -826,7 +839,9 @@ determine dynamically the modules to be loaded.
 Future statements
 -----------------
 
-.. index:: pair: future; statement
+.. index::
+   pair: future; statement
+   single: __future__; future statement
 
 A :dfn:`future statement` is a directive to the compiler that a particular
 module should be compiled using syntax or semantics that will be available in a
@@ -838,12 +853,11 @@ features on a per-module basis before the release in which the feature becomes
 standard.
 
 .. productionlist:: *
-   future_statement: "from" "__future__" "import" feature ["as" name]
-                   : ("," feature ["as" name])*
-                   : | "from" "__future__" "import" "(" feature ["as" name]
-                   : ("," feature ["as" name])* [","] ")"
-   feature: identifier
-   name: identifier
+   future_stmt: "from" "__future__" "import" `feature` ["as" `identifier`]
+              : ("," `feature` ["as" `identifier`])*
+              : | "from" "__future__" "import" "(" `feature` ["as" `identifier`]
+              : ("," `feature` ["as" `identifier`])* [","] ")"
+   feature: `identifier`
 
 A future statement must appear near the top of the module.  The only lines that
 can appear before a future statement are:
@@ -853,12 +867,15 @@ can appear before a future statement are:
 * blank lines, and
 * other future statements.
 
-.. XXX change this if future is cleaned out
+The only feature in Python 3.7 that requires using the future statement is
+``annotations``.
 
-The features recognized by Python 3.0 are ``absolute_import``, ``division``,
-``generators``, ``unicode_literals``, ``print_function``, ``nested_scopes`` and
-``with_statement``.  They are all redundant because they are always enabled, and
-only kept for backwards compatibility.
+All historical features enabled by the future statement are still recognized
+by Python 3.  The list includes ``absolute_import``, ``division``,
+``generators``, ``generator_stop``, ``unicode_literals``,
+``print_function``, ``nested_scopes`` and ``with_statement``.  They are
+all redundant because they are always enabled, and only kept for
+backwards compatibility.
 
 A future statement is recognized and treated specially at compile time: Changes
 to the semantics of core constructs are often implemented by generating
@@ -911,6 +928,7 @@ The :keyword:`global` statement
 .. index::
    statement: global
    triple: global; name; binding
+   single: , (comma); identifier list
 
 .. productionlist::
    global_stmt: "global" `identifier` ("," `identifier`)*
@@ -931,7 +949,7 @@ annotation.
 
 .. impl-detail::
 
-   The current implementation does not enforce some of these restriction, but
+   The current implementation does not enforce some of these restrictions, but
    programs should not abuse this freedom, as future implementations may enforce
    them or silently change the meaning of the program.
 
@@ -955,6 +973,7 @@ The :keyword:`nonlocal` statement
 =================================
 
 .. index:: statement: nonlocal
+   single: , (comma); identifier list
 
 .. productionlist::
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*

@@ -1,2 +1,0 @@
-Added multiprocessing.Process.kill method to terminate using the SIGKILL
-signal on Unix.

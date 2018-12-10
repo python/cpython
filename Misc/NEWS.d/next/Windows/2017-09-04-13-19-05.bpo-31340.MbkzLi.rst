@@ -1,1 +1,0 @@
-Change to building with MSVC v141 (included with Visual Studio 2017)

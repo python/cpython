@@ -1,2 +1,0 @@
-Compiling regular expression in debug mode on CPython now displays the
-compiled bytecode in human readable form.

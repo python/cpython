@@ -2,7 +2,7 @@
 ========================================
 
 .. module:: typing
-   :synopsis: Support for type hints (see PEP 484).
+   :synopsis: Support for type hints (see :pep:`484`).
 
 .. versionadded:: 3.5
 
@@ -111,8 +111,7 @@ More precisely, the expression ``some_value is Derived(some_value)`` is always
 true at runtime.
 
 This also means that it is not possible to create a subtype of ``Derived``
-since it is an identity function at runtime, not an actual type. Similarly, it
-is not possible to create another :func:`NewType` based on a ``Derived`` type::
+since it is an identity function at runtime, not an actual type::
 
    from typing import NewType
 
@@ -121,8 +120,15 @@ is not possible to create another :func:`NewType` based on a ``Derived`` type::
    # Fails at runtime and does not typecheck
    class AdminUserId(UserId): pass
 
-   # Also does not typecheck
+However, it is possible to create a :func:`NewType` based on a 'derived' ``NewType``::
+
+   from typing import NewType
+
+   UserId = NewType('UserId', int)
+
    ProUserId = NewType('ProUserId', UserId)
+
+and typechecking for ``ProUserId`` will work as expected.
 
 See :pep:`484` for more details.
 
@@ -139,6 +145,8 @@ See :pep:`484` for more details.
    value of type ``Original`` cannot be used in places where a value of type
    ``Derived`` is expected. This is useful when you want to prevent logic
    errors with minimal runtime cost.
+
+.. versionadded:: 3.5.2
 
 Callable
 --------
@@ -161,6 +169,8 @@ It is possible to declare the return type of a callable without specifying
 the call signature by substituting a literal ellipsis
 for the list of arguments in the type hint: ``Callable[..., ReturnType]``.
 
+.. _generics:
+
 Generics
 --------
 
@@ -175,7 +185,7 @@ subscription to denote expected types for container elements.
    def notify_by_email(employees: Sequence[Employee],
                        overrides: Mapping[str, str]) -> None: ...
 
-Generics can be parametrized by using a new factory available in typing
+Generics can be parameterized by using a new factory available in typing
 called :class:`TypeVar`.
 
 ::
@@ -480,13 +490,16 @@ The module defines the following classes, functions and decorators:
    required to handle this particular case may change in future revisions of
    :pep:`484`.
 
-   The only legal parameters for :class:`Type` are classes, unions of classes, and
-   :data:`Any`. For example::
+   The only legal parameters for :class:`Type` are classes, :data:`Any`,
+   :ref:`type variables <generics>`, and unions of any of these types.
+   For example::
 
       def new_non_team_user(user_class: Type[Union[BaseUser, ProUser]]): ...
 
    ``Type[Any]`` is equivalent to ``Type`` which in turn is equivalent
    to ``type``, which is the root of Python's metaclass hierarchy.
+
+   .. versionadded:: 3.5.2
 
 .. class:: Iterable(Generic[T_co])
 
@@ -656,6 +669,12 @@ The module defines the following classes, functions and decorators:
 
    .. versionadded:: 3.6
 
+.. class:: AsyncContextManager(Generic[T_co])
+
+   A generic version of :class:`contextlib.AbstractAsyncContextManager`.
+
+   .. versionadded:: 3.6
+
 .. class:: Dict(dict, MutableMapping[KT, VT])
 
    A generic version of :class:`dict`.
@@ -667,6 +686,14 @@ The module defines the following classes, functions and decorators:
 .. class:: DefaultDict(collections.defaultdict, MutableMapping[KT, VT])
 
    A generic version of :class:`collections.defaultdict`.
+
+   .. versionadded:: 3.5.2
+
+.. class:: OrderedDict(collections.OrderedDict, MutableMapping[KT, VT])
+
+   A generic version of :class:`collections.OrderedDict`.
+
+   .. versionadded:: 3.7.2
 
 .. class:: Counter(collections.Counter, Dict[T, int])
 
@@ -756,31 +783,26 @@ The module defines the following classes, functions and decorators:
        def add_unicode_checkmark(text: Text) -> Text:
            return text + u' \u2713'
 
-.. class:: io
+   .. versionadded:: 3.5.2
 
-   Wrapper namespace for I/O stream types.
+.. class:: IO
+           TextIO
+           BinaryIO
 
-   This defines the generic type ``IO[AnyStr]`` and aliases ``TextIO``
-   and ``BinaryIO`` for respectively ``IO[str]`` and ``IO[bytes]``.
-   These represent the types of I/O streams such as returned by
+   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
+   and ``BinaryIO(IO[bytes])``
+   represent the types of I/O streams such as returned by
    :func:`open`.
 
-   These types are also accessible directly as ``typing.IO``,
-   ``typing.TextIO``, and ``typing.BinaryIO``.
+.. class:: Pattern
+           Match
 
-.. class:: re
-
-   Wrapper namespace for regular expression matching types.
-
-   This defines the type aliases ``Pattern`` and ``Match`` which
+   These type aliases
    correspond to the return types from :func:`re.compile` and
    :func:`re.match`.  These types (and the corresponding functions)
    are generic in ``AnyStr`` and can be made specific by writing
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
    ``Match[bytes]``.
-
-   These types are also accessible directly as ``typing.Pattern``
-   and ``typing.Match``.
 
 .. class:: NamedTuple
 
@@ -841,6 +863,8 @@ The module defines the following classes, functions and decorators:
       UserId = NewType('UserId', int)
       first_user = UserId(1)
 
+   .. versionadded:: 3.5.2
+
 .. function:: cast(typ, val)
 
    Cast a value to a type.
@@ -874,7 +898,7 @@ The module defines the following classes, functions and decorators:
    non-``@overload``-decorated definition, while the latter is used at
    runtime but should be ignored by a type checker.  At runtime, calling
    a ``@overload``-decorated function directly will raise
-   ``NotImplementedError``. An example of overload that gives a more
+   :exc:`NotImplementedError`. An example of overload that gives a more
    precise type than can be expressed using a union or a type variable::
 
       @overload
@@ -891,17 +915,17 @@ The module defines the following classes, functions and decorators:
 
    See :pep:`484` for details and comparison with other typing semantics.
 
-.. decorator:: no_type_check(arg)
+.. decorator:: no_type_check
 
    Decorator to indicate that annotations are not type hints.
 
-   The argument must be a class or function; if it is a class, it
+   This works as class or function :term:`decorator`.  With a class, it
    applies recursively to all methods defined in that class (but not
    to methods defined in its superclasses or subclasses).
 
    This mutates the function(s) in place.
 
-.. decorator:: no_type_check_decorator(decorator)
+.. decorator:: no_type_check_decorator
 
    Decorator to give another decorator the :func:`no_type_check` effect.
 
@@ -914,6 +938,18 @@ The module defines the following classes, functions and decorators:
 
    * Every type is compatible with :data:`Any`.
    * :data:`Any` is compatible with every type.
+
+.. data:: NoReturn
+
+   Special type indicating that a function never returns.
+   For example::
+
+      from typing import NoReturn
+
+      def stop() -> NoReturn:
+          raise RuntimeError('no way')
+
+   .. versionadded:: 3.6.5
 
 .. data:: Union
 
@@ -939,15 +975,14 @@ The module defines the following classes, functions and decorators:
 
        Union[int, str] == Union[str, int]
 
-   * When a class and its subclass are present, the latter is skipped, e.g.::
-
-       Union[int, object] == object
-
    * You cannot subclass or instantiate a union.
 
    * You cannot write ``Union[X][Y]``.
 
    * You can use ``Optional[X]`` as a shorthand for ``Union[X, None]``.
+
+   .. versionchanged:: 3.7
+      Don't remove explicit subclasses from unions at runtime.
 
 .. data:: Optional
 
@@ -957,10 +992,18 @@ The module defines the following classes, functions and decorators:
 
    Note that this is not the same concept as an optional argument,
    which is one that has a default.  An optional argument with a
-   default needn't use the ``Optional`` qualifier on its type
-   annotation (although it is inferred if the default is ``None``).
-   A mandatory argument may still have an ``Optional`` type if an
-   explicit value of ``None`` is allowed.
+   default does not require the ``Optional`` qualifier on its type
+   annotation just because it is optional. For example::
+
+      def foo(arg: int = 0) -> None:
+          ...
+
+   On the other hand, if an explicit value of ``None`` is allowed, the
+   use of ``Optional`` is appropriate, whether the argument is optional
+   or not. For example::
+
+      def foo(arg: Optional[int] = None) -> None:
+          ...
 
 .. data:: Tuple
 
@@ -1048,3 +1091,5 @@ The module defines the following classes, functions and decorators:
    "forward reference", to hide the ``expensive_mod`` reference from the
    interpreter runtime.  Type annotations for local variables are not
    evaluated, so the second annotation does not need to be enclosed in quotes.
+
+   .. versionadded:: 3.5.2

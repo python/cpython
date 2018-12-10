@@ -42,6 +42,17 @@ try:
 except ImportError:
     getgrnam = None
 
+_WINDOWS = os.name == 'nt'
+posix = nt = None
+if os.name == 'posix':
+    import posix
+elif _WINDOWS:
+    import nt
+
+COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 16 * 1024
+_HAS_SENDFILE = posix and hasattr(os, "sendfile")
+_HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
+
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
            "ExecError", "make_archive", "get_archive_formats",
@@ -72,17 +83,129 @@ class RegistryError(Exception):
     """Raised when a registry operation with the archiving
     and unpacking registries fails"""
 
+class _GiveupOnFastCopy(Exception):
+    """Raised as a signal to fallback on using raw read()/write()
+    file copy when fast-copy functions fail to do so.
+    """
 
-def copyfileobj(fsrc, fdst, length=16*1024):
+def _fastcopy_fcopyfile(fsrc, fdst, flags):
+    """Copy a regular file content or metadata by using high-performance
+    fcopyfile(3) syscall (macOS).
+    """
+    try:
+        infd = fsrc.fileno()
+        outfd = fdst.fileno()
+    except Exception as err:
+        raise _GiveupOnFastCopy(err)  # not a regular file
+
+    try:
+        posix._fcopyfile(infd, outfd, flags)
+    except OSError as err:
+        err.filename = fsrc.name
+        err.filename2 = fdst.name
+        if err.errno in {errno.EINVAL, errno.ENOTSUP}:
+            raise _GiveupOnFastCopy(err)
+        else:
+            raise err from None
+
+def _fastcopy_sendfile(fsrc, fdst):
+    """Copy data from one regular mmap-like fd to another by using
+    high-performance sendfile(2) syscall.
+    This should work on Linux >= 2.6.33 and Solaris only.
+    """
+    # Note: copyfileobj() is left alone in order to not introduce any
+    # unexpected breakage. Possible risks by using zero-copy calls
+    # in copyfileobj() are:
+    # - fdst cannot be open in "a"(ppend) mode
+    # - fsrc and fdst may be open in "t"(ext) mode
+    # - fsrc may be a BufferedReader (which hides unread data in a buffer),
+    #   GzipFile (which decompresses data), HTTPResponse (which decodes
+    #   chunks).
+    # - possibly others (e.g. encrypted fs/partition?)
+    global _HAS_SENDFILE
+    try:
+        infd = fsrc.fileno()
+        outfd = fdst.fileno()
+    except Exception as err:
+        raise _GiveupOnFastCopy(err)  # not a regular file
+
+    # Hopefully the whole file will be copied in a single call.
+    # sendfile() is called in a loop 'till EOF is reached (0 return)
+    # so a bufsize smaller or bigger than the actual file size
+    # should not make any difference, also in case the file content
+    # changes while being copied.
+    try:
+        blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8MB
+    except Exception:
+        blocksize = 2 ** 27  # 128MB
+
+    offset = 0
+    while True:
+        try:
+            sent = os.sendfile(outfd, infd, offset, blocksize)
+        except OSError as err:
+            # ...in oder to have a more informative exception.
+            err.filename = fsrc.name
+            err.filename2 = fdst.name
+
+            if err.errno == errno.ENOTSOCK:
+                # sendfile() on this platform (probably Linux < 2.6.33)
+                # does not support copies between regular files (only
+                # sockets).
+                _HAS_SENDFILE = False
+                raise _GiveupOnFastCopy(err)
+
+            if err.errno == errno.ENOSPC:  # filesystem is full
+                raise err from None
+
+            # Give up on first call and if no data was copied.
+            if offset == 0 and os.lseek(outfd, 0, os.SEEK_CUR) == 0:
+                raise _GiveupOnFastCopy(err)
+
+            raise err
+        else:
+            if sent == 0:
+                break  # EOF
+            offset += sent
+
+def _copyfileobj_readinto(fsrc, fdst, length=COPY_BUFSIZE):
+    """readinto()/memoryview() based variant of copyfileobj().
+    *fsrc* must support readinto() method and both files must be
+    open in binary mode.
+    """
+    # Localize variable access to minimize overhead.
+    fsrc_readinto = fsrc.readinto
+    fdst_write = fdst.write
+    with memoryview(bytearray(length)) as mv:
+        while True:
+            n = fsrc_readinto(mv)
+            if not n:
+                break
+            elif n < length:
+                with mv[:n] as smv:
+                    fdst.write(smv)
+            else:
+                fdst_write(mv)
+
+def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
     """copy data from file-like object fsrc to file-like object fdst"""
-    while 1:
-        buf = fsrc.read(length)
+    # Localize variable access to minimize overhead.
+    fsrc_read = fsrc.read
+    fdst_write = fdst.write
+    while True:
+        buf = fsrc_read(length)
         if not buf:
             break
-        fdst.write(buf)
+        fdst_write(buf)
 
 def _samefile(src, dst):
     # Macintosh, Unix.
+    if isinstance(src, os.DirEntry) and hasattr(os.path, 'samestat'):
+        try:
+            return os.path.samestat(src.stat(), os.stat(dst))
+        except OSError:
+            return False
+
     if hasattr(os.path, 'samefile'):
         try:
             return os.path.samefile(src, dst)
@@ -93,8 +216,14 @@ def _samefile(src, dst):
     return (os.path.normcase(os.path.abspath(src)) ==
             os.path.normcase(os.path.abspath(dst)))
 
+def _stat(fn):
+    return fn.stat() if isinstance(fn, os.DirEntry) else os.stat(fn)
+
+def _islink(fn):
+    return fn.is_symlink() if isinstance(fn, os.DirEntry) else os.path.islink(fn)
+
 def copyfile(src, dst, *, follow_symlinks=True):
-    """Copy data from src to dst.
+    """Copy data from src to dst in the most efficient way possible.
 
     If follow_symlinks is not set and src is a symbolic link, a new
     symlink will be created instead of copying the file it points to.
@@ -103,23 +232,47 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if _samefile(src, dst):
         raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
 
-    for fn in [src, dst]:
+    file_size = 0
+    for i, fn in enumerate([src, dst]):
         try:
-            st = os.stat(fn)
+            st = _stat(fn)
         except OSError:
             # File most likely does not exist
             pass
         else:
             # XXX What about other special files? (sockets, devices...)
             if stat.S_ISFIFO(st.st_mode):
+                fn = fn.path if isinstance(fn, os.DirEntry) else fn
                 raise SpecialFileError("`%s` is a named pipe" % fn)
+            if _WINDOWS and i == 0:
+                file_size = st.st_size
 
-    if not follow_symlinks and os.path.islink(src):
+    if not follow_symlinks and _islink(src):
         os.symlink(os.readlink(src), dst)
     else:
-        with open(src, 'rb') as fsrc:
-            with open(dst, 'wb') as fdst:
-                copyfileobj(fsrc, fdst)
+        with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
+            # macOS
+            if _HAS_FCOPYFILE:
+                try:
+                    _fastcopy_fcopyfile(fsrc, fdst, posix._COPYFILE_DATA)
+                    return dst
+                except _GiveupOnFastCopy:
+                    pass
+            # Linux / Solaris
+            elif _HAS_SENDFILE:
+                try:
+                    _fastcopy_sendfile(fsrc, fdst)
+                    return dst
+                except _GiveupOnFastCopy:
+                    pass
+            # Windows, see:
+            # https://github.com/python/cpython/pull/7160#discussion_r195405230
+            elif _WINDOWS and file_size > 0:
+                _copyfileobj_readinto(fsrc, fdst, min(file_size, COPY_BUFSIZE))
+                return dst
+
+            copyfileobj(fsrc, fdst)
+
     return dst
 
 def copymode(src, dst, *, follow_symlinks=True):
@@ -130,13 +283,13 @@ def copymode(src, dst, *, follow_symlinks=True):
     (e.g. Linux) this method does nothing.
 
     """
-    if not follow_symlinks and os.path.islink(src) and os.path.islink(dst):
+    if not follow_symlinks and _islink(src) and os.path.islink(dst):
         if hasattr(os, 'lchmod'):
             stat_func, chmod_func = os.lstat, os.lchmod
         else:
             return
     elif hasattr(os, 'chmod'):
-        stat_func, chmod_func = os.stat, os.chmod
+        stat_func, chmod_func = _stat, os.chmod
     else:
         return
 
@@ -171,17 +324,21 @@ else:
         pass
 
 def copystat(src, dst, *, follow_symlinks=True):
-    """Copy all stat info (mode bits, atime, mtime, flags) from src to dst.
+    """Copy file metadata
 
-    If the optional flag `follow_symlinks` is not set, symlinks aren't followed if and
-    only if both `src` and `dst` are symlinks.
+    Copy the permission bits, last access time, last modification time, and
+    flags from `src` to `dst`. On Linux, copystat() also copies the "extended
+    attributes" where possible. The file contents, owner, and group are
+    unaffected. `src` and `dst` are path names given as strings.
 
+    If the optional flag `follow_symlinks` is not set, symlinks aren't
+    followed if and only if both `src` and `dst` are symlinks.
     """
     def _nop(*args, ns=None, follow_symlinks=None):
         pass
 
     # follow symlinks (aka don't not follow symlinks)
-    follow = follow_symlinks or not (os.path.islink(src) and os.path.islink(dst))
+    follow = follow_symlinks or not (_islink(src) and os.path.islink(dst))
     if follow:
         # use the real function if it exists
         def lookup(name):
@@ -195,7 +352,10 @@ def copystat(src, dst, *, follow_symlinks=True):
                 return fn
             return _nop
 
-    st = lookup("stat")(src, follow_symlinks=follow)
+    if isinstance(src, os.DirEntry):
+        st = src.stat(follow_symlinks=follow)
+    else:
+        st = lookup("stat")(src, follow_symlinks=follow)
     mode = stat.S_IMODE(st.st_mode)
     lookup("utime")(dst, ns=(st.st_atime_ns, st.st_mtime_ns),
         follow_symlinks=follow)
@@ -243,14 +403,15 @@ def copy(src, dst, *, follow_symlinks=True):
     return dst
 
 def copy2(src, dst, *, follow_symlinks=True):
-    """Copy data and all stat info ("cp -p src dst"). Return the file's
-    destination."
+    """Copy data and metadata. Return the file's destination.
+
+    Metadata is copied with copystat(). Please see the copystat function
+    for more information.
 
     The destination may be a directory.
 
     If follow_symlinks is false, symlinks won't be followed. This
     resembles GNU's "cp -P src dst".
-
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
@@ -269,6 +430,63 @@ def ignore_patterns(*patterns):
             ignored_names.extend(fnmatch.filter(names, pattern))
         return set(ignored_names)
     return _ignore_patterns
+
+def _copytree(entries, src, dst, symlinks, ignore, copy_function,
+              ignore_dangling_symlinks):
+    if ignore is not None:
+        ignored_names = ignore(src, set(os.listdir(src)))
+    else:
+        ignored_names = set()
+
+    os.makedirs(dst)
+    errors = []
+    use_srcentry = copy_function is copy2 or copy_function is copy
+
+    for srcentry in entries:
+        if srcentry.name in ignored_names:
+            continue
+        srcname = os.path.join(src, srcentry.name)
+        dstname = os.path.join(dst, srcentry.name)
+        srcobj = srcentry if use_srcentry else srcname
+        try:
+            if srcentry.is_symlink():
+                linkto = os.readlink(srcname)
+                if symlinks:
+                    # We can't just leave it to `copy_function` because legacy
+                    # code with a custom `copy_function` may rely on copytree
+                    # doing the right thing.
+                    os.symlink(linkto, dstname)
+                    copystat(srcobj, dstname, follow_symlinks=not symlinks)
+                else:
+                    # ignore dangling symlink if the flag is on
+                    if not os.path.exists(linkto) and ignore_dangling_symlinks:
+                        continue
+                    # otherwise let the copy occurs. copy2 will raise an error
+                    if srcentry.is_dir():
+                        copytree(srcobj, dstname, symlinks, ignore,
+                                 copy_function)
+                    else:
+                        copy_function(srcobj, dstname)
+            elif srcentry.is_dir():
+                copytree(srcobj, dstname, symlinks, ignore, copy_function)
+            else:
+                # Will raise a SpecialFileError for unsupported file types
+                copy_function(srcentry, dstname)
+        # catch the Error from the recursive copytree so that we can
+        # continue with other files
+        except Error as err:
+            errors.extend(err.args[0])
+        except OSError as why:
+            errors.append((srcname, dstname, str(why)))
+    try:
+        copystat(src, dst)
+    except OSError as why:
+        # Copying file access times may fail on Windows
+        if getattr(why, 'winerror', None) is None:
+            errors.append((src, dst, str(why)))
+    if errors:
+        raise Error(errors)
+    return dst
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
              ignore_dangling_symlinks=False):
@@ -306,81 +524,35 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     function that supports the same signature (like copy()) can be used.
 
     """
-    names = os.listdir(src)
-    if ignore is not None:
-        ignored_names = ignore(src, names)
-    else:
-        ignored_names = set()
-
-    os.makedirs(dst)
-    errors = []
-    for name in names:
-        if name in ignored_names:
-            continue
-        srcname = os.path.join(src, name)
-        dstname = os.path.join(dst, name)
-        try:
-            if os.path.islink(srcname):
-                linkto = os.readlink(srcname)
-                if symlinks:
-                    # We can't just leave it to `copy_function` because legacy
-                    # code with a custom `copy_function` may rely on copytree
-                    # doing the right thing.
-                    os.symlink(linkto, dstname)
-                    copystat(srcname, dstname, follow_symlinks=not symlinks)
-                else:
-                    # ignore dangling symlink if the flag is on
-                    if not os.path.exists(linkto) and ignore_dangling_symlinks:
-                        continue
-                    # otherwise let the copy occurs. copy2 will raise an error
-                    if os.path.isdir(srcname):
-                        copytree(srcname, dstname, symlinks, ignore,
-                                 copy_function)
-                    else:
-                        copy_function(srcname, dstname)
-            elif os.path.isdir(srcname):
-                copytree(srcname, dstname, symlinks, ignore, copy_function)
-            else:
-                # Will raise a SpecialFileError for unsupported file types
-                copy_function(srcname, dstname)
-        # catch the Error from the recursive copytree so that we can
-        # continue with other files
-        except Error as err:
-            errors.extend(err.args[0])
-        except OSError as why:
-            errors.append((srcname, dstname, str(why)))
-    try:
-        copystat(src, dst)
-    except OSError as why:
-        # Copying file access times may fail on Windows
-        if getattr(why, 'winerror', None) is None:
-            errors.append((src, dst, str(why)))
-    if errors:
-        raise Error(errors)
-    return dst
+    with os.scandir(src) as entries:
+        return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
+                         ignore=ignore, copy_function=copy_function,
+                         ignore_dangling_symlinks=ignore_dangling_symlinks)
 
 # version vulnerable to race conditions
 def _rmtree_unsafe(path, onerror):
     try:
-        if os.path.islink(path):
-            # symlinks to directories are forbidden, see bug #1669
-            raise OSError("Cannot call rmtree on a symbolic link")
+        with os.scandir(path) as scandir_it:
+            entries = list(scandir_it)
     except OSError:
-        onerror(os.path.islink, path, sys.exc_info())
-        # can't continue even if onerror hook returns
-        return
-    names = []
-    try:
-        names = os.listdir(path)
-    except OSError:
-        onerror(os.listdir, path, sys.exc_info())
-    for name in names:
-        fullname = os.path.join(path, name)
+        onerror(os.scandir, path, sys.exc_info())
+        entries = []
+    for entry in entries:
+        fullname = entry.path
         try:
-            mode = os.lstat(fullname).st_mode
+            is_dir = entry.is_dir(follow_symlinks=False)
         except OSError:
-            mode = 0
-        if stat.S_ISDIR(mode):
+            is_dir = False
+        if is_dir:
+            try:
+                if entry.is_symlink():
+                    # This can only happen if someone replaces
+                    # a directory with a symlink after the call to
+                    # os.scandir or entry.is_dir above.
+                    raise OSError("Cannot call rmtree on a symbolic link")
+            except OSError:
+                onerror(os.path.islink, fullname, sys.exc_info())
+                continue
             _rmtree_unsafe(fullname, onerror)
         else:
             try:
@@ -394,22 +566,25 @@ def _rmtree_unsafe(path, onerror):
 
 # Version using fd-based APIs to protect against races
 def _rmtree_safe_fd(topfd, path, onerror):
-    names = []
     try:
-        names = os.listdir(topfd)
+        with os.scandir(topfd) as scandir_it:
+            entries = list(scandir_it)
     except OSError as err:
         err.filename = path
-        onerror(os.listdir, path, sys.exc_info())
-    for name in names:
-        fullname = os.path.join(path, name)
+        onerror(os.scandir, path, sys.exc_info())
+        return
+    for entry in entries:
+        fullname = os.path.join(path, entry.name)
         try:
-            orig_st = os.stat(name, dir_fd=topfd, follow_symlinks=False)
-            mode = orig_st.st_mode
+            is_dir = entry.is_dir(follow_symlinks=False)
+            if is_dir:
+                orig_st = entry.stat(follow_symlinks=False)
+                is_dir = stat.S_ISDIR(orig_st.st_mode)
         except OSError:
-            mode = 0
-        if stat.S_ISDIR(mode):
+            is_dir = False
+        if is_dir:
             try:
-                dirfd = os.open(name, os.O_RDONLY, dir_fd=topfd)
+                dirfd = os.open(entry.name, os.O_RDONLY, dir_fd=topfd)
             except OSError:
                 onerror(os.open, fullname, sys.exc_info())
             else:
@@ -417,14 +592,14 @@ def _rmtree_safe_fd(topfd, path, onerror):
                     if os.path.samestat(orig_st, os.fstat(dirfd)):
                         _rmtree_safe_fd(dirfd, fullname, onerror)
                         try:
-                            os.rmdir(name, dir_fd=topfd)
+                            os.rmdir(entry.name, dir_fd=topfd)
                         except OSError:
                             onerror(os.rmdir, fullname, sys.exc_info())
                     else:
                         try:
                             # This can only happen if someone replaces
                             # a directory with a symlink after the call to
-                            # stat.S_ISDIR above.
+                            # os.scandir or stat.S_ISDIR above.
                             raise OSError("Cannot call rmtree on a symbolic "
                                           "link")
                         except OSError:
@@ -433,13 +608,13 @@ def _rmtree_safe_fd(topfd, path, onerror):
                     os.close(dirfd)
         else:
             try:
-                os.unlink(name, dir_fd=topfd)
+                os.unlink(entry.name, dir_fd=topfd)
             except OSError:
                 onerror(os.unlink, fullname, sys.exc_info())
 
 _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
                      os.supports_dir_fd and
-                     os.listdir in os.supports_fd and
+                     os.scandir in os.supports_fd and
                      os.stat in os.supports_follow_symlinks)
 
 def rmtree(path, ignore_errors=False, onerror=None):
@@ -491,6 +666,14 @@ def rmtree(path, ignore_errors=False, onerror=None):
         finally:
             os.close(fd)
     else:
+        try:
+            if os.path.islink(path):
+                # symlinks to directories are forbidden, see bug #1669
+                raise OSError("Cannot call rmtree on a symbolic link")
+        except OSError:
+            onerror(os.path.islink, path, sys.exc_info())
+            # can't continue even if onerror hook returns
+            return
         return _rmtree_unsafe(path, onerror)
 
 # Allow introspection of whether or not the hardening against symlink
@@ -1000,9 +1183,8 @@ if hasattr(os, 'statvfs'):
         used = (st.f_blocks - st.f_bfree) * st.f_frsize
         return _ntuple_diskusage(total, used, free)
 
-elif os.name == 'nt':
+elif _WINDOWS:
 
-    import nt
     __all__.append('disk_usage')
     _ntuple_diskusage = collections.namedtuple('usage', 'total used free')
 

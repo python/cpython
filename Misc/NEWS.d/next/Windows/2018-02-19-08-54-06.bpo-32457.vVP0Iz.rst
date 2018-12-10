@@ -1,0 +1,1 @@
+Improves handling of denormalized executable path when launching Python.

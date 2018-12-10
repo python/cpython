@@ -1,1 +1,0 @@
-Documented command-line interface of zipfile.

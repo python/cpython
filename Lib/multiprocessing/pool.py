@@ -156,7 +156,7 @@ class Pool(object):
                  maxtasksperchild=None, context=None):
         self._ctx = context or get_context()
         self._setup_queues()
-        self._taskqueue = queue.Queue()
+        self._taskqueue = queue.SimpleQueue()
         self._cache = {}
         self._state = RUN
         self._maxtasksperchild = maxtasksperchild
@@ -173,7 +173,15 @@ class Pool(object):
 
         self._processes = processes
         self._pool = []
-        self._repopulate_pool()
+        try:
+            self._repopulate_pool()
+        except Exception:
+            for p in self._pool:
+                if p.exitcode is None:
+                    p.terminate()
+            for p in self._pool:
+                p.join()
+            raise
 
         self._worker_handler = threading.Thread(
             target=Pool._handle_workers,
@@ -235,10 +243,10 @@ class Pool(object):
                                    self._initargs, self._maxtasksperchild,
                                    self._wrap_exception)
                             )
-            self._pool.append(w)
             w.name = w.name.replace('Process', 'PoolWorker')
             w.daemon = True
             w.start()
+            self._pool.append(w)
             util.debug('added worker')
 
     def _maintain_pool(self):
@@ -802,15 +810,18 @@ class ThreadPool(Pool):
         Pool.__init__(self, processes, initializer, initargs)
 
     def _setup_queues(self):
-        self._inqueue = queue.Queue()
-        self._outqueue = queue.Queue()
+        self._inqueue = queue.SimpleQueue()
+        self._outqueue = queue.SimpleQueue()
         self._quick_put = self._inqueue.put
         self._quick_get = self._outqueue.get
 
     @staticmethod
     def _help_stuff_finish(inqueue, task_handler, size):
-        # put sentinels at head of inqueue to make workers finish
-        with inqueue.not_empty:
-            inqueue.queue.clear()
-            inqueue.queue.extend([None] * size)
-            inqueue.not_empty.notify_all()
+        # drain inqueue, and put sentinels at its head to make workers finish
+        try:
+            while True:
+                inqueue.get(block=False)
+        except queue.Empty:
+            pass
+        for i in range(size):
+            inqueue.put(None)

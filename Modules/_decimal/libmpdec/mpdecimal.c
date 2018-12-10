@@ -53,6 +53,12 @@
 #endif
 
 
+/* Disable warning that is part of -Wextra since gcc 7.0. */
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER) && __GNUC__ >= 7
+  #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#endif
+
+
 #if defined(_MSC_VER)
   #define ALWAYS_INLINE __forceinline
 #elif defined(LEGACY_COMPILER)

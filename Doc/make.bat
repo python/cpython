@@ -5,18 +5,28 @@ pushd %~dp0
 
 set this=%~n0
 
-call ..\PCBuild\find_python.bat %PYTHON%
-if not defined SPHINXBUILD if defined PYTHON (
+call ..\PCbuild\find_python.bat %PYTHON%
+
+if not defined PYTHON set PYTHON=py
+
+if not defined SPHINXBUILD (
     %PYTHON% -c "import sphinx" > nul 2> nul
     if errorlevel 1 (
         echo Installing sphinx with %PYTHON%
         %PYTHON% -m pip install sphinx
         if errorlevel 1 exit /B
     )
-    set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sphinx.main()"
+    set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sys.exit(sphinx.main())"
 )
 
-if not defined BLURB if defined PYTHON (
+%PYTHON% -c "import python_docs_theme" > nul 2> nul
+if errorlevel 1 (
+    echo Installing python-docs-theme with %PYTHON%
+    %PYTHON% -m pip install python-docs-theme
+    if errorlevel 1 exit /B
+)
+
+if not defined BLURB (
     %PYTHON% -c "import blurb" > nul 2> nul
     if errorlevel 1 (
         echo Installing blurb with %PYTHON%
@@ -25,10 +35,6 @@ if not defined BLURB if defined PYTHON (
     )
     set BLURB=%PYTHON% -m blurb
 )
-
-if not defined PYTHON set PYTHON=py
-if not defined SPHINXBUILD set SPHINXBUILD=sphinx-build
-if not defined BLURB set BLURB=blurb
 
 if "%1" NEQ "htmlhelp" goto :skiphhcsearch
 if exist "%HTMLHELP%" goto :skiphhcsearch
@@ -58,7 +64,7 @@ if "%1" EQU "help" goto help
 if "%1" EQU "check" goto check
 if "%1" EQU "serve" goto serve
 if "%1" == "clean" (
-    rmdir /q /s %BUILDDIR%
+    rmdir /q /s "%BUILDDIR%"
     goto end
 )
 
@@ -107,6 +113,8 @@ echo.be passed by setting the SPHINXOPTS environment variable.
 goto end
 
 :build
+if not exist "%BUILDDIR%" mkdir "%BUILDDIR%"
+
 if exist ..\Misc\NEWS (
     echo.Copying Misc\NEWS to build\NEWS
     copy ..\Misc\NEWS build\NEWS > nul
@@ -123,10 +131,13 @@ if exist ..\Misc\NEWS (
 if NOT "%PAPER%" == "" (
     set SPHINXOPTS=-D latex_elements.papersize=%PAPER% %SPHINXOPTS%
 )
-cmd /C "%SPHINXBUILD% %SPHINXOPTS% -b%1 -dbuild\doctrees . %BUILDDIR%\%*"
+if "%1" EQU "htmlhelp" (
+    set SPHINXOPTS=-D html_theme_options.body_max_width=none %SPHINXOPTS%
+)
+cmd /S /C "%SPHINXBUILD% %SPHINXOPTS% -b%1 -dbuild\doctrees . "%BUILDDIR%\%1" %2 %3 %4 %5 %6 %7 %8 %9"
 
 if "%1" EQU "htmlhelp" (
-    cmd /C "%HTMLHELP%" build\htmlhelp\python%DISTVERSION:.=%.hhp
+    "%HTMLHELP%" "%BUILDDIR%\htmlhelp\python%DISTVERSION:.=%.hhp"
     rem hhc.exe seems to always exit with code 1, reset to 0 for less than 2
     if not errorlevel 2 cmd /C exit /b 0
 )
@@ -146,19 +157,19 @@ if NOT "%2" EQU "" (
 )
 cmd /C %this% html
 
-if EXIST %BUILDDIR%\html\index.html (
-    echo.Opening %BUILDDIR%\html\index.html in the default web browser...
-    start %BUILDDIR%\html\index.html
+if EXIST "%BUILDDIR%\html\index.html" (
+    echo.Opening "%BUILDDIR%\html\index.html" in the default web browser...
+    start "" "%BUILDDIR%\html\index.html"
 )
 
 goto end
 
 :check
-cmd /C %PYTHON% tools\rstlint.py -i tools
+cmd /S /C "%PYTHON% tools\rstlint.py -i tools"
 goto end
 
 :serve
-cmd /C %PYTHON% ..\Tools\scripts\serve.py %BUILDDIR%\html
+cmd /S /C "%PYTHON% ..\Tools\scripts\serve.py "%BUILDDIR%\html""
 goto end
 
 :end

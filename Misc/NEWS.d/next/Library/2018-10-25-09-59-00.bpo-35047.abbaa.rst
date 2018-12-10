@@ -1,0 +1,3 @@
+``unittest.mock`` now includes mock calls in exception messages if
+``assert_not_called``, ``assert_called_once``, or ``assert_called_once_with``
+fails. Patch by Petter Strandmark.

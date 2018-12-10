@@ -63,6 +63,8 @@ The :mod:`sunau` module defines the following functions:
 
    A synonym for :func:`.open`, maintained for backwards compatibility.
 
+   .. deprecated-removed:: 3.7 3.9
+
 
 The :mod:`sunau` module defines the following exception:
 

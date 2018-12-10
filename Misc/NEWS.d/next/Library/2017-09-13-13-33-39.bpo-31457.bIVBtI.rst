@@ -1,1 +1,0 @@
-LoggerAdapter objects can now be nested.

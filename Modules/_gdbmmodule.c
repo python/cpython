@@ -75,7 +75,7 @@ newdbmobject(const char *file, int flags, int mode)
     errno = 0;
     if ((dp->di_dbm = gdbm_open((char *)file, 0, flags, mode, NULL)) == 0) {
         if (errno != 0)
-            PyErr_SetFromErrno(DbmError);
+            PyErr_SetFromErrnoWithFilename(DbmError, file);
         else
             PyErr_SetString(DbmError, gdbm_strerror(gdbm_errno));
         Py_DECREF(dp);
@@ -485,7 +485,6 @@ static PyMethodDef dbm_methods[] = {
     _GDBM_GDBM_REORGANIZE_METHODDEF
     _GDBM_GDBM_SYNC_METHODDEF
     _GDBM_GDBM_GET_METHODDEF
-    _GDBM_GDBM_GET_METHODDEF
     _GDBM_GDBM_SETDEFAULT_METHODDEF
     {"__enter__", dbm__enter__, METH_NOARGS, NULL},
     {"__exit__",  dbm__exit__, METH_VARARGS, NULL},
@@ -527,7 +526,7 @@ static PyTypeObject Dbmtype = {
 
 /*[clinic input]
 _gdbm.open as dbmopen
-    filename as name: str
+    filename: unicode
     flags: str="r"
     mode: int(py_default="0o666") = 0o666
     /
@@ -557,8 +556,9 @@ when the database has to be created.  It defaults to octal 0o666.
 [clinic start generated code]*/
 
 static PyObject *
-dbmopen_impl(PyObject *module, const char *name, const char *flags, int mode)
-/*[clinic end generated code: output=31aa1bafdf5da688 input=55563cd60e51984a]*/
+dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
+             int mode)
+/*[clinic end generated code: output=9527750f5df90764 input=3be0b0875974b928]*/
 {
     int iflags;
 
@@ -606,7 +606,19 @@ dbmopen_impl(PyObject *module, const char *name, const char *flags, int mode)
         }
     }
 
-    return newdbmobject(name, iflags, mode);
+    PyObject *filenamebytes = PyUnicode_EncodeFSDefault(filename);
+    if (filenamebytes == NULL) {
+        return NULL;
+    }
+    const char *name = PyBytes_AS_STRING(filenamebytes);
+    if (strlen(name) != (size_t)PyBytes_GET_SIZE(filenamebytes)) {
+        Py_DECREF(filenamebytes);
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
+    PyObject *self = newdbmobject(name, iflags, mode);
+    Py_DECREF(filenamebytes);
+    return self;
 }
 
 static const char dbmmodule_open_flags[] = "rwcn"
@@ -641,20 +653,46 @@ static struct PyModuleDef _gdbmmodule = {
 
 PyMODINIT_FUNC
 PyInit__gdbm(void) {
-    PyObject *m, *d, *s;
+    PyObject *m;
 
     if (PyType_Ready(&Dbmtype) < 0)
             return NULL;
     m = PyModule_Create(&_gdbmmodule);
-    if (m == NULL)
+    if (m == NULL) {
         return NULL;
-    d = PyModule_GetDict(m);
-    DbmError = PyErr_NewException("_gdbm.error", PyExc_OSError, NULL);
-    if (DbmError != NULL) {
-        PyDict_SetItemString(d, "error", DbmError);
-        s = PyUnicode_FromString(dbmmodule_open_flags);
-        PyDict_SetItemString(d, "open_flags", s);
-        Py_DECREF(s);
     }
+
+    DbmError = PyErr_NewException("_gdbm.error", PyExc_OSError, NULL);
+    if (DbmError == NULL) {
+        goto error;
+    }
+    Py_INCREF(DbmError);
+    if (PyModule_AddObject(m, "error", DbmError) < 0) {
+        Py_DECREF(DbmError);
+        goto error;
+    }
+
+    if (PyModule_AddStringConstant(m, "open_flags",
+                                   dbmmodule_open_flags) < 0) {
+        goto error;
+    }
+
+#if defined(GDBM_VERSION_MAJOR) && defined(GDBM_VERSION_MINOR) && \
+    defined(GDBM_VERSION_PATCH)
+    PyObject *obj = Py_BuildValue("iii", GDBM_VERSION_MAJOR,
+                                  GDBM_VERSION_MINOR, GDBM_VERSION_PATCH);
+    if (obj == NULL) {
+        goto error;
+    }
+    if (PyModule_AddObject(m, "_GDBM_VERSION", obj) < 0) {
+        Py_DECREF(obj);
+        goto error;
+    }
+#endif
+
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }

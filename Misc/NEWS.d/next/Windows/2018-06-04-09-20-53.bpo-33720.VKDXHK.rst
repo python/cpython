@@ -1,0 +1,1 @@
+Reduces maximum marshal recursion depth on release builds.

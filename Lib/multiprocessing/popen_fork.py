@@ -1,5 +1,4 @@
 import os
-import sys
 import signal
 
 from . import util
@@ -14,8 +13,7 @@ class Popen(object):
     method = 'fork'
 
     def __init__(self, process_obj):
-        sys.stdout.flush()
-        sys.stderr.flush()
+        util._flush_std_streams()
         self.returncode = None
         self.finalizer = None
         self._launch(process_obj)

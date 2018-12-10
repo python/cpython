@@ -71,13 +71,13 @@ PyDoc_STRVAR(unicode_center__doc__,
 "Padding is done using the specified fill character (default is a space).");
 
 #define UNICODE_CENTER_METHODDEF    \
-    {"center", (PyCFunction)unicode_center, METH_FASTCALL, unicode_center__doc__},
+    {"center", (PyCFunction)(void(*)(void))unicode_center, METH_FASTCALL, unicode_center__doc__},
 
 static PyObject *
 unicode_center_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
 
 static PyObject *
-unicode_center(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicode_center(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t width;
@@ -109,13 +109,13 @@ PyDoc_STRVAR(unicode_encode__doc__,
 "    codecs.register_error that can handle UnicodeEncodeErrors.");
 
 #define UNICODE_ENCODE_METHODDEF    \
-    {"encode", (PyCFunction)unicode_encode, METH_FASTCALL|METH_KEYWORDS, unicode_encode__doc__},
+    {"encode", (PyCFunction)(void(*)(void))unicode_encode, METH_FASTCALL|METH_KEYWORDS, unicode_encode__doc__},
 
 static PyObject *
 unicode_encode_impl(PyObject *self, const char *encoding, const char *errors);
 
 static PyObject *
-unicode_encode(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"encoding", "errors", NULL};
@@ -142,13 +142,13 @@ PyDoc_STRVAR(unicode_expandtabs__doc__,
 "If tabsize is not given, a tab size of 8 characters is assumed.");
 
 #define UNICODE_EXPANDTABS_METHODDEF    \
-    {"expandtabs", (PyCFunction)unicode_expandtabs, METH_FASTCALL|METH_KEYWORDS, unicode_expandtabs__doc__},
+    {"expandtabs", (PyCFunction)(void(*)(void))unicode_expandtabs, METH_FASTCALL|METH_KEYWORDS, unicode_expandtabs__doc__},
 
 static PyObject *
 unicode_expandtabs_impl(PyObject *self, int tabsize);
 
 static PyObject *
-unicode_expandtabs(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"tabsize", NULL};
@@ -163,6 +163,27 @@ unicode_expandtabs(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *
 
 exit:
     return return_value;
+}
+
+PyDoc_STRVAR(unicode_isascii__doc__,
+"isascii($self, /)\n"
+"--\n"
+"\n"
+"Return True if all characters in the string are ASCII, False otherwise.\n"
+"\n"
+"ASCII characters have code points in the range U+0000-U+007F.\n"
+"Empty string is ASCII too.");
+
+#define UNICODE_ISASCII_METHODDEF    \
+    {"isascii", (PyCFunction)unicode_isascii, METH_NOARGS, unicode_isascii__doc__},
+
+static PyObject *
+unicode_isascii_impl(PyObject *self);
+
+static PyObject *
+unicode_isascii(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return unicode_isascii_impl(self);
 }
 
 PyDoc_STRVAR(unicode_islower__doc__,
@@ -360,8 +381,8 @@ PyDoc_STRVAR(unicode_isidentifier__doc__,
 "\n"
 "Return True if the string is a valid Python identifier, False otherwise.\n"
 "\n"
-"Use keyword.iskeyword() to test for reserved identifiers such as \"def\" and\n"
-"\"class\".");
+"Call keyword.iskeyword(s) to test whether string s is a reserved identifier,\n"
+"such as \"def\" or \"class\".");
 
 #define UNICODE_ISIDENTIFIER_METHODDEF    \
     {"isidentifier", (PyCFunction)unicode_isidentifier, METH_NOARGS, unicode_isidentifier__doc__},
@@ -419,13 +440,13 @@ PyDoc_STRVAR(unicode_ljust__doc__,
 "Padding is done using the specified fill character (default is a space).");
 
 #define UNICODE_LJUST_METHODDEF    \
-    {"ljust", (PyCFunction)unicode_ljust, METH_FASTCALL, unicode_ljust__doc__},
+    {"ljust", (PyCFunction)(void(*)(void))unicode_ljust, METH_FASTCALL, unicode_ljust__doc__},
 
 static PyObject *
 unicode_ljust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
 
 static PyObject *
-unicode_ljust(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicode_ljust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t width;
@@ -468,13 +489,13 @@ PyDoc_STRVAR(unicode_strip__doc__,
 "If chars is given and not None, remove characters in chars instead.");
 
 #define UNICODE_STRIP_METHODDEF    \
-    {"strip", (PyCFunction)unicode_strip, METH_FASTCALL, unicode_strip__doc__},
+    {"strip", (PyCFunction)(void(*)(void))unicode_strip, METH_FASTCALL, unicode_strip__doc__},
 
 static PyObject *
 unicode_strip_impl(PyObject *self, PyObject *chars);
 
 static PyObject *
-unicode_strip(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicode_strip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *chars = Py_None;
@@ -499,13 +520,13 @@ PyDoc_STRVAR(unicode_lstrip__doc__,
 "If chars is given and not None, remove characters in chars instead.");
 
 #define UNICODE_LSTRIP_METHODDEF    \
-    {"lstrip", (PyCFunction)unicode_lstrip, METH_FASTCALL, unicode_lstrip__doc__},
+    {"lstrip", (PyCFunction)(void(*)(void))unicode_lstrip, METH_FASTCALL, unicode_lstrip__doc__},
 
 static PyObject *
 unicode_lstrip_impl(PyObject *self, PyObject *chars);
 
 static PyObject *
-unicode_lstrip(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicode_lstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *chars = NULL;
@@ -530,13 +551,13 @@ PyDoc_STRVAR(unicode_rstrip__doc__,
 "If chars is given and not None, remove characters in chars instead.");
 
 #define UNICODE_RSTRIP_METHODDEF    \
-    {"rstrip", (PyCFunction)unicode_rstrip, METH_FASTCALL, unicode_rstrip__doc__},
+    {"rstrip", (PyCFunction)(void(*)(void))unicode_rstrip, METH_FASTCALL, unicode_rstrip__doc__},
 
 static PyObject *
 unicode_rstrip_impl(PyObject *self, PyObject *chars);
 
 static PyObject *
-unicode_rstrip(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicode_rstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *chars = NULL;
@@ -566,14 +587,14 @@ PyDoc_STRVAR(unicode_replace__doc__,
 "replaced.");
 
 #define UNICODE_REPLACE_METHODDEF    \
-    {"replace", (PyCFunction)unicode_replace, METH_FASTCALL, unicode_replace__doc__},
+    {"replace", (PyCFunction)(void(*)(void))unicode_replace, METH_FASTCALL, unicode_replace__doc__},
 
 static PyObject *
 unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
                      Py_ssize_t count);
 
 static PyObject *
-unicode_replace(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *old;
@@ -599,13 +620,13 @@ PyDoc_STRVAR(unicode_rjust__doc__,
 "Padding is done using the specified fill character (default is a space).");
 
 #define UNICODE_RJUST_METHODDEF    \
-    {"rjust", (PyCFunction)unicode_rjust, METH_FASTCALL, unicode_rjust__doc__},
+    {"rjust", (PyCFunction)(void(*)(void))unicode_rjust, METH_FASTCALL, unicode_rjust__doc__},
 
 static PyObject *
 unicode_rjust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
 
 static PyObject *
-unicode_rjust(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicode_rjust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t width;
@@ -636,13 +657,13 @@ PyDoc_STRVAR(unicode_split__doc__,
 "    -1 (the default value) means no limit.");
 
 #define UNICODE_SPLIT_METHODDEF    \
-    {"split", (PyCFunction)unicode_split, METH_FASTCALL|METH_KEYWORDS, unicode_split__doc__},
+    {"split", (PyCFunction)(void(*)(void))unicode_split, METH_FASTCALL|METH_KEYWORDS, unicode_split__doc__},
 
 static PyObject *
 unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit);
 
 static PyObject *
-unicode_split(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sep", "maxsplit", NULL};
@@ -682,7 +703,7 @@ PyDoc_STRVAR(unicode_rpartition__doc__,
 "\n"
 "Partition the string into three parts using the given separator.\n"
 "\n"
-"This will search for the separator in the string, starting and the end. If\n"
+"This will search for the separator in the string, starting at the end. If\n"
 "the separator is found, returns a 3-tuple containing the part before the\n"
 "separator, the separator itself, and the part after it.\n"
 "\n"
@@ -709,13 +730,13 @@ PyDoc_STRVAR(unicode_rsplit__doc__,
 "Splits are done starting at the end of the string and working to the front.");
 
 #define UNICODE_RSPLIT_METHODDEF    \
-    {"rsplit", (PyCFunction)unicode_rsplit, METH_FASTCALL|METH_KEYWORDS, unicode_rsplit__doc__},
+    {"rsplit", (PyCFunction)(void(*)(void))unicode_rsplit, METH_FASTCALL|METH_KEYWORDS, unicode_rsplit__doc__},
 
 static PyObject *
 unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit);
 
 static PyObject *
-unicode_rsplit(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sep", "maxsplit", NULL};
@@ -743,13 +764,13 @@ PyDoc_STRVAR(unicode_splitlines__doc__,
 "true.");
 
 #define UNICODE_SPLITLINES_METHODDEF    \
-    {"splitlines", (PyCFunction)unicode_splitlines, METH_FASTCALL|METH_KEYWORDS, unicode_splitlines__doc__},
+    {"splitlines", (PyCFunction)(void(*)(void))unicode_splitlines, METH_FASTCALL|METH_KEYWORDS, unicode_splitlines__doc__},
 
 static PyObject *
 unicode_splitlines_impl(PyObject *self, int keepends);
 
 static PyObject *
-unicode_splitlines(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_splitlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"keepends", NULL};
@@ -799,13 +820,13 @@ PyDoc_STRVAR(unicode_maketrans__doc__,
 "must be a string, whose characters will be mapped to None in the result.");
 
 #define UNICODE_MAKETRANS_METHODDEF    \
-    {"maketrans", (PyCFunction)unicode_maketrans, METH_FASTCALL|METH_STATIC, unicode_maketrans__doc__},
+    {"maketrans", (PyCFunction)(void(*)(void))unicode_maketrans, METH_FASTCALL|METH_STATIC, unicode_maketrans__doc__},
 
 static PyObject *
 unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z);
 
 static PyObject *
-unicode_maketrans(void *null, PyObject **args, Py_ssize_t nargs)
+unicode_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *x;
@@ -930,4 +951,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=8fd799fd7f2cc724 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d323802b67bfc6d8 input=a9049054013a1b77]*/

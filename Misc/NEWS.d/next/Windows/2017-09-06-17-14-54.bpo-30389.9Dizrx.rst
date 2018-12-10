@@ -1,1 +1,0 @@
-Adds detection of Visual Studio 2017 to distutils on Windows.

@@ -1,0 +1,5 @@
+:func:`fnmatch.translate()` no longer produces patterns which contain set
+operations. Sets starting with '[' or containing '--', '&&', '~~' or '||'
+will be interpreted differently in regular expressions in future versions.
+Currently they emit warnings. fnmatch.translate() now avoids producing
+patterns containing such sets by accident.
