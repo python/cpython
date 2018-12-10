@@ -86,7 +86,7 @@ CONFIGURE_CFLAGS=	@CFLAGS@
 CONFIGURE_CFLAGS_NODIST=@CFLAGS_NODIST@
 # LDFLAGS_NODIST is used in the same manner as CFLAGS_NODIST.
 # Use it when a linker flag should _not_ be part of the distutils LDFLAGS
-# once Python is installed (Issue #35257)
+# once Python is installed (bpo-35257)
 CONFIGURE_LDFLAGS_NODIST=@LDFLAGS_NODIST@
 CONFIGURE_CPPFLAGS=	@CPPFLAGS@
 CONFIGURE_LDFLAGS=	@LDFLAGS@
