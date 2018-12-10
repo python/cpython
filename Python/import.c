@@ -2146,7 +2146,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     if (mod != NULL || PyErr_Occurred()) {
         Py_DECREF(name);
         Py_DECREF(path);
-        Py_INCREF(mod);
+        Py_XINCREF(mod);
         return mod;
     }
 
