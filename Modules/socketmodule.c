@@ -2245,13 +2245,15 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         {
             return 0;
         }
-        /* sockaddr_alg has fixed-sized char arrays for type and name */
-        if (strlen(type) > sizeof(sa->salg_type)) {
+        /* sockaddr_alg has fixed-sized char arrays for type, and name
+         * both must be NULL terminated.
+         */
+        if (strlen(type) >= sizeof(sa->salg_type)) {
             PyErr_SetString(PyExc_ValueError, "AF_ALG type too long.");
             return 0;
         }
         strncpy((char *)sa->salg_type, type, sizeof(sa->salg_type));
-        if (strlen(name) > sizeof(sa->salg_name)) {
+        if (strlen(name) >= sizeof(sa->salg_name)) {
             PyErr_SetString(PyExc_ValueError, "AF_ALG name too long.");
             return 0;
         }
