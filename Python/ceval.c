@@ -824,7 +824,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     PyObject *consts;
 #if defined(Py_DEBUG) || defined(LLTRACE)
     /* Make it easier to find out where we are with a debugger */
+#ifdef __GNUC__
+    char *filename __attribute__((unused));
+#else
     char *filename;
+#endif
 #endif
 
 /* Tuple access macros */
@@ -1288,7 +1292,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             FAST_DISPATCH();
         }
 
-       
+
         TARGET_NOARG(DUP_TOP)
         {
             v = TOP();
@@ -1835,7 +1839,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         }
 
 
-     
+
         TARGET_WITH_IMPL_NOARG(SLICE, _slice)
         TARGET_WITH_IMPL_NOARG(SLICE_1, _slice)
         TARGET_WITH_IMPL_NOARG(SLICE_2, _slice)
@@ -1860,7 +1864,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             break;
         }
 
-     
+
         TARGET_WITH_IMPL_NOARG(STORE_SLICE, _store_slice)
         TARGET_WITH_IMPL_NOARG(STORE_SLICE_1, _store_slice)
         TARGET_WITH_IMPL_NOARG(STORE_SLICE_2, _store_slice)
