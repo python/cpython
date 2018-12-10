@@ -30,6 +30,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <pyconfig.h>
 #include <stddef.h>
 #include <string.h>  /* memcpy */
 
