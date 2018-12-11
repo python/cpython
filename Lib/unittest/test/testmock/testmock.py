@@ -1779,7 +1779,6 @@ class MockTest(unittest.TestCase):
 
             del mock.foo
             self.assertFalse(hasattr(mock, 'foo'))
-            self.assertRaises(AttributeError, getattr, mock, 'foo')
 
             mock.foo = 4
             self.assertTrue(hasattr(mock, 'foo'))
@@ -1787,14 +1786,13 @@ class MockTest(unittest.TestCase):
 
             del mock.foo
             self.assertFalse(hasattr(mock, 'foo'))
-            self.assertRaises(AttributeError, getattr, mock, 'foo')
 
 
-    def test_mock_raises_when_deleting_inexistent_attribute(self):
+    def test_mock_raises_when_deleting_nonexistent_attribute(self):
         for mock in (Mock(), MagicMock(), NonCallableMagicMock(),
                      NonCallableMock()):
+            del mock.foo
             with self.assertRaises(AttributeError):
-                del mock.foo
                 del mock.foo
 
 
