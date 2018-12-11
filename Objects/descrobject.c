@@ -450,14 +450,9 @@ descr_get_qualname(PyDescrObject *descr, void *Py_UNUSED(ignored))
 static PyObject *
 descr_reduce(PyDescrObject *descr)
 {
-    PyObject *builtins;
-    PyObject *getattr;
     _Py_IDENTIFIER(getattr);
-
-    builtins = PyEval_GetBuiltins();
-    getattr = _PyDict_GetItemId(builtins, &PyId_getattr);
-    return Py_BuildValue("O(OO)", getattr, PyDescr_TYPE(descr),
-                         PyDescr_NAME(descr));
+    return Py_BuildValue("N(OO)", _PyEval_GetBuiltinId(&PyId_getattr),
+                         PyDescr_TYPE(descr), PyDescr_NAME(descr));
 }
 
 static PyMethodDef descr_methods[] = {
@@ -1088,13 +1083,9 @@ wrapper_repr(wrapperobject *wp)
 static PyObject *
 wrapper_reduce(wrapperobject *wp)
 {
-    PyObject *builtins;
-    PyObject *getattr;
     _Py_IDENTIFIER(getattr);
-
-    builtins = PyEval_GetBuiltins();
-    getattr = _PyDict_GetItemId(builtins, &PyId_getattr);
-    return Py_BuildValue("O(OO)", getattr, wp->self, PyDescr_NAME(wp->descr));
+    return Py_BuildValue("N(OO)", _PyEval_GetBuiltinId(&PyId_getattr),
+                         wp->self, PyDescr_NAME(wp->descr));
 }
 
 static PyMethodDef wrapper_methods[] = {
