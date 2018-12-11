@@ -25,7 +25,6 @@ __all__ = (
 __version__ = '1.0'
 
 
-import functools
 import inspect
 import pprint
 import sys
@@ -69,9 +68,7 @@ def _get_signature_object(func, as_instance, eat_self):
     signature object.
     Return a (reduced func, signature) tuple, or None.
     """
-    if isinstance(func, functools.partial):
-        pass
-    elif isinstance(func, type) and not as_instance:
+    if isinstance(func, type) and not as_instance:
         # If it's a type and should be modelled as a type, use __init__.
         try:
             func = func.__init__
@@ -2308,8 +2305,6 @@ def _must_skip(spec, entry, is_type):
             # Normal method => skip if looked up on type
             # (if looked up on instance, self is already skipped)
             return is_type
-        elif isinstance(result, functools.partialmethod):
-            return True
         else:
             return False
 

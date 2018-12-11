@@ -901,53 +901,34 @@ class SpecSignatureTest(unittest.TestCase):
         autospec = create_autospec(proxy)
         self.assertFalse(hasattr(autospec, '__name__'))
 
+
     def test_spec_inspect_signature(self):
 
         def myfunc(x, y):
             pass
 
         mock = create_autospec(myfunc)
-        self.assertEqual(inspect.getfullargspec(mock), inspect.getfullargspec(myfunc))
         mock(1, 2)
         mock(x=1, y=2)
+
+        self.assertEqual(inspect.getfullargspec(mock), inspect.getfullargspec(myfunc))
+        self.assertEqual(mock.mock_calls, [call(1, 2), call(x=1, y=2)])
         self.assertRaises(TypeError, mock, 1)
+
+
+    def test_spec_inspect_signature_annotations(self):
 
         def foo(a: int, b: int=10, *, c:int) -> int:
             return a + b + c
 
         mock = create_autospec(foo)
-        self.assertEqual(inspect.getfullargspec(mock), inspect.getfullargspec(foo))
         mock(1, 2, c=3)
         mock(1, c=3)
+
+        self.assertEqual(inspect.getfullargspec(mock), inspect.getfullargspec(foo))
+        self.assertEqual(mock.mock_calls, [call(1, 2, c=3), call(1, c=3)])
         self.assertRaises(TypeError, mock, 1)
         self.assertRaises(TypeError, mock, 1, 2, 3, c=4)
-
-    def test_spec_inspect_signature_partial(self):
-
-        import functools
-
-        def foo(a: int, b: int=10, *, c:int) -> int:
-            return a + b + c
-
-        partial_object = functools.partial(foo, 1)
-        mock = create_autospec(partial_object)
-        mock(1, c=1)
-        mock(c=1)
-        self.assertEqual(inspect.getfullargspec(mock), inspect.getfullargspec(partial_object))
-        self.assertRaises(TypeError, partial_object)
-
-        class Bar:
-
-            def foo(self, a: int, b: int=10, *, c:int) -> int:
-                return a + b + c
-
-            baz = functools.partialmethod(foo, 1)
-
-        mock = create_autospec(Bar)
-        mock.baz(1, c=2)
-        mock.baz(c=2)
-        self.assertRaises(TypeError, mock.baz, 1)
-        self.assertRaises(TypeError, mock.baz, 1, 2, c=2)
 
 
 class TestCallList(unittest.TestCase):
