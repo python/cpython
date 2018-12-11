@@ -7,12 +7,8 @@
 #include <Windows.h>
 #include <shellapi.h>
 
-#ifdef PYTHON_UWP_SUPPORTED
 #include <winrt\Windows.ApplicationModel.h>
 #include <winrt\Windows.Storage.h>
-#else
-#include <string>
-#endif
 
 #ifdef PYTHONW
 #ifdef _DEBUG
@@ -31,7 +27,6 @@ const wchar_t *PROGNAME = L"python.exe";
 static void
 set_user_base()
 {
-#ifdef PYTHON_UWP_SUPPORTED
     wchar_t envBuffer[2048];
     try {
         const auto appData = winrt::Windows::Storage::ApplicationData::Current();
@@ -49,17 +44,12 @@ set_user_base()
         }
     } catch (...) {
     }
-#endif
 }
 
 static const wchar_t *
 get_argv0(const wchar_t *argv0)
 {
-#ifdef PYTHON_UWP_SUPPORTED
     winrt::hstring installPath;
-#else
-    std::wstring installPath;
-#endif
     const wchar_t *launcherPath;
     wchar_t *buffer;
     size_t len;
@@ -79,7 +69,6 @@ get_argv0(const wchar_t *argv0)
         return buffer;
     }
 
-#ifdef PYTHON_UWP_SUPPORTED
     try {
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         if (package) {
@@ -91,7 +80,6 @@ get_argv0(const wchar_t *argv0)
     }
     catch (...) {
     }
-#endif
 
     if (!installPath.empty()) {
         len = installPath.size() + wcslen(PROGNAME) + 2;
