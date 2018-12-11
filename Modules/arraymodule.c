@@ -2943,7 +2943,8 @@ static PyObject *
 array_arrayiterator___reduce___impl(arrayiterobject *self)
 /*[clinic end generated code: output=7898a52e8e66e016 input=a062ea1e9951417a]*/
 {
-    PyObject *func = _PyObject_GetBuiltin("iter");
+    _Py_IDENTIFIER(iter);
+    PyObject *func = _PyEval_GetBuiltinId(&PyId_iter);
     if (self->ao == NULL) {
         return Py_BuildValue("N(())", func);
     }
