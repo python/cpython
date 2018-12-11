@@ -218,6 +218,19 @@ extern char        *ctermid_r(char *);
 
 #endif /* !_MSC_VER */
 
+#if defined(__VXWORKS__)
+#include <vxCpuLib.h>
+#include <rtpLib.h>
+#include <wait.h>
+#include <taskLib.h>
+extern char ** environ;
+#ifndef _P_WAIT
+#define _P_WAIT          3
+#define _P_NOWAIT        2
+#define _P_NOWAITO       1
+#endif
+#endif /* __VXWORKS__ */
+
 #ifdef HAVE_POSIX_SPAWN
 #include <spawn.h>
 #endif
@@ -4855,7 +4868,7 @@ os__exit_impl(PyObject *module, int status)
 #define EXECV_CHAR char
 #endif
 
-#if defined(HAVE_EXECV) || defined(HAVE_SPAWNV)
+#if defined(HAVE_EXECV) || defined(HAVE_SPAWNV) || defined(HAVE_RTPSPAWN)
 static void
 free_string_array(EXECV_CHAR **array, Py_ssize_t count)
 {
@@ -4893,7 +4906,7 @@ fsconvert_strdup(PyObject *o, EXECV_CHAR **out)
 }
 #endif
 
-#if defined(HAVE_EXECV) || defined (HAVE_FEXECVE)
+#if defined(HAVE_EXECV) || defined (HAVE_FEXECVE) || defined(HAVE_RTPSPAWN)
 static EXECV_CHAR**
 parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
 {
@@ -5617,8 +5630,40 @@ os_posix_spawnp_impl(PyObject *module, path_t *path, PyObject *argv,
 }
 #endif /* HAVE_POSIX_SPAWNP */
 
+#ifdef HAVE_RTPSPAWN
+static intptr_t
+_rtp_spawn(int mode, const char *rtpFileName, const char *argv[])
+{
+     RTP_ID rtpid;
+     int status;
 
-#if defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)
+     rtpid = rtpSpawn(rtpFileName, argv, (const char **)environ,
+                      100, 0x1000000, 0, VX_FP_TASK);
+     if ((rtpid != RTP_ID_ERROR) && (mode == _P_WAIT)) {
+         (void) waitpid((pid_t)rtpid, &status, 0);
+         return ((intptr_t)status);
+     }
+     return ((intptr_t)rtpid);
+}
+
+static intptr_t
+_rtp_spawne(int mode, const char *rtpFileName, const char *argv[],
+               const char  *envp[])
+{
+    RTP_ID rtpid;
+    int status;
+
+    rtpid = rtpSpawn(rtpFileName, argv, envp,
+                     100, 0x1000000, 0, VX_FP_TASK);
+    if ((rtpid != RTP_ID_ERROR) && (mode == _P_WAIT)) {
+        (void) waitpid((pid_t)rtpid, &status, 0);
+        return ((intptr_t)status);
+    }
+    return ((intptr_t)rtpid);
+}
+#endif
+
+#if defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN)
 /*[clinic input]
 os.spawnv
 
@@ -5688,13 +5733,17 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
     }
     argvlist[argc] = NULL;
 
+#if !defined(HAVE_RTPSPAWN)
     if (mode == _OLD_P_OVERLAY)
         mode = _P_OVERLAY;
+#endif
 
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_WSPAWNV
     spawnval = _wspawnv(mode, path->wide, argvlist);
+#elif defined(HAVE_RTPSPAWN)
+    spawnval = _rtp_spawn(mode, path->narrow, (const char **)argvlist);
 #else
     spawnval = _spawnv(mode, path->narrow, argvlist);
 #endif
@@ -5793,13 +5842,18 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
     if (envlist == NULL)
         goto fail_1;
 
+#if !defined(HAVE_RTPSPAWN)
     if (mode == _OLD_P_OVERLAY)
         mode = _P_OVERLAY;
+#endif
 
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_WSPAWNV
     spawnval = _wspawnve(mode, path->wide, argvlist, envlist);
+#elif defined(HAVE_RTPSPAWN)
+    spawnval = _rtp_spawne(mode, path->narrow, (const char **)argvlist,
+                           (const char **)envlist);
 #else
     spawnval = _spawnve(mode, path->narrow, argvlist, envlist);
 #endif
@@ -13740,11 +13794,13 @@ all_ins(PyObject *m)
     if (PyModule_AddIntConstant(m, "POSIX_SPAWN_DUP2", POSIX_SPAWN_DUP2)) return -1;
 #endif
 
-#ifdef HAVE_SPAWNV
+#ifdef defined(HAVE_SPAWNV) || defined (HAVE_RTPSPAWN)
     if (PyModule_AddIntConstant(m, "P_WAIT", _P_WAIT)) return -1;
     if (PyModule_AddIntConstant(m, "P_NOWAIT", _P_NOWAIT)) return -1;
-    if (PyModule_AddIntConstant(m, "P_OVERLAY", _OLD_P_OVERLAY)) return -1;
     if (PyModule_AddIntConstant(m, "P_NOWAITO", _P_NOWAITO)) return -1;
+#endif
+#ifdef HAVE_SPAWNV
+    if (PyModule_AddIntConstant(m, "P_OVERLAY", _OLD_P_OVERLAY)) return -1;
     if (PyModule_AddIntConstant(m, "P_DETACH", _P_DETACH)) return -1;
 #endif
 
