@@ -290,4 +290,3 @@ AS_VAR_IF([$1], [""], [$5], [$4])dnl
 
 m4_include([m4/ax_c_float_words_bigendian.m4])
 m4_include([m4/ax_check_openssl.m4])
-m4_include([acinclude.m4])
