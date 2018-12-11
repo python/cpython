@@ -322,7 +322,7 @@ _PyEval_SignalReceived(void)
     SIGNAL_PENDING_SIGNALS();
 }
 
-int
+static int
 _add_pending_call(int (*func)(void *), void *arg)
 {
     // TODO: Drop the limit?
@@ -349,7 +349,7 @@ _add_pending_call(int (*func)(void *), void *arg)
     return 0;
 }
 
-void
+static void
 _pop_pending_call(int (**func)(void *), void **arg)
 {
     struct _pending_call *call = _PyRuntime.ceval.pending.head;
