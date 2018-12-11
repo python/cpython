@@ -797,6 +797,9 @@ Py_NewInterpreter(void)
             goto handle_error;
         Py_INCREF(interp->builtins);
     }
+    else if (PyErr_Occurred()) {
+        goto handle_error;
+    }
 
     /* initialize builtin exceptions */
     _PyExc_Init(bimod);

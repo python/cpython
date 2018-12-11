@@ -785,9 +785,11 @@ local_clear(localobject *self)
         for(tstate = PyInterpreterState_ThreadHead(tstate->interp);
             tstate;
             tstate = PyThreadState_Next(tstate))
-            if (tstate->dict &&
-                PyDict_GetItem(tstate->dict, self->key))
-                PyDict_DelItem(tstate->dict, self->key);
+            if (tstate->dict && PyDict_GetItem(tstate->dict, self->key)) {
+                if (PyDict_DelItem(tstate->dict, self->key)) {
+                    PyErr_Clear();
+                }
+            }
     }
     return 0;
 }
