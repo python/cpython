@@ -1,3 +1,5 @@
-REVERT: Fix a reference issue inside multiprocessing.Pool that caused the
+Revert the fix for this issue previously released in 3.6.7 pending
+further investigation:
+Fix a reference issue inside multiprocessing.Pool that caused the
 pool to remain alive if it was deleted without being closed or terminated
 explicitly.
