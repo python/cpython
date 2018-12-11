@@ -5109,7 +5109,7 @@ unicode_concatenate(PyObject *v, PyObject *w,
             PyObject *names = f->f_code->co_names;
             PyObject *name = GETITEM(names, oparg);
             PyObject *locals = f->f_locals;
-            if (PyDict_CheckExact(locals) &&
+            if (locals && PyDict_CheckExact(locals) &&
                 PyDict_GetItem(locals, name) == v) {
                 if (PyDict_DelItem(locals, name) != 0) {
                     PyErr_Clear();
