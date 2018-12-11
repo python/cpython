@@ -1,2 +1,0 @@
-Fixed possible crash in ``os.utime()`` on Windows when pass incorrect
-arguments.

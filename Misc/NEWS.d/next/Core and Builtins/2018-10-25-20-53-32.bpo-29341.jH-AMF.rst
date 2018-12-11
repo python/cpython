@@ -1,2 +1,0 @@
-Clarify in the docstrings of :mod:`os` methods that path-like objects are also accepted
-as input parameters.

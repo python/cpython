@@ -1,0 +1,879 @@
+.. bpo: 34812
+.. date: 2018-11-23-15-00-23
+.. nonce: 84VQnb
+.. release date: 2018-12-11
+.. section: Security
+
+The :option:`-I` command line option (run Python in isolated mode) is now
+also copied by the :mod:`multiprocessing` and :mod:`distutils` modules when
+spawning child processes. Previously, only :option:`-E` and :option:`-s`
+options (enabled by :option:`-I`) were copied.
+
+..
+
+.. bpo: 34791
+.. date: 2018-09-24-18-49-25
+.. nonce: 78GmIG
+.. section: Security
+
+The xml.sax and xml.dom.domreg no longer use environment variables to
+override parser implementations when sys.flags.ignore_environment is set by
+-E or -I arguments.
+
+..
+
+.. bpo: 35444
+.. date: 2018-12-09-13-09-39
+.. nonce: 9kYn4V
+.. section: Core and Builtins
+
+Fixed error handling in pickling methods when fail to look up builtin
+"getattr".
+
+..
+
+.. bpo: 35436
+.. date: 2018-12-07-02-38-01
+.. nonce: 0VW7p9
+.. section: Core and Builtins
+
+Fix various issues with memory allocation error handling.  Patch by Zackery
+Spytz.
+
+..
+
+.. bpo: 35357
+.. date: 2018-12-03-21-20-24
+.. nonce: rhhoiC
+.. section: Core and Builtins
+
+Internal attributes' names of unittest.mock._Call and
+unittest.mock.MagicProxy (name, parent & from_kall) are now prefixed with
+_mock_ in order to prevent clashes with widely used object attributes. Fixed
+minor typo in test function name.
+
+..
+
+.. bpo: 35372
+.. date: 2018-12-01-19-20-53
+.. nonce: RwVJjZ
+.. section: Core and Builtins
+
+Fixed the code page decoder for input longer than 2 GiB containing
+undecodable bytes.
+
+..
+
+.. bpo: 33954
+.. date: 2018-11-20-22-33-38
+.. nonce: RzSngM
+.. section: Core and Builtins
+
+For :meth:`str.format`, :meth:`float.__format__` and
+:meth:`complex.__format__` methods for non-ASCII decimal point when using
+the "n" formatter.
+
+..
+
+.. bpo: 35214
+.. date: 2018-11-13-00-40-35
+.. nonce: OQBjph
+.. section: Core and Builtins
+
+Fixed an out of bounds memory access when parsing a truncated unicode escape
+sequence at the end of a string such as ``'\N'``.  It would read one byte
+beyond the end of the memory allocation.
+
+..
+
+.. bpo: 35214
+.. date: 2018-11-12-11-38-06
+.. nonce: PCHKbX
+.. section: Core and Builtins
+
+The interpreter and extension modules have had annotations added so that
+they work properly under clang's Memory Sanitizer.  A new configure flag
+--with-memory-sanitizer has been added to make test builds of this nature
+easier to perform.
+
+..
+
+.. bpo: 35193
+.. date: 2018-11-08-23-00-04
+.. nonce: WK2PDg
+.. section: Core and Builtins
+
+Fix an off by one error in the bytecode peephole optimizer where it could
+read bytes beyond the end of bounds of an array when removing unreachable
+code. This bug was present in every release of Python 3.6 until now.
+
+..
+
+.. bpo: 29341
+.. date: 2018-10-25-20-53-32
+.. nonce: jH-AMF
+.. section: Core and Builtins
+
+Clarify in the docstrings of :mod:`os` methods that path-like objects are
+also accepted as input parameters.
+
+..
+
+.. bpo: 35050
+.. date: 2018-10-23-15-03-53
+.. nonce: 49wraS
+.. section: Core and Builtins
+
+:mod:`socket`: Fix off-by-one bug in length check for ``AF_ALG`` name and
+type.
+
+..
+
+.. bpo: 34974
+.. date: 2018-10-13-22-24-19
+.. nonce: 7LgTc2
+.. section: Core and Builtins
+
+:class:`bytes` and :class:`bytearray` constructors no longer convert
+unexpected exceptions (e.g. :exc:`MemoryError` and :exc:`KeyboardInterrupt`)
+to :exc:`TypeError`.
+
+..
+
+.. bpo: 34973
+.. date: 2018-10-13-16-42-03
+.. nonce: B5M-3g
+.. section: Core and Builtins
+
+Fixed crash in :func:`bytes` when the :class:`list` argument is mutated
+while it is iterated.
+
+..
+
+.. bpo: 34824
+.. date: 2018-09-27-11-10-02
+.. nonce: VLlCaU
+.. section: Core and Builtins
+
+Fix a possible null pointer dereference in Modules/_ssl.c. Patch by Zackery
+Spytz.
+
+..
+
+.. bpo: 1621
+.. date: 2018-09-11-15-19-37
+.. nonce: 7o19yG
+.. section: Core and Builtins
+
+Do not assume signed integer overflow behavior (C undefined behavior) when
+performing set hash table resizing.
+
+..
+
+.. bpo: 35052
+.. date: 2018-12-10-09-48-27
+.. nonce: xE1ymg
+.. section: Library
+
+Fix xml.dom.minidom cloneNode() on a document with an entity: pass the
+correct arguments to the user data handler of an entity.
+
+..
+
+.. bpo: 35330
+.. date: 2018-12-06-00-43-13
+.. nonce: abB4BN
+.. section: Library
+
+When a :class:`Mock` instance was used to wrap an object, if `side_effect`
+is used in one of the mocks of it methods, don't call the original
+implementation and return the result of using the side effect the same way
+that it is done with return_value.
+
+..
+
+.. bpo: 34172
+.. date: 2018-12-06-00-31-25
+.. nonce: l7CIYt
+.. section: Library
+
+Revert the fix for this issue previously released in 3.6.7 pending further
+investigation: Fix a reference issue inside multiprocessing.Pool that caused
+the pool to remain alive if it was deleted without being closed or
+terminated explicitly.
+
+..
+
+.. bpo: 10496
+.. date: 2018-12-05-13-37-39
+.. nonce: VH-1Lp
+.. section: Library
+
+:func:`posixpath.expanduser` now returns the input *path* unchanged if the
+``HOME`` environment variable is not set and the current user has no home
+directory (if the current user identifier doesn't exist in the password
+database). This change fix the :mod:`site` module if the current user
+doesn't exist in the password database (if the user has no home directory).
+
+..
+
+.. bpo: 35310
+.. date: 2018-12-03-19-45-00
+.. nonce: 9k28gR
+.. section: Library
+
+Fix a bug in :func:`select.select` where, in some cases, the file descriptor
+sequences were returned unmodified after a signal interruption, even though
+the file descriptors might not be ready yet.  :func:`select.select` will now
+always return empty lists if a timeout has occurred.  Patch by Oran Avraham.
+
+..
+
+.. bpo: 35380
+.. date: 2018-12-03-14-41-11
+.. nonce: SdRF9l
+.. section: Library
+
+Enable TCP_NODELAY on Windows for proactor asyncio event loop.
+
+..
+
+.. bpo: 35371
+.. date: 2018-12-01-13-44-12
+.. nonce: fTAwlX
+.. section: Library
+
+Fixed possible crash in ``os.utime()`` on Windows when pass incorrect
+arguments.
+
+..
+
+.. bpo: 27903
+.. date: 2018-11-29-12-14-04
+.. nonce: ia8xgT
+.. section: Library
+
+Fix ``ResourceWarning`` in :func:`platform.dist` on SuSE and Caldera
+OpenLinux. Patch by Ville Skyttä.
+
+..
+
+.. bpo: 28604
+.. date: 2018-11-20-13-34-01
+.. nonce: iiih5h
+.. section: Library
+
+:func:`locale.localeconv` now sets temporarily the ``LC_CTYPE`` locale to
+the ``LC_MONETARY`` locale if the two locales are different and monetary
+strings are non-ASCII. This temporary change affects other threads.
+
+..
+
+.. bpo: 35277
+.. date: 2018-11-19-07-22-04
+.. nonce: dsD-2E
+.. section: Library
+
+Update ensurepip to install pip 18.1 and setuptools 40.6.2.
+
+..
+
+.. bpo: 35226
+.. date: 2018-11-15-07-14-32
+.. nonce: wJPEEe
+.. section: Library
+
+Recursively check arguments when testing for equality of
+:class:`unittest.mock.call` objects and add note that tracking of parameters
+used to create ancestors of mocks in ``mock_calls`` is not possible.
+
+..
+
+.. bpo: 35189
+.. date: 2018-11-09-13-35-36
+.. nonce: gog-sl
+.. section: Library
+
+Modify the following fnctl function to retry if interrupted by a signal
+(EINTR): flock, lockf, fnctl
+
+..
+
+.. bpo: 35062
+.. date: 2018-10-29-23-09-24
+.. nonce: dQS1ng
+.. section: Library
+
+Fix incorrect parsing of :class:`_io.IncrementalNewlineDecoder`'s
+*translate* argument.
+
+..
+
+.. bpo: 35079
+.. date: 2018-10-26-22-53-16
+.. nonce: Tm5jvF
+.. section: Library
+
+Improve difflib.SequenceManager.get_matching_blocks doc by adding
+'non-overlapping' and changing '!=' to '<'.
+
+..
+
+.. bpo: 35017
+.. date: 2018-10-26-00-11-21
+.. nonce: 6Ez4Cv
+.. section: Library
+
+:meth:`socketserver.BaseServer.serve_forever` now exits immediately if it's
+:meth:`~socketserver.BaseServer.shutdown` method is called while it is
+polling for new events.
+
+..
+
+.. bpo: 31047
+.. date: 2018-10-25-09-37-03
+.. nonce: kBbX8r
+.. section: Library
+
+Fix ``ntpath.abspath`` regression where it didn't remove a trailing
+separator on Windows. Patch by Tim Graham.
+
+..
+
+.. bpo: 34794
+.. date: 2018-10-21-14-53-19
+.. nonce: yt3R4-
+.. section: Library
+
+Fixed a leak in Tkinter when pass the Python wrapper around Tcl_Obj back to
+Tcl/Tk.
+
+..
+
+.. bpo: 35008
+.. date: 2018-10-17-11-54-04
+.. nonce: dotef_
+.. section: Library
+
+Fixed references leaks when call the ``__setstate__()`` method of
+:class:`xml.etree.ElementTree.Element` in the C implementation for already
+initialized element.
+
+..
+
+.. bpo: 23420
+.. date: 2018-10-17-11-00-00
+.. nonce: Lq74Uu
+.. section: Library
+
+Verify the value for the parameter '-s' of the cProfile CLI. Patch by Robert
+Kuska
+
+..
+
+.. bpo: 16965
+.. date: 2018-10-12-20-30-42
+.. nonce: xo5LAr
+.. section: Library
+
+The :term:`2to3` :2to3fixer:`execfile` fixer now opens the file with mode
+``'rb'``.  Patch by Zackery Spytz.
+
+..
+
+.. bpo: 34966
+.. date: 2018-10-12-18-57-52
+.. nonce: WZeBHO
+.. section: Library
+
+:mod:`pydoc` now supports aliases not only to methods defined in the end
+class, but also to inherited methods.  The docstring is not duplicated for
+aliases.
+
+..
+
+.. bpo: 34941
+.. date: 2018-10-09-14-42-16
+.. nonce: 1Q5QKv
+.. section: Library
+
+Methods ``find()``, ``findtext()`` and ``findall()`` of the ``Element``
+class in the :mod:`xml.etree.ElementTree` module are now able to find
+children which are instances of ``Element`` subclasses.
+
+..
+
+.. bpo: 34936
+.. date: 2018-10-08-21-05-11
+.. nonce: 3tRqdq
+.. section: Library
+
+Fix ``TclError`` in ``tkinter.Spinbox.selection_element()``. Patch by
+Juliette Monsel.
+
+..
+
+.. bpo: 34900
+.. date: 2018-10-05-05-55-53
+.. nonce: 8RNiFu
+.. section: Library
+
+Fixed :meth:`unittest.TestCase.debug` when used to call test methods with
+subtests.  Patch by Bruno Oliveira.
+
+..
+
+.. bpo: 34866
+.. date: 2018-10-03-11-07-28
+.. nonce: ML6KpJ
+.. section: Library
+
+Adding ``max_num_fields`` to ``cgi.FieldStorage`` to make DOS attacks harder
+by limiting the number of ``MiniFieldStorage`` objects created by
+``FieldStorage``.
+
+..
+
+.. bpo: 34738
+.. date: 2018-09-19-16-51-04
+.. nonce: Pr3-iG
+.. section: Library
+
+ZIP files created by :mod:`distutils` will now include entries for
+directories.
+
+..
+
+.. bpo: 31177
+.. date: 2018-09-14-10-38-18
+.. nonce: Sv91TN
+.. section: Library
+
+Fix bug that prevented using :meth:`reset_mock
+<unittest.mock.Mock.reset_mock>` on mock instances with deleted attributes
+
+..
+
+.. bpo: 34604
+.. date: 2018-09-07-10-16-34
+.. nonce: xL7-kG
+.. section: Library
+
+Fix possible mojibake in the error message of `pwd.getpwnam` and
+`grp.getgrnam` using string representation because of invisible characters
+or trailing whitespaces. Patch by William Grzybowski.
+
+..
+
+.. bpo: 34574
+.. date: 2018-09-04-09-32-54
+.. nonce: X4RwYI
+.. section: Library
+
+OrderedDict iterators are not exhausted during pickling anymore. Patch by
+Sergey Fedoseev.
+
+..
+
+.. bpo: 34052
+.. date: 2018-07-24-16-37-40
+.. nonce: VbbFAE
+.. section: Library
+
+:meth:`sqlite3.Connection.create_aggregate`,
+:meth:`sqlite3.Connection.create_function`,
+:meth:`sqlite3.Connection.set_authorizer`,
+:meth:`sqlite3.Connection.set_progress_handler` methods raises TypeError
+when unhashable objects are passed as callable. These methods now don't pass
+such objects to SQLite API. Previous behavior could lead to segfaults. Patch
+by Sergey Fedoseev.
+
+..
+
+.. bpo: 29877
+.. date: 2017-12-16-11-40-52
+.. nonce: SfWhmz
+.. section: Library
+
+compileall: import ProcessPoolExecutor only when needed, preventing hangs on
+low resource platforms
+
+..
+
+.. bpo: 22005
+.. date: 2017-10-12-22-39-55
+.. nonce: lGP-sc
+.. section: Library
+
+Implemented unpickling instances of :class:`~datetime.datetime`,
+:class:`~datetime.date` and :class:`~datetime.time` pickled by Python 2.
+``encoding='latin1'`` should be used for successful decoding.
+
+..
+
+.. bpo: 35089
+.. date: 2018-10-28-16-51-31
+.. nonce: _stCpS
+.. section: Documentation
+
+Remove mention of ``typing.io`` and ``typing.re``. Their types should be
+imported from ``typing`` directly.
+
+..
+
+.. bpo: 35038
+.. date: 2018-10-25-17-45-09
+.. nonce: 2eVOYS
+.. section: Documentation
+
+Fix the documentation about an unexisting `f_restricted` attribute in the
+frame object. Patch by Stéphane Wirtel
+
+..
+
+.. bpo: 35035
+.. date: 2018-10-21-02-20-36
+.. nonce: 4zBObK
+.. section: Documentation
+
+Rename documentation for :mod:`email.utils` to ``email.utils.rst``.
+
+..
+
+.. bpo: 34967
+.. date: 2018-10-13-07-39-57
+.. nonce: E40tFP
+.. section: Documentation
+
+Use app.add_object_type() instead of the deprecated Sphinx function
+app.description_unit()
+
+..
+
+.. bpo: 33594
+.. date: 2018-05-21-14-36-12
+.. nonce: -HRcyX
+.. section: Documentation
+
+Document ``getargspec``, ``from_function`` and ``from_builtin`` as
+deprecated in their respective docstring, and include version since
+deprecation in DeprecationWarning message.
+
+..
+
+.. bpo: 32613
+.. date: 2018-02-05-15-05-53
+.. nonce: TDjgM1
+.. section: Documentation
+
+Update the faq/windows.html to use the py command from PEP 397 instead of
+python.
+
+..
+
+.. bpo: 33725
+.. date: 2018-12-09-01-27-29
+.. nonce: TaGayj
+.. section: Tests
+
+test_multiprocessing_fork may crash on recent versions of macOS.  Until the
+issue is resolved, skip the test on macOS.
+
+..
+
+.. bpo: 35352
+.. date: 2018-11-30-17-18-56
+.. nonce: 8bD7GC
+.. section: Tests
+
+Modify test_asyncio to use the certificate set from the test directory.
+
+..
+
+.. bpo: 35317
+.. date: 2018-11-26-16-54-21
+.. nonce: jByGP2
+.. section: Tests
+
+Fix ``mktime()`` overflow error in ``test_email``: run
+``test_localtime_daylight_true_dst_true()`` and
+``test_localtime_daylight_false_dst_true()`` with a specific timezone.
+
+..
+
+.. bpo: 21263
+.. date: 2018-11-04-20-17-09
+.. nonce: T3qo9r
+.. section: Tests
+
+After several reports that test_gdb does not work properly on macOS and
+since gdb is not shipped by default anymore, test_gdb is now skipped on
+macOS when LLVM Clang has been used to compile Python. Patch by Lysandros
+Nikolaou
+
+..
+
+.. bpo: 34279
+.. date: 2018-10-27-13-41-55
+.. nonce: v0Xqxe
+.. section: Tests
+
+regrtest issue a warning when no tests have been executed in a particular
+test file. Also, a new final result state is issued if no test have been
+executed across all test files. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 35351
+.. date: 2018-12-04-15-33-28
+.. nonce: ZhhBfT
+.. section: Build
+
+When building Python with clang and LTO, LTO flags are no longer passed into
+CFLAGS to build third-party C extensions through distutils.
+
+..
+
+.. bpo: 35139
+.. date: 2018-11-01-15-01-23
+.. nonce: XZTttb
+.. section: Build
+
+Fix a compiler error when statically linking `pyexpat` in `Modules/Setup`.
+
+..
+
+.. bpo: 35011
+.. date: 2018-10-17-17-38-57
+.. nonce: GgoPIC
+.. section: Build
+
+Restores the use of pyexpatns.h to isolate our embedded copy of the expat C
+library so that its symbols do not conflict at link or dynamic loading time
+with an embedding application or other extension modules with their own
+version of libexpat.
+
+..
+
+.. bpo: 28015
+.. date: 2018-10-16-12-22-36
+.. nonce: ylSgFh
+.. section: Build
+
+Have --with-lto works correctly with clang.
+
+..
+
+.. bpo: 33015
+.. date: 2018-08-24-09-48-25
+.. nonce: s21y74
+.. section: Build
+
+Fix an undefined behaviour in the pthread implementation of
+:c:func:`PyThread_start_new_thread`: add a function wrapper to always return
+``NULL``.
+
+..
+
+.. bpo: 31625
+.. date: 2017-09-28-23-21-20
+.. nonce: Bb2NXr
+.. section: Build
+
+Stop using ranlib on static libraries. Instead, we assume ar supports the
+'s' flag.
+
+..
+
+.. bpo: 31354
+.. date: 2017-09-08-11-48-11
+.. nonce: 4f-VJK
+.. section: Build
+
+Allow --with-lto to be used on all builds, not just `make profile-opt`.
+
+..
+
+.. bpo: 35401
+.. date: 2018-12-10-15-01-13
+.. nonce: 9L1onG
+.. section: Windows
+
+Updates Windows build to OpenSSL 1.0.2q
+
+..
+
+.. bpo: 32890
+.. date: 2018-03-08-20-02-38
+.. nonce: 3jzFzY
+.. section: Windows
+
+Fix usage of GetLastError() instead of errno in os.execve() and
+os.truncate().
+
+..
+
+.. bpo: 15663
+.. date: 2018-12-11-02-50-35
+.. nonce: 6tnyd2
+.. section: macOS
+
+The macOS 10.6+ installer now provides a private copy of Tcl/Tk 8.6, like
+the 10.9+ installer does.
+
+..
+
+.. bpo: 35402
+.. date: 2018-12-10-02-44-48
+.. nonce: xzn8qJ
+.. section: macOS
+
+Update macOS installer to use Tcl/Tk 8.6.9.1.
+
+..
+
+.. bpo: 35401
+.. date: 2018-12-10-02-37-11
+.. nonce: sFhD5z
+.. section: macOS
+
+Update macOS installer to use OpenSSL 1.0.2q.
+
+..
+
+.. bpo: 35025
+.. date: 2018-10-18-23-54-55
+.. nonce: X4LFJg
+.. section: macOS
+
+Properly guard the use of the ``CLOCK_GETTIME`` et al. macros in
+``timemodule`` on macOS.
+
+..
+
+.. bpo: 24658
+.. date: 2018-10-17-14-36-08
+.. nonce: Naddgx
+.. section: macOS
+
+On macOS, fix reading from and writing into a file with a size larger than 2
+GiB.
+
+..
+
+.. bpo: 35213
+.. date: 2018-11-12-00-20-01
+.. nonce: cqNgzT
+.. section: IDLE
+
+Where appropriate, use 'macOS' in idlelib.
+
+..
+
+.. bpo: 34864
+.. date: 2018-11-11-17-13-50
+.. nonce: cw0PvO
+.. section: IDLE
+
+On macOS, warn if the system preference "Prefer tabs when opening documents"
+is set to "Always".
+
+..
+
+.. bpo: 34864
+.. date: 2018-11-10-21-27-25
+.. nonce: Ci-G2q
+.. section: IDLE
+
+Document two IDLE on MacOS issues. The System Preferences Dock "prefer tabs
+always" setting disables some IDLE features.  Menus are a bit different than
+as described for Windows and Linux.
+
+..
+
+.. bpo: 35202
+.. date: 2018-11-10-09-10-54
+.. nonce: TeJJrt
+.. section: IDLE
+
+Remove unused imports from lib/idlelib
+
+..
+
+.. bpo: 33000
+.. date: 2018-11-06-23-10-54
+.. nonce: pQasCt
+.. section: IDLE
+
+Document that IDLE's shell has no line limit. A program that runs
+indefinitely can overfill memory.
+
+..
+
+.. bpo: 23220
+.. date: 2018-11-05-23-23-00
+.. nonce: H3SAWE
+.. section: IDLE
+
+Explain how IDLE's Shell displays output.
+
+..
+
+.. bpo: 35099
+.. date: 2018-11-05-20-43-08
+.. nonce: SVOZXC
+.. section: IDLE
+
+Improve the doc about IDLE running user code.   The section is renamed from
+"IDLE -- console differences" is renamed "Running user code". It mostly
+covers the implications of using custom sys.stdxxx objects.
+
+..
+
+.. bpo: 35097
+.. date: 2018-10-28-20-17-14
+.. nonce: 07tm66
+.. section: IDLE
+
+Add IDLE doc subsection explaining editor windows. Topics include opening,
+title and status bar, .py* extension, and running.
+
+..
+
+.. bpo: 35093
+.. date: 2018-10-28-15-53-51
+.. nonce: cH-tli
+.. section: IDLE
+
+Document the IDLE document viewer in the IDLE doc. Add a paragraph in "Help
+and preferences", "Help sources" subsection.
+
+..
+
+.. bpo: 35088
+.. date: 2018-10-28-00-54-32
+.. nonce: r1lJZd
+.. section: IDLE
+
+Update idlelib.help.copy_string docstring. We now use git and backporting
+instead of hg and forward merging.
+
+..
+
+.. bpo: 35087
+.. date: 2018-10-28-00-08-42
+.. nonce: G7gx2-
+.. section: IDLE
+
+Update idlelib help files for the current doc build. The main change is the
+elimination of chapter-section numbers.
+
+..
+
+.. bpo: 34989
+.. date: 2018-10-15-13-22-28
+.. nonce: hU4fra
+.. section: Tools/Demos
+
+python-gdb.py now handles errors on computing the line number of a Python
+frame.

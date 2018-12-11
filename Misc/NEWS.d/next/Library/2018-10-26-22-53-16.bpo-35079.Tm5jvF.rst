@@ -1,2 +1,0 @@
-Improve difflib.SequenceManager.get_matching_blocks doc by adding
-'non-overlapping' and changing '!=' to '<'.
