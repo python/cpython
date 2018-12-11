@@ -256,7 +256,11 @@ already_warned(PyObject *registry, PyObject *key, int should_set)
     version_obj = _PyDict_GetItemId(registry, &PyId_version);
     if (version_obj == NULL
         || !PyLong_CheckExact(version_obj)
-        || PyLong_AsLong(version_obj) != _PyRuntime.warnings.filters_version) {
+        || PyLong_AsLong(version_obj) != _PyRuntime.warnings.filters_version)
+    {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
         PyDict_Clear(registry);
         version_obj = PyLong_FromLong(_PyRuntime.warnings.filters_version);
         if (version_obj == NULL)

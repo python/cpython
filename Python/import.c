@@ -2138,10 +2138,10 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     }
 
     mod = _PyImport_FindExtensionObject(name, path);
-    if (mod != NULL) {
+    if (mod != NULL || PyErr_Occurred()) {
         Py_DECREF(name);
         Py_DECREF(path);
-        Py_INCREF(mod);
+        Py_XINCREF(mod);
         return mod;
     }
 

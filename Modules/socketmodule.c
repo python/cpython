@@ -360,10 +360,14 @@ remove_unusable_flags(PyObject *m)
         else {
             if (PyDict_GetItemString(
                     dict,
-                    win_runtime_flags[i].flag_name) != NULL) {
-                PyDict_DelItemString(
-                    dict,
-                    win_runtime_flags[i].flag_name);
+                    win_runtime_flags[i].flag_name) != NULL)
+            {
+                if (PyDict_DelItemString(
+                        dict,
+                        win_runtime_flags[i].flag_name))
+                {
+                    PyErr_Clear();
+                }
             }
         }
     }
