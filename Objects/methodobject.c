@@ -103,16 +103,13 @@ meth_dealloc(PyCFunctionObject *m)
 static PyObject *
 meth_reduce(PyCFunctionObject *m)
 {
-    PyObject *builtins;
-    PyObject *getattr;
     _Py_IDENTIFIER(getattr);
 
     if (m->m_self == NULL || PyModule_Check(m->m_self))
         return PyUnicode_FromString(m->m_ml->ml_name);
 
-    builtins = PyEval_GetBuiltins();
-    getattr = _PyDict_GetItemId(builtins, &PyId_getattr);
-    return Py_BuildValue("O(Os)", getattr, m->m_self, m->m_ml->ml_name);
+    return Py_BuildValue("N(Os)", _PyEval_GetBuiltinId(&PyId_getattr),
+                         m->m_self, m->m_ml->ml_name);
 }
 
 static PyMethodDef meth_methods[] = {
