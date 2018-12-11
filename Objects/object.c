@@ -1080,23 +1080,6 @@ PyObject_SelfIter(PyObject *obj)
     return obj;
 }
 
-/* Convenience function to get a builtin from its name */
-PyObject *
-_PyObject_GetBuiltin(const char *name)
-{
-    PyObject *mod_name, *mod, *attr;
-
-    mod_name = _PyUnicode_FromId(&PyId_builtins);   /* borrowed */
-    if (mod_name == NULL)
-        return NULL;
-    mod = PyImport_Import(mod_name);
-    if (mod == NULL)
-        return NULL;
-    attr = PyObject_GetAttrString(mod, name);
-    Py_DECREF(mod);
-    return attr;
-}
-
 /* Helper used when the __next__ method is removed from a type:
    tp_iternext is never NULL and can be safely called without checking
    on every iteration.
