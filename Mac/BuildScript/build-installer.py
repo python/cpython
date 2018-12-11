@@ -2,6 +2,8 @@
 """
 This script is used to build "official" universal installers on macOS.
 
+NEW for 3.6.8 / 2.7.16:
+- also build and use Tk 8.6 for 10.6+ installers
 NEW for 3.6.5:
 - support Intel 64-bit-only () and 32-bit-only installer builds
 - build and link with private Tcl/Tk 8.6 for 10.9+ builds
@@ -20,8 +22,8 @@ Sphinx and dependencies are installed into a venv using the python3's pip
 so will fetch them from PyPI if necessary.  Since python3 is now used for
 Sphinx, build-installer.py should also be converted to use python3!
 
-For 10.9 or greater deployment targets, build-installer builds and links
-with its own copy of Tcl/Tk 8.5 and the rest of this paragraph does not
+For 10.6 or greater deployment targets, build-installer builds and links
+with its own copy of Tcl/Tk 8.6 and the rest of this paragraph does not
 apply.  Otherwise, build-installer requires an installed third-party version
 of Tcl/Tk 8.4 (for OS X 10.4 and 10.5 deployment targets) or Tcl/TK 8.5
 (for 10.6 or later) installed in /Library/Frameworks.  When installed,
@@ -188,9 +190,9 @@ USAGE = textwrap.dedent("""\
 EXPECTED_SHARED_LIBS = {}
 
 # Are we building and linking with our own copy of Tcl/TK?
-#   For now, do so if deployment target is 10.9+.
+#   For now, do so if deployment target is 10.6+.
 def internalTk():
-    return getDeptargetTuple() >= (10, 9)
+    return getDeptargetTuple() >= (10, 6)
 
 # List of names of third party software built with this installer.
 # The names will be inserted into the rtf version of the License.
