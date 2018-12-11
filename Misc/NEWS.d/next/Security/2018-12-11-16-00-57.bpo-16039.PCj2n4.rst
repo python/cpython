@@ -1,0 +1,2 @@
+CVE-2013-1752: Change use of ``readline()`` in :class:`imaplib.IMAP4_SSL` to
+limit line length.
