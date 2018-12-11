@@ -1,2 +1,0 @@
-The Windows installer (MSI) now also install internal header files
-(``Include/internal/`` subdirectory).

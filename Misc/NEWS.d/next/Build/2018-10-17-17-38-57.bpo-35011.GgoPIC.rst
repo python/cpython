@@ -1,4 +1,0 @@
-Restores the use of pyexpatns.h to isolate our embedded copy of the expat C
-library so that its symbols do not conflict at link or dynamic loading time
-with an embedding application or other extension modules with their own
-version of libexpat.

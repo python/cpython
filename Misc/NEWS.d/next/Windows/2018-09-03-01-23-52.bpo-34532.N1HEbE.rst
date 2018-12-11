@@ -1,1 +1,0 @@
-Fixes exit code of list version arguments for py.exe.

@@ -1,1 +1,0 @@
-Rename documentation for :mod:`email.utils` to ``email.utils.rst``.
