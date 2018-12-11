@@ -533,6 +533,7 @@
     <!--
     <ClCompile Include="$(opensslDir)crypto\fips_ers.c" />
     -->
+    <ClCompile Include="$(opensslDir)crypto\getenv.c" />
     <ClCompile Include="$(opensslDir)crypto\hmac\hm_ameth.c" />
     <ClCompile Include="$(opensslDir)crypto\hmac\hm_pmeth.c" />
     <ClCompile Include="$(opensslDir)crypto\hmac\hmac.c" />
@@ -725,9 +726,7 @@
     <ClCompile Include="$(opensslDir)crypto\ui\ui_lib.c" />
     <ClCompile Include="$(opensslDir)crypto\ui\ui_openssl.c" />
     <ClCompile Include="$(opensslDir)crypto\ui\ui_util.c" />
-    <!--
     <ClCompile Include="$(opensslDir)crypto\uid.c" />
-    -->
     <ClCompile Include="$(opensslDir)crypto\whrlpool\wp_dgst.c" />
     <ClCompile Include="$(opensslDir)crypto\x509\by_dir.c" />
     <ClCompile Include="$(opensslDir)crypto\x509\by_file.c" />
