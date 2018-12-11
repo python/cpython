@@ -280,3 +280,4 @@ Number Protocol
 
    Returns ``1`` if *o* is an index integer (has the nb_index slot of  the
    tp_as_number structure filled in), and ``0`` otherwise.
+   This function always succeeds.

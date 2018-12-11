@@ -60,12 +60,21 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
    This is equivalent to the Python expression ``key in o``.
    This function always succeeds.
 
+   Note that errors raised in the :meth:`__getitem__` method
+   will get suppressed.  To get error reporting use
+   :c:func:`PyObject_GetItem()` instead.
+
 
 .. c:function:: int PyMapping_HasKeyString(PyObject *o, const char *key)
 
    Return ``1`` if the mapping object has the key *key* and ``0`` otherwise.
    This is equivalent to the Python expression ``key in o``.
    This function always succeeds.
+
+   Note that errors raised in the :meth:`__getitem__` method,
+   as well as errors raised when fail to create a temporary string object,
+   will get suppressed.  To get error reporting use
+   :c:func:`PyMapping_GetItemString()` instead.
 
 
 .. c:function:: PyObject* PyMapping_Keys(PyObject *o)
