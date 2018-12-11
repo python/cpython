@@ -37,6 +37,7 @@ set BUILDX64=
 set TARGET=Rebuild
 set TESTTARGETDIR=
 set PGO=-m test -q --pgo
+set BUILDMSI=1
 set BUILDNUGET=1
 set BUILDZIP=1
 
@@ -61,6 +62,7 @@ if "%1" EQU "--pgo" (set PGO=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "--skip-pgo" (set PGO=) && shift && goto CheckOpts
 if "%1" EQU "--skip-nuget" (set BUILDNUGET=) && shift && goto CheckOpts
 if "%1" EQU "--skip-zip" (set BUILDZIP=) && shift && goto CheckOpts
+if "%1" EQU "--skip-msi" (set BUILDMSI=) && shift && goto CheckOpts
 
 if "%1" NEQ "" echo Invalid option: "%1" && exit /B 1
 
@@ -174,10 +176,12 @@ if "%OUTDIR_PLAT%" EQU "win32" (
 )
 
 set BUILDOPTS=/p:Platform=%1 /p:BuildForRelease=true /p:DownloadUrl=%DOWNLOAD_URL% /p:DownloadUrlBase=%DOWNLOAD_URL_BASE% /p:ReleaseUri=%RELEASE_URI%
-%MSBUILD% "%D%bundle\releaselocal.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=true
-if errorlevel 1 exit /B
-%MSBUILD% "%D%bundle\releaseweb.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=false
-if errorlevel 1 exit /B
+if defined BUILDMSI (
+    %MSBUILD% "%D%bundle\releaselocal.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=true
+    if errorlevel 1 exit /B
+    %MSBUILD% "%D%bundle\releaseweb.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=false
+    if errorlevel 1 exit /B
+)
 
 if defined BUILDZIP (
     %MSBUILD% "%D%make_zip.proj" /t:Build %BUILDOPTS% %CERTOPTS% /p:OutputPath="%BUILD%en-us"
@@ -214,6 +218,7 @@ echo    --skip-build (-B)   Do not build Python (just do the installers)
 echo    --skip-doc (-D)     Do not build documentation
 echo    --pgo               Specify PGO command for x64 installers
 echo    --skip-pgo          Build x64 installers without using PGO
+echo    --skip-msi          Do not build executable/MSI packages
 echo    --skip-nuget        Do not build Nuget packages
 echo    --skip-zip          Do not build embeddable package
 echo    --download          Specify the full download URL for MSIs

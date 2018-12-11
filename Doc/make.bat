@@ -115,12 +115,16 @@ goto end
 :build
 if not exist "%BUILDDIR%" mkdir "%BUILDDIR%"
 
+rem We ought to move NEWS to %BUILDDIR%\NEWS and point
+rem Sphinx at the right location.
 if exist ..\Misc\NEWS (
     echo.Copying Misc\NEWS to build\NEWS
+    if not exist build mkdir build
     copy ..\Misc\NEWS build\NEWS > nul
 ) else if exist ..\Misc\NEWS.D (
     if defined BLURB (
         echo.Merging Misc/NEWS with %BLURB%
+        if not exist build mkdir build
         %BLURB% merge -f build\NEWS
     ) else (
         echo.No Misc/NEWS file and Blurb is not available.
