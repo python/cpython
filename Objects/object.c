@@ -17,7 +17,6 @@ _Py_IDENTIFIER(Py_Repr);
 _Py_IDENTIFIER(__bytes__);
 _Py_IDENTIFIER(__dir__);
 _Py_IDENTIFIER(__isabstractmethod__);
-_Py_IDENTIFIER(builtins);
 
 #ifdef Py_REF_DEBUG
 Py_ssize_t _Py_RefTotal;
