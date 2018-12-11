@@ -2,7 +2,7 @@
 
 NOTE: This file requires more content.
 
-Since Python 3.8.2, releases have been made through the Microsoft Store
+Since Python 3.7.2, releases have been made through the Microsoft Store
 to allow easy installation on Windows 10.0.17763.0 and later.
 
 # Building
