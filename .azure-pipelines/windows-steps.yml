@@ -13,6 +13,8 @@ steps:
 
 - script: PCbuild\build.bat -e $(buildOpt)
   displayName: 'Build CPython'
+  env:
+    IncludeUwp: true
 
 - script: python.bat -m test.pythoninfo
   displayName: 'Display build info'

@@ -1519,7 +1519,7 @@ class _BasePathTest(object):
             # resolves to 'dirB/..' first before resolving to parent of dirB.
             self._check_resolve_relative(p, P(BASE, 'foo', 'in', 'spam'), False)
         # Now create absolute symlinks
-        d = support._longpath(tempfile.mkdtemp(suffix='-dirD'))
+        d = support._longpath(tempfile.mkdtemp(suffix='-dirD', dir=os.getcwd()))
         self.addCleanup(support.rmtree, d)
         os.symlink(os.path.join(d), join('dirA', 'linkX'))
         os.symlink(join('dirB'), os.path.join(d, 'linkY'))
