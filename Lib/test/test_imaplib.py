@@ -166,14 +166,18 @@ class BaseThreadedNetworkedTests(unittest.TestCase):
 
 
     def test_linetoolong(self):
+        maxline = 10
+
         class TooLongHandler(SimpleIMAPHandler):
             def handle(self):
                 # Send a very long response line
-                self.wfile.write('* OK ' + imaplib._MAXLINE*'x' + '\r\n')
+                self.wfile.write('* OK ' + maxline * 'x' + '\r\n')
 
-        with self.reaped_server(TooLongHandler) as server:
-            self.assertRaises(imaplib.IMAP4.error,
-                              self.imap_class, *server.server_address)
+        with self.reaped_server(TooLongHandler) as server, \
+                 support.swap_attr(imaplib, '_MAXLINE', maxline):
+            with self.assertRaisesRegexp(imaplib.IMAP4.error,
+                    'got more than 10 bytes'):
+                self.imap_class(*server.server_address)
 
 class ThreadedNetworkedTests(BaseThreadedNetworkedTests):
 
@@ -186,9 +190,6 @@ class ThreadedNetworkedTestsSSL(BaseThreadedNetworkedTests):
 
     server_class = SecureTCPServer
     imap_class = IMAP4_SSL
-
-    def test_linetoolong(self):
-        raise unittest.SkipTest("test is not reliable on 2.7; see issue 20118")
 
 
 class RemoteIMAPTest(unittest.TestCase):
