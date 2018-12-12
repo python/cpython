@@ -261,6 +261,20 @@ These functions are used to retrieve resource usage information:
    *who* parameter should be specified using one of the :const:`RUSAGE_\*`
    constants described below.
 
+   A simple example::
+
+      from resource import *
+      import time
+
+      # a non CPU-bound task
+      time.sleep(3)
+      print(getrusage(RUSAGE_SELF))
+
+      # a CPU-bound task
+      for i in range(10 ** 8):
+         _ = 1 + 1
+      print(getrusage(RUSAGE_SELF))
+
    The fields of the return value each describe how a particular system resource
    has been used, e.g. amount of time spent running is user mode or number of times
    the process was swapped out of main memory. Some values are dependent on the
