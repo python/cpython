@@ -1,0 +1,2 @@
+Set ``__signature__`` on mock for :mod:`inspect` to get signature.
+Patch by Karthikeyan Singaravelan.
