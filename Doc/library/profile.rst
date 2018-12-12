@@ -265,8 +265,8 @@ functions:
       ps.print_stats()
       print(s.getvalue())
 
-   The :class:`Profile` class can also be used as a context manager (see
-   :ref:`typecontextmanager`)::
+   The :class:`Profile` class can also be used as a context manager (supported
+   only in :mod:`cProfile` module. see :ref:`typecontextmanager`)::
 
       import cProfile
 
