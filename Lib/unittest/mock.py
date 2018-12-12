@@ -102,6 +102,7 @@ def _check_signature(func, mock, skipfirst, instance=False):
         sig.bind(*args, **kwargs)
     _copy_func_details(func, checksig)
     type(mock)._mock_check_sig = checksig
+    type(mock).__signature__ = sig
 
 
 def _copy_func_details(func, funcopy):
@@ -171,11 +172,11 @@ def _set_signature(mock, original, instance=False):
     return mock(*args, **kwargs)""" % name
     exec (src, context)
     funcopy = context[name]
-    _setup_func(funcopy, mock)
+    _setup_func(funcopy, mock, sig)
     return funcopy
 
 
-def _setup_func(funcopy, mock):
+def _setup_func(funcopy, mock, sig):
     funcopy.mock = mock
 
     # can't use isinstance with mocks
@@ -223,6 +224,7 @@ def _setup_func(funcopy, mock):
     funcopy.assert_called = assert_called
     funcopy.assert_not_called = assert_not_called
     funcopy.assert_called_once = assert_called_once
+    funcopy.__signature__ = sig
 
     mock._mock_delegate = funcopy
 
