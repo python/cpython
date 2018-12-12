@@ -35,7 +35,7 @@ __all__ = [
 #
 
 # EBADF - guard against macOS `stat` throwing EBADF
-# EINVAL - `stat` on Windows throws it for invalid paths 
+# EINVAL - `stat` on Windows throws it for invalid paths
 _IGNORED_ERROS = (ENOENT, ENOTDIR, EBADF, EINVAL)
 
 def _is_wildcard_pattern(pat):
