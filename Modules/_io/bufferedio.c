@@ -1807,8 +1807,19 @@ bufferedwriter_write(buffered *self, PyObject *args)
     Py_buffer buf;
     Py_ssize_t written, avail, remaining;
     Py_off_t offset;
+    PyObject *arg;
 
     CHECK_INITIALIZED(self)
+
+    if (!PyArg_ParseTuple(args, "O:write", &arg)) {
+        return NULL;
+    }
+    if (PyUnicode_Check(arg) &&
+        PyErr_WarnPy3k("write() argument must be string or buffer, "
+                       "not 'unicode'", 1) < 0)
+    {
+        return NULL;
+    }
     if (!PyArg_ParseTuple(args, "s*:write", &buf)) {
         return NULL;
     }
