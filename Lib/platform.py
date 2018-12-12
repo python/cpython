@@ -113,24 +113,11 @@ __copyright__ = """
 __version__ = '1.0.8'
 
 import collections
-import sys, os, re, subprocess
-
-import warnings
+import os
+import re
+import sys
 
 ### Globals & Constants
-
-# Determine the platform's /dev/null device
-try:
-    DEV_NULL = os.devnull
-except AttributeError:
-    # os.devnull was added in Python 2.4, so emulate it for earlier
-    # Python versions
-    if sys.platform in ('dos', 'win32', 'win16'):
-        # Use the old CP/M NUL as device name
-        DEV_NULL = 'NUL'
-    else:
-        # Standard Unix uses /dev/null
-        DEV_NULL = '/dev/null'
 
 # Helper for comparing two version number strings.
 # Based on the description of the PHP's version_compare():
@@ -169,7 +156,7 @@ _libc_search = re.compile(b'(__libc_init)'
                           b'|'
                           br'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)', re.ASCII)
 
-def libc_ver(executable=sys.executable, lib='', version='', chunksize=16384):
+def libc_ver(executable=None, lib='', version='', chunksize=16384):
 
     """ Tries to determine the libc version that the file executable
         (which defaults to the Python interpreter) is linked against.
@@ -184,6 +171,19 @@ def libc_ver(executable=sys.executable, lib='', version='', chunksize=16384):
         The file is read and scanned in chunks of chunksize bytes.
 
     """
+    if executable is None:
+        try:
+            ver = os.confstr('CS_GNU_LIBC_VERSION')
+            # parse 'glibc 2.28' as ('glibc', '2.28')
+            parts = ver.split(maxsplit=1)
+            if len(parts) == 2:
+                return tuple(parts)
+        except (AttributeError, ValueError, OSError):
+            # os.confstr() or CS_GNU_LIBC_VERSION value not available
+            pass
+
+        executable = sys.executable
+
     V = _comparable_version
     if hasattr(os.path, 'realpath'):
         # Python 2.2 introduced os.path.realpath(); it is used
@@ -226,63 +226,6 @@ def libc_ver(executable=sys.executable, lib='', version='', chunksize=16384):
                         version = version + threads
             pos = m.end()
     return lib, version
-
-def _dist_try_harder(distname, version, id):
-
-    """ Tries some special tricks to get the distribution
-        information in case the default method fails.
-
-        Currently supports older SuSE Linux, Caldera OpenLinux and
-        Slackware Linux distributions.
-
-    """
-    if os.path.exists('/var/adm/inst-log/info'):
-        # SuSE Linux stores distribution information in that file
-        distname = 'SuSE'
-        for line in open('/var/adm/inst-log/info'):
-            tv = line.split()
-            if len(tv) == 2:
-                tag, value = tv
-            else:
-                continue
-            if tag == 'MIN_DIST_VERSION':
-                version = value.strip()
-            elif tag == 'DIST_IDENT':
-                values = value.split('-')
-                id = values[2]
-        return distname, version, id
-
-    if os.path.exists('/etc/.installed'):
-        # Caldera OpenLinux has some infos in that file (thanks to Colin Kong)
-        for line in open('/etc/.installed'):
-            pkg = line.split('-')
-            if len(pkg) >= 2 and pkg[0] == 'OpenLinux':
-                # XXX does Caldera support non Intel platforms ? If yes,
-                #     where can we find the needed id ?
-                return 'OpenLinux', pkg[1], id
-
-    if os.path.isdir('/usr/lib/setup'):
-        # Check for slackware version tag file (thanks to Greg Andruk)
-        verfiles = os.listdir('/usr/lib/setup')
-        for n in range(len(verfiles)-1, -1, -1):
-            if verfiles[n][:14] != 'slack-version-':
-                del verfiles[n]
-        if verfiles:
-            verfiles.sort()
-            distname = 'slackware'
-            version = verfiles[-1][14:]
-            return distname, version, id
-
-    return distname, version, id
-
-def popen(cmd, mode='r', bufsize=-1):
-
-    """ Portable popen() interface.
-    """
-    import warnings
-    warnings.warn('use os.popen instead', DeprecationWarning, stacklevel=2)
-    return os.popen(cmd, mode, bufsize)
-
 
 def _norm_version(version, build=''):
 
@@ -332,16 +275,15 @@ def _syscmd_ver(system='', release='', version='',
         return system, release, version
 
     # Try some common cmd strings
+    import subprocess
     for cmd in ('ver', 'command /c ver', 'cmd /c ver'):
         try:
-            pipe = os.popen(cmd)
-            info = pipe.read()
-            if pipe.close():
-                raise OSError('command failed')
-            # XXX How can I suppress shell errors from being written
-            #     to stderr ?
-        except OSError as why:
-            #print 'Command %s failed: %s' % (cmd, why)
+            info = subprocess.check_output(cmd,
+                                           stderr=subprocess.DEVNULL,
+                                           text=True,
+                                           shell=True)
+        except (OSError, subprocess.CalledProcessError) as why:
+            #print('Command %s failed: %s' % (cmd, why))
             continue
         else:
             break
@@ -464,7 +406,7 @@ def _mac_ver_xml():
 
 def mac_ver(release='', versioninfo=('', '', ''), machine=''):
 
-    """ Get MacOS version information and return it as tuple (release,
+    """ Get macOS version information and return it as tuple (release,
         versioninfo, machine) with versioninfo being a tuple (version,
         dev_stage, non_release_version).
 
@@ -536,12 +478,7 @@ def system_alias(system, release, version):
         where it would otherwise cause confusion.
 
     """
-    if system == 'Rhapsody':
-        # Apple's BSD derivative
-        # XXX How can we determine the marketing release number ?
-        return 'MacOS X Server', system+release, version
-
-    elif system == 'SunOS':
+    if system == 'SunOS':
         # Sun's OS
         if release < '5':
             # These releases use the old name SunOS
@@ -646,16 +583,15 @@ def _syscmd_uname(option, default=''):
     if sys.platform in ('dos', 'win32', 'win16'):
         # XXX Others too ?
         return default
+
+    import subprocess
     try:
-        f = os.popen('uname %s 2> %s' % (option, DEV_NULL))
-    except (AttributeError, OSError):
+        output = subprocess.check_output(('uname', option),
+                                         stderr=subprocess.DEVNULL,
+                                         text=True)
+    except (OSError, subprocess.CalledProcessError):
         return default
-    output = f.read().strip()
-    rc = f.close()
-    if not output or rc:
-        return default
-    else:
-        return output
+    return (output.strip() or default)
 
 def _syscmd_file(target, default=''):
 
@@ -669,19 +605,16 @@ def _syscmd_file(target, default=''):
     if sys.platform in ('dos', 'win32', 'win16'):
         # XXX Others too ?
         return default
+
+    import subprocess
     target = _follow_symlinks(target)
     try:
-        proc = subprocess.Popen(['file', target],
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-    except (AttributeError, OSError):
+        output = subprocess.check_output(['file', target],
+                                         stderr=subprocess.DEVNULL,
+                                         encoding='latin-1')
+    except (OSError, subprocess.CalledProcessError):
         return default
-    output = proc.communicate()[0].decode('latin-1')
-    rc = proc.wait()
-    if not output or rc:
-        return default
-    else:
-        return output
+    return (output or default)
 
 ### Information about the used architecture
 
@@ -1224,6 +1157,13 @@ def platform(aliased=0, terse=0):
     if aliased:
         system, release, version = system_alias(system, release, version)
 
+    if system == 'Darwin':
+        # macOS (darwin kernel)
+        macos_release = mac_ver()[0]
+        if macos_release:
+            system = 'macOS'
+            release = macos_release
+
     if system == 'Windows':
         # MS platforms
         rel, vers, csd, ptype = win32_ver(version)
@@ -1247,13 +1187,6 @@ def platform(aliased=0, terse=0):
             platform = _platform(system, release, version,
                                  'on',
                                  os_name, os_version, os_arch)
-
-    elif system == 'MacOS':
-        # MacOS platforms
-        if terse:
-            platform = _platform(system, release)
-        else:
-            platform = _platform(system, release, machine)
 
     else:
         # Generic handler

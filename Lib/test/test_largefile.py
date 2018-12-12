@@ -5,12 +5,12 @@ import os
 import stat
 import sys
 import unittest
-from test.support import TESTFN, requires, unlink
+from test.support import TESTFN, requires, unlink, bigmemtest
 import io  # C implementation of io
 import _pyio as pyio # Python implementation of io
 
 # size of file to create (>2 GiB; 2 GiB == 2,147,483,648 bytes)
-size = 2500000000
+size = 2_500_000_000
 
 class LargeFileTest:
     """Test that each file function works as expected for large
@@ -44,6 +44,15 @@ class LargeFileTest:
         if not os.stat(TESTFN)[stat.ST_SIZE] == 0:
             raise cls.failureException('File was not truncated by opening '
                                        'with mode "wb"')
+
+    # _pyio.FileIO.readall() uses a temporary bytearray then casted to bytes,
+    # so memuse=2 is needed
+    @bigmemtest(size=size, memuse=2, dry_run=False)
+    def test_large_read(self, _size):
+        # bpo-24658: Test that a read greater than 2GB does not fail.
+        with self.open(TESTFN, "rb") as f:
+            self.assertEqual(len(f.read()), size + 1)
+            self.assertEqual(f.tell(), size + 1)
 
     def test_osstat(self):
         self.assertEqual(os.stat(TESTFN)[stat.ST_SIZE], size+1)

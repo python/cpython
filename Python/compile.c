@@ -24,7 +24,6 @@
 #include "Python.h"
 
 #include "Python-ast.h"
-#include "node.h"
 #include "ast.h"
 #include "code.h"
 #include "symtable.h"
@@ -161,6 +160,8 @@ struct compiler {
     int c_interactive;           /* true if in interactive mode */
     int c_nestlevel;
 
+    PyObject *c_const_cache;     /* Python dict holding all constants,
+                                    including names tuple */
     struct compiler_unit *u; /* compiler state for current block */
     PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
     PyArena *c_arena;            /* pointer to memory allocation arena */
@@ -174,6 +175,7 @@ static int compiler_addop(struct compiler *, int);
 static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
 static int compiler_addop_j(struct compiler *, int, basicblock *, int);
 static int compiler_error(struct compiler *, const char *);
+static int compiler_warn(struct compiler *, const char *);
 static int compiler_nameop(struct compiler *, identifier, expr_context_ty);
 
 static PyCodeObject *compiler_mod(struct compiler *, mod_ty);
@@ -285,9 +287,16 @@ compiler_init(struct compiler *c)
 {
     memset(c, 0, sizeof(struct compiler));
 
-    c->c_stack = PyList_New(0);
-    if (!c->c_stack)
+    c->c_const_cache = PyDict_New();
+    if (!c->c_const_cache) {
         return 0;
+    }
+
+    c->c_stack = PyList_New(0);
+    if (!c->c_stack) {
+        Py_CLEAR(c->c_const_cache);
+        return 0;
+    }
 
     return 1;
 }
@@ -387,6 +396,7 @@ compiler_free(struct compiler *c)
     if (c->c_future)
         PyObject_Free(c->c_future);
     Py_XDECREF(c->c_filename);
+    Py_DECREF(c->c_const_cache);
     Py_DECREF(c->c_stack);
 }
 
@@ -1179,18 +1189,126 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
     return arg;
 }
 
+// Merge const *o* recursively and return constant key object.
+static PyObject*
+merge_consts_recursive(struct compiler *c, PyObject *o)
+{
+    // None and Ellipsis are singleton, and key is the singleton.
+    // No need to merge object and key.
+    if (o == Py_None || o == Py_Ellipsis) {
+        Py_INCREF(o);
+        return o;
+    }
+
+    PyObject *key = _PyCode_ConstantKey(o);
+    if (key == NULL) {
+        return NULL;
+    }
+
+    // t is borrowed reference
+    PyObject *t = PyDict_SetDefault(c->c_const_cache, key, key);
+    if (t != key) {
+        // o is registered in c_const_cache.  Just use it.
+        Py_INCREF(t);
+        Py_DECREF(key);
+        return t;
+    }
+
+    // We registered o in c_const_cache.
+    // When o is a tuple or frozenset, we want to merge it's
+    // items too.
+    if (PyTuple_CheckExact(o)) {
+        Py_ssize_t len = PyTuple_GET_SIZE(o);
+        for (Py_ssize_t i = 0; i < len; i++) {
+            PyObject *item = PyTuple_GET_ITEM(o, i);
+            PyObject *u = merge_consts_recursive(c, item);
+            if (u == NULL) {
+                Py_DECREF(key);
+                return NULL;
+            }
+
+            // See _PyCode_ConstantKey()
+            PyObject *v;  // borrowed
+            if (PyTuple_CheckExact(u)) {
+                v = PyTuple_GET_ITEM(u, 1);
+            }
+            else {
+                v = u;
+            }
+            if (v != item) {
+                Py_INCREF(v);
+                PyTuple_SET_ITEM(o, i, v);
+                Py_DECREF(item);
+            }
+
+            Py_DECREF(u);
+        }
+    }
+    else if (PyFrozenSet_CheckExact(o)) {
+        // *key* is tuple. And it's first item is frozenset of
+        // constant keys.
+        // See _PyCode_ConstantKey() for detail.
+        assert(PyTuple_CheckExact(key));
+        assert(PyTuple_GET_SIZE(key) == 2);
+
+        Py_ssize_t len = PySet_GET_SIZE(o);
+        if (len == 0) {  // empty frozenset should not be re-created.
+            return key;
+        }
+        PyObject *tuple = PyTuple_New(len);
+        if (tuple == NULL) {
+            Py_DECREF(key);
+            return NULL;
+        }
+        Py_ssize_t i = 0, pos = 0;
+        PyObject *item;
+        Py_hash_t hash;
+        while (_PySet_NextEntry(o, &pos, &item, &hash)) {
+            PyObject *k = merge_consts_recursive(c, item);
+            if (k == NULL) {
+                Py_DECREF(tuple);
+                Py_DECREF(key);
+                return NULL;
+            }
+            PyObject *u;
+            if (PyTuple_CheckExact(k)) {
+                u = PyTuple_GET_ITEM(k, 1);
+                Py_INCREF(u);
+                Py_DECREF(k);
+            }
+            else {
+                u = k;
+            }
+            PyTuple_SET_ITEM(tuple, i, u);  // Steals reference of u.
+            i++;
+        }
+
+        // Instead of rewriting o, we create new frozenset and embed in the
+        // key tuple.  Caller should get merged frozenset from the key tuple.
+        PyObject *new = PyFrozenSet_New(tuple);
+        Py_DECREF(tuple);
+        if (new == NULL) {
+            Py_DECREF(key);
+            return NULL;
+        }
+        assert(PyTuple_GET_ITEM(key, 1) == o);
+        Py_DECREF(o);
+        PyTuple_SET_ITEM(key, 1, new);
+    }
+
+    return key;
+}
+
 static Py_ssize_t
 compiler_add_const(struct compiler *c, PyObject *o)
 {
-    PyObject *t;
-    Py_ssize_t arg;
-
-    t = _PyCode_ConstantKey(o);
-    if (t == NULL)
+    PyObject *key = merge_consts_recursive(c, o);
+    if (key == NULL) {
         return -1;
+    }
 
-    arg = compiler_add_o(c, c->u->u_consts, t);
-    Py_DECREF(t);
+    Py_ssize_t arg = compiler_add_o(c, c->u->u_consts, key);
+    Py_DECREF(key);
     return arg;
 }
 
@@ -1396,43 +1514,6 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
             return 0; \
         } \
     } \
-}
-
-static int
-is_const(expr_ty e)
-{
-    switch (e->kind) {
-    case Constant_kind:
-    case Num_kind:
-    case Str_kind:
-    case Bytes_kind:
-    case Ellipsis_kind:
-    case NameConstant_kind:
-        return 1;
-    default:
-        return 0;
-    }
-}
-
-static PyObject *
-get_const_value(expr_ty e)
-{
-    switch (e->kind) {
-    case Constant_kind:
-        return e->v.Constant.value;
-    case Num_kind:
-        return e->v.Num.n;
-    case Str_kind:
-        return e->v.Str.s;
-    case Bytes_kind:
-        return e->v.Bytes.s;
-    case Ellipsis_kind:
-        return Py_Ellipsis;
-    case NameConstant_kind:
-        return e->v.NameConstant.value;
-    default:
-        Py_UNREACHABLE();
-    }
 }
 
 /* Search if variable annotations are present statically in a block. */
@@ -1986,6 +2067,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     Py_ssize_t i, funcflags;
     int annotations;
     int scope_type;
+    int firstlineno;
 
     if (is_async) {
         assert(s->kind == AsyncFunctionDef_kind);
@@ -2012,6 +2094,11 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     if (!compiler_decorators(c, decos))
         return 0;
 
+    firstlineno = s->lineno;
+    if (asdl_seq_LEN(decos)) {
+        firstlineno = ((expr_ty)asdl_seq_GET(decos, 0))->lineno;
+    }
+
     funcflags = compiler_default_arguments(c, args);
     if (funcflags == -1) {
         return 0;
@@ -2025,7 +2112,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         funcflags |= 0x04;
     }
 
-    if (!compiler_enter_scope(c, name, scope_type, (void *)s, s->lineno)) {
+    if (!compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno)) {
         return 0;
     }
 
@@ -2068,11 +2155,16 @@ compiler_class(struct compiler *c, stmt_ty s)
 {
     PyCodeObject *co;
     PyObject *str;
-    int i;
+    int i, firstlineno;
     asdl_seq* decos = s->v.ClassDef.decorator_list;
 
     if (!compiler_decorators(c, decos))
         return 0;
+
+    firstlineno = s->lineno;
+    if (asdl_seq_LEN(decos)) {
+        firstlineno = ((expr_ty)asdl_seq_GET(decos, 0))->lineno;
+    }
 
     /* ultimately generate code for:
          <name> = __build_class__(<func>, <name>, *<bases>, **<keywords>)
@@ -2088,7 +2180,7 @@ compiler_class(struct compiler *c, stmt_ty s)
 
     /* 1. compile the class body into a code object */
     if (!compiler_enter_scope(c, s->v.ClassDef.name,
-                              COMPILER_SCOPE_CLASS, (void *)s, s->lineno))
+                              COMPILER_SCOPE_CLASS, (void *)s, firstlineno))
         return 0;
     /* this block represents what we do in the new scope */
     {
@@ -2568,7 +2660,7 @@ static int
 compiler_return(struct compiler *c, stmt_ty s)
 {
     int preserve_tos = ((s->v.Return.value != NULL) &&
-                        !is_const(s->v.Return.value));
+                        (s->v.Return.value->kind != Constant_kind));
     if (c->u->u_ste->ste_type != FunctionBlock)
         return compiler_error(c, "'return' outside function");
     if (s->v.Return.value != NULL &&
@@ -2775,8 +2867,9 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
             cleanup_end = compiler_new_block(c);
             cleanup_body = compiler_new_block(c);
-            if (!(cleanup_end || cleanup_body))
+            if (cleanup_end == NULL || cleanup_body == NULL) {
                 return 0;
+            }
 
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             ADDOP(c, POP_TOP);
@@ -3007,7 +3100,6 @@ compiler_assert(struct compiler *c, stmt_ty s)
 {
     static PyObject *assertion_error = NULL;
     basicblock *end;
-    PyObject* msg;
 
     if (c->c_optimize)
         return 1;
@@ -3017,18 +3109,13 @@ compiler_assert(struct compiler *c, stmt_ty s)
             return 0;
     }
     if (s->v.Assert.test->kind == Tuple_kind &&
-        asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0) {
-        msg = PyUnicode_FromString("assertion is always true, "
-                                   "perhaps remove parentheses?");
-        if (msg == NULL)
-            return 0;
-        if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg,
-                                     c->c_filename, c->u->u_lineno,
-                                     NULL, NULL) == -1) {
-            Py_DECREF(msg);
+        asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0)
+    {
+        if (!compiler_warn(c, "assertion is always true, "
+                              "perhaps remove parentheses?"))
+        {
             return 0;
         }
-        Py_DECREF(msg);
     }
     end = compiler_new_block(c);
     if (end == NULL)
@@ -3054,7 +3141,7 @@ compiler_visit_stmt_expr(struct compiler *c, expr_ty value)
         return 1;
     }
 
-    if (is_const(value)) {
+    if (value->kind == Constant_kind) {
         /* ignore constant statement */
         return 1;
     }
@@ -3502,7 +3589,7 @@ are_all_items_const(asdl_seq *seq, Py_ssize_t begin, Py_ssize_t end)
     Py_ssize_t i;
     for (i = begin; i < end; i++) {
         expr_ty key = (expr_ty)asdl_seq_GET(seq, i);
-        if (key == NULL || !is_const(key))
+        if (key == NULL || key->kind != Constant_kind)
             return 0;
     }
     return 1;
@@ -3522,7 +3609,7 @@ compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end
             return 0;
         }
         for (i = begin; i < end; i++) {
-            key = get_const_value((expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
+            key = ((expr_ty)asdl_seq_GET(e->v.Dict.keys, i))->v.Constant.value;
             Py_INCREF(key);
             PyTuple_SET_ITEM(keys, i - begin, key);
         }
@@ -4244,8 +4331,8 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
 static int
 expr_constant(expr_ty e)
 {
-    if (is_const(e)) {
-        return PyObject_IsTrue(get_const_value(e));
+    if (e->kind == Constant_kind) {
+        return PyObject_IsTrue(e->v.Constant.value);
     }
     return -1;
 }
@@ -4505,25 +4592,10 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case Constant_kind:
         ADDOP_LOAD_CONST(c, e->v.Constant.value);
         break;
-    case Num_kind:
-        ADDOP_LOAD_CONST(c, e->v.Num.n);
-        break;
-    case Str_kind:
-        ADDOP_LOAD_CONST(c, e->v.Str.s);
-        break;
     case JoinedStr_kind:
         return compiler_joined_str(c, e);
     case FormattedValue_kind:
         return compiler_formatted_value(c, e);
-    case Bytes_kind:
-        ADDOP_LOAD_CONST(c, e->v.Bytes.s);
-        break;
-    case Ellipsis_kind:
-        ADDOP_LOAD_CONST(c, Py_Ellipsis);
-        break;
-    case NameConstant_kind:
-        ADDOP_LOAD_CONST(c, e->v.NameConstant.value);
-        break;
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
         if (e->v.Attribute.ctx != AugStore)
@@ -4830,7 +4902,7 @@ compiler_error(struct compiler *c, const char *errstr)
         loc = Py_None;
     }
     u = Py_BuildValue("(OiiO)", c->c_filename, c->u->u_lineno,
-                      c->u->u_col_offset, loc);
+                      c->u->u_col_offset + 1, loc);
     if (!u)
         goto exit;
     v = Py_BuildValue("(zO)", errstr, u);
@@ -4842,6 +4914,31 @@ compiler_error(struct compiler *c, const char *errstr)
     Py_XDECREF(u);
     Py_XDECREF(v);
     return 0;
+}
+
+/* Emits a SyntaxWarning and returns 1 on success.
+   If a SyntaxWarning raised as error, replaces it with a SyntaxError
+   and returns 0.
+*/
+static int
+compiler_warn(struct compiler *c, const char *errstr)
+{
+    PyObject *msg = PyUnicode_FromString(errstr);
+    if (msg == NULL) {
+        return 0;
+    }
+    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, c->c_filename,
+                                 c->u->u_lineno, NULL, NULL) < 0)
+    {
+        Py_DECREF(msg);
+        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
+            PyErr_Clear();
+            return compiler_error(c, errstr);
+        }
+        return 0;
+    }
+    Py_DECREF(msg);
+    return 1;
 }
 
 static int
@@ -5401,6 +5498,35 @@ compute_code_flags(struct compiler *c)
     return flags;
 }
 
+// Merge *tuple* with constant cache.
+// Unlike merge_consts_recursive(), this function doesn't work recursively.
+static int
+merge_const_tuple(struct compiler *c, PyObject **tuple)
+{
+    assert(PyTuple_CheckExact(*tuple));
+
+    PyObject *key = _PyCode_ConstantKey(*tuple);
+    if (key == NULL) {
+        return 0;
+    }
+
+    // t is borrowed reference
+    PyObject *t = PyDict_SetDefault(c->c_const_cache, key, key);
+    Py_DECREF(key);
+    if (t == NULL) {
+        return 0;
+    }
+    if (t == key) {  // tuple is new constant.
+        return 1;
+    }
+
+    PyObject *u = PyTuple_GET_ITEM(t, 1);
+    Py_INCREF(u);
+    Py_DECREF(*tuple);
+    *tuple = u;
+    return 1;
+}
+
 static PyCodeObject *
 makecode(struct compiler *c, struct assembler *a)
 {
@@ -5431,6 +5557,14 @@ makecode(struct compiler *c, struct assembler *a)
     if (!freevars)
         goto error;
 
+    if (!merge_const_tuple(c, &names) ||
+            !merge_const_tuple(c, &varnames) ||
+            !merge_const_tuple(c, &cellvars) ||
+            !merge_const_tuple(c, &freevars))
+    {
+        goto error;
+    }
+
     nlocals = PyDict_GET_SIZE(c->u->u_varnames);
     assert(nlocals < INT_MAX);
     nlocals_int = Py_SAFE_DOWNCAST(nlocals, Py_ssize_t, int);
@@ -5448,6 +5582,9 @@ makecode(struct compiler *c, struct assembler *a)
         goto error;
     Py_DECREF(consts);
     consts = tmp;
+    if (!merge_const_tuple(c, &consts)) {
+        goto error;
+    }
 
     argcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
     kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);

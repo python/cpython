@@ -74,7 +74,7 @@ class Bdb:
             return: A function or other code block is about to return.
             exception: An exception has occurred.
             c_call: A C function is about to be called.
-            c_return: A C functon has returned.
+            c_return: A C function has returned.
             c_exception: A C function has raised an exception.
 
         For the Python events, specialized functions (see the dispatch_*()

@@ -3,8 +3,8 @@
 #
 
 import unittest
+import unittest.mock
 import queue as pyqueue
-import contextlib
 import time
 import io
 import itertools
@@ -30,9 +30,6 @@ from test import support
 _multiprocessing = test.support.import_module('_multiprocessing')
 # Skip tests if sem_open implementation is broken.
 test.support.import_module('multiprocessing.synchronize')
-# import threading after _multiprocessing to raise a more relevant error
-# message: "No module named _multiprocessing". _multiprocessing is not compiled
-# without thread support.
 import threading
 
 import multiprocessing.connection
@@ -1117,6 +1114,14 @@ class _TestQueue(BaseTestCase):
         # Assert that the serialization and the hook have been called correctly
         self.assertTrue(not_serializable_obj.reduce_was_called)
         self.assertTrue(not_serializable_obj.on_queue_feeder_error_was_called)
+
+    def test_closed_queue_put_get_exceptions(self):
+        for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
+            q.close()
+            with self.assertRaisesRegex(ValueError, 'is closed'):
+                q.put('foo')
+            with self.assertRaisesRegex(ValueError, 'is closed'):
+                q.get()
 #
 #
 #
@@ -2466,6 +2471,7 @@ class _TestPool(BaseTestCase):
             with self.Pool(2) as p:
                 r = p.map_async(sqr, L)
                 self.assertEqual(r.get(), expected)
+            p.join()
             self.assertRaises(ValueError, p.map_async, sqr, L)
 
     @classmethod
@@ -2483,6 +2489,7 @@ class _TestPool(BaseTestCase):
                     exc = e
                 else:
                     self.fail('expected RuntimeError')
+            p.join()
             self.assertIs(type(exc), RuntimeError)
             self.assertEqual(exc.args, (123,))
             cause = exc.__cause__
@@ -2507,6 +2514,7 @@ class _TestPool(BaseTestCase):
                     self.fail('expected SayWhenError')
                 self.assertIs(type(exc), SayWhenError)
                 self.assertIs(exc.__cause__, None)
+            p.join()
 
     @classmethod
     def _test_wrapped_exception(cls):
@@ -2517,6 +2525,7 @@ class _TestPool(BaseTestCase):
         with self.Pool(1) as p:
             with self.assertRaises(RuntimeError):
                 p.apply(self._test_wrapped_exception)
+        p.join()
 
     def test_map_no_failfast(self):
         # Issue #23992: the fail-fast behaviour when an exception is raised
@@ -4545,7 +4554,8 @@ class TestSemaphoreTracker(unittest.TestCase):
         if pid is not None:
             os.kill(pid, signal.SIGKILL)
             os.waitpid(pid, 0)
-        with warnings.catch_warnings(record=True) as all_warn:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
             _semaphore_tracker.ensure_running()
         pid = _semaphore_tracker._pid
 
@@ -4554,6 +4564,7 @@ class TestSemaphoreTracker(unittest.TestCase):
 
         ctx = multiprocessing.get_context("spawn")
         with warnings.catch_warnings(record=True) as all_warn:
+            warnings.simplefilter("always")
             sem = ctx.Semaphore()
             sem.acquire()
             sem.release()
@@ -4566,7 +4577,7 @@ class TestSemaphoreTracker(unittest.TestCase):
             if should_die:
                 self.assertEqual(len(all_warn), 1)
                 the_warn = all_warn[0]
-                issubclass(the_warn.category, UserWarning)
+                self.assertTrue(issubclass(the_warn.category, UserWarning))
                 self.assertTrue("semaphore_tracker: process died"
                                 in str(the_warn.message))
             else:
@@ -4620,6 +4631,48 @@ class TestSimpleQueue(unittest.TestCase):
         self.assertTrue(queue.empty())
 
         proc.join()
+
+
+class TestPoolNotLeakOnFailure(unittest.TestCase):
+
+    def test_release_unused_processes(self):
+        # Issue #19675: During pool creation, if we can't create a process,
+        # don't leak already created ones.
+        will_fail_in = 3
+        forked_processes = []
+
+        class FailingForkProcess:
+            def __init__(self, **kwargs):
+                self.name = 'Fake Process'
+                self.exitcode = None
+                self.state = None
+                forked_processes.append(self)
+
+            def start(self):
+                nonlocal will_fail_in
+                if will_fail_in <= 0:
+                    raise OSError("Manually induced OSError")
+                will_fail_in -= 1
+                self.state = 'started'
+
+            def terminate(self):
+                self.state = 'stopping'
+
+            def join(self):
+                if self.state == 'stopping':
+                    self.state = 'stopped'
+
+            def is_alive(self):
+                return self.state == 'started' or self.state == 'stopping'
+
+        with self.assertRaisesRegex(OSError, 'Manually induced OSError'):
+            p = multiprocessing.pool.Pool(5, context=unittest.mock.MagicMock(
+                Process=FailingForkProcess))
+            p.close()
+            p.join()
+        self.assertFalse(
+            any(process.is_alive() for process in forked_processes))
+
 
 
 class MiscTestCase(unittest.TestCase):

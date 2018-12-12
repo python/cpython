@@ -45,7 +45,7 @@ PyDoc_STRVAR(_dbm_dbm_get__doc__,
 "Return the value for key if present, otherwise default.");
 
 #define _DBM_DBM_GET_METHODDEF    \
-    {"get", (PyCFunction)_dbm_dbm_get, METH_FASTCALL, _dbm_dbm_get__doc__},
+    {"get", (PyCFunction)(void(*)(void))_dbm_dbm_get, METH_FASTCALL, _dbm_dbm_get__doc__},
 
 static PyObject *
 _dbm_dbm_get_impl(dbmobject *self, const char *key,
@@ -78,7 +78,7 @@ PyDoc_STRVAR(_dbm_dbm_setdefault__doc__,
 "If key is not in the database, it is inserted with default as the value.");
 
 #define _DBM_DBM_SETDEFAULT_METHODDEF    \
-    {"setdefault", (PyCFunction)_dbm_dbm_setdefault, METH_FASTCALL, _dbm_dbm_setdefault__doc__},
+    {"setdefault", (PyCFunction)(void(*)(void))_dbm_dbm_setdefault, METH_FASTCALL, _dbm_dbm_setdefault__doc__},
 
 static PyObject *
 _dbm_dbm_setdefault_impl(dbmobject *self, const char *key,
@@ -118,7 +118,7 @@ PyDoc_STRVAR(dbmopen__doc__,
 "    (e.g. os.O_RDWR).");
 
 #define DBMOPEN_METHODDEF    \
-    {"open", (PyCFunction)dbmopen, METH_FASTCALL, dbmopen__doc__},
+    {"open", (PyCFunction)(void(*)(void))dbmopen, METH_FASTCALL, dbmopen__doc__},
 
 static PyObject *
 dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
@@ -141,4 +141,4 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1cba297bc8d7c2c2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e4585e78f5821b5b input=a9049054013a1b77]*/

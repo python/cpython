@@ -72,7 +72,7 @@ __all__ = [
     # globals
     "PIPE_MAX_SIZE", "verbose", "max_memuse", "use_resources", "failfast",
     # exceptions
-    "Error", "TestFailed", "ResourceDenied",
+    "Error", "TestFailed", "TestDidNotRun", "ResourceDenied",
     # imports
     "import_module", "import_fresh_module", "CleanImport",
     # modules
@@ -107,7 +107,8 @@ __all__ = [
     # threads
     "threading_setup", "threading_cleanup", "reap_threads", "start_threads",
     # miscellaneous
-    "check_warnings", "check_no_resource_warning", "EnvironmentVarGuard",
+    "check_warnings", "check_no_resource_warning", "check_no_warnings",
+    "EnvironmentVarGuard",
     "run_with_locale", "swap_item",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
@@ -118,6 +119,9 @@ class Error(Exception):
 
 class TestFailed(Error):
     """Test failed."""
+
+class TestDidNotRun(Error):
+    """Test did not run any subtests."""
 
 class ResourceDenied(unittest.SkipTest):
     """Test skipped because it requested a disallowed resource.
@@ -867,7 +871,11 @@ for character in (
     '\u20AC',
 ):
     try:
-        os.fsdecode(os.fsencode(character))
+        # If Python is set up to use the legacy 'mbcs' in Windows,
+        # 'replace' error mode is used, and encode() returns b'?'
+        # for characters missing in the ANSI codepage
+        if os.fsdecode(os.fsencode(character)) != character:
+            raise UnicodeError
     except UnicodeError:
         pass
     else:
@@ -1253,6 +1261,30 @@ def check_warnings(*filters, **kwargs):
 
 
 @contextlib.contextmanager
+def check_no_warnings(testcase, message='', category=Warning, force_gc=False):
+    """Context manager to check that no warnings are emitted.
+
+    This context manager enables a given warning within its scope
+    and checks that no warnings are emitted even with that warning
+    enabled.
+
+    If force_gc is True, a garbage collection is attempted before checking
+    for warnings. This may help to catch warnings emitted when objects
+    are deleted, such as ResourceWarning.
+
+    Other keyword arguments are passed to warnings.filterwarnings().
+    """
+    with warnings.catch_warnings(record=True) as warns:
+        warnings.filterwarnings('always',
+                                message=message,
+                                category=category)
+        yield
+        if force_gc:
+            gc_collect()
+    testcase.assertEqual(warns, [])
+
+
+@contextlib.contextmanager
 def check_no_resource_warning(testcase):
     """Context manager to check that no ResourceWarning is emitted.
 
@@ -1266,11 +1298,8 @@ def check_no_resource_warning(testcase):
     You must remove the object which may emit ResourceWarning before
     the end of the context manager.
     """
-    with warnings.catch_warnings(record=True) as warns:
-        warnings.filterwarnings('always', category=ResourceWarning)
+    with check_no_warnings(testcase, category=ResourceWarning, force_gc=True):
         yield
-        gc_collect()
-    testcase.assertEqual(warns, [])
 
 
 class CleanImport(object):
@@ -1899,16 +1928,17 @@ def _filter_suite(suite, pred):
 
 def _run_suite(suite):
     """Run tests from a unittest.TestSuite-derived class."""
-    runner = get_test_runner(sys.stdout, verbosity=verbose)
-
-    # TODO: Remove this before merging (here for easy comparison with old impl)
-    #runner = unittest.TextTestRunner(sys.stdout, verbosity=2, failfast=failfast)
+    runner = get_test_runner(sys.stdout,
+                             verbosity=verbose,
+                             capture_output=(junit_xml_list is not None))
 
     result = runner.run(suite)
 
     if junit_xml_list is not None:
         junit_xml_list.append(result.get_xml_element())
 
+    if not result.testsRun:
+        raise TestDidNotRun
     if not result.wasSuccessful():
         if len(result.errors) == 1 and not result.failures:
             err = result.errors[0][1]

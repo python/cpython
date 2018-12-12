@@ -3,6 +3,69 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-34864: When starting IDLE on MacOS, warn if the system setting
+"Prefer tabs when opening documents" is "Always".  As previous
+documented for this issue, running IDLE with this setting causes
+problems.  If the setting is changed while IDLE is running,
+there will be no warning until IDLE is restarted.
+
+bpo-35213: Where appropriate, use 'macOS' in idlelib.
+
+bpo-34864: Document two IDLE on MacOS issues.  The System Preferences
+Dock "prefer tabs always" setting disables some IDLE features.
+Menus are a bit different than as described for Windows and Linux.
+
+bpo-35202: Remove unused imports in idlelib.
+
+bpo-33000: Document that IDLE's shell has no line limit.
+A program that runs indefinitely can overfill memory.
+
+bpo-23220: Explain how IDLE's Shell displays output.
+Add new subsection "User output in Shell".
+
+bpo-35099: Improve the doc about IDLE running user code.
+"IDLE -- console differences" is renamed "Running user code".
+It mostly covers the implications of using custom sys.stdxxx objects.
+
+bpo-35097: Add IDLE doc subsection explaining editor windows.
+Topics include opening, title and status bars, .py* extension, and running.
+
+Issue 35093: Document the IDLE document viewer in the IDLE doc.
+Add a paragraph in "Help and preferences", "Help sources" subsection.
+
+bpo-1529353: Explain Shell text squeezing in the IDLE doc.
+
+bpo-35088: Update idlelib.help.copy_string docstring.
+We now use git and backporting instead of hg and forward merging.
+
+bpo-35087: Update idlelib help files for the current doc build.
+The main change is the elimination of chapter-section numbers.
+
+bpo-1529353: Output over N lines (50 by default) is squeezed down to a button.
+N can be changed in the PyShell section of the General page of the
+Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
+right clicking on the output.  Squeezed output can be expanded in place
+by double-clicking the button or into the clipboard or a separate window
+by right-clicking the button.
+
+bpo-34548: Use configured color theme for read-only text views.
+
+bpo-33839: Refactor ToolTip and CallTip classes; add documentation
+and tests.
+
+bpo-34047: Fix mouse wheel scrolling direction on macOS.
+
+bpo-34275: Make calltips always visible on Mac.
+Patch by Kevin Walzer.
+
+bpo-34120: Fix freezing after closing some dialogs on Mac.
+This is one of multiple regressions from using newer tcl/tk.
+
+bpo-33975: Avoid small type when running htests.
+Since part of the purpose of human-viewed tests is to determine that
+widgets look right, it is important that they look the same for
+testing as when running IDLE.
+
 bpo-33905: Add test for idlelib.stackview.StackBrowser.
 
 bpo-33924: Change mainmenu.menudefs key 'windows' to 'window'.
@@ -197,7 +260,7 @@ To see the example in action, enable it on options extensions tab.
 
 bpo-31421: Document how IDLE runs tkinter programs.
 IDLE calls tcl/tk update in the background in order to make live
-interaction and experimentatin with tkinter applications much easier.
+interaction and experimentation with tkinter applications much easier.
 
 bpo-31414: Fix tk entry box tests by deleting first.
 Adding to an int entry is not the same as deleting and inserting
@@ -435,7 +498,7 @@ Released on 2016-12-23
   -w option but without -jn.  Fix warning from test_config.
 
 - Issue #27621: Put query response validation error messages in the query
-  box itself instead of in a separate massagebox.  Redo tests to match.
+  box itself instead of in a separate messagebox.  Redo tests to match.
   Add Mac OSX refinements.  Original patch by Mark Roseman.
 
 - Issue #27620: Escape key now closes Query box as cancelled.
@@ -501,7 +564,7 @@ Released on 2016-12-23
 
 - Issue #27239: idlelib.macosx.isXyzTk functions initialize as needed.
 
-- Issue #27262: move Aqua unbinding code, which enable context menus, to maxosx.
+- Issue #27262: move Aqua unbinding code, which enable context menus, to macosx.
 
 - Issue #24759: Make clear in idlelib.idle_test.__init__ that the directory
   is a private implementation of test.test_idle and tool for maintainers.

@@ -988,6 +988,34 @@ class _TestMboxMMDF(_TestSingleFile):
         with open(self._path) as f:
             self.assertEqual(f.readlines(), [])
 
+    def test_get_bytes_from(self):
+        # Get bytes representations of messages with _unixfrom.
+        unixfrom = 'From foo@bar blah\n'
+        key0 = self._box.add(unixfrom + self._template % 0)
+        key1 = self._box.add(unixfrom + _sample_message)
+        self.assertEqual(self._box.get_bytes(key0, from_=False),
+            (self._template % 0).encode('ascii'))
+        self.assertEqual(self._box.get_bytes(key1, from_=False),
+            _bytes_sample_message)
+        self.assertEqual(self._box.get_bytes(key0, from_=True),
+            (unixfrom + self._template % 0).encode('ascii'))
+        self.assertEqual(self._box.get_bytes(key1, from_=True),
+            unixfrom.encode('ascii') + _bytes_sample_message)
+
+    def test_get_string_from(self):
+        # Get string representations of messages with _unixfrom.
+        unixfrom = 'From foo@bar blah\n'
+        key0 = self._box.add(unixfrom + self._template % 0)
+        key1 = self._box.add(unixfrom + _sample_message)
+        self.assertEqual(self._box.get_string(key0, from_=False),
+                         self._template % 0)
+        self.assertEqual(self._box.get_string(key1, from_=False).split('\n'),
+                         _sample_message.split('\n'))
+        self.assertEqual(self._box.get_string(key0, from_=True),
+                         unixfrom + self._template % 0)
+        self.assertEqual(self._box.get_string(key1, from_=True).split('\n'),
+                         (unixfrom + _sample_message).split('\n'))
+
     def test_add_from_string(self):
         # Add a string starting with 'From ' to the mailbox
         key = self._box.add('From foo@bar blah\nFrom: foo\n\n0\n')
