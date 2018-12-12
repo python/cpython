@@ -2242,6 +2242,9 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
         p = P(BASE, "dirC")
         self.assertEqual(set(p.rglob("FILEd")), { P(BASE, "dirC/dirD/fileD") })
 
+    def test_exists_for_invalid_path(self):
+        self.assertEqual(self.cls("*").exists(), False)
+
     def test_expanduser(self):
         P = self.cls
         with support.EnvironmentVarGuard() as env:
