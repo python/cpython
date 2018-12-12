@@ -2486,30 +2486,6 @@ class AbstractEventLoopTests(unittest.TestCase):
         loop.close()
 
 
-class ProtocolsAbsTests(unittest.TestCase):
-
-    def test_empty(self):
-        f = mock.Mock()
-        p = asyncio.Protocol()
-        self.assertIsNone(p.connection_made(f))
-        self.assertIsNone(p.connection_lost(f))
-        self.assertIsNone(p.data_received(f))
-        self.assertIsNone(p.eof_received())
-
-        dp = asyncio.DatagramProtocol()
-        self.assertIsNone(dp.connection_made(f))
-        self.assertIsNone(dp.connection_lost(f))
-        self.assertIsNone(dp.error_received(f))
-        self.assertIsNone(dp.datagram_received(f, f))
-
-        sp = asyncio.SubprocessProtocol()
-        self.assertIsNone(sp.connection_made(f))
-        self.assertIsNone(sp.connection_lost(f))
-        self.assertIsNone(sp.pipe_data_received(1, f))
-        self.assertIsNone(sp.pipe_connection_lost(1, f))
-        self.assertIsNone(sp.process_exited())
-
-
 class PolicyTests(unittest.TestCase):
 
     def test_event_loop_policy(self):

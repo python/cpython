@@ -2142,13 +2142,15 @@ object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
 items specified by the format string, or a single mapping object (for example, a
 dictionary).
 
+.. index::
+   single: () (parentheses); in printf-style formatting
+   single: * (asterisk); in printf-style formatting
+   single: . (dot); in printf-style formatting
+
 A conversion specifier contains two or more characters and has the following
 components, which must occur in this order:
 
 #. The ``'%'`` character, which marks the start of the specifier.
-
-.. index::
-   single: () (parentheses); in printf-style formatting
 
 #. Mapping key (optional), consisting of a parenthesised sequence of characters
    (for example, ``(somename)``).
@@ -2156,13 +2158,9 @@ components, which must occur in this order:
 #. Conversion flags (optional), which affect the result of some conversion
    types.
 
-.. index:: single: * (asterisk); in printf-style formatting
-
 #. Minimum field width (optional).  If specified as an ``'*'`` (asterisk), the
    actual width is read from the next element of the tuple in *values*, and the
    object to convert comes after the minimum field width and optional precision.
-
-.. index:: single: . (dot); in printf-style formatting
 
 #. Precision (optional), given as a ``'.'`` (dot) followed by the precision.  If
    specified as ``'*'`` (an asterisk), the actual precision is read from the next
@@ -3276,13 +3274,15 @@ object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
 items specified by the format bytes object, or a single mapping object (for
 example, a dictionary).
 
+.. index::
+   single: () (parentheses); in printf-style formatting
+   single: * (asterisk); in printf-style formatting
+   single: . (dot); in printf-style formatting
+
 A conversion specifier contains two or more characters and has the following
 components, which must occur in this order:
 
 #. The ``'%'`` character, which marks the start of the specifier.
-
-.. index::
-   single: () (parentheses); in printf-style formatting
 
 #. Mapping key (optional), consisting of a parenthesised sequence of characters
    (for example, ``(somename)``).
@@ -3290,13 +3290,9 @@ components, which must occur in this order:
 #. Conversion flags (optional), which affect the result of some conversion
    types.
 
-.. index:: single: * (asterisk); in printf-style formatting
-
 #. Minimum field width (optional).  If specified as an ``'*'`` (asterisk), the
    actual width is read from the next element of the tuple in *values*, and the
    object to convert comes after the minimum field width and optional precision.
-
-.. index:: single: . (dot); in printf-style formatting
 
 #. Precision (optional), given as a ``'.'`` (dot) followed by the precision.  If
    specified as ``'*'`` (an asterisk), the actual precision is read from the next

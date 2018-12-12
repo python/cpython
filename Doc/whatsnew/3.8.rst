@@ -275,7 +275,7 @@ Optimizations
   +26% on Linux, +50% on macOS and +40% on Windows. Also, much less CPU cycles
   are consumed.
   See :ref:`shutil-platform-dependent-efficient-copy-operations` section.
-  (Contributed by Giampaolo Rodola' in :issue:`25427`.)
+  (Contributed by Giampaolo Rodola' in :issue:`33671`.)
 
 * :func:`shutil.copytree` uses :func:`os.scandir` function and all copy
   functions depending from it use cached :func:`os.stat` values. The speedup
@@ -482,6 +482,12 @@ Changes in the Python API
 * :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
   external entities by default.
   (Contributed by Christian Heimes in :issue:`17239`.)
+
+* Deleting a key from a read-only :mod:`dbm` database (:mod:`dbm.dumb`,
+  :mod:`dbm.gnu` or :mod:`dbm.ndbm`) raises :attr:`error` (:exc:`dbm.dumb.error`,
+  :exc:`dbm.gnu.error` or :exc:`dbm.ndbm.error`) instead of :exc:`KeyError`.
+  (Contributed by Xiang Zhang in :issue:`33106`.)
+
 
 CPython bytecode changes
 ------------------------

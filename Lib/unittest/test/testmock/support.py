@@ -12,10 +12,3 @@ class SomeClass(object):
 
 class X(object):
     pass
-
-
-def examine_warnings(func):
-    def wrapper():
-        with catch_warnings(record=True) as ws:
-            func(ws)
-    return wrapper
