@@ -183,6 +183,8 @@ class Pool(object):
                 p.join()
             raise
 
+        # Event set when self._worker_handler._state changes
+        self._worker_state_event = threading.Event()
         self._worker_handler = threading.Thread(
             target=Pool._handle_workers,
             args=(self, )
@@ -413,12 +415,27 @@ class Pool(object):
     @staticmethod
     def _handle_workers(pool):
         thread = threading.current_thread()
+        state_event = pool._worker_state_event
 
         # Keep maintaining workers until the cache gets drained, unless the pool
         # is terminated.
         while thread._state == RUN or (pool._cache and thread._state != TERMINATE):
             pool._maintain_pool()
-            time.sleep(0.1)
+            if thread._state == RUN:
+                # Wait until thread._state changes
+                if state_event.wait():
+                    state_event.clear()
+            elif thread._state != TERMINATE:
+                # Wait until one result completes, the order doesn't matter.
+                # Do nothing if the cache is empty.
+                for result in pool._cache.values():
+                    # When the pool is closed, a delay of 100 ms is still
+                    # needed because of bpo-35478 bug (pending results never
+                    # complete if the pool is terminated) to check if
+                    # thread._state has been set to TERMINATE in the meanwhile.
+                    result.wait(0.1)
+                    break
+
         # send sentinel to stop workers
         pool._taskqueue.put(None)
         util.debug('worker handler exiting')
@@ -548,11 +565,13 @@ class Pool(object):
         if self._state == RUN:
             self._state = CLOSE
             self._worker_handler._state = CLOSE
+            self._worker_state_event.set()
 
     def terminate(self):
         util.debug('terminating pool')
         self._state = TERMINATE
         self._worker_handler._state = TERMINATE
+        self._worker_state_event.set()
         self._terminate()
 
     def join(self):

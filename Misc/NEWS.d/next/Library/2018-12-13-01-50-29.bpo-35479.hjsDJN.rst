@@ -1,0 +1,2 @@
+The :meth:`multiprocessing.Pool.join` method now completes as soon as possible.
+Previously, it always had to wait at least 100 ms.
