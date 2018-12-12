@@ -280,11 +280,11 @@ functions:
 
    .. method:: enable()
 
-      Start collecting profiling data.
+      Start collecting profiling data. Only in :mod:`cProfile`.
 
    .. method:: disable()
 
-      Stop collecting profiling data.
+      Stop collecting profiling data. Only in :mod:`cProfile`.
 
    .. method:: create_stats()
 
