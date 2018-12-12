@@ -406,7 +406,7 @@ def _mac_ver_xml():
 
 def mac_ver(release='', versioninfo=('', '', ''), machine=''):
 
-    """ Get MacOS version information and return it as tuple (release,
+    """ Get macOS version information and return it as tuple (release,
         versioninfo, machine) with versioninfo being a tuple (version,
         dev_stage, non_release_version).
 
@@ -478,12 +478,7 @@ def system_alias(system, release, version):
         where it would otherwise cause confusion.
 
     """
-    if system == 'Rhapsody':
-        # Apple's BSD derivative
-        # XXX How can we determine the marketing release number ?
-        return 'MacOS X Server', system+release, version
-
-    elif system == 'SunOS':
+    if system == 'SunOS':
         # Sun's OS
         if release < '5':
             # These releases use the old name SunOS
@@ -1166,7 +1161,6 @@ def platform(aliased=0, terse=0):
         # macOS (darwin kernel)
         macos_release = mac_ver()[0]
         if macos_release:
-            # note: 'macOS' is different than 'MacOS' used below
             system = 'macOS'
             release = macos_release
 
@@ -1193,13 +1187,6 @@ def platform(aliased=0, terse=0):
             platform = _platform(system, release, version,
                                  'on',
                                  os_name, os_version, os_arch)
-
-    elif system == 'MacOS':
-        # MacOS platforms
-        if terse:
-            platform = _platform(system, release)
-        else:
-            platform = _platform(system, release, machine)
 
     else:
         # Generic handler
