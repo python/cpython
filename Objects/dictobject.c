@@ -2371,8 +2371,15 @@ PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
         value = PySequence_Fast_GET_ITEM(fast, 1);
         Py_INCREF(key);
         Py_INCREF(value);
-        if (override || PyDict_GetItemWithError(d, key) == NULL) {
-            if ((!override && PyErr_Occurred()) || PyDict_SetItem(d, key, value) < 0) {
+        if (override) {
+            if (PyDict_SetItem(d, key, value) < 0) {
+                Py_DECREF(key);
+                Py_DECREF(value);
+                goto Fail;
+            }
+        }
+        else if (PyDict_GetItemWithError(d, key) == NULL) {
+            if (PyErr_Occurred() || PyDict_SetItem(d, key, value) < 0) {
                 Py_DECREF(key);
                 Py_DECREF(value);
                 goto Fail;

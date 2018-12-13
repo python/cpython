@@ -1701,7 +1701,7 @@ MODULE_INITFUNC(void)
     }
     Py_DECREF(errmod_name);
     model_module = PyDict_GetItemWithError(d, modelmod_name);
-    if (model_module == NULL) {
+    if (model_module == NULL && !PyErr_Occurred()) {
         model_module = PyModule_New(MODULE_NAME ".model");
         if (model_module != NULL) {
             _PyImport_SetModule(modelmod_name, model_module);

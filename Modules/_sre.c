@@ -1899,10 +1899,7 @@ match_getslice_by_index(MatchObject* self, Py_ssize_t index, PyObject* def)
     void* ptr;
     Py_ssize_t i, j;
 
-    if (index < 0) {
-        return NULL;
-    }
-
+    assert(0 <= index && index < self->groups);
     index *= 2;
 
     if (self->string == Py_None || self->mark[index] < 0) {
@@ -1961,7 +1958,13 @@ match_getindex(MatchObject* self, PyObject* index)
 static PyObject*
 match_getslice(MatchObject* self, PyObject* index, PyObject* def)
 {
-    return match_getslice_by_index(self, match_getindex(self, index), def);
+    Py_ssize_t i = match_getindex(self, index);
+
+    if (i < 0) {
+        return NULL;
+    }
+
+    return match_getslice_by_index(self, i, def);
 }
 
 /*[clinic input]

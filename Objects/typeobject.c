@@ -3767,9 +3767,12 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return NULL;
         }
         comma = _PyUnicode_FromId(&comma_id);
-        if (comma == NULL)
+        if (comma == NULL) {
+            Py_DECREF(sorted_methods);
             return NULL;
+        }
         joined = PyUnicode_Join(comma, sorted_methods);
+        Py_DECREF(sorted_methods);
         if (joined == NULL)
             return NULL;
 
