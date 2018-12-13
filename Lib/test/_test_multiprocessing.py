@@ -2561,6 +2561,22 @@ class _TestPool(BaseTestCase):
         # they were released too.
         self.assertEqual(CountedObject.n_instances, 0)
 
+    def test_enter(self):
+        if self.TYPE == 'manager':
+            self.skipTest("test not applicable to manager")
+
+        pool = self.Pool(1)
+        with pool:
+            pass
+            # call pool.terminate()
+        # pool is no longer running
+
+        with self.assertRaises(ValueError):
+            # bpo-35477: pool.__enter__() fails if the pool is not running
+            with pool:
+                pass
+        pool.join()
+
 
 def raising():
     raise KeyError("key")
