@@ -490,7 +490,9 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._accept_futures = {}   # socket file descriptor => Future
         proactor.set_loop(self)
         self._make_self_pipe()
-        signal.set_wakeup_fd(self._csock.fileno())
+        self_no = self._csock.fileno()
+        if isinstance(self_no, int):
+            signal.set_wakeup_fd(self_no)
 
     def _make_socket_transport(self, sock, protocol, waiter=None,
                                extra=None, server=None):
