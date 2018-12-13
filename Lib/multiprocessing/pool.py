@@ -616,6 +616,9 @@ class Pool(object):
         if threading.current_thread() is not result_handler:
             result_handler.join()
 
+        for result in list(cache.values()):
+            result._pool_terminated()
+
         if pool and hasattr(pool[0], 'terminate'):
             util.debug('joining pool workers')
             for p in pool:
@@ -674,6 +677,11 @@ class ApplyResult(object):
         self._event.set()
         del self._cache[self._job]
 
+    def _pool_terminated(self):
+        exc = RuntimeError("Pool terminated")
+        self._set(0, (False, exc))
+
+
 AsyncResult = ApplyResult       # create alias -- see #17805
 
 #
@@ -716,6 +724,13 @@ class MapResult(ApplyResult):
                     self._error_callback(self._value)
                 del self._cache[self._job]
                 self._event.set()
+
+    def _pool_terminated(self):
+        value = self._value
+        exc = RuntimeError("Pool terminated")
+        for i in range(0, len(value), self._chunksize):
+            if value[i] is None:
+                self._set(i, (False, exc))
 
 #
 # Class whose instances are returned by `Pool.imap()`
