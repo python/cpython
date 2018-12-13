@@ -299,7 +299,7 @@ PyDoc_STRVAR(_winapi_CreateProcess__doc__,
 
 static PyObject *
 _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
-                           Py_UNICODE *command_line, PyObject *proc_attrs,
+                           PyObject *command_line, PyObject *proc_attrs,
                            PyObject *thread_attrs, BOOL inherit_handles,
                            DWORD creation_flags, PyObject *env_mapping,
                            Py_UNICODE *current_directory,
@@ -310,7 +310,7 @@ _winapi_CreateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_UNICODE *application_name;
-    Py_UNICODE *command_line;
+    PyObject *command_line;
     PyObject *proc_attrs;
     PyObject *thread_attrs;
     BOOL inherit_handles;
@@ -319,7 +319,7 @@ _winapi_CreateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_UNICODE *current_directory;
     PyObject *startup_info;
 
-    if (!_PyArg_ParseStack(args, nargs, "ZZOOikOZO:CreateProcess",
+    if (!_PyArg_ParseStack(args, nargs, "ZUOOikOZO:CreateProcess",
         &application_name, &command_line, &proc_attrs, &thread_attrs, &inherit_handles, &creation_flags, &env_mapping, &current_directory, &startup_info)) {
         goto exit;
     }
@@ -941,4 +941,4 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=915dd640329de0c0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1d55dc299b855905 input=a9049054013a1b77]*/

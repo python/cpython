@@ -975,7 +975,7 @@ cleanup:
 _winapi.CreateProcess
 
     application_name: Py_UNICODE(accept={str, NoneType})
-    command_line: Py_UNICODE(accept={str, NoneType})
+    command_line: unicode
     proc_attrs: object
         Ignored internally, can be None.
     thread_attrs: object
@@ -995,12 +995,12 @@ process ID, and thread ID.
 
 static PyObject *
 _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
-                           Py_UNICODE *command_line, PyObject *proc_attrs,
+                           PyObject *command_line, PyObject *proc_attrs,
                            PyObject *thread_attrs, BOOL inherit_handles,
                            DWORD creation_flags, PyObject *env_mapping,
                            Py_UNICODE *current_directory,
                            PyObject *startup_info)
-/*[clinic end generated code: output=4652a33aff4b0ae1 input=4a43b05038d639bb]*/
+/*[clinic end generated code: output=2ecaab46a05e3123 input=14cbeab1bed18c3a]*/
 {
     PyObject *ret = NULL;
     BOOL result;
@@ -1008,9 +1008,7 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
     STARTUPINFOEXW si;
     PyObject *environment = NULL;
     wchar_t *wenvironment;
-    Py_ssize_t command_line_len;
     wchar_t *command_line_copy = NULL;
-    wchar_t *command_line_to_use = command_line;
     AttributeList attribute_list = {0};
 
     ZeroMemory(&si, sizeof(si));
@@ -1046,27 +1044,14 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
 
     si.lpAttributeList = attribute_list.attribute_list;
 
-    // copy command line since CreateProcessW can change the content of the buffer
-    // The maximum length of this string is 32,768 characters,
-    // including the Unicode terminating null character
-    // if command line that was passed exceeded this range
-    // CreateProcessW will report an error so there is no point to clone the buffer
-    // and we can use original string. Otherwise copy the string.
-    command_line_len = wcslen(command_line);
-    if (command_line_len < 32768) {
-        command_line_copy = PyMem_New(wchar_t, command_line_len + 1);
-        if (command_line_copy == NULL) {
-            PyErr_NoMemory();
-            goto cleanup;
-        }
-        wcsncpy(command_line_copy, command_line, command_line_len);
-        command_line_copy[command_line_len] = L'\0';
-        command_line_to_use = command_line_copy;
+    command_line_copy = PyUnicode_AsWideCharString(command_line, NULL);
+    if (command_line_copy == NULL) {
+        goto cleanup;
     }
 
     Py_BEGIN_ALLOW_THREADS
     result = CreateProcessW(application_name,
-                           command_line_to_use,
+                           command_line_copy,
                            NULL,
                            NULL,
                            inherit_handles,
