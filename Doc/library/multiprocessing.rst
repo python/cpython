@@ -2141,6 +2141,12 @@ with the :class:`Pool` class.
       Callbacks should complete immediately since otherwise the thread which
       handles the results will get blocked.
 
+      .. warning::
+
+         If function *function* send too many data to the PIPE_BUF in os.pipe()
+         (>= 512 bytes in POSIX, >= 4096 bytes in Linux), it may block the os.pipe()
+         function then cause deadlock.
+
    .. method:: map(func, iterable[, chunksize])
 
       A parallel equivalent of the :func:`map` built-in function (it supports only
