@@ -261,6 +261,10 @@ class Pool(object):
         self._quick_put = self._inqueue._writer.send
         self._quick_get = self._outqueue._reader.recv
 
+    def _check_running(self):
+        if self._state != RUN:
+            raise ValueError("Pool not running")
+
     def apply(self, func, args=(), kwds={}):
         '''
         Equivalent of `func(*args, **kwds)`.
@@ -306,8 +310,7 @@ class Pool(object):
         '''
         Equivalent of `map()` -- can be MUCH slower than `Pool.map()`.
         '''
-        if self._state != RUN:
-            raise ValueError("Pool not running")
+        self._check_running()
         if chunksize == 1:
             result = IMapIterator(self._cache)
             self._taskqueue.put(
@@ -336,8 +339,7 @@ class Pool(object):
         '''
         Like `imap()` method but ordering of results is arbitrary.
         '''
-        if self._state != RUN:
-            raise ValueError("Pool not running")
+        self._check_running()
         if chunksize == 1:
             result = IMapUnorderedIterator(self._cache)
             self._taskqueue.put(
@@ -366,8 +368,7 @@ class Pool(object):
         '''
         Asynchronous version of `apply()` method.
         '''
-        if self._state != RUN:
-            raise ValueError("Pool not running")
+        self._check_running()
         result = ApplyResult(self._cache, callback, error_callback)
         self._taskqueue.put(([(result._job, 0, func, args, kwds)], None))
         return result
@@ -385,8 +386,7 @@ class Pool(object):
         '''
         Helper function to implement map, starmap and their async counterparts.
         '''
-        if self._state != RUN:
-            raise ValueError("Pool not running")
+        self._check_running()
         if not hasattr(iterable, '__len__'):
             iterable = list(iterable)
 
@@ -625,6 +625,7 @@ class Pool(object):
                     p.join()
 
     def __enter__(self):
+        self._check_running()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
