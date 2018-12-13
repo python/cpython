@@ -130,25 +130,29 @@ Sequence Protocol
 
 .. c:function:: PyObject* PySequence_Fast(PyObject *o, const char *m)
 
-   Return the sequence or iterable *o* as a list, unless it is already a tuple or list, in
-   which case *o* is returned.  Use :c:func:`PySequence_Fast_GET_ITEM` to access
-   the members of the result.  Returns *NULL* on failure.  If the object is not
-   a sequence or iterable, raises :exc:`TypeError` with *m* as the message text.
+   Return the sequence or iterable *o* as an object usable by the other
+   ``PySequence_Fast*`` family of functions. On CPython, if *o* is already a
+   sequence or list, it will be returned, but this is an implementation detail.
+   Returns *NULL* on failure.  If the object is not a sequence or iterable,
+   raises :exc:`TypeError` with *m* as the message text.
+
+   This family of functions is labelled *Fast* since it can assume *o* is a
+   :c:type:`PyTupleObject` or a :c:type:`PyListObject`, and accesses the type's
+   data fields directly.
 
 
 .. c:function:: Py_ssize_t PySequence_Fast_GET_SIZE(PyObject *o)
 
    Returns the length of *o*, assuming that *o* was returned by
-   :c:func:`PySequence_Fast` and that *o* is not *NULL*.  The size can also be
-   gotten by calling :c:func:`PySequence_Size` on *o*, but
-   :c:func:`PySequence_Fast_GET_SIZE` is faster because it can assume *o* is a list
-   or tuple.
+   :c:func:`PySequence_Fast` and that *o* is not *NULL*.  Equivalent to
+   :c:func:`PySequence_Size` but faster.
 
 
 .. c:function:: PyObject* PySequence_Fast_GET_ITEM(PyObject *o, Py_ssize_t i)
 
    Return the *i*\ th element of *o*, assuming that *o* was returned by
    :c:func:`PySequence_Fast`, *o* is not *NULL*, and that *i* is within bounds.
+   Equivalent to :c:func:`PySequence_GetItem` but faster.
 
 
 .. c:function:: PyObject** PySequence_Fast_ITEMS(PyObject *o)
@@ -163,7 +167,7 @@ Sequence Protocol
 
 .. c:function:: PyObject* PySequence_ITEM(PyObject *o, Py_ssize_t i)
 
-   Return the *i*\ th element of *o* or *NULL* on failure. Macro form of
+   Return the *i*\ th element of *o* or *NULL* on failure. Faster form of
    :c:func:`PySequence_GetItem` but without checking that
    :c:func:`PySequence_Check` on *o* is true and without adjustment for negative
    indices.
