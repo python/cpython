@@ -966,6 +966,11 @@ Unix signals
 
    Set *callback* as the handler for the *signum* signal.
 
+   The callback will be invoked in the thread that runs *loop*, along with
+   other queued callbacks and runnable coroutines of that event loop. Unlike
+   signal handlers registered using :func:`signal.signal`, a callback
+   registered with this function is allowed to interact with the event loop.
+
    Raise :exc:`ValueError` if the signal number is invalid or uncatchable.
    Raise :exc:`RuntimeError` if there is a problem setting up the handler.
 
