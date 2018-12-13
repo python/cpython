@@ -214,7 +214,7 @@ class Pool(object):
         self._terminate = util.Finalize(
             self, self._terminate_pool,
             args=(self._taskqueue, self._inqueue, self._outqueue, self._pool,
-                  self._worker_handler, self._task_handler,
+                  self._worker_handler, self._worker_state_event, self._task_handler,
                   self._result_handler, self._cache),
             exitpriority=15
             )
@@ -597,11 +597,13 @@ class Pool(object):
 
     @classmethod
     def _terminate_pool(cls, taskqueue, inqueue, outqueue, pool,
-                        worker_handler, task_handler, result_handler, cache):
+                        worker_handler, worker_state_event, task_handler,
+                        result_handler, cache):
         # this is guaranteed to only be called once
         util.debug('finalizing pool')
 
         worker_handler._state = TERMINATE
+        worker_state_event.set()
         task_handler._state = TERMINATE
 
         util.debug('helping task handler/workers to finish')
