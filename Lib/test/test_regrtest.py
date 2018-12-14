@@ -1009,6 +1009,7 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("-w", testname, exitcode=2)
         self.check_executed_tests(output, [testname],
                                   failed=testname, rerun=testname)
+
     def test_no_tests_ran(self):
         code = textwrap.dedent("""
             import unittest
@@ -1021,6 +1022,19 @@ class ArgsTestCase(BaseTestCase):
 
         output = self.run_tests(testname, "-m", "nosuchtest", exitcode=0)
         self.check_executed_tests(output, [testname], no_test_ran=testname)
+
+    def test_no_tests_ran_skip(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_skipped(self):
+                    self.skipTest("because")
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests(testname, exitcode=0)
+        self.check_executed_tests(output, [testname])
 
     def test_no_tests_ran_multiple_tests_nonexistent(self):
         code = textwrap.dedent("""
