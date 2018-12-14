@@ -286,6 +286,8 @@ PyDoc_STRVAR(_winapi_CreateProcess__doc__,
 "\n"
 "Create a new process and its primary thread.\n"
 "\n"
+"  command_line\n"
+"    Can be str or None\n"
 "  proc_attrs\n"
 "    Ignored internally, can be None.\n"
 "  thread_attrs\n"
@@ -319,7 +321,7 @@ _winapi_CreateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_UNICODE *current_directory;
     PyObject *startup_info;
 
-    if (!_PyArg_ParseStack(args, nargs, "ZUOOikOZO:CreateProcess",
+    if (!_PyArg_ParseStack(args, nargs, "ZOOOikOZO:CreateProcess",
         &application_name, &command_line, &proc_attrs, &thread_attrs, &inherit_handles, &creation_flags, &env_mapping, &current_directory, &startup_info)) {
         goto exit;
     }
@@ -941,4 +943,4 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1d55dc299b855905 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1568ad4bd625f2af input=a9049054013a1b77]*/

@@ -975,7 +975,8 @@ cleanup:
 _winapi.CreateProcess
 
     application_name: Py_UNICODE(accept={str, NoneType})
-    command_line: unicode
+    command_line: object
+        Can be str or None
     proc_attrs: object
         Ignored internally, can be None.
     thread_attrs: object
@@ -1000,7 +1001,7 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
                            DWORD creation_flags, PyObject *env_mapping,
                            Py_UNICODE *current_directory,
                            PyObject *startup_info)
-/*[clinic end generated code: output=2ecaab46a05e3123 input=14cbeab1bed18c3a]*/
+/*[clinic end generated code: output=2ecaab46a05e3123 input=42ac293eaea03fc4]*/
 {
     PyObject *ret = NULL;
     BOOL result;
@@ -1043,11 +1044,19 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
         goto cleanup;
 
     si.lpAttributeList = attribute_list.attribute_list;
-
-    command_line_copy = PyUnicode_AsWideCharString(command_line, NULL);
-    if (command_line_copy == NULL) {
+    if (PyUnicode_Check(command_line)) {
+        command_line_copy = PyUnicode_AsWideCharString(command_line, NULL);
+        if (command_line_copy == NULL) {
+            goto cleanup;
+        }
+    }
+    else if (command_line != Py_None) {
+        PyErr_Format(PyExc_TypeError, 
+                     "CreateProcess() argument 2 must be str or None, not %s", 
+                     Py_TYPE(command_line)->tp_name);
         goto cleanup;
     }
+
 
     Py_BEGIN_ALLOW_THREADS
     result = CreateProcessW(application_name,
