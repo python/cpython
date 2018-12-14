@@ -1627,8 +1627,8 @@ class' :attr:`~object.__dict__`.
 
 .. method:: object.__set__(self, instance, value)
 
-   Called to set the attribute on an instance *instance* of the owner class to a
-   new value, *value*.
+   Called to set the attribute on an instance, *instance* of the owner class
+   to a new value, *value*.
 
 
 .. method:: object.__delete__(self, instance)
