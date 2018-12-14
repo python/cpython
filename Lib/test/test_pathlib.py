@@ -345,6 +345,8 @@ class _BasePurePathTest(object):
         self.assertTrue(P('/a/b.py').match('/a/*.py'))
         self.assertFalse(P('/ab.py').match('/a/*.py'))
         self.assertFalse(P('/a/b/c.py').match('/a/*.py'))
+        # Multi-part glob-style pattern
+        self.assertFalse(P('/a/b/c.py').match('/**/*.py'))
 
     def test_ordering_common(self):
         # Ordering is tuple-alike
