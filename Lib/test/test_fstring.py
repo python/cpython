@@ -368,9 +368,26 @@ non-important content
                              ])
 
     def test_mismatched_parens(self):
-        self.assertAllRaise(SyntaxError, 'f-string: mismatched',
+        self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\}' "
+                            r"does not match opening parenthesis '\('",
                             ["f'{((}'",
                              ])
+        self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\)' "
+                            r"does not match opening parenthesis '\['",
+                            [r"f'{a[4)}'",
+                            ])
+        self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\]' "
+                            r"does not match opening parenthesis '\('",
+                            [r"f'{a(4]}'",
+                            ])
+        self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\}' "
+                            r"does not match opening parenthesis '\['",
+                            [r"f'{a[4}'",
+                            ])
+        self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\}' "
+                            r"does not match opening parenthesis '\('",
+                            [r"f'{a(4}'",
+                            ])
 
     def test_double_braces(self):
         self.assertEqual(f'{{', '{')
@@ -448,7 +465,9 @@ non-important content
                             ["f'{1#}'",   # error because the expression becomes "(1#)"
                              "f'{3(#)}'",
                              "f'{#}'",
-                             "f'{)#}'",   # When wrapped in parens, this becomes
+                             ])
+        self.assertAllRaise(SyntaxError, r"f-string: unmatched '\)'",
+                            ["f'{)#}'",   # When wrapped in parens, this becomes
                                           #  '()#)'.  Make sure that doesn't compile.
                              ])
 
@@ -577,7 +596,7 @@ non-important content
                              "f'{,}'",  # this is (,), which is an error
                              ])
 
-        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
+        self.assertAllRaise(SyntaxError, r"f-string: unmatched '\)'",
                             ["f'{3)+(4}'",
                              ])
 
@@ -1002,12 +1021,6 @@ non-important content
         self.assertEqual(f'{d[a]}', 'integer')
         self.assertEqual('{d[a]}'.format(d=d), 'string')
         self.assertEqual('{d[0]}'.format(d=d), 'integer')
-
-    def test_invalid_expressions(self):
-        self.assertAllRaise(SyntaxError, 'invalid syntax',
-                            [r"f'{a[4)}'",
-                             r"f'{a(4]}'",
-                            ])
 
     def test_errors(self):
         # see issue 26287
