@@ -436,6 +436,11 @@ class _BasePurePathTest(object):
         self.assertEqual(par[0], P('a/b'))
         self.assertEqual(par[1], P('a'))
         self.assertEqual(par[2], P('.'))
+        self.assertEqual(par[0:1], [P('a/b')])
+        self.assertEqual(par[:2], [P('a/b'), P('a')])
+        self.assertEqual(par[:-1], [P('a/b'), P('a')])
+        self.assertEqual(par[1:], [P('a'), P('.')])
+        self.assertEqual(par[::2], [P('a/b'), P('.')])
         self.assertEqual(list(par), [P('a/b'), P('a'), P('.')])
         with self.assertRaises(IndexError):
             par[-1]
@@ -450,6 +455,11 @@ class _BasePurePathTest(object):
         self.assertEqual(par[0], P('/a/b'))
         self.assertEqual(par[1], P('/a'))
         self.assertEqual(par[2], P('/'))
+        self.assertEqual(par[0:1], [P('/a/b')])
+        self.assertEqual(par[:2], [P('/a/b'), P('/a')])
+        self.assertEqual(par[:-1], [P('/a/b'), P('/a')])
+        self.assertEqual(par[1:], [P('/a'), P('/')])
+        self.assertEqual(par[::2], [P('/a/b'), P('/')])
         self.assertEqual(list(par), [P('/a/b'), P('/a'), P('/')])
         with self.assertRaises(IndexError):
             par[3]
@@ -850,6 +860,11 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(len(par), 2)
         self.assertEqual(par[0], P('z:a'))
         self.assertEqual(par[1], P('z:'))
+        self.assertEqual(par[0:1], [P('z:a')])
+        self.assertEqual(par[:-1], [P('z:a')])
+        self.assertEqual(par[:2], [P('z:a'), P('z:')])
+        self.assertEqual(par[1:], [P('z:')])
+        self.assertEqual(par[::2], [P('z:a')])
         self.assertEqual(list(par), [P('z:a'), P('z:')])
         with self.assertRaises(IndexError):
             par[2]
@@ -858,6 +873,11 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(len(par), 2)
         self.assertEqual(par[0], P('z:/a'))
         self.assertEqual(par[1], P('z:/'))
+        self.assertEqual(par[0:1], [P('z:/a')])
+        self.assertEqual(par[0:-1], [P('z:/a')])
+        self.assertEqual(par[:2], [P('z:/a'), P('z:/')])
+        self.assertEqual(par[1:], [P('z:/')])
+        self.assertEqual(par[::2], [P('z:/a')])
         self.assertEqual(list(par), [P('z:/a'), P('z:/')])
         with self.assertRaises(IndexError):
             par[2]
@@ -866,6 +886,11 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(len(par), 2)
         self.assertEqual(par[0], P('//a/b/c'))
         self.assertEqual(par[1], P('//a/b'))
+        self.assertEqual(par[0:1], [P('//a/b/c')])
+        self.assertEqual(par[0:-1], [P('//a/b/c')])
+        self.assertEqual(par[:2], [P('//a/b/c'), P('//a/b')])
+        self.assertEqual(par[1:], [P('//a/b')])
+        self.assertEqual(par[::2], [P('//a/b/c')])
         self.assertEqual(list(par), [P('//a/b/c'), P('//a/b')])
         with self.assertRaises(IndexError):
             par[2]
