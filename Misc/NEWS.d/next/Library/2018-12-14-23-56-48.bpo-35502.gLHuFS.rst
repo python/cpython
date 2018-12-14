@@ -1,0 +1,2 @@
+Fixed reference leaks in :class:`xml.etree.ElementTree.TreeBuilder` in case
+of unfinished building of the tree.
