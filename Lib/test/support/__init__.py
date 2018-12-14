@@ -1543,7 +1543,7 @@ def _run_suite(suite):
         runner = BasicTestRunner()
 
     result = runner.run(suite)
-    if not result.testsRun:
+    if not result.testsRun and not result.skipped:
         raise TestDidNotRun
     if not result.wasSuccessful():
         if len(result.errors) == 1 and not result.failures:
