@@ -683,7 +683,7 @@ always available.
 .. function:: get_coroutine_origin_tracking_depth()
 
    Get the current coroutine origin tracking depth, as set by
-   func:`set_coroutine_origin_tracking_depth`.
+   :func:`set_coroutine_origin_tracking_depth`.
 
    .. versionadded:: 3.7
 
