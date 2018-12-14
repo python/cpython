@@ -651,12 +651,8 @@ def architecture(executable=sys.executable, bits='', linkage=''):
     # else is given as default.
     if not bits:
         import struct
-        try:
-            size = struct.calcsize('P')
-        except struct.error:
-            # Older installations can only query longs
-            size = struct.calcsize('l')
-        bits = str(size*8) + 'bit'
+        size = struct.calcsize('P')
+        bits = str(size * 8) + 'bit'
 
     # Get data from the 'file' system command
     if executable:
