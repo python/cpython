@@ -2824,7 +2824,7 @@ class unicode_converter(CConverter):
 @add_legacy_c_converter('Z', accept={str, NoneType})
 @add_legacy_c_converter('Z#', accept={str, NoneType}, zeroes=True)
 class Py_UNICODE_converter(CConverter):
-    type = 'Py_UNICODE *'
+    type = 'const Py_UNICODE *'
     default_type = (str, Null, NoneType)
     format_unit = 'u'
 
