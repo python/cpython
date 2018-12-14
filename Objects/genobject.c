@@ -1598,6 +1598,12 @@ static PyMethodDef async_gen_asend_methods[] = {
 };
 
 
+static PyMemberDef async_gen_asend_memberlist[] = {
+    {"ags_gen", T_OBJECT, offsetof(PyAsyncGenASend, ags_gen), READONLY},
+    {NULL}      /* Sentinel */
+};
+
+
 static PyAsyncMethods async_gen_asend_as_async = {
     PyObject_SelfIter,                          /* am_await */
     0,                                          /* am_aiter */
@@ -1635,7 +1641,7 @@ PyTypeObject _PyAsyncGenASend_Type = {
     PyObject_SelfIter,                          /* tp_iter */
     (iternextfunc)async_gen_asend_iternext,     /* tp_iternext */
     async_gen_asend_methods,                    /* tp_methods */
-    0,                                          /* tp_members */
+    async_gen_asend_memberlist,                 /* tp_members */
     0,                                          /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
@@ -1951,6 +1957,12 @@ static PyMethodDef async_gen_athrow_methods[] = {
 };
 
 
+static PyMemberDef async_gen_athrow_memberlist[] = {
+    {"agt_gen", T_OBJECT, offsetof(PyAsyncGenAThrow, agt_gen), READONLY},
+    {NULL}      /* Sentinel */
+};
+
+
 static PyAsyncMethods async_gen_athrow_as_async = {
     PyObject_SelfIter,                          /* am_await */
     0,                                          /* am_aiter */
@@ -1988,7 +2000,7 @@ PyTypeObject _PyAsyncGenAThrow_Type = {
     PyObject_SelfIter,                          /* tp_iter */
     (iternextfunc)async_gen_athrow_iternext,    /* tp_iternext */
     async_gen_athrow_methods,                   /* tp_methods */
-    0,                                          /* tp_members */
+    async_gen_athrow_memberlist,                /* tp_members */
     0,                                          /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */

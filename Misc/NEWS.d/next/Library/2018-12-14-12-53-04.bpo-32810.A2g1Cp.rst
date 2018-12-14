@@ -1,0 +1,2 @@
+Allow accessing the ``ags_gen`` and ``agt_gen`` attributes of asynchronous
+generators.

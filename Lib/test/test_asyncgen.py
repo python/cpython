@@ -374,6 +374,15 @@ class AsyncGenTest(unittest.TestCase):
 
         self.assertTrue(inspect.isawaitable(g.aclose()))
 
+    def test_async_gen_ags_gen_agt_gen(self):
+        async def agen():
+            yield 1
+        g = agen()
+        asend = g.asend(1)
+        self.assertIsInstance(asend.ags_gen, types.AsyncGeneratorType)
+        athrow = g.athrow()
+        self.assertIsInstance(athrow.agt_gen, types.AsyncGeneratorType)
+
 
 class AsyncGenAsyncioTest(unittest.TestCase):
 
