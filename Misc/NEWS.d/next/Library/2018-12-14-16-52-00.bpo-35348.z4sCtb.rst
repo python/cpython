@@ -1,0 +1,2 @@
+Make parsing the output of the ``file`` command in
+:func:`platform.architecture`: more reliable.

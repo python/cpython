@@ -610,11 +610,13 @@ def _syscmd_file(target, default=''):
     target = _follow_symlinks(target)
     try:
         output = subprocess.check_output(['file', target],
-                                         stderr=subprocess.DEVNULL,
-                                         encoding='latin-1')
+                                         stderr=subprocess.DEVNULL)
     except (OSError, subprocess.CalledProcessError):
         return default
-    return (output or default)
+    prefix = os.fsencode(target) + b': '
+    if output.startswith(prefix):
+        output = output[len(prefix):]
+    return (os.fsdecode(output) or default)
 
 ### Information about the used architecture
 
@@ -676,7 +678,7 @@ def architecture(executable=sys.executable, bits='', linkage=''):
                 linkage = l
         return bits, linkage
 
-    if 'executable' not in fileout:
+    if 'executable' not in fileout and 'shared object' not in fileout:
         # Format not supported
         return bits, linkage
 
