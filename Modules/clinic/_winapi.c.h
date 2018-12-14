@@ -300,25 +300,26 @@ PyDoc_STRVAR(_winapi_CreateProcess__doc__,
     {"CreateProcess", (PyCFunction)(void(*)(void))_winapi_CreateProcess, METH_FASTCALL, _winapi_CreateProcess__doc__},
 
 static PyObject *
-_winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
+_winapi_CreateProcess_impl(PyObject *module,
+                           const Py_UNICODE *application_name,
                            PyObject *command_line, PyObject *proc_attrs,
                            PyObject *thread_attrs, BOOL inherit_handles,
                            DWORD creation_flags, PyObject *env_mapping,
-                           Py_UNICODE *current_directory,
+                           const Py_UNICODE *current_directory,
                            PyObject *startup_info);
 
 static PyObject *
 _winapi_CreateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_UNICODE *application_name;
+    const Py_UNICODE *application_name;
     PyObject *command_line;
     PyObject *proc_attrs;
     PyObject *thread_attrs;
     BOOL inherit_handles;
     DWORD creation_flags;
     PyObject *env_mapping;
-    Py_UNICODE *current_directory;
+    const Py_UNICODE *current_directory;
     PyObject *startup_info;
 
     if (!_PyArg_ParseStack(args, nargs, "ZOOOikOZO:CreateProcess",
@@ -943,4 +944,4 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1568ad4bd625f2af input=a9049054013a1b77]*/
+/*[clinic end generated code: output=145d0d362167c1b1 input=a9049054013a1b77]*/
