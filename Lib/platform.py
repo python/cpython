@@ -610,7 +610,8 @@ def _syscmd_file(target, default=''):
     target = _follow_symlinks(target)
     try:
         output = subprocess.check_output(['file', target],
-                                         stderr=subprocess.DEVNULL)
+                                         stderr=subprocess.DEVNULL,
+                                         env={'LC_ALL': 'C'})
     except (OSError, subprocess.CalledProcessError):
         return default
     prefix = os.fsencode(target) + b': '
