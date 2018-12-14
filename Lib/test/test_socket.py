@@ -1800,16 +1800,17 @@ class GeneralModuleTests(unittest.TestCase):
             socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=-42)
 
     def test_socket_fileno_requires_valid_fd(self):
+        WSAENOTSOCK = 10038
         with self.assertRaises(OSError) as cm:
             socket.socket(fileno=support.make_bad_fd())
-        self.assertEqual(cm.exception.errno, errno.EBADF)
+        self.assertIn(cm.exception.errno, (errno.EBADF, WSAENOTSOCK))
 
         with self.assertRaises(OSError) as cm:
             socket.socket(
                 socket.AF_INET,
                 socket.SOCK_STREAM,
                 fileno=support.make_bad_fd())
-        self.assertEqual(cm.exception.errno, errno.EBADF)
+        self.assertIn(cm.exception.errno, (errno.EBADF, WSAENOTSOCK))
 
     def test_socket_fileno_requires_socket_fd(self):
         with tempfile.NamedTemporaryFile() as afile:
