@@ -30,9 +30,9 @@ from . import get_context, TimeoutError
 # Constants representing the state of a pool
 #
 
-RUN = 0
-CLOSE = 1
-TERMINATE = 2
+RUN = "RUN"
+CLOSE = "CLOSE"
+TERMINATE = "TERMINATE"
 
 #
 # Miscellaneous
@@ -216,6 +216,12 @@ class Pool(object):
                   self._result_handler, self._cache),
             exitpriority=15
             )
+
+    def __repr__(self):
+        cls = self.__class__
+        return (f'<{cls.__module__}.{cls.__qualname__} '
+                f'state={self._state} '
+                f'pool_size={len(self._pool)}>')
 
     def _join_exited_workers(self):
         """Cleanup after any worker processes which have exited due to reaching
@@ -432,7 +438,7 @@ class Pool(object):
             try:
                 # iterating taskseq cannot fail
                 for task in taskseq:
-                    if thread._state:
+                    if thread._state != RUN:
                         util.debug('task handler found thread._state != RUN')
                         break
                     try:
@@ -480,7 +486,7 @@ class Pool(object):
                 util.debug('result handler got EOFError/OSError -- exiting')
                 return
 
-            if thread._state:
+            if thread._state != "RUN":
                 assert thread._state == TERMINATE, "Thread not in TERMINATE"
                 util.debug('result handler found thread._state=TERMINATE')
                 break
