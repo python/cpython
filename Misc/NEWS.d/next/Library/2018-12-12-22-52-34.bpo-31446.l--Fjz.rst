@@ -1,0 +1,2 @@
+Copy command line that was passed to CreateProcessW since this function can
+change the content of the input buffer.
