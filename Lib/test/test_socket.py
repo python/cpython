@@ -1783,42 +1783,45 @@ class GeneralModuleTests(unittest.TestCase):
             self._test_socket_fileno(s, socket.AF_UNIX, socket.SOCK_STREAM)
 
     def test_socket_fileno_rejects_float(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "integer argument expected"):
             socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=42.5)
 
     def test_socket_fileno_rejects_other_types(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "integer is required"):
             socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno="foo")
 
     def test_socket_fileno_rejects_invalid_socket(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, "negative file descriptor"):
             socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=-1)
 
     @unittest.skipIf(os.name == "nt", "Windows disallows -1 only")
     def test_socket_fileno_rejects_negative(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, "negative file descriptor"):
             socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=-42)
 
     def test_socket_fileno_requires_valid_fd(self):
-        with self.assertRaises(OSError):
+        with self.assertRaises(OSError) as cm:
             socket.socket(fileno=support.make_bad_fd())
+        self.assertEqual(cm.exception.errno, errno.EBADF)
 
-        with self.assertRaises(OSError):
+        with self.assertRaises(OSError) as cm:
             socket.socket(
                 socket.AF_INET,
                 socket.SOCK_STREAM,
                 fileno=support.make_bad_fd())
+        self.assertEqual(cm.exception.errno, errno.EBADF)
 
     def test_socket_fileno_requires_socket_fd(self):
         with tempfile.NamedTemporaryFile() as afile:
             with self.assertRaises(OSError):
                 socket.socket(fileno=afile.fileno())
 
-            with self.assertRaises(OSError):
+            with self.assertRaises(OSError) as cm:
                 socket.socket(
                     socket.AF_INET,
                     socket.SOCK_STREAM,
                     fileno=afile.fileno())
+            self.assertEqual(cm.exception.errno, errno.ENOTSOCK)
 
 
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')
