@@ -378,6 +378,9 @@ API and Feature Removals
 
 The following features and APIs have been removed from Python 3.8:
 
+* The :mod:`macpath` module, deprecated in Python 3.7, has been removed.
+  (Contributed by Victor Stinner in :issue:`35471`.)
+
 * The function :func:`platform.popen` has been removed, it was deprecated since
   Python 3.3: use :func:`os.popen` instead.
 
