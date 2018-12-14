@@ -975,7 +975,8 @@ cleanup:
 _winapi.CreateProcess
 
     application_name: Py_UNICODE(accept={str, NoneType})
-    command_line: Py_UNICODE(accept={str, NoneType})
+    command_line: object
+        Can be str or None
     proc_attrs: object
         Ignored internally, can be None.
     thread_attrs: object
@@ -995,12 +996,12 @@ process ID, and thread ID.
 
 static PyObject *
 _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
-                           Py_UNICODE *command_line, PyObject *proc_attrs,
+                           PyObject *command_line, PyObject *proc_attrs,
                            PyObject *thread_attrs, BOOL inherit_handles,
                            DWORD creation_flags, PyObject *env_mapping,
                            Py_UNICODE *current_directory,
                            PyObject *startup_info)
-/*[clinic end generated code: output=4652a33aff4b0ae1 input=4a43b05038d639bb]*/
+/*[clinic end generated code: output=2ecaab46a05e3123 input=42ac293eaea03fc4]*/
 {
     PyObject *ret = NULL;
     BOOL result;
@@ -1008,6 +1009,7 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
     STARTUPINFOEXW si;
     PyObject *environment = NULL;
     wchar_t *wenvironment;
+    wchar_t *command_line_copy = NULL;
     AttributeList attribute_list = {0};
 
     ZeroMemory(&si, sizeof(si));
@@ -1042,10 +1044,23 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
         goto cleanup;
 
     si.lpAttributeList = attribute_list.attribute_list;
+    if (PyUnicode_Check(command_line)) {
+        command_line_copy = PyUnicode_AsWideCharString(command_line, NULL);
+        if (command_line_copy == NULL) {
+            goto cleanup;
+        }
+    }
+    else if (command_line != Py_None) {
+        PyErr_Format(PyExc_TypeError, 
+                     "CreateProcess() argument 2 must be str or None, not %s", 
+                     Py_TYPE(command_line)->tp_name);
+        goto cleanup;
+    }
+
 
     Py_BEGIN_ALLOW_THREADS
     result = CreateProcessW(application_name,
-                           command_line,
+                           command_line_copy,
                            NULL,
                            NULL,
                            inherit_handles,
@@ -1069,6 +1084,7 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
                         pi.dwThreadId);
 
 cleanup:
+    PyMem_Free(command_line_copy);
     Py_XDECREF(environment);
     freeattributelist(&attribute_list);
 
