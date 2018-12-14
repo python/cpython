@@ -376,14 +376,14 @@ PyDoc_STRVAR(array_array_fromunicode__doc__,
     {"fromunicode", (PyCFunction)array_array_fromunicode, METH_O, array_array_fromunicode__doc__},
 
 static PyObject *
-array_array_fromunicode_impl(arrayobject *self, Py_UNICODE *ustr,
+array_array_fromunicode_impl(arrayobject *self, const Py_UNICODE *ustr,
                              Py_ssize_clean_t ustr_length);
 
 static PyObject *
 array_array_fromunicode(arrayobject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_UNICODE *ustr;
+    const Py_UNICODE *ustr;
     Py_ssize_clean_t ustr_length;
 
     if (!PyArg_Parse(arg, "u#:fromunicode", &ustr, &ustr_length)) {
@@ -505,4 +505,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=3a4c6f3deb597bfd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3d2bb1aa81541cbd input=a9049054013a1b77]*/
