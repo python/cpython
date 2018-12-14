@@ -1214,7 +1214,8 @@ def iterparse(source, events=None, parser=None):
     # Use the internal, undocumented _parser argument for now; When the
     # parser argument of iterparse is removed, this can be killed.
     pullparser = XMLPullParser(events=events, _parser=parser)
-    def iterator():
+
+    def iterator(pullparser, source, close_source):
         try:
             while True:
                 yield from pullparser.read_events()
@@ -1223,23 +1224,34 @@ def iterparse(source, events=None, parser=None):
                 if not data:
                     break
                 pullparser.feed(data)
+
             root = pullparser._close_and_return_root()
             yield from pullparser.read_events()
-            it.root = root
+            return root
         finally:
             if close_source:
                 source.close()
-
-    class IterParseIterator(collections.abc.Iterator):
-        __next__ = iterator().__next__
-    it = IterParseIterator()
-    it.root = None
-    del iterator, IterParseIterator
+            # explicitly break reference cycles
+            pullparser = None
 
     close_source = False
     if not hasattr(source, "read"):
         source = open(source, "rb")
         close_source = True
+
+    class IterParseIterator(collections.abc.Iterator):
+        def __init__(self, gen):
+            self._gen = gen
+            self.root = None
+
+        def __next__(self):
+            try:
+                return self._gen.__next__()
+            except StopIteration as exc:
+                self.root = exc.value
+
+    it = IterParseIterator(iterator(pullparser, source, close_source))
+    del iterator, IterParseIterator, pullparser, source
 
     return it
 
@@ -1267,6 +1279,9 @@ class XMLPullParser:
                 self._parser.feed(data)
             except SyntaxError as exc:
                 self._events_queue.append(exc)
+                # explicitly break reference cycles
+                self = None
+                exc = None
 
     def _close_and_return_root(self):
         # iterparse needs this to set its root attribute properly :(
