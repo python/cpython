@@ -415,7 +415,7 @@ Changed Syntax
   the restrictions on ``None`` already.)
 
 * Change from :keyword:`except` *exc*, *var* to
-  :keyword:`except` *exc* :keyword:`as` *var*.  See :pep:`3110`.
+  :keyword:`except` *exc* :keyword:`as <try_as>` *var*.  See :pep:`3110`.
 
 * :pep:`3115`: New Metaclass Syntax.  Instead of::
 
@@ -507,9 +507,9 @@ consulted for longer descriptions.
 * :ref:`pep-3105`.  This is now a standard feature and no longer needs
   to be imported from :mod:`__future__`.  More details were given above.
 
-* :ref:`pep-3110`.  The :keyword:`except` *exc* :keyword:`as` *var*
+* :ref:`pep-3110`.  The :keyword:`except` *exc* :keyword:`as <try_as>` *var*
   syntax is now standard and :keyword:`except` *exc*, *var* is no
-  longer supported.  (Of course, the :keyword:`as` *var* part is still
+  longer supported.  (Of course, the :keyword:`as <try_as>` *var* part is still
   optional.)
 
 * :ref:`pep-3112`.  The ``b"..."`` string literal notation (and its

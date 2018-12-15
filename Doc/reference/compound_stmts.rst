@@ -223,6 +223,7 @@ returns the list ``[0, 1, 2]``.
 .. _try:
 .. _except:
 .. _finally:
+.. _try_as:
 
 The :keyword:`try` statement
 ============================
@@ -270,7 +271,7 @@ as if the entire :keyword:`try` statement raised the exception).
 .. index:: single: as; except clause
 
 When a matching except clause is found, the exception is assigned to the target
-specified after the :keyword:`as` keyword in that except clause, if present, and
+specified after the :keyword:`as <try_as>` keyword in that except clause, if present, and
 the except clause's suite is executed.  All except clauses must have an
 executable block.  When the end of this block is reached, execution continues
 normally after the entire try statement.  (This means that if two nested

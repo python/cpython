@@ -707,6 +707,7 @@ really starting the next loop cycle.
 
 .. _import:
 .. _from:
+.. _import_as:
 
 The :keyword:`import` statement
 ===============================
@@ -755,8 +756,8 @@ available in the local namespace in one of three ways:
 
 .. index:: single: as; import statement
 
-* If the module name is followed by :keyword:`as`, then the name
-  following :keyword:`as` is bound directly to the imported module.
+* If the module name is followed by :keyword:`as <import_as>`, then the name
+  following :keyword:`as <import_as>` is bound directly to the imported module.
 * If no other name is specified, and the module being imported is a top
   level module, the module's name is bound in the local namespace as a
   reference to the imported module
@@ -781,7 +782,7 @@ The :keyword:`from` form uses a slightly more complex process:
       check the imported module again for that attribute
    #. if the attribute is not found, :exc:`ImportError` is raised.
    #. otherwise, a reference to that value is stored in the local namespace,
-      using the name in the :keyword:`as` clause if it is present,
+      using the name in the :keyword:`as <import_as>` clause if it is present,
       otherwise using the attribute name
 
 Examples::

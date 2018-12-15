@@ -1,0 +1,1 @@
+Fix linking of :keyword:`as` for :keyword:`import` and :keyword:`try`.
