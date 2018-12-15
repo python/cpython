@@ -74,8 +74,8 @@ one of their operands.)
 
 .. _boolean:
 
-Boolean Operations --- :keyword:`and`, :keyword:`or`, :keyword:`not`
-====================================================================
+Boolean Operations --- :keyword:`!and`, :keyword:`!or`, :keyword:`!not`
+=======================================================================
 
 .. index:: pair: Boolean; operations
 
@@ -4460,7 +4460,7 @@ before the statement body is executed and exited when the statement ends:
 
    Enter the runtime context and return either this object or another object
    related to the runtime context. The value returned by this method is bound to
-   the identifier in the :keyword:`as` clause of :keyword:`with` statements using
+   the identifier in the :keyword:`!as` clause of :keyword:`with` statements using
    this context manager.
 
    An example of a context manager that returns itself is a :term:`file object`.
@@ -4472,7 +4472,7 @@ before the statement body is executed and exited when the statement ends:
    decimal context to a copy of the original decimal context and then return the
    copy. This allows changes to be made to the current decimal context in the body
    of the :keyword:`with` statement without affecting code outside the
-   :keyword:`with` statement.
+   :keyword:`!with` statement.
 
 
 .. method:: contextmanager.__exit__(exc_type, exc_val, exc_tb)
@@ -4484,10 +4484,10 @@ before the statement body is executed and exited when the statement ends:
 
    Returning a true value from this method will cause the :keyword:`with` statement
    to suppress the exception and continue execution with the statement immediately
-   following the :keyword:`with` statement. Otherwise the exception continues
+   following the :keyword:`!with` statement. Otherwise the exception continues
    propagating after this method has finished executing. Exceptions that occur
    during execution of this method will replace any exception that occurred in the
-   body of the :keyword:`with` statement.
+   body of the :keyword:`!with` statement.
 
    The exception passed in should never be reraised explicitly - instead, this
    method should return a false value to indicate that the method completed

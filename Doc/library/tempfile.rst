@@ -124,7 +124,7 @@ The module defines the following user-callable items:
 
    The directory name can be retrieved from the :attr:`name` attribute of the
    returned object.  When the returned object is used as a context manager, the
-   :attr:`name` will be assigned to the target of the :keyword:`as` clause in
+   :attr:`name` will be assigned to the target of the :keyword:`!as` clause in
    the :keyword:`with` statement, if there is one.
 
    The directory can be explicitly cleaned up by calling the

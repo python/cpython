@@ -249,7 +249,7 @@ I/O Base Classes
 
    :class:`IOBase` is also a context manager and therefore supports the
    :keyword:`with` statement.  In this example, *file* is closed after the
-   :keyword:`with` statement's suite is finished---even if an exception occurs::
+   :keyword:`!with` statement's suite is finished---even if an exception occurs::
 
       with open('spam.txt', 'w') as file:
           file.write('Spam and eggs!')
