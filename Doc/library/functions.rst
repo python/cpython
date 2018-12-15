@@ -1002,13 +1002,13 @@ are always available.  They are listed here in alphabetical order.
    ``'a'``   open for writing, appending to the end of the file if it exists
    ``'b'``   binary mode
    ``'t'``   text mode (default)
-   ``'+'``   open a disk file for updating (reading and writing)
+   ``'+'``   open for both reading and writing
    ``'U'``   :term:`universal newlines` mode (deprecated)
    ========= ===============================================================
 
    The default mode is ``'r'`` (open for reading text, synonym of ``'rt'``).
-   For binary read-write access, the mode ``'w+b'`` opens and truncates the file
-   to 0 bytes.  ``'r+b'`` opens the file without truncation.
+   Mode ``'r+'`` opens *file* for both reading and writing, without truncation;
+   while mode ``'w+'`` truncates the file first.
 
    As mentioned in the :ref:`io-overview`, Python distinguishes between binary
    and text I/O.  Files opened in binary mode (including ``'b'`` in the *mode*
