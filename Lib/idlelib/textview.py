@@ -163,8 +163,8 @@ class ViewFrame(Frame):
 
         self.button_ok = button_ok = Button(
                 self, text='Close', command=self.ok, takefocus=False)
-        self.textframe.pack(side='top', expand=True, fill='both')
         button_ok.pack(side='bottom')
+        self.textframe.pack(side='top', expand=True, fill='both')
 
     def ok(self, event=None):
         """Dismiss text viewer dialog."""
