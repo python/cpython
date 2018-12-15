@@ -561,6 +561,13 @@ class BaseFutureTests:
             fut = self._new_future(loop=self.loop)
             fut.set_result(Evil())
 
+    def test_future_del_segfault(self):
+        fut = self._new_future(loop=self.loop)
+        with self.assertRaises(AttributeError):
+            del fut._log_destroy_pending
+        with self.assertRaises(AttributeError):
+            del fut._log_traceback
+
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')

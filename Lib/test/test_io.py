@@ -3598,6 +3598,11 @@ class TextIOWrapperTest(unittest.TestCase):
         t.write('x')
         t.tell()
 
+    def test_del__CHUNK_SIZE_SystemError(self):
+        t = self.TextIOWrapper(self.BytesIO(), encoding='ascii')
+        with self.assertRaises(AttributeError):
+            del t._CHUNK_SIZE
+
 
 class MemviewBytesIO(io.BytesIO):
     '''A BytesIO object whose read method returns memoryviews
