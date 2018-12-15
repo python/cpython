@@ -1648,6 +1648,8 @@ returns a boolean value regardless of the type of its argument
 (for example, ``not 'foo'`` produces ``False`` rather than ``''``.)
 
 
+.. _if_expr:
+
 Conditional expressions
 =======================
 
@@ -1790,7 +1792,7 @@ precedence and have a left-to-right chaining feature as described in the
 +===============================================+=====================================+
 | :keyword:`lambda`                             | Lambda expression                   |
 +-----------------------------------------------+-------------------------------------+
-| :keyword:`!if` -- :keyword:`!else`            | Conditional expression              |
+| :keyword:`if <if_expr>` -- :keyword:`!else`   | Conditional expression              |
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`or`                                 | Boolean OR                          |
 +-----------------------------------------------+-------------------------------------+
