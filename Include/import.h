@@ -38,7 +38,9 @@ PyAPI_FUNC(PyObject *) PyImport_ExecCodeModuleObject(
     );
 #endif
 PyAPI_FUNC(PyObject *) PyImport_GetModuleDict(void);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
 PyAPI_FUNC(PyObject *) PyImport_GetModule(PyObject *name);
+#endif
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyImport_IsInitialized(PyInterpreterState *);
 PyAPI_FUNC(PyObject *) _PyImport_GetModuleId(struct _Py_Identifier *name);
@@ -51,9 +53,6 @@ PyAPI_FUNC(int) _PyImport_SetModuleString(const char *name, PyObject* module);
 PyAPI_FUNC(PyObject *) PyImport_AddModuleObject(
     PyObject *name
     );
-#endif
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyImport_AddModuleObject(PyObject *, PyObject *);
 #endif
 PyAPI_FUNC(PyObject *) PyImport_AddModule(
     const char *name            /* UTF-8 encoded string */

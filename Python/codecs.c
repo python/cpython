@@ -9,7 +9,7 @@ Copyright (c) Corporation for National Research Initiatives.
    ------------------------------------------------------------------------ */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include "ucnhash.h"
 #include <ctype.h>
 
@@ -32,7 +32,7 @@ static int _PyCodecRegistry_Init(void); /* Forward */
 
 int PyCodec_Register(PyObject *search_function)
 {
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
         goto onError;
     if (search_function == NULL) {
@@ -78,8 +78,6 @@ PyObject *normalizestring(const char *string)
     }
     p[i] = '\0';
     v = PyUnicode_FromString(p);
-    if (v == NULL)
-        return NULL;
     PyMem_Free(p);
     return v;
 }
@@ -101,7 +99,6 @@ PyObject *normalizestring(const char *string)
 
 PyObject *_PyCodec_Lookup(const char *encoding)
 {
-    PyInterpreterState *interp;
     PyObject *result, *args = NULL, *v;
     Py_ssize_t i, len;
 
@@ -110,7 +107,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
         goto onError;
     }
 
-    interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
         goto onError;
 
@@ -132,8 +129,10 @@ PyObject *_PyCodec_Lookup(const char *encoding)
 
     /* Next, scan the search functions in order of registration */
     args = PyTuple_New(1);
-    if (args == NULL)
-        goto onError;
+    if (args == NULL) {
+        Py_DECREF(v);
+        return NULL;
+    }
     PyTuple_SET_ITEM(args,0,v);
 
     len = PyList_Size(interp->codec_search_path);
@@ -189,11 +188,10 @@ PyObject *_PyCodec_Lookup(const char *encoding)
 
 int _PyCodec_Forget(const char *encoding)
 {
-    PyInterpreterState *interp;
     PyObject *v;
     int result;
 
-    interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     if (interp->codec_search_path == NULL) {
         return -1;
     }
@@ -626,7 +624,7 @@ PyObject *_PyCodec_DecodeText(PyObject *object,
    Return 0 on success, -1 on error */
 int PyCodec_RegisterError(const char *name, PyObject *error)
 {
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
         return -1;
     if (!PyCallable_Check(error)) {
@@ -644,7 +642,7 @@ PyObject *PyCodec_LookupError(const char *name)
 {
     PyObject *handler = NULL;
 
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
         return NULL;
 
@@ -1496,7 +1494,7 @@ static int _PyCodecRegistry_Init(void)
         }
     };
 
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     PyObject *mod;
     unsigned i;
 

@@ -34,7 +34,9 @@ except ImportError:
     fcntl = None
 
 HOST = support.HOST
-MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8') ## test unicode string and carriage return
+# test unicode string and carriage return
+MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')
+MAIN_TIMEOUT = 60.0
 
 VSOCKPORT = 1234
 
@@ -94,15 +96,30 @@ def _have_socket_alg():
         s.close()
     return True
 
+def _have_socket_qipcrtr():
+    """Check whether AF_QIPCRTR sockets are supported on this host."""
+    try:
+        s = socket.socket(socket.AF_QIPCRTR, socket.SOCK_DGRAM, 0)
+    except (AttributeError, OSError):
+        return False
+    else:
+        s.close()
+    return True
+
 def _have_socket_vsock():
     """Check whether AF_VSOCK sockets are supported on this host."""
     ret = get_cid() is not None
     return ret
 
 
-def _is_fd_in_blocking_mode(sock):
-    return not bool(
-        fcntl.fcntl(sock, fcntl.F_GETFL, os.O_NONBLOCK) & os.O_NONBLOCK)
+@contextlib.contextmanager
+def socket_setdefaulttimeout(timeout):
+    old_timeout = socket.getdefaulttimeout()
+    try:
+        socket.setdefaulttimeout(timeout)
+        yield
+    finally:
+        socket.setdefaulttimeout(old_timeout)
 
 
 HAVE_SOCKET_CAN = _have_socket_can()
@@ -112,6 +129,8 @@ HAVE_SOCKET_CAN_ISOTP = _have_socket_can_isotp()
 HAVE_SOCKET_RDS = _have_socket_rds()
 
 HAVE_SOCKET_ALG = _have_socket_alg()
+
+HAVE_SOCKET_QIPCRTR = _have_socket_qipcrtr()
 
 HAVE_SOCKET_VSOCK = _have_socket_vsock()
 
@@ -893,7 +912,7 @@ class GeneralModuleTests(unittest.TestCase):
         )
         for addr in ['0.1.1.~1', '1+.1.1.1', '::1q', '::1::2',
                      '1:1:1:1:1:1:1:1:1']:
-            with self.assertRaises(OSError):
+            with self.assertRaises(OSError, msg=addr):
                 socket.gethostbyname(addr)
             with self.assertRaises(OSError, msg=explanation):
                 socket.gethostbyaddr(addr)
@@ -1056,18 +1075,16 @@ class GeneralModuleTests(unittest.TestCase):
         s.close()
 
         # Set the default timeout to 10, and see if it propagates
-        socket.setdefaulttimeout(10)
-        self.assertEqual(socket.getdefaulttimeout(), 10)
-        s = socket.socket()
-        self.assertEqual(s.gettimeout(), 10)
-        s.close()
+        with socket_setdefaulttimeout(10):
+            self.assertEqual(socket.getdefaulttimeout(), 10)
+            with socket.socket() as sock:
+                self.assertEqual(sock.gettimeout(), 10)
 
-        # Reset the default timeout to None, and see if it propagates
-        socket.setdefaulttimeout(None)
-        self.assertEqual(socket.getdefaulttimeout(), None)
-        s = socket.socket()
-        self.assertEqual(s.gettimeout(), None)
-        s.close()
+            # Reset the default timeout to None, and see if it propagates
+            socket.setdefaulttimeout(None)
+            self.assertEqual(socket.getdefaulttimeout(), None)
+            with socket.socket() as sock:
+                self.assertEqual(sock.gettimeout(), None)
 
         # Check that setting it to an invalid value raises ValueError
         self.assertRaises(ValueError, socket.setdefaulttimeout, -1)
@@ -2054,33 +2071,34 @@ class RDSTest(ThreadedRDSSocketTest):
         self.data = b'select'
         self.cli.sendto(self.data, 0, (HOST, self.port))
 
-    def testCongestion(self):
-        # wait until the sender is done
-        self.evt.wait()
+@unittest.skipUnless(HAVE_SOCKET_QIPCRTR,
+          'QIPCRTR sockets required for this test.')
+class BasicQIPCRTRTest(unittest.TestCase):
 
-    def _testCongestion(self):
-        # test the behavior in case of congestion
-        self.data = b'fill'
-        self.cli.setblocking(False)
-        try:
-            # try to lower the receiver's socket buffer size
-            self.cli.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 16384)
-        except OSError:
+    def testCrucialConstants(self):
+        socket.AF_QIPCRTR
+
+    def testCreateSocket(self):
+        with socket.socket(socket.AF_QIPCRTR, socket.SOCK_DGRAM) as s:
             pass
-        with self.assertRaises(OSError) as cm:
-            try:
-                # fill the receiver's socket buffer
-                while True:
-                    self.cli.sendto(self.data, 0, (HOST, self.port))
-            finally:
-                # signal the receiver we're done
-                self.evt.set()
-        # sendto() should have failed with ENOBUFS
-        self.assertEqual(cm.exception.errno, errno.ENOBUFS)
-        # and we should have received a congestion notification through poll
-        r, w, x = select.select([self.serv], [], [], 3.0)
-        self.assertIn(self.serv, r)
 
+    def testUnbound(self):
+        with socket.socket(socket.AF_QIPCRTR, socket.SOCK_DGRAM) as s:
+            self.assertEqual(s.getsockname()[1], 0)
+
+    def testBindSock(self):
+        with socket.socket(socket.AF_QIPCRTR, socket.SOCK_DGRAM) as s:
+            support.bind_port(s, host=s.getsockname()[0])
+            self.assertNotEqual(s.getsockname()[1], 0)
+
+    def testInvalidBindSock(self):
+        with socket.socket(socket.AF_QIPCRTR, socket.SOCK_DGRAM) as s:
+            self.assertRaises(OSError, support.bind_port, s, host=-2)
+
+    def testAutoBindSock(self):
+        with socket.socket(socket.AF_QIPCRTR, socket.SOCK_DGRAM) as s:
+            s.connect((123, 123))
+            self.assertNotEqual(s.getsockname()[1], 0)
 
 @unittest.skipIf(fcntl is None, "need fcntl")
 @unittest.skipUnless(HAVE_SOCKET_VSOCK,
@@ -2643,9 +2661,18 @@ class SendmsgStreamTests(SendmsgTests):
     def _testSendmsgTimeout(self):
         try:
             self.cli_sock.settimeout(0.03)
-            with self.assertRaises(socket.timeout):
+            try:
                 while True:
                     self.sendmsgToServer([b"a"*512])
+            except socket.timeout:
+                pass
+            except OSError as exc:
+                if exc.errno != errno.ENOMEM:
+                    raise
+                # bpo-33937 the test randomly fails on Travis CI with
+                # "OSError: [Errno 12] Cannot allocate memory"
+            else:
+                self.fail("socket.timeout not raised")
         finally:
             self.misc_event.set()
 
@@ -2668,8 +2695,10 @@ class SendmsgStreamTests(SendmsgTests):
             with self.assertRaises(OSError) as cm:
                 while True:
                     self.sendmsgToServer([b"a"*512], [], socket.MSG_DONTWAIT)
+            # bpo-33937: catch also ENOMEM, the test randomly fails on Travis CI
+            # with "OSError: [Errno 12] Cannot allocate memory"
             self.assertIn(cm.exception.errno,
-                          (errno.EAGAIN, errno.EWOULDBLOCK))
+                          (errno.EAGAIN, errno.EWOULDBLOCK, errno.ENOMEM))
         finally:
             self.misc_event.set()
 
@@ -3199,10 +3228,11 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     def testFDPassSeparateMinSpace(self):
         # Pass two FDs in two separate arrays, receiving them into the
         # minimum space for two arrays.
-        self.checkRecvmsgFDs(2,
+        num_fds = 2
+        self.checkRecvmsgFDs(num_fds,
                              self.doRecvmsg(self.serv_sock, len(MSG),
                                             socket.CMSG_SPACE(SIZEOF_INT) +
-                                            socket.CMSG_LEN(SIZEOF_INT)),
+                                            socket.CMSG_LEN(SIZEOF_INT * num_fds)),
                              maxcmsgs=2, ignoreflags=socket.MSG_CTRUNC)
 
     @testFDPassSeparateMinSpace.client_skip
@@ -4189,57 +4219,45 @@ class BasicSocketPairTest(SocketPairTest):
 class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     def __init__(self, methodName='runTest'):
+        self.event = threading.Event()
         ThreadedTCPSocketTest.__init__(self, methodName=methodName)
 
+    def assert_sock_timeout(self, sock, timeout):
+        self.assertEqual(self.serv.gettimeout(), timeout)
+
+        blocking = (timeout != 0.0)
+        self.assertEqual(sock.getblocking(), blocking)
+
+        if fcntl is not None:
+            # When a Python socket has a non-zero timeout, it's switched
+            # internally to a non-blocking mode. Later, sock.sendall(),
+            # sock.recv(), and other socket operations use a select() call and
+            # handle EWOULDBLOCK/EGAIN on all socket operations. That's how
+            # timeouts are enforced.
+            fd_blocking = (timeout is None)
+
+            flag = fcntl.fcntl(sock, fcntl.F_GETFL, os.O_NONBLOCK)
+            self.assertEqual(not bool(flag & os.O_NONBLOCK), fd_blocking)
+
     def testSetBlocking(self):
-        # Testing whether set blocking works
+        # Test setblocking() and settimeout() methods
         self.serv.setblocking(True)
-        self.assertIsNone(self.serv.gettimeout())
-        self.assertTrue(self.serv.getblocking())
-        if fcntl:
-            self.assertTrue(_is_fd_in_blocking_mode(self.serv))
+        self.assert_sock_timeout(self.serv, None)
 
         self.serv.setblocking(False)
-        self.assertEqual(self.serv.gettimeout(), 0.0)
-        self.assertFalse(self.serv.getblocking())
-        if fcntl:
-            self.assertFalse(_is_fd_in_blocking_mode(self.serv))
+        self.assert_sock_timeout(self.serv, 0.0)
 
         self.serv.settimeout(None)
-        self.assertTrue(self.serv.getblocking())
-        if fcntl:
-            self.assertTrue(_is_fd_in_blocking_mode(self.serv))
+        self.assert_sock_timeout(self.serv, None)
 
         self.serv.settimeout(0)
-        self.assertFalse(self.serv.getblocking())
-        self.assertEqual(self.serv.gettimeout(), 0)
-        if fcntl:
-            self.assertFalse(_is_fd_in_blocking_mode(self.serv))
+        self.assert_sock_timeout(self.serv, 0)
 
         self.serv.settimeout(10)
-        self.assertTrue(self.serv.getblocking())
-        self.assertEqual(self.serv.gettimeout(), 10)
-        if fcntl:
-            # When a Python socket has a non-zero timeout, it's
-            # switched internally to a non-blocking mode.
-            # Later, sock.sendall(), sock.recv(), and other socket
-            # operations use a `select()` call and handle EWOULDBLOCK/EGAIN
-            # on all socket operations.  That's how timeouts are
-            # enforced.
-            self.assertFalse(_is_fd_in_blocking_mode(self.serv))
+        self.assert_sock_timeout(self.serv, 10)
 
         self.serv.settimeout(0)
-        self.assertFalse(self.serv.getblocking())
-        if fcntl:
-            self.assertFalse(_is_fd_in_blocking_mode(self.serv))
-
-        start = time.time()
-        try:
-            self.serv.accept()
-        except OSError:
-            pass
-        end = time.time()
-        self.assertTrue((end - start) < 1.0, "Error setting non-blocking mode.")
+        self.assert_sock_timeout(self.serv, 0)
 
     def _testSetBlocking(self):
         pass
@@ -4250,8 +4268,10 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         import _testcapi
         if _testcapi.UINT_MAX >= _testcapi.ULONG_MAX:
             self.skipTest('needs UINT_MAX < ULONG_MAX')
+
         self.serv.setblocking(False)
         self.assertEqual(self.serv.gettimeout(), 0.0)
+
         self.serv.setblocking(_testcapi.UINT_MAX + 1)
         self.assertIsNone(self.serv.gettimeout())
 
@@ -4261,95 +4281,99 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
                          'test needs socket.SOCK_NONBLOCK')
     @support.requires_linux_version(2, 6, 28)
     def testInitNonBlocking(self):
-        # reinit server socket
+        # create a socket with SOCK_NONBLOCK
         self.serv.close()
-        self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM |
-                                                  socket.SOCK_NONBLOCK)
-        self.assertFalse(self.serv.getblocking())
-        self.assertEqual(self.serv.gettimeout(), 0)
-        self.port = support.bind_port(self.serv)
-        self.serv.listen()
-        # actual testing
-        start = time.time()
-        try:
-            self.serv.accept()
-        except OSError:
-            pass
-        end = time.time()
-        self.assertTrue((end - start) < 1.0, "Error creating with non-blocking mode.")
+        self.serv = socket.socket(socket.AF_INET,
+                                  socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
+        self.assert_sock_timeout(self.serv, 0)
 
     def _testInitNonBlocking(self):
         pass
 
-    def testInheritFlags(self):
-        # Issue #7995: when calling accept() on a listening socket with a
-        # timeout, the resulting socket should not be non-blocking.
-        self.serv.settimeout(10)
-        try:
+    def testInheritFlagsBlocking(self):
+        # bpo-7995: accept() on a listening socket with a timeout and the
+        # default timeout is None, the resulting socket must be blocking.
+        with socket_setdefaulttimeout(None):
+            self.serv.settimeout(10)
             conn, addr = self.serv.accept()
-            message = conn.recv(len(MSG))
-        finally:
-            conn.close()
-            self.serv.settimeout(None)
+            self.addCleanup(conn.close)
+            self.assertIsNone(conn.gettimeout())
 
-    def _testInheritFlags(self):
-        time.sleep(0.1)
+    def _testInheritFlagsBlocking(self):
         self.cli.connect((HOST, self.port))
-        time.sleep(0.5)
-        self.cli.send(MSG)
+
+    def testInheritFlagsTimeout(self):
+        # bpo-7995: accept() on a listening socket with a timeout and the
+        # default timeout is None, the resulting socket must inherit
+        # the default timeout.
+        default_timeout = 20.0
+        with socket_setdefaulttimeout(default_timeout):
+            self.serv.settimeout(10)
+            conn, addr = self.serv.accept()
+            self.addCleanup(conn.close)
+            self.assertEqual(conn.gettimeout(), default_timeout)
+
+    def _testInheritFlagsTimeout(self):
+        self.cli.connect((HOST, self.port))
 
     def testAccept(self):
         # Testing non-blocking accept
         self.serv.setblocking(0)
-        try:
+
+        # connect() didn't start: non-blocking accept() fails
+        start_time = time.monotonic()
+        with self.assertRaises(BlockingIOError):
             conn, addr = self.serv.accept()
-        except OSError:
-            pass
-        else:
-            self.fail("Error trying to do non-blocking accept.")
-        read, write, err = select.select([self.serv], [], [])
-        if self.serv in read:
-            conn, addr = self.serv.accept()
-            self.assertIsNone(conn.gettimeout())
-            conn.close()
-        else:
+        dt = time.monotonic() - start_time
+        self.assertLess(dt, 1.0)
+
+        self.event.set()
+
+        read, write, err = select.select([self.serv], [], [], MAIN_TIMEOUT)
+        if self.serv not in read:
             self.fail("Error trying to do accept after select.")
 
-    def _testAccept(self):
-        time.sleep(0.1)
-        self.cli.connect((HOST, self.port))
-
-    def testConnect(self):
-        # Testing non-blocking connect
+        # connect() completed: non-blocking accept() doesn't block
         conn, addr = self.serv.accept()
-        conn.close()
+        self.addCleanup(conn.close)
+        self.assertIsNone(conn.gettimeout())
 
-    def _testConnect(self):
-        self.cli.settimeout(10)
+    def _testAccept(self):
+        # don't connect before event is set to check
+        # that non-blocking accept() raises BlockingIOError
+        self.event.wait()
+
         self.cli.connect((HOST, self.port))
 
     def testRecv(self):
         # Testing non-blocking recv
         conn, addr = self.serv.accept()
+        self.addCleanup(conn.close)
         conn.setblocking(0)
-        try:
+
+        # the server didn't send data yet: non-blocking recv() fails
+        with self.assertRaises(BlockingIOError):
             msg = conn.recv(len(MSG))
-        except OSError:
-            pass
-        else:
-            self.fail("Error trying to do non-blocking recv.")
-        read, write, err = select.select([conn], [], [])
-        if conn in read:
-            msg = conn.recv(len(MSG))
-            conn.close()
-            self.assertEqual(msg, MSG)
-        else:
+
+        self.event.set()
+
+        read, write, err = select.select([conn], [], [], MAIN_TIMEOUT)
+        if conn not in read:
             self.fail("Error during select call to non-blocking socket.")
+
+        # the server sent data yet: non-blocking recv() doesn't block
+        msg = conn.recv(len(MSG))
+        self.assertEqual(msg, MSG)
 
     def _testRecv(self):
         self.cli.connect((HOST, self.port))
-        time.sleep(0.1)
-        self.cli.send(MSG)
+
+        # don't send anything before event is set to check
+        # that non-blocking recv() raises BlockingIOError
+        self.event.wait()
+
+        # send data: recv() will no longer block
+        self.cli.sendall(MSG)
 
 
 class FileObjectClassTestCase(SocketConnectedTest):
@@ -5843,7 +5867,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
                                  op=socket.ALG_OP_ENCRYPT, iv=iv)
                 enc = op.recv(msglen * multiplier)
             self.assertEqual(len(enc), msglen * multiplier)
-            self.assertTrue(enc[:msglen], ciphertext)
+            self.assertEqual(enc[:msglen], ciphertext)
 
             op, _ = algo.accept()
             with op:
@@ -5945,10 +5969,28 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             with self.assertRaises(TypeError):
                 sock.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, assoclen=-1)
 
+    def test_length_restriction(self):
+        # bpo-35050, off-by-one error in length check
+        sock = socket.socket(socket.AF_ALG, socket.SOCK_SEQPACKET, 0)
+        self.addCleanup(sock.close)
+
+        # salg_type[14]
+        with self.assertRaises(FileNotFoundError):
+            sock.bind(("t" * 13, "name"))
+        with self.assertRaisesRegex(ValueError, "type too long"):
+            sock.bind(("t" * 14, "name"))
+
+        # salg_name[64]
+        with self.assertRaises(FileNotFoundError):
+            sock.bind(("type", "n" * 63))
+        with self.assertRaisesRegex(ValueError, "name too long"):
+            sock.bind(("type", "n" * 64))
+
+
 @unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
 class TestMSWindowsTCPFlags(unittest.TestCase):
     knownTCPFlags = {
-                       # avaliable since long time ago
+                       # available since long time ago
                        'TCP_MAXSEG',
                        'TCP_NODELAY',
                        # available starting with Windows 10 1607
@@ -5994,6 +6036,7 @@ def test_main():
     tests.extend([BasicCANTest, CANTest])
     tests.extend([BasicRDSTest, RDSTest])
     tests.append(LinuxKernelCryptoAPI)
+    tests.append(BasicQIPCRTRTest)
     tests.extend([
         BasicVSOCKTest,
         ThreadedVSOCKSocketStreamTest,

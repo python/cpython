@@ -1,0 +1,2 @@
+:func:`tokenize.generate_tokens` is now documented as a public API to
+tokenize unicode strings. It was previously present but undocumented.

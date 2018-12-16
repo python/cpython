@@ -90,13 +90,14 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(cm.exception.path, os.__file__)
         self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from 'os' \(.*os.py\)")
 
+    @cpython_only
     def test_from_import_missing_attr_has_name_and_so_path(self):
-        import select
+        import _testcapi
         with self.assertRaises(ImportError) as cm:
-            from select import i_dont_exist
-        self.assertEqual(cm.exception.name, 'select')
-        self.assertEqual(cm.exception.path, select.__file__)
-        self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from 'select' \(.*\.(so|pyd)\)")
+            from _testcapi import i_dont_exist
+        self.assertEqual(cm.exception.name, '_testcapi')
+        self.assertEqual(cm.exception.path, _testcapi.__file__)
+        self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|pyd)\)")
 
     def test_from_import_missing_attr_has_name(self):
         with self.assertRaises(ImportError) as cm:
@@ -1269,6 +1270,19 @@ class CircularImportTests(unittest.TestCase):
             import test.test_import.data.circular_imports.binding
         except ImportError:
             self.fail('circular import with binding a submodule to a name failed')
+
+    def test_crossreference1(self):
+        import test.test_import.data.circular_imports.use
+        import test.test_import.data.circular_imports.source
+
+    def test_crossreference2(self):
+        with self.assertRaises(AttributeError) as cm:
+            import test.test_import.data.circular_imports.source
+        errmsg = str(cm.exception)
+        self.assertIn('test.test_import.data.circular_imports.source', errmsg)
+        self.assertIn('spam', errmsg)
+        self.assertIn('partially initialized module', errmsg)
+        self.assertIn('circular import', errmsg)
 
 
 if __name__ == '__main__':

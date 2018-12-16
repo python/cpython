@@ -16,17 +16,17 @@
 #define PGEN
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "pgenheaders.h"
 #include "grammar.h"
 #include "node.h"
 #include "parsetok.h"
 #include "pgen.h"
 
-int Py_DebugFlag;
-int Py_VerboseFlag;
-int Py_IgnoreEnvironmentFlag;
+int Py_DebugFlag = 0;
+int Py_VerboseFlag = 0;
+int Py_IgnoreEnvironmentFlag = 0;
 _PyRuntimeState _PyRuntime = _PyRuntimeState_INIT;
 
 /* Forward */

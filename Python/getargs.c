@@ -2,6 +2,7 @@
 /* New getargs implementation */
 
 #include "Python.h"
+#include "pycore_tupleobject.h"
 
 #include <ctype.h>
 #include <float.h>
@@ -422,7 +423,7 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
             return 0;
         }
 
-        stack = &PyTuple_GET_ITEM(args, 0);
+        stack = _PyTuple_ITEMS(args);
         nargs = PyTuple_GET_SIZE(args);
     }
     else {
@@ -2254,7 +2255,7 @@ vgetargskeywordsfast(PyObject *args, PyObject *keywords,
         return 0;
     }
 
-    stack = &PyTuple_GET_ITEM(args, 0);
+    stack = _PyTuple_ITEMS(args);
     nargs = PyTuple_GET_SIZE(args);
     return vgetargskeywordsfast_impl(stack, nargs, keywords, NULL,
                                      parser, p_va, flags);
@@ -2333,7 +2334,9 @@ skipitem(const char **p_format, va_list *p_va, int flags)
                         (void) va_arg(*p_va, int *);
                 }
                 format++;
-            } else if ((c == 's' || c == 'z' || c == 'y') && *format == '*') {
+            } else if ((c == 's' || c == 'z' || c == 'y' || c == 'w')
+                       && *format == '*')
+            {
                 format++;
             }
             break;
@@ -2409,8 +2412,8 @@ unpack_stack(PyObject *const *args, Py_ssize_t nargs, const char *name,
         if (name != NULL)
             PyErr_Format(
                 PyExc_TypeError,
-                "%.200s expected %s%zd arguments, got %zd",
-                name, (min == max ? "" : "at least "), min, nargs);
+                "%.200s expected %s%zd argument%s, got %zd",
+                name, (min == max ? "" : "at least "), min, min == 1 ? "" : "s", nargs);
         else
             PyErr_Format(
                 PyExc_TypeError,
@@ -2428,8 +2431,8 @@ unpack_stack(PyObject *const *args, Py_ssize_t nargs, const char *name,
         if (name != NULL)
             PyErr_Format(
                 PyExc_TypeError,
-                "%.200s expected %s%zd arguments, got %zd",
-                name, (min == max ? "" : "at most "), max, nargs);
+                "%.200s expected %s%zd argument%s, got %zd",
+                name, (min == max ? "" : "at most "), max, max == 1 ? "" : "s", nargs);
         else
             PyErr_Format(
                 PyExc_TypeError,
@@ -2459,7 +2462,7 @@ PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t m
             "PyArg_UnpackTuple() argument list is not a tuple");
         return 0;
     }
-    stack = &PyTuple_GET_ITEM(args, 0);
+    stack = _PyTuple_ITEMS(args);
     nargs = PyTuple_GET_SIZE(args);
 
 #ifdef HAVE_STDARG_PROTOTYPES

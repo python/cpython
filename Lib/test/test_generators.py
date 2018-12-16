@@ -9,12 +9,18 @@ import inspect
 
 from test import support
 
-_testcapi = support.import_module('_testcapi')
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
 
 
 # This tests to make sure that if a SIGINT arrives just before we send into a
 # yield from chain, the KeyboardInterrupt is raised in the innermost
 # generator (see bpo-30039).
+@unittest.skipUnless(_testcapi is not None and
+                     hasattr(_testcapi, "raise_SIGINT_then_send_None"),
+                     "needs _testcapi.raise_SIGINT_then_send_None")
 class SignalAndYieldFromTest(unittest.TestCase):
 
     def generator1(self):
@@ -1859,12 +1865,12 @@ SyntaxError: assignment to yield expression not possible
 >>> def f(): (yield bar) = y
 Traceback (most recent call last):
   ...
-SyntaxError: can't assign to yield expression
+SyntaxError: cannot assign to yield expression
 
 >>> def f(): (yield bar) += y
 Traceback (most recent call last):
   ...
-SyntaxError: can't assign to yield expression
+SyntaxError: cannot assign to yield expression
 
 
 Now check some throw() conditions:

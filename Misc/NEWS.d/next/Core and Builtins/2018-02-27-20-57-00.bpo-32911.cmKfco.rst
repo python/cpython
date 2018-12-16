@@ -1,0 +1,5 @@
+Due to unexpected compatibility issues discovered during downstream beta
+testing, reverted :issue:`29463`. ``docstring`` field is removed from Module,
+ClassDef, FunctionDef, and AsyncFunctionDef ast nodes which was added in
+3.7a1.  Docstring expression is restored as a first statement in their body.
+Based on patch by Inada Naoki.

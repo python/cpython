@@ -161,7 +161,9 @@ always available.
 
 .. data:: dllhandle
 
-   Integer specifying the handle of the Python DLL. Availability: Windows.
+   Integer specifying the handle of the Python DLL.
+
+   .. availability:: Windows.
 
 
 .. function:: displayhook(value)
@@ -207,6 +209,26 @@ always available.
    ``False`` depending on the :option:`-B` command line option and the
    :envvar:`PYTHONDONTWRITEBYTECODE` environment variable, but you can set it
    yourself to control bytecode file generation.
+
+
+.. data:: pycache_prefix
+
+   If this is set (not ``None``), Python will write bytecode-cache ``.pyc``
+   files to (and read them from) a parallel directory tree rooted at this
+   directory, rather than from ``__pycache__`` directories in the source code
+   tree. Any ``__pycache__`` directories in the source code tree will be ignored
+   and new `.pyc` files written within the pycache prefix. Thus if you use
+   :mod:`compileall` as a pre-build step, you must ensure you run it with the
+   same pycache prefix (if any) that you will use at runtime.
+
+   A relative path is interpreted relative to the current working directory.
+
+   This value is initially set based on the value of the :option:`-X`
+   ``pycache_prefix=PATH`` command-line option or the
+   :envvar:`PYTHONPYCACHEPREFIX` environment variable (command-line takes
+   precedence). If neither are set, it is ``None``.
+
+   .. versionadded:: 3.8
 
 
 .. function:: excepthook(type, value, traceback)
@@ -313,9 +335,6 @@ always available.
       has caught :exc:`SystemExit` (such as an error flushing buffered data
       in the standard streams), the exit status is changed to 120.
 
-   .. versionchanged:: 3.7
-      Added ``utf8_mode`` attribute for the new :option:`-X` ``utf8`` flag.
-
 
 .. data:: flags
 
@@ -328,6 +347,7 @@ always available.
    :const:`debug`                :option:`-d`
    :const:`inspect`              :option:`-i`
    :const:`interactive`          :option:`-i`
+   :const:`isolated`             :option:`-I`
    :const:`optimize`             :option:`-O` or :option:`-OO`
    :const:`dont_write_bytecode`  :option:`-B`
    :const:`no_user_site`         :option:`-s`
@@ -349,6 +369,9 @@ always available.
 
    .. versionchanged:: 3.3
       Removed obsolete ``division_warning`` attribute.
+
+   .. versionchanged:: 3.4
+      Added ``isolated`` attribute for :option:`-I` ``isolated`` flag.
 
    .. versionchanged:: 3.7
       Added ``dev_mode`` attribute for the new :option:`-X` ``dev`` flag
@@ -456,7 +479,7 @@ always available.
 
    Return the build time API version of Android as an integer.
 
-   Availability: Android.
+   .. availability:: Android.
 
    .. versionadded:: 3.7
 
@@ -480,7 +503,9 @@ always available.
    Return the current value of the flags that are used for
    :c:func:`dlopen` calls.  Symbolic names for the flag values can be
    found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
-   :data:`os.RTLD_LAZY`).  Availability: Unix.
+   :data:`os.RTLD_LAZY`).
+
+   .. availability:: Unix.
 
 
 .. function:: getfilesystemencoding()
@@ -648,7 +673,7 @@ always available.
    is being emulated for the process. It is intended for use in logging rather
    than for feature detection.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
    .. versionchanged:: 3.2
       Changed to a named tuple and added *service_pack_minor*,
@@ -678,7 +703,7 @@ always available.
 .. function:: get_coroutine_origin_tracking_depth()
 
    Get the current coroutine origin tracking depth, as set by
-   func:`set_coroutine_origin_tracking_depth`.
+   :func:`set_coroutine_origin_tracking_depth`.
 
    .. versionadded:: 3.7
 
@@ -1039,6 +1064,8 @@ always available.
    .. index::
       single: interpreter prompts
       single: prompts, interpreter
+      single: >>>; interpreter prompt
+      single: ...; interpreter prompt
 
    Strings specifying the primary and secondary prompt of the interpreter.  These
    are only defined if the interpreter is in interactive mode.  Their initial
@@ -1073,7 +1100,7 @@ always available.
    can be found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
    :data:`os.RTLD_LAZY`).
 
-   Availability: Unix.
+   .. availability:: Unix.
 
 .. function:: setprofile(profilefunc)
 
@@ -1319,7 +1346,7 @@ always available.
    This is equivalent to defining the :envvar:`PYTHONLEGACYWINDOWSFSENCODING`
    environment variable before launching Python.
 
-   Availability: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.6
       See :pep:`529` for more details.
@@ -1465,7 +1492,9 @@ always available.
    stored as string resource 1000 in the Python DLL.  The value is normally the
    first three characters of :const:`version`.  It is provided in the :mod:`sys`
    module for informational purposes; modifying this value has no effect on the
-   registry keys used by Python. Availability: Windows.
+   registry keys used by Python.
+
+   .. availability:: Windows.
 
 
 .. data:: _xoptions

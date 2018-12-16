@@ -1,0 +1,3 @@
+Attributes *skipinitialspace*, *doublequote* and *strict* of the *dialect*
+attribute of the :mod:`csv` reader are now :class:`bool` instances instead
+of integers 0 or 1.

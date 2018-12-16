@@ -9,6 +9,19 @@
 
 .. _getting-started:
 
+
+.. testsetup::
+
+    import unittest
+    from unittest.mock import Mock, MagicMock, patch, call, sentinel
+
+    class SomeClass:
+        attribute = 'this is a doctest'
+
+        @staticmethod
+        def static_method():
+            pass
+
 Using Mock
 ----------
 
@@ -99,7 +112,7 @@ by looking at the return value of the mocked class.
 In the example below we have a function ``some_function`` that instantiates ``Foo``
 and calls a method on it. The call to :func:`patch` replaces the class ``Foo`` with a
 mock. The ``Foo`` instance is the result of calling the mock, so it is configured
-by modifying the mock :attr:`~Mock.return_value`.
+by modifying the mock :attr:`~Mock.return_value`. ::
 
     >>> def some_function():
     ...     instance = module.Foo()
@@ -151,6 +164,15 @@ You use the :data:`call` object to construct lists for comparing with
 
     >>> expected = [call.method(), call.attribute.method(10, x=53)]
     >>> mock.mock_calls == expected
+    True
+
+However, parameters to calls that return mocks are not recorded, which means it is not
+possible to track nested calls where the parameters used to create ancestors are important:
+
+    >>> m = Mock()
+    >>> m.factory(important=True).deliver()
+    <Mock name='mock.factory().deliver()' id='...'>
+    >>> m.mock_calls[-1] == call.factory(important=False).deliver()
     True
 
 
@@ -321,7 +343,7 @@ whatever) to be replaced with. 'patch.object' takes an object and the name of
 the attribute you would like patched, plus optionally the value to patch it
 with.
 
-``patch.object``:
+``patch.object``::
 
     >>> original = SomeClass.attribute
     >>> @patch.object(SomeClass, 'attribute', sentinel.attribute)
@@ -348,7 +370,7 @@ instead of :func:`patch.object`:
     >>> mock.assert_called_with('filename', 'r')
     >>> assert handle == sentinel.file_handle, "incorrect file handle returned"
 
-The module name can be 'dotted', in the form ``package.module`` if needed:
+The module name can be 'dotted', in the form ``package.module`` if needed::
 
     >>> @patch('package.module.ClassName.attribute', sentinel.attribute)
     ... def test():
@@ -380,7 +402,7 @@ passed into the test function / method:
     ...
     >>> MyTest('test_something').test_something()
 
-You can stack up multiple patch decorators using this pattern:
+You can stack up multiple patch decorators using this pattern::
 
     >>> class MyTest(unittest.TestCase):
     ...     @patch('package.module.ClassName1')
@@ -392,7 +414,7 @@ You can stack up multiple patch decorators using this pattern:
     >>> MyTest('test_something').test_something()
 
 When you nest patch decorators the mocks are passed in to the decorated
-function in the same order they applied (the normal *python* order that
+function in the same order they applied (the normal *Python* order that
 decorators are applied). This means from the bottom up, so in the example
 above the mock for ``test_module.ClassName2`` is passed in first.
 
@@ -485,7 +507,7 @@ response object for it. To set the response as the return value for that final
     mock_backend.get_endpoint.return_value.create_call.return_value.start_call.return_value = mock_response
 
 We can do that in a slightly nicer way using the :meth:`~Mock.configure_mock`
-method to directly set the return value for us:
+method to directly set the return value for us::
 
     >>> something = Something()
     >>> mock_response = Mock(spec=open)
@@ -494,7 +516,7 @@ method to directly set the return value for us:
     >>> mock_backend.configure_mock(**config)
 
 With these we monkey patch the "mock backend" in place and can make the real
-call:
+call::
 
     >>> something.backend = mock_backend
     >>> something.method()
@@ -502,7 +524,7 @@ call:
 Using :attr:`~Mock.mock_calls` we can check the chained call with a single
 assert. A chained call is several calls in one line of code, so there will be
 several entries in ``mock_calls``. We can use :meth:`call.call_list` to create
-this list of calls for us:
+this list of calls for us::
 
     >>> chained = call.get_endpoint('foobar').create_call('spam', 'eggs').start_call()
     >>> call_list = chained.call_list()
@@ -525,7 +547,7 @@ The :func:`patch decorator <patch>` is used here to
 mock out the ``date`` class in the module under test. The :attr:`side_effect`
 attribute on the mock date class is then set to a lambda function that returns
 a real date. When the mock date class is called a real date will be
-constructed and returned by ``side_effect``.
+constructed and returned by ``side_effect``. ::
 
     >>> from datetime import date
     >>> with patch('mymodule.date') as mock_date:
@@ -534,7 +556,6 @@ constructed and returned by ``side_effect``.
     ...
     ...     assert mymodule.date.today() == date(2010, 10, 8)
     ...     assert mymodule.date(2009, 6, 8) == date(2009, 6, 8)
-    ...
 
 Note that we don't patch :class:`datetime.date` globally, we patch ``date`` in the
 module that *uses* it. See :ref:`where to patch <where-to-patch>`.
@@ -600,10 +621,10 @@ is to apply the patch decorators to every method. This can feel like unnecessary
 repetition. For Python 2.6 or more recent you can use :func:`patch` (in all its
 various forms) as a class decorator. This applies the patches to all test
 methods on the class. A test method is identified by methods whose names start
-with ``test``:
+with ``test``::
 
     >>> @patch('mymodule.SomeClass')
-    ... class MyTest(TestCase):
+    ... class MyTest(unittest.TestCase):
     ...
     ...     def test_one(self, MockSomeClass):
     ...         self.assertIs(mymodule.SomeClass, MockSomeClass)
@@ -621,8 +642,9 @@ with ``test``:
 
 An alternative way of managing patches is to use the :ref:`start-and-stop`.
 These allow you to move the patching into your ``setUp`` and ``tearDown`` methods.
+::
 
-    >>> class MyTest(TestCase):
+    >>> class MyTest(unittest.TestCase):
     ...     def setUp(self):
     ...         self.patcher = patch('mymodule.foo')
     ...         self.mock_foo = self.patcher.start()
@@ -638,9 +660,9 @@ These allow you to move the patching into your ``setUp`` and ``tearDown`` method
 If you use this technique you must ensure that the patching is "undone" by
 calling ``stop``. This can be fiddlier than you might think, because if an
 exception is raised in the setUp then tearDown is not called.
-:meth:`unittest.TestCase.addCleanup` makes this easier:
+:meth:`unittest.TestCase.addCleanup` makes this easier::
 
-    >>> class MyTest(TestCase):
+    >>> class MyTest(unittest.TestCase):
     ...     def setUp(self):
     ...         patcher = patch('mymodule.foo')
     ...         self.addCleanup(patcher.stop)
@@ -753,7 +775,7 @@ defined in 'mymodule'::
         val.clear()
 
 When we try to test that ``grob`` calls ``frob`` with the correct argument look
-what happens:
+what happens::
 
     >>> with patch('mymodule.frob') as mock_frob:
     ...     val = {6}
@@ -777,7 +799,7 @@ functionality. If you provide a ``side_effect`` function for a mock then
 opportunity to copy the arguments and store them for later assertions. In this
 example I'm using *another* mock to store the arguments so that I can use the
 mock methods for doing the assertion. Again a helper function sets this up for
-me.
+me. ::
 
     >>> from copy import deepcopy
     >>> from unittest.mock import Mock, patch, DEFAULT
@@ -854,9 +876,9 @@ Nesting Patches
 
 Using patch as a context manager is nice, but if you do multiple patches you
 can end up with nested with statements indenting further and further to the
-right:
+right::
 
-    >>> class MyTest(TestCase):
+    >>> class MyTest(unittest.TestCase):
     ...
     ...     def test_foo(self):
     ...         with patch('mymodule.Foo') as mock_foo:
@@ -873,9 +895,9 @@ right:
 With unittest ``cleanup`` functions and the :ref:`start-and-stop` we can
 achieve the same effect without the nested indentation. A simple helper
 method, ``create_patch``, puts the patch in place and returns the created mock
-for us:
+for us::
 
-    >>> class MyTest(TestCase):
+    >>> class MyTest(unittest.TestCase):
     ...
     ...     def create_patch(self, name):
     ...         patcher = patch(name)
@@ -969,7 +991,7 @@ mock methods and attributes:
     >>> mock.__setitem__.call_args_list
     [call('b', 'fish'), call('d', 'eggs')]
     >>> my_dict
-    {'a': 1, 'c': 3, 'b': 'fish', 'd': 'eggs'}
+    {'a': 1, 'b': 'fish', 'c': 3, 'd': 'eggs'}
 
 
 Mock subclasses and their attributes
@@ -1064,6 +1086,7 @@ previously will be restored safely.
 
 Here's an example that mocks out the 'fooble' module.
 
+    >>> import sys
     >>> mock = Mock()
     >>> with patch.dict('sys.modules', {'fooble': mock}):
     ...    import fooble
@@ -1132,7 +1155,7 @@ the ``mock_calls`` attribute on the manager mock:
 
 If ``patch`` is creating, and putting in place, your mocks then you can attach
 them to a manager mock using the :meth:`~Mock.attach_mock` method. After
-attaching calls will be recorded in ``mock_calls`` of the manager.
+attaching calls will be recorded in ``mock_calls`` of the manager. ::
 
     >>> manager = MagicMock()
     >>> with patch('mymodule.Class1') as MockClass1:
@@ -1141,14 +1164,13 @@ attaching calls will be recorded in ``mock_calls`` of the manager.
     ...         manager.attach_mock(MockClass2, 'MockClass2')
     ...         MockClass1().foo()
     ...         MockClass2().bar()
-    ...
     <MagicMock name='mock.MockClass1().foo()' id='...'>
     <MagicMock name='mock.MockClass2().bar()' id='...'>
     >>> manager.mock_calls
     [call.MockClass1(),
-     call.MockClass1().foo(),
-     call.MockClass2(),
-     call.MockClass2().bar()]
+    call.MockClass1().foo(),
+    call.MockClass2(),
+    call.MockClass2().bar()]
 
 If many calls have been made, but you're only interested in a particular
 sequence of them then an alternative is to use the

@@ -1,7 +1,8 @@
 /* Frame object implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
 
 #include "code.h"
 #include "frameobject.h"
@@ -86,7 +87,7 @@ get_arg(const _Py_CODEUNIT *codestr, Py_ssize_t i)
  *    that time.
  */
 static int
-frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
+frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignored))
 {
     int new_lineno = 0;                 /* The new value of f_lineno */
     long l_new_lineno;
@@ -297,7 +298,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     if (delta_iblock > 0) {
         f->f_iblock -= delta_iblock;
         PyTryBlock *b = &f->f_blockstack[f->f_iblock];
-        delta += (f->f_stacktop - f->f_valuestack) - b->b_level;
+        delta += (int)(f->f_stacktop - f->f_valuestack) - b->b_level;
         if (b->b_type == SETUP_FINALLY &&
             code[b->b_handler] == WITH_CLEANUP_START)
         {
@@ -469,7 +470,7 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     return 0;
 }
 
-static void
+static int
 frame_tp_clear(PyFrameObject *f)
 {
     PyObject **fastlocals, **p, **oldtop;
@@ -497,10 +498,11 @@ frame_tp_clear(PyFrameObject *f)
         for (p = f->f_valuestack; p < oldtop; p++)
             Py_CLEAR(*p);
     }
+    return 0;
 }
 
 static PyObject *
-frame_clear(PyFrameObject *f)
+frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     if (f->f_executing) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -511,7 +513,7 @@ frame_clear(PyFrameObject *f)
         _PyGen_Finalize(f->f_gen);
         assert(f->f_gen == NULL);
     }
-    frame_tp_clear(f);
+    (void)frame_tp_clear(f);
     Py_RETURN_NONE;
 }
 
@@ -519,7 +521,7 @@ PyDoc_STRVAR(clear__doc__,
 "F.clear(): clear most references held by the frame");
 
 static PyObject *
-frame_sizeof(PyFrameObject *f)
+frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t res, extras, ncells, nfrees;
 

@@ -936,8 +936,7 @@ on_completion_display_matches_hook(char **matches,
         s = decode(matches[i+1]);
         if (s == NULL)
             goto error;
-        if (PyList_SetItem(m, i, s) == -1)
-            goto error;
+        PyList_SET_ITEM(m, i, s);
     }
     sub = decode(matches[0]);
     r = PyObject_CallFunction(readlinestate_global->completion_display_matches_hook,
@@ -1078,6 +1077,9 @@ setup_readline(readlinestate *mod_state)
         Py_FatalError("not enough memory to save locale");
 #endif
 
+    /* The name must be defined before initialization */
+    rl_readline_name = "python";
+
 #ifdef __APPLE__
     /* the libedit readline emulation resets key bindings etc
      * when calling rl_initialize.  So call it upfront
@@ -1099,7 +1101,6 @@ setup_readline(readlinestate *mod_state)
 
     using_history();
 
-    rl_readline_name = "python";
     /* Force rebind of TAB to insert-tab */
     rl_bind_key('\t', rl_insert);
     /* Bind both ESC-TAB and ESC-ESC to the completion function */
@@ -1238,7 +1239,7 @@ static char *
 call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 {
     size_t n;
-    char *p, *q;
+    char *p;
     int signal;
 
 #ifdef SAVE_LOCALE
@@ -1295,10 +1296,10 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     }
     /* Copy the malloc'ed buffer into a PyMem_Malloc'ed one and
        release the original. */
-    q = p;
+    char *q = p;
     p = PyMem_RawMalloc(n+2);
     if (p != NULL) {
-        strncpy(p, q, n);
+        memcpy(p, q, n);
         p[n] = '\n';
         p[n+1] = '\0';
     }

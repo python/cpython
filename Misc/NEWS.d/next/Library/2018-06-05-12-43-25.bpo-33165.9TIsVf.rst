@@ -1,0 +1,2 @@
+Added a stacklevel parameter to logging calls to allow use of wrapper/helper
+functions for logging APIs.

@@ -51,7 +51,6 @@ __all__ = ['Trace', 'CoverageResults']
 
 import linecache
 import os
-import re
 import sys
 import token
 import tokenize
@@ -63,18 +62,7 @@ from time import monotonic as _time
 
 import threading
 
-def _settrace(func):
-    threading.settrace(func)
-    sys.settrace(func)
-
-def _unsettrace():
-    sys.settrace(None)
-    threading.settrace(None)
-
 PRAGMA_NOCOVER = "#pragma NO COVER"
-
-# Simple rx to find lines with no code.
-rx_blank = re.compile(r'^\s*(#.*)?$')
 
 class _Ignore:
     def __init__(self, modules=None, dirs=None):
@@ -278,16 +266,15 @@ class CoverageResults:
                 lnotab = _find_executable_linenos(filename)
             else:
                 lnotab = {}
-            if lnotab:
-                source = linecache.getlines(filename)
-                coverpath = os.path.join(dir, modulename + ".cover")
-                with open(filename, 'rb') as fp:
-                    encoding, _ = tokenize.detect_encoding(fp.readline)
-                n_hits, n_lines = self.write_results_file(coverpath, source,
-                                                          lnotab, count, encoding)
-                if summary and n_lines:
-                    percent = int(100 * n_hits / n_lines)
-                    sums[modulename] = n_lines, percent, modulename, filename
+            source = linecache.getlines(filename)
+            coverpath = os.path.join(dir, modulename + ".cover")
+            with open(filename, 'rb') as fp:
+                encoding, _ = tokenize.detect_encoding(fp.readline)
+            n_hits, n_lines = self.write_results_file(coverpath, source,
+                                                      lnotab, count, encoding)
+            if summary and n_lines:
+                percent = int(100 * n_hits / n_lines)
+                sums[modulename] = n_lines, percent, modulename, filename
 
 
         if summary and sums:
@@ -306,11 +293,12 @@ class CoverageResults:
 
     def write_results_file(self, path, lines, lnotab, lines_hit, encoding=None):
         """Return a coverage results file in path."""
+        # ``lnotab`` is a dict of executable lines, or a line number "table"
 
         try:
             outfile = open(path, "w", encoding=encoding)
         except OSError as err:
-            print(("trace: Could not open %r for writing: %s"
+            print(("trace: Could not open %r for writing: %s "
                                   "- skipping" % (path, err)), file=sys.stderr)
             return 0, 0
 
@@ -324,17 +312,13 @@ class CoverageResults:
                     outfile.write("%5d: " % lines_hit[lineno])
                     n_hits += 1
                     n_lines += 1
-                elif rx_blank.match(line):
-                    outfile.write("       ")
-                else:
-                    # lines preceded by no marks weren't hit
-                    # Highlight them if so indicated, unless the line contains
+                elif lineno in lnotab and not PRAGMA_NOCOVER in line:
+                    # Highlight never-executed lines, unless the line contains
                     # #pragma: NO COVER
-                    if lineno in lnotab and not PRAGMA_NOCOVER in line:
-                        outfile.write(">>>>>> ")
-                        n_lines += 1
-                    else:
-                        outfile.write("       ")
+                    outfile.write(">>>>>> ")
+                    n_lines += 1
+                else:
+                    outfile.write("       ")
                 outfile.write(line.expandtabs(8))
 
         return n_hits, n_lines
@@ -458,12 +442,14 @@ class Trace:
         if globals is None: globals = {}
         if locals is None: locals = {}
         if not self.donothing:
-            _settrace(self.globaltrace)
+            threading.settrace(self.globaltrace)
+            sys.settrace(self.globaltrace)
         try:
             exec(cmd, globals, locals)
         finally:
             if not self.donothing:
-                _unsettrace()
+                sys.settrace(None)
+                threading.settrace(None)
 
     def runfunc(self, func, *args, **kw):
         result = None
@@ -657,7 +643,7 @@ def main():
     grp = parser.add_argument_group('Filters',
             'Can be specified multiple times')
     grp.add_argument('--ignore-module', action='append', default=[],
-            help='Ignore the given module(s) and its submodules'
+            help='Ignore the given module(s) and its submodules '
                  '(if it is a package). Accepts comma separated list of '
                  'module names.')
     grp.add_argument('--ignore-dir', action='append', default=[],

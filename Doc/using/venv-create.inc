@@ -7,9 +7,10 @@ Running this command creates the target directory (creating any parent
 directories that don't exist already) and places a ``pyvenv.cfg`` file in it
 with a ``home`` key pointing to the Python installation from which the command
 was run.  It also creates a ``bin`` (or ``Scripts`` on Windows) subdirectory
-containing a copy of the ``python`` binary (or binaries, in the case of
-Windows).  It also creates an (initially empty) ``lib/pythonX.Y/site-packages``
-subdirectory (on Windows, this is ``Lib\site-packages``). If an existing
+containing a copy/symlink of the Python binary/binaries (as appropriate for the
+platform or arguments used at environment creation time). It also creates an
+(initially empty) ``lib/pythonX.Y/site-packages`` subdirectory
+(on Windows, this is ``Lib\site-packages``). If an existing
 directory is specified, it will be re-used.
 
 .. deprecated:: 3.6
@@ -19,11 +20,6 @@ directory is specified, it will be re-used.
 
 .. versionchanged:: 3.5
    The use of ``venv`` is now recommended for creating virtual environments.
-
-.. seealso::
-
-   `Python Packaging User Guide: Creating and using virtual environments
-   <https://packaging.python.org/installing/#creating-virtual-environments>`__
 
 .. highlight:: none
 
@@ -87,7 +83,8 @@ path.
 
 Once a virtual environment has been created, it can be "activated" using a
 script in the virtual environment's binary directory. The invocation of the
-script is platform-specific:
+script is platform-specific (`<venv>` must be replaced by the path of the
+directory containing the virtual environment):
 
 +-------------+-----------------+-----------------------------------------+
 | Platform    | Shell           | Command to activate virtual environment |

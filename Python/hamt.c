@@ -1,8 +1,9 @@
 #include "Python.h"
 
+#include "pycore_hamt.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
-#include "internal/pystate.h"
-#include "internal/hamt.h"
 
 /*
 This file provides an implemention of an immutable mapping using the
@@ -39,7 +40,7 @@ Now let's partition this bit representation of the hash into blocks of
     0b00_00000_10010_11101_00101_01011_10000 = 19830128
           (6)   (5)   (4)   (3)   (2)   (1)
 
-Each block of 5 bits represents a number betwen 0 and 31.  So if we have
+Each block of 5 bits represents a number between 0 and 31.  So if we have
 a tree that consists of nodes, each of which is an array of 32 pointers,
 those 5-bit blocks will encode a position on a single tree level.
 
@@ -372,10 +373,11 @@ hamt_node_collision_count(PyHamtNode_Collision *node);
 
 #ifdef Py_DEBUG
 static void
-_hamt_node_array_validate(void *o)
+_hamt_node_array_validate(void *obj_raw)
 {
-    assert(IS_ARRAY_NODE(o));
-    PyHamtNode_Array *node = (PyHamtNode_Array*)(o);
+    PyObject *obj = _PyObject_CAST(obj_raw);
+    assert(IS_ARRAY_NODE(obj));
+    PyHamtNode_Array *node = (PyHamtNode_Array*)obj;
     Py_ssize_t i = 0, count = 0;
     for (; i < HAMT_ARRAY_NODE_SIZE; i++) {
         if (node->a_array[i] != NULL) {
@@ -832,7 +834,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
                pairs.
 
                Small hamt objects (<30 keys) usually don't have any
-               Array nodes at all.  Betwen ~30 and ~400 keys hamt
+               Array nodes at all.  Between ~30 and ~400 keys hamt
                objects usually have one Array node, and usually it's
                a root node.
             */
@@ -2348,7 +2350,7 @@ _PyHamt_Without(PyHamtObject *o, PyObject *key)
         return NULL;
     }
 
-    PyHamtNode *new_root;
+    PyHamtNode *new_root = NULL;
 
     hamt_without_t res = hamt_node_without(
         (PyHamtNode *)(o->h_root),
@@ -2476,6 +2478,8 @@ hamt_alloc(void)
     if (o == NULL) {
         return NULL;
     }
+    o->h_count = 0;
+    o->h_root = NULL;
     o->h_weakreflist = NULL;
     PyObject_GC_Track(o);
     return o;

@@ -249,7 +249,7 @@ ABC hierarchy::
 
    .. abstractmethod:: find_module(fullname, path=None)
 
-      An abstact method for finding a :term:`loader` for the specified
+      An abstract method for finding a :term:`loader` for the specified
       module.  Originally specified in :pep:`302`, this method was meant
       for use in :data:`sys.meta_path` and in the path-based import subsystem.
 
@@ -530,7 +530,7 @@ ABC hierarchy::
 
     .. abstractmethod:: contents()
 
-        Returns an :term:`iterator` of strings over the contents of
+        Returns an :term:`iterable` of strings over the contents of
         the package. Do note that it is not required that all names
         returned by the iterator be actual resources, e.g. it is
         acceptable to return names for which :meth:`is_resource` would
@@ -544,7 +544,7 @@ ABC hierarchy::
         the file system then those subdirectory names can be used
         directly.
 
-        The abstract method returns an iterator of no items.
+        The abstract method returns an iterable of no items.
 
 
 .. class:: ResourceLoader
@@ -770,7 +770,7 @@ ABC hierarchy::
 
        Concrete implementation of :meth:`Loader.exec_module`.
 
-      .. versionadded:: 3.4
+       .. versionadded:: 3.4
 
     .. method:: load_module(fullname)
 
@@ -926,9 +926,9 @@ The following functions are available.
 
 .. function:: contents(package)
 
-    Return an iterator over the named items within the package.  The iterator
+    Return an iterable over the named items within the package.  The iterable
     returns :class:`str` resources (e.g. files) and non-resources
-    (e.g. directories).  The iterator does not recurse into subdirectories.
+    (e.g. directories).  The iterable does not recurse into subdirectories.
 
     *package* is either a name or a module object which conforms to the
     ``Package`` requirements.
@@ -1081,7 +1081,12 @@ find and load modules.
    .. classmethod:: invalidate_caches()
 
       Calls :meth:`importlib.abc.PathEntryFinder.invalidate_caches` on all
-      finders stored in :attr:`sys.path_importer_cache`.
+      finders stored in :data:`sys.path_importer_cache` that define the method.
+      Otherwise entries in :data:`sys.path_importer_cache` set to ``None`` are
+      deleted.
+
+      .. versionchanged:: 3.7
+         Entries of ``None`` in :data:`sys.path_importer_cache` are deleted.
 
    .. versionchanged:: 3.4
       Calls objects in :data:`sys.path_hooks` with the current working
@@ -1402,7 +1407,7 @@ an :term:`importer`.
    file path.  For example, if *path* is
    ``/foo/bar/__pycache__/baz.cpython-32.pyc`` the returned path would be
    ``/foo/bar/baz.py``.  *path* need not exist, however if it does not conform
-   to :pep:`3147` or :pep:`488` format, a ``ValueError`` is raised. If
+   to :pep:`3147` or :pep:`488` format, a :exc:`ValueError` is raised. If
    :attr:`sys.implementation.cache_tag` is not defined,
    :exc:`NotImplementedError` is raised.
 
@@ -1648,7 +1653,7 @@ Importing a source file directly
 ''''''''''''''''''''''''''''''''
 
 To import a Python source file directly, use the following recipe
-(Python 3.4 and newer only)::
+(Python 3.5 and newer only)::
 
   import importlib.util
   import sys
@@ -1726,7 +1731,7 @@ Python 3.6 and newer for other parts of the code).
       if '.' in absolute_name:
           parent_name, _, child_name = absolute_name.rpartition('.')
           parent_module = import_module(parent_name)
-          path = parent_module.spec.submodule_search_locations
+          path = parent_module.__spec__.submodule_search_locations
       for finder in sys.meta_path:
           spec = finder.find_spec(absolute_name, path)
           if spec is not None:

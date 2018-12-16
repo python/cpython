@@ -8,6 +8,17 @@ except ImportError:
     print("** IDLE can't import Tkinter.\n"
           "Your Python may not be configured for Tk. **", file=sys.__stderr__)
     raise SystemExit(1)
+
+# Valid arguments for the ...Awareness call below are defined in the following.
+# https://msdn.microsoft.com/en-us/library/windows/desktop/dn280512(v=vs.85).aspx
+if sys.platform == 'win32':
+    try:
+        import ctypes
+        PROCESS_SYSTEM_DPI_AWARE = 1
+        ctypes.OleDLL('shcore').SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
+    except (ImportError, AttributeError, OSError):
+        pass
+
 import tkinter.messagebox as tkMessageBox
 if TkVersion < 8.5:
     root = Tk()  # otherwise create root in main
@@ -27,6 +38,7 @@ from platform import python_version
 import re
 import socket
 import subprocess
+from textwrap import TextWrapper
 import threading
 import time
 import tokenize
@@ -841,10 +853,14 @@ class PyShell(OutputWindow):
         ("edit", "_Edit"),
         ("debug", "_Debug"),
         ("options", "_Options"),
-        ("windows", "_Window"),
+        ("window", "_Window"),
         ("help", "_Help"),
     ]
 
+    # Extend right-click context menu
+    rmenu_specs = OutputWindow.rmenu_specs + [
+        ("Squeeze", "<<squeeze-current-text>>"),
+    ]
 
     # New classes
     from idlelib.history import History
@@ -1022,7 +1038,7 @@ class PyShell(OutputWindow):
         return self.shell_title
 
     COPYRIGHT = \
-          'Type "copyright", "credits" or "license()" for more information.'
+          'Type "help", "copyright", "credits" or "license()" for more information.'
 
     def begin(self):
         self.text.mark_set("iomark", "insert")
@@ -1257,6 +1273,14 @@ class PyShell(OutputWindow):
         self.text.mark_set("insert", "end-1c")
         self.set_line_and_column()
         self.io.reset_undo()
+
+    def show_warning(self, msg):
+        width = self.interp.tkconsole.width
+        wrapper = TextWrapper(width=width, tabsize=8, expand_tabs=True)
+        wrapped_msg = '\n'.join(wrapper.wrap(msg))
+        if not wrapped_msg.endswith('\n'):
+            wrapped_msg += '\n'
+        self.per.bottom.insert("iomark linestart", wrapped_msg, "stderr")
 
     def resetoutput(self):
         source = self.text.get("iomark", "end-1c")
@@ -1526,12 +1550,20 @@ def main():
             shell.interp.execfile(script)
     elif shell:
         # If there is a shell window and no cmd or script in progress,
-        # check for problematic OS X Tk versions and print a warning
-        # message in the IDLE shell window; this is less intrusive
-        # than always opening a separate window.
+        # check for problematic issues and print warning message(s) in
+        # the IDLE shell window; this is less intrusive than always
+        # opening a separate window.
+
+        # Warn if using a problematic OS X Tk version.
         tkversionwarning = macosx.tkVersionWarning(root)
         if tkversionwarning:
-            shell.interp.runcommand("print('%s')" % tkversionwarning)
+            shell.show_warning(tkversionwarning)
+
+        # Warn if the "Prefer tabs when opening documents" system
+        # preference is set to "Always".
+        prefer_tabs_preference_warning = macosx.preferTabsPreferenceWarning()
+        if prefer_tabs_preference_warning:
+            shell.show_warning(prefer_tabs_preference_warning)
 
     while flist.inversedict:  # keep IDLE running while files are open.
         root.mainloop()

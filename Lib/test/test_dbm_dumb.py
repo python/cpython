@@ -73,18 +73,27 @@ class DumbDBMTestCase(unittest.TestCase):
         f = dumbdbm.open(_fname, 'w')
         self._dict[b'g'] = f[b'g'] = b"indented"
         self.read_helper(f)
+        # setdefault() works as in the dict interface
+        self.assertEqual(f.setdefault(b'xxx', b'foo'), b'foo')
+        self.assertEqual(f[b'xxx'], b'foo')
         f.close()
 
     def test_dumbdbm_read(self):
         self.init_db()
         f = dumbdbm.open(_fname, 'r')
         self.read_helper(f)
-        with self.assertRaisesRegex(ValueError,
+        with self.assertRaisesRegex(dumbdbm.error,
                                    'The database is opened for reading only'):
             f[b'g'] = b'x'
-        with self.assertRaisesRegex(ValueError,
+        with self.assertRaisesRegex(dumbdbm.error,
                                    'The database is opened for reading only'):
             del f[b'a']
+        # get() works as in the dict interface
+        self.assertEqual(f.get(b'a'), self._dict[b'a'])
+        self.assertEqual(f.get(b'xxx', b'foo'), b'foo')
+        self.assertIsNone(f.get(b'xxx'))
+        with self.assertRaises(KeyError):
+            f[b'xxx']
         f.close()
 
     def test_dumbdbm_keys(self):

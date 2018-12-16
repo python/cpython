@@ -126,7 +126,10 @@ class HelpParser(HTMLParser):
         if tag in ['h1', 'h2', 'h3']:
             self.indent(0)  # clear tag, reset indent
             if self.show:
-                self.toc.append((self.header, self.text.index('insert')))
+                indent = ('        ' if tag == 'h3' else
+                          '    ' if tag == 'h2' else
+                          '')
+                self.toc.append((indent+self.header, self.text.index('insert')))
         elif tag in ['span', 'em']:
             self.chartags = ''
         elif tag == 'a':
@@ -142,11 +145,15 @@ class HelpParser(HTMLParser):
         if self.show and not self.hdrlink:
             d = data if self.pre else data.replace('\n', ' ')
             if self.tags == 'h1':
-                self.hprefix = d[0:d.index(' ')]
-            if self.tags in ['h1', 'h2', 'h3'] and self.hprefix != '':
-                if d[0:len(self.hprefix)] == self.hprefix:
-                    d = d[len(self.hprefix):].strip()
-                self.header += d
+                try:
+                    self.hprefix = d[0:d.index(' ')]
+                except ValueError:
+                    self.hprefix = ''
+            if self.tags in ['h1', 'h2', 'h3']:
+                if (self.hprefix != '' and
+                    d[0:len(self.hprefix)] == self.hprefix):
+                    d = d[len(self.hprefix):]
+                self.header += d.strip()
             self.text.insert('end', d, (self.tags, self.chartags))
 
 
@@ -233,28 +240,28 @@ class HelpWindow(Toplevel):
 def copy_strip():
     """Copy idle.html to idlelib/help.html, stripping trailing whitespace.
 
-    Files with trailing whitespace cannot be pushed to the hg cpython
+    Files with trailing whitespace cannot be pushed to the git cpython
     repository.  For 3.x (on Windows), help.html is generated, after
-    editing idle.rst in the earliest maintenance version, with
+    editing idle.rst on the master branch, with
       sphinx-build -bhtml . build/html
       python_d.exe -c "from idlelib.help import copy_strip; copy_strip()"
-    After refreshing TortoiseHG workshop to generate a diff,
-    check  both the diff and displayed text.  Push the diff along with
-    the idle.rst change and merge both into default (or an intermediate
-    maintenance version).
+    Check build/html/library/idle.html, the help.html diff, and the text
+    displayed by Help => IDLE Help.  Add a blurb and create a PR.
 
-    When the 'earlist' version gets its final maintenance release,
-    do an update as described above, without editing idle.rst, to
-    rebase help.html on the next version of idle.rst.  Do not worry
-    about version changes as version is not displayed.  Examine other
-    changes and the result of Help -> IDLE Help.
+    It can be worthwhile to occasionally generate help.html without
+    touching idle.rst.  Changes to the master version and to the doc
+    build system may result in changes that should not changed
+    the displayed text, but might break HelpParser.
 
-    If maintenance and default versions of idle.rst diverge, and
-    merging does not go smoothly, then consider generating
-    separate help.html files from separate idle.htmls.
+    As long as master and maintenance versions of idle.rst remain the
+    same, help.html can be backported.  The internal Python version
+    number is not displayed.  If maintenance idle.rst diverges from
+    the master version, then instead of backporting help.html from
+    master, repeat the proceedure above to generate a maintenance
+    version.
     """
     src = join(abspath(dirname(dirname(dirname(__file__)))),
-               'Doc', 'build', 'html', 'library', 'idle.html')
+            'Doc', 'build', 'html', 'library', 'idle.html')
     dst = join(abspath(dirname(__file__)), 'help.html')
     with open(src, 'rb') as inn,\
          open(dst, 'wb') as out:
@@ -271,5 +278,8 @@ def show_idlehelp(parent):
     HelpWindow(parent, filename, 'IDLE Help (%s)' % python_version())
 
 if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_help', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(show_idlehelp)

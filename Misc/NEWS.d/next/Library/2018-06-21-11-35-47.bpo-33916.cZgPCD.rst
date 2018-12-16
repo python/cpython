@@ -1,0 +1,2 @@
+bz2 and lzma: When Decompressor.__init__() is called twice, free the old
+lock to not leak memory.

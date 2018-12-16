@@ -31,7 +31,7 @@ be used for each of them.  A concrete object belonging to any of these
 categories is called a :term:`file object`.  Other common terms are *stream*
 and *file-like object*.
 
-Independently of its category, each concrete stream object will also have
+Independent of its category, each concrete stream object will also have
 various capabilities: it can be read-only, write-only, or read-write. It can
 also allow arbitrary random access (seeking forwards or backwards to any
 location), or only sequential access (for example in the case of a socket or
@@ -39,7 +39,7 @@ pipe).
 
 All streams are careful about the type of data you give to them.  For example
 giving a :class:`str` object to the ``write()`` method of a binary stream
-will raise a ``TypeError``.  So will giving a :class:`bytes` object to the
+will raise a :exc:`TypeError`.  So will giving a :class:`bytes` object to the
 ``write()`` method of a text stream.
 
 .. versionchanged:: 3.3
@@ -799,7 +799,7 @@ Text I/O
 
       .. versionadded:: 3.1
 
-   .. method:: read(size)
+   .. method:: read(size=-1)
 
       Read and return at most *size* characters from the stream as a single
       :class:`str`.  If *size* is negative or ``None``, reads until EOF.
@@ -889,7 +889,7 @@ Text I/O
      characters written are translated to the given string.
 
    If *line_buffering* is ``True``, :meth:`flush` is implied when a call to
-   write contains a newline character.
+   write contains a newline character or a carriage return.
 
    If *write_through* is ``True``, calls to :meth:`write` are guaranteed
    not to be buffered: any data written on the :class:`TextIOWrapper`

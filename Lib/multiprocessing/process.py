@@ -248,6 +248,7 @@ class BaseProcess(object):
             raise ValueError("process not started") from None
 
     def __repr__(self):
+        exitcode = None
         if self is _current_process:
             status = 'started'
         elif self._closed:
@@ -257,19 +258,23 @@ class BaseProcess(object):
         elif self._popen is None:
             status = 'initial'
         else:
-            if self._popen.poll() is not None:
-                status = self.exitcode
+            exitcode = self._popen.poll()
+            if exitcode is not None:
+                status = 'stopped'
             else:
                 status = 'started'
 
-        if type(status) is int:
-            if status == 0:
-                status = 'stopped'
-            else:
-                status = 'stopped[%s]' % _exitcode_to_name.get(status, status)
-
-        return '<%s(%s, %s%s)>' % (type(self).__name__, self._name,
-                                   status, self.daemon and ' daemon' or '')
+        info = [type(self).__name__, 'name=%r' % self._name]
+        if self._popen is not None:
+            info.append('pid=%s' % self._popen.pid)
+        info.append('parent=%s' % self._parent_pid)
+        info.append(status)
+        if exitcode is not None:
+            exitcode = _exitcode_to_name.get(exitcode, exitcode)
+            info.append('exitcode=%s' % exitcode)
+        if self.daemon:
+            info.append('daemon')
+        return '<%s>' % ' '.join(info)
 
     ##
 
@@ -373,7 +378,7 @@ _exitcode_to_name = {}
 
 for name, signum in list(signal.__dict__.items()):
     if name[:3]=='SIG' and '_' not in name:
-        _exitcode_to_name[-signum] = name
+        _exitcode_to_name[-signum] = f'-{name}'
 
 # For debug and leak testing
 _dangling = WeakSet()

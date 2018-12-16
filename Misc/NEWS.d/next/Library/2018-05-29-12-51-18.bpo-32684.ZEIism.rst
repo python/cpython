@@ -1,0 +1,1 @@
+Fix gather to propagate cancellation of itself even with return_exceptions.

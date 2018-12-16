@@ -163,6 +163,7 @@ create_converter('LPSECURITY_ATTRIBUTES', '" F_POINTER "')
 create_converter('BOOL', 'i') # F_BOOL used previously (always 'i')
 create_converter('DWORD', 'k') # F_DWORD is always "k" (which is much shorter)
 create_converter('LPCTSTR', 's')
+create_converter('LPCWSTR', 'u')
 create_converter('LPWSTR', 'u')
 create_converter('UINT', 'I') # F_UINT used previously (always 'I')
 
@@ -186,7 +187,7 @@ class DWORD_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = Py_BuildValue("k", _return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=4527052fe06e5823]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=27456f8555228b62]*/
 
 #include "clinic/_winapi.c.h"
 
@@ -974,7 +975,8 @@ cleanup:
 _winapi.CreateProcess
 
     application_name: Py_UNICODE(accept={str, NoneType})
-    command_line: Py_UNICODE(accept={str, NoneType})
+    command_line: object
+        Can be str or None
     proc_attrs: object
         Ignored internally, can be None.
     thread_attrs: object
@@ -993,13 +995,14 @@ process ID, and thread ID.
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
-                           Py_UNICODE *command_line, PyObject *proc_attrs,
+_winapi_CreateProcess_impl(PyObject *module,
+                           const Py_UNICODE *application_name,
+                           PyObject *command_line, PyObject *proc_attrs,
                            PyObject *thread_attrs, BOOL inherit_handles,
                            DWORD creation_flags, PyObject *env_mapping,
-                           Py_UNICODE *current_directory,
+                           const Py_UNICODE *current_directory,
                            PyObject *startup_info)
-/*[clinic end generated code: output=4652a33aff4b0ae1 input=4a43b05038d639bb]*/
+/*[clinic end generated code: output=9b2423a609230132 input=42ac293eaea03fc4]*/
 {
     PyObject *ret = NULL;
     BOOL result;
@@ -1007,6 +1010,7 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
     STARTUPINFOEXW si;
     PyObject *environment = NULL;
     wchar_t *wenvironment;
+    wchar_t *command_line_copy = NULL;
     AttributeList attribute_list = {0};
 
     ZeroMemory(&si, sizeof(si));
@@ -1041,10 +1045,23 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
         goto cleanup;
 
     si.lpAttributeList = attribute_list.attribute_list;
+    if (PyUnicode_Check(command_line)) {
+        command_line_copy = PyUnicode_AsWideCharString(command_line, NULL);
+        if (command_line_copy == NULL) {
+            goto cleanup;
+        }
+    }
+    else if (command_line != Py_None) {
+        PyErr_Format(PyExc_TypeError, 
+                     "CreateProcess() argument 2 must be str or None, not %s", 
+                     Py_TYPE(command_line)->tp_name);
+        goto cleanup;
+    }
+
 
     Py_BEGIN_ALLOW_THREADS
     result = CreateProcessW(application_name,
-                           command_line,
+                           command_line_copy,
                            NULL,
                            NULL,
                            inherit_handles,
@@ -1068,6 +1085,7 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
                         pi.dwThreadId);
 
 cleanup:
+    PyMem_Free(command_line_copy);
     Py_XDECREF(environment);
     freeattributelist(&attribute_list);
 
@@ -1337,7 +1355,7 @@ _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
         }
         if (_PyBytes_Resize(&buf, nread))
             return NULL;
-        return Py_BuildValue("Nii", buf, navail, nleft);
+        return Py_BuildValue("NII", buf, navail, nleft);
     }
     else {
         Py_BEGIN_ALLOW_THREADS
@@ -1346,7 +1364,7 @@ _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
         if (!ret) {
             return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
         }
-        return Py_BuildValue("ii", navail, nleft);
+        return Py_BuildValue("II", navail, nleft);
     }
 }
 
@@ -1354,14 +1372,14 @@ _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
 _winapi.ReadFile
 
     handle: HANDLE
-    size: int
+    size: DWORD
     overlapped as use_overlapped: bool(accept={int}) = False
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_ReadFile_impl(PyObject *module, HANDLE handle, int size,
+_winapi_ReadFile_impl(PyObject *module, HANDLE handle, DWORD size,
                       int use_overlapped)
-/*[clinic end generated code: output=492029ca98161d84 input=3f0fde92f74de59a]*/
+/*[clinic end generated code: output=d3d5b44a8201b944 input=08c439d03a11aac5]*/
 {
     DWORD nread;
     PyObject *buf;
@@ -1430,8 +1448,6 @@ _winapi_SetNamedPipeHandleState_impl(PyObject *module, HANDLE named_pipe,
     PyObject *oArgs[3] = {mode, max_collection_count, collect_data_timeout};
     DWORD dwArgs[3], *pArgs[3] = {NULL, NULL, NULL};
     int i;
-
-    PyErr_Clear();
 
     for (i = 0 ; i < 3 ; i++) {
         if (oArgs[i] != Py_None) {

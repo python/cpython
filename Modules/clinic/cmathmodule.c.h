@@ -641,7 +641,7 @@ PyDoc_STRVAR(cmath_log__doc__,
 "If the base not specified, returns the natural logarithm (base e) of z.");
 
 #define CMATH_LOG_METHODDEF    \
-    {"log", (PyCFunction)cmath_log, METH_FASTCALL, cmath_log__doc__},
+    {"log", (PyCFunction)(void(*)(void))cmath_log, METH_FASTCALL, cmath_log__doc__},
 
 static PyObject *
 cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj);
@@ -726,7 +726,7 @@ PyDoc_STRVAR(cmath_rect__doc__,
 "Convert from polar coordinates to rectangular coordinates.");
 
 #define CMATH_RECT_METHODDEF    \
-    {"rect", (PyCFunction)cmath_rect, METH_FASTCALL, cmath_rect__doc__},
+    {"rect", (PyCFunction)(void(*)(void))cmath_rect, METH_FASTCALL, cmath_rect__doc__},
 
 static PyObject *
 cmath_rect_impl(PyObject *module, double r, double phi);
@@ -851,7 +851,7 @@ PyDoc_STRVAR(cmath_isclose__doc__,
 "not close to anything, even itself. inf and -inf are only close to themselves.");
 
 #define CMATH_ISCLOSE_METHODDEF    \
-    {"isclose", (PyCFunction)cmath_isclose, METH_FASTCALL|METH_KEYWORDS, cmath_isclose__doc__},
+    {"isclose", (PyCFunction)(void(*)(void))cmath_isclose, METH_FASTCALL|METH_KEYWORDS, cmath_isclose__doc__},
 
 static int
 cmath_isclose_impl(PyObject *module, Py_complex a, Py_complex b,
@@ -882,4 +882,4 @@ cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dd93c3a6aeb42ebb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=17f6f65a229b1ef9 input=a9049054013a1b77]*/
