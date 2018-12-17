@@ -76,7 +76,7 @@ decompression bomb         Safe             Safe              Safe             S
    the unexpanded entity verbatim.
 3. :mod:`xmlrpclib` doesn't expand external entities and omits them.
 4. Since Python 3.8.0, external general entities are no longer processed by
-   default since Python.
+   default.
 
 
 billion laughs / exponential entity expansion
