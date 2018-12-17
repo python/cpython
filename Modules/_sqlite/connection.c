@@ -1138,6 +1138,10 @@ static PyObject* pysqlite_connection_get_in_transaction(pysqlite_Connection* sel
 static int
 pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* isolation_level, void *Py_UNUSED(ignored))
 {
+    if (isolation_level == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
     if (isolation_level == Py_None) {
         PyObject *res = pysqlite_connection_commit(self, NULL);
         if (!res) {
