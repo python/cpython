@@ -378,6 +378,9 @@ API and Feature Removals
 
 The following features and APIs have been removed from Python 3.8:
 
+* The :mod:`macpath` module, deprecated in Python 3.7, has been removed.
+  (Contributed by Victor Stinner in :issue:`35471`.)
+
 * The function :func:`platform.popen` has been removed, it was deprecated since
   Python 3.3: use :func:`os.popen` instead.
 
@@ -482,6 +485,12 @@ Changes in the Python API
 * :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
   external entities by default.
   (Contributed by Christian Heimes in :issue:`17239`.)
+
+* Deleting a key from a read-only :mod:`dbm` database (:mod:`dbm.dumb`,
+  :mod:`dbm.gnu` or :mod:`dbm.ndbm`) raises :attr:`error` (:exc:`dbm.dumb.error`,
+  :exc:`dbm.gnu.error` or :exc:`dbm.ndbm.error`) instead of :exc:`KeyError`.
+  (Contributed by Xiang Zhang in :issue:`33106`.)
+
 
 CPython bytecode changes
 ------------------------

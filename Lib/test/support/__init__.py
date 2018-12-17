@@ -1937,7 +1937,7 @@ def _run_suite(suite):
     if junit_xml_list is not None:
         junit_xml_list.append(result.get_xml_element())
 
-    if not result.testsRun:
+    if not result.testsRun and not result.skipped:
         raise TestDidNotRun
     if not result.wasSuccessful():
         if len(result.errors) == 1 and not result.failures:
@@ -2259,11 +2259,11 @@ def start_threads(threads, unlock=None):
         try:
             if unlock:
                 unlock()
-            endtime = starttime = time.time()
+            endtime = starttime = time.monotonic()
             for timeout in range(1, 16):
                 endtime += 60
                 for t in started:
-                    t.join(max(endtime - time.time(), 0.01))
+                    t.join(max(endtime - time.monotonic(), 0.01))
                 started = [t for t in started if t.isAlive()]
                 if not started:
                     break

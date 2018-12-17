@@ -30,9 +30,9 @@ from . import get_context, TimeoutError
 # Constants representing the state of a pool
 #
 
-RUN = 0
-CLOSE = 1
-TERMINATE = 2
+RUN = "RUN"
+CLOSE = "CLOSE"
+TERMINATE = "TERMINATE"
 
 #
 # Miscellaneous
@@ -217,6 +217,12 @@ class Pool(object):
             exitpriority=15
             )
 
+    def __repr__(self):
+        cls = self.__class__
+        return (f'<{cls.__module__}.{cls.__qualname__} '
+                f'state={self._state} '
+                f'pool_size={len(self._pool)}>')
+
     def _join_exited_workers(self):
         """Cleanup after any worker processes which have exited due to reaching
         their specified lifetime.  Returns True if any workers were cleaned up.
@@ -260,6 +266,10 @@ class Pool(object):
         self._outqueue = self._ctx.SimpleQueue()
         self._quick_put = self._inqueue._writer.send
         self._quick_get = self._outqueue._reader.recv
+
+    def _check_running(self):
+        if self._state != RUN:
+            raise ValueError("Pool not running")
 
     def apply(self, func, args=(), kwds={}):
         '''
@@ -306,8 +316,7 @@ class Pool(object):
         '''
         Equivalent of `map()` -- can be MUCH slower than `Pool.map()`.
         '''
-        if self._state != RUN:
-            raise ValueError("Pool not running")
+        self._check_running()
         if chunksize == 1:
             result = IMapIterator(self._cache)
             self._taskqueue.put(
@@ -336,8 +345,7 @@ class Pool(object):
         '''
         Like `imap()` method but ordering of results is arbitrary.
         '''
-        if self._state != RUN:
-            raise ValueError("Pool not running")
+        self._check_running()
         if chunksize == 1:
             result = IMapUnorderedIterator(self._cache)
             self._taskqueue.put(
@@ -366,8 +374,7 @@ class Pool(object):
         '''
         Asynchronous version of `apply()` method.
         '''
-        if self._state != RUN:
-            raise ValueError("Pool not running")
+        self._check_running()
         result = ApplyResult(self._cache, callback, error_callback)
         self._taskqueue.put(([(result._job, 0, func, args, kwds)], None))
         return result
@@ -385,8 +392,7 @@ class Pool(object):
         '''
         Helper function to implement map, starmap and their async counterparts.
         '''
-        if self._state != RUN:
-            raise ValueError("Pool not running")
+        self._check_running()
         if not hasattr(iterable, '__len__'):
             iterable = list(iterable)
 
@@ -432,7 +438,7 @@ class Pool(object):
             try:
                 # iterating taskseq cannot fail
                 for task in taskseq:
-                    if thread._state:
+                    if thread._state != RUN:
                         util.debug('task handler found thread._state != RUN')
                         break
                     try:
@@ -480,7 +486,7 @@ class Pool(object):
                 util.debug('result handler got EOFError/OSError -- exiting')
                 return
 
-            if thread._state:
+            if thread._state != RUN:
                 assert thread._state == TERMINATE, "Thread not in TERMINATE"
                 util.debug('result handler found thread._state=TERMINATE')
                 break
@@ -625,6 +631,7 @@ class Pool(object):
                     p.join()
 
     def __enter__(self):
+        self._check_running()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
