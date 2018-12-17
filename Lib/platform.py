@@ -618,6 +618,8 @@ def _syscmd_file(target, default=''):
 
 ### Information about the used architecture
 
+_DEFAULT_LINKAGE = {'win32': 'WindowsPE'}
+
 def architecture(executable=None, bits='', linkage=''):
 
     """ Queries the given executable (defaults to the Python interpreter
@@ -646,8 +648,7 @@ def architecture(executable=None, bits='', linkage=''):
 
     # bpo-35348: For Python executable, don't use the file command
     if executable is None or executable == sys.executable:
-        if sys.platform == 'win32':
-            linkage = 'WindowsPE'
+        linkage = _DEFAULT_LINKAGE.get(sys.platform, linkage)
         return bits, linkage
 
     # Get data from the 'file' system command
