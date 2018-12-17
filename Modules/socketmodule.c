@@ -5018,28 +5018,45 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
         else
 #endif
         {
-            fd = PyLong_AsSocket_t(fdobj);
-            if (fd == (SOCKET_T)(-1) && PyErr_Occurred())
-                return -1;
-            if (fd == INVALID_SOCKET) {
-                PyErr_SetString(PyExc_ValueError,
-                                "can't use invalid socket value");
+
+            if (PyFloat_Check(fdobj)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "integer argument expected, got float");
                 return -1;
             }
 
-            if (family == -1) {
-                sock_addr_t addrbuf;
-                socklen_t addrlen = sizeof(sock_addr_t);
-
-                memset(&addrbuf, 0, addrlen);
-                if (getsockname(fd, SAS2SA(&addrbuf), &addrlen) == 0) {
-                    family = SAS2SA(&addrbuf)->sa_family;
-                } else {
+            fd = PyLong_AsSocket_t(fdobj);
+            if (fd == (SOCKET_T)(-1) && PyErr_Occurred())
+                return -1;
 #ifdef MS_WINDOWS
-                    PyErr_SetFromWindowsErrWithFilename(0, "family");
+            if (fd == INVALID_SOCKET) {
 #else
-                    PyErr_SetFromErrnoWithFilename(PyExc_OSError, "family");
+            if (fd < 0) {
 #endif
+                PyErr_SetString(PyExc_ValueError, "negative file descriptor");
+                return -1;
+            }
+
+            /* validate that passed file descriptor is valid and a socket. */
+            sock_addr_t addrbuf;
+            socklen_t addrlen = sizeof(sock_addr_t);
+
+            memset(&addrbuf, 0, addrlen);
+            if (getsockname(fd, SAS2SA(&addrbuf), &addrlen) == 0) {
+                if (family == -1) {
+                    family = SAS2SA(&addrbuf)->sa_family;
+                }
+            } else {
+#ifdef MS_WINDOWS
+                /* getsockname() on an unbound socket is an error on Windows.
+                   Invalid descriptor and not a socket is same error code.
+                   Error out if family must be resolved, or bad descriptor. */
+                if (family == -1 || CHECK_ERRNO(ENOTSOCK)) {
+#else
+                /* getsockname() is not supported for SOL_ALG on Linux. */
+                if (family == -1 || CHECK_ERRNO(EBADF) || CHECK_ERRNO(ENOTSOCK)) {
+#endif
+                    set_error();
                     return -1;
                 }
             }
@@ -5052,11 +5069,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
                 {
                     type = tmp;
                 } else {
-#ifdef MS_WINDOWS
-                    PyErr_SetFromWindowsErrWithFilename(0, "type");
-#else
-                    PyErr_SetFromErrnoWithFilename(PyExc_OSError, "type");
-#endif
+                    set_error();
                     return -1;
                 }
             }
@@ -5072,11 +5085,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
                 {
                     proto = tmp;
                 } else {
-#ifdef MS_WINDOWS
-                    PyErr_SetFromWindowsErrWithFilename(0, "protocol");
-#else
-                    PyErr_SetFromErrnoWithFilename(PyExc_OSError, "protocol");
-#endif
+                    set_error();
                     return -1;
                 }
             }
