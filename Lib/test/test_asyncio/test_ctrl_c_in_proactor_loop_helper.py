@@ -3,8 +3,8 @@ import sys
 
 def do_in_child_process():
     import asyncio
-    asyncio.set_event_loop_policy(
-            asyncio.WindowsProactorEventLoopPolicy())
+
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     l = asyncio.get_event_loop()
     try:
         print("start")
@@ -23,7 +23,7 @@ def do_in_main_process():
     import signal
     import subprocess
     from test.support.script_helper import spawn_python
-    
+
     ok = False
     with spawn_python(__file__, "--child") as p:
         try:
@@ -39,6 +39,7 @@ def do_in_main_process():
             sys.stderr.write(repr(e))
             p.kill()
     sys.exit(255 if ok else 1)
+
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
