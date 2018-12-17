@@ -18,6 +18,7 @@ from asyncio import windows_events
 from test.test_asyncio import utils as test_utils
 from test.support.script_helper import spawn_python
 
+
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
 
