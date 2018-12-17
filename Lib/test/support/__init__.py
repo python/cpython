@@ -1986,7 +1986,7 @@ def set_match_tests(patterns):
         patterns = ()
     elif all(map(_is_full_match_test, patterns)):
         # Simple case: all patterns are full test identifier.
-        # The test.bisect utility only uses such full test identifiers.
+        # The test.bisect_cmd utility only uses such full test identifiers.
         func = set(patterns).__contains__
     else:
         regex = '|'.join(map(fnmatch.translate, patterns))
