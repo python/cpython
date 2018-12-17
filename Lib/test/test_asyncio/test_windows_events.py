@@ -40,7 +40,7 @@ class UpperProto(asyncio.Protocol):
 class ProactorLoopCtrlC(test_utils.TestCase):
     def test_ctrl_c(self):
         from .test_ctrl_c_in_proactor_loop_helper import __file__ as f
-        
+
         # ctrl-c will be sent to all processes that share the same console
         # in order to isolate the effect of raising ctrl-c we'll create
         # a process with a new console
