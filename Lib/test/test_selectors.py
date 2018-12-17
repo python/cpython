@@ -1,6 +1,7 @@
 import errno
 import os
 import random
+import select
 import selectors
 import signal
 import socket
@@ -524,6 +525,15 @@ class EpollSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn):
             with self.assertRaises(KeyError):
                 s.get_key(f)
 
+    def test_register(self):
+        super().test_register()
+        s =  self.SELECTOR()
+        if hasattr("select", 'EPOLLEXCLUSIVE'):
+            key = s.register(wr, selectors.EVENT_WRITE, 'data', extra_events=select.EPOLLEXCLUSIVE)
+            self.assertEqual(key.fileobj, wr)
+            self.assertEqual(key.fd, wr.fileno())
+            self.assertEqual(key.events, select.EPOLLEXCLUSIVE)
+            self.assertEqual(key.data, "data")
 
 @unittest.skipUnless(hasattr(selectors, 'KqueueSelector'),
                      "Test needs selectors.KqueueSelector)")

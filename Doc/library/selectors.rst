@@ -102,7 +102,7 @@ constants below:
    :class:`BaseSelector` and its concrete implementations support the
    :term:`context manager` protocol.
 
-   .. abstractmethod:: register(fileobj, events, data=None)
+   .. abstractmethod:: register(fileobj, events, data=None, *, extra_events=0)
 
       Register a file object for selection, monitoring it for I/O events.
 
@@ -110,6 +110,7 @@ constants below:
       file descriptor or an object with a ``fileno()`` method.
       *events* is a bitwise mask of events to monitor.
       *data* is an opaque object.
+      *extra_events* is the extra events people want to use. All of the events are defined in :mod:`select` module.
 
       This returns a new :class:`SelectorKey` instance, or raises a
       :exc:`ValueError` in case of invalid event mask or file descriptor, or
@@ -127,12 +128,12 @@ constants below:
       :exc:`ValueError` if *fileobj* is invalid (e.g. it has no ``fileno()``
       method or its ``fileno()`` method has an invalid return value).
 
-   .. method:: modify(fileobj, events, data=None)
+   .. method:: modify(fileobj, events, data=None, *, extra_events=0)
 
       Change a registered file object's monitored events or attached data.
 
       This is equivalent to :meth:`BaseSelector.unregister(fileobj)` followed
-      by :meth:`BaseSelector.register(fileobj, events, data)`, except that it
+      by :meth:`BaseSelector.register(fileobj, events, data, *, extra_events=0)`, except that it
       can be implemented more efficiently.
 
       This returns a new :class:`SelectorKey` instance, or raises a
