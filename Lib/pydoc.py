@@ -2213,14 +2213,14 @@ def _start_server(urlhandler, hostname, port):
         Let the server do its thing. We just need to monitor its status.
         Use time.sleep so the loop doesn't hog the CPU.
 
-        >>> starttime = time.time()
+        >>> starttime = time.monotonic()
         >>> timeout = 1                    #seconds
 
         This is a short timeout for testing purposes.
 
         >>> while serverthread.serving:
         ...     time.sleep(.01)
-        ...     if serverthread.serving and time.time() - starttime > timeout:
+        ...     if serverthread.serving and time.monotonic() - starttime > timeout:
         ...          serverthread.stop()
         ...          break
 

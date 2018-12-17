@@ -1122,18 +1122,18 @@ class StressTest(unittest.TestCase):
         self.setsig(signal.SIGALRM, second_handler)  # for ITIMER_REAL
 
         expected_sigs = 0
-        deadline = time.time() + 15.0
+        deadline = time.monotonic() + 15.0
 
         while expected_sigs < N:
             os.kill(os.getpid(), signal.SIGPROF)
             expected_sigs += 1
             # Wait for handlers to run to avoid signal coalescing
-            while len(sigs) < expected_sigs and time.time() < deadline:
+            while len(sigs) < expected_sigs and time.monotonic() < deadline:
                 time.sleep(1e-5)
 
             os.kill(os.getpid(), signal.SIGUSR1)
             expected_sigs += 1
-            while len(sigs) < expected_sigs and time.time() < deadline:
+            while len(sigs) < expected_sigs and time.monotonic() < deadline:
                 time.sleep(1e-5)
 
         # All ITIMER_REAL signals should have been delivered to the
@@ -1156,7 +1156,7 @@ class StressTest(unittest.TestCase):
         self.setsig(signal.SIGALRM, handler)  # for ITIMER_REAL
 
         expected_sigs = 0
-        deadline = time.time() + 15.0
+        deadline = time.monotonic() + 15.0
 
         while expected_sigs < N:
             # Hopefully the SIGALRM will be received somewhere during
@@ -1166,7 +1166,7 @@ class StressTest(unittest.TestCase):
 
             expected_sigs += 2
             # Wait for handlers to run to avoid signal coalescing
-            while len(sigs) < expected_sigs and time.time() < deadline:
+            while len(sigs) < expected_sigs and time.monotonic() < deadline:
                 time.sleep(1e-5)
 
         # All ITIMER_REAL signals should have been delivered to the
