@@ -1,5 +1,6 @@
 import os
 import platform
+import struct
 import subprocess
 import sys
 import sysconfig
@@ -16,13 +17,13 @@ class PlatformTest(unittest.TestCase):
         platform._uname_cache = None
 
     def test_architecture(self):
-        with mock.patch('struct.calcsize', return_value=10):
-            bits, linkage = platform.architecture()
-            self.assertEqual(bits, '80bit')
-            if sys.platform == 'win32':
-                self.assertEqual(linkage, 'WindowsPE')
-            else:
-                self.assertEqual(linkage, '')
+        bits, linkage = platform.architecture()
+        pointer_bits = struct.calcsize('P') * 8
+        self.assertEqual(bits, f"{pointer_bits}bit")
+        if sys.platform == 'win32':
+            self.assertEqual(linkage, 'WindowsPE')
+        else:
+            self.assertEqual(linkage, '')
 
     @support.skip_unless_symlink
     def test_architecture_via_symlink(self): # issue3762
