@@ -134,10 +134,12 @@ class EncodingDetails(_EncodingDetails):
 
         * Some platforms report ASCII as ANSI_X3.4-1968
         * Some platforms report ASCII as US-ASCII
+        * Some platforms report ASCII as 646
         * Some platforms report UTF-8 instead of utf-8
         """
         data = data.replace(b"ANSI_X3.4-1968", b"ascii")
         data = data.replace(b"US-ASCII", b"ascii")
+        data = data.replace(b"646", b"ascii")
         data = data.lower()
         return data
 
