@@ -1004,10 +1004,14 @@ non-important content
         self.assertEqual('{d[0]}'.format(d=d), 'integer')
 
     def test_invalid_expressions(self):
-        self.assertAllRaise(SyntaxError, 'invalid syntax',
-                            [r"f'{a[4)}'",
-                             r"f'{a(4]}'",
-                            ])
+        self.assertAllRaise(SyntaxError,
+                            r"closing parenthesis '\)' does not match "
+                            r"opening parenthesis '\[' \(<fstring>, line 1\)",
+                            [r"f'{a[4)}'"])
+        self.assertAllRaise(SyntaxError,
+                            r"closing parenthesis '\]' does not match "
+                            r"opening parenthesis '\(' \(<fstring>, line 1\)",
+                            [r"f'{a(4]}'"])
 
     def test_errors(self):
         # see issue 26287

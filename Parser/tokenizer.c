@@ -1842,12 +1842,44 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     case '(':
     case '[':
     case '{':
+#ifndef PGEN
+        if (tok->level >= MAXLEVEL) {
+            return syntaxerror(tok, "too many nested parentheses");
+        }
+        tok->parenstack[tok->level] = c;
+        tok->parenlinenostack[tok->level] = tok->lineno;
+#endif
         tok->level++;
         break;
     case ')':
     case ']':
     case '}':
+#ifndef PGEN
+        if (!tok->level) {
+            return syntaxerror(tok, "unmatched '%c'", c);
+        }
+#endif
         tok->level--;
+#ifndef PGEN
+        int opening = tok->parenstack[tok->level];
+        if (!((opening == '(' && c == ')') ||
+              (opening == '[' && c == ']') ||
+              (opening == '{' && c == '}')))
+        {
+            if (tok->parenlinenostack[tok->level] != tok->lineno) {
+                return syntaxerror(tok,
+                        "closing parenthesis '%c' does not match "
+                        "opening parenthesis '%c' on line %d",
+                        c, opening, tok->parenlinenostack[tok->level]);
+            }
+            else {
+                return syntaxerror(tok,
+                        "closing parenthesis '%c' does not match "
+                        "opening parenthesis '%c'",
+                        c, opening);
+            }
+        }
+#endif
         break;
     }
 
