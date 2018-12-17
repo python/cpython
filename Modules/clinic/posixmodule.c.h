@@ -176,7 +176,7 @@ PyDoc_STRVAR(os_ttyname__doc__,
 #define OS_TTYNAME_METHODDEF    \
     {"ttyname", (PyCFunction)os_ttyname, METH_O, os_ttyname__doc__},
 
-static char *
+static PyObject *
 os_ttyname_impl(PyObject *module, int fd);
 
 static PyObject *
@@ -184,16 +184,11 @@ os_ttyname(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
-    char *_return_value;
 
     if (!PyArg_Parse(arg, "i:ttyname", &fd)) {
         goto exit;
     }
-    _return_value = os_ttyname_impl(module, fd);
-    if (_return_value == NULL) {
-        goto exit;
-    }
-    return_value = PyUnicode_DecodeFSDefault(_return_value);
+    return_value = os_ttyname_impl(module, fd);
 
 exit:
     return return_value;
@@ -6758,4 +6753,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=7ebb53d872bab149 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=87a3ebadb91bc46b input=a9049054013a1b77]*/
