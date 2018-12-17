@@ -38,41 +38,19 @@ class UpperProto(asyncio.Protocol):
 
 class ProactorLoopCtrlC(test_utils.TestCase):
     def test_ctrl_c(self):
-        code = """if 1:
-        import sys
-        import asyncio
-        asyncio.set_event_loop_policy(
-                asyncio.WindowsProactorEventLoopPolicy())
-        l = asyncio.get_event_loop()
-        try:
-            print("start")
-            sys.stdout.flush()
-            l.run_forever()
-        except KeyboardInterrupt:
-            # ok case
-            sys.exit(255)
-        except:
-            pass
-        """
-        prev_handler = None
-        with spawn_python("-c", code) as p:
+        from .test_ctrl_c_in_proactor_loop_helper import __file__ as f
+        
+        # ctrl-c will be sent to all processes that share the same console
+        # in order to isolate the effect of raising ctrl-c we'll create
+        # a process with a new console
+        flags = subprocess.CREATE_NEW_CONSOLE
+        with spawn_python(f, creationflags=flags) as p:
             try:
-                ready = p.stdout.readline()
-                self.assertEqual(ready, b"start\r\n")
-                # set IGN handler in a current process to avoid being interrupted
-                prev_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
-                # wait until child gets to a run_forever state
-                time.sleep(1)
-                p.send_signal(signal.CTRL_C_EVENT)
                 exit_code = p.wait(timeout=5)
                 self.assertEqual(exit_code, 255)
             except:
                 p.kill()
                 raise
-            finally:
-                # restore old SIGINT handler
-                if prev_handler is not None:
-                    signal.signal(signal.SIGINT, prev_handler)
 
 
 class ProactorTests(test_utils.TestCase):
