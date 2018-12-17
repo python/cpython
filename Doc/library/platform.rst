@@ -35,10 +35,9 @@ Cross Platform
    ``sizeof(long)`` on Python version < 1.5.2) is used as indicator for the
    supported pointer size.
 
-   The function relies on the system's :file:`file` command to do the actual work.
-   This is available on most if not all Unix  platforms and some non-Unix platforms
-   and then only if the executable points to the Python interpreter.  Reasonable
-   defaults are used when the above needs are not met.
+   If the *executable* parameter is set, the function relies on the system's
+   :file:`file` command to do the actual work. This is available on most Unix
+   platforms.
 
    .. note::
 
@@ -49,6 +48,10 @@ Cross Platform
       reliable to query the :attr:`sys.maxsize` attribute::
 
          is_64bits = sys.maxsize > 2**32
+
+   .. versionchanged:: 3.8
+      The system's :file:`file` command is now longer used if the *executable*
+      parameter is not set.
 
 
 .. function:: machine()

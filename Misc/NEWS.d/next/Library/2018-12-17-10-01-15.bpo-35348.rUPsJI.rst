@@ -1,0 +1,2 @@
+Fix :func:`platform.architecture` for macOS universal binaries: it no longer
+uses the system's ``file`` command if the *executable* parameter is not set.

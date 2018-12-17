@@ -171,7 +171,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         The file is read and scanned in chunks of chunksize bytes.
 
     """
-    if executable is None:
+    if executable is None or executable == sys.executable:
         try:
             ver = os.confstr('CS_GNU_LIBC_VERSION')
             # parse 'glibc 2.28' as ('glibc', '2.28')
@@ -618,15 +618,7 @@ def _syscmd_file(target, default=''):
 
 ### Information about the used architecture
 
-# Default values for architecture; non-empty strings override the
-# defaults given as parameters
-_default_architecture = {
-    'win32': ('', 'WindowsPE'),
-    'win16': ('', 'Windows'),
-    'dos': ('', 'MSDOS'),
-}
-
-def architecture(executable=sys.executable, bits='', linkage=''):
+def architecture(executable=None, bits='', linkage=''):
 
     """ Queries the given executable (defaults to the Python interpreter
         binary) for various architecture information.
@@ -640,11 +632,9 @@ def architecture(executable=sys.executable, bits='', linkage=''):
         (or sizeof(long) on Python version < 1.5.2) is used as
         indicator for the supported pointer size.
 
-        The function relies on the system's "file" command to do the
-        actual work. This is available on most if not all Unix
-        platforms. On some non-Unix platforms where the "file" command
-        does not exist and the executable is set to the Python interpreter
-        binary defaults from _default_architecture are used.
+        If the executable parameter is set, the function relies on the system's
+        "file" command to do the actual work. This is available on most Unix
+        platforms.
 
     """
     # Use the sizeof(pointer) as default number of bits if nothing
@@ -654,23 +644,17 @@ def architecture(executable=sys.executable, bits='', linkage=''):
         size = struct.calcsize('P')
         bits = str(size * 8) + 'bit'
 
+    # bpo-35348: For Python executable, don't use the file command
+    if executable is None or executable == sys.executable:
+        if sys.platform == 'win32':
+            linkage = 'WindowsPE'
+        return bits, linkage
+
     # Get data from the 'file' system command
     if executable:
         fileout = _syscmd_file(executable, '')
     else:
         fileout = ''
-
-    if not fileout and \
-       executable == sys.executable:
-        # "file" command did not return anything; we'll try to provide
-        # some sensible defaults then...
-        if sys.platform in _default_architecture:
-            b, l = _default_architecture[sys.platform]
-            if b:
-                bits = b
-            if l:
-                linkage = l
-        return bits, linkage
 
     if 'executable' not in fileout:
         # Format not supported
