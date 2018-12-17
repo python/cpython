@@ -106,7 +106,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     int blockstack_top = 0;             /* (ditto) */
 
     if (p_new_lineno == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "Cannot delete attribute");
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
         return -1;
     }
     /* f_lineno must be an integer. */

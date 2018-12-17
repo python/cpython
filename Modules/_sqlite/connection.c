@@ -1162,7 +1162,7 @@ static int
 pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* isolation_level, void *Py_UNUSED(ignored))
 {
     if (isolation_level == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "Cannot delete attribute");
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
         return -1;
     }
     if (isolation_level == Py_None) {

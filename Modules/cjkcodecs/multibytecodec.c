@@ -134,7 +134,7 @@ codecctx_errors_set(MultibyteStatefulCodecContext *self, PyObject *value,
     const char *str;
 
     if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "Cannot delete attribute");
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
         return -1;
     }
     if (!PyUnicode_Check(value)) {
