@@ -610,7 +610,7 @@ def _syscmd_file(target, default=''):
     target = _follow_symlinks(target)
     # "file" output is locale dependent: force the usage of the C locale
     # to get deterministic behavior.
-    env = dict(os.environ, LC_ALL='c')
+    env = dict(os.environ, LC_ALL='C')
     try:
         # -b: do not prepend filenames to output lines (brief mode)
         output = subprocess.check_output(['file', '-b', target],
