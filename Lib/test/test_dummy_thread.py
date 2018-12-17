@@ -70,14 +70,14 @@ class LockTests(unittest.TestCase):
             to_unlock.release()
 
         self.lock.acquire()
-        start_time = int(time.time())
+        start_time = int(time.monotonic())
         _thread.start_new_thread(delay_unlock,(self.lock, DELAY))
         if support.verbose:
             print()
             print("*** Waiting for thread to release the lock "\
             "(approx. %s sec.) ***" % DELAY)
         self.lock.acquire()
-        end_time = int(time.time())
+        end_time = int(time.monotonic())
         if support.verbose:
             print("done")
         self.assertGreaterEqual(end_time - start_time, DELAY,
