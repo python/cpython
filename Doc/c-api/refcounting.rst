@@ -58,8 +58,8 @@ objects.
    the macro carefully uses a temporary variable and sets the argument to *NULL*
    before decrementing its reference count.
 
-   It is a good idea to use this macro whenever decrementing the value of a
-   variable that might be traversed during garbage collection.
+   It is a good idea to use this macro whenever decrementing the reference
+   count of an object that might be traversed during garbage collection.
 
 
 The following functions are for runtime dynamic embedding of Python:
