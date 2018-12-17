@@ -608,13 +608,21 @@ def _syscmd_file(target, default=''):
 
     import subprocess
     target = _follow_symlinks(target)
+    # "file" output is locale dependent: force the usage of the C locale
+    # to get deterministic behavior.
+    env = dict(os.environ, LC_ALL='C')
     try:
-        output = subprocess.check_output(['file', target],
+        # -b: do not prepend filenames to output lines (brief mode)
+        output = subprocess.check_output(['file', '-b', target],
                                          stderr=subprocess.DEVNULL,
-                                         encoding='latin-1')
+                                         env=env)
     except (OSError, subprocess.CalledProcessError):
         return default
-    return (output or default)
+    if not output:
+        return default
+    # With the C locale, the output should be mostly ASCII-compatible.
+    # Decode from Latin-1 to prevent Unicode decode error.
+    return output.decode('latin-1')
 
 ### Information about the used architecture
 
@@ -672,7 +680,7 @@ def architecture(executable=sys.executable, bits='', linkage=''):
                 linkage = l
         return bits, linkage
 
-    if 'executable' not in fileout:
+    if 'executable' not in fileout and 'shared object' not in fileout:
         # Format not supported
         return bits, linkage
 
