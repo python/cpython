@@ -352,29 +352,40 @@ class PlatformTest(unittest.TestCase):
     def test_macos(self):
         self.addCleanup(self.clear_caches)
 
+        darwin_version = ('Darwin Kernel Version 17.7.0: '
+                          'Thu Jun 21 22:53:14 PDT 2018; '
+                          'root:xnu-4570.71.2~1/RELEASE_X86_64')
         uname = ('Darwin', 'hostname', '17.7.0',
-                 ('Darwin Kernel Version 17.7.0: '
-                  'Thu Jun 21 22:53:14 PDT 2018; '
-                  'root:xnu-4570.71.2~1/RELEASE_X86_64'),
+                 darwin_version,
                  'x86_64', 'i386')
+        uname = platform.uname_result(*uname)
         arch = ('64bit', '')
         with mock.patch.object(platform, 'uname', return_value=uname), \
              mock.patch.object(platform, 'architecture', return_value=arch):
-            for mac_ver, expected_terse, expected in [
+            for mac_ver, expected_terse, expected, expected_system_alias in [
                 # darwin: mac_ver() returns empty strings
                 (('', '', ''),
                  'Darwin-17.7.0',
-                 'Darwin-17.7.0-x86_64-i386-64bit'),
+                 'Darwin-17.7.0-x86_64-i386-64bit',
+                 ('Darwin', '17.7.0', darwin_version)),
                 # macOS: mac_ver() returns macOS version
                 (('10.13.6', ('', '', ''), 'x86_64'),
                  'macOS-10.13.6',
-                 'macOS-10.13.6-x86_64-i386-64bit'),
+                 'macOS-10.13.6-x86_64-i386-64bit',
+                 ('macOS', '10.13.6', darwin_version)),
             ]:
                 with mock.patch.object(platform, 'mac_ver',
                                        return_value=mac_ver):
                     self.clear_caches()
                     self.assertEqual(platform.platform(terse=1), expected_terse)
                     self.assertEqual(platform.platform(), expected)
+
+                    plat_uname = platform.uname()
+                    system_alias = platform.system_alias(plat_uname.system,
+                                                         plat_uname.release,
+                                                         plat_uname.version)
+                    self.assertEqual(system_alias,
+                                     expected_system_alias)
 
 
 if __name__ == '__main__':

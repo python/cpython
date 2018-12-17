@@ -155,6 +155,11 @@ Cross Platform
    for some systems.  It also does some reordering of the information in some cases
    where it would otherwise cause confusion.
 
+   .. versionchanged:: 3.8
+      On macOS, the function now uses :func:`mac_ver`, if it returns a
+      non-empty release string, to get the macOS version rather than the darwin
+      version.
+
 
 .. function:: version()
 

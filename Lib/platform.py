@@ -478,7 +478,14 @@ def system_alias(system, release, version):
         where it would otherwise cause confusion.
 
     """
-    if system == 'SunOS':
+    if system == 'Darwin':
+        # macOS (darwin kernel)
+        macos_release = mac_ver()[0]
+        if macos_release:
+            system = 'macOS'
+            release = macos_release
+
+    elif system == 'SunOS':
         # Sun's OS
         if release < '5':
             # These releases use the old name SunOS

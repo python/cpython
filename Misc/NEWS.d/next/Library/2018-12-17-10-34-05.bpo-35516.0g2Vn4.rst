@@ -1,0 +1,2 @@
+On macOS, :func:`platform.system_alias` now returns macOS and macOS release,
+rather than Darwin and Darwin release.
