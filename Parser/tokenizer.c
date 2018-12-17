@@ -1844,7 +1844,7 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     case '{':
 #ifndef PGEN
         if (tok->level >= MAXLEVEL) {
-            return syntaxerror(tok, "too many nested parenthesis");
+            return syntaxerror(tok, "too many nested parentheses");
         }
         tok->parenstack[tok->level] = c;
         tok->parenlinenostack[tok->level] = tok->lineno;
