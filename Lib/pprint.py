@@ -568,11 +568,11 @@ def _perfcheck(object=None):
     if object is None:
         object = [("string", (1, 2), [3, 4], {5: 6, 7: 8})] * 100000
     p = PrettyPrinter()
-    t1 = time.time()
+    t1 = time.perf_counter()
     _safe_repr(object, {}, None, 0)
-    t2 = time.time()
+    t2 = time.perf_counter()
     p.pformat(object)
-    t3 = time.time()
+    t3 = time.perf_counter()
     print("_safe_repr:", t2 - t1)
     print("pformat:", t3 - t2)
 

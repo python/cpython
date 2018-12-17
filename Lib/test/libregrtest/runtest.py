@@ -162,7 +162,7 @@ def runtest_inner(ns, test, display_failure=True):
         abstest = get_abs_module(ns, test)
         clear_caches()
         with saved_test_environment(test, ns.verbose, ns.quiet, pgo=ns.pgo) as environment:
-            start_time = time.time()
+            start_time = time.perf_counter()
             the_module = importlib.import_module(abstest)
             # If the test has a test_main, that will run the appropriate
             # tests.  If not, use normal unittest test loading.
@@ -180,7 +180,7 @@ def runtest_inner(ns, test, display_failure=True):
                 refleak = dash_R(the_module, test, test_runner, ns.huntrleaks)
             else:
                 test_runner()
-            test_time = time.time() - start_time
+            test_time = time.perf_counter() - start_time
         post_test_cleanup()
     except support.ResourceDenied as msg:
         if not ns.quiet and not ns.pgo:
