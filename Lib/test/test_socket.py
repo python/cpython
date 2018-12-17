@@ -1700,7 +1700,6 @@ class GeneralModuleTests(unittest.TestCase):
             s.setblocking(False)
             self.assertEqual(s.type, socket.SOCK_STREAM)
 
-    @unittest.skipIf(os.name == 'nt', 'Will not work on Windows')
     def test_unknown_socket_family_repr(self):
         # Test that when created with a family that's not one of the known
         # AF_*/SOCK_* constants, socket.family just returns the number.
@@ -1708,10 +1707,8 @@ class GeneralModuleTests(unittest.TestCase):
         # To do this we fool socket.socket into believing it already has an
         # open fd because on this path it doesn't actually verify the family and
         # type and populates the socket object.
-        #
-        # On Windows this trick won't work, so the test is skipped.
-        fd, path = tempfile.mkstemp()
-        self.addCleanup(os.unlink, path)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        fd = sock.detach()
         unknown_family = max(socket.AddressFamily.__members__.values()) + 1
 
         unknown_type = max(
@@ -1784,6 +1781,48 @@ class GeneralModuleTests(unittest.TestCase):
             self.addCleanup(s.close)
             s.bind(os.path.join(tmpdir, 'socket'))
             self._test_socket_fileno(s, socket.AF_UNIX, socket.SOCK_STREAM)
+
+    def test_socket_fileno_rejects_float(self):
+        with self.assertRaisesRegex(TypeError, "integer argument expected"):
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=42.5)
+
+    def test_socket_fileno_rejects_other_types(self):
+        with self.assertRaisesRegex(TypeError, "integer is required"):
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno="foo")
+
+    def test_socket_fileno_rejects_invalid_socket(self):
+        with self.assertRaisesRegex(ValueError, "negative file descriptor"):
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=-1)
+
+    @unittest.skipIf(os.name == "nt", "Windows disallows -1 only")
+    def test_socket_fileno_rejects_negative(self):
+        with self.assertRaisesRegex(ValueError, "negative file descriptor"):
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=-42)
+
+    def test_socket_fileno_requires_valid_fd(self):
+        WSAENOTSOCK = 10038
+        with self.assertRaises(OSError) as cm:
+            socket.socket(fileno=support.make_bad_fd())
+        self.assertIn(cm.exception.errno, (errno.EBADF, WSAENOTSOCK))
+
+        with self.assertRaises(OSError) as cm:
+            socket.socket(
+                socket.AF_INET,
+                socket.SOCK_STREAM,
+                fileno=support.make_bad_fd())
+        self.assertIn(cm.exception.errno, (errno.EBADF, WSAENOTSOCK))
+
+    def test_socket_fileno_requires_socket_fd(self):
+        with tempfile.NamedTemporaryFile() as afile:
+            with self.assertRaises(OSError):
+                socket.socket(fileno=afile.fileno())
+
+            with self.assertRaises(OSError) as cm:
+                socket.socket(
+                    socket.AF_INET,
+                    socket.SOCK_STREAM,
+                    fileno=afile.fileno())
+            self.assertEqual(cm.exception.errno, errno.ENOTSOCK)
 
 
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')

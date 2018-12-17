@@ -3166,16 +3166,6 @@ class float_return_converter(double_return_converter):
     cast = '(double)'
 
 
-class DecodeFSDefault_return_converter(CReturnConverter):
-    type = 'char *'
-
-    def render(self, function, data):
-        self.declare(data)
-        self.err_occurred_if_null_pointer("_return_value", data)
-        data.return_conversion.append(
-            'return_value = PyUnicode_DecodeFSDefault(_return_value);\n')
-
-
 def eval_ast_expr(node, globals, *, filename='-'):
     """
     Takes an ast.Expr node.  Compiles and evaluates it.

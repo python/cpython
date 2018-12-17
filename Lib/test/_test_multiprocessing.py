@@ -155,11 +155,11 @@ class TimingWrapper(object):
         self.elapsed = None
 
     def __call__(self, *args, **kwds):
-        t = time.time()
+        t = time.monotonic()
         try:
             return self.func(*args, **kwds)
         finally:
-            self.elapsed = time.time() - t
+            self.elapsed = time.monotonic() - t
 
 #
 # Base class for test cases
@@ -1034,9 +1034,9 @@ class _TestQueue(BaseTestCase):
 
     def test_timeout(self):
         q = multiprocessing.Queue()
-        start = time.time()
+        start = time.monotonic()
         self.assertRaises(pyqueue.Empty, q.get, True, 0.200)
-        delta = time.time() - start
+        delta = time.monotonic() - start
         # bpo-30317: Tolerate a delta of 100 ms because of the bad clock
         # resolution on Windows (usually 15.6 ms). x86 Windows7 3.x once
         # failed because the delta was only 135.8 ms.
@@ -1440,9 +1440,9 @@ class _TestCondition(BaseTestCase):
         sem.release()
         with cond:
             expected = 0.1
-            dt = time.time()
+            dt = time.monotonic()
             result = cond.wait_for(lambda : state.value==4, timeout=expected)
-            dt = time.time() - dt
+            dt = time.monotonic() - dt
             # borrow logic in assertTimeout() from test/lock_tests.py
             if not result and expected * 0.6 < dt < expected * 10.0:
                 success.value = True
@@ -2533,7 +2533,7 @@ class _TestPool(BaseTestCase):
         # process would fill the result queue (after the result handler thread
         # terminated, hence not draining it anymore).
 
-        t_start = time.time()
+        t_start = time.monotonic()
 
         with self.assertRaises(ValueError):
             with self.Pool(2) as p:
@@ -2545,7 +2545,7 @@ class _TestPool(BaseTestCase):
                     p.join()
 
         # check that we indeed waited for all jobs
-        self.assertGreater(time.time() - t_start, 0.9)
+        self.assertGreater(time.monotonic() - t_start, 0.9)
 
     def test_release_task_refs(self):
         # Issue #29861: task arguments and results should not be kept
@@ -4108,9 +4108,9 @@ class TestWait(unittest.TestCase):
         expected = 5
         a, b = multiprocessing.Pipe()
 
-        start = time.time()
+        start = time.monotonic()
         res = wait([a, b], expected)
-        delta = time.time() - start
+        delta = time.monotonic() - start
 
         self.assertEqual(res, [])
         self.assertLess(delta, expected * 2)
@@ -4118,9 +4118,9 @@ class TestWait(unittest.TestCase):
 
         b.send(None)
 
-        start = time.time()
+        start = time.monotonic()
         res = wait([a, b], 20)
-        delta = time.time() - start
+        delta = time.monotonic() - start
 
         self.assertEqual(res, [a])
         self.assertLess(delta, 0.4)
@@ -4144,9 +4144,9 @@ class TestWait(unittest.TestCase):
         self.assertIsInstance(p.sentinel, int)
         self.assertTrue(sem.acquire(timeout=20))
 
-        start = time.time()
+        start = time.monotonic()
         res = wait([a, p.sentinel, b], expected + 20)
-        delta = time.time() - start
+        delta = time.monotonic() - start
 
         self.assertEqual(res, [p.sentinel])
         self.assertLess(delta, expected + 2)
@@ -4154,18 +4154,18 @@ class TestWait(unittest.TestCase):
 
         a.send(None)
 
-        start = time.time()
+        start = time.monotonic()
         res = wait([a, p.sentinel, b], 20)
-        delta = time.time() - start
+        delta = time.monotonic() - start
 
         self.assertEqual(sorted_(res), sorted_([p.sentinel, b]))
         self.assertLess(delta, 0.4)
 
         b.send(None)
 
-        start = time.time()
+        start = time.monotonic()
         res = wait([a, p.sentinel, b], 20)
-        delta = time.time() - start
+        delta = time.monotonic() - start
 
         self.assertEqual(sorted_(res), sorted_([a, p.sentinel, b]))
         self.assertLess(delta, 0.4)
@@ -4176,9 +4176,9 @@ class TestWait(unittest.TestCase):
     def test_neg_timeout(self):
         from multiprocessing.connection import wait
         a, b = multiprocessing.Pipe()
-        t = time.time()
+        t = time.monotonic()
         res = wait([a], timeout=-1)
-        t = time.time() - t
+        t = time.monotonic() - t
         self.assertEqual(res, [])
         self.assertLess(t, 1)
         a.close()

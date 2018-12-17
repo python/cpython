@@ -133,7 +133,7 @@ class HelperFunctionsTests(unittest.TestCase):
 
     def test_addpackage_import_bad_syntax(self):
         # Issue 10642
-        pth_dir, pth_fn = self.make_pth("import bad)syntax\n")
+        pth_dir, pth_fn = self.make_pth("import bad-syntax\n")
         with captured_stderr() as err_out:
             site.addpackage(pth_dir, pth_fn, set())
         self.assertRegex(err_out.getvalue(), "line 1")
@@ -143,7 +143,7 @@ class HelperFunctionsTests(unittest.TestCase):
         # order doesn't matter.  The next three could be a single check
         # but my regex foo isn't good enough to write it.
         self.assertRegex(err_out.getvalue(), 'Traceback')
-        self.assertRegex(err_out.getvalue(), r'import bad\)syntax')
+        self.assertRegex(err_out.getvalue(), r'import bad-syntax')
         self.assertRegex(err_out.getvalue(), 'SyntaxError')
 
     def test_addpackage_import_bad_exec(self):
