@@ -443,7 +443,7 @@ Notes:
 (4)
    Performing these calculations with at least one extra sign extension bit in
    a finite two's complement representation (a working bit-width of
-   ``1 + max(x.bit_length(), y.bit_length()`` or more) is sufficient to get the
+   ``1 + max(x.bit_length(), y.bit_length())`` or more) is sufficient to get the
    same result as if there were an infinite number of sign bits.
 
 
@@ -2142,13 +2142,15 @@ object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
 items specified by the format string, or a single mapping object (for example, a
 dictionary).
 
+.. index::
+   single: () (parentheses); in printf-style formatting
+   single: * (asterisk); in printf-style formatting
+   single: . (dot); in printf-style formatting
+
 A conversion specifier contains two or more characters and has the following
 components, which must occur in this order:
 
 #. The ``'%'`` character, which marks the start of the specifier.
-
-.. index::
-   single: () (parentheses); in printf-style formatting
 
 #. Mapping key (optional), consisting of a parenthesised sequence of characters
    (for example, ``(somename)``).
@@ -2156,13 +2158,9 @@ components, which must occur in this order:
 #. Conversion flags (optional), which affect the result of some conversion
    types.
 
-.. index:: single: * (asterisk); in printf-style formatting
-
 #. Minimum field width (optional).  If specified as an ``'*'`` (asterisk), the
    actual width is read from the next element of the tuple in *values*, and the
    object to convert comes after the minimum field width and optional precision.
-
-.. index:: single: . (dot); in printf-style formatting
 
 #. Precision (optional), given as a ``'.'`` (dot) followed by the precision.  If
    specified as ``'*'`` (an asterisk), the actual precision is read from the next
@@ -3222,7 +3220,7 @@ place, and instead produce new objects.
 
    Return a copy of the sequence left filled with ASCII ``b'0'`` digits to
    make a sequence of length *width*. A leading sign prefix (``b'+'``/
-   ``b'-'`` is handled by inserting the padding *after* the sign character
+   ``b'-'``) is handled by inserting the padding *after* the sign character
    rather than before. For :class:`bytes` objects, the original sequence is
    returned if *width* is less than or equal to ``len(seq)``.
 
@@ -3276,13 +3274,15 @@ object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
 items specified by the format bytes object, or a single mapping object (for
 example, a dictionary).
 
+.. index::
+   single: () (parentheses); in printf-style formatting
+   single: * (asterisk); in printf-style formatting
+   single: . (dot); in printf-style formatting
+
 A conversion specifier contains two or more characters and has the following
 components, which must occur in this order:
 
 #. The ``'%'`` character, which marks the start of the specifier.
-
-.. index::
-   single: () (parentheses); in printf-style formatting
 
 #. Mapping key (optional), consisting of a parenthesised sequence of characters
    (for example, ``(somename)``).
@@ -3290,13 +3290,9 @@ components, which must occur in this order:
 #. Conversion flags (optional), which affect the result of some conversion
    types.
 
-.. index:: single: * (asterisk); in printf-style formatting
-
 #. Minimum field width (optional).  If specified as an ``'*'`` (asterisk), the
    actual width is read from the next element of the tuple in *values*, and the
    object to convert comes after the minimum field width and optional precision.
-
-.. index:: single: . (dot); in printf-style formatting
 
 #. Precision (optional), given as a ``'.'`` (dot) followed by the precision.  If
    specified as ``'*'`` (an asterisk), the actual precision is read from the next
@@ -3809,7 +3805,7 @@ copying.
 
       ``nbytes == product(shape) * itemsize == len(m.tobytes())``. This is
       the amount of space in bytes that the array would use in a contiguous
-      representation. It is not necessarily equal to len(m)::
+      representation. It is not necessarily equal to ``len(m)``::
 
          >>> import array
          >>> a = array.array('i', [1,2,3,4,5])
@@ -4335,7 +4331,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
    .. versionchanged:: 3.7
       Dictionary order is guaranteed to be insertion order.  This behavior was
-      implementation detail of CPython from 3.6.
+      an implementation detail of CPython from 3.6.
 
    Dictionaries and dictionary views are reversible. ::
 

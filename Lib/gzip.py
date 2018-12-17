@@ -520,12 +520,12 @@ class _GzipReader(_compression.DecompressReader):
         super()._rewind()
         self._new_member = True
 
-def compress(data, compresslevel=_COMPRESS_LEVEL_BEST):
+def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=None):
     """Compress data in one shot and return the compressed string.
     Optional argument is the compression level, in range of 0-9.
     """
     buf = io.BytesIO()
-    with GzipFile(fileobj=buf, mode='wb', compresslevel=compresslevel) as f:
+    with GzipFile(fileobj=buf, mode='wb', compresslevel=compresslevel, mtime=mtime) as f:
         f.write(data)
     return buf.getvalue()
 

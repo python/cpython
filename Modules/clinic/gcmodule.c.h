@@ -79,7 +79,7 @@ PyDoc_STRVAR(gc_collect__doc__,
 "The number of unreachable objects is returned.");
 
 #define GC_COLLECT_METHODDEF    \
-    {"collect", (PyCFunction)gc_collect, METH_FASTCALL|METH_KEYWORDS, gc_collect__doc__},
+    {"collect", (PyCFunction)(void(*)(void))gc_collect, METH_FASTCALL|METH_KEYWORDS, gc_collect__doc__},
 
 static Py_ssize_t
 gc_collect_impl(PyObject *module, int generation);
@@ -325,4 +325,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=21dc9270b10b7891 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ba67a1ab58780485 input=a9049054013a1b77]*/

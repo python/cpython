@@ -1452,8 +1452,8 @@ Basic customization
       dict insertion, O(n^2) complexity.  See
       http://www.ocert.org/advisories/ocert-2011-003.html for details.
 
-      Changing hash values affects the iteration order of dicts, sets and
-      other mappings.  Python has never made guarantees about this ordering
+      Changing hash values affects the iteration order of sets.
+      Python has never made guarantees about this ordering
       (and it typically varies between 32-bit and 64-bit builds).
 
       See also :envvar:`PYTHONHASHSEED`.
@@ -1998,45 +1998,13 @@ becomes the :attr:`~object.__dict__` attribute of the class object.
       Describes the implicit ``__class__`` closure reference
 
 
-Metaclass example
-^^^^^^^^^^^^^^^^^
+Uses for metaclasses
+^^^^^^^^^^^^^^^^^^^^
 
 The potential uses for metaclasses are boundless. Some ideas that have been
 explored include enum, logging, interface checking, automatic delegation,
 automatic property creation, proxies, frameworks, and automatic resource
 locking/synchronization.
-
-Here is an example of a metaclass that uses an :class:`collections.OrderedDict`
-to remember the order that class variables are defined::
-
-    class OrderedClass(type):
-
-        @classmethod
-        def __prepare__(metacls, name, bases, **kwds):
-            return collections.OrderedDict()
-
-        def __new__(cls, name, bases, namespace, **kwds):
-            result = type.__new__(cls, name, bases, dict(namespace))
-            result.members = tuple(namespace)
-            return result
-
-    class A(metaclass=OrderedClass):
-        def one(self): pass
-        def two(self): pass
-        def three(self): pass
-        def four(self): pass
-
-    >>> A.members
-    ('__module__', 'one', 'two', 'three', 'four')
-
-When the class definition for *A* gets executed, the process begins with
-calling the metaclass's :meth:`__prepare__` method which returns an empty
-:class:`collections.OrderedDict`.  That mapping records the methods and
-attributes of *A* as they are defined within the body of the class statement.
-Once those definitions are executed, the ordered dictionary is fully populated
-and the metaclass's :meth:`__new__` method gets invoked.  That method builds
-the new type and it saves the ordered dictionary keys in an attribute
-called ``members``.
 
 
 Customizing instance and subclass checks
@@ -2178,6 +2146,8 @@ through the container; for mappings, :meth:`__iter__` should be the same as
    .. versionadded:: 3.4
 
 
+.. index:: object: slice
+
 .. note::
 
    Slicing is done exclusively with the following three methods.  A call like ::
@@ -2193,8 +2163,6 @@ through the container; for mappings, :meth:`__iter__` should be the same as
 
 .. method:: object.__getitem__(self, key)
 
-   .. index:: object: slice
-
    Called to implement evaluation of ``self[key]``. For sequence types, the
    accepted keys should be integers and slice objects.  Note that the special
    interpretation of negative indexes (if the class wishes to emulate a sequence
@@ -2208,12 +2176,6 @@ through the container; for mappings, :meth:`__iter__` should be the same as
 
       :keyword:`for` loops expect that an :exc:`IndexError` will be raised for illegal
       indexes to allow proper detection of the end of the sequence.
-
-
-.. method:: object.__missing__(self, key)
-
-   Called by :class:`dict`\ .\ :meth:`__getitem__` to implement ``self[key]`` for dict subclasses
-   when key is not in the dictionary.
 
 
 .. method:: object.__setitem__(self, key, value)
@@ -2232,6 +2194,12 @@ through the container; for mappings, :meth:`__iter__` should be the same as
    objects support removal of keys, or for sequences if elements can be removed
    from the sequence.  The same exceptions should be raised for improper *key*
    values as for the :meth:`__getitem__` method.
+
+
+.. method:: object.__missing__(self, key)
+
+   Called by :class:`dict`\ .\ :meth:`__getitem__` to implement ``self[key]`` for dict subclasses
+   when key is not in the dictionary.
 
 
 .. method:: object.__iter__(self)

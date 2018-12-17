@@ -2,9 +2,10 @@
 
 #include "Python.h"
 #include "osdefs.h"
-#include "pycore_mem.h"
+#include "pycore_fileutils.h"
 #include "pycore_pathconfig.h"
-#include "pycore_state.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include <wchar.h>
 
 #ifdef __cplusplus
@@ -48,10 +49,9 @@ _PyPathConfig_Clear(_PyPathConfig *config)
 
     CLEAR(config->prefix);
     CLEAR(config->program_full_path);
+    CLEAR(config->exec_prefix);
 #ifdef MS_WINDOWS
     CLEAR(config->dll_path);
-#else
-    CLEAR(config->exec_prefix);
 #endif
     CLEAR(config->module_search_path);
     CLEAR(config->home);
@@ -73,8 +73,8 @@ _PyPathConfig_Calculate(_PyPathConfig *path_config,
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    /* Calculate program_full_path, prefix, exec_prefix (Unix)
-       or dll_path (Windows), and module_search_path */
+    /* Calculate program_full_path, prefix, exec_prefix,
+       dll_path (Windows), and module_search_path */
     err = _PyPathConfig_Calculate_impl(&new_config, core_config);
     if (_Py_INIT_FAILED(err)) {
         goto err;
@@ -125,10 +125,9 @@ _PyPathConfig_SetGlobal(const _PyPathConfig *config)
 
     COPY_ATTR(program_full_path);
     COPY_ATTR(prefix);
+    COPY_ATTR(exec_prefix);
 #ifdef MS_WINDOWS
     COPY_ATTR(dll_path);
-#else
-    COPY_ATTR(exec_prefix);
 #endif
     COPY_ATTR(module_search_path);
     COPY_ATTR(program_name);
@@ -207,12 +206,11 @@ _PyCoreConfig_SetPathConfig(const _PyCoreConfig *core_config)
     if (copy_wstr(&path_config.prefix, core_config->prefix) < 0) {
         goto no_memory;
     }
-#ifdef MS_WINDOWS
-    if (copy_wstr(&path_config.dll_path, core_config->dll_path) < 0) {
+    if (copy_wstr(&path_config.exec_prefix, core_config->exec_prefix) < 0) {
         goto no_memory;
     }
-#else
-    if (copy_wstr(&path_config.exec_prefix, core_config->exec_prefix) < 0) {
+#ifdef MS_WINDOWS
+    if (copy_wstr(&path_config.dll_path, core_config->dll_path) < 0) {
         goto no_memory;
     }
 #endif
@@ -316,12 +314,8 @@ _PyCoreConfig_CalculatePathConfig(_PyCoreConfig *config)
     }
 
     if (config->exec_prefix == NULL) {
-#ifdef MS_WINDOWS
-        wchar_t *exec_prefix = path_config.prefix;
-#else
-        wchar_t *exec_prefix = path_config.exec_prefix;
-#endif
-        if (copy_wstr(&config->exec_prefix, exec_prefix) < 0) {
+        if (copy_wstr(&config->exec_prefix,
+                      path_config.exec_prefix) < 0) {
             goto no_memory;
         }
     }
@@ -378,7 +372,8 @@ _PyCoreConfig_InitPathConfig(_PyCoreConfig *config)
     }
 
     if (config->base_exec_prefix == NULL) {
-        if (copy_wstr(&config->base_exec_prefix, config->exec_prefix) < 0) {
+        if (copy_wstr(&config->base_exec_prefix,
+                      config->exec_prefix) < 0) {
             return _Py_INIT_NO_MEMORY();
         }
     }
@@ -434,12 +429,11 @@ Py_SetPath(const wchar_t *path)
     int alloc_error = (new_config.program_full_path == NULL);
     new_config.prefix = _PyMem_RawWcsdup(L"");
     alloc_error |= (new_config.prefix == NULL);
+    new_config.exec_prefix = _PyMem_RawWcsdup(L"");
+    alloc_error |= (new_config.exec_prefix == NULL);
 #ifdef MS_WINDOWS
     new_config.dll_path = _PyMem_RawWcsdup(L"");
     alloc_error |= (new_config.dll_path == NULL);
-#else
-    new_config.exec_prefix = _PyMem_RawWcsdup(L"");
-    alloc_error |= (new_config.exec_prefix == NULL);
 #endif
     new_config.module_search_path = _PyMem_RawWcsdup(path);
     alloc_error |= (new_config.module_search_path == NULL);
@@ -502,6 +496,26 @@ Py_SetProgramName(const wchar_t *program_name)
     }
 }
 
+void
+_Py_SetProgramFullPath(const wchar_t *program_full_path)
+{
+    if (program_full_path == NULL || program_full_path[0] == L'\0') {
+        return;
+    }
+
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    PyMem_RawFree(_Py_path_config.program_full_path);
+    _Py_path_config.program_full_path = _PyMem_RawWcsdup(program_full_path);
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    if (_Py_path_config.program_full_path == NULL) {
+        Py_FatalError("_Py_SetProgramFullPath() failed: out of memory");
+    }
+}
+
 
 wchar_t *
 Py_GetPath(void)
@@ -522,12 +536,8 @@ Py_GetPrefix(void)
 wchar_t *
 Py_GetExecPrefix(void)
 {
-#ifdef MS_WINDOWS
-    return Py_GetPrefix();
-#else
     pathconfig_global_init();
     return _Py_path_config.exec_prefix;
-#endif
 }
 
 

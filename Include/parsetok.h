@@ -1,11 +1,14 @@
-
 /* Parser-tokenizer link interface */
+
 #ifndef Py_LIMITED_API
 #ifndef Py_PARSETOK_H
 #define Py_PARSETOK_H
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "grammar.h"      /* grammar */
+#include "node.h"         /* node */
 
 typedef struct {
     int error;

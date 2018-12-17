@@ -3,11 +3,9 @@
 import collections
 import copy
 import doctest
-import keyword
 import operator
 import pickle
 from random import choice, randrange
-import re
 import string
 import sys
 from test import support

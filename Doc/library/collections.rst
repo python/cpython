@@ -225,7 +225,7 @@ For example::
 .. class:: Counter([iterable-or-mapping])
 
     A :class:`Counter` is a :class:`dict` subclass for counting hashable objects.
-    It is an unordered collection where elements are stored as dictionary keys
+    It is a collection where elements are stored as dictionary keys
     and their counts are stored as dictionary values.  Counts are allowed to be
     any integer value including zero or negative counts.  The :class:`Counter`
     class is similar to bags or multisets in other languages.

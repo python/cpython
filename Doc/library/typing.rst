@@ -689,6 +689,12 @@ The module defines the following classes, functions and decorators:
 
    .. versionadded:: 3.5.2
 
+.. class:: OrderedDict(collections.OrderedDict, MutableMapping[KT, VT])
+
+   A generic version of :class:`collections.OrderedDict`.
+
+   .. versionadded:: 3.7.2
+
 .. class:: Counter(collections.Counter, Dict[T, int])
 
    A generic version of :class:`collections.Counter`.

@@ -13,7 +13,6 @@ fallback token code OP, but the parser needs the actual token code.
 """
 
 # Python imports
-import collections
 import pickle
 
 # Local imports

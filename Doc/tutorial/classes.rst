@@ -672,6 +672,9 @@ be treated as a non-public part of the API (whether it is a function, a method
 or a data member).  It should be considered an implementation detail and subject
 to change without notice.
 
+.. index::
+   pair: name; mangling
+
 Since there is a valid use-case for class-private members (namely to avoid name
 clashes of names with names defined by subclasses), there is limited support for
 such a mechanism, called :dfn:`name mangling`.  Any identifier of the form

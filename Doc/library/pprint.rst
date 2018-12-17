@@ -30,6 +30,8 @@ The :mod:`pprint` module defines one class:
 .. First the implementation class:
 
 
+.. index:: single: ...; placeholder
+
 .. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None, *, \
                          compact=False)
 

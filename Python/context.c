@@ -1,9 +1,10 @@
 #include "Python.h"
 
-#include "structmember.h"
-#include "pycore_state.h"
 #include "pycore_context.h"
 #include "pycore_hamt.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
+#include "structmember.h"
 
 
 #define CONTEXT_FREELIST_MAXLEN 255
@@ -647,7 +648,7 @@ static PyMethodDef PyContext_methods[] = {
     _CONTEXTVARS_CONTEXT_KEYS_METHODDEF
     _CONTEXTVARS_CONTEXT_VALUES_METHODDEF
     _CONTEXTVARS_CONTEXT_COPY_METHODDEF
-    {"run", (PyCFunction)context_run, METH_FASTCALL | METH_KEYWORDS, NULL},
+    {"run", (PyCFunction)(void(*)(void))context_run, METH_FASTCALL | METH_KEYWORDS, NULL},
     {NULL, NULL}
 };
 
@@ -1140,14 +1141,14 @@ error:
 }
 
 static PyObject *
-token_get_var(PyContextToken *self)
+token_get_var(PyContextToken *self, void *Py_UNUSED(ignored))
 {
     Py_INCREF(self->tok_var);
     return (PyObject *)self->tok_var;
 }
 
 static PyObject *
-token_get_old_value(PyContextToken *self)
+token_get_old_value(PyContextToken *self, void *Py_UNUSED(ignored))
 {
     if (self->tok_oldval == NULL) {
         return get_token_missing();

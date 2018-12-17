@@ -352,7 +352,10 @@ get_attrib_from_keywords(PyObject *kwds)
             return NULL;
         }
         attrib = PyDict_Copy(attrib);
-        PyDict_DelItem(kwds, attrib_str);
+        if (attrib && PyDict_DelItem(kwds, attrib_str) < 0) {
+            Py_DECREF(attrib);
+            attrib = NULL;
+        }
     } else {
         attrib = PyDict_New();
     }
@@ -3968,7 +3971,7 @@ static PyTypeObject XMLParser_Type = {
 /* python module interface */
 
 static PyMethodDef _functions[] = {
-    {"SubElement", (PyCFunction) subelement, METH_VARARGS | METH_KEYWORDS},
+    {"SubElement", (PyCFunction)(void(*)(void)) subelement, METH_VARARGS | METH_KEYWORDS},
     {NULL, NULL}
 };
 

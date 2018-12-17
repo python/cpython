@@ -13,7 +13,6 @@ import warnings
 
 from . import base_events
 from . import constants
-from . import events
 from . import futures
 from . import exceptions
 from . import protocols
@@ -444,6 +443,11 @@ class _ProactorSocketTransport(_ProactorReadPipeTransport,
     """Transport for connected sockets."""
 
     _sendfile_compatible = constants._SendfileMode.TRY_NATIVE
+
+    def __init__(self, loop, sock, protocol, waiter=None,
+                 extra=None, server=None):
+        super().__init__(loop, sock, protocol, waiter, extra, server)
+        base_events._set_nodelay(sock)
 
     def _set_extra(self, sock):
         self._extra['socket'] = sock

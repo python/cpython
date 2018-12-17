@@ -418,7 +418,7 @@ coroutine function to be an asynchronous generator. For example::
     def gen():  # defines a generator function
         yield 123
 
-    async def agen(): # defines an asynchronous generator function (PEP 525)
+    async def agen(): # defines an asynchronous generator function
         yield 123
 
 Due to their side effects on the containing scope, ``yield`` expressions
@@ -500,6 +500,10 @@ on the right hand side of an assignment statement.
    :pep:`380` - Syntax for Delegating to a Subgenerator
       The proposal to introduce the :token:`yield_from` syntax, making delegation
       to sub-generators easy.
+
+   :pep:`525` - Asynchronous Generators
+      The proposal that expanded on :pep:`492` by adding generator capabilities to
+      coroutine functions.
 
 .. index:: object: generator
 .. _generator-methods:
@@ -1635,7 +1639,7 @@ returned; otherwise, *y* is evaluated and the resulting value is returned.
 The expression ``x or y`` first evaluates *x*; if *x* is true, its value is
 returned; otherwise, *y* is evaluated and the resulting value is returned.
 
-(Note that neither :keyword:`and` nor :keyword:`or` restrict the value and type
+Note that neither :keyword:`and` nor :keyword:`or` restrict the value and type
 they return to ``False`` and ``True``, but rather return the last evaluated
 argument.  This is sometimes useful, e.g., if ``s`` is a string that should be
 replaced by a default value if it is empty, the expression ``s or 'foo'`` yields
