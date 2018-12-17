@@ -570,7 +570,7 @@ PyImport_AddModule:PyObject*::0:reference borrowed from sys.modules
 PyImport_AddModule:const char*:name::
 
 PyImport_AddModuleObject:PyObject*::0:reference borrowed from sys.modules
-PyImport_AddModuleObject:PyObject*:name::
+PyImport_AddModuleObject:PyObject*:name:0:
 
 PyImport_Cleanup:void:::
 
