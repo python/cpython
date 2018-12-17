@@ -293,17 +293,9 @@ Functions
    The reference point of the returned value is undefined, so that only the
    difference between the results of consecutive calls is valid.
 
-   On Windows versions older than Vista, :func:`monotonic` detects
-   :c:func:`GetTickCount` integer overflow (32 bits, roll-over after 49.7 days).
-   It increases an internal epoch (reference time) by 2\ :sup:`32` each time
-   that an overflow is detected.  The epoch is stored in the process-local state
-   and so the value of :func:`monotonic` may be different in two Python
-   processes running for more than 49 days. On more recent versions of Windows
-   and on other operating systems, :func:`monotonic` is system-wide.
-
    .. versionadded:: 3.3
    .. versionchanged:: 3.5
-      The function is now always available.
+      The function is now always available and always system-wide.
 
 
 .. function:: monotonic_ns() -> int
