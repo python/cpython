@@ -516,6 +516,9 @@ Py_InitModule4:int:apiver::usually provided by Py_InitModule or Py_InitModule3
 PyImport_AddModule:PyObject*::0:reference borrowed from sys.modules
 PyImport_AddModule:const char*:name::
 
+PyImport_AddModuleObject:PyObject*::0:reference borrowed from sys.modules
+PyImport_AddModuleObject:PyObject*:name:0:
+
 PyImport_Cleanup:void:::
 
 PyImport_ExecCodeModule:PyObject*::+1:
@@ -527,6 +530,21 @@ PyImport_ExecCodeModuleEx:const char*:name::
 PyImport_ExecCodeModuleEx:PyObject*:co:0:
 PyImport_ExecCodeModuleEx:const char*:pathname::
 
+PyImport_ExecCodeModuleObject:PyObject*::+1:
+PyImport_ExecCodeModuleObject:const char*:name::
+PyImport_ExecCodeModuleObject:PyObject*:co:0:
+PyImport_ExecCodeModuleObject:PyObject*:pathname:0:
+PyImport_ExecCodeModuleObject:PyObject*:cpathname:0:
+
+PyImport_ExecCodeModuleWithPathnames:PyObject*::+1:
+PyImport_ExecCodeModuleWithPathnames:const char*:name::
+PyImport_ExecCodeModuleWithPathnames:PyObject*:co:0:
+PyImport_ExecCodeModuleWithPathnames:const char*:pathname::
+PyImport_ExecCodeModuleWithPathnames:const char*:cpathname::
+
+PyImport_GetImporter:PyObject*::+1:
+PyImport_GetImporter:PyObject*:path:0:
+
 PyImport_GetMagicNumber:long:::
 
 PyImport_GetModuleDict:PyObject*::0:
@@ -536,6 +554,9 @@ PyImport_Import:PyObject*:name:0:
 
 PyImport_ImportFrozenModule:int:::
 PyImport_ImportFrozenModule:const char*:::
+
+PyImport_ImportFrozenModuleObject:int:::
+PyImport_ImportFrozenModuleObject:PyObject*::+1:
 
 PyImport_ImportModule:PyObject*::+1:
 PyImport_ImportModule:const char*:name::
@@ -552,6 +573,13 @@ PyImport_ImportModuleLevel:PyObject*:globals:0:???
 PyImport_ImportModuleLevel:PyObject*:locals:0:???
 PyImport_ImportModuleLevel:PyObject*:fromlist:0:???
 PyImport_ImportModuleLevel:int:level::
+
+PyImport_ImportModuleLevelObject:PyObject*::+1:
+PyImport_ImportModuleLevelObject:PyObject*:name:0:
+PyImport_ImportModuleLevelObject:PyObject*:globals:0:???
+PyImport_ImportModuleLevelObject:PyObject*:locals:0:???
+PyImport_ImportModuleLevelObject:PyObject*:fromlist:0:???
+PyImport_ImportModuleLevelObject:int:level::
 
 PyImport_ReloadModule:PyObject*::+1:
 PyImport_ReloadModule:PyObject*:m:0:
