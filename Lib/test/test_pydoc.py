@@ -1013,12 +1013,12 @@ class PydocServerTest(unittest.TestCase):
         serverthread = pydoc._start_server(my_url_handler, hostname='0.0.0.0', port=0)
         self.assertIn('0.0.0.0', serverthread.docserver.address)
 
-        starttime = time.time()
+        starttime = time.monotonic()
         timeout = 1  #seconds
 
         while serverthread.serving:
             time.sleep(.01)
-            if serverthread.serving and time.time() - starttime > timeout:
+            if serverthread.serving and time.monotonic() - starttime > timeout:
                 serverthread.stop()
                 break
 
