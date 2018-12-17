@@ -3625,6 +3625,10 @@ static int
 set_post_handshake_auth(PySSLContext *self, PyObject *arg, void *c) {
     int (*verify_cb)(int, X509_STORE_CTX *) = NULL;
     int mode = SSL_CTX_get_verify_mode(self->ctx);
+    if (arg == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
     int pha = PyObject_IsTrue(arg);
 
     if (pha == -1) {

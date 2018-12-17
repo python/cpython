@@ -1191,6 +1191,10 @@ CharArray_set_raw(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored))
     Py_ssize_t size;
     Py_buffer view;
 
+    if (value == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
     if (PyObject_GetBuffer(value, &view, PyBUF_SIMPLE) < 0)
         return -1;
     size = view.len;
