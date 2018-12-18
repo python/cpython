@@ -719,8 +719,7 @@ than raw I/O does.
 .. class:: BufferedRandom(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
    A buffered interface to random access streams.  It inherits
-   :class:`BufferedReader` and :class:`BufferedWriter`, and further supports
-   :meth:`seek` and :meth:`tell` functionality.
+   :class:`BufferedReader` and :class:`BufferedWriter`.
 
    The constructor creates a reader and writer for a seekable raw stream, given
    in the first argument.  If the *buffer_size* is omitted it defaults to
