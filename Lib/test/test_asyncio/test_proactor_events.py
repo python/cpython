@@ -737,7 +737,8 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
 
         with mock.patch('asyncio.proactor_events.socket.socketpair',
                         return_value=(self.ssock, self.csock)):
-            self.loop = BaseProactorEventLoop(self.proactor)
+            with mock.patch('signal.set_wakeup_fd'):
+                self.loop = BaseProactorEventLoop(self.proactor)
         self.set_event_loop(self.loop)
 
     @mock.patch.object(BaseProactorEventLoop, 'call_soon')
@@ -745,7 +746,8 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
     def test_ctor(self, socketpair, call_soon):
         ssock, csock = socketpair.return_value = (
             mock.Mock(), mock.Mock())
-        loop = BaseProactorEventLoop(self.proactor)
+        with mock.patch('signal.set_wakeup_fd'):
+            loop = BaseProactorEventLoop(self.proactor)
         self.assertIs(loop._ssock, ssock)
         self.assertIs(loop._csock, csock)
         self.assertEqual(loop._internal_fds, 1)

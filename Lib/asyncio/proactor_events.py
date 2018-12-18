@@ -491,8 +491,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         proactor.set_loop(self)
         self._make_self_pipe()
         self_no = self._csock.fileno()
-        if isinstance(self_no, int):
-            signal.set_wakeup_fd(self_no)
+        signal.set_wakeup_fd(self_no)
 
     def _make_socket_transport(self, sock, protocol, waiter=None,
                                extra=None, server=None):
