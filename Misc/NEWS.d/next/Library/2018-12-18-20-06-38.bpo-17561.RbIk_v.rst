@@ -1,0 +1,4 @@
+Add socket.create_server_sock() function returning a TCP socket able to serve
+both IPv4 and IPv6 connections. Also add socket.has_dual_stack() function,
+which tells whether IPv4/6 dual-stack capabilities are supported by the
+kernel.  (patch by Giampaolo Rodola)
