@@ -290,12 +290,12 @@ class Pool(object):
         if need_repopulate is None:
             with self._worker_state_lock:
                 self._worker_handler._state = BROKEN
+
+            err = BrokenProcessPool(
+                'A worker in the pool terminated abruptly.')
+            # Exhaust MapResult with errors
             for i, cache_ent in list(self._cache.items()):
-                err = BrokenProcessPool(
-                    'A worker of the pool terminated abruptly.')
-                # Exhaust MapResult with errors
-                while cache_ent._number_left > 0:
-                    cache_ent._set(i, (False, err))
+                cache_ent._set_all((False, err))
 
     def _setup_queues(self):
         self._inqueue = self._ctx.SimpleQueue()
@@ -679,7 +679,7 @@ class Pool(object):
                     # worker has not yet exited
                     util.debug('cleaning up worker %d' % p.pid)
                     p.join()
-        util.debug('terminate pool finalized')
+        util.debug('terminate pool finished')
 
     def __enter__(self):
         self._check_running()
@@ -731,6 +731,9 @@ class ApplyResult(object):
         self._event.set()
         del self._cache[self._job]
 
+    def _set_all(self, obj):
+        self._set(0, obj)
+
 AsyncResult = ApplyResult       # create alias -- see #17805
 
 #
@@ -773,6 +776,12 @@ class MapResult(ApplyResult):
                     self._error_callback(self._value)
                 del self._cache[self._job]
                 self._event.set()
+
+    def _set_all(self, obj):
+        item = 0
+        while self._number_left > 0:
+            self._set(item, obj)
+            item += 1
 
 #
 # Class whose instances are returned by `Pool.imap()`
@@ -830,6 +839,10 @@ class IMapIterator(object):
 
             if self._index == self._length:
                 del self._cache[self._job]
+
+    def _set_all(self, obj):
+        while self._index != self._length:
+            self._set(self._index, obj)
 
     def _set_length(self, length):
         with self._cond:

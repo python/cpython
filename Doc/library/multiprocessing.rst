@@ -2237,6 +2237,8 @@ with the :class:`Pool` class.
       one of the workers of a :class:`Pool` has terminated in a non-clean
       fashion (for example, if it was killed from the outside).
 
+      .. versionadded:: 3.8
+
 
 .. class:: AsyncResult
 

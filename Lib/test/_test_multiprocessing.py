@@ -2584,10 +2584,13 @@ def raising():
 def unpickleable_result():
     return lambda: 42
 
-def waiting(args):
-    time.sleep(7)
+def bad_exit_os(value):
+    if value:
+        from os import _exit as exit
+        # from sys import exit
+        exit(123)
 
-def bad_exit(value):
+def bad_exit_sys(value):
     if value:
         from sys import exit
         exit(123)
@@ -2633,12 +2636,16 @@ class _TestPoolWorkerErrors(BaseTestCase):
         p.close()
         p.join()
 
-    def test_broken_process_pool1(self):
+    def test_external_signal_kills_worker_apply_async(self):
+        """mimics that a worker was killed from external signal"""
         from multiprocessing.pool import BrokenProcessPool
         p = multiprocessing.Pool(2)
-        res = p.map_async(waiting, range(10))
-        # Kill one of the pool workers.
-        waiting(None)
+        res = p.apply_async(time.sleep, (5,))
+        res = p.apply_async(time.sleep, (2,))
+        res = p.apply_async(time.sleep, (1,))
+        # Kill one of the pool workers, after some have entered
+        # execution (hence, the 0.5s wait)
+        time.sleep(0.5)
         pid = p._pool[0].pid
         os.kill(pid, signal.SIGTERM)
         with self.assertRaises(BrokenProcessPool):
@@ -2646,11 +2653,35 @@ class _TestPoolWorkerErrors(BaseTestCase):
         p.close()
         p.join()
 
-
-    def test_broken_process_pool2(self):
+    def test_external_signal_kills_worker_imap_unordered(self):
+        """mimics that a worker was killed from external signal"""
         from multiprocessing.pool import BrokenProcessPool
         p = multiprocessing.Pool(2)
-        res = p.map_async(waiting, [1])
+        with self.assertRaises(BrokenProcessPool):
+            res = list(p.imap_unordered(bad_exit_os, [0, 0, 1, 0]))
+        p.close()
+        p.join()
+
+    def test_external_signal_kills_worker_map_async1(self):
+        """mimics that a worker was killed from external signal"""
+        from multiprocessing.pool import BrokenProcessPool
+        p = multiprocessing.Pool(2)
+        res = p.map_async(time.sleep, [5] * 10)
+        # Kill one of the pool workers, after some have entered
+        # execution (hence, the 0.5s wait)
+        time.sleep(0.5)
+        pid = p._pool[0].pid
+        os.kill(pid, signal.SIGTERM)
+        with self.assertRaises(BrokenProcessPool):
+            res.get()
+        p.close()
+        p.join()
+
+    def test_external_signal_kills_worker_map_async2(self):
+        """mimics that a worker was killed from external signal"""
+        from multiprocessing.pool import BrokenProcessPool
+        p = multiprocessing.Pool(2)
+        res = p.map_async(time.sleep, (2, ))
         # Kill one of the pool workers.
         pid = p._pool[0].pid
         os.kill(pid, signal.SIGTERM)
@@ -2659,14 +2690,47 @@ class _TestPoolWorkerErrors(BaseTestCase):
         p.close()
         p.join()
 
-    def test_broken_process_pool3(self):
+    def test_map_async_with_broken_pool(self):
+        """submit task to a broken pool"""
         from multiprocessing.pool import BrokenProcessPool
         p = multiprocessing.Pool(2)
+        pid = p._pool[0].pid
+        res = p.map_async(time.sleep, (2, ))
+        # Kill one of the pool workers.
+        os.kill(pid, signal.SIGTERM)
         with self.assertRaises(BrokenProcessPool):
-            res = p.map(bad_exit, [0, 0, 1, 0])
+            res.get()
         p.close()
         p.join()
 
+    def test_internal_signal_kills_worker_map1(self):
+        from multiprocessing.pool import BrokenProcessPool
+        p = multiprocessing.Pool(2)
+        with self.assertRaises(BrokenProcessPool):
+            res = p.map(bad_exit_os, [0, 0, 1, 0])
+        p.close()
+        p.join()
+
+    def test_internal_signal_kills_worker_map2(self):
+        from multiprocessing.pool import BrokenProcessPool
+        p = multiprocessing.Pool(2)
+        with self.assertRaises(BrokenProcessPool):
+            res = p.map(bad_exit_sys, [0, 0, 1, 0])
+        p.close()
+        p.join()
+
+    def test_internal_signal_kills_worker_map_async3(self):
+        from multiprocessing.pool import BrokenProcessPool
+        p = multiprocessing.Pool(2)
+        res = p.map_async(time.sleep, [5] * 10)
+        # Kill one of the pool workers, after some have entered
+        # execution (hence, the 0.5s wait)
+        time.sleep(0.5)
+        p._pool[0].terminate()
+        with self.assertRaises(BrokenProcessPool):
+            res.get()
+        p.close()
+        p.join()
 
 class _TestPoolWorkerLifetime(BaseTestCase):
     ALLOWED_TYPES = ('processes', )
