@@ -10,6 +10,7 @@ import io
 import os
 import socket
 import warnings
+import signal
 
 from . import base_events
 from . import constants
@@ -489,6 +490,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._accept_futures = {}   # socket file descriptor => Future
         proactor.set_loop(self)
         self._make_self_pipe()
+        self_no = self._csock.fileno()
+        signal.set_wakeup_fd(self_no)
 
     def _make_socket_transport(self, sock, protocol, waiter=None,
                                extra=None, server=None):
@@ -529,6 +532,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         if self.is_closed():
             return
 
+        signal.set_wakeup_fd(-1)
         # Call these methods before closing the event loop (before calling
         # BaseEventLoop.close), because they can schedule callbacks with
         # call_soon(), which is forbidden when the event loop is closed.
@@ -613,7 +617,6 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._ssock.setblocking(False)
         self._csock.setblocking(False)
         self._internal_fds += 1
-        self.call_soon(self._loop_self_reading)
 
     def _loop_self_reading(self, f=None):
         try:
