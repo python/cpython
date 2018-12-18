@@ -960,11 +960,19 @@ Unix signals
 
    Set *callback* as the handler for the *signum* signal.
 
+   The callback will be invoked by *loop*, along with other queued callbacks
+   and runnable coroutines of that event loop. Unlike signal handlers
+   registered using :func:`signal.signal`, a callback registered with this
+   function is allowed to interact with the event loop.
+
    Raise :exc:`ValueError` if the signal number is invalid or uncatchable.
    Raise :exc:`RuntimeError` if there is a problem setting up the handler.
 
    Use :func:`functools.partial` :ref:`to pass keyword arguments
    <asyncio-pass-keywords>` to *callback*.
+
+   Like :func:`signal.signal`, this function must be invoked in the main
+   thread.
 
 .. method:: loop.remove_signal_handler(sig)
 
