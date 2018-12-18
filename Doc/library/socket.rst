@@ -602,8 +602,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    string or ``None`` all network interfaces are used.
    If dual-stack is supported by kernel and *dual_stack* parameter
    is ``True`` the socket will be able to serve both :data:`AF_INET` and
-   :data:`AF_INET6` connections. If not the right address family will be chosen
-   based on the host specified in *address*.
+   :data:`AF_INET6` (IPv4 / IPv6) connections. If not the right address family
+   will be chosen based on the host specified in *address*.
    *queue_size* is the argument passed to :meth:`socket.listen`.
    If *reuse_addr* is ``True`` :data:`socket.SO_REUSEADDR` socket flag is set.
 
@@ -611,8 +611,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
 .. function:: has_dual_stack()
 
-   Return ``True`` if the system allows creating a socket which is able to
-   listen for both :data:`AF_INET` and :data:`AF_INET6` connections.
+   Return ``True`` if the kernel supports creating a socket which can handle
+   both :data:`AF_INET` and :data:`AF_INET6` (IPv4 / IPv6) connections.
 
    .. versionadded:: 3.8
 
