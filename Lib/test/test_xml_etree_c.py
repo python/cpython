@@ -136,6 +136,8 @@ class MiscTests(unittest.TestCase):
 
     def test_iterparse_leaks(self):
         # Test reference leaks in TreeBuilder (issue #35502).
+        # The test is written to be executed in the hunting reference leaks
+        # mode.
         XML = '<a></a></b>'
         parser = cET.iterparse(io.StringIO(XML))
         next(parser)
@@ -144,6 +146,8 @@ class MiscTests(unittest.TestCase):
 
     def test_xmlpullparser_leaks(self):
         # Test reference leaks in TreeBuilder (issue #35502).
+        # The test is written to be executed in the hunting reference leaks
+        # mode.
         XML = '<a></a></b>'
         parser = cET.XMLPullParser()
         parser.feed(XML)
