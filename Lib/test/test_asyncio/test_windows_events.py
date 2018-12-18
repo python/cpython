@@ -1,6 +1,9 @@
 import os
+import signal
 import socket
 import sys
+import subprocess
+import time
 import unittest
 from unittest import mock
 
@@ -13,6 +16,7 @@ import _winapi
 import asyncio
 from asyncio import windows_events
 from test.test_asyncio import utils as test_utils
+from test.support.script_helper import spawn_python
 
 
 def tearDownModule():
@@ -31,6 +35,23 @@ class UpperProto(asyncio.Protocol):
         if b'\n' in data:
             self.trans.write(b''.join(self.buf).upper())
             self.trans.close()
+
+
+class ProactorLoopCtrlC(test_utils.TestCase):
+    def test_ctrl_c(self):
+        from .test_ctrl_c_in_proactor_loop_helper import __file__ as f
+
+        # ctrl-c will be sent to all processes that share the same console
+        # in order to isolate the effect of raising ctrl-c we'll create
+        # a process with a new console
+        flags = subprocess.CREATE_NEW_CONSOLE
+        with spawn_python(f, creationflags=flags) as p:
+            try:
+                exit_code = p.wait(timeout=5)
+                self.assertEqual(exit_code, 255)
+            except:
+                p.kill()
+                raise
 
 
 class ProactorTests(test_utils.TestCase):
