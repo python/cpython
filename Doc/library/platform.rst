@@ -40,6 +40,9 @@ Cross Platform
    and then only if the executable points to the Python interpreter.  Reasonable
    defaults are used when the above needs are not met.
 
+   To only get the pointer size of the running Python interpreter,
+   :attr:`sys.maxsize` or ``struct.calcsize('P')`` can be used.
+
    .. note::
 
       On Mac OS X (and perhaps other platforms), executable files may be
