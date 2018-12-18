@@ -1390,6 +1390,11 @@ class Popen(object):
                     errread, errwrite)
 
 
+        def _posix_spawn(self, args, executable):
+            """Execute program using os.posix_spawn()."""
+            env = dict(os.environ)
+            self.pid = os.posix_spawn(executable, args, env)
+
         def _execute_child(self, args, executable, preexec_fn, close_fds,
                            pass_fds, cwd, env,
                            startupinfo, creationflags, shell,
@@ -1414,6 +1419,16 @@ class Popen(object):
 
             if executable is None:
                 executable = args[0]
+
+            if (preexec_fn is None
+                    and not close_fds
+                    and not pass_fds
+                    and cwd is None
+                    and env is None
+                    and restore_signals is False
+                    and not start_new_session):
+                return self._posix_spawn(args, executable)
+
             orig_executable = executable
 
             # For transferring possible exec failure from child to parent.
