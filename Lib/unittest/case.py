@@ -1058,9 +1058,9 @@ class TestCase(object):
                                   'of second %s\n' % (len1, seq_type_name))
         standardMsg = differing
         diffMsg = difflib.unified_diff(pprint.pformat(seq1).splitlines(),
-                                        pprint.pformat(seq2).splitlines(),
-                                        fromfile='expected', tofile='got',
-                                        lineterm='')
+                                       pprint.pformat(seq2).splitlines(),
+                                       fromfile='expected', tofile='got',
+                                       lineterm='')
         diffMsg = '\n' + '\n'.join(diffMsg)
 
         standardMsg = self._truncateMessage(standardMsg, diffMsg)

@@ -1187,9 +1187,8 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
         first, last = group[0], group[-1]
         file1_range = _format_range_unified(first[1], last[2])
         file2_range = _format_range_unified(first[3], last[4])
-        if isinstance(a, list) or isinstance(a, tuple) and \
-            isinstance(b, list) or isinstance(b, tuple):
-            yield '{}'.format(lineterm)
+        if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):
+            yield lineterm
         else:
             yield '@@ -{} +{} @@{}'.format(file1_range, file2_range, lineterm)
 
