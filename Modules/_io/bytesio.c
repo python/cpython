@@ -191,19 +191,22 @@ write_bytes(bytesio *self, PyObject *b)
     }
     Py_ssize_t len = buf.len;
     if (len == 0) {
-        PyBuffer_Release(&buf);
-        return 0;
+        goto done;
     }
 
     assert(self->pos >= 0);
     size_t endpos = (size_t)self->pos + len;
     if (endpos > (size_t)PyBytes_GET_SIZE(self->buf)) {
-        if (resize_buffer(self, endpos) < 0)
-            return -1;
+        if (resize_buffer(self, endpos) < 0) {
+            len = -1;
+            goto done;
+        }
     }
     else if (SHARED_BUF(self)) {
-        if (unshare_buffer(self, Py_MAX(endpos, (size_t)self->string_size)) < 0)
-            return -1;
+        if (unshare_buffer(self, Py_MAX(endpos, (size_t)self->string_size)) < 0) {
+            len = -1;
+            goto done;
+        }
     }
 
     if (self->pos > self->string_size) {
@@ -229,6 +232,7 @@ write_bytes(bytesio *self, PyObject *b)
         self->string_size = endpos;
     }
 
+  done:
     PyBuffer_Release(&buf);
     return len;
 }
