@@ -2429,6 +2429,11 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
 static int
 treebuilder_gc_traverse(TreeBuilderObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(self->end_ns_event_obj);
+    Py_VISIT(self->start_ns_event_obj);
+    Py_VISIT(self->end_event_obj);
+    Py_VISIT(self->start_event_obj);
+    Py_VISIT(self->events_append);
     Py_VISIT(self->root);
     Py_VISIT(self->this);
     Py_VISIT(self->last);
