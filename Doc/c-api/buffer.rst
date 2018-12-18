@@ -429,7 +429,7 @@ Buffer-related functions
 
    Return ``1`` if *obj* supports the buffer interface otherwise ``0``.  When ``1`` is
    returned, it doesn't guarantee that :c:func:`PyObject_GetBuffer` will
-   succeed.
+   succeed.  This function always succeeds.
 
 
 .. c:function:: int PyObject_GetBuffer(PyObject *exporter, Py_buffer *view, int flags)
@@ -470,7 +470,7 @@ Buffer-related functions
 
    Return ``1`` if the memory defined by the *view* is C-style (*order* is
    ``'C'``) or Fortran-style (*order* is ``'F'``) :term:`contiguous` or either one
-   (*order* is ``'A'``).  Return ``0`` otherwise.
+   (*order* is ``'A'``).  Return ``0`` otherwise.  This function always succeeds.
 
 
 .. c:function:: int PyBuffer_ToContiguous(void *buf, Py_buffer *src, Py_ssize_t len, char order)
