@@ -406,7 +406,7 @@ def _mac_ver_xml():
 
 def mac_ver(release='', versioninfo=('', '', ''), machine=''):
 
-    """ Get MacOS version information and return it as tuple (release,
+    """ Get macOS version information and return it as tuple (release,
         versioninfo, machine) with versioninfo being a tuple (version,
         dev_stage, non_release_version).
 
@@ -478,12 +478,7 @@ def system_alias(system, release, version):
         where it would otherwise cause confusion.
 
     """
-    if system == 'Rhapsody':
-        # Apple's BSD derivative
-        # XXX How can we determine the marketing release number ?
-        return 'MacOS X Server', system+release, version
-
-    elif system == 'SunOS':
+    if system == 'SunOS':
         # Sun's OS
         if release < '5':
             # These releases use the old name SunOS
@@ -518,6 +513,9 @@ def system_alias(system, release, version):
     elif system in ('win32', 'win16'):
         # In case one of the other tricks
         system = 'Windows'
+
+    # bpo-35516: Don't replace Darwin with macOS since input release and
+    # version arguments can be different than the currently running version.
 
     return system, release, version
 
@@ -613,13 +611,21 @@ def _syscmd_file(target, default=''):
 
     import subprocess
     target = _follow_symlinks(target)
+    # "file" output is locale dependent: force the usage of the C locale
+    # to get deterministic behavior.
+    env = dict(os.environ, LC_ALL='C')
     try:
-        output = subprocess.check_output(['file', target],
+        # -b: do not prepend filenames to output lines (brief mode)
+        output = subprocess.check_output(['file', '-b', target],
                                          stderr=subprocess.DEVNULL,
-                                         encoding='latin-1')
+                                         env=env)
     except (OSError, subprocess.CalledProcessError):
         return default
-    return (output or default)
+    if not output:
+        return default
+    # With the C locale, the output should be mostly ASCII-compatible.
+    # Decode from Latin-1 to prevent Unicode decode error.
+    return output.decode('latin-1')
 
 ### Information about the used architecture
 
@@ -656,12 +662,8 @@ def architecture(executable=sys.executable, bits='', linkage=''):
     # else is given as default.
     if not bits:
         import struct
-        try:
-            size = struct.calcsize('P')
-        except struct.error:
-            # Older installations can only query longs
-            size = struct.calcsize('l')
-        bits = str(size*8) + 'bit'
+        size = struct.calcsize('P')
+        bits = str(size * 8) + 'bit'
 
     # Get data from the 'file' system command
     if executable:
@@ -681,7 +683,7 @@ def architecture(executable=sys.executable, bits='', linkage=''):
                 linkage = l
         return bits, linkage
 
-    if 'executable' not in fileout:
+    if 'executable' not in fileout and 'shared object' not in fileout:
         # Format not supported
         return bits, linkage
 
@@ -1166,7 +1168,6 @@ def platform(aliased=0, terse=0):
         # macOS (darwin kernel)
         macos_release = mac_ver()[0]
         if macos_release:
-            # note: 'macOS' is different than 'MacOS' used below
             system = 'macOS'
             release = macos_release
 
@@ -1193,13 +1194,6 @@ def platform(aliased=0, terse=0):
             platform = _platform(system, release, version,
                                  'on',
                                  os_name, os_version, os_arch)
-
-    elif system == 'MacOS':
-        # MacOS platforms
-        if terse:
-            platform = _platform(system, release)
-        else:
-            platform = _platform(system, release, machine)
 
     else:
         # Generic handler
