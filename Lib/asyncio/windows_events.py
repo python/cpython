@@ -308,6 +308,22 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
             proactor = IocpProactor()
         super().__init__(proactor)
 
+    def run_forever(self):
+        try:
+            # if _self_reading_future is cancelled -
+            # this might indicate that event loop was interrupted before
+            # and self-reading routine is not hooked up now and needs 
+            # to be restarted
+            if (self._self_reading_future is not None and 
+                self._self_reading_future.cancelled()):
+                self._self_reading_future = None
+                self.call_soon(self._loop_self_reading)
+            super().run_forever()
+        except KeyboardInterrupt:
+            if self._self_reading_future is not None:
+                self._self_reading_future.cancel()
+            raise
+
     async def create_pipe_connection(self, protocol_factory, address):
         f = self._proactor.connect_pipe(address)
         pipe = await f
