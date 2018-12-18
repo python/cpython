@@ -94,11 +94,12 @@ menudefs = [
 
  ('options', [
    ('Configure _IDLE', '<<open-config-dialog>>'),
-   ('_Code Context', '<<toggle-code-context>>'),
+   None,
+   ('Zoom Height', '<<zoom-height>>'),
+   ('Show _Code Context', '<<toggle-code-context>>'),
    ]),
 
  ('window', [
-   ('Zoom Height', '<<zoom-height>>'),
    ]),
 
  ('help', [

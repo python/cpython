@@ -275,7 +275,7 @@ Configure IDLE
    menu. For more, see
    :ref:`Setting preferences <preferences>` under Help and preferences.
 
-Code Context (toggle)(Editor Window only)
+Show/Hide Code Context (Editor Window only)
    Open a pane at the top of the edit window which shows the block context
    of the code which has scrolled above the top of the window.  See
    :ref:`Code Context <code-context>` in the Editing and Navigation section below.
