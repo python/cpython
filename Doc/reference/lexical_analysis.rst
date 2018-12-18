@@ -442,8 +442,6 @@ declaration; it is UTF-8 if no encoding declaration is given in the source file;
 see section :ref:`encodings`.
 
 .. index:: triple-quoted string, Unicode Consortium, raw string
-   single: """; string literal
-   single: '''; string literal
 
 In plain English: Both types of literals can be enclosed in matching single quotes
 (``'``) or double quotes (``"``).  They can also be enclosed in matching groups
