@@ -6009,9 +6009,67 @@ class TestMSWindowsTCPFlags(unittest.TestCase):
         self.assertEqual([], unknown,
             "New TCP flags were discovered. See bpo-32394 for more information")
 
+class CreateServerSockTest(unittest.TestCase):
+
+    def echo_server(self, sock, port=None):
+        def run():
+            with sock:
+                conn, _ = sock.accept()
+                with conn:
+                    msg = conn.recv(1024)
+                    if not msg:
+                        return
+                    conn.sendall(msg)
+
+        sock.settimeout(2)
+        t = threading.Thread(target=run)
+        t.start()
+        time.sleep(.1)
+
+    def test_base(self):
+        port = support.find_unused_port()
+        with socket.create_server_sock((None, port)) as sock:
+            self.assertEqual(sock.getsockname()[1], port)
+            self.assertEqual(sock.type, socket.SOCK_STREAM)
+            if socket.has_dual_stack():
+                self.assertEqual(sock.family, socket.AF_INET6)
+            else:
+                self.assertEqual(sock.family, socket.AF_INET)
+            self.echo_server(sock)
+            with socket.create_connection(('localhost', port), timeout=2) as cl:
+                cl.sendall(b'foo')
+                self.assertEqual(cl.recv(1024), b'foo')
+
+    def test_dual_stack(self):
+        with socket.create_server_sock((None, 0)) as sock:
+            self.echo_server(sock)
+            port = sock.getsockname()[1]
+            with socket.create_connection(("127.0.0.1", port), timeout=2) as cl:
+                cl.sendall(b'foo')
+                self.assertEqual(cl.recv(1024), b'foo')
+
+        with socket.create_server_sock((None, 0)) as sock:
+            self.echo_server(sock)
+            port = sock.getsockname()[1]
+            if socket.has_dual_stack():
+                with socket.create_connection(("::1", port), timeout=2) as cl:
+                    cl.sendall(b'foo')
+                    self.assertEqual(cl.recv(1024), b'foo')
+            else:
+                self.assertRaises(ConnectionRefusedError,
+                                  socket.create_connection, ("::1", port))
+                # just stop server
+                with socket.create_connection(("127.0.0.1", port), timeout=2) \
+                        as cl:
+                    cl.sendall(b'foo')
+                    cl.recv(1024)
+                unittest.skip('dual stack cannot be tested as not supported')
+
+
 def test_main():
     tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
-             TestExceptions, BufferIOTest, BasicTCPTest2, BasicUDPTest, UDPTimeoutTest ]
+             TestExceptions, BufferIOTest, BasicTCPTest2, BasicUDPTest,
+             UDPTimeoutTest, CreateServerSockTest]
 
     tests.extend([
         NonBlockingTCPTests,

@@ -728,6 +728,75 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
     else:
         raise error("getaddrinfo returns an empty list")
 
+def has_dual_stack():
+    """Return True if kernel allows creating a socket which is able to
+    listen for both AF_INET and AF_INET6 connections.
+    """
+    if not has_ipv6 \
+            or not hasattr(_socket, 'AF_INET6') \
+            or not hasattr(_socket, 'IPV6_V6ONLY'):
+        return False
+    try:
+        with socket(AF_INET6, SOCK_STREAM) as sock:
+            if not sock.getsockopt(IPPROTO_IPV6, IPV6_V6ONLY):
+                return True
+            else:
+                sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, False)
+                return True
+    except error:
+        return False
+
+def create_server_sock(address,
+                       reuse_addr=os.name == 'posix' and sys.platform != 'cygwin',
+                       queue_size=5, dual_stack=has_dual_stack()):
+    """Utility function which creates a TCP server bound to a
+    (host, port) *address* tuple and return a socket instance.
+    Internally it takes care of choosing the right address family
+    depending on the host specified in *address*.
+    If *host* is an empty string or None all netwrok interfaces are
+    assumed.
+    If dual stack is supported by kernel the socket will be able to
+    listen for both AF_INET and AF_INET6 connections.
+
+    >>> server = create_server_sock((None, 8000))
+    >>> while True:
+    ...     sock, addr = server.accept()
+    ...     # handle new sock connection
+    """
+    AF_INET6_ = getattr(_socket, "AF_INET6", 0)
+    host, port = address
+    if host == "":
+        # http://mail.python.org/pipermail/python-ideas/2013-March/019937.html
+        host = None
+    # If dual stack is supported and no host was specified '::' will
+    # accept AF_INET and AF_INET6 connections and all interfaces.
+    if host is None and dual_stack:
+        host = "::"
+    err = None
+    info = getaddrinfo(host, port, AF_UNSPEC, SOCK_STREAM, 0, AI_PASSIVE)
+    for res in info:
+        af, socktype, proto, canonname, sa = res
+        sock = None
+        try:
+            sock = socket(af, socktype, proto)
+            if reuse_addr:
+                sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+            if af == AF_INET6_ and dual_stack:
+                if sock.getsockopt(IPPROTO_IPV6, IPV6_V6ONLY):
+                    sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, False)
+            sock.bind(sa)
+            sock.listen(queue_size)
+            return sock
+        except error as _:
+            err = _
+            if sock is not None:
+                sock.close()
+
+    if err is not None:
+        raise err
+    else:
+        raise error("getaddrinfo() returned an empty list")
+
 def getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
     """Resolve host and port into list of address info entries.
 
