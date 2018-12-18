@@ -514,6 +514,9 @@ def system_alias(system, release, version):
         # In case one of the other tricks
         system = 'Windows'
 
+    # bpo-35516: Don't replace Darwin with macOS since input release and
+    # version arguments can be different than the currently running version.
+
     return system, release, version
 
 ### Various internal helpers
