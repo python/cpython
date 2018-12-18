@@ -810,13 +810,15 @@ are always available.  They are listed here in alphabetical order.
 
    See also :ref:`typeiter`.
 
-   One useful application of the second form of :func:`iter` is to read lines of
-   a file until a certain line is reached.  The following example reads a file
-   until the :meth:`~io.TextIOBase.readline` method returns an empty string::
+   One simple example application of the second form of :func:`iter` is to roll
+   two dice and sum the two rolled values until a certain number is observed::
 
-      with open('mydata.txt') as fp:
-          for line in iter(fp.readline, ''):
-              process_line(line)
+    >>> from random import randint
+    >>> def roll_dice():
+    ...     return randint(1, 6) + randint(1, 6)
+    ...
+    >>> list(iter(roll_dice, 7))  # roll until 7 is seen
+    [8, 6]
 
 
 .. function:: len(s)
