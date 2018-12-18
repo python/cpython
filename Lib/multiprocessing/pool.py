@@ -642,7 +642,7 @@ class Pool(object):
             util.debug('helping task handler/workers to finish')
             cls._help_stuff_finish(inqueue, task_handler, len(pool))
         else:
-            util.debug('finalizing BROKEN procress pool')
+            util.debug('finalishing BROKEN process pool')
 
         if (not result_handler.is_alive()) and (len(cache) != 0):
             raise AssertionError(
