@@ -746,22 +746,23 @@ def has_dual_stack():
     except error:
         return False
 
-def create_server_sock(address,
-                       reuse_addr=os.name == 'posix' and sys.platform != 'cygwin',
-                       queue_size=5, dual_stack=has_dual_stack()):
-    """Utility function which creates a TCP server bound to a
-    (host, port) *address* tuple and return a socket instance.
-    Internally it takes care of choosing the right address family
-    depending on the host specified in *address*.
-    If *host* is an empty string or None all netwrok interfaces are
-    assumed.
-    If dual stack is supported by kernel the socket will be able to
-    listen for both AF_INET and AF_INET6 connections.
+def create_server_sock(address, *, dual_stack=has_dual_stack(), queue_size=5,
+                       reuse_addr=os.name == 'posix' and sys.platform != 'cygwin'):
+    """Convenience function which creates a TCP server bound to
+    *address* (a 2-tuple (host, port)) and return a socket object.
 
-    >>> server = create_server_sock((None, 8000))
-    >>> while True:
-    ...     sock, addr = server.accept()
-    ...     # handle new sock connection
+    If *host* is an empty string or None all network interfaces are assumed.
+    If dual-stack is supported by kernel and *dual_stack* parameter
+    is True the socket will be able to serve both AF_INET and AF_INET6
+    connections. If not the right address family will be chosen
+    based on the host specified in *address*.
+    *queue_size* is the argument passed to socket.listen() method,
+    *reuse_addr* dictates whether to set SO_REUSEADDR flag.
+
+    >>> with create_server_sock((None, 8000)) as server:
+    ...     while True:
+    ...         sock, addr = server.accept()
+    ...         # handle new sock connection
     """
     AF_INET6_ = getattr(_socket, "AF_INET6", 0)
     host, port = address

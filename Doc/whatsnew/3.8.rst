@@ -196,6 +196,16 @@ pathlib
 contain characters unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
+socket
+------
+
+Added :meth:`~socket.create_server_sock()`, a convenience function which
+creates a TCP server socket able to serve both IPv4 and IPv6 connections.
+(Contributed by Giampaolo Rodola in :issue:`17561`.)
+
+Added :meth:`~socket.has_dual_stack()` function.
+(Contributed by Giampaolo Rodola in :issue:`17561`.)
+
 ssl
 ---
 
