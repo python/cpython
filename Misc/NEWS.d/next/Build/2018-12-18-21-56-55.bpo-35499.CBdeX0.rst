@@ -1,0 +1,2 @@
+``make build_all_generate_profile`` doesn't add ``PGO_PROF_GEN_FLAG`` flags
+to ``LDFLAGS`` anymore.
