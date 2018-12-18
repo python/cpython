@@ -729,8 +729,8 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
         raise error("getaddrinfo returns an empty list")
 
 def has_dual_stack():
-    """Return True if kernel allows creating a socket which is able to
-    listen for both AF_INET and AF_INET6 connections.
+    """Return True if the kernel supports creating a socket which
+    can handle both AF_INET and AF_INET6 (IPv4 / IPv6) connections.
     """
     if not has_ipv6 \
             or not hasattr(_socket, 'AF_INET6') \
