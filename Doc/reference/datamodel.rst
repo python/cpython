@@ -620,7 +620,7 @@ Callable types
       called, always returns an iterator object which can be used to execute the
       body of the function:  calling the iterator's :meth:`iterator.__next__`
       method will cause the function to execute until it provides a value
-      using the :keyword:`yield` statement.  When the function executes a
+      using the :keyword:`!yield` statement.  When the function executes a
       :keyword:`return` statement or falls off the end, a :exc:`StopIteration`
       exception is raised and the iterator will have reached the end of the set of
       values to be returned.
@@ -700,7 +700,7 @@ Modules
 
    Modules are a basic organizational unit of Python code, and are created by
    the :ref:`import system <importsystem>` as invoked either by the
-   :keyword:`import` statement (see :keyword:`import`), or by calling
+   :keyword:`import` statement, or by calling
    functions such as :func:`importlib.import_module` and built-in
    :func:`__import__`.  A module object has a namespace implemented by a
    dictionary object (this is the dictionary referenced by the ``__globals__``
@@ -2424,7 +2424,7 @@ A :dfn:`context manager` is an object that defines the runtime context to be
 established when executing a :keyword:`with` statement. The context manager
 handles the entry into, and the exit from, the desired runtime context for the
 execution of the block of code.  Context managers are normally invoked using the
-:keyword:`with` statement (described in section :ref:`with`), but can also be
+:keyword:`!with` statement (described in section :ref:`with`), but can also be
 used by directly invoking their methods.
 
 .. index::
@@ -2441,7 +2441,7 @@ For more information on context managers, see :ref:`typecontextmanager`.
 
    Enter the runtime context related to this object. The :keyword:`with` statement
    will bind this method's return value to the target(s) specified in the
-   :keyword:`as` clause of the statement, if any.
+   :keyword:`!as` clause of the statement, if any.
 
 
 .. method:: object.__exit__(self, exc_type, exc_value, traceback)

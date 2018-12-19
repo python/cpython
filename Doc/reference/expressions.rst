@@ -185,20 +185,20 @@ Common syntax elements for comprehensions are:
    comp_if: "if" `expression_nocond` [`comp_iter`]
 
 The comprehension consists of a single expression followed by at least one
-:keyword:`for` clause and zero or more :keyword:`for` or :keyword:`if` clauses.
+:keyword:`!for` clause and zero or more :keyword:`!for` or :keyword:`!if` clauses.
 In this case, the elements of the new container are those that would be produced
-by considering each of the :keyword:`for` or :keyword:`if` clauses a block,
+by considering each of the :keyword:`!for` or :keyword:`!if` clauses a block,
 nesting from left to right, and evaluating the expression to produce an element
 each time the innermost block is reached.
 
-However, aside from the iterable expression in the leftmost :keyword:`for` clause,
+However, aside from the iterable expression in the leftmost :keyword:`!for` clause,
 the comprehension is executed in a separate implicitly nested scope. This ensures
 that names assigned to in the target list don't "leak" into the enclosing scope.
 
-The iterable expression in the leftmost :keyword:`for` clause is evaluated
+The iterable expression in the leftmost :keyword:`!for` clause is evaluated
 directly in the enclosing scope and then passed as an argument to the implictly
-nested scope. Subsequent :keyword:`for` clauses and any filter condition in the
-leftmost :keyword:`for` clause cannot be evaluated in the enclosing scope as
+nested scope. Subsequent :keyword:`!for` clauses and any filter condition in the
+leftmost :keyword:`!for` clause cannot be evaluated in the enclosing scope as
 they may depend on the values obtained from the leftmost iterable. For example:
 ``[x*y for x in range(10) for y in range(x, x+10)]``.
 
@@ -210,14 +210,14 @@ when compiled, in Python 3.8+ they will emit :exc:`SyntaxError`).
 .. index::
    single: await; in comprehensions
 
-Since Python 3.6, in an :keyword:`async def` function, an :keyword:`async for`
+Since Python 3.6, in an :keyword:`async def` function, an :keyword:`!async for`
 clause may be used to iterate over a :term:`asynchronous iterator`.
-A comprehension in an :keyword:`async def` function may consist of either a
-:keyword:`for` or :keyword:`async for` clause following the leading
-expression, may contain additional :keyword:`for` or :keyword:`async for`
+A comprehension in an :keyword:`!async def` function may consist of either a
+:keyword:`!for` or :keyword:`!async for` clause following the leading
+expression, may contain additional :keyword:`!for` or :keyword:`!async for`
 clauses, and may also use :keyword:`await` expressions.
-If a comprehension contains either :keyword:`async for` clauses
-or :keyword:`await` expressions it is called an
+If a comprehension contains either :keyword:`!async for` clauses
+or :keyword:`!await` expressions it is called an
 :dfn:`asynchronous comprehension`.  An asynchronous comprehension may
 suspend the execution of the coroutine function in which it appears.
 See also :pep:`530`.
@@ -361,11 +361,11 @@ brackets or curly braces.
 Variables used in the generator expression are evaluated lazily when the
 :meth:`~generator.__next__` method is called for the generator object (in the same
 fashion as normal generators).  However, the iterable expression in the
-leftmost :keyword:`for` clause is immediately evaluated, so that an error
+leftmost :keyword:`!for` clause is immediately evaluated, so that an error
 produced by it will be emitted at the point where the generator expression
 is defined, rather than at the point where the first value is retrieved.
-Subsequent :keyword:`for` clauses and any filter condition in the leftmost
-:keyword:`for` clause cannot be evaluated in the enclosing scope as they may
+Subsequent :keyword:`!for` clauses and any filter condition in the leftmost
+:keyword:`!for` clause cannot be evaluated in the enclosing scope as they may
 depend on the values obtained from the leftmost iterable. For example:
 ``(x*y for x in range(10) for y in range(x, x+10))``.
 
@@ -378,7 +378,7 @@ implicitly defined generator (in Python 3.7, such expressions emit
 :exc:`DeprecationWarning` when compiled, in Python 3.8+ they will emit
 :exc:`SyntaxError`).
 
-If a generator expression contains either :keyword:`async for`
+If a generator expression contains either :keyword:`!async for`
 clauses or :keyword:`await` expressions it is called an
 :dfn:`asynchronous generator expression`.  An asynchronous generator
 expression returns a new asynchronous generator object,
@@ -642,12 +642,12 @@ that method.
 In an asynchronous generator function, yield expressions are allowed anywhere
 in a :keyword:`try` construct. However, if an asynchronous generator is not
 resumed before it is finalized (by reaching a zero reference count or by
-being garbage collected), then a yield expression within a :keyword:`try`
+being garbage collected), then a yield expression within a :keyword:`!try`
 construct could result in a failure to execute pending :keyword:`finally`
 clauses.  In this case, it is the responsibility of the event loop or
 scheduler running the asynchronous generator to call the asynchronous
 generator-iterator's :meth:`~agen.aclose` method and run the resulting
-coroutine object, thus allowing any pending :keyword:`finally` clauses
+coroutine object, thus allowing any pending :keyword:`!finally` clauses
 to execute.
 
 To take care of finalization, an event loop should define
@@ -1553,7 +1553,7 @@ Membership test operations
 The operators :keyword:`in` and :keyword:`not in` test for membership.  ``x in
 s`` evaluates to ``True`` if *x* is a member of *s*, and ``False`` otherwise.
 ``x not in s`` returns the negation of ``x in s``.  All built-in sequences and
-set types support this as well as dictionary, for which :keyword:`in` tests
+set types support this as well as dictionary, for which :keyword:`!in` tests
 whether the dictionary has a given key. For container types such as list, tuple,
 set, frozenset, dict, or collections.deque, the expression ``x in y`` is equivalent
 to ``any(x is e or x == e for e in y)``.
@@ -1652,6 +1652,8 @@ the desired value.  Because :keyword:`not` has to create a new value, it
 returns a boolean value regardless of the type of its argument
 (for example, ``not 'foo'`` produces ``False`` rather than ``''``.)
 
+
+.. _if_expr:
 
 Conditional expressions
 =======================
@@ -1795,7 +1797,7 @@ precedence and have a left-to-right chaining feature as described in the
 +===============================================+=====================================+
 | :keyword:`lambda`                             | Lambda expression                   |
 +-----------------------------------------------+-------------------------------------+
-| :keyword:`if` -- :keyword:`else`              | Conditional expression              |
+| :keyword:`if <if_expr>` -- :keyword:`!else`   | Conditional expression              |
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`or`                                 | Boolean OR                          |
 +-----------------------------------------------+-------------------------------------+

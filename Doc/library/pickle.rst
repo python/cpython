@@ -923,7 +923,7 @@ The following example reads the resulting pickled data. ::
 .. [#] Don't confuse this with the :mod:`marshal` module
 
 .. [#] This is why :keyword:`lambda` functions cannot be pickled:  all
-    :keyword:`lambda` functions share the same name:  ``<lambda>``.
+    :keyword:`!lambda` functions share the same name:  ``<lambda>``.
 
 .. [#] The exception raised will likely be an :exc:`ImportError` or an
    :exc:`AttributeError` but it could be something else.
