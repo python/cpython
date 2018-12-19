@@ -645,7 +645,7 @@ try:
     # Windows XP and non-Windows OS'es will mock _getfinalpathname.
     if sys.getwindowsversion()[:2] >= (6, 0):
         from nt import _getfinalpathname
-        
+
         def realpath(p):
             try:
                 p = _getfinalpathname(p)
