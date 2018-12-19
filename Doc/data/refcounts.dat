@@ -1767,7 +1767,6 @@ PyUnicode_DecodeUnicodeEscape:PyObject*::+1:
 PyUnicode_DecodeUnicodeEscape:const char*:s::
 PyUnicode_DecodeUnicodeEscape:Py_ssize_t:size::
 PyUnicode_DecodeUnicodeEscape:const char*:errors::
-PyUnicode_DecodeUnicodeEscape:const char**:first_invalid_escape::
 
 PyUnicode_EncodeUnicodeEscape:PyObject*::+1:
 PyUnicode_EncodeUnicodeEscape:const Py_UNICODE*:s::
@@ -1780,7 +1779,6 @@ PyUnicode_DecodeRawUnicodeEscape:PyObject*::+1:
 PyUnicode_DecodeRawUnicodeEscape:const char*:s::
 PyUnicode_DecodeRawUnicodeEscape:Py_ssize_t:size::
 PyUnicode_DecodeRawUnicodeEscape:const char*:errors::
-PyUnicode_DecodeRawUnicodeEscape:const char**:first_invalid_escape::
 
 PyUnicode_EncodeRawUnicodeEscape:PyObject*::+1:
 PyUnicode_EncodeRawUnicodeEscape:const Py_UNICODE*:s::
@@ -1904,7 +1902,7 @@ PyUnicode_FindChar:Py_ssize_t:start::
 PyUnicode_FindChar:Py_ssize_t:end::
 PyUnicode_FindChar:int:direction::
 
-PyUnicode_Count:int:::
+PyUnicode_Count:Py_ssize_t:::
 PyUnicode_Count:PyObject*:str:0:
 PyUnicode_Count:PyObject*:substr:0:
 PyUnicode_Count:Py_ssize_t:start::
@@ -1914,7 +1912,7 @@ PyUnicode_Replace:PyObject*::+1:
 PyUnicode_Replace:PyObject*:str:0:
 PyUnicode_Replace:PyObject*:substr:0:
 PyUnicode_Replace:PyObject*:replstr:0:
-PyUnicode_Replace:int:maxcount::
+PyUnicode_Replace:Py_ssize_t:maxcount::
 
 PyUnicode_Compare:int:::
 PyUnicode_Compare:PyObject*:left:0:
