@@ -527,8 +527,6 @@ else:  # use native Windows method on Windows
         except (OSError, ValueError):
             return _abspath_fallback(path)
 
-# realpath is a no-op on systems without islink support
-realpath = abspath
 # Win9x family and earlier have no Unicode filename support.
 supports_unicode_filenames = (hasattr(sys, "getwindowsversion") and
                               sys.getwindowsversion()[3] >= 2)
@@ -647,6 +645,15 @@ try:
     # Windows XP and non-Windows OS'es will mock _getfinalpathname.
     if sys.getwindowsversion()[:2] >= (6, 0):
         from nt import _getfinalpathname
+        
+        def realpath(p):
+            try:
+                p = _getfinalpathname(p)
+                # GetFinalPathNameByHandle returns path in \\?\ syntax
+                # remove leading \\?\ prefix
+                return p[4:]
+            except FileNotFoundError:
+                return abspath(p)
     else:
         raise ImportError
 except (AttributeError, ImportError):
@@ -656,7 +663,8 @@ except (AttributeError, ImportError):
     # approximation.
     def _getfinalpathname(f):
         return normcase(abspath(f))
-
+    # realpath is a no-op on systems without islink support
+    realpath = abspath
 
 try:
     # The genericpath.isdir implementation uses os.stat and checks the mode

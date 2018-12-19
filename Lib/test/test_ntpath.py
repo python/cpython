@@ -5,7 +5,7 @@ import unittest
 import warnings
 from test.support import TestFailed, FakePath
 from test import support, test_genericpath
-from tempfile import TemporaryFile
+from tempfile import TemporaryFile, TemporaryDirectory
 
 try:
     import nt
@@ -13,6 +13,12 @@ except ImportError:
     # Most tests can complete without the nt module,
     # but for those that require it we import here.
     nt = None
+
+try:
+    import _winapi
+except ImportError:
+    # realpath tests require _winapi
+    _winapi = None
 
 def tester(fn, wantResult):
     fn = fn.replace("\\", "\\\\")
@@ -276,6 +282,18 @@ class TestNtpath(unittest.TestCase):
                    'C:\\idle\\eric\\foo\\bar')
             tester('ntpath.expanduser("~/foo/bar")',
                    'C:\\idle\\eric/foo/bar')
+
+    @unittest.skipUnless(nt and _winapi, "realpath requires 'nt' and '_winapi' modules")
+    def test_realpath(self):
+        with TemporaryDirectory() as d:
+            f = ntpath.join(d, "f")
+            os.mkdir(f)
+            f2 = ntpath.join(d, "g")
+            _winapi.CreateJunction(f, f2)
+            p1 = ntpath.realpath(f)
+            p2 = ntpath.realpath(f2)
+            os.unlink(f2)
+            self.assertEqualCI(p1, p2)
 
     @unittest.skipUnless(nt, "abspath requires 'nt' module")
     def test_abspath(self):
