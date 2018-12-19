@@ -18,11 +18,16 @@ from distutils.spawn import find_executable
 
 cross_compiling = "_PYTHON_HOST_PLATFORM" in os.environ
 
-# Add special CFLAGS reserved for building the interpreter and the stdlib
-# modules (Issue #21121).
-cflags = sysconfig.get_config_var('CFLAGS')
-py_cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST')
-sysconfig.get_config_vars()['CFLAGS'] = cflags + ' ' + py_cflags_nodist
+# Set common compiler and linker flags derived from the Makefile,
+# reserved for building the interpreter and the stdlib modules.
+# See bpo-21121 and bpo-35257
+def set_compiler_flags(compiler_flags, compiler_py_flags_nodist):
+    flags = sysconfig.get_config_var(compiler_flags)
+    py_flags_nodist = sysconfig.get_config_var(compiler_py_flags_nodist)
+    sysconfig.get_config_vars()[compiler_flags] = flags + ' ' + py_flags_nodist
+
+set_compiler_flags('CFLAGS', 'PY_CFLAGS_NODIST')
+set_compiler_flags('LDFLAGS', 'PY_LDFLAGS_NODIST')
 
 class Dummy:
     """Hack for parallel build"""
