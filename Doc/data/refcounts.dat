@@ -1618,13 +1618,24 @@ Py_UNICODE_TONUMERIC:Py_UNICODE:ch::
 
 PyUnicode_FromUnicode:PyObject*::+1:
 PyUnicode_FromUnicode:const Py_UNICODE*:u::
-PyUnicode_FromUnicode:int:size::
+PyUnicode_FromUnicode:Py_ssize_t:size::
 
 PyUnicode_AsUnicode:Py_UNICODE*:::
-PyUnicode_AsUnicode:PyObject :*unicode:0:
+PyUnicode_AsUnicode:PyObject*:unicode:0:
 
-PyUnicode_GetSize:int:::
-PyUnicode_GetSize:PyObject :*unicode:0:
+PyUnicode_TransformDecimalToASCII:PyObject*::+1:
+PyUnicode_TransformDecimalToASCII:Py_UNICODE*:s::
+PyUnicode_TransformDecimalToASCII:Py_ssize_t:size::
+
+PyUnicode_AsUnicodeAndSize:Py_UNICODE*:::
+PyUnicode_AsUnicodeAndSize:PyObject*:unicode:0:
+PyUnicode_AsUnicodeAndSize:Py_ssize_t*:size::
+
+PyUnicode_AsUnicodeCopy:Py_UNICODE*:::
+PyUnicode_AsUnicodeCopy:PyObject*:unicode:0:
+
+PyUnicode_GetSize:Py_ssize_t:::
+PyUnicode_GetSize:PyObject*:unicode:0:
 
 PyUnicode_FromObject:PyObject*::+1:
 PyUnicode_FromObject:PyObject*:*obj:0:
@@ -1636,35 +1647,39 @@ PyUnicode_FromEncodedObject:const char*:errors::
 
 PyUnicode_FromWideChar:PyObject*::+1:
 PyUnicode_FromWideChar:const wchar_t*:w::
-PyUnicode_FromWideChar:int:size::
+PyUnicode_FromWideChar:Py_ssize_t:size::
 
-PyUnicode_AsWideChar:int:::
+PyUnicode_AsWideChar:Py_ssize_t:::
 PyUnicode_AsWideChar:PyObject*:*unicode:0:
 PyUnicode_AsWideChar:wchar_t*:w::
-PyUnicode_AsWideChar:int:size::
+PyUnicode_AsWideChar:Pyssize_t:size::
+
+PyUnicode_AsWideCharString:wchar_t*:::
+PyUnicode_AsWideCharString:PyObject*:unicode:0:
+PyUnicode_AsWideCharString:Py_ssize_t*:size::
 
 PyUnicode_Decode:PyObject*::+1:
 PyUnicode_Decode:const char*:s::
-PyUnicode_Decode:int:size::
+PyUnicode_Decode:Py_ssize_t:size::
 PyUnicode_Decode:const char*:encoding::
 PyUnicode_Decode:const char*:errors::
 
 PyUnicode_DecodeUTF16Stateful:PyObject*::+1:
 PyUnicode_DecodeUTF16Stateful:const char*:s::
-PyUnicode_DecodeUTF16Stateful:int:size::
+PyUnicode_DecodeUTF16Stateful:Py_ssize_t:size::
 PyUnicode_DecodeUTF16Stateful:const char*:errors::
 PyUnicode_DecodeUTF16Stateful:int*:byteorder::
-PyUnicode_DecodeUTF16Stateful:int*:consumed::
+PyUnicode_DecodeUTF16Stateful:Py_ssize_t*:consumed::
 
 PyUnicode_DecodeUTF8Stateful:PyObject*::+1:
 PyUnicode_DecodeUTF8Stateful:const char*:s::
-PyUnicode_DecodeUTF8Stateful:int:size::
+PyUnicode_DecodeUTF8Stateful:Py_ssize_t:size::
 PyUnicode_DecodeUTF8Stateful:const char*:errors::
-PyUnicode_DecodeUTF8Stateful:int*:consumed::
+PyUnicode_DecodeUTF8Stateful:Py_ssize_t*:consumed::
 
 PyUnicode_Encode:PyObject*::+1:
 PyUnicode_Encode:const Py_UNICODE*:s::
-PyUnicode_Encode:int:size::
+PyUnicode_Encode:Py_ssize_t:size::
 PyUnicode_Encode:const char*:encoding::
 PyUnicode_Encode:const char*:errors::
 
@@ -1673,68 +1688,113 @@ PyUnicode_AsEncodedString:PyObject*:unicode::
 PyUnicode_AsEncodedString:const char*:encoding::
 PyUnicode_AsEncodedString:const char*:errors::
 
+PyUnicode_DecodeUTF7:PyObject*::+1:
+PyUnicode_DecodeUTF7:const char*:s::
+PyUnicode_DecodeUTF7:Py_ssize_t:size::
+PyUnicode_DecodeUTF7:const char*:errors::
+
+PyUnicode_DecodeUTF7Stateful:PyObject*::+1:
+PyUnicode_DecodeUTF7Stateful:const char*:s::
+PyUnicode_DecodeUTF7Stateful:Py_ssize_t:size::
+PyUnicode_DecodeUTF7Stateful:const char*:errors::
+PyUnicode_DecodeUTF7Stateful:Py_ssize_t*:consumed::
+
+PyUnicode_EncodeUTF7:PyObject*::+1:
+PyUnicode_EncodeUTF7:const Py_UNICODE*:s::
+PyUnicode_EncodeUTF7:Py_ssize_t:size::
+PyUnicode_EncodeUTF7:int:base64SetO::
+PyUnicode_EncodeUTF7:int:base64WhiteSpace::
+PyUnicode_EncodeUTF7:const char*:errors::
+
 PyUnicode_DecodeUTF8:PyObject*::+1:
 PyUnicode_DecodeUTF8:const char*:s::
-PyUnicode_DecodeUTF8:int:size::
+PyUnicode_DecodeUTF8:Py_ssize_t:size::
 PyUnicode_DecodeUTF8:const char*:errors::
 
 PyUnicode_EncodeUTF8:PyObject*::+1:
 PyUnicode_EncodeUTF8:const Py_UNICODE*:s::
-PyUnicode_EncodeUTF8:int:size::
+PyUnicode_EncodeUTF8:Py_ssize_t:size::
 PyUnicode_EncodeUTF8:const char*:errors::
 
 PyUnicode_AsUTF8String:PyObject*::+1:
 PyUnicode_AsUTF8String:PyObject*:unicode::
 
+PyUnicode_AsUTF8AndSize:const char*:::
+PyUnicode_AsUTF8AndSize:PyObject*:unicode:0:
+PyUnicode_AsUTF8AndSize:Py_ssize_t*:size:0:
+
+PyUnicode_AsUTF8:const char*:::
+PyUnicode_AsUTF8:PyObject*:unicode:0:
+
 PyUnicode_DecodeUTF16:PyObject*::+1:
 PyUnicode_DecodeUTF16:const char*:s::
-PyUnicode_DecodeUTF16:int:size::
+PyUnicode_DecodeUTF16:Py_ssize_t:size::
 PyUnicode_DecodeUTF16:const char*:errors::
 PyUnicode_DecodeUTF16:int*:byteorder::
 
 PyUnicode_EncodeUTF16:PyObject*::+1:
 PyUnicode_EncodeUTF16:const Py_UNICODE*:s::
-PyUnicode_EncodeUTF16:int:size::
+PyUnicode_EncodeUTF16:Py_ssize_t:size::
 PyUnicode_EncodeUTF16:const char*:errors::
 PyUnicode_EncodeUTF16:int:byteorder::
 
 PyUnicode_AsUTF16String:PyObject*::+1:
 PyUnicode_AsUTF16String:PyObject*:unicode::
 
+PyUnicode_DecodeUTF32:PyObject*::+1:
+PyUnicode_DecodeUTF32:const char*:s::
+PyUnicode_DecodeUTF32:Py_ssize_t:size::
+PyUnicode_DecodeUTF32:const char*:errors::
+PyUnicode_DecodeUTF32:int*:byteorder::
+
+PyUnicode_DecodeUTF32Stateful:PyObject*::+1:
+PyUnicode_DecodeUTF32Stateful:const char*:s::
+PyUnicode_DecodeUTF32Stateful:Py_ssize_t:size::
+PyUnicode_DecodeUTF32Stateful:const char*:errors::
+PyUnicode_DecodeUTF32Stateful:int*:byteorder::
+PyUnicode_DecodeUTF32Stateful:Py_ssize_t*:consumed::
+
+PyUnicode_AsUTF32String:PyObject*::+1:
+PyUnicode_AsUTF32String:PyObject*:unicode:0:
+
+PyUnicode_EncodeUTF32:PyObject*::+1:
+PyUnicode_EncodeUTF32:const Py_UNICODE*:s::
+PyUnicode_EncodeUTF32:Py_ssize_t:size::
+PyUnicode_EncodeUTF32:const char*:errors::
+PyUnicode_EncodeUTF32:int:byteorder::
+
 PyUnicode_DecodeUnicodeEscape:PyObject*::+1:
 PyUnicode_DecodeUnicodeEscape:const char*:s::
-PyUnicode_DecodeUnicodeEscape:int:size::
+PyUnicode_DecodeUnicodeEscape:Py_ssize_t:size::
 PyUnicode_DecodeUnicodeEscape:const char*:errors::
 
 PyUnicode_EncodeUnicodeEscape:PyObject*::+1:
 PyUnicode_EncodeUnicodeEscape:const Py_UNICODE*:s::
-PyUnicode_EncodeUnicodeEscape:int:size::
-PyUnicode_EncodeUnicodeEscape:const char*:errors::
+PyUnicode_EncodeUnicodeEscape:Py_ssize_t:size::
 
 PyUnicode_AsUnicodeEscapeString:PyObject*::+1:
 PyUnicode_AsUnicodeEscapeString:PyObject*:unicode::
 
 PyUnicode_DecodeRawUnicodeEscape:PyObject*::+1:
 PyUnicode_DecodeRawUnicodeEscape:const char*:s::
-PyUnicode_DecodeRawUnicodeEscape:int:size::
+PyUnicode_DecodeRawUnicodeEscape:Py_ssize_t:size::
 PyUnicode_DecodeRawUnicodeEscape:const char*:errors::
 
 PyUnicode_EncodeRawUnicodeEscape:PyObject*::+1:
 PyUnicode_EncodeRawUnicodeEscape:const Py_UNICODE*:s::
-PyUnicode_EncodeRawUnicodeEscape:int:size::
-PyUnicode_EncodeRawUnicodeEscape:const char*:errors::
+PyUnicode_EncodeRawUnicodeEscape:Py_ssize_t:size::
 
 PyUnicode_AsRawUnicodeEscapeString:PyObject*::+1:
 PyUnicode_AsRawUnicodeEscapeString:PyObject*:unicode::
 
 PyUnicode_DecodeLatin1:PyObject*::+1:
 PyUnicode_DecodeLatin1:const char*:s::
-PyUnicode_DecodeLatin1:int:size::
+PyUnicode_DecodeLatin1:Py_ssize_t:size::
 PyUnicode_DecodeLatin1:const char*:errors::
 
 PyUnicode_EncodeLatin1:PyObject*::+1:
 PyUnicode_EncodeLatin1:const Py_UNICODE*:s::
-PyUnicode_EncodeLatin1:int:size::
+PyUnicode_EncodeLatin1:Py_ssize_t:size::
 PyUnicode_EncodeLatin1:const char*:errors::
 
 PyUnicode_AsLatin1String:PyObject*::+1:
@@ -1742,12 +1802,12 @@ PyUnicode_AsLatin1String:PyObject*:unicode::
 
 PyUnicode_DecodeASCII:PyObject*::+1:
 PyUnicode_DecodeASCII:const char*:s::
-PyUnicode_DecodeASCII:int:size::
+PyUnicode_DecodeASCII:Py_ssize_t:size::
 PyUnicode_DecodeASCII:const char*:errors::
 
 PyUnicode_EncodeASCII:PyObject*::+1:
 PyUnicode_EncodeASCII:const Py_UNICODE*:s::
-PyUnicode_EncodeASCII:int:size::
+PyUnicode_EncodeASCII:Py_ssize_t:size::
 PyUnicode_EncodeASCII:const char*:errors::
 
 PyUnicode_AsASCIIString:PyObject*::+1:
@@ -1755,13 +1815,13 @@ PyUnicode_AsASCIIString:PyObject*:unicode::
 
 PyUnicode_DecodeCharmap:PyObject*::+1:
 PyUnicode_DecodeCharmap:const char*:s::
-PyUnicode_DecodeCharmap:int:size::
+PyUnicode_DecodeCharmap:Py_ssize_t:size::
 PyUnicode_DecodeCharmap:PyObject*:mapping:0:
 PyUnicode_DecodeCharmap:const char*:errors::
 
 PyUnicode_EncodeCharmap:PyObject*::+1:
 PyUnicode_EncodeCharmap:const Py_UNICODE*:s::
-PyUnicode_EncodeCharmap:int:size::
+PyUnicode_EncodeCharmap:Py_ssize_t:size::
 PyUnicode_EncodeCharmap:PyObject*:mapping:0:
 PyUnicode_EncodeCharmap:const char*:errors::
 
@@ -1771,18 +1831,29 @@ PyUnicode_AsCharmapString:PyObject*:mapping:0:
 
 PyUnicode_TranslateCharmap:PyObject*::+1:
 PyUnicode_TranslateCharmap:const Py_UNICODE*:s::
-PyUnicode_TranslateCharmap:int:size::
+PyUnicode_TranslateCharmap:Py_ssize_t:size::
 PyUnicode_TranslateCharmap:PyObject*:table:0:
 PyUnicode_TranslateCharmap:const char*:errors::
 
 PyUnicode_DecodeMBCS:PyObject*::+1:
 PyUnicode_DecodeMBCS:const char*:s::
-PyUnicode_DecodeMBCS:int:size::
+PyUnicode_DecodeMBCS:Py_ssize_t:size::
 PyUnicode_DecodeMBCS:const char*:errors::
+
+PyUnicode_DecodeMBCSStateful:PyObject::+1:
+PyUnicode_DecodeMBCSStateful:const char*:s::
+PyUnicode_DecodeMBCSStateful:Py_ssize_t:size::
+PyUnicode_DecodeMBCSStateful:const char*:errors::
+PyUnicode_DecodeMBCSStateful:Py_ssize_t*:consumed::
+
+PyUnicode_EncodeCodePage:PyObject*::+1:
+PyUnicode_EncodeCodePage:int:code_page::
+PyUnicode_EncodeCodePage:PyObject*:unicode:0:
+PyUnicode_EncodeCodePage:const char*:errors::
 
 PyUnicode_EncodeMBCS:PyObject*::+1:
 PyUnicode_EncodeMBCS:const Py_UNICODE*:s::
-PyUnicode_EncodeMBCS:int:size::
+PyUnicode_EncodeMBCS:Py_ssize_t:size::
 PyUnicode_EncodeMBCS:const char*:errors::
 
 PyUnicode_AsMBCSString:PyObject*::+1:
@@ -1795,11 +1866,11 @@ PyUnicode_Concat:PyObject*:right:0:
 PyUnicode_Split:PyObject*::+1:
 PyUnicode_Split:PyObject*:left:0:
 PyUnicode_Split:PyObject*:right:0:
-PyUnicode_Split:int:maxsplit::
+PyUnicode_Split:Py_ssize_t:maxsplit::
 
 PyUnicode_Splitlines:PyObject*::+1:
 PyUnicode_Splitlines:PyObject*:s:0:
-PyUnicode_Splitlines:int:maxsplit::
+PyUnicode_Splitlines:int:keepend::
 
 PyUnicode_Translate:PyObject*::+1:
 PyUnicode_Translate:PyObject*:str:0:
@@ -1810,35 +1881,51 @@ PyUnicode_Join:PyObject*::+1:
 PyUnicode_Join:PyObject*:separator:0:
 PyUnicode_Join:PyObject*:seq:0:
 
-PyUnicode_Tailmatch:int:::
+PyUnicode_Tailmatch:Py_ssize_t:::
 PyUnicode_Tailmatch:PyObject*:str:0:
 PyUnicode_Tailmatch:PyObject*:substr:0:
-PyUnicode_Tailmatch:int:start::
-PyUnicode_Tailmatch:int:end::
+PyUnicode_Tailmatch:Py_ssize_t:start::
+PyUnicode_Tailmatch:Py_ssize_t:end::
 PyUnicode_Tailmatch:int:direction::
 
-PyUnicode_Find:int:::
+PyUnicode_Find:Py_ssize_t:::
 PyUnicode_Find:PyObject*:str:0:
 PyUnicode_Find:PyObject*:substr:0:
-PyUnicode_Find:int:start::
-PyUnicode_Find:int:end::
+PyUnicode_Find:Py_ssize_t:start::
+PyUnicode_Find:Py_ssize_t:end::
 PyUnicode_Find:int:direction::
 
-PyUnicode_Count:int:::
+PyUnicode_FindChar:Py_ssize_t:::
+PyUnicode_FindChar:PyObject*:str:0:
+PyUnicode_FindChar:Py_UCS4:ch::
+PyUnicode_FindChar:Py_ssize_t:start::
+PyUnicode_FindChar:Py_ssize_t:end::
+PyUnicode_FindChar:int:direction::
+
+PyUnicode_Count:Py_ssize_t:::
 PyUnicode_Count:PyObject*:str:0:
 PyUnicode_Count:PyObject*:substr:0:
-PyUnicode_Count:int:start::
-PyUnicode_Count:int:end::
+PyUnicode_Count:Py_ssize_t:start::
+PyUnicode_Count:Py_ssize_t:end::
 
 PyUnicode_Replace:PyObject*::+1:
 PyUnicode_Replace:PyObject*:str:0:
 PyUnicode_Replace:PyObject*:substr:0:
 PyUnicode_Replace:PyObject*:replstr:0:
-PyUnicode_Replace:int:maxcount::
+PyUnicode_Replace:Py_ssize_t:maxcount::
 
 PyUnicode_Compare:int:::
 PyUnicode_Compare:PyObject*:left:0:
 PyUnicode_Compare:PyObject*:right:0:
+
+PyUnicode_CompareWithASCIIString:int:::
+PyUnicode_CompareWithASCIIString:PyObject*:uni:0:
+PyUnicode_CompareWithASCIIString:const char*:string::
+
+PyUnicode_RichCompare:PyObject::+1:
+PyUnicode_RichCompare:PyObject*:left:0:
+PyUnicode_RichCompare:PyObject*:right:0:
+PyUnicode_RichCompare:int:op::
 
 PyUnicode_Format:PyObject*::+1:
 PyUnicode_Format:PyObject*:format:0:
@@ -1847,6 +1934,106 @@ PyUnicode_Format:PyObject*:args:0:
 PyUnicode_Contains:int:::
 PyUnicode_Contains:PyObject*:container:0:
 PyUnicode_Contains:PyObject*:element:0:
+
+PyUnicode_InternInPlace:void:::
+PyUnicode_InternInPlace:PyObject**:string:+1:
+
+PyUnicode_InternFromString:PyObject*::+1:
+PyUnicode_InternFromString:const char*:cp::
+
+PyUnicode_New:PyObject*::+1:
+PyUnicode_New:Py_ssize_t:size::
+PyUnicode_New:Py_UCS4:maxchar::
+
+PyUnicode_FromKindAndData:PyObject*::+1:
+PyUnicode_FromKindAndData:int:kind::
+PyUnicode_FromKindAndData:const void*:buffer::
+PyUnicode_FromKindAndData:Py_ssize_t:size::
+
+PyUnicode_FromStringAndSize:PyObject*::+1:
+PyUnicode_FromStringAndSize:const char*:u::
+PyUnicode_FromStringAndSize:Py_ssize_t:size::
+
+PyUnicode_FromString:PyObject*::+1:
+PyUnicode_FromString:const char*:u::
+
+PyUnicode_FromFormat:PyObject*::+1:
+PyUnicode_FromFormat:const char*:format::
+PyUnicode_FromFormat::...::
+
+PyUnicode_FromFormatV:PyObject*::+1:
+PyUnicode_FromFormatV:const char*:format::
+PyUnicode_FromFormatV:va_list:args::
+
+PyUnicode_GetLength:Py_ssize_t:::
+PyUnicode_GetLength:PyObject*:unicode:0:
+
+PyUnicode_CopyCharacters:Py_ssize_t:::
+PyUnicode_CopyCharacters:PyObject*:to:0:
+PyUnicode_CopyCharacters:Py_ssize_t:to_start::
+PyUnicode_CopyCharacters:PyObject*:from:0:
+PyUnicode_CopyCharacters:Py_ssize_t:from_start::
+PyUnicode_CopyCharacters:Py_ssize_t:how_many::
+
+PyUnicode_Fill:Py_ssize_t:::
+PyUnicode_Fill:PyObject*:unicode:0:
+PyUnicode_Fill:Py_ssize_t:index::
+PyUnicode_Fill:Py_ssize_t:length::
+PyUnicode_Fill:Py_UCS4:fill_char::
+
+PyUnicode_ReadChar:Py_UCS4:::
+PyUnicode_ReadChar:PyObject*:unicode:0:
+PyUnicode_ReadChar:Py_ssize_t:index::
+
+PyUnicode_WriteChar:int:::
+PyUnicode_WriteChar:PyObject*:unicode:0:
+PyUnicode_WriteChar:Py_ssize_t:index::
+PyUnicode_WriteChar:Py_UCS4:character::
+
+PyUnicode_Substring:PyObject*::+1:
+PyUnicode_Substring:PyObject*:str:0:
+PyUnicode_Substring:Py_ssize_t:start::
+PyUnicode_Substring:Py_ssize_t:end::
+
+PyUnicode_AsUCS4:Py_UCS4*:::
+PyUnicode_AsUCS4:PyObject*:u:0:
+PyUnicode_AsUCS4:Py_UCS4*:buffer::
+PyUnicode_AsUCS4:Py_ssize_t:buflen::
+PyUnicode_AsUCS4:int:copy_null::
+
+PyUnicode_AsUCS4Copy:Py_UCS4*:::
+PyUnicode_AsUCS4Copy:PyObject*:u:0:
+
+PyUnicode_DecodeLocaleAndSize:PyObject*::+1:
+PyUnicode_DecodeLocaleAndSize:const char*:str::
+PyUnicode_DecodeLocaleAndSize:Py_ssize_t:len::
+PyUnicode_DecodeLocaleAndSize:const char*:errors::
+
+PyUnicode_DecodeLocale:PyObject*::+1:
+PyUnicode_DecodeLocale:const char*:str::
+PyUnicode_DecodeLocale:const char*:errors::
+
+PyUnicode_EncodeLocale:PyObject*::+1:
+PyUnicode_EncodeLocale:PyObject*:unicode:0:
+PyUnicode_EncodeLocale:const char*:errors::
+
+PyUnicode_FSConverter:int:::
+PyUnicode_FSConverter:PyObject*:obj:0:
+PyUnicode_FSConverter:void*:result::
+
+PyUnicode_FSDecoder:int:::
+PyUnicode_FSDecoder:PyObject*:obj:0:
+PyUnicode_FSDecoder:void*:result::
+
+PyUnicode_DecodeFSDefaultAndSize:PyObject*::+1:
+PyUnicode_DecodeFSDefaultAndSize:const char*:s::
+PyUnicode_DecodeFSDefaultAndSize:Py_ssize_t:size::
+
+PyUnicode_DecodeFSDefault:PyObject::+1:
+PyUnicode_DecodeFSDefault:const char*:s::
+
+PyUnicode_EncodeFSDefault:PyObject::+1:
+PyUnicode_EncodeFSDefault:PyObject:unicode:0:
 
 PyWeakref_GET_OBJECT:PyObject*::0:
 PyWeakref_GET_OBJECT:PyObject*:ref:0:
