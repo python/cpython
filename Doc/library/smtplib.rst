@@ -46,7 +46,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
 
    The :class:`SMTP` class supports the :keyword:`with` statement.  When used
    like this, the SMTP ``QUIT`` command is issued automatically when the
-   :keyword:`with` statement exits.  E.g.::
+   :keyword:`!with` statement exits.  E.g.::
 
     >>> from smtplib import SMTP
     >>> with SMTP("domain.org") as smtp:

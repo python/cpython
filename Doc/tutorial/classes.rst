@@ -783,7 +783,7 @@ calls :func:`iter` on the container object.  The function returns an iterator
 object that defines the method :meth:`~iterator.__next__` which accesses
 elements in the container one at a time.  When there are no more elements,
 :meth:`~iterator.__next__` raises a :exc:`StopIteration` exception which tells the
-:keyword:`for` loop to terminate.  You can call the :meth:`~iterator.__next__` method
+:keyword:`!for` loop to terminate.  You can call the :meth:`~iterator.__next__` method
 using the :func:`next` built-in function; this example shows how it all works::
 
    >>> s = 'abc'

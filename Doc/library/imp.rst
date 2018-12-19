@@ -179,7 +179,7 @@ This module provides an interface to the mechanisms used to implement the
    If a module imports objects from another module using :keyword:`from` ...
    :keyword:`import` ..., calling :func:`reload` for the other module does not
    redefine the objects imported from it --- one way around this is to re-execute
-   the :keyword:`from` statement, another is to use :keyword:`import` and qualified
+   the :keyword:`!from` statement, another is to use :keyword:`!import` and qualified
    names (*module*.*name*) instead.
 
    If a module instantiates instances of a class, reloading the module that defines

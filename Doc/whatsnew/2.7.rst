@@ -708,7 +708,7 @@ Some smaller changes made to the core Python language are:
 
 * The :keyword:`with` statement can now use multiple context managers
   in one statement.  Context managers are processed from left to right
-  and each one is treated as beginning a new :keyword:`with` statement.
+  and each one is treated as beginning a new :keyword:`!with` statement.
   This means that::
 
    with A() as a, B() as b:
@@ -844,7 +844,7 @@ Some smaller changes made to the core Python language are:
 
 * The :keyword:`import` statement will no longer try an absolute import
   if a relative import (e.g. ``from .os import sep``) fails.  This
-  fixes a bug, but could possibly break certain :keyword:`import`
+  fixes a bug, but could possibly break certain :keyword:`!import`
   statements that were only working by accident.  (Fixed by Meador Inge;
   :issue:`7902`.)
 
@@ -1158,7 +1158,7 @@ changes, or look through the Subversion logs for all the details.
 
 * Deprecated function: :func:`contextlib.nested`, which allows
   handling more than one context manager with a single :keyword:`with`
-  statement, has been deprecated, because the :keyword:`with` statement
+  statement, has been deprecated, because the :keyword:`!with` statement
   now supports multiple context managers.
 
 * The :mod:`cookielib` module now ignores cookies that have an invalid

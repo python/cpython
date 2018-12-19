@@ -58,8 +58,8 @@ The following constructs bind names: formal parameters to functions,
 :keyword:`import` statements, class and function definitions (these bind the
 class or function name in the defining block), and targets that are identifiers
 if occurring in an assignment, :keyword:`for` loop header, or after
-:keyword:`as` in a :keyword:`with` statement or :keyword:`except` clause.
-The :keyword:`import` statement
+:keyword:`!as` in a :keyword:`with` statement or :keyword:`except` clause.
+The :keyword:`!import` statement
 of the form ``from ... import *`` binds all names defined in the imported
 module, except those beginning with an underscore.  This form may only be used
 at the module level.
@@ -123,7 +123,7 @@ namespace.  Names are resolved in the top-level namespace by searching the
 global namespace, i.e. the namespace of the module containing the code block,
 and the builtins namespace, the namespace of the module :mod:`builtins`.  The
 global namespace is searched first.  If the name is not found there, the
-builtins namespace is searched.  The :keyword:`global` statement must precede
+builtins namespace is searched.  The :keyword:`!global` statement must precede
 all uses of the name.
 
 The :keyword:`global` statement has the same scope as a name binding operation

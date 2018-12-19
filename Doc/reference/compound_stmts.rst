@@ -78,11 +78,11 @@ on a separate line for clarity.
 .. _elif:
 .. _else:
 
-The :keyword:`if` statement
-===========================
+The :keyword:`!if` statement
+============================
 
 .. index::
-   statement: if
+   ! statement: if
    keyword: elif
    keyword: else
    single: : (colon); compound statement
@@ -103,14 +103,13 @@ false, the suite of the :keyword:`else` clause, if present, is executed.
 
 .. _while:
 
-The :keyword:`while` statement
-==============================
+The :keyword:`!while` statement
+===============================
 
 .. index::
-   statement: while
+   ! statement: while
    keyword: else
    pair: loop; statement
-   keyword: else
    single: : (colon); compound statement
 
 The :keyword:`while` statement is used for repeated execution as long as an
@@ -122,7 +121,7 @@ expression is true:
 
 This repeatedly tests the expression and, if it is true, executes the first
 suite; if the expression is false (which may be the first time it is tested) the
-suite of the :keyword:`else` clause, if present, is executed and the loop
+suite of the :keyword:`!else` clause, if present, is executed and the loop
 terminates.
 
 .. index::
@@ -130,25 +129,22 @@ terminates.
    statement: continue
 
 A :keyword:`break` statement executed in the first suite terminates the loop
-without executing the :keyword:`else` clause's suite.  A :keyword:`continue`
+without executing the :keyword:`!else` clause's suite.  A :keyword:`continue`
 statement executed in the first suite skips the rest of the suite and goes back
 to testing the expression.
 
 
 .. _for:
 
-The :keyword:`for` statement
-============================
+The :keyword:`!for` statement
+=============================
 
 .. index::
-   statement: for
+   ! statement: for
    keyword: in
    keyword: else
    pair: target; list
    pair: loop; statement
-   keyword: in
-   keyword: else
-   pair: target; list
    object: sequence
    single: : (colon); compound statement
 
@@ -166,16 +162,16 @@ by the iterator.  Each item in turn is assigned to the target list using the
 standard rules for assignments (see :ref:`assignment`), and then the suite is
 executed.  When the items are exhausted (which is immediately when the sequence
 is empty or an iterator raises a :exc:`StopIteration` exception), the suite in
-the :keyword:`else` clause, if present, is executed, and the loop terminates.
+the :keyword:`!else` clause, if present, is executed, and the loop terminates.
 
 .. index::
    statement: break
    statement: continue
 
 A :keyword:`break` statement executed in the first suite terminates the loop
-without executing the :keyword:`else` clause's suite.  A :keyword:`continue`
+without executing the :keyword:`!else` clause's suite.  A :keyword:`continue`
 statement executed in the first suite skips the rest of the suite and continues
-with the next item, or with the :keyword:`else` clause if there is no next
+with the next item, or with the :keyword:`!else` clause if there is no next
 item.
 
 The for-loop makes assignments to the variables in the target list.
@@ -224,11 +220,11 @@ returns the list ``[0, 1, 2]``.
 .. _except:
 .. _finally:
 
-The :keyword:`try` statement
-============================
+The :keyword:`!try` statement
+=============================
 
 .. index::
-   statement: try
+   ! statement: try
    keyword: except
    keyword: finally
    keyword: else
@@ -250,7 +246,7 @@ for a group of statements:
 
 The :keyword:`except` clause(s) specify one or more exception handlers. When no
 exception occurs in the :keyword:`try` clause, no exception handler is executed.
-When an exception occurs in the :keyword:`try` suite, a search for an exception
+When an exception occurs in the :keyword:`!try` suite, a search for an exception
 handler is started.  This search inspects the except clauses in turn until one
 is found that matches the exception.  An expression-less except clause, if
 present, must be last; it matches any exception.  For an except clause with an
@@ -270,7 +266,7 @@ as if the entire :keyword:`try` statement raised the exception).
 .. index:: single: as; except clause
 
 When a matching except clause is found, the exception is assigned to the target
-specified after the :keyword:`as` keyword in that except clause, if present, and
+specified after the :keyword:`!as` keyword in that except clause, if present, and
 the except clause's suite is executed.  All except clauses must have an
 executable block.  When the end of this block is reached, execution continues
 normally after the entire try statement.  (This means that if two nested
@@ -314,22 +310,22 @@ from a function that handled an exception.
    statement: break
    statement: continue
 
-The optional :keyword:`else` clause is executed if the control flow leaves the
+The optional :keyword:`!else` clause is executed if the control flow leaves the
 :keyword:`try` suite, no exception was raised, and no :keyword:`return`,
 :keyword:`continue`, or :keyword:`break` statement was executed.  Exceptions in
-the :keyword:`else` clause are not handled by the preceding :keyword:`except`
+the :keyword:`!else` clause are not handled by the preceding :keyword:`except`
 clauses.
 
 .. index:: keyword: finally
 
 If :keyword:`finally` is present, it specifies a 'cleanup' handler.  The
 :keyword:`try` clause is executed, including any :keyword:`except` and
-:keyword:`else` clauses.  If an exception occurs in any of the clauses and is
-not handled, the exception is temporarily saved. The :keyword:`finally` clause
+:keyword:`!else` clauses.  If an exception occurs in any of the clauses and is
+not handled, the exception is temporarily saved. The :keyword:`!finally` clause
 is executed.  If there is a saved exception it is re-raised at the end of the
-:keyword:`finally` clause.  If the :keyword:`finally` clause raises another
+:keyword:`!finally` clause.  If the :keyword:`!finally` clause raises another
 exception, the saved exception is set as the context of the new exception.
-If the :keyword:`finally` clause executes a :keyword:`return`, :keyword:`break`
+If the :keyword:`!finally` clause executes a :keyword:`return`, :keyword:`break`
 or :keyword:`continue` statement, the saved exception is discarded::
 
    >>> def f():
@@ -350,12 +346,12 @@ the :keyword:`finally` clause.
    statement: continue
 
 When a :keyword:`return`, :keyword:`break` or :keyword:`continue` statement is
-executed in the :keyword:`try` suite of a :keyword:`try`...\ :keyword:`finally`
+executed in the :keyword:`try` suite of a :keyword:`!try`...\ :keyword:`!finally`
 statement, the :keyword:`finally` clause is also executed 'on the way out.'
 
 The return value of a function is determined by the last :keyword:`return`
 statement executed.  Since the :keyword:`finally` clause always executes, a
-:keyword:`return` statement executed in the :keyword:`finally` clause will
+:keyword:`!return` statement executed in the :keyword:`!finally` clause will
 always be the last one executed::
 
    >>> def foo():
@@ -379,11 +375,11 @@ may be found in section :ref:`raise`.
 .. _with:
 .. _as:
 
-The :keyword:`with` statement
-=============================
+The :keyword:`!with` statement
+==============================
 
 .. index::
-   statement: with
+   ! statement: with
    keyword: as
    single: as; with statement
    single: , (comma); with statement
@@ -595,7 +591,7 @@ name), for immediate use in expressions.  This uses lambda expressions, describe
 section :ref:`lambda`.  Note that the lambda expression is merely a shorthand for a
 simplified function definition; a function defined in a ":keyword:`def`"
 statement can be passed around or assigned to another name just like a function
-defined by a lambda expression.  The ":keyword:`def`" form is actually more powerful
+defined by a lambda expression.  The ":keyword:`!def`" form is actually more powerful
 since it allows the execution of multiple statements and annotations.
 
 **Programmer's note:** Functions are first-class objects.  A "``def``" statement
@@ -758,8 +754,8 @@ An example of a coroutine function::
 .. index:: statement: async for
 .. _`async for`:
 
-The :keyword:`async for` statement
-----------------------------------
+The :keyword:`!async for` statement
+-----------------------------------
 
 .. productionlist::
    async_for_stmt: "async" `for_stmt`
@@ -802,8 +798,8 @@ body of a coroutine function.
 .. index:: statement: async with
 .. _`async with`:
 
-The :keyword:`async with` statement
------------------------------------
+The :keyword:`!async with` statement
+------------------------------------
 
 .. productionlist::
    async_with_stmt: "async" `with_stmt`

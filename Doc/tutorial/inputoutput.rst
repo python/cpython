@@ -317,7 +317,7 @@ reading and writing such files.
 It is good practice to use the :keyword:`with` keyword when dealing
 with file objects.  The advantage is that the file is properly closed
 after its suite finishes, even if an exception is raised at some
-point.  Using :keyword:`with` is also much shorter than writing
+point.  Using :keyword:`!with` is also much shorter than writing
 equivalent :keyword:`try`\ -\ :keyword:`finally` blocks::
 
     >>> with open('workfile') as f:

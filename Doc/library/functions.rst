@@ -1665,7 +1665,7 @@ are always available.  They are listed here in alphabetical order.
    This function is invoked by the :keyword:`import` statement.  It can be
    replaced (by importing the :mod:`builtins` module and assigning to
    ``builtins.__import__``) in order to change semantics of the
-   :keyword:`import` statement, but doing so is **strongly** discouraged as it
+   :keyword:`!import` statement, but doing so is **strongly** discouraged as it
    is usually simpler to use import hooks (see :pep:`302`) to attain the same
    goals and does not cause issues with code which assumes the default import
    implementation is in use.  Direct use of :func:`__import__` is also
