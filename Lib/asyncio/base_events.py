@@ -942,7 +942,6 @@ class BaseEventLoop(events.AbstractEventLoop):
                     if laddr is not None:
                         try:
                             sock.bind(laddr)
-                            break
                         except OSError as exc:
                             msg = (
                                 f'error while attempting to bind on '
