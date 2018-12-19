@@ -1909,7 +1909,7 @@ Deprecated Python Behavior
 
 Yield expressions (both ``yield`` and ``yield from`` clauses) are now deprecated
 in comprehensions and generator expressions (aside from the iterable expression
-in the leftmost :keyword:`for` clause). This ensures that comprehensions
+in the leftmost :keyword:`!for` clause). This ensures that comprehensions
 always immediately return a container of the appropriate type (rather than
 potentially returning a :term:`generator iterator` object), while generator
 expressions won't attempt to interleave their implicit output with the output

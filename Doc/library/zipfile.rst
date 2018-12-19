@@ -175,7 +175,7 @@ ZipFile Objects
 
    ZipFile is also a context manager and therefore supports the
    :keyword:`with` statement.  In the example, *myzip* is closed after the
-   :keyword:`with` statement's suite is finished---even if an exception occurs::
+   :keyword:`!with` statement's suite is finished---even if an exception occurs::
 
       with ZipFile('spam.zip', 'w') as myzip:
           myzip.write('eggs.txt')
