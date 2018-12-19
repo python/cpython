@@ -22,7 +22,7 @@ newbitset(int nbits)
 void
 delbitset(bitset ss)
 {
-    PyObject_FREE(ss);
+    PyObject_FREE(ss); 
 }
 
 int
