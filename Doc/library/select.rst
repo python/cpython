@@ -317,6 +317,9 @@ Edge and Level Trigger Polling (epoll) Objects
    | :const:`EPOLLMSG`       | Ignored.                                      |
    +-------------------------+-----------------------------------------------+
 
+   .. versionadded:: 3.6
+      :const:`EPOLLEXCLUSIVE` was added.  It's only supported by Linux Kernel 4.5
+      or later.
 
 .. method:: epoll.close()
 
