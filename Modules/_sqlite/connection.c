@@ -1131,6 +1131,10 @@ static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, Py
     PyObject* begin_statement;
     char* begin_statement_str;
 
+    if (isolation_level == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
     Py_XDECREF(self->isolation_level);
 
     if (self->begin_statement) {
