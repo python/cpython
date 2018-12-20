@@ -2577,6 +2577,22 @@ class _TestPool(BaseTestCase):
                 pass
         pool.join()
 
+    def test_resource_warning(self):
+        if self.TYPE == 'manager':
+            self.skipTest("test not applicable to manager")
+
+        pool = self.Pool(1)
+        pool.terminate()
+        pool.join()
+
+        # force state to RUN to emit ResourceWarning in __del__()
+        pool._state = multiprocessing.pool.RUN
+
+        with support.check_warnings(('unclosed running multiprocessing pool',
+                                     ResourceWarning)):
+            pool = None
+            support.gc_collect()
+
 
 def raising():
     raise KeyError("key")
