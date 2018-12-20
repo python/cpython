@@ -81,6 +81,7 @@ static int
 list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 {
     assert(self->ob_item == NULL);
+    assert(size > 0);
 
     PyObject **items = PyMem_New(PyObject*, size);
     if (items == NULL) {
