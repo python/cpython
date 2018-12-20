@@ -1216,6 +1216,10 @@ CharArray_set_raw(CDataObject *self, PyObject *value)
 #if (PY_VERSION_HEX >= 0x02060000)
     Py_buffer view = { 0 };
 #endif
+    if (value == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
     if (PyBuffer_Check(value)) {
         size = Py_TYPE(value)->tp_as_buffer->bf_getreadbuffer(value, 0, (void *)&ptr);
         if (size < 0)

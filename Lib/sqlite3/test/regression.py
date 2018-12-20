@@ -361,6 +361,10 @@ class RegressionTests(unittest.TestCase):
         del ref
         support.gc_collect()
 
+    def CheckDelIsolation_levelSegfault(self):
+        with self.assertRaises(AttributeError):
+            del self.con.isolation_level
+
 
 class UnhashableFunc:
     def __hash__(self):

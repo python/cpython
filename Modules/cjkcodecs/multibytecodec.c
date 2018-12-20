@@ -138,6 +138,10 @@ codecctx_errors_set(MultibyteStatefulCodecContext *self, PyObject *value,
 {
     PyObject *cb;
 
+    if (value == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
     if (!PyString_Check(value)) {
         PyErr_SetString(PyExc_TypeError, "errors must be a string");
         return -1;
