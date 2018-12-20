@@ -415,7 +415,7 @@ Changes in Python behavior
 
 * Yield expressions (both ``yield`` and ``yield from`` clauses) are now disallowed
   in comprehensions and generator expressions (aside from the iterable expression
-  in the leftmost :keyword:`for` clause).
+  in the leftmost :keyword:`!for` clause).
   (Contributed by Serhiy Storchaka in :issue:`10544`.)
 
 
