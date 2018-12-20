@@ -1,0 +1,1 @@
+subprocess.Popen can now use posix_spawn() in some cases.
