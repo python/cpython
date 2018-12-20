@@ -3,6 +3,9 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-35521: Document the editor code context feature.
+Add some internal references within the IDLE doc.
+
 bpo-34864: When starting IDLE on MacOS, warn if the system setting
 "Prefer tabs when opening documents" is "Always".  As previous
 documented for this issue, running IDLE with this setting causes
