@@ -4,9 +4,8 @@
 .. module:: os.path
    :synopsis: Operations on pathnames.
 
-**Source code:** :source:`Lib/posixpath.py` (for POSIX),
-:source:`Lib/ntpath.py` (for Windows NT),
-and :source:`Lib/macpath.py` (for Macintosh)
+**Source code:** :source:`Lib/posixpath.py` (for POSIX) and
+:source:`Lib/ntpath.py` (for Windows NT).
 
 .. index:: single: path; operations
 
@@ -52,7 +51,6 @@ the :mod:`glob` module.)
 
    * :mod:`posixpath` for UNIX-style paths
    * :mod:`ntpath` for Windows paths
-   * :mod:`macpath` for old-style MacOS paths
 
 
 .. versionchanged:: 3.8

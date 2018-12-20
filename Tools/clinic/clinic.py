@@ -2858,7 +2858,7 @@ class unicode_converter(CConverter):
 @add_legacy_c_converter('Z', accept={str, NoneType})
 @add_legacy_c_converter('Z#', accept={str, NoneType}, zeroes=True)
 class Py_UNICODE_converter(CConverter):
-    type = 'Py_UNICODE *'
+    type = 'const Py_UNICODE *'
     default_type = (str, Null, NoneType)
     format_unit = 'u'
 
@@ -3164,16 +3164,6 @@ class double_return_converter(CReturnConverter):
 class float_return_converter(double_return_converter):
     type = 'float'
     cast = '(double)'
-
-
-class DecodeFSDefault_return_converter(CReturnConverter):
-    type = 'char *'
-
-    def render(self, function, data):
-        self.declare(data)
-        self.err_occurred_if_null_pointer("_return_value", data)
-        data.return_conversion.append(
-            'return_value = PyUnicode_DecodeFSDefault(_return_value);\n')
 
 
 def eval_ast_expr(node, globals, *, filename='-'):

@@ -176,7 +176,7 @@ PyDoc_STRVAR(os_ttyname__doc__,
 #define OS_TTYNAME_METHODDEF    \
     {"ttyname", (PyCFunction)os_ttyname, METH_O, os_ttyname__doc__},
 
-static char *
+static PyObject *
 os_ttyname_impl(PyObject *module, int fd);
 
 static PyObject *
@@ -184,16 +184,11 @@ os_ttyname(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
-    char *_return_value;
 
     if (!PyArg_Parse(arg, "i:ttyname", &fd)) {
         goto exit;
     }
-    _return_value = os_ttyname_impl(module, fd);
-    if (_return_value == NULL) {
-        goto exit;
-    }
-    return_value = PyUnicode_DecodeFSDefault(_return_value);
+    return_value = os_ttyname_impl(module, fd);
 
 exit:
     return return_value;
@@ -1329,7 +1324,7 @@ PyDoc_STRVAR(os_system__doc__,
     {"system", (PyCFunction)(void(*)(void))os_system, METH_FASTCALL|METH_KEYWORDS, os_system__doc__},
 
 static long
-os_system_impl(PyObject *module, Py_UNICODE *command);
+os_system_impl(PyObject *module, const Py_UNICODE *command);
 
 static PyObject *
 os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1337,7 +1332,7 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"command", NULL};
     static _PyArg_Parser _parser = {"u:system", _keywords, 0};
-    Py_UNICODE *command;
+    const Py_UNICODE *command;
     long _return_value;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
@@ -5327,7 +5322,8 @@ PyDoc_STRVAR(os_startfile__doc__,
     {"startfile", (PyCFunction)(void(*)(void))os_startfile, METH_FASTCALL|METH_KEYWORDS, os_startfile__doc__},
 
 static PyObject *
-os_startfile_impl(PyObject *module, path_t *filepath, Py_UNICODE *operation);
+os_startfile_impl(PyObject *module, path_t *filepath,
+                  const Py_UNICODE *operation);
 
 static PyObject *
 os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -5336,7 +5332,7 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     static const char * const _keywords[] = {"filepath", "operation", NULL};
     static _PyArg_Parser _parser = {"O&|u:startfile", _keywords, 0};
     path_t filepath = PATH_T_INITIALIZE("startfile", "filepath", 0, 0);
-    Py_UNICODE *operation = NULL;
+    const Py_UNICODE *operation = NULL;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &filepath, &operation)) {
@@ -6757,4 +6753,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=d62c0bb988141e70 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=87a3ebadb91bc46b input=a9049054013a1b77]*/
