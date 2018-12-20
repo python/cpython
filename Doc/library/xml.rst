@@ -75,7 +75,7 @@ decompression bomb         Safe             Safe              Safe             S
 2. :mod:`xml.dom.minidom` doesn't expand external entities and simply returns
    the unexpanded entity verbatim.
 3. :mod:`xmlrpclib` doesn't expand external entities and omits them.
-4. Since Python 3.8, external general entities are no longer processed by
+4. Since Python 3.7.1, external general entities are no longer processed by
    default.
 
 
