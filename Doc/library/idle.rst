@@ -146,7 +146,7 @@ Go to Line
 
 Show Completions
    Open a scrollable list allowing selection of keywords and attributes. See
-   Completions in the Tips sections below.
+   :ref:`Completions <completions>` in the Editing and navigation section below.
 
 Expand Word
    Expand a prefix you have typed to match a full word in the same window;
@@ -154,7 +154,8 @@ Expand Word
 
 Show call tip
    After an unclosed parenthesis for a function, open a small window with
-   function parameter hints.
+   function parameter hints.  See :ref:`Calltips <calltips>` in the
+   Editing and navigation section below.
 
 Show surrounding parens
    Highlight the surrounding parenthesis.
@@ -278,8 +279,8 @@ Configure IDLE
 
 Code Context (toggle)(Editor Window only)
    Open a pane at the top of the edit window which shows the block context
-   of the code which has scrolled above the top of the window.  Clicking a
-   line in this pane exposes that line at the top of the editor.
+   of the code which has scrolled above the top of the window.  See
+   :ref:`Code Context <code-context>` in the Editing and Navigation section below.
 
 Window menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -310,8 +311,8 @@ Turtle Demo
    Run the turtledemo module with example Python code and turtle drawings.
 
 Additional help sources may be added here with the Configure IDLE dialog under
-the General tab. See the "Help sources" subsection below for more
-on Help menu choices.
+the General tab. See the :ref:`Help sources <help-sources>` subsection below
+for more on Help menu choices.
 
 .. index::
    single: Cut
@@ -358,6 +359,8 @@ Squeeze
    If the cursor is over an output line, squeeze all the output between
    the code above and the prompt below down to a 'Squeezed text' label.
 
+
+.. _editing-and-navigation:
 
 Editing and navigation
 ----------------------
@@ -431,6 +434,9 @@ are restricted to four spaces due to Tcl/Tk limitations.
 
 See also the indent/dedent region commands in the edit menu.
 
+
+.. _completions:
+
 Completions
 ^^^^^^^^^^^
 
@@ -475,6 +481,8 @@ much can be found by default, e.g. the re module.
 If you don't like the ACW popping up unbidden, simply make the delay
 longer or disable the extension.
 
+.. _calltips:
+
 Calltips
 ^^^^^^^^
 
@@ -502,6 +510,25 @@ not import turtle.  The menu or shortcut do nothing either.  Enter
 In an editor, import statements have no effect until one runs the file.  One
 might want to run a file after writing the import statements at the top,
 or immediately run an existing file before editing.
+
+.. _code-context:
+
+Code Context
+^^^^^^^^^^^^
+
+Within an editor window containing Python code, code context can be toggled
+in order to show or hide a pane at the top of the window.  When shown, this
+pane freezes the opening lines for block code, such as those beginning with
+``class``, ``def``, or ``if`` keywords, that would have otherwise scrolled
+out of view.  The size of the pane will be expanded and contracted as needed
+to show the all current levels of context, up to the maximum number of
+lines defined in the Configure IDLE dialog (which defaults to 15).  If there
+are no current context lines and the feature is toggled on, a single blank
+line will display.  Clicking on a line in the context pane will move that
+line to the top of the editor.
+
+The text and background colors for the context pane can be configured under
+the Highlights tab in the Configure IDLE dialog.
 
 Python Shell window
 ^^^^^^^^^^^^^^^^^^^
@@ -767,6 +794,8 @@ with the default subprocess if at all possible.
 
 Help and preferences
 --------------------
+
+.. _help-sources:
 
 Help sources
 ^^^^^^^^^^^^
