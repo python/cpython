@@ -1,7 +1,15 @@
-What's New in IDLE 3.7.2
-Released on 2018-07-31?
+What's New in IDLE 3.7.3
+Released on 2019-??-??
 ======================================
 
+
+bpo-35521: Document the editor code context feature.
+Add some internal references within the IDLE doc.
+
+
+What's New in IDLE 3.7.2
+Released on 2018-12-21?
+======================================
 
 bpo-34864: When starting IDLE on MacOS, warn if the system setting
 "Prefer tabs when opening documents" is "Always".  As previous
