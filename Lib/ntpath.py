@@ -652,7 +652,7 @@ try:
                 # GetFinalPathNameByHandle returns path in \\?\ syntax
                 # remove leading \\?\ prefix
                 return p[4:]
-            except (FileNotFoundError, OSError):
+            except OSError:
                 return abspath(p)
     else:
         raise ImportError
