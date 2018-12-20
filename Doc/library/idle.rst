@@ -160,6 +160,8 @@ Show call tip
 Show surrounding parens
    Highlight the surrounding parenthesis.
 
+.. _format-menu:
+
 Format menu (Editor window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -268,14 +270,10 @@ Options menu (Shell and Editor)
 Configure IDLE
    Open a configuration dialog and change preferences for the following:
    fonts, indentation, keybindings, text color themes, startup windows and
-   size, additional help sources, and extensions (see below).  On macOS,
-   open the configuration dialog by selecting Preferences in the application
-   menu.  To use a new built-in color theme (IDLE Dark) with older IDLEs,
-   save it as a new custom theme.
-
-   Non-default user settings are saved in a .idlerc directory in the user's
-   home directory.  Problems caused by bad user configuration files are solved
-   by editing or deleting one or more of the files in .idlerc.
+   size, additional help sources, and extensions.  On macOS,  open the
+   configuration dialog by selecting Preferences in the application
+   menu. For more, see
+   :ref:`Setting preferences <preferences>` under Help and preferences.
 
 Code Context (toggle)(Editor Window only)
    Open a pane at the top of the edit window which shows the block context
@@ -432,7 +430,8 @@ to 4 spaces if they are there. :kbd:`Tab` inserts spaces (in the Python
 Shell window one tab), number depends on Indent width. Currently, tabs
 are restricted to four spaces due to Tcl/Tk limitations.
 
-See also the indent/dedent region commands in the edit menu.
+See also the indent/dedent region commands on the
+:ref:`Format menu <format-menu>`.
 
 
 .. _completions:
@@ -817,13 +816,21 @@ that will be opened instead.
 Selected URLs can be added or removed from the help menu at any time using the
 General tab of the Configure IDLE dialog .
 
+.. _preferences:
+
 Setting preferences
 ^^^^^^^^^^^^^^^^^^^
 
 The font preferences, highlighting, keys, and general preferences can be
-changed via Configure IDLE on the Option menu.  Keys can be user defined;
-IDLE ships with four built-in key sets. In addition, a user can create a
-custom key set in the Configure IDLE dialog under the keys tab.
+changed via Configure IDLE on the Option menu.
+Non-default user settings are saved in a .idlerc directory in the user's
+home directory.  Problems caused by bad user configuration files are solved
+by editing or deleting one or more of the files in .idlerc.
+
+On the Highlights and Keys tab, select a built-in or custom color theme
+and key set.  To use a newer built-in color theme or key set with older
+IDLEs, save it as a new custom theme or key set and it well be accessible
+to older IDLEs.
 
 IDLE on macOS
 ^^^^^^^^^^^^^

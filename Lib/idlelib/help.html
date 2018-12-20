@@ -215,7 +215,7 @@ Editing and navigation section below.</dd>
 </dl>
 </div>
 <div class="section" id="format-menu-editor-window-only">
-<h3>Format menu (Editor window only)<a class="headerlink" href="#format-menu-editor-window-only" title="Permalink to this headline">¶</a></h3>
+<span id="format-menu"></span><h3>Format menu (Editor window only)<a class="headerlink" href="#format-menu-editor-window-only" title="Permalink to this headline">¶</a></h3>
 <dl class="docutils">
 <dt>Indent Region</dt>
 <dd>Shift selected lines right by the indent width (default 4 spaces).</dd>
@@ -303,16 +303,12 @@ access to locals and globals.</dd>
 <h3>Options menu (Shell and Editor)<a class="headerlink" href="#options-menu-shell-and-editor" title="Permalink to this headline">¶</a></h3>
 <dl class="docutils">
 <dt>Configure IDLE</dt>
-<dd><p class="first">Open a configuration dialog and change preferences for the following:
+<dd>Open a configuration dialog and change preferences for the following:
 fonts, indentation, keybindings, text color themes, startup windows and
-size, additional help sources, and extensions (see below).  On macOS,
-open the configuration dialog by selecting Preferences in the application
-menu.  To use a new built-in color theme (IDLE Dark) with older IDLEs,
-save it as a new custom theme.</p>
-<p class="last">Non-default user settings are saved in a .idlerc directory in the user’s
-home directory.  Problems caused by bad user configuration files are solved
-by editing or deleting one or more of the files in .idlerc.</p>
-</dd>
+size, additional help sources, and extensions.  On macOS,  open the
+configuration dialog by selecting Preferences in the application
+menu. For more, see
+<a class="reference internal" href="#preferences"><span class="std std-ref">Setting preferences</span></a> under Help and preferences.</dd>
 <dt>Code Context (toggle)(Editor Window only)</dt>
 <dd>Open a pane at the top of the edit window which shows the block context
 of the code which has scrolled above the top of the window.  See
@@ -443,7 +439,8 @@ the next line is dedented.  In leading indentation, <kbd class="kbd docutils lit
 to 4 spaces if they are there. <kbd class="kbd docutils literal notranslate">Tab</kbd> inserts spaces (in the Python
 Shell window one tab), number depends on Indent width. Currently, tabs
 are restricted to four spaces due to Tcl/Tk limitations.</p>
-<p>See also the indent/dedent region commands in the edit menu.</p>
+<p>See also the indent/dedent region commands on the
+<a class="reference internal" href="#format-menu"><span class="std std-ref">Format menu</span></a>.</p>
 </div>
 <div class="section" id="completions">
 <span id="id3"></span><h3>Completions<a class="headerlink" href="#completions" title="Permalink to this headline">¶</a></h3>
@@ -766,11 +763,16 @@ that will be opened instead.</p>
 General tab of the Configure IDLE dialog .</p>
 </div>
 <div class="section" id="setting-preferences">
-<h3>Setting preferences<a class="headerlink" href="#setting-preferences" title="Permalink to this headline">¶</a></h3>
+<span id="preferences"></span><h3>Setting preferences<a class="headerlink" href="#setting-preferences" title="Permalink to this headline">¶</a></h3>
 <p>The font preferences, highlighting, keys, and general preferences can be
-changed via Configure IDLE on the Option menu.  Keys can be user defined;
-IDLE ships with four built-in key sets. In addition, a user can create a
-custom key set in the Configure IDLE dialog under the keys tab.</p>
+changed via Configure IDLE on the Option menu.
+Non-default user settings are saved in a .idlerc directory in the user’s
+home directory.  Problems caused by bad user configuration files are solved
+by editing or deleting one or more of the files in .idlerc.</p>
+<p>On the Highlights and Keys tab, select a built-in or custom color theme
+and key set.  To use a newer built-in color theme or key set with older
+IDLEs, save it as a new custom theme or key set and it well be accessible
+to older IDLEs.</p>
 </div>
 <div class="section" id="idle-on-macos">
 <h3>IDLE on macOS<a class="headerlink" href="#idle-on-macos" title="Permalink to this headline">¶</a></h3>
@@ -916,7 +918,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Dec 19, 2018.
+    Last updated on Dec 20, 2018.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 
