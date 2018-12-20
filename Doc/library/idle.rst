@@ -154,7 +154,8 @@ Expand Word
 
 Show call tip
    After an unclosed parenthesis for a function, open a small window with
-   function parameter hints.
+   function parameter hints.  See :ref:`Calltips <calltips>` in the
+   Editing and navigation section below.
 
 Show surrounding parens
    Highlight the surrounding parenthesis.
@@ -479,6 +480,8 @@ much can be found by default, e.g. the re module.
 
 If you don't like the ACW popping up unbidden, simply make the delay
 longer or disable the extension.
+
+.. _calltips:
 
 Calltips
 ^^^^^^^^
