@@ -2,6 +2,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_object.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
 #include "structmember.h"
@@ -2357,11 +2358,12 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 bytearrayiter_reduce(bytesiterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
                              it->it_seq, it->it_index);
     } else {
-        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
     }
 }
 

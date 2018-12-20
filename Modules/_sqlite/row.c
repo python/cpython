@@ -150,7 +150,8 @@ PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
     }
 }
 
-Py_ssize_t pysqlite_row_length(pysqlite_Row* self, PyObject* args, PyObject* kwargs)
+static Py_ssize_t
+pysqlite_row_length(pysqlite_Row* self)
 {
     return PyTuple_GET_SIZE(self->data);
 }

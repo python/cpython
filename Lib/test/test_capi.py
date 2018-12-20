@@ -330,7 +330,7 @@ class CAPITest(unittest.TestCase):
         rc, out, err = assert_python_failure('-c', code)
         self.assertRegex(err,
                          br'_testcapimodule\.c:[0-9]+: '
-                         br'_Py_NegativeRefcount: Assertion ".*" failed; '
+                         br'_Py_NegativeRefcount: Assertion failed: '
                          br'object has negative ref count')
 
 

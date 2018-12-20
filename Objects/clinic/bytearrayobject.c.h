@@ -51,7 +51,7 @@ PyDoc_STRVAR(bytearray_translate__doc__,
 "The remaining characters are mapped through the given translation table.");
 
 #define BYTEARRAY_TRANSLATE_METHODDEF    \
-    {"translate", (PyCFunction)bytearray_translate, METH_FASTCALL|METH_KEYWORDS, bytearray_translate__doc__},
+    {"translate", (PyCFunction)(void(*)(void))bytearray_translate, METH_FASTCALL|METH_KEYWORDS, bytearray_translate__doc__},
 
 static PyObject *
 bytearray_translate_impl(PyByteArrayObject *self, PyObject *table,
@@ -88,7 +88,7 @@ PyDoc_STRVAR(bytearray_maketrans__doc__,
 "The bytes objects frm and to must be of the same length.");
 
 #define BYTEARRAY_MAKETRANS_METHODDEF    \
-    {"maketrans", (PyCFunction)bytearray_maketrans, METH_FASTCALL|METH_STATIC, bytearray_maketrans__doc__},
+    {"maketrans", (PyCFunction)(void(*)(void))bytearray_maketrans, METH_FASTCALL|METH_STATIC, bytearray_maketrans__doc__},
 
 static PyObject *
 bytearray_maketrans_impl(Py_buffer *frm, Py_buffer *to);
@@ -133,7 +133,7 @@ PyDoc_STRVAR(bytearray_replace__doc__,
 "replaced.");
 
 #define BYTEARRAY_REPLACE_METHODDEF    \
-    {"replace", (PyCFunction)bytearray_replace, METH_FASTCALL, bytearray_replace__doc__},
+    {"replace", (PyCFunction)(void(*)(void))bytearray_replace, METH_FASTCALL, bytearray_replace__doc__},
 
 static PyObject *
 bytearray_replace_impl(PyByteArrayObject *self, Py_buffer *old,
@@ -181,7 +181,7 @@ PyDoc_STRVAR(bytearray_split__doc__,
 "    -1 (the default value) means no limit.");
 
 #define BYTEARRAY_SPLIT_METHODDEF    \
-    {"split", (PyCFunction)bytearray_split, METH_FASTCALL|METH_KEYWORDS, bytearray_split__doc__},
+    {"split", (PyCFunction)(void(*)(void))bytearray_split, METH_FASTCALL|METH_KEYWORDS, bytearray_split__doc__},
 
 static PyObject *
 bytearray_split_impl(PyByteArrayObject *self, PyObject *sep,
@@ -256,7 +256,7 @@ PyDoc_STRVAR(bytearray_rsplit__doc__,
 "Splitting is done starting at the end of the bytearray and working to the front.");
 
 #define BYTEARRAY_RSPLIT_METHODDEF    \
-    {"rsplit", (PyCFunction)bytearray_rsplit, METH_FASTCALL|METH_KEYWORDS, bytearray_rsplit__doc__},
+    {"rsplit", (PyCFunction)(void(*)(void))bytearray_rsplit, METH_FASTCALL|METH_KEYWORDS, bytearray_rsplit__doc__},
 
 static PyObject *
 bytearray_rsplit_impl(PyByteArrayObject *self, PyObject *sep,
@@ -311,7 +311,7 @@ PyDoc_STRVAR(bytearray_insert__doc__,
 "    The item to be inserted.");
 
 #define BYTEARRAY_INSERT_METHODDEF    \
-    {"insert", (PyCFunction)bytearray_insert, METH_FASTCALL, bytearray_insert__doc__},
+    {"insert", (PyCFunction)(void(*)(void))bytearray_insert, METH_FASTCALL, bytearray_insert__doc__},
 
 static PyObject *
 bytearray_insert_impl(PyByteArrayObject *self, Py_ssize_t index, int item);
@@ -388,7 +388,7 @@ PyDoc_STRVAR(bytearray_pop__doc__,
 "If no index argument is given, will pop the last item.");
 
 #define BYTEARRAY_POP_METHODDEF    \
-    {"pop", (PyCFunction)bytearray_pop, METH_FASTCALL, bytearray_pop__doc__},
+    {"pop", (PyCFunction)(void(*)(void))bytearray_pop, METH_FASTCALL, bytearray_pop__doc__},
 
 static PyObject *
 bytearray_pop_impl(PyByteArrayObject *self, Py_ssize_t index);
@@ -448,7 +448,7 @@ PyDoc_STRVAR(bytearray_strip__doc__,
 "If the argument is omitted or None, strip leading and trailing ASCII whitespace.");
 
 #define BYTEARRAY_STRIP_METHODDEF    \
-    {"strip", (PyCFunction)bytearray_strip, METH_FASTCALL, bytearray_strip__doc__},
+    {"strip", (PyCFunction)(void(*)(void))bytearray_strip, METH_FASTCALL, bytearray_strip__doc__},
 
 static PyObject *
 bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes);
@@ -479,7 +479,7 @@ PyDoc_STRVAR(bytearray_lstrip__doc__,
 "If the argument is omitted or None, strip leading ASCII whitespace.");
 
 #define BYTEARRAY_LSTRIP_METHODDEF    \
-    {"lstrip", (PyCFunction)bytearray_lstrip, METH_FASTCALL, bytearray_lstrip__doc__},
+    {"lstrip", (PyCFunction)(void(*)(void))bytearray_lstrip, METH_FASTCALL, bytearray_lstrip__doc__},
 
 static PyObject *
 bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes);
@@ -510,7 +510,7 @@ PyDoc_STRVAR(bytearray_rstrip__doc__,
 "If the argument is omitted or None, strip trailing ASCII whitespace.");
 
 #define BYTEARRAY_RSTRIP_METHODDEF    \
-    {"rstrip", (PyCFunction)bytearray_rstrip, METH_FASTCALL, bytearray_rstrip__doc__},
+    {"rstrip", (PyCFunction)(void(*)(void))bytearray_rstrip, METH_FASTCALL, bytearray_rstrip__doc__},
 
 static PyObject *
 bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes);
@@ -548,7 +548,7 @@ PyDoc_STRVAR(bytearray_decode__doc__,
 "    can handle UnicodeDecodeErrors.");
 
 #define BYTEARRAY_DECODE_METHODDEF    \
-    {"decode", (PyCFunction)bytearray_decode, METH_FASTCALL|METH_KEYWORDS, bytearray_decode__doc__},
+    {"decode", (PyCFunction)(void(*)(void))bytearray_decode, METH_FASTCALL|METH_KEYWORDS, bytearray_decode__doc__},
 
 static PyObject *
 bytearray_decode_impl(PyByteArrayObject *self, const char *encoding,
@@ -596,7 +596,7 @@ PyDoc_STRVAR(bytearray_splitlines__doc__,
 "true.");
 
 #define BYTEARRAY_SPLITLINES_METHODDEF    \
-    {"splitlines", (PyCFunction)bytearray_splitlines, METH_FASTCALL|METH_KEYWORDS, bytearray_splitlines__doc__},
+    {"splitlines", (PyCFunction)(void(*)(void))bytearray_splitlines, METH_FASTCALL|METH_KEYWORDS, bytearray_splitlines__doc__},
 
 static PyObject *
 bytearray_splitlines_impl(PyByteArrayObject *self, int keepends);
@@ -674,7 +674,7 @@ PyDoc_STRVAR(bytearray_reduce_ex__doc__,
 "Return state information for pickling.");
 
 #define BYTEARRAY_REDUCE_EX_METHODDEF    \
-    {"__reduce_ex__", (PyCFunction)bytearray_reduce_ex, METH_FASTCALL, bytearray_reduce_ex__doc__},
+    {"__reduce_ex__", (PyCFunction)(void(*)(void))bytearray_reduce_ex, METH_FASTCALL, bytearray_reduce_ex__doc__},
 
 static PyObject *
 bytearray_reduce_ex_impl(PyByteArrayObject *self, int proto);
@@ -712,4 +712,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=bb9051a369adb328 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b88bb192dddca6e1 input=a9049054013a1b77]*/

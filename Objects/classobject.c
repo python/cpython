@@ -1,6 +1,7 @@
 /* Class object implementation (dead now except for methods) */
 
 #include "Python.h"
+#include "pycore_object.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
 #include "structmember.h"
@@ -55,7 +56,7 @@ PyMethod_New(PyObject *func, PyObject *self)
     im = free_list;
     if (im != NULL) {
         free_list = (PyMethodObject *)(im->im_self);
-        (void)PyObject_INIT((PyObject *)im, &PyMethod_Type);
+        (void)PyObject_INIT(im, &PyMethod_Type);
         numfree--;
     }
     else {
@@ -77,8 +78,6 @@ method_reduce(PyMethodObject *im, PyObject *Py_UNUSED(ignored))
 {
     PyObject *self = PyMethod_GET_SELF(im);
     PyObject *func = PyMethod_GET_FUNCTION(im);
-    PyObject *builtins;
-    PyObject *getattr;
     PyObject *funcname;
     _Py_IDENTIFIER(getattr);
 
@@ -86,9 +85,8 @@ method_reduce(PyMethodObject *im, PyObject *Py_UNUSED(ignored))
     if (funcname == NULL) {
         return NULL;
     }
-    builtins = PyEval_GetBuiltins();
-    getattr = _PyDict_GetItemId(builtins, &PyId_getattr);
-    return Py_BuildValue("O(ON)", getattr, self, funcname);
+    return Py_BuildValue("N(ON)", _PyEval_GetBuiltinId(&PyId_getattr),
+                         self, funcname);
 }
 
 static PyMethodDef method_methods[] = {

@@ -1521,7 +1521,7 @@ sys_getandroidapilevel(PyObject *self)
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
-    {"breakpointhook",  (PyCFunction)sys_breakpointhook,
+    {"breakpointhook",  (PyCFunction)(void(*)(void))sys_breakpointhook,
      METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
     {"callstats", sys_callstats, METH_NOARGS,
      callstats_doc},
@@ -1560,7 +1560,7 @@ static PyMethodDef sys_methods[] = {
     {"getrefcount",     (PyCFunction)sys_getrefcount, METH_O, getrefcount_doc},
     {"getrecursionlimit", sys_getrecursionlimit, METH_NOARGS,
      getrecursionlimit_doc},
-    {"getsizeof",   (PyCFunction)sys_getsizeof,
+    {"getsizeof",   (PyCFunction)(void(*)(void))sys_getsizeof,
      METH_VARARGS | METH_KEYWORDS, getsizeof_doc},
     {"_getframe", sys_getframe, METH_VARARGS, getframe_doc},
 #ifdef MS_WINDOWS
@@ -1601,7 +1601,7 @@ static PyMethodDef sys_methods[] = {
      set_coroutine_wrapper_doc},
     {"get_coroutine_wrapper", sys_get_coroutine_wrapper, METH_NOARGS,
      get_coroutine_wrapper_doc},
-    {"set_asyncgen_hooks", (PyCFunction)sys_set_asyncgen_hooks,
+    {"set_asyncgen_hooks", (PyCFunction)(void(*)(void))sys_set_asyncgen_hooks,
      METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
     {"get_asyncgen_hooks", sys_get_asyncgen_hooks, METH_NOARGS,
      get_asyncgen_hooks_doc},
@@ -1774,7 +1774,6 @@ get_warnoptions(void)
          * call optional for embedding applications, thus making this
          * reachable again.
          */
-        Py_XDECREF(warnoptions);
         warnoptions = PyList_New(0);
         if (warnoptions == NULL)
             return NULL;
@@ -1846,7 +1845,8 @@ int
 PySys_HasWarnOptions(void)
 {
     PyObject *warnoptions = _PySys_GetObjectId(&PyId_warnoptions);
-    return (warnoptions != NULL && (PyList_Size(warnoptions) > 0)) ? 1 : 0;
+    return (warnoptions != NULL && PyList_Check(warnoptions)
+            && PyList_GET_SIZE(warnoptions) > 0);
 }
 
 static PyObject *
@@ -1864,7 +1864,6 @@ get_xoptions(void)
          * call optional for embedding applications, thus making this
          * reachable again.
          */
-        Py_XDECREF(xoptions);
         xoptions = PyDict_New();
         if (xoptions == NULL)
             return NULL;
@@ -2594,7 +2593,7 @@ makepathobject(const wchar_t *path, wchar_t delim)
             Py_DECREF(v);
             return NULL;
         }
-        PyList_SetItem(v, i, w);
+        PyList_SET_ITEM(v, i, w);
         if (*p == '\0')
             break;
         path = p+1;

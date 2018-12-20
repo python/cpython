@@ -4,6 +4,7 @@
 #include "code.h"
 #include "structmember.h"
 #include "pycore_pystate.h"
+#include "pycore_tupleobject.h"
 
 /* Holder for co_extra information */
 typedef struct {

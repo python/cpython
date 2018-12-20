@@ -1061,10 +1061,16 @@ config_read_complex_options(_PyCoreConfig *config)
 static void
 config_init_locale(_PyCoreConfig *config)
 {
-    if (config->coerce_c_locale < 0) {
+    /* Test also if coerce_c_locale equals 1: PYTHONCOERCECLOCALE=1 doesn't
+       imply that the C locale is always coerced. It is only coerced if
+       if the LC_CTYPE locale is "C". */
+    if (config->coerce_c_locale != 0) {
         /* The C locale enables the C locale coercion (PEP 538) */
         if (_Py_LegacyLocaleDetected()) {
             config->coerce_c_locale = 1;
+        }
+        else {
+            config->coerce_c_locale = 0;
         }
     }
 
@@ -1394,7 +1400,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         }
     }
 
-    if (config->utf8_mode < 0 || config->coerce_c_locale < 0) {
+    if (config->coerce_c_locale != 0 || config->utf8_mode < 0) {
         config_init_locale(config);
     }
 

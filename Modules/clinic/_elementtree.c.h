@@ -154,7 +154,7 @@ PyDoc_STRVAR(_elementtree_Element_find__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_FIND_METHODDEF    \
-    {"find", (PyCFunction)_elementtree_Element_find, METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_find__doc__},
+    {"find", (PyCFunction)(void(*)(void))_elementtree_Element_find, METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_find__doc__},
 
 static PyObject *
 _elementtree_Element_find_impl(ElementObject *self, PyObject *path,
@@ -185,7 +185,7 @@ PyDoc_STRVAR(_elementtree_Element_findtext__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_FINDTEXT_METHODDEF    \
-    {"findtext", (PyCFunction)_elementtree_Element_findtext, METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_findtext__doc__},
+    {"findtext", (PyCFunction)(void(*)(void))_elementtree_Element_findtext, METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_findtext__doc__},
 
 static PyObject *
 _elementtree_Element_findtext_impl(ElementObject *self, PyObject *path,
@@ -218,7 +218,7 @@ PyDoc_STRVAR(_elementtree_Element_findall__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_FINDALL_METHODDEF    \
-    {"findall", (PyCFunction)_elementtree_Element_findall, METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_findall__doc__},
+    {"findall", (PyCFunction)(void(*)(void))_elementtree_Element_findall, METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_findall__doc__},
 
 static PyObject *
 _elementtree_Element_findall_impl(ElementObject *self, PyObject *path,
@@ -249,7 +249,7 @@ PyDoc_STRVAR(_elementtree_Element_iterfind__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_ITERFIND_METHODDEF    \
-    {"iterfind", (PyCFunction)_elementtree_Element_iterfind, METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_iterfind__doc__},
+    {"iterfind", (PyCFunction)(void(*)(void))_elementtree_Element_iterfind, METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_iterfind__doc__},
 
 static PyObject *
 _elementtree_Element_iterfind_impl(ElementObject *self, PyObject *path,
@@ -280,7 +280,7 @@ PyDoc_STRVAR(_elementtree_Element_get__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_GET_METHODDEF    \
-    {"get", (PyCFunction)_elementtree_Element_get, METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_get__doc__},
+    {"get", (PyCFunction)(void(*)(void))_elementtree_Element_get, METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_get__doc__},
 
 static PyObject *
 _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
@@ -328,7 +328,7 @@ PyDoc_STRVAR(_elementtree_Element_iter__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_ITER_METHODDEF    \
-    {"iter", (PyCFunction)_elementtree_Element_iter, METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_iter__doc__},
+    {"iter", (PyCFunction)(void(*)(void))_elementtree_Element_iter, METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_iter__doc__},
 
 static PyObject *
 _elementtree_Element_iter_impl(ElementObject *self, PyObject *tag);
@@ -357,7 +357,7 @@ PyDoc_STRVAR(_elementtree_Element_getiterator__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_GETITERATOR_METHODDEF    \
-    {"getiterator", (PyCFunction)_elementtree_Element_getiterator, METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_getiterator__doc__},
+    {"getiterator", (PyCFunction)(void(*)(void))_elementtree_Element_getiterator, METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_getiterator__doc__},
 
 static PyObject *
 _elementtree_Element_getiterator_impl(ElementObject *self, PyObject *tag);
@@ -403,7 +403,7 @@ PyDoc_STRVAR(_elementtree_Element_insert__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_INSERT_METHODDEF    \
-    {"insert", (PyCFunction)_elementtree_Element_insert, METH_FASTCALL, _elementtree_Element_insert__doc__},
+    {"insert", (PyCFunction)(void(*)(void))_elementtree_Element_insert, METH_FASTCALL, _elementtree_Element_insert__doc__},
 
 static PyObject *
 _elementtree_Element_insert_impl(ElementObject *self, Py_ssize_t index,
@@ -466,7 +466,7 @@ PyDoc_STRVAR(_elementtree_Element_makeelement__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_MAKEELEMENT_METHODDEF    \
-    {"makeelement", (PyCFunction)_elementtree_Element_makeelement, METH_FASTCALL, _elementtree_Element_makeelement__doc__},
+    {"makeelement", (PyCFunction)(void(*)(void))_elementtree_Element_makeelement, METH_FASTCALL, _elementtree_Element_makeelement__doc__},
 
 static PyObject *
 _elementtree_Element_makeelement_impl(ElementObject *self, PyObject *tag,
@@ -522,7 +522,7 @@ PyDoc_STRVAR(_elementtree_Element_set__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_SET_METHODDEF    \
-    {"set", (PyCFunction)_elementtree_Element_set, METH_FASTCALL, _elementtree_Element_set__doc__},
+    {"set", (PyCFunction)(void(*)(void))_elementtree_Element_set, METH_FASTCALL, _elementtree_Element_set__doc__},
 
 static PyObject *
 _elementtree_Element_set_impl(ElementObject *self, PyObject *key,
@@ -607,7 +607,7 @@ PyDoc_STRVAR(_elementtree_TreeBuilder_start__doc__,
 "\n");
 
 #define _ELEMENTTREE_TREEBUILDER_START_METHODDEF    \
-    {"start", (PyCFunction)_elementtree_TreeBuilder_start, METH_FASTCALL, _elementtree_TreeBuilder_start__doc__},
+    {"start", (PyCFunction)(void(*)(void))_elementtree_TreeBuilder_start, METH_FASTCALL, _elementtree_TreeBuilder_start__doc__},
 
 static PyObject *
 _elementtree_TreeBuilder_start_impl(TreeBuilderObject *self, PyObject *tag,
@@ -693,7 +693,7 @@ PyDoc_STRVAR(_elementtree_XMLParser__setevents__doc__,
 "\n");
 
 #define _ELEMENTTREE_XMLPARSER__SETEVENTS_METHODDEF    \
-    {"_setevents", (PyCFunction)_elementtree_XMLParser__setevents, METH_FASTCALL, _elementtree_XMLParser__setevents__doc__},
+    {"_setevents", (PyCFunction)(void(*)(void))_elementtree_XMLParser__setevents, METH_FASTCALL, _elementtree_XMLParser__setevents__doc__},
 
 static PyObject *
 _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
@@ -717,4 +717,4 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1bff22415aabb78b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f1efdb511a5b027b input=a9049054013a1b77]*/

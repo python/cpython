@@ -275,7 +275,7 @@ Optimizations
   +26% on Linux, +50% on macOS and +40% on Windows. Also, much less CPU cycles
   are consumed.
   See :ref:`shutil-platform-dependent-efficient-copy-operations` section.
-  (Contributed by Giampaolo Rodola' in :issue:`25427`.)
+  (Contributed by Giampaolo Rodola' in :issue:`33671`.)
 
 * :func:`shutil.copytree` uses :func:`os.scandir` function and all copy
   functions depending from it use cached :func:`os.stat` values. The speedup
@@ -373,8 +373,16 @@ Deprecated
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
 
-Removed
-=======
+API and Feature Removals
+========================
+
+The following features and APIs have been removed from Python 3.8:
+
+* The :mod:`macpath` module, deprecated in Python 3.7, has been removed.
+  (Contributed by Victor Stinner in :issue:`35471`.)
+
+* The function :func:`platform.popen` has been removed, it was deprecated since
+  Python 3.3: use :func:`os.popen` instead.
 
 * The ``pyvenv`` script has been removed in favor of ``python3.8 -m venv``
   to help eliminate confusion as to what Python interpreter the ``pyvenv``
@@ -407,12 +415,15 @@ Changes in Python behavior
 
 * Yield expressions (both ``yield`` and ``yield from`` clauses) are now disallowed
   in comprehensions and generator expressions (aside from the iterable expression
-  in the leftmost :keyword:`for` clause).
+  in the leftmost :keyword:`!for` clause).
   (Contributed by Serhiy Storchaka in :issue:`10544`.)
 
 
 Changes in the Python API
 -------------------------
+
+* The function :func:`platform.popen` has been removed, it was deprecated since
+  Python 3.3: use :func:`os.popen` instead.
 
 * The :meth:`~tkinter.ttk.Treeview.selection` method of the
   :class:`tkinter.ttk.Treeview` class no longer takes arguments.  Using it with
@@ -474,6 +485,12 @@ Changes in the Python API
 * :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
   external entities by default.
   (Contributed by Christian Heimes in :issue:`17239`.)
+
+* Deleting a key from a read-only :mod:`dbm` database (:mod:`dbm.dumb`,
+  :mod:`dbm.gnu` or :mod:`dbm.ndbm`) raises :attr:`error` (:exc:`dbm.dumb.error`,
+  :exc:`dbm.gnu.error` or :exc:`dbm.ndbm.error`) instead of :exc:`KeyError`.
+  (Contributed by Xiang Zhang in :issue:`33106`.)
+
 
 CPython bytecode changes
 ------------------------
