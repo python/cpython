@@ -1392,8 +1392,7 @@ class Popen(object):
 
         def _posix_spawn(self, args, executable):
             """Execute program using os.posix_spawn()."""
-            env = os.environ
-            self.pid = os.posix_spawn(executable, args, env)
+            self.pid = os.posix_spawn(executable, args, os.environ)
 
         def _execute_child(self, args, executable, preexec_fn, close_fds,
                            pass_fds, cwd, env,
@@ -1420,15 +1419,17 @@ class Popen(object):
             if executable is None:
                 executable = args[0]
 
-            if (preexec_fn is None
+            if (os.path.dirname(executable)
+                    and preexec_fn is None
                     and not close_fds
                     and not pass_fds
                     and cwd is None
                     and env is None
+                    and p2cread == p2cwrite == -1
+                    and c2pread == c2pwrite == -1
+                    and errread == errwrite == -1
                     and not restore_signals
-                    and not start_new_session
-                    and os.path.dirname(executable)
-                    and self.stdin is self.stdout is self.stderr is None):
+                    and not start_new_session):
                 self._posix_spawn(args, executable)
                 return
 
