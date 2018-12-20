@@ -3483,20 +3483,23 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 #endif
-    Py_INCREF(dll); /* for KeepRef */
-    Py_DECREF(ftuple);
-    if (!_validate_paramflags(type, paramflags))
+    if (!_validate_paramflags(type, paramflags)) {
+        Py_DECREF(ftuple);
         return NULL;
+    }
 
     self = (PyCFuncPtrObject *)GenericPyCData_new(type, args, kwds);
-    if (!self)
+    if (!self) {
+        Py_DECREF(ftuple);
         return NULL;
+    }
 
     Py_XINCREF(paramflags);
     self->paramflags = paramflags;
 
     *(void **)self->b_ptr = address;
-
+    Py_INCREF(dll);
+    Py_DECREF(ftuple);
     if (-1 == KeepRef((CDataObject *)self, 0, dll)) {
         Py_DECREF((PyObject *)self);
         return NULL;
