@@ -21,6 +21,9 @@ function Sign-File {
             $description = "Python";
         }
     }
+    if (-not $certsha1) {
+        $certsha1 = $env:SigningCertificateSha1;
+    }
     if (-not $certname) {
         $certname = $env:SigningCertificate;
     }
@@ -32,7 +35,7 @@ function Sign-File {
         if ($certsha1) {
             SignTool sign /sha1 $certsha1 /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d $description $a
         } elseif ($certname) {
-            SignTool sign /n $certname /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d $description $a
+            SignTool sign /a /n $certname /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d $description $a
         } elseif ($certfile) {
             SignTool sign /f $certfile /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d $description $a
         } else {
