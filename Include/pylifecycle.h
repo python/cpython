@@ -99,7 +99,9 @@ PyAPI_FUNC(void) Py_InitializeEx(int);
 PyAPI_FUNC(void) _Py_FatalInitError(_PyInitError err) _Py_NO_RETURN;
 #endif
 PyAPI_FUNC(void) Py_Finalize(void);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03060000
 PyAPI_FUNC(int) Py_FinalizeEx(void);
+#endif
 PyAPI_FUNC(int) Py_IsInitialized(void);
 
 /* Subinterpreter support */
