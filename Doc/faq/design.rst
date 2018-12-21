@@ -499,8 +499,7 @@ using the :func:`hash` built-in function.  The hash code varies widely depending
 on the key and a per-process seed; for example, "Python" could hash to
 -539294296 while "python", a string that differs by a single bit, could hash
 to 1142331976.  The hash code is then used to calculate a location in an
-internal array where the value will be stored.  Assuming that you're storing
-keys that all have different hash values, this means that dictionaries take
+internal array where the value will be stored.  Hash tables, and therefore dictionaries, take
 constant time -- O(1), in Big-O notation -- to retrieve a key.
 
 
