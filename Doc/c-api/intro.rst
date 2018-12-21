@@ -271,9 +271,11 @@ borrowed reference.
 
 Conversely, when a calling function passes in a reference to an  object, there
 are two possibilities: the function *steals* a  reference to the object, or it
-does not.  *Stealing a reference* means that when you pass a reference to a
-function, that function assumes that it now owns that reference, and you are not
-responsible for it any longer.
+does not. If a called function decreases the reference count of an object, it
+is said to *steal* the ownership of the reference from its caller. *Stealing a
+reference* means that when you pass a reference to a stealing function, that
+function assumes that it now owns that reference, and you are not responsible
+for it any longer.
 
 .. index::
    single: PyList_SetItem()
