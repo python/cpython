@@ -275,7 +275,7 @@ Configure IDLE
    menu. For more, see
    :ref:`Setting preferences <preferences>` under Help and preferences.
 
-Zoom Height
+Zoom/Restore Height
    Toggles the window between normal size and maximum height. The initial size
    defaults to 40 lines by 80 chars unless changed on the General tab of the
    Configure IDLE dialog.

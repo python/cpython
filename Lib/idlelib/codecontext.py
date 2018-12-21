@@ -127,8 +127,8 @@ class CodeContext:
             self.context.destroy()
             self.context = None
             menu_status = 'Show'
-        self.editwin.update_label(menu='options', index=3,
-                                  label=f'{menu_status} Code Context')
+        self.editwin.update_menu_label(menu='options', index='* Code Context',
+                                       label=f'{menu_status} Code Context')
         return "break"
 
     def get_context(self, new_topvisible, stopline=1, stopindent=0):
