@@ -373,21 +373,15 @@ class BaseXYTestCase(unittest.TestCase):
         eq(base64.b16decode('0102ABCDEF'), b'\x01\x02\xab\xcd\xef')
         eq(base64.b16decode(b'00'), b'\x00')
         eq(base64.b16decode('00'), b'\x00')
-        # Lower case is not allowed without a flag
-        self.assertRaises(binascii.Error, base64.b16decode, b'0102abcdef')
-        self.assertRaises(binascii.Error, base64.b16decode, '0102abcdef')
-        # Case fold
-        eq(base64.b16decode(b'0102abcdef', True), b'\x01\x02\xab\xcd\xef')
-        eq(base64.b16decode('0102abcdef', True), b'\x01\x02\xab\xcd\xef')
         # Non-bytes
         self.check_other_types(base64.b16decode, b"0102ABCDEF",
                                b'\x01\x02\xab\xcd\xef')
         self.check_decode_type_errors(base64.b16decode)
-        eq(base64.b16decode(bytearray(b"0102abcdef"), True),
+        eq(base64.b16decode(bytearray(b"0102abcdef")),
            b'\x01\x02\xab\xcd\xef')
-        eq(base64.b16decode(memoryview(b"0102abcdef"), True),
+        eq(base64.b16decode(memoryview(b"0102abcdef")),
            b'\x01\x02\xab\xcd\xef')
-        eq(base64.b16decode(array('B', b"0102abcdef"), True),
+        eq(base64.b16decode(array('B', b"0102abcdef")),
            b'\x01\x02\xab\xcd\xef')
         # Non-alphabet characters
         self.assertRaises(binascii.Error, base64.b16decode, '0102AG')
