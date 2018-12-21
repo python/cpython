@@ -540,8 +540,10 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         levels[0] = 0;
         if (toplevel) {
             PyOS_snprintf(msgbuf, bufsize,
-                          "expected %d arguments, not %" PY_FORMAT_SIZE_T "d",
-                          n, len);
+                          "expected %d argument%s, not %" PY_FORMAT_SIZE_T "d",
+                          n,
+                          n == 1 ? "" : "s",
+                          len);
         }
         else {
             PyOS_snprintf(msgbuf, bufsize,
@@ -1718,12 +1720,14 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                 }
                 else {
                     PyErr_Format(PyExc_TypeError,
-                                 "%.200s%s takes %s %d positional arguments"
+                                 "%.200s%s takes %s %d positional argument%s"
                                  " (%d given)",
                                  (fname == NULL) ? "function" : fname,
                                  (fname == NULL) ? "" : "()",
                                  (min != INT_MAX) ? "at most" : "exactly",
-                                 max, nargs);
+                                 max,
+                                 max == 1 ? "" : "s",
+                                 nargs);
                 }
                 return cleanreturn(0, &freelist);
             }
@@ -1797,12 +1801,14 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
 
     if (skip) {
         PyErr_Format(PyExc_TypeError,
-                     "%.200s%s takes %s %d positional arguments"
+                     "%.200s%s takes %s %d positional argument%s"
                      " (%d given)",
                      (fname == NULL) ? "function" : fname,
                      (fname == NULL) ? "" : "()",
                      (Py_MIN(pos, min) < i) ? "at least" : "exactly",
-                     Py_MIN(pos, min), nargs);
+                     Py_MIN(pos, min),
+                     Py_MIN(pos, min) == 1 ? "" : "s",
+                     nargs);
         return cleanreturn(0, &freelist);
     }
 
@@ -2104,11 +2110,13 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
         }
         else {
             PyErr_Format(PyExc_TypeError,
-                         "%.200s%s takes %s %d positional arguments (%d given)",
+                         "%.200s%s takes %s %d positional argument%s (%d given)",
                          (parser->fname == NULL) ? "function" : parser->fname,
                          (parser->fname == NULL) ? "" : "()",
                          (parser->min != INT_MAX) ? "at most" : "exactly",
-                         parser->max, nargs);
+                         parser->max,
+                         parser->max == 1 ? "" : "s",
+                         nargs);
         }
         return cleanreturn(0, &freelist);
     }
@@ -2152,12 +2160,14 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
             if (i < pos) {
                 Py_ssize_t min = Py_MIN(pos, parser->min);
                 PyErr_Format(PyExc_TypeError,
-                             "%.200s%s takes %s %d positional arguments"
+                             "%.200s%s takes %s %d positional argument%s"
                              " (%d given)",
                              (parser->fname == NULL) ? "function" : parser->fname,
                              (parser->fname == NULL) ? "" : "()",
                              min < parser->max ? "at least" : "exactly",
-                             min, nargs);
+                             min,
+                             min == 1 ? "" : "s",
+                             nargs);
             }
             else {
                 keyword = PyTuple_GET_ITEM(kwtuple, i - pos);
@@ -2417,9 +2427,9 @@ unpack_stack(PyObject *const *args, Py_ssize_t nargs, const char *name,
         else
             PyErr_Format(
                 PyExc_TypeError,
-                "unpacked tuple should have %s%zd elements,"
+                "unpacked tuple should have %s%zd element%s,"
                 " but has %zd",
-                (min == max ? "" : "at least "), min, nargs);
+                (min == max ? "" : "at least "), min, min == 1 ? "" : "s", nargs);
         return 0;
     }
 
@@ -2436,9 +2446,9 @@ unpack_stack(PyObject *const *args, Py_ssize_t nargs, const char *name,
         else
             PyErr_Format(
                 PyExc_TypeError,
-                "unpacked tuple should have %s%zd elements,"
+                "unpacked tuple should have %s%zd element%s,"
                 " but has %zd",
-                (min == max ? "" : "at most "), max, nargs);
+                (min == max ? "" : "at most "), max, max == 1 ? "" : "s", nargs);
         return 0;
     }
 
