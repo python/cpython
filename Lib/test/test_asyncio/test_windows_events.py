@@ -44,7 +44,7 @@ class ProactorLoopCtrlC(test_utils.TestCase):
         import ctypes
         import sys
         from ctypes import wintypes
-        
+
         # child process is created with CREATE_NEW_PROCESS_GROUP flag
         # an implicit call to SetConsoleCtrlHandler(NULL,TRUE) will be made
         # on behalf of new process which will disable CTRL-C in it
@@ -79,7 +79,7 @@ class ProactorLoopCtrlC(test_utils.TestCase):
             # ensure that child process gets to run_forever
             time.sleep(0.5)
             os.kill(p.pid, signal.CTRL_C_EVENT)
-        
+
         exit_code = None
         flags = subprocess.CREATE_NEW_PROCESS_GROUP
         with spawn_python("-c", code, creationflags=flags) as p:
