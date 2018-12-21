@@ -1112,7 +1112,7 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
             parse((1,), {'a': 3}, 'OOO', ['', '', 'a'])
         parse((1,), {}, 'O|OO', ['', '', 'a'])
         with self.assertRaisesRegex(TypeError,
-               r'function takes at least 1 positional arguments \(0 given\)'):
+               r'function takes at least 1 positional argument \(0 given\)'):
             parse((), {}, 'O|OO', ['', '', 'a'])
         parse((1, 2), {'a': 3}, 'OO$O', ['', '', 'a'])
         with self.assertRaisesRegex(TypeError,
@@ -1120,7 +1120,7 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
             parse((1,), {'a': 3}, 'OO$O', ['', '', 'a'])
         parse((1,), {}, 'O|O$O', ['', '', 'a'])
         with self.assertRaisesRegex(TypeError,
-               r'function takes at least 1 positional arguments \(0 given\)'):
+               r'function takes at least 1 positional argument \(0 given\)'):
             parse((), {}, 'O|O$O', ['', '', 'a'])
         with self.assertRaisesRegex(SystemError, r'Empty parameter name after \$'):
             parse((1,), {}, 'O|$OO', ['', '', 'a'])
