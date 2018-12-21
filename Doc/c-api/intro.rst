@@ -251,17 +251,22 @@ they are done with the result; this soon becomes second nature.
 Reference Count Details
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-The reference count behavior of functions in the Python/C API is best  explained
+The reference count behavior of functions in the Python/C API is best explained
 in terms of *ownership of references*.  Ownership pertains to references, never
 to objects (objects are not owned: they are always shared).  "Owning a
-reference" means being responsible for calling Py_DECREF on it when the
+reference" means being responsible for calling :c:func:`Py_DECREF` on it when the
 reference is no longer needed.  Ownership can also be transferred, meaning that
 the code that receives ownership of the reference then becomes responsible for
 eventually decref'ing it by calling :c:func:`Py_DECREF` or :c:func:`Py_XDECREF`
 when it's no longer needed---or passing on this responsibility (usually to its
-caller). When a function passes ownership of a reference on to its caller, the
-caller is said to receive a *new* reference.  When no ownership is transferred,
-the caller is said to *borrow* the reference. Nothing needs to be done for a
+caller). Let's look at different types of reference ownership passings in more
+detail.
+
+When a function returns an object and effectively increases the
+reference count of it, the function is said to *give* ownership of a new
+reference to its caller and the caller is said to *own* the reference. When a
+function returns an object without changing the reference count of it, the
+caller is said to *borrow* the reference. Nothing needs to be done for a
 borrowed reference.
 
 Conversely, when a calling function passes in a reference to an  object, there
