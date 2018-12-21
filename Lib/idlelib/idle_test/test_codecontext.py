@@ -42,7 +42,7 @@ class DummyEditwin:
         self.text = text
         self.label = ''
 
-    def update_label(self, **kwargs):
+    def update_menu_label(self, **kwargs):
         self.label = kwargs['label']
 
 
