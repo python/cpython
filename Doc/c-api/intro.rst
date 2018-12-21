@@ -269,8 +269,8 @@ function returns an object without changing the reference count of it, the
 caller is said to *borrow* the reference. Nothing needs to be done for a
 borrowed reference.
 
-Conversely, when a calling function passes in a reference to an  object, there
-are two possibilities: the function *steals* a  reference to the object, or it
+Conversely, when a calling function passes in a reference to an object, there
+are two possibilities: the function *steals* a reference to the object, or it
 does not. If a called function decreases the reference count of an object, it
 is said to *steal* the ownership of the reference from its caller. *Stealing a
 reference* means that when you pass a reference to a stealing function, that
