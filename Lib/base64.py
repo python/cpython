@@ -250,7 +250,7 @@ def b16encode(s):
     return binascii.hexlify(s).upper()
 
 
-def b16decode(s, casefold=False):
+def b16decode(s):
     """Decode the Base16 encoded bytes-like object or ASCII string s.
 
     Optional casefold is a flag specifying whether a lowercase alphabet is
@@ -261,9 +261,7 @@ def b16decode(s, casefold=False):
     in the input.
     """
     s = _bytes_from_decode_data(s)
-    if casefold:
-        s = s.upper()
-    if re.search(b'[^0-9A-F]', s):
+    if re.search(b'[^0-9A-Fa-f]', s):
         raise binascii.Error('Non-base16 digit found')
     return binascii.unhexlify(s)
 
