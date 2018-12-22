@@ -1,0 +1,2 @@
+Removed incorrect assert statement that caused segfault in debug builds.
+Patch by Karthikeyan Singaravelan.
