@@ -1,2 +1,3 @@
-Removed incorrect assert statement that caused segfault in debug builds.
-Patch by Karthikeyan Singaravelan.
+Removed an incorrect assert statement expecting `min_width`  >= 0 in
+`_PyUnicode_InsertThousandsGrouping` that caused segfault in :func:`format`
+in debug builds for certain cases. Patch by Karthikeyan Singaravelan.
