@@ -3,6 +3,11 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-22703: Improve Code Context and Zoom Height menu labels.
+Code Context menu label now toggles between Show/Hide Code Context.
+Menu label for Zoom Height, moved from Window menu to Options menu,
+now toggles between Zoom/Restore Height.
+
 bpo-35521: Document the editor code context feature.
 Add some internal references within the IDLE doc.
 
