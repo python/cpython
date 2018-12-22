@@ -701,6 +701,12 @@ class FormatTestCase(unittest.TestCase):
         self.assertEqual(format(1234.56, '.4'), '1.235e+03')
         self.assertEqual(format(12345.6, '.4'), '1.235e+04')
 
+    def test_issue35560(self):
+        self.assertEqual(format(123.0, '00'), '123.0')
+        self.assertEqual(format(float(123), '00'), '123.0')
+        self.assertEqual("{0:00f}".format(float(123)), '123.000000')
+        self.assertEqual(f"{123:00f}", '123.000000')
+
 class ReprTestCase(unittest.TestCase):
     def test_repr(self):
         floats_file = open(os.path.join(os.path.split(__file__)[0],

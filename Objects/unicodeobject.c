@@ -9391,7 +9391,6 @@ _PyUnicode_InsertThousandsGrouping(
     }
     assert(0 <= d_pos);
     assert(0 <= n_digits);
-    assert(0 <= min_width);
     assert(grouping != NULL);
 
     if (digits != NULL) {
