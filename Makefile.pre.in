@@ -302,6 +302,7 @@ POBJS=		\
 		Parser/metagrammar.o \
 		Parser/firstsets.o \
 		Parser/grammar.o \
+		Parser/token.o \
 		Parser/pgen.o
 
 PARSER_OBJS=	$(POBJS) Parser/myreadline.o Parser/parsetok.o Parser/tokenizer.o
@@ -559,7 +560,7 @@ coverage-lcov:
 	@echo
 
 # Force regeneration of parser and importlib
-coverage-report: regen-grammar regen-importlib
+coverage-report: regen-grammar regen-token regen-importlib
 	@ # build with coverage info
 	$(MAKE) coverage
 	@ # run tests, ignore failures
@@ -741,7 +742,7 @@ regen-importlib: Programs/_freeze_importlib
 # Regenerate all generated files
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar \
-	regen-ast regen-importlib clinic
+	regen-token regen-symbol regen-ast regen-importlib clinic
 
 ############################################################################
 # Special rules for object files
@@ -848,6 +849,37 @@ regen-opcode:
 		$(srcdir)/Lib/opcode.py \
 		$(srcdir)/Include/opcode.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
+
+.PHONY: regen-token
+regen-token:
+	# Regenerate Doc/library/token-list.inc from Grammar/Tokens
+	# using Tools/scripts/generate_token.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py rst \
+		$(srcdir)/Grammar/Tokens \
+		$(srcdir)/Doc/library/token-list.inc
+	# Regenerate Include/token.h from Grammar/Tokens
+	# using Tools/scripts/generate_token.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py h \
+		$(srcdir)/Grammar/Tokens \
+		$(srcdir)/Include/token.h
+	# Regenerate Parser/token.c from Grammar/Tokens
+	# using Tools/scripts/generate_token.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py c \
+		$(srcdir)/Grammar/Tokens \
+		$(srcdir)/Parser/token.c
+	# Regenerate Lib/token.py from Grammar/Tokens
+	# using Tools/scripts/generate_token.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py py \
+		$(srcdir)/Grammar/Tokens \
+		$(srcdir)/Lib/token.py
+
+.PHONY: regen-symbol
+regen-symbol: $(srcdir)/Include/graminit.h
+	# Regenerate Lib/symbol.py from Include/graminit.h
+	# using Tools/scripts/generate_symbol_py.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_symbol_py.py \
+		$(srcdir)/Include/graminit.h \
+		$(srcdir)/Lib/symbol.py
 
 Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o: $(srcdir)/Include/graminit.h $(srcdir)/Include/Python-ast.h
 

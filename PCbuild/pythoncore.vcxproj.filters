@@ -866,6 +866,9 @@
     <ClCompile Include="..\Parser\tokenizer.c">
       <Filter>Parser</Filter>
     </ClCompile>
+    <ClCompile Include="..\Parser\token.c">
+      <Filter>Parser</Filter>
+    </ClCompile>
     <ClCompile Include="..\PC\winreg.c">
       <Filter>PC</Filter>
     </ClCompile>
