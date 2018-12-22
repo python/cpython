@@ -1,0 +1,2 @@
+Use compiled regex in :func:`base64.b16decode` for validation.
+Patch by Karthikeyan Singaravelan.
