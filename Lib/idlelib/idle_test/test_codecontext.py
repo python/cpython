@@ -40,6 +40,10 @@ class DummyEditwin:
         self.top = root
         self.text_frame = frame
         self.text = text
+        self.label = ''
+
+    def update_menu_label(self, **kwargs):
+        self.label = kwargs['label']
 
 
 class CodeContextTest(unittest.TestCase):
@@ -127,10 +131,12 @@ class CodeContextTest(unittest.TestCase):
         eq(cc.context['fg'], cc.colors['foreground'])
         eq(cc.context['bg'], cc.colors['background'])
         eq(cc.context.get('1.0', 'end-1c'), '')
+        eq(cc.editwin.label, 'Hide Code Context')
 
         # Toggle off.
         eq(toggle(), 'break')
         self.assertIsNone(cc.context)
+        eq(cc.editwin.label, 'Show Code Context')
 
     def test_get_context(self):
         eq = self.assertEqual
