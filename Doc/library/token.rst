@@ -44,64 +44,7 @@ functions.  The functions mirror definitions in the Python C header files.
 
 The token constants are:
 
-.. data:: ENDMARKER
-          NAME
-          NUMBER
-          STRING
-          NEWLINE
-          INDENT
-          DEDENT
-          LPAR
-          RPAR
-          LSQB
-          RSQB
-          COLON
-          COMMA
-          SEMI
-          PLUS
-          MINUS
-          STAR
-          SLASH
-          VBAR
-          AMPER
-          LESS
-          GREATER
-          EQUAL
-          DOT
-          PERCENT
-          LBRACE
-          RBRACE
-          EQEQUAL
-          NOTEQUAL
-          LESSEQUAL
-          GREATEREQUAL
-          TILDE
-          CIRCUMFLEX
-          LEFTSHIFT
-          RIGHTSHIFT
-          DOUBLESTAR
-          PLUSEQUAL
-          MINEQUAL
-          STAREQUAL
-          SLASHEQUAL
-          PERCENTEQUAL
-          AMPEREQUAL
-          VBAREQUAL
-          CIRCUMFLEXEQUAL
-          LEFTSHIFTEQUAL
-          RIGHTSHIFTEQUAL
-          DOUBLESTAREQUAL
-          DOUBLESLASH
-          DOUBLESLASHEQUAL
-          AT
-          ATEQUAL
-          RARROW
-          ELLIPSIS
-          OP
-          ERRORTOKEN
-          N_TOKENS
-          NT_OFFSET
-
+.. include:: token-list.inc
 
 The following token type values aren't used by the C tokenizer but are needed for
 the :mod:`tokenize` module.

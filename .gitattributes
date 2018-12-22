@@ -55,3 +55,7 @@ Include/opcode.h            linguist-generated=true
 Python/opcode_targets.h     linguist-generated=true
 Objects/typeslots.inc       linguist-generated=true
 Modules/unicodedata_db.h    linguist-generated=true
+Doc/library/token-list.inc  linguist-generated=true
+Include/token.h             linguist-generated=true
+Lib/token.py                linguist-generated=true
+Parser/token.c              linguist-generated=true
