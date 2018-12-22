@@ -40,6 +40,8 @@ needs_sphinx = '1.2'
 venvdir = os.getenv('VENVDIR', 'venv')
 exclude_patterns = [venvdir+'/*', 'README.rst']
 
+# Avoid a warning with Sphinx >= 2.0
+master_doc = 'contents'
 
 # Options for HTML output
 # -----------------------
