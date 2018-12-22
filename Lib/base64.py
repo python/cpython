@@ -30,6 +30,7 @@ __all__ = [
 
 
 bytes_types = (bytes, bytearray)  # Types acceptable as binary data
+_B16DECODE_PAT = re.compile(b'[^0-9A-F]')
 
 def _bytes_from_decode_data(s):
     if isinstance(s, str):
@@ -263,7 +264,7 @@ def b16decode(s, casefold=False):
     s = _bytes_from_decode_data(s)
     if casefold:
         s = s.upper()
-    if re.search(b'[^0-9A-F]', s):
+    if _B16DECODE_PAT.search(s):
         raise binascii.Error('Non-base16 digit found')
     return binascii.unhexlify(s)
 
