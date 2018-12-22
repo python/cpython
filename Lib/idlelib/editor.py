@@ -446,6 +446,11 @@ class EditorWindow(object):
             menu.delete(self.wmenu_end+1, end)
         window.add_windows_to_menu(menu)
 
+    def update_menu_label(self, menu, index, label):
+        "Update label for menu item at index ."
+        menuitem = self.menudict[menu]
+        menuitem.entryconfig(index, label=label)
+
     def handle_yview(self, event, *args):
         "Handle scrollbar."
         if event == 'moveto':
