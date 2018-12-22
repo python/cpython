@@ -1,2 +1,3 @@
-Change menu label for Code Context to toggle between Show/Hide Code Context.
-Move Zoom Height from Window menu to Options menu.
+Code Context menu label now toggles between Show/Hide Code Context.
+Menu label for Zoom Height, moved from Window menu to Options menu,
+now toggles between Zoom/Restore Height.
