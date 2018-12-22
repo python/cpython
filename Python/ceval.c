@@ -3792,6 +3792,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
             }
         }
 
+		/*
         assert(j >= total_args);
         if (kwdict == NULL) {
             PyErr_Format(PyExc_TypeError,
@@ -3799,8 +3800,9 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
                          co->co_name, keyword);
             goto fail;
         }
+		*/
 
-        if (PyDict_SetItem(kwdict, keyword, value) == -1) {
+        if (kwdict && PyDict_SetItem(kwdict, keyword, value) == -1) {
             goto fail;
         }
         continue;
