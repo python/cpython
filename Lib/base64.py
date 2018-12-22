@@ -241,9 +241,6 @@ def b32decode(s, casefold=False, map01=None):
     return bytes(decoded)
 
 
-# RFC 3548, Base 16 Alphabet specifies uppercase, but hexlify() returns
-# lowercase.  The RFC also recommends against accepting input case
-# insensitively.
 def b16encode(s):
     """Encode the bytes-like object s using Base16 and return a bytes object.
     """
