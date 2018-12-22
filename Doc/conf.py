@@ -41,6 +41,8 @@ exclude_patterns = [
 # Require Sphinx 1.2 for build.
 needs_sphinx = '1.2'
 
+# Avoid a warning with Sphinx >= 2.0
+master_doc = 'contents'
 
 # Options for HTML output
 # -----------------------
