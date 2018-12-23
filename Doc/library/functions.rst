@@ -810,9 +810,9 @@ are always available.  They are listed here in alphabetical order.
 
    See also :ref:`typeiter`.
 
-   One application of the second form of :func:`iter` is build a block-reader.
-   For example, reading fixed-width blocks from a text file until the end of
-   file is reached:
+   One useful application of the second form of :func:`iter` is to build a
+   block-reader. For example, reading fixed-width blocks from a text file
+   until the end of file is reached:
 
     from functools import partial
     with open('mydata.txt') as fp:
