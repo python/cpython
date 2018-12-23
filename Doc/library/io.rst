@@ -31,7 +31,7 @@ be used for each of them.  A concrete object belonging to any of these
 categories is called a :term:`file object`.  Other common terms are *stream*
 and *file-like object*.
 
-Independently of its category, each concrete stream object will also have
+Independent of its category, each concrete stream object will also have
 various capabilities: it can be read-only, write-only, or read-write. It can
 also allow arbitrary random access (seeking forwards or backwards to any
 location), or only sequential access (for example in the case of a socket or
@@ -249,7 +249,7 @@ I/O Base Classes
 
    :class:`IOBase` is also a context manager and therefore supports the
    :keyword:`with` statement.  In this example, *file* is closed after the
-   :keyword:`with` statement's suite is finished---even if an exception occurs::
+   :keyword:`!with` statement's suite is finished---even if an exception occurs::
 
       with open('spam.txt', 'w') as file:
           file.write('Spam and eggs!')

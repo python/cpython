@@ -412,26 +412,26 @@ PyTypeObject PyCursesWindow_Type;
    PARSESTR - format string for argument parsing
 */
 
-#define Window_NoArgNoReturnFunction(X)                 \
-    static PyObject *PyCursesWindow_ ## X               \
-    (PyCursesWindowObject *self, PyObject *args)        \
+#define Window_NoArgNoReturnFunction(X)                         \
+    static PyObject *PyCursesWindow_ ## X                       \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))  \
     { return PyCursesCheckERR(X(self->win), # X); }
 
 #define Window_NoArgTrueFalseFunction(X)                                \
     static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self)                                        \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))          \
     {                                                                   \
         return PyBool_FromLong(X(self->win)); }
 
 #define Window_NoArgNoReturnVoidFunction(X)                     \
     static PyObject * PyCursesWindow_ ## X                      \
-    (PyCursesWindowObject *self)                                \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))  \
     {                                                           \
         X(self->win); Py_RETURN_NONE; }
 
 #define Window_NoArg2TupleReturnFunction(X, TYPE, ERGSTR)               \
     static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self)                                        \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))          \
     {                                                                   \
         TYPE arg1, arg2;                                                \
         X(self->win,arg1,arg2); return Py_BuildValue(ERGSTR, arg1, arg2); }
@@ -2288,7 +2288,7 @@ PyCursesWindow_get_encoding(PyCursesWindowObject *self, void *closure)
 }
 
 static int
-PyCursesWindow_set_encoding(PyCursesWindowObject *self, PyObject *value)
+PyCursesWindow_set_encoding(PyCursesWindowObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     PyObject *ascii;
     char *encoding;

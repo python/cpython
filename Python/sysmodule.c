@@ -17,10 +17,10 @@ Data members:
 #include "Python.h"
 #include "code.h"
 #include "frameobject.h"
-#include "pycore_lifecycle.h"
-#include "pycore_mem.h"
+#include "pycore_pylifecycle.h"
+#include "pycore_pymem.h"
 #include "pycore_pathconfig.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 #include "pythread.h"
 
 #include "osdefs.h"
@@ -1521,7 +1521,7 @@ sys_getandroidapilevel(PyObject *self)
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
-    {"breakpointhook",  (PyCFunction)sys_breakpointhook,
+    {"breakpointhook",  (PyCFunction)(void(*)(void))sys_breakpointhook,
      METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
     {"callstats", sys_callstats, METH_NOARGS,
      callstats_doc},
@@ -1560,7 +1560,7 @@ static PyMethodDef sys_methods[] = {
     {"getrefcount",     (PyCFunction)sys_getrefcount, METH_O, getrefcount_doc},
     {"getrecursionlimit", sys_getrecursionlimit, METH_NOARGS,
      getrecursionlimit_doc},
-    {"getsizeof",   (PyCFunction)sys_getsizeof,
+    {"getsizeof",   (PyCFunction)(void(*)(void))sys_getsizeof,
      METH_VARARGS | METH_KEYWORDS, getsizeof_doc},
     {"_getframe", sys_getframe, METH_VARARGS, getframe_doc},
 #ifdef MS_WINDOWS
@@ -1601,7 +1601,7 @@ static PyMethodDef sys_methods[] = {
      set_coroutine_wrapper_doc},
     {"get_coroutine_wrapper", sys_get_coroutine_wrapper, METH_NOARGS,
      get_coroutine_wrapper_doc},
-    {"set_asyncgen_hooks", (PyCFunction)sys_set_asyncgen_hooks,
+    {"set_asyncgen_hooks", (PyCFunction)(void(*)(void))sys_set_asyncgen_hooks,
      METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
     {"get_asyncgen_hooks", sys_get_asyncgen_hooks, METH_NOARGS,
      get_asyncgen_hooks_doc},
@@ -1774,7 +1774,6 @@ get_warnoptions(void)
          * call optional for embedding applications, thus making this
          * reachable again.
          */
-        Py_XDECREF(warnoptions);
         warnoptions = PyList_New(0);
         if (warnoptions == NULL)
             return NULL;
@@ -1846,7 +1845,8 @@ int
 PySys_HasWarnOptions(void)
 {
     PyObject *warnoptions = _PySys_GetObjectId(&PyId_warnoptions);
-    return (warnoptions != NULL && (PyList_Size(warnoptions) > 0)) ? 1 : 0;
+    return (warnoptions != NULL && PyList_Check(warnoptions)
+            && PyList_GET_SIZE(warnoptions) > 0);
 }
 
 static PyObject *
@@ -1864,7 +1864,6 @@ get_xoptions(void)
          * call optional for embedding applications, thus making this
          * reachable again.
          */
-        Py_XDECREF(xoptions);
         xoptions = PyDict_New();
         if (xoptions == NULL)
             return NULL;
@@ -2488,7 +2487,20 @@ _PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
     assert(config->exec_prefix != NULL);
     assert(config->base_exec_prefix != NULL);
 
-    SET_SYS_FROM_STRING_BORROW("path", config->module_search_path);
+#define COPY_LIST(KEY, ATTR) \
+    do { \
+        assert(PyList_Check(config->ATTR)); \
+        PyObject *list = PyList_GetSlice(config->ATTR, \
+                                         0, PyList_GET_SIZE(config->ATTR)); \
+        if (list == NULL) { \
+            return -1; \
+        } \
+        SET_SYS_FROM_STRING_BORROW(KEY, list); \
+        Py_DECREF(list); \
+    } while (0)
+
+    COPY_LIST("path", module_search_path);
+
     SET_SYS_FROM_STRING_BORROW("executable", config->executable);
     SET_SYS_FROM_STRING_BORROW("prefix", config->prefix);
     SET_SYS_FROM_STRING_BORROW("base_prefix", config->base_prefix);
@@ -2505,11 +2517,18 @@ _PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
         SET_SYS_FROM_STRING_BORROW("argv", config->argv);
     }
     if (config->warnoptions != NULL) {
-        SET_SYS_FROM_STRING_BORROW("warnoptions", config->warnoptions);
+        COPY_LIST("warnoptions", warnoptions);
     }
     if (config->xoptions != NULL) {
-        SET_SYS_FROM_STRING_BORROW("_xoptions", config->xoptions);
+        PyObject *dict = PyDict_Copy(config->xoptions);
+        if (dict == NULL) {
+            return -1;
+        }
+        SET_SYS_FROM_STRING_BORROW("_xoptions", dict);
+        Py_DECREF(dict);
     }
+
+#undef COPY_LIST
 
     /* Set flags to their final values */
     SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags());
@@ -2574,7 +2593,7 @@ makepathobject(const wchar_t *path, wchar_t delim)
             Py_DECREF(v);
             return NULL;
         }
-        PyList_SetItem(v, i, w);
+        PyList_SET_ITEM(v, i, w);
         if (*p == '\0')
             break;
         path = p+1;

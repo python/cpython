@@ -1,0 +1,2 @@
+Conditionally declare :c:func:`Py_FinalizeEx()` (new in 3.6) based on
+Py_LIMITED_API. Patch by Arthur Neufeld.

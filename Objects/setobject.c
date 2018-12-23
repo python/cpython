@@ -32,7 +32,8 @@
 */
 
 #include "Python.h"
-#include "pycore_state.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 
 /* Object used as dummy key to fill deleted entries */
@@ -701,17 +702,14 @@ static PyObject *
 set_pop(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
     /* Make sure the search finger is in bounds */
-    setentry *entry, *limit;
+    setentry *entry = so->table + (so->finger & so->mask);
+    setentry *limit = so->table + so->mask;
     PyObject *key;
 
-    assert (PyAnySet_Check(so));
     if (so->used == 0) {
         PyErr_SetString(PyExc_KeyError, "pop from an empty set");
         return NULL;
     }
-
-    entry = so->table + (so->finger & so->mask);
-    limit = so->table + so->mask;
     while (entry->key == NULL || entry->key==dummy) {
         entry++;
         if (entry > limit)
@@ -844,6 +842,7 @@ static PyObject *setiter_iternext(setiterobject *si);
 static PyObject *
 setiter_reduce(setiterobject *si, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     /* copy the iterator state */
     setiterobject tmp = *si;
     Py_XINCREF(tmp.si_set);
@@ -854,7 +853,7 @@ setiter_reduce(setiterobject *si, PyObject *Py_UNUSED(ignored))
     if (list == NULL) {
         return NULL;
     }
-    return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltinId(&PyId_iter), list);
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");

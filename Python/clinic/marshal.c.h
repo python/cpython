@@ -20,7 +20,7 @@ PyDoc_STRVAR(marshal_dump__doc__,
 "to the file. The object will not be properly read back by load().");
 
 #define MARSHAL_DUMP_METHODDEF    \
-    {"dump", (PyCFunction)marshal_dump, METH_FASTCALL, marshal_dump__doc__},
+    {"dump", (PyCFunction)(void(*)(void))marshal_dump, METH_FASTCALL, marshal_dump__doc__},
 
 static PyObject *
 marshal_dump_impl(PyObject *module, PyObject *value, PyObject *file,
@@ -78,7 +78,7 @@ PyDoc_STRVAR(marshal_dumps__doc__,
 "unsupported type.");
 
 #define MARSHAL_DUMPS_METHODDEF    \
-    {"dumps", (PyCFunction)marshal_dumps, METH_FASTCALL, marshal_dumps__doc__},
+    {"dumps", (PyCFunction)(void(*)(void))marshal_dumps, METH_FASTCALL, marshal_dumps__doc__},
 
 static PyObject *
 marshal_dumps_impl(PyObject *module, PyObject *value, int version);
@@ -134,4 +134,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=584eb2222d86fdc3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cbb6128201bee7e0 input=a9049054013a1b77]*/

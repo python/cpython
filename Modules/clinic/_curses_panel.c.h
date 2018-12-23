@@ -137,7 +137,7 @@ PyDoc_STRVAR(_curses_panel_panel_move__doc__,
 "Move the panel to the screen coordinates (y, x).");
 
 #define _CURSES_PANEL_PANEL_MOVE_METHODDEF    \
-    {"move", (PyCFunction)_curses_panel_panel_move, METH_FASTCALL, _curses_panel_panel_move__doc__},
+    {"move", (PyCFunction)(void(*)(void))_curses_panel_panel_move, METH_FASTCALL, _curses_panel_panel_move__doc__},
 
 static PyObject *
 _curses_panel_panel_move_impl(PyCursesPanelObject *self, int y, int x);
@@ -314,4 +314,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=96f627ca0b08b96d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=66e49cb9726a638f input=a9049054013a1b77]*/

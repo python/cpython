@@ -757,7 +757,7 @@ Philbrick (philbrick@hks.com)::
         * only take two PyObject* parameters, and keywdarg_parrot() takes
         * three.
         */
-       {"parrot", (PyCFunction)keywdarg_parrot, METH_VARARGS | METH_KEYWORDS,
+       {"parrot", (PyCFunction)(void(*)(void))keywdarg_parrot, METH_VARARGS | METH_KEYWORDS,
         "Print a lovely skit to standard output."},
        {NULL, NULL, 0, NULL}   /* sentinel */
    };

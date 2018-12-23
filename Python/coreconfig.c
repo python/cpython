@@ -1,9 +1,9 @@
 #include "Python.h"
 #include "pycore_fileutils.h"
-#include "pycore_lifecycle.h"
-#include "pycore_mem.h"
+#include "pycore_pylifecycle.h"
+#include "pycore_pymem.h"
 #include "pycore_pathconfig.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 #include <locale.h>
 #ifdef HAVE_LANGINFO_H
 #  include <langinfo.h>
@@ -53,6 +53,78 @@ int Py_IsolatedFlag = 0; /* for -I, isolate from user's env */
 int Py_LegacyWindowsFSEncodingFlag = 0; /* Uses mbcs instead of utf-8 */
 int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
 #endif
+
+
+PyObject *
+_Py_GetGlobalVariablesAsDict(void)
+{
+    PyObject *dict, *obj;
+
+    dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+
+#define SET_ITEM(KEY, EXPR) \
+        do { \
+            obj = (EXPR); \
+            if (obj == NULL) { \
+                return NULL; \
+            } \
+            int res = PyDict_SetItemString(dict, (KEY), obj); \
+            Py_DECREF(obj); \
+            if (res < 0) { \
+                goto fail; \
+            } \
+        } while (0)
+#define SET_ITEM_INT(VAR) \
+    SET_ITEM(#VAR, PyLong_FromLong(VAR))
+#define FROM_STRING(STR) \
+    ((STR != NULL) ? \
+        PyUnicode_FromString(STR) \
+        : (Py_INCREF(Py_None), Py_None))
+#define SET_ITEM_STR(VAR) \
+    SET_ITEM(#VAR, FROM_STRING(VAR))
+
+    SET_ITEM_STR(Py_FileSystemDefaultEncoding);
+    SET_ITEM_INT(Py_HasFileSystemDefaultEncoding);
+    SET_ITEM_STR(Py_FileSystemDefaultEncodeErrors);
+    SET_ITEM_INT(_Py_HasFileSystemDefaultEncodeErrors);
+
+    SET_ITEM_INT(Py_UTF8Mode);
+    SET_ITEM_INT(Py_DebugFlag);
+    SET_ITEM_INT(Py_VerboseFlag);
+    SET_ITEM_INT(Py_QuietFlag);
+    SET_ITEM_INT(Py_InteractiveFlag);
+    SET_ITEM_INT(Py_InspectFlag);
+
+    SET_ITEM_INT(Py_OptimizeFlag);
+    SET_ITEM_INT(Py_NoSiteFlag);
+    SET_ITEM_INT(Py_BytesWarningFlag);
+    SET_ITEM_INT(Py_FrozenFlag);
+    SET_ITEM_INT(Py_IgnoreEnvironmentFlag);
+    SET_ITEM_INT(Py_DontWriteBytecodeFlag);
+    SET_ITEM_INT(Py_NoUserSiteDirectory);
+    SET_ITEM_INT(Py_UnbufferedStdioFlag);
+    SET_ITEM_INT(Py_HashRandomizationFlag);
+    SET_ITEM_INT(Py_IsolatedFlag);
+
+#ifdef MS_WINDOWS
+    SET_ITEM_INT(Py_LegacyWindowsFSEncodingFlag);
+    SET_ITEM_INT(Py_LegacyWindowsStdioFlag);
+#endif
+
+    return dict;
+
+fail:
+    Py_DECREF(dict);
+    return NULL;
+
+#undef FROM_STRING
+#undef SET_ITEM
+#undef SET_ITEM_INT
+#undef SET_ITEM_STR
+}
 
 
 void
@@ -493,6 +565,7 @@ _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
 #endif
+    COPY_FLAG(_frozen, Py_FrozenFlag);
 
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
@@ -589,6 +662,23 @@ config_init_program_name(_PyCoreConfig *config)
     return _Py_INIT_OK();
 }
 
+static _PyInitError
+config_init_executable(_PyCoreConfig *config)
+{
+    assert(config->executable == NULL);
+
+    /* If Py_SetProgramFullPath() was called, use its value */
+    const wchar_t *program_full_path = _Py_path_config.program_full_path;
+    if (program_full_path != NULL) {
+        config->executable = _PyMem_RawWcsdup(program_full_path);
+        if (config->executable == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+        return _Py_INIT_OK();
+    }
+
+    return _Py_INIT_OK();
+}
 
 static const wchar_t*
 config_get_xoption(const _PyCoreConfig *config, wchar_t *name)
@@ -971,10 +1061,16 @@ config_read_complex_options(_PyCoreConfig *config)
 static void
 config_init_locale(_PyCoreConfig *config)
 {
-    if (config->coerce_c_locale < 0) {
+    /* Test also if coerce_c_locale equals 1: PYTHONCOERCECLOCALE=1 doesn't
+       imply that the C locale is always coerced. It is only coerced if
+       if the LC_CTYPE locale is "C". */
+    if (config->coerce_c_locale != 0) {
         /* The C locale enables the C locale coercion (PEP 538) */
         if (_Py_LegacyLocaleDetected()) {
             config->coerce_c_locale = 1;
+        }
+        else {
+            config->coerce_c_locale = 0;
         }
     }
 
@@ -1297,7 +1393,14 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         }
     }
 
-    if (config->utf8_mode < 0 || config->coerce_c_locale < 0) {
+    if (config->executable == NULL) {
+        err = config_init_executable(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+
+    if (config->coerce_c_locale != 0 || config->utf8_mode < 0) {
         config_init_locale(config);
     }
 
@@ -1371,14 +1474,6 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
         return NULL;
     }
 
-#define FROM_STRING(STR) \
-    ((STR != NULL) ? \
-        PyUnicode_FromString(STR) \
-        : (Py_INCREF(Py_None), Py_None))
-#define FROM_WSTRING(STR) \
-    ((STR != NULL) ? \
-        PyUnicode_FromWideChar(STR, -1) \
-        : (Py_INCREF(Py_None), Py_None))
 #define SET_ITEM(KEY, EXPR) \
         do { \
             obj = (EXPR); \
@@ -1391,115 +1486,81 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
                 goto fail; \
             } \
         } while (0)
+#define FROM_STRING(STR) \
+    ((STR != NULL) ? \
+        PyUnicode_FromString(STR) \
+        : (Py_INCREF(Py_None), Py_None))
+#define SET_ITEM_INT(ATTR) \
+    SET_ITEM(#ATTR, PyLong_FromLong(config->ATTR))
+#define SET_ITEM_UINT(ATTR) \
+    SET_ITEM(#ATTR, PyLong_FromUnsignedLong(config->ATTR))
+#define SET_ITEM_STR(ATTR) \
+    SET_ITEM(#ATTR, FROM_STRING(config->ATTR))
+#define FROM_WSTRING(STR) \
+    ((STR != NULL) ? \
+        PyUnicode_FromWideChar(STR, -1) \
+        : (Py_INCREF(Py_None), Py_None))
+#define SET_ITEM_WSTR(ATTR) \
+    SET_ITEM(#ATTR, FROM_WSTRING(config->ATTR))
+#define SET_ITEM_WSTRLIST(NOPTION, OPTIONS) \
+    SET_ITEM(#OPTIONS, _Py_wstrlist_as_pylist(config->NOPTION, config->OPTIONS))
 
-    SET_ITEM("install_signal_handlers",
-             PyLong_FromLong(config->install_signal_handlers));
-    SET_ITEM("use_environment",
-             PyLong_FromLong(config->use_environment));
-    SET_ITEM("use_hash_seed",
-             PyLong_FromLong(config->use_hash_seed));
-    SET_ITEM("hash_seed",
-             PyLong_FromUnsignedLong(config->hash_seed));
-    SET_ITEM("allocator",
-             FROM_STRING(config->allocator));
-    SET_ITEM("dev_mode",
-             PyLong_FromLong(config->dev_mode));
-    SET_ITEM("faulthandler",
-             PyLong_FromLong(config->faulthandler));
-    SET_ITEM("tracemalloc",
-             PyLong_FromLong(config->tracemalloc));
-    SET_ITEM("import_time",
-             PyLong_FromLong(config->import_time));
-    SET_ITEM("show_ref_count",
-             PyLong_FromLong(config->show_ref_count));
-    SET_ITEM("show_alloc_count",
-             PyLong_FromLong(config->show_alloc_count));
-    SET_ITEM("dump_refs",
-             PyLong_FromLong(config->dump_refs));
-    SET_ITEM("malloc_stats",
-             PyLong_FromLong(config->malloc_stats));
-    SET_ITEM("coerce_c_locale",
-             PyLong_FromLong(config->coerce_c_locale));
-    SET_ITEM("coerce_c_locale_warn",
-             PyLong_FromLong(config->coerce_c_locale_warn));
-    SET_ITEM("filesystem_encoding",
-             FROM_STRING(config->filesystem_encoding));
-    SET_ITEM("filesystem_errors",
-             FROM_STRING(config->filesystem_errors));
-    SET_ITEM("stdio_encoding",
-             FROM_STRING(config->stdio_encoding));
-    SET_ITEM("utf8_mode",
-             PyLong_FromLong(config->utf8_mode));
-    SET_ITEM("pycache_prefix",
-             FROM_WSTRING(config->pycache_prefix));
-    SET_ITEM("program_name",
-             FROM_WSTRING(config->program_name));
-    SET_ITEM("argv",
-             _Py_wstrlist_as_pylist(config->argc, config->argv));
-    SET_ITEM("program",
-             FROM_WSTRING(config->program));
-    SET_ITEM("warnoptions",
-             _Py_wstrlist_as_pylist(config->nwarnoption, config->warnoptions));
-    SET_ITEM("module_search_path_env",
-             FROM_WSTRING(config->module_search_path_env));
-    SET_ITEM("home",
-             FROM_WSTRING(config->home));
-    SET_ITEM("module_search_paths",
-             _Py_wstrlist_as_pylist(config->nmodule_search_path, config->module_search_paths));
-    SET_ITEM("executable",
-             FROM_WSTRING(config->executable));
-    SET_ITEM("prefix",
-             FROM_WSTRING(config->prefix));
-    SET_ITEM("base_prefix",
-             FROM_WSTRING(config->base_prefix));
-    SET_ITEM("exec_prefix",
-             FROM_WSTRING(config->exec_prefix));
-    SET_ITEM("base_exec_prefix",
-             FROM_WSTRING(config->base_exec_prefix));
+    SET_ITEM_INT(install_signal_handlers);
+    SET_ITEM_INT(use_environment);
+    SET_ITEM_INT(use_hash_seed);
+    SET_ITEM_UINT(hash_seed);
+    SET_ITEM_STR(allocator);
+    SET_ITEM_INT(dev_mode);
+    SET_ITEM_INT(faulthandler);
+    SET_ITEM_INT(tracemalloc);
+    SET_ITEM_INT(import_time);
+    SET_ITEM_INT(show_ref_count);
+    SET_ITEM_INT(show_alloc_count);
+    SET_ITEM_INT(dump_refs);
+    SET_ITEM_INT(malloc_stats);
+    SET_ITEM_INT(coerce_c_locale);
+    SET_ITEM_INT(coerce_c_locale_warn);
+    SET_ITEM_STR(filesystem_encoding);
+    SET_ITEM_STR(filesystem_errors);
+    SET_ITEM_INT(utf8_mode);
+    SET_ITEM_WSTR(pycache_prefix);
+    SET_ITEM_WSTR(program_name);
+    SET_ITEM_WSTRLIST(argc, argv);
+    SET_ITEM_WSTR(program);
+    SET_ITEM_WSTRLIST(nxoption, xoptions);
+    SET_ITEM_WSTRLIST(nwarnoption, warnoptions);
+    SET_ITEM_WSTR(module_search_path_env);
+    SET_ITEM_WSTR(home);
+    SET_ITEM_WSTRLIST(nmodule_search_path, module_search_paths);
+    SET_ITEM_WSTR(executable);
+    SET_ITEM_WSTR(prefix);
+    SET_ITEM_WSTR(base_prefix);
+    SET_ITEM_WSTR(exec_prefix);
+    SET_ITEM_WSTR(base_exec_prefix);
 #ifdef MS_WINDOWS
-    SET_ITEM("dll_path",
-             FROM_WSTRING(config->dll_path));
+    SET_ITEM_WSTR(dll_path);
 #endif
-    SET_ITEM("isolated",
-             PyLong_FromLong(config->isolated));
-    SET_ITEM("site_import",
-             PyLong_FromLong(config->site_import));
-    SET_ITEM("bytes_warning",
-             PyLong_FromLong(config->bytes_warning));
-    SET_ITEM("inspect",
-             PyLong_FromLong(config->inspect));
-    SET_ITEM("interactive",
-             PyLong_FromLong(config->interactive));
-    SET_ITEM("optimization_level",
-             PyLong_FromLong(config->optimization_level));
-    SET_ITEM("parser_debug",
-             PyLong_FromLong(config->parser_debug));
-    SET_ITEM("write_bytecode",
-             PyLong_FromLong(config->write_bytecode));
-    SET_ITEM("verbose",
-             PyLong_FromLong(config->verbose));
-    SET_ITEM("quiet",
-             PyLong_FromLong(config->quiet));
-    SET_ITEM("user_site_directory",
-             PyLong_FromLong(config->user_site_directory));
-    SET_ITEM("buffered_stdio",
-             PyLong_FromLong(config->buffered_stdio));
-    SET_ITEM("stdio_encoding",
-             FROM_STRING(config->stdio_encoding));
-    SET_ITEM("stdio_errors",
-             FROM_STRING(config->stdio_errors));
+    SET_ITEM_INT(isolated);
+    SET_ITEM_INT(site_import);
+    SET_ITEM_INT(bytes_warning);
+    SET_ITEM_INT(inspect);
+    SET_ITEM_INT(interactive);
+    SET_ITEM_INT(optimization_level);
+    SET_ITEM_INT(parser_debug);
+    SET_ITEM_INT(write_bytecode);
+    SET_ITEM_INT(verbose);
+    SET_ITEM_INT(quiet);
+    SET_ITEM_INT(user_site_directory);
+    SET_ITEM_INT(buffered_stdio);
+    SET_ITEM_STR(stdio_encoding);
+    SET_ITEM_STR(stdio_errors);
 #ifdef MS_WINDOWS
-    SET_ITEM("legacy_windows_fs_encoding",
-             PyLong_FromLong(config->legacy_windows_fs_encoding));
-    SET_ITEM("legacy_windows_stdio",
-             PyLong_FromLong(config->legacy_windows_stdio));
+    SET_ITEM_INT(legacy_windows_fs_encoding);
+    SET_ITEM_INT(legacy_windows_stdio);
 #endif
-    SET_ITEM("_install_importlib",
-             PyLong_FromLong(config->_install_importlib));
-    SET_ITEM("_check_hash_pycs_mode",
-             FROM_STRING(config->_check_hash_pycs_mode));
-    SET_ITEM("_frozen",
-             PyLong_FromLong(config->_frozen));
+    SET_ITEM_INT(_install_importlib);
+    SET_ITEM_STR(_check_hash_pycs_mode);
+    SET_ITEM_INT(_frozen);
 
     return dict;
 
@@ -1510,4 +1571,9 @@ fail:
 #undef FROM_STRING
 #undef FROM_WSTRING
 #undef SET_ITEM
+#undef SET_ITEM_INT
+#undef SET_ITEM_UINT
+#undef SET_ITEM_STR
+#undef SET_ITEM_WSTR
+#undef SET_ITEM_WSTRLIST
 }

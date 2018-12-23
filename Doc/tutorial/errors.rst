@@ -114,7 +114,7 @@ The :keyword:`try` statement works as follows.
 A :keyword:`try` statement may have more than one except clause, to specify
 handlers for different exceptions.  At most one handler will be executed.
 Handlers only handle exceptions that occur in the corresponding try clause, not
-in other handlers of the same :keyword:`try` statement.  An except clause may
+in other handlers of the same :keyword:`!try` statement.  An except clause may
 name multiple exceptions as a parenthesized tuple, for example::
 
    ... except (RuntimeError, TypeError, NameError):
@@ -180,10 +180,10 @@ example::
            print(arg, 'has', len(f.readlines()), 'lines')
            f.close()
 
-The use of the :keyword:`else` clause is better than adding additional code to
+The use of the :keyword:`!else` clause is better than adding additional code to
 the :keyword:`try` clause because it avoids accidentally catching an exception
-that wasn't raised by the code being protected by the :keyword:`try` ...
-:keyword:`except` statement.
+that wasn't raised by the code being protected by the :keyword:`!try` ...
+:keyword:`!except` statement.
 
 When an exception occurs, it may have an associated value, also known as the
 exception's *argument*. The presence and type of the argument depend on the
@@ -343,11 +343,11 @@ example::
 
 A *finally clause* is always executed before leaving the :keyword:`try`
 statement, whether an exception has occurred or not. When an exception has
-occurred in the :keyword:`try` clause and has not been handled by an
-:keyword:`except` clause (or it has occurred in an :keyword:`except` or
-:keyword:`else` clause), it is re-raised after the :keyword:`finally` clause has
-been executed.  The :keyword:`finally` clause is also executed "on the way out"
-when any other clause of the :keyword:`try` statement is left via a
+occurred in the :keyword:`!try` clause and has not been handled by an
+:keyword:`except` clause (or it has occurred in an :keyword:`!except` or
+:keyword:`!else` clause), it is re-raised after the :keyword:`finally` clause has
+been executed.  The :keyword:`!finally` clause is also executed "on the way out"
+when any other clause of the :keyword:`!try` statement is left via a
 :keyword:`break`, :keyword:`continue` or :keyword:`return` statement.  A more
 complicated example::
 
@@ -376,7 +376,7 @@ complicated example::
 
 As you can see, the :keyword:`finally` clause is executed in any event.  The
 :exc:`TypeError` raised by dividing two strings is not handled by the
-:keyword:`except` clause and therefore re-raised after the :keyword:`finally`
+:keyword:`except` clause and therefore re-raised after the :keyword:`!finally`
 clause has been executed.
 
 In real world applications, the :keyword:`finally` clause is useful for

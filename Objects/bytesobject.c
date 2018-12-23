@@ -3,8 +3,9 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "pycore_mem.h"
-#include "pycore_state.h"
+#include "pycore_object.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 
 #include "bytes_methods.h"
 #include "pystrhex.h"
@@ -85,7 +86,7 @@ _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
         op = (PyBytesObject *)PyObject_Malloc(PyBytesObject_SIZE + size);
     if (op == NULL)
         return PyErr_NoMemory();
-    (void)PyObject_INIT_VAR((PyVarObject *)op, &PyBytes_Type, size);
+    (void)PyObject_INIT_VAR(op, &PyBytes_Type, size);
     op->ob_shash = -1;
     if (!use_calloc)
         op->ob_sval[size] = '\0';
@@ -163,7 +164,7 @@ PyBytes_FromString(const char *str)
     op = (PyBytesObject *)PyObject_MALLOC(PyBytesObject_SIZE + size);
     if (op == NULL)
         return PyErr_NoMemory();
-    (void)PyObject_INIT_VAR((PyVarObject *)op, &PyBytes_Type, size);
+    (void)PyObject_INIT_VAR(op, &PyBytes_Type, size);
     op->ob_shash = -1;
     memcpy(op->ob_sval, str, size+1);
     /* share short strings */
@@ -1508,7 +1509,7 @@ bytes_repeat(PyBytesObject *a, Py_ssize_t n)
     op = (PyBytesObject *)PyObject_MALLOC(PyBytesObject_SIZE + nbytes);
     if (op == NULL)
         return PyErr_NoMemory();
-    (void)PyObject_INIT_VAR((PyVarObject *)op, &PyBytes_Type, size);
+    (void)PyObject_INIT_VAR(op, &PyBytes_Type, size);
     op->ob_shash = -1;
     op->ob_sval[size] = '\0';
     if (Py_SIZE(a) == 1 && n > 0) {
@@ -3088,11 +3089,12 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 striter_reduce(striterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
                              it->it_seq, it->it_index);
     } else {
-        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
     }
 }
 

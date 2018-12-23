@@ -21,6 +21,10 @@
 #include <dirent.h>
 #endif
 
+#ifdef _Py_MEMORY_SANITIZER
+# include <sanitizer/msan_interface.h>
+#endif
+
 #if defined(__ANDROID__) && __ANDROID_API__ < 21 && !defined(SYS_getdents64)
 # include <sys/linux-syscalls.h>
 # define SYS_getdents64  __NR_getdents64
@@ -287,6 +291,9 @@ _close_open_fds_safe(int start_fd, PyObject* py_fds_to_keep)
                                 sizeof(buffer))) > 0) {
             struct linux_dirent64 *entry;
             int offset;
+#ifdef _Py_MEMORY_SANITIZER
+            __msan_unpoison(buffer, bytes);
+#endif
             for (offset = 0; offset < bytes; offset += entry->d_reclen) {
                 int fd;
                 entry = (struct linux_dirent64 *)(buffer + offset);

@@ -20,6 +20,10 @@
 #  endif
 #endif
 
+#ifdef _Py_MEMORY_SANITIZER
+#  include <sanitizer/msan_interface.h>
+#endif
+
 #ifdef Py_DEBUG
 int _Py_HashSecret_Initialized = 0;
 #else
@@ -51,8 +55,6 @@ error:
 static int
 win32_urandom(unsigned char *buffer, Py_ssize_t size, int raise)
 {
-    Py_ssize_t chunk;
-
     if (hCryptProv == 0)
     {
         if (win32_urandom_init(raise) == -1) {
@@ -62,8 +64,8 @@ win32_urandom(unsigned char *buffer, Py_ssize_t size, int raise)
 
     while (size > 0)
     {
-        chunk = size > INT_MAX ? INT_MAX : size;
-        if (!CryptGenRandom(hCryptProv, (DWORD)chunk, buffer))
+        DWORD chunk = (DWORD)Py_MIN(size, PY_DWORD_MAX);
+        if (!CryptGenRandom(hCryptProv, chunk, buffer))
         {
             /* CryptGenRandom() failed */
             if (raise) {
@@ -143,6 +145,11 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
         else {
             n = syscall(SYS_getrandom, dest, n, flags);
         }
+#  ifdef _Py_MEMORY_SANITIZER
+        if (n > 0) {
+             __msan_unpoison(dest, n);
+        }
+#  endif
 #endif
 
         if (n < 0) {

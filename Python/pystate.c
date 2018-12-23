@@ -2,8 +2,8 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
-#include "pycore_mem.h"
-#include "pycore_state.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 
 #define _PyThreadState_SET(value) \
     _Py_atomic_store_relaxed(&_PyRuntime.gilstate.tstate_current, \
@@ -592,6 +592,7 @@ PyState_RemoveModule(struct PyModuleDef* def)
         Py_FatalError("PyState_RemoveModule: Module index out of bounds.");
         return -1;
     }
+    Py_INCREF(Py_None);
     return PyList_SetItem(state->modules_by_index, index, Py_None);
 }
 
