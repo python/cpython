@@ -249,7 +249,6 @@ def b16encode(s):
 
 def b16decode(s):
     """Decode the Base16 encoded bytes-like object or ASCII string s.
-    
     The result is returned as a bytes object. A binascii.Error is raised if
     s is incorrectly padded or if there are non-alphabet characters present
     in the input.
