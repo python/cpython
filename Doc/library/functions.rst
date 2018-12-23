@@ -811,12 +811,13 @@ are always available.  They are listed here in alphabetical order.
    See also :ref:`typeiter`.
 
    One application of the second form of :func:`iter` is build a block-reader.
-   For example, reading fixed-width blocks from a database file:
+   For example, reading fixed-width blocks from a text file until the end of
+   file is reached:
 
     from functools import partial
-    with open('mydata.db') as f:
-        for block in iter(partial(f.read, 64), ''):
-            print(block)
+    with open('mydata.txt') as fp:
+        for block in iter(partial(fp.read, 64), ''):
+            process_block(block)
 
 
 .. function:: len(s)
