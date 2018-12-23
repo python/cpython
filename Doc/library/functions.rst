@@ -810,15 +810,13 @@ are always available.  They are listed here in alphabetical order.
 
    See also :ref:`typeiter`.
 
-   One simple example application of the second form of :func:`iter` is to roll
-   two dice and sum the two rolled values until a certain number is observed::
+   One application of the second form of :func:`iter` is build a block-reader.
+   For example, read fixed-width blocks from a database file:
 
-    >>> from random import randint
-    >>> def roll_dice():
-    ...     return randint(1, 6) + randint(1, 6)
-    ...
-    >>> list(iter(roll_dice, 7))  # roll until 7 is seen
-    [8, 6]
+    >>> from functools import partial
+    >>> with open('mydata.db') as f:
+    ...     for block in iter(partial(f.read, 64)):
+    ...         print(block)
 
 
 .. function:: len(s)
