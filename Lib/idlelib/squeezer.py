@@ -49,10 +49,10 @@ def count_lines_with_wrapping(s, linewidth=80, tabwidth=8):
             # If the current column was exactly linewidth, divmod would give
             # (1,0), even though a new line hadn't yet been started. The same
             # is true if length is any exact multiple of linewidth. Therefore,
-            # subtract 1 before dividing, except if the current column is 0.
-            linecount += 1 + (
-                ((current_column - 1) // linewidth) if current_column > 0 else 0
-            )
+            # subtract 1 before dividing a non-empty line.
+            if current_column > linewidth:  # Don't bother adding 0.
+                linecount += (current_column - 1) // linewidth
+            linecount += 1
             current_column = 0
         else:
             assert s[pos] == '\t'
