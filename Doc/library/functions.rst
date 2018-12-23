@@ -814,10 +814,10 @@ are always available.  They are listed here in alphabetical order.
    block-reader. For example, reading fixed-width blocks from a text file
    until the end of file is reached:
 
-    from functools import partial
-    with open('mydata.txt') as fp:
-        for block in iter(partial(fp.read, 64), ''):
-            process_block(block)
+   from functools import partial
+   with open('mydata.txt') as fp:
+       for block in iter(partial(fp.read, 64), ''):
+           process_block(block)
 
 
 .. function:: len(s)
