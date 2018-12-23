@@ -1,1 +1,0 @@
-wsgiref: Add detail to assertion failure message for hop-by-hop headers.
