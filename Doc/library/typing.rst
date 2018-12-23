@@ -101,7 +101,7 @@ accidentally creating a ``UserId`` in an invalid way::
    # 'output' is of type 'int', not 'UserId'
    output = UserId(23413) + UserId(54341)
 
-Note that these checks are enforced only by the static type checker. At runtime
+Note that these checks are enforced only by the static type checker. At runtime,
 the statement ``Derived = NewType('Derived', Base)`` will make ``Derived`` a
 function that immediately returns whatever parameter you pass it. That means
 the expression ``Derived(some_value)`` does not create a new class or introduce
