@@ -66,17 +66,6 @@ def count_lines_with_wrapping(s, linewidth=80, tabwidth=8):
 
         pos += 1 # after the tab or newline
 
-        # avoid divmod(-1, linewidth)
-        if current_column > 0:
-            # If the length was exactly linewidth, divmod would give (1,0),
-            # even though a new line hadn't yet been started. The same is true
-            # if length is any exact multiple of linewidth. Therefore, subtract
-            # 1 before doing divmod, and later add 1 to the column to
-            # compensate.
-            lines, column = divmod(current_column - 1, linewidth)
-            linecount += lines
-            current_column = column + 1
-
     # process remaining chars (no more tabs or newlines)
     current_column += len(s) - pos
     # avoid divmod(-1, linewidth)
