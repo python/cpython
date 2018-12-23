@@ -90,7 +90,7 @@ Programmatic Interface
    stream, are indented by *indentlevel* spaces.  If a nonzero value
    is given to *annotate*, each opcode in the output is annotated with
    a short description.  The value of *annotate* is used as a hint for
-   the column where :term:`annotation` should start.
+   the column where annotation should start.
 
    .. versionadded:: 3.2
       The *annotate* argument.
