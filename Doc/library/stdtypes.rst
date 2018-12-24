@@ -4283,7 +4283,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
    .. describe:: reversed(d)
 
-      Return a reversed iterator over the keys of the dictionary. This is a
+      Return a reverse iterator over the keys of the dictionary. This is a
       shortcut for ``reversed(d.keys())``.
 
    .. method:: setdefault(key[, default])
@@ -4394,7 +4394,7 @@ support membership tests:
 
 .. describe:: reversed(dictview)
 
-   Return an reversed iterator over the keys, values or items of the dictionnary.
+   Return a reverse iterator over the keys, values or items of the dictionary.
    The view will be iterated in reverse order of the insertion.
 
    .. versionchanged:: 3.8
