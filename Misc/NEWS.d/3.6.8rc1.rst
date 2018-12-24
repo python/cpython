@@ -728,7 +728,10 @@ the 10.9+ installer does.
 .. nonce: xzn8qJ
 .. section: macOS
 
-Update macOS installer to use Tcl/Tk 8.6.9.1.
+Update macOS installer to use Tcl/Tk 8.6.9.1.  [NOTE: This change was
+reverted for the released python.org 3.6.8 macOS installers due to
+regressions found in Tk 8.6.9.1.  For now, the installers provide
+Tcl/Tk 8.6.8.]
 
 ..
 
