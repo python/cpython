@@ -961,6 +961,31 @@ class CookieTests(unittest.TestCase):
         c.add_cookie_header(req)
         self.assertFalse(req.has_header("Cookie"))
 
+        c.clear()
+
+        pol.set_blocked_domains([])
+        req = urllib.request.Request("http://acme.com/")
+        res = FakeResponse(headers, "http://acme.com/")
+        c.extract_cookies(res, req)
+        self.assertEqual(len(c), 1)
+
+        req = urllib.request.Request("http://acme.com/")
+        c.add_cookie_header(req)
+        self.assertTrue(req.has_header("Cookie"))
+
+        req = urllib.request.Request("http://badacme.com/")
+        c.add_cookie_header(req)
+        self.assertFalse(req.has_header("Cookie"))
+
+        p = pol.set_blocked_domains(["acme.com"])
+        req = urllib.request.Request("http://acme.com/")
+        c.add_cookie_header(req)
+        self.assertFalse(req.has_header("Cookie"))
+
+        req = urllib.request.Request("http://badacme.com/")
+        c.add_cookie_header(req)
+        self.assertFalse(req.has_header("Cookie"))
+
     def test_secure(self):
         for ns in True, False:
             for whitespace in " ", "":

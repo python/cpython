@@ -1169,13 +1169,14 @@ class DefaultCookiePolicy(CookiePolicy):
         # Liberal check of.  This is here as an optimization to avoid
         # having to load lots of MSIE cookie files unless necessary.
         req_host, erhn = eff_request_host(request)
+        suffix_check_domain = domain
         if not req_host.startswith("."):
             req_host = "."+req_host
         if not erhn.startswith("."):
             erhn = "."+erhn
-        if not domain.startswith("."):
-            domain = "."+domain
-        if not (req_host.endswith(domain) or erhn.endswith(domain)):
+        if suffix_check_domain and not suffix_check_domain.startswith("."):
+            suffix_check_domain = "." + suffix_check_domain
+        if not (req_host.endswith(suffix_check_domain) or erhn.endswith(suffix_check_domain)):
             #_debug("   request domain %s does not match cookie domain %s",
             #       req_host, domain)
             return False
