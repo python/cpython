@@ -27,7 +27,7 @@ from idlelib.tooltip import Hovertip
 from idlelib import macosx
 
 
-def count_lines_with_wrapping(s, linewidth=80, tabwidth=8):
+def count_lines_with_wrapping(s, linewidth=80):
     """Count the number of lines in a given string.
 
     Lines are counted as if the string was wrapped so that lines are never over
@@ -35,6 +35,7 @@ def count_lines_with_wrapping(s, linewidth=80, tabwidth=8):
 
     Tabs are considered tabwidth characters long.
     """
+    tabwidth = 8  # this is currently always true in IDLE's shell
     pos = 0
     linecount = 1
     current_column = 0
@@ -299,10 +300,8 @@ class Squeezer:
 
         Tabs are considered tabwidth characters long.
         """
-        # Tab width is configurable
-        tabwidth = self.editwin.get_tk_tabwidth()
         linewidth = self.get_line_width()
-        return count_lines_with_wrapping(s, linewidth, tabwidth)
+        return count_lines_with_wrapping(s, linewidth)
 
     def get_line_width(self):
         # The maximum line length in pixels: The width of the text widget,

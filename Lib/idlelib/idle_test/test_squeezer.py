@@ -33,10 +33,10 @@ def get_test_tk_root(test_instance):
 
 class CountLinesTest(unittest.TestCase):
     """Tests for the count_lines_with_wrapping function."""
-    def check(self, expected, text, linewidth, tabwidth):
+    def check(self, expected, text, linewidth):
         return self.assertEqual(
             expected,
-            count_lines_with_wrapping(text, linewidth, tabwidth),
+            count_lines_with_wrapping(text, linewidth),
         )
 
     def test_count_empty(self):
@@ -55,37 +55,14 @@ class CountLinesTest(unittest.TestCase):
         """Test with several lines of text."""
         self.assertEqual(count_lines_with_wrapping("1\n2\n3\n"), 3)
 
-    def test_tab_width(self):
-        """Test with various tab widths and line widths."""
-        self.check(expected=1, text='\t' * 1, linewidth=8, tabwidth=4)
-        self.check(expected=1, text='\t' * 2, linewidth=8, tabwidth=4)
-        self.check(expected=2, text='\t' * 3, linewidth=8, tabwidth=4)
-        self.check(expected=2, text='\t' * 4, linewidth=8, tabwidth=4)
-        self.check(expected=3, text='\t' * 5, linewidth=8, tabwidth=4)
-
-        # test longer lines and various tab widths
-        self.check(expected=4, text='\t' * 10, linewidth=12, tabwidth=4)
-        self.check(expected=10, text='\t' * 10, linewidth=12, tabwidth=8)
-        self.check(expected=2, text='\t' * 4, linewidth=10, tabwidth=3)
-
-        # test tabwidth=1
-        self.check(expected=2, text='\t' * 9, linewidth=5, tabwidth=1)
-        self.check(expected=2, text='\t' * 10, linewidth=5, tabwidth=1)
-        self.check(expected=3, text='\t' * 11, linewidth=5, tabwidth=1)
-
-        # test for off-by-one errors
-        self.check(expected=2, text='\t' * 6, linewidth=12, tabwidth=4)
-        self.check(expected=3, text='\t' * 6, linewidth=11, tabwidth=4)
-        self.check(expected=2, text='\t' * 6, linewidth=13, tabwidth=4)
-
     def test_empty_lines(self):
-        self.check(expected=1, text='\n', linewidth=80, tabwidth=8)
-        self.check(expected=2, text='\n\n', linewidth=80, tabwidth=8)
-        self.check(expected=10, text='\n' * 10, linewidth=80, tabwidth=8)
+        self.check(expected=1, text='\n', linewidth=80)
+        self.check(expected=2, text='\n\n', linewidth=80)
+        self.check(expected=10, text='\n' * 10, linewidth=80)
 
     def test_long_line(self):
-        self.check(expected=3, text='a' * 200, linewidth=80, tabwidth=8)
-        self.check(expected=3, text='a' * 200 + '\n', linewidth=80, tabwidth=8)
+        self.check(expected=3, text='a' * 200, linewidth=80)
+        self.check(expected=3, text='a' * 200 + '\n', linewidth=80)
 
     def test_several_lines_different_lengths(self):
         text = dedent("""\
@@ -94,12 +71,11 @@ class CountLinesTest(unittest.TestCase):
 
             7 chars
             13 characters""")
-        self.check(expected=5, text=text, linewidth=80, tabwidth=8)
-        self.check(expected=5, text=text + '\n', linewidth=80, tabwidth=8)
-        self.check(expected=6, text=text, linewidth=40, tabwidth=8)
-        self.check(expected=7, text=text, linewidth=20, tabwidth=8)
-        self.check(expected=11, text=text, linewidth=10, tabwidth=8)
-
+        self.check(expected=5, text=text, linewidth=80)
+        self.check(expected=5, text=text + '\n', linewidth=80)
+        self.check(expected=6, text=text, linewidth=40)
+        self.check(expected=7, text=text, linewidth=20)
+        self.check(expected=11, text=text, linewidth=10)
 
 class SqueezerTest(unittest.TestCase):
     """Tests for the Squeezer class."""
@@ -117,7 +93,6 @@ class SqueezerTest(unittest.TestCase):
             editor_window = self.make_mock_editor_window()
         squeezer = Squeezer(editor_window)
         squeezer.get_line_width = Mock(return_value=80)
-        squeezer.editwin.get_tk_tabwidth = Mock(return_value=8)
         return squeezer
 
     def make_text_widget(self):
@@ -132,25 +107,21 @@ class SqueezerTest(unittest.TestCase):
         editwin = self.make_mock_editor_window()
         squeezer = self.make_squeezer_instance(editwin)
 
-        for text_code, tab_width, line_width, expected in [
-            (r"'\n'", 8, 80, 1),
-            (r"'\n' * 3", 8, 80, 3),
-            (r"'a' * 40 + '\n'", 8, 80, 1),
-            (r"'a' * 80 + '\n'", 8, 80, 1),
+        for text_code, line_width, expected in [
+            (r"'\n'", 80, 1),
+            (r"'\n' * 3", 80, 3),
+            (r"'a' * 40 + '\n'", 80, 1),
+            (r"'a' * 80 + '\n'", 80, 1),
             # TODO: uncomment the next test case after bpo-35208 is fixed
-            # (r"'a' * 200 + '\n'", 8, 80, 3),
-            (r"'aa\t' * 20", 8, 80, 2),
-            (r"'aa\t' * 21", 8, 80, 3),
-            (r"'aa\t' * 20", 8, 40, 4),
-            (r"'aa\t' * 20", 4, 80, 1),
-            (r"'aa\t' * 21", 4, 80, 2),
+            # (r"'a' * 200 + '\n'", 80, 3),
+            (r"'aa\t' * 20", 80, 2),
+            (r"'aa\t' * 21", 80, 3),
+            (r"'aa\t' * 20", 40, 4),
         ]:
             with self.subTest(text_code=text_code,
-                              tab_width=tab_width,
                               line_width=line_width,
                               expected=expected):
                 text = eval(text_code)
-                editwin.get_tk_tabwidth.return_value = tab_width
                 squeezer.get_line_width.return_value = line_width
                 self.assertEquals(squeezer.count_lines(text), expected)
 
