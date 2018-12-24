@@ -51,9 +51,9 @@ Module-level decorators, classes, and functions
 
    The :func:`dataclass` decorator examines the class to find
    ``field``\s.  A ``field`` is defined as class variable that has a
-   type annotation.  With two exceptions described below, nothing in
-   :func:`dataclass` examines the type specified in the variable
-   annotation.
+   :term:`type annotation <variable annotation>`.  With two
+   exceptions described below, nothing in :func:`dataclass`
+   examines the type specified in the variable annotation.
 
    The order of the fields in all of the generated methods is the
    order in which they appear in the class definition.

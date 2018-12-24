@@ -571,8 +571,8 @@ used keyword arguments.
    single: ->; function annotations
    single: : (colon); function annotations
 
-Parameters may have annotations of the form "``: expression``" following the
-parameter name.  Any parameter may have an annotation even those of the form
+Parameters may have an :term:`annotation <function annotation>` of the form "``: expression``"
+following the parameter name.  Any parameter may have an annotation, even those of the form
 ``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
 the form "``-> expression``" after the parameter list.  These annotations can be
 any valid Python expression.  The presence of annotations does not change the
