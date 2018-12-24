@@ -272,21 +272,6 @@ class Squeezer:
                 if s_len < auto_squeeze_min_lines:
                     return write(s, tags)
 
-                # Try another quick check to avoid calculating the actual
-                # number of lines, but only if the given text is not too
-                # long for it to possibly succeed.
-                line_width = self.get_line_width()
-                if s_len < auto_squeeze_min_lines * line_width:
-                    # Check lower bound: Assume that all non-newline
-                    # characters are in one long line, and that the
-                    # tab width is 8.
-                    n_newlines = s.count('\n')
-                    n_tabs = s.count('\t')
-                    n_lines_lower_bound = n_newlines + \
-                        (s_len - n_newlines + n_tabs * 7) // line_width
-                    if n_lines_lower_bound < auto_squeeze_min_lines:
-                        return write(s, tags)
-
                 numoflines = self.count_lines(s)
                 if numoflines < self.auto_squeeze_min_lines:
                     return write(s, tags)
