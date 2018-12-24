@@ -211,15 +211,7 @@ Functions
 
    .. note::
 
-      The date field is two characters long, and is space padded.
-
-   For example:
-
-      >>> import time
-      >>> time.ctime(1545642769)
-      'Mon Dec 24 14:42:49 2018'
-      >>> time.ctime(654321)
-      'Thu Jan  8 19:15:21 1970'
+      The date field is two characters long, and is space padded. E.g. - 'Thu Jan  8 19:15:21 1970'
 
 
 .. function:: get_clock_info(name)
