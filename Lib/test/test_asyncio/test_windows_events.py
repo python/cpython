@@ -56,8 +56,6 @@ class ProactorLoopCtrlC(test_utils.TestCase):
             self.fail("should not fall through 'run_forever'")
         except KeyboardInterrupt:
             pass
-        except BaseException as e:
-            self.fail(repr(e))
         finally:
             l.close()
 
