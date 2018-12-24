@@ -50,10 +50,10 @@ class ProactorLoopCtrlC(test_utils.TestCase):
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
         l = asyncio.get_event_loop()
         try:
-            t = threading.Thread(target=SIGINT_after_delay, daemon=False)
+            t = threading.Thread(target=SIGINT_after_delay)
             t.start()
             l.run_forever()
-            self.fail("should not fall though 'run_forever'")
+            self.fail("should not fall through 'run_forever'")
         except KeyboardInterrupt:
             pass
         except BaseException as e:
