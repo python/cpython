@@ -133,6 +133,7 @@ Functions
 
    .. note::
 
+      The date field is two characters long, and is space padded.
       Unlike the C function of the same name, :func:`asctime` does not add a
       trailing newline.
 
@@ -207,6 +208,18 @@ Functions
    local time. If *secs* is not provided or :const:`None`, the current time as
    returned by :func:`.time` is used.  ``ctime(secs)`` is equivalent to
    ``asctime(localtime(secs))``. Locale information is not used by :func:`ctime`.
+
+   .. note::
+
+      The date field is two characters long, and is space padded.
+
+   For example:
+
+      >>> import time
+      >>> time.ctime()
+      'Mon Dec 24 13:06:10 2018'
+      >>> time.ctime(654321)
+      'Thu Jan  8 19:15:21 1970'
 
 
 .. function:: get_clock_info(name)
