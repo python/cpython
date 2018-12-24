@@ -4,6 +4,7 @@ import socket
 import sys
 import subprocess
 import time
+import threading
 import unittest
 from unittest import mock
 
@@ -11,6 +12,7 @@ if sys.platform != 'win32':
     raise unittest.SkipTest('Windows only')
 
 import _overlapped
+import _testcapi
 import _winapi
 
 import asyncio
@@ -38,61 +40,26 @@ class UpperProto(asyncio.Protocol):
 
 
 class ProactorLoopCtrlC(test_utils.TestCase):
+    
     def test_ctrl_c(self):
-        code = """if 1:
-        import asyncio
-        import ctypes
-        import sys
-        from ctypes import wintypes
 
-        # child process is created with CREATE_NEW_PROCESS_GROUP flag
-        # an implicit call to SetConsoleCtrlHandler(NULL,TRUE) will be made
-        # on behalf of new process which will disable CTRL-C in it
-        # call SetConsoleCtrlHandler(NULL, False) to restore normal processing
-        SetConsoleCtrlHandler = ctypes.windll.kernel32.SetConsoleCtrlHandler
-        SetConsoleCtrlHandler.argtypes = (ctypes.POINTER(ctypes.c_voidp), wintypes.BOOL)
-        SetConsoleCtrlHandler.restype = wintypes.BOOL
-        SetConsoleCtrlHandler(None, False)
+        def SIGINT_after_delay():
+            time.sleep(1)
+            _testcapi.raise_signal(signal.SIGINT)
 
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
         l = asyncio.get_event_loop()
-
-        def step(n):
-            try:
-                print(n)
-                sys.stdout.flush()
-                l.run_forever()
-                sys.exit(100)
-            except KeyboardInterrupt:
-                # ok
-                pass
-            except:
-                sys.exit(200)
-
-        step(1)
-        step(2)
-        sys.exit(255)
-        """
-        def step(p, expected):
-            s = p.stdout.readline()
-            self.assertEqual(s, expected)
-            # ensure that child process gets to run_forever
-            time.sleep(0.5)
-            os.kill(p.pid, signal.CTRL_C_EVENT)
-
-        exit_code = None
-        flags = subprocess.CREATE_NEW_PROCESS_GROUP
-        with spawn_python("-c", code, creationflags=flags) as p:
-            try:
-                step(p, b"1\r\n")
-                step(p, b"2\r\n")
-                exit_code = p.wait(timeout=5)
-            except Exception as e:
-                p.kill()
-                p.wait()
-                stdout, stderr = p.communicate()
-                self.fail(f"{stdout: stdout}\nstderr:{stderr}")
-        self.assertEqual(exit_code, 255)
+        try:
+            t = threading.Thread(target=SIGINT_after_delay, daemon=False)
+            t.start()
+            l.run_forever()
+            self.fail("should not fall though 'run_forever'")
+        except KeyboardInterrupt:
+            pass
+        except BaseException as e:
+            self.fail(repr(e))
+        finally:
+            l.close()
 
 
 class ProactorTests(test_utils.TestCase):
