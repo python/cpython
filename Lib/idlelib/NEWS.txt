@@ -3,6 +3,8 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-35208: Squeezer now counts wrapped lines before newlines.
+
 bpo-35555: Gray out Code Context menu entry when it's not applicable.
 
 bpo-22703: Improve the Code Context and Zoom Height menu labels.
