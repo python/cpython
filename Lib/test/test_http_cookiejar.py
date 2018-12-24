@@ -415,6 +415,7 @@ class CookieTests(unittest.TestCase):
             ("http://foo.bar.com/", ".foo.bar.com", True),
             ("http://foo.bar.com/", "foo.bar.com", True),
             ("http://foo.bar.com/", ".bar.com", True),
+            ("http://foo.bar.com/", "bar.com", True),
             ("http://foo.bar.com/", "com", True),
             ("http://foo.com/", "rhubarb.foo.com", False),
             ("http://foo.com/", ".foo.com", True),
