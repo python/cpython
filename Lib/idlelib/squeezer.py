@@ -46,6 +46,14 @@ def count_lines_with_wrapping(s, linewidth=80, tabwidth=8):
 
         # deal with tab or newline
         if s[pos] == '\n':
+            # Avoid the `current_column == 0` edge-case, and while we're at it,
+            # don't bother adding 0.
+            if current_column > linewidth:
+                # If the current column was exactly linewidth, divmod would give
+                # (1,0), even though a new line hadn't yet been started. The same
+                # is true if length is any exact multiple of linewidth. Therefore,
+                # subtract 1 before dividing a non-empty line.
+                linecount += (current_column - 1) // linewidth
             linecount += 1
             current_column = 0
         else:
@@ -59,17 +67,6 @@ def count_lines_with_wrapping(s, linewidth=80, tabwidth=8):
                 current_column = tabwidth
 
         pos += 1 # after the tab or newline
-
-        # avoid divmod(-1, linewidth)
-        if current_column > 0:
-            # If the length was exactly linewidth, divmod would give (1,0),
-            # even though a new line hadn't yet been started. The same is true
-            # if length is any exact multiple of linewidth. Therefore, subtract
-            # 1 before doing divmod, and later add 1 to the column to
-            # compensate.
-            lines, column = divmod(current_column - 1, linewidth)
-            linecount += lines
-            current_column = column + 1
 
     # process remaining chars (no more tabs or newlines)
     current_column += len(s) - pos
@@ -106,7 +103,8 @@ class ExpandingButton(tk.Button):
         # before the iomark
         self.base_text = editwin.per.bottom
 
-        button_text = "Squeezed text (%d lines)." % self.numoflines
+        line_plurality = "lines" if numoflines != 1 else "line"
+        button_text = f"Squeezed text ({numoflines} {line_plurality})."
         tk.Button.__init__(self, text, text=button_text,
                            background="#FFFFC0", activebackground="#FFFFE0")
 
