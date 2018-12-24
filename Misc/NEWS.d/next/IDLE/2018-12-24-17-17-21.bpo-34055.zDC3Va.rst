@@ -1,0 +1,1 @@
+IDLE Shell: Fix printing smart indent on every line
