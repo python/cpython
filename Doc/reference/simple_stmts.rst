@@ -325,8 +325,8 @@ Annotated assignment statements
    single: statement; assignment, annotated
    single: : (colon); annotated variable
 
-Annotation assignment is the combination, in a single statement,
-of a variable or attribute annotation and an optional assignment statement:
+:term:`Annotation <variable annotation>` assignment is the combination, in a single
+statement, of a variable or attribute annotation and an optional assignment statement:
 
 .. productionlist::
    annotated_assignment_stmt: `augtarget` ":" `expression` ["=" `expression`]
