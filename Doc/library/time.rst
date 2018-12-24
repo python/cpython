@@ -216,8 +216,8 @@ Functions
    For example:
 
       >>> import time
-      >>> time.ctime()
-      'Mon Dec 24 13:06:10 2018'
+      >>> time.ctime(1545642769)
+      'Mon Dec 24 14:42:49 2018'
       >>> time.ctime(654321)
       'Thu Jan  8 19:15:21 1970'
 
