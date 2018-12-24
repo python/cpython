@@ -203,7 +203,7 @@ class Squeezer:
     This avoids IDLE's shell slowing down considerably, and even becoming
     completely unresponsive, when very long outputs are written.
     """
-    _instance_weakrefs = []
+    _instance_weakref = None
 
     @classmethod
     def reload(cls):
@@ -213,16 +213,13 @@ class Squeezer:
             type="int", default=50,
         )
 
-        # Loading the font info requires a Tk root, and we don't want to
-        # rely on Tkinter's "default root", so each instance will load
-        # font info separately using its editor windows's Tk root.
-        new_instance_weakrefs = []
-        for inst_ref in cls._instance_weakrefs:
-            inst = inst_ref()
-            if inst is not None:
-                inst.load_font()
-                new_instance_weakrefs.append(inst_ref)
-        cls._instance_weakrefs = new_instance_weakrefs
+        # Loading the font info requires a Tk root. IDLE doesn't rely
+        # on Tkinter's "default root", so the instance will reload
+        # font info using its editor windows's Tk root.
+        if cls._instance_weakref is not None:
+            instance = cls._instance_weakref()
+            if instance is not None:
+                instance.load_font()
 
     def __init__(self, editwin):
         """Initialize settings for Squeezer.
@@ -243,7 +240,7 @@ class Squeezer:
         # the actual Text widget. Squeezer, however, needs to make such changes.
         self.base_text = editwin.per.bottom
 
-        self._instance_weakrefs.append(weakref.ref(self))
+        self._instance_weakref = weakref.ref(self)
         self.load_font()
 
         # Twice the text widget's border width and internal padding;
@@ -254,43 +251,42 @@ class Squeezer:
         )
 
         self.expandingbuttons = []
-        from idlelib.pyshell import PyShell  # done here to avoid import cycle
-        if isinstance(editwin, PyShell):
-            # If we get a PyShell instance, replace its write method with a
-            # wrapper, which inserts an ExpandingButton instead of a long text.
-            def mywrite(s, tags=(), write=editwin.write):
-                # Only auto-squeeze text which has just the "stdout" tag.
-                if tags != "stdout":
-                    return write(s, tags)
 
-                # Only auto-squeeze text with at least the minimum
-                # configured number of lines.
+        # Replace the PyShell instance's write method with a wrapper,
+        # which inserts an ExpandingButton instead of a long text.
+        def mywrite(s, tags=(), write=editwin.write):
+            # Only auto-squeeze text which has just the "stdout" tag.
+            if tags != "stdout":
+                return write(s, tags)
 
-                # First, a very quick check to skip very short texts.
-                s_len = len(s)
-                auto_squeeze_min_lines = self.auto_squeeze_min_lines
-                if s_len < auto_squeeze_min_lines:
-                    return write(s, tags)
+            # Only auto-squeeze text with at least the minimum
+            # configured number of lines.
 
-                numoflines = self.count_lines(s)
-                if numoflines < self.auto_squeeze_min_lines:
-                    return write(s, tags)
+            # First, a very quick check to skip very short texts.
+            s_len = len(s)
+            auto_squeeze_min_lines = self.auto_squeeze_min_lines
+            if s_len < auto_squeeze_min_lines:
+                return write(s, tags)
 
-                # create an ExpandingButton instance
-                expandingbutton = ExpandingButton(s, tags, numoflines, self)
+            numoflines = self.count_lines(s)
+            if numoflines < self.auto_squeeze_min_lines:
+                return write(s, tags)
 
-                # insert the ExpandingButton into the Text widget
-                text.mark_gravity("iomark", tk.RIGHT)
-                text.window_create("iomark", window=expandingbutton,
-                                   padx=3, pady=5)
-                text.see("iomark")
-                text.update()
-                text.mark_gravity("iomark", tk.LEFT)
+            # create an ExpandingButton instance
+            expandingbutton = ExpandingButton(s, tags, numoflines, self)
 
-                # add the ExpandingButton to the Squeezer's list
-                self.expandingbuttons.append(expandingbutton)
+            # insert the ExpandingButton into the Text widget
+            text.mark_gravity("iomark", tk.RIGHT)
+            text.window_create("iomark", window=expandingbutton,
+                               padx=3, pady=5)
+            text.see("iomark")
+            text.update()
+            text.mark_gravity("iomark", tk.LEFT)
 
-            editwin.write = mywrite
+            # add the ExpandingButton to the Squeezer's list
+            self.expandingbuttons.append(expandingbutton)
+
+        editwin.write = mywrite
 
     def count_lines(self, s):
         """Count the number of lines in a given text.
