@@ -1,0 +1,38 @@
+.. bpo: 31715
+.. date: 2018-08-15-16-22-30
+.. nonce: Iw8jS8
+.. release date: 2018-12-23
+.. section: Library
+
+Associate ``.mjs`` file extension with ``application/javascript`` MIME Type.
+
+..
+
+.. bpo: 35499
+.. date: 2018-12-14-19-36-05
+.. nonce: 9yAldM
+.. section: Build
+
+``make profile-opt`` no longer replaces ``CFLAGS_NODIST`` with ``CFLAGS``.
+It now adds profile-guided optimization (PGO) flags to ``CFLAGS_NODIST``:
+existing ``CFLAGS_NODIST`` flags are kept.
+
+..
+
+.. bpo: 35257
+.. date: 2018-12-05-22-28-40
+.. nonce: dmcd_s
+.. section: Build
+
+Avoid leaking the linker flags from Link Time Optimizations (LTO) into
+distutils when compiling C extensions.
+
+..
+
+.. bpo: 35259
+.. date: 2018-11-22-13-52-36
+.. nonce: p07c61
+.. section: C API
+
+Conditionally declare :c:func:`Py_FinalizeEx()` (new in 3.6) based on
+Py_LIMITED_API. Patch by Arthur Neufeld.
