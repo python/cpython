@@ -40,7 +40,7 @@ class UpperProto(asyncio.Protocol):
 
 
 class ProactorLoopCtrlC(test_utils.TestCase):
-    
+
     def test_ctrl_c(self):
 
         def SIGINT_after_delay():
