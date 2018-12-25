@@ -3172,8 +3172,8 @@ class PyBytesObject_converter(CConverter):
                     _PyArg_BadArgument("{{name}}", "bytes", {argname});
                     goto exit;
                 }}}}
-                {paramname} = {argname};
-                """.format(argname=argname, paramname=self.name)
+                {paramname} = ({type}){argname};
+                """.format(argname=argname, paramname=self.name, type=self.type)
         return super().parse_arg(argname)
 
 class PyByteArrayObject_converter(CConverter):
@@ -3188,8 +3188,8 @@ class PyByteArrayObject_converter(CConverter):
                     _PyArg_BadArgument("{{name}}", "bytearray", {argname});
                     goto exit;
                 }}}}
-                {paramname} = {argname};
-                """.format(argname=argname, paramname=self.name)
+                {paramname} = ({type}){argname};
+                """.format(argname=argname, paramname=self.name, type=self.type)
         return super().parse_arg(argname)
 
 class unicode_converter(CConverter):

@@ -205,7 +205,7 @@ test_PyBytesObject_converter(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("test_PyBytesObject_converter", "bytes", arg);
         goto exit;
     }
-    a = arg;
+    a = (PyBytesObject *)arg;
     return_value = test_PyBytesObject_converter_impl(module, a);
 
 exit:
@@ -214,7 +214,7 @@ exit:
 
 static PyObject *
 test_PyBytesObject_converter_impl(PyObject *module, PyBytesObject *a)
-/*[clinic end generated code: output=c82deb2d473a060b input=12b10c7cb5750400]*/
+/*[clinic end generated code: output=fd69d6df4d26c853 input=12b10c7cb5750400]*/
 
 /*[clinic input]
 test_PyByteArrayObject_converter
@@ -245,7 +245,7 @@ test_PyByteArrayObject_converter(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("test_PyByteArrayObject_converter", "bytearray", arg);
         goto exit;
     }
-    a = arg;
+    a = (PyByteArrayObject *)arg;
     return_value = test_PyByteArrayObject_converter_impl(module, a);
 
 exit:
@@ -254,7 +254,7 @@ exit:
 
 static PyObject *
 test_PyByteArrayObject_converter_impl(PyObject *module, PyByteArrayObject *a)
-/*[clinic end generated code: output=0dc2c6061de4803e input=5a657da535d194ae]*/
+/*[clinic end generated code: output=d309c909182c4183 input=5a657da535d194ae]*/
 
 /*[clinic input]
 test_unicode_converter
