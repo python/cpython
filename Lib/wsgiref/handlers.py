@@ -233,8 +233,7 @@ class BaseHandler:
             for name, val in headers:
                 name = self._convert_string_type(name, "Header name")
                 val = self._convert_string_type(val, "Header value")
-                assert not is_hop_by_hop(name),\
-                       f"Hop-by-hop header, '{name}: {val}', not allowed"
+                assert not is_hop_by_hop(name),"Hop-by-hop headers not allowed"
 
         return self.write
 
