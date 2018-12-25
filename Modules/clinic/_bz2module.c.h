@@ -29,7 +29,7 @@ _bz2_BZ2Compressor_compress(BZ2Compressor *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("compress", "contiguous buffer", arg);
+        _PyArg_BadArgument("compress", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _bz2_BZ2Compressor_compress_impl(self, &data);
@@ -190,4 +190,4 @@ _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=21e61bb0c8ecd1e9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=892c6133e97ff840 input=a9049054013a1b77]*/

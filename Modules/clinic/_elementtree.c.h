@@ -20,7 +20,7 @@ _elementtree_Element_append(ElementObject *self, PyObject *arg)
     PyObject *subelement;
 
     if (!PyObject_TypeCheck(arg, &Element_Type)) {
-        _PyArg_BadArgument("append", (&Element_Type)->tp_name, arg);
+        _PyArg_BadArgument("append", 0, (&Element_Type)->tp_name, arg);
         goto exit;
     }
     subelement = arg;
@@ -82,7 +82,7 @@ _elementtree_Element___deepcopy__(ElementObject *self, PyObject *arg)
     PyObject *memo;
 
     if (!PyDict_Check(arg)) {
-        _PyArg_BadArgument("__deepcopy__", "dict", arg);
+        _PyArg_BadArgument("__deepcopy__", 0, "dict", arg);
         goto exit;
     }
     memo = arg;
@@ -441,7 +441,7 @@ _elementtree_Element_insert(ElementObject *self, PyObject *const *args, Py_ssize
         index = ival;
     }
     if (!PyObject_TypeCheck(args[1], &Element_Type)) {
-        _PyArg_BadArgument("insert", (&Element_Type)->tp_name, args[1]);
+        _PyArg_BadArgument("insert", 2, (&Element_Type)->tp_name, args[1]);
         goto exit;
     }
     subelement = args[1];
@@ -533,7 +533,7 @@ _elementtree_Element_remove(ElementObject *self, PyObject *arg)
     PyObject *subelement;
 
     if (!PyObject_TypeCheck(arg, &Element_Type)) {
-        _PyArg_BadArgument("remove", (&Element_Type)->tp_name, arg);
+        _PyArg_BadArgument("remove", 0, (&Element_Type)->tp_name, arg);
         goto exit;
     }
     subelement = arg;
@@ -744,4 +744,4 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e83d23e9db8a5139 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6bbedd24b709dc00 input=a9049054013a1b77]*/

@@ -219,7 +219,7 @@ zlib_Compress_compress(compobject *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("compress", "contiguous buffer", arg);
+        _PyArg_BadArgument("compress", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = zlib_Compress_compress_impl(self, &data);
@@ -505,7 +505,7 @@ zlib_adler32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("adler32", "contiguous buffer", args[0]);
+        _PyArg_BadArgument("adler32", 1, "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -563,7 +563,7 @@ zlib_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("crc32", "contiguous buffer", args[0]);
+        _PyArg_BadArgument("crc32", 1, "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -613,4 +613,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=f7d5129d6c45cc53 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b3acec2384f18782 input=a9049054013a1b77]*/

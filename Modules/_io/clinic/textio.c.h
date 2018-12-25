@@ -251,7 +251,7 @@ _io_TextIOWrapper_write(textio *self, PyObject *arg)
     PyObject *text;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("write", "str", arg);
+        _PyArg_BadArgument("write", 0, "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -548,4 +548,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=34718526a65b3752 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8bdd1035bf878d6f input=a9049054013a1b77]*/

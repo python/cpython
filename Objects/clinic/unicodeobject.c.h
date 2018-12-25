@@ -651,7 +651,7 @@ unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("replace", "str", args[0]);
+        _PyArg_BadArgument("replace", 1, "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -659,7 +659,7 @@ unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     old = args[0];
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("replace", "str", args[1]);
+        _PyArg_BadArgument("replace", 2, "str", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1]) == -1) {
@@ -946,7 +946,7 @@ unicode_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
         goto skip_optional;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("maketrans", "str", args[1]);
+        _PyArg_BadArgument("maketrans", 2, "str", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1]) == -1) {
@@ -957,7 +957,7 @@ unicode_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
         goto skip_optional;
     }
     if (!PyUnicode_Check(args[2])) {
-        _PyArg_BadArgument("maketrans", "str", args[2]);
+        _PyArg_BadArgument("maketrans", 3, "str", args[2]);
         goto exit;
     }
     if (PyUnicode_READY(args[2]) == -1) {
@@ -1068,7 +1068,7 @@ unicode___format__(PyObject *self, PyObject *arg)
     PyObject *format_spec;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("__format__", "str", arg);
+        _PyArg_BadArgument("__format__", 0, "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -1098,4 +1098,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=9522c6e433fb3f6a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=73ad9670e00a2490 input=a9049054013a1b77]*/

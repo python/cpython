@@ -229,7 +229,7 @@ float___getformat__(PyTypeObject *type, PyObject *arg)
     const char *typestr;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("__getformat__", "str", arg);
+        _PyArg_BadArgument("__getformat__", 0, "str", arg);
         goto exit;
     }
     Py_ssize_t typestr_length;
@@ -283,7 +283,7 @@ float___set_format__(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("__set_format__", "str", args[0]);
+        _PyArg_BadArgument("__set_format__", 1, "str", args[0]);
         goto exit;
     }
     Py_ssize_t typestr_length;
@@ -296,7 +296,7 @@ float___set_format__(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("__set_format__", "str", args[1]);
+        _PyArg_BadArgument("__set_format__", 2, "str", args[1]);
         goto exit;
     }
     Py_ssize_t fmt_length;
@@ -333,7 +333,7 @@ float___format__(PyObject *self, PyObject *arg)
     PyObject *format_spec;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("__format__", "str", arg);
+        _PyArg_BadArgument("__format__", 0, "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -345,4 +345,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f0a938f71ecebb58 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2631a60701a8f7d4 input=a9049054013a1b77]*/

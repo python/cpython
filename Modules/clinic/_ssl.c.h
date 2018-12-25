@@ -222,7 +222,7 @@ _ssl__SSLSocket_write(PySSLSocket *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&b, 'C')) {
-        _PyArg_BadArgument("write", "contiguous buffer", arg);
+        _PyArg_BadArgument("write", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _ssl__SSLSocket_write_impl(self, &b);
@@ -420,7 +420,7 @@ _ssl__SSLContext_set_ciphers(PySSLContext *self, PyObject *arg)
     const char *cipherlist;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("set_ciphers", "str", arg);
+        _PyArg_BadArgument("set_ciphers", 0, "str", arg);
         goto exit;
     }
     Py_ssize_t cipherlist_length;
@@ -481,7 +481,7 @@ _ssl__SSLContext__set_npn_protocols(PySSLContext *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&protos, 'C')) {
-        _PyArg_BadArgument("_set_npn_protocols", "contiguous buffer", arg);
+        _PyArg_BadArgument("_set_npn_protocols", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _ssl__SSLContext__set_npn_protocols_impl(self, &protos);
@@ -517,7 +517,7 @@ _ssl__SSLContext__set_alpn_protocols(PySSLContext *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&protos, 'C')) {
-        _PyArg_BadArgument("_set_alpn_protocols", "contiguous buffer", arg);
+        _PyArg_BadArgument("_set_alpn_protocols", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _ssl__SSLContext__set_alpn_protocols_impl(self, &protos);
@@ -876,7 +876,7 @@ _ssl_MemoryBIO_write(PySSLMemoryBIO *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&b, 'C')) {
-        _PyArg_BadArgument("write", "contiguous buffer", arg);
+        _PyArg_BadArgument("write", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _ssl_MemoryBIO_write_impl(self, &b);
@@ -948,7 +948,7 @@ _ssl_RAND_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
             goto exit;
         }
         if (!PyBuffer_IsContiguous(&view, 'C')) {
-            _PyArg_BadArgument("RAND_add", "contiguous buffer", args[0]);
+            _PyArg_BadArgument("RAND_add", 1, "contiguous buffer", args[0]);
             goto exit;
         }
     }
@@ -1284,4 +1284,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=8c7b52b24d37cdbb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ac3fb15ca27500f2 input=a9049054013a1b77]*/

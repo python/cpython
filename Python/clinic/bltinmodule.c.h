@@ -102,7 +102,7 @@ builtin_format(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto skip_optional;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("format", "str", args[1]);
+        _PyArg_BadArgument("format", 2, "str", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1]) == -1) {
@@ -729,4 +729,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a7e253e940b999cf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=11b5cd918bd7eb18 input=a9049054013a1b77]*/
