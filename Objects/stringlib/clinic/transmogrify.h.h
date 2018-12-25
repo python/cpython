@@ -147,12 +147,26 @@ stringlib_zfill(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t width;
 
-    if (!PyArg_Parse(arg, "n:zfill", &width)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
         goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        width = ival;
     }
     return_value = stringlib_zfill_impl(self, width);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d09ba158d470566e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bf2ef501639e1190 input=a9049054013a1b77]*/

@@ -185,7 +185,13 @@ os_ttyname(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "i:ttyname", &fd)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_ttyname_impl(module, fd);
@@ -941,7 +947,7 @@ os__getfullpathname(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     path_t path = PATH_T_INITIALIZE("_getfullpathname", "path", 0, 0);
 
-    if (!PyArg_Parse(arg, "O&:_getfullpathname", path_converter, &path)) {
+    if (!path_converter(arg, &path)) {
         goto exit;
     }
     return_value = os__getfullpathname_impl(module, &path);
@@ -975,7 +981,7 @@ os__getfinalpathname(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     path_t path = PATH_T_INITIALIZE("_getfinalpathname", "path", 0, 0);
 
-    if (!PyArg_Parse(arg, "O&:_getfinalpathname", path_converter, &path)) {
+    if (!path_converter(arg, &path)) {
         goto exit;
     }
     return_value = os__getfinalpathname_impl(module, &path);
@@ -1101,7 +1107,13 @@ os_nice(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int increment;
 
-    if (!PyArg_Parse(arg, "i:nice", &increment)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    increment = _PyLong_AsInt(arg);
+    if (increment == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_nice_impl(module, increment);
@@ -1411,7 +1423,13 @@ os_umask(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int mask;
 
-    if (!PyArg_Parse(arg, "i:umask", &mask)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    mask = _PyLong_AsInt(arg);
+    if (mask == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_umask_impl(module, mask);
@@ -2725,7 +2743,13 @@ os_plock(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int op;
 
-    if (!PyArg_Parse(arg, "i:plock", &op)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    op = _PyLong_AsInt(arg);
+    if (op == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_plock_impl(module, op);
@@ -2756,7 +2780,7 @@ os_setuid(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     uid_t uid;
 
-    if (!PyArg_Parse(arg, "O&:setuid", _Py_Uid_Converter, &uid)) {
+    if (!_Py_Uid_Converter(arg, &uid)) {
         goto exit;
     }
     return_value = os_setuid_impl(module, uid);
@@ -2787,7 +2811,7 @@ os_seteuid(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     uid_t euid;
 
-    if (!PyArg_Parse(arg, "O&:seteuid", _Py_Uid_Converter, &euid)) {
+    if (!_Py_Uid_Converter(arg, &euid)) {
         goto exit;
     }
     return_value = os_seteuid_impl(module, euid);
@@ -2818,7 +2842,7 @@ os_setegid(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     gid_t egid;
 
-    if (!PyArg_Parse(arg, "O&:setegid", _Py_Gid_Converter, &egid)) {
+    if (!_Py_Gid_Converter(arg, &egid)) {
         goto exit;
     }
     return_value = os_setegid_impl(module, egid);
@@ -2915,7 +2939,7 @@ os_setgid(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     gid_t gid;
 
-    if (!PyArg_Parse(arg, "O&:setgid", _Py_Gid_Converter, &gid)) {
+    if (!_Py_Gid_Converter(arg, &gid)) {
         goto exit;
     }
     return_value = os_setgid_impl(module, gid);
@@ -3389,7 +3413,13 @@ os_tcgetpgrp(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "i:tcgetpgrp", &fd)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_tcgetpgrp_impl(module, fd);
@@ -3557,7 +3587,13 @@ os_dup(PyObject *module, PyObject *arg)
     int fd;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "i:dup", &fd)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_dup_impl(module, fd);
@@ -3981,7 +4017,13 @@ os_isatty(PyObject *module, PyObject *arg)
     int fd;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "i:isatty", &fd)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_isatty_impl(module, fd);
@@ -4045,7 +4087,13 @@ os_pipe2(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flags;
 
-    if (!PyArg_Parse(arg, "i:pipe2", &flags)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flags = _PyLong_AsInt(arg);
+    if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_pipe2_impl(module, flags);
@@ -4318,7 +4366,7 @@ os_major(PyObject *module, PyObject *arg)
     dev_t device;
     unsigned int _return_value;
 
-    if (!PyArg_Parse(arg, "O&:major", _Py_Dev_Converter, &device)) {
+    if (!_Py_Dev_Converter(arg, &device)) {
         goto exit;
     }
     _return_value = os_major_impl(module, device);
@@ -4354,7 +4402,7 @@ os_minor(PyObject *module, PyObject *arg)
     dev_t device;
     unsigned int _return_value;
 
-    if (!PyArg_Parse(arg, "O&:minor", _Py_Dev_Converter, &device)) {
+    if (!_Py_Dev_Converter(arg, &device)) {
         goto exit;
     }
     _return_value = os_minor_impl(module, device);
@@ -4654,7 +4702,7 @@ os_unsetenv(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name = NULL;
 
-    if (!PyArg_Parse(arg, "O&:unsetenv", PyUnicode_FSConverter, &name)) {
+    if (!PyUnicode_FSConverter(arg, &name)) {
         goto exit;
     }
     return_value = os_unsetenv_impl(module, name);
@@ -4686,7 +4734,13 @@ os_strerror(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int code;
 
-    if (!PyArg_Parse(arg, "i:strerror", &code)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    code = _PyLong_AsInt(arg);
+    if (code == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_strerror_impl(module, code);
@@ -4716,7 +4770,13 @@ os_WCOREDUMP(PyObject *module, PyObject *arg)
     int status;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "i:WCOREDUMP", &status)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    status = _PyLong_AsInt(arg);
+    if (status == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_WCOREDUMP_impl(module, status);
@@ -5029,7 +5089,13 @@ os_fstatvfs(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "i:fstatvfs", &fd)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_fstatvfs_impl(module, fd);
@@ -5225,7 +5291,7 @@ os_confstr(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int name;
 
-    if (!PyArg_Parse(arg, "O&:confstr", conv_confstr_confname, &name)) {
+    if (!conv_confstr_confname(arg, &name)) {
         goto exit;
     }
     return_value = os_confstr_impl(module, name);
@@ -5257,7 +5323,7 @@ os_sysconf(PyObject *module, PyObject *arg)
     int name;
     long _return_value;
 
-    if (!PyArg_Parse(arg, "O&:sysconf", conv_sysconf_confname, &name)) {
+    if (!conv_sysconf_confname(arg, &name)) {
         goto exit;
     }
     _return_value = os_sysconf_impl(module, name);
@@ -5730,8 +5796,22 @@ os_urandom(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t size;
 
-    if (!PyArg_Parse(arg, "n:urandom", &size)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
         goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        size = ival;
     }
     return_value = os_urandom_impl(module, size);
 
@@ -5780,7 +5860,13 @@ os_get_inheritable(PyObject *module, PyObject *arg)
     int fd;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "i:get_inheritable", &fd)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_get_inheritable_impl(module, fd);
@@ -5915,7 +6001,13 @@ os_get_blocking(PyObject *module, PyObject *arg)
     int fd;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "i:get_blocking", &fd)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_get_blocking_impl(module, fd);
@@ -6753,4 +6845,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=87a3ebadb91bc46b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b02036b2a269b1db input=a9049054013a1b77]*/
