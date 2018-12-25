@@ -4,9 +4,8 @@
 .. module:: os.path
    :synopsis: Operations on pathnames.
 
-**Source code:** :source:`Lib/posixpath.py` (for POSIX),
-:source:`Lib/ntpath.py` (for Windows NT),
-and :source:`Lib/macpath.py` (for Macintosh)
+**Source code:** :source:`Lib/posixpath.py` (for POSIX) and
+:source:`Lib/ntpath.py` (for Windows NT).
 
 .. index:: single: path; operations
 
@@ -52,7 +51,6 @@ the :mod:`glob` module.)
 
    * :mod:`posixpath` for UNIX-style paths
    * :mod:`ntpath` for Windows paths
-   * :mod:`macpath` for old-style MacOS paths
 
 
 .. versionchanged:: 3.8
@@ -93,7 +91,7 @@ the :mod:`glob` module.)
    pathnames, or if *paths* is empty.  Unlike :func:`commonprefix`, this
    returns a valid path.
 
-   Availability: Unix, Windows
+   .. availability:: Unix, Windows.
 
    .. versionadded:: 3.5
 
@@ -160,6 +158,8 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
+.. index:: single: ~ (tilde); home directory expansion
+
 .. function:: expanduser(path)
 
    On Unix and Windows, return the argument with an initial component of ``~`` or
@@ -183,6 +183,9 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+.. index::
+   single: $ (dollar); environment variables expansion
+   single: % (percent); environment variables expansion (Windows)
 
 .. function:: expandvars(path)
 
@@ -320,7 +323,7 @@ the :mod:`glob` module.)
    Normalize the case of a pathname.  On Unix and Mac OS X, this returns the
    path unchanged; on case-insensitive filesystems, it converts the path to
    lowercase.  On Windows, it also converts forward slashes to backward slashes.
-   Raise a TypeError if the type of *path* is not ``str`` or ``bytes`` (directly
+   Raise a :exc:`TypeError` if the type of *path* is not ``str`` or ``bytes`` (directly
    or indirectly through the :class:`os.PathLike` interface).
 
    .. versionchanged:: 3.6
@@ -357,7 +360,7 @@ the :mod:`glob` module.)
 
    *start* defaults to :attr:`os.curdir`.
 
-   Availability: Unix, Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -369,7 +372,7 @@ the :mod:`glob` module.)
    This is determined by the device number and i-node number and raises an
    exception if an :func:`os.stat` call on either pathname fails.
 
-   Availability: Unix, Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
       Added Windows support.
@@ -385,7 +388,7 @@ the :mod:`glob` module.)
 
    Return ``True`` if the file descriptors *fp1* and *fp2* refer to the same file.
 
-   Availability: Unix, Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
       Added Windows support.
@@ -401,7 +404,7 @@ the :mod:`glob` module.)
    :func:`os.lstat`, or :func:`os.stat`.  This function implements the
    underlying comparison used by :func:`samefile` and :func:`sameopenfile`.
 
-   Availability: Unix, Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.4
       Added Windows support.

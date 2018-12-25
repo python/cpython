@@ -1,4 +1,5 @@
 from collections import namedtuple
+from textwrap import dedent
 from tkinter import Text, Tk
 import unittest
 from unittest.mock import Mock, NonCallableMagicMock, patch, sentinel, ANY
@@ -76,6 +77,28 @@ class CountLinesTest(unittest.TestCase):
         self.check(expected=2, text='\t' * 6, linewidth=12, tabwidth=4)
         self.check(expected=3, text='\t' * 6, linewidth=11, tabwidth=4)
         self.check(expected=2, text='\t' * 6, linewidth=13, tabwidth=4)
+
+    def test_empty_lines(self):
+        self.check(expected=1, text='\n', linewidth=80, tabwidth=8)
+        self.check(expected=2, text='\n\n', linewidth=80, tabwidth=8)
+        self.check(expected=10, text='\n' * 10, linewidth=80, tabwidth=8)
+
+    def test_long_line(self):
+        self.check(expected=3, text='a' * 200, linewidth=80, tabwidth=8)
+        self.check(expected=3, text='a' * 200 + '\n', linewidth=80, tabwidth=8)
+
+    def test_several_lines_different_lengths(self):
+        text = dedent("""\
+            13 characters
+            43 is the number of characters on this line
+
+            7 chars
+            13 characters""")
+        self.check(expected=5, text=text, linewidth=80, tabwidth=8)
+        self.check(expected=5, text=text + '\n', linewidth=80, tabwidth=8)
+        self.check(expected=6, text=text, linewidth=40, tabwidth=8)
+        self.check(expected=7, text=text, linewidth=20, tabwidth=8)
+        self.check(expected=11, text=text, linewidth=10, tabwidth=8)
 
 
 class SqueezerTest(unittest.TestCase):

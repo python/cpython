@@ -1,8 +1,21 @@
 #ifndef Py_FILEUTILS_H
 #define Py_FILEUTILS_H
-
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
+PyAPI_FUNC(wchar_t *) Py_DecodeLocale(
+    const char *arg,
+    size_t *size);
+
+PyAPI_FUNC(char*) Py_EncodeLocale(
+    const wchar_t *text,
+    size_t *error_pos);
+
+PyAPI_FUNC(char*) _Py_EncodeLocaleRaw(
+    const wchar_t *text,
+    size_t *error_pos);
 #endif
 
 
@@ -20,47 +33,7 @@ typedef enum {
 } _Py_error_handler;
 
 PyAPI_FUNC(_Py_error_handler) _Py_GetErrorHandler(const char *errors);
-#endif
 
-
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
-PyAPI_FUNC(wchar_t *) Py_DecodeLocale(
-    const char *arg,
-    size_t *size);
-
-PyAPI_FUNC(char*) Py_EncodeLocale(
-    const wchar_t *text,
-    size_t *error_pos);
-
-PyAPI_FUNC(char*) _Py_EncodeLocaleRaw(
-    const wchar_t *text,
-    size_t *error_pos);
-#endif
-
-#ifdef Py_BUILD_CORE
-PyAPI_FUNC(int) _Py_DecodeUTF8Ex(
-    const char *arg,
-    Py_ssize_t arglen,
-    wchar_t **wstr,
-    size_t *wlen,
-    const char **reason,
-    _Py_error_handler errors);
-
-PyAPI_FUNC(int) _Py_EncodeUTF8Ex(
-    const wchar_t *text,
-    char **str,
-    size_t *error_pos,
-    const char **reason,
-    int raw_malloc,
-    _Py_error_handler errors);
-
-PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(
-    const char *arg,
-    Py_ssize_t arglen);
-#endif
-
-
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
 PyAPI_FUNC(int) _Py_DecodeLocaleEx(
     const char *arg,
     wchar_t **wstr,
@@ -80,6 +53,19 @@ PyAPI_FUNC(int) _Py_EncodeLocaleEx(
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
+
+#if defined(MS_WINDOWS) || defined(__APPLE__)
+    /* On Windows, the count parameter of read() is an int (bpo-9015, bpo-9611).
+       On macOS 10.13, read() and write() with more than INT_MAX bytes
+       fail with EINVAL (bpo-24658). */
+#   define _PY_READ_MAX  INT_MAX
+#   define _PY_WRITE_MAX INT_MAX
+#else
+    /* write() should truncate the input to PY_SSIZE_T_MAX bytes,
+       but it's safer to do it ourself to have a portable behaviour */
+#   define _PY_READ_MAX  PY_SSIZE_T_MAX
+#   define _PY_WRITE_MAX PY_SSIZE_T_MAX
+#endif
 
 #ifdef MS_WINDOWS
 struct _Py_stat_struct {
@@ -184,20 +170,9 @@ PyAPI_FUNC(int) _Py_get_blocking(int fd);
 PyAPI_FUNC(int) _Py_set_blocking(int fd, int blocking);
 #endif   /* !MS_WINDOWS */
 
-PyAPI_FUNC(int) _Py_GetLocaleconvNumeric(
-    PyObject **decimal_point,
-    PyObject **thousands_sep,
-    const char **grouping);
-
 #endif   /* Py_LIMITED_API */
-
-
-#ifdef Py_BUILD_CORE
-PyAPI_FUNC(int) _Py_GetForceASCII(void);
-#endif
 
 #ifdef __cplusplus
 }
 #endif
-
 #endif /* !Py_FILEUTILS_H */

@@ -44,7 +44,11 @@ The module defines the following functions:
 
    * if *tb* is not ``None``, it prints a header ``Traceback (most recent
      call last):``
+
    * it prints the exception *etype* and *value* after the stack trace
+
+   .. index:: single: ^ (caret); marker
+
    * if *type(value)* is :exc:`SyntaxError` and *value* has the appropriate
      format, it prints the line where the syntax error occurred with a caret
      indicating the approximate position of the error.

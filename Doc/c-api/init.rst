@@ -156,7 +156,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    See :pep:`529` for more details.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
 .. c:var:: Py_LegacyWindowsStdioFlag
 
@@ -168,7 +168,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    See :pep:`528` for more details.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
 .. c:var:: Py_NoSiteFlag
 

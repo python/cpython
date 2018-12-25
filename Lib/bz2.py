@@ -66,7 +66,7 @@ class BZ2File(_compression.BaseStream):
         self._mode = _MODE_CLOSED
 
         if buffering is not _sentinel:
-            warnings.warn("Use of 'buffering' argument is deprecated  and ignored"
+            warnings.warn("Use of 'buffering' argument is deprecated and ignored "
                           "since Python 3.0.",
                           DeprecationWarning,
                           stacklevel=2)

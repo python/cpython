@@ -1,0 +1,67 @@
+jobs:
+- job: Prebuild
+  displayName: Pre-build checks
+
+  pool:
+    vmImage: ubuntu-16.04
+
+  steps:
+  - template: ./prebuild-checks.yml
+
+
+- job: Windows_Appx_Tests
+  displayName: Windows Appx Tests
+  dependsOn: Prebuild
+  condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
+
+  pool:
+    vmImage: vs2017-win2016
+
+  strategy:
+    matrix:
+      win64:
+        arch: amd64
+        buildOpt: '-p x64'
+        testRunTitle: '$(Build.SourceBranchName)-win64-appx'
+        testRunPlatform: win64
+    maxParallel: 2
+
+  steps:
+  - checkout: self
+    clean: true
+    fetchDepth: 5
+
+  - powershell: |
+      # Relocate build outputs outside of source directory to make cleaning faster
+      Write-Host '##vso[task.setvariable variable=Py_IntDir]$(Build.BinariesDirectory)\obj'
+      # UNDONE: Do not build to a different directory because of broken tests
+      Write-Host '##vso[task.setvariable variable=Py_OutDir]$(Build.SourcesDirectory)\PCbuild'
+      Write-Host '##vso[task.setvariable variable=EXTERNAL_DIR]$(Build.BinariesDirectory)\externals'
+    displayName: Update build locations
+
+  - script: PCbuild\build.bat -e $(buildOpt)
+    displayName: 'Build CPython'
+    env:
+      IncludeUwp: true
+
+  - script: python.bat PC\layout -vv -s "$(Build.SourcesDirectory)" -b "$(Py_OutDir)\$(arch)" -t "$(Py_IntDir)\layout-tmp-$(arch)" --copy "$(Py_IntDir)\layout-$(arch)" --precompile --preset-appx --include-tests
+    displayName: 'Create APPX layout'
+
+  - script: .\python.exe -m test.pythoninfo
+    workingDirectory: $(Py_IntDir)\layout-$(arch)
+    displayName: 'Display build info'
+
+  - script: .\python.exe -m test -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0 --junit-xml="$(Build.BinariesDirectory)\test-results.xml" --tempdir "$(Py_IntDir)\tmp-$(arch)"
+    workingDirectory: $(Py_IntDir)\layout-$(arch)
+    displayName: 'Tests'
+    env:
+      PREFIX: $(Py_IntDir)\layout-$(arch)
+
+  - task: PublishTestResults@2
+    displayName: 'Publish Test Results'
+    inputs:
+      testResultsFiles: '$(Build.BinariesDirectory)\test-results.xml'
+      mergeTestResults: true
+      testRunTitle: $(testRunTitle)
+      platform: $(testRunPlatform)
+    condition: succeededOrFailed()

@@ -9,7 +9,7 @@ PyDoc_STRVAR(math_gcd__doc__,
 "greatest common divisor of x and y");
 
 #define MATH_GCD_METHODDEF    \
-    {"gcd", (PyCFunction)math_gcd, METH_FASTCALL, math_gcd__doc__},
+    {"gcd", (PyCFunction)(void(*)(void))math_gcd, METH_FASTCALL, math_gcd__doc__},
 
 static PyObject *
 math_gcd_impl(PyObject *module, PyObject *a, PyObject *b);
@@ -127,7 +127,7 @@ PyDoc_STRVAR(math_ldexp__doc__,
 "This is essentially the inverse of frexp().");
 
 #define MATH_LDEXP_METHODDEF    \
-    {"ldexp", (PyCFunction)math_ldexp, METH_FASTCALL, math_ldexp__doc__},
+    {"ldexp", (PyCFunction)(void(*)(void))math_ldexp, METH_FASTCALL, math_ldexp__doc__},
 
 static PyObject *
 math_ldexp_impl(PyObject *module, double x, PyObject *i);
@@ -249,7 +249,7 @@ PyDoc_STRVAR(math_fmod__doc__,
 "x % y may differ.");
 
 #define MATH_FMOD_METHODDEF    \
-    {"fmod", (PyCFunction)math_fmod, METH_FASTCALL, math_fmod__doc__},
+    {"fmod", (PyCFunction)(void(*)(void))math_fmod, METH_FASTCALL, math_fmod__doc__},
 
 static PyObject *
 math_fmod_impl(PyObject *module, double x, double y);
@@ -284,7 +284,7 @@ PyDoc_STRVAR(math_dist__doc__,
 "    sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))");
 
 #define MATH_DIST_METHODDEF    \
-    {"dist", (PyCFunction)math_dist, METH_FASTCALL, math_dist__doc__},
+    {"dist", (PyCFunction)(void(*)(void))math_dist, METH_FASTCALL, math_dist__doc__},
 
 static PyObject *
 math_dist_impl(PyObject *module, PyObject *p, PyObject *q);
@@ -314,7 +314,7 @@ PyDoc_STRVAR(math_pow__doc__,
 "Return x**y (x to the power of y).");
 
 #define MATH_POW_METHODDEF    \
-    {"pow", (PyCFunction)math_pow, METH_FASTCALL, math_pow__doc__},
+    {"pow", (PyCFunction)(void(*)(void))math_pow, METH_FASTCALL, math_pow__doc__},
 
 static PyObject *
 math_pow_impl(PyObject *module, double x, double y);
@@ -499,7 +499,7 @@ PyDoc_STRVAR(math_isclose__doc__,
 "only close to themselves.");
 
 #define MATH_ISCLOSE_METHODDEF    \
-    {"isclose", (PyCFunction)math_isclose, METH_FASTCALL|METH_KEYWORDS, math_isclose__doc__},
+    {"isclose", (PyCFunction)(void(*)(void))math_isclose, METH_FASTCALL|METH_KEYWORDS, math_isclose__doc__},
 
 static int
 math_isclose_impl(PyObject *module, double a, double b, double rel_tol,
@@ -530,4 +530,4 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=237ea62836db1146 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=da4b9940a5cb0188 input=a9049054013a1b77]*/

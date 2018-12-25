@@ -1,4 +1,5 @@
 import copy
+import re
 import sys
 import tempfile
 
@@ -8,7 +9,7 @@ from unittest import mock
 from unittest.mock import (
     call, DEFAULT, patch, sentinel,
     MagicMock, Mock, NonCallableMock,
-    NonCallableMagicMock, _CallList,
+    NonCallableMagicMock, _Call, _CallList,
     create_autospec
 )
 
@@ -407,6 +408,14 @@ class MockTest(unittest.TestCase):
             lambda: mock.assert_called_once_with('bob', 'bar', baz=2)
         )
 
+    def test_assert_called_once_with_call_list(self):
+        m = Mock()
+        m(1)
+        m(2)
+        self.assertRaisesRegex(AssertionError,
+            re.escape("Calls: [call(1), call(2)]"),
+            lambda: m.assert_called_once_with(2))
+
 
     def test_assert_called_once_with_function_spec(self):
         def f(a, b, c, d=None):
@@ -549,6 +558,16 @@ class MockTest(unittest.TestCase):
         real.assert_called_with(1, 2, fish=3)
 
 
+    def test_wraps_prevents_automatic_creation_of_mocks(self):
+        class Real(object):
+            pass
+
+        real = Real()
+        mock = Mock(wraps=real)
+
+        self.assertRaises(AttributeError, lambda: mock.new_attr())
+
+
     def test_wraps_call_with_nondefault_return_value(self):
         real = Mock()
 
@@ -573,6 +592,118 @@ class MockTest(unittest.TestCase):
         result = mock.attribute.frog(1, 2, fish=3)
         Real.attribute.frog.assert_called_with(1, 2, fish=3)
         self.assertEqual(result, Real.attribute.frog())
+
+
+    def test_customize_wrapped_object_with_side_effect_iterable_with_default(self):
+        class Real(object):
+            def method(self):
+                return sentinel.ORIGINAL_VALUE
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = [sentinel.VALUE1, DEFAULT]
+
+        self.assertEqual(mock.method(), sentinel.VALUE1)
+        self.assertEqual(mock.method(), sentinel.ORIGINAL_VALUE)
+        self.assertRaises(StopIteration, mock.method)
+
+
+    def test_customize_wrapped_object_with_side_effect_iterable(self):
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = [sentinel.VALUE1, sentinel.VALUE2]
+
+        self.assertEqual(mock.method(), sentinel.VALUE1)
+        self.assertEqual(mock.method(), sentinel.VALUE2)
+        self.assertRaises(StopIteration, mock.method)
+
+
+    def test_customize_wrapped_object_with_side_effect_exception(self):
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = RuntimeError
+
+        self.assertRaises(RuntimeError, mock.method)
+
+
+    def test_customize_wrapped_object_with_side_effect_function(self):
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        def side_effect():
+            return sentinel.VALUE
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = side_effect
+
+        self.assertEqual(mock.method(), sentinel.VALUE)
+
+
+    def test_customize_wrapped_object_with_return_value(self):
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.return_value = sentinel.VALUE
+
+        self.assertEqual(mock.method(), sentinel.VALUE)
+
+
+    def test_customize_wrapped_object_with_return_value_and_side_effect(self):
+        # side_effect should always take precedence over return_value.
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = [sentinel.VALUE1, sentinel.VALUE2]
+        mock.method.return_value = sentinel.WRONG_VALUE
+
+        self.assertEqual(mock.method(), sentinel.VALUE1)
+        self.assertEqual(mock.method(), sentinel.VALUE2)
+        self.assertRaises(StopIteration, mock.method)
+
+
+    def test_customize_wrapped_object_with_return_value_and_side_effect2(self):
+        # side_effect can return DEFAULT to default to return_value
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = lambda: DEFAULT
+        mock.method.return_value = sentinel.VALUE
+
+        self.assertEqual(mock.method(), sentinel.VALUE)
+
+
+    def test_customize_wrapped_object_with_return_value_and_side_effect_default(self):
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = [sentinel.VALUE1, DEFAULT]
+        mock.method.return_value = sentinel.RETURN
+
+        self.assertEqual(mock.method(), sentinel.VALUE1)
+        self.assertEqual(mock.method(), sentinel.RETURN)
+        self.assertRaises(StopIteration, mock.method)
 
 
     def test_exceptional_side_effect(self):
@@ -916,6 +1047,57 @@ class MockTest(unittest.TestCase):
                              call().__int__().call_list())
 
 
+    def test_child_mock_call_equal(self):
+        m = Mock()
+        result = m()
+        result.wibble()
+        # parent looks like this:
+        self.assertEqual(m.mock_calls, [call(), call().wibble()])
+        # but child should look like this:
+        self.assertEqual(result.mock_calls, [call.wibble()])
+
+
+    def test_mock_call_not_equal_leaf(self):
+        m = Mock()
+        m.foo().something()
+        self.assertNotEqual(m.mock_calls[1], call.foo().different())
+        self.assertEqual(m.mock_calls[0], call.foo())
+
+
+    def test_mock_call_not_equal_non_leaf(self):
+        m = Mock()
+        m.foo().bar()
+        self.assertNotEqual(m.mock_calls[1], call.baz().bar())
+        self.assertNotEqual(m.mock_calls[0], call.baz())
+
+
+    def test_mock_call_not_equal_non_leaf_params_different(self):
+        m = Mock()
+        m.foo(x=1).bar()
+        # This isn't ideal, but there's no way to fix it without breaking backwards compatibility:
+        self.assertEqual(m.mock_calls[1], call.foo(x=2).bar())
+
+
+    def test_mock_call_not_equal_non_leaf_attr(self):
+        m = Mock()
+        m.foo.bar()
+        self.assertNotEqual(m.mock_calls[0], call.baz.bar())
+
+
+    def test_mock_call_not_equal_non_leaf_call_versus_attr(self):
+        m = Mock()
+        m.foo.bar()
+        self.assertNotEqual(m.mock_calls[0], call.foo().bar())
+
+
+    def test_mock_call_repr(self):
+        m = Mock()
+        m.foo().bar().baz.bob()
+        self.assertEqual(repr(m.mock_calls[0]), 'call.foo()')
+        self.assertEqual(repr(m.mock_calls[1]), 'call.foo().bar()')
+        self.assertEqual(repr(m.mock_calls[2]), 'call.foo().bar().baz.bob()')
+
+
     def test_subclassing(self):
         class Subclass(Mock):
             pass
@@ -1250,6 +1432,13 @@ class MockTest(unittest.TestCase):
         with self.assertRaises(AssertionError):
             m.hello.assert_not_called()
 
+    def test_assert_not_called_message(self):
+        m = Mock()
+        m(1, 2)
+        self.assertRaisesRegex(AssertionError,
+            re.escape("Calls: [call(1, 2)]"),
+            m.assert_not_called)
+
     def test_assert_called(self):
         m = Mock()
         with self.assertRaises(AssertionError):
@@ -1270,6 +1459,20 @@ class MockTest(unittest.TestCase):
         m.hello()
         with self.assertRaises(AssertionError):
             m.hello.assert_called_once()
+
+    def test_assert_called_once_message(self):
+        m = Mock()
+        m(1, 2)
+        m(3)
+        self.assertRaisesRegex(AssertionError,
+            re.escape("Calls: [call(1, 2), call(3)]"),
+            m.assert_called_once)
+
+    def test_assert_called_once_message_not_called(self):
+        m = Mock()
+        with self.assertRaises(AssertionError) as e:
+            m.assert_called_once()
+        self.assertNotIn("Calls:", str(e.exception))
 
     #Issue21256 printout of keyword args should be in deterministic order
     def test_sorted_call_signature(self):
@@ -1566,6 +1769,16 @@ class MockTest(unittest.TestCase):
             self.assertRaises(AttributeError, getattr, mock, 'f')
 
 
+    def test_reset_mock_does_not_raise_on_attr_deletion(self):
+        # bpo-31177: reset_mock should not raise AttributeError when attributes
+        # were deleted in a mock instance
+        mock = Mock()
+        mock.child = True
+        del mock.child
+        mock.reset_mock()
+        self.assertFalse(hasattr(mock, 'child'))
+
+
     def test_class_assignable(self):
         for mock in Mock(), MagicMock():
             self.assertNotIsInstance(mock, int)
@@ -1573,6 +1786,20 @@ class MockTest(unittest.TestCase):
             mock.__class__ = int
             self.assertIsInstance(mock, int)
             mock.foo
+
+    def test_name_attribute_of_call(self):
+        # bpo-35357: _Call should not disclose any attributes whose names
+        # may clash with popular ones (such as ".name")
+        self.assertIsNotNone(call.name)
+        self.assertEqual(type(call.name), _Call)
+        self.assertEqual(type(call.name().name), _Call)
+
+    def test_parent_attribute_of_call(self):
+        # bpo-35357: _Call should not disclose any attributes whose names
+        # may clash with popular ones (such as ".parent")
+        self.assertIsNotNone(call.parent)
+        self.assertEqual(type(call.parent), _Call)
+        self.assertEqual(type(call.parent().parent), _Call)
 
 
 if __name__ == '__main__':

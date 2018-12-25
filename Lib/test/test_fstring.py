@@ -626,7 +626,7 @@ non-important content
         self.assertEqual(f'2\x203', '2 3')
         self.assertEqual(f'\x203', ' 3')
 
-        with self.assertWarns(DeprecationWarning):  # invalid escape sequence
+        with self.assertWarns(SyntaxWarning):  # invalid escape sequence
             value = eval(r"f'\{6*7}'")
         self.assertEqual(value, '\\42')
         self.assertEqual(f'\\{6*7}', '\\42')
@@ -1004,10 +1004,14 @@ non-important content
         self.assertEqual('{d[0]}'.format(d=d), 'integer')
 
     def test_invalid_expressions(self):
-        self.assertAllRaise(SyntaxError, 'invalid syntax',
-                            [r"f'{a[4)}'",
-                             r"f'{a(4]}'",
-                            ])
+        self.assertAllRaise(SyntaxError,
+                            r"closing parenthesis '\)' does not match "
+                            r"opening parenthesis '\[' \(<fstring>, line 1\)",
+                            [r"f'{a[4)}'"])
+        self.assertAllRaise(SyntaxError,
+                            r"closing parenthesis '\]' does not match "
+                            r"opening parenthesis '\(' \(<fstring>, line 1\)",
+                            [r"f'{a(4]}'"])
 
     def test_errors(self):
         # see issue 26287

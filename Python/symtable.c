@@ -1,11 +1,7 @@
 #include "Python.h"
-#include "internal/pystate.h"
-#ifdef Yield
-#undef Yield /* undefine conflicting macro from winbase.h */
-#endif
-#include "Python-ast.h"
-#include "code.h"
+#include "pycore_pystate.h"
 #include "symtable.h"
+#undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "structmember.h"
 
 /* error strings used for warnings */
@@ -215,8 +211,10 @@ symtable_new(void)
     struct symtable *st;
 
     st = (struct symtable *)PyMem_Malloc(sizeof(struct symtable));
-    if (st == NULL)
+    if (st == NULL) {
+        PyErr_NoMemory();
         return NULL;
+    }
 
     st->st_filename = NULL;
     st->st_blocks = NULL;
@@ -265,7 +263,7 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
     st->st_future = future;
 
     /* Setup recursion depth check counters */
-    tstate = PyThreadState_GET();
+    tstate = _PyThreadState_GET();
     if (!tstate) {
         PySymtable_Free(st);
         return NULL;
@@ -625,8 +623,10 @@ update_symbols(PyObject *symbols, PyObject *scopes,
         return 0;
 
     itr = PyObject_GetIter(free);
-    if (!itr)
-        goto error;
+    if (itr == NULL) {
+        Py_DECREF(v_free);
+        return 0;
+    }
 
     while ((name = PyIter_Next(itr))) {
         v = PyDict_GetItem(symbols, name);
@@ -1173,6 +1173,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                 VISIT_QUIT(st, 0);
             }
             if ((cur & (DEF_GLOBAL | DEF_NONLOCAL))
+                && (st->st_cur->ste_symbols != st->st_global)
                 && s->v.AnnAssign.simple) {
                 PyErr_Format(PyExc_SyntaxError,
                              cur & DEF_GLOBAL ? GLOBAL_ANNOT : NONLOCAL_ANNOT,

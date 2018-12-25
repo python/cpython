@@ -119,11 +119,11 @@ termios_tcgetattr(PyObject *self, PyObject *args)
     PyList_SetItem(v, 3, PyLong_FromLong((long)mode.c_lflag));
     PyList_SetItem(v, 4, PyLong_FromLong((long)ispeed));
     PyList_SetItem(v, 5, PyLong_FromLong((long)ospeed));
-    PyList_SetItem(v, 6, cc);
-    if (PyErr_Occurred()){
+    if (PyErr_Occurred()) {
         Py_DECREF(v);
         goto err;
     }
+    PyList_SetItem(v, 6, cc);
     return v;
   err:
     Py_DECREF(cc);

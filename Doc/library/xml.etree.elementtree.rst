@@ -489,6 +489,10 @@ Functions
 
    *elem* is an element tree or an individual element.
 
+   .. versionchanged:: 3.8
+      The :func:`dump` function now preserves the attribute order specified
+      by the user.
+
 
 .. function:: fromstring(text)
 
@@ -946,6 +950,10 @@ ElementTree Objects
 
       .. versionadded:: 3.4
          The *short_empty_elements* parameter.
+
+      .. versionchanged:: 3.8
+         The :meth:`write` method now preserves the attribute order specified
+         by the user.
 
 
 This is the XML file that is going to be manipulated::

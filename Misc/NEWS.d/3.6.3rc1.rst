@@ -406,7 +406,7 @@ avoid keeping a reference to yielded objects.
 .. nonce: nmAvfu
 .. section: Library
 
-Fix ctypes producing wrong PEP 3118 type codes for integer types.
+Fix ctypes producing wrong :pep:`3118` type codes for integer types.
 
 ..
 
@@ -1252,7 +1252,7 @@ by Cheryl Sabella.
 .. section: Tools/Demos
 
 gdb integration commands (py-bt, etc.) work on optimized shared builds now,
-too.  PEP 523 introduced _PyEval_EvalFrameDefault which inlines
+too.  :pep:`523` introduced _PyEval_EvalFrameDefault which inlines
 PyEval_EvalFrameEx on non-debug shared builds.  This broke the ability to
 use py-bt, py-up, and a few other Python-specific gdb integrations. The
 problem is fixed by only looking for _PyEval_EvalFrameDefault frames in
