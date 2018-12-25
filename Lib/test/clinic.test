@@ -1,0 +1,1205 @@
+/*[clinic input]
+output preset block
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c81ac2402d06a8b]*/
+
+/*[clinic input]
+test_object_converter
+
+    a: object
+    b: object(converter="PyUnicode_FSConverter")
+    c: object(subclass_of="&PyUnicode_Type")
+    d: object(type="PyUnicode_Object *")
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_object_converter__doc__,
+"test_object_converter($module, a, b, c, d, /)\n"
+"--\n"
+"\n");
+
+#define TEST_OBJECT_CONVERTER_METHODDEF    \
+    {"test_object_converter", (PyCFunction)test_object_converter, METH_FASTCALL, test_object_converter__doc__},
+
+static PyObject *
+test_object_converter_impl(PyObject *module, PyObject *a, PyObject *b,
+                           PyObject *c, PyUnicode_Object *d);
+
+static PyObject *
+test_object_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *b;
+    PyObject *c;
+    PyUnicode_Object *d;
+
+    if (!_PyArg_ParseStack(args, nargs, "OO&O!O:test_object_converter",
+        &a, PyUnicode_FSConverter, &b, &PyUnicode_Type, &c, &d)) {
+        goto exit;
+    }
+    return_value = test_object_converter_impl(module, a, b, c, d);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_object_converter_impl(PyObject *module, PyObject *a, PyObject *b,
+                           PyObject *c, PyUnicode_Object *d)
+/*[clinic end generated code: output=a82a013247de5d81 input=005e6a8a711a869b]*/
+
+/*[clinic input]
+test_object_converter_one_arg
+
+    a: object
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_object_converter_one_arg__doc__,
+"test_object_converter_one_arg($module, a, /)\n"
+"--\n"
+"\n");
+
+#define TEST_OBJECT_CONVERTER_ONE_ARG_METHODDEF    \
+    {"test_object_converter_one_arg", (PyCFunction)test_object_converter_one_arg, METH_O, test_object_converter_one_arg__doc__},
+
+static PyObject *
+test_object_converter_one_arg(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=6da755f8502139df input=d635d92a421f1ca3]*/
+
+/*[clinic input]
+test_objects_converter
+
+    a: object
+    b: object = NULL
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_objects_converter__doc__,
+"test_objects_converter($module, a, b=None, /)\n"
+"--\n"
+"\n");
+
+#define TEST_OBJECTS_CONVERTER_METHODDEF    \
+    {"test_objects_converter", (PyCFunction)test_objects_converter, METH_FASTCALL, test_objects_converter__doc__},
+
+static PyObject *
+test_objects_converter_impl(PyObject *module, PyObject *a, PyObject *b);
+
+static PyObject *
+test_objects_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *b = NULL;
+
+    if (!_PyArg_UnpackStack(args, nargs, "test_objects_converter",
+        1, 2,
+        &a, &b)) {
+        goto exit;
+    }
+    return_value = test_objects_converter_impl(module, a, b);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_objects_converter_impl(PyObject *module, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=4bf98d3729b7bae7 input=4cbb3d9edd2a36f3]*/
+
+/*[clinic input]
+test_object_converter_subclass_of
+
+    a: object(subclass_of="&PyLong_Type")
+    b: object(subclass_of="&PyTuple_Type")
+    c: object(subclass_of="&PyList_Type")
+    d: object(subclass_of="&PySet_Type")
+    e: object(subclass_of="&PyFrozenSet_Type")
+    f: object(subclass_of="&PyDict_Type")
+    g: object(subclass_of="&PyUnicode_Type")
+    h: object(subclass_of="&PyBytes_Type")
+    i: object(subclass_of="&PyByteArray_Type")
+    j: object(subclass_of="&MyType")
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_object_converter_subclass_of__doc__,
+"test_object_converter_subclass_of($module, a, b, c, d, e, f, g, h, i,\n"
+"                                  j, /)\n"
+"--\n"
+"\n");
+
+#define TEST_OBJECT_CONVERTER_SUBCLASS_OF_METHODDEF    \
+    {"test_object_converter_subclass_of", (PyCFunction)test_object_converter_subclass_of, METH_FASTCALL, test_object_converter_subclass_of__doc__},
+
+static PyObject *
+test_object_converter_subclass_of_impl(PyObject *module, PyObject *a,
+                                       PyObject *b, PyObject *c, PyObject *d,
+                                       PyObject *e, PyObject *f, PyObject *g,
+                                       PyObject *h, PyObject *i, PyObject *j);
+
+static PyObject *
+test_object_converter_subclass_of(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *b;
+    PyObject *c;
+    PyObject *d;
+    PyObject *e;
+    PyObject *f;
+    PyObject *g;
+    PyObject *h;
+    PyObject *i;
+    PyObject *j;
+
+    if (!_PyArg_ParseStack(args, nargs, "O!O!O!O!O!O!O!O!O!O!:test_object_converter_subclass_of",
+        &PyLong_Type, &a, &PyTuple_Type, &b, &PyList_Type, &c, &PySet_Type, &d, &PyFrozenSet_Type, &e, &PyDict_Type, &f, &PyUnicode_Type, &g, &PyBytes_Type, &h, &PyByteArray_Type, &i, &MyType, &j)) {
+        goto exit;
+    }
+    return_value = test_object_converter_subclass_of_impl(module, a, b, c, d, e, f, g, h, i, j);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_object_converter_subclass_of_impl(PyObject *module, PyObject *a,
+                                       PyObject *b, PyObject *c, PyObject *d,
+                                       PyObject *e, PyObject *f, PyObject *g,
+                                       PyObject *h, PyObject *i, PyObject *j)
+/*[clinic end generated code: output=811bcace8eca7f92 input=31b06b772d5f983e]*/
+
+/*[clinic input]
+test_PyBytesObject_converter
+
+    a: PyBytesObject
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_PyBytesObject_converter__doc__,
+"test_PyBytesObject_converter($module, a, /)\n"
+"--\n"
+"\n");
+
+#define TEST_PYBYTESOBJECT_CONVERTER_METHODDEF    \
+    {"test_PyBytesObject_converter", (PyCFunction)test_PyBytesObject_converter, METH_O, test_PyBytesObject_converter__doc__},
+
+static PyObject *
+test_PyBytesObject_converter_impl(PyObject *module, PyBytesObject *a);
+
+static PyObject *
+test_PyBytesObject_converter(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyBytesObject *a;
+
+    if (!PyArg_Parse(arg, "S:test_PyBytesObject_converter", &a)) {
+        goto exit;
+    }
+    return_value = test_PyBytesObject_converter_impl(module, a);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_PyBytesObject_converter_impl(PyObject *module, PyBytesObject *a)
+/*[clinic end generated code: output=8dbf43c604ced031 input=12b10c7cb5750400]*/
+
+/*[clinic input]
+test_PyByteArrayObject_converter
+
+    a: PyByteArrayObject
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_PyByteArrayObject_converter__doc__,
+"test_PyByteArrayObject_converter($module, a, /)\n"
+"--\n"
+"\n");
+
+#define TEST_PYBYTEARRAYOBJECT_CONVERTER_METHODDEF    \
+    {"test_PyByteArrayObject_converter", (PyCFunction)test_PyByteArrayObject_converter, METH_O, test_PyByteArrayObject_converter__doc__},
+
+static PyObject *
+test_PyByteArrayObject_converter_impl(PyObject *module, PyByteArrayObject *a);
+
+static PyObject *
+test_PyByteArrayObject_converter(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyByteArrayObject *a;
+
+    if (!PyArg_Parse(arg, "Y:test_PyByteArrayObject_converter", &a)) {
+        goto exit;
+    }
+    return_value = test_PyByteArrayObject_converter_impl(module, a);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_PyByteArrayObject_converter_impl(PyObject *module, PyByteArrayObject *a)
+/*[clinic end generated code: output=ade99fc6705e7d6e input=5a657da535d194ae]*/
+
+/*[clinic input]
+test_unicode_converter
+
+    a: unicode
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_unicode_converter__doc__,
+"test_unicode_converter($module, a, /)\n"
+"--\n"
+"\n");
+
+#define TEST_UNICODE_CONVERTER_METHODDEF    \
+    {"test_unicode_converter", (PyCFunction)test_unicode_converter, METH_O, test_unicode_converter__doc__},
+
+static PyObject *
+test_unicode_converter_impl(PyObject *module, PyObject *a);
+
+static PyObject *
+test_unicode_converter(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+
+    if (!PyArg_Parse(arg, "U:test_unicode_converter", &a)) {
+        goto exit;
+    }
+    return_value = test_unicode_converter_impl(module, a);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_unicode_converter_impl(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=504a2c8d00370adf input=aa33612df92aa9c5]*/
+
+/*[clinic input]
+test_bool_converter
+
+    a: bool = True
+    b: bool(accept={object}) = True
+    c: bool(accept={int}) = True
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_bool_converter__doc__,
+"test_bool_converter($module, a=True, b=True, c=True, /)\n"
+"--\n"
+"\n");
+
+#define TEST_BOOL_CONVERTER_METHODDEF    \
+    {"test_bool_converter", (PyCFunction)test_bool_converter, METH_FASTCALL, test_bool_converter__doc__},
+
+static PyObject *
+test_bool_converter_impl(PyObject *module, int a, int b, int c);
+
+static PyObject *
+test_bool_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int a = 1;
+    int b = 1;
+    int c = 1;
+
+    if (!_PyArg_ParseStack(args, nargs, "|ppi:test_bool_converter",
+        &a, &b, &c)) {
+        goto exit;
+    }
+    return_value = test_bool_converter_impl(module, a, b, c);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_bool_converter_impl(PyObject *module, int a, int b, int c)
+/*[clinic end generated code: output=a3e8bc2f49647d1b input=939854fa9f248c60]*/
+
+/*[clinic input]
+test_char_converter
+
+    a: char
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_char_converter__doc__,
+"test_char_converter($module, a, /)\n"
+"--\n"
+"\n");
+
+#define TEST_CHAR_CONVERTER_METHODDEF    \
+    {"test_char_converter", (PyCFunction)test_char_converter, METH_O, test_char_converter__doc__},
+
+static PyObject *
+test_char_converter_impl(PyObject *module, char a);
+
+static PyObject *
+test_char_converter(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    char a;
+
+    if (!PyArg_Parse(arg, "c:test_char_converter", &a)) {
+        goto exit;
+    }
+    return_value = test_char_converter_impl(module, a);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_char_converter_impl(PyObject *module, char a)
+/*[clinic end generated code: output=900f0c5a82453471 input=e802e90b9deadd17]*/
+
+/*[clinic input]
+test_unsigned_char_converter
+
+    c: unsigned_char(bitwise=True) = 56
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_unsigned_char_converter__doc__,
+"test_unsigned_char_converter($module, c=56, /)\n"
+"--\n"
+"\n");
+
+#define TEST_UNSIGNED_CHAR_CONVERTER_METHODDEF    \
+    {"test_unsigned_char_converter", (PyCFunction)test_unsigned_char_converter, METH_FASTCALL, test_unsigned_char_converter__doc__},
+
+static PyObject *
+test_unsigned_char_converter_impl(PyObject *module, unsigned char c);
+
+static PyObject *
+test_unsigned_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    unsigned char c = 56;
+
+    if (!_PyArg_ParseStack(args, nargs, "|B:test_unsigned_char_converter",
+        &c)) {
+        goto exit;
+    }
+    return_value = test_unsigned_char_converter_impl(module, c);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_unsigned_char_converter_impl(PyObject *module, unsigned char c)
+/*[clinic end generated code: output=48eb2d10bdc8aa08 input=c761000cf94b2df3]*/
+
+/*[clinic input]
+test_short_converter
+
+    a: short = 12
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_short_converter__doc__,
+"test_short_converter($module, a=12, /)\n"
+"--\n"
+"\n");
+
+#define TEST_SHORT_CONVERTER_METHODDEF    \
+    {"test_short_converter", (PyCFunction)test_short_converter, METH_FASTCALL, test_short_converter__doc__},
+
+static PyObject *
+test_short_converter_impl(PyObject *module, short a);
+
+static PyObject *
+test_short_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    short a = 12;
+
+    if (!_PyArg_ParseStack(args, nargs, "|h:test_short_converter",
+        &a)) {
+        goto exit;
+    }
+    return_value = test_short_converter_impl(module, a);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_short_converter_impl(PyObject *module, short a)
+/*[clinic end generated code: output=ce5b137b7baae608 input=6a8a7a509a498ff4]*/
+
+/*[clinic input]
+test_unsigned_short_converter
+
+    c: unsigned_short(bitwise=True) = 56
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_unsigned_short_converter__doc__,
+"test_unsigned_short_converter($module, c=56, /)\n"
+"--\n"
+"\n");
+
+#define TEST_UNSIGNED_SHORT_CONVERTER_METHODDEF    \
+    {"test_unsigned_short_converter", (PyCFunction)test_unsigned_short_converter, METH_FASTCALL, test_unsigned_short_converter__doc__},
+
+static PyObject *
+test_unsigned_short_converter_impl(PyObject *module, unsigned short c);
+
+static PyObject *
+test_unsigned_short_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    unsigned short c = 56;
+
+    if (!_PyArg_ParseStack(args, nargs, "|H:test_unsigned_short_converter",
+        &c)) {
+        goto exit;
+    }
+    return_value = test_unsigned_short_converter_impl(module, c);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_unsigned_short_converter_impl(PyObject *module, unsigned short c)
+/*[clinic end generated code: output=1efab48251e8ac53 input=bdfdc5236f5eb7f8]*/
+
+/*[clinic input]
+test_int_converter
+
+    a: int = 12
+    b: int(accept={int}) = 34
+    c: int(accept={str}) = 45
+    d: int(type='myenum') = 67
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_int_converter__doc__,
+"test_int_converter($module, a=12, b=34, c=45, d=67, /)\n"
+"--\n"
+"\n");
+
+#define TEST_INT_CONVERTER_METHODDEF    \
+    {"test_int_converter", (PyCFunction)test_int_converter, METH_FASTCALL, test_int_converter__doc__},
+
+static PyObject *
+test_int_converter_impl(PyObject *module, int a, int b, int c, myenum d);
+
+static PyObject *
+test_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int a = 12;
+    int b = 34;
+    int c = 45;
+    myenum d = 67;
+
+    if (!_PyArg_ParseStack(args, nargs, "|iiCi:test_int_converter",
+        &a, &b, &c, &d)) {
+        goto exit;
+    }
+    return_value = test_int_converter_impl(module, a, b, c, d);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_int_converter_impl(PyObject *module, int a, int b, int c, myenum d)
+/*[clinic end generated code: output=601e88039fdfa60a input=d20541fc1ca0553e]*/
+
+/*[clinic input]
+test_unsigned_int_converter
+
+    c: unsigned_int(bitwise=True) = 56
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_unsigned_int_converter__doc__,
+"test_unsigned_int_converter($module, c=56, /)\n"
+"--\n"
+"\n");
+
+#define TEST_UNSIGNED_INT_CONVERTER_METHODDEF    \
+    {"test_unsigned_int_converter", (PyCFunction)test_unsigned_int_converter, METH_FASTCALL, test_unsigned_int_converter__doc__},
+
+static PyObject *
+test_unsigned_int_converter_impl(PyObject *module, unsigned int c);
+
+static PyObject *
+test_unsigned_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    unsigned int c = 56;
+
+    if (!_PyArg_ParseStack(args, nargs, "|I:test_unsigned_int_converter",
+        &c)) {
+        goto exit;
+    }
+    return_value = test_unsigned_int_converter_impl(module, c);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_unsigned_int_converter_impl(PyObject *module, unsigned int c)
+/*[clinic end generated code: output=cc53589104965088 input=378cd89bcaa7d54a]*/
+
+/*[clinic input]
+test_long_converter
+
+    a: long = 12
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_long_converter__doc__,
+"test_long_converter($module, a=12, /)\n"
+"--\n"
+"\n");
+
+#define TEST_LONG_CONVERTER_METHODDEF    \
+    {"test_long_converter", (PyCFunction)test_long_converter, METH_FASTCALL, test_long_converter__doc__},
+
+static PyObject *
+test_long_converter_impl(PyObject *module, long a);
+
+static PyObject *
+test_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    long a = 12;
+
+    if (!_PyArg_ParseStack(args, nargs, "|l:test_long_converter",
+        &a)) {
+        goto exit;
+    }
+    return_value = test_long_converter_impl(module, a);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_long_converter_impl(PyObject *module, long a)
+/*[clinic end generated code: output=a9de1d6b8993931c input=d2179e3c9cdcde89]*/
+
+/*[clinic input]
+test_unsigned_long_converter
+
+    c: unsigned_long(bitwise=True) = 56
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_unsigned_long_converter__doc__,
+"test_unsigned_long_converter($module, c=56, /)\n"
+"--\n"
+"\n");
+
+#define TEST_UNSIGNED_LONG_CONVERTER_METHODDEF    \
+    {"test_unsigned_long_converter", (PyCFunction)test_unsigned_long_converter, METH_FASTCALL, test_unsigned_long_converter__doc__},
+
+static PyObject *
+test_unsigned_long_converter_impl(PyObject *module, unsigned long c);
+
+static PyObject *
+test_unsigned_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    unsigned long c = 56;
+
+    if (!_PyArg_ParseStack(args, nargs, "|k:test_unsigned_long_converter",
+        &c)) {
+        goto exit;
+    }
+    return_value = test_unsigned_long_converter_impl(module, c);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_unsigned_long_converter_impl(PyObject *module, unsigned long c)
+/*[clinic end generated code: output=484caa61090cd6f4 input=c69803655925e29c]*/
+
+/*[clinic input]
+test_long_long_converter
+
+    a: long_long = 12
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_long_long_converter__doc__,
+"test_long_long_converter($module, a=12, /)\n"
+"--\n"
+"\n");
+
+#define TEST_LONG_LONG_CONVERTER_METHODDEF    \
+    {"test_long_long_converter", (PyCFunction)test_long_long_converter, METH_FASTCALL, test_long_long_converter__doc__},
+
+static PyObject *
+test_long_long_converter_impl(PyObject *module, long long a);
+
+static PyObject *
+test_long_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    long long a = 12;
+
+    if (!_PyArg_ParseStack(args, nargs, "|L:test_long_long_converter",
+        &a)) {
+        goto exit;
+    }
+    return_value = test_long_long_converter_impl(module, a);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_long_long_converter_impl(PyObject *module, long long a)
+/*[clinic end generated code: output=7741ab7cfffae072 input=d5fc81577ff4dd02]*/
+
+/*[clinic input]
+test_unsigned_long_long_converter
+
+    c: unsigned_long_long(bitwise=True) = 56
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_unsigned_long_long_converter__doc__,
+"test_unsigned_long_long_converter($module, c=56, /)\n"
+"--\n"
+"\n");
+
+#define TEST_UNSIGNED_LONG_LONG_CONVERTER_METHODDEF    \
+    {"test_unsigned_long_long_converter", (PyCFunction)test_unsigned_long_long_converter, METH_FASTCALL, test_unsigned_long_long_converter__doc__},
+
+static PyObject *
+test_unsigned_long_long_converter_impl(PyObject *module,
+                                       unsigned long long c);
+
+static PyObject *
+test_unsigned_long_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    unsigned long long c = 56;
+
+    if (!_PyArg_ParseStack(args, nargs, "|K:test_unsigned_long_long_converter",
+        &c)) {
+        goto exit;
+    }
+    return_value = test_unsigned_long_long_converter_impl(module, c);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_unsigned_long_long_converter_impl(PyObject *module,
+                                       unsigned long long c)
+/*[clinic end generated code: output=e07b58db59674c80 input=75cfdbbadef34439]*/
+
+/*[clinic input]
+test_Py_ssize_t_converter
+
+    a: Py_ssize_t = 12
+    b: Py_ssize_t(accept={int}) = 34
+    c: Py_ssize_t(accept={int, NoneType}) = 56
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_Py_ssize_t_converter__doc__,
+"test_Py_ssize_t_converter($module, a=12, b=34, c=56, /)\n"
+"--\n"
+"\n");
+
+#define TEST_PY_SSIZE_T_CONVERTER_METHODDEF    \
+    {"test_Py_ssize_t_converter", (PyCFunction)test_Py_ssize_t_converter, METH_FASTCALL, test_Py_ssize_t_converter__doc__},
+
+static PyObject *
+test_Py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
+                               Py_ssize_t c);
+
+static PyObject *
+test_Py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t a = 12;
+    Py_ssize_t b = 34;
+    Py_ssize_t c = 56;
+
+    if (!_PyArg_ParseStack(args, nargs, "|nnO&:test_Py_ssize_t_converter",
+        &a, &b, _Py_convert_optional_to_ssize_t, &c)) {
+        goto exit;
+    }
+    return_value = test_Py_ssize_t_converter_impl(module, a, b, c);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_Py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
+                               Py_ssize_t c)
+/*[clinic end generated code: output=504a11df58a5a277 input=3855f184bb3f299d]*/
+
+/*[clinic input]
+test_slice_index_converter
+
+    a: slice_index = 12
+    b: slice_index(accept={int}) = 34
+    c: slice_index(accept={int, NoneType}) = 56
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_slice_index_converter__doc__,
+"test_slice_index_converter($module, a=12, b=34, c=56, /)\n"
+"--\n"
+"\n");
+
+#define TEST_SLICE_INDEX_CONVERTER_METHODDEF    \
+    {"test_slice_index_converter", (PyCFunction)test_slice_index_converter, METH_FASTCALL, test_slice_index_converter__doc__},
+
+static PyObject *
+test_slice_index_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
+                                Py_ssize_t c);
+
+static PyObject *
+test_slice_index_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t a = 12;
+    Py_ssize_t b = 34;
+    Py_ssize_t c = 56;
+
+    if (!_PyArg_ParseStack(args, nargs, "|O&O&O&:test_slice_index_converter",
+        _PyEval_SliceIndex, &a, _PyEval_SliceIndexNotNone, &b, _PyEval_SliceIndex, &c)) {
+        goto exit;
+    }
+    return_value = test_slice_index_converter_impl(module, a, b, c);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_slice_index_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
+                                Py_ssize_t c)
+/*[clinic end generated code: output=b156931c01c9508a input=edeadb0ee126f531]*/
+
+/*[clinic input]
+test_float_converter
+
+    a: float = 12.5
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_float_converter__doc__,
+"test_float_converter($module, a=12.5, /)\n"
+"--\n"
+"\n");
+
+#define TEST_FLOAT_CONVERTER_METHODDEF    \
+    {"test_float_converter", (PyCFunction)test_float_converter, METH_FASTCALL, test_float_converter__doc__},
+
+static PyObject *
+test_float_converter_impl(PyObject *module, float a);
+
+static PyObject *
+test_float_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    float a = 12.5;
+
+    if (!_PyArg_ParseStack(args, nargs, "|f:test_float_converter",
+        &a)) {
+        goto exit;
+    }
+    return_value = test_float_converter_impl(module, a);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_float_converter_impl(PyObject *module, float a)
+/*[clinic end generated code: output=d37bb4f773ffac06 input=259c0d98eca35034]*/
+
+/*[clinic input]
+test_double_converter
+
+    a: double = 12.5
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_double_converter__doc__,
+"test_double_converter($module, a=12.5, /)\n"
+"--\n"
+"\n");
+
+#define TEST_DOUBLE_CONVERTER_METHODDEF    \
+    {"test_double_converter", (PyCFunction)test_double_converter, METH_FASTCALL, test_double_converter__doc__},
+
+static PyObject *
+test_double_converter_impl(PyObject *module, double a);
+
+static PyObject *
+test_double_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    double a = 12.5;
+
+    if (!_PyArg_ParseStack(args, nargs, "|d:test_double_converter",
+        &a)) {
+        goto exit;
+    }
+    return_value = test_double_converter_impl(module, a);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_double_converter_impl(PyObject *module, double a)
+/*[clinic end generated code: output=863371b11f7e55fd input=c6a9945706a41c27]*/
+
+/*[clinic input]
+test_Py_complex_converter
+
+    a: Py_complex
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_Py_complex_converter__doc__,
+"test_Py_complex_converter($module, a, /)\n"
+"--\n"
+"\n");
+
+#define TEST_PY_COMPLEX_CONVERTER_METHODDEF    \
+    {"test_Py_complex_converter", (PyCFunction)test_Py_complex_converter, METH_O, test_Py_complex_converter__doc__},
+
+static PyObject *
+test_Py_complex_converter_impl(PyObject *module, Py_complex a);
+
+static PyObject *
+test_Py_complex_converter(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_complex a;
+
+    if (!PyArg_Parse(arg, "D:test_Py_complex_converter", &a)) {
+        goto exit;
+    }
+    return_value = test_Py_complex_converter_impl(module, a);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_Py_complex_converter_impl(PyObject *module, Py_complex a)
+/*[clinic end generated code: output=27efb4ff772d6170 input=070f216a515beb79]*/
+
+/*[clinic input]
+test_str_converter
+
+    a: str = NULL
+    b: str = "ab"
+    c: str(accept={str}) = "cd"
+    d: str(accept={robuffer}) = "cef"
+    e: str(accept={str, NoneType}) = "gh"
+    f: str(accept={robuffer}, zeroes=True) = "ij"
+    g: str(accept={robuffer, str}, zeroes=True) = "kl"
+    h: str(accept={robuffer, str, NoneType}, zeroes=True) = "mn"
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_str_converter__doc__,
+"test_str_converter($module, a=None, b=\'ab\', c=\'cd\', d=\'cef\', e=\'gh\',\n"
+"                   f=\'ij\', g=\'kl\', h=\'mn\', /)\n"
+"--\n"
+"\n");
+
+#define TEST_STR_CONVERTER_METHODDEF    \
+    {"test_str_converter", (PyCFunction)test_str_converter, METH_FASTCALL, test_str_converter__doc__},
+
+static PyObject *
+test_str_converter_impl(PyObject *module, const char *a, const char *b,
+                        const char *c, const char *d, const char *e,
+                        const char *f, Py_ssize_clean_t f_length,
+                        const char *g, Py_ssize_clean_t g_length,
+                        const char *h, Py_ssize_clean_t h_length);
+
+static PyObject *
+test_str_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    const char *a = NULL;
+    const char *b = "ab";
+    const char *c = "cd";
+    const char *d = "cef";
+    const char *e = "gh";
+    const char *f = "ij";
+    Py_ssize_clean_t f_length;
+    const char *g = "kl";
+    Py_ssize_clean_t g_length;
+    const char *h = "mn";
+    Py_ssize_clean_t h_length;
+
+    if (!_PyArg_ParseStack(args, nargs, "|sssyzy#s#z#:test_str_converter",
+        &a, &b, &c, &d, &e, &f, &f_length, &g, &g_length, &h, &h_length)) {
+        goto exit;
+    }
+    return_value = test_str_converter_impl(module, a, b, c, d, e, f, f_length, g, g_length, h, h_length);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_str_converter_impl(PyObject *module, const char *a, const char *b,
+                        const char *c, const char *d, const char *e,
+                        const char *f, Py_ssize_clean_t f_length,
+                        const char *g, Py_ssize_clean_t g_length,
+                        const char *h, Py_ssize_clean_t h_length)
+/*[clinic end generated code: output=94988a5346fd888e input=8afe9da8185cd38c]*/
+
+/*[clinic input]
+test_str_converter_encoding
+
+    a: str(encoding="idna")
+    b: str(encoding="idna", accept={str})
+    c: str(encoding="idna", accept={bytes, bytearray, str})
+    d: str(encoding="idna", zeroes=True)
+    e: str(encoding="idna", accept={bytes, bytearray, str}, zeroes=True)
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_str_converter_encoding__doc__,
+"test_str_converter_encoding($module, a, b, c, d, e, /)\n"
+"--\n"
+"\n");
+
+#define TEST_STR_CONVERTER_ENCODING_METHODDEF    \
+    {"test_str_converter_encoding", (PyCFunction)test_str_converter_encoding, METH_FASTCALL, test_str_converter_encoding__doc__},
+
+static PyObject *
+test_str_converter_encoding_impl(PyObject *module, char *a, char *b, char *c,
+                                 char *d, Py_ssize_clean_t d_length, char *e,
+                                 Py_ssize_clean_t e_length);
+
+static PyObject *
+test_str_converter_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    char *a = NULL;
+    char *b = NULL;
+    char *c = NULL;
+    char *d = NULL;
+    Py_ssize_clean_t d_length;
+    char *e = NULL;
+    Py_ssize_clean_t e_length;
+
+    if (!_PyArg_ParseStack(args, nargs, "esesetes#et#:test_str_converter_encoding",
+        "idna", &a, "idna", &b, "idna", &c, "idna", &d, &d_length, "idna", &e, &e_length)) {
+        goto exit;
+    }
+    return_value = test_str_converter_encoding_impl(module, a, b, c, d, d_length, e, e_length);
+
+exit:
+    /* Cleanup for a */
+    if (a) {
+       PyMem_FREE(a);
+    }
+    /* Cleanup for b */
+    if (b) {
+       PyMem_FREE(b);
+    }
+    /* Cleanup for c */
+    if (c) {
+       PyMem_FREE(c);
+    }
+    /* Cleanup for d */
+    if (d) {
+       PyMem_FREE(d);
+    }
+    /* Cleanup for e */
+    if (e) {
+       PyMem_FREE(e);
+    }
+
+    return return_value;
+}
+
+static PyObject *
+test_str_converter_encoding_impl(PyObject *module, char *a, char *b, char *c,
+                                 char *d, Py_ssize_clean_t d_length, char *e,
+                                 Py_ssize_clean_t e_length)
+/*[clinic end generated code: output=1a63c67528fe9e74 input=eb4c38e1f898f402]*/
+
+/*[clinic input]
+test_Py_UNICODE_converter
+
+    a: Py_UNICODE
+    b: Py_UNICODE(accept={str})
+    c: Py_UNICODE(accept={str, NoneType})
+    d: Py_UNICODE(zeroes=True)
+    e: Py_UNICODE(accept={str, NoneType}, zeroes=True)
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_Py_UNICODE_converter__doc__,
+"test_Py_UNICODE_converter($module, a, b, c, d, e, /)\n"
+"--\n"
+"\n");
+
+#define TEST_PY_UNICODE_CONVERTER_METHODDEF    \
+    {"test_Py_UNICODE_converter", (PyCFunction)test_Py_UNICODE_converter, METH_FASTCALL, test_Py_UNICODE_converter__doc__},
+
+static PyObject *
+test_Py_UNICODE_converter_impl(PyObject *module, const Py_UNICODE *a,
+                               const Py_UNICODE *b, const Py_UNICODE *c,
+                               const Py_UNICODE *d,
+                               Py_ssize_clean_t d_length,
+                               const Py_UNICODE *e,
+                               Py_ssize_clean_t e_length);
+
+static PyObject *
+test_Py_UNICODE_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    const Py_UNICODE *a;
+    const Py_UNICODE *b;
+    const Py_UNICODE *c;
+    const Py_UNICODE *d;
+    Py_ssize_clean_t d_length;
+    const Py_UNICODE *e;
+    Py_ssize_clean_t e_length;
+
+    if (!_PyArg_ParseStack(args, nargs, "uuZu#Z#:test_Py_UNICODE_converter",
+        &a, &b, &c, &d, &d_length, &e, &e_length)) {
+        goto exit;
+    }
+    return_value = test_Py_UNICODE_converter_impl(module, a, b, c, d, d_length, e, e_length);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_Py_UNICODE_converter_impl(PyObject *module, const Py_UNICODE *a,
+                               const Py_UNICODE *b, const Py_UNICODE *c,
+                               const Py_UNICODE *d,
+                               Py_ssize_clean_t d_length,
+                               const Py_UNICODE *e,
+                               Py_ssize_clean_t e_length)
+/*[clinic end generated code: output=98f7ebc3ce76aff3 input=064a3b68ad7f04b0]*/
+
+/*[clinic input]
+test_Py_buffer_converter
+
+    a: Py_buffer
+    b: Py_buffer(accept={buffer})
+    c: Py_buffer(accept={str, buffer})
+    d: Py_buffer(accept={str, buffer, NoneType})
+    e: Py_buffer(accept={rwbuffer})
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_Py_buffer_converter__doc__,
+"test_Py_buffer_converter($module, a, b, c, d, e, /)\n"
+"--\n"
+"\n");
+
+#define TEST_PY_BUFFER_CONVERTER_METHODDEF    \
+    {"test_Py_buffer_converter", (PyCFunction)test_Py_buffer_converter, METH_FASTCALL, test_Py_buffer_converter__doc__},
+
+static PyObject *
+test_Py_buffer_converter_impl(PyObject *module, Py_buffer *a, Py_buffer *b,
+                              Py_buffer *c, Py_buffer *d, Py_buffer *e);
+
+static PyObject *
+test_Py_buffer_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_buffer a = {NULL, NULL};
+    Py_buffer b = {NULL, NULL};
+    Py_buffer c = {NULL, NULL};
+    Py_buffer d = {NULL, NULL};
+    Py_buffer e = {NULL, NULL};
+
+    if (!_PyArg_ParseStack(args, nargs, "y*y*s*z*w*:test_Py_buffer_converter",
+        &a, &b, &c, &d, &e)) {
+        goto exit;
+    }
+    return_value = test_Py_buffer_converter_impl(module, &a, &b, &c, &d, &e);
+
+exit:
+    /* Cleanup for a */
+    if (a.obj) {
+       PyBuffer_Release(&a);
+    }
+    /* Cleanup for b */
+    if (b.obj) {
+       PyBuffer_Release(&b);
+    }
+    /* Cleanup for c */
+    if (c.obj) {
+       PyBuffer_Release(&c);
+    }
+    /* Cleanup for d */
+    if (d.obj) {
+       PyBuffer_Release(&d);
+    }
+    /* Cleanup for e */
+    if (e.obj) {
+       PyBuffer_Release(&e);
+    }
+
+    return return_value;
+}
+
+static PyObject *
+test_Py_buffer_converter_impl(PyObject *module, Py_buffer *a, Py_buffer *b,
+                              Py_buffer *c, Py_buffer *d, Py_buffer *e)
+/*[clinic end generated code: output=92937215f10bc937 input=6a9da0f56f9525fd]*/
