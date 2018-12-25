@@ -349,6 +349,7 @@ test_char_converter
     k: char = b'?'
     l: char = b'\\'
     m: char = b'\000'
+    n: char = b'\377'
     /
 
 [clinic start generated code]*/
@@ -356,7 +357,7 @@ test_char_converter
 PyDoc_STRVAR(test_char_converter__doc__,
 "test_char_converter($module, a=b\'A\', b=b\'\\x07\', c=b\'\\x08\', d=b\'\\t\',\n"
 "                    e=b\'\\n\', f=b\'\\x0b\', g=b\'\\x0c\', h=b\'\\r\', i=b\'\"\',\n"
-"                    j=b\"\'\", k=b\'?\', l=b\'\\\\\', m=b\'\\x00\', /)\n"
+"                    j=b\"\'\", k=b\'?\', l=b\'\\\\\', m=b\'\\x00\', n=b\'\\xff\', /)\n"
 "--\n"
 "\n");
 
@@ -366,31 +367,32 @@ PyDoc_STRVAR(test_char_converter__doc__,
 static PyObject *
 test_char_converter_impl(PyObject *module, char a, char b, char c, char d,
                          char e, char f, char g, char h, char i, char j,
-                         char k, char l, char m);
+                         char k, char l, char m, char n);
 
 static PyObject *
 test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     char a = 'A';
-    char b = '\a';
-    char c = '\b';
+    char b = '\x07';
+    char c = '\x08';
     char d = '\t';
     char e = '\n';
-    char f = '\v';
-    char g = '\f';
+    char f = '\x0b';
+    char g = '\x0c';
     char h = '\r';
-    char i = '\"';
+    char i = '"';
     char j = '\'';
-    char k = '\?';
+    char k = '?';
     char l = '\\';
-    char m = '\0';
+    char m = '\x00';
+    char n = '\xff';
 
-    if (!_PyArg_ParseStack(args, nargs, "|ccccccccccccc:test_char_converter",
-        &a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k, &l, &m)) {
+    if (!_PyArg_ParseStack(args, nargs, "|cccccccccccccc:test_char_converter",
+        &a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k, &l, &m, &n)) {
         goto exit;
     }
-    return_value = test_char_converter_impl(module, a, b, c, d, e, f, g, h, i, j, k, l, m);
+    return_value = test_char_converter_impl(module, a, b, c, d, e, f, g, h, i, j, k, l, m, n);
 
 exit:
     return return_value;
@@ -399,8 +401,8 @@ exit:
 static PyObject *
 test_char_converter_impl(PyObject *module, char a, char b, char c, char d,
                          char e, char f, char g, char h, char i, char j,
-                         char k, char l, char m)
-/*[clinic end generated code: output=d9b268767e933c77 input=40431047c768ec24]*/
+                         char k, char l, char m, char n)
+/*[clinic end generated code: output=14c61e8ee78f3d47 input=e42330417a44feac]*/
 
 /*[clinic input]
 test_unsigned_char_converter
