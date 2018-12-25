@@ -193,6 +193,19 @@ class IntegrationTests(TestCase):
                 ))
                 self.assertEqual(err.splitlines()[-2], exc_message)
 
+    @unittest.skipIf(support.python_is_optimized(),
+                     "Python was compiled with optimizations")
+    def test_hop_by_hop_validation_error(self):
+        def bad_app(environ, start_response):
+            start_response("200 OK", [('Content-Type', 'text/plain'),
+                                      ('Connection', 'close')])
+            return ["Hello, world!"]
+        out, err = run_amock(bad_app)
+        self.assertTrue(out.endswith(
+            b"A server error occurred.  Please contact the administrator."
+        ))
+        self.assertRaises(AssertionError)
+
     def test_wsgi_input(self):
         def bad_app(e,s):
             e["wsgi.input"].read()
