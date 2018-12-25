@@ -156,7 +156,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyObject *con
     if (!_PyArg_CheckPositional("ExternalEntityParserCreate", nargs, 1, 2)) {
         goto exit;
     }
-    if (args[0] == NULL) {
+    if (args[0] == Py_None) {
         context = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
@@ -348,4 +348,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=bb5815e1a48ead47 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7e7c40c66377ab30 input=a9049054013a1b77]*/

@@ -209,7 +209,7 @@ _codecs_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -269,7 +269,7 @@ _codecs_escape_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -320,7 +320,7 @@ _codecs_unicode_internal_decode(PyObject *module, PyObject *const *args, Py_ssiz
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -378,7 +378,7 @@ _codecs_utf_7_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -453,7 +453,7 @@ _codecs_utf_8_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -528,7 +528,7 @@ _codecs_utf_16_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -603,7 +603,7 @@ _codecs_utf_16_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -678,7 +678,7 @@ _codecs_utf_16_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -755,7 +755,7 @@ _codecs_utf_16_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -842,7 +842,7 @@ _codecs_utf_32_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -917,7 +917,7 @@ _codecs_utf_32_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -992,7 +992,7 @@ _codecs_utf_32_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -1069,7 +1069,7 @@ _codecs_utf_32_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -1165,7 +1165,7 @@ _codecs_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -1237,7 +1237,7 @@ _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ss
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -1299,7 +1299,7 @@ _codecs_latin_1_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -1361,7 +1361,7 @@ _codecs_ascii_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -1424,7 +1424,7 @@ _codecs_charmap_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -1493,7 +1493,7 @@ _codecs_mbcs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -1572,7 +1572,7 @@ _codecs_oem_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -1661,7 +1661,7 @@ _codecs_code_page_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (args[2] == NULL) {
+    if (args[2] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[2])) {
@@ -1747,7 +1747,7 @@ _codecs_readbuffer_encode(PyObject *module, PyObject *const *args, Py_ssize_t na
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -1803,7 +1803,7 @@ _codecs_unicode_internal_encode(PyObject *module, PyObject *const *args, Py_ssiz
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -1861,7 +1861,7 @@ _codecs_utf_7_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -1919,7 +1919,7 @@ _codecs_utf_8_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -1978,7 +1978,7 @@ _codecs_utf_16_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -2048,7 +2048,7 @@ _codecs_utf_16_le_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -2106,7 +2106,7 @@ _codecs_utf_16_be_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -2165,7 +2165,7 @@ _codecs_utf_32_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -2235,7 +2235,7 @@ _codecs_utf_32_le_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -2293,7 +2293,7 @@ _codecs_utf_32_be_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -2351,7 +2351,7 @@ _codecs_unicode_escape_encode(PyObject *module, PyObject *const *args, Py_ssize_
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -2409,7 +2409,7 @@ _codecs_raw_unicode_escape_encode(PyObject *module, PyObject *const *args, Py_ss
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -2467,7 +2467,7 @@ _codecs_latin_1_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -2525,7 +2525,7 @@ _codecs_ascii_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -2584,7 +2584,7 @@ _codecs_charmap_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -2678,7 +2678,7 @@ _codecs_mbcs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -2739,7 +2739,7 @@ _codecs_oem_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (args[1] == NULL) {
+    if (args[1] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
@@ -2811,7 +2811,7 @@ _codecs_code_page_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (args[2] == NULL) {
+    if (args[2] == Py_None) {
         errors = NULL;
     }
     else if (PyUnicode_Check(args[2])) {
@@ -2948,4 +2948,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=3e246fe3c6a61a7f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=61e735032485bc05 input=a9049054013a1b77]*/

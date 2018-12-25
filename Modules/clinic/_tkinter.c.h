@@ -716,7 +716,7 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (args[0] == NULL) {
+    if (args[0] == Py_None) {
         screenName = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
@@ -817,7 +817,7 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 8) {
         goto skip_optional;
     }
-    if (args[7] == NULL) {
+    if (args[7] == Py_None) {
         use = NULL;
     }
     else if (PyUnicode_Check(args[7])) {
@@ -912,4 +912,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=80cdad38dc78d122 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=21529a19ece1aee3 input=a9049054013a1b77]*/

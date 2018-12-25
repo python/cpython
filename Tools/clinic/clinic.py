@@ -3165,7 +3165,7 @@ class str_converter(CConverter):
                 """.format(argname=argname, paramname=self.name)
         if self.format_unit == 'z':
             return """
-                if ({argname} == NULL) {{{{
+                if ({argname} == Py_None) {{{{
                     {paramname} = NULL;
                 }}}}
                 else if (PyUnicode_Check({argname})) {{{{
