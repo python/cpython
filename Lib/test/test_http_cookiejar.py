@@ -967,6 +967,7 @@ class CookieTests(unittest.TestCase):
         pol.set_blocked_domains([])
         req = urllib.request.Request("http://acme.com/")
         res = FakeResponse(headers, "http://acme.com/")
+        cookies = c.make_cookies(res, req)
         c.extract_cookies(res, req)
         self.assertEqual(len(c), 1)
 
@@ -976,6 +977,7 @@ class CookieTests(unittest.TestCase):
 
         req = urllib.request.Request("http://badacme.com/")
         c.add_cookie_header(req)
+        self.assertFalse(pol.return_ok(cookies[0], req))
         self.assertFalse(req.has_header("Cookie"))
 
         p = pol.set_blocked_domains(["acme.com"])
