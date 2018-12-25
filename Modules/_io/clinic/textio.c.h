@@ -250,9 +250,14 @@ _io_TextIOWrapper_write(textio *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *text;
 
-    if (!PyArg_Parse(arg, "U:write", &text)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("write", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    text = arg;
     return_value = _io_TextIOWrapper_write_impl(self, text);
 
 exit:
@@ -504,4 +509,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=a811badd76bfe92e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b933f08c2f2d85cd input=a9049054013a1b77]*/

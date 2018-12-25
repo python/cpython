@@ -58,9 +58,14 @@ int___format__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *format_spec;
 
-    if (!PyArg_Parse(arg, "U:__format__", &format_spec)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("__format__", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    format_spec = arg;
     return_value = int___format___impl(self, format_spec);
 
 exit:
@@ -239,4 +244,4 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=403ccd096555fd1e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7436b5f4decdcf9d input=a9049054013a1b77]*/

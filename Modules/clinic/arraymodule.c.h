@@ -278,8 +278,22 @@ array_array_fromstring(arrayobject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "s*:fromstring", &buffer)) {
-        goto exit;
+    if (PyUnicode_Check(arg)) {
+        Py_ssize_t len;
+        const char *ptr = PyUnicode_AsUTF8AndSize(arg, &len);
+        if (ptr == NULL) {
+            goto exit;
+        }
+        PyBuffer_FillInfo(&buffer, arg, (void *)ptr, len, 1, 0);
+    }
+    else { /* any bytes-like object */
+        if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
+            goto exit;
+        }
+        if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+            _PyArg_BadArgument("fromstring", "contiguous buffer", arg);
+            goto exit;
+        }
     }
     return_value = array_array_fromstring_impl(self, &buffer);
 
@@ -310,7 +324,11 @@ array_array_frombytes(arrayobject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:frombytes", &buffer)) {
+    if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+        _PyArg_BadArgument("frombytes", "contiguous buffer", arg);
         goto exit;
     }
     return_value = array_array_frombytes_impl(self, &buffer);
@@ -505,4 +523,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=3d2bb1aa81541cbd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=15da19d2ece09d22 input=a9049054013a1b77]*/
