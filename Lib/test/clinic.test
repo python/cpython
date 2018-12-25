@@ -277,9 +277,14 @@ test_unicode_converter(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *a;
 
-    if (!PyArg_Parse(arg, "U:test_unicode_converter", &a)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("test_unicode_converter", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    a = arg;
     return_value = test_unicode_converter_impl(module, a);
 
 exit:
@@ -288,7 +293,7 @@ exit:
 
 static PyObject *
 test_unicode_converter_impl(PyObject *module, PyObject *a)
-/*[clinic end generated code: output=504a2c8d00370adf input=aa33612df92aa9c5]*/
+/*[clinic end generated code: output=ca603454e1f8f764 input=aa33612df92aa9c5]*/
 
 /*[clinic input]
 test_bool_converter
@@ -1025,7 +1030,8 @@ test_Py_complex_converter(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_complex a;
 
-    if (!PyArg_Parse(arg, "D:test_Py_complex_converter", &a)) {
+    a = PyComplex_AsCComplex(arg);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     return_value = test_Py_complex_converter_impl(module, a);
@@ -1036,7 +1042,7 @@ exit:
 
 static PyObject *
 test_Py_complex_converter_impl(PyObject *module, Py_complex a)
-/*[clinic end generated code: output=27efb4ff772d6170 input=070f216a515beb79]*/
+/*[clinic end generated code: output=c2ecbec2144ca540 input=070f216a515beb79]*/
 
 /*[clinic input]
 test_str_converter
