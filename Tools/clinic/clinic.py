@@ -3165,10 +3165,32 @@ class PyBytesObject_converter(CConverter):
     format_unit = 'S'
     # accept = {bytes}
 
+    def parse_arg(self, argname):
+        if self.format_unit == 'S':
+            return """
+                if (!PyBytes_Check({argname})) {{{{
+                    _PyArg_BadArgument("{{name}}", "bytes", {argname});
+                    goto exit;
+                }}}}
+                {paramname} = {argname};
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
+
 class PyByteArrayObject_converter(CConverter):
     type = 'PyByteArrayObject *'
     format_unit = 'Y'
     # accept = {bytearray}
+
+    def parse_arg(self, argname):
+        if self.format_unit == 'Y':
+            return """
+                if (!PyByteArray_Check({argname})) {{{{
+                    _PyArg_BadArgument("{{name}}", "bytearray", {argname});
+                    goto exit;
+                }}}}
+                {paramname} = {argname};
+                """.format(argname=argname, paramname=self.name)
+        return super().parse_arg(argname)
 
 class unicode_converter(CConverter):
     type = 'PyObject *'
