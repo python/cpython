@@ -808,12 +808,7 @@ class CLanguage(Language):
                     """ % argname)
 
                 parsearg = converters[0].parse_arg(argname)
-                if parsearg is None:
-                    parsearg = """
-                        if (!PyArg_Parse(%s, "{format_units}:{name}", {parse_arguments})) {{
-                            goto exit;
-                        }}
-                        """ % argname
+                assert parsearg is not None
                 parser_definition = parser_body(parser_prototype,
                                                 normalize_snippet(parsearg, indent=4))
 
@@ -2569,6 +2564,11 @@ class CConverter(metaclass=CConverterAutoRegister):
                 {paramname} = {cast}{argname};
                 """.format(argname=argname, paramname=self.name,
                            subclass_of=self.subclass_of, cast=cast)
+        return """
+            if (!PyArg_Parse(%s, "{format_units}:{name}", {parse_arguments})) {{
+                goto exit;
+            }}
+            """ % argname
 
 type_checks = {
     '&PyLong_Type': ('PyLong_Check', 'int'),
