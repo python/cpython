@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include "frameobject.h"
 #include "clinic/_warnings.c.h"
 
@@ -255,7 +255,11 @@ already_warned(PyObject *registry, PyObject *key, int should_set)
     version_obj = _PyDict_GetItemId(registry, &PyId_version);
     if (version_obj == NULL
         || !PyLong_CheckExact(version_obj)
-        || PyLong_AsLong(version_obj) != _PyRuntime.warnings.filters_version) {
+        || PyLong_AsLong(version_obj) != _PyRuntime.warnings.filters_version)
+    {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
         PyDict_Clear(registry);
         version_obj = PyLong_FromLong(_PyRuntime.warnings.filters_version);
         if (version_obj == NULL)
@@ -671,7 +675,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     PyObject *globals;
 
     /* Setup globals, filename and lineno. */
-    PyFrameObject *f = PyThreadState_GET()->frame;
+    PyFrameObject *f = _PyThreadState_GET()->frame;
     // Stack level comparisons to Python code is off by one as there is no
     // warnings-related stack level to avoid.
     if (stack_level <= 0 || is_internal_frame(f)) {
@@ -1150,7 +1154,7 @@ PyDoc_STRVAR(warn_explicit_doc,
 
 static PyMethodDef warnings_functions[] = {
     WARNINGS_WARN_METHODDEF
-    {"warn_explicit", (PyCFunction)warnings_warn_explicit,
+    {"warn_explicit", (PyCFunction)(void(*)(void))warnings_warn_explicit,
         METH_VARARGS | METH_KEYWORDS, warn_explicit_doc},
     {"_filters_mutated", (PyCFunction)warnings_filters_mutated, METH_NOARGS,
         NULL},

@@ -7,7 +7,7 @@
 
 #include "Python.h"
 #include "structmember.h"
-#include "accu.h"
+#include "pycore_accu.h"
 
 #ifdef __GNUC__
 #define UNUSED __attribute__((__unused__))

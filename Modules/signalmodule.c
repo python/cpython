@@ -4,6 +4,8 @@
 /* XXX Signals should be recorded per thread, now we have thread state. */
 
 #include "Python.h"
+#include "pycore_atomic.h"
+
 #ifndef MS_WINDOWS
 #include "posixmodule.h"
 #endif
@@ -1208,7 +1210,7 @@ static PyMethodDef signal_methods[] = {
     SIGNAL_SIGNAL_METHODDEF
     SIGNAL_STRSIGNAL_METHODDEF
     SIGNAL_GETSIGNAL_METHODDEF
-    {"set_wakeup_fd", (PyCFunction)signal_set_wakeup_fd, METH_VARARGS | METH_KEYWORDS, set_wakeup_fd_doc},
+    {"set_wakeup_fd", (PyCFunction)(void(*)(void))signal_set_wakeup_fd, METH_VARARGS | METH_KEYWORDS, set_wakeup_fd_doc},
     SIGNAL_SIGINTERRUPT_METHODDEF
     SIGNAL_PAUSE_METHODDEF
     SIGNAL_PTHREAD_KILL_METHODDEF

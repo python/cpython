@@ -392,7 +392,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: make_legacy_pyc(source)
 
-   Move a PEP 3147/488 pyc file to its legacy pyc location and return the file
+   Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return the file
    system path to the legacy pyc file.  The *source* value is the file system
    path to the source file.  It does not need to exist, however the PEP
    3147/488 pyc file must exist.

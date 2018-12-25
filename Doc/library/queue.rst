@@ -26,8 +26,8 @@ competing threads; however, they are not designed to handle reentrancy
 within a thread.
 
 In addition, the module implements a "simple"
-:abbr:`FIFO (first-in, first-out)` queue type where
-specific implementations can provide additional guarantees
+:abbr:`FIFO (first-in, first-out)` queue type, :class:`SimpleQueue`, whose
+specific implementation provides additional guarantees
 in exchange for the smaller functionality.
 
 The :mod:`queue` module defines the following classes and exceptions:
@@ -275,4 +275,5 @@ SimpleQueue Objects
 
    :class:`collections.deque` is an alternative implementation of unbounded
    queues with fast atomic :meth:`~collections.deque.append` and
-   :meth:`~collections.deque.popleft` operations that do not require locking.
+   :meth:`~collections.deque.popleft` operations that do not require locking
+   and also support indexing.

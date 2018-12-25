@@ -9,7 +9,7 @@ Copyright (c) Corporation for National Research Initiatives.
    ------------------------------------------------------------------------ */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include "ucnhash.h"
 #include <ctype.h>
 
@@ -129,8 +129,10 @@ PyObject *_PyCodec_Lookup(const char *encoding)
 
     /* Next, scan the search functions in order of registration */
     args = PyTuple_New(1);
-    if (args == NULL)
-        goto onError;
+    if (args == NULL) {
+        Py_DECREF(v);
+        return NULL;
+    }
     PyTuple_SET_ITEM(args,0,v);
 
     len = PyList_Size(interp->codec_search_path);

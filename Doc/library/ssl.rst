@@ -1941,7 +1941,7 @@ to speed up repeated connections from the same clients.
    .. note::
       With versions of OpenSSL older than 0.9.8m, it is only possible
       to set options, not to clear them.  Attempting to clear an option
-      (by resetting the corresponding bits) will raise a ``ValueError``.
+      (by resetting the corresponding bits) will raise a :exc:`ValueError`.
 
    .. versionchanged:: 3.6
       :attr:`SSLContext.options` returns :class:`Options` flags:

@@ -346,7 +346,7 @@ class _ABC(type):
             except AttributeError:
                 return False
             else:
-                return type(value) in _const_types[cls]
+                return isinstance(value, _const_types[cls])
         return type.__instancecheck__(cls, inst)
 
 def _new(cls, *args, **kwargs):

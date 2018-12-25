@@ -552,7 +552,7 @@ Patch by Dong-hee Na.
 .. nonce: YMQ7Q2
 .. section: Library
 
-inspect.signature should follow PEP 8, if the parameter has an annotation
+inspect.signature should follow :pep:`8`, if the parameter has an annotation
 and a default value. Patch by Dong-hee Na.
 
 ..

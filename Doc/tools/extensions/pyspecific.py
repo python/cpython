@@ -11,7 +11,7 @@
 
 import re
 import io
-from os import path
+from os import getenv, path
 from time import asctime
 from pprint import pformat
 from docutils.io import StringOutput
@@ -141,9 +141,10 @@ class Availability(Directive):
     final_argument_whitespace = True
 
     def run(self):
-        pnode = nodes.paragraph(classes=['availability'])
-        n, m = self.state.inline_text(':ref:`Availability <availability>`: ',
-                                      self.lineno)
+        availability_ref = ':ref:`Availability <availability>`: '
+        pnode = nodes.paragraph(availability_ref + self.arguments[0],
+                                classes=["availability"],)
+        n, m = self.state.inline_text(availability_ref, self.lineno)
         pnode.extend(n + m)
         n, m = self.state.inline_text(self.arguments[0], self.lineno)
         pnode.extend(n + m)
@@ -291,7 +292,9 @@ class MiscNews(Directive):
         fname = self.arguments[0]
         source = self.state_machine.input_lines.source(
             self.lineno - self.state_machine.input_offset - 1)
-        source_dir = path.dirname(path.abspath(source))
+        source_dir = getenv('PY_MISC_NEWS_DIR')
+        if not source_dir:
+            source_dir = path.dirname(path.abspath(source))
         fpath = path.join(source_dir, fname)
         self.state.document.settings.record_dependencies.add(fpath)
         try:
@@ -424,11 +427,9 @@ def setup(app):
     app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
     app.add_builder(suspicious.CheckSuspiciousMarkupBuilder)
-    app.add_description_unit('opcode', 'opcode', '%s (opcode)',
-                             parse_opcode_signature)
-    app.add_description_unit('pdbcommand', 'pdbcmd', '%s (pdb command)',
-                             parse_pdb_command)
-    app.add_description_unit('2to3fixer', '2to3fixer', '%s (2to3 fixer)')
+    app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
+    app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
+    app.add_object_type('2to3fixer', '2to3fixer', '%s (2to3 fixer)')
     app.add_directive_to_domain('py', 'decorator', PyDecoratorFunction)
     app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)
