@@ -1619,6 +1619,8 @@ class TestRoundtrip(TestCase):
             testfiles = random.sample(testfiles, 10)
 
         for testfile in testfiles:
+            if support.verbose >= 2:
+                print('tokenize', testfile)
             with open(testfile, 'rb') as f:
                 with self.subTest(file=testfile):
                     self.check_roundtrip(f)

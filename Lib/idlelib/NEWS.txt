@@ -3,6 +3,18 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-35208: Squeezer now counts wrapped lines before newlines.
+
+bpo-35555: Gray out Code Context menu entry when it's not applicable.
+
+bpo-22703: Improve the Code Context and Zoom Height menu labels.
+The Code Context menu label now toggles between Show/Hide Code Context.
+The Zoom Height menu now toggles between Zoom/Restore Height.
+Zoom Height has moved from the Window menu to the Options menu.
+
+bpo-35521: Document the editor code context feature.
+Add some internal references within the IDLE doc.
+
 bpo-34864: When starting IDLE on MacOS, warn if the system setting
 "Prefer tabs when opening documents" is "Always".  As previous
 documented for this issue, running IDLE with this setting causes

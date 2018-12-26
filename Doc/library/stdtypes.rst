@@ -220,8 +220,8 @@ numbers for the machine on which your program is running is available
 in :data:`sys.float_info`.  Complex numbers have a real and imaginary
 part, which are each a floating point number.  To extract these parts
 from a complex number *z*, use ``z.real`` and ``z.imag``. (The standard
-library includes additional numeric types, :mod:`fractions` that hold
-rationals, and :mod:`decimal` that hold floating-point numbers with
+library includes the additional numeric types :mod:`fractions.Fraction`, for
+rationals, and :mod:`decimal.Decimal`, for floating-point numbers with
 user-definable precision.)
 
 .. index::
@@ -4239,9 +4239,9 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
       Return a shallow copy of the dictionary.
 
-   .. classmethod:: fromkeys(seq[, value])
+   .. classmethod:: fromkeys(iterable[, value])
 
-      Create a new dictionary with keys from *seq* and values set to *value*.
+      Create a new dictionary with keys from *iterable* and values set to *value*.
 
       :meth:`fromkeys` is a class method that returns a new dictionary. *value*
       defaults to ``None``.
@@ -4283,7 +4283,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
    .. describe:: reversed(d)
 
-      Return a reversed iterator over the keys of the dictionary. This is a
+      Return a reverse iterator over the keys of the dictionary. This is a
       shortcut for ``reversed(d.keys())``.
 
    .. method:: setdefault(key[, default])
@@ -4394,7 +4394,7 @@ support membership tests:
 
 .. describe:: reversed(dictview)
 
-   Return an reversed iterator over the keys, values or items of the dictionnary.
+   Return a reverse iterator over the keys, values or items of the dictionary.
    The view will be iterated in reverse order of the insertion.
 
    .. versionchanged:: 3.8
