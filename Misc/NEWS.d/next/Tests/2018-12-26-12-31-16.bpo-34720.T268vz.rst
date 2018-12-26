@@ -1,0 +1,2 @@
+Assert m_state != NULL to mimic transversal functions that do not correctly
+module creation when the module state has not been created.
