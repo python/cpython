@@ -317,15 +317,6 @@ class TestNtpath(unittest.TestCase):
                 file2 = ntpath.join(f2, "missing")
                 self.assertEqualCI(file, ntpath.realpath(file2))
                 self.assertEqualCI(s2b(file), ntpath.realpath(s2b(file2)))
-
-                # realpath for long path is in extended form
-                # even though initially it was not
-                f3 = ntpath.join(d, "f" * 255)
-                os.mkdir("\\\\?\\" + f3)
-                f4 = ntpath.join(d, "short")
-                _winapi.CreateJunction(f3, f4)
-                self.assertEqualCI("\\\\?\\" + f3, ntpath.realpath(f4))
-                self.assertEqualCI(s2b("\\\\?\\" + f3), ntpath.realpath(s2b(f4)))
             finally:
                 os.unlink(f2)
                 if f4:
