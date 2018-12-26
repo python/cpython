@@ -285,15 +285,52 @@ class TestNtpath(unittest.TestCase):
 
     @unittest.skipUnless(nt and _winapi, "realpath requires 'nt' and '_winapi' modules")
     def test_realpath(self):
+        def to_unc(p):
+            drive, rest = ntpath.splitdrive(file2)
+            return ntpath.join(f"\\\\localhost\\{drive[0]}$", rest)
+        def s2b(s):
+            return bytes(s, "utf-8")
+
         with TemporaryDirectory() as d:
+            f4 = None
             f = ntpath.join(d, "f")
             os.mkdir(f)
             f2 = ntpath.join(d, "g")
             _winapi.CreateJunction(f, f2)
-            p1 = ntpath.realpath(f)
-            p2 = ntpath.realpath(f2)
-            os.unlink(f2)
-            self.assertEqualCI(p1, p2)
+            try:
+                # realpath for original path and junction is the same
+                self.assertEqualCI(ntpath.realpath(f), ntpath.realpath(f2))
+                self.assertEqualCI(ntpath.realpath(s2b(f)), ntpath.realpath(s2b(f2)))
+
+                # realpath for UNC path is the same
+                file = ntpath.join(f, "file1")
+                open(file, "w+").close()
+                file2 = ntpath.join(f2, "file1")
+                unc1 = to_unc(file)
+                unc2 = to_unc(file2)
+                self.assertEqualCI(unc1, ntpath.realpath(unc2))
+                self.assertEqualCI(s2b(unc1), ntpath.realpath(s2b(unc2)))
+
+                # realpath for non-existent file F in symlinked folder
+                # is original folder + F
+                file = ntpath.join(f, "missing")
+                file2 = ntpath.join(f2, "missing")
+                self.assertEqualCI(file, ntpath.realpath(file2))
+                self.assertEqualCI(s2b(file), ntpath.realpath(s2b(file2)))
+
+                # realpath for long path is in extended form
+                # even though initially it was not
+                f3 = ntpath.join(d, "f" * 255)
+                os.mkdir("\\\\?\\" + f3)
+                f4 = ntpath.join(d, "short")
+                _winapi.CreateJunction(f3, f4)
+                self.assertEqualCI("\\\\?\\" + f3, ntpath.realpath(f4))
+                self.assertEqualCI(s2b("\\\\?\\" + f3), ntpath.realpath(s2b(f4)))
+            finally:
+                os.unlink(f2)
+                if f4:
+                    os.unlink(f4)
+
 
     @unittest.skipUnless(nt, "abspath requires 'nt' module")
     def test_abspath(self):
