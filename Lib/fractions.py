@@ -440,7 +440,7 @@ class Fraction(numbers.Rational):
 
     def _floordiv(a, b):
         """a // b"""
-        return math.floor(a / b)
+        return (a.numerator * b.denominator) // (a.denominator * b.numerator)
 
     __floordiv__, __rfloordiv__ = _operator_fallbacks(_floordiv, operator.floordiv)
 
