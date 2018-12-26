@@ -1,0 +1,1 @@
+Speed-up building enums by value, e.g. http.HTTPStatus(200).
