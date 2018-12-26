@@ -436,13 +436,9 @@ class Fraction(numbers.Rational):
 
     def _divmod(a, b):
         """(a // b, a % b)"""
-        # div = a // b
         da, db = a.denominator, b.denominator
-        n_div, d_div = a.numerator * db, da * b.numerator
-        div = n_div // d_div
-        # mod = a - b * div == (na*db - da*nb * div) / (da*db)
-        n_mod, d_mod = n_div - d_div * div, da * db
-        return div, Fraction(n_mod, d_mod)
+        div, n_mod = divmod(a.numerator * db, da * b.numerator)
+        return div, Fraction(n_mod, da * db)
 
     __divmod__, __rdivmod__ = _operator_fallbacks(_divmod, divmod)
 
