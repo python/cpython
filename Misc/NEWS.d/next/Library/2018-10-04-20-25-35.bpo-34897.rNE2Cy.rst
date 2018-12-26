@@ -1,2 +1,2 @@
-Fix Lib/test/support/__init__.py so that an assignment of "" is ignored
-patch by aixtools
+Adjust test.support.missing_compiler_executable check so that a nominal
+command name of "" is ignored. Patch by Michael Felt.
