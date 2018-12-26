@@ -22,7 +22,6 @@ import sys
 import stat
 import genericpath
 from genericpath import *
-from nt import _getfinalpathname
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
@@ -640,58 +639,65 @@ def commonpath(paths):
         raise
 
 
-# determine if two files are in fact the same file
-def realpath(filename):
-    filename = os.fspath(filename)
-    extended_length_prefix = '\\\\?\\' if isinstance(filename, str) else b'\\\\?\\'
-    is_extended_path = filename.startswith(extended_length_prefix)
-    unresolved = filename if is_extended_path else abspath(filename)
-    resolved_parts = []
-    while True:
-        try:
-            resolved_parts.append(_getfinalpathname(unresolved))
-            break
-        except OSError:
-            unresolved, tail = split(unresolved)
-            if not tail:
-                resolved_parts.append(unresolved)
+try:
+    from nt import _getfinalpathname
+
+    # determine if two files are in fact the same file
+    def realpath(filename):
+        filename = os.fspath(filename)
+        extended_length_prefix = '\\\\?\\' if isinstance(filename, str) else b'\\\\?\\'
+        is_extended_path = filename.startswith(extended_length_prefix)
+        unresolved = filename if is_extended_path else abspath(filename)
+        resolved_parts = []
+        while True:
+            try:
+                resolved_parts.append(_getfinalpathname(unresolved))
                 break
-            resolved_parts.append(tail)
-    resolved = join(*reversed(resolved_parts))
-    # try to convert extended path to normal if
-    # initial path did not use \\?\ prefix and result uses it
-    if not is_extended_path and resolved.startswith(extended_length_prefix):
-        resolved = _extended_to_normal(resolved)
-    return resolved
+            except OSError:
+                unresolved, tail = split(unresolved)
+                if not tail:
+                    resolved_parts.append(unresolved)
+                    break
+                resolved_parts.append(tail)
+        resolved = join(*reversed(resolved_parts))
+        # try to convert extended path to normal if
+        # initial path did not use \\?\ prefix and result uses it
+        if not is_extended_path and resolved.startswith(extended_length_prefix):
+            resolved = _extended_to_normal(resolved)
+        return resolved
 
-def _extended_to_normal(path):
-    drive, rest = splitdrive(path)
-    if not rest:
+    def _extended_to_normal(path):
+        drive, rest = splitdrive(path)
+        if not rest:
+            return path
+        if isinstance(path, str):
+            sep = '\\'
+            colon = ':'
+            letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+            extended_unc_prefix = '\\\\?\\UNC'
+        else:
+            sep = b'\\'
+            colon = b':'
+            letters = b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+            extended_unc_prefix = b'\\\\?\\UNC'
+        drive = drive.upper()
+        if drive == extended_unc_prefix:
+            # UNC path with \\?\ prefix - drop prefix
+            # 7 is len('\\?\UNC')
+            normal_path = sep + path[7:]
+        else:
+            assert len(drive) == 6 and drive[4:5] in letters and drive[5:6] == colon
+            # extended path with \\?\ prefix
+            # 4 is len('\\?\')
+            normal_path = path[4:]
+
+        if 0 < len(normal_path) < 260 and normal_path == abspath(normal_path):
+            return normal_path
         return path
-    if isinstance(path, str):
-        sep = '\\'
-        colon = ':'
-        letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        extended_unc_prefix = '\\\\?\\UNC'
-    else:
-        sep = b'\\'
-        colon = b':'
-        letters = b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        extended_unc_prefix = b'\\\\?\\UNC'
-    drive = drive.upper()
-    if drive == extended_unc_prefix:
-        # UNC path with \\?\ prefix - drop prefix
-        # 7 is len('\\?\UNC')
-        normal_path = sep + path[7:]
-    else:
-        assert len(drive) == 6 and drive[4:5] in letters and drive[5:6] == colon
-        # extended path with \\?\ prefix
-        # 4 is len('\\?\')
-        normal_path = path[4:]
-
-    if 0 < len(normal_path) < 260 and normal_path == abspath(normal_path):
-        return normal_path
-    return path
+except ImportError:
+    realpath = abspath
+    def _getfinalpathname(path):
+        return normcase(abspath(path))
 
 try:
     # The genericpath.isdir implementation uses os.stat and checks the mode
