@@ -1,0 +1,2 @@
+Mod and divmod operations on :class:`fractions.Fraction` types are 2-3x faster.
+Patch by Stefan Behnel.
