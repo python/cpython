@@ -36,16 +36,6 @@ def _gcd(a, b):
     return a
 
 
-def _flat_divmod(na, da, nb, db):
-    """(a // b, a % b)"""
-    # div = a // b
-    n_div, d_div = na * db, da * nb
-    div = n_div // d_div
-    # mod = a - b * div == (na*db - da*nb * div) / (da*db)
-    n_mod, d_mod = n_div - d_div * div, da * db
-    return div, n_mod, d_mod
-
-
 # Constants related to the hash implementation;  hash(x) is based
 # on the reduction of x modulo the prime _PyHASH_MODULUS.
 _PyHASH_MODULUS = sys.hash_info.modulus
@@ -446,17 +436,20 @@ class Fraction(numbers.Rational):
 
     def _divmod(a, b):
         """(a // b, a % b)"""
-        div, n_mod, d_mod = _flat_divmod(
-            a.numerator, a.denominator, b.numerator, b.denominator)
+        # div = a // b
+        da, db = a.denominator, b.denominator
+        n_div, d_div = a.numerator * db, da * b.numerator
+        div = n_div // d_div
+        # mod = a - b * div == (na*db - da*nb * div) / (da*db)
+        n_mod, d_mod = n_div - d_div * div, da * db
         return div, Fraction(n_mod, d_mod)
 
     __divmod__, __rdivmod__ = _operator_fallbacks(_divmod, divmod)
 
     def _mod(a, b):
         """a % b"""
-        _, n_mod, d_mod = _flat_divmod(
-            a.numerator, a.denominator, b.numerator, b.denominator)
-        return Fraction(n_mod, d_mod)
+        da, db = a.denominator, b.denominator
+        return Fraction((a.numerator * db) % (b.numerator * da), da * db)
 
     __mod__, __rmod__ = _operator_fallbacks(_mod, operator.mod)
 
