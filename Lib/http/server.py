@@ -692,6 +692,14 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             else:
                 return self.list_directory(path)
         ctype = self.guess_type(path)
+        # check for trailing "/" which should return 404. See Issue17324
+        # The test for this was added in test_httpserver.py
+        # However, some OS platforms accept a trailingSlash as a filename
+        # See discussion on python-dev and Issue34711 regarding
+        # parseing and rejection of filenames with a trailing slash
+        if path.endswith("/"):
+            self.send_error(HTTPStatus.NOT_FOUND, "File not found")
+            return None
         try:
             f = open(path, 'rb')
         except OSError:
