@@ -17,7 +17,7 @@ PyDoc_STRVAR(bytes_split__doc__,
 "    -1 (the default value) means no limit.");
 
 #define BYTES_SPLIT_METHODDEF    \
-    {"split", (PyCFunction)bytes_split, METH_FASTCALL|METH_KEYWORDS, bytes_split__doc__},
+    {"split", (PyCFunction)(void(*)(void))bytes_split, METH_FASTCALL|METH_KEYWORDS, bytes_split__doc__},
 
 static PyObject *
 bytes_split_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit);
@@ -66,7 +66,11 @@ bytes_partition(PyBytesObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer sep = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:partition", &sep)) {
+    if (PyObject_GetBuffer(arg, &sep, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&sep, 'C')) {
+        _PyArg_BadArgument("partition", "contiguous buffer", arg);
         goto exit;
     }
     return_value = bytes_partition_impl(self, &sep);
@@ -105,7 +109,11 @@ bytes_rpartition(PyBytesObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer sep = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:rpartition", &sep)) {
+    if (PyObject_GetBuffer(arg, &sep, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&sep, 'C')) {
+        _PyArg_BadArgument("rpartition", "contiguous buffer", arg);
         goto exit;
     }
     return_value = bytes_rpartition_impl(self, &sep);
@@ -136,7 +144,7 @@ PyDoc_STRVAR(bytes_rsplit__doc__,
 "Splitting is done starting at the end of the bytes and working to the front.");
 
 #define BYTES_RSPLIT_METHODDEF    \
-    {"rsplit", (PyCFunction)bytes_rsplit, METH_FASTCALL|METH_KEYWORDS, bytes_rsplit__doc__},
+    {"rsplit", (PyCFunction)(void(*)(void))bytes_rsplit, METH_FASTCALL|METH_KEYWORDS, bytes_rsplit__doc__},
 
 static PyObject *
 bytes_rsplit_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit);
@@ -184,7 +192,7 @@ PyDoc_STRVAR(bytes_strip__doc__,
 "If the argument is omitted or None, strip leading and trailing ASCII whitespace.");
 
 #define BYTES_STRIP_METHODDEF    \
-    {"strip", (PyCFunction)bytes_strip, METH_FASTCALL, bytes_strip__doc__},
+    {"strip", (PyCFunction)(void(*)(void))bytes_strip, METH_FASTCALL, bytes_strip__doc__},
 
 static PyObject *
 bytes_strip_impl(PyBytesObject *self, PyObject *bytes);
@@ -215,7 +223,7 @@ PyDoc_STRVAR(bytes_lstrip__doc__,
 "If the argument is omitted or None, strip leading  ASCII whitespace.");
 
 #define BYTES_LSTRIP_METHODDEF    \
-    {"lstrip", (PyCFunction)bytes_lstrip, METH_FASTCALL, bytes_lstrip__doc__},
+    {"lstrip", (PyCFunction)(void(*)(void))bytes_lstrip, METH_FASTCALL, bytes_lstrip__doc__},
 
 static PyObject *
 bytes_lstrip_impl(PyBytesObject *self, PyObject *bytes);
@@ -246,7 +254,7 @@ PyDoc_STRVAR(bytes_rstrip__doc__,
 "If the argument is omitted or None, strip trailing ASCII whitespace.");
 
 #define BYTES_RSTRIP_METHODDEF    \
-    {"rstrip", (PyCFunction)bytes_rstrip, METH_FASTCALL, bytes_rstrip__doc__},
+    {"rstrip", (PyCFunction)(void(*)(void))bytes_rstrip, METH_FASTCALL, bytes_rstrip__doc__},
 
 static PyObject *
 bytes_rstrip_impl(PyBytesObject *self, PyObject *bytes);
@@ -281,7 +289,7 @@ PyDoc_STRVAR(bytes_translate__doc__,
 "The remaining characters are mapped through the given translation table.");
 
 #define BYTES_TRANSLATE_METHODDEF    \
-    {"translate", (PyCFunction)bytes_translate, METH_FASTCALL|METH_KEYWORDS, bytes_translate__doc__},
+    {"translate", (PyCFunction)(void(*)(void))bytes_translate, METH_FASTCALL|METH_KEYWORDS, bytes_translate__doc__},
 
 static PyObject *
 bytes_translate_impl(PyBytesObject *self, PyObject *table,
@@ -318,7 +326,7 @@ PyDoc_STRVAR(bytes_maketrans__doc__,
 "The bytes objects frm and to must be of the same length.");
 
 #define BYTES_MAKETRANS_METHODDEF    \
-    {"maketrans", (PyCFunction)bytes_maketrans, METH_FASTCALL|METH_STATIC, bytes_maketrans__doc__},
+    {"maketrans", (PyCFunction)(void(*)(void))bytes_maketrans, METH_FASTCALL|METH_STATIC, bytes_maketrans__doc__},
 
 static PyObject *
 bytes_maketrans_impl(Py_buffer *frm, Py_buffer *to);
@@ -363,7 +371,7 @@ PyDoc_STRVAR(bytes_replace__doc__,
 "replaced.");
 
 #define BYTES_REPLACE_METHODDEF    \
-    {"replace", (PyCFunction)bytes_replace, METH_FASTCALL, bytes_replace__doc__},
+    {"replace", (PyCFunction)(void(*)(void))bytes_replace, METH_FASTCALL, bytes_replace__doc__},
 
 static PyObject *
 bytes_replace_impl(PyBytesObject *self, Py_buffer *old, Py_buffer *new,
@@ -412,7 +420,7 @@ PyDoc_STRVAR(bytes_decode__doc__,
 "    can handle UnicodeDecodeErrors.");
 
 #define BYTES_DECODE_METHODDEF    \
-    {"decode", (PyCFunction)bytes_decode, METH_FASTCALL|METH_KEYWORDS, bytes_decode__doc__},
+    {"decode", (PyCFunction)(void(*)(void))bytes_decode, METH_FASTCALL|METH_KEYWORDS, bytes_decode__doc__},
 
 static PyObject *
 bytes_decode_impl(PyBytesObject *self, const char *encoding,
@@ -447,7 +455,7 @@ PyDoc_STRVAR(bytes_splitlines__doc__,
 "true.");
 
 #define BYTES_SPLITLINES_METHODDEF    \
-    {"splitlines", (PyCFunction)bytes_splitlines, METH_FASTCALL|METH_KEYWORDS, bytes_splitlines__doc__},
+    {"splitlines", (PyCFunction)(void(*)(void))bytes_splitlines, METH_FASTCALL|METH_KEYWORDS, bytes_splitlines__doc__},
 
 static PyObject *
 bytes_splitlines_impl(PyBytesObject *self, int keepends);
@@ -491,12 +499,17 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *string;
 
-    if (!PyArg_Parse(arg, "U:fromhex", &string)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("fromhex", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    string = arg;
     return_value = bytes_fromhex_impl(type, string);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=470acd12b2534765 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dc9aa04f0007ab11 input=a9049054013a1b77]*/

@@ -489,7 +489,7 @@ static PyGetSetDef SHA3_getseters[] = {
     static PyTypeObject type_obj = { \
         PyVarObject_HEAD_INIT(NULL, 0) \
         type_name,          /* tp_name */ \
-        sizeof(SHA3object), /* tp_size */ \
+        sizeof(SHA3object), /* tp_basicsize */ \
         0,                  /* tp_itemsize */ \
         /*  methods  */ \
         (destructor)SHA3_dealloc, /* tp_dealloc */ \
@@ -589,6 +589,10 @@ _SHAKE_digest(SHA3object *self, unsigned long digestlen, int hex)
     int res;
     PyObject *result = NULL;
 
+    if (digestlen >= (1 << 29)) {
+        PyErr_SetString(PyExc_ValueError, "length is too large");
+        return NULL;
+    }
     /* ExtractLane needs at least SHA3_MAX_DIGESTSIZE + SHA3_LANESIZE and
      * SHA3_LANESIZE extra space.
      */

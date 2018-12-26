@@ -35,12 +35,9 @@ class HMAC:
 
         key:       key for the keyed hash object.
         msg:       Initial input for the hash, if provided.
-        digestmod: A module supporting PEP 247.  *OR*
-                   A hashlib constructor returning a new hash object. *OR*
+        digestmod: Required.  A module supporting PEP 247.  *OR*
+                   A hashlib constructor returning a new hash object.  *OR*
                    A hash name suitable for hashlib.new().
-                   Defaults to hashlib.md5.
-                   Implicit default to hashlib.md5 is deprecated since Python
-                   3.4 and will be removed in Python 3.8.
 
         Note: key and msg must be a bytes or bytearray objects.
         """
@@ -49,11 +46,7 @@ class HMAC:
             raise TypeError("key: expected bytes or bytearray, but got %r" % type(key).__name__)
 
         if digestmod is None:
-            _warnings.warn("HMAC() without an explicit digestmod argument "
-                           "is deprecated since Python 3.4, and will be removed "
-                           "in 3.8",
-                           DeprecationWarning, 2)
-            digestmod = _hashlib.md5
+            raise ValueError('`digestmod` is required.')
 
         if callable(digestmod):
             self.digest_cons = digestmod

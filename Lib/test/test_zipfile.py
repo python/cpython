@@ -549,8 +549,8 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             self.assertRaises(ValueError, zipfp.write, TESTFN)
 
-        with zipfile.ZipFile(TESTFN2, "w") as zipfp:
-            zipfp.write(TESTFN, strict_timestamps=False)
+        with zipfile.ZipFile(TESTFN2, "w", strict_timestamps=False) as zipfp:
+            zipfp.write(TESTFN)
             zinfo = zipfp.getinfo(TESTFN)
             self.assertEqual(zinfo.date_time, (1980, 1, 1, 0, 0, 0))
 
@@ -564,8 +564,8 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             self.assertRaises(struct.error, zipfp.write, TESTFN)
 
-        with zipfile.ZipFile(TESTFN2, "w") as zipfp:
-            zipfp.write(TESTFN, strict_timestamps=False)
+        with zipfile.ZipFile(TESTFN2, "w", strict_timestamps=False) as zipfp:
+            zipfp.write(TESTFN)
             zinfo = zipfp.getinfo(TESTFN)
             self.assertEqual(zinfo.date_time, (2107, 12, 31, 23, 59, 59))
 
@@ -769,6 +769,20 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
 
         with zipfile.ZipFile(TESTFN2, "r", zipfile.ZIP_STORED) as zipfp:
             self.assertEqual(zipfp.namelist(), ["absolute"])
+
+    def test_append(self):
+        # Test that appending to the Zip64 archive doesn't change
+        # extra fields of existing entries.
+        with zipfile.ZipFile(TESTFN2, "w", allowZip64=True) as zipfp:
+            zipfp.writestr("strfile", self.data)
+        with zipfile.ZipFile(TESTFN2, "r", allowZip64=True) as zipfp:
+            zinfo = zipfp.getinfo("strfile")
+            extra = zinfo.extra
+        with zipfile.ZipFile(TESTFN2, "a", allowZip64=True) as zipfp:
+            zipfp.writestr("strfile2", self.data)
+        with zipfile.ZipFile(TESTFN2, "r", allowZip64=True) as zipfp:
+            zinfo = zipfp.getinfo("strfile")
+            self.assertEqual(zinfo.extra, extra)
 
 @requires_zlib
 class DeflateTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,

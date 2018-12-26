@@ -3,8 +3,8 @@
 #
 
 import unittest
+import unittest.mock
 import queue as pyqueue
-import contextlib
 import time
 import io
 import itertools
@@ -20,6 +20,7 @@ import logging
 import struct
 import operator
 import weakref
+import warnings
 import test.support
 import test.support.script_helper
 from test import support
@@ -29,9 +30,6 @@ from test import support
 _multiprocessing = test.support.import_module('_multiprocessing')
 # Skip tests if sem_open implementation is broken.
 test.support.import_module('multiprocessing.synchronize')
-# import threading after _multiprocessing to raise a more relevant error
-# message: "No module named _multiprocessing". _multiprocessing is not compiled
-# without thread support.
 import threading
 
 import multiprocessing.connection
@@ -157,11 +155,11 @@ class TimingWrapper(object):
         self.elapsed = None
 
     def __call__(self, *args, **kwds):
-        t = time.time()
+        t = time.monotonic()
         try:
             return self.func(*args, **kwds)
         finally:
-            self.elapsed = time.time() - t
+            self.elapsed = time.monotonic() - t
 
 #
 # Base class for test cases
@@ -1036,9 +1034,9 @@ class _TestQueue(BaseTestCase):
 
     def test_timeout(self):
         q = multiprocessing.Queue()
-        start = time.time()
+        start = time.monotonic()
         self.assertRaises(pyqueue.Empty, q.get, True, 0.200)
-        delta = time.time() - start
+        delta = time.monotonic() - start
         # bpo-30317: Tolerate a delta of 100 ms because of the bad clock
         # resolution on Windows (usually 15.6 ms). x86 Windows7 3.x once
         # failed because the delta was only 135.8 ms.
@@ -1116,6 +1114,14 @@ class _TestQueue(BaseTestCase):
         # Assert that the serialization and the hook have been called correctly
         self.assertTrue(not_serializable_obj.reduce_was_called)
         self.assertTrue(not_serializable_obj.on_queue_feeder_error_was_called)
+
+    def test_closed_queue_put_get_exceptions(self):
+        for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
+            q.close()
+            with self.assertRaisesRegex(ValueError, 'is closed'):
+                q.put('foo')
+            with self.assertRaisesRegex(ValueError, 'is closed'):
+                q.get()
 #
 #
 #
@@ -1434,9 +1440,9 @@ class _TestCondition(BaseTestCase):
         sem.release()
         with cond:
             expected = 0.1
-            dt = time.time()
+            dt = time.monotonic()
             result = cond.wait_for(lambda : state.value==4, timeout=expected)
-            dt = time.time() - dt
+            dt = time.monotonic() - dt
             # borrow logic in assertTimeout() from test/lock_tests.py
             if not result and expected * 0.6 < dt < expected * 10.0:
                 success.value = True
@@ -2079,6 +2085,16 @@ class _TestContainers(BaseTestCase):
         a.append('hello')
         self.assertEqual(f[0][:], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'hello'])
 
+    def test_list_iter(self):
+        a = self.list(list(range(10)))
+        it = iter(a)
+        self.assertEqual(list(it), list(range(10)))
+        self.assertEqual(list(it), [])  # exhausted
+        # list modified during iteration
+        it = iter(a)
+        a[0] = 100
+        self.assertEqual(next(it), 100)
+
     def test_list_proxy_in_list(self):
         a = self.list([self.list(range(3)) for _i in range(3)])
         self.assertEqual([inner[:] for inner in a], [[0, 1, 2]] * 3)
@@ -2108,6 +2124,19 @@ class _TestContainers(BaseTestCase):
         self.assertEqual(sorted(d.keys()), indices)
         self.assertEqual(sorted(d.values()), [chr(i) for i in indices])
         self.assertEqual(sorted(d.items()), [(i, chr(i)) for i in indices])
+
+    def test_dict_iter(self):
+        d = self.dict()
+        indices = list(range(65, 70))
+        for i in indices:
+            d[i] = chr(i)
+        it = iter(d)
+        self.assertEqual(list(it), indices)
+        self.assertEqual(list(it), [])  # exhausted
+        # dictionary changed size during iteration
+        it = iter(d)
+        d.clear()
+        self.assertRaises(RuntimeError, next, it)
 
     def test_dict_proxy_nested(self):
         pets = self.dict(ferrets=2, hamsters=4)
@@ -2442,6 +2471,7 @@ class _TestPool(BaseTestCase):
             with self.Pool(2) as p:
                 r = p.map_async(sqr, L)
                 self.assertEqual(r.get(), expected)
+            p.join()
             self.assertRaises(ValueError, p.map_async, sqr, L)
 
     @classmethod
@@ -2459,6 +2489,7 @@ class _TestPool(BaseTestCase):
                     exc = e
                 else:
                     self.fail('expected RuntimeError')
+            p.join()
             self.assertIs(type(exc), RuntimeError)
             self.assertEqual(exc.args, (123,))
             cause = exc.__cause__
@@ -2483,6 +2514,7 @@ class _TestPool(BaseTestCase):
                     self.fail('expected SayWhenError')
                 self.assertIs(type(exc), SayWhenError)
                 self.assertIs(exc.__cause__, None)
+            p.join()
 
     @classmethod
     def _test_wrapped_exception(cls):
@@ -2493,6 +2525,7 @@ class _TestPool(BaseTestCase):
         with self.Pool(1) as p:
             with self.assertRaises(RuntimeError):
                 p.apply(self._test_wrapped_exception)
+        p.join()
 
     def test_map_no_failfast(self):
         # Issue #23992: the fail-fast behaviour when an exception is raised
@@ -2500,7 +2533,7 @@ class _TestPool(BaseTestCase):
         # process would fill the result queue (after the result handler thread
         # terminated, hence not draining it anymore).
 
-        t_start = time.time()
+        t_start = time.monotonic()
 
         with self.assertRaises(ValueError):
             with self.Pool(2) as p:
@@ -2512,7 +2545,7 @@ class _TestPool(BaseTestCase):
                     p.join()
 
         # check that we indeed waited for all jobs
-        self.assertGreater(time.time() - t_start, 0.9)
+        self.assertGreater(time.monotonic() - t_start, 0.9)
 
     def test_release_task_refs(self):
         # Issue #29861: task arguments and results should not be kept
@@ -2527,6 +2560,38 @@ class _TestPool(BaseTestCase):
         # With a process pool, copies of the objects are returned, check
         # they were released too.
         self.assertEqual(CountedObject.n_instances, 0)
+
+    def test_enter(self):
+        if self.TYPE == 'manager':
+            self.skipTest("test not applicable to manager")
+
+        pool = self.Pool(1)
+        with pool:
+            pass
+            # call pool.terminate()
+        # pool is no longer running
+
+        with self.assertRaises(ValueError):
+            # bpo-35477: pool.__enter__() fails if the pool is not running
+            with pool:
+                pass
+        pool.join()
+
+    def test_resource_warning(self):
+        if self.TYPE == 'manager':
+            self.skipTest("test not applicable to manager")
+
+        pool = self.Pool(1)
+        pool.terminate()
+        pool.join()
+
+        # force state to RUN to emit ResourceWarning in __del__()
+        pool._state = multiprocessing.pool.RUN
+
+        with support.check_warnings(('unclosed running multiprocessing pool',
+                                     ResourceWarning)):
+            pool = None
+            support.gc_collect()
 
 
 def raising():
@@ -4059,9 +4124,9 @@ class TestWait(unittest.TestCase):
         expected = 5
         a, b = multiprocessing.Pipe()
 
-        start = time.time()
+        start = time.monotonic()
         res = wait([a, b], expected)
-        delta = time.time() - start
+        delta = time.monotonic() - start
 
         self.assertEqual(res, [])
         self.assertLess(delta, expected * 2)
@@ -4069,9 +4134,9 @@ class TestWait(unittest.TestCase):
 
         b.send(None)
 
-        start = time.time()
+        start = time.monotonic()
         res = wait([a, b], 20)
-        delta = time.time() - start
+        delta = time.monotonic() - start
 
         self.assertEqual(res, [a])
         self.assertLess(delta, 0.4)
@@ -4095,9 +4160,9 @@ class TestWait(unittest.TestCase):
         self.assertIsInstance(p.sentinel, int)
         self.assertTrue(sem.acquire(timeout=20))
 
-        start = time.time()
+        start = time.monotonic()
         res = wait([a, p.sentinel, b], expected + 20)
-        delta = time.time() - start
+        delta = time.monotonic() - start
 
         self.assertEqual(res, [p.sentinel])
         self.assertLess(delta, expected + 2)
@@ -4105,18 +4170,18 @@ class TestWait(unittest.TestCase):
 
         a.send(None)
 
-        start = time.time()
+        start = time.monotonic()
         res = wait([a, p.sentinel, b], 20)
-        delta = time.time() - start
+        delta = time.monotonic() - start
 
         self.assertEqual(sorted_(res), sorted_([p.sentinel, b]))
         self.assertLess(delta, 0.4)
 
         b.send(None)
 
-        start = time.time()
+        start = time.monotonic()
         res = wait([a, p.sentinel, b], 20)
-        delta = time.time() - start
+        delta = time.monotonic() - start
 
         self.assertEqual(sorted_(res), sorted_([a, p.sentinel, b]))
         self.assertLess(delta, 0.4)
@@ -4127,9 +4192,9 @@ class TestWait(unittest.TestCase):
     def test_neg_timeout(self):
         from multiprocessing.connection import wait
         a, b = multiprocessing.Pipe()
-        t = time.time()
+        t = time.monotonic()
         res = wait([a], timeout=-1)
-        t = time.time() - t
+        t = time.monotonic() - t
         self.assertEqual(res, [])
         self.assertLess(t, 1)
         a.close()
@@ -4517,17 +4582,21 @@ class TestSemaphoreTracker(unittest.TestCase):
         # bpo-31310: if the semaphore tracker process has died, it should
         # be restarted implicitly.
         from multiprocessing.semaphore_tracker import _semaphore_tracker
-        _semaphore_tracker.ensure_running()
         pid = _semaphore_tracker._pid
+        if pid is not None:
+            os.kill(pid, signal.SIGKILL)
+            os.waitpid(pid, 0)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            _semaphore_tracker.ensure_running()
+        pid = _semaphore_tracker._pid
+
         os.kill(pid, signum)
         time.sleep(1.0)  # give it time to die
 
         ctx = multiprocessing.get_context("spawn")
-        with contextlib.ExitStack() as stack:
-            if should_die:
-                stack.enter_context(self.assertWarnsRegex(
-                    UserWarning,
-                    "semaphore_tracker: process died"))
+        with warnings.catch_warnings(record=True) as all_warn:
+            warnings.simplefilter("always")
             sem = ctx.Semaphore()
             sem.acquire()
             sem.release()
@@ -4537,10 +4606,22 @@ class TestSemaphoreTracker(unittest.TestCase):
             del sem
             gc.collect()
             self.assertIsNone(wr())
+            if should_die:
+                self.assertEqual(len(all_warn), 1)
+                the_warn = all_warn[0]
+                self.assertTrue(issubclass(the_warn.category, UserWarning))
+                self.assertTrue("semaphore_tracker: process died"
+                                in str(the_warn.message))
+            else:
+                self.assertEqual(len(all_warn), 0)
 
     def test_semaphore_tracker_sigint(self):
         # Catchable signal (ignored by semaphore tracker)
         self.check_semaphore_tracker_death(signal.SIGINT, False)
+
+    def test_semaphore_tracker_sigterm(self):
+        # Catchable signal (ignored by semaphore tracker)
+        self.check_semaphore_tracker_death(signal.SIGTERM, False)
 
     def test_semaphore_tracker_sigkill(self):
         # Uncatchable signal.
@@ -4582,6 +4663,48 @@ class TestSimpleQueue(unittest.TestCase):
         self.assertTrue(queue.empty())
 
         proc.join()
+
+
+class TestPoolNotLeakOnFailure(unittest.TestCase):
+
+    def test_release_unused_processes(self):
+        # Issue #19675: During pool creation, if we can't create a process,
+        # don't leak already created ones.
+        will_fail_in = 3
+        forked_processes = []
+
+        class FailingForkProcess:
+            def __init__(self, **kwargs):
+                self.name = 'Fake Process'
+                self.exitcode = None
+                self.state = None
+                forked_processes.append(self)
+
+            def start(self):
+                nonlocal will_fail_in
+                if will_fail_in <= 0:
+                    raise OSError("Manually induced OSError")
+                will_fail_in -= 1
+                self.state = 'started'
+
+            def terminate(self):
+                self.state = 'stopping'
+
+            def join(self):
+                if self.state == 'stopping':
+                    self.state = 'stopped'
+
+            def is_alive(self):
+                return self.state == 'started' or self.state == 'stopping'
+
+        with self.assertRaisesRegex(OSError, 'Manually induced OSError'):
+            p = multiprocessing.pool.Pool(5, context=unittest.mock.MagicMock(
+                Process=FailingForkProcess))
+            p.close()
+            p.join()
+        self.assertFalse(
+            any(process.is_alive() for process in forked_processes))
+
 
 
 class MiscTestCase(unittest.TestCase):

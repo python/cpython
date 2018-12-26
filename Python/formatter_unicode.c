@@ -3,6 +3,7 @@
    of int.__float__, etc., that take and return unicode objects */
 
 #include "Python.h"
+#include "pycore_fileutils.h"
 #include <locale.h>
 
 /* Raises an exception about an unknown presentation type for this
@@ -28,16 +29,17 @@ unknown_presentation_type(Py_UCS4 presentation_type,
 }
 
 static void
-invalid_comma_type(Py_UCS4 presentation_type)
+invalid_thousands_separator_type(char specifier, Py_UCS4 presentation_type)
 {
+    assert(specifier == ',' || specifier == '_');
     if (presentation_type > 32 && presentation_type < 128)
         PyErr_Format(PyExc_ValueError,
-                     "Cannot specify ',' with '%c'.",
-                     (char)presentation_type);
+                     "Cannot specify '%c' with '%c'.",
+                     specifier, (char)presentation_type);
     else
         PyErr_Format(PyExc_ValueError,
-                     "Cannot specify ',' with '\\x%x'.",
-                     (unsigned int)presentation_type);
+                     "Cannot specify '%c' with '\\x%x'.",
+                     specifier, (unsigned int)presentation_type);
 }
 
 static void
@@ -117,8 +119,8 @@ is_sign_element(Py_UCS4 c)
 /* Locale type codes. LT_NO_LOCALE must be zero. */
 enum LocaleType {
     LT_NO_LOCALE = 0,
-    LT_DEFAULT_LOCALE,
-    LT_UNDERSCORE_LOCALE,
+    LT_DEFAULT_LOCALE = ',',
+    LT_UNDERSCORE_LOCALE = '_',
     LT_UNDER_FOUR_LOCALE,
     LT_CURRENT_LOCALE
 };
@@ -314,7 +316,7 @@ parse_internal_render_format_spec(PyObject *format_spec,
             }
             /* fall through */
         default:
-            invalid_comma_type(format->type);
+            invalid_thousands_separator_type(format->thousands_separators, format->type);
             return 0;
         }
     }
@@ -395,9 +397,10 @@ typedef struct {
     PyObject *decimal_point;
     PyObject *thousands_sep;
     const char *grouping;
+    char *grouping_buffer;
 } LocaleInfo;
 
-#define STATIC_LOCALE_INFO_INIT {0, 0, 0}
+#define LocaleInfo_STATIC_INIT {0, 0, 0, 0}
 
 /* describes the layout for an integer, see the comment in
    calc_number_widths() for details */
@@ -459,7 +462,8 @@ parse_number(PyObject *s, Py_ssize_t pos, Py_ssize_t end,
 /* not all fields of format are used.  for example, precision is
    unused.  should this take discrete params in order to be more clear
    about what it does?  or is passing a single format parameter easier
-   and more efficient enough to justify a little obfuscation? */
+   and more efficient enough to justify a little obfuscation?
+   Return -1 on error. */
 static Py_ssize_t
 calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
                    Py_UCS4 sign_char, PyObject *number, Py_ssize_t n_start,
@@ -538,9 +542,12 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
         Py_UCS4 grouping_maxchar;
         spec->n_grouped_digits = _PyUnicode_InsertThousandsGrouping(
             NULL, 0,
-            0, NULL,
-            spec->n_digits, spec->n_min_width,
+            NULL, 0, spec->n_digits,
+            spec->n_min_width,
             locale->grouping, locale->thousands_sep, &grouping_maxchar);
+        if (spec->n_grouped_digits == -1) {
+            return -1;
+        }
         *maxchar = Py_MAX(*maxchar, grouping_maxchar);
     }
 
@@ -632,26 +639,14 @@ fill_number(_PyUnicodeWriter *writer, const NumberFieldWidths *spec,
     /* Only for type 'c' special case, it has no digits. */
     if (spec->n_digits != 0) {
         /* Fill the digits with InsertThousandsGrouping. */
-        char *pdigits;
-        if (PyUnicode_READY(digits))
-            return -1;
-        pdigits = PyUnicode_DATA(digits);
-        if (PyUnicode_KIND(digits) < kind) {
-            pdigits = _PyUnicode_AsKind(digits, kind);
-            if (pdigits == NULL)
-                return -1;
-        }
         r = _PyUnicode_InsertThousandsGrouping(
-                writer->buffer, writer->pos,
-                spec->n_grouped_digits,
-                pdigits + kind * d_pos,
-                spec->n_digits, spec->n_min_width,
+                writer, spec->n_grouped_digits,
+                digits, d_pos, spec->n_digits,
+                spec->n_min_width,
                 locale->grouping, locale->thousands_sep, NULL);
         if (r == -1)
             return -1;
         assert(r == spec->n_grouped_digits);
-        if (PyUnicode_KIND(digits) < kind)
-            PyMem_Free(pdigits);
         d_pos += spec->n_digits;
     }
     if (toupper) {
@@ -704,11 +699,22 @@ get_locale_info(enum LocaleType type, LocaleInfo *locale_info)
 {
     switch (type) {
     case LT_CURRENT_LOCALE: {
-        if (_Py_GetLocaleconvNumeric(&locale_info->decimal_point,
-                                     &locale_info->thousands_sep,
-                                     &locale_info->grouping) < 0) {
+        struct lconv *lc = localeconv();
+        if (_Py_GetLocaleconvNumeric(lc,
+                                     &locale_info->decimal_point,
+                                     &locale_info->thousands_sep) < 0) {
             return -1;
         }
+
+        /* localeconv() grouping can become a dangling pointer or point
+           to a different string if another thread calls localeconv() during
+           the string formatting. Copy the string to avoid this risk. */
+        locale_info->grouping_buffer = _PyMem_Strdup(lc->grouping);
+        if (locale_info->grouping_buffer == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        locale_info->grouping = locale_info->grouping_buffer;
         break;
     }
     case LT_DEFAULT_LOCALE:
@@ -742,6 +748,7 @@ free_locale_info(LocaleInfo *locale_info)
 {
     Py_XDECREF(locale_info->decimal_point);
     Py_XDECREF(locale_info->thousands_sep);
+    PyMem_Free(locale_info->grouping_buffer);
 }
 
 /************************************************************************/
@@ -854,7 +861,7 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
 
     /* Locale settings, either from the actual locale or
        from a hard-code pseudo-locale */
-    LocaleInfo locale = STATIC_LOCALE_INFO_INIT;
+    LocaleInfo locale = LocaleInfo_STATIC_INIT;
 
     /* no precision allowed on integers */
     if (format->precision != -1) {
@@ -979,6 +986,9 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
     n_total = calc_number_widths(&spec, n_prefix, sign_char, tmp, inumeric_chars,
                                  inumeric_chars + n_digits, n_remainder, 0,
                                  &locale, format, &maxchar);
+    if (n_total == -1) {
+        goto done;
+    }
 
     /* Allocate the memory. */
     if (_PyUnicodeWriter_Prepare(writer, n_total, maxchar) == -1)
@@ -1026,7 +1036,7 @@ format_float_internal(PyObject *value,
 
     /* Locale settings, either from the actual locale or
        from a hard-code pseudo-locale */
-    LocaleInfo locale = STATIC_LOCALE_INFO_INIT;
+    LocaleInfo locale = LocaleInfo_STATIC_INIT;
 
     if (format->precision > INT_MAX) {
         PyErr_SetString(PyExc_ValueError, "precision too big");
@@ -1124,6 +1134,9 @@ format_float_internal(PyObject *value,
     n_total = calc_number_widths(&spec, 0, sign_char, unicode_tmp, index,
                                  index + n_digits, n_remainder, has_decimal,
                                  &locale, format, &maxchar);
+    if (n_total == -1) {
+        goto done;
+    }
 
     /* Allocate the memory. */
     if (_PyUnicodeWriter_Prepare(writer, n_total, maxchar) == -1)
@@ -1189,7 +1202,7 @@ format_complex_internal(PyObject *value,
 
     /* Locale settings, either from the actual locale or
        from a hard-code pseudo-locale */
-    LocaleInfo locale = STATIC_LOCALE_INFO_INIT;
+    LocaleInfo locale = LocaleInfo_STATIC_INIT;
 
     if (format->precision > INT_MAX) {
         PyErr_SetString(PyExc_ValueError, "precision too big");
@@ -1307,6 +1320,9 @@ format_complex_internal(PyObject *value,
                                     i_re, i_re + n_re_digits, n_re_remainder,
                                     re_has_decimal, &locale, &tmp_format,
                                     &maxchar);
+    if (n_re_total == -1) {
+        goto done;
+    }
 
     /* Same formatting, but always include a sign, unless the real part is
      * going to be omitted, in which case we use whatever sign convention was
@@ -1317,6 +1333,9 @@ format_complex_internal(PyObject *value,
                                     i_im, i_im + n_im_digits, n_im_remainder,
                                     im_has_decimal, &locale, &tmp_format,
                                     &maxchar);
+    if (n_im_total == -1) {
+        goto done;
+    }
 
     if (skip_re)
         n_re_total = 0;

@@ -170,7 +170,6 @@ class HelpFormatter(object):
 
         self._prog = prog
         self._indent_increment = indent_increment
-        self._max_help_position = max_help_position
         self._max_help_position = min(max_help_position,
                                       max(width - 20, indent_increment * 2))
         self._width = width

@@ -5,6 +5,7 @@ from test.support import run_unittest, verbose, requires_IEEE_754
 from test import support
 import unittest
 import itertools
+import decimal
 import math
 import os
 import platform
@@ -510,6 +511,10 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.factorial, -1e100)
         self.assertRaises(ValueError, math.factorial, math.pi)
 
+    def testFactorialNonIntegers(self):
+        self.assertRaises(TypeError, math.factorial, decimal.Decimal(5.2))
+        self.assertRaises(TypeError, math.factorial, "5")
+
     # Other implementations may place different upper bounds.
     @support.cpython_only
     def testFactorialHugeInputs(self):
@@ -751,6 +756,10 @@ class MathTests(unittest.TestCase):
         self.assertEqual(1.0,
             math.copysign(1.0, hypot(-0.0))        # Convert negative zero to positive zero
         )
+        self.assertEqual(                          # Handling of moving max to the end
+            hypot(1.5, 1.5, 0.5),
+            hypot(1.5, 0.5, 1.5),
+        )
 
         # Test handling of bad arguments
         with self.assertRaises(TypeError):         # Reject keyword args
@@ -771,7 +780,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(hypot(-INF, -INF), INF)
         self.assertEqual(hypot(10, -INF), INF)
 
-        # If no infinity, any NaN gives a Nan.
+        # If no infinity, any NaN gives a NaN.
         self.assertTrue(math.isnan(hypot(NAN)))
         self.assertTrue(math.isnan(hypot(0, NAN)))
         self.assertTrue(math.isnan(hypot(NAN, 10)))
@@ -831,9 +840,13 @@ class MathTests(unittest.TestCase):
         self.assertEqual(1.0,                      # Convert negative zero to positive zero
             math.copysign(1.0, dist((0.0,), (-0.0,)))
         )
+        self.assertEqual(                          # Handling of moving max to the end
+            dist((1.5, 1.5, 0.5), (0, 0, 0)),
+            dist((1.5, 0.5, 1.5), (0, 0, 0))
+        )
 
         # Verify tuple subclasses are allowed
-        class T(tuple):     # tuple subclas
+        class T(tuple):
             pass
         self.assertEqual(dist(T((1, 2, 3)), ((4, 2, -1))), 5.0)
 
@@ -855,8 +868,7 @@ class MathTests(unittest.TestCase):
         with self.assertRaises(ValueError):        # Check dimension agree
             dist((1, 2, 3), (4, 5, 6, 7))
 
-
-        # Verify that the one dimensional case equivalent to abs()
+        # Verify that the one dimensional case is equivalent to abs()
         for i in range(20):
             p, q = random.random(), random.random()
             self.assertEqual(dist((p,), (q,)), abs(p - q))
@@ -870,7 +882,7 @@ class MathTests(unittest.TestCase):
                     # Any infinite difference gives positive infinity.
                     self.assertEqual(dist(p, q), INF)
                 elif any(map(math.isnan, diffs)):
-                    # If no infinity, any NaN gives a Nan.
+                    # If no infinity, any NaN gives a NaN.
                     self.assertTrue(math.isnan(dist(p, q)))
 
         # Verify scaling for extremely large values
@@ -1343,8 +1355,6 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.tanh(NAN)))
 
     @requires_IEEE_754
-    @unittest.skipIf(sysconfig.get_config_var('TANH_PRESERVES_ZERO_SIGN') == 0,
-                     "system tanh() function doesn't copy the sign")
     def testTanhSign(self):
         # check that tanh(-0.) == -0. on IEEE 754 systems
         self.assertEqual(math.tanh(-0.), -0.)

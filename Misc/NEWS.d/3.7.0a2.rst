@@ -249,7 +249,7 @@ by Oren Milman.
 .. nonce: _kr47t
 .. section: Core and Builtins
 
-Make ``async`` and ``await`` proper keywords, as specified in PEP 492.
+Make ``async`` and ``await`` proper keywords, as specified in :pep:`492`.
 
 ..
 
@@ -680,7 +680,7 @@ and Py_SetPath()
 .. nonce: vm8vGE
 .. section: C API
 
-Implement PEP 539 for Thread Specific Storage (TSS) API: it is a new Thread
+Implement :pep:`539` for Thread Specific Storage (TSS) API: it is a new Thread
 Local Storage (TLS) API to CPython which would supersede use of the existing
 TLS API within the CPython interpreter, while deprecating the existing API.
 PEP written by Erik M. Bray, patch by Masayuki Yamamoto.

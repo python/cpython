@@ -327,7 +327,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     from os.path import join, getsize
     for root, dirs, files in os.walk('python/Lib/email'):
         print(root, "consumes", end="")
-        print(sum([getsize(join(root, name)) for name in files]), end="")
+        print(sum(getsize(join(root, name)) for name in files), end="")
         print("bytes in", len(files), "non-directory files")
         if 'CVS' in dirs:
             dirs.remove('CVS')  # don't visit CVS directories
@@ -446,7 +446,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         import os
         for root, dirs, files, rootfd in os.fwalk('python/Lib/email'):
             print(root, "consumes", end="")
-            print(sum([os.stat(name, dir_fd=rootfd).st_size for name in files]),
+            print(sum(os.stat(name, dir_fd=rootfd).st_size for name in files),
                   end="")
             print("bytes in", len(files), "non-directory files")
             if 'CVS' in dirs:
@@ -524,12 +524,6 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             yield toppath, dirs, nondirs, topfd
 
     __all__.append("fwalk")
-
-# Make sure os.environ exists, at least
-try:
-    environ
-except NameError:
-    environ = {}
 
 def execl(file, *args):
     """execl(file, *args)

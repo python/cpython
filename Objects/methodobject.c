@@ -2,8 +2,9 @@
 /* Method object implementation */
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 
 /* Free list for method objects to safe malloc/free overhead
@@ -18,7 +19,7 @@ static int numfree = 0;
 /* undefine macro trampoline to PyCFunction_NewEx */
 #undef PyCFunction_New
 
-PyAPI_FUNC(PyObject *)
+PyObject *
 PyCFunction_New(PyMethodDef *ml, PyObject *self)
 {
     return PyCFunction_NewEx(ml, self, NULL);
@@ -103,16 +104,13 @@ meth_dealloc(PyCFunctionObject *m)
 static PyObject *
 meth_reduce(PyCFunctionObject *m, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *builtins;
-    PyObject *getattr;
     _Py_IDENTIFIER(getattr);
 
     if (m->m_self == NULL || PyModule_Check(m->m_self))
         return PyUnicode_FromString(m->m_ml->ml_name);
 
-    builtins = PyEval_GetBuiltins();
-    getattr = _PyDict_GetItemId(builtins, &PyId_getattr);
-    return Py_BuildValue("O(Os)", getattr, m->m_self, m->m_ml->ml_name);
+    return Py_BuildValue("N(Os)", _PyEval_GetBuiltinId(&PyId_getattr),
+                         m->m_self, m->m_ml->ml_name);
 }
 
 static PyMethodDef meth_methods[] = {

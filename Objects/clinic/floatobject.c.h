@@ -47,7 +47,7 @@ PyDoc_STRVAR(float___round____doc__,
 "When an argument is passed, work like built-in round(x, ndigits).");
 
 #define FLOAT___ROUND___METHODDEF    \
-    {"__round__", (PyCFunction)float___round__, METH_FASTCALL, float___round____doc__},
+    {"__round__", (PyCFunction)(void(*)(void))float___round__, METH_FASTCALL, float___round____doc__},
 
 static PyObject *
 float___round___impl(PyObject *self, PyObject *o_ndigits);
@@ -228,7 +228,17 @@ float___getformat__(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     const char *typestr;
 
-    if (!PyArg_Parse(arg, "s:__getformat__", &typestr)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("__getformat__", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t typestr_length;
+    typestr = PyUnicode_AsUTF8AndSize(arg, &typestr_length);
+    if (typestr == NULL) {
+        goto exit;
+    }
+    if (strlen(typestr) != (size_t)typestr_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = float___getformat___impl(type, typestr);
@@ -256,7 +266,7 @@ PyDoc_STRVAR(float___set_format____doc__,
 "This affects how floats are converted to and from binary strings.");
 
 #define FLOAT___SET_FORMAT___METHODDEF    \
-    {"__set_format__", (PyCFunction)float___set_format__, METH_FASTCALL|METH_CLASS, float___set_format____doc__},
+    {"__set_format__", (PyCFunction)(void(*)(void))float___set_format__, METH_FASTCALL|METH_CLASS, float___set_format____doc__},
 
 static PyObject *
 float___set_format___impl(PyTypeObject *type, const char *typestr,
@@ -297,12 +307,17 @@ float___format__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *format_spec;
 
-    if (!PyArg_Parse(arg, "U:__format__", &format_spec)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("__format__", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    format_spec = arg;
     return_value = float___format___impl(self, format_spec);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a3c366a156be61f9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e8f8be828462d58b input=a9049054013a1b77]*/

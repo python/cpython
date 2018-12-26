@@ -842,7 +842,7 @@ PyTclObject_string(PyTclObject *self, void *ignored)
 }
 
 static PyObject *
-PyTclObject_str(PyTclObject *self, void *ignored)
+PyTclObject_str(PyTclObject *self)
 {
     if (self->string) {
         Py_INCREF(self->string);
@@ -855,7 +855,7 @@ PyTclObject_str(PyTclObject *self, void *ignored)
 static PyObject *
 PyTclObject_repr(PyTclObject *self)
 {
-    PyObject *repr, *str = PyTclObject_str(self, NULL);
+    PyObject *repr, *str = PyTclObject_str(self);
     if (str == NULL)
         return NULL;
     repr = PyUnicode_FromFormat("<%s object: %R>",
@@ -1101,9 +1101,7 @@ AsObj(PyObject *value)
     }
 
     if (PyTclObject_Check(value)) {
-        Tcl_Obj *v = ((PyTclObject*)value)->value;
-        Tcl_IncrRefCount(v);
-        return v;
+        return ((PyTclObject*)value)->value;
     }
 
     {

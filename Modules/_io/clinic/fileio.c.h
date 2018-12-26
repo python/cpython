@@ -156,7 +156,13 @@ _io_FileIO_readinto(fileio *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "w*:readinto", &buffer)) {
+    if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
+        PyErr_Clear();
+        _PyArg_BadArgument("readinto", "read-write bytes-like object", arg);
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+        _PyArg_BadArgument("readinto", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io_FileIO_readinto_impl(self, &buffer);
@@ -202,7 +208,7 @@ PyDoc_STRVAR(_io_FileIO_read__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO_FILEIO_READ_METHODDEF    \
-    {"read", (PyCFunction)_io_FileIO_read, METH_FASTCALL, _io_FileIO_read__doc__},
+    {"read", (PyCFunction)(void(*)(void))_io_FileIO_read, METH_FASTCALL, _io_FileIO_read__doc__},
 
 static PyObject *
 _io_FileIO_read_impl(fileio *self, Py_ssize_t size);
@@ -245,7 +251,11 @@ _io_FileIO_write(fileio *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer b = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:write", &b)) {
+    if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&b, 'C')) {
+        _PyArg_BadArgument("write", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io_FileIO_write_impl(self, &b);
@@ -274,7 +284,7 @@ PyDoc_STRVAR(_io_FileIO_seek__doc__,
 "Note that not all file objects are seekable.");
 
 #define _IO_FILEIO_SEEK_METHODDEF    \
-    {"seek", (PyCFunction)_io_FileIO_seek, METH_FASTCALL, _io_FileIO_seek__doc__},
+    {"seek", (PyCFunction)(void(*)(void))_io_FileIO_seek, METH_FASTCALL, _io_FileIO_seek__doc__},
 
 static PyObject *
 _io_FileIO_seek_impl(fileio *self, PyObject *pos, int whence);
@@ -328,7 +338,7 @@ PyDoc_STRVAR(_io_FileIO_truncate__doc__,
 "The current file position is changed to the value of size.");
 
 #define _IO_FILEIO_TRUNCATE_METHODDEF    \
-    {"truncate", (PyCFunction)_io_FileIO_truncate, METH_FASTCALL, _io_FileIO_truncate__doc__},
+    {"truncate", (PyCFunction)(void(*)(void))_io_FileIO_truncate, METH_FASTCALL, _io_FileIO_truncate__doc__},
 
 static PyObject *
 _io_FileIO_truncate_impl(fileio *self, PyObject *posobj);
@@ -373,4 +383,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=a8796438c8b7c49a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8be0ea9a5ac7aa43 input=a9049054013a1b77]*/

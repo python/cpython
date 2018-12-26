@@ -1,0 +1,2 @@
+Implement ``traceback.FrameSummary.__len__()`` method to preserve
+compatibility with the old tuple API.
