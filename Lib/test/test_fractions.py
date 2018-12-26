@@ -380,6 +380,40 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(p.numerator, 4)
         self.assertEqual(p.denominator, 1)
 
+    def testLargeArithmetic(self):
+        self.assertTypedEquals(
+            F(10101010100808080808080808101010101010000000000000000,
+              1010101010101010101010101011111111101010101010101010101010101),
+            F(10**35+1, 10**27+1) % F(10**27+1, 10**35-1)
+        )
+        self.assertTypedEquals(
+            F(7, 1901475900342344102245054808064),
+            F(-2**100, 3) % F(5, 2**100)
+        )
+        self.assertTypedTupleEquals(
+            (9999999999999999,
+             F(10101010100808080808080808101010101010000000000000000,
+               1010101010101010101010101011111111101010101010101010101010101)),
+            divmod(F(10**35+1, 10**27+1), F(10**27+1, 10**35-1))
+        )
+        self.assertTypedEquals(
+            -2 ** 200 // 15,
+            F(-2**100, 3) // F(5, 2**100)
+        )
+        self.assertTypedEquals(
+            1,
+            F(5, 2**100) // F(3, 2**100)
+        )
+        self.assertTypedEquals(
+            (1, F(2, 2**100)),
+            divmod(F(5, 2**100), F(3, 2**100))
+        )
+        self.assertTypedTupleEquals(
+            (-2 ** 200 // 15,
+             F(7, 1901475900342344102245054808064)),
+            divmod(F(-2**100, 3), F(5, 2**100))
+        )
+
     def testMixedArithmetic(self):
         self.assertTypedEquals(F(11, 10), F(1, 10) + 1)
         self.assertTypedEquals(1.1, F(1, 10) + 1.0)
