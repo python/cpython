@@ -42,7 +42,7 @@ def _flat_divmod(na, da, nb, db):
     n_div, d_div = na * db, da * nb
     div = n_div // d_div
     # mod = a - b * div == (na*db - da*nb * div) / (da*db)
-    n_mod, d_mod = n_div - d_div * div, da*db
+    n_mod, d_mod = n_div - d_div * div, da * db
     return div, n_mod, d_mod
 
 
