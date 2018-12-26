@@ -1,3 +1,2 @@
-Fix pystate.c/_new_long_object() so that signed object returned
-is based on the pointer size (32 or 64 bit)
-patch by Michael Felt
+The experimental PEP 554 data channels now correctly pass negative PyLong
+objects between subinterpreters on 32-bit systems. Patch by Michael Felt.
