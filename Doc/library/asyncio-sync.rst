@@ -1,172 +1,206 @@
 .. currentmodule:: asyncio
+
 .. _asyncio-sync:
 
-Synchronization primitives
+==========================
+Synchronization Primitives
 ==========================
 
-**Source code:** :source:`Lib/asyncio/locks.py`
+asyncio synchronization primitives are designed to be similar to
+those of the :mod:`threading` module with two important caveats:
 
-Locks:
+* asyncio primitives are not thread-safe, therefore they should not
+  be used for OS thread synchronization (use :mod:`threading` for
+  that);
+
+* methods of these synchronization primitives do not accept the *timeout*
+  argument; use the :func:`asyncio.wait_for` function to perform
+  operations with timeouts.
+
+asyncio has the following basic sychronization primitives:
 
 * :class:`Lock`
 * :class:`Event`
 * :class:`Condition`
-
-Semaphores:
-
 * :class:`Semaphore`
 * :class:`BoundedSemaphore`
 
-asyncio lock API was designed to be close to classes of the :mod:`threading`
-module (:class:`~threading.Lock`, :class:`~threading.Event`,
-:class:`~threading.Condition`, :class:`~threading.Semaphore`,
-:class:`~threading.BoundedSemaphore`), but it has no *timeout* parameter. The
-:func:`asyncio.wait_for` function can be used to cancel a task after a timeout.
+
+---------
 
 
 Lock
-----
+====
 
 .. class:: Lock(\*, loop=None)
 
-   Primitive lock objects.
+   Implements a mutex lock for asyncio tasks.  Not thread-safe.
 
-   A primitive lock is a synchronization primitive that is not owned by a
-   particular coroutine when locked.  A primitive lock is in one of two states,
-   'locked' or 'unlocked'.
+   An asyncio lock can be used to guarantee exclusive access to a
+   shared resource.
 
-   The lock is created in the unlocked state.
-   It has two basic methods, :meth:`acquire` and :meth:`release`.
-   When the state is unlocked, acquire() changes the state to
-   locked and returns immediately.  When the state is locked, acquire() blocks
-   until a call to release() in another coroutine changes it to unlocked, then
-   the acquire() call resets it to locked and returns.  The release() method
-   should only be called in the locked state; it changes the state to unlocked
-   and returns immediately.  If an attempt is made to release an unlocked lock,
-   a :exc:`RuntimeError` will be raised.
+   The preferred way to use a Lock is an :keyword:`async with`
+   statement::
 
-   When more than one coroutine is blocked in acquire() waiting for the state
-   to turn to unlocked, only one coroutine proceeds when a release() call
-   resets the state to unlocked; first coroutine which is blocked in acquire()
-   is being processed.
+       lock = asyncio.Lock()
 
-   :meth:`acquire` is a coroutine and should be called with ``await``.
+       # ... later
+       async with lock:
+           # access shared state
 
-   Locks support the :ref:`context management protocol <async-with-locks>`.
+   which is equivalent to::
 
-   This class is :ref:`not thread safe <asyncio-multithreading>`.
+       lock = asyncio.Lock()
 
-   .. method:: locked()
-
-      Return ``True`` if the lock is acquired.
+       # ... later
+       await lock.acquire()
+       try:
+           # access shared state
+       finally:
+           lock.release()
 
    .. coroutinemethod:: acquire()
 
-      Acquire a lock.
+      Acquire the lock.
 
-      This method blocks until the lock is unlocked, then sets it to locked and
-      returns ``True``.
-
-      This method is a :ref:`coroutine <coroutine>`.
+      This method waits until the lock is *unlocked*, sets it to
+      *locked* and returns ``True``.
 
    .. method:: release()
 
-      Release a lock.
+      Release the lock.
 
-      When the lock is locked, reset it to unlocked, and return.  If any other
-      coroutines are blocked waiting for the lock to become unlocked, allow
-      exactly one of them to proceed.
+      When the lock is *locked*, reset it to *unlocked* and return.
 
-      When invoked on an unlocked lock, a :exc:`RuntimeError` is raised.
+      If the lock is *unlocked*, a :exc:`RuntimeError` is raised.
 
-      There is no return value.
+   .. method:: locked()
+
+      Return ``True`` if the lock is *locked*.
 
 
 Event
------
+=====
 
 .. class:: Event(\*, loop=None)
 
-   An Event implementation, asynchronous equivalent to :class:`threading.Event`.
+   An event object.  Not thread-safe.
 
-   Class implementing event objects. An event manages a flag that can be set to
-   true with the :meth:`set` method and reset to false with the :meth:`clear`
-   method.  The :meth:`wait` method blocks until the flag is true. The flag is
-   initially false.
+   An asyncio event can be used to notify multiple asyncio tasks
+   that some event has happened.
 
-   This class is :ref:`not thread safe <asyncio-multithreading>`.
+   An Event object manages an internal flag that can be set to *true*
+   with the :meth:`set` method and reset to *false* with the
+   :meth:`clear` method.  The :meth:`wait` method blocks until the
+   flag is set to *true*.  The flag is set to *false* initially.
 
-   .. method:: clear()
+   .. _asyncio_example_sync_event:
 
-      Reset the internal flag to false. Subsequently, coroutines calling
-      :meth:`wait` will block until :meth:`set` is called to set the internal
-      flag to true again.
+   Example::
 
-   .. method:: is_set()
+      async def waiter(event):
+          print('waiting for it ...')
+          await event.wait()
+          print('... got it!')
 
-      Return ``True`` if and only if the internal flag is true.
+      async def main():
+          # Create an Event object.
+          event = asyncio.Event()
 
-   .. method:: set()
+          # Spawn a Task to wait until 'event' is set.
+          waiter_task = asyncio.create_task(waiter(event))
 
-      Set the internal flag to true. All coroutines waiting for it to become
-      true are awakened. Coroutine that call :meth:`wait` once the flag is true
-      will not block at all.
+          # Sleep for 1 second and set the event.
+          await asyncio.sleep(1)
+          event.set()
+
+          # Wait until the waiter task is finished.
+          await waiter_task
+
+      asyncio.run(main())
 
    .. coroutinemethod:: wait()
 
-      Block until the internal flag is true.
+      Wait until the event is set.
 
-      If the internal flag is true on entry, return ``True`` immediately.
-      Otherwise, block until another coroutine calls :meth:`set` to set the
-      flag to true, then return ``True``.
+      If the event is set, return ``True`` immediately.
+      Otherwise block until another task calls :meth:`set`.
 
-      This method is a :ref:`coroutine <coroutine>`.
+   .. method:: set()
+
+      Set the event.
+
+      All tasks waiting for event to be set will be immediately
+      awakened.
+
+   .. method:: clear()
+
+      Clear (unset) the event.
+
+      Tasks awaiting on :meth:`wait` will now block until the
+      :meth:`set` method is called again.
+
+   .. method:: is_set()
+
+      Return ``True`` if the event is set.
 
 
 Condition
----------
+=========
 
 .. class:: Condition(lock=None, \*, loop=None)
 
-   A Condition implementation, asynchronous equivalent to
-   :class:`threading.Condition`.
+   A Condition object.  Not thread-safe.
 
-   This class implements condition variable objects. A condition variable
-   allows one or more coroutines to wait until they are notified by another
-   coroutine.
+   An asyncio condition primitive can be used by a task to wait for
+   some event to happen and then get exclusive access to a shared
+   resource.
 
-   If the *lock* argument is given and not ``None``, it must be a :class:`Lock`
-   object, and it is used as the underlying lock.  Otherwise,
-   a new :class:`Lock` object is created and used as the underlying lock.
+   In essence, a Condition object combines the functionality
+   of an :class:`Event` and a :class:`Lock`.  It is possible to have
+   multiple Condition objects share one Lock, which allows coordinating
+   exclusive access to a shared resource between different tasks
+   interested in particular states of that shared resource.
 
-   Conditions support the :ref:`context management protocol
-   <async-with-locks>`.
+   The optional *lock* argument must be a :class:`Lock` object or
+   ``None``.  In the latter case a new Lock object is created
+   automatically.
 
-   This class is :ref:`not thread safe <asyncio-multithreading>`.
+   The preferred way to use a Condition is an :keyword:`async with`
+   statement::
+
+       cond = asyncio.Condition()
+
+       # ... later
+       async with cond:
+           await cond.wait()
+
+   which is equivalent to::
+
+       cond = asyncio.Condition()
+
+       # ... later
+       await lock.acquire()
+       try:
+           await cond.wait()
+       finally:
+           lock.release()
 
    .. coroutinemethod:: acquire()
 
       Acquire the underlying lock.
 
-      This method blocks until the lock is unlocked, then sets it to locked and
-      returns ``True``.
-
-      This method is a :ref:`coroutine <coroutine>`.
+      This method waits until the underlying lock is *unlocked*,
+      sets it to *locked* and returns ``True``.
 
    .. method:: notify(n=1)
 
-      By default, wake up one coroutine waiting on this condition, if any.
-      If the calling coroutine has not acquired the lock when this method is
-      called, a :exc:`RuntimeError` is raised.
+      Wake up at most *n* tasks (1 by default) waiting on this
+      condition.  The method is no-op if no tasks are waiting.
 
-      This method wakes up at most *n* of the coroutines waiting for the
-      condition variable; it is a no-op if no coroutines are waiting.
-
-      .. note::
-
-         An awakened coroutine does not actually return from its :meth:`wait`
-         call until it can reacquire the lock. Since :meth:`notify` does not
-         release the lock, its caller should.
+      The lock must be acquired before this method is called and
+      released shortly after.  If called with an *unlocked* lock
+      a :exc:`RuntimeError` error is raised.
 
    .. method:: locked()
 
@@ -174,78 +208,87 @@ Condition
 
    .. method:: notify_all()
 
-      Wake up all coroutines waiting on this condition. This method acts like
-      :meth:`notify`, but wakes up all waiting coroutines instead of one. If the
-      calling coroutine has not acquired the lock when this method is called, a
-      :exc:`RuntimeError` is raised.
+      Wake up all tasks waiting on this condition.
+
+      This method acts like :meth:`notify`, but wakes up all waiting
+      tasks.
+
+      The lock must be acquired before this method is called and
+      released shortly after.  If called with an *unlocked* lock
+      a :exc:`RuntimeError` error is raised.
 
    .. method:: release()
 
       Release the underlying lock.
 
-      When the lock is locked, reset it to unlocked, and return. If any other
-      coroutines are blocked waiting for the lock to become unlocked, allow
-      exactly one of them to proceed.
-
-      When invoked on an unlocked lock, a :exc:`RuntimeError` is raised.
-
-      There is no return value.
+      When invoked on an unlocked lock, a :exc:`RuntimeError` is
+      raised.
 
    .. coroutinemethod:: wait()
 
       Wait until notified.
 
-      If the calling coroutine has not acquired the lock when this method is
+      If the calling task has not acquired the lock when this method is
       called, a :exc:`RuntimeError` is raised.
 
-      This method releases the underlying lock, and then blocks until it is
-      awakened by a :meth:`notify` or :meth:`notify_all` call for the same
-      condition variable in another coroutine.  Once awakened, it re-acquires
-      the lock and returns ``True``.
-
-      This method is a :ref:`coroutine <coroutine>`.
+      This method releases the underlying lock, and then blocks until
+      it is awakened by a :meth:`notify` or :meth:`notify_all` call.
+      Once awakened, the Condition re-acquires its lock and this method
+      returns ``True``.
 
    .. coroutinemethod:: wait_for(predicate)
 
-      Wait until a predicate becomes true.
+      Wait until a predicate becomes *true*.
 
-      The predicate should be a callable which result will be interpreted as a
-      boolean value. The final predicate value is the return value.
-
-      This method is a :ref:`coroutine <coroutine>`.
+      The predicate must be a callable which result will be
+      interpreted as a boolean value.  The final value is the
+      return value.
 
 
 Semaphore
----------
+=========
 
 .. class:: Semaphore(value=1, \*, loop=None)
 
-   A Semaphore implementation.
+   A Semaphore object.  Not thread-safe.
 
    A semaphore manages an internal counter which is decremented by each
-   :meth:`acquire` call and incremented by each :meth:`release` call. The
-   counter can never go below zero; when :meth:`acquire` finds that it is zero,
-   it blocks, waiting until some other coroutine calls :meth:`release`.
+   :meth:`acquire` call and incremented by each :meth:`release` call.
+   The counter can never go below zero; when :meth:`acquire` finds
+   that it is zero, it blocks, waiting until some task calls
+   :meth:`release`.
 
-   The optional argument gives the initial value for the internal counter; it
-   defaults to ``1``. If the value given is less than ``0``, :exc:`ValueError`
-   is raised.
+   The optional *value* argument gives the initial value for the
+   internal counter (``1`` by default). If the given value is
+   less than ``0`` a :exc:`ValueError` is raised.
 
-   Semaphores support the :ref:`context management protocol
-   <async-with-locks>`.
+   The preferred way to use a Semaphore is an :keyword:`async with`
+   statement::
 
-   This class is :ref:`not thread safe <asyncio-multithreading>`.
+       sem = asyncio.Semaphore(10)
+
+       # ... later
+       async with sem:
+           # work with shared resource
+
+   which is equivalent to::
+
+       sem = asyncio.Semaphore(10)
+
+       # ... later
+       await sem.acquire()
+       try:
+           # work with shared resource
+       finally:
+           sem.release()
 
    .. coroutinemethod:: acquire()
 
       Acquire a semaphore.
 
-      If the internal counter is larger than zero on entry, decrement it by one
-      and return ``True`` immediately.  If it is zero on entry, block, waiting
-      until some other coroutine has called :meth:`release` to make it larger
-      than ``0``, and then return ``True``.
-
-      This method is a :ref:`coroutine <coroutine>`.
+      If the internal counter is greater than zero, decrement
+      it by one and return ``True`` immediately.  If it is zero, wait
+      until a :meth:`release` is called and return ``True``.
 
    .. method:: locked()
 
@@ -253,53 +296,30 @@ Semaphore
 
    .. method:: release()
 
-      Release a semaphore, incrementing the internal counter by one. When it
-      was zero on entry and another coroutine is waiting for it to become
-      larger than zero again, wake up that coroutine.
+      Release a semaphore, incrementing the internal counter by one.
+      Can wake up a task waiting to acquire the semaphore.
+
+      Unlike :class:`BoundedSemaphore`, :class:`Semaphore` allows
+      making more ``release()`` calls than ``acquire()`` calls.
 
 
 BoundedSemaphore
-----------------
+================
 
 .. class:: BoundedSemaphore(value=1, \*, loop=None)
 
-   A bounded semaphore implementation. Inherit from :class:`Semaphore`.
+   A bounded semaphore object.  Not thread-safe.
 
-   This raises :exc:`ValueError` in :meth:`~Semaphore.release` if it would
-   increase the value above the initial value.
-
-   Bounded semapthores support the :ref:`context management
-   protocol <async-with-locks>`.
-
-   This class is :ref:`not thread safe <asyncio-multithreading>`.
+   Bounded Semaphore is a version of :class:`Semaphore` that raises
+   a :exc:`ValueError` in :meth:`~Semaphore.release` if it
+   increases the internal counter above the initial *value*.
 
 
-.. _async-with-locks:
+---------
 
-Using locks, conditions and semaphores in the :keyword:`async with` statement
------------------------------------------------------------------------------
-
-:class:`Lock`, :class:`Condition`, :class:`Semaphore`, and
-:class:`BoundedSemaphore` objects can be used in :keyword:`async with`
-statements.
-
-The :meth:`acquire` method will be called when the block is entered,
-and :meth:`release` will be called when the block is exited.  Hence,
-the following snippet::
-
-   async with lock:
-       # do something...
-
-is equivalent to::
-
-   await lock.acquire()
-   try:
-       # do something...
-   finally:
-       lock.release()
 
 .. deprecated:: 3.7
 
-   Lock acquiring using ``await lock`` or ``yield from lock`` and
+   Acquiring a lock using ``await lock`` or ``yield from lock`` and/or
    :keyword:`with` statement (``with await lock``, ``with (yield from
-   lock)``) are deprecated.
+   lock)``) is deprecated.  Use ``async with lock`` instead.

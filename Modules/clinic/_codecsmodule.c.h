@@ -33,7 +33,17 @@ _codecs_lookup(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     const char *encoding;
 
-    if (!PyArg_Parse(arg, "s:lookup", &encoding)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("lookup", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t encoding_length;
+    encoding = PyUnicode_AsUTF8AndSize(arg, &encoding_length);
+    if (encoding == NULL) {
+        goto exit;
+    }
+    if (strlen(encoding) != (size_t)encoding_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _codecs_lookup_impl(module, encoding);
@@ -55,7 +65,7 @@ PyDoc_STRVAR(_codecs_encode__doc__,
 "codecs.register_error that can handle ValueErrors.");
 
 #define _CODECS_ENCODE_METHODDEF    \
-    {"encode", (PyCFunction)_codecs_encode, METH_FASTCALL|METH_KEYWORDS, _codecs_encode__doc__},
+    {"encode", (PyCFunction)(void(*)(void))_codecs_encode, METH_FASTCALL|METH_KEYWORDS, _codecs_encode__doc__},
 
 static PyObject *
 _codecs_encode_impl(PyObject *module, PyObject *obj, const char *encoding,
@@ -94,7 +104,7 @@ PyDoc_STRVAR(_codecs_decode__doc__,
 "codecs.register_error that can handle ValueErrors.");
 
 #define _CODECS_DECODE_METHODDEF    \
-    {"decode", (PyCFunction)_codecs_decode, METH_FASTCALL|METH_KEYWORDS, _codecs_decode__doc__},
+    {"decode", (PyCFunction)(void(*)(void))_codecs_decode, METH_FASTCALL|METH_KEYWORDS, _codecs_decode__doc__},
 
 static PyObject *
 _codecs_decode_impl(PyObject *module, PyObject *obj, const char *encoding,
@@ -138,7 +148,17 @@ _codecs__forget_codec(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     const char *encoding;
 
-    if (!PyArg_Parse(arg, "s:_forget_codec", &encoding)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("_forget_codec", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t encoding_length;
+    encoding = PyUnicode_AsUTF8AndSize(arg, &encoding_length);
+    if (encoding == NULL) {
+        goto exit;
+    }
+    if (strlen(encoding) != (size_t)encoding_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _codecs__forget_codec_impl(module, encoding);
@@ -153,7 +173,7 @@ PyDoc_STRVAR(_codecs_escape_decode__doc__,
 "\n");
 
 #define _CODECS_ESCAPE_DECODE_METHODDEF    \
-    {"escape_decode", (PyCFunction)_codecs_escape_decode, METH_FASTCALL, _codecs_escape_decode__doc__},
+    {"escape_decode", (PyCFunction)(void(*)(void))_codecs_escape_decode, METH_FASTCALL, _codecs_escape_decode__doc__},
 
 static PyObject *
 _codecs_escape_decode_impl(PyObject *module, Py_buffer *data,
@@ -187,7 +207,7 @@ PyDoc_STRVAR(_codecs_escape_encode__doc__,
 "\n");
 
 #define _CODECS_ESCAPE_ENCODE_METHODDEF    \
-    {"escape_encode", (PyCFunction)_codecs_escape_encode, METH_FASTCALL, _codecs_escape_encode__doc__},
+    {"escape_encode", (PyCFunction)(void(*)(void))_codecs_escape_encode, METH_FASTCALL, _codecs_escape_encode__doc__},
 
 static PyObject *
 _codecs_escape_encode_impl(PyObject *module, PyObject *data,
@@ -216,7 +236,7 @@ PyDoc_STRVAR(_codecs_unicode_internal_decode__doc__,
 "\n");
 
 #define _CODECS_UNICODE_INTERNAL_DECODE_METHODDEF    \
-    {"unicode_internal_decode", (PyCFunction)_codecs_unicode_internal_decode, METH_FASTCALL, _codecs_unicode_internal_decode__doc__},
+    {"unicode_internal_decode", (PyCFunction)(void(*)(void))_codecs_unicode_internal_decode, METH_FASTCALL, _codecs_unicode_internal_decode__doc__},
 
 static PyObject *
 _codecs_unicode_internal_decode_impl(PyObject *module, PyObject *obj,
@@ -245,7 +265,7 @@ PyDoc_STRVAR(_codecs_utf_7_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_7_DECODE_METHODDEF    \
-    {"utf_7_decode", (PyCFunction)_codecs_utf_7_decode, METH_FASTCALL, _codecs_utf_7_decode__doc__},
+    {"utf_7_decode", (PyCFunction)(void(*)(void))_codecs_utf_7_decode, METH_FASTCALL, _codecs_utf_7_decode__doc__},
 
 static PyObject *
 _codecs_utf_7_decode_impl(PyObject *module, Py_buffer *data,
@@ -280,7 +300,7 @@ PyDoc_STRVAR(_codecs_utf_8_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_8_DECODE_METHODDEF    \
-    {"utf_8_decode", (PyCFunction)_codecs_utf_8_decode, METH_FASTCALL, _codecs_utf_8_decode__doc__},
+    {"utf_8_decode", (PyCFunction)(void(*)(void))_codecs_utf_8_decode, METH_FASTCALL, _codecs_utf_8_decode__doc__},
 
 static PyObject *
 _codecs_utf_8_decode_impl(PyObject *module, Py_buffer *data,
@@ -315,7 +335,7 @@ PyDoc_STRVAR(_codecs_utf_16_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_DECODE_METHODDEF    \
-    {"utf_16_decode", (PyCFunction)_codecs_utf_16_decode, METH_FASTCALL, _codecs_utf_16_decode__doc__},
+    {"utf_16_decode", (PyCFunction)(void(*)(void))_codecs_utf_16_decode, METH_FASTCALL, _codecs_utf_16_decode__doc__},
 
 static PyObject *
 _codecs_utf_16_decode_impl(PyObject *module, Py_buffer *data,
@@ -350,7 +370,7 @@ PyDoc_STRVAR(_codecs_utf_16_le_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_LE_DECODE_METHODDEF    \
-    {"utf_16_le_decode", (PyCFunction)_codecs_utf_16_le_decode, METH_FASTCALL, _codecs_utf_16_le_decode__doc__},
+    {"utf_16_le_decode", (PyCFunction)(void(*)(void))_codecs_utf_16_le_decode, METH_FASTCALL, _codecs_utf_16_le_decode__doc__},
 
 static PyObject *
 _codecs_utf_16_le_decode_impl(PyObject *module, Py_buffer *data,
@@ -385,7 +405,7 @@ PyDoc_STRVAR(_codecs_utf_16_be_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_BE_DECODE_METHODDEF    \
-    {"utf_16_be_decode", (PyCFunction)_codecs_utf_16_be_decode, METH_FASTCALL, _codecs_utf_16_be_decode__doc__},
+    {"utf_16_be_decode", (PyCFunction)(void(*)(void))_codecs_utf_16_be_decode, METH_FASTCALL, _codecs_utf_16_be_decode__doc__},
 
 static PyObject *
 _codecs_utf_16_be_decode_impl(PyObject *module, Py_buffer *data,
@@ -421,7 +441,7 @@ PyDoc_STRVAR(_codecs_utf_16_ex_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_EX_DECODE_METHODDEF    \
-    {"utf_16_ex_decode", (PyCFunction)_codecs_utf_16_ex_decode, METH_FASTCALL, _codecs_utf_16_ex_decode__doc__},
+    {"utf_16_ex_decode", (PyCFunction)(void(*)(void))_codecs_utf_16_ex_decode, METH_FASTCALL, _codecs_utf_16_ex_decode__doc__},
 
 static PyObject *
 _codecs_utf_16_ex_decode_impl(PyObject *module, Py_buffer *data,
@@ -457,7 +477,7 @@ PyDoc_STRVAR(_codecs_utf_32_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_DECODE_METHODDEF    \
-    {"utf_32_decode", (PyCFunction)_codecs_utf_32_decode, METH_FASTCALL, _codecs_utf_32_decode__doc__},
+    {"utf_32_decode", (PyCFunction)(void(*)(void))_codecs_utf_32_decode, METH_FASTCALL, _codecs_utf_32_decode__doc__},
 
 static PyObject *
 _codecs_utf_32_decode_impl(PyObject *module, Py_buffer *data,
@@ -492,7 +512,7 @@ PyDoc_STRVAR(_codecs_utf_32_le_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_LE_DECODE_METHODDEF    \
-    {"utf_32_le_decode", (PyCFunction)_codecs_utf_32_le_decode, METH_FASTCALL, _codecs_utf_32_le_decode__doc__},
+    {"utf_32_le_decode", (PyCFunction)(void(*)(void))_codecs_utf_32_le_decode, METH_FASTCALL, _codecs_utf_32_le_decode__doc__},
 
 static PyObject *
 _codecs_utf_32_le_decode_impl(PyObject *module, Py_buffer *data,
@@ -527,7 +547,7 @@ PyDoc_STRVAR(_codecs_utf_32_be_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_BE_DECODE_METHODDEF    \
-    {"utf_32_be_decode", (PyCFunction)_codecs_utf_32_be_decode, METH_FASTCALL, _codecs_utf_32_be_decode__doc__},
+    {"utf_32_be_decode", (PyCFunction)(void(*)(void))_codecs_utf_32_be_decode, METH_FASTCALL, _codecs_utf_32_be_decode__doc__},
 
 static PyObject *
 _codecs_utf_32_be_decode_impl(PyObject *module, Py_buffer *data,
@@ -563,7 +583,7 @@ PyDoc_STRVAR(_codecs_utf_32_ex_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_EX_DECODE_METHODDEF    \
-    {"utf_32_ex_decode", (PyCFunction)_codecs_utf_32_ex_decode, METH_FASTCALL, _codecs_utf_32_ex_decode__doc__},
+    {"utf_32_ex_decode", (PyCFunction)(void(*)(void))_codecs_utf_32_ex_decode, METH_FASTCALL, _codecs_utf_32_ex_decode__doc__},
 
 static PyObject *
 _codecs_utf_32_ex_decode_impl(PyObject *module, Py_buffer *data,
@@ -599,7 +619,7 @@ PyDoc_STRVAR(_codecs_unicode_escape_decode__doc__,
 "\n");
 
 #define _CODECS_UNICODE_ESCAPE_DECODE_METHODDEF    \
-    {"unicode_escape_decode", (PyCFunction)_codecs_unicode_escape_decode, METH_FASTCALL, _codecs_unicode_escape_decode__doc__},
+    {"unicode_escape_decode", (PyCFunction)(void(*)(void))_codecs_unicode_escape_decode, METH_FASTCALL, _codecs_unicode_escape_decode__doc__},
 
 static PyObject *
 _codecs_unicode_escape_decode_impl(PyObject *module, Py_buffer *data,
@@ -633,7 +653,7 @@ PyDoc_STRVAR(_codecs_raw_unicode_escape_decode__doc__,
 "\n");
 
 #define _CODECS_RAW_UNICODE_ESCAPE_DECODE_METHODDEF    \
-    {"raw_unicode_escape_decode", (PyCFunction)_codecs_raw_unicode_escape_decode, METH_FASTCALL, _codecs_raw_unicode_escape_decode__doc__},
+    {"raw_unicode_escape_decode", (PyCFunction)(void(*)(void))_codecs_raw_unicode_escape_decode, METH_FASTCALL, _codecs_raw_unicode_escape_decode__doc__},
 
 static PyObject *
 _codecs_raw_unicode_escape_decode_impl(PyObject *module, Py_buffer *data,
@@ -667,7 +687,7 @@ PyDoc_STRVAR(_codecs_latin_1_decode__doc__,
 "\n");
 
 #define _CODECS_LATIN_1_DECODE_METHODDEF    \
-    {"latin_1_decode", (PyCFunction)_codecs_latin_1_decode, METH_FASTCALL, _codecs_latin_1_decode__doc__},
+    {"latin_1_decode", (PyCFunction)(void(*)(void))_codecs_latin_1_decode, METH_FASTCALL, _codecs_latin_1_decode__doc__},
 
 static PyObject *
 _codecs_latin_1_decode_impl(PyObject *module, Py_buffer *data,
@@ -701,7 +721,7 @@ PyDoc_STRVAR(_codecs_ascii_decode__doc__,
 "\n");
 
 #define _CODECS_ASCII_DECODE_METHODDEF    \
-    {"ascii_decode", (PyCFunction)_codecs_ascii_decode, METH_FASTCALL, _codecs_ascii_decode__doc__},
+    {"ascii_decode", (PyCFunction)(void(*)(void))_codecs_ascii_decode, METH_FASTCALL, _codecs_ascii_decode__doc__},
 
 static PyObject *
 _codecs_ascii_decode_impl(PyObject *module, Py_buffer *data,
@@ -735,7 +755,7 @@ PyDoc_STRVAR(_codecs_charmap_decode__doc__,
 "\n");
 
 #define _CODECS_CHARMAP_DECODE_METHODDEF    \
-    {"charmap_decode", (PyCFunction)_codecs_charmap_decode, METH_FASTCALL, _codecs_charmap_decode__doc__},
+    {"charmap_decode", (PyCFunction)(void(*)(void))_codecs_charmap_decode, METH_FASTCALL, _codecs_charmap_decode__doc__},
 
 static PyObject *
 _codecs_charmap_decode_impl(PyObject *module, Py_buffer *data,
@@ -772,7 +792,7 @@ PyDoc_STRVAR(_codecs_mbcs_decode__doc__,
 "\n");
 
 #define _CODECS_MBCS_DECODE_METHODDEF    \
-    {"mbcs_decode", (PyCFunction)_codecs_mbcs_decode, METH_FASTCALL, _codecs_mbcs_decode__doc__},
+    {"mbcs_decode", (PyCFunction)(void(*)(void))_codecs_mbcs_decode, METH_FASTCALL, _codecs_mbcs_decode__doc__},
 
 static PyObject *
 _codecs_mbcs_decode_impl(PyObject *module, Py_buffer *data,
@@ -811,7 +831,7 @@ PyDoc_STRVAR(_codecs_oem_decode__doc__,
 "\n");
 
 #define _CODECS_OEM_DECODE_METHODDEF    \
-    {"oem_decode", (PyCFunction)_codecs_oem_decode, METH_FASTCALL, _codecs_oem_decode__doc__},
+    {"oem_decode", (PyCFunction)(void(*)(void))_codecs_oem_decode, METH_FASTCALL, _codecs_oem_decode__doc__},
 
 static PyObject *
 _codecs_oem_decode_impl(PyObject *module, Py_buffer *data,
@@ -850,7 +870,7 @@ PyDoc_STRVAR(_codecs_code_page_decode__doc__,
 "\n");
 
 #define _CODECS_CODE_PAGE_DECODE_METHODDEF    \
-    {"code_page_decode", (PyCFunction)_codecs_code_page_decode, METH_FASTCALL, _codecs_code_page_decode__doc__},
+    {"code_page_decode", (PyCFunction)(void(*)(void))_codecs_code_page_decode, METH_FASTCALL, _codecs_code_page_decode__doc__},
 
 static PyObject *
 _codecs_code_page_decode_impl(PyObject *module, int codepage,
@@ -888,7 +908,7 @@ PyDoc_STRVAR(_codecs_readbuffer_encode__doc__,
 "\n");
 
 #define _CODECS_READBUFFER_ENCODE_METHODDEF    \
-    {"readbuffer_encode", (PyCFunction)_codecs_readbuffer_encode, METH_FASTCALL, _codecs_readbuffer_encode__doc__},
+    {"readbuffer_encode", (PyCFunction)(void(*)(void))_codecs_readbuffer_encode, METH_FASTCALL, _codecs_readbuffer_encode__doc__},
 
 static PyObject *
 _codecs_readbuffer_encode_impl(PyObject *module, Py_buffer *data,
@@ -922,7 +942,7 @@ PyDoc_STRVAR(_codecs_unicode_internal_encode__doc__,
 "\n");
 
 #define _CODECS_UNICODE_INTERNAL_ENCODE_METHODDEF    \
-    {"unicode_internal_encode", (PyCFunction)_codecs_unicode_internal_encode, METH_FASTCALL, _codecs_unicode_internal_encode__doc__},
+    {"unicode_internal_encode", (PyCFunction)(void(*)(void))_codecs_unicode_internal_encode, METH_FASTCALL, _codecs_unicode_internal_encode__doc__},
 
 static PyObject *
 _codecs_unicode_internal_encode_impl(PyObject *module, PyObject *obj,
@@ -951,7 +971,7 @@ PyDoc_STRVAR(_codecs_utf_7_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_7_ENCODE_METHODDEF    \
-    {"utf_7_encode", (PyCFunction)_codecs_utf_7_encode, METH_FASTCALL, _codecs_utf_7_encode__doc__},
+    {"utf_7_encode", (PyCFunction)(void(*)(void))_codecs_utf_7_encode, METH_FASTCALL, _codecs_utf_7_encode__doc__},
 
 static PyObject *
 _codecs_utf_7_encode_impl(PyObject *module, PyObject *str,
@@ -980,7 +1000,7 @@ PyDoc_STRVAR(_codecs_utf_8_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_8_ENCODE_METHODDEF    \
-    {"utf_8_encode", (PyCFunction)_codecs_utf_8_encode, METH_FASTCALL, _codecs_utf_8_encode__doc__},
+    {"utf_8_encode", (PyCFunction)(void(*)(void))_codecs_utf_8_encode, METH_FASTCALL, _codecs_utf_8_encode__doc__},
 
 static PyObject *
 _codecs_utf_8_encode_impl(PyObject *module, PyObject *str,
@@ -1009,7 +1029,7 @@ PyDoc_STRVAR(_codecs_utf_16_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_ENCODE_METHODDEF    \
-    {"utf_16_encode", (PyCFunction)_codecs_utf_16_encode, METH_FASTCALL, _codecs_utf_16_encode__doc__},
+    {"utf_16_encode", (PyCFunction)(void(*)(void))_codecs_utf_16_encode, METH_FASTCALL, _codecs_utf_16_encode__doc__},
 
 static PyObject *
 _codecs_utf_16_encode_impl(PyObject *module, PyObject *str,
@@ -1039,7 +1059,7 @@ PyDoc_STRVAR(_codecs_utf_16_le_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_LE_ENCODE_METHODDEF    \
-    {"utf_16_le_encode", (PyCFunction)_codecs_utf_16_le_encode, METH_FASTCALL, _codecs_utf_16_le_encode__doc__},
+    {"utf_16_le_encode", (PyCFunction)(void(*)(void))_codecs_utf_16_le_encode, METH_FASTCALL, _codecs_utf_16_le_encode__doc__},
 
 static PyObject *
 _codecs_utf_16_le_encode_impl(PyObject *module, PyObject *str,
@@ -1068,7 +1088,7 @@ PyDoc_STRVAR(_codecs_utf_16_be_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_BE_ENCODE_METHODDEF    \
-    {"utf_16_be_encode", (PyCFunction)_codecs_utf_16_be_encode, METH_FASTCALL, _codecs_utf_16_be_encode__doc__},
+    {"utf_16_be_encode", (PyCFunction)(void(*)(void))_codecs_utf_16_be_encode, METH_FASTCALL, _codecs_utf_16_be_encode__doc__},
 
 static PyObject *
 _codecs_utf_16_be_encode_impl(PyObject *module, PyObject *str,
@@ -1097,7 +1117,7 @@ PyDoc_STRVAR(_codecs_utf_32_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_ENCODE_METHODDEF    \
-    {"utf_32_encode", (PyCFunction)_codecs_utf_32_encode, METH_FASTCALL, _codecs_utf_32_encode__doc__},
+    {"utf_32_encode", (PyCFunction)(void(*)(void))_codecs_utf_32_encode, METH_FASTCALL, _codecs_utf_32_encode__doc__},
 
 static PyObject *
 _codecs_utf_32_encode_impl(PyObject *module, PyObject *str,
@@ -1127,7 +1147,7 @@ PyDoc_STRVAR(_codecs_utf_32_le_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_LE_ENCODE_METHODDEF    \
-    {"utf_32_le_encode", (PyCFunction)_codecs_utf_32_le_encode, METH_FASTCALL, _codecs_utf_32_le_encode__doc__},
+    {"utf_32_le_encode", (PyCFunction)(void(*)(void))_codecs_utf_32_le_encode, METH_FASTCALL, _codecs_utf_32_le_encode__doc__},
 
 static PyObject *
 _codecs_utf_32_le_encode_impl(PyObject *module, PyObject *str,
@@ -1156,7 +1176,7 @@ PyDoc_STRVAR(_codecs_utf_32_be_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_BE_ENCODE_METHODDEF    \
-    {"utf_32_be_encode", (PyCFunction)_codecs_utf_32_be_encode, METH_FASTCALL, _codecs_utf_32_be_encode__doc__},
+    {"utf_32_be_encode", (PyCFunction)(void(*)(void))_codecs_utf_32_be_encode, METH_FASTCALL, _codecs_utf_32_be_encode__doc__},
 
 static PyObject *
 _codecs_utf_32_be_encode_impl(PyObject *module, PyObject *str,
@@ -1185,7 +1205,7 @@ PyDoc_STRVAR(_codecs_unicode_escape_encode__doc__,
 "\n");
 
 #define _CODECS_UNICODE_ESCAPE_ENCODE_METHODDEF    \
-    {"unicode_escape_encode", (PyCFunction)_codecs_unicode_escape_encode, METH_FASTCALL, _codecs_unicode_escape_encode__doc__},
+    {"unicode_escape_encode", (PyCFunction)(void(*)(void))_codecs_unicode_escape_encode, METH_FASTCALL, _codecs_unicode_escape_encode__doc__},
 
 static PyObject *
 _codecs_unicode_escape_encode_impl(PyObject *module, PyObject *str,
@@ -1214,7 +1234,7 @@ PyDoc_STRVAR(_codecs_raw_unicode_escape_encode__doc__,
 "\n");
 
 #define _CODECS_RAW_UNICODE_ESCAPE_ENCODE_METHODDEF    \
-    {"raw_unicode_escape_encode", (PyCFunction)_codecs_raw_unicode_escape_encode, METH_FASTCALL, _codecs_raw_unicode_escape_encode__doc__},
+    {"raw_unicode_escape_encode", (PyCFunction)(void(*)(void))_codecs_raw_unicode_escape_encode, METH_FASTCALL, _codecs_raw_unicode_escape_encode__doc__},
 
 static PyObject *
 _codecs_raw_unicode_escape_encode_impl(PyObject *module, PyObject *str,
@@ -1243,7 +1263,7 @@ PyDoc_STRVAR(_codecs_latin_1_encode__doc__,
 "\n");
 
 #define _CODECS_LATIN_1_ENCODE_METHODDEF    \
-    {"latin_1_encode", (PyCFunction)_codecs_latin_1_encode, METH_FASTCALL, _codecs_latin_1_encode__doc__},
+    {"latin_1_encode", (PyCFunction)(void(*)(void))_codecs_latin_1_encode, METH_FASTCALL, _codecs_latin_1_encode__doc__},
 
 static PyObject *
 _codecs_latin_1_encode_impl(PyObject *module, PyObject *str,
@@ -1272,7 +1292,7 @@ PyDoc_STRVAR(_codecs_ascii_encode__doc__,
 "\n");
 
 #define _CODECS_ASCII_ENCODE_METHODDEF    \
-    {"ascii_encode", (PyCFunction)_codecs_ascii_encode, METH_FASTCALL, _codecs_ascii_encode__doc__},
+    {"ascii_encode", (PyCFunction)(void(*)(void))_codecs_ascii_encode, METH_FASTCALL, _codecs_ascii_encode__doc__},
 
 static PyObject *
 _codecs_ascii_encode_impl(PyObject *module, PyObject *str,
@@ -1301,7 +1321,7 @@ PyDoc_STRVAR(_codecs_charmap_encode__doc__,
 "\n");
 
 #define _CODECS_CHARMAP_ENCODE_METHODDEF    \
-    {"charmap_encode", (PyCFunction)_codecs_charmap_encode, METH_FASTCALL, _codecs_charmap_encode__doc__},
+    {"charmap_encode", (PyCFunction)(void(*)(void))_codecs_charmap_encode, METH_FASTCALL, _codecs_charmap_encode__doc__},
 
 static PyObject *
 _codecs_charmap_encode_impl(PyObject *module, PyObject *str,
@@ -1342,9 +1362,14 @@ _codecs_charmap_build(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *map;
 
-    if (!PyArg_Parse(arg, "U:charmap_build", &map)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("charmap_build", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    map = arg;
     return_value = _codecs_charmap_build_impl(module, map);
 
 exit:
@@ -1359,7 +1384,7 @@ PyDoc_STRVAR(_codecs_mbcs_encode__doc__,
 "\n");
 
 #define _CODECS_MBCS_ENCODE_METHODDEF    \
-    {"mbcs_encode", (PyCFunction)_codecs_mbcs_encode, METH_FASTCALL, _codecs_mbcs_encode__doc__},
+    {"mbcs_encode", (PyCFunction)(void(*)(void))_codecs_mbcs_encode, METH_FASTCALL, _codecs_mbcs_encode__doc__},
 
 static PyObject *
 _codecs_mbcs_encode_impl(PyObject *module, PyObject *str, const char *errors);
@@ -1391,7 +1416,7 @@ PyDoc_STRVAR(_codecs_oem_encode__doc__,
 "\n");
 
 #define _CODECS_OEM_ENCODE_METHODDEF    \
-    {"oem_encode", (PyCFunction)_codecs_oem_encode, METH_FASTCALL, _codecs_oem_encode__doc__},
+    {"oem_encode", (PyCFunction)(void(*)(void))_codecs_oem_encode, METH_FASTCALL, _codecs_oem_encode__doc__},
 
 static PyObject *
 _codecs_oem_encode_impl(PyObject *module, PyObject *str, const char *errors);
@@ -1423,7 +1448,7 @@ PyDoc_STRVAR(_codecs_code_page_encode__doc__,
 "\n");
 
 #define _CODECS_CODE_PAGE_ENCODE_METHODDEF    \
-    {"code_page_encode", (PyCFunction)_codecs_code_page_encode, METH_FASTCALL, _codecs_code_page_encode__doc__},
+    {"code_page_encode", (PyCFunction)(void(*)(void))_codecs_code_page_encode, METH_FASTCALL, _codecs_code_page_encode__doc__},
 
 static PyObject *
 _codecs_code_page_encode_impl(PyObject *module, int code_page, PyObject *str,
@@ -1460,7 +1485,7 @@ PyDoc_STRVAR(_codecs_register_error__doc__,
 "error and must return a (replacement, new position) tuple.");
 
 #define _CODECS_REGISTER_ERROR_METHODDEF    \
-    {"register_error", (PyCFunction)_codecs_register_error, METH_FASTCALL, _codecs_register_error__doc__},
+    {"register_error", (PyCFunction)(void(*)(void))_codecs_register_error, METH_FASTCALL, _codecs_register_error__doc__},
 
 static PyObject *
 _codecs_register_error_impl(PyObject *module, const char *errors,
@@ -1504,7 +1529,17 @@ _codecs_lookup_error(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     const char *name;
 
-    if (!PyArg_Parse(arg, "s:lookup_error", &name)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("lookup_error", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(arg, &name_length);
+    if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _codecs_lookup_error_impl(module, name);
@@ -1536,4 +1571,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=06fa0d6803103c62 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c2d2b917b78a4c45 input=a9049054013a1b77]*/

@@ -514,7 +514,7 @@ class RefactoringTool(object):
         set.
         """
         try:
-            fp = io.open(filename, "w", encoding=encoding)
+            fp = io.open(filename, "w", encoding=encoding, newline='')
         except OSError as err:
             self.log_error("Can't create %s: %s", filename, err)
             return

@@ -256,13 +256,6 @@ def copyfileobj(src, dst, length=None, exception=OSError, bufsize=None):
         dst.write(buf)
     return
 
-def filemode(mode):
-    """Deprecated in this location; use stat.filemode."""
-    import warnings
-    warnings.warn("deprecated in favor of stat.filemode",
-                  DeprecationWarning, 2)
-    return stat.filemode(mode)
-
 def _safe_print(s):
     encoding = getattr(sys.stdout, 'encoding', None)
     if encoding is not None:
@@ -520,21 +513,10 @@ class _Stream:
             raise StreamError("seeking backwards is not allowed")
         return self.pos
 
-    def read(self, size=None):
-        """Return the next size number of bytes from the stream.
-           If size is not defined, return all bytes of the stream
-           up to EOF.
-        """
-        if size is None:
-            t = []
-            while True:
-                buf = self._read(self.bufsize)
-                if not buf:
-                    break
-                t.append(buf)
-            buf = "".join(t)
-        else:
-            buf = self._read(size)
+    def read(self, size):
+        """Return the next size number of bytes from the stream."""
+        assert size is not None
+        buf = self._read(size)
         self.pos += len(buf)
         return buf
 
@@ -545,34 +527,41 @@ class _Stream:
             return self.__read(size)
 
         c = len(self.dbuf)
+        t = [self.dbuf]
         while c < size:
-            buf = self.__read(self.bufsize)
-            if not buf:
-                break
+            # Skip underlying buffer to avoid unaligned double buffering.
+            if self.buf:
+                buf = self.buf
+                self.buf = b""
+            else:
+                buf = self.fileobj.read(self.bufsize)
+                if not buf:
+                    break
             try:
                 buf = self.cmp.decompress(buf)
             except self.exception:
                 raise ReadError("invalid compressed data")
-            self.dbuf += buf
+            t.append(buf)
             c += len(buf)
-        buf = self.dbuf[:size]
-        self.dbuf = self.dbuf[size:]
-        return buf
+        t = b"".join(t)
+        self.dbuf = t[size:]
+        return t[:size]
 
     def __read(self, size):
         """Return size bytes from stream. If internal buffer is empty,
            read another block from the stream.
         """
         c = len(self.buf)
+        t = [self.buf]
         while c < size:
             buf = self.fileobj.read(self.bufsize)
             if not buf:
                 break
-            self.buf += buf
+            t.append(buf)
             c += len(buf)
-        buf = self.buf[:size]
-        self.buf = self.buf[size:]
-        return buf
+        t = b"".join(t)
+        self.buf = t[size:]
+        return t[:size]
 # class _Stream
 
 class _StreamProxy(object):

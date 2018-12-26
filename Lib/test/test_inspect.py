@@ -166,26 +166,51 @@ class TestPredicates(IsTestBase):
             self.assertFalse(inspect.ismemberdescriptor(datetime.timedelta.days))
 
     def test_iscoroutine(self):
+        async_gen_coro = async_generator_function_example(1)
         gen_coro = gen_coroutine_function_example(1)
         coro = coroutine_function_example(1)
 
         self.assertFalse(
             inspect.iscoroutinefunction(gen_coroutine_function_example))
+        self.assertFalse(
+            inspect.iscoroutinefunction(
+                functools.partial(functools.partial(
+                    gen_coroutine_function_example))))
         self.assertFalse(inspect.iscoroutine(gen_coro))
 
         self.assertTrue(
             inspect.isgeneratorfunction(gen_coroutine_function_example))
+        self.assertTrue(
+            inspect.isgeneratorfunction(
+                functools.partial(functools.partial(
+                    gen_coroutine_function_example))))
         self.assertTrue(inspect.isgenerator(gen_coro))
 
         self.assertTrue(
             inspect.iscoroutinefunction(coroutine_function_example))
+        self.assertTrue(
+            inspect.iscoroutinefunction(
+                functools.partial(functools.partial(
+                    coroutine_function_example))))
         self.assertTrue(inspect.iscoroutine(coro))
 
         self.assertFalse(
             inspect.isgeneratorfunction(coroutine_function_example))
+        self.assertFalse(
+            inspect.isgeneratorfunction(
+                functools.partial(functools.partial(
+                    coroutine_function_example))))
         self.assertFalse(inspect.isgenerator(coro))
 
-        coro.close(); gen_coro.close() # silence warnings
+        self.assertTrue(
+            inspect.isasyncgenfunction(async_generator_function_example))
+        self.assertTrue(
+            inspect.isasyncgenfunction(
+                functools.partial(functools.partial(
+                    async_generator_function_example))))
+        self.assertTrue(inspect.isasyncgen(async_gen_coro))
+
+        coro.close(); gen_coro.close(); # silence warnings
 
     def test_isawaitable(self):
         def gen(): yield
@@ -344,7 +369,7 @@ class GetSourceBase(unittest.TestCase):
 
     def sourcerange(self, top, bottom):
         lines = self.source.split("\n")
-        return "\n".join(lines[top-1:bottom]) + "\n"
+        return "\n".join(lines[top-1:bottom]) + ("\n" if bottom else "")
 
     def assertSourceEqual(self, obj, top, bottom):
         self.assertEqual(inspect.getsource(obj),
@@ -526,6 +551,16 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     def test_getsource_on_code_object(self):
         self.assertSourceEqual(mod.eggs.__code__, 12, 18)
+
+class TestGettingSourceOfToplevelFrames(GetSourceBase):
+    fodderModule = mod
+
+    def test_range_toplevel_frame(self):
+        self.maxDiff = None
+        self.assertSourceEqual(mod.currentframe, 1, None)
+
+    def test_range_traceback_toplevel_frame(self):
+        self.assertSourceEqual(mod.tb, 1, None)
 
 class TestDecorators(GetSourceBase):
     fodderModule = mod2
@@ -841,7 +876,7 @@ class TestClassesAndFunctions(unittest.TestCase):
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
-    def test_getfullagrspec_builtin_func(self):
+    def test_getfullargspec_builtin_func(self):
         import _testcapi
         builtin = _testcapi.docstring_with_signature_with_defaults
         spec = inspect.getfullargspec(builtin)
@@ -850,7 +885,7 @@ class TestClassesAndFunctions(unittest.TestCase):
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
-    def test_getfullagrspec_builtin_func_no_signature(self):
+    def test_getfullargspec_builtin_func_no_signature(self):
         import _testcapi
         builtin = _testcapi.docstring_no_signature
         with self.assertRaises(TypeError):
@@ -3870,7 +3905,7 @@ def test_main():
         TestBoundArguments, TestSignaturePrivateHelpers,
         TestSignatureDefinitions, TestIsDataDescriptor,
         TestGetClosureVars, TestUnwrap, TestMain, TestReload,
-        TestGetCoroutineState
+        TestGetCoroutineState, TestGettingSourceOfToplevelFrames
     )
 
 if __name__ == "__main__":

@@ -111,8 +111,8 @@ atom: ('(' [yield_expr|testlist_gexp] ')' |
        '{' [dictsetmaker] '}' |
        '`' testlist1 '`' |
        NAME | NUMBER | STRING+ | '.' '.' '.')
-listmaker: (test|star_expr) ( old_comp_for | (',' (test|star_expr))* [','] )
-testlist_gexp: (test|star_expr) ( old_comp_for | (',' (test|star_expr))* [','] )
+listmaker: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
+testlist_gexp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
 lambdef: 'lambda' [varargslist] ':' test
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
 subscriptlist: subscript (',' subscript)* [',']
@@ -142,27 +142,8 @@ argument: ( test [comp_for] |
 	    star_expr )
 
 comp_iter: comp_for | comp_if
-comp_for: [ASYNC] 'for' exprlist 'in' or_test [comp_iter]
+comp_for: [ASYNC] 'for' exprlist 'in' testlist_safe [comp_iter]
 comp_if: 'if' old_test [comp_iter]
-
-# As noted above, testlist_safe extends the syntax allowed in list
-# comprehensions and generators. We can't use it indiscriminately in all
-# derivations using a comp_for-like pattern because the testlist_safe derivation
-# contains comma which clashes with trailing comma in arglist.
-#
-# This was an issue because the parser would not follow the correct derivation
-# when parsing syntactically valid Python code. Since testlist_safe was created
-# specifically to handle list comprehensions and generator expressions enclosed
-# with parentheses, it's safe to only use it in those. That avoids the issue; we
-# can parse code like set(x for x in [],).
-#
-# The syntax supported by this set of rules is not a valid Python 3 syntax,
-# hence the prefix "old".
-#
-# See https://bugs.python.org/issue27494
-old_comp_iter: old_comp_for | old_comp_if
-old_comp_for: [ASYNC] 'for' exprlist 'in' testlist_safe [old_comp_iter]
-old_comp_if: 'if' old_test [old_comp_iter]
 
 testlist1: test (',' test)*
 

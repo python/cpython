@@ -1,0 +1,2 @@
+-X dev: it is now possible to override the memory allocator using
+PYTHONMALLOC even if the developer mode is enabled.

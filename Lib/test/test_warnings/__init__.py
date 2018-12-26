@@ -148,10 +148,14 @@ class FilterTests(BaseTest):
             self.module.resetwarnings()
             self.module.filterwarnings("always", category=UserWarning)
             message = "FilterTests.test_always"
-            self.module.warn(message, UserWarning)
-            self.assertTrue(message, w[-1].message)
-            self.module.warn(message, UserWarning)
-            self.assertTrue(w[-1].message, message)
+            def f():
+                self.module.warn(message, UserWarning)
+            f()
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[-1].message.args[0], message)
+            f()
+            self.assertEqual(len(w), 2)
+            self.assertEqual(w[-1].message.args[0], message)
 
     def test_always_after_default(self):
         with original_warnings.catch_warnings(record=True,
@@ -893,12 +897,27 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
                 func()
             """))
 
-        res = assert_python_ok('-Wd', '-X', 'tracemalloc=2', support.TESTFN)
+        def run(*args):
+            res = assert_python_ok(*args)
+            stderr = res.err.decode('ascii', 'replace')
+            stderr = '\n'.join(stderr.splitlines())
 
-        stderr = res.err.decode('ascii', 'replace')
-        # normalize newlines
-        stderr = '\n'.join(stderr.splitlines())
-        stderr = re.sub('<.*>', '<...>', stderr)
+            # normalize newlines
+            stderr = re.sub('<.*>', '<...>', stderr)
+            return stderr
+
+        # tracemalloc disabled
+        stderr = run('-Wd', support.TESTFN)
+        expected = textwrap.dedent('''
+            {fname}:5: ResourceWarning: unclosed file <...>
+              f = None
+            ResourceWarning: Enable tracemalloc to get the object allocation traceback
+        ''')
+        expected = expected.format(fname=support.TESTFN).strip()
+        self.assertEqual(stderr, expected)
+
+        # tracemalloc enabled
+        stderr = run('-Wd', '-X', 'tracemalloc=2', support.TESTFN)
         expected = textwrap.dedent('''
             {fname}:5: ResourceWarning: unclosed file <...>
               f = None

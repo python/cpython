@@ -1,7 +1,7 @@
 # Python test set -- part 2, opcodes
 
 import unittest
-from test import ann_module
+from test import ann_module, support
 
 class OpcodeTest(unittest.TestCase):
 
@@ -42,10 +42,13 @@ class OpcodeTest(unittest.TestCase):
         self.assertEqual(ns['__annotations__'], {'x': int, 1: 2})
 
     def test_do_not_recreate_annotations(self):
-        class C:
-            del __annotations__
-            with self.assertRaises(NameError):
-                x: int
+        # Don't rely on the existence of the '__annotations__' global.
+        with support.swap_item(globals(), '__annotations__', {}):
+            del globals()['__annotations__']
+            class C:
+                del __annotations__
+                with self.assertRaises(NameError):
+                    x: int
 
     def test_raise_class_exceptions(self):
 

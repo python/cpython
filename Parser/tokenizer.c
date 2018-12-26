@@ -48,72 +48,6 @@ static int tok_nextc(struct tok_state *tok);
 static void tok_backup(struct tok_state *tok, int c);
 
 
-/* Token names */
-
-const char *_PyParser_TokenNames[] = {
-    "ENDMARKER",
-    "NAME",
-    "NUMBER",
-    "STRING",
-    "NEWLINE",
-    "INDENT",
-    "DEDENT",
-    "LPAR",
-    "RPAR",
-    "LSQB",
-    "RSQB",
-    "COLON",
-    "COMMA",
-    "SEMI",
-    "PLUS",
-    "MINUS",
-    "STAR",
-    "SLASH",
-    "VBAR",
-    "AMPER",
-    "LESS",
-    "GREATER",
-    "EQUAL",
-    "DOT",
-    "PERCENT",
-    "LBRACE",
-    "RBRACE",
-    "EQEQUAL",
-    "NOTEQUAL",
-    "LESSEQUAL",
-    "GREATEREQUAL",
-    "TILDE",
-    "CIRCUMFLEX",
-    "LEFTSHIFT",
-    "RIGHTSHIFT",
-    "DOUBLESTAR",
-    "PLUSEQUAL",
-    "MINEQUAL",
-    "STAREQUAL",
-    "SLASHEQUAL",
-    "PERCENTEQUAL",
-    "AMPEREQUAL",
-    "VBAREQUAL",
-    "CIRCUMFLEXEQUAL",
-    "LEFTSHIFTEQUAL",
-    "RIGHTSHIFTEQUAL",
-    "DOUBLESTAREQUAL",
-    "DOUBLESLASH",
-    "DOUBLESLASHEQUAL",
-    "AT",
-    "ATEQUAL",
-    "RARROW",
-    "ELLIPSIS",
-    /* This table must match the #defines in token.h! */
-    "OP",
-    "<ERRORTOKEN>",
-    "COMMENT",
-    "NL",
-    "ENCODING",
-    "<N_TOKENS>"
-};
-
-
 /* Create and initialize a new tok_state structure */
 
 static struct tok_state *
@@ -953,6 +887,11 @@ tok_nextc(struct tok_state *tok)
                 buflen = PyBytes_GET_SIZE(u);
                 buf = PyBytes_AS_STRING(u);
                 newtok = PyMem_MALLOC(buflen+1);
+                if (newtok == NULL) {
+                    Py_DECREF(u);
+                    tok->done = E_NOMEM;
+                    return EOF;
+                }
                 strcpy(newtok, buf);
                 Py_DECREF(u);
             }
@@ -1109,175 +1048,26 @@ tok_backup(struct tok_state *tok, int c)
 }
 
 
-/* Return the token corresponding to a single character */
-
-int
-PyToken_OneChar(int c)
+static int
+syntaxerror(struct tok_state *tok, const char *format, ...)
 {
-    switch (c) {
-    case '(':           return LPAR;
-    case ')':           return RPAR;
-    case '[':           return LSQB;
-    case ']':           return RSQB;
-    case ':':           return COLON;
-    case ',':           return COMMA;
-    case ';':           return SEMI;
-    case '+':           return PLUS;
-    case '-':           return MINUS;
-    case '*':           return STAR;
-    case '/':           return SLASH;
-    case '|':           return VBAR;
-    case '&':           return AMPER;
-    case '<':           return LESS;
-    case '>':           return GREATER;
-    case '=':           return EQUAL;
-    case '.':           return DOT;
-    case '%':           return PERCENT;
-    case '{':           return LBRACE;
-    case '}':           return RBRACE;
-    case '^':           return CIRCUMFLEX;
-    case '~':           return TILDE;
-    case '@':           return AT;
-    default:            return OP;
-    }
-}
-
-
-int
-PyToken_TwoChars(int c1, int c2)
-{
-    switch (c1) {
-    case '=':
-        switch (c2) {
-        case '=':               return EQEQUAL;
-        }
-        break;
-    case '!':
-        switch (c2) {
-        case '=':               return NOTEQUAL;
-        }
-        break;
-    case '<':
-        switch (c2) {
-        case '>':               return NOTEQUAL;
-        case '=':               return LESSEQUAL;
-        case '<':               return LEFTSHIFT;
-        }
-        break;
-    case '>':
-        switch (c2) {
-        case '=':               return GREATEREQUAL;
-        case '>':               return RIGHTSHIFT;
-        }
-        break;
-    case '+':
-        switch (c2) {
-        case '=':               return PLUSEQUAL;
-        }
-        break;
-    case '-':
-        switch (c2) {
-        case '=':               return MINEQUAL;
-        case '>':               return RARROW;
-        }
-        break;
-    case '*':
-        switch (c2) {
-        case '*':               return DOUBLESTAR;
-        case '=':               return STAREQUAL;
-        }
-        break;
-    case '/':
-        switch (c2) {
-        case '/':               return DOUBLESLASH;
-        case '=':               return SLASHEQUAL;
-        }
-        break;
-    case '|':
-        switch (c2) {
-        case '=':               return VBAREQUAL;
-        }
-        break;
-    case '%':
-        switch (c2) {
-        case '=':               return PERCENTEQUAL;
-        }
-        break;
-    case '&':
-        switch (c2) {
-        case '=':               return AMPEREQUAL;
-        }
-        break;
-    case '^':
-        switch (c2) {
-        case '=':               return CIRCUMFLEXEQUAL;
-        }
-        break;
-    case '@':
-        switch (c2) {
-        case '=':               return ATEQUAL;
-        }
-        break;
-    }
-    return OP;
-}
-
-int
-PyToken_ThreeChars(int c1, int c2, int c3)
-{
-    switch (c1) {
-    case '<':
-        switch (c2) {
-        case '<':
-            switch (c3) {
-            case '=':
-                return LEFTSHIFTEQUAL;
-            }
-            break;
-        }
-        break;
-    case '>':
-        switch (c2) {
-        case '>':
-            switch (c3) {
-            case '=':
-                return RIGHTSHIFTEQUAL;
-            }
-            break;
-        }
-        break;
-    case '*':
-        switch (c2) {
-        case '*':
-            switch (c3) {
-            case '=':
-                return DOUBLESTAREQUAL;
-            }
-            break;
-        }
-        break;
-    case '/':
-        switch (c2) {
-        case '/':
-            switch (c3) {
-            case '=':
-                return DOUBLESLASHEQUAL;
-            }
-            break;
-        }
-        break;
-    case '.':
-        switch (c2) {
-        case '.':
-            switch (c3) {
-            case '.':
-                return ELLIPSIS;
-            }
-            break;
-        }
-        break;
-    }
-    return OP;
+#ifndef PGEN
+    va_list vargs;
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    PyErr_FormatV(PyExc_SyntaxError, format, vargs);
+    va_end(vargs);
+    PyErr_SyntaxLocationObject(tok->filename,
+                               tok->lineno,
+                               (int)(tok->cur - tok->line_start));
+    tok->done = E_ERROR;
+#else
+    tok->done = E_TOKEN;
+#endif
+    return ERRORTOKEN;
 }
 
 static int
@@ -1302,7 +1092,7 @@ verify_identifier(struct tok_state *tok)
     if (tok->decoding_erred)
         return 0;
     s = PyUnicode_DecodeUTF8(tok->start, tok->cur - tok->start, NULL);
-    if (s == NULL || PyUnicode_READY(s) == -1) {
+    if (s == NULL) {
         if (PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
             PyErr_Clear();
             tok->done = E_IDENTIFIER;
@@ -1333,8 +1123,8 @@ tok_decimal_tail(struct tok_state *tok)
         }
         c = tok_nextc(tok);
         if (!isdigit(c)) {
-            tok->done = E_TOKEN;
             tok_backup(tok, c);
+            syntaxerror(tok, "invalid decimal literal");
             return 0;
         }
     }
@@ -1562,9 +1352,8 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                         c = tok_nextc(tok);
                     }
                     if (!isxdigit(c)) {
-                        tok->done = E_TOKEN;
                         tok_backup(tok, c);
-                        return ERRORTOKEN;
+                        return syntaxerror(tok, "invalid hexadecimal literal");
                     }
                     do {
                         c = tok_nextc(tok);
@@ -1579,14 +1368,23 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                         c = tok_nextc(tok);
                     }
                     if (c < '0' || c >= '8') {
-                        tok->done = E_TOKEN;
                         tok_backup(tok, c);
-                        return ERRORTOKEN;
+                        if (isdigit(c)) {
+                            return syntaxerror(tok,
+                                    "invalid digit '%c' in octal literal", c);
+                        }
+                        else {
+                            return syntaxerror(tok, "invalid octal literal");
+                        }
                     }
                     do {
                         c = tok_nextc(tok);
                     } while ('0' <= c && c < '8');
                 } while (c == '_');
+                if (isdigit(c)) {
+                    return syntaxerror(tok,
+                            "invalid digit '%c' in octal literal", c);
+                }
             }
             else if (c == 'b' || c == 'B') {
                 /* Binary */
@@ -1596,14 +1394,23 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                         c = tok_nextc(tok);
                     }
                     if (c != '0' && c != '1') {
-                        tok->done = E_TOKEN;
                         tok_backup(tok, c);
-                        return ERRORTOKEN;
+                        if (isdigit(c)) {
+                            return syntaxerror(tok,
+                                    "invalid digit '%c' in binary literal", c);
+                        }
+                        else {
+                            return syntaxerror(tok, "invalid binary literal");
+                        }
                     }
                     do {
                         c = tok_nextc(tok);
                     } while (c == '0' || c == '1');
                 } while (c == '_');
+                if (isdigit(c)) {
+                    return syntaxerror(tok,
+                            "invalid digit '%c' in binary literal", c);
+                }
             }
             else {
                 int nonzero = 0;
@@ -1613,9 +1420,8 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                     if (c == '_') {
                         c = tok_nextc(tok);
                         if (!isdigit(c)) {
-                            tok->done = E_TOKEN;
                             tok_backup(tok, c);
-                            return ERRORTOKEN;
+                            return syntaxerror(tok, "invalid decimal literal");
                         }
                     }
                     if (c != '0') {
@@ -1642,9 +1448,11 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                 }
                 else if (nonzero) {
                     /* Old-style octal: now disallowed. */
-                    tok->done = E_TOKEN;
                     tok_backup(tok, c);
-                    return ERRORTOKEN;
+                    return syntaxerror(tok,
+                                       "leading zeros in decimal integer "
+                                       "literals are not permitted; "
+                                       "use an 0o prefix for octal integers");
                 }
             }
         }
@@ -1676,9 +1484,8 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                     if (c == '+' || c == '-') {
                         c = tok_nextc(tok);
                         if (!isdigit(c)) {
-                            tok->done = E_TOKEN;
                             tok_backup(tok, c);
-                            return ERRORTOKEN;
+                            return syntaxerror(tok, "invalid decimal literal");
                         }
                     } else if (!isdigit(c)) {
                         tok_backup(tok, c);
@@ -1798,12 +1605,44 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     case '(':
     case '[':
     case '{':
+#ifndef PGEN
+        if (tok->level >= MAXLEVEL) {
+            return syntaxerror(tok, "too many nested parentheses");
+        }
+        tok->parenstack[tok->level] = c;
+        tok->parenlinenostack[tok->level] = tok->lineno;
+#endif
         tok->level++;
         break;
     case ')':
     case ']':
     case '}':
+#ifndef PGEN
+        if (!tok->level) {
+            return syntaxerror(tok, "unmatched '%c'", c);
+        }
+#endif
         tok->level--;
+#ifndef PGEN
+        int opening = tok->parenstack[tok->level];
+        if (!((opening == '(' && c == ')') ||
+              (opening == '[' && c == ']') ||
+              (opening == '{' && c == '}')))
+        {
+            if (tok->parenlinenostack[tok->level] != tok->lineno) {
+                return syntaxerror(tok,
+                        "closing parenthesis '%c' does not match "
+                        "opening parenthesis '%c' on line %d",
+                        c, opening, tok->parenlinenostack[tok->level]);
+            }
+            else {
+                return syntaxerror(tok,
+                        "closing parenthesis '%c' does not match "
+                        "opening parenthesis '%c'",
+                        c, opening);
+            }
+        }
+#endif
         break;
     }
 

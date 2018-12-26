@@ -20,7 +20,7 @@ import contextlib
 
 import test.support
 from test.support import (
-    EnvironmentVarGuard, TESTFN, check_warnings, forget, JYTHON,
+    EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
     make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
     unlink, unload, create_empty_file, cpython_only, TESTFN_UNENCODABLE,
     temp_dir, DirsOnSysPath)
@@ -148,7 +148,7 @@ class ImportTests(unittest.TestCase):
         def test_with_extension(ext):
             # The extension is normally ".py", perhaps ".pyw".
             source = TESTFN + ext
-            if JYTHON:
+            if is_jython:
                 pyc = TESTFN + "$py.class"
             else:
                 pyc = TESTFN + ".pyc"
@@ -1270,6 +1270,19 @@ class CircularImportTests(unittest.TestCase):
             import test.test_import.data.circular_imports.binding
         except ImportError:
             self.fail('circular import with binding a submodule to a name failed')
+
+    def test_crossreference1(self):
+        import test.test_import.data.circular_imports.use
+        import test.test_import.data.circular_imports.source
+
+    def test_crossreference2(self):
+        with self.assertRaises(AttributeError) as cm:
+            import test.test_import.data.circular_imports.source
+        errmsg = str(cm.exception)
+        self.assertIn('test.test_import.data.circular_imports.source', errmsg)
+        self.assertIn('spam', errmsg)
+        self.assertIn('partially initialized module', errmsg)
+        self.assertIn('circular import', errmsg)
 
 
 if __name__ == '__main__':

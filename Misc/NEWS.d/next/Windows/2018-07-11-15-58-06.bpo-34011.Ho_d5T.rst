@@ -1,0 +1,4 @@
+A suite of code has been changed which copied across DLLs and init.tcl from
+the running Python location into a venv being created. These copies are needed
+only when running from a Python source build, and the copying code is now only
+run when that is the case, rather than whenever a venv is created.

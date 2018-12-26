@@ -32,6 +32,7 @@ import itertools as _itertools
 import re
 import sys
 from token import *
+from token import EXACT_TOKEN_TYPES
 
 cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
@@ -40,55 +41,6 @@ import token
 __all__ = token.__all__ + ["tokenize", "generate_tokens", "detect_encoding",
                            "untokenize", "TokenInfo"]
 del token
-
-EXACT_TOKEN_TYPES = {
-    '(':   LPAR,
-    ')':   RPAR,
-    '[':   LSQB,
-    ']':   RSQB,
-    ':':   COLON,
-    ',':   COMMA,
-    ';':   SEMI,
-    '+':   PLUS,
-    '-':   MINUS,
-    '*':   STAR,
-    '/':   SLASH,
-    '|':   VBAR,
-    '&':   AMPER,
-    '<':   LESS,
-    '>':   GREATER,
-    '=':   EQUAL,
-    '.':   DOT,
-    '%':   PERCENT,
-    '{':   LBRACE,
-    '}':   RBRACE,
-    '==':  EQEQUAL,
-    '!=':  NOTEQUAL,
-    '<=':  LESSEQUAL,
-    '>=':  GREATEREQUAL,
-    '~':   TILDE,
-    '^':   CIRCUMFLEX,
-    '<<':  LEFTSHIFT,
-    '>>':  RIGHTSHIFT,
-    '**':  DOUBLESTAR,
-    '+=':  PLUSEQUAL,
-    '-=':  MINEQUAL,
-    '*=':  STAREQUAL,
-    '/=':  SLASHEQUAL,
-    '%=':  PERCENTEQUAL,
-    '&=':  AMPEREQUAL,
-    '|=':  VBAREQUAL,
-    '^=':  CIRCUMFLEXEQUAL,
-    '<<=': LEFTSHIFTEQUAL,
-    '>>=': RIGHTSHIFTEQUAL,
-    '**=': DOUBLESTAREQUAL,
-    '//':  DOUBLESLASH,
-    '//=': DOUBLESLASHEQUAL,
-    '...': ELLIPSIS,
-    '->':  RARROW,
-    '@':   AT,
-    '@=':  ATEQUAL,
-}
 
 class TokenInfo(collections.namedtuple('TokenInfo', 'type string start end line')):
     def __repr__(self):
@@ -163,17 +115,11 @@ Triple = group(StringPrefix + "'''", StringPrefix + '"""')
 String = group(StringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
                StringPrefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*"')
 
-# Because of leftmost-then-longest match semantics, be sure to put the
-# longest operators first (e.g., if = came before ==, == would get
-# recognized as two instances of =).
-Operator = group(r"\*\*=?", r">>=?", r"<<=?", r"!=",
-                 r"//=?", r"->",
-                 r"[+\-*/%&@|^=<>]=?",
-                 r"~")
-
-Bracket = '[][(){}]'
-Special = group(r'\r?\n', r'\.\.\.', r'[:;.,@]')
-Funny = group(Operator, Bracket, Special)
+# Sorting in reverse order puts the long operators before their prefixes.
+# Otherwise if = came before ==, == would get recognized as two instances
+# of =.
+Special = group(*map(re.escape, sorted(EXACT_TOKEN_TYPES, reverse=True)))
+Funny = group(r'\r?\n', Special)
 
 PlainToken = group(Number, Funny, String, Name)
 Token = Ignore + PlainToken
@@ -492,8 +438,15 @@ def _tokenize(readline, encoding):
             # BOM will already have been stripped.
             encoding = "utf-8"
         yield TokenInfo(ENCODING, encoding, (0, 0), (0, 0), '')
+    last_line = b''
+    line = b''
     while True:                                # loop over lines in stream
         try:
+            # We capture the value of the line variable here because
+            # readline uses the empty string '' to signal end of input,
+            # hence `line` itself will always be overwritten at the end
+            # of this loop.
+            last_line = line
             line = readline()
         except StopIteration:
             line = b''
@@ -648,6 +601,9 @@ def _tokenize(readline, encoding):
                            (lnum, pos), (lnum, pos+1), line)
                 pos += 1
 
+    # Add an implicit NEWLINE if the input doesn't end in one
+    if last_line and last_line[-1] not in '\r\n':
+        yield TokenInfo(NEWLINE, '', (lnum - 1, len(last_line)), (lnum - 1, len(last_line) + 1), '')
     for indent in indents[1:]:                 # pop remaining indent levels
         yield TokenInfo(DEDENT, '', (lnum, 0), (lnum, 0), '')
     yield TokenInfo(ENDMARKER, '', (lnum, 0), (lnum, 0), '')

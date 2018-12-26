@@ -80,7 +80,7 @@
 
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include "osdefs.h"
 #include <wchar.h>
 
@@ -89,7 +89,7 @@
 #endif
 
 #include <windows.h>
-#include <Shlwapi.h>
+#include <shlwapi.h>
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -536,10 +536,16 @@ static _PyInitError
 get_program_full_path(const _PyCoreConfig *core_config,
                       PyCalculatePath *calculate, _PyPathConfig *config)
 {
+    const wchar_t *pyvenv_launcher;
     wchar_t program_full_path[MAXPATHLEN+1];
     memset(program_full_path, 0, sizeof(program_full_path));
 
-    if (!GetModuleFileNameW(NULL, program_full_path, MAXPATHLEN)) {
+    /* The launcher may need to force the executable path to a
+     * different environment, so override it here. */
+    pyvenv_launcher = _wgetenv(L"__PYVENV_LAUNCHER__");
+    if (pyvenv_launcher && pyvenv_launcher[0]) {
+        wcscpy_s(program_full_path, MAXPATHLEN+1, pyvenv_launcher);
+    } else if (!GetModuleFileNameW(NULL, program_full_path, MAXPATHLEN)) {
         /* GetModuleFileName should never fail when passed NULL */
         return _Py_INIT_ERR("Cannot determine program path");
     }
@@ -553,8 +559,7 @@ get_program_full_path(const _PyCoreConfig *core_config,
 
 
 static int
-read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path,
-              int *isolated, int *nosite)
+read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path)
 {
     FILE *sp_file = _Py_wfopen(path, L"r");
     if (sp_file == NULL) {
@@ -563,13 +568,16 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path,
 
     wcscpy_s(prefix, MAXPATHLEN+1, path);
     reduce(prefix);
-    *isolated = 1;
-    *nosite = 1;
+    config->isolated = 1;
+    config->site_import = 0;
 
     size_t bufsiz = MAXPATHLEN;
     size_t prefixlen = wcslen(prefix);
 
     wchar_t *buf = (wchar_t*)PyMem_RawMalloc(bufsiz * sizeof(wchar_t));
+    if (buf == NULL) {
+        goto error;
+    }
     buf[0] = '\0';
 
     while (!feof(sp_file)) {
@@ -589,25 +597,31 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path,
         }
 
         if (strcmp(line, "import site") == 0) {
-            *nosite = 0;
+            config->site_import = 1;
             continue;
-        } else if (strncmp(line, "import ", 7) == 0) {
+        }
+        else if (strncmp(line, "import ", 7) == 0) {
             Py_FatalError("only 'import site' is supported in ._pth file");
         }
 
         DWORD wn = MultiByteToWideChar(CP_UTF8, 0, line, -1, NULL, 0);
         wchar_t *wline = (wchar_t*)PyMem_RawMalloc((wn + 1) * sizeof(wchar_t));
+        if (wline == NULL) {
+            goto error;
+        }
         wn = MultiByteToWideChar(CP_UTF8, 0, line, -1, wline, wn + 1);
         wline[wn] = '\0';
 
         size_t usedsiz = wcslen(buf);
         while (usedsiz + wn + prefixlen + 4 > bufsiz) {
             bufsiz += MAXPATHLEN;
-            buf = (wchar_t*)PyMem_RawRealloc(buf, (bufsiz + 1) * sizeof(wchar_t));
-            if (!buf) {
+            wchar_t *tmp = (wchar_t*)PyMem_RawRealloc(buf, (bufsiz + 1) *
+                                                            sizeof(wchar_t));
+            if (tmp == NULL) {
                 PyMem_RawFree(wline);
                 goto error;
             }
+            buf = tmp;
         }
 
         if (usedsiz) {
@@ -680,11 +694,7 @@ calculate_pth_file(_PyPathConfig *config, wchar_t *prefix)
         return 0;
     }
 
-    /* FIXME, bpo-32030: Global configuration variables should not be modified
-       here, _PyPathConfig_Init() is called early in Python initialization:
-       see pymain_cmdline(). */
-    return read_pth_file(config, prefix, spbuffer,
-                         &Py_IsolatedFlag, &Py_NoSiteFlag);
+    return read_pth_file(config, prefix, spbuffer);
 }
 
 
@@ -986,6 +996,10 @@ done:
     if (config->prefix == NULL) {
         return _Py_INIT_NO_MEMORY();
     }
+    config->exec_prefix = _PyMem_RawWcsdup(prefix);
+    if (config->exec_prefix == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
 
     return _Py_INIT_OK();
 }
@@ -1000,7 +1014,7 @@ calculate_free(PyCalculatePath *calculate)
 
 
 _PyInitError
-_PyPathConfig_Calculate(_PyPathConfig *config, const _PyCoreConfig *core_config)
+_PyPathConfig_Calculate_impl(_PyPathConfig *config, const _PyCoreConfig *core_config)
 {
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));

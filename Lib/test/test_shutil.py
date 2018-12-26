@@ -33,6 +33,7 @@ from test import support
 from test.support import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
+MACOS = sys.platform.startswith("darwin")
 try:
     import grp
     import pwd
@@ -1180,6 +1181,8 @@ class TestShutil(unittest.TestCase):
                 subprocess.check_output(zip_cmd, stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as exc:
                 details = exc.output.decode(errors="replace")
+                if 'unrecognized option: t' in details:
+                    self.skipTest("unzip doesn't support -t")
                 msg = "{}\n\n**Unzip Output**\n{}"
                 self.fail(msg.format(exc, details))
 
@@ -1360,11 +1363,16 @@ class TestShutil(unittest.TestCase):
                          "disk_usage not available on this platform")
     def test_disk_usage(self):
         usage = shutil.disk_usage(os.path.dirname(__file__))
+        for attr in ('total', 'used', 'free'):
+            self.assertIsInstance(getattr(usage, attr), int)
         self.assertGreater(usage.total, 0)
         self.assertGreater(usage.used, 0)
         self.assertGreaterEqual(usage.free, 0)
         self.assertGreaterEqual(usage.total, usage.used)
         self.assertGreater(usage.total, usage.free)
+
+        # bpo-32557: Check that disk_usage() also accepts a filename
+        shutil.disk_usage(__file__)
 
     @unittest.skipUnless(UID_GID_SUPPORT, "Requires grp and pwd support")
     @unittest.skipUnless(hasattr(os, 'chown'), 'requires os.chown')
@@ -1807,7 +1815,7 @@ class TestCopyFile(unittest.TestCase):
 
         self.assertRaises(OSError, shutil.copyfile, 'srcfile', 'destfile')
 
-    @unittest.skipIf(support.MACOS, "skipped on macOS")
+    @unittest.skipIf(MACOS, "skipped on macOS")
     def test_w_dest_open_fails(self):
 
         srcfile = self.Faux()
@@ -1827,7 +1835,7 @@ class TestCopyFile(unittest.TestCase):
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot open "destfile"',))
 
-    @unittest.skipIf(support.MACOS, "skipped on macOS")
+    @unittest.skipIf(MACOS, "skipped on macOS")
     def test_w_dest_close_fails(self):
 
         srcfile = self.Faux()
@@ -1850,7 +1858,7 @@ class TestCopyFile(unittest.TestCase):
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot close',))
 
-    @unittest.skipIf(support.MACOS, "skipped on macOS")
+    @unittest.skipIf(MACOS, "skipped on macOS")
     def test_w_source_close_fails(self):
 
         srcfile = self.Faux(True)
@@ -2184,7 +2192,7 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
             shutil._HAS_SENDFILE = True
 
 
-@unittest.skipIf(not support.MACOS, 'macOS only')
+@unittest.skipIf(not MACOS, 'macOS only')
 class TestZeroCopyMACOS(_ZeroCopyFileTest, unittest.TestCase):
     PATCHPOINT = "posix._fcopyfile"
 

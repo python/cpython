@@ -3,11 +3,9 @@
 import collections
 import copy
 import doctest
-import keyword
 import operator
 import pickle
 from random import choice, randrange
-import re
 import string
 import sys
 from test import support
@@ -796,22 +794,21 @@ class TestOneTrickPonyABCs(ABCTestCase):
 
     def test_Reversible(self):
         # Check some non-reversibles
-        non_samples = [None, 42, 3.14, 1j, dict(), set(), frozenset()]
+        non_samples = [None, 42, 3.14, 1j, set(), frozenset()]
         for x in non_samples:
             self.assertNotIsInstance(x, Reversible)
             self.assertFalse(issubclass(type(x), Reversible), repr(type(x)))
         # Check some non-reversible iterables
-        non_reversibles = [dict().keys(), dict().items(), dict().values(),
-                           Counter(), Counter().keys(), Counter().items(),
-                           Counter().values(), _test_gen(),
-                           (x for x in []), iter([]), reversed([])]
+        non_reversibles = [_test_gen(), (x for x in []), iter([]), reversed([])]
         for x in non_reversibles:
             self.assertNotIsInstance(x, Reversible)
             self.assertFalse(issubclass(type(x), Reversible), repr(type(x)))
         # Check some reversible iterables
         samples = [bytes(), str(), tuple(), list(), OrderedDict(),
                    OrderedDict().keys(), OrderedDict().items(),
-                   OrderedDict().values()]
+                   OrderedDict().values(), Counter(), Counter().keys(),
+                   Counter().items(), Counter().values(), dict(),
+                   dict().keys(), dict().items(), dict().values()]
         for x in samples:
             self.assertIsInstance(x, Reversible)
             self.assertTrue(issubclass(type(x), Reversible), repr(type(x)))
@@ -1612,7 +1609,7 @@ class TestCollectionABCs(ABCTestCase):
         self.assertIsInstance(z, set)
         list(z)
         mymap['blue'] = 7               # Shouldn't affect 'z'
-        self.assertEqual(sorted(z), [('orange', 3), ('red', 5)])
+        self.assertEqual(z, {('orange', 3), ('red', 5)})
 
     def test_Sequence(self):
         for sample in [tuple, list, bytes, str]:
@@ -1721,6 +1718,18 @@ class TestCollectionABCs(ABCTestCase):
         mss.clear()
         self.assertEqual(len(mss), 0)
 
+        # issue 34427
+        # extending self should not cause infinite loop
+        items = 'ABCD'
+        mss2 = MutableSequenceSubclass()
+        mss2.extend(items + items)
+        mss.clear()
+        mss.extend(items)
+        mss.extend(mss)
+        self.assertEqual(len(mss), len(mss2))
+        self.assertEqual(list(mss), list(mss2))
+
+
 ################################################################################
 ### Counter
 ################################################################################
@@ -1755,10 +1764,10 @@ class TestCounter(unittest.TestCase):
         self.assertTrue(issubclass(Counter, Mapping))
         self.assertEqual(len(c), 3)
         self.assertEqual(sum(c.values()), 6)
-        self.assertEqual(sorted(c.values()), [1, 2, 3])
-        self.assertEqual(sorted(c.keys()), ['a', 'b', 'c'])
-        self.assertEqual(sorted(c), ['a', 'b', 'c'])
-        self.assertEqual(sorted(c.items()),
+        self.assertEqual(list(c.values()), [3, 2, 1])
+        self.assertEqual(list(c.keys()), ['a', 'b', 'c'])
+        self.assertEqual(list(c), ['a', 'b', 'c'])
+        self.assertEqual(list(c.items()),
                          [('a', 3), ('b', 2), ('c', 1)])
         self.assertEqual(c['b'], 2)
         self.assertEqual(c['z'], 0)
@@ -1772,7 +1781,7 @@ class TestCounter(unittest.TestCase):
         for i in range(5):
             self.assertEqual(c.most_common(i),
                              [('a', 3), ('b', 2), ('c', 1)][:i])
-        self.assertEqual(''.join(sorted(c.elements())), 'aaabbc')
+        self.assertEqual(''.join(c.elements()), 'aaabbc')
         c['a'] += 1         # increment an existing value
         c['b'] -= 2         # sub existing value to zero
         del c['c']          # remove an entry
@@ -1781,7 +1790,7 @@ class TestCounter(unittest.TestCase):
         c['e'] = -5         # directly assign a missing value
         c['f'] += 4         # add to a missing value
         self.assertEqual(c, dict(a=4, b=0, d=-2, e=-5, f=4))
-        self.assertEqual(''.join(sorted(c.elements())), 'aaaaffff')
+        self.assertEqual(''.join(c.elements()), 'aaaaffff')
         self.assertEqual(c.pop('f'), 4)
         self.assertNotIn('f', c)
         for i in range(3):

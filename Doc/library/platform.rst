@@ -79,6 +79,11 @@ Cross Platform
    Setting *terse* to true causes the function to return only the absolute minimum
    information needed to identify the platform.
 
+   .. versionchanged:: 3.8
+      On macOS, the function now uses :func:`mac_ver`, if it returns a
+      non-empty release string, to get the macOS version rather than the darwin
+      version.
+
 
 .. function:: processor()
 
@@ -212,20 +217,6 @@ Windows Platform
       only runs on Win32 compatible platforms.
 
 
-Win95/98 specific
-^^^^^^^^^^^^^^^^^
-
-.. function:: popen(cmd, mode='r', bufsize=-1)
-
-   Portable :func:`popen` interface.  Find a working popen implementation
-   preferring :func:`win32pipe.popen`.  On Windows NT, :func:`win32pipe.popen`
-   should work; on Windows 9x it hangs due to bugs in the MS C library.
-
-   .. deprecated:: 3.3
-      This function is obsolete.  Use the :mod:`subprocess` module.  Check
-      especially the :ref:`subprocess-replacements` section.
-
-
 Mac OS Platform
 ---------------
 
@@ -243,7 +234,7 @@ Mac OS Platform
 Unix Platforms
 --------------
 
-.. function:: libc_ver(executable=sys.executable, lib='', version='', chunksize=2048)
+.. function:: libc_ver(executable=sys.executable, lib='', version='', chunksize=16384)
 
    Tries to determine the libc version against which the file executable (defaults
    to the Python interpreter) is linked.  Returns a tuple of strings ``(lib,

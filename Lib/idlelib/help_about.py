@@ -195,6 +195,7 @@ class AboutDialog(Toplevel):
 
     def ok(self, event=None):
         "Dismiss help_about dialog."
+        self.grab_release()
         self.destroy()
 
 

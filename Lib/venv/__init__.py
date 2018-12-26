@@ -9,6 +9,7 @@ import os
 import shutil
 import subprocess
 import sys
+import sysconfig
 import types
 
 logger = logging.getLogger(__name__)
@@ -63,10 +64,11 @@ class EnvBuilder:
         self.system_site_packages = False
         self.create_configuration(context)
         self.setup_python(context)
+        if not self.upgrade:
+            self.setup_scripts(context)
         if self.with_pip:
             self._setup_pip(context)
         if not self.upgrade:
-            self.setup_scripts(context)
             self.post_setup(context)
         if true_system_site_packages:
             # We had set it to False before, now
@@ -157,14 +159,6 @@ class EnvBuilder:
             f.write('include-system-site-packages = %s\n' % incl)
             f.write('version = %d.%d.%d\n' % sys.version_info[:3])
 
-    if os.name == 'nt':
-        def include_binary(self, f):
-            if f.endswith(('.pyd', '.dll')):
-                result = True
-            else:
-                result = f.startswith('python') and f.endswith('.exe')
-            return result
-
     def symlink_or_copy(self, src, dst, relative_symlinks_ok=False):
         """
         Try symlinking a file, and if that fails, fall back to copying.
@@ -194,9 +188,9 @@ class EnvBuilder:
         binpath = context.bin_path
         path = context.env_exe
         copier = self.symlink_or_copy
-        copier(context.executable, path)
         dirname = context.python_dir
         if os.name != 'nt':
+            copier(context.executable, path)
             if not os.path.islink(path):
                 os.chmod(path, 0o755)
             for suffix in ('python', 'python3'):
@@ -208,32 +202,33 @@ class EnvBuilder:
                     if not os.path.islink(path):
                         os.chmod(path, 0o755)
         else:
-            subdir = 'DLLs'
-            include = self.include_binary
-            files = [f for f in os.listdir(dirname) if include(f)]
-            for f in files:
-                src = os.path.join(dirname, f)
-                dst = os.path.join(binpath, f)
-                if dst != context.env_exe:  # already done, above
-                    copier(src, dst)
-            dirname = os.path.join(dirname, subdir)
-            if os.path.isdir(dirname):
-                files = [f for f in os.listdir(dirname) if include(f)]
-                for f in files:
-                    src = os.path.join(dirname, f)
-                    dst = os.path.join(binpath, f)
-                    copier(src, dst)
-            # copy init.tcl over
-            for root, dirs, files in os.walk(context.python_dir):
-                if 'init.tcl' in files:
-                    tcldir = os.path.basename(root)
-                    tcldir = os.path.join(context.env_dir, 'Lib', tcldir)
-                    if not os.path.exists(tcldir):
-                        os.makedirs(tcldir)
-                    src = os.path.join(root, 'init.tcl')
-                    dst = os.path.join(tcldir, 'init.tcl')
-                    shutil.copyfile(src, dst)
-                    break
+            # For normal cases, the venvlauncher will be copied from
+            # our scripts folder. For builds, we need to copy it
+            # manually.
+            if sysconfig.is_python_build(True):
+                suffix = '.exe'
+                if context.python_exe.lower().endswith('_d.exe'):
+                    suffix = '_d.exe'
+
+                src = os.path.join(dirname, "venvlauncher" + suffix)
+                dst = os.path.join(binpath, context.python_exe)
+                copier(src, dst)
+
+                src = os.path.join(dirname, "venvwlauncher" + suffix)
+                dst = os.path.join(binpath, "pythonw" + suffix)
+                copier(src, dst)
+
+                # copy init.tcl over
+                for root, dirs, files in os.walk(context.python_dir):
+                    if 'init.tcl' in files:
+                        tcldir = os.path.basename(root)
+                        tcldir = os.path.join(context.env_dir, 'Lib', tcldir)
+                        if not os.path.exists(tcldir):
+                            os.makedirs(tcldir)
+                        src = os.path.join(root, 'init.tcl')
+                        dst = os.path.join(tcldir, 'init.tcl')
+                        shutil.copyfile(src, dst)
+                        break
 
     def _setup_pip(self, context):
         """Installs or upgrades pip in a virtual environment"""
@@ -320,7 +315,7 @@ class EnvBuilder:
                 dstfile = os.path.join(dstdir, f)
                 with open(srcfile, 'rb') as f:
                     data = f.read()
-                if not srcfile.endswith('.exe'):
+                if not srcfile.endswith(('.exe', '.pdb')):
                     try:
                         data = data.decode('utf-8')
                         data = self.replace_variables(data, context)

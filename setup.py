@@ -1,7 +1,7 @@
 # Autodetecting setup.py script for building the Python extensions
 #
 
-import sys, os, importlib.machinery, re, optparse
+import sys, os, importlib.machinery, re, argparse
 from glob import glob
 import importlib._bootstrap
 import importlib.util
@@ -18,11 +18,16 @@ from distutils.spawn import find_executable
 
 cross_compiling = "_PYTHON_HOST_PLATFORM" in os.environ
 
-# Add special CFLAGS reserved for building the interpreter and the stdlib
-# modules (Issue #21121).
-cflags = sysconfig.get_config_var('CFLAGS')
-py_cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST')
-sysconfig.get_config_vars()['CFLAGS'] = cflags + ' ' + py_cflags_nodist
+# Set common compiler and linker flags derived from the Makefile,
+# reserved for building the interpreter and the stdlib modules.
+# See bpo-21121 and bpo-35257
+def set_compiler_flags(compiler_flags, compiler_py_flags_nodist):
+    flags = sysconfig.get_config_var(compiler_flags)
+    py_flags_nodist = sysconfig.get_config_var(compiler_py_flags_nodist)
+    sysconfig.get_config_vars()[compiler_flags] = flags + ' ' + py_flags_nodist
+
+set_compiler_flags('CFLAGS', 'PY_CFLAGS_NODIST')
+set_compiler_flags('LDFLAGS', 'PY_LDFLAGS_NODIST')
 
 class Dummy:
     """Hack for parallel build"""
@@ -560,24 +565,9 @@ class PyBuildExt(build_ext):
                 ('CPPFLAGS', '-I', self.compiler.include_dirs)):
             env_val = sysconfig.get_config_var(env_var)
             if env_val:
-                # To prevent optparse from raising an exception about any
-                # options in env_val that it doesn't know about we strip out
-                # all double dashes and any dashes followed by a character
-                # that is not for the option we are dealing with.
-                #
-                # Please note that order of the regex is important!  We must
-                # strip out double-dashes first so that we don't end up with
-                # substituting "--Long" to "-Long" and thus lead to "ong" being
-                # used for a library directory.
-                env_val = re.sub(r'(^|\s+)-(-|(?!%s))' % arg_name[1],
-                                 ' ', env_val)
-                parser = optparse.OptionParser()
-                # Make sure that allowing args interspersed with options is
-                # allowed
-                parser.allow_interspersed_args = True
-                parser.error = lambda msg: None
-                parser.add_option(arg_name, dest="dirs", action="append")
-                options = parser.parse_args(env_val.split())[0]
+                parser = argparse.ArgumentParser()
+                parser.add_argument(arg_name, dest="dirs", action="append")
+                options, _ = parser.parse_known_args(env_val.split())
                 if options.dirs:
                     for directory in reversed(options.dirs):
                         add_dir_to_list(dir_list, directory)
@@ -693,7 +683,9 @@ class PyBuildExt(build_ext):
         # atexit
         exts.append( Extension("atexit", ["atexitmodule.c"]) )
         # _json speedups
-        exts.append( Extension("_json", ["_json.c"]) )
+        exts.append( Extension("_json", ["_json.c"],
+                               # pycore_accu.h requires Py_BUILD_CORE_BUILTIN
+                               extra_compile_args=['-DPy_BUILD_CORE_BUILTIN']) )
         # Python C API test module
         exts.append( Extension('_testcapi', ['_testcapimodule.c'],
                                depends=['testcapi_long.h']) )

@@ -569,18 +569,21 @@ mmap_flush_method(mmap_object *self, PyObject *args)
     }
 
     if (self->access == ACCESS_READ || self->access == ACCESS_COPY)
-        return PyLong_FromLong(0);
+        Py_RETURN_NONE;
 
 #ifdef MS_WINDOWS
-    return PyLong_FromLong((long) FlushViewOfFile(self->data+offset, size));
+    if (!FlushViewOfFile(self->data+offset, size)) {
+        PyErr_SetFromWindowsErr(GetLastError());
+        return NULL;
+    }
+    Py_RETURN_NONE;
 #elif defined(UNIX)
-    /* XXX semantics of return value? */
     /* XXX flags for msync? */
     if (-1 == msync(self->data + offset, size, MS_SYNC)) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
-    return PyLong_FromLong(0);
+    Py_RETURN_NONE;
 #else
     PyErr_SetString(PyExc_ValueError, "flush not supported on this system");
     return NULL;
@@ -653,7 +656,7 @@ mmap_move_method(mmap_object *self, PyObject *args)
 }
 
 static PyObject *
-mmap_closed_get(mmap_object *self)
+mmap_closed_get(mmap_object *self, void *Py_UNUSED(ignored))
 {
 #ifdef MS_WINDOWS
     return PyBool_FromLong(self->map_handle == NULL ? 1 : 0);
@@ -980,7 +983,7 @@ To map anonymous memory, pass -1 as the fileno (both versions).");
 static PyTypeObject mmap_object_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "mmap.mmap",                                /* tp_name */
-    sizeof(mmap_object),                        /* tp_size */
+    sizeof(mmap_object),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor) mmap_object_dealloc,           /* tp_dealloc */

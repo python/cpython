@@ -63,6 +63,28 @@ class TestTool(unittest.TestCase):
     ]
     """)
 
+    jsonlines_raw = textwrap.dedent("""\
+    {"ingredients":["frog", "water", "chocolate", "glucose"]}
+    {"ingredients":["chocolate","steel bolts"]}
+    """)
+
+    jsonlines_expect = textwrap.dedent("""\
+    {
+        "ingredients": [
+            "frog",
+            "water",
+            "chocolate",
+            "glucose"
+        ]
+    }
+    {
+        "ingredients": [
+            "chocolate",
+            "steel bolts"
+        ]
+    }
+    """)
+
     def test_stdin_stdout(self):
         args = sys.executable, '-m', 'json.tool'
         with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
@@ -105,6 +127,13 @@ class TestTool(unittest.TestCase):
         self.assertEqual(rc, 2)
         self.assertEqual(out, b'')
         self.assertIn(b"error: can't open '/bla/outfile': [Errno 2]", err)
+
+    def test_jsonlines(self):
+        args = sys.executable, '-m', 'json.tool', '--json-lines'
+        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
+            out, err = proc.communicate(self.jsonlines_raw.encode())
+        self.assertEqual(out.splitlines(), self.jsonlines_expect.encode().splitlines())
+        self.assertEqual(err, b'')
 
     def test_help_flag(self):
         rc, out, err = assert_python_ok('-m', 'json.tool', '-h')
