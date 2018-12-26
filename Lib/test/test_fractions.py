@@ -424,9 +424,9 @@ class FractionTest(unittest.TestCase):
         self.assertTypedEquals(float('inf'), F(-1, 10) % float('inf'))
         self.assertTypedEquals(-0.1, F(-1, 10) % float('-inf'))
 
-        self.assertTypedTupleEquals((F(0), F(1, 10)), divmod(F(1, 10), 1))
+        self.assertTypedTupleEquals((0, F(1, 10)), divmod(F(1, 10), 1))
         self.assertTypedTupleEquals(divmod(0.1, 1.0), divmod(F(1, 10), 1.0))
-        self.assertTypedTupleEquals((F(10, 1), F(0)), divmod(1, F(1, 10)))
+        self.assertTypedTupleEquals((10, F(0)), divmod(1, F(1, 10)))
         self.assertTypedTupleEquals(divmod(1.0, 0.1), divmod(1.0, F(1, 10)))
         self.assertTypedTupleEquals(divmod(0.1, float('inf')), divmod(F(1, 10), float('inf')))
         self.assertTypedTupleEquals(divmod(0.1, float('-inf')), divmod(F(1, 10), float('-inf')))

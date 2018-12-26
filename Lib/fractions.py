@@ -448,7 +448,7 @@ class Fraction(numbers.Rational):
         """(a // b, a % b)"""
         div, n_mod, d_mod = _flat_divmod(
             a.numerator, a.denominator, b.numerator, b.denominator)
-        return Fraction(div), Fraction(n_mod, d_mod)
+        return div, Fraction(n_mod, d_mod)
 
     __divmod__, __rdivmod__ = _operator_fallbacks(_divmod, divmod)
 
