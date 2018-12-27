@@ -292,7 +292,6 @@ class TestNtpath(unittest.TestCase):
             return bytes(s, "utf-8")
 
         with TemporaryDirectory() as d:
-            f4 = None
             f = ntpath.join(d, "f")
             os.mkdir(f)
             f2 = ntpath.join(d, "g")
@@ -317,10 +316,17 @@ class TestNtpath(unittest.TestCase):
                 file2 = ntpath.join(f2, "missing")
                 self.assertEqualCI(ntpath.realpath(file), ntpath.realpath(file2))
                 self.assertEqualCI(ntpath.realpath(s2b(file)), ntpath.realpath(s2b(file2)))
+
+                # realpath for short names used for non 8.3 directory names
+                dir = ntpath.join(f, "somelongname")
+                os.mkdir(dir)
+                file = ntpath.join(dir, "f")
+                open(file, "w+").close()
+                file_in_f2 = ntpath.join(f2, "somelo~1", "f")
+                self.assertEqualCI(ntpath.realpath(file), ntpath.realpath(file_in_f2))
+                self.assertEqualCI(ntpath.realpath(s2b(file)), ntpath.realpath(s2b(file_in_f2)))
             finally:
                 os.unlink(f2)
-                if f4:
-                    os.unlink(f4)
 
 
     @unittest.skipUnless(nt, "abspath requires 'nt' module")
