@@ -234,7 +234,7 @@ class GetKeysDialog(Toplevel):
         self.move_keys = ('Home', 'End', 'Page Up', 'Page Down', 'Left Arrow',
                           'Right Arrow', 'Up Arrow', 'Down Arrow')
         # Make a tuple of most of the useful common 'final' keys.
-        keys = (self.alphanum_keys + self.punctuation_keys + self.function_keys + 
+        keys = (self.alphanum_keys + self.punctuation_keys + self.function_keys +
                 self.whitespace_keys + self.edit_keys + self.move_keys)
         self.list_keys_final.insert(END, *keys)
 
