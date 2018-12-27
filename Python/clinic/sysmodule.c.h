@@ -469,6 +469,56 @@ sys_get_coroutine_wrapper(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_get_coroutine_wrapper_impl(module);
 }
 
+PyDoc_STRVAR(sys_set_asyncgen_hooks__doc__,
+"set_asyncgen_hooks($module, /, firstiter=None, finalizer=None)\n"
+"--\n"
+"\n"
+"Set a finalizer for async generators objects.");
+
+#define SYS_SET_ASYNCGEN_HOOKS_METHODDEF    \
+    {"set_asyncgen_hooks", (PyCFunction)(void(*)(void))sys_set_asyncgen_hooks, METH_FASTCALL|METH_KEYWORDS, sys_set_asyncgen_hooks__doc__},
+
+static PyObject *
+sys_set_asyncgen_hooks_impl(PyObject *module, PyObject *firstiter,
+                            PyObject *finalizer);
+
+static PyObject *
+sys_set_asyncgen_hooks(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"firstiter", "finalizer", NULL};
+    static _PyArg_Parser _parser = {"|OO:set_asyncgen_hooks", _keywords, 0};
+    PyObject *firstiter = NULL;
+    PyObject *finalizer = NULL;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &firstiter, &finalizer)) {
+        goto exit;
+    }
+    return_value = sys_set_asyncgen_hooks_impl(module, firstiter, finalizer);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(sys_get_asyncgen_hooks__doc__,
+"get_asyncgen_hooks($module, /)\n"
+"--\n"
+"\n"
+"Return a namedtuple of installed asynchronous generators hooks (firstiter, finalizer).");
+
+#define SYS_GET_ASYNCGEN_HOOKS_METHODDEF    \
+    {"get_asyncgen_hooks", (PyCFunction)sys_get_asyncgen_hooks, METH_NOARGS, sys_get_asyncgen_hooks__doc__},
+
+static PyObject *
+sys_get_asyncgen_hooks_impl(PyObject *module);
+
+static PyObject *
+sys_get_asyncgen_hooks(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_get_asyncgen_hooks_impl(module);
+}
+
 PyDoc_STRVAR(sys_getrecursionlimit__doc__,
 "getrecursionlimit($module, /)\n"
 "--\n"
@@ -519,6 +569,33 @@ static PyObject *
 sys_getwindowsversion(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return sys_getwindowsversion_impl(module);
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(sys__enablelegacywindowsfsencoding__doc__,
+"_enablelegacywindowsfsencoding($module, /)\n"
+"--\n"
+"\n"
+"Changes the default filesystem encoding to mbcs:replace for consistency with earlier versions of Python.\n"
+"\n"
+"See PEP 529 for more information.\n"
+"\n"
+"This is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING\n"
+"environment variable before launching Python.");
+
+#define SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF    \
+    {"_enablelegacywindowsfsencoding", (PyCFunction)sys__enablelegacywindowsfsencoding, METH_NOARGS, sys__enablelegacywindowsfsencoding__doc__},
+
+static PyObject *
+sys__enablelegacywindowsfsencoding_impl(PyObject *module);
+
+static PyObject *
+sys__enablelegacywindowsfsencoding(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__enablelegacywindowsfsencoding_impl(module);
 }
 
 #endif /* defined(MS_WINDOWS) */
@@ -951,9 +1028,35 @@ sys_is_finalizing(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_is_finalizing_impl(module);
 }
 
+#if defined(ANDROID_API_LEVEL)
+
+PyDoc_STRVAR(sys_getandroidapilevel__doc__,
+"getandroidapilevel($module, /)\n"
+"--\n"
+"\n"
+"Return the build time API version of Android as an integer.");
+
+#define SYS_GETANDROIDAPILEVEL_METHODDEF    \
+    {"getandroidapilevel", (PyCFunction)sys_getandroidapilevel, METH_NOARGS, sys_getandroidapilevel__doc__},
+
+static PyObject *
+sys_getandroidapilevel_impl(PyObject *module);
+
+static PyObject *
+sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_getandroidapilevel_impl(module);
+}
+
+#endif /* defined(ANDROID_API_LEVEL) */
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
+
+#ifndef SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
+    #define SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
+#endif /* !defined(SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF) */
 
 #ifndef SYS_SETDLOPENFLAGS_METHODDEF
     #define SYS_SETDLOPENFLAGS_METHODDEF
@@ -974,4 +1077,8 @@ sys_is_finalizing(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETCOUNTS_METHODDEF
     #define SYS_GETCOUNTS_METHODDEF
 #endif /* !defined(SYS_GETCOUNTS_METHODDEF) */
-/*[clinic end generated code: output=d89987671f408b07 input=a9049054013a1b77]*/
+
+#ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
+    #define SYS_GETANDROIDAPILEVEL_METHODDEF
+#endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
+/*[clinic end generated code: output=caace5ee20947442 input=a9049054013a1b77]*/

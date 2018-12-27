@@ -887,20 +887,20 @@ static PyStructSequence_Desc asyncgen_hooks_desc = {
     2
 };
 
+/*[clinic input]
+sys.set_asyncgen_hooks
+
+    firstiter: object = NULL
+    finalizer: object = NULL
+
+Set a finalizer for async generators objects.
+[clinic start generated code]*/
 
 static PyObject *
-sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
+sys_set_asyncgen_hooks_impl(PyObject *module, PyObject *firstiter,
+                            PyObject *finalizer)
+/*[clinic end generated code: output=6fe3b2dd3f9a9db5 input=ef6a1e96361234be]*/
 {
-    static char *keywords[] = {"firstiter", "finalizer", NULL};
-    PyObject *firstiter = NULL;
-    PyObject *finalizer = NULL;
-
-    if (!PyArg_ParseTupleAndKeywords(
-            args, kw, "|OO", keywords,
-            &firstiter, &finalizer)) {
-        return NULL;
-    }
-
     if (finalizer && finalizer != Py_None) {
         if (!PyCallable_Check(finalizer)) {
             PyErr_Format(PyExc_TypeError,
@@ -930,14 +930,15 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(set_asyncgen_hooks_doc,
-"set_asyncgen_hooks(*, firstiter=None, finalizer=None)\n\
-\n\
-Set a finalizer for async generators objects."
-);
+/*[clinic input]
+sys.get_asyncgen_hooks
+
+Return a namedtuple of installed asynchronous generators hooks (firstiter, finalizer).
+[clinic start generated code]*/
 
 static PyObject *
-sys_get_asyncgen_hooks(PyObject *self, PyObject *args)
+sys_get_asyncgen_hooks_impl(PyObject *module)
+/*[clinic end generated code: output=53a253707146f6cf input=07de446eb4c33c50]*/
 {
     PyObject *res;
     PyObject *firstiter = _PyEval_GetAsyncGenFirstiter();
@@ -964,13 +965,6 @@ sys_get_asyncgen_hooks(PyObject *self, PyObject *args)
 
     return res;
 }
-
-PyDoc_STRVAR(get_asyncgen_hooks_doc,
-"get_asyncgen_hooks()\n\
-\n\
-Return a namedtuple of installed asynchronous generators hooks \
-(firstiter, finalizer)."
-);
 
 
 static PyTypeObject Hash_InfoType;
@@ -1173,18 +1167,20 @@ sys_getwindowsversion_impl(PyObject *module)
 
 #pragma warning(pop)
 
-PyDoc_STRVAR(enablelegacywindowsfsencoding_doc,
-"_enablelegacywindowsfsencoding()\n\
-\n\
-Changes the default filesystem encoding to mbcs:replace for consistency\n\
-with earlier versions of Python. See PEP 529 for more information.\n\
-\n\
-This is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING\n\
-environment variable before launching Python."
-);
+/*[clinic input]
+sys._enablelegacywindowsfsencoding
+
+Changes the default filesystem encoding to mbcs:replace for consistency with earlier versions of Python.
+
+See PEP 529 for more information.
+
+This is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING
+environment variable before launching Python.
+[clinic start generated code]*/
 
 static PyObject *
-sys_enablelegacywindowsfsencoding(PyObject *self)
+sys__enablelegacywindowsfsencoding_impl(PyObject *module)
+/*[clinic end generated code: output=f5c3855b45e24fe9 input=8522dd702ad9a5a1]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     _PyCoreConfig *config = &interp->core_config;
@@ -1599,13 +1595,15 @@ sys_is_finalizing_impl(PyObject *module)
 }
 
 #ifdef ANDROID_API_LEVEL
-PyDoc_STRVAR(getandroidapilevel_doc,
-"getandroidapilevel()\n\
-\n\
-Return the build time API version of Android as an integer.");
+/*[clinic input]
+sys.getandroidapilevel
+
+Return the build time API version of Android as an integer.
+[clinic start generated code]*/
 
 static PyObject *
-sys_getandroidapilevel(PyObject *self)
+sys_getandroidapilevel_impl(PyObject *module)
+/*[clinic end generated code: output=214abf183a1c70c1 input=3e6d6c9fcdd24ac6]*/
 {
     return PyLong_FromLong(ANDROID_API_LEVEL);
 }
@@ -1640,11 +1638,8 @@ static PyMethodDef sys_methods[] = {
     SYS_GETRECURSIONLIMIT_METHODDEF
     SYS_GETSIZEOF_METHODDEF
     SYS__GETFRAME_METHODDEF
-#ifdef MS_WINDOWS
     SYS_GETWINDOWSVERSION_METHODDEF
-    {"_enablelegacywindowsfsencoding", (PyCFunction)sys_enablelegacywindowsfsencoding,
-     METH_NOARGS, enablelegacywindowsfsencoding_doc },
-#endif /* MS_WINDOWS */
+    SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
     SYS_INTERN_METHODDEF
     SYS_IS_FINALIZING_METHODDEF
     SYS_MDEBUG_METHODDEF
@@ -1664,14 +1659,9 @@ static PyMethodDef sys_methods[] = {
     SYS_GET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
     SYS_SET_COROUTINE_WRAPPER_METHODDEF
     SYS_GET_COROUTINE_WRAPPER_METHODDEF
-    {"set_asyncgen_hooks", (PyCFunction)(void(*)(void))sys_set_asyncgen_hooks,
-     METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
-    {"get_asyncgen_hooks", sys_get_asyncgen_hooks, METH_NOARGS,
-     get_asyncgen_hooks_doc},
-#ifdef ANDROID_API_LEVEL
-    {"getandroidapilevel", (PyCFunction)sys_getandroidapilevel, METH_NOARGS,
-     getandroidapilevel_doc},
-#endif
+    SYS_SET_ASYNCGEN_HOOKS_METHODDEF
+    SYS_GET_ASYNCGEN_HOOKS_METHODDEF
+    SYS_GETANDROIDAPILEVEL_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
