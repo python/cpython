@@ -308,15 +308,15 @@ class TestNtpath(unittest.TestCase):
                 file2 = ntpath.join(f2, "file1")
                 unc1 = to_unc(file)
                 unc2 = to_unc(file2)
-                self.assertEqualCI(unc1, ntpath.realpath(unc2))
-                self.assertEqualCI(s2b(unc1), ntpath.realpath(s2b(unc2)))
+                self.assertEqualCI(ntpath.realpath(unc1), ntpath.realpath(unc2))
+                self.assertEqualCI(ntpath.realpath(s2b(unc1)), ntpath.realpath(s2b(unc2)))
 
                 # realpath for non-existent file F in symlinked folder
                 # is original folder + F
                 file = ntpath.join(f, "missing")
                 file2 = ntpath.join(f2, "missing")
-                self.assertEqualCI(file, ntpath.realpath(file2))
-                self.assertEqualCI(s2b(file), ntpath.realpath(s2b(file2)))
+                self.assertEqualCI(ntpath.realpath(file), ntpath.realpath(file2))
+                self.assertEqualCI(ntpath.realpath(s2b(file)), ntpath.realpath(s2b(file2)))
             finally:
                 os.unlink(f2)
                 if f4:
