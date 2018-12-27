@@ -123,7 +123,7 @@ class SqueezerTest(unittest.TestCase):
                               expected=expected):
                 text = eval(text_code)
                 squeezer.get_line_width.return_value = line_width
-                self.assertEquals(squeezer.count_lines(text), expected)
+                self.assertEqual(squeezer.count_lines(text), expected)
 
     def test_init(self):
         """Test the creation of Squeezer instances."""
