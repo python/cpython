@@ -150,9 +150,11 @@ _multibytecodec_MultibyteIncrementalEncoder_setstate(MultibyteIncrementalEncoder
     PyObject *return_value = NULL;
     PyLongObject *statelong;
 
-    if (!PyArg_Parse(arg, "O!:setstate", &PyLong_Type, &statelong)) {
+    if (!PyLong_Check(arg)) {
+        _PyArg_BadArgument("setstate", "int", arg);
         goto exit;
     }
+    statelong = (PyLongObject *)arg;
     return_value = _multibytecodec_MultibyteIncrementalEncoder_setstate_impl(self, statelong);
 
 exit:
@@ -248,9 +250,11 @@ _multibytecodec_MultibyteIncrementalDecoder_setstate(MultibyteIncrementalDecoder
     PyObject *return_value = NULL;
     PyObject *state;
 
-    if (!PyArg_Parse(arg, "O!:setstate", &PyTuple_Type, &state)) {
+    if (!PyTuple_Check(arg)) {
+        _PyArg_BadArgument("setstate", "tuple", arg);
         goto exit;
     }
+    state = arg;
     return_value = _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(self, state);
 
 exit:
@@ -418,4 +422,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=4c1dc8015ee5abb4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a94364d0965adf1d input=a9049054013a1b77]*/
