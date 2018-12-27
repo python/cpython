@@ -518,7 +518,7 @@ def register_standard_browsers():
         # Detect some common Windows browsers, fallback to IE
         iexplore = os.path.join(os.environ.get("PROGRAMFILES", "C:\\Program Files"),
                                 "Internet Explorer\\IEXPLORE.EXE")
-        for browser in ("firefox", "firebird", "seamonkey", "mozilla",
+        for browser in ("firefox", "firebird", "seamonkey", "mozilla", "chrome"
                         "netscape", "opera", iexplore):
             if shutil.which(browser):
                 register(browser, None, BackgroundBrowser(browser))
