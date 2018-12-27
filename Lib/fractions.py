@@ -35,7 +35,6 @@ def _gcd(a, b):
         a, b = b, a%b
     return a
 
-
 # Constants related to the hash implementation;  hash(x) is based
 # on the reduction of x modulo the prime _PyHASH_MODULUS.
 _PyHASH_MODULUS = sys.hash_info.modulus
