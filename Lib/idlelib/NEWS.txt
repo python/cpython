@@ -2,6 +2,7 @@ What's New in IDLE 3.8.0 (since 3.7.0)
 Released on 2019-10-20?
 ======================================
 
+bpo-35598: Improve config_key with PEP8 names.
 
 bpo-35208: Squeezer now counts wrapped lines before newlines.
 
