@@ -1050,8 +1050,10 @@ deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
         start = stop;
     assert(0 <= start && start <= stop && stop <= Py_SIZE(deque));
 
-    /* XXX Replace this loop with faster code from deque_item() */
-    for (i=0 ; i<start ; i++) {
+    for (i=0 ; i < start - BLOCKLEN ; i += BLOCKLEN) {
+        b = b->rightlink;
+    }
+    for ( ; i < start ; i++) {
         index++;
         if (index == BLOCKLEN) {
             b = b->rightlink;
@@ -1308,7 +1310,7 @@ deque_traverse(dequeobject *deque, visitproc visit, void *arg)
 }
 
 static PyObject *
-deque_reduce(dequeobject *deque)
+deque_reduce(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
     PyObject *dict, *it;
     _Py_IDENTIFIER(__dict__);
@@ -1506,7 +1508,7 @@ deque_bool(dequeobject *deque)
 }
 
 static PyObject *
-deque_get_maxlen(dequeobject *deque)
+deque_get_maxlen(dequeobject *deque, void *Py_UNUSED(ignored))
 {
     if (deque->maxlen < 0)
         Py_RETURN_NONE;
@@ -1571,9 +1573,9 @@ static PyMethodDef deque_methods[] = {
         METH_O,                  extend_doc},
     {"extendleft",              (PyCFunction)deque_extendleft,
         METH_O,                  extendleft_doc},
-    {"index",                   (PyCFunction)deque_index,
+    {"index",                   (PyCFunction)(void(*)(void))deque_index,
         METH_FASTCALL,            index_doc},
-    {"insert",                  (PyCFunction)deque_insert,
+    {"insert",                  (PyCFunction)(void(*)(void))deque_insert,
         METH_FASTCALL,            insert_doc},
     {"pop",                     (PyCFunction)deque_pop,
         METH_NOARGS,             pop_doc},
@@ -1587,7 +1589,7 @@ static PyMethodDef deque_methods[] = {
         METH_NOARGS,             reversed_doc},
     {"reverse",                 (PyCFunction)deque_reverse,
         METH_NOARGS,             reverse_doc},
-    {"rotate",                  (PyCFunction)deque_rotate,
+    {"rotate",                  (PyCFunction)(void(*)(void))deque_rotate,
         METH_FASTCALL,            rotate_doc},
     {"__sizeof__",              (PyCFunction)deque_sizeof,
         METH_NOARGS,             sizeof_doc},

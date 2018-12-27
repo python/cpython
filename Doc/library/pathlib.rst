@@ -638,7 +638,17 @@ Methods
 
 Concrete paths provide the following methods in addition to pure paths
 methods.  Many of these methods can raise an :exc:`OSError` if a system
-call fails (for example because the path doesn't exist):
+call fails (for example because the path doesn't exist).
+
+.. versionchanged:: 3.8
+
+   :meth:`~Path.exists()`, :meth:`~Path.is_dir()`, :meth:`~Path.is_file()`,
+   :meth:`~Path.is_mount()`, :meth:`~Path.is_symlink()`,
+   :meth:`~Path.is_block_device()`, :meth:`~Path.is_char_device()`,
+   :meth:`~Path.is_fifo()`, :meth:`~Path.is_socket()` now return ``False``
+   instead of raising an exception for paths that contain characters
+   unrepresentable at the OS level.
+
 
 .. classmethod:: Path.cwd()
 
@@ -1085,23 +1095,30 @@ Below is a table mapping various :mod:`os` functions to their corresponding
    overlapping use-cases, their semantics differ enough to warrant not
    considering them equivalent.
 
-============================   ==============================
-os and os.path                 pathlib
-============================   ==============================
-:func:`os.path.abspath`        :meth:`Path.resolve`
-:func:`os.getcwd`              :func:`Path.cwd`
-:func:`os.path.exists`         :meth:`Path.exists`
-:func:`os.path.expanduser`     :meth:`Path.expanduser` and
-                               :meth:`Path.home`
-:func:`os.path.isdir`          :meth:`Path.is_dir`
-:func:`os.path.isfile`         :meth:`Path.is_file`
-:func:`os.path.islink`         :meth:`Path.is_symlink`
-:func:`os.stat`                :meth:`Path.stat`,
-                               :meth:`Path.owner`,
-                               :meth:`Path.group`
-:func:`os.path.isabs`          :meth:`PurePath.is_absolute`
-:func:`os.path.join`           :func:`PurePath.joinpath`
-:func:`os.path.basename`       :data:`PurePath.name`
-:func:`os.path.dirname`        :data:`PurePath.parent`
-:func:`os.path.splitext`       :data:`PurePath.suffix`
-============================   ==============================
+====================================   ==============================
+os and os.path                         pathlib
+====================================   ==============================
+:func:`os.path.abspath`                :meth:`Path.resolve`
+:func:`os.chmod`                       :meth:`Path.chmod`
+:func:`os.mkdir`                       :meth:`Path.mkdir`
+:func:`os.rename`                      :meth:`Path.rename`
+:func:`os.replace`                     :meth:`Path.replace`
+:func:`os.rmdir`                       :meth:`Path.rmdir`
+:func:`os.remove`, :func:`os.unlink`   :meth:`Path.unlink`
+:func:`os.getcwd`                      :func:`Path.cwd`
+:func:`os.path.exists`                 :meth:`Path.exists`
+:func:`os.path.expanduser`             :meth:`Path.expanduser` and
+                                       :meth:`Path.home`
+:func:`os.path.isdir`                  :meth:`Path.is_dir`
+:func:`os.path.isfile`                 :meth:`Path.is_file`
+:func:`os.path.islink`                 :meth:`Path.is_symlink`
+:func:`os.stat`                        :meth:`Path.stat`,
+                                       :meth:`Path.owner`,
+                                       :meth:`Path.group`
+:func:`os.path.isabs`                  :meth:`PurePath.is_absolute`
+:func:`os.path.join`                   :func:`PurePath.joinpath`
+:func:`os.path.basename`               :data:`PurePath.name`
+:func:`os.path.dirname`                :data:`PurePath.parent`
+:func:`os.path.samefile`               :meth:`Path.samefile`
+:func:`os.path.splitext`               :data:`PurePath.suffix`
+====================================   ==============================

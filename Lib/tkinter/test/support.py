@@ -62,9 +62,9 @@ def requires_tcl(*version):
     def deco(test):
         @functools.wraps(test)
         def newtest(self):
-            if get_tk_patchlevel() < (8, 6, 5):
+            if get_tk_patchlevel() < version:
                 self.skipTest('requires Tcl version >= ' +
-                                '.'.join(map(str, get_tk_patchlevel())))
+                                '.'.join(map(str, version)))
             test(self)
         return newtest
     return deco

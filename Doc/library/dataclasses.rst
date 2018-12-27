@@ -51,9 +51,9 @@ Module-level decorators, classes, and functions
 
    The :func:`dataclass` decorator examines the class to find
    ``field``\s.  A ``field`` is defined as class variable that has a
-   type annotation.  With two exceptions described below, nothing in
-   :func:`dataclass` examines the type specified in the variable
-   annotation.
+   :term:`type annotation <variable annotation>`.  With two
+   exceptions described below, nothing in :func:`dataclass`
+   examines the type specified in the variable annotation.
 
    The order of the fields in all of the generated methods is the
    order in which they appear in the class definition.
@@ -308,7 +308,7 @@ Module-level decorators, classes, and functions
 
    Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
 
-.. function:: astuple(*, tuple_factory=tuple)
+.. function:: astuple(instance, *, tuple_factory=tuple)
 
    Converts the dataclass ``instance`` to a tuple (by using the
    factory function ``tuple_factory``).  Each dataclass is converted

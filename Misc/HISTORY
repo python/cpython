@@ -629,7 +629,7 @@ Library
 - Issue #21560: An attempt to write a data of wrong type no longer cause
   GzipFile corruption.  Original patch by Wolfgang Maier.
 
-- Issue #23647: Increase impalib's MAXLINE to accommodate modern mailbox sizes.
+- Issue #23647: Increase imaplib's MAXLINE to accommodate modern mailbox sizes.
 
 - Issue #23539: If body is None, http.client.HTTPConnection.request now sets
   Content-Length to 0 for PUT, POST, and PATCH headers to avoid 411 errors from
@@ -677,7 +677,7 @@ Library
 - Issue #23521: Corrected pure python implementation of timedelta division.
 
  * Eliminated OverflowError from timedelta * float for some floats;
- * Corrected rounding in timedlta true division.
+ * Corrected rounding in timedelta true division.
 
 - Issue #21619: Popen objects no longer leave a zombie after exit in the with
   statement if the pipe was broken.  Patch by Martin Panter.
@@ -966,7 +966,7 @@ Core and Builtins
   returned NotImplemented.  Original patch by Martin Panter.
 
 - Issue #23321: Fixed a crash in str.decode() when error handler returned
-  replacment string longer than mailformed input data.
+  replacement string longer than malformed input data.
 
 - Issue #23048: Fix jumping out of an infinite while loop in the pdb.
 
@@ -1042,7 +1042,7 @@ Library
 - Issue #23250: In the http.cookies module, capitalize "HttpOnly" and "Secure"
   as they are written in the standard.
 
-- Issue #23063: In the disutils' check command, fix parsing of reST with code or
+- Issue #23063: In the distutils' check command, fix parsing of reST with code or
   code-block directives.
 
 - Issue #23209, #23225: selectors.BaseSelector.close() now clears its internal
@@ -9956,7 +9956,7 @@ Library
   ensure that it will be found regardless of the shell PATH. This ensures
   that multiprocessing.cpu_count works on default installs of MacOSX.
 
-- Issue #11501: disutils.archive_utils.make_zipfile no longer fails if zlib is
+- Issue #11501: distutils.archive_utils.make_zipfile no longer fails if zlib is
   not installed. Instead, the zipfile.ZIP_STORED compression is used to create
   the ZipFile. Patch by Natalia B. Bidart.
 

@@ -13,7 +13,7 @@ PyDoc_STRVAR(sys_set_coroutine_origin_tracking_depth__doc__,
 "to disable.");
 
 #define SYS_SET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF    \
-    {"set_coroutine_origin_tracking_depth", (PyCFunction)sys_set_coroutine_origin_tracking_depth, METH_FASTCALL|METH_KEYWORDS, sys_set_coroutine_origin_tracking_depth__doc__},
+    {"set_coroutine_origin_tracking_depth", (PyCFunction)(void(*)(void))sys_set_coroutine_origin_tracking_depth, METH_FASTCALL|METH_KEYWORDS, sys_set_coroutine_origin_tracking_depth__doc__},
 
 static PyObject *
 sys_set_coroutine_origin_tracking_depth_impl(PyObject *module, int depth);
@@ -63,4 +63,4 @@ sys_get_coroutine_origin_tracking_depth(PyObject *module, PyObject *Py_UNUSED(ig
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4a3ac42b97d710ff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dfd3eb5b137a9861 input=a9049054013a1b77]*/

@@ -1,5 +1,5 @@
-:mod:`contextlib` --- Utilities for :keyword:`with`\ -statement contexts
-========================================================================
+:mod:`!contextlib` --- Utilities for :keyword:`!with`\ -statement contexts
+==========================================================================
 
 .. module:: contextlib
    :synopsis: Utilities for with-statement contexts.
@@ -72,7 +72,7 @@ Functions and classes provided:
 
    The function being decorated must return a :term:`generator`-iterator when
    called. This iterator must yield exactly one value, which will be bound to
-   the targets in the :keyword:`with` statement's :keyword:`as` clause, if any.
+   the targets in the :keyword:`with` statement's :keyword:`!as` clause, if any.
 
    At the point where the generator yields, the block nested in the :keyword:`with`
    statement is executed.  The generator is then resumed after the block is exited.
@@ -82,9 +82,9 @@ Functions and classes provided:
    the error (if any), or ensure that some cleanup takes place. If an exception is
    trapped merely in order to log it or to perform some action (rather than to
    suppress it entirely), the generator must reraise that exception. Otherwise the
-   generator context manager will indicate to the :keyword:`with` statement that
+   generator context manager will indicate to the :keyword:`!with` statement that
    the exception has been handled, and execution will resume with the statement
-   immediately following the :keyword:`with` statement.
+   immediately following the :keyword:`!with` statement.
 
    :func:`contextmanager` uses :class:`ContextDecorator` so the context managers
    it creates can be used as decorators as well as in :keyword:`with` statements.
@@ -346,7 +346,7 @@ Functions and classes provided:
       As the decorated function must be able to be called multiple times, the
       underlying context manager must support use in multiple :keyword:`with`
       statements. If this is not the case, then the original construct with the
-      explicit :keyword:`with` statement inside the function should be used.
+      explicit :keyword:`!with` statement inside the function should be used.
 
    .. versionadded:: 3.2
 
@@ -471,11 +471,11 @@ Functions and classes provided:
    .. method:: push_async_exit(exit)
 
       Similar to :meth:`push` but expects either an asynchronous context manager
-      or a coroutine.
+      or a coroutine function.
 
    .. method:: push_async_callback(callback, *args, **kwds)
 
-      Similar to :meth:`callback` but expects a coroutine.
+      Similar to :meth:`callback` but expects a coroutine function.
 
    .. method:: aclose()
 
@@ -771,7 +771,7 @@ Reentrant context managers
 
 More sophisticated context managers may be "reentrant". These context
 managers can not only be used in multiple :keyword:`with` statements,
-but may also be used *inside* a :keyword:`with` statement that is already
+but may also be used *inside* a :keyword:`!with` statement that is already
 using the same context manager.
 
 :class:`threading.RLock` is an example of a reentrant context manager, as are

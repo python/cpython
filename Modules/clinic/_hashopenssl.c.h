@@ -24,7 +24,7 @@ PyDoc_STRVAR(EVP_digest__doc__,
 "digest($self, /)\n"
 "--\n"
 "\n"
-"Return the digest value as a string of binary data.");
+"Return the digest value as a bytes object.");
 
 #define EVP_DIGEST_METHODDEF    \
     {"digest", (PyCFunction)EVP_digest, METH_NOARGS, EVP_digest__doc__},
@@ -117,7 +117,7 @@ PyDoc_STRVAR(EVP_new__doc__,
 "The MD5 and SHA1 algorithms are always supported.");
 
 #define EVP_NEW_METHODDEF    \
-    {"new", (PyCFunction)EVP_new, METH_FASTCALL|METH_KEYWORDS, EVP_new__doc__},
+    {"new", (PyCFunction)(void(*)(void))EVP_new, METH_FASTCALL|METH_KEYWORDS, EVP_new__doc__},
 
 static PyObject *
 EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj);
@@ -151,7 +151,7 @@ PyDoc_STRVAR(pbkdf2_hmac__doc__,
 "Password based key derivation function 2 (PKCS #5 v2.0) with HMAC as pseudorandom function.");
 
 #define PBKDF2_HMAC_METHODDEF    \
-    {"pbkdf2_hmac", (PyCFunction)pbkdf2_hmac, METH_FASTCALL|METH_KEYWORDS, pbkdf2_hmac__doc__},
+    {"pbkdf2_hmac", (PyCFunction)(void(*)(void))pbkdf2_hmac, METH_FASTCALL|METH_KEYWORDS, pbkdf2_hmac__doc__},
 
 static PyObject *
 pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
@@ -201,7 +201,7 @@ PyDoc_STRVAR(_hashlib_scrypt__doc__,
 "scrypt password-based key derivation function.");
 
 #define _HASHLIB_SCRYPT_METHODDEF    \
-    {"scrypt", (PyCFunction)_hashlib_scrypt, METH_FASTCALL|METH_KEYWORDS, _hashlib_scrypt__doc__},
+    {"scrypt", (PyCFunction)(void(*)(void))_hashlib_scrypt, METH_FASTCALL|METH_KEYWORDS, _hashlib_scrypt__doc__},
 
 static PyObject *
 _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
@@ -250,7 +250,7 @@ PyDoc_STRVAR(_hashlib_hmac_digest__doc__,
 "Single-shot HMAC.");
 
 #define _HASHLIB_HMAC_DIGEST_METHODDEF    \
-    {"hmac_digest", (PyCFunction)_hashlib_hmac_digest, METH_FASTCALL|METH_KEYWORDS, _hashlib_hmac_digest__doc__},
+    {"hmac_digest", (PyCFunction)(void(*)(void))_hashlib_hmac_digest, METH_FASTCALL|METH_KEYWORDS, _hashlib_hmac_digest__doc__},
 
 static PyObject *
 _hashlib_hmac_digest_impl(PyObject *module, Py_buffer *key, Py_buffer *msg,
@@ -292,4 +292,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=239faa50f6fdcb82 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cae09468e2cdbefe input=a9049054013a1b77]*/

@@ -1,6 +1,5 @@
 import unittest
 import urllib.parse
-import warnings
 
 RFC1808_BASE = "http://a/b/c/d;p?q#f"
 RFC2396_BASE = "http://a/b/c/d;p?q"
@@ -879,6 +878,13 @@ class UrlParseTestCase(unittest.TestCase):
         result = urllib.parse.parse_qsl("key=\u0141%E9-", encoding="ascii",
                                                           errors="ignore")
         self.assertEqual(result, [('key', '\u0141-')])
+
+    def test_parse_qsl_max_num_fields(self):
+        with self.assertRaises(ValueError):
+            urllib.parse.parse_qs('&'.join(['a=a']*11), max_num_fields=10)
+        with self.assertRaises(ValueError):
+            urllib.parse.parse_qs(';'.join(['a=a']*11), max_num_fields=10)
+        urllib.parse.parse_qs('&'.join(['a=a']*10), max_num_fields=10)
 
     def test_urlencode_sequences(self):
         # Other tests incidentally urlencode things; test non-covered cases:

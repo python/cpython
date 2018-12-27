@@ -25,6 +25,18 @@ _DUMMY_SYMLINK = os.path.join(tempfile.gettempdir(),
 requires_32b = unittest.skipUnless(sys.maxsize < 2**32,
         'test is only meaningful on 32-bit builds')
 
+def _supports_sched():
+    if not hasattr(posix, 'sched_getscheduler'):
+        return False
+    try:
+        posix.sched_getscheduler(0)
+    except OSError as e:
+        if e.errno == errno.ENOSYS:
+            return False
+    return True
+
+requires_sched = unittest.skipUnless(_supports_sched(), 'requires POSIX scheduler API')
+
 class PosixTester(unittest.TestCase):
 
     def setUp(self):
@@ -1273,7 +1285,7 @@ class PosixTester(unittest.TestCase):
             self.assertRaises(OSError, posix.sched_get_priority_min, -23)
             self.assertRaises(OSError, posix.sched_get_priority_max, -23)
 
-    @unittest.skipUnless(hasattr(posix, 'sched_setscheduler'), "can't change scheduler")
+    @requires_sched
     def test_get_and_set_scheduler_and_param(self):
         possible_schedulers = [sched for name, sched in posix.__dict__.items()
                                if name.startswith("SCHED_")]
@@ -1646,16 +1658,18 @@ class TestPosixSpawn(unittest.TestCase):
                               [sys.executable, "-c", "pass"],
                               os.environ, setsigdef=[signal.NSIG, signal.NSIG+1])
 
-    @unittest.skipUnless(hasattr(posix, 'sched_setscheduler'), "can't change scheduler")
+    @requires_sched
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'netbsd')),
+                     "bpo-34685: test can fail on BSD")
     def test_setscheduler_only_param(self):
         policy = os.sched_getscheduler(0)
         priority = os.sched_get_priority_min(policy)
         code = textwrap.dedent(f"""\
-            import os
+            import os, sys
             if os.sched_getscheduler(0) != {policy}:
-                os.exit(101)
+                sys.exit(101)
             if os.sched_getparam(0).sched_priority != {priority}:
-                os.exit(102)""")
+                sys.exit(102)""")
         pid = posix.posix_spawn(
             sys.executable,
             [sys.executable, '-c', code],
@@ -1664,16 +1678,18 @@ class TestPosixSpawn(unittest.TestCase):
         )
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
 
-    @unittest.skipUnless(hasattr(posix, 'sched_setscheduler'), "can't change scheduler")
+    @requires_sched
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'netbsd')),
+                     "bpo-34685: test can fail on BSD")
     def test_setscheduler_with_policy(self):
         policy = os.sched_getscheduler(0)
         priority = os.sched_get_priority_min(policy)
         code = textwrap.dedent(f"""\
-            import os
+            import os, sys
             if os.sched_getscheduler(0) != {policy}:
-                os.exit(101)
+                sys.exit(101)
             if os.sched_getparam(0).sched_priority != {priority}:
-                os.exit(102)""")
+                sys.exit(102)""")
         pid = posix.posix_spawn(
             sys.executable,
             [sys.executable, '-c', code],

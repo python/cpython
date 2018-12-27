@@ -334,7 +334,7 @@ class Scanner:
         self.lexicon = lexicon
         # combine phrases into a compound pattern
         p = []
-        s = sre_parse.Pattern()
+        s = sre_parse.State()
         s.flags = flags
         for phrase, action in lexicon:
             gid = s.opengroup()

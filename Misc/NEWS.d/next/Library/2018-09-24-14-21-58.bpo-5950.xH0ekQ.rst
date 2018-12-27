@@ -1,0 +1,1 @@
+Support reading zip files with archive comments in :mod:`zipimport`.

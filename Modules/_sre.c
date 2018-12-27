@@ -100,11 +100,6 @@ static unsigned int sre_lower_ascii(unsigned int ch)
     return ((ch) < 128 ? Py_TOLOWER(ch) : ch);
 }
 
-static unsigned int sre_upper_ascii(unsigned int ch)
-{
-    return ((ch) < 128 ? Py_TOUPPER(ch) : ch);
-}
-
 /* locale-specific character predicates */
 /* !(c & ~N) == (c < N+1) for any unsigned c, this avoids
  * warnings when c's type supports only numbers < N+1 */
@@ -293,7 +288,7 @@ _sre_ascii_iscased_impl(PyObject *module, int character)
 /*[clinic end generated code: output=4f454b630fbd19a2 input=9f0bd952812c7ed3]*/
 {
     unsigned int ch = (unsigned int)character;
-    return ch != sre_lower_ascii(ch) || ch != sre_upper_ascii(ch);
+    return ch < 128 && Py_ISALPHA(ch);
 }
 
 /*[clinic input]
@@ -1310,7 +1305,7 @@ PyDoc_STRVAR(pattern_doc, "Compiled regular expression object.");
 
 /* PatternObject's 'groupindex' method. */
 static PyObject *
-pattern_groupindex(PatternObject *self)
+pattern_groupindex(PatternObject *self, void *Py_UNUSED(ignored))
 {
     if (self->groupindex == NULL)
         return PyDict_New();
@@ -2277,7 +2272,7 @@ PyDoc_STRVAR(match_group_doc,
     For 0 returns the entire match.");
 
 static PyObject *
-match_lastindex_get(MatchObject *self)
+match_lastindex_get(MatchObject *self, void *Py_UNUSED(ignored))
 {
     if (self->lastindex >= 0)
         return PyLong_FromSsize_t(self->lastindex);
@@ -2285,7 +2280,7 @@ match_lastindex_get(MatchObject *self)
 }
 
 static PyObject *
-match_lastgroup_get(MatchObject *self)
+match_lastgroup_get(MatchObject *self, void *Py_UNUSED(ignored))
 {
     if (self->pattern->indexgroup &&
         self->lastindex >= 0 &&
@@ -2300,7 +2295,7 @@ match_lastgroup_get(MatchObject *self)
 }
 
 static PyObject *
-match_regs_get(MatchObject *self)
+match_regs_get(MatchObject *self, void *Py_UNUSED(ignored))
 {
     if (self->regs) {
         Py_INCREF(self->regs);

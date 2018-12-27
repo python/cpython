@@ -58,7 +58,7 @@ PyDoc_STRVAR(zipimport_zipimporter_find_module__doc__,
 "with the importer protocol.");
 
 #define ZIPIMPORT_ZIPIMPORTER_FIND_MODULE_METHODDEF    \
-    {"find_module", (PyCFunction)zipimport_zipimporter_find_module, METH_FASTCALL, zipimport_zipimporter_find_module__doc__},
+    {"find_module", (PyCFunction)(void *)zipimport_zipimporter_find_module, METH_FASTCALL, zipimport_zipimporter_find_module__doc__},
 
 static PyObject *
 zipimport_zipimporter_find_module_impl(ZipImporter *self, PyObject *fullname,
@@ -94,7 +94,7 @@ PyDoc_STRVAR(zipimport_zipimporter_find_loader__doc__,
 "there for compatibility with the importer protocol.");
 
 #define ZIPIMPORT_ZIPIMPORTER_FIND_LOADER_METHODDEF    \
-    {"find_loader", (PyCFunction)zipimport_zipimporter_find_loader, METH_FASTCALL, zipimport_zipimporter_find_loader__doc__},
+    {"find_loader", (PyCFunction)(void *)zipimport_zipimporter_find_loader, METH_FASTCALL, zipimport_zipimporter_find_loader__doc__},
 
 static PyObject *
 zipimport_zipimporter_find_loader_impl(ZipImporter *self, PyObject *fullname,
@@ -322,4 +322,4 @@ zipimport_zipimporter_get_resource_reader(ZipImporter *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0b57adfe21373512 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=854ce3502180dc1f input=a9049054013a1b77]*/

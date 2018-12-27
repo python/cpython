@@ -194,12 +194,12 @@ EVP_copy_impl(EVPobject *self)
 /*[clinic input]
 _hashlib.HASH.digest as EVP_digest
 
-Return the digest value as a string of binary data.
+Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
 EVP_digest_impl(EVPobject *self)
-/*[clinic end generated code: output=0f6a3a0da46dc12d input=1876390edc3e318a]*/
+/*[clinic end generated code: output=0f6a3a0da46dc12d input=03561809a419bf00]*/
 {
     unsigned char digest[EVP_MAX_MD_SIZE];
     EVP_MD_CTX *temp_ctx;
@@ -258,7 +258,7 @@ EVP_hexdigest_impl(EVPobject *self)
 
     EVP_MD_CTX_free(temp_ctx);
 
-    return _Py_strhex((const char *)digest, digest_size);
+    return _Py_strhex((const char *)digest, (Py_ssize_t)digest_size);
 }
 
 /*[clinic input]
@@ -1022,7 +1022,7 @@ generate_hash_name_list(void)
 
 /* a PyMethodDef structure for the constructor */
 #define CONSTRUCTOR_METH_DEF(NAME)  \
-    {"openssl_" #NAME, (PyCFunction)EVP_new_ ## NAME, METH_FASTCALL, \
+    {"openssl_" #NAME, (PyCFunction)(void(*)(void))EVP_new_ ## NAME, METH_FASTCALL, \
         PyDoc_STR("Returns a " #NAME \
                   " hash object; optionally initialized with a string") \
     }
