@@ -1,2 +1,2 @@
-Mod, divmod and floordiv operations on :class:`fractions.Fraction` types are 2-4x faster.
+ The floor division and modulo operations and the :func:`divmod` function on :class:`fractions.Fraction` types are 2--4x faster.
 Patch by Stefan Behnel.
