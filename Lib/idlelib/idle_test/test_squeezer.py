@@ -1,3 +1,5 @@
+"Test squeezer, coverage 93%"
+
 from collections import namedtuple
 from textwrap import dedent
 from tkinter import Text, Tk
