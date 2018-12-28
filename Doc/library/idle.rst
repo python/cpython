@@ -236,10 +236,10 @@ Restart Shell
   Restart the shell to clean the environment.
 
 Previous History
-  Retrieves the prior command in history which matches the current entry.
+  Cycle through earlier commands in history which match the current entry.
 
 Next History
-  Retrieves the next command in history which matches the current entry.
+  Cycle through later commands in history which match the current entry.
 
 Interrupt Execution
   Stop a running program.
