@@ -235,6 +235,12 @@ View Last Restart
 Restart Shell
   Restart the shell to clean the environment.
 
+Previous History
+  Cycle through earlier commands in history which match the current entry.
+
+Next History
+  Cycle through later commands in history which match the current entry.
+
 Interrupt Execution
   Stop a running program.
 

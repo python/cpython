@@ -273,6 +273,10 @@ line.</dd>
 <dd>Scroll the shell window to the last Shell restart.</dd>
 <dt>Restart Shell</dt>
 <dd>Restart the shell to clean the environment.</dd>
+<dt>Previous History</dt>
+<dd>Cycle through earlier commands in history which match the current entry.</dd>
+<dt>Next History</dt>
+<dd>Cycle through later commands in history which match the current entry.</dd>
 <dt>Interrupt Execution</dt>
 <dd>Stop a running program.</dd>
 </dl>
@@ -309,7 +313,11 @@ size, additional help sources, and extensions.  On macOS,  open the
 configuration dialog by selecting Preferences in the application
 menu. For more, see
 <a class="reference internal" href="#preferences"><span class="std std-ref">Setting preferences</span></a> under Help and preferences.</dd>
-<dt>Code Context (toggle)(Editor Window only)</dt>
+<dt>Zoom/Restore Height</dt>
+<dd>Toggles the window between normal size and maximum height. The initial size
+defaults to 40 lines by 80 chars unless changed on the General tab of the
+Configure IDLE dialog.</dd>
+<dt>Show/Hide Code Context (Editor Window only)</dt>
 <dd>Open a pane at the top of the edit window which shows the block context
 of the code which has scrolled above the top of the window.  See
 <a class="reference internal" href="#code-context"><span class="std std-ref">Code Context</span></a> in the Editing and Navigation section below.</dd>
@@ -317,14 +325,8 @@ of the code which has scrolled above the top of the window.  See
 </div>
 <div class="section" id="window-menu-shell-and-editor">
 <h3>Window menu (Shell and Editor)<a class="headerlink" href="#window-menu-shell-and-editor" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt>Zoom Height</dt>
-<dd>Toggles the window between normal size and maximum height. The initial size
-defaults to 40 lines by 80 chars unless changed on the General tab of the
-Configure IDLE dialog.</dd>
-</dl>
-<p>The rest of this menu lists the names of all open windows; select one to bring
-it to the foreground (deiconifying it if necessary).</p>
+<p>Lists the names of all open windows; select one to bring it to the foreground
+(deiconifying it if necessary).</p>
 </div>
 <div class="section" id="help-menu-shell-and-editor">
 <h3>Help menu (Shell and Editor)<a class="headerlink" href="#help-menu-shell-and-editor" title="Permalink to this headline">¶</a></h3>
@@ -918,7 +920,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Dec 20, 2018.
+    Last updated on Dec 28, 2018.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 
