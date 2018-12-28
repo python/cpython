@@ -447,9 +447,14 @@ class EditorWindow(object):
         window.add_windows_to_menu(menu)
 
     def update_menu_label(self, menu, index, label):
-        "Update label for menu item at index ."
+        "Update label for menu item at index."
         menuitem = self.menudict[menu]
         menuitem.entryconfig(index, label=label)
+
+    def update_menu_state(self, menu, index, state):
+        "Update state for menu item at index."
+        menuitem = self.menudict[menu]
+        menuitem.entryconfig(index, state=state)
 
     def handle_yview(self, event, *args):
         "Handle scrollbar."
