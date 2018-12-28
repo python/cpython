@@ -121,7 +121,7 @@ class ExpandingButton(tk.Button):
             self.bind("<Button-2>", self.context_menu_event)
         else:
             self.bind("<Button-3>", self.context_menu_event)
-        self.selection_handle(
+        self.selection_handle(  # X windows only.
             lambda offset, length: s[int(offset):int(offset) + int(length)])
 
         self.is_dangerous = None
