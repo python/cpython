@@ -65,7 +65,6 @@ class EditorWindow(object):
     def __init__(self, flist=None, filename=None, key=None, root=None):
         # Delay import: runscript imports pyshell imports EditorWindow.
         from idlelib.runscript import ScriptBinding
-        from idlelib.pyshell import PyShell
 
         if EditorWindow.help_url is None:
             dochome =  os.path.join(sys.base_prefix, 'Doc', 'index.html')
@@ -318,10 +317,6 @@ class EditorWindow(object):
         text.bind("<<zoom-height>>", self.ZoomHeight(self).zoom_height_event)
         text.bind("<<toggle-code-context>>",
                   self.CodeContext(self).toggle_code_context_event)
-        if isinstance(self, PyShell):
-            squeezer = self.Squeezer(self)
-            text.bind("<<squeeze-current-text>>",
-                      squeezer.squeeze_current_text_event)
 
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so diplayable in Tk."""
