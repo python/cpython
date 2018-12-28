@@ -270,7 +270,7 @@ class Squeezer:
                 return write(s, tags)
 
             numoflines = self.count_lines(s)
-            if numoflines < self.auto_squeeze_min_lines:
+            if numoflines < auto_squeeze_min_lines:
                 return write(s, tags)
 
             # create an ExpandingButton instance
