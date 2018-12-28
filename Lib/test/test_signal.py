@@ -1214,6 +1214,26 @@ class StressTest(unittest.TestCase):
         # Python handler
         self.assertEqual(len(sigs), N, "Some signals were lost")
 
+class RaiseSignalTest(unittest.TestCase):
+
+    def test_sigint(self):
+        try:
+            signal.raise_signal(signal.SIGINT)
+            self.fail("Expected KeyInterrupt")
+        except KeyboardInterrupt:
+            pass
+
+    def test_handler(self):
+        is_ok = False
+        def handler(a, b):
+            nonlocal is_ok
+            is_ok = True
+        old_signal = signal.signal(signal.SIGINT, handler)
+        self.addCleanup(signal.signal, signal.SIGINT, old_signal)
+
+        signal.raise_signal(signal.SIGINT)
+        self.assertTrue(is_ok)
+
 
 def tearDownModule():
     support.reap_children()
