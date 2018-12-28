@@ -37,9 +37,8 @@ def _set_socket_extra(transport, sock):
         try:
             transport._extra['peername'] = sock.getpeername()
         except (socket.error, AttributeError):
-            if transport._loop.get_debug():
-                logger.warning("getpeername() failed on %r",
-                                sock, exc_info=True)
+            # UDP sockets may not have a peer name
+            transport._extra['peername'] = None
 
 
 class _ProactorBasePipeTransport(transports._FlowControlMixin,

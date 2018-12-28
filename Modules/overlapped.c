@@ -57,7 +57,7 @@ typedef struct {
         /* Buffer passed by the user: TYPE_WRITE, TYPE_WRITE_TO, and TYPE_READINTO */
         Py_buffer user_buffer;
 
-        /* Data used for reading from a connection-less socket:
+        /* Data used for reading from a connectionless socket:
            TYPE_READ_FROM */
         struct {
             // A (buffer, (host, port)) tuple
@@ -655,11 +655,13 @@ Overlapped_dealloc(OverlappedObject *self)
 }
 
 static PyObject*
-unparse_address(LPSOCKADDR Address, DWORD Length) {
+unparse_address(LPSOCKADDR Address, DWORD Length)
+{
     // An IPv6 address has a maximum length of 39 characters
-    char AddressString[47];
+    char AddressString[40];
     unsigned int port;
     PVOID pSinAddr;
+    DWORD err;
 
     switch(Address->sa_family) {
     case AF_INET:
@@ -674,7 +676,11 @@ unparse_address(LPSOCKADDR Address, DWORD Length) {
         return SetFromWindowsErr(ERROR_INVALID_PARAMETER);
     }
 
-    inet_ntop(Address->sa_family, pSinAddr, AddressString, 47);
+    if (!inet_ntop(Address->sa_family, pSinAddr, AddressString,
+                  sizeof(AddressString)))
+    {
+        return SetFromWindowsErr(WSAGetLastError());
+    }
 
     return Py_BuildValue("(sH)", AddressString, port);
 }
@@ -786,10 +792,15 @@ Overlapped_getresult(OverlappedObject *self, PyObject *args)
 
             // The result is a two item tuple: (message, (address, port))
             self->read_from.result = PyTuple_New(2);
+            if (self->read_from.result == NULL) {
+                return NULL;
+            }
+
             // first item: message
-            PyTuple_SetItem(self->read_from.result, 0, self->read_from.buffer);
+            PyTuple_SET_ITEM(self->read_from.result, 0,
+                             self->read_from.buffer);
             // second item: tuple(address, port)
-            PyTuple_SetItem(self->read_from.result, 1, addr);
+            PyTuple_SET_ITEM(self->read_from.result, 1, addr);
 
             Py_INCREF(self->read_from.result);
             Py_INCREF(self->read_from.buffer);
@@ -1463,16 +1474,17 @@ PyDoc_STRVAR(
 
 /*
  * Note: WSAConnect does not support Overlapped I/O so this function should
- * _only_ be used for connection-less sockets (UDP).
+ * _only_ be used for connectionless sockets (UDP).
  */
 static PyObject *
-overlapped_WSAConnect(PyObject *self, PyObject *args) {
+overlapped_WSAConnect(PyObject *self, PyObject *args)
+{
     SOCKET ConnectSocket;
     PyObject *AddressObj;
     char AddressBuf[sizeof(struct sockaddr_in6)];
     SOCKADDR *Address = (SOCKADDR*)AddressBuf;
     int Length;
-    DWORD err;
+    int err;
 
     if (!PyArg_ParseTuple(args, F_HANDLE "O", &ConnectSocket, &AddressObj)) {
         return NULL;
@@ -1491,12 +1503,10 @@ overlapped_WSAConnect(PyObject *self, PyObject *args) {
                         NULL, NULL, NULL, NULL);
     Py_END_ALLOW_THREADS
 
-    err = err == ERROR_SUCCESS ? 0 : WSAGetLastError();
-
-    switch(err) {
-    case ERROR_SUCCESS:
+    if (err == 0) {
         Py_RETURN_NONE;
-    default:
+    }
+    else {
         return SetFromWindowsErr(WSAGetLastError());
     }
 }
@@ -1505,10 +1515,11 @@ PyDoc_STRVAR(
     Overlapped_WSASendTo_doc,
     "WSASendTo(handle, buf, flags, address_as_bytes) -> "
     "Overlapped[bytes_transferred]\n\n"
-    "Start overlapped sendto over a connection-less (UDP) socket");
+    "Start overlapped sendto over a connectionless (UDP) socket");
 
 static PyObject *
-Overlapped_WSASendTo(OverlappedObject *self, PyObject *args) {
+Overlapped_WSASendTo(OverlappedObject *self, PyObject *args)
+{
     HANDLE handle;
     PyObject *bufobj;
     DWORD flags;
@@ -1546,7 +1557,7 @@ Overlapped_WSASendTo(OverlappedObject *self, PyObject *args) {
 #if SIZEOF_SIZE_T > SIZEOF_LONG
     if (self->user_buffer.len > (Py_ssize_t)ULONG_MAX) {
         PyBuffer_Release(&self->user_buffer);
-        PyErr_SetString(PyExc_ValueError, "buffer to large");
+        PyErr_SetString(PyExc_ValueError, "buffer too large");
         return NULL;
     }
 #endif
@@ -1582,7 +1593,8 @@ PyDoc_STRVAR(
     "Start overlapped receive");
 
 static PyObject *
-Overlapped_WSARecvFrom(OverlappedObject *self, PyObject *args) {
+Overlapped_WSARecvFrom(OverlappedObject *self, PyObject *args)
+{
     HANDLE handle;
     DWORD size;
     DWORD flags = 0;
@@ -1761,10 +1773,9 @@ static PyMethodDef overlapped_functions[] = {
      METH_VARARGS, SetEvent_doc},
     {"ResetEvent", overlapped_ResetEvent,
      METH_VARARGS, ResetEvent_doc},
-    {"ConnectPipe",
-     (PyCFunction)ConnectPipe,
+    {"ConnectPipe", ConnectPipe,
      METH_VARARGS, ConnectPipe_doc},
-    {"WSAConnect", (PyCFunction) overlapped_WSAConnect,
+    {"WSAConnect", overlapped_WSAConnect,
      METH_VARARGS, overlapped_WSAConnect_doc},
     {NULL}
 };
