@@ -35,26 +35,27 @@ def count_lines_with_wrapping(s, linewidth=80):
 
     Tabs are considered tabwidth characters long.
     """
-    tabwidth = 8  # this is currently always true in IDLE's shell
+    tabwidth = 8  # Currently always true in Shell.
     pos = 0
     linecount = 1
     current_column = 0
 
     for m in re.finditer(r"[\t\n]", s):
-        # process the normal chars up to tab or newline
+        # Process the normal chars up to tab or newline.
         numchars = m.start() - pos
         pos += numchars
         current_column += numchars
 
-        # deal with tab or newline
+        # Deal with tab or newline.
         if s[pos] == '\n':
-            # Avoid the `current_column == 0` edge-case, and while we're at it,
-            # don't bother adding 0.
+            # Avoid the `current_column == 0` edge-case, and while we're
+            # at it, don't bother adding 0.
             if current_column > linewidth:
-                # If the current column was exactly linewidth, divmod would give
-                # (1,0), even though a new line hadn't yet been started. The same
-                # is true if length is any exact multiple of linewidth. Therefore,
-                # subtract 1 before dividing a non-empty line.
+                # If the current column was exactly linewidth, divmod
+                # would give (1,0), even though a new line hadn't yet
+                # been started. The same is true if length is any exact
+                # multiple of linewidth. Therefore, subtract 1 before
+                # dividing a non-empty line.
                 linecount += (current_column - 1) // linewidth
             linecount += 1
             current_column = 0
@@ -62,21 +63,21 @@ def count_lines_with_wrapping(s, linewidth=80):
             assert s[pos] == '\t'
             current_column += tabwidth - (current_column % tabwidth)
 
-            # if a tab passes the end of the line, consider the entire tab as
-            # being on the next line
+            # If a tab passes the end of the line, consider the entire
+            # tab as being on the next line.
             if current_column > linewidth:
                 linecount += 1
                 current_column = tabwidth
 
-        pos += 1 # after the tab or newline
+        pos += 1 # After the tab or newline.
 
-    # process remaining chars (no more tabs or newlines)
+    # Process remaining chars (no more tabs or newlines).
     current_column += len(s) - pos
-    # avoid divmod(-1, linewidth)
+    # Avoid divmod(-1, linewidth).
     if current_column > 0:
         linecount += (current_column - 1) // linewidth
     else:
-        # the text ended with a newline; don't count an extra line after it
+        # Text ended with newline; don't count an extra line after it.
         linecount -= 1
 
     return linecount
@@ -100,9 +101,7 @@ class ExpandingButton(tk.Button):
         self.squeezer = squeezer
         self.editwin = editwin = squeezer.editwin
         self.text = text = editwin.text
-
-        # the base Text widget of the PyShell object, used to change text
-        # before the iomark
+        # The base Text widget is needed to change text before iomark.
         self.base_text = editwin.per.bottom
 
         line_plurality = "lines" if numoflines != 1 else "line"
@@ -184,7 +183,7 @@ class ExpandingButton(tk.Button):
                   modal=False, wrap='none')
 
     rmenu_specs = (
-        # item structure: (label, method_name)
+        # Item structure: (label, method_name).
         ('copy', 'copy'),
         ('view', 'view'),
     )
@@ -235,10 +234,11 @@ class Squeezer:
         self.editwin = editwin
         self.text = text = editwin.text
 
-        # Get the base Text widget of the PyShell object, used to change text
-        # before the iomark. PyShell deliberately disables changing text before
-        # the iomark via its 'text' attribute, which is actually a wrapper for
-        # the actual Text widget. Squeezer, however, needs to make such changes.
+        # Get the base Text widget of the PyShell object, used to change
+        # text before the iomark. PyShell deliberately disables changing
+        # text before the iomark via its 'text' attribute, which is
+        # actually a wrapper for the actual Text widget. Squeezer,
+        # however, needs to make such changes.
         self.base_text = editwin.per.bottom
 
         self._instance_weakref = weakref.ref(self)
@@ -273,10 +273,10 @@ class Squeezer:
             if numoflines < auto_squeeze_min_lines:
                 return write(s, tags)
 
-            # create an ExpandingButton instance
+            # Create an ExpandingButton instance.
             expandingbutton = ExpandingButton(s, tags, numoflines, self)
 
-            # insert the ExpandingButton into the Text widget
+            # Insert the ExpandingButton into the Text widget.
             text.mark_gravity("iomark", tk.RIGHT)
             text.window_create("iomark", window=expandingbutton,
                                padx=3, pady=5)
@@ -284,7 +284,7 @@ class Squeezer:
             text.update()
             text.mark_gravity("iomark", tk.LEFT)
 
-            # add the ExpandingButton to the Squeezer's list
+            # Add the ExpandingButton to the Squeezer's list.
             self.expandingbuttons.append(expandingbutton)
 
         editwin.write = mywrite
@@ -304,8 +304,8 @@ class Squeezer:
         return count_lines_with_wrapping(s, linewidth)
 
     def get_line_width(self):
-        # The maximum line length in pixels: The width of the text widget,
-        # minus twice the border width and internal padding.
+        # The maximum line length in pixels: The width of the text
+        # widget, minus twice the border width and internal padding.
         linewidth_pixels = \
             self.base_text.winfo_width() - self.window_width_delta
 
@@ -327,29 +327,29 @@ class Squeezer:
         If the insert cursor is not in a squeezable block of text, give the
         user a small warning and do nothing.
         """
-        # set tag_name to the first valid tag found on the "insert" cursor
+        # Set tag_name to the first valid tag found on the "insert" cursor.
         tag_names = self.text.tag_names(tk.INSERT)
         for tag_name in ("stdout", "stderr"):
             if tag_name in tag_names:
                 break
         else:
-            # the insert cursor doesn't have a "stdout" or "stderr" tag
+            # The insert cursor doesn't have a "stdout" or "stderr" tag.
             self.text.bell()
             return "break"
 
-        # find the range to squeeze
+        # Find the range to squeeze.
         start, end = self.text.tag_prevrange(tag_name, tk.INSERT + "+1c")
         s = self.text.get(start, end)
 
-        # if the last char is a newline, remove it from the range
+        # If the last char is a newline, remove it from the range.
         if len(s) > 0 and s[-1] == '\n':
             end = self.text.index("%s-1c" % end)
             s = s[:-1]
 
-        # delete the text
+        # Delete the text.
         self.base_text.delete(start, end)
 
-        # prepare an ExpandingButton
+        # Prepare an ExpandingButton.
         numoflines = self.count_lines(s)
         expandingbutton = ExpandingButton(s, tag_name, numoflines, self)
 
@@ -357,9 +357,9 @@ class Squeezer:
         self.text.window_create(start, window=expandingbutton,
                                 padx=3, pady=5)
 
-        # insert the ExpandingButton to the list of ExpandingButtons, while
-        # keeping the list ordered according to the position of the buttons in
-        # the Text widget
+        # Insert the ExpandingButton to the list of ExpandingButtons,
+        # while keeping the list ordered according to the position of
+        # the buttons in the Text widget.
         i = len(self.expandingbuttons)
         while i > 0 and self.text.compare(self.expandingbuttons[i-1],
                                           ">", expandingbutton):
