@@ -240,10 +240,10 @@ class TestSFpatches(unittest.TestCase):
 
     def test_make_table_escape_table_header(self):
         html_diff = difflib.HtmlDiff()
-        output = html_diff.make_file(patch914575_from1.splitlines(),
-                                     patch914575_to1.splitlines(),
-                                     fromdesc='<from>',
-                                     todesc='<to>')
+        output = html_diff.make_table(patch914575_from1.splitlines(),
+                                      patch914575_to1.splitlines(),
+                                      fromdesc='<from>',
+                                      todesc='<to>')
         self.assertIn('&lt;from&gt;', output)
         self.assertIn('&lt;to&gt;', output)
 
