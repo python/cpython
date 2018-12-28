@@ -39,7 +39,8 @@ class GetKeysDialog(Toplevel):
         self.result = ''
         self.key_string = StringVar(self)
         self.key_string.set('')
-        self.set_modifiers_for_platform()  # Set self.modifiers, self.modifier_label
+        # Set self.modifiers, self.modifier_label.
+        self.set_modifiers_for_platform()
         self.modifier_vars = []
         for modifier in self.modifiers:
             variable = StringVar(self)
