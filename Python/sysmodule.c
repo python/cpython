@@ -340,14 +340,15 @@ sys_excepthook_impl(PyObject *module, PyObject *exctype, PyObject *value,
 /*[clinic input]
 sys.exc_info
 
-Return current exception information.
+Return current exception information: (type, value, traceback).
 
-Return information about the most recent exception caught by an except clause in the current stack frame or in an older stack frame.
+Return information about the most recent exception caught by an except
+clause in the current stack frame or in an older stack frame.
 [clinic start generated code]*/
 
 static PyObject *
 sys_exc_info_impl(PyObject *module)
-/*[clinic end generated code: output=3afd0940cf3a4d30 input=497c4c555d291a90]*/
+/*[clinic end generated code: output=3afd0940cf3a4d30 input=b5c5bf077788a3e5]*/
 {
     _PyErr_StackItem *err_info = _PyErr_GetTopmostException(_PyThreadState_GET());
     return Py_BuildValue(
@@ -844,14 +845,14 @@ sys_set_coroutine_wrapper(PyObject *module, PyObject *wrapper)
 }
 
 /*[clinic input]
-sys.get_coroutine_wrapper -> object
+sys.get_coroutine_wrapper
 
 Return the wrapper for coroutine objects set by sys.set_coroutine_wrapper.
 [clinic start generated code]*/
 
 static PyObject *
 sys_get_coroutine_wrapper_impl(PyObject *module)
-/*[clinic end generated code: output=b74a7e4b14fe898e input=d472f5e27ff68b63]*/
+/*[clinic end generated code: output=b74a7e4b14fe898e input=82d8446cd96f1102]*/
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "get_coroutine_wrapper is deprecated", 1) < 0) {
@@ -887,20 +888,19 @@ static PyStructSequence_Desc asyncgen_hooks_desc = {
     2
 };
 
-/*[clinic input]
-sys.set_asyncgen_hooks
-
-    firstiter: object = NULL
-    finalizer: object = NULL
-
-Set a finalizer for async generators objects.
-[clinic start generated code]*/
-
 static PyObject *
-sys_set_asyncgen_hooks_impl(PyObject *module, PyObject *firstiter,
-                            PyObject *finalizer)
-/*[clinic end generated code: output=6fe3b2dd3f9a9db5 input=ef6a1e96361234be]*/
+sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
 {
+    static char *keywords[] = {"firstiter", "finalizer", NULL};
+    PyObject *firstiter = NULL;
+    PyObject *finalizer = NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(
+            args, kw, "|OO", keywords,
+            &firstiter, &finalizer)) {
+        return NULL;
+    }
+
     if (finalizer && finalizer != Py_None) {
         if (!PyCallable_Check(finalizer)) {
             PyErr_Format(PyExc_TypeError,
@@ -929,6 +929,12 @@ sys_set_asyncgen_hooks_impl(PyObject *module, PyObject *firstiter,
 
     Py_RETURN_NONE;
 }
+
+PyDoc_STRVAR(set_asyncgen_hooks_doc,
+"set_asyncgen_hooks(* [, firstiter] [, finalizer])\n\
+\n\
+Set a finalizer for async generators objects."
+);
 
 /*[clinic input]
 sys.get_asyncgen_hooks
@@ -1320,22 +1326,18 @@ _PySys_GetSizeOf(PyObject *o)
     return (size_t)size;
 }
 
-/*[clinic input]
-sys.getsizeof
-
-    object:  object
-    default as dflt: object = NULL
-
-Return the size of object in bytes.
-[clinic start generated code]*/
-
 static PyObject *
-sys_getsizeof_impl(PyObject *module, PyObject *object, PyObject *dflt)
-/*[clinic end generated code: output=3f326a2f59e30975 input=4aa54a33d3f3e639]*/
+sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"object", "default", 0};
     size_t size;
+    PyObject *o, *dflt = NULL;
 
-    size = _PySys_GetSizeOf(object);
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:getsizeof",
+                                     kwlist, &o, &dflt))
+        return NULL;
+
+    size = _PySys_GetSizeOf(o);
 
     if (size == (size_t)-1 && PyErr_Occurred()) {
         /* Has a default value been given */
@@ -1350,6 +1352,11 @@ sys_getsizeof_impl(PyObject *module, PyObject *object, PyObject *dflt)
 
     return PyLong_FromSize_t(size);
 }
+
+PyDoc_STRVAR(getsizeof_doc,
+"getsizeof(object [, default]) -> int\n\
+\n\
+Return the size of object in bytes.");
 
 /*[clinic input]
 sys.getrefcount -> Py_ssize_t
@@ -1484,7 +1491,7 @@ sys_call_tracing_impl(PyObject *module, PyObject *func, PyObject *funcargs)
 }
 
 /*[clinic input]
-sys.callstats -> object
+sys.callstats
 
 Return a tuple of function call statistics.
 
@@ -1510,7 +1517,7 @@ a 11-tuple where the entries in the tuple are counts of:
 
 static PyObject *
 sys_callstats_impl(PyObject *module)
-/*[clinic end generated code: output=edc4a74957fa8def input=0e1654145ac61ad7]*/
+/*[clinic end generated code: output=edc4a74957fa8def input=734f2475fdd8ca8a]*/
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                       "sys.callstats() has been deprecated in Python 3.7 "
@@ -1636,7 +1643,8 @@ static PyMethodDef sys_methods[] = {
     SYS_GETTOTALREFCOUNT_METHODDEF
     SYS_GETREFCOUNT_METHODDEF
     SYS_GETRECURSIONLIMIT_METHODDEF
-    SYS_GETSIZEOF_METHODDEF
+    {"getsizeof",   (PyCFunction)(void(*)(void))sys_getsizeof,
+     METH_VARARGS | METH_KEYWORDS, getsizeof_doc},
     SYS__GETFRAME_METHODDEF
     SYS_GETWINDOWSVERSION_METHODDEF
     SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
@@ -1659,7 +1667,8 @@ static PyMethodDef sys_methods[] = {
     SYS_GET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
     SYS_SET_COROUTINE_WRAPPER_METHODDEF
     SYS_GET_COROUTINE_WRAPPER_METHODDEF
-    SYS_SET_ASYNCGEN_HOOKS_METHODDEF
+    {"set_asyncgen_hooks", (PyCFunction)(void(*)(void))sys_set_asyncgen_hooks,
+     METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
     SYS_GET_ASYNCGEN_HOOKS_METHODDEF
     SYS_GETANDROIDAPILEVEL_METHODDEF
     {NULL,              NULL}           /* sentinel */

@@ -47,9 +47,10 @@ PyDoc_STRVAR(sys_exc_info__doc__,
 "exc_info($module, /)\n"
 "--\n"
 "\n"
-"Return current exception information.\n"
+"Return current exception information: (type, value, traceback).\n"
 "\n"
-"Return information about the most recent exception caught by an except clause in the current stack frame or in an older stack frame.");
+"Return information about the most recent exception caught by an except\n"
+"clause in the current stack frame or in an older stack frame.");
 
 #define SYS_EXC_INFO_METHODDEF    \
     {"exc_info", (PyCFunction)sys_exc_info, METH_NOARGS, sys_exc_info__doc__},
@@ -469,38 +470,6 @@ sys_get_coroutine_wrapper(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_get_coroutine_wrapper_impl(module);
 }
 
-PyDoc_STRVAR(sys_set_asyncgen_hooks__doc__,
-"set_asyncgen_hooks($module, /, firstiter=None, finalizer=None)\n"
-"--\n"
-"\n"
-"Set a finalizer for async generators objects.");
-
-#define SYS_SET_ASYNCGEN_HOOKS_METHODDEF    \
-    {"set_asyncgen_hooks", (PyCFunction)(void(*)(void))sys_set_asyncgen_hooks, METH_FASTCALL|METH_KEYWORDS, sys_set_asyncgen_hooks__doc__},
-
-static PyObject *
-sys_set_asyncgen_hooks_impl(PyObject *module, PyObject *firstiter,
-                            PyObject *finalizer);
-
-static PyObject *
-sys_set_asyncgen_hooks(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"firstiter", "finalizer", NULL};
-    static _PyArg_Parser _parser = {"|OO:set_asyncgen_hooks", _keywords, 0};
-    PyObject *firstiter = NULL;
-    PyObject *finalizer = NULL;
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &firstiter, &finalizer)) {
-        goto exit;
-    }
-    return_value = sys_set_asyncgen_hooks_impl(module, firstiter, finalizer);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(sys_get_asyncgen_hooks__doc__,
 "get_asyncgen_hooks($module, /)\n"
 "--\n"
@@ -703,37 +672,6 @@ exit:
 }
 
 #endif /* defined(USE_MALLOPT) */
-
-PyDoc_STRVAR(sys_getsizeof__doc__,
-"getsizeof($module, /, object, default=None)\n"
-"--\n"
-"\n"
-"Return the size of object in bytes.");
-
-#define SYS_GETSIZEOF_METHODDEF    \
-    {"getsizeof", (PyCFunction)(void(*)(void))sys_getsizeof, METH_FASTCALL|METH_KEYWORDS, sys_getsizeof__doc__},
-
-static PyObject *
-sys_getsizeof_impl(PyObject *module, PyObject *object, PyObject *dflt);
-
-static PyObject *
-sys_getsizeof(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"object", "default", NULL};
-    static _PyArg_Parser _parser = {"O|O:getsizeof", _keywords, 0};
-    PyObject *object;
-    PyObject *dflt = NULL;
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &object, &dflt)) {
-        goto exit;
-    }
-    return_value = sys_getsizeof_impl(module, object, dflt);
-
-exit:
-    return return_value;
-}
 
 PyDoc_STRVAR(sys_getrefcount__doc__,
 "getrefcount($module, object, /)\n"
@@ -1081,4 +1019,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=caace5ee20947442 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=32a035c29cdd75fa input=a9049054013a1b77]*/
