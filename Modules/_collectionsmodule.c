@@ -2384,7 +2384,15 @@ tuplegetterdescr_get(PyObject *self, PyObject *obj, PyObject *type)
                      obj->ob_type->tp_name);
         return NULL;
     }
-    result = PyTuple_GetItem(obj, ((_tuplegetterobject*)self)->index);
+
+    Py_ssize_t index = ((_tuplegetterobject*)self)->index;
+
+    if (index < 0 || index >= PyTuple_GET_SIZE(obj)) {
+        PyErr_SetString(PyExc_IndexError, "tuple index out of range");
+        return NULL;
+    }
+
+    result = PyTuple_GET_ITEM(obj, index);
     Py_XINCREF(result);
     return result;
 }
