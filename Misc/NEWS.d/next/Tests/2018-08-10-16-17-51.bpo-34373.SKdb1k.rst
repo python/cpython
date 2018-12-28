@@ -1,0 +1,3 @@
+Fix ``test_mktime`` and ``test_pthread_getcpuclickid`` tests for AIX
+Add range checking for ``_PyTime_localtime`` for AIX
+Patch by Michael Felt
