@@ -46,7 +46,7 @@ TCLTK_FILES_ONLY = FileNameSet("turtle.py")
 
 VENV_DIRS_ONLY = FileNameSet("venv", "ensurepip")
 
-EXCLUDE_FROM_PYDS = FileStemSet("python*", "pyshellext")
+EXCLUDE_FROM_PYDS = FileStemSet("python*", "pyshellext", "vcruntime*")
 EXCLUDE_FROM_LIB = FileNameSet("*.pyc", "__pycache__", "*.pickle")
 EXCLUDE_FROM_PACKAGED_LIB = FileNameSet("readme.txt")
 EXCLUDE_FROM_COMPILE = FileNameSet("badsyntax_*", "bad_*")
