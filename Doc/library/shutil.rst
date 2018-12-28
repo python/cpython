@@ -209,14 +209,16 @@ Directory and files operations
 
 
 .. function:: copytree(src, dst, symlinks=False, ignore=None, \
-              copy_function=copy2, ignore_dangling_symlinks=False)
+              copy_function=copy2, ignore_dangling_symlinks=False, \
+              dirs_exist_ok=False)
 
-   Recursively copy an entire directory tree rooted at *src*, returning the
-   destination directory.  The destination
-   directory, named by *dst*, must not already exist; it will be created as
-   well as missing parent directories.  Permissions and times of directories
-   are copied with :func:`copystat`, individual files are copied using
-   :func:`shutil.copy2`.
+   Recursively copy an entire directory tree rooted at *src* to a directory
+   named *dst* and return the destination directory. *dirs_exist_ok* dictates
+   whether to raise an exception in case *dst* or any missing parent directory
+   already exists.
+
+   Permissions and times of directories are copied with :func:`copystat`,
+   individual files are copied using :func:`shutil.copy2`.
 
    If *symlinks* is true, symbolic links in the source tree are represented as
    symbolic links in the new tree and the metadata of the original links will
@@ -261,6 +263,9 @@ Directory and files operations
       Platform-specific fast-copy syscalls may be used internally in order to
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+
+   .. versionadded:: 3.8
+      The *dirs_exist_ok* parameter.
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None)
 

@@ -196,6 +196,14 @@ pathlib
 contain characters unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
+
+shutil
+------
+
+:func:`shutil.copytree` now accepts a new ``dirs_exist_ok`` keyword argument.
+(Contributed by Josh Bronson in :issue:`20849`.)
+
+
 ssl
 ---
 
@@ -283,7 +291,6 @@ Optimizations
   Windows and +30% on a Windows SMB share. Also the number of :func:`os.stat`
   syscalls is reduced by 38% making :func:`shutil.copytree` especially faster
   on network filesystems. (Contributed by Giampaolo Rodola' in :issue:`33695`.)
-
 
 * The default protocol in the :mod:`pickle` module is now Protocol 4,
   first introduced in Python 3.4.  It offers better performance and smaller

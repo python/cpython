@@ -691,6 +691,31 @@ class TestShutil(unittest.TestCase):
         actual = read_file((dst_dir, 'test_dir', 'test.txt'))
         self.assertEqual(actual, '456')
 
+    def test_copytree_dirs_exist_ok(self):
+        src_dir = tempfile.mkdtemp()
+        dst_dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, src_dir)
+        self.addCleanup(shutil.rmtree, dst_dir)
+
+        write_file((src_dir, 'nonexisting.txt'), '123')
+        os.mkdir(os.path.join(src_dir, 'existing_dir'))
+        os.mkdir(os.path.join(dst_dir, 'existing_dir'))
+        write_file((dst_dir, 'existing_dir', 'existing.txt'), 'will be replaced')
+        write_file((src_dir, 'existing_dir', 'existing.txt'), 'has been replaced')
+
+        shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True)
+        self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'nonexisting.txt')))
+        self.assertTrue(os.path.isdir(os.path.join(dst_dir, 'existing_dir')))
+        self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'existing_dir',
+                                                    'existing.txt')))
+        actual = read_file((dst_dir, 'nonexisting.txt'))
+        self.assertEqual(actual, '123')
+        actual = read_file((dst_dir, 'existing_dir', 'existing.txt'))
+        self.assertEqual(actual, 'has been replaced')
+
+        with self.assertRaises(FileExistsError):
+            shutil.copytree(src_dir, dst_dir, dirs_exist_ok=False)
+
     @support.skip_unless_symlink
     def test_copytree_symlinks(self):
         tmp_dir = self.mkdtemp()
