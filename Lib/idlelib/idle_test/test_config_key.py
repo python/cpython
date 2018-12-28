@@ -1,4 +1,4 @@
-"Test config_key, coverage 75%"
+"Test config_key, coverage 82%"
 
 from idlelib import config_key
 from test.support import requires
