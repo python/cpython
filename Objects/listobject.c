@@ -81,26 +81,15 @@ static int
 list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 {
     assert(self->ob_item == NULL);
+    assert(size > 0);
 
-    PyObject **items;
-    size_t allocated;
-
-    allocated = (size_t)size;
-    if (allocated > (size_t)PY_SSIZE_T_MAX / sizeof(PyObject *)) {
-        PyErr_NoMemory();
-        return -1;
-    }
-
-    if (size == 0) {
-        allocated = 0;
-    }
-    items = (PyObject **)PyMem_New(PyObject*, allocated);
+    PyObject **items = PyMem_New(PyObject*, size);
     if (items == NULL) {
         PyErr_NoMemory();
         return -1;
     }
     self->ob_item = items;
-    self->allocated = allocated;
+    self->allocated = size;
     return 0;
 }
 
