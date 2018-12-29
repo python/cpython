@@ -1,1 +1,1 @@
-Apply PEP8 naming convention to config_key.py.
+Apply PEP8 naming convention to config_key.py and add tests to increase coverage.
