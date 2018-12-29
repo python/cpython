@@ -2398,6 +2398,17 @@ tuplegetterdescr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 static int
+tuplegetter_set(PyObject *self, PyObject *obj, PyObject *value)
+{
+    if (value == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "can't delete attribute");
+    } else {
+        PyErr_SetString(PyExc_AttributeError, "can't set attribute");
+    }
+    return -1;
+}
+
+static int
 tuplegetter_traverse(PyObject *self, visitproc visit, void *arg)
 {
     _tuplegetterobject *tuplegetter = (_tuplegetterobject *)self;
@@ -2462,7 +2473,7 @@ static PyTypeObject tuplegetter_type = {
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
     tuplegetterdescr_get,                       /* tp_descr_get */
-    0,                                          /* tp_descr_set */
+    tuplegetter_set,                            /* tp_descr_set */
     0,                                          /* tp_dictoffset */
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
