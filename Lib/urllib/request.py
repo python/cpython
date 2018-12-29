@@ -690,10 +690,10 @@ class HTTPRedirectHandler(BaseHandler):
                        origin_req_host=req.origin_req_host,
                        unverifiable=True)
 
+        SENSITIVE_HEADERS = ("authorization", "cookie")
         if newrequest.host != req.host:
-            for k in newheaders.keys():
-                if "authorization" == k.lower():
-                    del newrequest.headers[k]
+            newrequest.headers = {k: v for k, v in newrequest.headers.items()
+                                  if k.lower() not in SENSITIVE_HEADERS}
 
         return newrequest
 
