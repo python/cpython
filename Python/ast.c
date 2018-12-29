@@ -4556,7 +4556,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
             /* Start looking for the end of the string. */
             quote_char = ch;
         } else if (ch == '[' || ch == '{' || ch == '(') {
-            if (nested_depth > MAXLEVEL) {
+            if (nested_depth >= MAXLEVEL) {
                 ast_error(c, n, "f-string: too many nested parenthesis");
                 return -1;
             }
