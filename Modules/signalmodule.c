@@ -405,7 +405,9 @@ signal_raise_signal_impl(PyObject *module, int signalnum)
 {
     int err;
     Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     err = raise(signalnum);
+    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     
     if (err) {

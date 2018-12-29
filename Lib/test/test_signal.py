@@ -1,3 +1,4 @@
+import errno
 import os
 import random
 import signal
@@ -1221,6 +1222,18 @@ class RaiseSignalTest(unittest.TestCase):
             self.fail("Expected KeyInterrupt")
         except KeyboardInterrupt:
             pass
+
+    @unittest.skipIf(sys.platform != "win32", "Windows specific test")
+    def test_invalid_argument(self):
+        try:
+            SIGHUP = 1 # not supported on win32
+            signal.raise_signal(SIGHUP)
+            self.fail("OSError (Invalid argument) expected")
+        except OSError as e:
+            if e.errno == errno.EINVAL:
+                pass
+            else:
+                raise
 
     def test_handler(self):
         is_ok = False
