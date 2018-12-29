@@ -7,18 +7,11 @@
 def abstractmethod(funcobj):
     """A decorator indicating abstract methods.
 
-    Requires that the metaclass is ABCMeta or derived from it. A
+    Requires that the metaclass is ABCMeta or derived from it.  A
     class that has a metaclass derived from ABCMeta cannot be
     instantiated unless all of its abstract methods are overridden.
     The abstract methods can be called using any of the normal
     'super' call mechanisms.
-
-    Usage:
-
-        class C(metaclass=ABCMeta):
-            @abstractmethod
-            def my_abstract_method(self, ...):
-                ...
     """
     funcobj.__isabstractmethod__ = True
     return funcobj
@@ -31,23 +24,8 @@ class abstractclassmethod(classmethod):
     an abstract classmehtod. Otherwise it is similar to
     abstractmethod.
 
-    Usage:
-
-        class C(metaclass=ABCMeta):
-            @abstractclassmethod
-            def my_abstract_classmethod(cls, ...):
-                ...
-
-    'abstractclassmethod' is deprecated. Use 'classmethod' with
+    'abstractclassmethod' is deprecated.  Use 'classmethod' with
     'abstractmethod' instead.
-
-    Usage:
-
-        class C(metclass=ABCMeta):
-             @classmethod
-             @abstractmethod
-             def my_abstract_classmethod(cls, ...):
-                 ...
     """
 
     __isabstractmethod__ = True
@@ -63,23 +41,8 @@ class abstractstaticmethod(staticmethod):
     A sublcass of the built-in 'staticmethod()', indicating
     and abstract staticmethod. Otherwise it is similar to abstractmethod.
 
-    Usage:
-
-        class C(metaclass=ABCMeta):
-            @abstractstaticmethod
-            def my_abstract_staticmethod(...):
-                ...
-
-    'abstractstaticmethod' is deprecated. Use 'staticmethod' with
+    'abstractstaticmethod' is deprecated.  Use 'staticmethod' with
     'abstractmethod' instead.
-
-    Usage:
-
-        class C(metaclass=ABCMeta):
-            @staticmethod
-            @abstractmethod
-            def my_abstract_staticmethod(...):
-                ...
     """
 
     __isabstractmethod__ = True
@@ -92,18 +55,11 @@ class abstractstaticmethod(staticmethod):
 class abstractproperty(property):
     """A decorator indicating abstract properties.
 
-    Requires that the metaclass is ABCMeta or derived from it. A
+    Requires that the metaclass is ABCMeta or derived from it.  A
     class that has a metaclass derived from ABCMeta cannot be
     instantiated unless all of its abstract properties are overridden.
     The abstract properties can be called using any of the normal
     'super' call mechanisms.
-
-    Usage:
-
-        class C(metaclass=ABCMeta):
-            @abstractproperty
-            def my_abstract_property(self):
-                ...
 
     This defines a read-only property; you can also define a read-write
     abstract property using the 'long' form of property declaration:
@@ -113,16 +69,8 @@ class abstractproperty(property):
             def setx(self, value): ...
             x = abstractproperty(getx, setx)
 
-    'abstractproperty' is deprecated. Use 'property' with 'abstractmethod'
+    'abstractproperty' is deprecated.  Use 'property' with 'abstractmethod'
     instead.
-
-    Usage:
-
-        class C(metaclass=ABCMeta):
-            @property
-            @abstractmethod
-            def my_abstract_property(self):
-                ....
     """
 
     __isabstractmethod__ = True
@@ -139,8 +87,8 @@ else:
     class ABCMeta(type):
         """Metaclass for defining Abstract Base Classes (ABCs).
 
-        Use this metaclass to create an ABC. An ABC can be subclassed
-        directly, and then acts as a mix-in class.You can also register
+        Use this metaclass to create an ABC.  An ABC can be subclassed
+        directly, and then acts as a mix-in class.  You can also register
         unrelated concrete classes (even built-in classes) and unrelated
         ABCs as 'virtual subclasses' -- these and their descendants will
         be considered subclasses of the registering ABC by the built-in
