@@ -1,0 +1,2 @@
+Escape table header output of :meth:`difflib.HtmlDiff.make_table`.
+Patch by Karthikeyan Singaravelan.
