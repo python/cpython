@@ -374,20 +374,21 @@ non-important content
                              ])
         self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\)' "
                             r"does not match opening parenthesis '\['",
-                            [r"f'{a[4)}'",
+                            ["f'{a[4)}'",
                             ])
         self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\]' "
                             r"does not match opening parenthesis '\('",
-                            [r"f'{a(4]}'",
+                            ["f'{a(4]}'",
                             ])
         self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\}' "
                             r"does not match opening parenthesis '\['",
-                            [r"f'{a[4}'",
+                            ["f'{a[4}'",
                             ])
         self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\}' "
                             r"does not match opening parenthesis '\('",
-                            [r"f'{a(4}'",
+                            ["f'{a(4}'",
                             ])
+        self.assertRaises(SyntaxError, eval, "f'{" + "("*500 + "}'")
 
     def test_double_braces(self):
         self.assertEqual(f'{{', '{')
