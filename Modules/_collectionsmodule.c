@@ -2393,7 +2393,7 @@ tuplegetterdescr_get(PyObject *self, PyObject *obj, PyObject *type)
     }
 
     result = PyTuple_GET_ITEM(obj, index);
-    Py_XINCREF(result);
+    Py_INCREF(result);
     return result;
 }
 
