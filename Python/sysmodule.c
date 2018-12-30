@@ -388,7 +388,7 @@ sys_exit_impl(PyObject *module, PyObject *status)
 /*[clinic input]
 sys.getdefaultencoding
 
-Return the current default string encoding used by the Unicode implementation.
+Return the current default encoding used by the Unicode implementation.
 [clinic start generated code]*/
 
 static PyObject *
@@ -401,7 +401,7 @@ sys_getdefaultencoding_impl(PyObject *module)
 /*[clinic input]
 sys.getfilesystemencoding
 
-Return the encoding used to convert Unicode filenames in operating system filenames.
+Return the encoding used to convert Unicode filenames to OS filenames.
 [clinic start generated code]*/
 
 static PyObject *
@@ -416,7 +416,7 @@ sys_getfilesystemencoding_impl(PyObject *module)
 /*[clinic input]
 sys.getfilesystemencodeerrors
 
-Return the error mode used to convert Unicode filenames in operating system filenames.
+Return the error mode used Unicode to OS filename conversion.
 [clinic start generated code]*/
 
 static PyObject *
@@ -436,9 +436,9 @@ sys.intern
 
 ``Intern'' the given string.
 
-This enters the string in the (global) table of interned strings whose purpose
-is to speed up dictionary lookups. Return the string itself or the previously
-interned string object with the same value.
+This enters the string in the (global) table of interned strings whose
+purpose is to speed up dictionary lookups. Return the string itself or
+the previously interned string object with the same value.
 [clinic start generated code]*/
 
 static PyObject *
@@ -643,7 +643,10 @@ sys.setcheckinterval
     n: int
     /
 
-Tell the Python interpreter to check for asynchronous events every n instructions.
+Set the async event check interval to n instructions.
+
+This tells the Python interpreter to check for asynchronous events
+every n instructions.
 
 This also affects how often thread switches occur.
 [clinic start generated code]*/
@@ -781,9 +784,10 @@ sys.set_coroutine_origin_tracking_depth
 
 Enable or disable origin tracking for coroutine objects in this thread.
 
-Coroutine objects will track 'depth' frames of traceback information about
-where they came from, available in their cr_origin attribute. Set depth of 0
-to disable.
+Coroutine objects will track 'depth' frames of traceback information
+about where they came from, available in their cr_origin attribute.
+
+Set a depth of 0 to disable.
 [clinic start generated code]*/
 
 static PyObject *
@@ -847,7 +851,7 @@ sys_set_coroutine_wrapper(PyObject *module, PyObject *wrapper)
 /*[clinic input]
 sys.get_coroutine_wrapper
 
-Return the wrapper for coroutine objects set by sys.set_coroutine_wrapper.
+Return the wrapper for coroutines set by sys.set_coroutine_wrapper.
 [clinic start generated code]*/
 
 static PyObject *
@@ -939,7 +943,9 @@ Set a finalizer for async generators objects."
 /*[clinic input]
 sys.get_asyncgen_hooks
 
-Return a namedtuple of installed asynchronous generators hooks (firstiter, finalizer).
+Return the installed asynchronous generators hooks.
+
+This returns a namedtuple of the form (firstiter, finalizer).
 [clinic start generated code]*/
 
 static PyObject *
@@ -1042,9 +1048,9 @@ sys.getrecursionlimit
 
 Return the current value of the recursion limit.
 
-The recursion limit is the maximum depth of the Python interpreter stack.
-This limit prevents infinite recursion from causing an overflow of the C
-stack and crashing Python.
+The recursion limit is the maximum depth of the Python interpreter
+stack.  This limit prevents infinite recursion from causing an overflow
+of the C stack and crashing Python.
 [clinic start generated code]*/
 
 static PyObject *
@@ -1090,17 +1096,17 @@ static PyStructSequence_Desc windows_version_desc = {
 /*[clinic input]
 sys.getwindowsversion
 
-Return information about the running version of Windows as a named tuple.
+Return info about the running version of Windows as a named tuple.
 
 The members are named: major, minor, build, platform, service_pack,
 service_pack_major, service_pack_minor, suite_mask, product_type and
-platform_version. For backward compatibility, only the first 5 items are
-available by indexing. All elements are numbers, except service_pack and
-platform_type which are strings, and platform_version which is a 3-tuple.
-Platform is always 2. Product_type may be 1 for a workstation, 2 for a
-domain controller, 3 for a server. Platform_version is a 3-tuple containing
-a version number that is intended for identifying the OS rather than
-feature detection.
+platform_version. For backward compatibility, only the first 5 items
+are available by indexing. All elements are numbers, except
+service_pack and platform_type which are strings, and platform_version
+which is a 3-tuple. Platform is always 2. Product_type may be 1 for a
+workstation, 2 for a domain controller, 3 for a server.
+Platform_version is a 3-tuple containing a version number that is
+intended for identifying the OS rather than feature detection.
 [clinic start generated code]*/
 
 static PyObject *
@@ -1176,9 +1182,10 @@ sys_getwindowsversion_impl(PyObject *module)
 /*[clinic input]
 sys._enablelegacywindowsfsencoding
 
-Changes the default filesystem encoding to mbcs:replace for consistency with earlier versions of Python.
+Changes the default filesystem encoding to mbcs:replace.
 
-See PEP 529 for more information.
+This is done for consistency with earlier versions of Python. See PEP
+529 for more information.
 
 This is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING
 environment variable before launching Python.
@@ -1227,12 +1234,13 @@ sys.setdlopenflags
 
 Set the flags used by the interpreter for dlopen calls.
 
-This is used, for example, when the interpreter loads extension modules.
-Among other things, this will enable a lazy resolving of symbols when
-importing a module, if called as sys.setdlopenflags(0).  To share symbols
-across extension modules, call as sys.setdlopenflags(os.RTLD_GLOBAL).
-Symbolic names for the flag modules can be found in the os module
-(RTLD_xxx constants, e.g. os.RTLD_LAZY).
+This is used, for example, when the interpreter loads extension
+modules. Among other things, this will enable a lazy resolving of
+symbols when importing a module, if called as sys.setdlopenflags(0).
+To share symbols across extension modules, call as
+sys.setdlopenflags(os.RTLD_GLOBAL).  Symbolic names for the flag
+modules can be found in the os module (RTLD_xxx constants, e.g.
+os.RTLD_LAZY).
 [clinic start generated code]*/
 
 static PyObject *
@@ -1394,7 +1402,9 @@ sys_gettotalrefcount_impl(PyObject *module)
 /*[clinic input]
 sys.getallocatedblocks -> Py_ssize_t
 
-Return the number of memory blocks currently allocated, regardless of their size.
+Return the number of memory blocks currently allocated.
+
+The memory blocks are counted regardless of their size.
 [clinic start generated code]*/
 
 static Py_ssize_t
@@ -1428,11 +1438,12 @@ sys._getframe
 Return a frame object from the call stack.
 
 If optional integer depth is given, return the frame object that many
-calls below the top of the stack.  If that is deeper than the call stack,
-ValueError is raised.  The default for depth is zero, returning the frame
-at the top of the call stack.
+calls below the top of the stack.  If that is deeper than the call
+stack, ValueError is raised.  The default for depth is zero, returning
+the frame at the top of the call stack.
 
-This function should be used for internal and specialized purposes only.
+This function should be used for internal and specialized purposes
+only.
 [clinic start generated code]*/
 
 static PyObject *
@@ -1457,7 +1468,8 @@ sys__getframe_impl(PyObject *module, int depth)
 /*[clinic input]
 sys._current_frames
 
-Return a dictionary mapping each current thread T's thread id to T's current stack frame.
+Return a dictionary mapping each current thread T's thread id to T's
+current stack frame.
 
 This function should be used for specialized purposes only.
 [clinic start generated code]*/
@@ -1499,8 +1511,8 @@ A tuple is returned only if CALL_PROFILE was defined when Python was
 built.  Otherwise, this returns None.
 
 When enabled, this function returns detailed, implementation-specific
-details about the number of function calls executed. The return value is
-a 11-tuple where the entries in the tuple are counts of:
+details about the number of function calls executed. The return value
+is a 11-tuple where the entries in the tuple are counts of:
 0. all function calls
 1. calls to PyFunction_Type objects
 2. PyFunction calls that do not create an argument tuple
@@ -1538,7 +1550,8 @@ sys._debugmallocstats
 
 Print summary info to stderr about the state of pymalloc's structures.
 
-In Py_DEBUG mode, also perform some expensive internal consistency checks.
+In Py_DEBUG mode, also perform some expensive internal consistency
+checks.
 [clinic start generated code]*/
 
 static PyObject *
@@ -1709,7 +1722,7 @@ list_builtin_module_names(void)
  *
  * Legacy embedding code paths:
  *   The multi-phase initialization API isn't public yet, so embedding
- *   apps still need to be able configure sys.warnoptions and sys._xoptions
+ *   apps still need to be able configure sys.warnoptions andsys._xoptions
  *   before they call Py_Initialize. To support this, we stash copies of
  *   the supplied wchar * sequences in linked lists, and then migrate the
  *   contents of those lists to the sys module in _PyInitializeCore.
