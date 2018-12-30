@@ -281,20 +281,41 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Point(1), (1, 20))
         self.assertEqual(Point(), (10, 20))
 
+    def test_readonly(self):
+        Point = namedtuple('Point', 'x y')
+        p = Point(11, 22)
+        with self.assertRaises(AttributeError):
+            p.x = 33
+        with self.assertRaises(AttributeError):
+            del p.x
+        with self.assertRaises(TypeError):
+            p[0] = 33
+        with self.assertRaises(TypeError):
+            del p[0]
+        self.assertEqual(p.x, 11)
+        self.assertEqual(p[0], 11)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_factory_doc_attr(self):
         Point = namedtuple('Point', 'x y')
         self.assertEqual(Point.__doc__, 'Point(x, y)')
+        Point.__doc__ = '2D point'
+        self.assertEqual(Point.__doc__, '2D point')
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
-    def test_doc_writable(self):
+    def test_attr_doc(self):
         Point = namedtuple('Point', 'x y')
         self.assertEqual(Point.x.__doc__, 'Alias for field number 0')
+        self.assertEqual(Point.y.__doc__, 'Alias for field number 1')
         Point.x.__doc__ = 'docstring for Point.x'
         self.assertEqual(Point.x.__doc__, 'docstring for Point.x')
+        # namedtuple can mutate doc of descriptors independently
+        Vector = namedtuple('Vector', 'x y')
+        self.assertEqual(Vector.x.__doc__, 'Alias for field number 0')
+        Vector.x.__doc__ = 'docstring for Vector.x'
+        self.assertEqual(Vector.x.__doc__, 'docstring for Vector.x')
 
     def test_name_fixer(self):
         for spec, renamed in [
@@ -319,16 +340,18 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(p, Point(y=22, x=11))
         self.assertEqual(p, Point(*(11, 22)))
         self.assertEqual(p, Point(**dict(x=11, y=22)))
-        self.assertRaises(TypeError, Point, 1)                              # too few args
-        self.assertRaises(TypeError, Point, 1, 2, 3)                        # too many args
-        self.assertRaises(TypeError, eval, 'Point(XXX=1, y=2)', locals())   # wrong keyword argument
-        self.assertRaises(TypeError, eval, 'Point(x=1)', locals())          # missing keyword argument
+        self.assertRaises(TypeError, Point, 1)          # too few args
+        self.assertRaises(TypeError, Point, 1, 2, 3)    # too many args
+        with self.assertRaises(TypeError):
+            Point(XXX=1, y=2)                           # wrong keyword argument
+        with self.assertRaises(TypeError):
+            Point(x=1)                                  # missing keyword argument
         self.assertEqual(repr(p), 'Point(x=11, y=22)')
         self.assertNotIn('__weakref__', dir(p))
-        self.assertEqual(p, Point._make([11, 22]))                          # test _make classmethod
-        self.assertEqual(p._fields, ('x', 'y'))                             # test _fields attribute
-        self.assertEqual(p._replace(x=1), (1, 22))                          # test _replace method
-        self.assertEqual(p._asdict(), dict(x=11, y=22))                     # test _asdict method
+        self.assertEqual(p, Point._make([11, 22]))      # test _make classmethod
+        self.assertEqual(p._fields, ('x', 'y'))         # test _fields attribute
+        self.assertEqual(p._replace(x=1), (1, 22))      # test _replace method
+        self.assertEqual(p._asdict(), dict(x=11, y=22)) # test _asdict method
 
         try:
             p._replace(x=1, error=2)
@@ -360,11 +383,15 @@ class TestNamedTuple(unittest.TestCase):
         x, y = p
         self.assertEqual(p, (x, y))                                         # unpacks like a tuple
         self.assertEqual((p[0], p[1]), (11, 22))                            # indexable like a tuple
-        self.assertRaises(IndexError, p.__getitem__, 3)
+        with self.assertRaises(IndexError):
+            p[3]
+        self.assertEqual(p[-1], 22)
+        self.assertEqual(hash(p), hash((11, 22)))
 
         self.assertEqual(p.x, x)
         self.assertEqual(p.y, y)
-        self.assertRaises(AttributeError, eval, 'p.z', locals())
+        with self.assertRaises(AttributeError):
+            p.z
 
     def test_odd_sizes(self):
         Zero = namedtuple('Zero', '')
@@ -514,13 +541,12 @@ class TestNamedTuple(unittest.TestCase):
         a.w = 5
         self.assertEqual(a.__dict__, {'w': 5})
 
-    def test_namedtuple_can_mutate_doc_of_descriptors_independently(self):
-        A = namedtuple('A', 'x y')
-        B = namedtuple('B', 'x y')
-        A.x.__doc__ = 'foo'
-        B.x.__doc__ = 'bar'
-        self.assertEqual(A.x.__doc__, 'foo')
-        self.assertEqual(B.x.__doc__, 'bar')
+    def test_attr_descr(self):
+        Point = namedtuple('Point', 'x y')
+        p = Point(11, 22)
+        self.assertEqual(Point.x.__get__(p), 11)
+        self.assertRaises(AttributeError, Point.x.__set__, p, 33)
+        self.assertRaises(AttributeError, Point.x.__delete__, p)
 
 
 ################################################################################

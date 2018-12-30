@@ -2369,7 +2369,7 @@ tuplegetter_new_impl(PyTypeObject *type, Py_ssize_t index, PyObject *doc)
 }
 
 static PyObject *
-tuplegetterdescr_get(PyObject *self, PyObject *obj, PyObject *type)
+tuplegetter_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
     PyObject *result;
     if (obj == NULL) {
@@ -2402,7 +2402,7 @@ tuplegetterdescr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 static int
-tuplegetter_set(PyObject *self, PyObject *obj, PyObject *value)
+tuplegetter_descr_set(PyObject *self, PyObject *obj, PyObject *value)
 {
     if (value == NULL) {
         PyErr_SetString(PyExc_AttributeError, "can't delete attribute");
@@ -2476,8 +2476,8 @@ static PyTypeObject tuplegetter_type = {
     0,                                          /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
-    tuplegetterdescr_get,                       /* tp_descr_get */
-    tuplegetter_set,                            /* tp_descr_set */
+    tuplegetter_descr_get,                      /* tp_descr_get */
+    tuplegetter_descr_set,                      /* tp_descr_set */
     0,                                          /* tp_dictoffset */
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */

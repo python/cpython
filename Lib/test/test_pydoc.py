@@ -676,6 +676,22 @@ class PydocDocTest(unittest.TestCase):
         finally:
             pydoc.getpager = getpager_old
 
+    def test_namedtuple_fields(self):
+        NT = namedtuple('Box', ['width', 'heigh'])
+        with captured_stdout() as help_io:
+            pydoc.help(NT)
+        helptext = help_io.getvalue()
+        self.assertIn("""
+ |  Data descriptors defined here:
+ |\x20\x20
+ |  width
+ |      Alias for field number 0
+ |\x20\x20
+ |  heigh
+ |      Alias for field number 1
+ |\x20\x20
+""", helptext)
+
     def test_namedtuple_public_underscore(self):
         NT = namedtuple('NT', ['abc', 'def'], rename=True)
         with captured_stdout() as help_io:
