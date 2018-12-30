@@ -285,19 +285,25 @@ class TestLoader(object):
             sys.path.insert(0, top_level_dir)
         self._top_level_dir = top_level_dir
 
-        is_not_importable = False
         is_namespace = False
         tests = []
         if os.path.isdir(os.path.abspath(start_dir)):
-            start_dir = os.path.abspath(start_dir)
-            if start_dir != top_level_dir:
-                is_not_importable = not os.path.isfile(os.path.join(start_dir, '__init__.py'))
+            if os.path.abspath(start_dir) != top_level_dir:
+                try:
+                    __import__(start_dir)
+                except ImportError:
+                    raise ImportError('Start directory is not importable: %r' % start_dir)
+
+            if not os.path.isfile(os.path.join(os.path.abspath(start_dir), '__init__.py')):
+                is_namespace = True
+
+            tests = list(self._find_tests(start_dir, pattern, is_namespace))
         else:
             # support for discovery from dotted module names
             try:
                 __import__(start_dir)
             except ImportError:
-                is_not_importable = True
+                raise ImportError('Start directory is not importable: %r' % start_dir)
             else:
                 the_module = sys.modules[start_dir]
                 top_part = start_dir.split('.')[0]
@@ -341,12 +347,9 @@ class TestLoader(object):
                         sys.path.remove(top_level_dir)
                     else:
                         sys.path.remove(top_level_dir)
+                if not is_namespace:
+                    tests = list(self._find_tests(start_dir, pattern))
 
-        if is_not_importable:
-            raise ImportError('Start directory is not importable: %r' % start_dir)
-
-        if not is_namespace:
-            tests = list(self._find_tests(start_dir, pattern))
         return self.suiteClass(tests)
 
     def _get_directory_containing_module(self, module_name):
