@@ -67,7 +67,7 @@ class GetKeysDialog(Toplevel):
         messagebox.showerror(*args, **kwargs)
 
     def create_widgets(self):
-        frame = Frame(self, borderwidth=2, relief=SUNKEN)
+        self.frame = frame = Frame(self, borderwidth=2, relief=SUNKEN)
         frame.pack(side=TOP, expand=True, fill=BOTH)
 
         frame_buttons = Frame(self)
@@ -81,7 +81,7 @@ class GetKeysDialog(Toplevel):
         self.button_cancel.grid(row=0, column=1, padx=5, pady=5)
 
         # Basic entry key sequence.
-        self.frame_keyseq_basic = Frame(frame)
+        self.frame_keyseq_basic = Frame(frame, name='keyseq_basic')
         self.frame_keyseq_basic.grid(row=0, column=0, sticky=NSEW,
                                       padx=5, pady=5)
         basic_title = Label(self.frame_keyseq_basic,
@@ -135,7 +135,7 @@ class GetKeysDialog(Toplevel):
         self.button_clear.grid(row=2, column=0, columnspan=4)
 
         # Advanced entry key sequence.
-        self.frame_keyseq_advanced = Frame(frame)
+        self.frame_keyseq_advanced = Frame(frame, name='keyseq_advanced')
         self.frame_keyseq_advanced.grid(row=0, column=0, sticky=NSEW,
                                          padx=5, pady=5)
         advanced_title = Label(self.frame_keyseq_advanced, justify=LEFT,
@@ -197,7 +197,7 @@ class GetKeysDialog(Toplevel):
             self.frame_controls_basic.lift()
             self.advanced = False
 
-    def final_key_selected(self, event):
+    def final_key_selected(self, event=None):
         "Handler for clicking on key in basic settings list."
         self.build_key_string()
 
