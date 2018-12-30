@@ -2387,7 +2387,7 @@ tuplegetterdescr_get(PyObject *self, PyObject *obj, PyObject *type)
 
     Py_ssize_t index = ((_tuplegetterobject*)self)->index;
 
-    if (index < 0 || index >= PyTuple_GET_SIZE(obj)) {
+    if (!valid_index(index, PyTuple_GET_SIZE(obj))) {
         PyErr_SetString(PyExc_IndexError, "tuple index out of range");
         return NULL;
     }
