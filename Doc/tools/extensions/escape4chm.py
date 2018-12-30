@@ -8,7 +8,10 @@ https://bugs.python.org/issue32174
 import re
 from html.entities import codepoint2name
 
-from sphinx.util.logging import getLogger
+try:  # sphinx>=1.6
+    from sphinx.util.logging import getLogger
+except ImportError:  # sphinx<1.6
+    from logging import getLogger
 
 # escape the characters which codepoint > 0x7F
 def _process(string):
