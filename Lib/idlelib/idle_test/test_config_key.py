@@ -1,4 +1,8 @@
-"Test config_key, coverage 96%"
+"""Test config_key, coverage 96%.
+
+Coverage is effectively 100%.  Tkinter dialog is mocked, Mac-only line
+may be skipped, and dummy function in bind test should not be called.
+"""
 
 from idlelib import config_key
 from test.support import requires
