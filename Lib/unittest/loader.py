@@ -290,11 +290,11 @@ class TestLoader(object):
         if os.path.isdir(os.path.abspath(start_dir)):
             if os.path.abspath(start_dir) != top_level_dir:
                 try:
-                    __import__(start_dir)
+                    __import__(os.path.relpath(start_dir, top_level_dir))
                 except ImportError:
                     raise ImportError('Start directory is not importable: %r' % start_dir)
 
-            if not os.path.isfile(os.path.join(os.path.abspath(start_dir), '__init__.py')):
+            if not os.path.isfile(os.path.join(start_dir, '__init__.py')):
                 is_namespace = True
 
             tests = list(self._find_tests(start_dir, pattern, is_namespace))
