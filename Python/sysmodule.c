@@ -393,7 +393,7 @@ Return the current default encoding used by the Unicode implementation.
 
 static PyObject *
 sys_getdefaultencoding_impl(PyObject *module)
-/*[clinic end generated code: output=256d19dfcc0711e6 input=436f7292b82bc04c]*/
+/*[clinic end generated code: output=256d19dfcc0711e6 input=d416856ddbef6909]*/
 {
     return PyUnicode_FromString(PyUnicode_GetDefaultEncoding());
 }
@@ -406,7 +406,7 @@ Return the encoding used to convert Unicode filenames to OS filenames.
 
 static PyObject *
 sys_getfilesystemencoding_impl(PyObject *module)
-/*[clinic end generated code: output=1dc4bdbe9be44aa7 input=c90a32bdddb10e21]*/
+/*[clinic end generated code: output=1dc4bdbe9be44aa7 input=8475f8649b8c7d8c]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     const _PyCoreConfig *config = &interp->core_config;
@@ -421,7 +421,7 @@ Return the error mode used Unicode to OS filename conversion.
 
 static PyObject *
 sys_getfilesystemencodeerrors_impl(PyObject *module)
-/*[clinic end generated code: output=ba77b36bbf7c96f5 input=e359ce698a0aeffd]*/
+/*[clinic end generated code: output=ba77b36bbf7c96f5 input=22a1e8365566f1e5]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     const _PyCoreConfig *config = &interp->core_config;
@@ -443,7 +443,7 @@ the previously interned string object with the same value.
 
 static PyObject *
 sys_intern_impl(PyObject *module, PyObject *s)
-/*[clinic end generated code: output=be680c24f5c9e5d6 input=6328c7b095eb8eac]*/
+/*[clinic end generated code: output=be680c24f5c9e5d6 input=849483c006924e2f]*/
 {
     if (PyUnicode_CheckExact(s)) {
         Py_INCREF(s);
@@ -653,7 +653,7 @@ This also affects how often thread switches occur.
 
 static PyObject *
 sys_setcheckinterval_impl(PyObject *module, int n)
-/*[clinic end generated code: output=3f686cef07e6e178 input=88c4246c7077f2f7]*/
+/*[clinic end generated code: output=3f686cef07e6e178 input=7a35b17bf22a6227]*/
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "sys.getcheckinterval() and sys.setcheckinterval() "
@@ -792,7 +792,7 @@ Set a depth of 0 to disable.
 
 static PyObject *
 sys_set_coroutine_origin_tracking_depth_impl(PyObject *module, int depth)
-/*[clinic end generated code: output=0a2123c1cc6759c5 input=9083112cccc1bdcb]*/
+/*[clinic end generated code: output=0a2123c1cc6759c5 input=a1d0a05f89d2c426]*/
 {
     if (depth < 0) {
         PyErr_SetString(PyExc_ValueError, "depth must be >= 0");
@@ -856,7 +856,7 @@ Return the wrapper for coroutines set by sys.set_coroutine_wrapper.
 
 static PyObject *
 sys_get_coroutine_wrapper_impl(PyObject *module)
-/*[clinic end generated code: output=b74a7e4b14fe898e input=82d8446cd96f1102]*/
+/*[clinic end generated code: output=b74a7e4b14fe898e input=ef0351fb9ece0bb4]*/
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "get_coroutine_wrapper is deprecated", 1) < 0) {
@@ -950,7 +950,7 @@ This returns a namedtuple of the form (firstiter, finalizer).
 
 static PyObject *
 sys_get_asyncgen_hooks_impl(PyObject *module)
-/*[clinic end generated code: output=53a253707146f6cf input=07de446eb4c33c50]*/
+/*[clinic end generated code: output=53a253707146f6cf input=3676b9ea62b14625]*/
 {
     PyObject *res;
     PyObject *firstiter = _PyEval_GetAsyncGenFirstiter();
@@ -1055,7 +1055,7 @@ of the C stack and crashing Python.
 
 static PyObject *
 sys_getrecursionlimit_impl(PyObject *module)
-/*[clinic end generated code: output=d571fb6b4549ef2e input=bfea686f7a8bce53]*/
+/*[clinic end generated code: output=d571fb6b4549ef2e input=1c6129fd2efaeea8]*/
 {
     return PyLong_FromLong(Py_GetRecursionLimit());
 }
@@ -1111,7 +1111,7 @@ intended for identifying the OS rather than feature detection.
 
 static PyObject *
 sys_getwindowsversion_impl(PyObject *module)
-/*[clinic end generated code: output=1ec063280b932857 input=ccd44cc7e1eaba43]*/
+/*[clinic end generated code: output=1ec063280b932857 input=73a228a328fee63a]*/
 {
     PyObject *version;
     int pos = 0;
@@ -1193,7 +1193,7 @@ environment variable before launching Python.
 
 static PyObject *
 sys__enablelegacywindowsfsencoding_impl(PyObject *module)
-/*[clinic end generated code: output=f5c3855b45e24fe9 input=8522dd702ad9a5a1]*/
+/*[clinic end generated code: output=f5c3855b45e24fe9 input=2bfa931a20704492]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     _PyCoreConfig *config = &interp->core_config;
@@ -1245,7 +1245,7 @@ os.RTLD_LAZY).
 
 static PyObject *
 sys_setdlopenflags_impl(PyObject *module, int new_val)
-/*[clinic end generated code: output=ec918b7fe0a37281 input=82c4d7efbe2bd900]*/
+/*[clinic end generated code: output=ec918b7fe0a37281 input=4c838211e857a77f]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
     interp->dlopenflags = new_val;
@@ -1403,13 +1403,11 @@ sys_gettotalrefcount_impl(PyObject *module)
 sys.getallocatedblocks -> Py_ssize_t
 
 Return the number of memory blocks currently allocated.
-
-The memory blocks are counted regardless of their size.
 [clinic start generated code]*/
 
 static Py_ssize_t
 sys_getallocatedblocks_impl(PyObject *module)
-/*[clinic end generated code: output=f0c4e873f0b6dcf7 input=ce784d876c0f9947]*/
+/*[clinic end generated code: output=f0c4e873f0b6dcf7 input=dab13ee346a0673e]*/
 {
     return _Py_GetAllocatedBlocks();
 }
@@ -1448,7 +1446,7 @@ only.
 
 static PyObject *
 sys__getframe_impl(PyObject *module, int depth)
-/*[clinic end generated code: output=d438776c04d59804 input=411f3f23045a045f]*/
+/*[clinic end generated code: output=d438776c04d59804 input=c1be8a6464b11ee5]*/
 {
     PyFrameObject *f = _PyThreadState_GET()->frame;
 
@@ -1468,15 +1466,14 @@ sys__getframe_impl(PyObject *module, int depth)
 /*[clinic input]
 sys._current_frames
 
-Return a dictionary mapping each current thread T's thread id to T's
-current stack frame.
+Return a dict mapping each thread's thread id to its current stack frame.
 
 This function should be used for specialized purposes only.
 [clinic start generated code]*/
 
 static PyObject *
 sys__current_frames_impl(PyObject *module)
-/*[clinic end generated code: output=d2a41ac0a0a3809a input=6336167bf596ecdb]*/
+/*[clinic end generated code: output=d2a41ac0a0a3809a input=2a9049c5f5033691]*/
 {
     return _PyThread_CurrentFrames();
 }
@@ -1529,7 +1526,7 @@ is a 11-tuple where the entries in the tuple are counts of:
 
 static PyObject *
 sys_callstats_impl(PyObject *module)
-/*[clinic end generated code: output=edc4a74957fa8def input=734f2475fdd8ca8a]*/
+/*[clinic end generated code: output=edc4a74957fa8def input=d447d8d224d5d175]*/
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                       "sys.callstats() has been deprecated in Python 3.7 "
@@ -1556,7 +1553,7 @@ checks.
 
 static PyObject *
 sys__debugmallocstats_impl(PyObject *module)
-/*[clinic end generated code: output=ec3565f8c7cee46a input=0602cf4a7f2ea1db]*/
+/*[clinic end generated code: output=ec3565f8c7cee46a input=33c0c9c416f98424]*/
 {
 #ifdef WITH_PYMALLOC
     if (_PyObject_DebugMallocStats(stderr)) {
@@ -1722,7 +1719,7 @@ list_builtin_module_names(void)
  *
  * Legacy embedding code paths:
  *   The multi-phase initialization API isn't public yet, so embedding
- *   apps still need to be able configure sys.warnoptions andsys._xoptions
+ *   apps still need to be able configure sys.warnoptions and sys._xoptions
  *   before they call Py_Initialize. To support this, we stash copies of
  *   the supplied wchar * sequences in linked lists, and then migrate the
  *   contents of those lists to the sys module in _PyInitializeCore.

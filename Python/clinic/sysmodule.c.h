@@ -102,7 +102,7 @@ PyDoc_STRVAR(sys_getdefaultencoding__doc__,
 "getdefaultencoding($module, /)\n"
 "--\n"
 "\n"
-"Return the current default string encoding used by the Unicode implementation.");
+"Return the current default encoding used by the Unicode implementation.");
 
 #define SYS_GETDEFAULTENCODING_METHODDEF    \
     {"getdefaultencoding", (PyCFunction)sys_getdefaultencoding, METH_NOARGS, sys_getdefaultencoding__doc__},
@@ -120,7 +120,7 @@ PyDoc_STRVAR(sys_getfilesystemencoding__doc__,
 "getfilesystemencoding($module, /)\n"
 "--\n"
 "\n"
-"Return the encoding used to convert Unicode filenames in operating system filenames.");
+"Return the encoding used to convert Unicode filenames to OS filenames.");
 
 #define SYS_GETFILESYSTEMENCODING_METHODDEF    \
     {"getfilesystemencoding", (PyCFunction)sys_getfilesystemencoding, METH_NOARGS, sys_getfilesystemencoding__doc__},
@@ -138,7 +138,7 @@ PyDoc_STRVAR(sys_getfilesystemencodeerrors__doc__,
 "getfilesystemencodeerrors($module, /)\n"
 "--\n"
 "\n"
-"Return the error mode used to convert Unicode filenames in operating system filenames.");
+"Return the error mode used Unicode to OS filename conversion.");
 
 #define SYS_GETFILESYSTEMENCODEERRORS_METHODDEF    \
     {"getfilesystemencodeerrors", (PyCFunction)sys_getfilesystemencodeerrors, METH_NOARGS, sys_getfilesystemencodeerrors__doc__},
@@ -158,9 +158,9 @@ PyDoc_STRVAR(sys_intern__doc__,
 "\n"
 "``Intern\'\' the given string.\n"
 "\n"
-"This enters the string in the (global) table of interned strings whose purpose\n"
-"is to speed up dictionary lookups. Return the string itself or the previously\n"
-"interned string object with the same value.");
+"This enters the string in the (global) table of interned strings whose\n"
+"purpose is to speed up dictionary lookups. Return the string itself or\n"
+"the previously interned string object with the same value.");
 
 #define SYS_INTERN_METHODDEF    \
     {"intern", (PyCFunction)sys_intern, METH_O, sys_intern__doc__},
@@ -232,7 +232,10 @@ PyDoc_STRVAR(sys_setcheckinterval__doc__,
 "setcheckinterval($module, n, /)\n"
 "--\n"
 "\n"
-"Tell the Python interpreter to check for asynchronous events every n instructions.\n"
+"Set the async event check interval to n instructions.\n"
+"\n"
+"This tells the Python interpreter to check for asynchronous events\n"
+"every n instructions.\n"
 "\n"
 "This also affects how often thread switches occur.");
 
@@ -387,9 +390,10 @@ PyDoc_STRVAR(sys_set_coroutine_origin_tracking_depth__doc__,
 "\n"
 "Enable or disable origin tracking for coroutine objects in this thread.\n"
 "\n"
-"Coroutine objects will track \'depth\' frames of traceback information about\n"
-"where they came from, available in their cr_origin attribute. Set depth of 0\n"
-"to disable.");
+"Coroutine objects will track \'depth\' frames of traceback information\n"
+"about where they came from, available in their cr_origin attribute.\n"
+"\n"
+"Set a depth of 0 to disable.");
 
 #define SYS_SET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF    \
     {"set_coroutine_origin_tracking_depth", (PyCFunction)(void(*)(void))sys_set_coroutine_origin_tracking_depth, METH_FASTCALL|METH_KEYWORDS, sys_set_coroutine_origin_tracking_depth__doc__},
@@ -456,7 +460,7 @@ PyDoc_STRVAR(sys_get_coroutine_wrapper__doc__,
 "get_coroutine_wrapper($module, /)\n"
 "--\n"
 "\n"
-"Return the wrapper for coroutine objects set by sys.set_coroutine_wrapper.");
+"Return the wrapper for coroutines set by sys.set_coroutine_wrapper.");
 
 #define SYS_GET_COROUTINE_WRAPPER_METHODDEF    \
     {"get_coroutine_wrapper", (PyCFunction)sys_get_coroutine_wrapper, METH_NOARGS, sys_get_coroutine_wrapper__doc__},
@@ -474,7 +478,9 @@ PyDoc_STRVAR(sys_get_asyncgen_hooks__doc__,
 "get_asyncgen_hooks($module, /)\n"
 "--\n"
 "\n"
-"Return a namedtuple of installed asynchronous generators hooks (firstiter, finalizer).");
+"Return the installed asynchronous generators hooks.\n"
+"\n"
+"This returns a namedtuple of the form (firstiter, finalizer).");
 
 #define SYS_GET_ASYNCGEN_HOOKS_METHODDEF    \
     {"get_asyncgen_hooks", (PyCFunction)sys_get_asyncgen_hooks, METH_NOARGS, sys_get_asyncgen_hooks__doc__},
@@ -494,9 +500,9 @@ PyDoc_STRVAR(sys_getrecursionlimit__doc__,
 "\n"
 "Return the current value of the recursion limit.\n"
 "\n"
-"The recursion limit is the maximum depth of the Python interpreter stack.\n"
-"This limit prevents infinite recursion from causing an overflow of the C\n"
-"stack and crashing Python.");
+"The recursion limit is the maximum depth of the Python interpreter\n"
+"stack.  This limit prevents infinite recursion from causing an overflow\n"
+"of the C stack and crashing Python.");
 
 #define SYS_GETRECURSIONLIMIT_METHODDEF    \
     {"getrecursionlimit", (PyCFunction)sys_getrecursionlimit, METH_NOARGS, sys_getrecursionlimit__doc__},
@@ -516,17 +522,17 @@ PyDoc_STRVAR(sys_getwindowsversion__doc__,
 "getwindowsversion($module, /)\n"
 "--\n"
 "\n"
-"Return information about the running version of Windows as a named tuple.\n"
+"Return info about the running version of Windows as a named tuple.\n"
 "\n"
 "The members are named: major, minor, build, platform, service_pack,\n"
 "service_pack_major, service_pack_minor, suite_mask, product_type and\n"
-"platform_version. For backward compatibility, only the first 5 items are\n"
-"available by indexing. All elements are numbers, except service_pack and\n"
-"platform_type which are strings, and platform_version which is a 3-tuple.\n"
-"Platform is always 2. Product_type may be 1 for a workstation, 2 for a\n"
-"domain controller, 3 for a server. Platform_version is a 3-tuple containing\n"
-"a version number that is intended for identifying the OS rather than\n"
-"feature detection.");
+"platform_version. For backward compatibility, only the first 5 items\n"
+"are available by indexing. All elements are numbers, except\n"
+"service_pack and platform_type which are strings, and platform_version\n"
+"which is a 3-tuple. Platform is always 2. Product_type may be 1 for a\n"
+"workstation, 2 for a domain controller, 3 for a server.\n"
+"Platform_version is a 3-tuple containing a version number that is\n"
+"intended for identifying the OS rather than feature detection.");
 
 #define SYS_GETWINDOWSVERSION_METHODDEF    \
     {"getwindowsversion", (PyCFunction)sys_getwindowsversion, METH_NOARGS, sys_getwindowsversion__doc__},
@@ -548,9 +554,10 @@ PyDoc_STRVAR(sys__enablelegacywindowsfsencoding__doc__,
 "_enablelegacywindowsfsencoding($module, /)\n"
 "--\n"
 "\n"
-"Changes the default filesystem encoding to mbcs:replace for consistency with earlier versions of Python.\n"
+"Changes the default filesystem encoding to mbcs:replace.\n"
 "\n"
-"See PEP 529 for more information.\n"
+"This is done for consistency with earlier versions of Python. See PEP\n"
+"529 for more information.\n"
 "\n"
 "This is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING\n"
 "environment variable before launching Python.");
@@ -577,12 +584,13 @@ PyDoc_STRVAR(sys_setdlopenflags__doc__,
 "\n"
 "Set the flags used by the interpreter for dlopen calls.\n"
 "\n"
-"This is used, for example, when the interpreter loads extension modules.\n"
-"Among other things, this will enable a lazy resolving of symbols when\n"
-"importing a module, if called as sys.setdlopenflags(0).  To share symbols\n"
-"across extension modules, call as sys.setdlopenflags(os.RTLD_GLOBAL).\n"
-"Symbolic names for the flag modules can be found in the os module\n"
-"(RTLD_xxx constants, e.g. os.RTLD_LAZY).");
+"This is used, for example, when the interpreter loads extension\n"
+"modules. Among other things, this will enable a lazy resolving of\n"
+"symbols when importing a module, if called as sys.setdlopenflags(0).\n"
+"To share symbols across extension modules, call as\n"
+"sys.setdlopenflags(os.RTLD_GLOBAL).  Symbolic names for the flag\n"
+"modules can be found in the os module (RTLD_xxx constants, e.g.\n"
+"os.RTLD_LAZY).");
 
 #define SYS_SETDLOPENFLAGS_METHODDEF    \
     {"setdlopenflags", (PyCFunction)sys_setdlopenflags, METH_O, sys_setdlopenflags__doc__},
@@ -740,7 +748,7 @@ PyDoc_STRVAR(sys_getallocatedblocks__doc__,
 "getallocatedblocks($module, /)\n"
 "--\n"
 "\n"
-"Return the number of memory blocks currently allocated, regardless of their size.");
+"Return the number of memory blocks currently allocated.");
 
 #define SYS_GETALLOCATEDBLOCKS_METHODDEF    \
     {"getallocatedblocks", (PyCFunction)sys_getallocatedblocks, METH_NOARGS, sys_getallocatedblocks__doc__},
@@ -792,11 +800,12 @@ PyDoc_STRVAR(sys__getframe__doc__,
 "Return a frame object from the call stack.\n"
 "\n"
 "If optional integer depth is given, return the frame object that many\n"
-"calls below the top of the stack.  If that is deeper than the call stack,\n"
-"ValueError is raised.  The default for depth is zero, returning the frame\n"
-"at the top of the call stack.\n"
+"calls below the top of the stack.  If that is deeper than the call\n"
+"stack, ValueError is raised.  The default for depth is zero, returning\n"
+"the frame at the top of the call stack.\n"
 "\n"
-"This function should be used for internal and specialized purposes only.");
+"This function should be used for internal and specialized purposes\n"
+"only.");
 
 #define SYS__GETFRAME_METHODDEF    \
     {"_getframe", (PyCFunction)(void(*)(void))sys__getframe, METH_FASTCALL, sys__getframe__doc__},
@@ -824,7 +833,7 @@ PyDoc_STRVAR(sys__current_frames__doc__,
 "_current_frames($module, /)\n"
 "--\n"
 "\n"
-"Return a dictionary mapping each current thread T\'s thread id to T\'s current stack frame.\n"
+"Return a dict mapping each thread\'s thread id to its current stack frame.\n"
 "\n"
 "This function should be used for specialized purposes only.");
 
@@ -883,8 +892,8 @@ PyDoc_STRVAR(sys_callstats__doc__,
 "built.  Otherwise, this returns None.\n"
 "\n"
 "When enabled, this function returns detailed, implementation-specific\n"
-"details about the number of function calls executed. The return value is\n"
-"a 11-tuple where the entries in the tuple are counts of:\n"
+"details about the number of function calls executed. The return value\n"
+"is a 11-tuple where the entries in the tuple are counts of:\n"
 "0. all function calls\n"
 "1. calls to PyFunction_Type objects\n"
 "2. PyFunction calls that do not create an argument tuple\n"
@@ -916,7 +925,8 @@ PyDoc_STRVAR(sys__debugmallocstats__doc__,
 "\n"
 "Print summary info to stderr about the state of pymalloc\'s structures.\n"
 "\n"
-"In Py_DEBUG mode, also perform some expensive internal consistency checks.");
+"In Py_DEBUG mode, also perform some expensive internal consistency\n"
+"checks.");
 
 #define SYS__DEBUGMALLOCSTATS_METHODDEF    \
     {"_debugmallocstats", (PyCFunction)sys__debugmallocstats, METH_NOARGS, sys__debugmallocstats__doc__},
@@ -1019,4 +1029,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=32a035c29cdd75fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0e662f2e19293d57 input=a9049054013a1b77]*/
