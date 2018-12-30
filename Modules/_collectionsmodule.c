@@ -2386,7 +2386,7 @@ tuplegetter_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         PyErr_Format(PyExc_TypeError,
                      "descriptor for index '%d' for tuple subclasses "
                      "doesn't apply to '%s' object",
-                     ((_tuplegetterobject*)self)->index,
+                     index,
                      obj->ob_type->tp_name);
         return NULL;
     }
