@@ -2336,7 +2336,7 @@ done:
     Py_RETURN_NONE;
 }
 
-/* Helper functions for namedtuples */
+/* Helper functions for namedtuples ************************************/
 
 typedef struct {
     PyObject_HEAD
@@ -2371,7 +2371,9 @@ tuplegetter_new_impl(PyTypeObject *type, Py_ssize_t index, PyObject *doc)
 static PyObject *
 tuplegetter_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
+    Py_ssize_t index = ((_tuplegetterobject*)self)->index;
     PyObject *result;
+
     if (obj == NULL) {
         Py_INCREF(self);
         return self;
@@ -2388,8 +2390,6 @@ tuplegetter_descr_get(PyObject *self, PyObject *obj, PyObject *type)
                      obj->ob_type->tp_name);
         return NULL;
     }
-
-    Py_ssize_t index = ((_tuplegetterobject*)self)->index;
 
     if (!valid_index(index, PyTuple_GET_SIZE(obj))) {
         PyErr_SetString(PyExc_IndexError, "tuple index out of range");
