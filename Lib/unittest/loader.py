@@ -290,7 +290,11 @@ class TestLoader(object):
         if os.path.isdir(os.path.abspath(start_dir)):
             if os.path.abspath(start_dir) != top_level_dir:
                 try:
-                    __import__(os.path.relpath(start_dir, top_level_dir))
+                    # Convert to dot import
+                    dot_import = '.'.join(
+                        os.path.relpath(start_dir, top_level_dir).split(os.sep)
+                    )
+                    __import__(dot_import)
                 except ImportError:
                     raise ImportError('Start directory is not importable: %r' % start_dir)
 
