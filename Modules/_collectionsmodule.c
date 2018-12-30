@@ -2336,7 +2336,7 @@ done:
     Py_RETURN_NONE;
 }
 
-/* Helper functions for namedtuples ************************************/
+/* Helper function for namedtuple() ************************************/
 
 typedef struct {
     PyObject_HEAD
