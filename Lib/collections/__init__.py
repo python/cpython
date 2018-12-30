@@ -312,7 +312,7 @@ except ImportError:
 ################################################################################
 
 try:
-    from _collections import _tuplegetter
+    from _collections import _tuplegetter_
 except ImportError:
     _tuplegetter = lambda index, doc: property(_itemgetter(index), doc=doc)
 

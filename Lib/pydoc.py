@@ -137,12 +137,6 @@ def stripid(text):
     # The behaviour of %p is implementation-dependent in terms of case.
     return _re_stripid.sub(r'\1', text)
 
-def _is_some_method(obj):
-    return (inspect.isfunction(obj) or
-            inspect.ismethod(obj) or
-            inspect.isbuiltin(obj) or
-            inspect.ismethoddescriptor(obj))
-
 def _is_bound_method(fn):
     """
     Returns True if fn is a bound method, regardless of whether
@@ -158,7 +152,7 @@ def _is_bound_method(fn):
 
 def allmethods(cl):
     methods = {}
-    for key, value in inspect.getmembers(cl, _is_some_method):
+    for key, value in inspect.getmembers(cl, inspect.isroutine):
         methods[key] = 1
     for base in cl.__bases__:
         methods.update(allmethods(base)) # all your base are belong to us
@@ -379,15 +373,13 @@ class Doc:
         # identifies something in a way that pydoc itself has issues handling;
         # think 'super' and how it is a descriptor (which raises the exception
         # by lacking a __name__ attribute) and an instance.
-        if inspect.isgetsetdescriptor(object): return self.docdata(*args)
-        if inspect.ismemberdescriptor(object): return self.docdata(*args)
         try:
             if inspect.ismodule(object): return self.docmodule(*args)
             if inspect.isclass(object): return self.docclass(*args)
             if inspect.isroutine(object): return self.docroutine(*args)
         except AttributeError:
             pass
-        if isinstance(object, property): return self.docproperty(*args)
+        if inspect.isdatadescriptor(object): return self.docdata(*args)
         return self.docother(*args)
 
     def fail(self, object, name=None, *args):
@@ -809,7 +801,7 @@ class HTMLDoc(Doc):
                     except Exception:
                         # Some descriptors may meet a failure in their __get__.
                         # (bug #1785)
-                        push(self._docdescriptor(name, value, mod))
+                        push(self.docdata(value, name, mod))
                     else:
                         push(self.document(value, name, mod,
                                         funcs, classes, mdict, object))
@@ -822,7 +814,7 @@ class HTMLDoc(Doc):
                 hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
-                    push(self._docdescriptor(name, value, mod))
+                    push(self.docdata(value, name, mod))
             return attrs
 
         def spilldata(msg, attrs, predicate):
@@ -994,31 +986,26 @@ class HTMLDoc(Doc):
             doc = doc and '<dd><tt>%s</tt></dd>' % doc
             return '<dl><dt>%s</dt>%s</dl>\n' % (decl, doc)
 
-    def _docdescriptor(self, name, value, mod):
+    def docdata(self, object, name=None, mod=None, cl=None):
+        """Produce html documentation for a data descriptor."""
         results = []
         push = results.append
 
         if name:
             push('<dl><dt><strong>%s</strong></dt>\n' % name)
-        if value.__doc__ is not None:
-            doc = self.markup(getdoc(value), self.preformat)
+        if object.__doc__ is not None:
+            doc = self.markup(getdoc(object), self.preformat)
             push('<dd><tt>%s</tt></dd>\n' % doc)
         push('</dl>\n')
 
         return ''.join(results)
 
-    def docproperty(self, object, name=None, mod=None, cl=None):
-        """Produce html documentation for a property."""
-        return self._docdescriptor(name, object, mod)
+    docproperty = docdata
 
     def docother(self, object, name=None, mod=None, *ignored):
         """Produce HTML documentation for a data object."""
         lhs = name and '<strong>%s</strong> = ' % name or ''
         return lhs + self.repr(object)
-
-    def docdata(self, object, name=None, mod=None, cl=None):
-        """Produce html documentation for a data descriptor."""
-        return self._docdescriptor(name, object, mod)
 
     def index(self, dir, shadowed=None):
         """Generate an HTML index for a directory of modules."""
@@ -1292,7 +1279,7 @@ location listed above.
                     except Exception:
                         # Some descriptors may meet a failure in their __get__.
                         # (bug #1785)
-                        push(self._docdescriptor(name, value, mod))
+                        push(self.docdata(value, name, mod))
                     else:
                         push(self.document(value,
                                         name, mod, object))
@@ -1304,7 +1291,7 @@ location listed above.
                 hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
-                    push(self._docdescriptor(name, value, mod))
+                    push(self.docdata(value, name, mod))
             return attrs
 
         def spilldata(msg, attrs, predicate):
@@ -1420,26 +1407,21 @@ location listed above.
             doc = getdoc(object) or ''
             return decl + '\n' + (doc and self.indent(doc).rstrip() + '\n')
 
-    def _docdescriptor(self, name, value, mod):
+    def docdata(self, object, name=None, mod=None, cl=None):
+        """Produce text documentation for a data descriptor."""
         results = []
         push = results.append
 
         if name:
             push(self.bold(name))
             push('\n')
-        doc = getdoc(value) or ''
+        doc = getdoc(object) or ''
         if doc:
             push(self.indent(doc))
             push('\n')
         return ''.join(results)
 
-    def docproperty(self, object, name=None, mod=None, cl=None):
-        """Produce text documentation for a property."""
-        return self._docdescriptor(name, object, mod)
-
-    def docdata(self, object, name=None, mod=None, cl=None):
-        """Produce text documentation for a data descriptor."""
-        return self._docdescriptor(name, object, mod)
+    docproperty = docdata
 
     def docother(self, object, name=None, mod=None, parent=None, maxlen=None, doc=None):
         """Produce text documentation for a data object."""
@@ -1673,9 +1655,7 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
     if not (inspect.ismodule(object) or
               inspect.isclass(object) or
               inspect.isroutine(object) or
-              inspect.isgetsetdescriptor(object) or
-              inspect.ismemberdescriptor(object) or
-              isinstance(object, property)):
+              inspect.isdatadescriptor(object)):
         # If the passed object is a piece of data or an instance,
         # document its available methods instead of its value.
         object = type(object)
