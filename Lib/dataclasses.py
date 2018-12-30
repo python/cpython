@@ -6,6 +6,7 @@ import inspect
 import keyword
 import builtins
 import functools
+import collections
 import _thread
 
 
@@ -1077,6 +1078,12 @@ def _asdict_inner(obj, dict_factory):
         # generator (which is not true for namedtuples, handled
         # above).
         return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
+    elif isinstance(obj, collections.defaultdict):
+        # defaultdict does not have the same constructor than dict and must be
+        # hendled separately
+        return type(obj)(obj.default_factory, ((_asdict_inner(k, dict_factory),
+                                               _asdict_inner(v, dict_factory))
+                                               for k, v in obj.items()))
     elif isinstance(obj, dict):
         return type(obj)((_asdict_inner(k, dict_factory),
                           _asdict_inner(v, dict_factory))
@@ -1129,6 +1136,12 @@ def _astuple_inner(obj, tuple_factory):
         # generator (which is not true for namedtuples, handled
         # above).
         return type(obj)(_astuple_inner(v, tuple_factory) for v in obj)
+    elif isinstance(obj, collections.defaultdict):
+        # defaultdict does not have the same constructor than dict and must be
+        # hendled separately
+        return type(obj)(obj.default_factory, ((_asdict_inner(k, dict_factory),
+                                               _asdict_inner(v, dict_factory))
+                                               for k, v in obj.items()))
     elif isinstance(obj, dict):
         return type(obj)((_astuple_inner(k, tuple_factory), _astuple_inner(v, tuple_factory))
                           for k, v in obj.items())

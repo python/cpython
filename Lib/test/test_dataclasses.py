@@ -1493,6 +1493,17 @@ class TestCase(unittest.TestCase):
         self.assertIsNot(d['f'], t)
         self.assertEqual(d['f'].my_a(), 6)
 
+    def test_helper_asdict_defaultdict(self):
+        @dataclass
+        class C:
+            d: dict
+
+        from collections import defaultdict
+        c = C(defaultdict(int))
+        self.assertEqual(asdict(c), {
+            'd': defaultdict(int)
+        })
+
     def test_helper_astuple(self):
         # Basic tests for astuple(), it should return a new tuple.
         @dataclass
@@ -1619,6 +1630,15 @@ class TestCase(unittest.TestCase):
         # Now, using a tuple_factory.  list is convenient here.
         t = astuple(c, tuple_factory=list)
         self.assertEqual(t, ['outer', T(1, ['inner', T(11, 12, 13)], 2)])
+
+    def test_helper_astuple_defaultdict(self):
+        @dataclass
+        class C:
+            d: dict
+
+        from collections import defaultdict
+        c = C(defaultdict(int))
+        self.assertEqual(astuple(c), (defaultdict(int),))
 
     def test_dynamic_class_creation(self):
         cls_dict = {'__annotations__': {'x': int, 'y': int},

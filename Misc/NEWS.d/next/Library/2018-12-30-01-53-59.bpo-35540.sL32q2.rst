@@ -1,0 +1,2 @@
+`dataclasses.asdict` and `dataclasses.astuple` now accept instances with
+`collections.defaultdict` attributes. Patch by Rémi Lapeyre.
