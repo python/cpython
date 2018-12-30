@@ -336,9 +336,9 @@ check::
         assert issubclass(w[-1].category, DeprecationWarning)
         assert "deprecated" in str(w[-1].message)
 
-One can also cause all warnings to be exceptions by using ``"error"`` instead of
-``"always"``. One thing to be aware of is that if a warning has already been
-raised because of a ``"once"``/``"default"`` rule, then no matter what filters are
+One can also cause all warnings to be exceptions by using ``error`` instead of
+``always``. One thing to be aware of is that if a warning has already been
+raised because of a ``once``/``default`` rule, then no matter what filters are
 set the warning will not be seen again unless the warnings registry related to
 the warning has been cleared.
 
