@@ -20,6 +20,10 @@ except ImportError:
 
 TIMEOUT = 0.5
 MS_WINDOWS = (os.name == 'nt')
+MEMORY_SANITIZER = (
+    sysconfig.get_config_var("CONFIG_ARGS") and
+    ("--with-memory-sanitizer" in sysconfig.get_config_var("CONFIG_ARGS"))
+)
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):
     regex = header
@@ -253,7 +257,7 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'Segmentation fault')
 
-    @unittest.skipIf("--with-memory-sanitizer" in sysconfig.get_config_var("CONFIG_ARGS"),
+    @unittest.skipIf(MEMORY_SANITIZER,
                      "memory-sanizer builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_file(self):
@@ -270,7 +274,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32",
                      "subprocess doesn't support pass_fds on Windows")
-    @unittest.skipIf("--with-memory-sanitizer" in sysconfig.get_config_var("CONFIG_ARGS"),
+    @unittest.skipIf(MEMORY_SANITIZER,
                      "memory-sanizer builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_fd(self):
