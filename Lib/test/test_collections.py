@@ -3,6 +3,7 @@
 import collections
 import copy
 import doctest
+import inspect
 import operator
 import pickle
 from random import choice, randrange
@@ -552,6 +553,7 @@ class TestNamedTuple(unittest.TestCase):
     def test_attr_descr(self):
         Point = namedtuple('Point', 'x y')
         p = Point(11, 22)
+        self.assertTrue(inspect.isdatadescriptor(Point.x))
         self.assertEqual(Point.x.__get__(p), 11)
         self.assertRaises(AttributeError, Point.x.__set__, p, 33)
         self.assertRaises(AttributeError, Point.x.__delete__, p)
