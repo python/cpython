@@ -3818,6 +3818,23 @@ AC_CHECK_FUNCS(gettimeofday,
     ])
 )
 
+# We search for the crypt() function, potentially requiring libcrypt as a
+# way to add -lcrypt if required before going on to look for crypt_r().
+AC_SEARCH_LIBS(crypt, crypt,
+  AC_CHECK_FUNC(crypt_r,
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#define _GNU_SOURCE  /* Required for crypt_r()'s prototype on Linux. */
+#include <crypt.h>
+]], [[
+struct crypt_data d;
+char *r = crypt_r("", "", &d);
+]])],
+      [AC_DEFINE(HAVE_CRYPT_R, 1, [Define if you have the crypt_r() function.])],
+      [])
+  ),
+  [], []
+)
+
 AC_CHECK_FUNCS(clock_gettime, [], [
     AC_CHECK_LIB(rt, clock_gettime, [
         LIBS="$LIBS -lrt"
