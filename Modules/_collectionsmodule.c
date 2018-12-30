@@ -2372,11 +2372,15 @@ static PyObject *
 tuplegetterdescr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
     PyObject *result;
-    if (obj == NULL || obj == Py_None) {
+    if (obj == NULL) {
         Py_INCREF(self);
         return self;
     }
     if (!PyTuple_Check(obj)) {
+        if (obj == Py_None) {
+            Py_INCREF(self);
+            return self;
+        }
         PyErr_Format(PyExc_TypeError,
                      "descriptor for index '%d' for tuple subclasses "
                      "doesn't apply to '%s' object",
