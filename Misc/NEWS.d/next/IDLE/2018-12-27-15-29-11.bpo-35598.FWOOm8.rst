@@ -1,1 +1,1 @@
-Update config_key: use PEP 8 names and add tests.
+Update config_key: use PEP 8 names, ttk widgets, and add tests.

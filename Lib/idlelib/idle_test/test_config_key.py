@@ -196,14 +196,14 @@ class KeySelectionTest(unittest.TestCase):
         gm = dialog.get_modifiers
         eq = self.assertEqual
 
-        # Modifiers are set by selecting/deselecting the checkbutton.
-        dialog.modifier_checkbuttons['foo'].select()
+        # Modifiers are set on/off by invoking the checkbutton.
+        dialog.modifier_checkbuttons['foo'].invoke()
         eq(gm(), ['foo'])
 
-        dialog.modifier_checkbuttons['BAZ'].select()
+        dialog.modifier_checkbuttons['BAZ'].invoke()
         eq(gm(), ['foo', 'BAZ'])
 
-        dialog.modifier_checkbuttons['foo'].deselect()
+        dialog.modifier_checkbuttons['foo'].invoke()
         eq(gm(), ['BAZ'])
 
     def test_translate_key(self):
