@@ -1080,7 +1080,7 @@ def _asdict_inner(obj, dict_factory):
         return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
     elif isinstance(obj, collections.defaultdict):
         # defaultdict does not have the same constructor than dict and must be
-        # hendled separately
+        # handled separately
         return type(obj)(obj.default_factory, ((_asdict_inner(k, dict_factory),
                                                _asdict_inner(v, dict_factory))
                                                for k, v in obj.items()))
@@ -1138,7 +1138,7 @@ def _astuple_inner(obj, tuple_factory):
         return type(obj)(_astuple_inner(v, tuple_factory) for v in obj)
     elif isinstance(obj, collections.defaultdict):
         # defaultdict does not have the same constructor than dict and must be
-        # hendled separately
+        # handled separately
         return type(obj)(obj.default_factory, ((_asdict_inner(k, dict_factory),
                                                _asdict_inner(v, dict_factory))
                                                for k, v in obj.items()))
