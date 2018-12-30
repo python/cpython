@@ -692,6 +692,28 @@ class CookieTests(unittest.TestCase):
         req = urllib.request.Request("http://www.example.com")
         self.assertEqual(request_path(req), "/")
 
+    def test_path_prefix_match(self):
+        pol = DefaultCookiePolicy()
+
+        c = CookieJar(pol)
+        url = "http://bar.com/foo"
+        interact_netscape(c, url, 'spam=eggs; Path=/foo')
+
+        h = interact_netscape(c, url)
+        self.assertIn('spam=eggs', h, "path not returned")
+
+        h = interact_netscape(c, "http://bar.com/foo/bar")
+        self.assertIn('spam=eggs', h, "path not returned")
+
+        h = interact_netscape(c, "http://bar.com/foo/bar/")
+        self.assertIn('spam=eggs', h, "path not returned")
+
+        h = interact_netscape(c, "http://bar.com/")
+        self.assertNotIn('spam=eggs', h, "path returned with /")
+
+        h = interact_netscape(c, "http://bar.com/foobad/foo")
+        self.assertNotIn('spam=eggs', h, "path returned with invalid prefix")
+
     def test_request_port(self):
         req = urllib.request.Request("http://www.acme.com:1234/",
                                      headers={"Host": "www.acme.com:4321"})
