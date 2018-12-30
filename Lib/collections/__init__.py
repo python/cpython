@@ -455,7 +455,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '__getnewargs__': __getnewargs__,
     }
     for index, name in enumerate(field_names):
-        doc = f'Alias for field number {index}'
+        doc = _sys.intern(f'Alias for field number {index}')
         class_namespace[name] = _tuplegetter(index, doc)
 
     result = type(typename, (tuple,), class_namespace)
