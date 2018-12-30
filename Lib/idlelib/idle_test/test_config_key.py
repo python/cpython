@@ -1,4 +1,4 @@
-"""Test config_key, coverage 96%.
+"""Test config_key, coverage 98%.
 
 Coverage is effectively 100%.  Tkinter dialog is mocked, Mac-only line
 may be skipped, and dummy function in bind test should not be called.
