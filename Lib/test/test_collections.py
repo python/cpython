@@ -514,6 +514,14 @@ class TestNamedTuple(unittest.TestCase):
         a.w = 5
         self.assertEqual(a.__dict__, {'w': 5})
 
+    def test_namedtuple_can_mutate_doc_of_descriptors_independently(self):
+        A = namedtuple('A', 'x y')
+        B = namedtuple('B', 'x y')
+        A.x.__doc__ = 'foo'
+        B.x.__doc__ = 'bar'
+        self.assertEqual(A.x.__doc__, 'foo')
+        self.assertEqual(B.x.__doc__, 'bar')
+
 
 ################################################################################
 ### Abstract Base Classes

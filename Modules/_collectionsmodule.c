@@ -7,6 +7,14 @@
 #include <sys/types.h>          /* For size_t */
 #endif
 
+/*[clinic input]
+class _tuplegetter "_tuplegetterobject *" "&tuplegetter_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ee5ed5baabe35068]*/
+
+static PyTypeObject tuplegetter_type;
+#include "clinic/_collectionsmodule.c.h"
+
 /* collections module implementation of a deque() datatype
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
 */
@@ -2328,6 +2336,156 @@ done:
     Py_RETURN_NONE;
 }
 
+/* Helper functions for namedtuples */
+
+typedef struct {
+    PyObject_HEAD
+    Py_ssize_t index;
+    PyObject* doc;
+} _tuplegetterobject;
+
+/*[clinic input]
+@classmethod
+_tuplegetter.__new__ as tuplegetter_new
+
+    index: Py_ssize_t
+    doc: object
+    /
+[clinic start generated code]*/
+
+static PyObject *
+tuplegetter_new_impl(PyTypeObject *type, Py_ssize_t index, PyObject *doc)
+/*[clinic end generated code: output=014be444ad80263f input=87c576a5bdbc0bbb]*/
+{
+    _tuplegetterobject* self;
+    self = (_tuplegetterobject *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+    self->index = index;
+    Py_INCREF(doc);
+    self->doc = doc;
+    return (PyObject *)self;
+}
+
+static PyObject *
+tuplegetterdescr_get(PyObject *self, PyObject *obj, PyObject *type)
+{
+    PyObject *result;
+    if (obj == NULL) {
+        Py_INCREF(self);
+        return self;
+    }
+    if (!PyTuple_Check(obj)) {
+        if (obj == Py_None) {
+            Py_INCREF(self);
+            return self;
+        }
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor for index '%d' for tuple subclasses "
+                     "doesn't apply to '%s' object",
+                     ((_tuplegetterobject*)self)->index,
+                     obj->ob_type->tp_name);
+        return NULL;
+    }
+
+    Py_ssize_t index = ((_tuplegetterobject*)self)->index;
+
+    if (!valid_index(index, PyTuple_GET_SIZE(obj))) {
+        PyErr_SetString(PyExc_IndexError, "tuple index out of range");
+        return NULL;
+    }
+
+    result = PyTuple_GET_ITEM(obj, index);
+    Py_INCREF(result);
+    return result;
+}
+
+static int
+tuplegetter_set(PyObject *self, PyObject *obj, PyObject *value)
+{
+    if (value == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "can't delete attribute");
+    } else {
+        PyErr_SetString(PyExc_AttributeError, "can't set attribute");
+    }
+    return -1;
+}
+
+static int
+tuplegetter_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    _tuplegetterobject *tuplegetter = (_tuplegetterobject *)self;
+    Py_VISIT(tuplegetter->doc);
+    return 0;
+}
+
+static int
+tuplegetter_clear(PyObject *self)
+{
+    _tuplegetterobject *tuplegetter = (_tuplegetterobject *)self;
+    Py_CLEAR(tuplegetter->doc);
+    return 0;
+}
+
+static void
+tuplegetter_dealloc(_tuplegetterobject *self)
+{
+    PyObject_GC_UnTrack(self);
+    tuplegetter_clear((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject*)self);
+}
+
+
+static PyMemberDef tuplegetter_members[] = {
+    {"__doc__",  T_OBJECT, offsetof(_tuplegetterobject, doc), 0},
+    {0}
+};
+
+static PyTypeObject tuplegetter_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "_collections._tuplegetter",                /* tp_name */
+    sizeof(_tuplegetterobject),                 /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)tuplegetter_dealloc,            /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    0,                                          /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)tuplegetter_traverse,         /* tp_traverse */
+    (inquiry)tuplegetter_clear,                 /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    0,                                          /* tp_methods */
+    tuplegetter_members,                        /* tp_members */
+    0,                                          /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    tuplegetterdescr_get,                       /* tp_descr_get */
+    tuplegetter_set,                            /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    tuplegetter_new,                            /* tp_new */
+    0,
+};
+
+
 /* module level code ********************************************************/
 
 PyDoc_STRVAR(module_doc,
@@ -2385,6 +2543,11 @@ PyInit__collections(void)
         return NULL;
     Py_INCREF(&dequereviter_type);
     PyModule_AddObject(m, "_deque_reverse_iterator", (PyObject *)&dequereviter_type);
+
+    if (PyType_Ready(&tuplegetter_type) < 0)
+        return NULL;
+    Py_INCREF(&tuplegetter_type);
+    PyModule_AddObject(m, "_tuplegetter", (PyObject *)&tuplegetter_type);
 
     return m;
 }

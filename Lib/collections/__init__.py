@@ -311,6 +311,11 @@ except ImportError:
 ### namedtuple
 ################################################################################
 
+try:
+    from _collections import _tuplegetter
+except ImportError:
+    _tuplegetter = lambda index, doc: property(_itemgetter(index), doc=doc)
+
 _nt_itemgetters = {}
 
 def namedtuple(typename, field_names, *, rename=False, defaults=None, module=None):
@@ -454,12 +459,13 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     cache = _nt_itemgetters
     for index, name in enumerate(field_names):
         try:
-            itemgetter_object, doc = cache[index]
+            doc = cache[index]
         except KeyError:
-            itemgetter_object = _itemgetter(index)
             doc = f'Alias for field number {index}'
-            cache[index] = itemgetter_object, doc
-        class_namespace[name] = property(itemgetter_object, doc=doc)
+            cache[index] = doc
+
+        tuplegetter_object = _tuplegetter(index, doc)
+        class_namespace[name] = tuplegetter_object
 
     result = type(typename, (tuple,), class_namespace)
 
