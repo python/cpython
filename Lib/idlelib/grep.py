@@ -175,6 +175,7 @@ def _grep_dialog(parent):  # htest #
     from tkinter import Toplevel, Text, SEL, END
     from tkinter.ttk import Frame, Button
     from idlelib.pyshell import PyShellFileList
+
     top = Toplevel(parent)
     top.title("Test GrepDialog")
     x, y = map(int, parent.geometry().split('+')[1:])
