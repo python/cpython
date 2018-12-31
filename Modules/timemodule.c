@@ -34,6 +34,10 @@
 #endif /* MS_WINDOWS */
 #endif /* !__WATCOMC__ || __QNX__ */
 
+#ifdef _Py_MEMORY_SANITIZER
+# include <sanitizer/msan_interface.h>
+#endif
+
 #define SEC_TO_NS (1000 * 1000 * 1000)
 
 /* Forward declarations */
@@ -331,6 +335,9 @@ time_pthread_getcpuclockid(PyObject *self, PyObject *args)
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
+#ifdef _Py_MEMORY_SANITIZER
+    __msan_unpoison(&clk_id, sizeof(clk_id));
+#endif
     return PyLong_FromLong(clk_id);
 }
 
@@ -718,7 +725,7 @@ time_strftime(PyObject *self, PyObject *args)
         return NULL;
     }
 
-#if defined(_MSC_VER) || defined(sun) || defined(_AIX)
+#if defined(_MSC_VER) || (defined(__sun) && defined(__SVR4)) || defined(_AIX)
     if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
         PyErr_SetString(PyExc_ValueError,
                         "strftime() requires year in [1; 9999]");
@@ -764,7 +771,7 @@ time_strftime(PyObject *self, PyObject *args)
             return NULL;
         }
     }
-#elif (defined(_AIX) || defined(sun)) && defined(HAVE_WCSFTIME)
+#elif (defined(_AIX) || (defined(__sun) && defined(__SVR4))) && defined(HAVE_WCSFTIME)
     for (outbuf = wcschr(fmt, '%');
         outbuf != NULL;
         outbuf = wcschr(outbuf+2, '%'))

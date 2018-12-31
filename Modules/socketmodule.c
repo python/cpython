@@ -100,6 +100,10 @@ Local naming conventions:
 #include "Python.h"
 #include "structmember.h"
 
+#ifdef _Py_MEMORY_SANITIZER
+# include <sanitizer/msan_interface.h>
+#endif
+
 /* Socket object documentation */
 PyDoc_STRVAR(sock_doc,
 "socket(family=AF_INET, type=SOCK_STREAM, proto=0) -> socket object\n\
@@ -261,7 +265,7 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 #endif
 
 /* Solaris fails to define this variable at all. */
-#if defined(sun) && !defined(INET_ADDRSTRLEN)
+#if (defined(__sun) && defined(__SVR4)) && !defined(INET_ADDRSTRLEN)
 #define INET_ADDRSTRLEN 16
 #endif
 
@@ -6463,7 +6467,23 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
         return NULL;
     }
 
+#ifdef _Py_MEMORY_SANITIZER
+    __msan_unpoison(ni, sizeof(ni));
+    __msan_unpoison(&ni[0], sizeof(ni[0]));
+#endif
     for (i = 0; ni[i].if_index != 0 && i < INT_MAX; i++) {
+#ifdef _Py_MEMORY_SANITIZER
+        /* This one isn't the end sentinel, the next one must exist. */
+        __msan_unpoison(&ni[i+1], sizeof(ni[0]));
+        /* Otherwise Py_BuildValue internals are flagged by MSan when
+           they access the not-msan-tracked if_name string data. */
+        {
+            char *to_sanitize = ni[i].if_name;
+            do {
+                __msan_unpoison(to_sanitize, 1);
+            } while (*to_sanitize++ != '\0');
+        }
+#endif
         PyObject *ni_tuple = Py_BuildValue("IO&",
                 ni[i].if_index, PyUnicode_DecodeFSDefault, ni[i].if_name);
 
