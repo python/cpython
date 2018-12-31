@@ -65,46 +65,6 @@ PyDoc_STRVAR(EVP_update__doc__,
 #define EVP_UPDATE_METHODDEF    \
     {"update", (PyCFunction)EVP_update, METH_O, EVP_update__doc__},
 
-PyDoc_STRVAR(EVP_tp_init__doc__,
-"HASH(name, string=b\'\')\n"
-"--\n"
-"\n"
-"A hash is an object used to calculate a checksum of a string of information.\n"
-"\n"
-"Methods:\n"
-"\n"
-"update() -- updates the current digest with an additional string\n"
-"digest() -- return the current digest value\n"
-"hexdigest() -- return the current digest as a string of hexadecimal digits\n"
-"copy() -- return a copy of the current hash object\n"
-"\n"
-"Attributes:\n"
-"\n"
-"name -- the hash algorithm being used by this object\n"
-"digest_size -- number of bytes in this hashes output");
-
-static int
-EVP_tp_init_impl(EVPobject *self, PyObject *name_obj, PyObject *data_obj);
-
-static int
-EVP_tp_init(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    int return_value = -1;
-    static const char * const _keywords[] = {"name", "string", NULL};
-    static _PyArg_Parser _parser = {"O|O:HASH", _keywords, 0};
-    PyObject *name_obj;
-    PyObject *data_obj = NULL;
-
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &name_obj, &data_obj)) {
-        goto exit;
-    }
-    return_value = EVP_tp_init_impl((EVPobject *)self, name_obj, data_obj);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(EVP_new__doc__,
 "new($module, /, name, string=b\'\')\n"
 "--\n"
@@ -292,4 +252,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=cae09468e2cdbefe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fe5931d2b301ca12 input=a9049054013a1b77]*/
