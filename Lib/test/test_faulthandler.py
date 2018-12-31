@@ -20,10 +20,17 @@ except ImportError:
 
 TIMEOUT = 0.5
 MS_WINDOWS = (os.name == 'nt')
-MEMORY_SANITIZER = (
-    sysconfig.get_config_var("CONFIG_ARGS") and
-    ("--with-memory-sanitizer" in sysconfig.get_config_var("CONFIG_ARGS"))
+_cflags = sysconfig.get_config_var('CFLAGS') or ''
+_config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
+UB_SANITIZER = (
+    '-fsanitizer=undefined' in _cflags or
+    '--with-undefined-behavior-sanitizer' in _config_args
 )
+MEMORY_SANITIZER = (
+    '-fsanitizer=memory' in _cflags or
+    '--with-memory-sanitizer' in _config_args
+)
+
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):
     regex = header
@@ -99,7 +106,7 @@ class FaultHandlerTests(unittest.TestCase):
         else:
             header = 'Stack'
         regex = r"""
-            ^{fatal_error}
+            (?m)^{fatal_error}
 
             {header} \(most recent call first\):
               File "<string>", line {lineno} in <module>
@@ -257,8 +264,8 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'Segmentation fault')
 
-    @unittest.skipIf(MEMORY_SANITIZER,
-                     "memory-sanizer builds change crashing process output.")
+    @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
+                     "sanizer builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_file(self):
         with temporary_filename() as filename:
@@ -274,8 +281,8 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32",
                      "subprocess doesn't support pass_fds on Windows")
-    @unittest.skipIf(MEMORY_SANITIZER,
-                     "memory-sanizer builds change crashing process output.")
+    @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
+                     "sanizer builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
