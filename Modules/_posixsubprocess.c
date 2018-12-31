@@ -30,7 +30,7 @@
 # define SYS_getdents64  __NR_getdents64
 #endif
 
-#if defined(sun)
+#if defined(__sun) && defined(__SVR4)
 /* readdir64 is used to work around Solaris 9 bug 6395699. */
 # define readdir readdir64
 # define dirent dirent64
