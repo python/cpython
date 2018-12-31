@@ -34,6 +34,10 @@
 #endif /* MS_WINDOWS */
 #endif /* !__WATCOMC__ || __QNX__ */
 
+#ifdef _Py_MEMORY_SANITIZER
+# include <sanitizer/msan_interface.h>
+#endif
+
 #define SEC_TO_NS (1000 * 1000 * 1000)
 
 /* Forward declarations */
@@ -336,6 +340,9 @@ time_pthread_getcpuclockid(PyObject *self, PyObject *args)
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
+#ifdef _Py_MEMORY_SANITIZER
+    __msan_unpoison(&clk_id, sizeof(clk_id));
+#endif
     return PyLong_FromLong(clk_id);
 }
 
