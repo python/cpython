@@ -1,1 +1,1 @@
-Fix a crash when sorting very long lists
+Fix a crash when sorting very long lists. Patch by Stephan Hohe.
