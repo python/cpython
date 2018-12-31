@@ -63,7 +63,7 @@ else:
 _cflags = sysconfig.get_config_var('CFLAGS') or ''
 _config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
 MEMORY_SANITIZER = (
-    '-fsanitizer=memory' in _cflags or
+    '-fsanitize=memory' in _cflags or
     '--with-memory-sanitizer' in _config_args
 )
 
