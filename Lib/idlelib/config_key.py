@@ -80,7 +80,6 @@ class GetKeysDialog(Toplevel):
             self.modifier_vars.append(variable)
         self.advanced = False
         self.create_widgets()
-        self.load_final_key_list()
         self.update_idletasks()
         self.geometry(
                 "+%d+%d" % (
@@ -154,6 +153,7 @@ class GetKeysDialog(Toplevel):
         # Basic entry key list.
         self.list_keys_final = Listbox(self.frame_controls_basic, width=15,
                                        height=10, selectmode='single')
+        self.list_keys_final.insert('end', *AVAILABLE_KEYS)
         self.list_keys_final.bind('<ButtonRelease-1>', self.final_key_selected)
         self.list_keys_final.grid(row=0, column=4, rowspan=4, sticky='ns')
         scroll_keys_final = Scrollbar(self.frame_controls_basic,
@@ -254,10 +254,6 @@ class GetKeysDialog(Toplevel):
         for variable in self.modifier_vars:
             variable.set('')
         self.key_string.set('')
-
-    def load_final_key_list(self):
-        "Populate listbox of available keys."
-        self.list_keys_final.insert('end', *AVAILABLE_KEYS)
 
     def ok(self, event=None):
         keys = self.key_string.get().strip()
