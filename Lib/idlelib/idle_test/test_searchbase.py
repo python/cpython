@@ -4,7 +4,8 @@
 
 import unittest
 from test.support import requires
-from tkinter import Tk, Frame  ##, BooleanVar, StringVar
+from tkinter import Tk
+from tkinter.ttk import Frame
 from idlelib import searchengine as se
 from idlelib import searchbase as sdb
 from idlelib.idle_test.mock_idle import Func

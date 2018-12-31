@@ -1,7 +1,7 @@
 '''Define SearchDialogBase used by Search, Replace, and Grep dialogs.'''
 
-from tkinter import Toplevel, Frame
-from tkinter.ttk import Entry, Label, Button, Checkbutton, Radiobutton
+from tkinter import Toplevel
+from tkinter.ttk import Frame, Entry, Label, Button, Checkbutton, Radiobutton
 
 
 class SearchDialogBase:
