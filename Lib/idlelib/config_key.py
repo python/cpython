@@ -2,7 +2,7 @@
 Dialog for building Tkinter accelerator key bindings
 """
 from tkinter import Toplevel, Listbox, Text, StringVar, TclError
-from tkinter.ttk import Button, Checkbutton, Entry, Frame, Label, Scrollbar
+from tkinter.ttk import Frame, Button, Checkbutton, Entry, Label, Scrollbar
 from tkinter import messagebox
 import string
 import sys
