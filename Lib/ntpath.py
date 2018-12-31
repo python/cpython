@@ -645,8 +645,8 @@ try:
     # determine if two files are in fact the same file
     def realpath(filename):
         filename = os.fspath(filename)
-        extended_length_prefix = '\\\\?\\' if isinstance(filename, str) else b'\\\\?\\'
-        is_extended_path = filename.startswith(extended_length_prefix)
+        extended_path_prefix = '\\\\?\\' if isinstance(filename, str) else b'\\\\?\\'
+        is_extended_path = filename.startswith(extended_path_prefix)
         unresolved = filename if is_extended_path else abspath(filename)
         resolved_parts = []
         while True:
@@ -662,7 +662,7 @@ try:
         resolved = join(*reversed(resolved_parts))
         # try to convert extended path to normal if
         # initial path did not use \\?\ prefix and result uses it
-        if not is_extended_path and resolved.startswith(extended_length_prefix):
+        if not is_extended_path and resolved.startswith(extended_path_prefix):
             resolved = _extended_to_normal(resolved)
         return resolved
 
@@ -674,30 +674,38 @@ try:
             sep = '\\'
             colon = ':'
             letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-            extended_unc_prefix = '\\\\?\\UNC'
+            unc_dev = '\\\\?\\UNC'
         else:
             sep = b'\\'
             colon = b':'
             letters = b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-            extended_unc_prefix = b'\\\\?\\UNC'
+            unc_dev = b'\\\\?\\UNC'
         drive = drive.upper()
-        if drive == extended_unc_prefix:
+        if drive == unc_dev:
             # UNC path with \\?\ prefix - drop prefix
             # 7 is len('\\?\UNC')
             normal_path = sep + path[7:]
-        else:
-            assert len(drive) == 6 and drive[4:5] in letters and drive[5:6] == colon
+        elif len(drive) == 6 and drive[4:5] in letters and drive[5:6] == colon:
             # extended path with \\?\ prefix
             # 4 is len('\\?\')
             normal_path = path[4:]
+        else:
+            # not a UNC or drive-letter path
+            # return path as-is
+            return path
 
         if 0 < len(normal_path) < 260 and normal_path == abspath(normal_path):
             return normal_path
         return path
 except ImportError:
-    realpath = abspath
+    def realpath(filename):
+        filename = os.fspath(filename)
+        extended_path_prefix = '\\\\?\\' if isinstance(filename, str) else b'\\\\?\\'
+        is_extended_path = filename.startswith(extended_path_prefix)
+        return filename if is_extended_path else abspath(filename)
+
     def _getfinalpathname(path):
-        return normcase(abspath(path))
+        return normcase(realpath(path))
 
 try:
     # The genericpath.isdir implementation uses os.stat and checks the mode
