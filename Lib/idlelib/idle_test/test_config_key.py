@@ -206,25 +206,6 @@ class KeySelectionTest(unittest.TestCase):
         dialog.modifier_checkbuttons['foo'].invoke()
         eq(gm(), ['BAZ'])
 
-    def test_translate_key(self):
-        dialog = self.dialog
-        tr = dialog.translate_key
-        eq = self.assertEqual
-
-        # Letters return unchanged with no 'Shift'.
-        eq(tr('q', []), 'Key-q')
-        eq(tr('q', ['Control', 'Alt']), 'Key-q')
-
-        # 'Shift' uppercases single lowercase letters.
-        eq(tr('q', ['Shift']), 'Key-Q')
-        eq(tr('q', ['Control', 'Shift']), 'Key-Q')
-        eq(tr('q', ['Control', 'Alt', 'Shift']), 'Key-Q')
-
-        # Convert key name to keysym.
-        eq(tr('Page Up', []), 'Key-Prior')
-        # 'Shift' doesn't change case.
-        eq(tr('Page Down', ['Shift']), 'Key-Next')
-
     @mock.patch.object(gkd, 'get_modifiers')
     def test_build_key_string(self, mock_modifiers):
         dialog = self.dialog
@@ -282,6 +263,28 @@ class CancelTest(unittest.TestCase):
         with self.assertRaises(TclError):
             self.dialog.winfo_class()
         self.assertEqual(self.dialog.result, '')
+
+
+class HelperTest(unittest.TestCase):
+    "Test module level helper functions."
+
+    def test_translate_key(self):
+        tr = config_key.translate_key
+        eq = self.assertEqual
+
+        # Letters return unchanged with no 'Shift'.
+        eq(tr('q', []), 'Key-q')
+        eq(tr('q', ['Control', 'Alt']), 'Key-q')
+
+        # 'Shift' uppercases single lowercase letters.
+        eq(tr('q', ['Shift']), 'Key-Q')
+        eq(tr('q', ['Control', 'Shift']), 'Key-Q')
+        eq(tr('q', ['Control', 'Alt', 'Shift']), 'Key-Q')
+
+        # Convert key name to keysym.
+        eq(tr('Page Up', []), 'Key-Prior')
+        # 'Shift' doesn't change case when it's not a single char.
+        eq(tr('*', ['Shift']), 'Key-asterisk')
 
 
 if __name__ == '__main__':
