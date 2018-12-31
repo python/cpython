@@ -8,6 +8,38 @@ import string
 import sys
 
 
+FUNCTION_KEYS = ('F1', 'F2' ,'F3' ,'F4' ,'F5' ,'F6',
+                 'F7', 'F8' ,'F9' ,'F10' ,'F11' ,'F12')
+ALPHANUM_KEYS = tuple(string.ascii_lowercase + string.digits)
+PUNCTUATION_KEYS = tuple('~!@#%^&*()_-+={}[]|;:,.<>/?')
+WHITESPACE_KEYS = ('Tab', 'Space', 'Return')
+EDIT_KEYS = ('BackSpace', 'Delete', 'Insert')
+MOVE_KEYS = ('Home', 'End', 'Page Up', 'Page Down', 'Left Arrow',
+             'Right Arrow', 'Up Arrow', 'Down Arrow')
+AVAILABLE_KEYS = (ALPHANUM_KEYS + PUNCTUATION_KEYS + FUNCTION_KEYS +
+                  WHITESPACE_KEYS + EDIT_KEYS + MOVE_KEYS)
+
+
+def translate_key(key, modifiers):
+    "Translate from keycap symbol to the Tkinter keysym."
+    mapping = {'Space':'space',
+            '~':'asciitilde', '!':'exclam', '@':'at', '#':'numbersign',
+            '%':'percent', '^':'asciicircum', '&':'ampersand',
+            '*':'asterisk', '(':'parenleft', ')':'parenright',
+            '_':'underscore', '-':'minus', '+':'plus', '=':'equal',
+            '{':'braceleft', '}':'braceright',
+            '[':'bracketleft', ']':'bracketright', '|':'bar',
+            ';':'semicolon', ':':'colon', ',':'comma', '.':'period',
+            '<':'less', '>':'greater', '/':'slash', '?':'question',
+            'Page Up':'Prior', 'Page Down':'Next',
+            'Left Arrow':'Left', 'Right Arrow':'Right',
+            'Up Arrow':'Up', 'Down Arrow': 'Down', 'Tab':'Tab'}
+    key = mapping.get(key, key)
+    if 'Shift' in modifiers and key in string.ascii_lowercase:
+        key = key.upper()
+    return f'Key-{key}'
+
+
 class GetKeysDialog(Toplevel):
 
     # Dialog title for invalid key sequence
@@ -48,7 +80,6 @@ class GetKeysDialog(Toplevel):
             self.modifier_vars.append(variable)
         self.advanced = False
         self.create_widgets()
-        self.load_final_key_list()
         self.update_idletasks()
         self.geometry(
                 "+%d+%d" % (
@@ -122,6 +153,7 @@ class GetKeysDialog(Toplevel):
         # Basic entry key list.
         self.list_keys_final = Listbox(self.frame_controls_basic, width=15,
                                        height=10, selectmode='single')
+        self.list_keys_final.insert('end', *AVAILABLE_KEYS)
         self.list_keys_final.bind('<ButtonRelease-1>', self.final_key_selected)
         self.list_keys_final.grid(row=0, column=4, rowspan=4, sticky='ns')
         scroll_keys_final = Scrollbar(self.frame_controls_basic,
@@ -206,7 +238,7 @@ class GetKeysDialog(Toplevel):
         keylist = modifiers = self.get_modifiers()
         final_key = self.list_keys_final.get('anchor')
         if final_key:
-            final_key = self.translate_key(final_key, modifiers)
+            final_key = translate_key(final_key, modifiers)
             keylist.append(final_key)
         self.key_string.set(f"<{'-'.join(keylist)}>")
 
@@ -222,43 +254,6 @@ class GetKeysDialog(Toplevel):
         for variable in self.modifier_vars:
             variable.set('')
         self.key_string.set('')
-
-    def load_final_key_list(self):
-        "Populate listbox of available keys."
-        # These tuples are also available for use in validity checks.
-        self.function_keys = ('F1', 'F2' ,'F3' ,'F4' ,'F5' ,'F6',
-                              'F7', 'F8' ,'F9' ,'F10' ,'F11' ,'F12')
-        self.alphanum_keys = tuple(string.ascii_lowercase + string.digits)
-        self.punctuation_keys = tuple('~!@#%^&*()_-+={}[]|;:,.<>/?')
-        self.whitespace_keys = ('Tab', 'Space', 'Return')
-        self.edit_keys = ('BackSpace', 'Delete', 'Insert')
-        self.move_keys = ('Home', 'End', 'Page Up', 'Page Down', 'Left Arrow',
-                          'Right Arrow', 'Up Arrow', 'Down Arrow')
-        # Make a tuple of most of the useful common 'final' keys.
-        keys = (self.alphanum_keys + self.punctuation_keys + self.function_keys +
-                self.whitespace_keys + self.edit_keys + self.move_keys)
-        self.list_keys_final.insert('end', *keys)
-
-    @staticmethod
-    def translate_key(key, modifiers):
-        "Translate from keycap symbol to the Tkinter keysym."
-        translate_dict = {'Space':'space',
-                '~':'asciitilde', '!':'exclam', '@':'at', '#':'numbersign',
-                '%':'percent', '^':'asciicircum', '&':'ampersand',
-                '*':'asterisk', '(':'parenleft', ')':'parenright',
-                '_':'underscore', '-':'minus', '+':'plus', '=':'equal',
-                '{':'braceleft', '}':'braceright',
-                '[':'bracketleft', ']':'bracketright', '|':'bar',
-                ';':'semicolon', ':':'colon', ',':'comma', '.':'period',
-                '<':'less', '>':'greater', '/':'slash', '?':'question',
-                'Page Up':'Prior', 'Page Down':'Next',
-                'Left Arrow':'Left', 'Right Arrow':'Right',
-                'Up Arrow':'Up', 'Down Arrow': 'Down', 'Tab':'Tab'}
-        if key in translate_dict:
-            key = translate_dict[key]
-        if 'Shift' in modifiers and key in string.ascii_lowercase:
-            key = key.upper()
-        return f'Key-{key}'
 
     def ok(self, event=None):
         keys = self.key_string.get().strip()
@@ -291,12 +286,12 @@ class GetKeysDialog(Toplevel):
             self.showerror(title, parent=self,
                            message='Missing the final Key')
         elif (not modifiers
-              and final_key not in self.function_keys + self.move_keys):
+              and final_key not in FUNCTION_KEYS + MOVE_KEYS):
             self.showerror(title=title, parent=self,
                            message='No modifier key(s) specified.')
         elif (modifiers == ['Shift']) \
                  and (final_key not in
-                      self.function_keys + self.move_keys + ('Tab', 'Space')):
+                      FUNCTION_KEYS + MOVE_KEYS + ('Tab', 'Space')):
             msg = 'The shift modifier by itself may not be used with'\
                   ' this key symbol.'
             self.showerror(title=title, parent=self, message=msg)
