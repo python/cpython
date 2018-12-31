@@ -252,8 +252,18 @@ finally:
     return ret;
 }
 
+/*[clinic input]
+sys.displayhook
+
+    object as o: object
+    /
+
+Print an object to sys.stdout and also save it in builtins._
+[clinic start generated code]*/
+
 static PyObject *
-sys_displayhook(PyObject *self, PyObject *o)
+sys_displayhook(PyObject *module, PyObject *o)
+/*[clinic end generated code: output=347477d006df92ed input=08ba730166d7ef72]*/
 {
     PyObject *outf;
     PyObject *builtins;
@@ -305,30 +315,40 @@ sys_displayhook(PyObject *self, PyObject *o)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(displayhook_doc,
-"displayhook(object) -> None\n"
-"\n"
-"Print an object to sys.stdout and also save it in builtins._\n"
-);
+
+/*[clinic input]
+sys.excepthook
+
+    exctype:   object
+    value:     object
+    traceback: object
+    /
+
+Handle an exception by displaying it with a traceback on sys.stderr.
+[clinic start generated code]*/
 
 static PyObject *
-sys_excepthook(PyObject* self, PyObject* args)
+sys_excepthook_impl(PyObject *module, PyObject *exctype, PyObject *value,
+                    PyObject *traceback)
+/*[clinic end generated code: output=18d99fdda21b6b5e input=ecf606fa826f19d9]*/
 {
-    PyObject *exc, *value, *tb;
-    if (!PyArg_UnpackTuple(args, "excepthook", 3, 3, &exc, &value, &tb))
-        return NULL;
-    PyErr_Display(exc, value, tb);
+    PyErr_Display(exctype, value, traceback);
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(excepthook_doc,
-"excepthook(exctype, value, traceback) -> None\n"
-"\n"
-"Handle an exception by displaying it with a traceback on sys.stderr.\n"
-);
+
+/*[clinic input]
+sys.exc_info
+
+Return current exception information: (type, value, traceback).
+
+Return information about the most recent exception caught by an except
+clause in the current stack frame or in an older stack frame.
+[clinic start generated code]*/
 
 static PyObject *
-sys_exc_info(PyObject *self, PyObject *noargs)
+sys_exc_info_impl(PyObject *module)
+/*[clinic end generated code: output=3afd0940cf3a4d30 input=b5c5bf077788a3e5]*/
 {
     _PyErr_StackItem *err_info = _PyErr_GetTopmostException(_PyThreadState_GET());
     return Py_BuildValue(
@@ -339,84 +359,92 @@ sys_exc_info(PyObject *self, PyObject *noargs)
             err_info->exc_traceback : Py_None);
 }
 
-PyDoc_STRVAR(exc_info_doc,
-"exc_info() -> (type, value, traceback)\n\
-\n\
-Return information about the most recent exception caught by an except\n\
-clause in the current stack frame or in an older stack frame."
-);
+
+/*[clinic input]
+sys.exit
+
+    status: object = NULL
+    /
+
+Exit the interpreter by raising SystemExit(status).
+
+If the status is omitted or None, it defaults to zero (i.e., success).
+If the status is an integer, it will be used as the system exit status.
+If it is another kind of object, it will be printed and the system
+exit status will be one (i.e., failure).
+[clinic start generated code]*/
 
 static PyObject *
-sys_exit(PyObject *self, PyObject *args)
+sys_exit_impl(PyObject *module, PyObject *status)
+/*[clinic end generated code: output=13870986c1ab2ec0 input=a737351f86685e9c]*/
 {
-    PyObject *exit_code = 0;
-    if (!PyArg_UnpackTuple(args, "exit", 0, 1, &exit_code))
-        return NULL;
     /* Raise SystemExit so callers may catch it or clean up. */
-    PyErr_SetObject(PyExc_SystemExit, exit_code);
+    PyErr_SetObject(PyExc_SystemExit, status);
     return NULL;
 }
 
-PyDoc_STRVAR(exit_doc,
-"exit([status])\n\
-\n\
-Exit the interpreter by raising SystemExit(status).\n\
-If the status is omitted or None, it defaults to zero (i.e., success).\n\
-If the status is an integer, it will be used as the system exit status.\n\
-If it is another kind of object, it will be printed and the system\n\
-exit status will be one (i.e., failure)."
-);
 
+
+/*[clinic input]
+sys.getdefaultencoding
+
+Return the current default encoding used by the Unicode implementation.
+[clinic start generated code]*/
 
 static PyObject *
-sys_getdefaultencoding(PyObject *self, PyObject *Py_UNUSED(ignored))
+sys_getdefaultencoding_impl(PyObject *module)
+/*[clinic end generated code: output=256d19dfcc0711e6 input=d416856ddbef6909]*/
 {
     return PyUnicode_FromString(PyUnicode_GetDefaultEncoding());
 }
 
-PyDoc_STRVAR(getdefaultencoding_doc,
-"getdefaultencoding() -> string\n\
-\n\
-Return the current default string encoding used by the Unicode\n\
-implementation."
-);
+/*[clinic input]
+sys.getfilesystemencoding
+
+Return the encoding used to convert Unicode filenames to OS filenames.
+[clinic start generated code]*/
 
 static PyObject *
-sys_getfilesystemencoding(PyObject *self, PyObject *Py_UNUSED(ignored))
+sys_getfilesystemencoding_impl(PyObject *module)
+/*[clinic end generated code: output=1dc4bdbe9be44aa7 input=8475f8649b8c7d8c]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     const _PyCoreConfig *config = &interp->core_config;
     return PyUnicode_FromString(config->filesystem_encoding);
 }
 
-PyDoc_STRVAR(getfilesystemencoding_doc,
-"getfilesystemencoding() -> string\n\
-\n\
-Return the encoding used to convert Unicode filenames in\n\
-operating system filenames."
-);
+/*[clinic input]
+sys.getfilesystemencodeerrors
+
+Return the error mode used Unicode to OS filename conversion.
+[clinic start generated code]*/
 
 static PyObject *
-sys_getfilesystemencodeerrors(PyObject *self, PyObject *Py_UNUSED(ignored))
+sys_getfilesystemencodeerrors_impl(PyObject *module)
+/*[clinic end generated code: output=ba77b36bbf7c96f5 input=22a1e8365566f1e5]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     const _PyCoreConfig *config = &interp->core_config;
     return PyUnicode_FromString(config->filesystem_errors);
 }
 
-PyDoc_STRVAR(getfilesystemencodeerrors_doc,
-    "getfilesystemencodeerrors() -> string\n\
-\n\
-Return the error mode used to convert Unicode filenames in\n\
-operating system filenames."
-);
+/*[clinic input]
+sys.intern
+
+    string as s: unicode
+    /
+
+``Intern'' the given string.
+
+This enters the string in the (global) table of interned strings whose
+purpose is to speed up dictionary lookups. Return the string itself or
+the previously interned string object with the same value.
+[clinic start generated code]*/
 
 static PyObject *
-sys_intern(PyObject *self, PyObject *args)
+sys_intern_impl(PyObject *module, PyObject *s)
+/*[clinic end generated code: output=be680c24f5c9e5d6 input=849483c006924e2f]*/
 {
-    PyObject *s;
-    if (!PyArg_ParseTuple(args, "U:intern", &s))
-        return NULL;
     if (PyUnicode_CheckExact(s)) {
         Py_INCREF(s);
         PyUnicode_InternInPlace(&s);
@@ -424,18 +452,10 @@ sys_intern(PyObject *self, PyObject *args)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                        "can't intern %.400s", s->ob_type->tp_name);
+                     "can't intern %.400s", s->ob_type->tp_name);
         return NULL;
     }
 }
-
-PyDoc_STRVAR(intern_doc,
-"intern(string) -> string\n\
-\n\
-``Intern'' the given string.  This enters the string in the (global)\n\
-table of interned strings whose purpose is to speed up dictionary lookups.\n\
-Return the string itself or the previously interned string object with the\n\
-same value.");
 
 
 /*
@@ -556,8 +576,17 @@ Set the global debug tracing function.  It will be called on each\n\
 function call.  See the debugger chapter in the library manual."
 );
 
+/*[clinic input]
+sys.gettrace
+
+Return the global debug tracing function set with sys.settrace.
+
+See the debugger chapter in the library manual.
+[clinic start generated code]*/
+
 static PyObject *
-sys_gettrace(PyObject *self, PyObject *args)
+sys_gettrace_impl(PyObject *module)
+/*[clinic end generated code: output=e97e3a4d8c971b6e input=373b51bb2147f4d8]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *temp = tstate->c_traceobj;
@@ -567,13 +596,6 @@ sys_gettrace(PyObject *self, PyObject *args)
     Py_INCREF(temp);
     return temp;
 }
-
-PyDoc_STRVAR(gettrace_doc,
-"gettrace()\n\
-\n\
-Return the global debug tracing function set with sys.settrace.\n\
-See the debugger chapter in the library manual."
-);
 
 static PyObject *
 sys_setprofile(PyObject *self, PyObject *args)
@@ -594,8 +616,17 @@ Set the profiling function.  It will be called on each function call\n\
 and return.  See the profiler chapter in the library manual."
 );
 
+/*[clinic input]
+sys.getprofile
+
+Return the profiling function set with sys.setprofile.
+
+See the profiler chapter in the library manual.
+[clinic start generated code]*/
+
 static PyObject *
-sys_getprofile(PyObject *self, PyObject *args)
+sys_getprofile_impl(PyObject *module)
+/*[clinic end generated code: output=579b96b373448188 input=1b3209d89a32965d]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *temp = tstate->c_profileobj;
@@ -606,15 +637,23 @@ sys_getprofile(PyObject *self, PyObject *args)
     return temp;
 }
 
-PyDoc_STRVAR(getprofile_doc,
-"getprofile()\n\
-\n\
-Return the profiling function set with sys.setprofile.\n\
-See the profiler chapter in the library manual."
-);
+/*[clinic input]
+sys.setcheckinterval
+
+    n: int
+    /
+
+Set the async event check interval to n instructions.
+
+This tells the Python interpreter to check for asynchronous events
+every n instructions.
+
+This also affects how often thread switches occur.
+[clinic start generated code]*/
 
 static PyObject *
-sys_setcheckinterval(PyObject *self, PyObject *args)
+sys_setcheckinterval_impl(PyObject *module, int n)
+/*[clinic end generated code: output=3f686cef07e6e178 input=7a35b17bf22a6227]*/
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "sys.getcheckinterval() and sys.setcheckinterval() "
@@ -622,24 +661,20 @@ sys_setcheckinterval(PyObject *self, PyObject *args)
                      "instead.", 1) < 0)
         return NULL;
 
-    int check_interval;
-    if (!PyArg_ParseTuple(args, "i:setcheckinterval", &check_interval))
-        return NULL;
-
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    interp->check_interval = check_interval;
+    interp->check_interval = n;
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(setcheckinterval_doc,
-"setcheckinterval(n)\n\
-\n\
-Tell the Python interpreter to check for asynchronous events every\n\
-n instructions.  This also affects how often thread switches occur."
-);
+/*[clinic input]
+sys.getcheckinterval
+
+Return the current check interval; see sys.setcheckinterval().
+[clinic start generated code]*/
 
 static PyObject *
-sys_getcheckinterval(PyObject *self, PyObject *args)
+sys_getcheckinterval_impl(PyObject *module)
+/*[clinic end generated code: output=1b5060bf2b23a47c input=4b6589cbcca1db4e]*/
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "sys.getcheckinterval() and sys.setcheckinterval() "
@@ -650,55 +685,68 @@ sys_getcheckinterval(PyObject *self, PyObject *args)
     return PyLong_FromLong(interp->check_interval);
 }
 
-PyDoc_STRVAR(getcheckinterval_doc,
-"getcheckinterval() -> current check interval; see setcheckinterval()."
-);
+/*[clinic input]
+sys.setswitchinterval
+
+    interval: double
+    /
+
+Set the ideal thread switching delay inside the Python interpreter.
+
+The actual frequency of switching threads can be lower if the
+interpreter executes long sequences of uninterruptible code
+(this is implementation-specific and workload-dependent).
+
+The parameter must represent the desired switching delay in seconds
+A typical value is 0.005 (5 milliseconds).
+[clinic start generated code]*/
 
 static PyObject *
-sys_setswitchinterval(PyObject *self, PyObject *args)
+sys_setswitchinterval_impl(PyObject *module, double interval)
+/*[clinic end generated code: output=65a19629e5153983 input=561b477134df91d9]*/
 {
-    double d;
-    if (!PyArg_ParseTuple(args, "d:setswitchinterval", &d))
-        return NULL;
-    if (d <= 0.0) {
+    if (interval <= 0.0) {
         PyErr_SetString(PyExc_ValueError,
                         "switch interval must be strictly positive");
         return NULL;
     }
-    _PyEval_SetSwitchInterval((unsigned long) (1e6 * d));
+    _PyEval_SetSwitchInterval((unsigned long) (1e6 * interval));
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(setswitchinterval_doc,
-"setswitchinterval(n)\n\
-\n\
-Set the ideal thread switching delay inside the Python interpreter\n\
-The actual frequency of switching threads can be lower if the\n\
-interpreter executes long sequences of uninterruptible code\n\
-(this is implementation-specific and workload-dependent).\n\
-\n\
-The parameter must represent the desired switching delay in seconds\n\
-A typical value is 0.005 (5 milliseconds)."
-);
 
-static PyObject *
-sys_getswitchinterval(PyObject *self, PyObject *args)
+/*[clinic input]
+sys.getswitchinterval -> double
+
+Return the current thread switch interval; see sys.setswitchinterval().
+[clinic start generated code]*/
+
+static double
+sys_getswitchinterval_impl(PyObject *module)
+/*[clinic end generated code: output=a38c277c85b5096d input=bdf9d39c0ebbbb6f]*/
 {
-    return PyFloat_FromDouble(1e-6 * _PyEval_GetSwitchInterval());
+    return 1e-6 * _PyEval_GetSwitchInterval();
 }
 
-PyDoc_STRVAR(getswitchinterval_doc,
-"getswitchinterval() -> current thread switch interval; see setswitchinterval()."
-);
+/*[clinic input]
+sys.setrecursionlimit
+
+    limit as new_limit: int
+    /
+
+Set the maximum depth of the Python interpreter stack to n.
+
+This limit prevents infinite recursion from causing an overflow of the C
+stack and crashing Python.  The highest possible limit is platform-
+dependent.
+[clinic start generated code]*/
 
 static PyObject *
-sys_setrecursionlimit(PyObject *self, PyObject *args)
+sys_setrecursionlimit_impl(PyObject *module, int new_limit)
+/*[clinic end generated code: output=35e1c64754800ace input=b0f7a23393924af3]*/
 {
-    int new_limit, mark;
+    int mark;
     PyThreadState *tstate;
-
-    if (!PyArg_ParseTuple(args, "i:setrecursionlimit", &new_limit))
-        return NULL;
 
     if (new_limit < 1) {
         PyErr_SetString(PyExc_ValueError,
@@ -736,14 +784,15 @@ sys.set_coroutine_origin_tracking_depth
 
 Enable or disable origin tracking for coroutine objects in this thread.
 
-Coroutine objects will track 'depth' frames of traceback information about
-where they came from, available in their cr_origin attribute. Set depth of 0
-to disable.
+Coroutine objects will track 'depth' frames of traceback information
+about where they came from, available in their cr_origin attribute.
+
+Set a depth of 0 to disable.
 [clinic start generated code]*/
 
 static PyObject *
 sys_set_coroutine_origin_tracking_depth_impl(PyObject *module, int depth)
-/*[clinic end generated code: output=0a2123c1cc6759c5 input=9083112cccc1bdcb]*/
+/*[clinic end generated code: output=0a2123c1cc6759c5 input=a1d0a05f89d2c426]*/
 {
     if (depth < 0) {
         PyErr_SetString(PyExc_ValueError, "depth must be >= 0");
@@ -766,8 +815,18 @@ sys_get_coroutine_origin_tracking_depth_impl(PyObject *module)
     return _PyEval_GetCoroutineOriginTrackingDepth();
 }
 
+/*[clinic input]
+sys.set_coroutine_wrapper
+
+    wrapper: object
+    /
+
+Set a wrapper for coroutine objects.
+[clinic start generated code]*/
+
 static PyObject *
-sys_set_coroutine_wrapper(PyObject *self, PyObject *wrapper)
+sys_set_coroutine_wrapper(PyObject *module, PyObject *wrapper)
+/*[clinic end generated code: output=9c7db52d65f6b188 input=df6ac09a06afef34]*/
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "set_coroutine_wrapper is deprecated", 1) < 0) {
@@ -789,14 +848,15 @@ sys_set_coroutine_wrapper(PyObject *self, PyObject *wrapper)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(set_coroutine_wrapper_doc,
-"set_coroutine_wrapper(wrapper)\n\
-\n\
-Set a wrapper for coroutine objects."
-);
+/*[clinic input]
+sys.get_coroutine_wrapper
+
+Return the wrapper for coroutines set by sys.set_coroutine_wrapper.
+[clinic start generated code]*/
 
 static PyObject *
-sys_get_coroutine_wrapper(PyObject *self, PyObject *args)
+sys_get_coroutine_wrapper_impl(PyObject *module)
+/*[clinic end generated code: output=b74a7e4b14fe898e input=ef0351fb9ece0bb4]*/
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "get_coroutine_wrapper is deprecated", 1) < 0) {
@@ -809,12 +869,6 @@ sys_get_coroutine_wrapper(PyObject *self, PyObject *args)
     Py_INCREF(wrapper);
     return wrapper;
 }
-
-PyDoc_STRVAR(get_coroutine_wrapper_doc,
-"get_coroutine_wrapper()\n\
-\n\
-Return the wrapper for coroutine objects set by sys.set_coroutine_wrapper."
-);
 
 
 static PyTypeObject AsyncGenHooksType;
@@ -837,7 +891,6 @@ static PyStructSequence_Desc asyncgen_hooks_desc = {
     asyncgen_hooks_fields ,    /* fields */
     2
 };
-
 
 static PyObject *
 sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
@@ -882,13 +935,22 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
 }
 
 PyDoc_STRVAR(set_asyncgen_hooks_doc,
-"set_asyncgen_hooks(*, firstiter=None, finalizer=None)\n\
+"set_asyncgen_hooks(* [, firstiter] [, finalizer])\n\
 \n\
 Set a finalizer for async generators objects."
 );
 
+/*[clinic input]
+sys.get_asyncgen_hooks
+
+Return the installed asynchronous generators hooks.
+
+This returns a namedtuple of the form (firstiter, finalizer).
+[clinic start generated code]*/
+
 static PyObject *
-sys_get_asyncgen_hooks(PyObject *self, PyObject *args)
+sys_get_asyncgen_hooks_impl(PyObject *module)
+/*[clinic end generated code: output=53a253707146f6cf input=3676b9ea62b14625]*/
 {
     PyObject *res;
     PyObject *firstiter = _PyEval_GetAsyncGenFirstiter();
@@ -915,13 +977,6 @@ sys_get_asyncgen_hooks(PyObject *self, PyObject *args)
 
     return res;
 }
-
-PyDoc_STRVAR(get_asyncgen_hooks_doc,
-"get_asyncgen_hooks()\n\
-\n\
-Return a namedtuple of installed asynchronous generators hooks \
-(firstiter, finalizer)."
-);
 
 
 static PyTypeObject Hash_InfoType;
@@ -988,45 +1043,24 @@ get_hash_info(void)
     }
     return hash_info;
 }
+/*[clinic input]
+sys.getrecursionlimit
 
+Return the current value of the recursion limit.
 
-PyDoc_STRVAR(setrecursionlimit_doc,
-"setrecursionlimit(n)\n\
-\n\
-Set the maximum depth of the Python interpreter stack to n.  This\n\
-limit prevents infinite recursion from causing an overflow of the C\n\
-stack and crashing Python.  The highest possible limit is platform-\n\
-dependent."
-);
+The recursion limit is the maximum depth of the Python interpreter
+stack.  This limit prevents infinite recursion from causing an overflow
+of the C stack and crashing Python.
+[clinic start generated code]*/
 
 static PyObject *
-sys_getrecursionlimit(PyObject *self, PyObject *Py_UNUSED(ignored))
+sys_getrecursionlimit_impl(PyObject *module)
+/*[clinic end generated code: output=d571fb6b4549ef2e input=1c6129fd2efaeea8]*/
 {
     return PyLong_FromLong(Py_GetRecursionLimit());
 }
 
-PyDoc_STRVAR(getrecursionlimit_doc,
-"getrecursionlimit()\n\
-\n\
-Return the current value of the recursion limit, the maximum depth\n\
-of the Python interpreter stack.  This limit prevents infinite\n\
-recursion from causing an overflow of the C stack and crashing Python."
-);
-
 #ifdef MS_WINDOWS
-PyDoc_STRVAR(getwindowsversion_doc,
-"getwindowsversion()\n\
-\n\
-Return information about the running version of Windows as a named tuple.\n\
-The members are named: major, minor, build, platform, service_pack,\n\
-service_pack_major, service_pack_minor, suite_mask, and product_type. For\n\
-backward compatibility, only the first 5 items are available by indexing.\n\
-All elements are numbers, except service_pack and platform_type which are\n\
-strings, and platform_version which is a 3-tuple. Platform is always 2.\n\
-Product_type may be 1 for a workstation, 2 for a domain controller, 3 for a\n\
-server. Platform_version is a 3-tuple containing a version number that is\n\
-intended for identifying the OS rather than feature detection."
-);
 
 static PyTypeObject WindowsVersionType = {0, 0, 0, 0, 0, 0};
 
@@ -1045,12 +1079,12 @@ static PyStructSequence_Field windows_version_fields[] = {
 };
 
 static PyStructSequence_Desc windows_version_desc = {
-    "sys.getwindowsversion",  /* name */
-    getwindowsversion_doc,    /* doc */
-    windows_version_fields,   /* fields */
-    5                         /* For backward compatibility,
-                                 only the first 5 items are accessible
-                                 via indexing, the rest are name only */
+    "sys.getwindowsversion",       /* name */
+    sys_getwindowsversion__doc__,  /* doc */
+    windows_version_fields,        /* fields */
+    5                              /* For backward compatibility,
+                                      only the first 5 items are accessible
+                                      via indexing, the rest are name only */
 };
 
 /* Disable deprecation warnings about GetVersionEx as the result is
@@ -1059,8 +1093,25 @@ static PyStructSequence_Desc windows_version_desc = {
 #pragma warning(push)
 #pragma warning(disable:4996)
 
+/*[clinic input]
+sys.getwindowsversion
+
+Return info about the running version of Windows as a named tuple.
+
+The members are named: major, minor, build, platform, service_pack,
+service_pack_major, service_pack_minor, suite_mask, product_type and
+platform_version. For backward compatibility, only the first 5 items
+are available by indexing. All elements are numbers, except
+service_pack and platform_type which are strings, and platform_version
+which is a 3-tuple. Platform is always 2. Product_type may be 1 for a
+workstation, 2 for a domain controller, 3 for a server.
+Platform_version is a 3-tuple containing a version number that is
+intended for identifying the OS rather than feature detection.
+[clinic start generated code]*/
+
 static PyObject *
-sys_getwindowsversion(PyObject *self)
+sys_getwindowsversion_impl(PyObject *module)
+/*[clinic end generated code: output=1ec063280b932857 input=73a228a328fee63a]*/
 {
     PyObject *version;
     int pos = 0;
@@ -1128,18 +1179,21 @@ sys_getwindowsversion(PyObject *self)
 
 #pragma warning(pop)
 
-PyDoc_STRVAR(enablelegacywindowsfsencoding_doc,
-"_enablelegacywindowsfsencoding()\n\
-\n\
-Changes the default filesystem encoding to mbcs:replace for consistency\n\
-with earlier versions of Python. See PEP 529 for more information.\n\
-\n\
-This is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING\n\
-environment variable before launching Python."
-);
+/*[clinic input]
+sys._enablelegacywindowsfsencoding
+
+Changes the default filesystem encoding to mbcs:replace.
+
+This is done for consistency with earlier versions of Python. See PEP
+529 for more information.
+
+This is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING
+environment variable before launching Python.
+[clinic start generated code]*/
 
 static PyObject *
-sys_enablelegacywindowsfsencoding(PyObject *self)
+sys__enablelegacywindowsfsencoding_impl(PyObject *module)
+/*[clinic end generated code: output=f5c3855b45e24fe9 input=2bfa931a20704492]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     _PyCoreConfig *config = &interp->core_config;
@@ -1171,39 +1225,49 @@ sys_enablelegacywindowsfsencoding(PyObject *self)
 #endif /* MS_WINDOWS */
 
 #ifdef HAVE_DLOPEN
+
+/*[clinic input]
+sys.setdlopenflags
+
+    flags as new_val: int
+    /
+
+Set the flags used by the interpreter for dlopen calls.
+
+This is used, for example, when the interpreter loads extension
+modules. Among other things, this will enable a lazy resolving of
+symbols when importing a module, if called as sys.setdlopenflags(0).
+To share symbols across extension modules, call as
+sys.setdlopenflags(os.RTLD_GLOBAL).  Symbolic names for the flag
+modules can be found in the os module (RTLD_xxx constants, e.g.
+os.RTLD_LAZY).
+[clinic start generated code]*/
+
 static PyObject *
-sys_setdlopenflags(PyObject *self, PyObject *args)
+sys_setdlopenflags_impl(PyObject *module, int new_val)
+/*[clinic end generated code: output=ec918b7fe0a37281 input=4c838211e857a77f]*/
 {
-    int new_val;
-    if (!PyArg_ParseTuple(args, "i:setdlopenflags", &new_val))
-        return NULL;
     PyInterpreterState *interp = _PyInterpreterState_Get();
     interp->dlopenflags = new_val;
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(setdlopenflags_doc,
-"setdlopenflags(n) -> None\n\
-\n\
-Set the flags used by the interpreter for dlopen calls, such as when the\n\
-interpreter loads extension modules.  Among other things, this will enable\n\
-a lazy resolving of symbols when importing a module, if called as\n\
-sys.setdlopenflags(0).  To share symbols across extension modules, call as\n\
-sys.setdlopenflags(os.RTLD_GLOBAL).  Symbolic names for the flag modules\n\
-can be found in the os module (RTLD_xxx constants, e.g. os.RTLD_LAZY).");
+
+/*[clinic input]
+sys.getdlopenflags
+
+Return the current value of the flags that are used for dlopen calls.
+
+The flag constants are defined in the os module.
+[clinic start generated code]*/
 
 static PyObject *
-sys_getdlopenflags(PyObject *self, PyObject *args)
+sys_getdlopenflags_impl(PyObject *module)
+/*[clinic end generated code: output=e92cd1bc5005da6e input=dc4ea0899c53b4b6]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
     return PyLong_FromLong(interp->dlopenflags);
 }
-
-PyDoc_STRVAR(getdlopenflags_doc,
-"getdlopenflags() -> int\n\
-\n\
-Return the current value of the flags that are used for dlopen calls.\n\
-The flag constants are defined in the os module.");
 
 #endif  /* HAVE_DLOPEN */
 
@@ -1211,12 +1275,18 @@ The flag constants are defined in the os module.");
 /* Link with -lmalloc (or -lmpc) on an SGI */
 #include <malloc.h>
 
+/*[clinic input]
+sys.mdebug
+
+    flag: int
+    /
+[clinic start generated code]*/
+
 static PyObject *
-sys_mdebug(PyObject *self, PyObject *args)
+sys_mdebug_impl(PyObject *module, int flag)
+/*[clinic end generated code: output=5431d545847c3637 input=151d150ae1636f8a]*/
 {
     int flag;
-    if (!PyArg_ParseTuple(args, "i:mdebug", &flag))
-        return NULL;
     mallopt(M_DEBUG, flag);
     Py_RETURN_NONE;
 }
@@ -1292,48 +1362,64 @@ sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(getsizeof_doc,
-"getsizeof(object, default) -> int\n\
+"getsizeof(object [, default]) -> int\n\
 \n\
 Return the size of object in bytes.");
 
-static PyObject *
-sys_getrefcount(PyObject *self, PyObject *arg)
+/*[clinic input]
+sys.getrefcount -> Py_ssize_t
+
+    object:  object
+    /
+
+Return the reference count of object.
+
+The count returned is generally one higher than you might expect,
+because it includes the (temporary) reference as an argument to
+getrefcount().
+[clinic start generated code]*/
+
+static Py_ssize_t
+sys_getrefcount_impl(PyObject *module, PyObject *object)
+/*[clinic end generated code: output=5fd477f2264b85b2 input=bf474efd50a21535]*/
 {
-    return PyLong_FromSsize_t(arg->ob_refcnt);
+    return object->ob_refcnt;
 }
 
 #ifdef Py_REF_DEBUG
-static PyObject *
-sys_gettotalrefcount(PyObject *self, PyObject *Py_UNUSED(ignored))
+/*[clinic input]
+sys.gettotalrefcount -> Py_ssize_t
+[clinic start generated code]*/
+
+static Py_ssize_t
+sys_gettotalrefcount_impl(PyObject *module)
+/*[clinic end generated code: output=4103886cf17c25bc input=53b744faa5d2e4f6]*/
 {
-    return PyLong_FromSsize_t(_Py_GetRefTotal());
+    return _Py_GetRefTotal();
 }
 #endif /* Py_REF_DEBUG */
 
-PyDoc_STRVAR(getrefcount_doc,
-"getrefcount(object) -> integer\n\
-\n\
-Return the reference count of object.  The count returned is generally\n\
-one higher than you might expect, because it includes the (temporary)\n\
-reference as an argument to getrefcount()."
-);
+/*[clinic input]
+sys.getallocatedblocks -> Py_ssize_t
 
-static PyObject *
-sys_getallocatedblocks(PyObject *self, PyObject *Py_UNUSED(ignored))
+Return the number of memory blocks currently allocated.
+[clinic start generated code]*/
+
+static Py_ssize_t
+sys_getallocatedblocks_impl(PyObject *module)
+/*[clinic end generated code: output=f0c4e873f0b6dcf7 input=dab13ee346a0673e]*/
 {
-    return PyLong_FromSsize_t(_Py_GetAllocatedBlocks());
+    return _Py_GetAllocatedBlocks();
 }
 
-PyDoc_STRVAR(getallocatedblocks_doc,
-"getallocatedblocks() -> integer\n\
-\n\
-Return the number of memory blocks currently allocated, regardless of their\n\
-size."
-);
-
 #ifdef COUNT_ALLOCS
+/*[clinic input]
+sys.getcounts
+[clinic start generated code]*/
+
 static PyObject *
-sys_getcounts(PyObject *self)
+sys_getcounts_impl(PyObject *module)
+/*[clinic end generated code: output=20df00bc164f43cb input=ad2ec7bda5424953]*/
 {
     extern PyObject *_Py_get_counts(void);
 
@@ -1341,26 +1427,28 @@ sys_getcounts(PyObject *self)
 }
 #endif
 
-PyDoc_STRVAR(getframe_doc,
-"_getframe([depth]) -> frameobject\n\
-\n\
-Return a frame object from the call stack.  If optional integer depth is\n\
-given, return the frame object that many calls below the top of the stack.\n\
-If that is deeper than the call stack, ValueError is raised.  The default\n\
-for depth is zero, returning the frame at the top of the call stack.\n\
-\n\
-This function should be used for internal and specialized\n\
-purposes only."
-);
+/*[clinic input]
+sys._getframe
+
+    depth: int = 0
+    /
+
+Return a frame object from the call stack.
+
+If optional integer depth is given, return the frame object that many
+calls below the top of the stack.  If that is deeper than the call
+stack, ValueError is raised.  The default for depth is zero, returning
+the frame at the top of the call stack.
+
+This function should be used for internal and specialized purposes
+only.
+[clinic start generated code]*/
 
 static PyObject *
-sys_getframe(PyObject *self, PyObject *args)
+sys__getframe_impl(PyObject *module, int depth)
+/*[clinic end generated code: output=d438776c04d59804 input=c1be8a6464b11ee5]*/
 {
     PyFrameObject *f = _PyThreadState_GET()->frame;
-    int depth = -1;
-
-    if (!PyArg_ParseTuple(args, "|i:_getframe", &depth))
-        return NULL;
 
     while (depth > 0 && f != NULL) {
         f = f->f_back;
@@ -1375,63 +1463,70 @@ sys_getframe(PyObject *self, PyObject *args)
     return (PyObject*)f;
 }
 
-PyDoc_STRVAR(current_frames_doc,
-"_current_frames() -> dictionary\n\
-\n\
-Return a dictionary mapping each current thread T's thread id to T's\n\
-current stack frame.\n\
-\n\
-This function should be used for specialized purposes only."
-);
+/*[clinic input]
+sys._current_frames
+
+Return a dict mapping each thread's thread id to its current stack frame.
+
+This function should be used for specialized purposes only.
+[clinic start generated code]*/
 
 static PyObject *
-sys_current_frames(PyObject *self, PyObject *noargs)
+sys__current_frames_impl(PyObject *module)
+/*[clinic end generated code: output=d2a41ac0a0a3809a input=2a9049c5f5033691]*/
 {
     return _PyThread_CurrentFrames();
 }
 
-PyDoc_STRVAR(call_tracing_doc,
-"call_tracing(func, args) -> object\n\
-\n\
-Call func(*args), while tracing is enabled.  The tracing state is\n\
-saved, and restored afterwards.  This is intended to be called from\n\
-a debugger from a checkpoint, to recursively debug some other code."
-);
+/*[clinic input]
+sys.call_tracing
+
+    func: object
+    args as funcargs: object(subclass_of='&PyTuple_Type')
+    /
+
+Call func(*args), while tracing is enabled.
+
+The tracing state is saved, and restored afterwards.  This is intended
+to be called from a debugger from a checkpoint, to recursively debug
+some other code.
+[clinic start generated code]*/
 
 static PyObject *
-sys_call_tracing(PyObject *self, PyObject *args)
+sys_call_tracing_impl(PyObject *module, PyObject *func, PyObject *funcargs)
+/*[clinic end generated code: output=7e4999853cd4e5a6 input=5102e8b11049f92f]*/
 {
-    PyObject *func, *funcargs;
-    if (!PyArg_ParseTuple(args, "OO!:call_tracing", &func, &PyTuple_Type, &funcargs))
-        return NULL;
     return _PyEval_CallTracing(func, funcargs);
 }
 
-PyDoc_STRVAR(callstats_doc,
-"callstats() -> tuple of integers\n\
-\n\
-Return a tuple of function call statistics, if CALL_PROFILE was defined\n\
-when Python was built.  Otherwise, return None.\n\
-\n\
-When enabled, this function returns detailed, implementation-specific\n\
-details about the number of function calls executed. The return value is\n\
-a 11-tuple where the entries in the tuple are counts of:\n\
-0. all function calls\n\
-1. calls to PyFunction_Type objects\n\
-2. PyFunction calls that do not create an argument tuple\n\
-3. PyFunction calls that do not create an argument tuple\n\
-   and bypass PyEval_EvalCodeEx()\n\
-4. PyMethod calls\n\
-5. PyMethod calls on bound methods\n\
-6. PyType calls\n\
-7. PyCFunction calls\n\
-8. generator calls\n\
-9. All other calls\n\
-10. Number of stack pops performed by call_function()"
-);
+/*[clinic input]
+sys.callstats
+
+Return a tuple of function call statistics.
+
+A tuple is returned only if CALL_PROFILE was defined when Python was
+built.  Otherwise, this returns None.
+
+When enabled, this function returns detailed, implementation-specific
+details about the number of function calls executed. The return value
+is a 11-tuple where the entries in the tuple are counts of:
+0. all function calls
+1. calls to PyFunction_Type objects
+2. PyFunction calls that do not create an argument tuple
+3. PyFunction calls that do not create an argument tuple
+   and bypass PyEval_EvalCodeEx()
+4. PyMethod calls
+5. PyMethod calls on bound methods
+6. PyType calls
+7. PyCFunction calls
+8. generator calls
+9. All other calls
+10. Number of stack pops performed by call_function()
+[clinic start generated code]*/
 
 static PyObject *
-sys_callstats(PyObject *self, PyObject *Py_UNUSED(ignored))
+sys_callstats_impl(PyObject *module)
+/*[clinic end generated code: output=edc4a74957fa8def input=d447d8d224d5d175]*/
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                       "sys.callstats() has been deprecated in Python 3.7 "
@@ -1447,8 +1542,18 @@ sys_callstats(PyObject *self, PyObject *Py_UNUSED(ignored))
 extern "C" {
 #endif
 
+/*[clinic input]
+sys._debugmallocstats
+
+Print summary info to stderr about the state of pymalloc's structures.
+
+In Py_DEBUG mode, also perform some expensive internal consistency
+checks.
+[clinic start generated code]*/
+
 static PyObject *
-sys_debugmallocstats(PyObject *self, PyObject *args)
+sys__debugmallocstats_impl(PyObject *module)
+/*[clinic end generated code: output=ec3565f8c7cee46a input=33c0c9c416f98424]*/
 {
 #ifdef WITH_PYMALLOC
     if (_PyObject_DebugMallocStats(stderr)) {
@@ -1459,15 +1564,6 @@ sys_debugmallocstats(PyObject *self, PyObject *args)
 
     Py_RETURN_NONE;
 }
-PyDoc_STRVAR(debugmallocstats_doc,
-"_debugmallocstats()\n\
-\n\
-Print summary info to stderr about the state of\n\
-pymalloc's structures.\n\
-\n\
-In Py_DEBUG mode, also perform some expensive internal consistency\n\
-checks.\n\
-");
 
 #ifdef Py_TRACE_REFS
 /* Defined in objects.c because it uses static globals if that file */
@@ -1483,8 +1579,16 @@ extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
 }
 #endif
 
+
+/*[clinic input]
+sys._clear_type_cache
+
+Clear the internal type lookup cache.
+[clinic start generated code]*/
+
 static PyObject *
-sys_clear_type_cache(PyObject* self, PyObject* args)
+sys__clear_type_cache_impl(PyObject *module)
+/*[clinic end generated code: output=20e48ca54a6f6971 input=127f3e04a8d9b555]*/
 {
     PyType_ClearCache();
     Py_RETURN_NONE;
@@ -1494,25 +1598,29 @@ PyDoc_STRVAR(sys_clear_type_cache__doc__,
 "_clear_type_cache() -> None\n\
 Clear the internal type lookup cache.");
 
+/*[clinic input]
+sys.is_finalizing
+
+Return True if Python is exiting.
+[clinic start generated code]*/
+
 static PyObject *
-sys_is_finalizing(PyObject* self, PyObject* args)
+sys_is_finalizing_impl(PyObject *module)
+/*[clinic end generated code: output=735b5ff7962ab281 input=f0df747a039948a5]*/
 {
     return PyBool_FromLong(_Py_IsFinalizing());
 }
 
-PyDoc_STRVAR(is_finalizing_doc,
-"is_finalizing()\n\
-Return True if Python is exiting.");
-
-
 #ifdef ANDROID_API_LEVEL
-PyDoc_STRVAR(getandroidapilevel_doc,
-"getandroidapilevel()\n\
-\n\
-Return the build time API version of Android as an integer.");
+/*[clinic input]
+sys.getandroidapilevel
+
+Return the build time API version of Android as an integer.
+[clinic start generated code]*/
 
 static PyObject *
-sys_getandroidapilevel(PyObject *self)
+sys_getandroidapilevel_impl(PyObject *module)
+/*[clinic end generated code: output=214abf183a1c70c1 input=3e6d6c9fcdd24ac6]*/
 {
     return PyLong_FromLong(ANDROID_API_LEVEL);
 }
@@ -1523,92 +1631,56 @@ static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
     {"breakpointhook",  (PyCFunction)(void(*)(void))sys_breakpointhook,
      METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
-    {"callstats", sys_callstats, METH_NOARGS,
-     callstats_doc},
-    {"_clear_type_cache",       sys_clear_type_cache,     METH_NOARGS,
-     sys_clear_type_cache__doc__},
-    {"_current_frames", sys_current_frames, METH_NOARGS,
-     current_frames_doc},
-    {"displayhook",     sys_displayhook, METH_O, displayhook_doc},
-    {"exc_info",        sys_exc_info, METH_NOARGS, exc_info_doc},
-    {"excepthook",      sys_excepthook, METH_VARARGS, excepthook_doc},
-    {"exit",            sys_exit, METH_VARARGS, exit_doc},
-    {"getdefaultencoding", sys_getdefaultencoding,
-     METH_NOARGS, getdefaultencoding_doc},
-#ifdef HAVE_DLOPEN
-    {"getdlopenflags", (PyCFunction)sys_getdlopenflags, METH_NOARGS,
-     getdlopenflags_doc},
-#endif
-    {"getallocatedblocks", sys_getallocatedblocks, METH_NOARGS,
-      getallocatedblocks_doc},
-#ifdef COUNT_ALLOCS
-    {"getcounts",       (PyCFunction)sys_getcounts, METH_NOARGS},
-#endif
+    SYS_CALLSTATS_METHODDEF
+    SYS__CLEAR_TYPE_CACHE_METHODDEF
+    SYS__CURRENT_FRAMES_METHODDEF
+    SYS_DISPLAYHOOK_METHODDEF
+    SYS_EXC_INFO_METHODDEF
+    SYS_EXCEPTHOOK_METHODDEF
+    SYS_EXIT_METHODDEF
+    SYS_GETDEFAULTENCODING_METHODDEF
+    SYS_GETDLOPENFLAGS_METHODDEF
+    SYS_GETALLOCATEDBLOCKS_METHODDEF
+    SYS_GETCOUNTS_METHODDEF
 #ifdef DYNAMIC_EXECUTION_PROFILE
     {"getdxp",          _Py_GetDXProfile, METH_VARARGS},
 #endif
-    {"getfilesystemencoding", sys_getfilesystemencoding,
-     METH_NOARGS, getfilesystemencoding_doc},
-    { "getfilesystemencodeerrors", sys_getfilesystemencodeerrors,
-     METH_NOARGS, getfilesystemencodeerrors_doc },
+    SYS_GETFILESYSTEMENCODING_METHODDEF
+    SYS_GETFILESYSTEMENCODEERRORS_METHODDEF
 #ifdef Py_TRACE_REFS
     {"getobjects",      _Py_GetObjects, METH_VARARGS},
 #endif
-#ifdef Py_REF_DEBUG
-    {"gettotalrefcount", sys_gettotalrefcount, METH_NOARGS},
-#endif
-    {"getrefcount",     (PyCFunction)sys_getrefcount, METH_O, getrefcount_doc},
-    {"getrecursionlimit", sys_getrecursionlimit, METH_NOARGS,
-     getrecursionlimit_doc},
+    SYS_GETTOTALREFCOUNT_METHODDEF
+    SYS_GETREFCOUNT_METHODDEF
+    SYS_GETRECURSIONLIMIT_METHODDEF
     {"getsizeof",   (PyCFunction)(void(*)(void))sys_getsizeof,
      METH_VARARGS | METH_KEYWORDS, getsizeof_doc},
-    {"_getframe", sys_getframe, METH_VARARGS, getframe_doc},
-#ifdef MS_WINDOWS
-    {"getwindowsversion", (PyCFunction)sys_getwindowsversion, METH_NOARGS,
-     getwindowsversion_doc},
-    {"_enablelegacywindowsfsencoding", (PyCFunction)sys_enablelegacywindowsfsencoding,
-     METH_NOARGS, enablelegacywindowsfsencoding_doc },
-#endif /* MS_WINDOWS */
-    {"intern",          sys_intern,     METH_VARARGS, intern_doc},
-    {"is_finalizing",   sys_is_finalizing, METH_NOARGS, is_finalizing_doc},
-#ifdef USE_MALLOPT
-    {"mdebug",          sys_mdebug, METH_VARARGS},
-#endif
-    {"setcheckinterval",        sys_setcheckinterval, METH_VARARGS,
-     setcheckinterval_doc},
-    {"getcheckinterval",        sys_getcheckinterval, METH_NOARGS,
-     getcheckinterval_doc},
-    {"setswitchinterval",       sys_setswitchinterval, METH_VARARGS,
-     setswitchinterval_doc},
-    {"getswitchinterval",       sys_getswitchinterval, METH_NOARGS,
-     getswitchinterval_doc},
-#ifdef HAVE_DLOPEN
-    {"setdlopenflags", sys_setdlopenflags, METH_VARARGS,
-     setdlopenflags_doc},
-#endif
+    SYS__GETFRAME_METHODDEF
+    SYS_GETWINDOWSVERSION_METHODDEF
+    SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
+    SYS_INTERN_METHODDEF
+    SYS_IS_FINALIZING_METHODDEF
+    SYS_MDEBUG_METHODDEF
+    SYS_SETCHECKINTERVAL_METHODDEF
+    SYS_GETCHECKINTERVAL_METHODDEF
+    SYS_SETSWITCHINTERVAL_METHODDEF
+    SYS_GETSWITCHINTERVAL_METHODDEF
+    SYS_SETDLOPENFLAGS_METHODDEF
     {"setprofile",      sys_setprofile, METH_O, setprofile_doc},
-    {"getprofile",      sys_getprofile, METH_NOARGS, getprofile_doc},
-    {"setrecursionlimit", sys_setrecursionlimit, METH_VARARGS,
-     setrecursionlimit_doc},
+    SYS_GETPROFILE_METHODDEF
+    SYS_SETRECURSIONLIMIT_METHODDEF
     {"settrace",        sys_settrace, METH_O, settrace_doc},
-    {"gettrace",        sys_gettrace, METH_NOARGS, gettrace_doc},
-    {"call_tracing", sys_call_tracing, METH_VARARGS, call_tracing_doc},
-    {"_debugmallocstats", sys_debugmallocstats, METH_NOARGS,
-     debugmallocstats_doc},
+    SYS_GETTRACE_METHODDEF
+    SYS_CALL_TRACING_METHODDEF
+    SYS__DEBUGMALLOCSTATS_METHODDEF
     SYS_SET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
     SYS_GET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
-    {"set_coroutine_wrapper", sys_set_coroutine_wrapper, METH_O,
-     set_coroutine_wrapper_doc},
-    {"get_coroutine_wrapper", sys_get_coroutine_wrapper, METH_NOARGS,
-     get_coroutine_wrapper_doc},
+    SYS_SET_COROUTINE_WRAPPER_METHODDEF
+    SYS_GET_COROUTINE_WRAPPER_METHODDEF
     {"set_asyncgen_hooks", (PyCFunction)(void(*)(void))sys_set_asyncgen_hooks,
      METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
-    {"get_asyncgen_hooks", sys_get_asyncgen_hooks, METH_NOARGS,
-     get_asyncgen_hooks_doc},
-#ifdef ANDROID_API_LEVEL
-    {"getandroidapilevel", (PyCFunction)sys_getandroidapilevel, METH_NOARGS,
-     getandroidapilevel_doc},
-#endif
+    SYS_GET_ASYNCGEN_HOOKS_METHODDEF
+    SYS_GETANDROIDAPILEVEL_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
