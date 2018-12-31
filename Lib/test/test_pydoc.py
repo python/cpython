@@ -636,6 +636,17 @@ class PydocDocTest(unittest.TestCase):
         # Testing that the subclasses section does not appear
         self.assertNotIn('Built-in subclasses', text)
 
+    def test_builtin_on_metaclasses(self):
+        """Tests help on metaclasses.
+
+        When running help() on a metaclasses such as type, it
+        should not contain any "Built-in subclasses" section.
+        """
+        doc = pydoc.TextDoc()
+        text = doc.docclass(type)
+        # Testing that the subclasses section does not appear
+        self.assertNotIn('Built-in subclasses', text)
+
     @unittest.skipIf(sys.flags.optimize >= 2,
                      'Docstrings are omitted with -O2 and above')
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
