@@ -306,7 +306,7 @@ class TestNamedTuple(unittest.TestCase):
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
-    def test_attr_doc(self):
+    def test_field_doc(self):
         Point = namedtuple('Point', 'x y')
         self.assertEqual(Point.x.__doc__, 'Alias for field number 0')
         self.assertEqual(Point.y.__doc__, 'Alias for field number 1')
@@ -318,9 +318,10 @@ class TestNamedTuple(unittest.TestCase):
         Vector.x.__doc__ = 'docstring for Vector.x'
         self.assertEqual(Vector.x.__doc__, 'docstring for Vector.x')
 
+    @support.cpython_only
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
-    def test_attr_doc_reuse(self):
+    def test_field_doc_reuse(self):
         P = namedtuple('P', ['m', 'n'])
         Q = namedtuple('Q', ['o', 'p'])
         self.assertIs(P.m.__doc__, Q.o.__doc__)
@@ -351,10 +352,10 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(p, Point(**dict(x=11, y=22)))
         self.assertRaises(TypeError, Point, 1)          # too few args
         self.assertRaises(TypeError, Point, 1, 2, 3)    # too many args
-        with self.assertRaises(TypeError):
-            Point(XXX=1, y=2)                           # wrong keyword argument
-        with self.assertRaises(TypeError):
-            Point(x=1)                                  # missing keyword argument
+        with self.assertRaises(TypeError):              # wrong keyword argument
+            Point(XXX=1, y=2)
+        with self.assertRaises(TypeError):              # missing keyword argument
+            Point(x=1)
         self.assertEqual(repr(p), 'Point(x=11, y=22)')
         self.assertNotIn('__weakref__', dir(p))
         self.assertEqual(p, Point._make([11, 22]))      # test _make classmethod
