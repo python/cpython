@@ -605,8 +605,8 @@ The module defines the following classes, functions and decorators:
 
    Generic version of :class:`list`.
    Useful for annotating return types. To annotate arguments it is preferred
-   to use abstract collection types such as :class:`Mapping`, :class:`Sequence`,
-   or :class:`AbstractSet`.
+   to use an abstract collection type such as :class:`Sequence` or
+   :class:`Iterable`.
 
    This type may be used as follows::
 
@@ -621,6 +621,8 @@ The module defines the following classes, functions and decorators:
 .. class:: Set(set, MutableSet[T])
 
    A generic version of :class:`builtins.set <set>`.
+   Useful for annotating return types. To annotate arguments it is preferred
+   to use an abstract collection type such as :class:`AbstractSet`.
 
 .. class:: FrozenSet(frozenset, AbstractSet[T_co])
 
@@ -682,6 +684,9 @@ The module defines the following classes, functions and decorators:
 .. class:: Dict(dict, MutableMapping[KT, VT])
 
    A generic version of :class:`dict`.
+   Useful for annotating return types. To annotate arguments it is preferred
+   to use an abstract collection type such as :class:`Mapping`.
+
    This type can be used as follows::
 
       def count_words(text: str) -> Dict[str, int]:
