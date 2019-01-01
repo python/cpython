@@ -638,6 +638,7 @@ def commonpath(paths):
         genericpath._check_arg_types('commonpath', *paths)
         raise
 
+MAX_PATH = 260
 
 try:
     from nt import _getfinalpathname
@@ -694,7 +695,7 @@ try:
             # return path as-is
             return path
 
-        if 0 < len(normal_path) < 260 and normal_path == abspath(normal_path):
+        if len(normal_path) < MAX_PATH and normal_path == abspath(normal_path):
             return normal_path
         return path
 except ImportError:
