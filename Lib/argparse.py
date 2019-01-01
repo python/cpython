@@ -61,7 +61,7 @@ considered public as object names -- the API of the formatter objects is
 still considered an implementation detail.)
 """
 
-__version__ = '1.1'
+__version__ = '1.2'
 __all__ = [
     'ArgumentParser',
     'ArgumentError',
