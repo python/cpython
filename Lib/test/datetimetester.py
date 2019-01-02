@@ -833,10 +833,10 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
             ('sub', lambda d, t: d - t, DateSubclass(2018, 1, 4)),
         ]
 
-        for name, func, exp in tests:
+        for name, func, expected in tests:
             with self.subTest(name):
                 act = func(d1, td)
-                self.assertEqual(act, exp)
+                self.assertEqual(act, expected)
                 self.assertIsInstance(act, DateSubclass)
 
     def test_subclass_datetime(self):
@@ -852,10 +852,10 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
             ('sub', lambda d, t: d - t, DateTimeSubclass(2018, 1, 4, 12)),
         ]
 
-        for name, func, exp in tests:
+        for name, func, expected in tests:
             with self.subTest(name):
                 act = func(d1, td)
-                self.assertEqual(act, exp)
+                self.assertEqual(act, expected)
                 self.assertIsInstance(act, DateTimeSubclass)
 
     def test_division(self):
@@ -2652,20 +2652,20 @@ class TestDateTime(TestDate):
             ('combine', (date(*args[0:3]), time(*args[3:])), base_d),
         ]
 
-        for constr_name, constr_args, exp in test_cases:
+        for constr_name, constr_args, expected in test_cases:
             for base_obj in (DateTimeSubclass, base_d):
                 # Test both the classmethod and method
                 with self.subTest(base_obj_type=type(base_obj),
                                   constr_name=constr_name):
-                    constr = getattr(base_obj, constr_name)
+                    constructor = getattr(base_obj, constr_name)
 
-                    dt = constr(*constr_args)
+                    dt = constructor(*constr_args)
 
                     # Test that it creates the right subclass
                     self.assertIsInstance(dt, DateTimeSubclass)
 
                     # Test that it's equal to the base object
-                    self.assertEqual(dt, exp)
+                    self.assertEqual(dt, expected)
 
                     # Test that it called the constructor
                     self.assertEqual(dt.extra, 7)
