@@ -2706,6 +2706,151 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 }
 
 
+/*[clinic input]
+math.comb
+
+    n: object
+
+    k: object
+    /
+
+Return the binomial coefficient indexed by the pair of integers n >= k >= 0.
+
+It is the coefficient of kth term in polynomial expansion of the expression
+(1 + x)^n. It is also known as the number of ways to choose an unordered
+subset of k elements from a fixed set of n elements, usually called
+*n choose k*.
+
+Raises a TypeError if argument(s) are non-integer and ValueError
+if argument(s) are negative or k > n.
+
+[clinic start generated code]*/
+
+static PyObject *
+math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
+/*[clinic end generated code: output=bd2cec8d854f3493 input=75e1a19623bae7dc]*/
+{
+    if (!(PyLong_Check(n) && PyLong_Check(k))) {
+        PyErr_SetString(PyExc_TypeError,
+            "comb() only accepts integer arguments");
+        return NULL;
+    }
+    n = PyNumber_Long(n);
+    if (n == NULL) {
+        return NULL;
+    }
+    k = PyNumber_Long(k);
+    if (k == NULL) {
+        Py_DECREF(n);
+        return NULL;
+    }
+
+    PyObject *val = NULL,
+        *temp_obj1 = NULL,
+        *temp_obj2 = NULL,
+        *dump_var = NULL;
+    int overflow, cmp;
+    long long i, terms;
+
+    cmp = PyObject_RichCompareBool(n, k, Py_LT);
+    if (cmp == 1) {
+        PyErr_Format(PyExc_ValueError,
+                     "n must be an integer >= k");
+        goto fail_comb;
+    }
+    else if (cmp == -1) {
+        goto fail_comb;
+    }
+
+    /* b = min(b, a - b) */
+    dump_var = PyNumber_Subtract(n, k);
+    if (dump_var == NULL) {
+        goto fail_comb;
+    }
+    cmp = PyObject_RichCompareBool(k, dump_var, Py_GT);
+    if (cmp == 1) {
+        Py_DECREF(k);
+        k = dump_var;
+        dump_var = NULL;
+    }
+    else if (cmp == -1) {
+        goto fail_comb;
+    }
+    else {
+        Py_DECREF(dump_var);
+        dump_var = NULL;
+    }
+
+    terms = PyLong_AsLongLongAndOverflow(k, &overflow);
+    if (terms == -1 && PyErr_Occurred()) {
+        goto fail_comb;
+    }
+    else if (overflow == 1) {
+        PyErr_Format(PyExc_OverflowError,
+                     "minimum(n - k, k) must not exceed %lld",
+                     LLONG_MAX);
+        goto fail_comb;
+    }
+    else if (overflow == -1 || terms < 0) {
+        PyErr_Format(PyExc_ValueError,
+                     "k must be an integer >= 0");
+        goto fail_comb;
+    }
+
+    if (terms == 0) {
+        Py_DECREF(n);
+        Py_DECREF(k);
+        return PyNumber_Long(_PyLong_One);
+    }
+
+    val = PyNumber_Long(n);
+    for (i = 1; i < terms; ++i) {
+        temp_obj1 = PyLong_FromSsize_t(i);
+        if (temp_obj1 == NULL) {
+            goto fail_comb;
+        }
+        temp_obj2 = PyNumber_Subtract(n, temp_obj1);
+        if (temp_obj2 == NULL) {
+            goto fail_comb;
+        }
+        dump_var = val;
+        val = PyNumber_Multiply(val, temp_obj2);
+        if (val == NULL) {
+            goto fail_comb;
+        }
+        Py_DECREF(dump_var);
+        dump_var = NULL;
+        Py_DECREF(temp_obj2);
+        temp_obj2 = PyLong_FromUnsignedLongLong((unsigned long long)(i + 1));
+        if (temp_obj2 == NULL) {
+            goto fail_comb;
+        }
+        dump_var = val;
+        val = PyNumber_FloorDivide(val, temp_obj2);
+        if (val == NULL) {
+            goto fail_comb;
+        }
+        Py_DECREF(dump_var);
+        Py_DECREF(temp_obj1);
+        Py_DECREF(temp_obj2);
+    }
+    Py_DECREF(n);
+    Py_DECREF(k);
+
+    return val;
+
+fail_comb:
+    Py_XDECREF(n);
+    Py_XDECREF(k);
+    Py_XDECREF(val);
+    Py_XDECREF(dump_var);
+    Py_XDECREF(temp_obj1);
+    Py_XDECREF(temp_obj2);
+
+    return NULL;
+}
+
+
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
     {"acosh",           math_acosh,     METH_O,         math_acosh_doc},
@@ -2754,6 +2899,7 @@ static PyMethodDef math_methods[] = {
     {"tanh",            math_tanh,      METH_O,         math_tanh_doc},
     MATH_TRUNC_METHODDEF
     MATH_PROD_METHODDEF
+    MATH_COMB_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 

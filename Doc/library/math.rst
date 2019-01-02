@@ -218,6 +218,21 @@ Number-theoretic and representation functions
    :meth:`x.__trunc__() <object.__trunc__>`.
 
 
+.. function:: comb(n, k)
+
+   Return the binomial coefficient indexed by the pair of integers n >= k >= 0.
+
+   It is the coefficient of kth term in polynomial expansion of the expression
+   (1 + x)^n. It is also known as the number of ways to choose an unordered
+   subset of k elements from a fixed set of n elements, usually called
+   *n choose k*.
+
+   Raises :exc:`TypeError` if argument(s) are non-integer and :exc:`ValueError`
+   if argument(s) are negative or k > n.
+
+   .. versionadded:: 3.8
+
+
 Note that :func:`frexp` and :func:`modf` have a different call/return pattern
 than their C equivalents: they take a single argument and return a pair of
 values, rather than returning their second return value through an 'output
