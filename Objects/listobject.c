@@ -2232,7 +2232,6 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         int ints_are_bounded = 1;
 
         /* Prove that assumption by checking every key. */
-        int i;
         for (i=0; i < saved_ob_size; i++) {
 
             if (keys_are_in_tuples &&
