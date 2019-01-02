@@ -2036,10 +2036,6 @@ class HtmlDiff(object):
                 s.append( fmt % (next_id[i],next_href[i],fromlist[i],
                                            next_href[i],tolist[i]))
         if fromdesc or todesc:
-            fromdesc = fromdesc.replace("&", "&amp;").replace(">", "&gt;") \
-                                                     .replace("<", "&lt;")
-            todesc = todesc.replace("&", "&amp;").replace(">", "&gt;") \
-                                                 .replace("<", "&lt;")
             header_row = '<thead><tr>%s%s%s%s</tr></thead>' % (
                 '<th class="diff_next"><br /></th>',
                 '<th colspan="2" class="diff_header">%s</th>' % fromdesc,
