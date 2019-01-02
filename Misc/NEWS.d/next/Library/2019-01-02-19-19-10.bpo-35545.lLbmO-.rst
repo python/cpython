@@ -1,0 +1,2 @@
+Fix mishandling of scoped IPv6 addresses in
+BaseEventLoop.create_connection().
