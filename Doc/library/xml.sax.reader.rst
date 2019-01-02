@@ -102,8 +102,8 @@ The :class:`XMLReader` interface supports the following methods:
 
    Process an input source, producing SAX events. The *source* object can be a
    system identifier (a string identifying the input source -- typically a file
-   name or a URL), a :class:`~pathlib.Path` object, a file-like object or an
-   :class:`InputSource` object. When :meth:`parse` returns, the input is
+   name or a URL), a :class:`~pathlib.Path` object, a :term:`file-like object`
+   or an :class:`InputSource` object. When :meth:`parse` returns, the input is
    completely processed, and the parser object can be discarded or reset.
 
    .. versionchanged:: 3.5
