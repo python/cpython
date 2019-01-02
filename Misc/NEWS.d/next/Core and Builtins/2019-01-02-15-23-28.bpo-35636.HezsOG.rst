@@ -1,0 +1,1 @@
+remove redundant check in unicode_hash(PyObject *self)
