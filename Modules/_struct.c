@@ -96,7 +96,7 @@ class cache_struct_converter(CConverter):
 [python start generated code]*/
 /*[python end generated code: output=da39a3ee5e6b4b0d input=49957cca130ffb63]*/
 
-static int cache_struct_converter(PyObject *, PyObject **);
+static int cache_struct_converter(PyObject *, PyStructObject **);
 
 #include "clinic/_struct.c.h"
 
@@ -2072,7 +2072,7 @@ PyTypeObject PyStructType = {
 static PyObject *cache = NULL;
 
 static int
-cache_struct_converter(PyObject *fmt, PyObject **ptr)
+cache_struct_converter(PyObject *fmt, PyStructObject **ptr)
 {
     PyObject * s_object;
 
@@ -2091,7 +2091,7 @@ cache_struct_converter(PyObject *fmt, PyObject **ptr)
     s_object = PyDict_GetItem(cache, fmt);
     if (s_object != NULL) {
         Py_INCREF(s_object);
-        *ptr = s_object;
+        *ptr = (PyStructObject *)s_object;
         return Py_CLEANUP_SUPPORTED;
     }
 
@@ -2102,7 +2102,7 @@ cache_struct_converter(PyObject *fmt, PyObject **ptr)
         /* Attempt to cache the result */
         if (PyDict_SetItem(cache, fmt, s_object) == -1)
             PyErr_Clear();
-        *ptr = s_object;
+        *ptr = (PyStructObject *)s_object;
         return Py_CLEANUP_SUPPORTED;
     }
     return 0;
@@ -2157,7 +2157,7 @@ pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     format = args[0];
 
-    if (!cache_struct_converter(format, &s_object)) {
+    if (!cache_struct_converter(format, (PyStructObject **)&s_object)) {
         return NULL;
     }
     result = s_pack(s_object, args + 1, nargs - 1);
@@ -2185,7 +2185,7 @@ pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     format = args[0];
 
-    if (!cache_struct_converter(format, &s_object)) {
+    if (!cache_struct_converter(format, (PyStructObject **)&s_object)) {
         return NULL;
     }
     result = s_pack_into(s_object, args + 1, nargs - 1);
