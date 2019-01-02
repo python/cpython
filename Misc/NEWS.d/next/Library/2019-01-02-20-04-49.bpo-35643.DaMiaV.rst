@@ -1,0 +1,2 @@
+Fixed a SyntaxWarning: invalid escape sequence in Modules/_sha3/cleanup.py.
+Patch by Mickaël Schoentgen.
