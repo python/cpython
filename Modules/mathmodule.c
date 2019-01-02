@@ -2998,6 +2998,92 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 }
 
 
+/*[clinic input]
+math.comb
+
+    a: object
+
+    b: object
+
+
+Return the binomial coefficient indexed by the pair of integers n >= k >= 0.
+
+It is the coefficient of kth term in polynomial expansion of the expression
+(1 + x)^n. It is also termed as the number of ways to choose an unordered
+subset of k elements from a fixed set of n elements, usually called
+*n choose k*.
+
+Raises a TypeError if argument(s) are non-integer and ValueError
+if argument(s) are negative or k > n.
+
+[clinic start generated code]*/
+
+static PyObject *
+math_comb_impl(PyObject *module, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=1343ae354f5dd2fa input=f5a3952a720899cf]*/
+{
+    if (!(PyLong_Check(a) && PyLong_Check(b))) {
+        PyErr_SetString(PyExc_TypeError,
+            "comb() only accepts integer arguments");
+        return NULL;
+    }
+    a = PyNumber_Long(a);
+    if (a == NULL)
+        return NULL;
+    b = PyNumber_Long(b);
+    if (b == NULL) {
+        Py_DECREF(a);
+        return NULL;
+    }
+
+    PyObject *val = PyLong_FromLong(1),
+        *temp_obj1, *temp_obj2,
+        *dump_var;
+    int overflow;
+    long long i, terms = PyLong_AsLongLongAndOverflow(b, &overflow);
+
+    if (overflow == 1) {
+        PyErr_Format(PyExc_OverflowError,
+                     "minimum(n - k, n) should not exceed %lld",
+                     LLONG_MAX);
+        return NULL;
+    }
+    dump_var = PyLong_FromLong(0);
+    if (PyObject_RichCompareBool(b, (PyObject *)dump_var, Py_LT)) {
+        PyErr_Format(PyExc_ValueError,
+                     "k must be an integer >= 0");
+        return NULL;
+    }
+    if (PyObject_RichCompareBool(a, b, Py_LT)) {
+        PyErr_Format(PyExc_ValueError,
+                     "n must be an integer >= k");
+        return NULL;
+    }
+
+    dump_var = PyNumber_Subtract(a, b);
+    if(PyObject_RichCompareBool(b, dump_var, Py_GT)){
+        b = dump_var;
+        dump_var = NULL;
+    }
+    for (i = 0; i < terms; ++i) {
+        temp_obj1 = PyLong_FromSsize_t(i);
+        temp_obj2 = PyNumber_Subtract(a, temp_obj1);
+        dump_var = val;
+        val = PyNumber_Multiply(val, temp_obj2);
+        Py_DECREF(dump_var);
+        Py_DECREF(temp_obj2);
+        temp_obj2 = PyLong_FromLong(PyLong_AsLong(temp_obj1) + 1);
+        dump_var = val;
+        val = PyNumber_FloorDivide(val, temp_obj2);
+        Py_DECREF(dump_var);
+        Py_DECREF(temp_obj1);
+        Py_DECREF(temp_obj2);
+    }
+
+    return val;
+}
+
+
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
     {"acosh",           math_acosh,     METH_O,         math_acosh_doc},
@@ -3047,6 +3133,7 @@ static PyMethodDef math_methods[] = {
     {"tanh",            math_tanh,      METH_O,         math_tanh_doc},
     MATH_TRUNC_METHODDEF
     MATH_PROD_METHODDEF
+    MATH_COMB_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 

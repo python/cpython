@@ -633,8 +633,46 @@ math_prod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     start = args[1];
 skip_optional_kwonly:
     return_value = math_prod_impl(module, iterable, start);
+=======
+PyDoc_STRVAR(math_comb__doc__,
+"comb($module, /, a, b)\n"
+"--\n"
+"\n"
+"Return the binomial coefficient indexed by the pair of integers n >= k >= 0.\n"
+"\n"
+"It is the coefficient of kth term in polynomial expansion of the expression\n"
+"(1 + x)^n. It is also termed as the number of ways to choose an unordered\n"
+"subset of k elements from a fixed set of n elements, usually called\n"
+"*n choose k*.\n"
+"\n"
+"Raises a TypeError if argument(s) are non-integer and ValueError\n"
+"if argument(s) are negative or k > n.");
+
+#define MATH_COMB_METHODDEF    \
+    {"comb", (PyCFunction)(void(*)(void))math_comb, METH_FASTCALL|METH_KEYWORDS, math_comb__doc__},
+
+static PyObject *
+math_comb_impl(PyObject *module, PyObject *a, PyObject *b);
+
+static PyObject *
+math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"a", "b", NULL};
+    static _PyArg_Parser _parser = {"OO:comb", _keywords, 0};
+    PyObject *a;
+    PyObject *b;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &a, &b)) {
+        goto exit;
+    }
+    return_value = math_comb_impl(module, a, b);
+>>>>>>> implemented math.comb function
 
 exit:
     return return_value;
 }
+
 /*[clinic end generated code: output=aeed62f403b90199 input=a9049054013a1b77]*/
+
