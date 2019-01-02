@@ -155,7 +155,6 @@ def get_argspec(ob):
     lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)
              if len(argspec) > _MAX_COLS else [argspec] if argspec else [])
 
-    print(lines)
     if isinstance(ob_call, types.MethodType):
         doc = ob_call.__doc__
     else:
