@@ -141,6 +141,8 @@ def _ipaddr_info(host, port, family, type, proto):
     if '%' in host:
         # Linux's inet_pton doesn't accept an IPv6 zone index after host,
         # like '::1%lo0'.
+        # Such hosts should be resolved by getaddrinfo() to obtain the
+        # appropriate scope ID, and to have the zone part removed.
         return None
 
     for af in afs:
@@ -917,16 +919,16 @@ class BaseEventLoop(events.AbstractEventLoop):
                     'host/port and sock can not be specified at the same time')
 
             infos = await self._ensure_resolved(
-                (host, port), family=family,
-                type=socket.SOCK_STREAM, proto=proto, flags=flags, loop=self)
+                host, port, family=family,
+                type=socket.SOCK_STREAM, proto=proto, flags=flags)
             if not infos:
                 raise OSError('getaddrinfo() returned empty list')
 
             if local_addr is not None:
                 laddr_infos = await self._ensure_resolved(
-                    local_addr, family=family,
+                    local_addr[0], local_addr[1], family=family,
                     type=socket.SOCK_STREAM, proto=proto,
-                    flags=flags, loop=self)
+                    flags=flags)
                 if not laddr_infos:
                     raise OSError('getaddrinfo() returned empty list')
 
@@ -1195,8 +1197,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                             '2-tuple is expected')
 
                         infos = await self._ensure_resolved(
-                            addr, family=family, type=socket.SOCK_DGRAM,
-                            proto=proto, flags=flags, loop=self)
+                            *addr, family=family, type=socket.SOCK_DGRAM,
+                            proto=proto, flags=flags)
                         if not infos:
                             raise OSError('getaddrinfo() returned empty list')
 
@@ -1277,22 +1279,23 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         return transport, protocol
 
-    async def _ensure_resolved(self, address, *,
+    async def _ensure_resolved(self, host, port, *,
                                family=0, type=socket.SOCK_STREAM,
-                               proto=0, flags=0, loop):
-        host, port = address[:2]
+                               proto=0, flags=0):
+        # Resolve (host, port) into a socket address tuple, skipping
+        # getaddrinfo() when possible.
         info = _ipaddr_info(host, port, family, type, proto)
         if info is not None:
             # "host" is already a resolved IP.
             return [info]
         else:
-            return await loop.getaddrinfo(host, port, family=family, type=type,
+            return await self.getaddrinfo(host, port, family=family, type=type,
                                           proto=proto, flags=flags)
 
     async def _create_server_getaddrinfo(self, host, port, family, flags):
-        infos = await self._ensure_resolved((host, port), family=family,
+        infos = await self._ensure_resolved(host, port, family=family,
                                             type=socket.SOCK_STREAM,
-                                            flags=flags, loop=self)
+                                            flags=flags)
         if not infos:
             raise OSError(f'getaddrinfo({host!r}) returned empty list')
         return infos

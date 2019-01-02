@@ -458,15 +458,14 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     async def sock_connect(self, sock, address):
         """Connect to a remote socket at address.
 
+        address must be a socket address tuple(i.e. (ipv4_address, port) for
+        IPv4 or (ipv6_address, port, flowinfo, scopeid) for IPv6). It must
+        not be a (host, port) tuple that still needs to be resolved.
+
         This method is a coroutine.
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
-
-        if not hasattr(socket, 'AF_UNIX') or sock.family != socket.AF_UNIX:
-            resolved = await self._ensure_resolved(
-                address, family=sock.family, proto=sock.proto, loop=self)
-            _, _, _, _, address = resolved[0]
 
         fut = self.create_future()
         self._sock_connect(fut, sock, address)
