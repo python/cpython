@@ -1,1 +1,0 @@
-remove redundant check in unicode_hash()
