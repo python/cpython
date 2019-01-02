@@ -1,0 +1,2 @@
+Introduce "m" formatter for float, complex and decimal numbers. It behaves
+like "f" formatter but uses separators from locale data.

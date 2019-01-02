@@ -436,6 +436,11 @@ class FormatTest(unittest.TestCase):
             self.assertIn(sep, text)
             self.assertIn(point, text)
             self.assertEqual(text.replace(sep, ''), '1234' + point + '5')
+
+            text = format(1234.5, ".3m")
+            self.assertIn(sep, text)
+            self.assertIn(point, text)
+            self.assertEqual(text.replace(sep, ''), '1234' + point + '500')
         finally:
             locale.setlocale(locale.LC_ALL, oldloc)
 

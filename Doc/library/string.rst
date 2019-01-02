@@ -522,6 +522,10 @@ The available presentation types for floating point and decimal values are:
    |         | ``'E'`` if the number gets too large. The                |
    |         | representations of infinity and NaN are uppercased, too. |
    +---------+----------------------------------------------------------+
+   | ``'m'`` | Number. This is the same as ``'f'``, except that it uses |
+   |         | the current locale setting to insert the appropriate     |
+   |         | number separator characters.                             |
+   +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'g'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
    |         | number separator characters.                             |

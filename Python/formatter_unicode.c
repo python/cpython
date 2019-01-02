@@ -1060,6 +1060,9 @@ format_float_internal(PyObject *value,
         /* 'n' is the same as 'g', except for the locale used to
            format the result. We take care of that later. */
         type = 'g';
+    else if (type == 'm')
+        /* 'm' is for 'n', what 'f' is for 'g'. */
+        type = 'f';
 
     val = PyFloat_AsDouble(value);
     if (val == -1.0 && PyErr_Occurred())
@@ -1096,6 +1099,7 @@ format_float_internal(PyObject *value,
     if (format->sign != '+' && format->sign != ' '
         && format->width == -1
         && format->type != 'n'
+        && format->type != 'm'
         && !format->thousands_separators)
     {
         /* Fast path */
@@ -1125,7 +1129,7 @@ format_float_internal(PyObject *value,
     parse_number(unicode_tmp, index, index + n_digits, &n_remainder, &has_decimal);
 
     /* Determine the grouping, separator, and decimal point, if any. */
-    if (get_locale_info(format->type == 'n' ? LT_CURRENT_LOCALE :
+    if (get_locale_info(format->type == 'n' || format->type == 'm' ? LT_CURRENT_LOCALE :
                         format->thousands_separators,
                         &locale) == -1)
         goto done;
@@ -1250,6 +1254,9 @@ format_complex_internal(PyObject *value,
         /* 'n' is the same as 'g', except for the locale used to
            format the result. We take care of that later. */
         type = 'g';
+    else if (type == 'm')
+        /* 'm' is for 'n', what 'f' is for 'g'. */
+        type = 'f';
 
     if (precision < 0)
         precision = default_precision;
@@ -1542,6 +1549,7 @@ _PyFloat_FormatAdvancedWriter(_PyUnicodeWriter *writer,
     case 'F':
     case 'g':
     case 'G':
+    case 'm':
     case 'n':
     case '%':
         /* no conversion, already a float.  do the formatting */
@@ -1581,6 +1589,7 @@ _PyComplex_FormatAdvancedWriter(_PyUnicodeWriter *writer,
     case 'F':
     case 'g':
     case 'G':
+    case 'm':
     case 'n':
         /* no conversion, already a complex.  do the formatting */
         return format_complex_internal(obj, &format, writer);

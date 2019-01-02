@@ -235,7 +235,7 @@ def rand_fillchar():
 
 # Generate random format strings
 # [[fill]align][sign][#][0][width][.precision][type]
-def rand_format(fill, typespec='EeGgFfn%'):
+def rand_format(fill, typespec='EeGgFfmn%'):
     active = sorted(random.sample(range(7), random.randrange(8)))
     have_align = 0
     s = ''
@@ -277,7 +277,7 @@ def all_format_sep():
                             type = random.choice(('', 'E', 'e', 'G', 'g', 'F', 'f', '%'))
                             yield ''.join((fill, align, sign, zeropad, width, ',', prec, type))
 
-# Partially brute force all possible format strings with an 'n' specifier.
+# Partially brute force all possible format strings with an 'n' and 'm' specifiers.
 # [[fill]align][sign][#][0][width][,][.precision][type]
 def all_format_loc():
     for align in ('', '<', '>', '=', '^'):
@@ -288,7 +288,8 @@ def all_format_loc():
                     if align != '': zeropad = ''
                     for width in ['']+[str(y) for y in range(1, 20)]+['101']:
                         for prec in ['']+['.'+str(y) for y in range(1, 20)]:
-                            yield ''.join((fill, align, sign, zeropad, width, prec, 'n'))
+                            for type in ('n', 'm'):
+                                yield ''.join((fill, align, sign, zeropad, width, prec, type))
 
 # Generate random format strings with a unicode fill character
 # [[fill]align][sign][#][0][width][,][.precision][type]
@@ -338,5 +339,5 @@ def rand_locale():
         elif elem == 4: # prec
             s += '.'
             s += str(random.randrange(100))
-    s += 'n'
+    s += random.choice('mn')
     return s
