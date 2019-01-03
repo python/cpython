@@ -526,7 +526,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     destination path as arguments. By default, copy2() is used, but any
     function that supports the same signature (like copy()) can be used.
     
-    When this copy_function should recieve a srcentry (like copy2() and
+    When the copy_function should recieve a srcentry (like copy2() and
     copy()), set use_srcentry to true, otherwise the function will pass
     only the srcname to the copy_function.
 
