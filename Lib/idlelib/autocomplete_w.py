@@ -4,7 +4,7 @@ An auto-completion window for IDLE, used by the autocomplete extension
 import platform
 
 from tkinter import *
-from tkinter.ttk import Scrollbar
+from tkinter.ttk import Frame, Scrollbar
 
 from idlelib.autocomplete import COMPLETE_FILES, COMPLETE_ATTRIBUTES
 from idlelib.multicall import MC_SHIFT

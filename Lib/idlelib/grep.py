@@ -8,7 +8,7 @@ import os
 import sys
 
 from tkinter import StringVar, BooleanVar
-from tkinter.ttk import Checkbutton
+from tkinter.ttk import Checkbutton  # Frame imported in ...Base
 
 from idlelib.searchbase import SearchDialogBase
 from idlelib import searchengine
@@ -173,15 +173,18 @@ class GrepDialog(SearchDialogBase):
 
 def _grep_dialog(parent):  # htest #
     from tkinter import Toplevel, Text, SEL, END
-    from tkinter.ttk import Button
+    from tkinter.ttk import Frame, Button
     from idlelib.pyshell import PyShellFileList
+
     top = Toplevel(parent)
     top.title("Test GrepDialog")
     x, y = map(int, parent.geometry().split('+')[1:])
     top.geometry(f"+{x}+{y + 175}")
 
     flist = PyShellFileList(top)
-    text = Text(top, height=5)
+    frame = Frame(top)
+    frame.pack()
+    text = Text(frame, height=5)
     text.pack()
 
     def show_grep_dialog():
@@ -189,7 +192,7 @@ def _grep_dialog(parent):  # htest #
         grep(text, flist=flist)
         text.tag_remove(SEL, "1.0", END)
 
-    button = Button(top, text="Show GrepDialog", command=show_grep_dialog)
+    button = Button(frame, text="Show GrepDialog", command=show_grep_dialog)
     button.pack()
 
 if __name__ == "__main__":
