@@ -1,0 +1,1 @@
+`calltip` get signature properly formated for function with not docstring
