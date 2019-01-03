@@ -246,6 +246,9 @@ Directory and files operations
    each file. It will be called with the source path and the destination path
    as arguments. By default, :func:`shutil.copy2` is used, but any function
    that supports the same signature (like :func:`shutil.copy`) can be used.
+   If *use_srcentry* is true, the *copy_fucntion* gets the srcentry, otherwise 
+   it gets the srcname. By default the functions copy() and copy2() get the
+   srcentry.
 
    .. versionchanged:: 3.3
       Copy metadata when *symlinks* is false.
@@ -261,6 +264,8 @@ Directory and files operations
       Platform-specific fast-copy syscalls may be used internally in order to
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+      Added *use_srcentry* argument to control if the srcentry or the srcname
+      is passed to the *copy_fucntion*.
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None)
 
