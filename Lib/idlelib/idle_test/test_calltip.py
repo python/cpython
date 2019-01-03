@@ -99,6 +99,35 @@ non-overlapping occurrences o...''')
     drop_whitespace=True, break_on_hyphens=True, tabsize=8, *, max_lines=None,
     placeholder=' [...]')''')
 
+    def test_properly_formated(self):
+        def foo(s='a'*100):
+            pass
+
+        def bar(s='a'*100):
+            """Hello Guido"""
+            pass
+
+        def baz(s='a'*100, z='b'*100):
+            pass
+
+        indent = calltip._INDENT
+
+        str_foo = "(s='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n" + indent + "aaaaaaaaa"\
+                  "aaaaaaaaaa')"
+        str_bar = "(s='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n" + indent + "aaaaaaaaa"\
+                  "aaaaaaaaaa')\nHello Guido"
+        str_baz = "(s='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n" + indent + "aaaaaaaaa"\
+                  "aaaaaaaaaa', z='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"\
+                  "bbbbbbbbbbbbbbbbb\n" + indent + "bbbbbbbbbbbbbbbbbbbbbb"\
+                  "bbbbbbbbbbbbbbbbbbbbbb')"
+
+        self.assertEqual(calltip.get_argspec(foo), str_foo)
+        self.assertEqual(calltip.get_argspec(bar), str_bar)
+        self.assertEqual(calltip.get_argspec(baz), str_baz)
+
     def test_docline_truncation(self):
         def f(): pass
         f.__doc__ = 'a'*300
