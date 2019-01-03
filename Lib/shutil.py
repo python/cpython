@@ -432,7 +432,7 @@ def ignore_patterns(*patterns):
     return _ignore_patterns
 
 def _copytree(entries, src, dst, symlinks, ignore, copy_function,
-              ignore_dangling_symlinks, dirs_exist_ok=False):
+              ignore_dangling_symlinks, dirs_exist_ok, use_srcentry):
     if ignore is not None:
         ignored_names = ignore(src, set(os.listdir(src)))
     else:
@@ -440,7 +440,6 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
 
     os.makedirs(dst, exist_ok=dirs_exist_ok)
     errors = []
-    use_srcentry = copy_function is copy2 or copy_function is copy
 
     for srcentry in entries:
         if srcentry.name in ignored_names:
@@ -490,7 +489,8 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
     return dst
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
-             ignore_dangling_symlinks=False, dirs_exist_ok=False):
+             ignore_dangling_symlinks=False, dirs_exist_ok=False,
+             use_srcentry=True):
     """Recursively copy a directory tree and return the destination directory.
 
     dirs_exist_ok dictates whether to raise an exception in case dst or any
@@ -525,13 +525,18 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     to copy each file. It will be called with the source path and the
     destination path as arguments. By default, copy2() is used, but any
     function that supports the same signature (like copy()) can be used.
+    
+    When this copy_function should recieve a srcentry (like copy2() and
+    copy()), set use_srcentry to true, otherwise the function will pass
+    only the srcname to the copy_function.
 
     """
     with os.scandir(src) as entries:
         return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
                          ignore=ignore, copy_function=copy_function,
                          ignore_dangling_symlinks=ignore_dangling_symlinks,
-                         dirs_exist_ok=dirs_exist_ok)
+                         dirs_exist_ok=dirs_exist_ok,
+                         use_srcentry=use_srcentry)
 
 # version vulnerable to race conditions
 def _rmtree_unsafe(path, onerror):
