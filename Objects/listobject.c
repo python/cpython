@@ -1,6 +1,7 @@
 /* List object implementation */
 
 #include "Python.h"
+#include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "pycore_accu.h"
 
@@ -80,26 +81,15 @@ static int
 list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 {
     assert(self->ob_item == NULL);
+    assert(size > 0);
 
-    PyObject **items;
-    size_t allocated;
-
-    allocated = (size_t)size;
-    if (allocated > (size_t)PY_SSIZE_T_MAX / sizeof(PyObject *)) {
-        PyErr_NoMemory();
-        return -1;
-    }
-
-    if (size == 0) {
-        allocated = 0;
-    }
-    items = (PyObject **)PyMem_New(PyObject*, allocated);
+    PyObject **items = PyMem_New(PyObject*, size);
     if (items == NULL) {
         PyErr_NoMemory();
         return -1;
     }
     self->ob_item = items;
-    self->allocated = allocated;
+    self->allocated = size;
     return 0;
 }
 
@@ -2293,7 +2283,6 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         int ints_are_bounded = 1;
 
         /* Prove that assumption by checking every key. */
-        int i;
         for (i=0; i < saved_ob_size; i++) {
 
             if (keys_are_in_tuples &&
@@ -3355,23 +3344,25 @@ listreviter_setstate(listreviterobject *it, PyObject *state)
 static PyObject *
 listiter_reduce_general(void *_it, int forward)
 {
+    _Py_IDENTIFIER(iter);
+    _Py_IDENTIFIER(reversed);
     PyObject *list;
 
     /* the objects are not the same, index is of different types! */
     if (forward) {
         listiterobject *it = (listiterobject *)_it;
         if (it->it_seq)
-            return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
+            return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
                                  it->it_seq, it->it_index);
     } else {
         listreviterobject *it = (listreviterobject *)_it;
         if (it->it_seq)
-            return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("reversed"),
+            return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_reversed),
                                  it->it_seq, it->it_index);
     }
     /* empty iterator, create an empty list */
     list = PyList_New(0);
     if (list == NULL)
         return NULL;
-    return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltinId(&PyId_iter), list);
 }

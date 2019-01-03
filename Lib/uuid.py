@@ -728,10 +728,10 @@ def uuid1(node=None, clock_seq=None):
 
     global _last_timestamp
     import time
-    nanoseconds = int(time.time() * 1e9)
+    nanoseconds = time.time_ns()
     # 0x01b21dd213814000 is the number of 100-ns intervals between the
     # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
-    timestamp = int(nanoseconds/100) + 0x01b21dd213814000
+    timestamp = nanoseconds // 100 + 0x01b21dd213814000
     if _last_timestamp is not None and timestamp <= _last_timestamp:
         timestamp = _last_timestamp + 1
     _last_timestamp = timestamp

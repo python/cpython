@@ -101,7 +101,7 @@ accidentally creating a ``UserId`` in an invalid way::
    # 'output' is of type 'int', not 'UserId'
    output = UserId(23413) + UserId(54341)
 
-Note that these checks are enforced only by the static type checker. At runtime
+Note that these checks are enforced only by the static type checker. At runtime,
 the statement ``Derived = NewType('Derived', Base)`` will make ``Derived`` a
 function that immediately returns whatever parameter you pass it. That means
 the expression ``Derived(some_value)`` does not create a new class or introduce
@@ -688,6 +688,12 @@ The module defines the following classes, functions and decorators:
    A generic version of :class:`collections.defaultdict`.
 
    .. versionadded:: 3.5.2
+
+.. class:: OrderedDict(collections.OrderedDict, MutableMapping[KT, VT])
+
+   A generic version of :class:`collections.OrderedDict`.
+
+   .. versionadded:: 3.7.2
 
 .. class:: Counter(collections.Counter, Dict[T, int])
 

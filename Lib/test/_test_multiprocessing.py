@@ -155,11 +155,11 @@ class TimingWrapper(object):
         self.elapsed = None
 
     def __call__(self, *args, **kwds):
-        t = time.time()
+        t = time.monotonic()
         try:
             return self.func(*args, **kwds)
         finally:
-            self.elapsed = time.time() - t
+            self.elapsed = time.monotonic() - t
 
 #
 # Base class for test cases
@@ -1034,9 +1034,9 @@ class _TestQueue(BaseTestCase):
 
     def test_timeout(self):
         q = multiprocessing.Queue()
-        start = time.time()
+        start = time.monotonic()
         self.assertRaises(pyqueue.Empty, q.get, True, 0.200)
-        delta = time.time() - start
+        delta = time.monotonic() - start
         # bpo-30317: Tolerate a delta of 100 ms because of the bad clock
         # resolution on Windows (usually 15.6 ms). x86 Windows7 3.x once
         # failed because the delta was only 135.8 ms.
@@ -1440,9 +1440,9 @@ class _TestCondition(BaseTestCase):
         sem.release()
         with cond:
             expected = 0.1
-            dt = time.time()
+            dt = time.monotonic()
             result = cond.wait_for(lambda : state.value==4, timeout=expected)
-            dt = time.time() - dt
+            dt = time.monotonic() - dt
             # borrow logic in assertTimeout() from test/lock_tests.py
             if not result and expected * 0.6 < dt < expected * 10.0:
                 success.value = True
@@ -2471,6 +2471,7 @@ class _TestPool(BaseTestCase):
             with self.Pool(2) as p:
                 r = p.map_async(sqr, L)
                 self.assertEqual(r.get(), expected)
+            p.join()
             self.assertRaises(ValueError, p.map_async, sqr, L)
 
     @classmethod
@@ -2488,6 +2489,7 @@ class _TestPool(BaseTestCase):
                     exc = e
                 else:
                     self.fail('expected RuntimeError')
+            p.join()
             self.assertIs(type(exc), RuntimeError)
             self.assertEqual(exc.args, (123,))
             cause = exc.__cause__
@@ -2512,6 +2514,7 @@ class _TestPool(BaseTestCase):
                     self.fail('expected SayWhenError')
                 self.assertIs(type(exc), SayWhenError)
                 self.assertIs(exc.__cause__, None)
+            p.join()
 
     @classmethod
     def _test_wrapped_exception(cls):
@@ -2522,6 +2525,7 @@ class _TestPool(BaseTestCase):
         with self.Pool(1) as p:
             with self.assertRaises(RuntimeError):
                 p.apply(self._test_wrapped_exception)
+        p.join()
 
     def test_map_no_failfast(self):
         # Issue #23992: the fail-fast behaviour when an exception is raised
@@ -2529,7 +2533,7 @@ class _TestPool(BaseTestCase):
         # process would fill the result queue (after the result handler thread
         # terminated, hence not draining it anymore).
 
-        t_start = time.time()
+        t_start = time.monotonic()
 
         with self.assertRaises(ValueError):
             with self.Pool(2) as p:
@@ -2541,7 +2545,7 @@ class _TestPool(BaseTestCase):
                     p.join()
 
         # check that we indeed waited for all jobs
-        self.assertGreater(time.time() - t_start, 0.9)
+        self.assertGreater(time.monotonic() - t_start, 0.9)
 
     def test_release_task_refs(self):
         # Issue #29861: task arguments and results should not be kept
@@ -2557,12 +2561,38 @@ class _TestPool(BaseTestCase):
         # they were released too.
         self.assertEqual(CountedObject.n_instances, 0)
 
-    def test_del_pool(self):
-        p = self.Pool(1)
-        wr = weakref.ref(p)
-        del p
-        gc.collect()
-        self.assertIsNone(wr())
+    def test_enter(self):
+        if self.TYPE == 'manager':
+            self.skipTest("test not applicable to manager")
+
+        pool = self.Pool(1)
+        with pool:
+            pass
+            # call pool.terminate()
+        # pool is no longer running
+
+        with self.assertRaises(ValueError):
+            # bpo-35477: pool.__enter__() fails if the pool is not running
+            with pool:
+                pass
+        pool.join()
+
+    def test_resource_warning(self):
+        if self.TYPE == 'manager':
+            self.skipTest("test not applicable to manager")
+
+        pool = self.Pool(1)
+        pool.terminate()
+        pool.join()
+
+        # force state to RUN to emit ResourceWarning in __del__()
+        pool._state = multiprocessing.pool.RUN
+
+        with support.check_warnings(('unclosed running multiprocessing pool',
+                                     ResourceWarning)):
+            pool = None
+            support.gc_collect()
+
 
 def raising():
     raise KeyError("key")
@@ -4094,9 +4124,9 @@ class TestWait(unittest.TestCase):
         expected = 5
         a, b = multiprocessing.Pipe()
 
-        start = time.time()
+        start = time.monotonic()
         res = wait([a, b], expected)
-        delta = time.time() - start
+        delta = time.monotonic() - start
 
         self.assertEqual(res, [])
         self.assertLess(delta, expected * 2)
@@ -4104,9 +4134,9 @@ class TestWait(unittest.TestCase):
 
         b.send(None)
 
-        start = time.time()
+        start = time.monotonic()
         res = wait([a, b], 20)
-        delta = time.time() - start
+        delta = time.monotonic() - start
 
         self.assertEqual(res, [a])
         self.assertLess(delta, 0.4)
@@ -4130,9 +4160,9 @@ class TestWait(unittest.TestCase):
         self.assertIsInstance(p.sentinel, int)
         self.assertTrue(sem.acquire(timeout=20))
 
-        start = time.time()
+        start = time.monotonic()
         res = wait([a, p.sentinel, b], expected + 20)
-        delta = time.time() - start
+        delta = time.monotonic() - start
 
         self.assertEqual(res, [p.sentinel])
         self.assertLess(delta, expected + 2)
@@ -4140,18 +4170,18 @@ class TestWait(unittest.TestCase):
 
         a.send(None)
 
-        start = time.time()
+        start = time.monotonic()
         res = wait([a, p.sentinel, b], 20)
-        delta = time.time() - start
+        delta = time.monotonic() - start
 
         self.assertEqual(sorted_(res), sorted_([p.sentinel, b]))
         self.assertLess(delta, 0.4)
 
         b.send(None)
 
-        start = time.time()
+        start = time.monotonic()
         res = wait([a, p.sentinel, b], 20)
-        delta = time.time() - start
+        delta = time.monotonic() - start
 
         self.assertEqual(sorted_(res), sorted_([a, p.sentinel, b]))
         self.assertLess(delta, 0.4)
@@ -4162,9 +4192,9 @@ class TestWait(unittest.TestCase):
     def test_neg_timeout(self):
         from multiprocessing.connection import wait
         a, b = multiprocessing.Pipe()
-        t = time.time()
+        t = time.monotonic()
         res = wait([a], timeout=-1)
-        t = time.time() - t
+        t = time.monotonic() - t
         self.assertEqual(res, [])
         self.assertLess(t, 1)
         a.close()

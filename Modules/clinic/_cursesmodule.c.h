@@ -233,7 +233,7 @@ PyDoc_STRVAR(_curses_window_bkgd__doc__,
 "    Background attributes.");
 
 #define _CURSES_WINDOW_BKGD_METHODDEF    \
-    {"bkgd", (PyCFunction)_curses_window_bkgd, METH_FASTCALL, _curses_window_bkgd__doc__},
+    {"bkgd", (PyCFunction)(void(*)(void))_curses_window_bkgd, METH_FASTCALL, _curses_window_bkgd__doc__},
 
 static PyObject *
 _curses_window_bkgd_impl(PyCursesWindowObject *self, PyObject *ch, long attr);
@@ -273,7 +273,13 @@ _curses_window_attroff(PyCursesWindowObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     long attr;
 
-    if (!PyArg_Parse(arg, "l:attroff", &attr)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    attr = PyLong_AsLong(arg);
+    if (attr == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_window_attroff_impl(self, attr);
@@ -300,7 +306,13 @@ _curses_window_attron(PyCursesWindowObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     long attr;
 
-    if (!PyArg_Parse(arg, "l:attron", &attr)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    attr = PyLong_AsLong(arg);
+    if (attr == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_window_attron_impl(self, attr);
@@ -327,7 +339,13 @@ _curses_window_attrset(PyCursesWindowObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     long attr;
 
-    if (!PyArg_Parse(arg, "l:attrset", &attr)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    attr = PyLong_AsLong(arg);
+    if (attr == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_window_attrset_impl(self, attr);
@@ -348,7 +366,7 @@ PyDoc_STRVAR(_curses_window_bkgdset__doc__,
 "    Background attributes.");
 
 #define _CURSES_WINDOW_BKGDSET_METHODDEF    \
-    {"bkgdset", (PyCFunction)_curses_window_bkgdset, METH_FASTCALL, _curses_window_bkgdset__doc__},
+    {"bkgdset", (PyCFunction)(void(*)(void))_curses_window_bkgdset, METH_FASTCALL, _curses_window_bkgdset__doc__},
 
 static PyObject *
 _curses_window_bkgdset_impl(PyCursesWindowObject *self, PyObject *ch,
@@ -403,7 +421,7 @@ PyDoc_STRVAR(_curses_window_border__doc__,
 "used for that parameter.");
 
 #define _CURSES_WINDOW_BORDER_METHODDEF    \
-    {"border", (PyCFunction)_curses_window_border, METH_FASTCALL, _curses_window_border__doc__},
+    {"border", (PyCFunction)(void(*)(void))_curses_window_border, METH_FASTCALL, _curses_window_border__doc__},
 
 static PyObject *
 _curses_window_border_impl(PyCursesWindowObject *self, PyObject *ls,
@@ -592,7 +610,7 @@ PyDoc_STRVAR(_curses_window_echochar__doc__,
 "    Attributes for the character.");
 
 #define _CURSES_WINDOW_ECHOCHAR_METHODDEF    \
-    {"echochar", (PyCFunction)_curses_window_echochar, METH_FASTCALL, _curses_window_echochar__doc__},
+    {"echochar", (PyCFunction)(void(*)(void))_curses_window_echochar, METH_FASTCALL, _curses_window_echochar__doc__},
 
 static PyObject *
 _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
@@ -629,7 +647,7 @@ PyDoc_STRVAR(_curses_window_enclose__doc__,
 "    X-coordinate.");
 
 #define _CURSES_WINDOW_ENCLOSE_METHODDEF    \
-    {"enclose", (PyCFunction)_curses_window_enclose, METH_FASTCALL, _curses_window_enclose__doc__},
+    {"enclose", (PyCFunction)(void(*)(void))_curses_window_enclose, METH_FASTCALL, _curses_window_enclose__doc__},
 
 static long
 _curses_window_enclose_impl(PyCursesWindowObject *self, int y, int x);
@@ -1198,7 +1216,13 @@ _curses_window_is_linetouched(PyCursesWindowObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int line;
 
-    if (!PyArg_Parse(arg, "i:is_linetouched", &line)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    line = _PyLong_AsInt(arg);
+    if (line == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_window_is_linetouched_impl(self, line);
@@ -1426,7 +1450,7 @@ PyDoc_STRVAR(_curses_window_redrawln__doc__,
 "They should be completely redrawn on the next refresh() call.");
 
 #define _CURSES_WINDOW_REDRAWLN_METHODDEF    \
-    {"redrawln", (PyCFunction)_curses_window_redrawln, METH_FASTCALL, _curses_window_redrawln__doc__},
+    {"redrawln", (PyCFunction)(void(*)(void))_curses_window_redrawln, METH_FASTCALL, _curses_window_redrawln__doc__},
 
 static PyObject *
 _curses_window_redrawln_impl(PyCursesWindowObject *self, int beg, int num);
@@ -1517,7 +1541,7 @@ PyDoc_STRVAR(_curses_window_setscrreg__doc__,
 "All scrolling actions will take place in this region.");
 
 #define _CURSES_WINDOW_SETSCRREG_METHODDEF    \
-    {"setscrreg", (PyCFunction)_curses_window_setscrreg, METH_FASTCALL, _curses_window_setscrreg__doc__},
+    {"setscrreg", (PyCFunction)(void(*)(void))_curses_window_setscrreg, METH_FASTCALL, _curses_window_setscrreg__doc__},
 
 static PyObject *
 _curses_window_setscrreg_impl(PyCursesWindowObject *self, int top,
@@ -1843,7 +1867,7 @@ PyDoc_STRVAR(_curses_cbreak__doc__,
 "Calling first raw() then cbreak() leaves the terminal in cbreak mode.");
 
 #define _CURSES_CBREAK_METHODDEF    \
-    {"cbreak", (PyCFunction)_curses_cbreak, METH_FASTCALL, _curses_cbreak__doc__},
+    {"cbreak", (PyCFunction)(void(*)(void))_curses_cbreak, METH_FASTCALL, _curses_cbreak__doc__},
 
 static PyObject *
 _curses_cbreak_impl(PyObject *module, int flag);
@@ -1888,8 +1912,29 @@ _curses_color_content(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     short color_number;
 
-    if (!PyArg_Parse(arg, "h:color_content", &color_number)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
         goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(arg);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            color_number = (short) ival;
+        }
     }
     return_value = _curses_color_content_impl(module, color_number);
 
@@ -1921,8 +1966,29 @@ _curses_color_pair(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     short color_number;
 
-    if (!PyArg_Parse(arg, "h:color_pair", &color_number)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
         goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(arg);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            color_number = (short) ival;
+        }
     }
     return_value = _curses_color_pair_impl(module, color_number);
 
@@ -1956,7 +2022,13 @@ _curses_curs_set(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int visibility;
 
-    if (!PyArg_Parse(arg, "i:curs_set", &visibility)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    visibility = _PyLong_AsInt(arg);
+    if (visibility == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_curs_set_impl(module, visibility);
@@ -2030,7 +2102,13 @@ _curses_delay_output(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int ms;
 
-    if (!PyArg_Parse(arg, "i:delay_output", &ms)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    ms = _PyLong_AsInt(arg);
+    if (ms == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_delay_output_impl(module, ms);
@@ -2069,7 +2147,7 @@ PyDoc_STRVAR(_curses_echo__doc__,
 "In echo mode, each character input is echoed to the screen as it is entered.");
 
 #define _CURSES_ECHO_METHODDEF    \
-    {"echo", (PyCFunction)_curses_echo, METH_FASTCALL, _curses_echo__doc__},
+    {"echo", (PyCFunction)(void(*)(void))_curses_echo, METH_FASTCALL, _curses_echo__doc__},
 
 static PyObject *
 _curses_echo_impl(PyObject *module, int flag);
@@ -2227,7 +2305,7 @@ PyDoc_STRVAR(_curses_ungetmouse__doc__,
 "The following getmouse() will return the given state data.");
 
 #define _CURSES_UNGETMOUSE_METHODDEF    \
-    {"ungetmouse", (PyCFunction)_curses_ungetmouse, METH_FASTCALL, _curses_ungetmouse__doc__},
+    {"ungetmouse", (PyCFunction)(void(*)(void))_curses_ungetmouse, METH_FASTCALL, _curses_ungetmouse__doc__},
 
 static PyObject *
 _curses_ungetmouse_impl(PyObject *module, short id, int x, int y, int z,
@@ -2290,8 +2368,29 @@ _curses_halfdelay(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     unsigned char tenths;
 
-    if (!PyArg_Parse(arg, "b:halfdelay", &tenths)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
         goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(arg);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < 0) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "unsigned byte integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > UCHAR_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "unsigned byte integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            tenths = (unsigned char) ival;
+        }
     }
     return_value = _curses_halfdelay_impl(module, tenths);
 
@@ -2376,7 +2475,13 @@ _curses_has_key(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int key;
 
-    if (!PyArg_Parse(arg, "i:has_key", &key)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    key = _PyLong_AsInt(arg);
+    if (key == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_has_key_impl(module, key);
@@ -2407,7 +2512,7 @@ PyDoc_STRVAR(_curses_init_color__doc__,
 "most terminals; it is active only if can_change_color() returns 1.");
 
 #define _CURSES_INIT_COLOR_METHODDEF    \
-    {"init_color", (PyCFunction)_curses_init_color, METH_FASTCALL, _curses_init_color__doc__},
+    {"init_color", (PyCFunction)(void(*)(void))_curses_init_color, METH_FASTCALL, _curses_init_color__doc__},
 
 static PyObject *
 _curses_init_color_impl(PyObject *module, short color_number, short r,
@@ -2449,7 +2554,7 @@ PyDoc_STRVAR(_curses_init_pair__doc__,
 "all occurrences of that color-pair are changed to the new definition.");
 
 #define _CURSES_INIT_PAIR_METHODDEF    \
-    {"init_pair", (PyCFunction)_curses_init_pair, METH_FASTCALL, _curses_init_pair__doc__},
+    {"init_pair", (PyCFunction)(void(*)(void))_curses_init_pair, METH_FASTCALL, _curses_init_pair__doc__},
 
 static PyObject *
 _curses_init_pair_impl(PyObject *module, short pair_number, short fg,
@@ -2507,7 +2612,7 @@ PyDoc_STRVAR(_curses_setupterm__doc__,
 "    If not supplied, the file descriptor for sys.stdout will be used.");
 
 #define _CURSES_SETUPTERM_METHODDEF    \
-    {"setupterm", (PyCFunction)_curses_setupterm, METH_FASTCALL|METH_KEYWORDS, _curses_setupterm__doc__},
+    {"setupterm", (PyCFunction)(void(*)(void))_curses_setupterm, METH_FASTCALL|METH_KEYWORDS, _curses_setupterm__doc__},
 
 static PyObject *
 _curses_setupterm_impl(PyObject *module, const char *term, int fd);
@@ -2548,7 +2653,13 @@ _curses_intrflush(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    if (!PyArg_Parse(arg, "i:intrflush", &flag)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flag = _PyLong_AsInt(arg);
+    if (flag == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_intrflush_impl(module, flag);
@@ -2589,7 +2700,7 @@ PyDoc_STRVAR(_curses_is_term_resized__doc__,
 "    Width.");
 
 #define _CURSES_IS_TERM_RESIZED_METHODDEF    \
-    {"is_term_resized", (PyCFunction)_curses_is_term_resized, METH_FASTCALL, _curses_is_term_resized__doc__},
+    {"is_term_resized", (PyCFunction)(void(*)(void))_curses_is_term_resized, METH_FASTCALL, _curses_is_term_resized__doc__},
 
 static PyObject *
 _curses_is_term_resized_impl(PyObject *module, int nlines, int ncols);
@@ -2634,7 +2745,13 @@ _curses_keyname(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int key;
 
-    if (!PyArg_Parse(arg, "i:keyname", &key)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    key = _PyLong_AsInt(arg);
+    if (key == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_keyname_impl(module, key);
@@ -2703,7 +2820,13 @@ _curses_meta(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int yes;
 
-    if (!PyArg_Parse(arg, "i:meta", &yes)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    yes = _PyLong_AsInt(arg);
+    if (yes == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_meta_impl(module, yes);
@@ -2739,7 +2862,13 @@ _curses_mouseinterval(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int interval;
 
-    if (!PyArg_Parse(arg, "i:mouseinterval", &interval)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    interval = _PyLong_AsInt(arg);
+    if (interval == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_mouseinterval_impl(module, interval);
@@ -2775,9 +2904,11 @@ _curses_mousemask(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     unsigned long newmask;
 
-    if (!PyArg_Parse(arg, "k:mousemask", &newmask)) {
+    if (!PyLong_Check(arg)) {
+        _PyArg_BadArgument("mousemask", "int", arg);
         goto exit;
     }
+    newmask = PyLong_AsUnsignedLongMask(arg);
     return_value = _curses_mousemask_impl(module, newmask);
 
 exit:
@@ -2807,7 +2938,13 @@ _curses_napms(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int ms;
 
-    if (!PyArg_Parse(arg, "i:napms", &ms)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    ms = _PyLong_AsInt(arg);
+    if (ms == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_napms_impl(module, ms);
@@ -2828,7 +2965,7 @@ PyDoc_STRVAR(_curses_newpad__doc__,
 "    Width.");
 
 #define _CURSES_NEWPAD_METHODDEF    \
-    {"newpad", (PyCFunction)_curses_newpad, METH_FASTCALL, _curses_newpad__doc__},
+    {"newpad", (PyCFunction)(void(*)(void))_curses_newpad, METH_FASTCALL, _curses_newpad__doc__},
 
 static PyObject *
 _curses_newpad_impl(PyObject *module, int nlines, int ncols);
@@ -2918,7 +3055,7 @@ PyDoc_STRVAR(_curses_nl__doc__,
 "newline into return and line-feed on output.  Newline mode is initially on.");
 
 #define _CURSES_NL_METHODDEF    \
-    {"nl", (PyCFunction)_curses_nl, METH_FASTCALL, _curses_nl__doc__},
+    {"nl", (PyCFunction)(void(*)(void))_curses_nl, METH_FASTCALL, _curses_nl__doc__},
 
 static PyObject *
 _curses_nl_impl(PyObject *module, int flag);
@@ -3062,8 +3199,29 @@ _curses_pair_content(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     short pair_number;
 
-    if (!PyArg_Parse(arg, "h:pair_content", &pair_number)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
         goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(arg);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            pair_number = (short) ival;
+        }
     }
     return_value = _curses_pair_content_impl(module, pair_number);
 
@@ -3091,7 +3249,13 @@ _curses_pair_number(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int attr;
 
-    if (!PyArg_Parse(arg, "i:pair_number", &attr)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    attr = _PyLong_AsInt(arg);
+    if (attr == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_pair_number_impl(module, attr);
@@ -3142,7 +3306,7 @@ PyDoc_STRVAR(_curses_qiflush__doc__,
 "will be flushed when the INTR, QUIT and SUSP characters are read.");
 
 #define _CURSES_QIFLUSH_METHODDEF    \
-    {"qiflush", (PyCFunction)_curses_qiflush, METH_FASTCALL, _curses_qiflush__doc__},
+    {"qiflush", (PyCFunction)(void(*)(void))_curses_qiflush, METH_FASTCALL, _curses_qiflush__doc__},
 
 static PyObject *
 _curses_qiflush_impl(PyObject *module, int flag);
@@ -3208,7 +3372,7 @@ PyDoc_STRVAR(_curses_raw__doc__,
 "curses input functions one by one.");
 
 #define _CURSES_RAW_METHODDEF    \
-    {"raw", (PyCFunction)_curses_raw, METH_FASTCALL, _curses_raw__doc__},
+    {"raw", (PyCFunction)(void(*)(void))_curses_raw, METH_FASTCALL, _curses_raw__doc__},
 
 static PyObject *
 _curses_raw_impl(PyObject *module, int flag);
@@ -3300,7 +3464,7 @@ PyDoc_STRVAR(_curses_resizeterm__doc__,
 "window dimensions (in particular the SIGWINCH handler).");
 
 #define _CURSES_RESIZETERM_METHODDEF    \
-    {"resizeterm", (PyCFunction)_curses_resizeterm, METH_FASTCALL, _curses_resizeterm__doc__},
+    {"resizeterm", (PyCFunction)(void(*)(void))_curses_resizeterm, METH_FASTCALL, _curses_resizeterm__doc__},
 
 static PyObject *
 _curses_resizeterm_impl(PyObject *module, int nlines, int ncols);
@@ -3344,7 +3508,7 @@ PyDoc_STRVAR(_curses_resize_term__doc__,
 "without additional interaction with the application.");
 
 #define _CURSES_RESIZE_TERM_METHODDEF    \
-    {"resize_term", (PyCFunction)_curses_resize_term, METH_FASTCALL, _curses_resize_term__doc__},
+    {"resize_term", (PyCFunction)(void(*)(void))_curses_resize_term, METH_FASTCALL, _curses_resize_term__doc__},
 
 static PyObject *
 _curses_resize_term_impl(PyObject *module, int nlines, int ncols);
@@ -3402,7 +3566,7 @@ PyDoc_STRVAR(_curses_setsyx__doc__,
 "If y and x are both -1, then leaveok is set.");
 
 #define _CURSES_SETSYX_METHODDEF    \
-    {"setsyx", (PyCFunction)_curses_setsyx, METH_FASTCALL, _curses_setsyx__doc__},
+    {"setsyx", (PyCFunction)(void(*)(void))_curses_setsyx, METH_FASTCALL, _curses_setsyx__doc__},
 
 static PyObject *
 _curses_setsyx_impl(PyObject *module, int y, int x);
@@ -3511,7 +3675,17 @@ _curses_tigetflag(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     const char *capname;
 
-    if (!PyArg_Parse(arg, "s:tigetflag", &capname)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("tigetflag", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t capname_length;
+    capname = PyUnicode_AsUTF8AndSize(arg, &capname_length);
+    if (capname == NULL) {
+        goto exit;
+    }
+    if (strlen(capname) != (size_t)capname_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _curses_tigetflag_impl(module, capname);
@@ -3544,7 +3718,17 @@ _curses_tigetnum(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     const char *capname;
 
-    if (!PyArg_Parse(arg, "s:tigetnum", &capname)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("tigetnum", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t capname_length;
+    capname = PyUnicode_AsUTF8AndSize(arg, &capname_length);
+    if (capname == NULL) {
+        goto exit;
+    }
+    if (strlen(capname) != (size_t)capname_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _curses_tigetnum_impl(module, capname);
@@ -3577,7 +3761,17 @@ _curses_tigetstr(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     const char *capname;
 
-    if (!PyArg_Parse(arg, "s:tigetstr", &capname)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("tigetstr", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t capname_length;
+    capname = PyUnicode_AsUTF8AndSize(arg, &capname_length);
+    if (capname == NULL) {
+        goto exit;
+    }
+    if (strlen(capname) != (size_t)capname_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _curses_tigetstr_impl(module, capname);
@@ -3597,7 +3791,7 @@ PyDoc_STRVAR(_curses_tparm__doc__,
 "    Parameterized byte string obtained from the terminfo database.");
 
 #define _CURSES_TPARM_METHODDEF    \
-    {"tparm", (PyCFunction)_curses_tparm, METH_FASTCALL, _curses_tparm__doc__},
+    {"tparm", (PyCFunction)(void(*)(void))_curses_tparm, METH_FASTCALL, _curses_tparm__doc__},
 
 static PyObject *
 _curses_tparm_impl(PyObject *module, const char *str, int i1, int i2, int i3,
@@ -3653,7 +3847,13 @@ _curses_typeahead(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "i:typeahead", &fd)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_typeahead_impl(module, fd);
@@ -3727,7 +3927,13 @@ _curses_use_env(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    if (!PyArg_Parse(arg, "i:use_env", &flag)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flag = _PyLong_AsInt(arg);
+    if (flag == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_use_env_impl(module, flag);
@@ -3838,4 +4044,4 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=763ffe3abc3a97c7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a2bbced3c5d29d64 input=a9049054013a1b77]*/
