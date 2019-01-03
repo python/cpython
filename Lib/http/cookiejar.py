@@ -992,7 +992,7 @@ class DefaultCookiePolicy(CookiePolicy):
             req_path = request_path(request)
             if ((cookie.version > 0 or
                  (cookie.version == 0 and self.strict_ns_set_path)) and
-                not req_path.startswith(cookie.path)):
+                not self.path_return_ok(cookie.path, request)):
                 _debug("   path attribute %s is not a prefix of request "
                        "path %s", cookie.path, req_path)
                 return False

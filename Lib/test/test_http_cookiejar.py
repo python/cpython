@@ -694,25 +694,27 @@ class CookieTests(unittest.TestCase):
 
     def test_path_prefix_match(self):
         pol = DefaultCookiePolicy()
+        strict_ns_path_pol = DefaultCookiePolicy(strict_ns_set_path=True)
 
         c = CookieJar(pol)
-        url = "http://bar.com/foo"
-        interact_netscape(c, url, 'spam=eggs; Path=/foo')
+        base_url = "http://bar.com"
+        interact_netscape(c, base_url, 'spam=eggs; Path=/foo')
+        cookie = c._cookies['bar.com']['/foo']['spam']
 
-        h = interact_netscape(c, url)
-        self.assertIn('spam=eggs', h, "path not returned")
-
-        h = interact_netscape(c, "http://bar.com/foo/bar")
-        self.assertIn('spam=eggs', h, "path not returned")
-
-        h = interact_netscape(c, "http://bar.com/foo/bar/")
-        self.assertIn('spam=eggs', h, "path not returned")
-
-        h = interact_netscape(c, "http://bar.com/")
-        self.assertNotIn('spam=eggs', h, "path returned with /")
-
-        h = interact_netscape(c, "http://bar.com/foobad/foo")
-        self.assertNotIn('spam=eggs', h, "path returned with invalid prefix")
+        for path, ok in [('/foo', True),
+                         ('/foo/', True),
+                         ('/foo/bar', True),
+                         ('/', False),
+                         ('/foobad/foo', False)]:
+            url = f'{base_url}{path}'
+            req = urllib.request.Request(url)
+            h = interact_netscape(c, url)
+            if ok:
+                self.assertIn('spam=eggs', h, f"cookie not set for {path}")
+                self.assertTrue(strict_ns_path_pol.set_ok_path(cookie, req))
+            else:
+                self.assertNotIn('spam=eggs', h, f"cookie set for {path}")
+                self.assertFalse(strict_ns_path_pol.set_ok_path(cookie, req))
 
     def test_request_port(self):
         req = urllib.request.Request("http://www.acme.com:1234/",
