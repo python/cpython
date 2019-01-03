@@ -88,7 +88,7 @@ test_nocond: or_test | lambdef_nocond
 lambdef: 'anonimowa' [varargslist] ':' test
 lambdef_nocond: 'anonimowa' [varargslist] ':' test_nocond
 or_test: and_test ('lub' and_test)*
-and_test: not_test ('ai' not_test)*
+and_test: not_test ('i' not_test)*
 not_test: 'nie' not_test | comparison
 comparison: expr (comp_op expr)*
 # <> isn't actually a valid comparison operator in Python. It's here for the
