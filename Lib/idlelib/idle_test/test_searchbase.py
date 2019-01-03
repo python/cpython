@@ -101,7 +101,7 @@ class SearchDialogBaseTest(unittest.TestCase):
         self.assertEqual(str(type(frame)), "<class 'tkinter.ttk.Frame'>")
         # self.assertIsInstance(frame, Frame) fails when test is run by
         # test_idle not run from IDLE editor.  See issue 33987 PR.
- 
+
         frame, label = self.dialog.make_frame('testlabel')
         self.assertEqual(label['text'], 'testlabel')
 
