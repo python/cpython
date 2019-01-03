@@ -248,8 +248,8 @@ Directory and files operations
    each file. It will be called with the source path and the destination path
    as arguments. By default, :func:`shutil.copy2` is used, but any function
    that supports the same signature (like :func:`shutil.copy`) can be used.
-   If *use_srcentry* is true, the *copy_function* gets the srcentry, otherwise 
-   it gets the srcname. The functions copy() and copy2() can handle the 
+   If *use_srcentry* is true, the *copy_function* gets the srcentry, otherwise
+   it gets the srcname. The functions copy() and copy2() can handle the
    srcentry.
 
    .. versionchanged:: 3.3
