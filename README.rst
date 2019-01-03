@@ -1,27 +1,6 @@
 This is Zaskroniec version 3.8.0 alpha 0
 ====================================
 
-.. image:: https://travis-ci.org/zaskroniec/czaskroniec.svg?branch=master
-   :alt: CZaskroniec build status on Travis CI
-   :target: https://travis-ci.org/zaskroniec/czaskroniec
-
-.. image:: https://ci.appveyor.com/api/projects/status/4mew1a93xdkbf5ua/branch/master?svg=true
-   :alt: CZaskroniec build status on Appveyor
-   :target: https://ci.appveyor.com/project/zaskroniec/czaskroniec/branch/master
-
-.. image:: https://dev.azure.com/zaskroniec/czaskroniec/_apis/build/status/Azure%20Pipelines%20CI?branchName=master
-   :alt: CZaskroniec build status on Azure DevOps
-   :target: https://dev.azure.com/zaskroniec/czaskroniec/_build/latest?definitionId=4&branchName=master
-
-.. image:: https://codecov.io/gh/zaskroniec/czaskroniec/branch/master/graph/badge.svg
-   :alt: CZaskroniec code coverage on Codecov
-   :target: https://codecov.io/gh/zaskroniec/czaskroniec
-
-.. image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
-   :alt: Zaskroniec Zulip chat
-   :target: https://zaskroniec.zulipchat.com
-
-
 Copyright (c) 2001-2019 Zaskroniec Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
