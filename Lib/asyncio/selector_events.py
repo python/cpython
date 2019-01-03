@@ -434,7 +434,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         fut.add_done_callback(
             functools.partial(self._sock_write_done, fd))
         # use a trick with a list in closure to store a mutable state
-        self.add_writer(fd, self._sock_sendall, fut, sock, data, [n])
+        self.add_writer(fd, self._sock_sendall, fut, sock,
+                        memoryview(data), [n])
         return await fut
 
     def _sock_sendall(self, fut, sock, data, pos):
