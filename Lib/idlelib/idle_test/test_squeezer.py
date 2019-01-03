@@ -79,8 +79,15 @@ class CountLinesTest(unittest.TestCase):
         self.check(expected=7, text=text, linewidth=20)
         self.check(expected=11, text=text, linewidth=10)
 
+
 class SqueezerTest(unittest.TestCase):
     """Tests for the Squeezer class."""
+    def tearDown(self):
+        # Clean up the Squeezer class's reference to its instance,
+        # to avoid side-effects from one test case upon another.
+        if Squeezer._instance_weakref is not None:
+            Squeezer._instance_weakref = None
+
     def make_mock_editor_window(self, with_text_widget=False):
         """Create a mock EditorWindow instance."""
         editwin = NonCallableMagicMock()
@@ -314,6 +321,10 @@ class SqueezerTest(unittest.TestCase):
                                2 * orig_zero_char_width, 0)
         self.assertEqual(squeezer.auto_squeeze_min_lines,
                          new_auto_squeeze_min_lines)
+
+    def test_reload_no_squeezer_instances(self):
+        """Test that Squeezer.reload() runs without any instances existing."""
+        Squeezer.reload()
 
 
 class ExpandingButtonTest(unittest.TestCase):
