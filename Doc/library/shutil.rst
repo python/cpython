@@ -267,7 +267,7 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
       Added *use_srcentry* parameter to control if the srcentry or the srcname
-      is passed to the *copy_fucntion*.
+      is passed to the *copy_function*.
 
    .. versionadded:: 3.8
       The *dirs_exist_ok* parameter.
