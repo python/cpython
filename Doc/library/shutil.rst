@@ -210,7 +210,7 @@ Directory and files operations
 
 .. function:: copytree(src, dst, symlinks=False, ignore=None, \
               copy_function=copy2, ignore_dangling_symlinks=False, \
-              dirs_exist_ok=False)
+              dirs_exist_ok=False, use_srcentry=True)
 
    Recursively copy an entire directory tree rooted at *src* to a directory
    named *dst* and return the destination directory. *dirs_exist_ok* dictates
@@ -248,6 +248,9 @@ Directory and files operations
    each file. It will be called with the source path and the destination path
    as arguments. By default, :func:`shutil.copy2` is used, but any function
    that supports the same signature (like :func:`shutil.copy`) can be used.
+   If *use_srcentry* is true, the *copy_function* gets the srcentry, otherwise 
+   it gets the srcname. The functions copy() and copy2() can handle the 
+   srcentry.
 
    .. versionchanged:: 3.3
       Copy metadata when *symlinks* is false.
@@ -263,6 +266,8 @@ Directory and files operations
       Platform-specific fast-copy syscalls may be used internally in order to
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+      Added *use_srcentry* parameter to control if the srcentry or the srcname
+      is passed to the *copy_fucntion*.
 
    .. versionadded:: 3.8
       The *dirs_exist_ok* parameter.
