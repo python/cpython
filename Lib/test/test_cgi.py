@@ -368,7 +368,7 @@ Test
         }
         fields = cgi.FieldStorage(fp, environ=env)
 
-        assert len(fields["my-arg"].file.read()) == 5
+        self.assertEqual(len(fields["my-arg"].file.read()), 5)
 
     def test_fieldstorage_as_context_manager(self):
         fp = BytesIO(b'x' * 10)
