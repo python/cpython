@@ -81,12 +81,18 @@ class CountLinesTest(unittest.TestCase):
 
 class SqueezerTest(unittest.TestCase):
     """Tests for the Squeezer class."""
-    def make_mock_editor_window(self):
+    def make_mock_editor_window(self, with_text_widget=False):
         """Create a mock EditorWindow instance."""
         editwin = NonCallableMagicMock()
         # isinstance(editwin, PyShell) must be true for Squeezer to enable
         # auto-squeezing; in practice this will always be true.
         editwin.__class__ = PyShell
+
+        if with_text_widget:
+            editwin.root = get_test_tk_root(self)
+            text_widget = self.make_text_widget(root=editwin.root)
+            editwin.text = editwin.per.bottom = text_widget
+
         return editwin
 
     def make_squeezer_instance(self, editor_window=None):
@@ -97,12 +103,19 @@ class SqueezerTest(unittest.TestCase):
         squeezer.get_line_width = Mock(return_value=80)
         return squeezer
 
-    def make_text_widget(self):
-        root = get_test_tk_root(self)
+    def make_text_widget(self, root=None):
+        if root is None:
+            root = get_test_tk_root(self)
         text_widget = Text(root)
         text_widget["font"] = idleConf.GetFont(root, "main", "EditorWindow")
         text_widget.mark_set("iomark", "1.0")
         return text_widget
+
+    def set_idleconf_option_with_cleanup(self, configType, section, option, value):
+        prev_val = idleConf.GetOption(configType, section, option)
+        idleConf.SetOption(configType, section, option, value)
+        self.addCleanup(idleConf.SetOption,
+                        configType, section, option, prev_val)
 
     def test_count_lines(self):
         """Test Squeezer.count_lines() with various inputs."""
@@ -185,10 +198,8 @@ class SqueezerTest(unittest.TestCase):
 
     def test_auto_squeeze(self):
         """Test that the auto-squeezing creates an ExpandingButton properly."""
-        text_widget = self.make_text_widget()
-
-        editwin = self.make_mock_editor_window()
-        editwin.text = text_widget
+        editwin = self.make_mock_editor_window(with_text_widget=True)
+        text_widget = editwin.text
         squeezer = self.make_squeezer_instance(editwin)
         squeezer.auto_squeeze_min_lines = 5
         squeezer.count_lines = Mock(return_value=6)
@@ -201,10 +212,8 @@ class SqueezerTest(unittest.TestCase):
         """Test the squeeze_current_text event."""
         # Squeezing text should work for both stdout and stderr.
         for tag_name in ["stdout", "stderr"]:
-            text_widget = self.make_text_widget()
-
-            editwin = self.make_mock_editor_window()
-            editwin.text = editwin.per.bottom = text_widget
+            editwin = self.make_mock_editor_window(with_text_widget=True)
+            text_widget = editwin.text
             squeezer = self.make_squeezer_instance(editwin)
             squeezer.count_lines = Mock(return_value=6)
 
@@ -230,10 +239,8 @@ class SqueezerTest(unittest.TestCase):
 
     def test_squeeze_current_text_event_no_allowed_tags(self):
         """Test that the event doesn't squeeze text without a relevant tag."""
-        text_widget = self.make_text_widget()
-
-        editwin = self.make_mock_editor_window()
-        editwin.text = editwin.per.bottom = text_widget
+        editwin = self.make_mock_editor_window(with_text_widget=True)
+        text_widget = editwin.text
         squeezer = self.make_squeezer_instance(editwin)
         squeezer.count_lines = Mock(return_value=6)
 
@@ -252,10 +259,8 @@ class SqueezerTest(unittest.TestCase):
 
     def test_squeeze_text_before_existing_squeezed_text(self):
         """Test squeezing text before existing squeezed text."""
-        text_widget = self.make_text_widget()
-
-        editwin = self.make_mock_editor_window()
-        editwin.text = editwin.per.bottom = text_widget
+        editwin = self.make_mock_editor_window(with_text_widget=True)
+        text_widget = editwin.text
         squeezer = self.make_squeezer_instance(editwin)
         squeezer.count_lines = Mock(return_value=6)
 
@@ -280,11 +285,35 @@ class SqueezerTest(unittest.TestCase):
 
     def test_reload(self):
         """Test the reload() class-method."""
-        self.assertIsInstance(Squeezer.auto_squeeze_min_lines, int)
-        idleConf.SetOption('main', 'PyShell', 'auto-squeeze-min-lines', '42')
-        with patch('idlelib.squeezer.Squeezer.load_font') as mock_load_font:
-            Squeezer.reload()
-        self.assertEqual(Squeezer.auto_squeeze_min_lines, 42)
+        editwin = self.make_mock_editor_window(with_text_widget=True)
+        text_widget = editwin.text
+        squeezer = self.make_squeezer_instance(editwin)
+
+        orig_zero_char_width = squeezer.zero_char_width
+        orig_auto_squeeze_min_lines = squeezer.auto_squeeze_min_lines
+
+        # set the font size to double the original value
+        prev_font_size = idleConf.GetOption(
+            'main', 'EditorWindow', 'font-size', type='int', default=10)
+        new_font_size = 2 * prev_font_size
+        self.set_idleconf_option_with_cleanup(
+            'main', 'EditorWindow', 'font-size', str(new_font_size))
+        # update the Text widget's font from the config
+        # (this is usually done by the config dialog)
+        text_widget["font"] = idleConf.GetFont(
+            editwin.root, "main", "EditorWindow")
+
+        # set auto-squeeze-min-lines to 10 more than the original value
+        new_auto_squeeze_min_lines = orig_auto_squeeze_min_lines + 10
+        self.set_idleconf_option_with_cleanup(
+            'main', 'PyShell', 'auto-squeeze-min-lines',
+            str(new_auto_squeeze_min_lines))
+
+        Squeezer.reload()
+        self.assertAlmostEqual(squeezer.zero_char_width,
+                               2 * orig_zero_char_width, 0)
+        self.assertEqual(squeezer.auto_squeeze_min_lines,
+                         new_auto_squeeze_min_lines)
 
 
 class ExpandingButtonTest(unittest.TestCase):

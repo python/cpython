@@ -241,7 +241,7 @@ class Squeezer:
         # however, needs to make such changes.
         self.base_text = editwin.per.bottom
 
-        self._instance_weakref = weakref.ref(self)
+        Squeezer._instance_weakref = weakref.ref(self)
         self.load_font()
 
         # Twice the text widget's border width and internal padding;
