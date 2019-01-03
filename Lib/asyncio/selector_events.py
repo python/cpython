@@ -438,13 +438,13 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                         memoryview(data), [n])
         return await fut
 
-    def _sock_sendall(self, fut, sock, data, pos):
+    def _sock_sendall(self, fut, sock, view, pos):
         if fut.done():
             # Future cancellation can be scheduled on previous loop iteration
             return
         start = pos[0]
         try:
-            n = sock.send(data[start:])
+            n = sock.send(view[start:])
         except (BlockingIOError, InterruptedError):
             return
         except Exception as exc:
@@ -453,7 +453,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         start += n
 
-        if start == len(data):
+        if start == len(view):
             fut.set_result(None)
         else:
             pos[0] = start
