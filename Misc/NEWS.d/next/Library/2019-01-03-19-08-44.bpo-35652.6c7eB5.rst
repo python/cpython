@@ -1,0 +1,1 @@
+shutil.copytree has now the `use_srcentry` argument. With this it's possible to control if the *copy_function* will get a srcentry or srcname.
