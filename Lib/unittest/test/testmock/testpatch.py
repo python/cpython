@@ -4,6 +4,7 @@
 
 import os
 import sys
+from collections import OrderedDict
 
 import unittest
 from unittest.test.testmock import support
@@ -1853,6 +1854,14 @@ class PatchTest(unittest.TestCase):
         with patch.object(foo, '__kwdefaults__', dict([('x', 1, )])):
             self.assertEqual(foo(), 1)
         self.assertEqual(foo(), 0)
+
+    def test_patch_dict_with_orderdict(self):
+        foo = OrderedDict()
+        foo['first'] = object()
+        foo['second'] = 'python'
+
+        original = foo.copy()
+
 
 if __name__ == '__main__':
     unittest.main()
