@@ -1,2 +1,2 @@
-Fix a RuntimeError when copying a WeakKeyDictionary or a
+:mod:`weakref`: Fix a RuntimeError when copying a WeakKeyDictionary or a
 WeakValueDictionary.
