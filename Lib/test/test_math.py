@@ -1868,7 +1868,8 @@ class IsCloseTests(unittest.TestCase):
         # Test if factorial defintion is staisfied
         for n in range(100):
             for k in range(n + 1):
-                self.assertEqual(comb(n, k), factorial(n) // (factorial(k) * factorial(n - k)))
+                self.assertEqual(comb(n, k), factorial(n)
+                    // (factorial(k) * factorial(n - k)))
 
         # Test for pascal's identity
         for n in range(1, 100):
@@ -1879,6 +1880,10 @@ class IsCloseTests(unittest.TestCase):
         for n in range(100):
             self.assertEqual(comb(n, 0), 1)
             self.assertEqual(comb(n, n), 1)
+
+        for n in range(1, 100):
+            self.assertEqual(comb(n, 1), n)
+            self.assertEqual(comb(n, n - 1), n)
 
         # Test Symmetry
         for n in range(100):
@@ -1904,6 +1909,9 @@ class IsCloseTests(unittest.TestCase):
         self.assertRaises(ValueError, comb, -1, 1)
         self.assertRaises(ValueError, comb, 1, -1)
         self.assertRaises(ValueError, comb, 1, 2)
+
+        # ValueError instead of OverflowError if k is negative and overflowing
+        self.assertRaises(ValueError, comb, 10**400, -10**200)
 
 
 def test_main():

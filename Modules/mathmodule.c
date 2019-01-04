@@ -3037,50 +3037,104 @@ math_comb_impl(PyObject *module, PyObject *a, PyObject *b)
     }
 
     PyObject *val = PyLong_FromLong(1),
-        *temp_obj1, *temp_obj2,
-        *dump_var;
-    int overflow;
-    long long i, terms = PyLong_AsLongLongAndOverflow(b, &overflow);
+        *temp_obj1 = NULL,
+        *temp_obj2 = NULL,
+        *dump_var = NULL;
+    if (val == NULL) {
+        goto fail_comb;
+    }
+    int overflow, cmp;
+    long long i, terms;
 
-    if (overflow == 1) {
-        PyErr_Format(PyExc_OverflowError,
-                     "minimum(n - k, n) should not exceed %lld",
-                     LLONG_MAX);
-        return NULL;
-    }
-    dump_var = PyLong_FromLong(0);
-    if (PyObject_RichCompareBool(b, (PyObject *)dump_var, Py_LT)) {
-        PyErr_Format(PyExc_ValueError,
-                     "k must be an integer >= 0");
-        return NULL;
-    }
-    if (PyObject_RichCompareBool(a, b, Py_LT)) {
+    cmp = PyObject_RichCompareBool(a, b, Py_LT);
+    if (cmp == 1) {
         PyErr_Format(PyExc_ValueError,
                      "n must be an integer >= k");
-        return NULL;
+        goto fail_comb;
+    }
+    else if (cmp == -1) {
+        goto fail_comb;
     }
 
+    /* b = min(b, a - b) */
     dump_var = PyNumber_Subtract(a, b);
-    if(PyObject_RichCompareBool(b, dump_var, Py_GT)){
+    if (dump_var == NULL) {
+        goto fail_comb;
+    }
+    cmp = PyObject_RichCompareBool(b, dump_var, Py_GT);
+    if (cmp == 1) {
+        Py_DECREF(b);
         b = dump_var;
         dump_var = NULL;
     }
+    else if (cmp == -1) {
+        goto fail_comb;
+    }
+    else {
+        Py_DECREF(dump_var);
+        dump_var = NULL;
+    }
+
+    terms = PyLong_AsLongLongAndOverflow(b, &overflow);
+    if (terms == -1 && PyErr_Occurred()) {
+        goto fail_comb;
+    }
+    else if (overflow == 1) {
+        PyErr_Format(PyExc_OverflowError,
+                     "minimum(n - k, n) should not exceed %lld",
+                     LLONG_MAX);
+        goto fail_comb;
+    }
+    else if (overflow == -1 || terms < 0) {
+        PyErr_Format(PyExc_ValueError,
+                     "k must be an integer >= 0");
+        goto fail_comb;
+    }
+
     for (i = 0; i < terms; ++i) {
         temp_obj1 = PyLong_FromSsize_t(i);
+        if (temp_obj1 == NULL) {
+            goto fail_comb;
+        }
         temp_obj2 = PyNumber_Subtract(a, temp_obj1);
+        if (temp_obj2 == NULL) {
+            goto fail_comb;
+        }
         dump_var = val;
         val = PyNumber_Multiply(val, temp_obj2);
+        if (val == NULL) {
+            goto fail_comb;
+        }
         Py_DECREF(dump_var);
+        dump_var = NULL;
         Py_DECREF(temp_obj2);
-        temp_obj2 = PyLong_FromLong(PyLong_AsLong(temp_obj1) + 1);
+        temp_obj2 = PyLong_FromUnsignedLongLong((unsigned long long)(i + 1));
+        if (temp_obj2 == NULL) {
+            goto fail_comb;
+        }
         dump_var = val;
         val = PyNumber_FloorDivide(val, temp_obj2);
+        if (val == NULL) {
+            goto fail_comb;
+        }
         Py_DECREF(dump_var);
         Py_DECREF(temp_obj1);
         Py_DECREF(temp_obj2);
     }
+    Py_DECREF(a);
+    Py_DECREF(b);
 
     return val;
+
+fail_comb:
+    Py_XDECREF(a);
+    Py_XDECREF(b);
+    Py_XDECREF(val);
+    Py_XDECREF(dump_var);
+    Py_XDECREF(temp_obj1);
+    Py_XDECREF(temp_obj2);
+
+    return NULL;
 }
 
 
