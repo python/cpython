@@ -458,7 +458,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     async def sock_connect(self, sock, address):
         """Connect to a remote socket at address.
 
-        address must be a socket address tuple(i.e. (ipv4_address, port) for
+        `address` must be a socket address tuple(i.e. (ipv4_address, port) for
         IPv4 or (ipv6_address, port, flowinfo, scopeid) for IPv6). It must
         not be a (host, port) tuple that still needs to be resolved.
 
