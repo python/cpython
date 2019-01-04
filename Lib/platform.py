@@ -332,6 +332,9 @@ _WIN32_SERVER_RELEASES = {
     (6, 2): "2012Server",
     (6, 3): "2012ServerR2",
     (6, None): "post2012ServerR2",
+    
+    (10, 0): "2016Server",
+    (10, None): "post2016Server",
 }
 
 def win32_ver(release='', version='', csd='', ptype=''):
