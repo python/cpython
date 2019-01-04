@@ -937,6 +937,7 @@ typedef struct {
     PyObject_HEAD
     Py_ssize_t nitems;
     PyObject *item;
+    Py_ssize_t index; // -1 unless *item* is a single non-negative integer index
 } itemgetterobject;
 
 static PyTypeObject itemgetter_type;
@@ -948,6 +949,7 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     itemgetterobject *ig;
     PyObject *item;
     Py_ssize_t nitems;
+    Py_ssize_t index;
 
     if (!_PyArg_NoKeywords("itemgetter", kwds))
         return NULL;
@@ -967,6 +969,16 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_INCREF(item);
     ig->item = item;
     ig->nitems = nitems;
+    ig->index = -1;
+    if (PyLong_CheckExact(item)) {
+        index = PyLong_AsSsize_t(item);
+        if (index < 0) {
+            // Only optimize non-negative values that fit in a Py_ssize_t
+            PyErr_Clear();
+        } else {
+            ig->index = index;
+        }
+    }
 
     PyObject_GC_Track(ig);
     return (PyObject *)ig;
@@ -1003,8 +1015,16 @@ itemgetter_call(itemgetterobject *ig, PyObject *args, PyObject *kw)
         if (!PyArg_UnpackTuple(args, "itemgetter", 1, 1, &obj))
             return NULL;
     }
-    if (nitems == 1)
+    if (nitems == 1) {
+        if (ig->index >= 0
+            && PyTuple_CheckExact(obj)
+            && ig->index < PyTuple_GET_SIZE(obj)) {
+            result = PyTuple_GET_ITEM(obj, ig->index);
+            Py_INCREF(result);
+            return result;
+        }
         return PyObject_GetItem(obj, ig->item);
+    }
 
     assert(PyTuple_Check(ig->item));
     assert(PyTuple_GET_SIZE(ig->item) == nitems);
