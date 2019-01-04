@@ -993,10 +993,16 @@ itemgetter_call(itemgetterobject *ig, PyObject *args, PyObject *kw)
     PyObject *obj, *result;
     Py_ssize_t i, nitems=ig->nitems;
 
-    if (!_PyArg_NoKeywords("itemgetter", kw))
-        return NULL;
-    if (!PyArg_UnpackTuple(args, "itemgetter", 1, 1, &obj))
-        return NULL;
+    assert(PyTuple_CheckExact(args));
+    if (kw == NULL && PyTuple_GET_SIZE(args) == 1) {
+        obj = PyTuple_GET_ITEM(args, 0);
+    }
+    else {
+        if (!_PyArg_NoKeywords("itemgetter", kw))
+            return NULL;
+        if (!PyArg_UnpackTuple(args, "itemgetter", 1, 1, &obj))
+            return NULL;
+    }
     if (nitems == 1)
         return PyObject_GetItem(obj, ig->item);
 
