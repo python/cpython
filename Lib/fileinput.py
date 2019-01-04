@@ -405,6 +405,9 @@ def hook_compressed(filename, mode):
     elif ext == '.bz2':
         import bz2
         return bz2.BZ2File(filename, mode)
+    elif ext == '.xz':
+        import lzma
+        return lzma.open(filename, mode)
     else:
         return open(filename, mode)
 
