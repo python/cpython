@@ -1,0 +1,1 @@
+Remove use of `from tkinter import *` from window.py.
