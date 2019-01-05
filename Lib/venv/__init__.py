@@ -158,6 +158,7 @@ class EnvBuilder:
                 incl = 'false'
             f.write('include-system-site-packages = %s\n' % incl)
             f.write('version = %d.%d.%d\n' % sys.version_info[:3])
+            f.write(f'prompt = {context.prompt}\n')
 
     def symlink_or_copy(self, src, dst, relative_symlinks_ok=False):
         """
