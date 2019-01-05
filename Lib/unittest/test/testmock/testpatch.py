@@ -1857,10 +1857,27 @@ class PatchTest(unittest.TestCase):
 
     def test_patch_dict_with_orderdict(self):
         foo = OrderedDict()
-        foo['first'] = object()
-        foo['second'] = 'python'
+        foo['a'] = object()
+        foo['b'] = 'python'
 
         original = foo.copy()
+        update_values = zip('cdefghijklmnopqrstuvwxyz', range(26))
+
+        @patch.dict(foo, OrderedDict(update_values))
+        def test():
+            self.assertEqual(list(foo), sorted(foo))
+
+        test()
+
+        self.assertEqual(foo, original)
+
+        @patch.dict(foo, update_values)
+        def test():
+            self.assertEqual(list(foo), sorted(foo))
+
+        test()
+
+        self.assertEqual(foo, original)
 
 
 if __name__ == '__main__':
