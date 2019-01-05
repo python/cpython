@@ -131,6 +131,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
          *charset* keyword-only argument was added.  The default charset of
          HTML document changed from ``'ISO-8859-1'`` to ``'utf-8'``.
 
+      .. note::
+         *fromdesc* and *todesc* are interpreted as HTML and should be properly escaped
+         while receiving input from untrusted sources.
+
    .. method:: make_table(fromlines, tolines, fromdesc='', todesc='', context=False, numlines=5)
 
       Compares *fromlines* and *tolines* (lists of strings) and returns a string which
