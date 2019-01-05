@@ -1,1 +1,1 @@
-Remove use of `from tkinter import *` from window.py.
+Fix imports in idlelib.window.
