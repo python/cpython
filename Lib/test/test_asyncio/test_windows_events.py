@@ -4,6 +4,7 @@ import socket
 import sys
 import subprocess
 import time
+import threading
 import unittest
 from unittest import mock
 
@@ -11,6 +12,7 @@ if sys.platform != 'win32':
     raise unittest.SkipTest('Windows only')
 
 import _overlapped
+import _testcapi
 import _winapi
 
 import asyncio
@@ -38,20 +40,24 @@ class UpperProto(asyncio.Protocol):
 
 
 class ProactorLoopCtrlC(test_utils.TestCase):
-    def test_ctrl_c(self):
-        from .test_ctrl_c_in_proactor_loop_helper import __file__ as f
 
-        # ctrl-c will be sent to all processes that share the same console
-        # in order to isolate the effect of raising ctrl-c we'll create
-        # a process with a new console
-        flags = subprocess.CREATE_NEW_CONSOLE
-        with spawn_python(f, creationflags=flags) as p:
-            try:
-                exit_code = p.wait(timeout=5)
-                self.assertEqual(exit_code, 255)
-            except:
-                p.kill()
-                raise
+    def test_ctrl_c(self):
+
+        def SIGINT_after_delay():
+            time.sleep(1)
+            _testcapi.raise_signal(signal.SIGINT)
+
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        l = asyncio.get_event_loop()
+        try:
+            t = threading.Thread(target=SIGINT_after_delay)
+            t.start()
+            l.run_forever()
+            self.fail("should not fall through 'run_forever'")
+        except KeyboardInterrupt:
+            pass
+        finally:
+            l.close()
 
 
 class ProactorTests(test_utils.TestCase):
