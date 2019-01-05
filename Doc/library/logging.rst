@@ -163,7 +163,7 @@ is the module's name in the Python package namespace.
       There are four keyword arguments in *kwargs* which are inspected:
       *exc_info*, *stack_info*, *stacklevel* and *extra*.
 
-      If *exc_info* does not evaluate as false, it causes exception information to be
+      If *exc_info* is true, it causes exception information to be
       added to the logging message. If an exception tuple (in the format returned by
       :func:`sys.exc_info`) or an exception instance is provided, it is used;
       otherwise, :func:`sys.exc_info` is called to get the exception information.
