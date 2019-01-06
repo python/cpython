@@ -115,6 +115,12 @@ The module provides the following classes:
       The *strict* parameter was removed. HTTP 0.9 style "Simple Responses" are
       no longer supported.
 
+This module provides the following function:
+
+.. function:: parse_headers(fp)
+
+   Parse the headers from a file pointer *fp* representing the HTTP request.
+   Requires that the HTTP request provide a valid :rfc:`2822` style header.
 
 The following exceptions are raised as appropriate:
 
