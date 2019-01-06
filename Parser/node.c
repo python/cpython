@@ -13,6 +13,8 @@ PyNode_New(int type)
     n->n_type = type;
     n->n_str = NULL;
     n->n_lineno = 0;
+    n->n_end_lineno = 0;
+    n->n_end_col_offset = -1;
     n->n_nchildren = 0;
     n->n_child = NULL;
     return n;
@@ -76,7 +78,7 @@ fancy_roundup(int n)
 
 
 int
-PyNode_AddChild(node *n1, int type, char *str, int lineno, int col_offset)
+PyNode_AddChild(node *n1, int type, char *str, int lineno, int col_offset, int end_col_offset)
 {
     const int nch = n1->n_nchildren;
     int current_capacity;
@@ -107,6 +109,8 @@ PyNode_AddChild(node *n1, int type, char *str, int lineno, int col_offset)
     n->n_str = str;
     n->n_lineno = lineno;
     n->n_col_offset = col_offset;
+    n->n_end_lineno = lineno;  // this and below are correct only for terminals.
+    n->n_end_col_offset = end_col_offset;
     n->n_nchildren = 0;
     n->n_child = NULL;
     return 0;

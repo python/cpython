@@ -187,7 +187,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
     parser_state *ps;
     node *n;
     int started = 0;
-    int col_offset;
+    int col_offset, end_col_offset;
 
     if ((ps = PyParser_New(g, start)) == NULL) {
         err_ret->error = E_NOMEM;
@@ -261,9 +261,17 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
             col_offset = -1;
         }
 
+        if (b != NULL && b >= tok->line_start) {
+            end_col_offset = Py_SAFE_DOWNCAST(b - tok->line_start,
+                                              intptr_t, int);
+        }
+        else {
+            end_col_offset = -1;
+        }
+
         if ((err_ret->error =
              PyParser_AddToken(ps, (int)type, str,
-                               tok->lineno, col_offset,
+                               tok->lineno, col_offset, end_col_offset,
                                &(err_ret->expected))) != E_OK) {
             if (err_ret->error != E_DONE) {
                 PyObject_FREE(str);

@@ -2303,6 +2303,7 @@ ast_for_binop(struct compiling *c, const node *n)
     if (!newoperator)
         return NULL;
 
+    printf("%d:%d - %d:%d\n", LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset);
     result = BinOp(expr1, newoperator, expr2, LINENO(n), n->n_col_offset,
                    c->c_arena);
     if (!result)
