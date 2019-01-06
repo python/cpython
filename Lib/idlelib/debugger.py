@@ -10,12 +10,19 @@ from idlelib.window import ListedToplevel
 
 
 class Idb(bdb.Bdb):
+    """Idle debugger, based on the bdb debugger."""
 
     def __init__(self, gui):
         self.gui = gui  # An instance of Debugger or proxy of remote.
-        bdb.Bdb.__init__(self)
+        super(Idb, self).__init__()
 
     def user_line(self, frame):
+        """
+        Handle a user stopping or breaking at a line.
+
+        Implements Bdb.user_line() to convert frame to string
+        and send message to GUI.
+        """
         if self.in_rpc_code(frame):
             self.set_step()
             return
@@ -25,18 +32,22 @@ class Idb(bdb.Bdb):
         except TclError:  # When closing debugger window with [x] in 3.x
             pass
 
-    def user_exception(self, frame, info):
+    def user_exception(self, frame, exc_info):
+        """Handle an the occurrence of an exception."""
         if self.in_rpc_code(frame):
             self.set_step()
             return
         message = self.__frame2message(frame)
-        self.gui.interaction(message, frame, info)
+        self.gui.interaction(message, frame, exc_info)
 
     def in_rpc_code(self, frame):
+        """Determine if debugger is within RPC code."""
         if frame.f_code.co_filename.count('rpc.py'):
             return True
         else:
             prev_frame = frame.f_back
+            if prev_frame is None:
+                return False
             prev_name = prev_frame.f_code.co_filename
             if 'idlelib' in prev_name and 'debugger' in prev_name:
                 # catch both idlelib/debugger.py and idlelib/debugger_r.py
@@ -45,6 +56,7 @@ class Idb(bdb.Bdb):
             return self.in_rpc_code(prev_frame)
 
     def __frame2message(self, frame):
+        """Convert a frame to a message string."""
         code = frame.f_code
         filename = code.co_filename
         lineno = frame.f_lineno
