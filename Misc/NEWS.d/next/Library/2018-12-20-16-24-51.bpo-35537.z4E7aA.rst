@@ -1,0 +1,2 @@
+The :mod:`subprocess` module now uses the :func:`os.posix_spawn` function if
+possible for better performance.
