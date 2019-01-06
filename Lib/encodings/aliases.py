@@ -491,9 +491,6 @@ aliases = {
     'sjisx0213'          : 'shift_jisx0213',
     's_jisx0213'         : 'shift_jisx0213',
 
-    # tactis codec
-    'tis260'             : 'tactis',
-
     # tis_620 codec
     'tis620'             : 'tis_620',
     'tis_620_0'          : 'tis_620',
