@@ -641,7 +641,7 @@ PyDoc_STRVAR(math_comb__doc__,
 "Return the binomial coefficient indexed by the pair of integers n >= k >= 0.\n"
 "\n"
 "It is the coefficient of kth term in polynomial expansion of the expression\n"
-"(1 + x)^n. It is also termed as the number of ways to choose an unordered\n"
+"(1 + x)^n. It is also known as the number of ways to choose an unordered\n"
 "subset of k elements from a fixed set of n elements, usually called\n"
 "*n choose k*.\n"
 "\n"
@@ -668,11 +668,10 @@ math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
         goto exit;
     }
     return_value = math_comb_impl(module, a, b);
->>>>>>> implemented math.comb function
 
 exit:
     return return_value;
 }
 
-/*[clinic end generated code: output=aeed62f403b90199 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9bcf4b171e2ad3ec input=a9049054013a1b77]*/
 

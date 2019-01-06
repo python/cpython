@@ -3009,7 +3009,7 @@ math.comb
 Return the binomial coefficient indexed by the pair of integers n >= k >= 0.
 
 It is the coefficient of kth term in polynomial expansion of the expression
-(1 + x)^n. It is also termed as the number of ways to choose an unordered
+(1 + x)^n. It is also known as the number of ways to choose an unordered
 subset of k elements from a fixed set of n elements, usually called
 *n choose k*.
 
@@ -3020,7 +3020,7 @@ if argument(s) are negative or k > n.
 
 static PyObject *
 math_comb_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=1343ae354f5dd2fa input=f5a3952a720899cf]*/
+/*[clinic end generated code: output=1343ae354f5dd2fa input=c7361e89712cfa3f]*/
 {
     if (!(PyLong_Check(a) && PyLong_Check(b))) {
         PyErr_SetString(PyExc_TypeError,

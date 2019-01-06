@@ -237,7 +237,7 @@ Number-theoretic and representation functions
    Return the binomial coefficient indexed by the pair of integers n >= k >= 0.
 
    It is the coefficient of kth term in polynomial expansion of the expression
-   (1 + x)^n. It is also termed as the number of ways to choose an unordered
+   (1 + x)^n. It is also known as the number of ways to choose an unordered
    subset of k elements from a fixed set of n elements, usually called
    *n choose k*.
 

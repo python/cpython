@@ -1865,13 +1865,13 @@ class IsCloseTests(unittest.TestCase):
     def testComb(self):
         comb = math.comb
         factorial = math.factorial
-        # Test if factorial defintion is staisfied
+        # Test if factorial defintion is satisfied
         for n in range(100):
             for k in range(n + 1):
                 self.assertEqual(comb(n, k), factorial(n)
                     // (factorial(k) * factorial(n - k)))
 
-        # Test for pascal's identity
+        # Test for Pascal's identity
         for n in range(1, 100):
             for k in range(1, n):
                 self.assertEqual(comb(n, k), comb(n - 1, k - 1) + comb(n - 1, k))
