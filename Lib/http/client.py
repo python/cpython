@@ -784,12 +784,8 @@ class HTTPResponse(io.BufferedIOBase):
         '''
         import warnings
         warnings.warn("HTTPResponse.getcode() is deprecated"
-                "use HTTPResponse.code instead",
+                "use HTTPResponse.status instead",
                 DeprecationWarning, stacklevel=2)
-        return self.status
-    
-    @property
-    def code(self):
         return self.status
 
 class HTTPConnection:

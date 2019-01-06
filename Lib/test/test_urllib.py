@@ -195,7 +195,7 @@ class urlopen_FileTests(unittest.TestCase):
 
     def test_getcode(self):
         self.assertIsNone(self.returned_obj.getcode())
-        self.assertIsNone(self.returned_obj.code)
+        self.assertIsNone(self.returned_obj.status)
 
     def test_iter(self):
         # Test iterator

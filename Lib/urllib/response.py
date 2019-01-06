@@ -76,10 +76,14 @@ class addinfourl(addinfo):
         self.url = url
         self.code = code
 
+    @property
+    def status(self):
+        return self.code
+    
     def getcode(self):
         import warnings
         warnings.warn("addinfourl.getcode() is deprecated"
-                "use addinfourl.code instead",
+                "use addinfourl.status instead",
                 DeprecationWarning, stacklevel=2)
         return self.code
 
