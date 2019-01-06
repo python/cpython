@@ -55,16 +55,8 @@ The :mod:`urllib.request` module defines the following functions:
    The *cadefault* parameter is ignored.
 
    This function always returns an object which can work as a
-   :term:`context manager` and has methods such as
-
-   * :meth:`~urllib.response.addinfourl.geturl` --- return the URL of the resource retrieved,
-     commonly used to determine if a redirect was followed
-
-   * :meth:`~urllib.response.addinfourl.info` --- return the meta-information of the page, such as headers,
-     in the form of an :func:`email.message_from_string` instance (see
-     `Quick Reference to HTTP Headers <http://jkorpela.fi/http.html>`_)
-
-   * :meth:`~urllib.response.addinfourl.getcode` -- return the HTTP status code of the response.
+   :term:`context manager` and has the properties `url`, `headers`, and `status`.
+   See :class:`urllib.response.addinfourl` for more detail on these properties.
 
    For HTTP and HTTPS URLs, this function returns a
    :class:`http.client.HTTPResponse` object slightly modified. In addition
@@ -1557,9 +1549,46 @@ some point in the future.
    :synopsis: Response classes used by urllib.
 
 The :mod:`urllib.response` module defines functions and classes which define a
-minimal file like interface, including ``read()`` and ``readline()``. The
-typical response object is an addinfourl instance, which defines an ``info()``
-method and that returns headers and a ``geturl()`` method that returns the url.
-Functions defined by this module are used internally by the
-:mod:`urllib.request` module.
+minimal file-like interface, including ``read()`` and ``readline()``.
+Functions defined by this module are used internally by the :mod:`urllib.request` module.
+The typical response object is a :class:`urllib.response.addinfourl` instance:
 
+.. class:: urllib.response.addinfourl
+
+.. attribute:: addinfourl.url
+
+   URL of the resource retrieved, commonly used to determine if a redirect was followed
+
+.. attribute:: addinfourl.headers
+
+   Returns the meta-information of the page, such as headers,
+   in the form of an :func:`email.message_from_string` instance (see
+   `Quick Reference to HTTP Headers <http://jkorpela.fi/http.html>`_)
+
+.. attribute:: addinfourl.code
+
+   Status code returned by server.
+
+.. attribute:: addinfourl.status
+
+   .. deprecated:: 3.8
+
+      Status code returned by server. Deprecated in favor of *addinfourl.status*.
+
+.. method:: addinfourl.geturl()
+
+   .. deprecated:: 3.8
+
+      Returns the URL of the resource retrieved. Deprecated in favor of *addinfourl.url*.
+
+.. method:: addinfourl.info()
+
+   .. deprecated:: 3.8
+
+      Returns the response headers. Deprecated in favor of *addinfourl.headers*.
+
+.. method:: addinfourl.getstatus()
+
+   .. deprecated:: 3.8
+
+      Returns the status. Deprecated in favor of *addinfourl.status*.

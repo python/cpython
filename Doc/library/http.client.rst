@@ -460,6 +460,14 @@ statement.
 
    HTTP protocol version used by server.  10 for HTTP/1.0, 11 for HTTP/1.1.
 
+.. attribute:: HTTPResponse.url
+
+   URL of the resource retrieved, commonly used to determine if a redirect was followed
+
+.. attribute:: HTTPResponse.headers
+
+   Headers of the response in the form of an :meth:`email.message_from_string` instance
+
 .. attribute:: HTTPResponse.status
 
    Status code returned by server.
@@ -476,6 +484,24 @@ statement.
 .. attribute:: HTTPResponse.closed
 
    Is ``True`` if the stream is closed.
+
+.. method:: HTTPResponse.geturl()
+
+   .. deprecated:: 3.8
+
+      Returns the URL of the resource retrieved. Deprecated in favor of *HTTPResponse.url*.
+
+.. method:: HTTPResponse.info()
+
+   .. deprecated:: 3.8
+
+      Returns the response headers. Deprecated in favor of *HTTPResponse.headers*.
+
+.. method:: HTTPResponse.getstatus()
+
+   .. deprecated:: 3.8
+
+      Returns the status. Deprecated in favor of *HTTPResponse.status*.
 
 Examples
 --------
