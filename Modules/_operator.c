@@ -973,7 +973,11 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (PyLong_CheckExact(item)) {
         index = PyLong_AsSsize_t(item);
         if (index < 0) {
-            // Only optimize non-negative values that fit in a Py_ssize_t
+            /* If we get here, then either the index conversion failed
+             * due to being out of range, or the index was a negative
+             * integer.  Either way, we clear any possible exception
+             * and fall back to the slow path, where ig->index is -1.
+             */
             PyErr_Clear();
         }
         else {
