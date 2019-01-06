@@ -975,7 +975,8 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (index < 0) {
             // Only optimize non-negative values that fit in a Py_ssize_t
             PyErr_Clear();
-        } else {
+        }
+        else {
             ig->index = index;
         }
     }
@@ -1018,7 +1019,8 @@ itemgetter_call(itemgetterobject *ig, PyObject *args, PyObject *kw)
     if (nitems == 1) {
         if (ig->index >= 0
             && PyTuple_CheckExact(obj)
-            && ig->index < PyTuple_GET_SIZE(obj)) {
+            && ig->index < PyTuple_GET_SIZE(obj))
+        {
             result = PyTuple_GET_ITEM(obj, ig->index);
             Py_INCREF(result);
             return result;
