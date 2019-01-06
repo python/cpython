@@ -115,6 +115,64 @@ class IdbTest(unittest.TestCase):
         gui.interaction.assert_called_once()
         gui.interaction.assert_called_with('test_user_exception.py:1: <module>()', test_frame1, test_exc_info)
 
+    def test_in_rpc_code_rpc_py(self):
+        """Test that .in_rpc_code detects position of rpc.py."""
+
+        # Create a test code object to simulate a debug session.
+        test_code = dedent("""
+            i = 1
+            i += 2
+            if i == 3:
+               print(i)
+            """)
+        code_obj = compile(test_code,
+                           'rpc.py',
+                           mode='exec')
+
+        # Create 1 test frame
+        test_frame = MockFrameType()
+        test_frame.f_code = code_obj
+        test_frame.f_lineno = 1
+
+        gui = mock.Mock()
+        gui.interaction = mock.Mock()
+
+        idb = debugger.Idb(gui)
+
+        assert idb.in_rpc_code(test_frame)
+
+    def test_in_rpc_code_debugger_star_dot_py(self):
+        """Test that .in_rpc_code detects position of idlelib/debugger*.py."""
+
+        # Create a test code object to simulate a debug session.
+        for filename in ('idlelib/debugger.py', 'idlelib/debugger_r.py'):
+            test_code = dedent("""
+                    i = 1
+                    i += 2
+                    if i == 3:
+                       print(i)
+                    """)
+            code_obj = compile(test_code,
+                               filename,
+                               mode='exec')
+
+            # Create 2 test frames
+            test_frame = MockFrameType()
+            test_frame.f_code = code_obj
+            test_frame.f_lineno = 1
+
+            test_frame2 = MockFrameType()
+            test_frame2.f_code = code_obj
+            test_frame2.f_lineno = 2
+            test_frame2.f_back = test_frame
+
+            gui = mock.Mock()
+            gui.interaction = mock.Mock()
+
+            idb = debugger.Idb(gui)
+
+            assert not idb.in_rpc_code(test_frame2)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
