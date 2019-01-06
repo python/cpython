@@ -487,21 +487,15 @@ statement.
 
 .. method:: HTTPResponse.geturl()
 
-   .. deprecated:: 3.8
-
-      Returns the URL of the resource retrieved. Deprecated in favor of *HTTPResponse.url*.
+   Returns the URL of the resource retrieved. Recommended to use *HTTPResponse.url* instead.
 
 .. method:: HTTPResponse.info()
 
-   .. deprecated:: 3.8
-
-      Returns the response headers. Deprecated in favor of *HTTPResponse.headers*.
+   Returns the response headers. Recommended to use *HTTPResponse.headers* instead.
 
 .. method:: HTTPResponse.getstatus()
 
-   .. deprecated:: 3.8
-
-      Returns the status. Deprecated in favor of *HTTPResponse.status*.
+   Returns the status. Recommended to use *HTTPResponse.status* instead.
 
 Examples
 --------

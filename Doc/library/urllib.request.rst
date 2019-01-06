@@ -1571,24 +1571,16 @@ The typical response object is a :class:`urllib.response.addinfourl` instance:
 
 .. attribute:: addinfourl.status
 
-   .. deprecated:: 3.8
-
-      Status code returned by server. Deprecated in favor of *addinfourl.status*.
+   Status code returned by server. Recommended to use *addinfourl.status* instead.
 
 .. method:: addinfourl.geturl()
 
-   .. deprecated:: 3.8
-
-      Returns the URL of the resource retrieved. Deprecated in favor of *addinfourl.url*.
+   Returns the URL of the resource retrieved. Recommended to use *addinfourl.url* instead.
 
 .. method:: addinfourl.info()
 
-   .. deprecated:: 3.8
-
-      Returns the response headers. Deprecated in favor of *addinfourl.headers*.
+   Returns the response headers. Recommended to use *addinfourl.headers* instead.
 
 .. method:: addinfourl.getstatus()
 
-   .. deprecated:: 3.8
-
-      Returns the status. Deprecated in favor of *addinfourl.status*.
+   Returns the status. Deprecated in favor of *addinfourl.status* instead.
