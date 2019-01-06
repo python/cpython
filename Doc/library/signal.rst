@@ -239,8 +239,9 @@ The :mod:`signal` module defines the following functions:
 
 .. function:: raise_signal(signum)
 
-   Sends a signal to the executing process. Returns nothing. If a signal handler
-   is called, the *raise* function shall not return until after the signal handler does.
+   Sends a signal to the calling process. Returns nothing.
+
+   .. versionadded:: 3.8
 
 
 .. function:: pthread_kill(thread_id, signalnum)
