@@ -78,8 +78,7 @@ class OutputWindow(EditorWindow):
         EditorWindow.__init__(self, *args)
         self.text.bind("<<goto-file-line>>", self.goto_file_line)
         self.text.unbind("<<toggle-code-context>>")
-        self.menudict['options'].entryconfig('*Code Context',
-                                             state='disabled')
+        self.update_menu_state('options', '*Code Context', 'disabled')
 
     # Customize EditorWindow
     def ispythonsource(self, filename):
