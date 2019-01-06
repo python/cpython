@@ -2881,7 +2881,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
                   try:
                       # body
                   finally:
-                      name = None
+                      name = None # in case name is unbound during except handling
                       del name
             */
 
