@@ -1861,21 +1861,22 @@ class PatchTest(unittest.TestCase):
         foo['b'] = 'python'
 
         original = foo.copy()
-        update_values = zip('cdefghijklmnopqrstuvwxyz', range(26))
+        update_values = list(zip('cdefghijklmnopqrstuvwxyz', range(26)))
+        patched_values = list(foo.items()) + update_values
 
-        @patch.dict(foo, OrderedDict(update_values))
-        def test():
-            self.assertEqual(list(foo), sorted(foo))
-
-        test()
+        with patch.dict(foo, OrderedDict(update_values)):
+            self.assertEqual(list(foo.items()), patched_values)
 
         self.assertEqual(foo, original)
 
-        @patch.dict(foo, update_values)
-        def test():
-            self.assertEqual(list(foo), sorted(foo))
+        with patch.dict(foo, update_values):
+            self.assertEqual(list(foo.items()), patched_values)
 
-        test()
+        self.assertEqual(foo, original)
+
+        # check if removing foo element not fail
+        with patch.dict(foo, OrderedDict(update_values)):
+            self.assertEqual(list(foo.items()).pop(), patched_values.pop())
 
         self.assertEqual(foo, original)
 
