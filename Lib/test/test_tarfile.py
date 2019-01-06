@@ -1,6 +1,7 @@
 import sys
 import os
 import io
+import errno
 from hashlib import md5
 from contextlib import contextmanager
 from random import Random
@@ -1288,6 +1289,113 @@ class WriteTest(WriteTestBase, unittest.TestCase):
 
         self.assertEqual(t.name, cmp_path or path.replace(os.sep, "/"))
 
+    def test_extractall_current_directory(self):
+        tempdir = os.path.join(TEMPDIR, "testcurdir")
+        temparchive = os.path.join(TEMPDIR, "testcurdir.tar")
+        os.mkdir(tempdir)
+        try:
+            source_file = os.path.join(tempdir, 'source')
+            with open(source_file, 'w') as f:
+                f.write('source file content\n')
+            tar = tarfile.open(temparchive, 'w')
+            try:
+                with support.change_cwd(tempdir):
+                    tar.add('./')
+            finally:
+                tar.close()
+            os.remove(source_file)
+            tar = tarfile.open(temparchive, 'r')
+            try:
+                tar.extractall(path=tempdir)
+                with open(source_file) as f:
+                    self.assertEqual(f.read(), 'source file content\n')
+            except OSError:
+                self.fail("extractall failed with ./ file")
+            finally:
+                tar.close()
+        finally:
+            support.unlink(temparchive)
+            support.rmtree(tempdir)
+
+    def test_extractall_non_directory_overwrites_empty_directory(self):
+        tempdir = os.path.join(TEMPDIR, "test_non_dir_overwrites_empty_dir")
+        temparchive = os.path.join(TEMPDIR, "test_non_dir_overwrites_empty_dir.tar")
+        os.mkdir(tempdir)
+        try:
+            source_file = os.path.join(tempdir, 'source')
+            with open(source_file, 'w') as f:
+                f.write('source file content\n')
+            tar = tarfile.open(temparchive, 'w')
+            try:
+                with support.change_cwd(tempdir):
+                    tar.add('source')
+            finally:
+                tar.close()
+            os.remove(source_file)
+            os.mkdir(source_file)
+            tar = tarfile.open(temparchive, 'r')
+            try:
+                tar.extractall(path=tempdir)
+                # Non-directory file should be able to overwrite empty
+                # directory
+                with open(source_file) as f:
+                    self.assertEqual(f.read(), 'source file content\n')
+            except OSError:
+                self.fail("extractall failed with non-directory files")
+            finally:
+                tar.close()
+            os.remove(source_file)
+            os.mkdir(source_file)
+            os.mkdir(os.path.join(source_file, 'inner_source'))
+            tar = tarfile.open(temparchive, 'r')
+            try:
+                tar.extractall(path=tempdir)
+                # Non-directory file should not be able to overwrite non-empty
+                # directory
+                self.fail("extractall failed with file overwriting non-empty "
+                          "directory")
+            # This should raise OSError: [Errno 21] Is a directory
+            except OSError as e:
+                self.assertEqual(e.errno, errno.EISDIR)
+            finally:
+                tar.close()
+        finally:
+            support.unlink(temparchive)
+            support.rmtree(tempdir)
+
+    def test_extractall_overwrites_not_empty_directory_contents(self):
+        tempdir = os.path.join(TEMPDIR, "test_not_empty_dir")
+        temparchive = os.path.join(TEMPDIR, "test_not_empty_dir.tar")
+        os.mkdir(tempdir)
+        try:
+            dir_A = os.path.join(tempdir, 'A')
+            dir_B = os.path.join(tempdir, 'B')
+            dir_C = os.path.join(dir_A, 'C')
+            os.mkdir(dir_A)
+            os.mkdir(dir_B)
+            os.mkdir(dir_C)
+            tar = tarfile.open(temparchive, 'w')
+            try:
+                with support.change_cwd(tempdir):
+                    tar.add('A')
+                    tar.add('B')
+            finally:
+                tar.close()
+            os.rmdir(dir_C)
+            dir_D = os.path.join(dir_A, 'D')
+            os.mkdir(dir_D)
+            tar = tarfile.open(temparchive, 'r')
+            try:
+                tar.extractall(path=tempdir)
+                self.assertEqual(sorted(os.listdir(tempdir)), ['A', 'B'])
+                self.assertEqual(sorted(os.listdir(dir_A)), ['C', 'D'])
+            except OSError:
+                self.fail("extractall failed with not empty directory")
+            finally:
+                tar.close()
+        finally:
+            support.unlink(temparchive)
+            support.rmtree(tempdir)
 
     @support.skip_unless_symlink
     def test_extractall_symlinks(self):
@@ -1296,20 +1404,73 @@ class WriteTest(WriteTestBase, unittest.TestCase):
         temparchive = os.path.join(TEMPDIR, "testsymlinks.tar")
         os.mkdir(tempdir)
         try:
-            source_file = os.path.join(tempdir,'source')
-            target_file = os.path.join(tempdir,'symlink')
-            with open(source_file,'w') as f:
-                f.write('something\n')
+            # File symlink
+            source_file = os.path.join(tempdir, 'source')
+            other_source_file = os.path.join(tempdir, 'other_source')
+            non_existent_file = os.path.join(tempdir, 'non_existent_file')
+            target_file = os.path.join(tempdir, 'symlink')
+            other_source_file2 = os.path.join(tempdir, 'other_source2')
+            non_existent_link = os.path.join(tempdir, 'non_existent_link')
+            with open(source_file, 'w') as f:
+                f.write('source file content\n')
+            with open(other_source_file, 'w') as f:
+                f.write('other source file content\n')
+            with open(other_source_file2, 'w') as f:
+                f.write('other source file content2\n')
             os.symlink(source_file, target_file)
+            # Directory symlink
+            source_dir = os.path.join(tempdir, 'source_dir')
+            other_source_dir = os.path.join(tempdir, 'other_source_dir')
+            target_dir = os.path.join(tempdir, 'symlink_dir')
+            os.mkdir(source_dir)
+            os.mkdir(other_source_dir)
+            os.symlink(source_dir, target_dir)
+            # Broken symlink
+            broken_target = os.path.join(tempdir, 'broken_symlink')
+            os.symlink(non_existent_file, broken_target)
             tar = tarfile.open(temparchive,'w')
-            tar.add(source_file)
-            tar.add(target_file)
+            with support.change_cwd(tempdir):
+                tar.add('source')
+                tar.add('symlink')
+                tar.add('source_dir')
+                tar.add('symlink_dir')
+                tar.add('broken_symlink')
+                tar.add('other_source2')
             tar.close()
-            # Let's extract it to the location which contains the symlink
+            # Point target_file to other_source_file and target_dir to
+            # other_source_dir to exercise overwriting behavior.
+            os.unlink(target_file)
+            os.symlink(other_source_file, target_file)
+            os.unlink(target_dir)
+            os.symlink(other_source_dir, target_dir)
+            # Create a broken symlink
+            os.unlink(other_source_file2)
+            os.symlink('non_existent_link', other_source_file2)
+            # Make symlink point to another file
+            os.unlink(broken_target)
+            os.symlink(other_source_file, broken_target)
             tar = tarfile.open(temparchive,'r')
-            # this should not raise OSError: [Errno 17] File exists
             try:
+                with open(target_file) as f:
+                    self.assertEqual(f.read(), 'other source file content\n')
+                self.assertEqual(os.readlink(target_dir), other_source_dir)
+                self.assertTrue(os.path.islink(other_source_file2))
+                self.assertFalse(os.path.exists(other_source_file2))
+                # Let's extract it to the location which contains the symlink
                 tar.extractall(path=tempdir)
+                # target_file that symlinked to other_source_file now symlinks
+                # back to source_file, and target_dir that symlinked to
+                # other_source_dir now symlinks back to source_dir.
+                with open(target_file) as f:
+                    self.assertEqual(f.read(), 'source file content\n')
+                self.assertEqual(os.readlink(target_dir), source_dir)
+                # Valid symlink is replaced with broken symlink
+                self.assertTrue(os.path.islink(broken_target))
+                self.assertFalse(os.path.exists(broken_target))
+                # Broken symlink is replaced with ordinary file
+                with open(other_source_file2) as f:
+                    self.assertEqual(f.read(), 'other source file content2\n')
+            # This should not raise OSError: [Errno 17] File exists
             except OSError:
                 self.fail("extractall failed with symlinked files")
             finally:
