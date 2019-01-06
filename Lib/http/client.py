@@ -755,10 +755,6 @@ class HTTPResponse(io.BufferedIOBase):
         description of the mimetools module.
 
         '''
-        import warnings
-        warnings.warn("HTTPResponse.info() is deprecated"
-                "use HTTPResponse.headers instead",
-                DeprecationWarning, stacklevel=2)
         return self.headers
 
     def geturl(self):
@@ -771,10 +767,6 @@ class HTTPResponse(io.BufferedIOBase):
         redirected URL.
 
         '''
-        import warnings
-        warnings.warn("HTTPResponse.geturl() is deprecated"
-                "use HTTPResponse.url instead",
-                DeprecationWarning, stacklevel=2)
         return self.url
 
     def getcode(self):
@@ -782,10 +774,6 @@ class HTTPResponse(io.BufferedIOBase):
         or None if the URL is not an HTTP URL.
 
         '''
-        import warnings
-        warnings.warn("HTTPResponse.getcode() is deprecated"
-                "use HTTPResponse.status instead",
-                DeprecationWarning, stacklevel=2)
         return self.status
 
 class HTTPConnection:

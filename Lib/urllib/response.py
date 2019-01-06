@@ -62,10 +62,6 @@ class addinfo(addbase):
         self.headers = headers
 
     def info(self):
-        import warnings
-        warnings.warn("addinfo.info() is deprecated"
-                "use addinfo.headers instead",
-                DeprecationWarning, stacklevel=2)
         return self.headers
 
 class addinfourl(addinfo):
@@ -81,15 +77,7 @@ class addinfourl(addinfo):
         return self.code
     
     def getcode(self):
-        import warnings
-        warnings.warn("addinfourl.getcode() is deprecated"
-                "use addinfourl.status instead",
-                DeprecationWarning, stacklevel=2)
         return self.code
 
     def geturl(self):
-        import warnings
-        warnings.warn("addinfourl.geturl() is deprecated"
-                "use addinfourl.url instead",
-                DeprecationWarning, stacklevel=2)
         return self.url
