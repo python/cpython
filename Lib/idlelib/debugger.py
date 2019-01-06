@@ -384,6 +384,7 @@ class Debugger:
             except AttributeError:
                 continue
 
+
 class StackViewer(ScrolledList):
 
     def __init__(self, master, flist, gui):
@@ -554,6 +555,7 @@ class NamespaceViewer:
 
     def close(self):
         self.frame.destroy()
+
 
 if __name__ == "__main__":
     from unittest import main
