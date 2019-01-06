@@ -4710,7 +4710,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
     switch (e->kind) {
     case Attribute_kind:
         auge = Attribute(e->v.Attribute.value, e->v.Attribute.attr,
-                         AugLoad, e->lineno, e->col_offset, c->c_arena);
+                         AugLoad, e->lineno, e->col_offset, e->end_lineno, e->end_col_offset, c->c_arena);
         if (auge == NULL)
             return 0;
         VISIT(c, expr, auge);
@@ -4721,7 +4721,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
         break;
     case Subscript_kind:
         auge = Subscript(e->v.Subscript.value, e->v.Subscript.slice,
-                         AugLoad, e->lineno, e->col_offset, c->c_arena);
+                         AugLoad, e->lineno, e->col_offset, e->end_lineno, e->end_col_offset, c->c_arena);
         if (auge == NULL)
             return 0;
         VISIT(c, expr, auge);
