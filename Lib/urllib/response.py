@@ -75,7 +75,7 @@ class addinfourl(addinfo):
     @property
     def status(self):
         return self.code
-    
+
     def getcode(self):
         return self.code
 
