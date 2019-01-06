@@ -1583,4 +1583,4 @@ The typical response object is a :class:`urllib.response.addinfourl` instance:
 
 .. method:: addinfourl.getstatus()
 
-   Returns the status. Deprecated in favor of *addinfourl.status* instead.
+   Returns the status. Recommended to use *addinfourl.status* instead.
