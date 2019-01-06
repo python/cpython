@@ -2,8 +2,9 @@
 
 from idlelib import debugger
 import unittest
+from unittest import mock
 from test.support import requires
-requires('gui')
+#requires('gui')
 from tkinter import Tk
 
 
@@ -22,6 +23,12 @@ class NameSpaceTest(unittest.TestCase):
     def test_init(self):
         debugger.NamespaceViewer(self.root, 'Test')
 
+
+@mock.patch('bdb.Bdb')
+class IdbTest(unittest.TestCase):
+    def test_init(self, bdb):
+        import pdb; pdb.set_trace()
+        bdb.__init__.assertCalled()
 
 # Other classes are Idb, Debugger, and StackViewer.
 
