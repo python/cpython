@@ -52,7 +52,7 @@ class IdbTest(unittest.TestCase):
     def test_user_line_basic_frame(self):
         """Test that .user_line() creates a string message for a frame."""
 
-        # Create a test code object to simuate a debug session.
+        # Create a test code object to simulate a debug session.
         test_code = dedent("""
         i = 1
         i += 2
@@ -79,8 +79,41 @@ class IdbTest(unittest.TestCase):
         idb = debugger.Idb(gui)
         idb.user_line(test_frame2)
 
+        assert not idb.in_rpc_code(test_frame2)
         gui.interaction.assert_called_once()
         gui.interaction.assert_called_with('test_user_line_basic_frame.py:2: <module>()', test_frame2)
+
+    def test_user_exception(self):
+        """Test that .user_exception() creates a string message for a frame."""
+
+        # Create a test code object to simulate a debug session.
+        test_code = dedent("""
+        i = 1
+        i += 2
+        if i == 3:
+           print(i)
+        """)
+        code_obj = compile(test_code,
+                           'test_user_exception.py',
+                           mode='exec')
+
+        # Create 1 test frame
+        test_frame1 = MockFrameType()
+        test_frame1.f_code = code_obj
+        test_frame1.f_lineno = 1
+
+        # Example from sys.exc_info()
+        test_exc_info = (type(ValueError), ValueError(), None)
+
+        gui = mock.Mock()
+        gui.interaction = mock.Mock()
+
+        idb = debugger.Idb(gui)
+        idb.user_exception(test_frame1, test_exc_info)
+
+        assert not idb.in_rpc_code(test_frame1)
+        gui.interaction.assert_called_once()
+        gui.interaction.assert_called_with('test_user_exception.py:1: <module>()', test_frame1, test_exc_info)
 
 
 if __name__ == '__main__':
