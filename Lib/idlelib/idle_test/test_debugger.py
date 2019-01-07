@@ -445,16 +445,45 @@ class StackViewerTest(unittest.TestCase):
         self.assertTrue(hasattr(sv, 'stack'))
 
     def test_load_stack(self):
-        """Test the .load_stack method against a fixed list."""
-        # Arrange a list of test stacks
+        """Test the .load_stack() method against a fixed test stack."""
+        # Arrange a test stack.
         test_code = compile(TEST_CODE, 'test_load_stack.py', 'exec')
-        test_stacks = [
+        test_stack = [
             (MockFrameType(test_code, 1), 1),
             (MockFrameType(test_code, 2), 2)
         ]
-        test_sv = debugger.StackViewer(None, None, None)
 
-        test_sv.load_stack(test_stacks)
+        # Create a stackviewer and load the test stack.
+        test_sv = debugger.StackViewer(None, None, None)
+        test_sv.load_stack(test_stack)
+
+        # Check the test stack is assigned and the list contains the repr of them.
+        self.assertEquals(test_sv.stack, test_stack)
+        self.assertEquals(test_sv.get(0), '?.<module>(), line 1: ')
+        self.assertEquals(test_sv.get(1), '?.<module>(), line 2: ')
+
+    def test_show_source(self):
+        """Test the .show_source() method against a fixed test stack."""
+        # Arrange a test stack.
+        test_code = compile(TEST_CODE, 'test_show_source.py', 'exec')
+        test_stack = [
+            (MockFrameType(test_code, 1), 1),
+            (MockFrameType(test_code, 2), 2)
+        ]
+
+        # Create a stackviewer and load the test stack.
+        test_sv = debugger.StackViewer(None, None, None)
+        test_sv.load_stack(test_stack)
+
+        # Patch out the file list to monitor it
+        test_sv.flist = mock.Mock()
+
+        # Patch out isfile to pretend file exists.
+        with mock.patch('idlelib.debugger.os.path.isfile', return_value=True) as isfile:
+            test_sv.show_source(1)
+            isfile.assert_called_once_with('test_show_source.py')
+            test_sv.flist.open.assert_called_once_with('test_show_source.py')
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
