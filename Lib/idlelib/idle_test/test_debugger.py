@@ -5,7 +5,7 @@ from idlelib import debugger
 import unittest
 from unittest import mock
 from test.support import requires
-requires('gui')
+#requires('gui')
 from tkinter import Tk
 from textwrap import dedent
 
@@ -46,8 +46,9 @@ class MockFrameType(object):
     f_restricted = 0
     f_trace = None
 
-    def __init__(self):
-        pass
+    def __init__(self, code, lineno):
+        self.f_code = code
+        self.f_lineno = lineno
 
 
 class IdbTest(unittest.TestCase):
@@ -67,13 +68,9 @@ class IdbTest(unittest.TestCase):
                            mode='exec')
 
         # Create 2 test frames for lines 1 and 2 of the test code.
-        test_frame1 = MockFrameType()
-        test_frame1.f_code = code_obj
-        test_frame1.f_lineno = 1
+        test_frame1 = MockFrameType(code_obj, 1)
 
-        test_frame2 = MockFrameType()
-        test_frame2.f_code = code_obj
-        test_frame2.f_lineno = 2
+        test_frame2 = MockFrameType(code_obj, 2)
         test_frame2.f_back = test_frame1
 
         gui = mock.Mock()
@@ -95,9 +92,7 @@ class IdbTest(unittest.TestCase):
                            mode='exec')
 
         # Create 1 test frame
-        test_frame1 = MockFrameType()
-        test_frame1.f_code = code_obj
-        test_frame1.f_lineno = 1
+        test_frame1 = MockFrameType(code_obj, 1)
 
         # Example from sys.exc_info()
         test_exc_info = (type(ValueError), ValueError(), None)
@@ -121,9 +116,7 @@ class IdbTest(unittest.TestCase):
                            mode='exec')
 
         # Create 1 test frame
-        test_frame = MockFrameType()
-        test_frame.f_code = code_obj
-        test_frame.f_lineno = 1
+        test_frame = MockFrameType(code_obj, 1)
 
         gui = mock.Mock()
         gui.interaction = mock.Mock()
@@ -143,13 +136,9 @@ class IdbTest(unittest.TestCase):
                                mode='exec')
 
             # Create 2 test frames
-            test_frame = MockFrameType()
-            test_frame.f_code = code_obj
-            test_frame.f_lineno = 1
+            test_frame = MockFrameType(code_obj, 1)
 
-            test_frame2 = MockFrameType()
-            test_frame2.f_code = code_obj
-            test_frame2.f_lineno = 2
+            test_frame2 = MockFrameType(code_obj, 2)
             test_frame2.f_back = test_frame
 
             gui = mock.Mock()
@@ -215,11 +204,9 @@ class DebuggerTest(unittest.TestCase):
     def test_interaction_with_message_and_frame(self):
         """Test the interaction sets the window message."""
         test_message = "testing 1234.."
-        test_frame = MockFrameType()
         test_code = compile(TEST_CODE, 'test_interaction.py', 'exec')
 
-        test_frame.f_code = test_code
-        test_frame.f_lineno = 1
+        test_frame = MockFrameType(test_code, 1)
 
         pyshell = make_pyshell_mock()
 
@@ -239,12 +226,9 @@ class DebuggerTest(unittest.TestCase):
     def test_interaction_with_message_and_frame_and_exc_info(self):
         """Test the interaction sets the window message with exception info."""
         test_message = "testing 1234.."
-        test_frame = MockFrameType()
         test_exc_info = (type(ValueError), ValueError(), None)
         test_code = compile(TEST_CODE, 'test_interaction.py', 'exec')
-
-        test_frame.f_code = test_code
-        test_frame.f_lineno = 1
+        test_frame = MockFrameType(test_code, 1)
 
         pyshell = make_pyshell_mock()
 
@@ -267,11 +251,8 @@ class DebuggerTest(unittest.TestCase):
 
         test_debugger = debugger.Debugger(pyshell)
 
-        test_frame = MockFrameType()
         test_code = compile(TEST_CODE, 'test_sync.py', 'exec')
-
-        test_frame.f_code = test_code
-        test_frame.f_lineno = 1
+        test_frame = MockFrameType(test_code, 1)
 
         test_debugger.frame = test_frame
 
@@ -323,7 +304,7 @@ class DebuggerTest(unittest.TestCase):
         # Patch out the root window and tk session so we can test them
         test_debugger.root = mock.Mock()
         test_debugger.root.tk = mock.Mock()
-        test_frame = MockFrameType()
+        test_frame = MockFrameType(None, None)
 
         test_debugger.frame = test_frame
         test_debugger.next()
@@ -340,7 +321,7 @@ class DebuggerTest(unittest.TestCase):
         # Patch out the root window and tk session so we can test them
         test_debugger.root = mock.Mock()
         test_debugger.root.tk = mock.Mock()
-        test_frame = MockFrameType()
+        test_frame = MockFrameType(None, None)
 
         test_debugger.frame = test_frame
         test_debugger.ret()
@@ -380,7 +361,7 @@ class DebuggerTest(unittest.TestCase):
         test_debugger = debugger.Debugger(pyshell, idb)
 
         # Set a frame on the GUI before showing stack
-        test_frame = MockFrameType()
+        test_frame = MockFrameType(None, None)
         test_debugger.frame = test_frame
 
         # Reset the stackviewer to force it to be recreated.
@@ -452,6 +433,28 @@ class DebuggerTest(unittest.TestCase):
              mock.call('test2.py', 44),
              mock.call('test2.py', 45)])
 
+
+class StackViewerTest(unittest.TestCase):
+
+    def test_init(self):
+        """Test creation of StackViewer."""
+        gui = None
+        flist = None
+        master_window = None
+        sv = debugger.StackViewer(master_window, flist, gui)
+        self.assertTrue(hasattr(sv, 'stack'))
+
+    def test_load_stack(self):
+        """Test the .load_stack method against a fixed list."""
+        # Arrange a list of test stacks
+        test_code = compile(TEST_CODE, 'test_load_stack.py', 'exec')
+        test_stacks = [
+            (MockFrameType(test_code, 1), 1),
+            (MockFrameType(test_code, 2), 2)
+        ]
+        test_sv = debugger.StackViewer(None, None, None)
+
+        test_sv.load_stack(test_stacks)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
