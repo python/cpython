@@ -1,10 +1,11 @@
 "Test debugger, coverage 19%"
 
+from collections import namedtuple
 from idlelib import debugger
 import unittest
 from unittest import mock
 from test.support import requires
-# requires('gui')
+requires('gui')
 from tkinter import Tk
 from textwrap import dedent
 
@@ -361,6 +362,95 @@ class DebuggerTest(unittest.TestCase):
 
         # Check set_quit was called on the idb instance.
         idb.set_quit.assert_called_once_with()
+
+    def test_show_stack(self):
+        """Test the .show_stack() method calls with stackview"""
+        pyshell = make_pyshell_mock()
+        idb = mock.Mock()
+        test_debugger = debugger.Debugger(pyshell, idb)
+        test_debugger.show_stack()
+
+        # Check that the newly created stackviewer has the test gui as a field.
+        self.assertEquals(test_debugger.stackviewer.gui, test_debugger)
+
+    def test_show_stack_with_frame(self):
+        """Test the .show_stack() method calls with stackview and frame"""
+        pyshell = make_pyshell_mock()
+        idb = mock.Mock()
+        test_debugger = debugger.Debugger(pyshell, idb)
+
+        # Set a frame on the GUI before showing stack
+        test_frame = MockFrameType()
+        test_debugger.frame = test_frame
+
+        # Reset the stackviewer to force it to be recreated.
+        test_debugger.stackviewer = None
+
+        idb.get_stack.return_value = ([], 0)
+        test_debugger.show_stack()
+
+        # Check that the newly created stackviewer has the test gui as a field.
+        self.assertEquals(test_debugger.stackviewer.gui, test_debugger)
+
+        idb.get_stack.assert_called_once_with(test_frame, None)
+
+    def test_set_breakpoint_here(self):
+        """Test the .set_breakpoint_here() method calls idb."""
+        pyshell = make_pyshell_mock()
+        idb = mock.Mock()
+        test_debugger = debugger.Debugger(pyshell, idb)
+
+        test_debugger.set_breakpoint_here('test.py', 4)
+
+        idb.set_break.assert_called_once_with('test.py', 4)
+
+    def test_clear_breakpoint_here(self):
+        """Test the .clear_breakpoint_here() method calls idb."""
+        pyshell = make_pyshell_mock()
+        idb = mock.Mock()
+        test_debugger = debugger.Debugger(pyshell, idb)
+
+        test_debugger.clear_breakpoint_here('test.py', 4)
+
+        idb.clear_break.assert_called_once_with('test.py', 4)
+
+    def test_clear_file_breaks(self):
+        """Test the .clear_file_breaks() method calls idb."""
+        pyshell = make_pyshell_mock()
+        idb = mock.Mock()
+        test_debugger = debugger.Debugger(pyshell, idb)
+
+        test_debugger.clear_file_breaks('test.py')
+
+        idb.clear_all_file_breaks.assert_called_once_with('test.py')
+
+    def test_load_breakpoints(self):
+        """Test the .load_breakpoints() method calls idb."""
+        FileIO = namedtuple('FileIO', 'filename')
+
+        class MockEditWindow(object):
+            def __init__(self, fn, breakpoints):
+                self.io = FileIO(fn)
+                self.breakpoints = breakpoints
+
+        pyshell = make_pyshell_mock()
+        pyshell.flist = mock.Mock()
+        pyshell.flist.inversedict = (
+            MockEditWindow('test1.py', [1, 4, 4]),
+            MockEditWindow('test2.py', [13, 44, 45]),
+        )
+        idb = mock.Mock()
+        test_debugger = debugger.Debugger(pyshell, idb)
+
+        test_debugger.load_breakpoints()
+
+        idb.set_break.assert_has_calls(
+            [mock.call('test1.py', 1),
+             mock.call('test1.py', 4),
+             mock.call('test1.py', 4),
+             mock.call('test2.py', 13),
+             mock.call('test2.py', 44),
+             mock.call('test2.py', 45)])
 
 
 if __name__ == '__main__':
