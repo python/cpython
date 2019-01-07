@@ -462,11 +462,11 @@ statement.
 
 .. attribute:: HTTPResponse.url
 
-   URL of the resource retrieved, commonly used to determine if a redirect was followed
+   URL of the resource retrieved, commonly used to determine if a redirect was followed.
 
 .. attribute:: HTTPResponse.headers
 
-   Headers of the response in the form of an :meth:`email.message_from_string` instance
+   Headers of the response in the form of an :meth:`email.message_from_string` instance.
 
 .. attribute:: HTTPResponse.status
 

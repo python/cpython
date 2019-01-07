@@ -1557,7 +1557,7 @@ The typical response object is a :class:`urllib.response.addinfourl` instance:
 
 .. attribute:: addinfourl.url
 
-   URL of the resource retrieved, commonly used to determine if a redirect was followed
+   URL of the resource retrieved, commonly used to determine if a redirect was followed.
 
 .. attribute:: addinfourl.headers
 
