@@ -211,6 +211,32 @@ class DebuggerTest(unittest.TestCase):
         test_debugger.idb.run.called_with(1, 'two')
         assert test_debugger.interacting == 0
 
+    def test_close(self):
+        """Test closing the window in an idle state."""
+        pyshell = make_pyshell_mock()
+        test_debugger = debugger.Debugger(pyshell)
+        test_debugger.close()
+        pyshell.close_debugger.assert_called_once()
+
+    def test_close_whilst_interacting(self):
+        """Test closing the window in an interactive state."""
+        pyshell = make_pyshell_mock()
+        test_debugger = debugger.Debugger(pyshell)
+        test_debugger.interacting = 1
+        test_debugger.close()
+        pyshell.close_debugger.assert_not_called()
+
+    def test_interaction_with_message_and_frame(self):
+        test_message = "testing 1234.."
+        test_frame = MockFrameType()
+
+        pyshell = make_pyshell_mock()
+        test_debugger = debugger.Debugger(pyshell)
+
+        # Patch out the status label so we can check messages
+        test_debugger.status = mock.Mock()
+        test_debugger.interaction(test_message, test_frame)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
