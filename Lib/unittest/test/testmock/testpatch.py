@@ -1874,12 +1874,6 @@ class PatchTest(unittest.TestCase):
 
         self.assertEqual(foo, original)
 
-        # check if removing foo element not fail
-        with patch.dict(foo, OrderedDict(update_values)):
-            self.assertEqual(list(foo.items()).pop(), patched_values.pop())
-
-        self.assertEqual(foo, original)
-
 
 if __name__ == '__main__':
     unittest.main()
