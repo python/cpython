@@ -5,7 +5,7 @@ from idlelib import debugger
 import unittest
 from unittest import mock
 from test.support import requires
-#requires('gui')
+requires('gui')
 from tkinter import Tk
 from textwrap import dedent
 
