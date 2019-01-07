@@ -1586,7 +1586,7 @@ decorator. When used as a class decorator :func:`patch.dict` honours
     >>> import os
     >>> import unittest
     >>> @patch.dict('os.environ', {'newkey': 'newvalue'})
-    >>> class TestSample(unittest.TestCase):
+    ... class TestSample(unittest.TestCase):
     ...     def test_sample(self):
     ...         self.assertEqual(os.environ['newkey'], 'newvalue')
 
