@@ -1,0 +1,3 @@
+Add tests for the idlelib.debugger module to validate the existing behaviors of the debugger window, the stack frame viewer and the namespace viewer.
+Fixed an issue where debug sessions could crash where the previous frame was None (ie. the first frame in a callstack).
+Fixed an issue where the Idb class would not set the "botframe" attribute, causing the debug session to crash.
