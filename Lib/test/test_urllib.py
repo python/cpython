@@ -187,7 +187,7 @@ class urlopen_FileTests(unittest.TestCase):
 
     def test_info(self):
         self.assertIsInstance(self.returned_obj.info(), email.message.Message)
-        self.assertIsInstance(self.returned_obj.info, email.message.Message)
+        self.assertIsInstance(self.returned_obj.headers, email.message.Message)
 
     def test_geturl(self):
         self.assertEqual(self.returned_obj.geturl(), self.pathname)
