@@ -2659,8 +2659,7 @@ ast_for_expr(struct compiling *c, const node *n)
                 }
 
                 return Compare(expression, ops, cmps, LINENO(n),
-                               n->n_end_lineno, n->n_end_col_offset,
-                               n->n_col_offset, c->c_arena);
+                               n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
             }
             break;
 

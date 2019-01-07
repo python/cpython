@@ -118,7 +118,7 @@ def copy_location(new_node, old_node):
     Copy source location (`lineno` and `col_offset` attributes) from
     *old_node* to *new_node* if possible, and return *new_node*.
     """
-    for attr in 'lineno', 'col_offset':
+    for attr in 'lineno', 'col_offset', 'end_lineno', 'end_col_offset':
         if attr in old_node._attributes and attr in new_node._attributes \
            and hasattr(old_node, attr):
             setattr(new_node, attr, getattr(old_node, attr))
@@ -133,20 +133,30 @@ def fix_missing_locations(node):
     recursively where not already set, by setting them to the values of the
     parent node.  It works recursively starting at *node*.
     """
-    def _fix(node, lineno, col_offset):
+    def _fix(node, lineno, col_offset, end_lineno, end_col_offset):
         if 'lineno' in node._attributes:
             if not hasattr(node, 'lineno'):
                 node.lineno = lineno
             else:
                 lineno = node.lineno
+        if 'end_lineno' in node._attributes:
+            if not hasattr(node, 'end_lineno'):
+                node.end_lineno = end_lineno
+            else:
+                end_lineno = node.end_lineno
         if 'col_offset' in node._attributes:
             if not hasattr(node, 'col_offset'):
                 node.col_offset = col_offset
             else:
                 col_offset = node.col_offset
+        if 'end_col_offset' in node._attributes:
+            if not hasattr(node, 'end_col_offset'):
+                node.end_col_offset = end_col_offset
+            else:
+                end_col_offset = node.end_col_offset
         for child in iter_child_nodes(node):
-            _fix(child, lineno, col_offset)
-    _fix(node, 1, 0)
+            _fix(child, lineno, col_offset, end_lineno, end_col_offset)
+    _fix(node, 1, 0, 1, 0)
     return node
 
 
