@@ -1,0 +1,4 @@
+:func:`os.stat` and :meth:`os.DirEntry.stat` no longer automount the
+terminal ("basename") component of pathname if it is a directory that is an
+automount point on Linux when *dir_fd* or *follow_symlinks* arguments are
+passed.

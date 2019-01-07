@@ -2153,9 +2153,13 @@ posix_do_stat(const char *function_name, path_t *path,
     else
 #endif /* HAVE_LSTAT */
 #ifdef HAVE_FSTATAT
-    if ((dir_fd != DEFAULT_DIR_FD) || !follow_symlinks)
-        result = fstatat(dir_fd, path->narrow, &st,
-                         follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
+    if ((dir_fd != DEFAULT_DIR_FD) || !follow_symlinks) {
+        int flags = follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW;
+#ifdef AT_NO_AUTOMOUNT
+        flags |= AT_NO_AUTOMOUNT;
+#endif /* AT_NO_AUTOMOUNT */
+        result = fstatat(dir_fd, path->narrow, &st, flags);
+    }
     else
 #endif /* HAVE_FSTATAT */
         result = STAT(path->narrow, &st);
@@ -12081,8 +12085,11 @@ DirEntry_fetch_stat(DirEntry *self, int follow_symlinks)
     const char *path = PyBytes_AS_STRING(ub);
     if (self->dir_fd != DEFAULT_DIR_FD) {
 #ifdef HAVE_FSTATAT
-        result = fstatat(self->dir_fd, path, &st,
-                         follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
+        int flags = follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW;
+#ifdef AT_NO_AUTOMOUNT
+        flags |= AT_NO_AUTOMOUNT;
+#endif /* AT_NO_AUTOMOUNT */
+        result = fstatat(self->dir_fd, path, &st, flags);
 #else
         PyErr_SetString(PyExc_NotImplementedError, "can't fetch stat");
         return NULL;
