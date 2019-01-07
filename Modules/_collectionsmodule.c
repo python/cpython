@@ -134,32 +134,6 @@ freeblock(block *b)
     PyMem_Free(b);
 }
 
-static block *
-deque_get_block(dequeobject *deque, Py_ssize_t *index)
-{
-    Py_ssize_t i = *index, m = i, n;
-    block *b;
-
-    i += deque->leftindex;
-    n = (Py_ssize_t)((size_t) i / BLOCKLEN);
-    *index = (Py_ssize_t)((size_t) i % BLOCKLEN);
-    if (m < (Py_SIZE(deque) >> 1)) {
-        b = deque->leftblock;
-        while (n--) {
-            b = b->rightlink;
-        }
-    } else {
-        n = (Py_ssize_t)(
-                ((size_t)(deque->leftindex + Py_SIZE(deque) - 1))
-                / BLOCKLEN - n);
-        b = deque->rightblock;
-        while (n--) {
-            b = b->leftlink;
-        }
-    }
-    return b;
-}
-
 static PyObject *
 deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -1064,9 +1038,17 @@ _deque_index(dequeobject *deque, PyObject *value,
     if (start > stop)
         start = stop;
     assert(0 <= start && start <= stop && stop <= Py_SIZE(deque));
-
-    index = start;
-    b = deque_get_block(deque, &index);
+    int i;
+    for (i=0 ; i < start - BLOCKLEN ; i += BLOCKLEN) {
+        b = b->rightlink;
+    }
+    for ( ; i < start ; ++i){
+        ++index;
+        if (index == BLOCKLEN){
+            b = b->rightlink;
+            index = 0;
+        }
+    }
 
     n = stop - start ;
     while (--n >= 0) {
@@ -1082,8 +1064,8 @@ _deque_index(dequeobject *deque, PyObject *value,
                             "deque mutated during iteration");
             return -1;
         }
-
-        if (++index == BLOCKLEN) {
+        ++index;
+        if (index == BLOCKLEN) {
             b = b->rightlink;
             index = 0;
         }
@@ -1094,7 +1076,7 @@ _deque_index(dequeobject *deque, PyObject *value,
 
 
 static PyObject *
-deque_index(dequeobject *deque, PyObject *args, Py_ssize_t nargs)
+deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     Py_ssize_t i, start=0, stop=Py_SIZE(deque);
     PyObject *value;
@@ -1107,7 +1089,8 @@ deque_index(dequeobject *deque, PyObject *args, Py_ssize_t nargs)
 
     i = _deque_index(deque, value, start, stop);
 
-    if (i == -1 && PyErr_Occurred()) {
+    if (i == -1) {
+        assert(PyErr_Occurred());
         return NULL;
     }
    return PyLong_FromSsize_t(i);
@@ -1172,7 +1155,8 @@ deque_remove(dequeobject *deque, PyObject *value)
     int rv;
 
     i = _deque_index(deque, value, 0, Py_SIZE(deque));
-    if (i == -1 && PyErr_Occurred()) {
+    if (i == -1) {
+        assert(PyErr_Occurred());
         return NULL;
     }
     if (start_state != deque->state) {
