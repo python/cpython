@@ -588,9 +588,10 @@ class ASTHelpers_Test(unittest.TestCase):
         src = ast.parse('1 + 1', mode='eval')
         src.body.right = ast.copy_location(ast.Num(2), src.body.right)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, lineno=1, col_offset=0), '
-            'op=Add(), right=Constant(value=2, lineno=1, col_offset=4), lineno=1, '
-            'col_offset=0))'
+            'Expression(body=BinOp(left=Constant(value=1, lineno=1, col_offset=0, '
+            'end_lineno=1, end_col_offset=1), op=Add(), right=Constant(value=2, '
+            'lineno=1, col_offset=4, end_lineno=1, end_col_offset=5), lineno=1, '
+            'col_offset=0, end_lineno=1, end_col_offset=5))'
         )
 
     def test_fix_missing_locations(self):
@@ -613,17 +614,19 @@ class ASTHelpers_Test(unittest.TestCase):
         src = ast.parse('1 + 1', mode='eval')
         self.assertEqual(ast.increment_lineno(src, n=3), src)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0), '
-            'op=Add(), right=Constant(value=1, lineno=4, col_offset=4), lineno=4, '
-            'col_offset=0))'
+            'Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0, '
+            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, '
+            'lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, '
+            'col_offset=0, end_lineno=4, end_col_offset=5))'
         )
         # issue10869: do not increment lineno of root twice
         src = ast.parse('1 + 1', mode='eval')
         self.assertEqual(ast.increment_lineno(src.body, n=3), src.body)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0), '
-            'op=Add(), right=Constant(value=1, lineno=4, col_offset=4), lineno=4, '
-            'col_offset=0))'
+            'Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0, '
+            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, '
+            'lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, '
+            'col_offset=0, end_lineno=4, end_col_offset=5))'
         )
 
     def test_iter_fields(self):

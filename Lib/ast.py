@@ -168,6 +168,8 @@ def increment_lineno(node, n=1):
     for child in walk(node):
         if 'lineno' in child._attributes:
             child.lineno = getattr(child, 'lineno', 0) + n
+        if 'end_lineno' in child._attributes:
+            child.end_lineno = getattr(child, 'end_lineno', 0) + n
     return node
 
 
