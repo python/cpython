@@ -4,7 +4,7 @@ from idlelib import debugger
 import unittest
 from unittest import mock
 from test.support import requires
-requires('gui')
+# requires('gui')
 from tkinter import Tk
 from textwrap import dedent
 
@@ -172,6 +172,33 @@ class IdbTest(unittest.TestCase):
             idb = debugger.Idb(gui)
 
             assert not idb.in_rpc_code(test_frame2)
+
+
+def make_pyshell_mock():
+    """Factory for generating test fixtures of PyShell."""
+    pyshell = mock.Mock()
+    pyshell.root = None
+    return pyshell
+
+
+class DebuggerTest(unittest.TestCase):
+    """Tests for the idlelib.debugger.Debugger class."""
+
+    def test_setup_debugger(self):
+        """Test that Debugger can be instantiated with a mock PyShell."""
+        pyshell = make_pyshell_mock()
+        test_debugger = debugger.Debugger(pyshell)
+
+        assert test_debugger.pyshell == pyshell
+        assert test_debugger.frame is None
+
+    def test_run_debugger(self):
+        """Test Debugger.run() with an Idb instance."""
+        mock_idb = mock.Mock()  # Mocked debugger.Idb
+        test_debugger = debugger.Debugger(make_pyshell_mock(), idb=mock_idb)
+        test_debugger.run()
+        mock_idb.run.assert_called_once()
+        assert test_debugger.interacting == 0
 
 
 if __name__ == '__main__':

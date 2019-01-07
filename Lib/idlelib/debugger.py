@@ -68,10 +68,30 @@ class Idb(bdb.Bdb):
 
 
 class Debugger:
+    """
+    The debugger interface.
 
-    vstack = vsource = vlocals = vglobals = None
+    This class handles the drawing of the debugger window and
+    the interactions with the underlying debugger session.
+    """
+    vstack = None
+    vsource = None
+    vlocals = None
+    vglobals = None
+    stackviewer = None
+    localsviewer = None
+    globalsviewer = None
 
     def __init__(self, pyshell, idb=None):
+        """
+        Instantiate and draw a debugger window.
+
+        :param pyshell: An instance of the PyShell Window
+        :type  pyshell: :class:`idlelib.pyshell.PyShell`
+
+        :param idb: An instance of the IDLE debugger (optional)
+        :type  idb: :class:`idlelib.debugger.Idb`
+        """
         if idb is None:
             idb = Idb(self)
         self.pyshell = pyshell
@@ -299,8 +319,6 @@ class Debugger:
     def abort_loop(self):
         self.root.tk.call('set', '::idledebugwait', '1')
 
-    stackviewer = None
-
     def show_stack(self):
         if not self.stackviewer and self.vstack.get():
             self.stackviewer = sv = StackViewer(self.fstack, self.flist, self)
@@ -321,9 +339,6 @@ class Debugger:
     def show_frame(self, stackitem):
         self.frame = stackitem[0]  # lineno is stackitem[1]
         self.show_variables()
-
-    localsviewer = None
-    globalsviewer = None
 
     def show_locals(self):
         lv = self.localsviewer
@@ -375,7 +390,7 @@ class Debugger:
         self.idb.clear_all_file_breaks(filename)
 
     def load_breakpoints(self):
-        "Load PyShellEditorWindow breakpoints into subprocess debugger"
+        """Load PyShellEditorWindow breakpoints into subprocess debugger."""
         for editwin in self.pyshell.flist.inversedict:
             filename = editwin.io.filename
             try:
