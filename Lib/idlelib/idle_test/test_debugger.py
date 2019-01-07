@@ -192,12 +192,23 @@ class DebuggerTest(unittest.TestCase):
         assert test_debugger.pyshell == pyshell
         assert test_debugger.frame is None
 
-    def test_run_debugger(self):
+    def test_run_debugger_with_idb(self):
         """Test Debugger.run() with an Idb instance."""
         mock_idb = mock.Mock()  # Mocked debugger.Idb
         test_debugger = debugger.Debugger(make_pyshell_mock(), idb=mock_idb)
-        test_debugger.run()
+        test_debugger.run(1, 'two')
         mock_idb.run.assert_called_once()
+        mock_idb.run.called_with(1, 'two')
+        assert test_debugger.interacting == 0
+
+    def test_run_debugger_no_idb(self):
+        """Test Debugger.run() with no Idb instance."""
+        test_debugger = debugger.Debugger(make_pyshell_mock(), idb=None)
+        assert test_debugger.idb is not None
+        test_debugger.idb.run = mock.Mock()
+        test_debugger.run(1, 'two')
+        test_debugger.idb.run.assert_called_once()
+        test_debugger.idb.run.called_with(1, 'two')
         assert test_debugger.interacting == 0
 
 
