@@ -2729,7 +2729,16 @@ AC_MSG_RESULT($SHLIBS)
 
 # checks for libraries
 AC_CHECK_LIB(sendfile, sendfile)
-AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
+# Dynamic linking for SunOS/Solaris and SYSV
+AC_CHECK_LIB(dl, dlopen,
+	has_dlopen=yes
+	LIBS="$LIBS -ldl",
+	[AC_CHECK_FUNCS(dlopen), has_dlopen=yes])
+
+if test "$has_dlopen" = yes; then
+	AC_DEFINE(HAVE_DLOPEN, 1, [Define to 1 if you have the dlopen function.])
+fi
+
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 
 # checks for uuid.h location
@@ -3444,8 +3453,6 @@ DLINCLDIR=.
 
 # the dlopen() function means we might want to use dynload_shlib.o. some
 # platforms, such as AIX, have dlopen(), but don't want to use it.
-AC_CHECK_FUNCS(dlopen)
-
 # DYNLOADFILE specifies which dynload_*.o file we will use for dynamic
 # loading of modules.
 AC_SUBST(DYNLOADFILE)
@@ -3454,7 +3461,7 @@ if test -z "$DYNLOADFILE"
 then
 	case $ac_sys_system/$ac_sys_release in
 	AIX*) # Use dynload_shlib.c and dlopen() if we have it; otherwise dynload_aix.c
-	if test "$ac_cv_func_dlopen" = yes
+	if test "$has_dlopen" = yes
 	then DYNLOADFILE="dynload_shlib.o"
 	else DYNLOADFILE="dynload_aix.o"
 	fi
@@ -3463,7 +3470,7 @@ then
 	*)
 	# use dynload_shlib.c and dlopen() if we have it; otherwise stub
 	# out any dynamic loading
-	if test "$ac_cv_func_dlopen" = yes
+	if test "$has_dlopen" = yes
 	then DYNLOADFILE="dynload_shlib.o"
 	else DYNLOADFILE="dynload_stub.o"
 	fi
