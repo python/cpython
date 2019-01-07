@@ -1,0 +1,2 @@
+Add a deprecated warning for the threading.Thread.isAlive.
+Patch by Dong-hee Na.
