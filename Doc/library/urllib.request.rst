@@ -1571,16 +1571,16 @@ The typical response object is a :class:`urllib.response.addinfourl` instance:
 
 .. attribute:: addinfourl.status
 
-   Status code returned by server. Recommended to use *addinfourl.status* instead.
+   Status code returned by server. Recommended to use :attr:`~addinfourl.status` instead.
 
 .. method:: addinfourl.geturl()
 
-   Returns the URL of the resource retrieved. Recommended to use *addinfourl.url* instead.
+   Returns the URL of the resource retrieved. Recommended to use :attr:`~addinfourl.status` instead.
 
 .. method:: addinfourl.info()
 
-   Returns the response headers. Recommended to use *addinfourl.headers* instead.
+   Returns the response headers. Recommended to use :attr:`~addinfourl.status` instead.
 
 .. method:: addinfourl.getstatus()
 
-   Returns the status. Recommended to use *addinfourl.status* instead.
+   Returns the status. Recommended to use :attr:`~addinfourl.status` instead.
