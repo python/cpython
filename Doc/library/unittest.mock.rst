@@ -1578,7 +1578,7 @@ decorator. When used as a class decorator :func:`patch.dict` honours
 
     >>> foo = {}
     >>> @patch.dict(foo, {'newkey': 'newvalue'})
-    >>> def test():
+    ... def test():
     ...     assert foo == {'newkey': 'newvalue'}
     >>> test()
     >>> assert foo == {}
