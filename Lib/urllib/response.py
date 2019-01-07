@@ -64,6 +64,7 @@ class addinfo(addbase):
     def info(self):
         return self.headers
 
+
 class addinfourl(addinfo):
     """class to add info() and geturl() methods to an open file."""
 
