@@ -54,7 +54,7 @@ class TestResponse(unittest.TestCase):
         self.assertEqual(infourl.getcode(), code)
         self.assertEqual(infourl.info, self.test_headers)
         self.assertEqual(infourl.url, url)
-        self.assertEqual(infourl.code, code)
+        self.assertEqual(infourl.status, code)
 
     def tearDown(self):
         self.sock.close()
