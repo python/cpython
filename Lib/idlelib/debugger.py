@@ -14,6 +14,7 @@ class Idb(bdb.Bdb):
 
     def __init__(self, gui):
         self.gui = gui  # An instance of Debugger or proxy of remote.
+        self.botframe = None
         super(Idb, self).__init__()
 
     def user_line(self, frame):
@@ -102,6 +103,7 @@ class Debugger:
         self.nesting_level = 0
 
     def run(self, *args):
+        """Run the debugger."""
         # Deal with the scenario where we've already got a program running
         # in the debugger and we want to start another. If that is the case,
         # our second 'run' was invoked from an event dispatched not from
@@ -142,6 +144,7 @@ class Debugger:
             self.interacting = 0
 
     def close(self, event=None):
+        """Close the debugger and window."""
         try:
             self.quit()
         except Exception:
@@ -159,6 +162,7 @@ class Debugger:
         self.top.destroy()
 
     def make_gui(self):
+        """Draw the debugger gui on the screen."""
         pyshell = self.pyshell
         self.flist = pyshell.flist
         self.root = root = pyshell.root
