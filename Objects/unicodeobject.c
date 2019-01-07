@@ -9473,6 +9473,7 @@ _PyUnicode_InsertThousandsGrouping(
     PyObject *thousands_sep,
     Py_UCS4 *maxchar)
 {
+    min_width = Py_MAX(0, min_width);
     if (writer) {
         assert(digits != NULL);
         assert(maxchar == NULL);
@@ -9483,7 +9484,6 @@ _PyUnicode_InsertThousandsGrouping(
     }
     assert(0 <= d_pos);
     assert(0 <= n_digits);
-    assert(0 <= min_width);
     assert(grouping != NULL);
 
     if (digits != NULL) {
