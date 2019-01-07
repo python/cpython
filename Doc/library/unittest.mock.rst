@@ -1572,9 +1572,23 @@ patch.dict
     :func:`patch.dict` can also be called with arbitrary keyword arguments to set
     values in the dictionary.
 
-    :func:`patch.dict` can be used as a context manager, decorator or class
-    decorator. When used as a class decorator :func:`patch.dict` honours
-    ``patch.TEST_PREFIX`` for choosing which methods to wrap.
+:func:`patch.dict` can be used as a context manager, decorator or class
+decorator. When used as a class decorator :func:`patch.dict` honours
+``patch.TEST_PREFIX`` for choosing which methods to wrap.
+
+    >>> foo = {}
+    >>> @patch.dict(foo, {'newkey': 'newvalue'})
+    >>> def test():
+    ...     assert foo == {'newkey': 'newvalue'}
+    >>> test()
+    >>> assert foo == {}
+
+    >>> import os
+    >>> import unittest
+    >>> @patch.dict('os.environ', {'newkey': 'newvalue'}):
+    >>> class TestSample(unittest.TestCase):
+    ...     def test_sample(self):
+    ...         self.assertEqual(os.environ['newkey'], 'newvalue') 
 
     .. versionchanged:: 3.8
 
