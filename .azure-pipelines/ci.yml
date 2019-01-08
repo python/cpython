@@ -138,7 +138,6 @@ jobs:
 - job: Windows_Layout_Tests
   displayName: Windows Layout Tests
   dependsOn: Windows_CI_Tests
-  condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
 
   pool:
     vmImage: vs2017-win2016
