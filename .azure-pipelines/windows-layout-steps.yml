@@ -1,0 +1,35 @@
+steps:
+- checkout: self
+  clean: true
+  fetchDepth: 5
+
+- task: DownloadPipelineArtifact@0
+  displayName: 'Download build artifacts'
+  inputs:
+    artifactName: windows-$(arch)
+    targetPath: $(Build.BinariesDirectory)\build
+
+- script: |
+    $py = ('python.exe', 'python_d.exe') | %{ Get-Item "${env:BUILD_BINARIESDIRECTORY}\$_" } | select -First 1
+    Write-Host '##vso[task.setVariable variable=PYTHON]"' + $py.FullName + '"'
+    Write-Host '##vso[task.setVariable variable=PYTHON_NAME]"' + $py.Name + '"'
+    Write-Host '##vso[task.setVariable variable=BUILD]"' + $py.Directory.FullName + '"'
+
+- script: $(PYTHON) PC\layout -vv -s "$(Build.SourcesDirectory)" -b $(BUILD) -t "$(Build.BinariesDirectory)\layout-tmp-embed-$(arch)" --copy "$(Build.BinariesDirectory)\layout-embed-$(arch)" --precompile --preset-embed --include-tests
+
+- script: $(PYTHON_NAME) -m test.pythoninfo
+  workingDirectory: $(Build.BinariesDirectory)\layout-embed-$(arch)
+  displayName: 'Embeddable layout info'
+
+- script: $(PYTHON) PC\layout -vv -s "$(Build.SourcesDirectory)" -b $(BUILD) -t "$(Build.BinariesDirectory)\layout-tmp-nuget-$(arch)" --copy "$(Build.BinariesDirectory)\layout-nuget-$(arch)" --preset-nuget --include-tests
+
+- script: $(PYTHON_NAME) -m test.pythoninfo
+  workingDirectory: $(Build.BinariesDirectory)\layout-nuget-$(arch)
+  displayName: 'Nuget layout info'
+
+- script: $(PYTHON) PC\layout -vv -s "$(Build.SourcesDirectory)" -b $(BUILD) -t "$(Build.BinariesDirectory)\layout-tmp-appx-$(arch)" --copy "$(Build.BinariesDirectory)\layout-appx-$(arch)" --precompile --preset-appx --include-tests
+  displayName: 'Create APPX layout'
+
+- script: $(PYTHON_NAME) -m test.pythoninfo
+  workingDirectory: $(Build.BinariesDirectory)\layout-appx-$(arch)
+  displayName: 'APPX layout info'

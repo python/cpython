@@ -134,3 +134,4 @@ jobs:
 
   steps:
   - template: ./windows-steps.yml
+  - template: ./windows-layout-steps.yml

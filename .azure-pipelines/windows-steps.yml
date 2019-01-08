@@ -32,3 +32,9 @@ steps:
     testRunTitle: $(testRunTitle)
     platform: $(testRunPlatform)
   condition: succeededOrFailed()
+
+- task: PublishPipelineArtifact@0
+  displayName: 'Publish build artifacts'
+  inputs:
+    artifactName: windows-$(arch)
+    targetPath: $(Py_OutDir)\$(arch)
