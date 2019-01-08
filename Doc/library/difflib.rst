@@ -132,8 +132,8 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
          HTML document changed from ``'ISO-8859-1'`` to ``'utf-8'``.
 
       .. note::
-         *fromdesc* and *todesc* are interpreted as HTML and should be properly escaped
-         while receiving input from untrusted sources.
+         *fromdesc* and *todesc* are interpreted as unescaped HTML and should be
+         properly escaped while receiving input from untrusted sources.
 
    .. method:: make_table(fromlines, tolines, fromdesc='', todesc='', context=False, numlines=5)
 
