@@ -198,14 +198,13 @@ class FaultHandlerTests(unittest.TestCase):
     @skip_segfault_on_android
     def test_sigbus(self):
         self.check_fatal_error("""
-            import _testcapi
             import faulthandler
             import signal
 
             faulthandler.enable()
-            _testcapi.raise_signal(signal.SIGBUS)
+            signal.raise_signal(signal.SIGBUS)
             """,
-            6,
+            5,
             'Bus error')
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
@@ -213,14 +212,13 @@ class FaultHandlerTests(unittest.TestCase):
     @skip_segfault_on_android
     def test_sigill(self):
         self.check_fatal_error("""
-            import _testcapi
             import faulthandler
             import signal
 
             faulthandler.enable()
-            _testcapi.raise_signal(signal.SIGILL)
+            signal.raise_signal(signal.SIGILL)
             """,
-            6,
+            5,
             'Illegal instruction')
 
     def test_fatal_error(self):
