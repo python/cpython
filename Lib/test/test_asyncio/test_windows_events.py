@@ -45,7 +45,7 @@ class ProactorLoopCtrlC(test_utils.TestCase):
 
         def SIGINT_after_delay():
             time.sleep(1)
-            _testcapi.raise_signal(signal.SIGINT)
+            signal.raise_signal(signal.SIGINT)
 
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
         l = asyncio.get_event_loop()

@@ -66,6 +66,39 @@ signal_pause(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_PAUSE) */
 
+PyDoc_STRVAR(signal_raise_signal__doc__,
+"raise_signal($module, signalnum, /)\n"
+"--\n"
+"\n"
+"Send a signal to the executing process.");
+
+#define SIGNAL_RAISE_SIGNAL_METHODDEF    \
+    {"raise_signal", (PyCFunction)signal_raise_signal, METH_O, signal_raise_signal__doc__},
+
+static PyObject *
+signal_raise_signal_impl(PyObject *module, int signalnum);
+
+static PyObject *
+signal_raise_signal(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int signalnum;
+
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    signalnum = _PyLong_AsInt(arg);
+    if (signalnum == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = signal_raise_signal_impl(module, signalnum);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(signal_signal__doc__,
 "signal($module, signalnum, handler, /)\n"
 "--\n"
@@ -558,4 +591,4 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=4ed8c36860f9f577 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=365db4e807c26d4e input=a9049054013a1b77]*/

@@ -390,6 +390,31 @@ signal_pause_impl(PyObject *module)
 
 #endif
 
+/*[clinic input]
+signal.raise_signal
+
+    signalnum: int
+    /
+
+Send a signal to the executing process.
+[clinic start generated code]*/
+
+static PyObject *
+signal_raise_signal_impl(PyObject *module, int signalnum)
+/*[clinic end generated code: output=e2b014220aa6111d input=e90c0f9a42358de6]*/
+{
+    int err;
+    Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
+    err = raise(signalnum);
+    _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
+    
+    if (err) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    Py_RETURN_NONE;
+}
 
 /*[clinic input]
 signal.signal
@@ -1208,6 +1233,7 @@ static PyMethodDef signal_methods[] = {
     SIGNAL_SETITIMER_METHODDEF
     SIGNAL_GETITIMER_METHODDEF
     SIGNAL_SIGNAL_METHODDEF
+    SIGNAL_RAISE_SIGNAL_METHODDEF
     SIGNAL_STRSIGNAL_METHODDEF
     SIGNAL_GETSIGNAL_METHODDEF
     {"set_wakeup_fd", (PyCFunction)(void(*)(void))signal_set_wakeup_fd, METH_VARARGS | METH_KEYWORDS, set_wakeup_fd_doc},

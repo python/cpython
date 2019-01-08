@@ -1,3 +1,4 @@
+import errno
 import os
 import random
 import signal
@@ -254,7 +255,7 @@ class WakeupSignalTests(unittest.TestCase):
         signal.set_wakeup_fd(r)
         try:
             with captured_stderr() as err:
-                _testcapi.raise_signal(signal.SIGALRM)
+                signal.raise_signal(signal.SIGALRM)
         except ZeroDivisionError:
             # An ignored exception should have been printed out on stderr
             err = err.getvalue()
@@ -348,10 +349,9 @@ class WakeupSignalTests(unittest.TestCase):
 
     def test_signum(self):
         self.check_wakeup("""def test():
-            import _testcapi
             signal.signal(signal.SIGUSR1, handler)
-            _testcapi.raise_signal(signal.SIGUSR1)
-            _testcapi.raise_signal(signal.SIGALRM)
+            signal.raise_signal(signal.SIGUSR1)
+            signal.raise_signal(signal.SIGALRM)
         """, signal.SIGUSR1, signal.SIGALRM)
 
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
@@ -365,8 +365,8 @@ class WakeupSignalTests(unittest.TestCase):
             signal.signal(signum2, handler)
 
             signal.pthread_sigmask(signal.SIG_BLOCK, (signum1, signum2))
-            _testcapi.raise_signal(signum1)
-            _testcapi.raise_signal(signum2)
+            signal.raise_signal(signum1)
+            signal.raise_signal(signum2)
             # Unblocking the 2 signals calls the C signal handler twice
             signal.pthread_sigmask(signal.SIG_UNBLOCK, (signum1, signum2))
         """,  signal.SIGUSR1, signal.SIGUSR2, ordered=False)
@@ -396,7 +396,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
         write.setblocking(False)
         signal.set_wakeup_fd(write.fileno())
 
-        _testcapi.raise_signal(signum)
+        signal.raise_signal(signum)
 
         data = read.recv(1)
         if not data:
@@ -445,7 +445,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
         write.close()
 
         with captured_stderr() as err:
-            _testcapi.raise_signal(signum)
+            signal.raise_signal(signum)
 
         err = err.getvalue()
         if ('Exception ignored when trying to {action} to the signal wakeup fd'
@@ -519,7 +519,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
         signal.set_wakeup_fd(write.fileno())
 
         with captured_stderr() as err:
-            _testcapi.raise_signal(signum)
+            signal.raise_signal(signum)
 
         err = err.getvalue()
         if msg not in err:
@@ -530,7 +530,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
         signal.set_wakeup_fd(write.fileno(), warn_on_full_buffer=True)
 
         with captured_stderr() as err:
-            _testcapi.raise_signal(signum)
+            signal.raise_signal(signum)
 
         err = err.getvalue()
         if msg not in err:
@@ -541,7 +541,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
         signal.set_wakeup_fd(write.fileno(), warn_on_full_buffer=False)
 
         with captured_stderr() as err:
-            _testcapi.raise_signal(signum)
+            signal.raise_signal(signum)
 
         err = err.getvalue()
         if err != "":
@@ -553,7 +553,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
         signal.set_wakeup_fd(write.fileno())
 
         with captured_stderr() as err:
-            _testcapi.raise_signal(signum)
+            signal.raise_signal(signum)
 
         err = err.getvalue()
         if msg not in err:
@@ -1213,6 +1213,38 @@ class StressTest(unittest.TestCase):
         # All ITIMER_REAL signals should have been delivered to the
         # Python handler
         self.assertEqual(len(sigs), N, "Some signals were lost")
+
+class RaiseSignalTest(unittest.TestCase):
+
+    def test_sigint(self):
+        try:
+            signal.raise_signal(signal.SIGINT)
+            self.fail("Expected KeyInterrupt")
+        except KeyboardInterrupt:
+            pass
+
+    @unittest.skipIf(sys.platform != "win32", "Windows specific test")
+    def test_invalid_argument(self):
+        try:
+            SIGHUP = 1 # not supported on win32
+            signal.raise_signal(SIGHUP)
+            self.fail("OSError (Invalid argument) expected")
+        except OSError as e:
+            if e.errno == errno.EINVAL:
+                pass
+            else:
+                raise
+
+    def test_handler(self):
+        is_ok = False
+        def handler(a, b):
+            nonlocal is_ok
+            is_ok = True
+        old_signal = signal.signal(signal.SIGINT, handler)
+        self.addCleanup(signal.signal, signal.SIGINT, old_signal)
+
+        signal.raise_signal(signal.SIGINT)
+        self.assertTrue(is_ok)
 
 
 def tearDownModule():
