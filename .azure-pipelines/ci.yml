@@ -134,3 +134,13 @@ jobs:
 
   steps:
   - template: ./windows-steps.yml
+
+  - template: ./windows-layout-steps.yml
+    parameters:
+      kind: nuget
+  - template: ./windows-layout-steps.yml
+    parameters:
+      kind: embed
+  - template: ./windows-layout-steps.yml
+    parameters:
+      kind: appx
