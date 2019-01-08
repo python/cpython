@@ -1,0 +1,1 @@
+Remove asynciomodule.c from pythoncore.vcxproj
