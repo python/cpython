@@ -41,7 +41,7 @@ if exist "%HTMLHELP%" goto :skiphhcsearch
 
 rem Search for HHC in likely places
 set HTMLHELP=
-where hhc /q && set HTMLHELP=hhc && goto :skiphhcsearch
+where hhc /q && set "HTMLHELP=hhc" && goto :skiphhcsearch
 where /R ..\externals hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
 if not exist "%HTMLHELP%" where /R "%ProgramFiles(x86)%" hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
 if not exist "%HTMLHELP%" where /R "%ProgramFiles%" hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
