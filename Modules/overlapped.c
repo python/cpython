@@ -723,6 +723,7 @@ do_ReadFile(OverlappedObject *self, HANDLE handle,
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
+            PyBuffer_Release(&self->user_buffer);
             self->type = TYPE_NOT_STARTED;
             return SetFromWindowsErr(err);
     }
@@ -1011,6 +1012,7 @@ Overlapped_WSASend(OverlappedObject *self, PyObject *args)
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
+            PyBuffer_Release(&self->user_buffer);
             self->type = TYPE_NOT_STARTED;
             return SetFromWindowsErr(err);
     }
