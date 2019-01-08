@@ -268,7 +268,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         else {
             end_col_offset = -1;
         }
-
+        // TODO: end line for multi-line strings (and "" \ "").
         if ((err_ret->error =
              PyParser_AddToken(ps, (int)type, str,
                                tok->lineno, col_offset, end_col_offset,
