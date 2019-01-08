@@ -1,1 +1,2 @@
-Make xml.sax.parse accepting Path objects. Patch by Mickaël Schoentgen.
+:func:`xml.sax.parse` now supports :term:`path-like <path-like object>`.
+Patch by Mickaël Schoentgen.
