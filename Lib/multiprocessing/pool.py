@@ -26,6 +26,7 @@ import warnings
 # we avoid top-level imports which are liable to fail on some systems.
 from . import util
 from . import get_context, TimeoutError
+from .connection import wait
 
 #
 # Constants representing the state of a pool
@@ -451,6 +452,11 @@ class Pool(object):
         )
         return result
 
+    def _wait_for_updates(self, timeout):
+        sentinels = [self._outqueue._reader.fileno(), self._outqueue._writer.fileno()]
+        sentinels.extend([worker.sentinel for worker in self._pool])
+        wait(sentinels, timeout=timeout)
+
     @staticmethod
     def _handle_workers(cache, taskqueue, ctx, Process, processes, pool,
                         inqueue, outqueue, initializer, initargs,
@@ -463,7 +469,7 @@ class Pool(object):
             Pool._maintain_pool(ctx, Process, processes, pool, inqueue,
                                 outqueue, initializer, initargs,
                                 maxtasksperchild, wrap_exception)
-            time.sleep(0.1)
+            pool._wait_for_updates(timeout=0.2)
         # send sentinel to stop workers
         taskqueue.put(None)
         util.debug('worker handler exiting')
@@ -881,3 +887,6 @@ class ThreadPool(Pool):
             pass
         for i in range(size):
             inqueue.put(None)
+
+    def _wait_for_updates(self, timeout):
+        time.sleep(timeout)
