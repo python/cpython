@@ -331,6 +331,13 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.2
       Result is a structured object rather than a simple 2-tuple.
 
+.. function:: unwrap(url)
+
+   Extract the url from a wrapped URL (that is, a string formatted as
+   ``<URL:type://host/path>``, ``<type://host/path>``, ``URL:type://host/path``
+   or ``type://host/path``). If *url* is not a wrapped URL, it is returned
+   without changes.
+
 .. _parsing-ascii-encoded-bytes:
 
 Parsing ASCII Encoded Bytes

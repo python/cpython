@@ -952,17 +952,12 @@ def _to_bytes(url):
 
 
 def unwrap(url):
-    warnings.warn("urllib.parse.unwrap() is deprecated as of 3.8",
-                  DeprecationWarning, stacklevel=2)
-    return _unwrap(url)
-
-
-def _unwrap(url):
     """unwrap('<URL:type://host/path>') --> 'type://host/path'."""
     url = str(url).strip()
     if url[:1] == '<' and url[-1:] == '>':
         url = url[1:-1].strip()
-    if url[:4] == 'URL:': url = url[4:].strip()
+    if url[:4] == 'URL:':
+        url = url[4:].strip()
     return url
 
 

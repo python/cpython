@@ -1140,8 +1140,10 @@ class Utility_Tests(unittest.TestCase):
                           'http://www.python.org/medi\u00e6val')
 
     def test_unwrap(self):
-        url = urllib.parse._unwrap('<URL:type://host/path>')
-        self.assertEqual(url, 'type://host/path')
+        for wrapped_url in ('<URL:type://host/path>', '<type://host/path>',
+                            'URL:type://host/path', 'type://host/path'):
+            url = urllib.parse.unwrap(wrapped_url)
+            self.assertEqual(url, 'type://host/path')
 
 
 class DeprecationTest(unittest.TestCase):
@@ -1221,12 +1223,6 @@ class DeprecationTest(unittest.TestCase):
             urllib.parse.to_bytes('')
         self.assertEqual(str(cm.warning),
                          'urllib.parse.to_bytes() is deprecated as of 3.8')
-
-    def test_unwrap(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            urllib.parse.unwrap('')
-        self.assertEqual(str(cm.warning),
-                         'urllib.parse.unwrap() is deprecated as of 3.8')
 
 
 if __name__ == "__main__":
