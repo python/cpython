@@ -1180,7 +1180,7 @@ class MiscTestCase(unittest.TestCase):
 
 class InterruptMainTests(unittest.TestCase):
     def test_interrupt_main_subthread(self):
-        #Calling start_new_thread with a function that executes interrupt_main
+        # Calling start_new_thread with a function that executes interrupt_main
         # should raise KeyboardInterrupt upon completion.
         def call_interrupt():
             _thread.interrupt_main()
@@ -1191,7 +1191,7 @@ class InterruptMainTests(unittest.TestCase):
         t.join()
 
     def test_interrupt_main_mainthread(self):
-        # Make sure that if interrupt_main is called in main threat that
+        # Make sure that if interrupt_main is called in main thread that
         # KeyboardInterrupt is raised instantly.
         with self.assertRaises(KeyboardInterrupt):
             _thread.interrupt_main()

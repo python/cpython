@@ -523,11 +523,11 @@ Signal Handling
    :data:`signal.SIGINT` signal handler will be raised.
 
    The :data:`signal.SIGINT` signal must be handled by Python, otherwise an
-   exception is raised and return ``-1`` on error. Return ``0`` on success.
+   exception is raised and ``-1`` is returned. ``0`` is returned on success.
 
    The GIL doesn't need to be hold to call this function.
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.8
 
 
 .. c:function:: void PyErr_SetInterrupt()

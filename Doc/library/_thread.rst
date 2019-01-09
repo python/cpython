@@ -59,7 +59,7 @@ This module defines the following constants and functions:
    The :data:`signal.SIGINT` signal must be handled by Python, otherwise
    an exception is raised.
 
-   .. versionchanged:: 3.6
+   .. versionchanged:: 3.8
       The function now raises an exception if the signal is ignored or not
       handled by Python.
 
