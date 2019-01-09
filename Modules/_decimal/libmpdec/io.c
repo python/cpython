@@ -784,6 +784,7 @@ mpd_parse_fmt_str(mpd_spec_t *spec, const char *fmt, int caps)
     spec->dot = "";
     spec->sep = "";
     spec->grouping = "";
+    spec->locale = 0;
 
 
     /* presume that the first character is a UTF-8 fill character */
@@ -871,6 +872,7 @@ mpd_parse_fmt_str(mpd_spec_t *spec, const char *fmt, int caps)
         if (*spec->sep) {
             return 0;
         }
+        spec->locale = 1;
         spec->type = *cp++;
         spec->type = (spec->type == 'N') ? 'G' : 'g';
         lc = localeconv();

@@ -397,6 +397,7 @@ typedef struct mpd_spec_t {
     const char *dot;       /* decimal point */
     const char *sep;       /* thousands separator */
     const char *grouping;  /* grouping of digits */
+    int locale;            /* use localeconv() */
 } mpd_spec_t;
 
 /* output to a string */

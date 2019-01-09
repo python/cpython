@@ -1,0 +1,7 @@
+The :mod:`decimal` module now supports formatting number to the "n" type
+when the ``LC_NUMERIC`` locale uses a different encoding than the
+``LC_CTYPE`` locale. It now sets temporarily the ``LC_CTYPE`` locale to the
+``LC_NUMERIC`` locale to decode ``decimal_point`` and ``thousands_sep`` byte
+strings if they are non-ASCII or longer than 1 byte, and the ``LC_NUMERIC``
+locale is different than the ``LC_CTYPE`` locale.  This temporary change
+affects other threads.

@@ -32,6 +32,7 @@
 #include "structmember.h"
 #include "complexobject.h"
 #include "mpdecimal.h"
+#include "pycore_fileutils.h"
 
 #include <stdlib.h>
 
@@ -3013,32 +3014,6 @@ dec_replace_fillchar(char *dest)
      }
 }
 
-/* Convert decimal_point or thousands_sep, which may be multibyte or in
-   the range [128, 255], to a UTF8 string. */
-static PyObject *
-dotsep_as_utf8(const char *s)
-{
-    PyObject *utf8;
-    PyObject *tmp;
-    wchar_t buf[2];
-    size_t n;
-
-    n = mbstowcs(buf, s, 2);
-    if (n != 1) { /* Issue #7442 */
-        PyErr_SetString(PyExc_ValueError,
-            "invalid decimal point or unsupported "
-            "combination of LC_CTYPE and LC_NUMERIC");
-        return NULL;
-    }
-    tmp = PyUnicode_FromWideChar(buf, n);
-    if (tmp == NULL) {
-        return NULL;
-    }
-    utf8 = PyUnicode_AsUTF8String(tmp);
-    Py_DECREF(tmp);
-    return utf8;
-}
-
 /* Formatted representation of a PyDecObject. */
 static PyObject *
 dec_format(PyObject *dec, PyObject *args)
@@ -3048,6 +3023,7 @@ dec_format(PyObject *dec, PyObject *args)
     PyObject *dot = NULL;
     PyObject *sep = NULL;
     PyObject *grouping = NULL;
+    char *grouping_buffer = NULL;
     PyObject *fmtarg;
     PyObject *context;
     mpd_spec_t spec;
@@ -3133,24 +3109,33 @@ dec_format(PyObject *dec, PyObject *args)
             goto finish;
         }
     }
-    else {
-        size_t n = strlen(spec.dot);
-        if (n > 1 || (n == 1 && !isascii((uchar)spec.dot[0]))) {
-            /* fix locale dependent non-ascii characters */
-            dot = dotsep_as_utf8(spec.dot);
-            if (dot == NULL) {
-                goto finish;
-            }
-            spec.dot = PyBytes_AS_STRING(dot);
+    else if (spec.locale) {
+        struct lconv *lc = localeconv();
+        if (_Py_GetLocaleconvNumeric(lc, &dot, &sep) < 0) {
+            goto finish;
         }
-        n = strlen(spec.sep);
-        if (n > 1 || (n == 1 && !isascii((uchar)spec.sep[0]))) {
-            /* fix locale dependent non-ascii characters */
-            sep = dotsep_as_utf8(spec.sep);
-            if (sep == NULL) {
-                goto finish;
-            }
-            spec.sep = PyBytes_AS_STRING(sep);
+
+        grouping_buffer = _PyMem_Strdup(lc->grouping);
+        if (grouping_buffer == NULL) {
+            PyErr_NoMemory();
+            goto finish;
+        }
+        spec.grouping = grouping_buffer;
+
+        spec.dot = PyUnicode_AsUTF8(dot);
+        if (spec.dot == NULL) {
+            goto finish;
+        }
+
+        spec.sep = PyUnicode_AsUTF8(sep);
+        if (spec.sep == NULL) {
+            goto finish;
+        }
+
+        if (mpd_validate_lconv(&spec) < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                "invalid localeconv()");
+            goto finish;
         }
     }
 
@@ -3176,6 +3161,7 @@ dec_format(PyObject *dec, PyObject *args)
 
 finish:
     Py_XDECREF(grouping);
+    PyMem_Free(grouping_buffer);
     Py_XDECREF(sep);
     Py_XDECREF(dot);
     if (replace_fillchar) PyMem_Free(fmt);

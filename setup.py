@@ -2002,7 +2002,7 @@ class PyBuildExt(build_ext):
             ext.libraries.append('dl')
 
     def _decimal_ext(self):
-        extra_compile_args = []
+        extra_compile_args = ['-DPy_BUILD_CORE_BUILTIN']
         undef_macros = []
         if '--with-system-libmpdec' in sysconfig.get_config_var("CONFIG_ARGS"):
             include_dirs = []
