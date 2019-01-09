@@ -532,7 +532,7 @@ Signal Handling
 
 .. c:function:: void PyErr_SetInterrupt()
 
-   Deprecated version :c:func:`PyErr_SetInterruptWithErr` which ignores errors.
+   Deprecated version of :c:func:`PyErr_SetInterruptWithErr` which ignores errors.
 
 
 .. c:function:: int PySignal_SetWakeupFd(int fd)
