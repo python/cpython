@@ -850,16 +850,20 @@ class BooleanOptionalAction(Action):
                  required=False,
                  help=None,
                  metavar=None):
-        option_strings += [
-            '--no-' + option_string.lstrip('--')
-            for option_string in option_strings
-        ]
+
+        _option_strings = []
+        for option_string in option_strings:
+            _option_strings.append(option_string)
+
+            if option_string.startswith('--'):
+                option_string = '--no-' + option_string[2:]
+                _option_strings.append(option_string)
 
         if help is not None and default is not None:
             help += f" (default: {default})"
 
         super().__init__(
-            option_strings=option_strings,
+            option_strings=_option_strings,
             dest=dest,
             nargs=0,
             default=default,
