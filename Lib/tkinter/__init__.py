@@ -2141,6 +2141,7 @@ class Pack:
         self.tk.call(
               ('pack', 'configure', self._w)
               + self._options(cnf, kw))
+        return self
     pack = configure = config = pack_configure
     def pack_forget(self):
         """Unmap this widget and do not use it for the packing order."""
@@ -2186,6 +2187,7 @@ class Place:
         self.tk.call(
               ('place', 'configure', self._w)
               + self._options(cnf, kw))
+        return self
     place = configure = config = place_configure
     def place_forget(self):
         """Unmap this widget."""
@@ -2224,6 +2226,7 @@ class Grid:
         self.tk.call(
               ('grid', 'configure', self._w)
               + self._options(cnf, kw))
+        return self
     grid = configure = config = grid_configure
     bbox = grid_bbox = Misc.grid_bbox
     columnconfigure = grid_columnconfigure = Misc.grid_columnconfigure
