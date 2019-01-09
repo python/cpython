@@ -1565,10 +1565,6 @@ The typical response object is a :class:`urllib.response.addinfourl` instance:
    in the form of an :func:`email.message_from_string` instance (see
    `Quick Reference to HTTP Headers <http://jkorpela.fi/http.html>`_)
 
-.. attribute:: addinfourl.code
-
-   Status code returned by server.
-
 .. attribute:: addinfourl.status
 
    .. versionadded:: 3.8
@@ -1582,6 +1578,10 @@ The typical response object is a :class:`urllib.response.addinfourl` instance:
 .. method:: addinfourl.info()
 
    Returns the response headers. Recommended to use :attr:`~addinfourl.headers` instead.
+
+.. attribute:: addinfourl.code
+
+   Status code returned by server. Recommended to use :attr:`~addinfourl.status` instead.
 
 .. method:: addinfourl.getstatus()
 
