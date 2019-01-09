@@ -1561,13 +1561,12 @@ The typical response object is a :class:`urllib.response.addinfourl` instance:
 
 .. attribute:: addinfourl.headers
 
-   Returns the meta-information of the page, such as headers,
-   in the form of an :class:`~email.message.EmailMessage` instance.
+   Returns the headers of the response in the form of an :class:`~email.message.EmailMessage` instance.
 
 .. attribute:: addinfourl.status
 
    .. versionadded:: 3.8
-   
+
    Status code returned by server.
 
 .. method:: addinfourl.geturl()

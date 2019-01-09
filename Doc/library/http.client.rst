@@ -466,7 +466,7 @@ statement.
 
 .. attribute:: HTTPResponse.headers
 
-   Headers of the response in the form of an :meth:`email.message_from_string` instance.
+   Headers of the response in the form of an :class:`email.message.EmailMessage` instance.
 
 .. attribute:: HTTPResponse.status
 
