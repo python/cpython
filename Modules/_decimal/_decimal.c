@@ -34,6 +34,7 @@
 #include "mpdecimal.h"
 #include "pycore_fileutils.h"
 
+#include <locale.h>
 #include <stdlib.h>
 
 #include "docstrings.h"
