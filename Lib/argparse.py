@@ -66,6 +66,7 @@ __all__ = [
     'ArgumentParser',
     'ArgumentError',
     'ArgumentTypeError',
+    'BooleanOptionalAction',
     'FileType',
     'HelpFormatter',
     'ArgumentDefaultsHelpFormatter',
@@ -447,7 +448,7 @@ class HelpFormatter(object):
                 # if the Optional doesn't take a value, format is:
                 #    -s or --long
                 if action.nargs == 0:
-                    part = '%s' % option_string
+                    part = action.format_usage()
 
                 # if the Optional takes a value, format is:
                 #    -s ARGS or --long ARGS
@@ -832,8 +833,48 @@ class Action(_AttributeHolder):
         ]
         return [(name, getattr(self, name)) for name in names]
 
+    def format_usage(self):
+        return self.option_strings[0]
+
     def __call__(self, parser, namespace, values, option_string=None):
         raise NotImplementedError(_('.__call__() not defined'))
+
+class BooleanOptionalAction(Action):
+    def __init__(self,
+                 option_strings,
+                 dest,
+                 const=None,
+                 default=None,
+                 type=None,
+                 choices=None,
+                 required=False,
+                 help=None,
+                 metavar=None):
+        option_strings += [
+            '--no-' + option_string.lstrip('--')
+            for option_string in option_strings
+        ]
+
+        if help is not None and default is not None:
+            help += f" (default: {default})"
+
+        super().__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=0,
+            default=default,
+            type=type,
+            choices=choices,
+            required=required,
+            help=help,
+            metavar=metavar)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if option_string in self.option_strings:
+            setattr(namespace, self.dest, not option_string.startswith('--no-'))
+
+    def format_usage(self):
+        return ' | '.join(self.option_strings)
 
 
 class _StoreAction(Action):
