@@ -1573,8 +1573,7 @@ patch.dict
     values in the dictionary.
 
 :func:`patch.dict` can be used as a context manager, decorator or class
-decorator. When used as a class decorator :func:`patch.dict` honours
-``patch.TEST_PREFIX`` for choosing which methods to wrap.
+decorator.
 
     >>> foo = {}
     >>> @patch.dict(foo, {'newkey': 'newvalue'})
@@ -1583,12 +1582,22 @@ decorator. When used as a class decorator :func:`patch.dict` honours
     >>> test()
     >>> assert foo == {}
 
+When used as a class decorator :func:`patch.dict` honours
+``patch.TEST_PREFIX`` for choosing which methods to wrap. The patchers
+recognise methods that start with ``'test'`` as being test methods.
+If you want to use a different prefix for your test, you can inform the
+patchers of the different prefix by setting ``patch.TEST_PREFIX``.
+
     >>> import os
     >>> import unittest
+    >>> patch.TEST_PREFIX = 'foo'
     >>> @patch.dict('os.environ', {'newkey': 'newvalue'})
     ... class TestSample(unittest.TestCase):
-    ...     def test_sample(self):
+    ...     def foo_sample(self):
     ...         self.assertEqual(os.environ['newkey'], 'newvalue')
+    ...
+    ...     def test_sample2(self):
+    ...         self.assertNotIn('newkey', os.environ.keys())
 
     .. versionchanged:: 3.8
 
