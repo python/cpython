@@ -1571,6 +1571,8 @@ The typical response object is a :class:`urllib.response.addinfourl` instance:
 
 .. attribute:: addinfourl.status
 
+   .. versionadded:: 3.8
+   
    Status code returned by server.
 
 .. method:: addinfourl.geturl()
