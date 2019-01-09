@@ -2992,7 +2992,11 @@ long_dealloc(PyObject *v)
     Py_TYPE(v)->tp_free(v);
 }
 
-static int
+/* Returns a negative number when a < b
+   Returns 0 when a = b
+   Returns a positive number when a > b */
+
+static Py_ssize_t
 long_compare(PyLongObject *a, PyLongObject *b)
 {
     Py_ssize_t sign;
@@ -3012,13 +3016,13 @@ long_compare(PyLongObject *a, PyLongObject *b)
                 sign = -sign;
         }
     }
-    return sign < 0 ? -1 : sign > 0 ? 1 : 0;
+    return sign;
 }
 
 static PyObject *
 long_richcompare(PyObject *self, PyObject *other, int op)
 {
-    int result;
+    Py_ssize_t result;
     CHECK_BINOP(self, other);
     if (self == other)
         result = 0;
@@ -5023,7 +5027,8 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
 {
     PyLongObject *quo = NULL, *rem = NULL;
     PyObject *twice_rem, *result, *temp;
-    int cmp, quo_is_odd, quo_is_neg;
+    Py_ssize_t cmp;
+    int quo_is_odd, quo_is_neg;
 
     /* Equivalent Python code:
 
