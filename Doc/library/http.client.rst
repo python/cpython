@@ -119,18 +119,21 @@ This module provides the following function:
 
 .. function:: parse_headers(fp)
 
-   Parse the headers from a file pointer *fp* representing a HTTP request/response.
-   The file has to be a :class:`BufferedIOBase` reader (i.e. not text) and must
-   provide a valid :rfc:`2822` style header.
+   Parse the headers from a file pointer *fp* representing a HTTP
+   request/response. The file has to be a :class:`BufferedIOBase` reader
+   (i.e. not text) and must provide a valid :rfc:`2822` style header.
 
-   This function returns an instance of :class:`email.message.Message` that holds the header fields, but
-   no payload (the same as :attr:`HTTPResponse.msg` and :attr:`http.server.BaseHTTPRequestHandler.headers`).
+   This function returns an instance of :class:`email.message.Message`
+   that holds the header fields, but no payload
+   (the same as :attr:`HTTPResponse.msg`
+   and :attr:`http.server.BaseHTTPRequestHandler.headers`).
    It returns with the file pointer *fp* ready to read the HTTP body.
-   
+
    .. note::
-      :meth:`parse_headers` does not parse the start-line of a HTTP message; it only parses
-      the `Name: value` lines. The file has to be ready to read these field lines,
-      so the first line should already be consumed before calling the function.
+      :meth:`parse_headers` does not parse the start-line of a HTTP message;
+      it only parses the `Name: value` lines. The file has to be ready to
+      read these field lines, so the first line should already be consumed
+      before calling the function.
 
 The following exceptions are raised as appropriate:
 
