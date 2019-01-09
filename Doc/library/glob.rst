@@ -42,7 +42,8 @@ For example, ``'[?]'`` matches the character ``'?'``.
    a string containing a path specification. *pathname* can be either absolute
    (like :file:`/usr/src/Python-1.5/Makefile`) or relative (like
    :file:`../../Tools/\*/\*.gif`), and can contain shell-style wildcards. Broken
-   symlinks are included in the results (as in the shell).
+   symlinks are included in the results (as in the shell). Whether or not the
+   results are sorted depends on the file system.
 
    .. index::
       single: **; in glob-style wildcards

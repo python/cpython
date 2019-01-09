@@ -3,11 +3,10 @@
 import collections
 import copy
 import doctest
-import keyword
+import inspect
 import operator
 import pickle
 from random import choice, randrange
-import re
 import string
 import sys
 from test import support
@@ -283,20 +282,50 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Point(1), (1, 20))
         self.assertEqual(Point(), (10, 20))
 
+    def test_readonly(self):
+        Point = namedtuple('Point', 'x y')
+        p = Point(11, 22)
+        with self.assertRaises(AttributeError):
+            p.x = 33
+        with self.assertRaises(AttributeError):
+            del p.x
+        with self.assertRaises(TypeError):
+            p[0] = 33
+        with self.assertRaises(TypeError):
+            del p[0]
+        self.assertEqual(p.x, 11)
+        self.assertEqual(p[0], 11)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_factory_doc_attr(self):
         Point = namedtuple('Point', 'x y')
         self.assertEqual(Point.__doc__, 'Point(x, y)')
+        Point.__doc__ = '2D point'
+        self.assertEqual(Point.__doc__, '2D point')
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
-    def test_doc_writable(self):
+    def test_field_doc(self):
         Point = namedtuple('Point', 'x y')
         self.assertEqual(Point.x.__doc__, 'Alias for field number 0')
+        self.assertEqual(Point.y.__doc__, 'Alias for field number 1')
         Point.x.__doc__ = 'docstring for Point.x'
         self.assertEqual(Point.x.__doc__, 'docstring for Point.x')
+        # namedtuple can mutate doc of descriptors independently
+        Vector = namedtuple('Vector', 'x y')
+        self.assertEqual(Vector.x.__doc__, 'Alias for field number 0')
+        Vector.x.__doc__ = 'docstring for Vector.x'
+        self.assertEqual(Vector.x.__doc__, 'docstring for Vector.x')
+
+    @support.cpython_only
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_field_doc_reuse(self):
+        P = namedtuple('P', ['m', 'n'])
+        Q = namedtuple('Q', ['o', 'p'])
+        self.assertIs(P.m.__doc__, Q.o.__doc__)
+        self.assertIs(P.n.__doc__, Q.p.__doc__)
 
     def test_name_fixer(self):
         for spec, renamed in [
@@ -321,16 +350,18 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(p, Point(y=22, x=11))
         self.assertEqual(p, Point(*(11, 22)))
         self.assertEqual(p, Point(**dict(x=11, y=22)))
-        self.assertRaises(TypeError, Point, 1)                              # too few args
-        self.assertRaises(TypeError, Point, 1, 2, 3)                        # too many args
-        self.assertRaises(TypeError, eval, 'Point(XXX=1, y=2)', locals())   # wrong keyword argument
-        self.assertRaises(TypeError, eval, 'Point(x=1)', locals())          # missing keyword argument
+        self.assertRaises(TypeError, Point, 1)          # too few args
+        self.assertRaises(TypeError, Point, 1, 2, 3)    # too many args
+        with self.assertRaises(TypeError):              # wrong keyword argument
+            Point(XXX=1, y=2)
+        with self.assertRaises(TypeError):              # missing keyword argument
+            Point(x=1)
         self.assertEqual(repr(p), 'Point(x=11, y=22)')
         self.assertNotIn('__weakref__', dir(p))
-        self.assertEqual(p, Point._make([11, 22]))                          # test _make classmethod
-        self.assertEqual(p._fields, ('x', 'y'))                             # test _fields attribute
-        self.assertEqual(p._replace(x=1), (1, 22))                          # test _replace method
-        self.assertEqual(p._asdict(), dict(x=11, y=22))                     # test _asdict method
+        self.assertEqual(p, Point._make([11, 22]))      # test _make classmethod
+        self.assertEqual(p._fields, ('x', 'y'))         # test _fields attribute
+        self.assertEqual(p._replace(x=1), (1, 22))      # test _replace method
+        self.assertEqual(p._asdict(), dict(x=11, y=22)) # test _asdict method
 
         try:
             p._replace(x=1, error=2)
@@ -362,11 +393,15 @@ class TestNamedTuple(unittest.TestCase):
         x, y = p
         self.assertEqual(p, (x, y))                                         # unpacks like a tuple
         self.assertEqual((p[0], p[1]), (11, 22))                            # indexable like a tuple
-        self.assertRaises(IndexError, p.__getitem__, 3)
+        with self.assertRaises(IndexError):
+            p[3]
+        self.assertEqual(p[-1], 22)
+        self.assertEqual(hash(p), hash((11, 22)))
 
         self.assertEqual(p.x, x)
         self.assertEqual(p.y, y)
-        self.assertRaises(AttributeError, eval, 'p.z', locals())
+        with self.assertRaises(AttributeError):
+            p.z
 
     def test_odd_sizes(self):
         Zero = namedtuple('Zero', '')
@@ -515,6 +550,14 @@ class TestNamedTuple(unittest.TestCase):
 
         a.w = 5
         self.assertEqual(a.__dict__, {'w': 5})
+
+    def test_field_descriptor(self):
+        Point = namedtuple('Point', 'x y')
+        p = Point(11, 22)
+        self.assertTrue(inspect.isdatadescriptor(Point.x))
+        self.assertEqual(Point.x.__get__(p), 11)
+        self.assertRaises(AttributeError, Point.x.__set__, p, 33)
+        self.assertRaises(AttributeError, Point.x.__delete__, p)
 
 
 ################################################################################
@@ -796,22 +839,21 @@ class TestOneTrickPonyABCs(ABCTestCase):
 
     def test_Reversible(self):
         # Check some non-reversibles
-        non_samples = [None, 42, 3.14, 1j, dict(), set(), frozenset()]
+        non_samples = [None, 42, 3.14, 1j, set(), frozenset()]
         for x in non_samples:
             self.assertNotIsInstance(x, Reversible)
             self.assertFalse(issubclass(type(x), Reversible), repr(type(x)))
         # Check some non-reversible iterables
-        non_reversibles = [dict().keys(), dict().items(), dict().values(),
-                           Counter(), Counter().keys(), Counter().items(),
-                           Counter().values(), _test_gen(),
-                           (x for x in []), iter([]), reversed([])]
+        non_reversibles = [_test_gen(), (x for x in []), iter([]), reversed([])]
         for x in non_reversibles:
             self.assertNotIsInstance(x, Reversible)
             self.assertFalse(issubclass(type(x), Reversible), repr(type(x)))
         # Check some reversible iterables
         samples = [bytes(), str(), tuple(), list(), OrderedDict(),
                    OrderedDict().keys(), OrderedDict().items(),
-                   OrderedDict().values()]
+                   OrderedDict().values(), Counter(), Counter().keys(),
+                   Counter().items(), Counter().values(), dict(),
+                   dict().keys(), dict().items(), dict().values()]
         for x in samples:
             self.assertIsInstance(x, Reversible)
             self.assertTrue(issubclass(type(x), Reversible), repr(type(x)))
@@ -1612,7 +1654,7 @@ class TestCollectionABCs(ABCTestCase):
         self.assertIsInstance(z, set)
         list(z)
         mymap['blue'] = 7               # Shouldn't affect 'z'
-        self.assertEqual(sorted(z), [('orange', 3), ('red', 5)])
+        self.assertEqual(z, {('orange', 3), ('red', 5)})
 
     def test_Sequence(self):
         for sample in [tuple, list, bytes, str]:
@@ -1767,10 +1809,10 @@ class TestCounter(unittest.TestCase):
         self.assertTrue(issubclass(Counter, Mapping))
         self.assertEqual(len(c), 3)
         self.assertEqual(sum(c.values()), 6)
-        self.assertEqual(sorted(c.values()), [1, 2, 3])
-        self.assertEqual(sorted(c.keys()), ['a', 'b', 'c'])
-        self.assertEqual(sorted(c), ['a', 'b', 'c'])
-        self.assertEqual(sorted(c.items()),
+        self.assertEqual(list(c.values()), [3, 2, 1])
+        self.assertEqual(list(c.keys()), ['a', 'b', 'c'])
+        self.assertEqual(list(c), ['a', 'b', 'c'])
+        self.assertEqual(list(c.items()),
                          [('a', 3), ('b', 2), ('c', 1)])
         self.assertEqual(c['b'], 2)
         self.assertEqual(c['z'], 0)
@@ -1784,7 +1826,7 @@ class TestCounter(unittest.TestCase):
         for i in range(5):
             self.assertEqual(c.most_common(i),
                              [('a', 3), ('b', 2), ('c', 1)][:i])
-        self.assertEqual(''.join(sorted(c.elements())), 'aaabbc')
+        self.assertEqual(''.join(c.elements()), 'aaabbc')
         c['a'] += 1         # increment an existing value
         c['b'] -= 2         # sub existing value to zero
         del c['c']          # remove an entry
@@ -1793,7 +1835,7 @@ class TestCounter(unittest.TestCase):
         c['e'] = -5         # directly assign a missing value
         c['f'] += 4         # add to a missing value
         self.assertEqual(c, dict(a=4, b=0, d=-2, e=-5, f=4))
-        self.assertEqual(''.join(sorted(c.elements())), 'aaaaffff')
+        self.assertEqual(''.join(c.elements()), 'aaaaffff')
         self.assertEqual(c.pop('f'), 4)
         self.assertNotIn('f', c)
         for i in range(3):

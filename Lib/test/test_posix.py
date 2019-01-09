@@ -1596,8 +1596,8 @@ class TestPosixSpawn(unittest.TestCase):
                            'need signal.pthread_sigmask()')
     def test_setsigmask(self):
         code = textwrap.dedent("""\
-            import _testcapi, signal
-            _testcapi.raise_signal(signal.SIGUSR1)""")
+            import signal
+            signal.raise_signal(signal.SIGUSR1)""")
 
         pid = posix.posix_spawn(
             sys.executable,
@@ -1627,8 +1627,8 @@ class TestPosixSpawn(unittest.TestCase):
     def test_setsigdef(self):
         original_handler = signal.signal(signal.SIGUSR1, signal.SIG_IGN)
         code = textwrap.dedent("""\
-            import _testcapi, signal
-            _testcapi.raise_signal(signal.SIGUSR1)""")
+            import signal
+            signal.raise_signal(signal.SIGUSR1)""")
         try:
             pid = posix.posix_spawn(
                 sys.executable,

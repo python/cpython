@@ -352,7 +352,10 @@ get_attrib_from_keywords(PyObject *kwds)
             return NULL;
         }
         attrib = PyDict_Copy(attrib);
-        PyDict_DelItem(kwds, attrib_str);
+        if (attrib && PyDict_DelItem(kwds, attrib_str) < 0) {
+            Py_DECREF(attrib);
+            attrib = NULL;
+        }
     } else {
         attrib = PyDict_New();
     }
@@ -2444,6 +2447,11 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
 static int
 treebuilder_gc_traverse(TreeBuilderObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(self->end_ns_event_obj);
+    Py_VISIT(self->start_ns_event_obj);
+    Py_VISIT(self->end_event_obj);
+    Py_VISIT(self->start_event_obj);
+    Py_VISIT(self->events_append);
     Py_VISIT(self->root);
     Py_VISIT(self->this);
     Py_VISIT(self->last);
@@ -3968,7 +3976,7 @@ static PyTypeObject XMLParser_Type = {
 /* python module interface */
 
 static PyMethodDef _functions[] = {
-    {"SubElement", (PyCFunction) subelement, METH_VARARGS | METH_KEYWORDS},
+    {"SubElement", (PyCFunction)(void(*)(void)) subelement, METH_VARARGS | METH_KEYWORDS},
     {NULL, NULL}
 };
 

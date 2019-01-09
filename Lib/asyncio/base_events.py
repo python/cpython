@@ -18,7 +18,6 @@ import collections.abc
 import concurrent.futures
 import heapq
 import itertools
-import logging
 import os
 import socket
 import subprocess
@@ -167,6 +166,17 @@ def _run_until_complete_cb(fut):
             # stop it.
             return
     futures._get_loop(fut).stop()
+
+
+if hasattr(socket, 'TCP_NODELAY'):
+    def _set_nodelay(sock):
+        if (sock.family in {socket.AF_INET, socket.AF_INET6} and
+                sock.type == socket.SOCK_STREAM and
+                sock.proto == socket.IPPROTO_TCP):
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+else:
+    def _set_nodelay(sock):
+        pass
 
 
 class _SendfileFallbackProtocol(protocols.Protocol):

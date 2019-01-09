@@ -2,8 +2,9 @@
 
 #include "Python.h"
 #include "osdefs.h"
+#include "pycore_fileutils.h"
 #include "pycore_pathconfig.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 
 #include <sys/types.h>
 #include <string.h>

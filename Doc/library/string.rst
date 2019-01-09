@@ -551,7 +551,7 @@ addition of the ``{}`` and with ``:`` used instead of ``%``.
 For example, ``'%03.2f'`` can be translated to ``'{:03.2f}'``.
 
 The new format syntax also supports new and different options, shown in the
-follow examples.
+following examples.
 
 Accessing arguments by position::
 
@@ -739,7 +739,7 @@ these rules.  The methods of :class:`Template` are:
       simply return ``$`` instead of raising :exc:`ValueError`.
 
       While other exceptions may still occur, this method is called "safe"
-      because substitutions always tries to return a usable string instead of
+      because it always tries to return a usable string instead of
       raising an exception.  In another sense, :meth:`safe_substitute` may be
       anything other than safe, since it will silently ignore malformed
       templates containing dangling delimiters, unmatched braces, or

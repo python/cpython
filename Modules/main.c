@@ -3,10 +3,10 @@
 #include "Python.h"
 #include "osdefs.h"
 #include "pycore_getopt.h"
-#include "pycore_lifecycle.h"
-#include "pycore_mem.h"
 #include "pycore_pathconfig.h"
-#include "pycore_state.h"
+#include "pycore_pylifecycle.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 
 #include <locale.h>
 
@@ -1441,7 +1441,8 @@ _PyMainInterpreterConfig_Copy(_PyMainInterpreterConfig *config,
 {
     _PyMainInterpreterConfig_Clear(config);
 
-#define COPY_ATTR(ATTR) \
+#define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
+#define COPY_OBJ_ATTR(ATTR) \
     do { \
         if (config2->ATTR != NULL) { \
             config->ATTR = config_copy_attr(config2->ATTR); \
@@ -1451,18 +1452,78 @@ _PyMainInterpreterConfig_Copy(_PyMainInterpreterConfig *config,
         } \
     } while (0)
 
-    COPY_ATTR(argv);
-    COPY_ATTR(executable);
-    COPY_ATTR(prefix);
-    COPY_ATTR(base_prefix);
-    COPY_ATTR(exec_prefix);
-    COPY_ATTR(base_exec_prefix);
-    COPY_ATTR(warnoptions);
-    COPY_ATTR(xoptions);
-    COPY_ATTR(module_search_path);
-    COPY_ATTR(pycache_prefix);
+    COPY_ATTR(install_signal_handlers);
+    COPY_OBJ_ATTR(argv);
+    COPY_OBJ_ATTR(executable);
+    COPY_OBJ_ATTR(prefix);
+    COPY_OBJ_ATTR(base_prefix);
+    COPY_OBJ_ATTR(exec_prefix);
+    COPY_OBJ_ATTR(base_exec_prefix);
+    COPY_OBJ_ATTR(warnoptions);
+    COPY_OBJ_ATTR(xoptions);
+    COPY_OBJ_ATTR(module_search_path);
+    COPY_OBJ_ATTR(pycache_prefix);
 #undef COPY_ATTR
+#undef COPY_OBJ_ATTR
     return 0;
+}
+
+
+PyObject*
+_PyMainInterpreterConfig_AsDict(const _PyMainInterpreterConfig *config)
+{
+    PyObject *dict, *obj;
+    int res;
+
+    dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+
+#define SET_ITEM_INT(ATTR) \
+    do { \
+        obj = PyLong_FromLong(config->ATTR); \
+        if (obj == NULL) { \
+            goto fail; \
+        } \
+        res = PyDict_SetItemString(dict, #ATTR, obj); \
+        Py_DECREF(obj); \
+        if (res < 0) { \
+            goto fail; \
+        } \
+    } while (0)
+
+#define SET_ITEM_OBJ(ATTR) \
+    do { \
+        obj = config->ATTR; \
+        if (obj == NULL) { \
+            obj = Py_None; \
+        } \
+        res = PyDict_SetItemString(dict, #ATTR, obj); \
+        if (res < 0) { \
+            goto fail; \
+        } \
+    } while (0)
+
+    SET_ITEM_INT(install_signal_handlers);
+    SET_ITEM_OBJ(argv);
+    SET_ITEM_OBJ(executable);
+    SET_ITEM_OBJ(prefix);
+    SET_ITEM_OBJ(base_prefix);
+    SET_ITEM_OBJ(exec_prefix);
+    SET_ITEM_OBJ(base_exec_prefix);
+    SET_ITEM_OBJ(warnoptions);
+    SET_ITEM_OBJ(xoptions);
+    SET_ITEM_OBJ(module_search_path);
+    SET_ITEM_OBJ(pycache_prefix);
+
+    return dict;
+
+fail:
+    Py_DECREF(dict);
+    return NULL;
+
+#undef SET_ITEM_OBJ
 }
 
 

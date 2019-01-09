@@ -1,6 +1,9 @@
 #ifndef Py_INTERNAL_HAMT_H
 #define Py_INTERNAL_HAMT_H
 
+#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
+#  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
+#endif
 
 #define _Py_HAMT_MAX_TREE_DEPTH 7
 

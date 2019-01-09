@@ -259,10 +259,32 @@ class CmdLineTest(unittest.TestCase):
             self._check_script(zip_name, run_name, zip_name, zip_name, '',
                                zipimport.zipimporter)
 
-    def test_zipfile_compiled(self):
+    def test_zipfile_compiled_timestamp(self):
         with support.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
-            compiled_name = py_compile.compile(script_name, doraise=True)
+            compiled_name = py_compile.compile(
+                script_name, doraise=True,
+                invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP)
+            zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
+            self._check_script(zip_name, run_name, zip_name, zip_name, '',
+                               zipimport.zipimporter)
+
+    def test_zipfile_compiled_checked_hash(self):
+        with support.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, '__main__')
+            compiled_name = py_compile.compile(
+                script_name, doraise=True,
+                invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH)
+            zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
+            self._check_script(zip_name, run_name, zip_name, zip_name, '',
+                               zipimport.zipimporter)
+
+    def test_zipfile_compiled_unchecked_hash(self):
+        with support.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, '__main__')
+            compiled_name = py_compile.compile(
+                script_name, doraise=True,
+                invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH)
             zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
             self._check_script(zip_name, run_name, zip_name, zip_name, '',
                                zipimport.zipimporter)

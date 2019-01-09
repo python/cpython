@@ -275,4 +275,5 @@ SimpleQueue Objects
 
    :class:`collections.deque` is an alternative implementation of unbounded
    queues with fast atomic :meth:`~collections.deque.append` and
-   :meth:`~collections.deque.popleft` operations that do not require locking.
+   :meth:`~collections.deque.popleft` operations that do not require locking
+   and also support indexing.

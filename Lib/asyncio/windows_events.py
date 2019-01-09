@@ -308,6 +308,21 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
             proactor = IocpProactor()
         super().__init__(proactor)
 
+    def run_forever(self):
+        try:
+            assert self._self_reading_future is None
+            self.call_soon(self._loop_self_reading)
+            super().run_forever()
+        finally:
+            if self._self_reading_future is not None:
+                ov = self._self_reading_future._ov
+                self._self_reading_future.cancel()
+                # self_reading_future was just cancelled so it will never be signalled
+                # Unregister it otherwise IocpProactor.close will wait for it forever
+                if ov is not None:
+                    self._proactor._unregister(ov)
+                self._self_reading_future = None
+
     async def create_pipe_connection(self, protocol_factory, address):
         f = self._proactor.connect_pipe(address)
         pipe = await f

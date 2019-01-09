@@ -2,7 +2,6 @@
 
 import concurrent.futures
 import errno
-import logging
 import math
 import os
 import socket
@@ -15,7 +14,6 @@ from unittest import mock
 import asyncio
 from asyncio import base_events
 from asyncio import constants
-from asyncio import events
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support.script_helper import assert_python_ok
@@ -288,7 +286,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         loop.set_debug(debug)
         if debug:
             msg = ("Non-thread-safe operation invoked on an event loop other "
-                  "than the current one")
+                   "than the current one")
             with self.assertRaisesRegex(RuntimeError, msg):
                 loop.call_soon(cb)
             with self.assertRaisesRegex(RuntimeError, msg):
@@ -2073,6 +2071,32 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
         with self.assertRaisesRegex(ValueError,
                                     "offset must be a non-negative integer"):
             self.run_loop(self.loop.sock_sendfile(sock, self.file, -1))
+
+
+class TestSelectorUtils(test_utils.TestCase):
+    def check_set_nodelay(self, sock):
+        opt = sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
+        self.assertFalse(opt)
+
+        base_events._set_nodelay(sock)
+
+        opt = sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
+        self.assertTrue(opt)
+
+    @unittest.skipUnless(hasattr(socket, 'TCP_NODELAY'),
+                         'need socket.TCP_NODELAY')
+    def test_set_nodelay(self):
+        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
+                             proto=socket.IPPROTO_TCP)
+        with sock:
+            self.check_set_nodelay(sock)
+
+        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
+                             proto=socket.IPPROTO_TCP)
+        with sock:
+            sock.setblocking(False)
+            self.check_set_nodelay(sock)
+
 
 
 if __name__ == '__main__':
