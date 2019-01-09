@@ -11,7 +11,7 @@
 
 import re
 import io
-from os import path
+from os import getenv, path
 from time import asctime
 from pprint import pformat
 from docutils.io import StringOutput
@@ -292,7 +292,9 @@ class MiscNews(Directive):
         fname = self.arguments[0]
         source = self.state_machine.input_lines.source(
             self.lineno - self.state_machine.input_offset - 1)
-        source_dir = path.dirname(path.abspath(source))
+        source_dir = getenv('PY_MISC_NEWS_DIR')
+        if not source_dir:
+            source_dir = path.dirname(path.abspath(source))
         fpath = path.join(source_dir, fname)
         self.state.document.settings.record_dependencies.add(fpath)
         try:

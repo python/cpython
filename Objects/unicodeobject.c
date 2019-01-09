@@ -9381,6 +9381,7 @@ _PyUnicode_InsertThousandsGrouping(
     PyObject *thousands_sep,
     Py_UCS4 *maxchar)
 {
+    min_width = Py_MAX(0, min_width);
     if (writer) {
         assert(digits != NULL);
         assert(maxchar == NULL);
@@ -9391,7 +9392,6 @@ _PyUnicode_InsertThousandsGrouping(
     }
     assert(0 <= d_pos);
     assert(0 <= n_digits);
-    assert(0 <= min_width);
     assert(grouping != NULL);
 
     if (digits != NULL) {
@@ -11656,7 +11656,6 @@ unicode_getitem(PyObject *self, Py_ssize_t index)
 static Py_hash_t
 unicode_hash(PyObject *self)
 {
-    Py_ssize_t len;
     Py_uhash_t x;  /* Unsigned for defined overflow behavior. */
 
 #ifdef Py_DEBUG
@@ -11666,15 +11665,7 @@ unicode_hash(PyObject *self)
         return _PyUnicode_HASH(self);
     if (PyUnicode_READY(self) == -1)
         return -1;
-    len = PyUnicode_GET_LENGTH(self);
-    /*
-      We make the hash of the empty string be 0, rather than using
-      (prefix ^ suffix), since this slightly obfuscates the hash secret
-    */
-    if (len == 0) {
-        _PyUnicode_HASH(self) = 0;
-        return 0;
-    }
+
     x = _Py_HashBytes(PyUnicode_DATA(self),
                       PyUnicode_GET_LENGTH(self) * PyUnicode_KIND(self));
     _PyUnicode_HASH(self) = x;

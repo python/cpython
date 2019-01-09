@@ -1196,6 +1196,14 @@ OSError_written_get(PyOSErrorObject *self, void *context)
 static int
 OSError_written_set(PyOSErrorObject *self, PyObject *arg, void *context)
 {
+    if (arg == NULL) {
+        if (self->written == -1) {
+            PyErr_SetString(PyExc_AttributeError, "characters_written");
+            return -1;
+        }
+        self->written = -1;
+        return 0;
+    }
     Py_ssize_t n;
     n = PyNumber_AsSsize_t(arg, PyExc_ValueError);
     if (n == -1 && PyErr_Occurred())

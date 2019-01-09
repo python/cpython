@@ -367,6 +367,10 @@ static int win32_can_symlink = 0;
 #define HAVE_STRUCT_STAT_ST_FSTYPE 1
 #endif
 
+#ifdef _Py_MEMORY_SANITIZER
+# include <sanitizer/msan_interface.h>
+#endif
+
 #ifdef HAVE_FORK
 static void
 run_at_forkers(PyObject *lst, int reverse)
@@ -2647,7 +2651,7 @@ os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 
 #ifdef HAVE_TTYNAME
 /*[clinic input]
-os.ttyname -> DecodeFSDefault
+os.ttyname
 
     fd: int
         Integer file descriptor handle.
@@ -2657,16 +2661,17 @@ os.ttyname -> DecodeFSDefault
 Return the name of the terminal device connected to 'fd'.
 [clinic start generated code]*/
 
-static char *
+static PyObject *
 os_ttyname_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=ed16ad216d813591 input=5f72ca83e76b3b45]*/
+/*[clinic end generated code: output=c424d2e9d1cd636a input=9ff5a58b08115c55]*/
 {
     char *ret;
 
     ret = ttyname(fd);
-    if (ret == NULL)
-        posix_error();
-    return ret;
+    if (ret == NULL) {
+        return posix_error();
+    }
+    return PyUnicode_DecodeFSDefault(ret);
 }
 #endif
 
@@ -5492,6 +5497,9 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
         PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path->object);
         goto exit;
     }
+#ifdef _Py_MEMORY_SANITIZER
+    __msan_unpoison(&pid, sizeof(pid));
+#endif
     result = PyLong_FromPid(pid);
 
 exit:
@@ -6097,6 +6105,9 @@ os_sched_rr_get_interval_impl(PyObject *module, pid_t pid)
         posix_error();
         return -1.0;
     }
+#ifdef _Py_MEMORY_SANITIZER
+    __msan_unpoison(&interval, sizeof(interval));
+#endif
     return (double)interval.tv_sec + 1e-9*interval.tv_nsec;
 }
 #endif /* HAVE_SCHED_RR_GET_INTERVAL */
@@ -6334,7 +6345,7 @@ os_openpty_impl(PyObject *module)
 #endif
 #if defined(HAVE_DEV_PTMX) && !defined(HAVE_OPENPTY) && !defined(HAVE__GETPTY)
     PyOS_sighandler_t sig_saved;
-#ifdef sun
+#if defined(__sun) && defined(__SVR4)
     extern char *ptsname(int fildes);
 #endif
 #endif
@@ -6566,6 +6577,12 @@ posix_getgrouplist(PyObject *self, PyObject *args)
         PyMem_Del(groups);
         return posix_error();
     }
+
+#ifdef _Py_MEMORY_SANITIZER
+    /* Clang memory sanitizer libc intercepts don't know getgrouplist. */
+    __msan_unpoison(&ngroups, sizeof(ngroups));
+    __msan_unpoison(groups, ngroups*sizeof(*groups));
+#endif
 
     list = PyList_New(ngroups);
     if (list == NULL) {
