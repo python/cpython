@@ -55,7 +55,7 @@ The :mod:`urllib.request` module defines the following functions:
    The *cadefault* parameter is ignored.
 
    This function always returns an object which can work as a
-   :term:`context manager` and has the properties `url`, `headers`, and `status`.
+   :term:`context manager` and has the properties *url*, *headers*, and *status*.
    See :class:`urllib.response.addinfourl` for more detail on these properties.
 
    For HTTP and HTTPS URLs, this function returns a
