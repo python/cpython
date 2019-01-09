@@ -525,8 +525,6 @@ Signal Handling
    The :data:`signal.SIGINT` signal must be handled by Python, otherwise an
    exception is raised and ``-1`` is returned. ``0`` is returned on success.
 
-   The GIL doesn't need to be hold to call this function.
-
    .. versionadded:: 3.8
 
 

@@ -1711,9 +1711,7 @@ PyErr_SetInterruptWithErr(void)
 
 /* Simulate the effect of a SIGINT signal arriving. The next time
    PyErr_CheckSignals() is called,  the Python SIGINT signal handler will be
-   raised.
-
-   The GIL doesn't need to be hold to call this function. */
+   raised. */
 void
 PyErr_SetInterrupt(void)
 {
