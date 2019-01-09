@@ -1562,8 +1562,7 @@ The typical response object is a :class:`urllib.response.addinfourl` instance:
 .. attribute:: addinfourl.headers
 
    Returns the meta-information of the page, such as headers,
-   in the form of an :func:`email.message_from_string` instance (see
-   `Quick Reference to HTTP Headers <http://jkorpela.fi/http.html>`_)
+   in the form of an :class:`~email.message.EmailMessage` instance.
 
 .. attribute:: addinfourl.status
 
