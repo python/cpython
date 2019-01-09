@@ -1,0 +1,2 @@
+Avoid stripping trailing whitespace in doctest fancy diff. Orignial patch by
+R. David Murray & Jairo Trad. Enhanced by Sanyam Khurana.
