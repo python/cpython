@@ -672,24 +672,24 @@ try:
 
     def _extended_to_normal(path):
         letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        if (len(path) > 7 and
+        if (len(path) > 6 and
             path[4].upper() in letters and
             path[5] == ':' and
             path[6] == '\\'):
             # extended path with \\?\ prefix
             # 4 is len('\\?\')
-            normal_path = path[4:]
-        elif len(path) > 8 and path[:8].upper() == '\\\\?\\UNC\\':
+            normal_path = normpath(path[4:])
+        elif len(path) > 7 and path[:8].upper() == '\\\\?\\UNC\\':
             # UNC path with \\?\ prefix - drop prefix
             # 7 is len('\\?\UNC')
-            normal_path = '\\' + path[7:]
+            normal_path = normpath('\\' + path[7:])
         else:
             # not a UNC or drive-letter path
             # return path as-is
             return path
 
-        if len(normal_path) < MAX_PATH and normal_path == abspath(normal_path):
-            return normal_path
+        if len(normal_path) < MAX_PATH and normal_path == _getfullpathname(normal_path):
+            return normpath(normal_path)
         return path
 except ImportError:
     def realpath(filename):
