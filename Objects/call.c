@@ -88,8 +88,12 @@ _PyObject_FastCallDict(PyObject *callable, PyObject *const *args, Py_ssize_t nar
 {
     /* _PyObject_FastCallDict() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
-       caller loses its exception */
-    assert(!PyErr_Occurred());
+       caller loses its exception. But do print something about the error
+       that would have been clobbered before crashing. */
+    if (PyErr_Occurred()) {
+        PyErr_Print();
+        assert(!PyErr_Occurred());
+    }
 
     assert(callable != NULL);
     assert(nargs >= 0);
@@ -141,8 +145,12 @@ _PyObject_FastCallKeywords(PyObject *callable, PyObject *const *stack, Py_ssize_
 {
     /* _PyObject_FastCallKeywords() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
-       caller loses its exception */
-    assert(!PyErr_Occurred());
+       caller loses its exception. But do print something about the error that
+       would have been clobbered before crashing. */
+    if (PyErr_Occurred()) {
+        PyErr_Print();
+        assert(!PyErr_Occurred());
+    }
 
     assert(nargs >= 0);
     assert(kwnames == NULL || PyTuple_CheckExact(kwnames));
