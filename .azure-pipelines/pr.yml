@@ -90,6 +90,7 @@ jobs:
   - template: ./posix-steps.yml
     parameters:
       dependencies: false
+      xvfb: false
       patchcheck: false
 
 

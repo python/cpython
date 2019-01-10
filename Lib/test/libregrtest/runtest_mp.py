@@ -133,7 +133,7 @@ class MultiprocessThread(threading.Thread):
             return True
 
         result = json.loads(result)
-        assert len(result) == 3, f"Invalid result tuple from {test}: {result!r}\n{stdout}"
+        assert len(result) == 3, f"Invalid result tuple: {result!r}"
         self.output.put((test, stdout.rstrip(), stderr.rstrip(),
                          result))
         return False
