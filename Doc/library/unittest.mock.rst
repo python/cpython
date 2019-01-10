@@ -1573,8 +1573,9 @@ patch.dict
     values in the dictionary.
 
 :func:`patch.dict` can be used as a context manager, decorator or class
-decorator.
+decorator:
 
+    >>> import patch
     >>> foo = {}
     >>> @patch.dict(foo, {'newkey': 'newvalue'})
     ... def test():
@@ -1583,21 +1584,19 @@ decorator.
     >>> assert foo == {}
 
 When used as a class decorator :func:`patch.dict` honours
-``patch.TEST_PREFIX`` for choosing which methods to wrap. The patchers
-recognise methods that start with ``'test'`` as being test methods.
-If you want to use a different prefix for your test, you can inform the
-patchers of the different prefix by setting ``patch.TEST_PREFIX``.
+``patch.TEST_PREFIX`` (default to ``'test'``) for choosing which methods to wrap:
 
     >>> import os
     >>> import unittest
-    >>> patch.TEST_PREFIX = 'foo'
+    >>> from unittest.mock import patch
     >>> @patch.dict('os.environ', {'newkey': 'newvalue'})
     ... class TestSample(unittest.TestCase):
-    ...     def foo_sample(self):
+    ...     def test_sample(self):
     ...         self.assertEqual(os.environ['newkey'], 'newvalue')
-    ...
-    ...     def test_sample2(self):
-    ...         self.assertNotIn('newkey', os.environ.keys())
+
+If you want to use a different prefix for your test, you can inform the
+patchers of the different prefix by setting ``patch.TEST_PREFIX``. For
+more details about how to change the value of see :ref:`test-prefix`.
 
     .. versionchanged:: 3.8
 
@@ -1815,6 +1814,8 @@ builtin :func:`ord`::
     >>> test()
     101
 
+
+.. _test-prefix:
 
 TEST_PREFIX
 ~~~~~~~~~~~
