@@ -1,5 +1,5 @@
 variables:
-  manylinux: false
+  manylinux: true
   coverage: false
 
 jobs:
@@ -72,16 +72,25 @@ jobs:
         eq(dependencies.Prebuild.outputs['tests.run'], 'true')
     )
 
+  resources:
+    containers:
+    - container: manylinux1
+      image: dockcross:manylinux-x64
+
   pool:
     vmImage: ubuntu-16.04
+
+  container: manylinux1
 
   variables:
     testRunTitle: '$(build.sourceBranchName)-manylinux1'
     testRunPlatform: manylinux1
-    imageName: 'dockcross/manylinux-x64'
 
   steps:
-  - template: ./docker-steps.yml
+  - template: ./posix-steps.yml
+    parameters:
+      dependencies: false
+      patchcheck: false
 
 
 - job: Ubuntu_Coverage_CI_Tests

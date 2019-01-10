@@ -1,13 +1,16 @@
 parameters:
   coverage: false
+  dependencies: true
+  patchcheck: true
 
 steps:
 - checkout: self
   clean: true
   fetchDepth: 5
 
-- script: ./.azure-pipelines/posix-deps.sh $(openssl_version)
-  displayName: 'Install dependencies'
+- ${{ if eq(parameters.dependencies, 'true') }}:
+  - script: ./.azure-pipelines/posix-deps.sh $(openssl_version)
+    displayName: 'Install dependencies'
 
 - script: ./configure --with-pydebug
   displayName: 'Configure CPython (debug)'
@@ -48,9 +51,10 @@ steps:
     displayName: 'Tests'
 
 
-- script: ./python Tools/scripts/patchcheck.py --travis true
-  displayName: 'Run patchcheck.py'
-  condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
+- ${{ if eq(parameters.patchcheck, 'true') }}:
+  - script: ./python Tools/scripts/patchcheck.py --travis true
+    displayName: 'Run patchcheck.py'
+    condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
 
 
 - task: PublishTestResults@2
