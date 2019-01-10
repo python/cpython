@@ -419,9 +419,9 @@ class IocpProactor:
     def select(self, timeout=None):
         if not self._results:
             self._poll(timeout)
-        tmp = self._results
-        self._results = []
-        return tmp
+        results = self._results.copy()
+        self._results.clear()
+        return results
 
     def _result(self, value):
         fut = self._loop.create_future()
@@ -791,7 +791,7 @@ class IocpProactor:
             if not self._poll(1):
                 logger.debug('taking long time to close proactor')
 
-        self._results = []
+        self._results.clear()
         if self._iocp is not None:
             _winapi.CloseHandle(self._iocp)
             self._iocp = None
