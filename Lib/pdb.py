@@ -1079,7 +1079,17 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 # new position
                 self.curframe.f_lineno = arg
                 self.stack[self.curindex] = self.stack[self.curindex][0], arg
+
+                # Save copy of curframe_locals because print_stack_entry
+                # causes a .f_locals access.
+                curframe_locals_copy = dict(self.curframe_locals)
+
                 self.print_stack_entry(self.stack[self.curindex])
+
+                # In case user had deleted variable before jump
+                self.curframe_locals.clear()
+                # Restore from copy
+                self.curframe_locals.update(curframe_locals_copy)
             except ValueError as e:
                 self.error('Jump failed: %s' % e)
     do_j = do_jump
