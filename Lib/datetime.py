@@ -1983,7 +1983,7 @@ class datetime(date):
         _check_utc_offset("dst", offset)
         return offset
 
-    def tzidx(self, callback):
+    def tzidx(self):
         """Retrieve the time zone index of the datetime, either from the cache
         or from the return value of the passed callback.
 
@@ -1997,7 +1997,14 @@ class datetime(date):
         if self._tzidx != 0xff:
             return self._tzidx
 
-        tzidx = callback(self)
+        if self.tzinfo is None:
+            raise TypeError("tzidx must not be called on naive datetimes")
+
+        if not hasattr(self.tzinfo, "tzidx"):
+            raise TypeError("datetime.tzidx must only be called from tzinfo " +
+                            "objects which have implemented the tzidx method")
+
+        tzidx = self.tzinfo.tzidx(self)
         if isinstance(tzidx, int) and 0 <= tzidx < 0xff:
             self._tzidx = tzidx
 

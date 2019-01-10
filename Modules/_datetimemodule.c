@@ -975,51 +975,51 @@ new_datetime_subclass_ex(int year, int month, int day, int hour, int minute,
                                          cls);
 }
 
-
-static PyObject*
-_load_valid_tzidx(PyObject* self, PyObject* callback) {
-
-    if (!PyCallable_Check(callback)) {
-        PyErr_SetString(PyExc_TypeError, "Callback must be callable");
-        return NULL;
-    }
-
-    PyObject *args = PyTuple_New(1);
-    PyTuple_SetItem(args, 0, self);
-    Py_INCREF(self);
-    PyObject *obj = PyEval_CallObject(callback, args);
-
-    Py_XDECREF(args);
-
-    if (!PyLong_Check(obj)) {
-        PyErr_SetString(PyExc_TypeError, "Callback must return an integer");
-        return NULL;
-    }
-
-    return obj;
-}
-
-
 static unsigned char
 pylong_to_tzidx(PyObject* tzidx_obj) {
     long tzidx = PyLong_AsLong(tzidx_obj);
-    if (tzidx < 0 || tzidx > 0xff || PyErr_Occurred()) {
+    if (tzidx < 0 || tzidx > 0xff) {
+        if (tzidx == -1 && PyErr_Occurred()) {
+            // This can raise OverflowError if the long is too big, but in
+            // all cases where tzidx would overflow, it's too big for the
+            // cache anyway, so we will clear the exception
+            PyErr_Clear();
+        }
         return 255;
     } else {
         return (unsigned char)tzidx;
     }
 }
 
-
-static PyObject*
-datetime_tzidx(PyObject* self, PyObject* callback) {
+static PyObject *
+datetime_tzidx(PyObject* self) {
     unsigned char tzidx = DATE_GET_TZIDX(self);
 
     if (tzidx != 0xff) {
         return PyLong_FromLong((long)tzidx);
     }
 
-    PyObject *obj = _load_valid_tzidx(self, callback);
+    if (!HASTZINFO(self)) {
+        PyErr_SetString(PyExc_TypeError,
+                "tzidx must not be called on naive datetimes");
+        return NULL;
+    }
+
+    // If tzidx is not implemented, raise an exception - this is really
+    // only intended to be called from the tzinfo object itself
+    if (!PyObject_HasAttrString(self, "tzidx")) {
+        PyErr_SetString(PyExc_TypeError,
+                "datetime.tzidx must only be called by tzinfo objects "
+                "which have implemented the tzidx method.");
+        return NULL;
+    }
+
+    PyObject *obj = PyObject_CallMethod(GET_DT_TZINFO(self), "tzidx", "O",
+                                        self);
+
+    if (obj == NULL) {
+        return NULL;
+    }
 
     if (PyLong_Check(obj)) {
         tzidx = pylong_to_tzidx(obj);
@@ -6320,7 +6320,7 @@ static PyMethodDef datetime_methods[] = {
     {"dst",             (PyCFunction)datetime_dst, METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.dst(self).")},
 
-    {"tzidx", (PyCFunction)datetime_tzidx,    METH_O,
+    {"tzidx", (PyCFunction)datetime_tzidx,    METH_NOARGS,
      PyDoc_STR("Get the cached time zone index")},
 
 
