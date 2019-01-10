@@ -1643,6 +1643,33 @@ class _BasePathTest(object):
         self.assertFileNotFound(p.stat)
         self.assertFileNotFound(p.unlink)
 
+    def test_rmtree(self):
+        p = self.cls(BASE) / 'dirB'
+        q = self.cls(BASE) / 'dirC'
+        p.rmtree()
+        q.rmtree()
+        self.assertFileNotFound(p.stat)
+        self.assertFileNotFound(q.stat)
+        self.assertFileNotFound(p.unlink)
+        self.assertFileNotFound(q.unlink)
+
+    def test_rmtree_ignore_errors(self):
+        p = self.cls(BASE)
+        p.rmtree(ignore_errors=True)
+        self.assertListEqual(["dirE"], os.listdir(p))
+
+    def test_rmtree_onerror(self):
+        p = self.cls(BASE) / 'dirA/linkC'
+
+        errors = []
+        def onerror(*args):
+            errors.append(args)
+        p.rmtree(onerror=onerror)
+        self.assertEqual(len(errors), 1)
+        self.assertIs(errors[0][0], os.path.islink)
+        self.assertEqual(errors[0][1], p)
+        self.assertIsInstance(errors[0][2][1], OSError)
+
     def test_rename(self):
         P = self.cls(BASE)
         p = P / 'fileA'

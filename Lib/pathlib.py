@@ -5,6 +5,7 @@ import ntpath
 import os
 import posixpath
 import re
+import shutil
 import sys
 from _collections_abc import Sequence
 from errno import EINVAL, ENOENT, ENOTDIR, EBADF
@@ -403,6 +404,8 @@ class _NormalAccessor(_Accessor):
     unlink = os.unlink
 
     rmdir = os.rmdir
+
+    rmtree = shutil.rmtree
 
     rename = os.rename
 
@@ -1283,6 +1286,14 @@ class Path(PurePath):
         if self._closed:
             self._raise_closed()
         self._accessor.rmdir(self)
+
+    def rmtree(self, ignore_errors=False, onerror=None):
+        """
+        Remove this directory tree.
+        """
+        if self._closed:
+            self._raise_closed()
+        shutil.rmtree(path=self, ignore_errors=ignore_errors, onerror=onerror)
 
     def lstat(self):
         """
