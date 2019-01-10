@@ -96,7 +96,6 @@ class datetime.date "PyDateTime_Date *" "&PyDateTime_DateType"
 #define TIME_GET_SECOND         PyDateTime_TIME_GET_SECOND
 #define TIME_GET_MICROSECOND    PyDateTime_TIME_GET_MICROSECOND
 #define TIME_GET_FOLD           PyDateTime_TIME_GET_FOLD
-#define TIME_GET_TZIDX          PyDateTime_TIME_GET_TZIDX
 #define TIME_SET_HOUR(o, v)     (PyDateTime_TIME_GET_HOUR(o) = (v))
 #define TIME_SET_MINUTE(o, v)   (PyDateTime_TIME_GET_MINUTE(o) = (v))
 #define TIME_SET_SECOND(o, v)   (PyDateTime_TIME_GET_SECOND(o) = (v))
@@ -105,7 +104,6 @@ class datetime.date "PyDateTime_Date *" "&PyDateTime_DateType"
      ((o)->data[4] = ((v) & 0x00ff00) >> 8), \
      ((o)->data[5] = ((v) & 0x0000ff)))
 #define TIME_SET_FOLD(o, v)   (PyDateTime_TIME_GET_FOLD(o) = (v))
-#define TIME_SET_TZIDX(o, v)  (PyDateTime_TIME_GET_TZIDX(o) = (v))
 
 /* Delta accessors for timedelta. */
 #define GET_TD_DAYS(o)          (((PyDateTime_Delta *)(o))->days)
@@ -1074,24 +1072,6 @@ new_time_ex(int hour, int minute, int second, int usecond,
 #define new_time(hh, mm, ss, us, tzinfo, fold)                       \
     new_time_ex2(hh, mm, ss, us, tzinfo, fold, &PyDateTime_TimeType)
 
-
-static PyObject*
-time_get_tzidx(PyObject* self, PyObject* callback) {
-    unsigned char tzidx = TIME_GET_TZIDX(self);
-
-    if (tzidx != 0xff) {
-        return PyLong_FromLong((long)tzidx);
-    }
-
-    PyObject *obj = _load_valid_tzidx(self, callback);
-
-    if (PyLong_Check(obj)) {
-        tzidx = pylong_to_tzidx(obj);
-        TIME_SET_TZIDX(self, tzidx);
-    };
-
-    return obj;
-}
 
 /* Create a timedelta instance.  Normalize the members iff normalize is
  * true.  Passing false is a speed optimization, if you know for sure
@@ -4633,9 +4613,6 @@ static PyMethodDef time_methods[] = {
 
     {"dst",             (PyCFunction)time_dst,          METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.dst(self).")},
-
-    {"get_tzidx",       (PyCFunction)time_get_tzidx,    METH_O,
-     PyDoc_STR("Retrieve the tzidx cache")},
 
     {"replace",     (PyCFunction)(void(*)(void))time_replace,          METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return time with new specified fields.")},

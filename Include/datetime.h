@@ -82,7 +82,6 @@ typedef struct
 {
     _PyDateTime_TIMEHEAD
     unsigned char fold;
-    unsigned char tzidx;
     PyObject *tzinfo;
 } PyDateTime_Time;              /* hastzinfo true */
 
@@ -141,7 +140,6 @@ typedef struct
      (((PyDateTime_Time*)o)->data[4] << 8)  |           \
       ((PyDateTime_Time*)o)->data[5])
 #define PyDateTime_TIME_GET_FOLD(o)        (((PyDateTime_Time*)o)->fold)
-#define PyDateTime_TIME_GET_TZIDX(o)       (((PyDateTime_Time*)o)->tzidx)
 
 /* Apply for time delta instances */
 #define PyDateTime_DELTA_GET_DAYS(o)         (((PyDateTime_Delta*)o)->days)
