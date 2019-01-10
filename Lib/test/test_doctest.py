@@ -2451,8 +2451,7 @@ def test_unittest_reportflags():
     Then the default eporting options are ignored:
 
       >>> result = suite.run(unittest.TestResult())
-    """
-    """
+
     *NOTE*: These doctest are intentionally not placed in raw string to depict
     the trailing whitespace using `\x20` in the diff below.
 
