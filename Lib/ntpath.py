@@ -671,19 +671,18 @@ try:
         return resolved if is_str else os.fsencode(resolved)
 
     def _extended_to_normal(path):
-        drive, rest = splitdrive(path)
-        if not rest:
-            return path
         letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        drive = drive.upper()
-        if drive == '\\\\?\\UNC':
-            # UNC path with \\?\ prefix - drop prefix
-            # 7 is len('\\?\UNC')
-            normal_path = '\\' + path[7:]
-        elif len(drive) == 6 and drive[4] in letters and drive[5] == ':':
+        if (len(path) > 7 and
+            path[4].upper() in letters and
+            path[5] == ':' and
+            path[6] == '\\'):
             # extended path with \\?\ prefix
             # 4 is len('\\?\')
             normal_path = path[4:]
+        elif len(path) > 8 and path[:7].upper() == '\\\\?\\UNC\\':
+            # UNC path with \\?\ prefix - drop prefix
+            # 7 is len('\\?\UNC')
+            normal_path = '\\' + path[7:]
         else:
             # not a UNC or drive-letter path
             # return path as-is
