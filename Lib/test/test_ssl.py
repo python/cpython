@@ -1066,9 +1066,9 @@ class ContextTests(unittest.TestCase):
                          "required OpenSSL 1.1.0g")
     def test_min_max_version(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        self.assertEqual(
-            ctx.minimum_version, ssl.TLSVersion.MINIMUM_SUPPORTED
-        )
+        # bpo-35045: don't test the default minimum_version: it depends
+        # on the OpenSSL configuration, it is not always equal
+        # to TLSVersion.MINIMUM_SUPPORTED.
         self.assertEqual(
             ctx.maximum_version, ssl.TLSVersion.MAXIMUM_SUPPORTED
         )

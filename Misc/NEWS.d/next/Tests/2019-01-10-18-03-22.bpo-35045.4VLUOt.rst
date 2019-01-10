@@ -1,0 +1,2 @@
+Fix test_ssl.test_min_max_version(): no longer test the default
+minimum_version, it depends on the OpenSSL configuration.
