@@ -1,1 +1,1 @@
-ntpath.realpath() now uses :c:func:`GetFinalPathNameByHandle()`.
+ntpath.realpath() now uses ``GetFinalPathNameByHandle()``.

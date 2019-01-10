@@ -646,7 +646,9 @@ try:
     # determine if two files are in fact the same file
     def realpath(filename):
         filename = os.fspath(filename)
-        extended_path_prefix = '\\\\?\\' if isinstance(filename, str) else b'\\\\?\\'
+        is_str = isinstance(filename, str)
+        filename = os.fsdecode(filename)
+        extended_path_prefix = '\\\\?\\'
         is_extended_path = filename.startswith(extended_path_prefix)
         unresolved = filename if is_extended_path else abspath(filename)
         resolved_parts = []
@@ -665,28 +667,19 @@ try:
         # initial path did not use \\?\ prefix and result uses it
         if not is_extended_path and resolved.startswith(extended_path_prefix):
             resolved = _extended_to_normal(resolved)
-        return resolved
+        return resolved if is_str else os.fsencode(resolved)
 
     def _extended_to_normal(path):
         drive, rest = splitdrive(path)
         if not rest:
             return path
-        if isinstance(path, str):
-            sep = '\\'
-            colon = ':'
-            letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-            unc_dev = '\\\\?\\UNC'
-        else:
-            sep = b'\\'
-            colon = b':'
-            letters = b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-            unc_dev = b'\\\\?\\UNC'
+        letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         drive = drive.upper()
-        if drive == unc_dev:
+        if drive == '\\\\?\\UNC':
             # UNC path with \\?\ prefix - drop prefix
             # 7 is len('\\?\UNC')
-            normal_path = sep + path[7:]
-        elif len(drive) == 6 and drive[4:5] in letters and drive[5:6] == colon:
+            normal_path = '\\' + path[7:]
+        elif len(drive) == 6 and drive[4] in letters and drive[5] == ':':
             # extended path with \\?\ prefix
             # 4 is len('\\?\')
             normal_path = path[4:]
