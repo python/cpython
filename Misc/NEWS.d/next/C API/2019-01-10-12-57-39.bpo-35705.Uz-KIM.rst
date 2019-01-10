@@ -1,0 +1,1 @@
+Added support of libffi in _ctypes for windows 10 ARM64 .
