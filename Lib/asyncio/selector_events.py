@@ -658,9 +658,9 @@ class _SelectorTransport(transports._FlowControlMixin,
             self._loop._remove_writer(self._sock_fd)
             self._loop.call_soon(self._call_connection_lost, None)
 
-    def __del__(self, warn=warnings.warn):
+    def __del__(self, _warn=warnings.warn):
         if self._sock is not None:
-            warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+            _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
             self._sock.close()
 
     def _fatal_error(self, exc, message='Fatal error on transport'):
