@@ -829,6 +829,7 @@ These constants are used as parameters for :func:`clock_getres` and
 The following constant is the only parameter that can be sent to
 :func:`clock_settime`.
 
+
 .. data:: CLOCK_REALTIME
 
    System-wide real-time clock.  Setting this clock requires appropriate
