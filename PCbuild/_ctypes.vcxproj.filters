@@ -41,25 +41,31 @@
     <ClCompile Include="..\Modules\_ctypes\cfield.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_ctypes\libffi_msvc\ffi.c">
+    <ClCompile Include="..\Modules\_ctypes\stgdict.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_ctypes\malloc_closure.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_ctypes\libffi_msvc\prep_cif.c">
+    <ClCompile Include="..\..\..\libffi_msvc\ffi.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_ctypes\stgdict.c">
+    <ClCompile Include="..\..\..\libffi_msvc\prep_cif.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_ctypes\libffi_msvc\win32.c">
+    <ClCompile Include="..\..\..\libffi_msvc\types.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libffi_msvc\win32.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\Modules\_ctypes\libffi_msvc\win64.asm">
+    <ResourceCompile Include="..\PC\python_nt.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\libffi_msvc\win64.asm">
       <Filter>Source Files</Filter>
-    </CustomBuild>
+    </None>
   </ItemGroup>
 </Project>
