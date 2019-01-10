@@ -4619,7 +4619,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
             def __repr__(self):
                 return f"{self.__class__.__name__}()"
 
-            def get_tzidx(self, dt):
+            def tzidx(self, dt):
                 self.calls += 1
 
                 dst_start = (3, 15, 2, 0, 0, 0)      # DST starts March 15 at 2AM
@@ -4635,13 +4635,13 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
                     return 0
 
             def dst(self, dt):
-                return self.dsts[dt.tzidx(self.get_tzidx)]
+                return self.dsts[dt.tzidx()]
 
             def utcoffset(self, dt):
-                return self.offsets[dt.tzidx(self.get_tzidx)]
+                return self.offsets[dt.tzidx()]
 
             def tzname(self, dt):
-                return self.names[dt.tzidx(self.get_tzidx)]
+                return self.names[dt.tzidx()]
 
         STD_TUPLE = (timedelta(hours=0), '+00:00', timedelta(hours=0))
         DST_TUPLE = (timedelta(hours=1), '+01:00', timedelta(hours=1))
