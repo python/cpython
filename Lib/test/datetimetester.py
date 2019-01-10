@@ -4605,6 +4605,81 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         self.assertEqual(dt1.utcoffset(), dt2.utcoffset())
         self.assertEqual(dt2.newmeth(-7), dt1.hour + dt1.year - 7)
 
+    def test_tzidx(self):
+        class CachableTZInfo(tzinfo):
+            """Fixed DST offset time zone class intended to test tzidx_cache"""
+
+            offsets = [timedelta(hours=0), timedelta(hours=1)]
+            names = ['+00:00', '+01:00']
+            dsts = [timedelta(hours=0), timedelta(hours=1)]
+
+            def __init__(self):
+                self.calls = 0
+
+            def __repr__(self):
+                return f"{self.__class__.__name__}()"
+
+            def get_tzidx(self, dt):
+                self.calls += 1
+
+                dst_start = (3, 15, 2, 0, 0, 0)      # DST starts March 15 at 2AM
+                dst_end = (11, 2, 3, 0, 0, 0)        # DST ends November 2 at 3AM
+
+                dt_tuple = (dt.month, dt.day, dt.hour, dt.minute, dt.second,
+                            dt.microsecond)
+
+                # Not bothering with fold support here
+                if dst_start <= dt_tuple < dst_end:
+                    return 1
+                else:
+                    return 0
+
+            def dst(self, dt):
+                return self.dsts[dt.tzidx(self.get_tzidx)]
+
+            def utcoffset(self, dt):
+                return self.offsets[dt.tzidx(self.get_tzidx)]
+
+            def tzname(self, dt):
+                return self.names[dt.tzidx(self.get_tzidx)]
+
+        STD_TUPLE = (timedelta(hours=0), '+00:00', timedelta(hours=0))
+        DST_TUPLE = (timedelta(hours=1), '+01:00', timedelta(hours=1))
+
+        cases = [
+            (datetime(2014, 1, 1), STD_TUPLE),
+            (datetime(2015, 3, 15, 1), STD_TUPLE),
+            (datetime(2015, 3, 15, 3), DST_TUPLE),
+            (datetime(2015, 11, 1), DST_TUPLE),
+            (datetime(2015, 11, 4), STD_TUPLE),
+            (datetime(2015, 11, 4), STD_TUPLE),     # Repeat values with new dt
+        ]
+
+        tz = CachableTZInfo()
+        i = 0
+        for dt, (offset, name, dst) in cases:
+            with self.subTest(dt):
+                self.assertEqual(tz.calls, i)       # No new calls yet
+
+                dt0 = dt.replace(tzinfo=tz)
+                self.assertEqual(tz.calls, i)       # Cache is lazily populated
+
+                self.assertEqual(dt0.utcoffset(), offset)
+                i += 1          # This is the first calculation on this object
+                self.assertEqual(tz.calls, i)
+
+                # Subsequent calculations should hit the cache
+                self.assertEqual(dt0.dst(), dst)
+                self.assertEqual(tz.calls, i)
+
+                self.assertEqual(dt0.tzname(), name)
+                self.assertEqual(tz.calls, i)
+
+                # Try calling the same function again
+                self.assertEqual(dt0.utcoffset(), offset)
+                self.assertEqual(tz.calls, i)
+
+
 # Pain to set up DST-aware tzinfo classes.
 
 def first_sunday_on_or_after(dt):

@@ -1231,7 +1231,8 @@ class time:
     Properties (readonly):
     hour, minute, second, microsecond, tzinfo, fold
     """
-    __slots__ = '_hour', '_minute', '_second', '_microsecond', '_tzinfo', '_hashcode', '_fold'
+    __slots__ = ('_hour', '_minute', '_second', '_microsecond', '_tzinfo',
+                 '_hashcode', '_fold')
 
     def __new__(cls, hour=0, minute=0, second=0, microsecond=0, tzinfo=None, *, fold=0):
         """Constructor.
@@ -1561,7 +1562,7 @@ class datetime(date):
     The year, month and day arguments are required. tzinfo may be None, or an
     instance of a tzinfo subclass. The remaining arguments may be ints.
     """
-    __slots__ = date.__slots__ + time.__slots__
+    __slots__ = date.__slots__ + time.__slots__ + ('_tzidx',)
 
     def __new__(cls, year, month=None, day=None, hour=0, minute=0, second=0,
                 microsecond=0, tzinfo=None, *, fold=0):
@@ -1596,6 +1597,7 @@ class datetime(date):
         self._tzinfo = tzinfo
         self._hashcode = -1
         self._fold = fold
+        self._tzidx = 0xff
         return self
 
     # Read-only field accessors
@@ -1980,6 +1982,26 @@ class datetime(date):
         offset = self._tzinfo.dst(self)
         _check_utc_offset("dst", offset)
         return offset
+
+    def tzidx(self, callback):
+        """Retrieve the time zone index of the datetime, either from the cache
+        or from the return value of the passed callback.
+
+        If the return value of callback(self) is an integer in the range
+        [0, 254], it will be cached on the datetime on the first call to tzidx.
+
+        This is useful for time zones which have a relatively small number of
+        fixed (offset, name, dst) combinations where calculating which one
+        applies to a given datetime may be expensive.
+        """
+        if self._tzidx != 0xff:
+            return self._tzidx
+
+        tzidx = callback(self)
+        if isinstance(tzidx, int) and 0 <= tzidx < 0xff:
+            self._tzidx = tzidx
+
+        return tzidx
 
     # Comparisons of datetime objects with other.
 
