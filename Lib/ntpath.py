@@ -647,7 +647,8 @@ try:
     def realpath(filename):
         filename = os.fspath(filename)
         is_str = isinstance(filename, str)
-        filename = os.fsdecode(filename)
+        if not is_str:
+            filename = os.fsdecode(filename)
         extended_path_prefix = '\\\\?\\'
         is_extended_path = filename.startswith(extended_path_prefix)
         unresolved = filename if is_extended_path else abspath(filename)
