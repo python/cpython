@@ -1806,6 +1806,9 @@ PyInit_time(void)
 #ifdef CLOCK_UPTIME
     PyModule_AddIntMacro(m, CLOCK_UPTIME);
 #endif
+#ifdef CLOCK_UPTIME_RAW
+    PyModule_AddIntMacro(m, CLOCK_UPTIME_RAW);
+#endif
 
 #endif  /* defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES) */
 
