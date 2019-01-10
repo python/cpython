@@ -821,14 +821,13 @@ These constants are used as parameters for :func:`clock_getres` and
    point, unaffected by frequency or time adjustments and not increment while 
    the system is asleep.
 
-   .. availability:: Unix.
+   .. availability:: macOS 10.12 and newer.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.8
 
 
 The following constant is the only parameter that can be sent to
 :func:`clock_settime`.
-
 
 .. data:: CLOCK_REALTIME
 
