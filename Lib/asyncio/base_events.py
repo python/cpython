@@ -622,10 +622,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Returns True if the event loop was closed."""
         return self._closed
 
-    def __del__(self):
+    def __del__(self, warn=warnings.warn):
         if not self.is_closed():
-            warnings.warn(f"unclosed event loop {self!r}", ResourceWarning,
-                          source=self)
+            warn(f"unclosed event loop {self!r}", ResourceWarning, source=self)
             if not self.is_running():
                 self.close()
 

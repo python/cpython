@@ -120,10 +120,9 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
 
             # Don't clear the _proc reference yet: _post_init() may still run
 
-    def __del__(self):
+    def __del__(self, warn=warnings.warn):
         if not self._closed:
-            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
-                          source=self)
+            warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
             self.close()
 
     def get_pid(self):
