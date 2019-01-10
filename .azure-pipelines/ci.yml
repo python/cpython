@@ -5,7 +5,7 @@ variables:
 resources:
   containers:
   - container: manylinux1
-    image: pyca/cryptography-manylinux1
+    image: pyca/cryptography-manylinux1:x86_64
 
 jobs:
 - job: Prebuild
