@@ -1,0 +1,1 @@
+Add rmtree method to pathlib.Path
