@@ -352,53 +352,52 @@ class DebuggerTest(unittest.TestCase):
 
 class StackViewerTest(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        cls.root = Tk()
+        cls.root.withdraw()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.root.destroy()
+        del cls.root
+
+    def setUp(self):
+        self.code = compile(TEST_CODE, 'test_stackviewer.py', 'exec')
+        self.stack = [
+            (MockFrameType(self.code, 1), 1),
+            (MockFrameType(self.code, 2), 2)
+        ]
+
+        # Create a stackviewer and load the test stack.
+        self.sv = debugger.StackViewer(self.root, None, None)
+        self.sv.load_stack(self.stack)
+
     def test_init(self):
         """Test creation of StackViewer."""
         gui = None
         flist = None
-        master_window = None
+        master_window = self.root
         sv = debugger.StackViewer(master_window, flist, gui)
         self.assertTrue(hasattr(sv, 'stack'))
 
     def test_load_stack(self):
         """Test the .load_stack() method against a fixed test stack."""
-        # Arrange a test stack.
-        test_code = compile(TEST_CODE, 'test_load_stack.py', 'exec')
-        test_stack = [
-            (MockFrameType(test_code, 1), 1),
-            (MockFrameType(test_code, 2), 2)
-        ]
-
-        # Create a stackviewer and load the test stack.
-        test_sv = debugger.StackViewer(None, None, None)
-        test_sv.load_stack(test_stack)
-
         # Check the test stack is assigned and the list contains the repr of them.
-        self.assertEqual(test_sv.stack, test_stack)
-        self.assertEqual(test_sv.get(0), '?.<module>(), line 1: ')
-        self.assertEqual(test_sv.get(1), '?.<module>(), line 2: ')
+        self.assertEqual(self.sv.stack, self.stack)
+        self.assertEqual(self.sv.get(0), '?.<module>(), line 1: ')
+        self.assertEqual(self.sv.get(1), '?.<module>(), line 2: ')
 
     def test_show_source(self):
         """Test the .show_source() method against a fixed test stack."""
-        # Arrange a test stack.
-        test_code = compile(TEST_CODE, 'test_show_source.py', 'exec')
-        test_stack = [
-            (MockFrameType(test_code, 1), 1),
-            (MockFrameType(test_code, 2), 2)
-        ]
-
-        # Create a stackviewer and load the test stack.
-        test_sv = debugger.StackViewer(None, None, None)
-        test_sv.load_stack(test_stack)
-
         # Patch out the file list to monitor it
-        test_sv.flist = mock.Mock()
+        self.sv.flist = mock.Mock()
 
         # Patch out isfile to pretend file exists.
         with mock.patch('idlelib.debugger.os.path.isfile', return_value=True) as isfile:
-            test_sv.show_source(1)
-            isfile.assert_called_once_with('test_show_source.py')
-            test_sv.flist.open.assert_called_once_with('test_show_source.py')
+            self.sv.show_source(1)
+            isfile.assert_called_once_with('test_stackviewer.py')
+            self.sv.flist.open.assert_called_once_with('test_stackviewer.py')
 
 
 if __name__ == '__main__':
