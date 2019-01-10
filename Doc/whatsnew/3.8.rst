@@ -237,11 +237,8 @@ in the :class:`tkinter.Canvas` class.
 time
 ----
 
-Added new clock :data:`~time.CLOCK_UPTIME_RAW` for macOS 10.12 that
-increments monotonically, tracking the time since an arbitrary point,
-unaffected by frequency or time adjustments and not incremented while the
-system is asleep.
-(Contributed by Ricardo Fraile in :issue:`35702`.)
+Added new clock :data:`~time.CLOCK_UPTIME_RAW` for macOS 10.12.
+(Contributed by Joannah Nanjekye in :issue:`35702`.)
 
 unicodedata
 -----------
