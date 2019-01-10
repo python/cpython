@@ -1140,10 +1140,10 @@ class Utility_Tests(unittest.TestCase):
                           'http://www.python.org/medi\u00e6val')
 
     def test_unwrap(self):
-        for wrapped_url in ('<URL:type://host/path>', '<type://host/path>',
-                            'URL:type://host/path', 'type://host/path'):
+        for wrapped_url in ('<URL:scheme://host/path>', '<scheme://host/path>',
+                            'URL:scheme://host/path', 'scheme://host/path'):
             url = urllib.parse.unwrap(wrapped_url)
-            self.assertEqual(url, 'type://host/path')
+            self.assertEqual(url, 'scheme://host/path')
 
 
 class DeprecationTest(unittest.TestCase):

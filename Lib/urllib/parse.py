@@ -952,7 +952,7 @@ def _to_bytes(url):
 
 
 def unwrap(url):
-    """unwrap('<URL:type://host/path>') --> 'type://host/path'."""
+    """unwrap('<URL:scheme://host/path>') --> 'scheme://host/path'."""
     url = str(url).strip()
     if url[:1] == '<' and url[-1:] == '>':
         url = url[1:-1].strip()
