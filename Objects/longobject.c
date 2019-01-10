@@ -3023,7 +3023,7 @@ static PyObject *
 long_richcompare(PyObject *self, PyObject *other, int op)
 {
     Py_ssize_t result;
-    CHECK_BINOP(self, other);
+    CHECK_BINOP(other, self);
     if (self == other)
         result = 0;
     else
@@ -3184,7 +3184,7 @@ long_add(PyLongObject *a, PyLongObject *b)
 {
     PyLongObject *z;
 
-    CHECK_BINOP(a, b);
+    CHECK_BINOP(b, a);
 
     if (Py_ABS(Py_SIZE(a)) <= 1 && Py_ABS(Py_SIZE(b)) <= 1) {
         return PyLong_FromLong(MEDIUM_VALUE(a) + MEDIUM_VALUE(b));
@@ -3218,7 +3218,7 @@ long_sub(PyLongObject *a, PyLongObject *b)
 {
     PyLongObject *z;
 
-    CHECK_BINOP(a, b);
+    CHECK_BINOP(b, a);
 
     if (Py_ABS(Py_SIZE(a)) <= 1 && Py_ABS(Py_SIZE(b)) <= 1) {
         return PyLong_FromLong(MEDIUM_VALUE(a) - MEDIUM_VALUE(b));
@@ -3650,7 +3650,7 @@ long_mul(PyLongObject *a, PyLongObject *b)
 {
     PyLongObject *z;
 
-    CHECK_BINOP(a, b);
+    CHECK_BINOP(b, a);
 
     /* fast path for single-digit multiplication */
     if (Py_ABS(Py_SIZE(a)) <= 1 && Py_ABS(Py_SIZE(b)) <= 1) {
@@ -3804,7 +3804,7 @@ long_div(PyObject *a, PyObject *b)
 {
     PyLongObject *div;
 
-    CHECK_BINOP(a, b);
+    CHECK_BINOP(b, a);
 
     if (Py_ABS(Py_SIZE(a)) == 1 && Py_ABS(Py_SIZE(b)) == 1) {
         return fast_floor_div((PyLongObject*)a, (PyLongObject*)b);
@@ -3829,7 +3829,7 @@ long_true_divide(PyObject *v, PyObject *w)
     int inexact, negate, a_is_small, b_is_small;
     double dx, result;
 
-    CHECK_BINOP(v, w);
+    CHECK_BINOP(w, v);
     a = (PyLongObject *)v;
     b = (PyLongObject *)w;
 
@@ -4083,7 +4083,7 @@ long_mod(PyObject *a, PyObject *b)
 {
     PyLongObject *mod;
 
-    CHECK_BINOP(a, b);
+    CHECK_BINOP(b, a);
 
     if (Py_ABS(Py_SIZE(a)) == 1 && Py_ABS(Py_SIZE(b)) == 1) {
         return fast_mod((PyLongObject*)a, (PyLongObject*)b);
@@ -4100,7 +4100,7 @@ long_divmod(PyObject *a, PyObject *b)
     PyLongObject *div, *mod;
     PyObject *z;
 
-    CHECK_BINOP(a, b);
+    CHECK_BINOP(b, a);
 
     if (l_divmod((PyLongObject*)a, (PyLongObject*)b, &div, &mod) < 0) {
         return NULL;
@@ -4135,7 +4135,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
                                0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
     /* a, b, c = v, w, x */
-    CHECK_BINOP(v, w);
+    CHECK_BINOP(w, v);
     a = (PyLongObject*)v; Py_INCREF(a);
     b = (PyLongObject*)w; Py_INCREF(b);
     if (PyLong_Check(x)) {
@@ -4391,7 +4391,7 @@ long_rshift(PyLongObject *a, PyLongObject *b)
     Py_ssize_t newsize, wordshift, hishift, i, j;
     digit loshift, lomask, himask;
 
-    CHECK_BINOP(a, b);
+    CHECK_BINOP(b, a);
 
     if (Py_SIZE(b) < 0) {
         PyErr_SetString(PyExc_ValueError,
@@ -4445,7 +4445,7 @@ long_lshift(PyObject *v, PyObject *w)
     digit remshift;
     twodigits accum;
 
-    CHECK_BINOP(a, b);
+    CHECK_BINOP(b, a);
 
     if (Py_SIZE(b) < 0) {
         PyErr_SetString(PyExc_ValueError, "negative shift count");
@@ -4630,7 +4630,7 @@ static PyObject *
 long_and(PyObject *a, PyObject *b)
 {
     PyObject *c;
-    CHECK_BINOP(a, b);
+    CHECK_BINOP(b, a);
     c = long_bitwise((PyLongObject*)a, '&', (PyLongObject*)b);
     return c;
 }
@@ -4639,7 +4639,7 @@ static PyObject *
 long_xor(PyObject *a, PyObject *b)
 {
     PyObject *c;
-    CHECK_BINOP(a, b);
+    CHECK_BINOP(b, a);
     c = long_bitwise((PyLongObject*)a, '^', (PyLongObject*)b);
     return c;
 }
@@ -4648,7 +4648,7 @@ static PyObject *
 long_or(PyObject *a, PyObject *b)
 {
     PyObject *c;
-    CHECK_BINOP(a, b);
+    CHECK_BINOP(b, a);
     c = long_bitwise((PyLongObject*)a, '|', (PyLongObject*)b);
     return c;
 }
