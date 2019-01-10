@@ -26,6 +26,8 @@ MS_TO_NS = 10 ** 6
 SEC_TO_NS = 10 ** 9
 NS_TO_SEC = 10 ** 9
 
+INVALID_FLOATS = (float("nan"), float("-inf"), float("inf"))
+
 class _PyTime(enum.IntEnum):
     # Round towards minus infinity (-inf)
     ROUND_FLOOR = 0
@@ -160,6 +162,8 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.sleep, -2)
         self.assertRaises(ValueError, time.sleep, -1)
         time.sleep(1.2)
+        for value in INVALID_FLOATS:
+            self.assertRaises(ValueError, time.sleep, value)
 
     def test_strftime(self):
         tt = time.gmtime(self.t)
@@ -545,8 +549,9 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(OSError, time.ctime, invalid_time_t)
 
         # Issue #26669: check for localtime() failure
-        self.assertRaises(ValueError, time.localtime, float("nan"))
-        self.assertRaises(ValueError, time.ctime, float("nan"))
+        for value in INVALID_FLOATS:
+            self.assertRaises(ValueError, time.localtime, value)
+            self.assertRaises(ValueError, time.ctime, value)
 
     def test_get_clock_info(self):
         clocks = ['clock', 'monotonic', 'perf_counter', 'process_time', 'time']
@@ -884,10 +889,11 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
                                 lambda secs: secs * SEC_TO_NS,
                                 value_filter=c_int_filter)
 
-        # test nan
-        for time_rnd, _ in ROUNDING_MODES:
-            with self.assertRaises(TypeError):
-                PyTime_FromSeconds(float('nan'))
+        # test invalid floats
+        for value in INVALID_FLOATS:
+            for time_rnd, _ in ROUNDING_MODES:
+                with self.assertRaises(TypeError):
+                    PyTime_FromSeconds(value)
 
     def test_FromSecondsObject(self):
         from _testcapi import PyTime_FromSecondsObject
@@ -900,10 +906,11 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
             PyTime_FromSecondsObject,
             lambda ns: self.decimal_round(ns * SEC_TO_NS))
 
-        # test nan
-        for time_rnd, _ in ROUNDING_MODES:
-            with self.assertRaises(ValueError):
-                PyTime_FromSecondsObject(float('nan'), time_rnd)
+        # test invalid floats
+        for value in INVALID_FLOATS:
+            for time_rnd, _ in ROUNDING_MODES:
+                with self.assertRaises(ValueError):
+                    PyTime_FromSecondsObject(value, time_rnd)
 
     def test_AsSecondsDouble(self):
         from _testcapi import PyTime_AsSecondsDouble
@@ -918,10 +925,11 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
                                 float_converter,
                                 NS_TO_SEC)
 
-        # test nan
-        for time_rnd, _ in ROUNDING_MODES:
-            with self.assertRaises(TypeError):
-                PyTime_AsSecondsDouble(float('nan'))
+        # test invalid floats
+        for value in INVALID_FLOATS:
+            for time_rnd, _ in ROUNDING_MODES:
+                with self.assertRaises(TypeError):
+                    PyTime_AsSecondsDouble(value)
 
     def create_decimal_converter(self, denominator):
         denom = decimal.Decimal(denominator)
@@ -1028,10 +1036,11 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
                                   self.create_converter(SEC_TO_US),
                                   value_filter=self.time_t_filter)
 
-         # test nan
-        for time_rnd, _ in ROUNDING_MODES:
-            with self.assertRaises(ValueError):
-                pytime_object_to_timeval(float('nan'), time_rnd)
+        # test invalid floats
+        for value in INVALID_FLOATS:
+            for time_rnd, _ in ROUNDING_MODES:
+                with self.assertRaises(ValueError):
+                    pytime_object_to_timeval(value, time_rnd)
 
     def test_object_to_timespec(self):
         from _testcapi import pytime_object_to_timespec
@@ -1044,10 +1053,11 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
                                   self.create_converter(SEC_TO_NS),
                                   value_filter=self.time_t_filter)
 
-        # test nan
-        for time_rnd, _ in ROUNDING_MODES:
-            with self.assertRaises(ValueError):
-                pytime_object_to_timespec(float('nan'), time_rnd)
+        # test invalid floats
+        for value in INVALID_FLOATS:
+            for time_rnd, _ in ROUNDING_MODES:
+                with self.assertRaises(ValueError):
+                    pytime_object_to_timespec(value, time_rnd)
 
 
 if __name__ == "__main__":

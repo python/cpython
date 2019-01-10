@@ -128,6 +128,18 @@ _PyTime_Round(double x, _PyTime_round_t round)
     return d;
 }
 
+static const char*
+pytime_check_double(double d)
+{
+    if (Py_IS_NAN(d)) {
+        return "invalid value: NaN";
+    }
+    if (Py_IS_INFINITY(d)) {
+        return "invalid value: infinity";
+    }
+    return NULL;
+}
+
 static int
 _PyTime_DoubleToDenominator(double d, time_t *sec, long *numerator,
                             long idenominator, _PyTime_round_t round)
@@ -137,8 +149,14 @@ _PyTime_DoubleToDenominator(double d, time_t *sec, long *numerator,
     /* volatile avoids optimization changing how numbers are rounded */
     volatile double floatpart;
 
-    floatpart = modf(d, &intpart);
+    const char *errmsg = pytime_check_double(d);
+    if (errmsg) {
+        *numerator = 0;
+        PyErr_SetString(PyExc_ValueError, errmsg);
+        return -1;
+    }
 
+    floatpart = modf(d, &intpart);
     floatpart *= denominator;
     floatpart = _PyTime_Round(floatpart, round);
     if (floatpart >= denominator) {
@@ -169,11 +187,6 @@ _PyTime_ObjectToDenominator(PyObject *obj, time_t *sec, long *numerator,
 
     if (PyFloat_Check(obj)) {
         double d = PyFloat_AsDouble(obj);
-        if (Py_IS_NAN(d)) {
-            *numerator = 0;
-            PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
-            return -1;
-        }
         return _PyTime_DoubleToDenominator(d, sec, numerator,
                                            denominator, round);
     }
@@ -196,8 +209,10 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
         volatile double d;
 
         d = PyFloat_AsDouble(obj);
-        if (Py_IS_NAN(d)) {
-            PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
+
+        const char *errmsg = pytime_check_double(d);
+        if (errmsg) {
+            PyErr_SetString(PyExc_ValueError, errmsg);
             return -1;
         }
 
@@ -383,6 +398,12 @@ _PyTime_FromDouble(_PyTime_t *t, double value, _PyTime_round_t round,
 {
     /* volatile avoids optimization changing how numbers are rounded */
     volatile double d;
+
+    const char *errmsg = pytime_check_double(value);
+    if (errmsg) {
+        PyErr_SetString(PyExc_ValueError, errmsg);
+        return -1;
+    }
 
     /* convert to a number of nanoseconds */
     d = value;

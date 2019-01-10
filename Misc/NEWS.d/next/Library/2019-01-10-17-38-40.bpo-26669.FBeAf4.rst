@@ -1,0 +1,1 @@
+Reject float infinity in time functions.
