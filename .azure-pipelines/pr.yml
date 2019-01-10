@@ -72,7 +72,7 @@ jobs:
     and(
         and(
             succeeded(),
-            eq(variables['coverage'], 'true')
+            eq(variables['manylinux'], 'true')
         ),
         eq(dependencies.Prebuild.outputs['tests.run'], 'true')
     )
