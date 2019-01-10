@@ -2,6 +2,11 @@ variables:
   manylinux: true
   coverage: false
 
+resources:
+  containers:
+  - container: manylinux1
+    image: dockcross:manylinux-x64
+
 jobs:
 - job: Prebuild
   displayName: Pre-build checks
@@ -54,7 +59,7 @@ jobs:
   variables:
     testRunTitle: '$(build.sourceBranchName)-linux'
     testRunPlatform: linux
-    openssl_version: 1.1.0g
+    openssl_version: 1.1.0j
 
   steps:
   - template: ./posix-steps.yml
@@ -71,11 +76,6 @@ jobs:
         ),
         eq(dependencies.Prebuild.outputs['tests.run'], 'true')
     )
-
-  resources:
-    containers:
-    - container: manylinux1
-      image: dockcross:manylinux-x64
 
   pool:
     vmImage: ubuntu-16.04
@@ -111,7 +111,7 @@ jobs:
   variables:
     testRunTitle: '$(Build.SourceBranchName)-linux-coverage'
     testRunPlatform: linux-coverage
-    openssl_version: 1.1.0g
+    openssl_version: 1.1.0j
 
   steps:
   - template: ./posix-steps.yml

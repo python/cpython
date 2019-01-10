@@ -1,3 +1,12 @@
+variables:
+  manylinux: true
+  coverage: false
+
+resources:
+  containers:
+  - container: manylinux1
+    image: dockcross:manylinux-x64
+
 jobs:
 - job: Prebuild
   displayName: Pre-build checks
@@ -59,12 +68,14 @@ jobs:
 - job: ManyLinux1_PR_Tests
   displayName: ManyLinux1 PR Tests
   dependsOn: Prebuild
-  condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
-
-  resources:
-    containers:
-    - container: manylinux1
-      image: dockcross:manylinux-x64
+  condition: |
+    and(
+        and(
+            succeeded(),
+            eq(variables['coverage'], 'true')
+        ),
+        eq(dependencies.Prebuild.outputs['tests.run'], 'true')
+    )
 
   pool:
     vmImage: ubuntu-16.04
@@ -80,6 +91,32 @@ jobs:
     parameters:
       dependencies: false
       patchcheck: false
+
+
+- job: Ubuntu_Coverage_PR_Tests
+  displayName: Ubuntu PR Tests (coverage)
+  dependsOn: Prebuild
+  condition: |
+    and(
+        and(
+            succeeded(),
+            eq(variables['coverage'], 'true')
+        ),
+        eq(dependencies.Prebuild.outputs['tests.run'], 'true')
+    )
+
+  pool:
+    vmImage: ubuntu-16.04
+
+  variables:
+    testRunTitle: '$(Build.SourceBranchName)-linux-coverage'
+    testRunPlatform: linux-coverage
+    openssl_version: 1.1.0j
+
+  steps:
+  - template: ./posix-steps.yml
+    parameters:
+      coverage: true
 
 
 - job: Windows_PR_Tests
