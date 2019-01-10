@@ -1012,7 +1012,7 @@ pylong_to_tzidx(PyObject* tzidx_obj) {
 
 
 static PyObject*
-datetime_get_tzidx(PyObject* self, PyObject* callback) {
+datetime_tzidx(PyObject* self, PyObject* callback) {
     unsigned char tzidx = DATE_GET_TZIDX(self);
 
     if (tzidx != 0xff) {
@@ -6320,7 +6320,7 @@ static PyMethodDef datetime_methods[] = {
     {"dst",             (PyCFunction)datetime_dst, METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.dst(self).")},
 
-    {"get_tzidx", (PyCFunction)datetime_get_tzidx,    METH_O,
+    {"tzidx", (PyCFunction)datetime_tzidx,    METH_O,
      PyDoc_STR("Get the cached time zone index")},
 
 
