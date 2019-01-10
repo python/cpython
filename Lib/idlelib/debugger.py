@@ -15,7 +15,7 @@ class Idb(bdb.Bdb):
     def __init__(self, gui):
         self.gui = gui  # An instance of Debugger or proxy of remote.
         self.botframe = None
-        super(Idb, self).__init__()
+        super().__init__()
 
     def user_line(self, frame):
         """
