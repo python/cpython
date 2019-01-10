@@ -679,7 +679,7 @@ try:
             # extended path with \\?\ prefix
             # 4 is len('\\?\')
             normal_path = path[4:]
-        elif len(path) > 8 and path[:7].upper() == '\\\\?\\UNC\\':
+        elif len(path) > 8 and path[:8].upper() == '\\\\?\\UNC\\':
             # UNC path with \\?\ prefix - drop prefix
             # 7 is len('\\?\UNC')
             normal_path = '\\' + path[7:]
