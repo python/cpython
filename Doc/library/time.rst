@@ -818,7 +818,7 @@ These constants are used as parameters for :func:`clock_getres` and
 .. data:: CLOCK_UPTIME_RAW
 
    Clock that increments monotonically, tracking the time since an arbitrary 
-   point, unaffected by frequency or time adjustments and not increment while 
+   point, unaffected by frequency or time adjustments and not incremented while 
    the system is asleep.
 
    .. availability:: macOS 10.12 and newer.
