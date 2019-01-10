@@ -815,6 +815,17 @@ These constants are used as parameters for :func:`clock_getres` and
    .. versionadded:: 3.7
 
 
+.. data:: CLOCK_UPTIME_RAW
+
+   Clock that increments monotonically, tracking the time since an arbitrary 
+   point, unaffected by frequency or time adjustments and not increment while 
+   the system is asleep.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.7
+
+
 The following constant is the only parameter that can be sent to
 :func:`clock_settime`.
 
