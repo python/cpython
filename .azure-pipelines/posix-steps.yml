@@ -37,10 +37,10 @@ steps:
                 -x test_concurrent_futures
     displayName: 'Tests with coverage'
     env:
-      - ${{ if eq(parameters.xvfb, 'true') }}:
-        - COMMAND: xvfb-run ./venv/bin/python
-      - ${{ if ne(parameters.xvfb, 'true') }}:
-        - COMMAND: ./venv/bin/python
+      ${{ if eq(parameters.xvfb, 'true') }}:
+        COMMAND: xvfb-run ./venv/bin/python
+      ${{ if ne(parameters.xvfb, 'true') }}:
+        COMMAND: ./venv/bin/python
 
   - script: ./venv/bin/python -m coverage xml
     displayName: 'Generate coverage.xml'
@@ -56,10 +56,10 @@ steps:
   - script: $COMMAND buildbottest TESTOPTS="-j4 -uall,-cpu --junit-xml=$(build.binariesDirectory)/test-results.xml"
     displayName: 'Tests'
     env:
-      - ${{ if eq(parameters.xvfb, 'true') }}:
-        - COMMAND: xvfb-run make
-      - ${{ if ne(parameters.xvfb, 'true') }}:
-        - COMMAND: make
+      ${{ if eq(parameters.xvfb, 'true') }}:
+        COMMAND: xvfb-run make
+      ${{ if ne(parameters.xvfb, 'true') }}:
+        COMMAND: make
 
 - ${{ if eq(parameters.patchcheck, 'true') }}:
   - script: ./python Tools/scripts/patchcheck.py --travis true
