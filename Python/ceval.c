@@ -100,6 +100,7 @@ static long dxp[256];
     _Py_atomic_store_relaxed( \
         &_PyRuntime.ceval.eval_breaker, \
         GIL_REQUEST | \
+        _Py_atomic_load_relaxed(&_PyRuntime.ceval.signals_pending) | \
         _Py_atomic_load_relaxed(&_PyRuntime.ceval.pending.calls_to_do) | \
         _PyRuntime.ceval.pending.async_exc)
 
@@ -125,6 +126,18 @@ static long dxp[256];
 #define UNSIGNAL_PENDING_CALLS() \
     do { \
         _Py_atomic_store_relaxed(&_PyRuntime.ceval.pending.calls_to_do, 0); \
+        COMPUTE_EVAL_BREAKER(); \
+    } while (0)
+
+#define SIGNAL_PENDING_SIGNALS() \
+    do { \
+        _Py_atomic_store_relaxed(&_PyRuntime.ceval.signals_pending, 1); \
+        _Py_atomic_store_relaxed(&_PyRuntime.ceval.eval_breaker, 1); \
+    } while (0)
+
+#define UNSIGNAL_PENDING_SIGNALS() \
+    do { \
+        _Py_atomic_store_relaxed(&_PyRuntime.ceval.signals_pending, 0); \
         COMPUTE_EVAL_BREAKER(); \
     } while (0)
 
@@ -306,7 +319,7 @@ _PyEval_SignalReceived(void)
     /* bpo-30703: Function called when the C signal handler of Python gets a
        signal. We cannot queue a callback using Py_AddPendingCall() since
        that function is not async-signal-safe. */
-    SIGNAL_PENDING_CALLS();
+    SIGNAL_PENDING_SIGNALS();
 }
 
 /* This implementation is thread-safe.  It allows
@@ -356,21 +369,28 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
     return result;
 }
 
-int
-Py_MakePendingCalls(void)
+static int
+handle_signals(void)
+{
+    /* Only handle signals on main thread. */
+    if (_PyRuntime.ceval.pending.main_thread &&
+        PyThread_get_thread_ident() != _PyRuntime.ceval.pending.main_thread)
+    {
+        return 0;
+    }
+
+    UNSIGNAL_PENDING_SIGNALS();
+    if (PyErr_CheckSignals() < 0) {
+        SIGNAL_PENDING_SIGNALS(); /* We're not done yet */
+        return -1;
+    }
+    return 0;
+}
+
+static int
+make_pending_calls(void)
 {
     static int busy = 0;
-    int i;
-    int r = 0;
-
-    assert(PyGILState_Check());
-
-    if (!_PyRuntime.ceval.pending.lock) {
-        /* initial allocation of the lock */
-        _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
-        if (_PyRuntime.ceval.pending.lock == NULL)
-            return -1;
-    }
 
     /* only service pending calls on main thread */
     if (_PyRuntime.ceval.pending.main_thread &&
@@ -378,22 +398,28 @@ Py_MakePendingCalls(void)
     {
         return 0;
     }
+
     /* don't perform recursive pending calls */
-    if (busy)
+    if (busy) {
         return 0;
+    }
     busy = 1;
     /* unsignal before starting to call callbacks, so that any callback
        added in-between re-signals */
     UNSIGNAL_PENDING_CALLS();
+    int res = 0;
 
-    /* Python signal handler doesn't really queue a callback: it only signals
-       that a signal was received, see _PyEval_SignalReceived(). */
-    if (PyErr_CheckSignals() < 0) {
-        goto error;
+    if (!_PyRuntime.ceval.pending.lock) {
+        /* initial allocation of the lock */
+        _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
+        if (_PyRuntime.ceval.pending.lock == NULL) {
+            res = -1;
+            goto error;
+        }
     }
 
     /* perform a bounded number of calls, in case of recursion */
-    for (i=0; i<NPENDINGCALLS; i++) {
+    for (int i=0; i<NPENDINGCALLS; i++) {
         int j;
         int (*func)(void *);
         void *arg = NULL;
@@ -412,19 +438,41 @@ Py_MakePendingCalls(void)
         /* having released the lock, perform the callback */
         if (func == NULL)
             break;
-        r = func(arg);
-        if (r) {
+        res = func(arg);
+        if (res) {
             goto error;
         }
     }
 
     busy = 0;
-    return r;
+    return res;
 
 error:
     busy = 0;
-    SIGNAL_PENDING_CALLS(); /* We're not done yet */
-    return -1;
+    SIGNAL_PENDING_CALLS();
+    return res;
+}
+
+/* Py_MakePendingCalls() is a simple wrapper for the sake
+   of backward-compatibility. */
+int
+Py_MakePendingCalls(void)
+{
+    assert(PyGILState_Check());
+
+    /* Python signal handler doesn't really queue a callback: it only signals
+       that a signal was received, see _PyEval_SignalReceived(). */
+    int res = handle_signals();
+    if (res != 0) {
+        return res;
+    }
+
+    res = make_pending_calls();
+    if (res != 0) {
+        return res;
+    }
+
+    return 0;
 }
 
 /* The interpreter's recursion limit */
@@ -957,12 +1005,22 @@ main_loop:
                 */
                 goto fast_next_opcode;
             }
+
+            if (_Py_atomic_load_relaxed(
+                        &_PyRuntime.ceval.signals_pending))
+            {
+                if (handle_signals() != 0) {
+                    goto error;
+                }
+            }
             if (_Py_atomic_load_relaxed(
                         &_PyRuntime.ceval.pending.calls_to_do))
             {
-                if (Py_MakePendingCalls() < 0)
+                if (make_pending_calls() != 0) {
                     goto error;
+                }
             }
+
             if (_Py_atomic_load_relaxed(
                         &_PyRuntime.ceval.gil_drop_request))
             {
