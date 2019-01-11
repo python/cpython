@@ -202,12 +202,15 @@ It raises KeyboardInterrupt.");
 static int
 report_wakeup_write_error(void *data)
 {
+    PyObject *exc, *val, *tb;
     int save_errno = errno;
     errno = (int) (intptr_t) data;
+    PyErr_Fetch(&exc, &val, &tb);
     PyErr_SetFromErrno(PyExc_OSError);
     PySys_WriteStderr("Exception ignored when trying to write to the "
                       "signal wakeup fd:\n");
     PyErr_WriteUnraisable(NULL);
+    PyErr_Restore(exc, val, tb);
     errno = save_errno;
     return 0;
 }
@@ -216,6 +219,8 @@ report_wakeup_write_error(void *data)
 static int
 report_wakeup_send_error(void* data)
 {
+    PyObject *exc, *val, *tb;
+    PyErr_Fetch(&exc, &val, &tb);
     /* PyErr_SetExcFromWindowsErr() invokes FormatMessage() which
        recognizes the error codes used by both GetLastError() and
        WSAGetLastError */
@@ -223,6 +228,7 @@ report_wakeup_send_error(void* data)
     PySys_WriteStderr("Exception ignored when trying to send to the "
                       "signal wakeup fd:\n");
     PyErr_WriteUnraisable(NULL);
+    PyErr_Restore(exc, val, tb);
     return 0;
 }
 #endif   /* MS_WINDOWS */

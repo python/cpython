@@ -1,0 +1,3 @@
+Separate the signal handling trigger in the eval loop from the "pending
+calls" machinery. There is no semantic change and the difference in
+performance is insignificant.
