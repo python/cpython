@@ -1376,6 +1376,7 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
             goto done;
         }
         pymain_clear_cmdline(pymain, cmdline);
+        pymain_clear_pymain(pymain);
         memset(cmdline, 0, sizeof(*cmdline));
         config->utf8_mode = new_utf8_mode;
         config->coerce_c_locale = new_coerce_c_locale;
