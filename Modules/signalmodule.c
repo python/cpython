@@ -185,6 +185,12 @@ itimer_retval(struct itimerval *iv)
 }
 #endif
 
+int
+is_main(void)
+{
+    return PyThread_get_thread_ident() == main_thread;
+}
+
 static PyObject *
 signal_default_int_handler(PyObject *self, PyObject *args)
 {
@@ -464,7 +470,7 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
             return NULL;
     }
 #endif
-    if (PyThread_get_thread_ident() != main_thread) {
+    if (!is_main()) {
         PyErr_SetString(PyExc_ValueError,
                         "signal only works in main thread");
         return NULL;
@@ -681,7 +687,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
 #endif
 
-    if (PyThread_get_thread_ident() != main_thread) {
+    if (!is_main()) {
         PyErr_SetString(PyExc_ValueError,
                         "set_wakeup_fd only works in main thread");
         return NULL;
@@ -1607,7 +1613,7 @@ finisignal(void)
 int
 PyErr_CheckSignals(void)
 {
-    if (PyThread_get_thread_ident() != main_thread) {
+    if (!is_main()) {
         return 0;
     }
 
@@ -1696,8 +1702,9 @@ int
 PyOS_InterruptOccurred(void)
 {
     if (_Py_atomic_load_relaxed(&Handlers[SIGINT].tripped)) {
-        if (PyThread_get_thread_ident() != main_thread)
+        if (!is_main()) {
             return 0;
+        }
         _Py_atomic_store_relaxed(&Handlers[SIGINT].tripped, 0);
         return 1;
     }
@@ -1730,7 +1737,7 @@ _PySignal_AfterFork(void)
 int
 _PyOS_IsMainThread(void)
 {
-    return PyThread_get_thread_ident() == main_thread;
+    return is_main();
 }
 
 #ifdef MS_WINDOWS
