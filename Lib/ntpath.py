@@ -672,14 +672,11 @@ try:
 
     def _extended_to_normal(path):
         letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        if (len(path) > 6 and
-            path[4].upper() in letters and
-            path[5] == ':' and
-            path[6] == '\\'):
+        if path[5:7] == ":\\" and path[4].upper() in letters:
             # extended path with \\?\ prefix
             # 4 is len('\\?\')
             normal_path = normpath(path[4:])
-        elif len(path) > 7 and path[:8].upper() == '\\\\?\\UNC\\':
+        elif path[:8].upper() == '\\\\?\\UNC\\':
             # UNC path with \\?\ prefix - drop prefix
             # 7 is len('\\?\UNC')
             normal_path = normpath('\\' + path[7:])
