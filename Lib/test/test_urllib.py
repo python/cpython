@@ -185,17 +185,23 @@ class urlopen_FileTests(unittest.TestCase):
         # by the tearDown() method for the test
         self.returned_obj.close()
 
+    def test_headers(self):
+        self.assertIsInstance(self.returned_obj.headers, email.message.Message)
+
+    def test_url(self):
+        self.assertEqual(self.returned_obj.url, self.pathname)
+
+    def test_status(self):
+        self.assertIsNone(self.returned_obj.status)
+
     def test_info(self):
         self.assertIsInstance(self.returned_obj.info(), email.message.Message)
-        self.assertIsInstance(self.returned_obj.headers, email.message.Message)
 
     def test_geturl(self):
         self.assertEqual(self.returned_obj.geturl(), self.pathname)
-        self.assertEqual(self.returned_obj.url, self.pathname)
 
     def test_getcode(self):
         self.assertIsNone(self.returned_obj.getcode())
-        self.assertIsNone(self.returned_obj.status)
 
     def test_iter(self):
         # Test iterator
