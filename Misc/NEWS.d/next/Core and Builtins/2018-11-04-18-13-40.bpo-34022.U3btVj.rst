@@ -1,0 +1,2 @@
+Fix handling of hash-based bytecode files in :mod:`zipimport`.
+Patch by Elvis Pranskevichus.

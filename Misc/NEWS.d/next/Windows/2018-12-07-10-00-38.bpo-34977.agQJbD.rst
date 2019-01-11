@@ -1,0 +1,2 @@
+venv on Windows will now use a python.exe redirector rather than copying the
+actual binaries from the base environment.

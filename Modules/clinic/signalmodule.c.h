@@ -23,7 +23,13 @@ signal_alarm(PyObject *module, PyObject *arg)
     int seconds;
     long _return_value;
 
-    if (!PyArg_Parse(arg, "i:alarm", &seconds)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    seconds = _PyLong_AsInt(arg);
+    if (seconds == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = signal_alarm_impl(module, seconds);
@@ -60,6 +66,39 @@ signal_pause(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_PAUSE) */
 
+PyDoc_STRVAR(signal_raise_signal__doc__,
+"raise_signal($module, signalnum, /)\n"
+"--\n"
+"\n"
+"Send a signal to the executing process.");
+
+#define SIGNAL_RAISE_SIGNAL_METHODDEF    \
+    {"raise_signal", (PyCFunction)signal_raise_signal, METH_O, signal_raise_signal__doc__},
+
+static PyObject *
+signal_raise_signal_impl(PyObject *module, int signalnum);
+
+static PyObject *
+signal_raise_signal(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int signalnum;
+
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    signalnum = _PyLong_AsInt(arg);
+    if (signalnum == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = signal_raise_signal_impl(module, signalnum);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(signal_signal__doc__,
 "signal($module, signalnum, handler, /)\n"
 "--\n"
@@ -74,7 +113,7 @@ PyDoc_STRVAR(signal_signal__doc__,
 "the first is the signal number, the second is the interrupted stack frame.");
 
 #define SIGNAL_SIGNAL_METHODDEF    \
-    {"signal", (PyCFunction)signal_signal, METH_FASTCALL, signal_signal__doc__},
+    {"signal", (PyCFunction)(void(*)(void))signal_signal, METH_FASTCALL, signal_signal__doc__},
 
 static PyObject *
 signal_signal_impl(PyObject *module, int signalnum, PyObject *handler);
@@ -120,7 +159,13 @@ signal_getsignal(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int signalnum;
 
-    if (!PyArg_Parse(arg, "i:getsignal", &signalnum)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    signalnum = _PyLong_AsInt(arg);
+    if (signalnum == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = signal_getsignal_impl(module, signalnum);
@@ -150,7 +195,13 @@ signal_strsignal(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int signalnum;
 
-    if (!PyArg_Parse(arg, "i:strsignal", &signalnum)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    signalnum = _PyLong_AsInt(arg);
+    if (signalnum == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = signal_strsignal_impl(module, signalnum);
@@ -171,7 +222,7 @@ PyDoc_STRVAR(signal_siginterrupt__doc__,
 "signal sig, else system calls will be interrupted.");
 
 #define SIGNAL_SIGINTERRUPT_METHODDEF    \
-    {"siginterrupt", (PyCFunction)signal_siginterrupt, METH_FASTCALL, signal_siginterrupt__doc__},
+    {"siginterrupt", (PyCFunction)(void(*)(void))signal_siginterrupt, METH_FASTCALL, signal_siginterrupt__doc__},
 
 static PyObject *
 signal_siginterrupt_impl(PyObject *module, int signalnum, int flag);
@@ -209,7 +260,7 @@ PyDoc_STRVAR(signal_setitimer__doc__,
 "Returns old values as a tuple: (delay, interval).");
 
 #define SIGNAL_SETITIMER_METHODDEF    \
-    {"setitimer", (PyCFunction)signal_setitimer, METH_FASTCALL, signal_setitimer__doc__},
+    {"setitimer", (PyCFunction)(void(*)(void))signal_setitimer, METH_FASTCALL, signal_setitimer__doc__},
 
 static PyObject *
 signal_setitimer_impl(PyObject *module, int which, PyObject *seconds,
@@ -255,7 +306,13 @@ signal_getitimer(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int which;
 
-    if (!PyArg_Parse(arg, "i:getitimer", &which)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    which = _PyLong_AsInt(arg);
+    if (which == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = signal_getitimer_impl(module, which);
@@ -275,7 +332,7 @@ PyDoc_STRVAR(signal_pthread_sigmask__doc__,
 "Fetch and/or change the signal mask of the calling thread.");
 
 #define SIGNAL_PTHREAD_SIGMASK_METHODDEF    \
-    {"pthread_sigmask", (PyCFunction)signal_pthread_sigmask, METH_FASTCALL, signal_pthread_sigmask__doc__},
+    {"pthread_sigmask", (PyCFunction)(void(*)(void))signal_pthread_sigmask, METH_FASTCALL, signal_pthread_sigmask__doc__},
 
 static PyObject *
 signal_pthread_sigmask_impl(PyObject *module, int how, sigset_t mask);
@@ -348,7 +405,7 @@ signal_sigwait(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     sigset_t sigset;
 
-    if (!PyArg_Parse(arg, "O&:sigwait", _Py_Sigset_Converter, &sigset)) {
+    if (!_Py_Sigset_Converter(arg, &sigset)) {
         goto exit;
     }
     return_value = signal_sigwait_impl(module, sigset);
@@ -406,7 +463,7 @@ signal_sigwaitinfo(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     sigset_t sigset;
 
-    if (!PyArg_Parse(arg, "O&:sigwaitinfo", _Py_Sigset_Converter, &sigset)) {
+    if (!_Py_Sigset_Converter(arg, &sigset)) {
         goto exit;
     }
     return_value = signal_sigwaitinfo_impl(module, sigset);
@@ -428,7 +485,7 @@ PyDoc_STRVAR(signal_sigtimedwait__doc__,
 "The timeout is specified in seconds, with floating point numbers allowed.");
 
 #define SIGNAL_SIGTIMEDWAIT_METHODDEF    \
-    {"sigtimedwait", (PyCFunction)signal_sigtimedwait, METH_FASTCALL, signal_sigtimedwait__doc__},
+    {"sigtimedwait", (PyCFunction)(void(*)(void))signal_sigtimedwait, METH_FASTCALL, signal_sigtimedwait__doc__},
 
 static PyObject *
 signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
@@ -462,7 +519,7 @@ PyDoc_STRVAR(signal_pthread_kill__doc__,
 "Send a signal to a thread.");
 
 #define SIGNAL_PTHREAD_KILL_METHODDEF    \
-    {"pthread_kill", (PyCFunction)signal_pthread_kill, METH_FASTCALL, signal_pthread_kill__doc__},
+    {"pthread_kill", (PyCFunction)(void(*)(void))signal_pthread_kill, METH_FASTCALL, signal_pthread_kill__doc__},
 
 static PyObject *
 signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
@@ -534,4 +591,4 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=549f0efdc7405834 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=365db4e807c26d4e input=a9049054013a1b77]*/

@@ -25,10 +25,12 @@ def print_list(extracted_list, file=None):
         print(item, file=file, end="")
 
 def format_list(extracted_list):
-    """Format a list of traceback entry tuples for printing.
+    """Format a list of tuples or FrameSummary objects for printing.
 
-    Given a list of tuples as returned by extract_tb() or
-    extract_stack(), return a list of strings ready for printing.
+    Given a list of tuples or FrameSummary objects as returned by
+    extract_tb() or extract_stack(), return a list of strings ready
+    for printing.
+
     Each string in the resulting list corresponds to the item with the
     same index in the argument list.  Each string ends in a newline;
     the strings may contain internal newlines as well, for those items
@@ -55,15 +57,17 @@ def format_tb(tb, limit=None):
     return extract_tb(tb, limit=limit).format()
 
 def extract_tb(tb, limit=None):
-    """Return list of up to limit pre-processed entries from traceback.
+    """
+    Return a StackSummary object representing a list of
+    pre-processed entries from traceback.
 
     This is useful for alternate formatting of stack traces.  If
     'limit' is omitted or None, all entries are extracted.  A
-    pre-processed stack trace entry is a quadruple (filename, line
-    number, function name, text) representing the information that is
-    usually printed for a stack trace.  The text is a string with
-    leading and trailing whitespace stripped; if the source is not
-    available it is None.
+    pre-processed stack trace entry is a FrameSummary object
+    containing attributes filename, lineno, name, and line
+    representing the information that is usually printed for a stack
+    trace.  The line is a string with leading and trailing
+    whitespace stripped; if the source is not available it is None.
     """
     return StackSummary.extract(walk_tb(tb), limit=limit)
 
@@ -275,6 +279,9 @@ class FrameSummary:
         return "<FrameSummary file {filename}, line {lineno} in {name}>".format(
             filename=self.filename, lineno=self.lineno, name=self.name)
 
+    def __len__(self):
+        return 4
+
     @property
     def line(self):
         if self._line is None:
@@ -305,6 +312,8 @@ def walk_tb(tb):
         yield tb.tb_frame, tb.tb_lineno
         tb = tb.tb_next
 
+
+_RECURSIVE_CUTOFF = 3 # Also hardcoded in traceback.c.
 
 class StackSummary(list):
     """A stack of frames."""
@@ -359,10 +368,9 @@ class StackSummary(list):
 
     @classmethod
     def from_list(klass, a_list):
-        """Create a StackSummary from a simple list of tuples.
-
-        This method supports the older Python API. Each tuple should be a
-        4-tuple with (filename, lineno, name, line) elements.
+        """
+        Create a StackSummary object from a supplied list of
+        FrameSummary objects or old-style list of tuples.
         """
         # While doing a fast-path check for isinstance(a_list, StackSummary) is
         # appealing, idlelib.run.cleanup_traceback and other similar code may
@@ -395,18 +403,21 @@ class StackSummary(list):
         last_name = None
         count = 0
         for frame in self:
-            if (last_file is not None and last_file == frame.filename and
-                last_line is not None and last_line == frame.lineno and
-                last_name is not None and last_name == frame.name):
-                count += 1
-            else:
-                if count > 3:
-                    result.append(f'  [Previous line repeated {count-3} more times]\n')
+            if (last_file is None or last_file != frame.filename or
+                last_line is None or last_line != frame.lineno or
+                last_name is None or last_name != frame.name):
+                if count > _RECURSIVE_CUTOFF:
+                    count -= _RECURSIVE_CUTOFF
+                    result.append(
+                        f'  [Previous line repeated {count} more '
+                        f'time{"s" if count > 1 else ""}]\n'
+                    )
                 last_file = frame.filename
                 last_line = frame.lineno
                 last_name = frame.name
                 count = 0
-            if count >= 3:
+            count += 1
+            if count > _RECURSIVE_CUTOFF:
                 continue
             row = []
             row.append('  File "{}", line {}, in {}\n'.format(
@@ -417,8 +428,12 @@ class StackSummary(list):
                 for name, value in sorted(frame.locals.items()):
                     row.append('    {name} = {value}\n'.format(name=name, value=value))
             result.append(''.join(row))
-        if count > 3:
-            result.append(f'  [Previous line repeated {count-3} more times]\n')
+        if count > _RECURSIVE_CUTOFF:
+            count -= _RECURSIVE_CUTOFF
+            result.append(
+                f'  [Previous line repeated {count} more '
+                f'time{"s" if count > 1 else ""}]\n'
+            )
         return result
 
 

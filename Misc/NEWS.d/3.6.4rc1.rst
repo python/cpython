@@ -758,7 +758,7 @@ interruptions. If it crashes, restart it when necessary.
 .. nonce: 91mhWm
 .. section: Documentation
 
-Added asyncio.BaseEventLoop.connect_accepted_socket versionaddded marker.
+Added asyncio.BaseEventLoop.connect_accepted_socket versionadded marker.
 
 ..
 
@@ -974,7 +974,7 @@ Cheryl Sabella.
 .. nonce: VuSA_e
 .. section: IDLE
 
-IDLE -- Restrict shell prompt manipulaton to the shell. Editor and output
+IDLE -- Restrict shell prompt manipulation to the shell. Editor and output
 windows only see an empty last prompt line.  This simplifies the code and
 fixes a minor bug when newline is inserted. Sys.ps1, if present, is read on
 Shell start-up, but is not set or changed.
@@ -1099,9 +1099,6 @@ for code and tests by Guilherme Polo and Cheryl Sabella, respectively.
 .. section: Tools/Demos
 
 Make redemo work with Python 3.6 and newer versions.
-
-In Python 3.6, flags like re.DOTALL became members of an enum.IntFlag so
-usages like ``getattr(re, 'DOTALL')`` are invalid.
 
 Also, remove the ``LOCALE`` option since it doesn't work with string
 patterns in Python 3.

@@ -1,0 +1,2 @@
+Fixed a leak in Tkinter when pass the Python wrapper around Tcl_Obj back to
+Tcl/Tk.

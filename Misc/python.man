@@ -495,6 +495,9 @@ directory and Distutils installation paths for
 If this environment variable is set to a non-empty string, Python will
 show how long each import takes. This is exactly equivalent to setting
 \fB\-X importtime\fP on the command line.
+.IP PYTHONBREAKPOINT
+If this environment variable is set to 0, it disables the default debugger. It
+can be set to the callable of your debugger of choice.
 .SS Debug-mode variables
 Setting these variables only has an effect in a debug build of Python, that is,
 if Python was configured with the

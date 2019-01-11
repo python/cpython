@@ -1,7 +1,8 @@
 /* Frame object implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
 
 #include "code.h"
 #include "frameobject.h"
@@ -86,7 +87,7 @@ get_arg(const _Py_CODEUNIT *codestr, Py_ssize_t i)
  *    that time.
  */
 static int
-frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
+frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignored))
 {
     int new_lineno = 0;                 /* The new value of f_lineno */
     long l_new_lineno;
@@ -104,6 +105,10 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     int blockstack[CO_MAXBLOCKS];       /* Walking the 'finally' blocks */
     int blockstack_top = 0;             /* (ditto) */
 
+    if (p_new_lineno == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
     /* f_lineno must be an integer. */
     if (!PyLong_CheckExact(p_new_lineno)) {
         PyErr_SetString(PyExc_ValueError,
@@ -469,7 +474,7 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     return 0;
 }
 
-static void
+static int
 frame_tp_clear(PyFrameObject *f)
 {
     PyObject **fastlocals, **p, **oldtop;
@@ -497,6 +502,7 @@ frame_tp_clear(PyFrameObject *f)
         for (p = f->f_valuestack; p < oldtop; p++)
             Py_CLEAR(*p);
     }
+    return 0;
 }
 
 static PyObject *
@@ -511,7 +517,7 @@ frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
         _PyGen_Finalize(f->f_gen);
         assert(f->f_gen == NULL);
     }
-    frame_tp_clear(f);
+    (void)frame_tp_clear(f);
     Py_RETURN_NONE;
 }
 

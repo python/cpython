@@ -1,0 +1,3 @@
+Fixed references leaks when call the ``__setstate__()`` method of
+:class:`xml.etree.ElementTree.Element` in the C implementation for already
+initialized element.

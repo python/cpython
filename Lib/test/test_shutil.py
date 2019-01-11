@@ -691,6 +691,31 @@ class TestShutil(unittest.TestCase):
         actual = read_file((dst_dir, 'test_dir', 'test.txt'))
         self.assertEqual(actual, '456')
 
+    def test_copytree_dirs_exist_ok(self):
+        src_dir = tempfile.mkdtemp()
+        dst_dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, src_dir)
+        self.addCleanup(shutil.rmtree, dst_dir)
+
+        write_file((src_dir, 'nonexisting.txt'), '123')
+        os.mkdir(os.path.join(src_dir, 'existing_dir'))
+        os.mkdir(os.path.join(dst_dir, 'existing_dir'))
+        write_file((dst_dir, 'existing_dir', 'existing.txt'), 'will be replaced')
+        write_file((src_dir, 'existing_dir', 'existing.txt'), 'has been replaced')
+
+        shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True)
+        self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'nonexisting.txt')))
+        self.assertTrue(os.path.isdir(os.path.join(dst_dir, 'existing_dir')))
+        self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'existing_dir',
+                                                    'existing.txt')))
+        actual = read_file((dst_dir, 'nonexisting.txt'))
+        self.assertEqual(actual, '123')
+        actual = read_file((dst_dir, 'existing_dir', 'existing.txt'))
+        self.assertEqual(actual, 'has been replaced')
+
+        with self.assertRaises(FileExistsError):
+            shutil.copytree(src_dir, dst_dir, dirs_exist_ok=False)
+
     @support.skip_unless_symlink
     def test_copytree_symlinks(self):
         tmp_dir = self.mkdtemp()
@@ -1181,6 +1206,8 @@ class TestShutil(unittest.TestCase):
                 subprocess.check_output(zip_cmd, stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as exc:
                 details = exc.output.decode(errors="replace")
+                if 'unrecognized option: t' in details:
+                    self.skipTest("unzip doesn't support -t")
                 msg = "{}\n\n**Unzip Output**\n{}"
                 self.fail(msg.format(exc, details))
 
@@ -1361,11 +1388,16 @@ class TestShutil(unittest.TestCase):
                          "disk_usage not available on this platform")
     def test_disk_usage(self):
         usage = shutil.disk_usage(os.path.dirname(__file__))
+        for attr in ('total', 'used', 'free'):
+            self.assertIsInstance(getattr(usage, attr), int)
         self.assertGreater(usage.total, 0)
         self.assertGreater(usage.used, 0)
         self.assertGreaterEqual(usage.free, 0)
         self.assertGreaterEqual(usage.total, usage.used)
         self.assertGreater(usage.total, usage.free)
+
+        # bpo-32557: Check that disk_usage() also accepts a filename
+        shutil.disk_usage(__file__)
 
     @unittest.skipUnless(UID_GID_SUPPORT, "Requires grp and pwd support")
     @unittest.skipUnless(hasattr(os, 'chown'), 'requires os.chown')

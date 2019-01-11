@@ -398,6 +398,9 @@ _Py_string_to_number_with_underscores(
     }
 
     dup = PyMem_Malloc(orig_len + 1);
+    if (dup == NULL) {
+        return PyErr_NoMemory();
+    }
     end = dup;
     prev = '\0';
     last = s + orig_len;
@@ -791,7 +794,7 @@ _PyOS_ascii_formatd(char       *buffer,
 
 /* The fallback code to use if _Py_dg_dtoa is not available. */
 
-PyAPI_FUNC(char *) PyOS_double_to_string(double val,
+char * PyOS_double_to_string(double val,
                                          char format_code,
                                          int precision,
                                          int flags,
@@ -1238,7 +1241,7 @@ format_float_short(double d, char format_code,
 }
 
 
-PyAPI_FUNC(char *) PyOS_double_to_string(double val,
+char * PyOS_double_to_string(double val,
                                          char format_code,
                                          int precision,
                                          int flags,

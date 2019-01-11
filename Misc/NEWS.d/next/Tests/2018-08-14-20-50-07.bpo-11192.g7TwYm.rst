@@ -1,0 +1,4 @@
+Fix `test_socket` on AIX
+AIX 6.1 and later IPv6 zone id supports only supported by inet_pton6_zone()
+Switch to runtime-based platform.system() to establish current platform
+ rather than build-time based sys.platform()

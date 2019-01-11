@@ -234,7 +234,7 @@ duration of the call.
 However, a common pitfall is to extract an object from a list and hold on to it
 for a while without incrementing its reference count. Some other operation might
 conceivably remove the object from the list, decrementing its reference count
-and possible deallocating it. The real danger is that innocent-looking
+and possibly deallocating it. The real danger is that innocent-looking
 operations may invoke arbitrary Python code which could do this; there is a code
 path which allows control to flow back to the user from a :c:func:`Py_DECREF`, so
 almost any operation is potentially dangerous.

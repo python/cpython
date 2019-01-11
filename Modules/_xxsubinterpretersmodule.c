@@ -4,7 +4,7 @@
 
 #include "Python.h"
 #include "frameobject.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 
 
 static char *
@@ -15,7 +15,7 @@ _copy_raw_string(PyObject *strobj)
         return NULL;
     }
     char *copied = PyMem_Malloc(strlen(str)+1);
-    if (str == NULL) {
+    if (copied == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
@@ -26,10 +26,9 @@ _copy_raw_string(PyObject *strobj)
 static PyInterpreterState *
 _get_current(void)
 {
-    PyThreadState *tstate = PyThreadState_Get();
-    // PyThreadState_Get() aborts if lookup fails, so we don't need
+    // _PyInterpreterState_Get() aborts if lookup fails, so don't need
     // to check the result for NULL.
-    return tstate->interp;
+    return _PyInterpreterState_Get();
 }
 
 static int64_t
@@ -1765,7 +1764,7 @@ PyDoc_STRVAR(channelid_doc,
 static PyTypeObject ChannelIDtype = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "_xxsubinterpreters.ChannelID", /* tp_name */
-    sizeof(channelid),              /* tp_size */
+    sizeof(channelid),              /* tp_basicsize */
     0,                              /* tp_itemsize */
     (destructor)channelid_dealloc,  /* tp_dealloc */
     0,                              /* tp_print */
@@ -1941,7 +1940,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
 
     // Switch to interpreter.
     PyThreadState *save_tstate = NULL;
-    if (interp != PyThreadState_Get()->interp) {
+    if (interp != _PyInterpreterState_Get()) {
         // XXX Using the "head" thread isn't strictly correct.
         PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
         // XXX Possible GILState issues?
@@ -2174,7 +2173,7 @@ PyDoc_STRVAR(interpid_doc,
 static PyTypeObject InterpreterIDtype = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "interpreters.InterpreterID",   /* tp_name */
-    sizeof(interpid),               /* tp_size */
+    sizeof(interpid),               /* tp_basicsize */
     0,                              /* tp_itemsize */
     (destructor)interpid_dealloc,   /* tp_dealloc */
     0,                              /* tp_print */
@@ -2769,7 +2768,7 @@ channel__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
 static PyMethodDef module_functions[] = {
     {"create",                    (PyCFunction)interp_create,
      METH_VARARGS, create_doc},
-    {"destroy",                   (PyCFunction)interp_destroy,
+    {"destroy",                   (PyCFunction)(void(*)(void))interp_destroy,
      METH_VARARGS | METH_KEYWORDS, destroy_doc},
     {"list_all",                  interp_list_all,
      METH_NOARGS, list_all_doc},
@@ -2777,29 +2776,29 @@ static PyMethodDef module_functions[] = {
      METH_NOARGS, get_current_doc},
     {"get_main",                  interp_get_main,
      METH_NOARGS, get_main_doc},
-    {"is_running",                (PyCFunction)interp_is_running,
+    {"is_running",                (PyCFunction)(void(*)(void))interp_is_running,
      METH_VARARGS | METH_KEYWORDS, is_running_doc},
-    {"run_string",                (PyCFunction)interp_run_string,
+    {"run_string",                (PyCFunction)(void(*)(void))interp_run_string,
      METH_VARARGS | METH_KEYWORDS, run_string_doc},
 
-    {"is_shareable",              (PyCFunction)object_is_shareable,
+    {"is_shareable",              (PyCFunction)(void(*)(void))object_is_shareable,
      METH_VARARGS | METH_KEYWORDS, is_shareable_doc},
 
     {"channel_create",            channel_create,
      METH_NOARGS, channel_create_doc},
-    {"channel_destroy",           (PyCFunction)channel_destroy,
+    {"channel_destroy",           (PyCFunction)(void(*)(void))channel_destroy,
      METH_VARARGS | METH_KEYWORDS, channel_destroy_doc},
     {"channel_list_all",          channel_list_all,
      METH_NOARGS, channel_list_all_doc},
-    {"channel_send",              (PyCFunction)channel_send,
+    {"channel_send",              (PyCFunction)(void(*)(void))channel_send,
      METH_VARARGS | METH_KEYWORDS, channel_send_doc},
-    {"channel_recv",              (PyCFunction)channel_recv,
+    {"channel_recv",              (PyCFunction)(void(*)(void))channel_recv,
      METH_VARARGS | METH_KEYWORDS, channel_recv_doc},
-    {"channel_close",             (PyCFunction)channel_close,
+    {"channel_close",             (PyCFunction)(void(*)(void))channel_close,
      METH_VARARGS | METH_KEYWORDS, channel_close_doc},
-    {"channel_release",           (PyCFunction)channel_release,
+    {"channel_release",           (PyCFunction)(void(*)(void))channel_release,
      METH_VARARGS | METH_KEYWORDS, channel_release_doc},
-    {"_channel_id",               (PyCFunction)channel__channel_id,
+    {"_channel_id",               (PyCFunction)(void(*)(void))channel__channel_id,
      METH_VARARGS | METH_KEYWORDS, NULL},
 
     {NULL,                        NULL}           /* sentinel */

@@ -117,11 +117,11 @@ newcompobject(PyTypeObject *type)
 static void*
 PyZlib_Malloc(voidpf ctx, uInt items, uInt size)
 {
-    if (items > (size_t)PY_SSIZE_T_MAX / size)
+    if (size != 0 && items > (size_t)PY_SSIZE_T_MAX / size)
         return NULL;
     /* PyMem_Malloc() cannot be used: the GIL is not held when
        inflate() and deflate() are called */
-    return PyMem_RawMalloc(items * size);
+    return PyMem_RawMalloc((size_t)items * (size_t)size);
 }
 
 static void

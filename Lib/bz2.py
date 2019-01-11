@@ -24,6 +24,8 @@ _MODE_READ     = 1
 # Value 2 no longer used
 _MODE_WRITE    = 3
 
+_sentinel = object()
+
 
 class BZ2File(_compression.BaseStream):
 
@@ -36,7 +38,7 @@ class BZ2File(_compression.BaseStream):
     returned as bytes, and data to be written should be given as bytes.
     """
 
-    def __init__(self, filename, mode="r", buffering=None, compresslevel=9):
+    def __init__(self, filename, mode="r", buffering=_sentinel, compresslevel=9):
         """Open a bzip2-compressed file.
 
         If filename is a str, bytes, or PathLike object, it gives the
@@ -47,7 +49,7 @@ class BZ2File(_compression.BaseStream):
         'x' for creating exclusively, or 'a' for appending. These can
         equivalently be given as 'rb', 'wb', 'xb', and 'ab'.
 
-        buffering is ignored. Its use is deprecated.
+        buffering is ignored since Python 3.0. Its use is deprecated.
 
         If mode is 'w', 'x' or 'a', compresslevel can be a number between 1
         and 9 specifying the level of compression: 1 produces the least
@@ -63,9 +65,11 @@ class BZ2File(_compression.BaseStream):
         self._closefp = False
         self._mode = _MODE_CLOSED
 
-        if buffering is not None:
-            warnings.warn("Use of 'buffering' argument is deprecated",
-                          DeprecationWarning)
+        if buffering is not _sentinel:
+            warnings.warn("Use of 'buffering' argument is deprecated and ignored "
+                          "since Python 3.0.",
+                          DeprecationWarning,
+                          stacklevel=2)
 
         if not (1 <= compresslevel <= 9):
             raise ValueError("compresslevel must be between 1 and 9")

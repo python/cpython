@@ -192,11 +192,6 @@ typedef int pid_t;
 #define Py_IS_FINITE(X) _finite(X)
 #define copysign _copysign
 
-/* VS 2010 and above already defines hypot as _hypot */
-#if _MSC_VER < 1600
-#define hypot _hypot
-#endif
-
 /* VS 2015 defines these names with a leading underscore */
 #if _MSC_VER >= 1900
 #define timezone _timezone
@@ -231,7 +226,6 @@ typedef int pid_t;
 #endif
 
 #define COMPILER "[gcc]"
-#define hypot _hypot
 #define PY_LONG_LONG long long
 #define PY_LLONG_MIN LLONG_MIN
 #define PY_LLONG_MAX LLONG_MAX
@@ -395,6 +389,10 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define to 1 if you have the <direct.h> header file. */
 #define HAVE_DIRECT_H 1
+
+/* Define to 1 if you have the declaration of `tzname', and to 0 if you don't.
+   */
+#define HAVE_DECL_TZNAME 1
 
 /* Define if you have dirent.h.  */
 /* #define DIRENT 1 */
