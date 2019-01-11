@@ -419,11 +419,14 @@ _io_TextIOWrapper_truncate(textio *self, PyObject *const *args, Py_ssize_t nargs
     PyObject *return_value = NULL;
     PyObject *pos = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "truncate",
-        0, 1,
-        &pos)) {
+    if (!_PyArg_CheckPositional("truncate", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    pos = args[0];
+skip_optional:
     return_value = _io_TextIOWrapper_truncate_impl(self, pos);
 
 exit:
@@ -548,4 +551,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=8bdd1035bf878d6f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c3d1b2a5d2d2d429 input=a9049054013a1b77]*/

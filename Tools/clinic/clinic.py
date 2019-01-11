@@ -643,18 +643,6 @@ class CLanguage(Language):
             f.return_converter.type == 'PyObject *')
 
         positional = parameters and parameters[-1].is_positional_only()
-        all_boring_objects = False # yes, this will be false if there are 0 parameters, it's fine
-        first_optional = len(parameters)
-        for i, p in enumerate(parameters):
-            c = p.converter
-            if type(c) != object_converter:
-                break
-            if c.format_unit != 'O':
-                break
-            if p.default is not unspecified:
-                first_optional = min(first_optional, i)
-        else:
-            all_boring_objects = True
 
         new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
 
@@ -826,34 +814,6 @@ class CLanguage(Language):
             parser_prototype = parser_prototype_varargs
 
             parser_definition = parser_body(parser_prototype, '    {option_group_parsing}')
-
-        elif positional and all_boring_objects:
-            # positional-only, but no option groups,
-            # and nothing but normal objects:
-            # PyArg_UnpackTuple!
-
-            if not new_or_init:
-                flags = "METH_FASTCALL"
-                parser_prototype = parser_prototype_fastcall
-
-                parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                    if (!_PyArg_UnpackStack(args, nargs, "{name}",
-                        {unpack_min}, {unpack_max},
-                        {parse_arguments})) {{
-                        goto exit;
-                    }}
-                    """, indent=4))
-            else:
-                flags = "METH_VARARGS"
-                parser_prototype = parser_prototype_varargs
-
-                parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                    if (!PyArg_UnpackTuple(args, "{name}",
-                        {unpack_min}, {unpack_max},
-                        {parse_arguments})) {{
-                        goto exit;
-                    }}
-                    """, indent=4))
 
         elif positional:
             if not new_or_init:

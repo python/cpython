@@ -282,11 +282,14 @@ _io_BytesIO_readlines(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *arg = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "readlines",
-        0, 1,
-        &arg)) {
+    if (!_PyArg_CheckPositional("readlines", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    arg = args[0];
+skip_optional:
     return_value = _io_BytesIO_readlines_impl(self, arg);
 
 exit:
@@ -503,4 +506,4 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5c68eb481fa960bf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a6b47dd7921abfcd input=a9049054013a1b77]*/
