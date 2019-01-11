@@ -2426,6 +2426,8 @@ err:
 }
 
 
+#undef _PyArg_CheckPositional
+
 int
 _PyArg_CheckPositional(const char *name, Py_ssize_t nargs,
                        Py_ssize_t min, Py_ssize_t max)
