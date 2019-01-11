@@ -689,7 +689,7 @@ try:
             return path
 
         if len(normal_path) < MAX_PATH and normal_path == _getfullpathname(normal_path):
-            return normpath(normal_path)
+            return normal_path
         return path
 except ImportError:
     def realpath(filename):
