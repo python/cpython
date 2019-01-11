@@ -59,7 +59,6 @@ class Command:
             raise RuntimeError("Command is an abstract class")
 
         self.distribution = dist
-        self.initialize_options()
 
         # Per-command versions of the global flags, so that the user can
         # customize Distutils' behaviour command-by-command and let some
@@ -90,6 +89,8 @@ class Command:
         # this flag: it is the business of 'ensure_finalized()', which
         # always calls 'finalize_options()', to respect/update it.
         self.finalized = 0
+
+        self.initialize_options()
 
     # XXX A more explicit way to customize dry_run would be better.
     def __getattr__(self, attr):
