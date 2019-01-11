@@ -217,11 +217,11 @@ builtin_divmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_UnpackStack(args, nargs, "divmod",
-        2, 2,
-        &x, &y)) {
+    if (!_PyArg_CheckPositional("divmod", nargs, 2, 2)) {
         goto exit;
     }
+    x = args[0];
+    y = args[1];
     return_value = builtin_divmod_impl(module, x, y);
 
 exit:
@@ -255,11 +255,19 @@ builtin_eval(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *globals = Py_None;
     PyObject *locals = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "eval",
-        1, 3,
-        &source, &globals, &locals)) {
+    if (!_PyArg_CheckPositional("eval", nargs, 1, 3)) {
         goto exit;
     }
+    source = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    globals = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    locals = args[2];
+skip_optional:
     return_value = builtin_eval_impl(module, source, globals, locals);
 
 exit:
@@ -293,11 +301,19 @@ builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *globals = Py_None;
     PyObject *locals = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "exec",
-        1, 3,
-        &source, &globals, &locals)) {
+    if (!_PyArg_CheckPositional("exec", nargs, 1, 3)) {
         goto exit;
     }
+    source = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    globals = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    locals = args[2];
+skip_optional:
     return_value = builtin_exec_impl(module, source, globals, locals);
 
 exit:
@@ -346,11 +362,11 @@ builtin_hasattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *obj;
     PyObject *name;
 
-    if (!_PyArg_UnpackStack(args, nargs, "hasattr",
-        2, 2,
-        &obj, &name)) {
+    if (!_PyArg_CheckPositional("hasattr", nargs, 2, 2)) {
         goto exit;
     }
+    obj = args[0];
+    name = args[1];
     return_value = builtin_hasattr_impl(module, obj, name);
 
 exit:
@@ -392,11 +408,12 @@ builtin_setattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *name;
     PyObject *value;
 
-    if (!_PyArg_UnpackStack(args, nargs, "setattr",
-        3, 3,
-        &obj, &name, &value)) {
+    if (!_PyArg_CheckPositional("setattr", nargs, 3, 3)) {
         goto exit;
     }
+    obj = args[0];
+    name = args[1];
+    value = args[2];
     return_value = builtin_setattr_impl(module, obj, name, value);
 
 exit:
@@ -424,11 +441,11 @@ builtin_delattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *obj;
     PyObject *name;
 
-    if (!_PyArg_UnpackStack(args, nargs, "delattr",
-        2, 2,
-        &obj, &name)) {
+    if (!_PyArg_CheckPositional("delattr", nargs, 2, 2)) {
         goto exit;
     }
+    obj = args[0];
+    name = args[1];
     return_value = builtin_delattr_impl(module, obj, name);
 
 exit:
@@ -534,11 +551,16 @@ builtin_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *y;
     PyObject *z = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "pow",
-        2, 3,
-        &x, &y, &z)) {
+    if (!_PyArg_CheckPositional("pow", nargs, 2, 3)) {
         goto exit;
     }
+    x = args[0];
+    y = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    z = args[2];
+skip_optional:
     return_value = builtin_pow_impl(module, x, y, z);
 
 exit:
@@ -569,11 +591,14 @@ builtin_input(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *prompt = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "input",
-        0, 1,
-        &prompt)) {
+    if (!_PyArg_CheckPositional("input", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    prompt = args[0];
+skip_optional:
     return_value = builtin_input_impl(module, prompt);
 
 exit:
@@ -684,11 +709,11 @@ builtin_isinstance(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *obj;
     PyObject *class_or_tuple;
 
-    if (!_PyArg_UnpackStack(args, nargs, "isinstance",
-        2, 2,
-        &obj, &class_or_tuple)) {
+    if (!_PyArg_CheckPositional("isinstance", nargs, 2, 2)) {
         goto exit;
     }
+    obj = args[0];
+    class_or_tuple = args[1];
     return_value = builtin_isinstance_impl(module, obj, class_or_tuple);
 
 exit:
@@ -719,14 +744,14 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *cls;
     PyObject *class_or_tuple;
 
-    if (!_PyArg_UnpackStack(args, nargs, "issubclass",
-        2, 2,
-        &cls, &class_or_tuple)) {
+    if (!_PyArg_CheckPositional("issubclass", nargs, 2, 2)) {
         goto exit;
     }
+    cls = args[0];
+    class_or_tuple = args[1];
     return_value = builtin_issubclass_impl(module, cls, class_or_tuple);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=11b5cd918bd7eb18 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=54e5e33dcc2659e0 input=a9049054013a1b77]*/
