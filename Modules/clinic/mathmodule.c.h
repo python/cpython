@@ -21,11 +21,11 @@ math_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "gcd",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("gcd", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = math_gcd_impl(module, a, b);
 
 exit:
@@ -307,11 +307,11 @@ math_dist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *p;
     PyObject *q;
 
-    if (!_PyArg_UnpackStack(args, nargs, "dist",
-        2, 2,
-        &p, &q)) {
+    if (!_PyArg_CheckPositional("dist", nargs, 2, 2)) {
         goto exit;
     }
+    p = args[0];
+    q = args[1];
     return_value = math_dist_impl(module, p, q);
 
 exit:
@@ -548,4 +548,4 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2fe4fecd85585313 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f3264ab0ef57ba0a input=a9049054013a1b77]*/

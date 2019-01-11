@@ -58,11 +58,14 @@ float___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *o_ndigits = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "__round__",
-        0, 1,
-        &o_ndigits)) {
+    if (!_PyArg_CheckPositional("__round__", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    o_ndigits = args[0];
+skip_optional:
     return_value = float___round___impl(self, o_ndigits);
 
 exit:
@@ -173,11 +176,14 @@ float_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("float", kwargs)) {
         goto exit;
     }
-    if (!PyArg_UnpackTuple(args, "float",
-        0, 1,
-        &x)) {
+    if (!_PyArg_CheckPositional("float", PyTuple_GET_SIZE(args), 0, 1)) {
         goto exit;
     }
+    if (PyTuple_GET_SIZE(args) < 1) {
+        goto skip_optional;
+    }
+    x = PyTuple_GET_ITEM(args, 0);
+skip_optional:
     return_value = float_new_impl(type, x);
 
 exit:
@@ -345,4 +351,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2631a60701a8f7d4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c183029d87dd41fa input=a9049054013a1b77]*/

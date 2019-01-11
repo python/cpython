@@ -106,11 +106,15 @@ test_objects_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *a;
     PyObject *b = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "test_objects_converter",
-        1, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("test_objects_converter", nargs, 1, 2)) {
         goto exit;
     }
+    a = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    b = args[1];
+skip_optional:
     return_value = test_objects_converter_impl(module, a, b);
 
 exit:
@@ -119,7 +123,7 @@ exit:
 
 static PyObject *
 test_objects_converter_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=068c25d6ae8cd1ef input=4cbb3d9edd2a36f3]*/
+/*[clinic end generated code: output=58009c0e42b4834e input=4cbb3d9edd2a36f3]*/
 
 /*[clinic input]
 test_object_converter_subclass_of

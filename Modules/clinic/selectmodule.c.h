@@ -45,11 +45,17 @@ select_select(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *xlist;
     PyObject *timeout_obj = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "select",
-        3, 4,
-        &rlist, &wlist, &xlist, &timeout_obj)) {
+    if (!_PyArg_CheckPositional("select", nargs, 3, 4)) {
         goto exit;
     }
+    rlist = args[0];
+    wlist = args[1];
+    xlist = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    timeout_obj = args[3];
+skip_optional:
     return_value = select_select_impl(module, rlist, wlist, xlist, timeout_obj);
 
 exit:
@@ -201,11 +207,14 @@ select_poll_poll(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *timeout_obj = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "poll",
-        0, 1,
-        &timeout_obj)) {
+    if (!_PyArg_CheckPositional("poll", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    timeout_obj = args[0];
+skip_optional:
     return_value = select_poll_poll_impl(self, timeout_obj);
 
 exit:
@@ -366,11 +375,14 @@ select_devpoll_poll(devpollObject *self, PyObject *const *args, Py_ssize_t nargs
     PyObject *return_value = NULL;
     PyObject *timeout_obj = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "poll",
-        0, 1,
-        &timeout_obj)) {
+    if (!_PyArg_CheckPositional("poll", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    timeout_obj = args[0];
+skip_optional:
     return_value = select_devpoll_poll_impl(self, timeout_obj);
 
 exit:
@@ -808,11 +820,22 @@ select_epoll___exit__(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t na
     PyObject *exc_value = Py_None;
     PyObject *exc_tb = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "__exit__",
-        0, 3,
-        &exc_type, &exc_value, &exc_tb)) {
+    if (!_PyArg_CheckPositional("__exit__", nargs, 0, 3)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    exc_type = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    exc_value = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    exc_tb = args[2];
+skip_optional:
     return_value = select_epoll___exit___impl(self, exc_type, exc_value, exc_tb);
 
 exit:
@@ -1105,4 +1128,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=20da8f9c050e1b65 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3e40b33a3294d03d input=a9049054013a1b77]*/

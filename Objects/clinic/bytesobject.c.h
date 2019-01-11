@@ -203,11 +203,14 @@ bytes_strip(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "strip",
-        0, 1,
-        &bytes)) {
+    if (!_PyArg_CheckPositional("strip", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    bytes = args[0];
+skip_optional:
     return_value = bytes_strip_impl(self, bytes);
 
 exit:
@@ -234,11 +237,14 @@ bytes_lstrip(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "lstrip",
-        0, 1,
-        &bytes)) {
+    if (!_PyArg_CheckPositional("lstrip", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    bytes = args[0];
+skip_optional:
     return_value = bytes_lstrip_impl(self, bytes);
 
 exit:
@@ -265,11 +271,14 @@ bytes_rstrip(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "rstrip",
-        0, 1,
-        &bytes)) {
+    if (!_PyArg_CheckPositional("rstrip", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    bytes = args[0];
+skip_optional:
     return_value = bytes_rstrip_impl(self, bytes);
 
 exit:
@@ -559,4 +568,4 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=810c8dfc72520ca4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c6621bda84e63e51 input=a9049054013a1b77]*/

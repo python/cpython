@@ -289,11 +289,14 @@ list___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("list", kwargs)) {
         goto exit;
     }
-    if (!PyArg_UnpackTuple(args, "list",
-        0, 1,
-        &iterable)) {
+    if (!_PyArg_CheckPositional("list", PyTuple_GET_SIZE(args), 0, 1)) {
         goto exit;
     }
+    if (PyTuple_GET_SIZE(args) < 1) {
+        goto skip_optional;
+    }
+    iterable = PyTuple_GET_ITEM(args, 0);
+skip_optional:
     return_value = list___init___impl((PyListObject *)self, iterable);
 
 exit:
@@ -335,4 +338,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=1f641f5aef3f886f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4a835f9880a72273 input=a9049054013a1b77]*/

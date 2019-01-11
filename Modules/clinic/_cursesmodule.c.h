@@ -468,11 +468,42 @@ _curses_window_border(PyCursesWindowObject *self, PyObject *const *args, Py_ssiz
     PyObject *bl = NULL;
     PyObject *br = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "border",
-        0, 8,
-        &ls, &rs, &ts, &bs, &tl, &tr, &bl, &br)) {
+    if (!_PyArg_CheckPositional("border", nargs, 0, 8)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    ls = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    rs = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    ts = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    bs = args[3];
+    if (nargs < 5) {
+        goto skip_optional;
+    }
+    tl = args[4];
+    if (nargs < 6) {
+        goto skip_optional;
+    }
+    tr = args[5];
+    if (nargs < 7) {
+        goto skip_optional;
+    }
+    bl = args[6];
+    if (nargs < 8) {
+        goto skip_optional;
+    }
+    br = args[7];
+skip_optional:
     return_value = _curses_window_border_impl(self, ls, rs, ts, bs, tl, tr, bl, br);
 
 exit:
@@ -4500,4 +4531,4 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=ceb2e32ee1370033 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5305982cb312a911 input=a9049054013a1b77]*/

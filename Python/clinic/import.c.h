@@ -318,11 +318,15 @@ _imp_create_dynamic(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *spec;
     PyObject *file = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "create_dynamic",
-        1, 2,
-        &spec, &file)) {
+    if (!_PyArg_CheckPositional("create_dynamic", nargs, 1, 2)) {
         goto exit;
     }
+    spec = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    file = args[1];
+skip_optional:
     return_value = _imp_create_dynamic_impl(module, spec, file);
 
 exit:
@@ -433,4 +437,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=22062cee6e8ba7f3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2409b8feeafe7c4b input=a9049054013a1b77]*/

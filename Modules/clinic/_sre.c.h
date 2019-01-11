@@ -653,11 +653,14 @@ _sre_SRE_Match_start(MatchObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *group = NULL;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_UnpackStack(args, nargs, "start",
-        0, 1,
-        &group)) {
+    if (!_PyArg_CheckPositional("start", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    group = args[0];
+skip_optional:
     _return_value = _sre_SRE_Match_start_impl(self, group);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -687,11 +690,14 @@ _sre_SRE_Match_end(MatchObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *group = NULL;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_UnpackStack(args, nargs, "end",
-        0, 1,
-        &group)) {
+    if (!_PyArg_CheckPositional("end", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    group = args[0];
+skip_optional:
     _return_value = _sre_SRE_Match_end_impl(self, group);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -720,11 +726,14 @@ _sre_SRE_Match_span(MatchObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *group = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "span",
-        0, 1,
-        &group)) {
+    if (!_PyArg_CheckPositional("span", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    group = args[0];
+skip_optional:
     return_value = _sre_SRE_Match_span_impl(self, group);
 
 exit:
@@ -789,4 +798,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _sre_SRE_Scanner_search_impl(self);
 }
-/*[clinic end generated code: output=7992634045212b26 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8d19359d6a4a3a7e input=a9049054013a1b77]*/

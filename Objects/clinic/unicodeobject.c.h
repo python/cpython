@@ -546,11 +546,14 @@ unicode_strip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *chars = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "strip",
-        0, 1,
-        &chars)) {
+    if (!_PyArg_CheckPositional("strip", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    chars = args[0];
+skip_optional:
     return_value = unicode_strip_impl(self, chars);
 
 exit:
@@ -577,11 +580,14 @@ unicode_lstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *chars = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "lstrip",
-        0, 1,
-        &chars)) {
+    if (!_PyArg_CheckPositional("lstrip", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    chars = args[0];
+skip_optional:
     return_value = unicode_lstrip_impl(self, chars);
 
 exit:
@@ -608,11 +614,14 @@ unicode_rstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *chars = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "rstrip",
-        0, 1,
-        &chars)) {
+    if (!_PyArg_CheckPositional("rstrip", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    chars = args[0];
+skip_optional:
     return_value = unicode_rstrip_impl(self, chars);
 
 exit:
@@ -1098,4 +1107,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=73ad9670e00a2490 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=087ff163a10505ae input=a9049054013a1b77]*/

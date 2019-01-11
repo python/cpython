@@ -368,11 +368,14 @@ _io_FileIO_truncate(fileio *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *posobj = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "truncate",
-        0, 1,
-        &posobj)) {
+    if (!_PyArg_CheckPositional("truncate", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    posobj = args[0];
+skip_optional:
     return_value = _io_FileIO_truncate_impl(self, posobj);
 
 exit:
@@ -402,4 +405,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=4cf4e5f0cd656b11 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b6f327457938d4dd input=a9049054013a1b77]*/

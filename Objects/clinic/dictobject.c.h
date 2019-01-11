@@ -21,11 +21,15 @@ dict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs)
     PyObject *iterable;
     PyObject *value = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "fromkeys",
-        1, 2,
-        &iterable, &value)) {
+    if (!_PyArg_CheckPositional("fromkeys", nargs, 1, 2)) {
         goto exit;
     }
+    iterable = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    value = args[1];
+skip_optional:
     return_value = dict_fromkeys_impl(type, iterable, value);
 
 exit:
@@ -60,11 +64,15 @@ dict_get(PyDictObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "get",
-        1, 2,
-        &key, &default_value)) {
+    if (!_PyArg_CheckPositional("get", nargs, 1, 2)) {
         goto exit;
     }
+    key = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    default_value = args[1];
+skip_optional:
     return_value = dict_get_impl(self, key, default_value);
 
 exit:
@@ -93,11 +101,15 @@ dict_setdefault(PyDictObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "setdefault",
-        1, 2,
-        &key, &default_value)) {
+    if (!_PyArg_CheckPositional("setdefault", nargs, 1, 2)) {
         goto exit;
     }
+    key = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    default_value = args[1];
+skip_optional:
     return_value = dict_setdefault_impl(self, key, default_value);
 
 exit:
@@ -121,4 +133,4 @@ dict___reversed__(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict___reversed___impl(self);
 }
-/*[clinic end generated code: output=193e08cb8099fe22 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=12c21ce3552d9617 input=a9049054013a1b77]*/
