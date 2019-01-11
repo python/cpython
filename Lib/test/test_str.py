@@ -474,8 +474,106 @@ class StrTest(
         self.assertEqual('lhs %% %r' % SubclassedStr('rhs'),
                          "Success, self.__rmod__('lhs %% %r') was called")
 
+
+class CAPITest(unittest.TestCase):
+
+    # Test PyString_FromFormat()
+    def test_from_format(self):
+        ctypes = test_support.import_module('ctypes')
+        _testcapi = test_support.import_module('_testcapi')
+        from ctypes import pythonapi, py_object
+        from ctypes import (
+            c_int, c_uint,
+            c_long, c_ulong,
+            c_size_t, c_ssize_t,
+            c_char_p)
+
+        PyString_FromFormat = pythonapi.PyString_FromFormat
+        PyString_FromFormat.restype = py_object
+
+        # basic tests
+        self.assertEqual(PyString_FromFormat(b'format'),
+                         b'format')
+        self.assertEqual(PyString_FromFormat(b'Hello %s !', b'world'),
+                         b'Hello world !')
+
+        # test formatters
+        self.assertEqual(PyString_FromFormat(b'c=%c', c_int(0)),
+                         b'c=\0')
+        self.assertEqual(PyString_FromFormat(b'c=%c', c_int(ord('@'))),
+                         b'c=@')
+        self.assertEqual(PyString_FromFormat(b'c=%c', c_int(255)),
+                         b'c=\xff')
+        self.assertEqual(PyString_FromFormat(b'd=%d ld=%ld zd=%zd',
+                                            c_int(1), c_long(2),
+                                            c_size_t(3)),
+                         b'd=1 ld=2 zd=3')
+        self.assertEqual(PyString_FromFormat(b'd=%d ld=%ld zd=%zd',
+                                            c_int(-1), c_long(-2),
+                                            c_size_t(-3)),
+                         b'd=-1 ld=-2 zd=-3')
+        self.assertEqual(PyString_FromFormat(b'u=%u lu=%lu zu=%zu',
+                                            c_uint(123), c_ulong(456),
+                                            c_size_t(789)),
+                         b'u=123 lu=456 zu=789')
+        self.assertEqual(PyString_FromFormat(b'i=%i', c_int(123)),
+                         b'i=123')
+        self.assertEqual(PyString_FromFormat(b'i=%i', c_int(-123)),
+                         b'i=-123')
+        self.assertEqual(PyString_FromFormat(b'x=%x', c_int(0xabc)),
+                         b'x=abc')
+
+        self.assertEqual(PyString_FromFormat(b's=%s', c_char_p(b'cstr')),
+                         b's=cstr')
+
+        # test minimum and maximum integer values
+        size_max = c_size_t(-1).value
+        for formatstr, ctypes_type, value, py_formatter in (
+            (b'%d', c_int, _testcapi.INT_MIN, str),
+            (b'%d', c_int, _testcapi.INT_MAX, str),
+            (b'%ld', c_long, _testcapi.LONG_MIN, str),
+            (b'%ld', c_long, _testcapi.LONG_MAX, str),
+            (b'%lu', c_ulong, _testcapi.ULONG_MAX, str),
+            (b'%zd', c_ssize_t, _testcapi.PY_SSIZE_T_MIN, str),
+            (b'%zd', c_ssize_t, _testcapi.PY_SSIZE_T_MAX, str),
+            (b'%zu', c_size_t, size_max, str),
+        ):
+            self.assertEqual(PyString_FromFormat(formatstr, ctypes_type(value)),
+                             py_formatter(value).encode('ascii')),
+
+        # width and precision (width is currently ignored)
+        self.assertEqual(PyString_FromFormat(b'%5s', b'a'),
+                         b'a')
+        self.assertEqual(PyString_FromFormat(b'%.3s', b'abcdef'),
+                         b'abc')
+
+        # '%%' formatter
+        self.assertEqual(PyString_FromFormat(b'%%'),
+                         b'%')
+        self.assertEqual(PyString_FromFormat(b'[%%]'),
+                         b'[%]')
+        self.assertEqual(PyString_FromFormat(b'%%%c', c_int(ord('_'))),
+                         b'%_')
+        self.assertEqual(PyString_FromFormat(b'%%s'),
+                         b'%s')
+
+        # Invalid formats and partial formatting
+        self.assertEqual(PyString_FromFormat(b'%'), b'%')
+        self.assertEqual(PyString_FromFormat(b'x=%i y=%', c_int(2), c_int(3)),
+                         b'x=2 y=%')
+
+        self.assertEqual(PyString_FromFormat(b'%c', c_int(-1)), b'\xff')
+        self.assertEqual(PyString_FromFormat(b'%c', c_int(256)), b'\0')
+
+        # Issue #33817: empty strings
+        self.assertEqual(PyString_FromFormat(b''),
+                         b'')
+        self.assertEqual(PyString_FromFormat(b'%s', b''),
+                         b'')
+
+
 def test_main():
-    test_support.run_unittest(StrTest)
+    test_support.run_unittest(StrTest, CAPITest)
 
 if __name__ == "__main__":
     test_main()
