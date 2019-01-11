@@ -21,11 +21,15 @@ _gdbm_gdbm_get(dbmobject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "get",
-        1, 2,
-        &key, &default_value)) {
+    if (!_PyArg_CheckPositional("get", nargs, 1, 2)) {
         goto exit;
     }
+    key = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    default_value = args[1];
+skip_optional:
     return_value = _gdbm_gdbm_get_impl(self, key, default_value);
 
 exit:
@@ -52,11 +56,15 @@ _gdbm_gdbm_setdefault(dbmobject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "setdefault",
-        1, 2,
-        &key, &default_value)) {
+    if (!_PyArg_CheckPositional("setdefault", nargs, 1, 2)) {
         goto exit;
     }
+    key = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    default_value = args[1];
+skip_optional:
     return_value = _gdbm_gdbm_setdefault_impl(self, key, default_value);
 
 exit:
@@ -290,4 +298,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=05f06065d2dc1f9e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0a72598e5a3acd60 input=a9049054013a1b77]*/

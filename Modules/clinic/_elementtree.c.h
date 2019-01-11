@@ -504,11 +504,11 @@ _elementtree_Element_makeelement(ElementObject *self, PyObject *const *args, Py_
     PyObject *tag;
     PyObject *attrib;
 
-    if (!_PyArg_UnpackStack(args, nargs, "makeelement",
-        2, 2,
-        &tag, &attrib)) {
+    if (!_PyArg_CheckPositional("makeelement", nargs, 2, 2)) {
         goto exit;
     }
+    tag = args[0];
+    attrib = args[1];
     return_value = _elementtree_Element_makeelement_impl(self, tag, attrib);
 
 exit:
@@ -562,11 +562,11 @@ _elementtree_Element_set(ElementObject *self, PyObject *const *args, Py_ssize_t 
     PyObject *key;
     PyObject *value;
 
-    if (!_PyArg_UnpackStack(args, nargs, "set",
-        2, 2,
-        &key, &value)) {
+    if (!_PyArg_CheckPositional("set", nargs, 2, 2)) {
         goto exit;
     }
+    key = args[0];
+    value = args[1];
     return_value = _elementtree_Element_set_impl(self, key, value);
 
 exit:
@@ -647,11 +647,15 @@ _elementtree_TreeBuilder_start(TreeBuilderObject *self, PyObject *const *args, P
     PyObject *tag;
     PyObject *attrs = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "start",
-        1, 2,
-        &tag, &attrs)) {
+    if (!_PyArg_CheckPositional("start", nargs, 1, 2)) {
         goto exit;
     }
+    tag = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    attrs = args[1];
+skip_optional:
     return_value = _elementtree_TreeBuilder_start_impl(self, tag, attrs);
 
 exit:
@@ -734,14 +738,18 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *const *args, 
     PyObject *events_queue;
     PyObject *events_to_report = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "_setevents",
-        1, 2,
-        &events_queue, &events_to_report)) {
+    if (!_PyArg_CheckPositional("_setevents", nargs, 1, 2)) {
         goto exit;
     }
+    events_queue = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    events_to_report = args[1];
+skip_optional:
     return_value = _elementtree_XMLParser__setevents_impl(self, events_queue, events_to_report);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6bbedd24b709dc00 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0c15c41e03a7829f input=a9049054013a1b77]*/

@@ -124,11 +124,10 @@ itertools__tee(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("_tee", kwargs)) {
         goto exit;
     }
-    if (!PyArg_UnpackTuple(args, "_tee",
-        1, 1,
-        &iterable)) {
+    if (!_PyArg_CheckPositional("_tee", PyTuple_GET_SIZE(args), 1, 1)) {
         goto exit;
     }
+    iterable = PyTuple_GET_ITEM(args, 0);
     return_value = itertools__tee_impl(type, iterable);
 
 exit:
@@ -204,11 +203,10 @@ itertools_cycle(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("cycle", kwargs)) {
         goto exit;
     }
-    if (!PyArg_UnpackTuple(args, "cycle",
-        1, 1,
-        &iterable)) {
+    if (!_PyArg_CheckPositional("cycle", PyTuple_GET_SIZE(args), 1, 1)) {
         goto exit;
     }
+    iterable = PyTuple_GET_ITEM(args, 0);
     return_value = itertools_cycle_impl(type, iterable);
 
 exit:
@@ -237,11 +235,11 @@ itertools_dropwhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("dropwhile", kwargs)) {
         goto exit;
     }
-    if (!PyArg_UnpackTuple(args, "dropwhile",
-        2, 2,
-        &func, &seq)) {
+    if (!_PyArg_CheckPositional("dropwhile", PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
+    func = PyTuple_GET_ITEM(args, 0);
+    seq = PyTuple_GET_ITEM(args, 1);
     return_value = itertools_dropwhile_impl(type, func, seq);
 
 exit:
@@ -268,11 +266,11 @@ itertools_takewhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("takewhile", kwargs)) {
         goto exit;
     }
-    if (!PyArg_UnpackTuple(args, "takewhile",
-        2, 2,
-        &func, &seq)) {
+    if (!_PyArg_CheckPositional("takewhile", PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
+    func = PyTuple_GET_ITEM(args, 0);
+    seq = PyTuple_GET_ITEM(args, 1);
     return_value = itertools_takewhile_impl(type, func, seq);
 
 exit:
@@ -299,11 +297,11 @@ itertools_starmap(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("starmap", kwargs)) {
         goto exit;
     }
-    if (!PyArg_UnpackTuple(args, "starmap",
-        2, 2,
-        &func, &seq)) {
+    if (!_PyArg_CheckPositional("starmap", PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
+    func = PyTuple_GET_ITEM(args, 0);
+    seq = PyTuple_GET_ITEM(args, 1);
     return_value = itertools_starmap_impl(type, func, seq);
 
 exit:
@@ -496,11 +494,11 @@ itertools_filterfalse(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("filterfalse", kwargs)) {
         goto exit;
     }
-    if (!PyArg_UnpackTuple(args, "filterfalse",
-        2, 2,
-        &func, &seq)) {
+    if (!_PyArg_CheckPositional("filterfalse", PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
+    func = PyTuple_GET_ITEM(args, 0);
+    seq = PyTuple_GET_ITEM(args, 1);
     return_value = itertools_filterfalse_impl(type, func, seq);
 
 exit:
@@ -542,4 +540,4 @@ itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f289354f54e04c13 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3d0ca69707b60715 input=a9049054013a1b77]*/
