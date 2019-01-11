@@ -89,10 +89,9 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._read_fut.cancel()
             self._read_fut = None
 
-    def __del__(self):
+    def __del__(self, _warn=warnings.warn):
         if self._sock is not None:
-            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
-                          source=self)
+            _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
             self.close()
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
@@ -111,7 +110,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._force_close(exc)
 
     def _force_close(self, exc):
-        if self._empty_waiter is not None:
+        if self._empty_waiter is not None and not self._empty_waiter.done():
             if exc is None:
                 self._empty_waiter.set_result(None)
             else:

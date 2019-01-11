@@ -311,7 +311,10 @@ except ImportError:
 ### namedtuple
 ################################################################################
 
-_nt_itemgetters = {}
+try:
+    from _collections import _tuplegetter
+except ImportError:
+    _tuplegetter = lambda index, doc: property(_itemgetter(index), doc=doc)
 
 def namedtuple(typename, field_names, *, rename=False, defaults=None, module=None):
     """Returns a new subclass of tuple with named fields.
@@ -451,15 +454,9 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '_asdict': _asdict,
         '__getnewargs__': __getnewargs__,
     }
-    cache = _nt_itemgetters
     for index, name in enumerate(field_names):
-        try:
-            itemgetter_object, doc = cache[index]
-        except KeyError:
-            itemgetter_object = _itemgetter(index)
-            doc = f'Alias for field number {index}'
-            cache[index] = itemgetter_object, doc
-        class_namespace[name] = property(itemgetter_object, doc=doc)
+        doc = _sys.intern(f'Alias for field number {index}')
+        class_namespace[name] = _tuplegetter(index, doc)
 
     result = type(typename, (tuple,), class_namespace)
 
