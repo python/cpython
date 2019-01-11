@@ -372,6 +372,13 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
 static int
 handle_signals(void)
 {
+    /* Only handle signals on main thread. */
+    if (_PyRuntime.ceval.pending.main_thread &&
+        PyThread_get_thread_ident() != _PyRuntime.ceval.pending.main_thread)
+    {
+        return 0;
+    }
+
     UNSIGNAL_PENDING_SIGNALS();
     if (PyErr_CheckSignals() < 0) {
         SIGNAL_PENDING_SIGNALS(); /* We're not done yet */
