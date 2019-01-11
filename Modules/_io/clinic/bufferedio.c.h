@@ -389,11 +389,14 @@ _io__Buffered_truncate(buffered *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *pos = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "truncate",
-        0, 1,
-        &pos)) {
+    if (!_PyArg_CheckPositional("truncate", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    pos = args[0];
+skip_optional:
     return_value = _io__Buffered_truncate_impl(self, pos);
 
 exit:
@@ -591,4 +594,4 @@ _io_BufferedRandom___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a85f61f495feff5c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b7f51040defff318 input=a9049054013a1b77]*/

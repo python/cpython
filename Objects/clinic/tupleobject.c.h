@@ -81,11 +81,14 @@ tuple_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("tuple", kwargs)) {
         goto exit;
     }
-    if (!PyArg_UnpackTuple(args, "tuple",
-        0, 1,
-        &iterable)) {
+    if (!_PyArg_CheckPositional("tuple", PyTuple_GET_SIZE(args), 0, 1)) {
         goto exit;
     }
+    if (PyTuple_GET_SIZE(args) < 1) {
+        goto skip_optional;
+    }
+    iterable = PyTuple_GET_ITEM(args, 0);
+skip_optional:
     return_value = tuple_new_impl(type, iterable);
 
 exit:
@@ -108,4 +111,4 @@ tuple___getnewargs__(PyTupleObject *self, PyObject *Py_UNUSED(ignored))
 {
     return tuple___getnewargs___impl(self);
 }
-/*[clinic end generated code: output=5312868473a41cfe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=56fab9b7368aba49 input=a9049054013a1b77]*/

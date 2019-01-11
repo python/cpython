@@ -32,11 +32,12 @@ sys_excepthook(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *value;
     PyObject *traceback;
 
-    if (!_PyArg_UnpackStack(args, nargs, "excepthook",
-        3, 3,
-        &exctype, &value, &traceback)) {
+    if (!_PyArg_CheckPositional("excepthook", nargs, 3, 3)) {
         goto exit;
     }
+    exctype = args[0];
+    value = args[1];
+    traceback = args[2];
     return_value = sys_excepthook_impl(module, exctype, value, traceback);
 
 exit:
@@ -87,11 +88,14 @@ sys_exit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *status = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "exit",
-        0, 1,
-        &status)) {
+    if (!_PyArg_CheckPositional("exit", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    status = args[0];
+skip_optional:
     return_value = sys_exit_impl(module, status);
 
 exit:
@@ -1046,4 +1050,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=6a5202e5bfe5e6bd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=109787af3401cd27 input=a9049054013a1b77]*/
