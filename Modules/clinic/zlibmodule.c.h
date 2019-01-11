@@ -219,7 +219,7 @@ zlib_Compress_compress(compobject *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("compress", "contiguous buffer", arg);
+        _PyArg_BadArgument("compress", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = zlib_Compress_compress_impl(self, &data);
@@ -305,10 +305,22 @@ zlib_Compress_flush(compobject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     int mode = Z_FINISH;
 
-    if (!_PyArg_ParseStack(args, nargs, "|i:flush",
-        &mode)) {
+    if (!_PyArg_CheckPositional("flush", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    mode = _PyLong_AsInt(args[0]);
+    if (mode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = zlib_Compress_flush_impl(self, mode);
 
 exit:
@@ -446,10 +458,16 @@ zlib_Decompress_flush(compobject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_ssize_t length = DEF_BUF_SIZE;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&:flush",
-        ssize_t_converter, &length)) {
+    if (!_PyArg_CheckPositional("flush", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!ssize_t_converter(args[0], &length)) {
+        goto exit;
+    }
+skip_optional:
     return_value = zlib_Decompress_flush_impl(self, length);
 
 exit:
@@ -480,10 +498,29 @@ zlib_adler32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_buffer data = {NULL, NULL};
     unsigned int value = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|I:adler32",
-        &data, &value)) {
+    if (!_PyArg_CheckPositional("adler32", nargs, 1, 2)) {
         goto exit;
     }
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("adler32", 1, "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    value = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (value == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = zlib_adler32_impl(module, &data, value);
 
 exit:
@@ -519,10 +556,29 @@ zlib_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_buffer data = {NULL, NULL};
     unsigned int value = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|I:crc32",
-        &data, &value)) {
+    if (!_PyArg_CheckPositional("crc32", nargs, 1, 2)) {
         goto exit;
     }
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("crc32", 1, "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    value = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (value == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = zlib_crc32_impl(module, &data, value);
 
 exit:
@@ -557,4 +613,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=bea1e3c64573d9fd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b3acec2384f18782 input=a9049054013a1b77]*/

@@ -35,10 +35,19 @@ test_object_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *c;
     PyUnicode_Object *d;
 
-    if (!_PyArg_ParseStack(args, nargs, "OO&O!O:test_object_converter",
-        &a, PyUnicode_FSConverter, &b, &PyUnicode_Type, &c, &d)) {
+    if (!_PyArg_CheckPositional("test_object_converter", nargs, 4, 4)) {
         goto exit;
     }
+    a = args[0];
+    if (!PyUnicode_FSConverter(args[1], &b)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[2])) {
+        _PyArg_BadArgument("test_object_converter", 3, "str", args[2]);
+        goto exit;
+    }
+    c = args[2];
+    d = (PyUnicode_Object *)args[3];
     return_value = test_object_converter_impl(module, a, b, c, d);
 
 exit:
@@ -48,7 +57,7 @@ exit:
 static PyObject *
 test_object_converter_impl(PyObject *module, PyObject *a, PyObject *b,
                            PyObject *c, PyUnicode_Object *d)
-/*[clinic end generated code: output=ac25517226de46c8 input=005e6a8a711a869b]*/
+/*[clinic end generated code: output=f2c26174b3d46e94 input=005e6a8a711a869b]*/
 
 /*[clinic input]
 test_object_converter_one_arg
@@ -159,10 +168,59 @@ test_object_converter_subclass_of(PyObject *module, PyObject *const *args, Py_ss
     PyObject *i;
     PyObject *j;
 
-    if (!_PyArg_ParseStack(args, nargs, "O!O!O!O!O!O!O!O!O!O!:test_object_converter_subclass_of",
-        &PyLong_Type, &a, &PyTuple_Type, &b, &PyList_Type, &c, &PySet_Type, &d, &PyFrozenSet_Type, &e, &PyDict_Type, &f, &PyUnicode_Type, &g, &PyBytes_Type, &h, &PyByteArray_Type, &i, &MyType, &j)) {
+    if (!_PyArg_CheckPositional("test_object_converter_subclass_of", nargs, 10, 10)) {
         goto exit;
     }
+    if (!PyLong_Check(args[0])) {
+        _PyArg_BadArgument("test_object_converter_subclass_of", 1, "int", args[0]);
+        goto exit;
+    }
+    a = args[0];
+    if (!PyTuple_Check(args[1])) {
+        _PyArg_BadArgument("test_object_converter_subclass_of", 2, "tuple", args[1]);
+        goto exit;
+    }
+    b = args[1];
+    if (!PyList_Check(args[2])) {
+        _PyArg_BadArgument("test_object_converter_subclass_of", 3, "list", args[2]);
+        goto exit;
+    }
+    c = args[2];
+    if (!PySet_Check(args[3])) {
+        _PyArg_BadArgument("test_object_converter_subclass_of", 4, "set", args[3]);
+        goto exit;
+    }
+    d = args[3];
+    if (!PyFrozenSet_Check(args[4])) {
+        _PyArg_BadArgument("test_object_converter_subclass_of", 5, "frozenset", args[4]);
+        goto exit;
+    }
+    e = args[4];
+    if (!PyDict_Check(args[5])) {
+        _PyArg_BadArgument("test_object_converter_subclass_of", 6, "dict", args[5]);
+        goto exit;
+    }
+    f = args[5];
+    if (!PyUnicode_Check(args[6])) {
+        _PyArg_BadArgument("test_object_converter_subclass_of", 7, "str", args[6]);
+        goto exit;
+    }
+    g = args[6];
+    if (!PyBytes_Check(args[7])) {
+        _PyArg_BadArgument("test_object_converter_subclass_of", 8, "bytes", args[7]);
+        goto exit;
+    }
+    h = args[7];
+    if (!PyByteArray_Check(args[8])) {
+        _PyArg_BadArgument("test_object_converter_subclass_of", 9, "bytearray", args[8]);
+        goto exit;
+    }
+    i = args[8];
+    if (!PyObject_TypeCheck(args[9], &MyType)) {
+        _PyArg_BadArgument("test_object_converter_subclass_of", 10, (&MyType)->tp_name, args[9]);
+        goto exit;
+    }
+    j = args[9];
     return_value = test_object_converter_subclass_of_impl(module, a, b, c, d, e, f, g, h, i, j);
 
 exit:
@@ -174,7 +232,7 @@ test_object_converter_subclass_of_impl(PyObject *module, PyObject *a,
                                        PyObject *b, PyObject *c, PyObject *d,
                                        PyObject *e, PyObject *f, PyObject *g,
                                        PyObject *h, PyObject *i, PyObject *j)
-/*[clinic end generated code: output=b26bcdc31dfc7872 input=31b06b772d5f983e]*/
+/*[clinic end generated code: output=99691bda8eeda6d6 input=31b06b772d5f983e]*/
 
 /*[clinic input]
 test_PyBytesObject_converter
@@ -202,7 +260,7 @@ test_PyBytesObject_converter(PyObject *module, PyObject *arg)
     PyBytesObject *a;
 
     if (!PyBytes_Check(arg)) {
-        _PyArg_BadArgument("test_PyBytesObject_converter", "bytes", arg);
+        _PyArg_BadArgument("test_PyBytesObject_converter", 0, "bytes", arg);
         goto exit;
     }
     a = (PyBytesObject *)arg;
@@ -214,7 +272,7 @@ exit:
 
 static PyObject *
 test_PyBytesObject_converter_impl(PyObject *module, PyBytesObject *a)
-/*[clinic end generated code: output=fd69d6df4d26c853 input=12b10c7cb5750400]*/
+/*[clinic end generated code: output=5d9a301c1df24eb5 input=12b10c7cb5750400]*/
 
 /*[clinic input]
 test_PyByteArrayObject_converter
@@ -242,7 +300,7 @@ test_PyByteArrayObject_converter(PyObject *module, PyObject *arg)
     PyByteArrayObject *a;
 
     if (!PyByteArray_Check(arg)) {
-        _PyArg_BadArgument("test_PyByteArrayObject_converter", "bytearray", arg);
+        _PyArg_BadArgument("test_PyByteArrayObject_converter", 0, "bytearray", arg);
         goto exit;
     }
     a = (PyByteArrayObject *)arg;
@@ -254,7 +312,7 @@ exit:
 
 static PyObject *
 test_PyByteArrayObject_converter_impl(PyObject *module, PyByteArrayObject *a)
-/*[clinic end generated code: output=d309c909182c4183 input=5a657da535d194ae]*/
+/*[clinic end generated code: output=9455d06f4f09637b input=5a657da535d194ae]*/
 
 /*[clinic input]
 test_unicode_converter
@@ -282,7 +340,7 @@ test_unicode_converter(PyObject *module, PyObject *arg)
     PyObject *a;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("test_unicode_converter", "str", arg);
+        _PyArg_BadArgument("test_unicode_converter", 0, "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -297,7 +355,7 @@ exit:
 
 static PyObject *
 test_unicode_converter_impl(PyObject *module, PyObject *a)
-/*[clinic end generated code: output=ca603454e1f8f764 input=aa33612df92aa9c5]*/
+/*[clinic end generated code: output=9275c04fe204f4c5 input=aa33612df92aa9c5]*/
 
 /*[clinic input]
 test_bool_converter
@@ -328,10 +386,36 @@ test_bool_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int b = 1;
     int c = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|ppi:test_bool_converter",
-        &a, &b, &c)) {
+    if (!_PyArg_CheckPositional("test_bool_converter", nargs, 0, 3)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    a = PyObject_IsTrue(args[0]);
+    if (a < 0) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    b = PyObject_IsTrue(args[1]);
+    if (b < 0) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    c = _PyLong_AsInt(args[2]);
+    if (c == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = test_bool_converter_impl(module, a, b, c);
 
 exit:
@@ -340,7 +424,7 @@ exit:
 
 static PyObject *
 test_bool_converter_impl(PyObject *module, int a, int b, int c)
-/*[clinic end generated code: output=f08a22d3390ab6f7 input=939854fa9f248c60]*/
+/*[clinic end generated code: output=25f20963894256a1 input=939854fa9f248c60]*/
 
 /*[clinic input]
 test_char_converter
@@ -397,10 +481,192 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     char m = '\x00';
     char n = '\xff';
 
-    if (!_PyArg_ParseStack(args, nargs, "|cccccccccccccc:test_char_converter",
-        &a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k, &l, &m, &n)) {
+    if (!_PyArg_CheckPositional("test_char_converter", nargs, 0, 14)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyBytes_Check(args[0]) && PyBytes_GET_SIZE(args[0]) == 1) {
+        a = PyBytes_AS_STRING(args[0])[0];
+    }
+    else if (PyByteArray_Check(args[0]) && PyByteArray_GET_SIZE(args[0]) == 1) {
+        a = PyByteArray_AS_STRING(args[0])[0];
+    }
+    else {
+        _PyArg_BadArgument("test_char_converter", 1, "a byte string of length 1", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyBytes_Check(args[1]) && PyBytes_GET_SIZE(args[1]) == 1) {
+        b = PyBytes_AS_STRING(args[1])[0];
+    }
+    else if (PyByteArray_Check(args[1]) && PyByteArray_GET_SIZE(args[1]) == 1) {
+        b = PyByteArray_AS_STRING(args[1])[0];
+    }
+    else {
+        _PyArg_BadArgument("test_char_converter", 2, "a byte string of length 1", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (PyBytes_Check(args[2]) && PyBytes_GET_SIZE(args[2]) == 1) {
+        c = PyBytes_AS_STRING(args[2])[0];
+    }
+    else if (PyByteArray_Check(args[2]) && PyByteArray_GET_SIZE(args[2]) == 1) {
+        c = PyByteArray_AS_STRING(args[2])[0];
+    }
+    else {
+        _PyArg_BadArgument("test_char_converter", 3, "a byte string of length 1", args[2]);
+        goto exit;
+    }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    if (PyBytes_Check(args[3]) && PyBytes_GET_SIZE(args[3]) == 1) {
+        d = PyBytes_AS_STRING(args[3])[0];
+    }
+    else if (PyByteArray_Check(args[3]) && PyByteArray_GET_SIZE(args[3]) == 1) {
+        d = PyByteArray_AS_STRING(args[3])[0];
+    }
+    else {
+        _PyArg_BadArgument("test_char_converter", 4, "a byte string of length 1", args[3]);
+        goto exit;
+    }
+    if (nargs < 5) {
+        goto skip_optional;
+    }
+    if (PyBytes_Check(args[4]) && PyBytes_GET_SIZE(args[4]) == 1) {
+        e = PyBytes_AS_STRING(args[4])[0];
+    }
+    else if (PyByteArray_Check(args[4]) && PyByteArray_GET_SIZE(args[4]) == 1) {
+        e = PyByteArray_AS_STRING(args[4])[0];
+    }
+    else {
+        _PyArg_BadArgument("test_char_converter", 5, "a byte string of length 1", args[4]);
+        goto exit;
+    }
+    if (nargs < 6) {
+        goto skip_optional;
+    }
+    if (PyBytes_Check(args[5]) && PyBytes_GET_SIZE(args[5]) == 1) {
+        f = PyBytes_AS_STRING(args[5])[0];
+    }
+    else if (PyByteArray_Check(args[5]) && PyByteArray_GET_SIZE(args[5]) == 1) {
+        f = PyByteArray_AS_STRING(args[5])[0];
+    }
+    else {
+        _PyArg_BadArgument("test_char_converter", 6, "a byte string of length 1", args[5]);
+        goto exit;
+    }
+    if (nargs < 7) {
+        goto skip_optional;
+    }
+    if (PyBytes_Check(args[6]) && PyBytes_GET_SIZE(args[6]) == 1) {
+        g = PyBytes_AS_STRING(args[6])[0];
+    }
+    else if (PyByteArray_Check(args[6]) && PyByteArray_GET_SIZE(args[6]) == 1) {
+        g = PyByteArray_AS_STRING(args[6])[0];
+    }
+    else {
+        _PyArg_BadArgument("test_char_converter", 7, "a byte string of length 1", args[6]);
+        goto exit;
+    }
+    if (nargs < 8) {
+        goto skip_optional;
+    }
+    if (PyBytes_Check(args[7]) && PyBytes_GET_SIZE(args[7]) == 1) {
+        h = PyBytes_AS_STRING(args[7])[0];
+    }
+    else if (PyByteArray_Check(args[7]) && PyByteArray_GET_SIZE(args[7]) == 1) {
+        h = PyByteArray_AS_STRING(args[7])[0];
+    }
+    else {
+        _PyArg_BadArgument("test_char_converter", 8, "a byte string of length 1", args[7]);
+        goto exit;
+    }
+    if (nargs < 9) {
+        goto skip_optional;
+    }
+    if (PyBytes_Check(args[8]) && PyBytes_GET_SIZE(args[8]) == 1) {
+        i = PyBytes_AS_STRING(args[8])[0];
+    }
+    else if (PyByteArray_Check(args[8]) && PyByteArray_GET_SIZE(args[8]) == 1) {
+        i = PyByteArray_AS_STRING(args[8])[0];
+    }
+    else {
+        _PyArg_BadArgument("test_char_converter", 9, "a byte string of length 1", args[8]);
+        goto exit;
+    }
+    if (nargs < 10) {
+        goto skip_optional;
+    }
+    if (PyBytes_Check(args[9]) && PyBytes_GET_SIZE(args[9]) == 1) {
+        j = PyBytes_AS_STRING(args[9])[0];
+    }
+    else if (PyByteArray_Check(args[9]) && PyByteArray_GET_SIZE(args[9]) == 1) {
+        j = PyByteArray_AS_STRING(args[9])[0];
+    }
+    else {
+        _PyArg_BadArgument("test_char_converter", 10, "a byte string of length 1", args[9]);
+        goto exit;
+    }
+    if (nargs < 11) {
+        goto skip_optional;
+    }
+    if (PyBytes_Check(args[10]) && PyBytes_GET_SIZE(args[10]) == 1) {
+        k = PyBytes_AS_STRING(args[10])[0];
+    }
+    else if (PyByteArray_Check(args[10]) && PyByteArray_GET_SIZE(args[10]) == 1) {
+        k = PyByteArray_AS_STRING(args[10])[0];
+    }
+    else {
+        _PyArg_BadArgument("test_char_converter", 11, "a byte string of length 1", args[10]);
+        goto exit;
+    }
+    if (nargs < 12) {
+        goto skip_optional;
+    }
+    if (PyBytes_Check(args[11]) && PyBytes_GET_SIZE(args[11]) == 1) {
+        l = PyBytes_AS_STRING(args[11])[0];
+    }
+    else if (PyByteArray_Check(args[11]) && PyByteArray_GET_SIZE(args[11]) == 1) {
+        l = PyByteArray_AS_STRING(args[11])[0];
+    }
+    else {
+        _PyArg_BadArgument("test_char_converter", 12, "a byte string of length 1", args[11]);
+        goto exit;
+    }
+    if (nargs < 13) {
+        goto skip_optional;
+    }
+    if (PyBytes_Check(args[12]) && PyBytes_GET_SIZE(args[12]) == 1) {
+        m = PyBytes_AS_STRING(args[12])[0];
+    }
+    else if (PyByteArray_Check(args[12]) && PyByteArray_GET_SIZE(args[12]) == 1) {
+        m = PyByteArray_AS_STRING(args[12])[0];
+    }
+    else {
+        _PyArg_BadArgument("test_char_converter", 13, "a byte string of length 1", args[12]);
+        goto exit;
+    }
+    if (nargs < 14) {
+        goto skip_optional;
+    }
+    if (PyBytes_Check(args[13]) && PyBytes_GET_SIZE(args[13]) == 1) {
+        n = PyBytes_AS_STRING(args[13])[0];
+    }
+    else if (PyByteArray_Check(args[13]) && PyByteArray_GET_SIZE(args[13]) == 1) {
+        n = PyByteArray_AS_STRING(args[13])[0];
+    }
+    else {
+        _PyArg_BadArgument("test_char_converter", 14, "a byte string of length 1", args[13]);
+        goto exit;
+    }
+skip_optional:
     return_value = test_char_converter_impl(module, a, b, c, d, e, f, g, h, i, j, k, l, m, n);
 
 exit:
@@ -411,7 +677,7 @@ static PyObject *
 test_char_converter_impl(PyObject *module, char a, char b, char c, char d,
                          char e, char f, char g, char h, char i, char j,
                          char k, char l, char m, char n)
-/*[clinic end generated code: output=14c61e8ee78f3d47 input=e42330417a44feac]*/
+/*[clinic end generated code: output=e041d687555e0a5d input=e42330417a44feac]*/
 
 /*[clinic input]
 test_unsigned_char_converter
@@ -443,10 +709,81 @@ test_unsigned_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t
     unsigned char b = 34;
     unsigned char c = 56;
 
-    if (!_PyArg_ParseStack(args, nargs, "|bbB:test_unsigned_char_converter",
-        &a, &b, &c)) {
+    if (!_PyArg_CheckPositional("test_unsigned_char_converter", nargs, 0, 3)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(args[0]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < 0) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "unsigned byte integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > UCHAR_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "unsigned byte integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            a = (unsigned char) ival;
+        }
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(args[1]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < 0) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "unsigned byte integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > UCHAR_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "unsigned byte integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            b = (unsigned char) ival;
+        }
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        long ival = PyLong_AsUnsignedLongMask(args[2]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else {
+            c = (unsigned char) ival;
+        }
+    }
+skip_optional:
     return_value = test_unsigned_char_converter_impl(module, a, b, c);
 
 exit:
@@ -456,7 +793,7 @@ exit:
 static PyObject *
 test_unsigned_char_converter_impl(PyObject *module, unsigned char a,
                                   unsigned char b, unsigned char c)
-/*[clinic end generated code: output=a4fd7ad26077dcfc input=021414060993e289]*/
+/*[clinic end generated code: output=ebf905c5c9414762 input=021414060993e289]*/
 
 /*[clinic input]
 test_short_converter
@@ -483,10 +820,37 @@ test_short_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     short a = 12;
 
-    if (!_PyArg_ParseStack(args, nargs, "|h:test_short_converter",
-        &a)) {
+    if (!_PyArg_CheckPositional("test_short_converter", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(args[0]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            a = (short) ival;
+        }
+    }
+skip_optional:
     return_value = test_short_converter_impl(module, a);
 
 exit:
@@ -495,7 +859,7 @@ exit:
 
 static PyObject *
 test_short_converter_impl(PyObject *module, short a)
-/*[clinic end generated code: output=08259a92c12890b1 input=6a8a7a509a498ff4]*/
+/*[clinic end generated code: output=86fe1a1496a7ff20 input=6a8a7a509a498ff4]*/
 
 /*[clinic input]
 test_unsigned_short_converter
@@ -527,10 +891,34 @@ test_unsigned_short_converter(PyObject *module, PyObject *const *args, Py_ssize_
     unsigned short b = 34;
     unsigned short c = 56;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&O&H:test_unsigned_short_converter",
-        _PyLong_UnsignedShort_Converter, &a, _PyLong_UnsignedShort_Converter, &b, &c)) {
+    if (!_PyArg_CheckPositional("test_unsigned_short_converter", nargs, 0, 3)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedShort_Converter(args[0], &a)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedShort_Converter(args[1], &b)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    c = (unsigned short)PyLong_AsUnsignedLongMask(args[2]);
+    if (c == (unsigned short)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = test_unsigned_short_converter_impl(module, a, b, c);
 
 exit:
@@ -540,7 +928,7 @@ exit:
 static PyObject *
 test_unsigned_short_converter_impl(PyObject *module, unsigned short a,
                                    unsigned short b, unsigned short c)
-/*[clinic end generated code: output=d714bceb98c1fe84 input=cdfd8eff3d9176b4]*/
+/*[clinic end generated code: output=3779fe104319e3ae input=cdfd8eff3d9176b4]*/
 
 /*[clinic input]
 test_int_converter
@@ -573,10 +961,61 @@ test_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int c = 45;
     myenum d = 67;
 
-    if (!_PyArg_ParseStack(args, nargs, "|iiCi:test_int_converter",
-        &a, &b, &c, &d)) {
+    if (!_PyArg_CheckPositional("test_int_converter", nargs, 0, 4)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    a = _PyLong_AsInt(args[0]);
+    if (a == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    b = _PyLong_AsInt(args[1]);
+    if (b == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[2])) {
+        _PyArg_BadArgument("test_int_converter", 3, "a unicode character", args[2]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[2])) {
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(args[2]) != 1) {
+        _PyArg_BadArgument("test_int_converter", 3, "a unicode character", args[2]);
+        goto exit;
+    }
+    c = PyUnicode_READ_CHAR(args[2], 0);
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[3])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    d = _PyLong_AsInt(args[3]);
+    if (d == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = test_int_converter_impl(module, a, b, c, d);
 
 exit:
@@ -585,7 +1024,7 @@ exit:
 
 static PyObject *
 test_int_converter_impl(PyObject *module, int a, int b, int c, myenum d)
-/*[clinic end generated code: output=1995799d5264e4a5 input=d20541fc1ca0553e]*/
+/*[clinic end generated code: output=de74e24e85a669a5 input=d20541fc1ca0553e]*/
 
 /*[clinic input]
 test_unsigned_int_converter
@@ -617,10 +1056,34 @@ test_unsigned_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t 
     unsigned int b = 34;
     unsigned int c = 56;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&O&I:test_unsigned_int_converter",
-        _PyLong_UnsignedInt_Converter, &a, _PyLong_UnsignedInt_Converter, &b, &c)) {
+    if (!_PyArg_CheckPositional("test_unsigned_int_converter", nargs, 0, 3)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedInt_Converter(args[0], &a)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedInt_Converter(args[1], &b)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    c = (unsigned int)PyLong_AsUnsignedLongMask(args[2]);
+    if (c == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = test_unsigned_int_converter_impl(module, a, b, c);
 
 exit:
@@ -630,7 +1093,7 @@ exit:
 static PyObject *
 test_unsigned_int_converter_impl(PyObject *module, unsigned int a,
                                  unsigned int b, unsigned int c)
-/*[clinic end generated code: output=3cdb7a3ef2b369a3 input=5533534828b62fc0]*/
+/*[clinic end generated code: output=189176ce67c7d2e7 input=5533534828b62fc0]*/
 
 /*[clinic input]
 test_long_converter
@@ -657,10 +1120,22 @@ test_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     long a = 12;
 
-    if (!_PyArg_ParseStack(args, nargs, "|l:test_long_converter",
-        &a)) {
+    if (!_PyArg_CheckPositional("test_long_converter", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    a = PyLong_AsLong(args[0]);
+    if (a == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = test_long_converter_impl(module, a);
 
 exit:
@@ -669,7 +1144,7 @@ exit:
 
 static PyObject *
 test_long_converter_impl(PyObject *module, long a)
-/*[clinic end generated code: output=65a8092a1dc10de6 input=d2179e3c9cdcde89]*/
+/*[clinic end generated code: output=44cd8823f59d116b input=d2179e3c9cdcde89]*/
 
 /*[clinic input]
 test_unsigned_long_converter
@@ -701,10 +1176,30 @@ test_unsigned_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t
     unsigned long b = 34;
     unsigned long c = 56;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&O&k:test_unsigned_long_converter",
-        _PyLong_UnsignedLong_Converter, &a, _PyLong_UnsignedLong_Converter, &b, &c)) {
+    if (!_PyArg_CheckPositional("test_unsigned_long_converter", nargs, 0, 3)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedLong_Converter(args[0], &a)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedLong_Converter(args[1], &b)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!PyLong_Check(args[2])) {
+        _PyArg_BadArgument("test_unsigned_long_converter", 3, "int", args[2]);
+        goto exit;
+    }
+    c = PyLong_AsUnsignedLongMask(args[2]);
+skip_optional:
     return_value = test_unsigned_long_converter_impl(module, a, b, c);
 
 exit:
@@ -714,7 +1209,7 @@ exit:
 static PyObject *
 test_unsigned_long_converter_impl(PyObject *module, unsigned long a,
                                   unsigned long b, unsigned long c)
-/*[clinic end generated code: output=81fd66d8981abeb2 input=f450d94cae1ef73b]*/
+/*[clinic end generated code: output=1c05c871c0309e08 input=f450d94cae1ef73b]*/
 
 /*[clinic input]
 test_long_long_converter
@@ -741,10 +1236,22 @@ test_long_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *return_value = NULL;
     long long a = 12;
 
-    if (!_PyArg_ParseStack(args, nargs, "|L:test_long_long_converter",
-        &a)) {
+    if (!_PyArg_CheckPositional("test_long_long_converter", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    a = PyLong_AsLongLong(args[0]);
+    if (a == (PY_LONG_LONG)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = test_long_long_converter_impl(module, a);
 
 exit:
@@ -753,7 +1260,7 @@ exit:
 
 static PyObject *
 test_long_long_converter_impl(PyObject *module, long long a)
-/*[clinic end generated code: output=9412f5800661b0c0 input=d5fc81577ff4dd02]*/
+/*[clinic end generated code: output=3e8083f3aee4f18a input=d5fc81577ff4dd02]*/
 
 /*[clinic input]
 test_unsigned_long_long_converter
@@ -787,10 +1294,30 @@ test_unsigned_long_long_converter(PyObject *module, PyObject *const *args, Py_ss
     unsigned long long b = 34;
     unsigned long long c = 56;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&O&K:test_unsigned_long_long_converter",
-        _PyLong_UnsignedLongLong_Converter, &a, _PyLong_UnsignedLongLong_Converter, &b, &c)) {
+    if (!_PyArg_CheckPositional("test_unsigned_long_long_converter", nargs, 0, 3)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedLongLong_Converter(args[0], &a)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedLongLong_Converter(args[1], &b)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!PyLong_Check(args[2])) {
+        _PyArg_BadArgument("test_unsigned_long_long_converter", 3, "int", args[2]);
+        goto exit;
+    }
+    c = PyLong_AsUnsignedLongLongMask(args[2]);
+skip_optional:
     return_value = test_unsigned_long_long_converter_impl(module, a, b, c);
 
 exit:
@@ -802,7 +1329,7 @@ test_unsigned_long_long_converter_impl(PyObject *module,
                                        unsigned long long a,
                                        unsigned long long b,
                                        unsigned long long c)
-/*[clinic end generated code: output=f5a57e0ccc048a32 input=a15115dc41866ff4]*/
+/*[clinic end generated code: output=0a9b17fb824e28eb input=a15115dc41866ff4]*/
 
 /*[clinic input]
 test_Py_ssize_t_converter
@@ -834,10 +1361,56 @@ test_Py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t na
     Py_ssize_t b = 34;
     Py_ssize_t c = 56;
 
-    if (!_PyArg_ParseStack(args, nargs, "|nnO&:test_Py_ssize_t_converter",
-        &a, &b, _Py_convert_optional_to_ssize_t, &c)) {
+    if (!_PyArg_CheckPositional("test_Py_ssize_t_converter", nargs, 0, 3)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        a = ival;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        b = ival;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[2], &c)) {
+        goto exit;
+    }
+skip_optional:
     return_value = test_Py_ssize_t_converter_impl(module, a, b, c);
 
 exit:
@@ -847,7 +1420,7 @@ exit:
 static PyObject *
 test_Py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
                                Py_ssize_t c)
-/*[clinic end generated code: output=50bc360c57b40e3f input=3855f184bb3f299d]*/
+/*[clinic end generated code: output=a46d2aaf40c10398 input=3855f184bb3f299d]*/
 
 /*[clinic input]
 test_slice_index_converter
@@ -879,10 +1452,28 @@ test_slice_index_converter(PyObject *module, PyObject *const *args, Py_ssize_t n
     Py_ssize_t b = 34;
     Py_ssize_t c = 56;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&O&O&:test_slice_index_converter",
-        _PyEval_SliceIndex, &a, _PyEval_SliceIndexNotNone, &b, _PyEval_SliceIndex, &c)) {
+    if (!_PyArg_CheckPositional("test_slice_index_converter", nargs, 0, 3)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[0], &a)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndexNotNone(args[1], &b)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &c)) {
+        goto exit;
+    }
+skip_optional:
     return_value = test_slice_index_converter_impl(module, a, b, c);
 
 exit:
@@ -892,7 +1483,7 @@ exit:
 static PyObject *
 test_slice_index_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
                                 Py_ssize_t c)
-/*[clinic end generated code: output=33b9152bf3c5963a input=edeadb0ee126f531]*/
+/*[clinic end generated code: output=2148703cd3c6e941 input=edeadb0ee126f531]*/
 
 /*[clinic input]
 test_size_t_converter
@@ -919,10 +1510,16 @@ test_size_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     size_t a = 12;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&:test_size_t_converter",
-        _PyLong_Size_t_Converter, &a)) {
+    if (!_PyArg_CheckPositional("test_size_t_converter", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_PyLong_Size_t_Converter(args[0], &a)) {
+        goto exit;
+    }
+skip_optional:
     return_value = test_size_t_converter_impl(module, a);
 
 exit:
@@ -931,7 +1528,7 @@ exit:
 
 static PyObject *
 test_size_t_converter_impl(PyObject *module, size_t a)
-/*[clinic end generated code: output=02fe6bf4c5a139d5 input=52e93a0fed0f1fb3]*/
+/*[clinic end generated code: output=8a91a9ca8a92dabb input=52e93a0fed0f1fb3]*/
 
 /*[clinic input]
 test_float_converter
@@ -958,10 +1555,17 @@ test_float_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     float a = 12.5;
 
-    if (!_PyArg_ParseStack(args, nargs, "|f:test_float_converter",
-        &a)) {
+    if (!_PyArg_CheckPositional("test_float_converter", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    a = (float) PyFloat_AsDouble(args[0]);
+    if (PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = test_float_converter_impl(module, a);
 
 exit:
@@ -970,7 +1574,7 @@ exit:
 
 static PyObject *
 test_float_converter_impl(PyObject *module, float a)
-/*[clinic end generated code: output=a0689b5ee76673ad input=259c0d98eca35034]*/
+/*[clinic end generated code: output=8293566b2ec1fc52 input=259c0d98eca35034]*/
 
 /*[clinic input]
 test_double_converter
@@ -997,10 +1601,17 @@ test_double_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     double a = 12.5;
 
-    if (!_PyArg_ParseStack(args, nargs, "|d:test_double_converter",
-        &a)) {
+    if (!_PyArg_CheckPositional("test_double_converter", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    a = PyFloat_AsDouble(args[0]);
+    if (PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = test_double_converter_impl(module, a);
 
 exit:
@@ -1009,7 +1620,7 @@ exit:
 
 static PyObject *
 test_double_converter_impl(PyObject *module, double a)
-/*[clinic end generated code: output=b78d23bd37b40681 input=c6a9945706a41c27]*/
+/*[clinic end generated code: output=487081a9b8da67ab input=c6a9945706a41c27]*/
 
 /*[clinic input]
 test_Py_complex_converter
