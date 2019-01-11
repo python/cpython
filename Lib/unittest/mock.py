@@ -25,6 +25,7 @@ __all__ = (
 __version__ = '1.0'
 
 
+import io
 import inspect
 import pprint
 import sys
@@ -2379,20 +2380,27 @@ def mock_open(mock=None, read_data=''):
     `read_data` is a string for the `read`, `readline` and `readlines` of the
     file handle to return.  This is an empty string by default.
     """
+    if isinstance(read_data, bytes):
+        _read_data = io.BytesIO(read_data)
+    else:
+        _read_data = io.StringIO(read_data)
+
+    _state = [_read_data, None]
+
     def _readlines_side_effect(*args, **kwargs):
         if handle.readlines.return_value is not None:
             return handle.readlines.return_value
-        return list(_state[0])
+        return _state[0].readlines(*args, **kwargs)
 
     def _read_side_effect(*args, **kwargs):
         if handle.read.return_value is not None:
             return handle.read.return_value
-        return type(read_data)().join(_state[0])
+        return _state[0].read(*args, **kwargs)
 
-    def _readline_side_effect():
+    def _readline_side_effect(*args, **kwargs):
         yield from _iter_side_effect()
         while True:
-            yield type(read_data)()
+            yield _state[0].readline(*args, **kwargs)
 
     def _iter_side_effect():
         if handle.readline.return_value is not None:
@@ -2412,8 +2420,6 @@ def mock_open(mock=None, read_data=''):
     handle = MagicMock(spec=file_spec)
     handle.__enter__.return_value = handle
 
-    _state = [_iterate_read_data(read_data), None]
-
     handle.write.return_value = None
     handle.read.return_value = None
     handle.readline.return_value = None
@@ -2426,7 +2432,10 @@ def mock_open(mock=None, read_data=''):
     handle.__iter__.side_effect = _iter_side_effect
 
     def reset_data(*args, **kwargs):
-        _state[0] = _iterate_read_data(read_data)
+        if isinstance(read_data, bytes):
+            _state[0] = io.BytesIO(read_data)
+        else:
+            _state[0] = io.StringIO(read_data)
         if handle.readline.side_effect == _state[1]:
             # Only reset the side effect if the user hasn't overridden it.
             _state[1] = _readline_side_effect()

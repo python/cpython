@@ -286,7 +286,7 @@ class TestMockOpen(unittest.TestCase):
         # for mocks returned by mock_open
         some_data = 'foo\nbar\nbaz'
         mock = mock_open(read_data=some_data)
-        self.assertEqual(mock().read(10), some_data)
+        self.assertEqual(mock().read(10), some_data[:10])
 
 
     def test_interleaved_reads(self):
