@@ -698,9 +698,6 @@ except ImportError:
         is_extended_path = filename.startswith(extended_path_prefix)
         return filename if is_extended_path else abspath(filename)
 
-    def _getfinalpathname(path):
-        return normcase(realpath(path))
-
 try:
     # The genericpath.isdir implementation uses os.stat and checks the mode
     # attribute to tell whether or not the path is a directory.
