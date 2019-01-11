@@ -487,15 +487,15 @@ statement.
 
 .. method:: HTTPResponse.geturl()
 
-   Returns the URL of the resource retrieved. Recommended to use :attr:`~HTTPResponse.url` instead.
+   Deprecated method equivalent to :attr:`HTTPResponse.url`.
 
 .. method:: HTTPResponse.info()
 
-   Returns the response headers. Recommended to use :attr:`~HTTPResponse.headers` instead.
+   Deprecated method equivalent to :attr:`HTTPResponse.headers`.
 
 .. method:: HTTPResponse.getstatus()
 
-   Returns the status. Recommended to use :attr:`~HTTPResponse.status` instead.
+   Deprecated method equivalent to :attr:`~HTTPResponse.status`.
 
 Examples
 --------
