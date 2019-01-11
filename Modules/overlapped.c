@@ -620,7 +620,7 @@ Overlapped_dealloc(OverlappedObject *self)
         CloseHandle(self->overlapped.hEvent);
     }
 
-    Overlapped_clear(self):
+    Overlapped_clear(self);
     PyObject_Del(self);
     SetLastError(olderr);
 }
