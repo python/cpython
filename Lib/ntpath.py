@@ -685,13 +685,16 @@ try:
             # return path as-is
             return path
 
-        if len(normal_path) < MAX_PATH and normal_path == _getfullpathname(normal_path):
+        if (len(normal_path) < MAX_PATH and
+            normal_path == _getfullpathname(normal_path)):
             return normal_path
         return path
 except ImportError:
     def realpath(filename):
         filename = os.fspath(filename)
-        extended_path_prefix = '\\\\?\\' if isinstance(filename, str) else b'\\\\?\\'
+        extended_path_prefix = (
+            '\\\\?\\' if isinstance(filename, str) else b'\\\\?\\'
+        )
         is_extended_path = filename.startswith(extended_path_prefix)
         return filename if is_extended_path else abspath(filename)
 
