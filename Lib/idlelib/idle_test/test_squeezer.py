@@ -1,4 +1,4 @@
-"Test squeezer, coverage 93%"
+"Test squeezer, coverage 95%"
 
 from collections import namedtuple
 from textwrap import dedent
