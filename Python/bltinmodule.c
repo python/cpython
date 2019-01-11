@@ -1520,7 +1520,8 @@ builtin_iter(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
                         "iter(v, w): v must be callable");
         return NULL;
     }
-    return PyCallIter_New(v, args[1]);
+    PyObject *sentinel = args[1];
+    return PyCallIter_New(v, sentinel);
 }
 
 PyDoc_STRVAR(iter_doc,
