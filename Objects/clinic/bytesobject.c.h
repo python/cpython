@@ -70,7 +70,7 @@ bytes_partition(PyBytesObject *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&sep, 'C')) {
-        _PyArg_BadArgument("partition", "contiguous buffer", arg);
+        _PyArg_BadArgument("partition", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = bytes_partition_impl(self, &sep);
@@ -113,7 +113,7 @@ bytes_rpartition(PyBytesObject *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&sep, 'C')) {
-        _PyArg_BadArgument("rpartition", "contiguous buffer", arg);
+        _PyArg_BadArgument("rpartition", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = bytes_rpartition_impl(self, &sep);
@@ -338,8 +338,21 @@ bytes_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
     Py_buffer frm = {NULL, NULL};
     Py_buffer to = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, "y*y*:maketrans",
-        &frm, &to)) {
+    if (!_PyArg_CheckPositional("maketrans", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &frm, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&frm, 'C')) {
+        _PyArg_BadArgument("maketrans", 1, "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &to, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&to, 'C')) {
+        _PyArg_BadArgument("maketrans", 2, "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = bytes_maketrans_impl(&frm, &to);
@@ -385,10 +398,44 @@ bytes_replace(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_buffer new = {NULL, NULL};
     Py_ssize_t count = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*y*|n:replace",
-        &old, &new, &count)) {
+    if (!_PyArg_CheckPositional("replace", nargs, 2, 3)) {
         goto exit;
     }
+    if (PyObject_GetBuffer(args[0], &old, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&old, 'C')) {
+        _PyArg_BadArgument("replace", 1, "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &new, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&new, 'C')) {
+        _PyArg_BadArgument("replace", 2, "contiguous buffer", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        count = ival;
+    }
+skip_optional:
     return_value = bytes_replace_impl(self, &old, &new, count);
 
 exit:
@@ -500,7 +547,7 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
     PyObject *string;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("fromhex", "str", arg);
+        _PyArg_BadArgument("fromhex", 0, "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -512,4 +559,4 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dc9aa04f0007ab11 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=810c8dfc72520ca4 input=a9049054013a1b77]*/

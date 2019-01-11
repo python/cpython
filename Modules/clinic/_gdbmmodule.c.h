@@ -245,13 +245,49 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *flags = "r";
     int mode = 438;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|si:open",
-        &filename, &flags, &mode)) {
+    if (!_PyArg_CheckPositional("open", nargs, 1, 3)) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("open", 1, "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    filename = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("open", 2, "str", args[1]);
+        goto exit;
+    }
+    Py_ssize_t flags_length;
+    flags = PyUnicode_AsUTF8AndSize(args[1], &flags_length);
+    if (flags == NULL) {
+        goto exit;
+    }
+    if (strlen(flags) != (size_t)flags_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    mode = _PyLong_AsInt(args[2]);
+    if (mode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = dbmopen_impl(module, filename, flags, mode);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5ca4361417bf96cb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=05f06065d2dc1f9e input=a9049054013a1b77]*/

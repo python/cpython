@@ -1416,10 +1416,31 @@ _operator_length_hint(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t default_value = 0;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|n:length_hint",
-        &obj, &default_value)) {
+    if (!_PyArg_CheckPositional("length_hint", nargs, 1, 2)) {
         goto exit;
     }
+    obj = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        default_value = ival;
+    }
+skip_optional:
     _return_value = _operator_length_hint_impl(module, obj, default_value);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -1469,4 +1490,4 @@ _operator__compare_digest(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=424b884884ab20b7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b382bece80a5a254 input=a9049054013a1b77]*/

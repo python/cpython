@@ -425,8 +425,19 @@ winreg_EnumKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HKEY key;
     int index;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i:EnumKey",
-        clinic_HKEY_converter, &key, &index)) {
+    if (!_PyArg_CheckPositional("EnumKey", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!clinic_HKEY_converter(args[0], &key)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    index = _PyLong_AsInt(args[1]);
+    if (index == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = winreg_EnumKey_impl(module, key, index);
@@ -472,8 +483,19 @@ winreg_EnumValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HKEY key;
     int index;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i:EnumValue",
-        clinic_HKEY_converter, &key, &index)) {
+    if (!_PyArg_CheckPositional("EnumValue", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!clinic_HKEY_converter(args[0], &key)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    index = _PyLong_AsInt(args[1]);
+    if (index == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = winreg_EnumValue_impl(module, key, index);
@@ -1095,4 +1117,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=82bd56c524c6c3dd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bd491131d343ae7a input=a9049054013a1b77]*/
