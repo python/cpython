@@ -486,7 +486,7 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
     else
         func = signal_handler;
     /* Check for pending signals before changing signal handler */
-    if (PyErr_CheckSignals()) {
+    if (_PyErr_CheckSignals()) {
         return NULL;
     }
     if (PyOS_setsig(signalnum, func) == SIG_ERR) {
@@ -1607,13 +1607,22 @@ finisignal(void)
 int
 PyErr_CheckSignals(void)
 {
+    if (PyThread_get_thread_ident() != main_thread) {
+        return 0;
+    }
+
+    return _PyErr_CheckSignals();
+}
+
+
+/* Declared in cpython/pyerrors.h */
+int
+_PyErr_CheckSignals(void)
+{
     int i;
     PyObject *f;
 
     if (!_Py_atomic_load(&is_tripped))
-        return 0;
-
-    if (PyThread_get_thread_ident() != main_thread)
         return 0;
 
     /*

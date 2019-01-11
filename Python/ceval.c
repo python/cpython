@@ -381,7 +381,7 @@ handle_signals(void)
     }
 
     UNSIGNAL_PENDING_SIGNALS();
-    if (PyErr_CheckSignals() < 0) {
+    if (_PyErr_CheckSignals() < 0) {
         SIGNAL_PENDING_SIGNALS(); /* We're not done yet */
         return -1;
     }
