@@ -1067,7 +1067,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
 static PyObject *
 builtin_getattr(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
-    PyObject *v, *name, *result, *dflt;
+    PyObject *v, *name, *result;
 
     if (!_PyArg_CheckPositional("getattr", nargs, 2, 3))
         return NULL;
@@ -1080,8 +1080,8 @@ builtin_getattr(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         return NULL;
     }
     if (nargs > 2) {
-        dflt = args[2];
         if (_PyObject_LookupAttr(v, name, &result) == 0) {
+            PyObject *dflt = args[2];
             Py_INCREF(dflt);
             return dflt;
         }
@@ -1373,7 +1373,7 @@ PyTypeObject PyMap_Type = {
 static PyObject *
 builtin_next(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
-    PyObject *it, *def, *res;
+    PyObject *it, *res;
 
     if (!_PyArg_CheckPositional("next", nargs, 1, 2))
         return NULL;
@@ -1390,7 +1390,7 @@ builtin_next(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (res != NULL) {
         return res;
     } else if (nargs > 1) {
-        def = args[1];
+        PyObject *def = args[1];
         if (PyErr_Occurred()) {
             if(!PyErr_ExceptionMatches(PyExc_StopIteration))
                 return NULL;
