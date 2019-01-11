@@ -76,10 +76,30 @@ array_array_pop(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_ssize_t i = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|n:pop",
-        &i)) {
+    if (!_PyArg_CheckPositional("pop", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        i = ival;
+    }
+skip_optional:
     return_value = array_array_pop_impl(self, i);
 
 exit:
@@ -114,10 +134,27 @@ array_array_insert(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t i;
     PyObject *v;
 
-    if (!_PyArg_ParseStack(args, nargs, "nO:insert",
-        &i, &v)) {
+    if (!_PyArg_CheckPositional("insert", nargs, 2, 2)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        i = ival;
+    }
+    v = args[1];
     return_value = array_array_insert_impl(self, i, v);
 
 exit:
@@ -212,9 +249,26 @@ array_array_fromfile(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *f;
     Py_ssize_t n;
 
-    if (!_PyArg_ParseStack(args, nargs, "On:fromfile",
-        &f, &n)) {
+    if (!_PyArg_CheckPositional("fromfile", nargs, 2, 2)) {
         goto exit;
+    }
+    f = args[0];
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        n = ival;
     }
     return_value = array_array_fromfile_impl(self, f, n);
 
@@ -291,7 +345,7 @@ array_array_fromstring(arrayobject *self, PyObject *arg)
             goto exit;
         }
         if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-            _PyArg_BadArgument("fromstring", "contiguous buffer", arg);
+            _PyArg_BadArgument("fromstring", 0, "contiguous buffer", arg);
             goto exit;
         }
     }
@@ -328,7 +382,7 @@ array_array_frombytes(arrayobject *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("frombytes", "contiguous buffer", arg);
+        _PyArg_BadArgument("frombytes", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = array_array_frombytes_impl(self, &buffer);
@@ -478,10 +532,32 @@ array__array_reconstructor(PyObject *module, PyObject *const *args, Py_ssize_t n
     enum machine_format_code mformat_code;
     PyObject *items;
 
-    if (!_PyArg_ParseStack(args, nargs, "OCiO:_array_reconstructor",
-        &arraytype, &typecode, &mformat_code, &items)) {
+    if (!_PyArg_CheckPositional("_array_reconstructor", nargs, 4, 4)) {
         goto exit;
     }
+    arraytype = (PyTypeObject *)args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("_array_reconstructor", 2, "a unicode character", args[1]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[1])) {
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(args[1]) != 1) {
+        _PyArg_BadArgument("_array_reconstructor", 2, "a unicode character", args[1]);
+        goto exit;
+    }
+    typecode = PyUnicode_READ_CHAR(args[1], 0);
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    mformat_code = _PyLong_AsInt(args[2]);
+    if (mformat_code == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    items = args[3];
     return_value = array__array_reconstructor_impl(module, arraytype, typecode, mformat_code, items);
 
 exit:
@@ -523,4 +599,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=15da19d2ece09d22 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c9a40f11f1a866fb input=a9049054013a1b77]*/

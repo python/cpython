@@ -100,8 +100,21 @@ bytearray_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
     Py_buffer frm = {NULL, NULL};
     Py_buffer to = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, "y*y*:maketrans",
-        &frm, &to)) {
+    if (!_PyArg_CheckPositional("maketrans", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &frm, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&frm, 'C')) {
+        _PyArg_BadArgument("maketrans", 1, "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &to, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&to, 'C')) {
+        _PyArg_BadArgument("maketrans", 2, "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = bytearray_maketrans_impl(&frm, &to);
@@ -147,10 +160,44 @@ bytearray_replace(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nar
     Py_buffer new = {NULL, NULL};
     Py_ssize_t count = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*y*|n:replace",
-        &old, &new, &count)) {
+    if (!_PyArg_CheckPositional("replace", nargs, 2, 3)) {
         goto exit;
     }
+    if (PyObject_GetBuffer(args[0], &old, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&old, 'C')) {
+        _PyArg_BadArgument("replace", 1, "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &new, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&new, 'C')) {
+        _PyArg_BadArgument("replace", 2, "contiguous buffer", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        count = ival;
+    }
+skip_optional:
     return_value = bytearray_replace_impl(self, &old, &new, count);
 
 exit:
@@ -323,8 +370,27 @@ bytearray_insert(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t narg
     Py_ssize_t index;
     int item;
 
-    if (!_PyArg_ParseStack(args, nargs, "nO&:insert",
-        &index, _getbytevalue, &item)) {
+    if (!_PyArg_CheckPositional("insert", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        index = ival;
+    }
+    if (!_getbytevalue(args[1], &item)) {
         goto exit;
     }
     return_value = bytearray_insert_impl(self, index, item);
@@ -399,10 +465,30 @@ bytearray_pop(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_ssize_t index = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|n:pop",
-        &index)) {
+    if (!_PyArg_CheckPositional("pop", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        index = ival;
+    }
+skip_optional:
     return_value = bytearray_pop_impl(self, index);
 
 exit:
@@ -641,7 +727,7 @@ bytearray_fromhex(PyTypeObject *type, PyObject *arg)
     PyObject *string;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("fromhex", "str", arg);
+        _PyArg_BadArgument("fromhex", 0, "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -690,10 +776,22 @@ bytearray_reduce_ex(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t n
     PyObject *return_value = NULL;
     int proto = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "|i:__reduce_ex__",
-        &proto)) {
+    if (!_PyArg_CheckPositional("__reduce_ex__", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    proto = _PyLong_AsInt(args[0]);
+    if (proto == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = bytearray_reduce_ex_impl(self, proto);
 
 exit:
@@ -717,4 +815,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=cd3e13a1905a473c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=010e281b823d7df1 input=a9049054013a1b77]*/

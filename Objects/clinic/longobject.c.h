@@ -59,7 +59,7 @@ int___format__(PyObject *self, PyObject *arg)
     PyObject *format_spec;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("__format__", "str", arg);
+        _PyArg_BadArgument("__format__", 0, "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -244,4 +244,4 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7436b5f4decdcf9d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3b91cda9d83abaa2 input=a9049054013a1b77]*/

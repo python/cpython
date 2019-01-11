@@ -50,8 +50,34 @@ msvcrt_locking(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int mode;
     long nbytes;
 
-    if (!_PyArg_ParseStack(args, nargs, "iil:locking",
-        &fd, &mode, &nbytes)) {
+    if (!_PyArg_CheckPositional("locking", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    mode = _PyLong_AsInt(args[1]);
+    if (mode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    nbytes = PyLong_AsLong(args[2]);
+    if (nbytes == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = msvcrt_locking_impl(module, fd, mode, nbytes);
@@ -85,8 +111,25 @@ msvcrt_setmode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int flags;
     long _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:setmode",
-        &fd, &flags)) {
+    if (!_PyArg_CheckPositional("setmode", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flags = _PyLong_AsInt(args[1]);
+    if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = msvcrt_setmode_impl(module, fd, flags);
@@ -332,7 +375,7 @@ msvcrt_putch(PyObject *module, PyObject *arg)
         char_value = PyByteArray_AS_STRING(arg)[0];
     }
     else {
-        _PyArg_BadArgument("putch", "a byte string of length 1", arg);
+        _PyArg_BadArgument("putch", 0, "a byte string of length 1", arg);
         goto exit;
     }
     return_value = msvcrt_putch_impl(module, char_value);
@@ -360,14 +403,14 @@ msvcrt_putwch(PyObject *module, PyObject *arg)
     int unicode_char;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("putwch", "a unicode character", arg);
+        _PyArg_BadArgument("putwch", 0, "a unicode character", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg)) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        _PyArg_BadArgument("putwch", "a unicode character", arg);
+        _PyArg_BadArgument("putwch", 0, "a unicode character", arg);
         goto exit;
     }
     unicode_char = PyUnicode_READ_CHAR(arg, 0);
@@ -406,7 +449,7 @@ msvcrt_ungetch(PyObject *module, PyObject *arg)
         char_value = PyByteArray_AS_STRING(arg)[0];
     }
     else {
-        _PyArg_BadArgument("ungetch", "a byte string of length 1", arg);
+        _PyArg_BadArgument("ungetch", 0, "a byte string of length 1", arg);
         goto exit;
     }
     return_value = msvcrt_ungetch_impl(module, char_value);
@@ -434,14 +477,14 @@ msvcrt_ungetwch(PyObject *module, PyObject *arg)
     int unicode_char;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("ungetwch", "a unicode character", arg);
+        _PyArg_BadArgument("ungetwch", 0, "a unicode character", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg)) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        _PyArg_BadArgument("ungetwch", "a unicode character", arg);
+        _PyArg_BadArgument("ungetwch", 0, "a unicode character", arg);
         goto exit;
     }
     unicode_char = PyUnicode_READ_CHAR(arg, 0);
@@ -515,8 +558,25 @@ msvcrt_CrtSetReportMode(PyObject *module, PyObject *const *args, Py_ssize_t narg
     int mode;
     long _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:CrtSetReportMode",
-        &type, &mode)) {
+    if (!_PyArg_CheckPositional("CrtSetReportMode", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    type = _PyLong_AsInt(args[0]);
+    if (type == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    mode = _PyLong_AsInt(args[1]);
+    if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = msvcrt_CrtSetReportMode_impl(module, type, mode);
@@ -619,4 +679,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=2530b4ff248563b4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=816bc4f993893cea input=a9049054013a1b77]*/

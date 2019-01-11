@@ -175,7 +175,7 @@ sys_intern(PyObject *module, PyObject *arg)
     PyObject *s;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("intern", "str", arg);
+        _PyArg_BadArgument("intern", 0, "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -819,10 +819,22 @@ sys__getframe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     int depth = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "|i:_getframe",
-        &depth)) {
+    if (!_PyArg_CheckPositional("_getframe", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    depth = _PyLong_AsInt(args[0]);
+    if (depth == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = sys__getframe_impl(module, depth);
 
 exit:
@@ -872,10 +884,15 @@ sys_call_tracing(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *func;
     PyObject *funcargs;
 
-    if (!_PyArg_ParseStack(args, nargs, "OO!:call_tracing",
-        &func, &PyTuple_Type, &funcargs)) {
+    if (!_PyArg_CheckPositional("call_tracing", nargs, 2, 2)) {
         goto exit;
     }
+    func = args[0];
+    if (!PyTuple_Check(args[1])) {
+        _PyArg_BadArgument("call_tracing", 2, "tuple", args[1]);
+        goto exit;
+    }
+    funcargs = args[1];
     return_value = sys_call_tracing_impl(module, func, funcargs);
 
 exit:
@@ -1029,4 +1046,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=0e662f2e19293d57 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6a5202e5bfe5e6bd input=a9049054013a1b77]*/

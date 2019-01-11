@@ -52,10 +52,15 @@ itertools__grouper(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("_grouper", kwargs)) {
         goto exit;
     }
-    if (!PyArg_ParseTuple(args, "O!O:_grouper",
-        &groupby_type, &parent, &tgtkey)) {
+    if (!_PyArg_CheckPositional("_grouper", PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
+    if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), &groupby_type)) {
+        _PyArg_BadArgument("_grouper", 1, (&groupby_type)->tp_name, PyTuple_GET_ITEM(args, 0));
+        goto exit;
+    }
+    parent = PyTuple_GET_ITEM(args, 0);
+    tgtkey = PyTuple_GET_ITEM(args, 1);
     return_value = itertools__grouper_impl(type, parent, tgtkey);
 
 exit:
@@ -84,10 +89,16 @@ itertools_teedataobject(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("teedataobject", kwargs)) {
         goto exit;
     }
-    if (!PyArg_ParseTuple(args, "OO!O:teedataobject",
-        &it, &PyList_Type, &values, &next)) {
+    if (!_PyArg_CheckPositional("teedataobject", PyTuple_GET_SIZE(args), 3, 3)) {
         goto exit;
     }
+    it = PyTuple_GET_ITEM(args, 0);
+    if (!PyList_Check(PyTuple_GET_ITEM(args, 1))) {
+        _PyArg_BadArgument("teedataobject", 2, "list", PyTuple_GET_ITEM(args, 1));
+        goto exit;
+    }
+    values = PyTuple_GET_ITEM(args, 1);
+    next = PyTuple_GET_ITEM(args, 2);
     return_value = itertools_teedataobject_impl(type, it, values, next);
 
 exit:
@@ -143,10 +154,31 @@ itertools_tee(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *iterable;
     Py_ssize_t n = 2;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|n:tee",
-        &iterable, &n)) {
+    if (!_PyArg_CheckPositional("tee", nargs, 1, 2)) {
         goto exit;
     }
+    iterable = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        n = ival;
+    }
+skip_optional:
     return_value = itertools_tee_impl(module, iterable, n);
 
 exit:
@@ -510,4 +542,4 @@ itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=916251f891fa84b9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f289354f54e04c13 input=a9049054013a1b77]*/

@@ -21,11 +21,11 @@ _io__BufferedIOBase_readinto(PyObject *self, PyObject *arg)
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
-        _PyArg_BadArgument("readinto", "read-write bytes-like object", arg);
+        _PyArg_BadArgument("readinto", 0, "read-write bytes-like object", arg);
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto", "contiguous buffer", arg);
+        _PyArg_BadArgument("readinto", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io__BufferedIOBase_readinto_impl(self, &buffer);
@@ -58,11 +58,11 @@ _io__BufferedIOBase_readinto1(PyObject *self, PyObject *arg)
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
-        _PyArg_BadArgument("readinto1", "read-write bytes-like object", arg);
+        _PyArg_BadArgument("readinto1", 0, "read-write bytes-like object", arg);
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto1", "contiguous buffer", arg);
+        _PyArg_BadArgument("readinto1", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io__BufferedIOBase_readinto1_impl(self, &buffer);
@@ -114,10 +114,30 @@ _io__Buffered_peek(buffered *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_ssize_t size = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "|n:peek",
-        &size)) {
+    if (!_PyArg_CheckPositional("peek", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        size = ival;
+    }
+skip_optional:
     return_value = _io__Buffered_peek_impl(self, size);
 
 exit:
@@ -141,10 +161,16 @@ _io__Buffered_read(buffered *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_ssize_t n = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&:read",
-        _Py_convert_optional_to_ssize_t, &n)) {
+    if (!_PyArg_CheckPositional("read", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[0], &n)) {
+        goto exit;
+    }
+skip_optional:
     return_value = _io__Buffered_read_impl(self, n);
 
 exit:
@@ -168,10 +194,30 @@ _io__Buffered_read1(buffered *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_ssize_t n = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|n:read1",
-        &n)) {
+    if (!_PyArg_CheckPositional("read1", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        n = ival;
+    }
+skip_optional:
     return_value = _io__Buffered_read1_impl(self, n);
 
 exit:
@@ -197,11 +243,11 @@ _io__Buffered_readinto(buffered *self, PyObject *arg)
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
-        _PyArg_BadArgument("readinto", "read-write bytes-like object", arg);
+        _PyArg_BadArgument("readinto", 0, "read-write bytes-like object", arg);
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto", "contiguous buffer", arg);
+        _PyArg_BadArgument("readinto", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io__Buffered_readinto_impl(self, &buffer);
@@ -234,11 +280,11 @@ _io__Buffered_readinto1(buffered *self, PyObject *arg)
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
-        _PyArg_BadArgument("readinto1", "read-write bytes-like object", arg);
+        _PyArg_BadArgument("readinto1", 0, "read-write bytes-like object", arg);
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto1", "contiguous buffer", arg);
+        _PyArg_BadArgument("readinto1", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io__Buffered_readinto1_impl(self, &buffer);
@@ -269,10 +315,16 @@ _io__Buffered_readline(buffered *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&:readline",
-        _Py_convert_optional_to_ssize_t, &size)) {
+    if (!_PyArg_CheckPositional("readline", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[0], &size)) {
+        goto exit;
+    }
+skip_optional:
     return_value = _io__Buffered_readline_impl(self, size);
 
 exit:
@@ -297,10 +349,23 @@ _io__Buffered_seek(buffered *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *targetobj;
     int whence = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|i:seek",
-        &targetobj, &whence)) {
+    if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
         goto exit;
     }
+    targetobj = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    whence = _PyLong_AsInt(args[1]);
+    if (whence == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _io__Buffered_seek_impl(self, targetobj, whence);
 
 exit:
@@ -418,7 +483,7 @@ _io_BufferedWriter_write(buffered *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("write", "contiguous buffer", arg);
+        _PyArg_BadArgument("write", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io_BufferedWriter_write_impl(self, &buffer);
@@ -462,10 +527,32 @@ _io_BufferedRWPair___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("BufferedRWPair", kwargs)) {
         goto exit;
     }
-    if (!PyArg_ParseTuple(args, "OO|n:BufferedRWPair",
-        &reader, &writer, &buffer_size)) {
+    if (!_PyArg_CheckPositional("BufferedRWPair", PyTuple_GET_SIZE(args), 2, 3)) {
         goto exit;
     }
+    reader = PyTuple_GET_ITEM(args, 0);
+    writer = PyTuple_GET_ITEM(args, 1);
+    if (PyTuple_GET_SIZE(args) < 3) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(PyTuple_GET_ITEM(args, 2))) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(PyTuple_GET_ITEM(args, 2));
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        buffer_size = ival;
+    }
+skip_optional:
     return_value = _io_BufferedRWPair___init___impl((rwpair *)self, reader, writer, buffer_size);
 
 exit:
@@ -504,4 +591,4 @@ _io_BufferedRandom___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=40de95d461a20782 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a85f61f495feff5c input=a9049054013a1b77]*/

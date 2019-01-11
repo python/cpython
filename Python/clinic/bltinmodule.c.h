@@ -94,10 +94,22 @@ builtin_format(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *value;
     PyObject *format_spec = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|U:format",
-        &value, &format_spec)) {
+    if (!_PyArg_CheckPositional("format", nargs, 1, 2)) {
         goto exit;
     }
+    value = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("format", 2, "str", args[1]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[1]) == -1) {
+        goto exit;
+    }
+    format_spec = args[1];
+skip_optional:
     return_value = builtin_format_impl(module, value, format_spec);
 
 exit:
@@ -717,4 +729,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ed300ebf3f6db530 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=11b5cd918bd7eb18 input=a9049054013a1b77]*/

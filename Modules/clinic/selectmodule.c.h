@@ -82,10 +82,19 @@ select_poll_register(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&|O&:register",
-        fildes_converter, &fd, _PyLong_UnsignedShort_Converter, &eventmask)) {
+    if (!_PyArg_CheckPositional("register", nargs, 1, 2)) {
         goto exit;
     }
+    if (!fildes_converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedShort_Converter(args[1], &eventmask)) {
+        goto exit;
+    }
+skip_optional:
     return_value = select_poll_register_impl(self, fd, eventmask);
 
 exit:
@@ -121,8 +130,13 @@ select_poll_modify(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     unsigned short eventmask;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O&:modify",
-        fildes_converter, &fd, _PyLong_UnsignedShort_Converter, &eventmask)) {
+    if (!_PyArg_CheckPositional("modify", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!fildes_converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (!_PyLong_UnsignedShort_Converter(args[1], &eventmask)) {
         goto exit;
     }
     return_value = select_poll_modify_impl(self, fd, eventmask);
@@ -228,10 +242,19 @@ select_devpoll_register(devpollObject *self, PyObject *const *args, Py_ssize_t n
     int fd;
     unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&|O&:register",
-        fildes_converter, &fd, _PyLong_UnsignedShort_Converter, &eventmask)) {
+    if (!_PyArg_CheckPositional("register", nargs, 1, 2)) {
         goto exit;
     }
+    if (!fildes_converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedShort_Converter(args[1], &eventmask)) {
+        goto exit;
+    }
+skip_optional:
     return_value = select_devpoll_register_impl(self, fd, eventmask);
 
 exit:
@@ -268,10 +291,19 @@ select_devpoll_modify(devpollObject *self, PyObject *const *args, Py_ssize_t nar
     int fd;
     unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&|O&:modify",
-        fildes_converter, &fd, _PyLong_UnsignedShort_Converter, &eventmask)) {
+    if (!_PyArg_CheckPositional("modify", nargs, 1, 2)) {
         goto exit;
     }
+    if (!fildes_converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedShort_Converter(args[1], &eventmask)) {
+        goto exit;
+    }
+skip_optional:
     return_value = select_devpoll_modify_impl(self, fd, eventmask);
 
 exit:
@@ -948,10 +980,24 @@ select_kqueue_control(kqueue_queue_Object *self, PyObject *const *args, Py_ssize
     int maxevents;
     PyObject *otimeout = Py_None;
 
-    if (!_PyArg_ParseStack(args, nargs, "Oi|O:control",
-        &changelist, &maxevents, &otimeout)) {
+    if (!_PyArg_CheckPositional("control", nargs, 2, 3)) {
         goto exit;
     }
+    changelist = args[0];
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    maxevents = _PyLong_AsInt(args[1]);
+    if (maxevents == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    otimeout = args[2];
+skip_optional:
     return_value = select_kqueue_control_impl(self, changelist, maxevents, otimeout);
 
 exit:
@@ -1059,4 +1105,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=122a49f131cdd9d9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=20da8f9c050e1b65 input=a9049054013a1b77]*/
