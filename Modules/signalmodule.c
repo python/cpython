@@ -99,6 +99,7 @@ class sigset_t_converter(CConverter):
 #include "pythread.h"
 static unsigned long main_thread;
 static pid_t main_pid;
+static PyInterpreterState *main_interp;
 
 static volatile struct {
     _Py_atomic_int tripped;
@@ -188,7 +189,8 @@ itimer_retval(struct itimerval *iv)
 int
 is_main(void)
 {
-    return PyThread_get_thread_ident() == main_thread;
+    return PyThread_get_thread_ident() == main_thread &&
+        _PyInterpreterState_Get() == main_interp;
 }
 
 static PyObject *
@@ -1320,6 +1322,7 @@ PyInit__signal(void)
 
     main_thread = PyThread_get_thread_ident();
     main_pid = getpid();
+    main_interp = _PyInterpreterState_Get();
 
     /* Create the module and add the functions */
     m = PyModule_Create(&signalmodule);
@@ -1732,6 +1735,7 @@ _PySignal_AfterFork(void)
     _clear_pending_signals();
     main_thread = PyThread_get_thread_ident();
     main_pid = getpid();
+    main_interp = _PyInterpreterState_Get();
 }
 
 int
