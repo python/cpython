@@ -114,7 +114,7 @@ class SqueezerTest(unittest.TestCase):
         if root is None:
             root = get_test_tk_root(self)
         text_widget = Text(root)
-        text_widget["font"] = idleConf.GetFont(root, "main", "EditorWindow")
+        text_widget["font"] = ('Courier', 10)
         text_widget.mark_set("iomark", "1.0")
         return text_widget
 
@@ -299,19 +299,8 @@ class SqueezerTest(unittest.TestCase):
         orig_zero_char_width = squeezer.zero_char_width
         orig_auto_squeeze_min_lines = squeezer.auto_squeeze_min_lines
 
-        # Set the font size to double the original value.
-        prev_font_size = idleConf.GetOption(
-            'main', 'EditorWindow', 'font-size', type='int', default=10)
-        new_font_size = 2 * prev_font_size
-        self.set_idleconf_option_with_cleanup(
-            'main', 'EditorWindow', 'font-size', str(new_font_size))
-        # Update the Text widget's font from the config.
-        # * This is usually done by the config dialog.
-        # * See: EditorWindow.ResetFont()
-        text_widget["font"] = idleConf.GetFont(
-            editwin.root, "main", "EditorWindow")
-
-        # Set auto-squeeze-min-lines to 10 more than the original value.
+        # Increase both font size and auto-squeeze-min-lines.
+        text_widget["font"] = ('Courier', 20)
         new_auto_squeeze_min_lines = orig_auto_squeeze_min_lines + 10
         self.set_idleconf_option_with_cleanup(
             'main', 'PyShell', 'auto-squeeze-min-lines',
