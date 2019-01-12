@@ -563,8 +563,10 @@ class Enum(metaclass=EnumMeta):
         # by-value search for a matching enum member
         # see if it's in the reverse mapping (for hashable values)
         try:
-            if value in cls._value2member_map_:
-                return cls._value2member_map_[value]
+            return cls._value2member_map_[value]
+        except KeyError:
+            # Not found, no need to do long O(n) search
+            pass
         except TypeError:
             # not there, now do long search -- O(n) behavior
             for member in cls._member_map_.values():

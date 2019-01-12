@@ -150,9 +150,11 @@ _multibytecodec_MultibyteIncrementalEncoder_setstate(MultibyteIncrementalEncoder
     PyObject *return_value = NULL;
     PyLongObject *statelong;
 
-    if (!PyArg_Parse(arg, "O!:setstate", &PyLong_Type, &statelong)) {
+    if (!PyLong_Check(arg)) {
+        _PyArg_BadArgument("setstate", 0, "int", arg);
         goto exit;
     }
+    statelong = (PyLongObject *)arg;
     return_value = _multibytecodec_MultibyteIncrementalEncoder_setstate_impl(self, statelong);
 
 exit:
@@ -248,9 +250,11 @@ _multibytecodec_MultibyteIncrementalDecoder_setstate(MultibyteIncrementalDecoder
     PyObject *return_value = NULL;
     PyObject *state;
 
-    if (!PyArg_Parse(arg, "O!:setstate", &PyTuple_Type, &state)) {
+    if (!PyTuple_Check(arg)) {
+        _PyArg_BadArgument("setstate", 0, "tuple", arg);
         goto exit;
     }
+    state = arg;
     return_value = _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(self, state);
 
 exit:
@@ -292,11 +296,14 @@ _multibytecodec_MultibyteStreamReader_read(MultibyteStreamReaderObject *self, Py
     PyObject *return_value = NULL;
     PyObject *sizeobj = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "read",
-        0, 1,
-        &sizeobj)) {
+    if (!_PyArg_CheckPositional("read", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    sizeobj = args[0];
+skip_optional:
     return_value = _multibytecodec_MultibyteStreamReader_read_impl(self, sizeobj);
 
 exit:
@@ -321,11 +328,14 @@ _multibytecodec_MultibyteStreamReader_readline(MultibyteStreamReaderObject *self
     PyObject *return_value = NULL;
     PyObject *sizeobj = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "readline",
-        0, 1,
-        &sizeobj)) {
+    if (!_PyArg_CheckPositional("readline", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    sizeobj = args[0];
+skip_optional:
     return_value = _multibytecodec_MultibyteStreamReader_readline_impl(self, sizeobj);
 
 exit:
@@ -350,11 +360,14 @@ _multibytecodec_MultibyteStreamReader_readlines(MultibyteStreamReaderObject *sel
     PyObject *return_value = NULL;
     PyObject *sizehintobj = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "readlines",
-        0, 1,
-        &sizehintobj)) {
+    if (!_PyArg_CheckPositional("readlines", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    sizehintobj = args[0];
+skip_optional:
     return_value = _multibytecodec_MultibyteStreamReader_readlines_impl(self, sizehintobj);
 
 exit:
@@ -418,4 +431,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=4c1dc8015ee5abb4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bcd6311010557faf input=a9049054013a1b77]*/

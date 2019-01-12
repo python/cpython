@@ -6,6 +6,7 @@ import errno
 import re
 import sys
 import traceback
+import warnings
 
 
 def normalize_text(text):
@@ -143,6 +144,10 @@ def collect_platform(info_add):
              platform.python_implementation())
     info_add('platform.platform',
              platform.platform(aliased=True))
+
+    libc_ver = ('%s %s' % platform.libc_ver()).strip()
+    if libc_ver:
+        info_add('platform.libc_ver', libc_ver)
 
 
 def collect_locale(info_add):
@@ -376,9 +381,17 @@ def collect_time(info_add):
     copy_attributes(info_add, time, 'time.%s', attributes)
 
     if hasattr(time, 'get_clock_info'):
-        for clock in ('time', 'perf_counter'):
-            tinfo = time.get_clock_info(clock)
-            info_add('time.get_clock_info(%s)' % clock, tinfo)
+        for clock in ('clock', 'monotonic', 'perf_counter',
+                      'process_time', 'thread_time', 'time'):
+            try:
+                # prevent DeprecatingWarning on get_clock_info('clock')
+                with warnings.catch_warnings(record=True):
+                    clock_info = time.get_clock_info(clock)
+            except ValueError:
+                # missing clock like time.thread_time()
+                pass
+            else:
+                info_add('time.get_clock_info(%s)' % clock, clock_info)
 
 
 def collect_datetime(info_add):
@@ -407,7 +420,10 @@ def collect_sysconfig(info_add):
         'OPT',
         'PY_CFLAGS',
         'PY_CFLAGS_NODIST',
+        'PY_CORE_LDFLAGS',
         'PY_LDFLAGS',
+        'PY_LDFLAGS_NODIST',
+        'PY_STDMODULE_CFLAGS',
         'Py_DEBUG',
         'Py_ENABLE_SHARED',
         'SHELL',

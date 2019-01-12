@@ -335,6 +335,10 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
         if (tvp) {
             timeout = deadline - _PyTime_GetMonotonicClock();
             if (timeout < 0) {
+                /* bpo-35310: lists were unmodified -- clear them explicitly */
+                FD_ZERO(&ifdset);
+                FD_ZERO(&ofdset);
+                FD_ZERO(&efdset);
                 n = 0;
                 break;
             }
@@ -689,10 +693,7 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
             goto error;
         }
         PyTuple_SET_ITEM(value, 1, num);
-        if ((PyList_SetItem(result_list, j, value)) == -1) {
-            Py_DECREF(value);
-            goto error;
-        }
+        PyList_SET_ITEM(result_list, j, value);
         i++;
     }
     return result_list;
@@ -982,10 +983,7 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
         Py_DECREF(num2);
         if (value == NULL)
             goto error;
-        if ((PyList_SetItem(result_list, i, value)) == -1) {
-            Py_DECREF(value);
-            goto error;
-        }
+        PyList_SET_ITEM(result_list, i, value);
     }
 
     return result_list;

@@ -1,0 +1,1 @@
+Fix imports in idlelib.window.

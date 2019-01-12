@@ -810,13 +810,14 @@ are always available.  They are listed here in alphabetical order.
 
    See also :ref:`typeiter`.
 
-   One useful application of the second form of :func:`iter` is to read lines of
-   a file until a certain line is reached.  The following example reads a file
-   until the :meth:`~io.TextIOBase.readline` method returns an empty string::
+   One useful application of the second form of :func:`iter` is to build a
+   block-reader. For example, reading fixed-width blocks from a binary
+   database file until the end of file is reached::
 
-      with open('mydata.txt') as fp:
-          for line in iter(fp.readline, ''):
-              process_line(line)
+      from functools import partial
+      with open('mydata.db', 'rb') as f:
+          for block in iter(partial(f.read, 64), ''):
+              process_block(block)
 
 
 .. function:: len(s)
@@ -1665,7 +1666,7 @@ are always available.  They are listed here in alphabetical order.
    This function is invoked by the :keyword:`import` statement.  It can be
    replaced (by importing the :mod:`builtins` module and assigning to
    ``builtins.__import__``) in order to change semantics of the
-   :keyword:`import` statement, but doing so is **strongly** discouraged as it
+   :keyword:`!import` statement, but doing so is **strongly** discouraged as it
    is usually simpler to use import hooks (see :pep:`302`) to attain the same
    goals and does not cause issues with code which assumes the default import
    implementation is in use.  Direct use of :func:`__import__` is also

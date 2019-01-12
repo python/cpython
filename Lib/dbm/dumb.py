@@ -185,7 +185,7 @@ class _Database(collections.abc.MutableMapping):
 
     def __setitem__(self, key, val):
         if self._readonly:
-            raise ValueError('The database is opened for reading only')
+            raise error('The database is opened for reading only')
         if isinstance(key, str):
             key = key.encode('utf-8')
         elif not isinstance(key, (bytes, bytearray)):
@@ -222,7 +222,7 @@ class _Database(collections.abc.MutableMapping):
 
     def __delitem__(self, key):
         if self._readonly:
-            raise ValueError('The database is opened for reading only')
+            raise error('The database is opened for reading only')
         if isinstance(key, str):
             key = key.encode('utf-8')
         self._verify_open()

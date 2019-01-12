@@ -74,8 +74,8 @@ one of their operands.)
 
 .. _boolean:
 
-Boolean Operations --- :keyword:`and`, :keyword:`or`, :keyword:`not`
-====================================================================
+Boolean Operations --- :keyword:`!and`, :keyword:`!or`, :keyword:`!not`
+=======================================================================
 
 .. index:: pair: Boolean; operations
 
@@ -220,8 +220,8 @@ numbers for the machine on which your program is running is available
 in :data:`sys.float_info`.  Complex numbers have a real and imaginary
 part, which are each a floating point number.  To extract these parts
 from a complex number *z*, use ``z.real`` and ``z.imag``. (The standard
-library includes additional numeric types, :mod:`fractions` that hold
-rationals, and :mod:`decimal` that hold floating-point numbers with
+library includes the additional numeric types :mod:`fractions.Fraction`, for
+rationals, and :mod:`decimal.Decimal`, for floating-point numbers with
 user-definable precision.)
 
 .. index::
@@ -443,7 +443,7 @@ Notes:
 (4)
    Performing these calculations with at least one extra sign extension bit in
    a finite two's complement representation (a working bit-width of
-   ``1 + max(x.bit_length(), y.bit_length()`` or more) is sufficient to get the
+   ``1 + max(x.bit_length(), y.bit_length())`` or more) is sufficient to get the
    same result as if there were an infinite number of sign bits.
 
 
@@ -2142,13 +2142,15 @@ object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
 items specified by the format string, or a single mapping object (for example, a
 dictionary).
 
+.. index::
+   single: () (parentheses); in printf-style formatting
+   single: * (asterisk); in printf-style formatting
+   single: . (dot); in printf-style formatting
+
 A conversion specifier contains two or more characters and has the following
 components, which must occur in this order:
 
 #. The ``'%'`` character, which marks the start of the specifier.
-
-.. index::
-   single: () (parentheses); in printf-style formatting
 
 #. Mapping key (optional), consisting of a parenthesised sequence of characters
    (for example, ``(somename)``).
@@ -2156,13 +2158,9 @@ components, which must occur in this order:
 #. Conversion flags (optional), which affect the result of some conversion
    types.
 
-.. index:: single: * (asterisk); in printf-style formatting
-
 #. Minimum field width (optional).  If specified as an ``'*'`` (asterisk), the
    actual width is read from the next element of the tuple in *values*, and the
    object to convert comes after the minimum field width and optional precision.
-
-.. index:: single: . (dot); in printf-style formatting
 
 #. Precision (optional), given as a ``'.'`` (dot) followed by the precision.  If
    specified as ``'*'`` (an asterisk), the actual precision is read from the next
@@ -3222,7 +3220,7 @@ place, and instead produce new objects.
 
    Return a copy of the sequence left filled with ASCII ``b'0'`` digits to
    make a sequence of length *width*. A leading sign prefix (``b'+'``/
-   ``b'-'`` is handled by inserting the padding *after* the sign character
+   ``b'-'``) is handled by inserting the padding *after* the sign character
    rather than before. For :class:`bytes` objects, the original sequence is
    returned if *width* is less than or equal to ``len(seq)``.
 
@@ -3276,13 +3274,15 @@ object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
 items specified by the format bytes object, or a single mapping object (for
 example, a dictionary).
 
+.. index::
+   single: () (parentheses); in printf-style formatting
+   single: * (asterisk); in printf-style formatting
+   single: . (dot); in printf-style formatting
+
 A conversion specifier contains two or more characters and has the following
 components, which must occur in this order:
 
 #. The ``'%'`` character, which marks the start of the specifier.
-
-.. index::
-   single: () (parentheses); in printf-style formatting
 
 #. Mapping key (optional), consisting of a parenthesised sequence of characters
    (for example, ``(somename)``).
@@ -3290,13 +3290,9 @@ components, which must occur in this order:
 #. Conversion flags (optional), which affect the result of some conversion
    types.
 
-.. index:: single: * (asterisk); in printf-style formatting
-
 #. Minimum field width (optional).  If specified as an ``'*'`` (asterisk), the
    actual width is read from the next element of the tuple in *values*, and the
    object to convert comes after the minimum field width and optional precision.
-
-.. index:: single: . (dot); in printf-style formatting
 
 #. Precision (optional), given as a ``'.'`` (dot) followed by the precision.  If
    specified as ``'*'`` (an asterisk), the actual precision is read from the next
@@ -4243,9 +4239,9 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
       Return a shallow copy of the dictionary.
 
-   .. classmethod:: fromkeys(seq[, value])
+   .. classmethod:: fromkeys(iterable[, value])
 
-      Create a new dictionary with keys from *seq* and values set to *value*.
+      Create a new dictionary with keys from *iterable* and values set to *value*.
 
       :meth:`fromkeys` is a class method that returns a new dictionary. *value*
       defaults to ``None``.
@@ -4287,7 +4283,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
    .. describe:: reversed(d)
 
-      Return a reversed iterator over the keys of the dictionary. This is a
+      Return a reverse iterator over the keys of the dictionary. This is a
       shortcut for ``reversed(d.keys())``.
 
    .. method:: setdefault(key[, default])
@@ -4398,7 +4394,7 @@ support membership tests:
 
 .. describe:: reversed(dictview)
 
-   Return an reversed iterator over the keys, values or items of the dictionnary.
+   Return a reverse iterator over the keys, values or items of the dictionary.
    The view will be iterated in reverse order of the insertion.
 
    .. versionchanged:: 3.8
@@ -4464,7 +4460,7 @@ before the statement body is executed and exited when the statement ends:
 
    Enter the runtime context and return either this object or another object
    related to the runtime context. The value returned by this method is bound to
-   the identifier in the :keyword:`as` clause of :keyword:`with` statements using
+   the identifier in the :keyword:`!as` clause of :keyword:`with` statements using
    this context manager.
 
    An example of a context manager that returns itself is a :term:`file object`.
@@ -4476,7 +4472,7 @@ before the statement body is executed and exited when the statement ends:
    decimal context to a copy of the original decimal context and then return the
    copy. This allows changes to be made to the current decimal context in the body
    of the :keyword:`with` statement without affecting code outside the
-   :keyword:`with` statement.
+   :keyword:`!with` statement.
 
 
 .. method:: contextmanager.__exit__(exc_type, exc_val, exc_tb)
@@ -4488,10 +4484,10 @@ before the statement body is executed and exited when the statement ends:
 
    Returning a true value from this method will cause the :keyword:`with` statement
    to suppress the exception and continue execution with the statement immediately
-   following the :keyword:`with` statement. Otherwise the exception continues
+   following the :keyword:`!with` statement. Otherwise the exception continues
    propagating after this method has finished executing. Exceptions that occur
    during execution of this method will replace any exception that occurred in the
-   body of the :keyword:`with` statement.
+   body of the :keyword:`!with` statement.
 
    The exception passed in should never be reraised explicitly - instead, this
    method should return a false value to indicate that the method completed

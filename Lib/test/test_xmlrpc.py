@@ -818,8 +818,7 @@ class SimpleServerTestCase(BaseServerTestCase):
                 # protocol error; provide additional information in test output
                 self.fail("%s\n%s" % (e, getattr(e, "headers", "")))
 
-    # [ch] The test 404 is causing lots of false alarms.
-    def XXXtest_404(self):
+    def test_404(self):
         # send POST with http.client, it should return 404 header and
         # 'Not Found' message.
         with contextlib.closing(httplib.client.HTTPConnection(ADDR, PORT)) as conn:

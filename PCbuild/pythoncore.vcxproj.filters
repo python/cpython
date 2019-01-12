@@ -866,6 +866,9 @@
     <ClCompile Include="..\Parser\tokenizer.c">
       <Filter>Parser</Filter>
     </ClCompile>
+    <ClCompile Include="..\Parser\token.c">
+      <Filter>Parser</Filter>
+    </ClCompile>
     <ClCompile Include="..\PC\winreg.c">
       <Filter>PC</Filter>
     </ClCompile>
@@ -1069,9 +1072,6 @@
     </ClCompile>
     <ClCompile Include="..\PC\_findvs.cpp">
       <Filter>PC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\_asynciomodule.c">
-      <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_contextvarsmodule.c">
       <Filter>Modules</Filter>
