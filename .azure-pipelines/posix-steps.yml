@@ -26,7 +26,7 @@ steps:
       xvfb-run ./venv/bin/python -m coverage run --pylib -m test \
                 --fail-env-changed \
                 -uall,-cpu \
-                --junit-xml=$(build.binariesDirectory)/test-results.xml" \
+                --junit-xml=$(build.binariesDirectory)/test-results.xml \
                 -x test_multiprocessing_fork \
                 -x test_multiprocessing_forkserver \
                 -x test_multiprocessing_spawn \

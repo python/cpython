@@ -243,6 +243,7 @@ class BasicTest(BaseTest):
             self.assertIn('include-system-site-packages = %s\n' % s, data)
 
     @unittest.skipUnless(can_symlink(), 'Needs symlinks')
+    @unittest.skipIf(os.name == 'nt', 'Symlinks are never used on Windows')
     def test_symlinking(self):
         """
         Test symlinking works as expected

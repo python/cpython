@@ -558,6 +558,16 @@ class MockTest(unittest.TestCase):
         real.assert_called_with(1, 2, fish=3)
 
 
+    def test_wraps_prevents_automatic_creation_of_mocks(self):
+        class Real(object):
+            pass
+
+        real = Real()
+        mock = Mock(wraps=real)
+
+        self.assertRaises(AttributeError, lambda: mock.new_attr())
+
+
     def test_wraps_call_with_nondefault_return_value(self):
         real = Mock()
 
@@ -582,6 +592,118 @@ class MockTest(unittest.TestCase):
         result = mock.attribute.frog(1, 2, fish=3)
         Real.attribute.frog.assert_called_with(1, 2, fish=3)
         self.assertEqual(result, Real.attribute.frog())
+
+
+    def test_customize_wrapped_object_with_side_effect_iterable_with_default(self):
+        class Real(object):
+            def method(self):
+                return sentinel.ORIGINAL_VALUE
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = [sentinel.VALUE1, DEFAULT]
+
+        self.assertEqual(mock.method(), sentinel.VALUE1)
+        self.assertEqual(mock.method(), sentinel.ORIGINAL_VALUE)
+        self.assertRaises(StopIteration, mock.method)
+
+
+    def test_customize_wrapped_object_with_side_effect_iterable(self):
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = [sentinel.VALUE1, sentinel.VALUE2]
+
+        self.assertEqual(mock.method(), sentinel.VALUE1)
+        self.assertEqual(mock.method(), sentinel.VALUE2)
+        self.assertRaises(StopIteration, mock.method)
+
+
+    def test_customize_wrapped_object_with_side_effect_exception(self):
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = RuntimeError
+
+        self.assertRaises(RuntimeError, mock.method)
+
+
+    def test_customize_wrapped_object_with_side_effect_function(self):
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        def side_effect():
+            return sentinel.VALUE
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = side_effect
+
+        self.assertEqual(mock.method(), sentinel.VALUE)
+
+
+    def test_customize_wrapped_object_with_return_value(self):
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.return_value = sentinel.VALUE
+
+        self.assertEqual(mock.method(), sentinel.VALUE)
+
+
+    def test_customize_wrapped_object_with_return_value_and_side_effect(self):
+        # side_effect should always take precedence over return_value.
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = [sentinel.VALUE1, sentinel.VALUE2]
+        mock.method.return_value = sentinel.WRONG_VALUE
+
+        self.assertEqual(mock.method(), sentinel.VALUE1)
+        self.assertEqual(mock.method(), sentinel.VALUE2)
+        self.assertRaises(StopIteration, mock.method)
+
+
+    def test_customize_wrapped_object_with_return_value_and_side_effect2(self):
+        # side_effect can return DEFAULT to default to return_value
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = lambda: DEFAULT
+        mock.method.return_value = sentinel.VALUE
+
+        self.assertEqual(mock.method(), sentinel.VALUE)
+
+
+    def test_customize_wrapped_object_with_return_value_and_side_effect_default(self):
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = [sentinel.VALUE1, DEFAULT]
+        mock.method.return_value = sentinel.RETURN
+
+        self.assertEqual(mock.method(), sentinel.VALUE1)
+        self.assertEqual(mock.method(), sentinel.RETURN)
+        self.assertRaises(StopIteration, mock.method)
 
 
     def test_exceptional_side_effect(self):

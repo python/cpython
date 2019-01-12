@@ -582,10 +582,7 @@ class Random(_random.Random):
 
         elif alpha == 1.0:
             # expovariate(1/beta)
-            u = random()
-            while u <= 1e-7:
-                u = random()
-            return -_log(u) * beta
+            return -_log(1.0 - random()) * beta
 
         else:   # alpha is between 0 and 1 (exclusive)
 
@@ -740,14 +737,14 @@ def _test_generator(n, func, args):
     sqsum = 0.0
     smallest = 1e10
     largest = -1e10
-    t0 = time.time()
+    t0 = time.perf_counter()
     for i in range(n):
         x = func(*args)
         total += x
         sqsum = sqsum + x*x
         smallest = min(x, smallest)
         largest = max(x, largest)
-    t1 = time.time()
+    t1 = time.perf_counter()
     print(round(t1-t0, 3), 'sec,', end=' ')
     avg = total/n
     stddev = _sqrt(sqsum/n - avg*avg)

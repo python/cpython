@@ -83,10 +83,33 @@ unicode_center(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
 
-    if (!_PyArg_ParseStack(args, nargs, "n|O&:center",
-        &width, convert_uc, &fillchar)) {
+    if (!_PyArg_CheckPositional("center", nargs, 1, 2)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        width = ival;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!convert_uc(args[1], &fillchar)) {
+        goto exit;
+    }
+skip_optional:
     return_value = unicode_center_impl(self, width, fillchar);
 
 exit:
@@ -452,10 +475,33 @@ unicode_ljust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
 
-    if (!_PyArg_ParseStack(args, nargs, "n|O&:ljust",
-        &width, convert_uc, &fillchar)) {
+    if (!_PyArg_CheckPositional("ljust", nargs, 1, 2)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        width = ival;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!convert_uc(args[1], &fillchar)) {
+        goto exit;
+    }
+skip_optional:
     return_value = unicode_ljust_impl(self, width, fillchar);
 
 exit:
@@ -500,11 +546,14 @@ unicode_strip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *chars = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "strip",
-        0, 1,
-        &chars)) {
+    if (!_PyArg_CheckPositional("strip", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    chars = args[0];
+skip_optional:
     return_value = unicode_strip_impl(self, chars);
 
 exit:
@@ -531,11 +580,14 @@ unicode_lstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *chars = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "lstrip",
-        0, 1,
-        &chars)) {
+    if (!_PyArg_CheckPositional("lstrip", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    chars = args[0];
+skip_optional:
     return_value = unicode_lstrip_impl(self, chars);
 
 exit:
@@ -562,11 +614,14 @@ unicode_rstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *chars = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "rstrip",
-        0, 1,
-        &chars)) {
+    if (!_PyArg_CheckPositional("rstrip", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    chars = args[0];
+skip_optional:
     return_value = unicode_rstrip_impl(self, chars);
 
 exit:
@@ -601,10 +656,46 @@ unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *new;
     Py_ssize_t count = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "UU|n:replace",
-        &old, &new, &count)) {
+    if (!_PyArg_CheckPositional("replace", nargs, 2, 3)) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("replace", 1, "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    old = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("replace", 2, "str", args[1]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[1]) == -1) {
+        goto exit;
+    }
+    new = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        count = ival;
+    }
+skip_optional:
     return_value = unicode_replace_impl(self, old, new, count);
 
 exit:
@@ -632,10 +723,33 @@ unicode_rjust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
 
-    if (!_PyArg_ParseStack(args, nargs, "n|O&:rjust",
-        &width, convert_uc, &fillchar)) {
+    if (!_PyArg_CheckPositional("rjust", nargs, 1, 2)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        width = ival;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!convert_uc(args[1], &fillchar)) {
+        goto exit;
+    }
+skip_optional:
     return_value = unicode_rjust_impl(self, width, fillchar);
 
 exit:
@@ -833,10 +947,33 @@ unicode_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
     PyObject *y = NULL;
     PyObject *z = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|UU:maketrans",
-        &x, &y, &z)) {
+    if (!_PyArg_CheckPositional("maketrans", nargs, 1, 3)) {
         goto exit;
     }
+    x = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("maketrans", 2, "str", args[1]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[1]) == -1) {
+        goto exit;
+    }
+    y = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[2])) {
+        _PyArg_BadArgument("maketrans", 3, "str", args[2]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[2]) == -1) {
+        goto exit;
+    }
+    z = args[2];
+skip_optional:
     return_value = unicode_maketrans_impl(x, y, z);
 
 exit:
@@ -898,8 +1035,22 @@ unicode_zfill(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t width;
 
-    if (!PyArg_Parse(arg, "n:zfill", &width)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
         goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        width = ival;
     }
     return_value = unicode_zfill_impl(self, width);
 
@@ -925,9 +1076,14 @@ unicode___format__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *format_spec;
 
-    if (!PyArg_Parse(arg, "U:__format__", &format_spec)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("__format__", 0, "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    format_spec = arg;
     return_value = unicode___format___impl(self, format_spec);
 
 exit:
@@ -951,4 +1107,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=d323802b67bfc6d8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=087ff163a10505ae input=a9049054013a1b77]*/

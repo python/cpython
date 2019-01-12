@@ -24,7 +24,7 @@ the SAX API.
    constructed data.  If you need to parse untrusted or unauthenticated data see
    :ref:`xml-vulnerabilities`.
 
-.. versionchanged:: 3.8
+.. versionchanged:: 3.7.1
 
    The SAX parser no longer processes general external entities by default
    to increase security. Before, the parser created network connections
