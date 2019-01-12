@@ -310,7 +310,7 @@ class Squeezer:
             self.base_text.winfo_width() - self.window_width_delta
 
         # Divide the width of the Text widget by the font width,
-        # which is taked to be the width of '0' (zero).
+        # which is taken to be the width of '0' (zero).
         # http://www.tcl.tk/man/tcl8.6/TkCmd/text.htm#M21
         return linewidth_pixels // self.zero_char_width
 
