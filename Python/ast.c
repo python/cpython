@@ -13,6 +13,8 @@
 #include <assert.h>
 #include <stdbool.h>
 
+#define MAXLEVEL 200    /* Max parentheses level */
+
 static int validate_stmts(asdl_seq *);
 static int validate_exprs(asdl_seq *, expr_context_ty, int);
 static int validate_nonempty_seq(asdl_seq *, const char *, const char *);
@@ -4479,6 +4481,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     /* Keep track of nesting level for braces/parens/brackets in
        expressions. */
     Py_ssize_t nested_depth = 0;
+    char parenstack[MAXLEVEL];
 
     /* Can only nest one level deep. */
     if (recurse_lvl >= 2) {
@@ -4553,10 +4556,12 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
             /* Start looking for the end of the string. */
             quote_char = ch;
         } else if (ch == '[' || ch == '{' || ch == '(') {
+            if (nested_depth >= MAXLEVEL) {
+                ast_error(c, n, "f-string: too many nested parenthesis");
+                return -1;
+            }
+            parenstack[nested_depth] = ch;
             nested_depth++;
-        } else if (nested_depth != 0 &&
-                   (ch == ']' || ch == '}' || ch == ')')) {
-            nested_depth--;
         } else if (ch == '#') {
             /* Error: can't include a comment character, inside parens
                or not. */
@@ -4573,6 +4578,23 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
             }
             /* Normal way out of this loop. */
             break;
+        } else if (ch == ']' || ch == '}' || ch == ')') {
+            if (!nested_depth) {
+                ast_error(c, n, "f-string: unmatched '%c'", ch);
+                return -1;
+            }
+            nested_depth--;
+            int opening = parenstack[nested_depth];
+            if (!((opening == '(' && ch == ')') ||
+                  (opening == '[' && ch == ']') ||
+                  (opening == '{' && ch == '}')))
+            {
+                ast_error(c, n,
+                          "f-string: closing parenthesis '%c' "
+                          "does not match opening parenthesis '%c'",
+                          ch, opening);
+                return -1;
+            }
         } else {
             /* Just consume this char and loop around. */
         }
@@ -4587,7 +4609,8 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         return -1;
     }
     if (nested_depth) {
-        ast_error(c, n, "f-string: mismatched '(', '{', or '['");
+        int opening = parenstack[nested_depth - 1];
+        ast_error(c, n, "f-string: unmatched '%c'", opening);
         return -1;
     }
 
