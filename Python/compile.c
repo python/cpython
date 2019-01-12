@@ -1190,7 +1190,7 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 }
 
 // Merge const *o* recursively and return constant key object.
-static PyObject*
+static PyObject *
 merge_consts_recursive(struct compiler *c, PyObject *o)
 {
     // None and Ellipsis are singleton, and key is the singleton.
