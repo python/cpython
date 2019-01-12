@@ -743,7 +743,6 @@ _PyImport_FindExtensionObjectEx(PyObject *name, PyObject *filename,
     }
     if (_PyState_AddModule(mod, def) < 0) {
         PyMapping_DelItem(modules, name);
-        Py_DECREF(mod);
         return NULL;
     }
     if (Py_VerboseFlag)
