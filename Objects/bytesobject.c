@@ -2991,8 +2991,21 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         /* return early if newsize equals to v->ob_size */
         return 0;
     }
+    if (Py_SIZE(v) == 0) {
+        if (newsize == 0) {
+            return 0;
+        }
+        *pv = _PyBytes_FromSize(newsize, 0);
+        Py_DECREF(v);
+        return (*pv == NULL) ? -1 : 0;
+    }
     if (Py_REFCNT(v) != 1) {
         goto error;
+    }
+    if (newsize == 0) {
+        *pv = _PyBytes_FromSize(0, 0);
+        Py_DECREF(v);
+        return (*pv == NULL) ? -1 : 0;
     }
     /* XXX UNREF/NEWREF interface should be more symmetrical */
     _Py_DEC_REFTOTAL;
