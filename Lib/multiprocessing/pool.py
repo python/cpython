@@ -146,6 +146,15 @@ def _helper_reraises_exception(ex):
 # Class representing a process pool
 #
 
+class PoolCache(dict):
+    def __init__(self, *args, notifier=None, **kwds):
+        self.notifier = notifier
+        super().__init__(*args, **kwds)
+    def __delitem__(self, item):
+        super().__delitem__(item)
+        if not self:
+            self.notifier.put(None)
+
 class Pool(object):
     '''
     Class which supports an async version of applying functions to arguments.
@@ -166,7 +175,8 @@ class Pool(object):
         self._ctx = context or get_context()
         self._setup_queues()
         self._taskqueue = queue.SimpleQueue()
-        self._cache = {}
+        self._change_notifier = self._ctx.SimpleQueue()
+        self._cache = PoolCache(notifier=self._change_notifier)
         self._maxtasksperchild = maxtasksperchild
         self._initializer = initializer
         self._initargs = initargs
@@ -222,7 +232,7 @@ class Pool(object):
         self._terminate = util.Finalize(
             self, self._terminate_pool,
             args=(self._taskqueue, self._inqueue, self._outqueue, self._pool,
-                  self._worker_handler, self._task_handler,
+                  self._change_notifier, self._worker_handler, self._task_handler,
                   self._result_handler, self._cache),
             exitpriority=15
             )
@@ -453,8 +463,13 @@ class Pool(object):
         return result
 
     def _wait_for_updates(self, timeout):
-        sentinels = [self._outqueue._reader.fileno(), self._outqueue._writer.fileno()]
-        sentinels.extend([worker.sentinel for worker in self._pool])
+        task_queue_sentinels = [self._outqueue._reader.fileno(),
+                                self._outqueue._writer.fileno()]
+        self_notifier_sentinels = [self._change_notifier._reader.fileno()]
+        worker_sentinels = [worker.sentinel for worker in self._pool]
+        sentinels = [*task_queue_sentinels,
+                     *worker_sentinels,
+                     *self_notifier_sentinels]
         wait(sentinels, timeout=timeout)
 
     @staticmethod
@@ -465,7 +480,9 @@ class Pool(object):
 
         # Keep maintaining workers until the cache gets drained, unless the pool
         # is terminated.
-        while thread._state == RUN or (cache and thread._state != TERMINATE):
+        while True:
+            if thread._state != RUN and (not pool._cache or thread._state == TERMINATE):
+                break
             Pool._maintain_pool(ctx, Process, processes, pool, inqueue,
                                 outqueue, initializer, initargs,
                                 maxtasksperchild, wrap_exception)
@@ -599,11 +616,13 @@ class Pool(object):
         if self._state == RUN:
             self._state = CLOSE
             self._worker_handler._state = CLOSE
+            self._change_notifier.put(None)
 
     def terminate(self):
         util.debug('terminating pool')
         self._state = TERMINATE
         self._worker_handler._state = TERMINATE
+        self._change_notifier.put(None)
         self._terminate()
 
     def join(self):
@@ -628,7 +647,7 @@ class Pool(object):
             time.sleep(0)
 
     @classmethod
-    def _terminate_pool(cls, taskqueue, inqueue, outqueue, pool,
+    def _terminate_pool(cls, taskqueue, inqueue, outqueue, pool, pool_notifier,
                         worker_handler, task_handler, result_handler, cache):
         # this is guaranteed to only be called once
         util.debug('finalizing pool')
@@ -644,6 +663,7 @@ class Pool(object):
                 "Cannot have cache with result_hander not alive")
 
         result_handler._state = TERMINATE
+        pool_notifier.put(None)
         outqueue.put(None)                  # sentinel
 
         # We must wait for the worker handler to exit before terminating
