@@ -421,9 +421,26 @@ int _PyUnicode_Resize(PyUnicodeObject **unicode, Py_ssize_t length)
         return -1;
     }
     v = *unicode;
-    if (v == NULL || !PyUnicode_Check(v) || Py_REFCNT(v) != 1 || length < 0) {
+    if (v == NULL || !PyUnicode_Check(v) || length < 0) {
         PyErr_BadInternalCall();
         return -1;
+    }
+    if (v->length == 0) {
+        if (length == 0) {
+            return 0;
+        }
+        *unicode = _PyUnicode_New(length);
+        Py_DECREF(v);
+        return (*unicode == NULL) ? -1 : 0;
+    }
+    if (Py_REFCNT(v) != 1) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    if (length == 0) {
+        *unicode = _PyUnicode_New(0);
+        Py_DECREF(v);
+        return (*unicode == NULL) ? -1 : 0;
     }
 
     /* Resizing unicode_empty and single character objects is not

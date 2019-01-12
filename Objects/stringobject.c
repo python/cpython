@@ -3893,12 +3893,30 @@ _PyString_Resize(PyObject **pv, Py_ssize_t newsize)
     register PyObject *v;
     register PyStringObject *sv;
     v = *pv;
-    if (!PyString_Check(v) || Py_REFCNT(v) != 1 || newsize < 0 ||
-        PyString_CHECK_INTERNED(v)) {
+    if (!PyString_Check(v) || newsize < 0) {
         *pv = 0;
         Py_DECREF(v);
         PyErr_BadInternalCall();
         return -1;
+    }
+    if (Py_SIZE(v) == 0) {
+        if (newsize == 0) {
+            return 0;
+        }
+        *pv = PyString_FromStringAndSize(NULL, newsize);
+        Py_DECREF(v);
+        return (*pv == NULL) ? -1 : 0;
+    }
+    if (Py_REFCNT(v) != 1 || PyString_CHECK_INTERNED(v)) {
+        *pv = 0;
+        Py_DECREF(v);
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    if (newsize == 0) {
+        *pv = PyString_FromStringAndSize(NULL, 0);
+        Py_DECREF(v);
+        return (*pv == NULL) ? -1 : 0;
     }
     /* XXX UNREF/NEWREF interface should be more symmetrical */
     _Py_DEC_REFTOTAL;
