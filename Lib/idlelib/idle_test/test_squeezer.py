@@ -318,10 +318,9 @@ class SqueezerTest(unittest.TestCase):
             str(new_auto_squeeze_min_lines))
 
         Squeezer.reload()
+        self.assertGreater(squeezer.zero_char_width, orig_zero_char_width)
         self.assertEqual(squeezer.auto_squeeze_min_lines,
                          new_auto_squeeze_min_lines)
-        self.assertAlmostEqual(squeezer.zero_char_width,
-                               2 * orig_zero_char_width, 0)
 
     def test_reload_no_squeezer_instances(self):
         """Test that Squeezer.reload() runs without any instances existing."""
