@@ -317,7 +317,7 @@ class Squeezer:
     def load_font(self):
         text = self.base_text
         self.zero_char_width = \
-            Font(text, name=text.cget('font')).measure('0')
+            Font(text, font=text.cget('font')).measure('0')
 
     def squeeze_current_text_event(self, event):
         """squeeze-current-text event handler
