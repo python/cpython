@@ -284,6 +284,8 @@ class TestNtpath(unittest.TestCase):
             tester('ntpath.abspath("")', cwd_dir)
             tester('ntpath.abspath(" ")', cwd_dir + "\\ ")
             tester('ntpath.abspath("?")', cwd_dir + "\\?")
+            drive, _ = ntpath.splitdrive(cwd_dir)
+            tester('ntpath.abspath("/abc/")', drive + "\\abc")
 
     def test_relpath(self):
         tester('ntpath.relpath("a")', 'a')

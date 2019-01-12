@@ -156,7 +156,13 @@ _io__WindowsConsoleIO_readinto(winconsoleio *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "w*:readinto", &buffer)) {
+    if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
+        PyErr_Clear();
+        _PyArg_BadArgument("readinto", 0, "read-write bytes-like object", arg);
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+        _PyArg_BadArgument("readinto", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io__WindowsConsoleIO_readinto_impl(self, &buffer);
@@ -209,7 +215,7 @@ PyDoc_STRVAR(_io__WindowsConsoleIO_read__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO__WINDOWSCONSOLEIO_READ_METHODDEF    \
-    {"read", (PyCFunction)_io__WindowsConsoleIO_read, METH_FASTCALL, _io__WindowsConsoleIO_read__doc__},
+    {"read", (PyCFunction)(void(*)(void))_io__WindowsConsoleIO_read, METH_FASTCALL, _io__WindowsConsoleIO_read__doc__},
 
 static PyObject *
 _io__WindowsConsoleIO_read_impl(winconsoleio *self, Py_ssize_t size);
@@ -220,10 +226,16 @@ _io__WindowsConsoleIO_read(winconsoleio *self, PyObject *const *args, Py_ssize_t
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&:read",
-        _Py_convert_optional_to_ssize_t, &size)) {
+    if (!_PyArg_CheckPositional("read", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[0], &size)) {
+        goto exit;
+    }
+skip_optional:
     return_value = _io__WindowsConsoleIO_read_impl(self, size);
 
 exit:
@@ -255,7 +267,11 @@ _io__WindowsConsoleIO_write(winconsoleio *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer b = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:write", &b)) {
+    if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&b, 'C')) {
+        _PyArg_BadArgument("write", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io__WindowsConsoleIO_write_impl(self, &b);
@@ -328,4 +344,4 @@ _io__WindowsConsoleIO_isatty(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=6d351a8200a8e848 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ab0f0ee8062eecb3 input=a9049054013a1b77]*/

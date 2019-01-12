@@ -1607,7 +1607,7 @@ class TestBreakpoint(unittest.TestCase):
     @unittest.skipIf(sys.flags.ignore_environment, '-E was given')
     def test_envar_unimportable(self):
         for envar in (
-                '.', '..', '.foo', 'foo.', '.int', 'int.'
+                '.', '..', '.foo', 'foo.', '.int', 'int.',
                 'nosuchbuiltin',
                 'nosuchmodule.nosuchcallable',
                 ):

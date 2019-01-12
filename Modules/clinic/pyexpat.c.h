@@ -11,7 +11,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_Parse__doc__,
 "`isfinal\' should be true at end of input.");
 
 #define PYEXPAT_XMLPARSER_PARSE_METHODDEF    \
-    {"Parse", (PyCFunction)pyexpat_xmlparser_Parse, METH_FASTCALL, pyexpat_xmlparser_Parse__doc__},
+    {"Parse", (PyCFunction)(void(*)(void))pyexpat_xmlparser_Parse, METH_FASTCALL, pyexpat_xmlparser_Parse__doc__},
 
 static PyObject *
 pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyObject *data,
@@ -24,10 +24,23 @@ pyexpat_xmlparser_Parse(xmlparseobject *self, PyObject *const *args, Py_ssize_t 
     PyObject *data;
     int isfinal = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|i:Parse",
-        &data, &isfinal)) {
+    if (!_PyArg_CheckPositional("Parse", nargs, 1, 2)) {
         goto exit;
     }
+    data = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    isfinal = _PyLong_AsInt(args[1]);
+    if (isfinal == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = pyexpat_xmlparser_Parse_impl(self, data, isfinal);
 
 exit:
@@ -61,7 +74,17 @@ pyexpat_xmlparser_SetBase(xmlparseobject *self, PyObject *arg)
     PyObject *return_value = NULL;
     const char *base;
 
-    if (!PyArg_Parse(arg, "s:SetBase", &base)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("SetBase", 0, "str", arg);
+        goto exit;
+    }
+    Py_ssize_t base_length;
+    base = PyUnicode_AsUTF8AndSize(arg, &base_length);
+    if (base == NULL) {
+        goto exit;
+    }
+    if (strlen(base) != (size_t)base_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = pyexpat_xmlparser_SetBase_impl(self, base);
@@ -116,7 +139,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_ExternalEntityParserCreate__doc__,
 "Create a parser for parsing an external entity based on the information passed to the ExternalEntityRefHandler.");
 
 #define PYEXPAT_XMLPARSER_EXTERNALENTITYPARSERCREATE_METHODDEF    \
-    {"ExternalEntityParserCreate", (PyCFunction)pyexpat_xmlparser_ExternalEntityParserCreate, METH_FASTCALL, pyexpat_xmlparser_ExternalEntityParserCreate__doc__},
+    {"ExternalEntityParserCreate", (PyCFunction)(void(*)(void))pyexpat_xmlparser_ExternalEntityParserCreate, METH_FASTCALL, pyexpat_xmlparser_ExternalEntityParserCreate__doc__},
 
 static PyObject *
 pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
@@ -130,10 +153,44 @@ pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyObject *con
     const char *context;
     const char *encoding = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "z|s:ExternalEntityParserCreate",
-        &context, &encoding)) {
+    if (!_PyArg_CheckPositional("ExternalEntityParserCreate", nargs, 1, 2)) {
         goto exit;
     }
+    if (args[0] == Py_None) {
+        context = NULL;
+    }
+    else if (PyUnicode_Check(args[0])) {
+        Py_ssize_t context_length;
+        context = PyUnicode_AsUTF8AndSize(args[0], &context_length);
+        if (context == NULL) {
+            goto exit;
+        }
+        if (strlen(context) != (size_t)context_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("ExternalEntityParserCreate", 1, "str or None", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("ExternalEntityParserCreate", 2, "str", args[1]);
+        goto exit;
+    }
+    Py_ssize_t encoding_length;
+    encoding = PyUnicode_AsUTF8AndSize(args[1], &encoding_length);
+    if (encoding == NULL) {
+        goto exit;
+    }
+    if (strlen(encoding) != (size_t)encoding_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+skip_optional:
     return_value = pyexpat_xmlparser_ExternalEntityParserCreate_impl(self, context, encoding);
 
 exit:
@@ -163,7 +220,13 @@ pyexpat_xmlparser_SetParamEntityParsing(xmlparseobject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    if (!PyArg_Parse(arg, "i:SetParamEntityParsing", &flag)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flag = _PyLong_AsInt(arg);
+    if (flag == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = pyexpat_xmlparser_SetParamEntityParsing_impl(self, flag);
@@ -185,7 +248,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_UseForeignDTD__doc__,
 "information to the parser. \'flag\' defaults to True if not provided.");
 
 #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF    \
-    {"UseForeignDTD", (PyCFunction)pyexpat_xmlparser_UseForeignDTD, METH_FASTCALL, pyexpat_xmlparser_UseForeignDTD__doc__},
+    {"UseForeignDTD", (PyCFunction)(void(*)(void))pyexpat_xmlparser_UseForeignDTD, METH_FASTCALL, pyexpat_xmlparser_UseForeignDTD__doc__},
 
 static PyObject *
 pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, int flag);
@@ -196,10 +259,17 @@ pyexpat_xmlparser_UseForeignDTD(xmlparseobject *self, PyObject *const *args, Py_
     PyObject *return_value = NULL;
     int flag = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|p:UseForeignDTD",
-        &flag)) {
+    if (!_PyArg_CheckPositional("UseForeignDTD", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    flag = PyObject_IsTrue(args[0]);
+    if (flag < 0) {
+        goto exit;
+    }
+skip_optional:
     return_value = pyexpat_xmlparser_UseForeignDTD_impl(self, flag);
 
 exit:
@@ -207,23 +277,6 @@ exit:
 }
 
 #endif /* (XML_COMBINED_VERSION >= 19505) */
-
-PyDoc_STRVAR(pyexpat_xmlparser___dir____doc__,
-"__dir__($self, /)\n"
-"--\n"
-"\n");
-
-#define PYEXPAT_XMLPARSER___DIR___METHODDEF    \
-    {"__dir__", (PyCFunction)pyexpat_xmlparser___dir__, METH_NOARGS, pyexpat_xmlparser___dir____doc__},
-
-static PyObject *
-pyexpat_xmlparser___dir___impl(xmlparseobject *self);
-
-static PyObject *
-pyexpat_xmlparser___dir__(xmlparseobject *self, PyObject *Py_UNUSED(ignored))
-{
-    return pyexpat_xmlparser___dir___impl(self);
-}
 
 PyDoc_STRVAR(pyexpat_ParserCreate__doc__,
 "ParserCreate($module, /, encoding=None, namespace_separator=None,\n"
@@ -233,7 +286,7 @@ PyDoc_STRVAR(pyexpat_ParserCreate__doc__,
 "Return a new XML parser object.");
 
 #define PYEXPAT_PARSERCREATE_METHODDEF    \
-    {"ParserCreate", (PyCFunction)pyexpat_ParserCreate, METH_FASTCALL|METH_KEYWORDS, pyexpat_ParserCreate__doc__},
+    {"ParserCreate", (PyCFunction)(void(*)(void))pyexpat_ParserCreate, METH_FASTCALL|METH_KEYWORDS, pyexpat_ParserCreate__doc__},
 
 static PyObject *
 pyexpat_ParserCreate_impl(PyObject *module, const char *encoding,
@@ -277,7 +330,13 @@ pyexpat_ErrorString(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     long code;
 
-    if (!PyArg_Parse(arg, "l:ErrorString", &code)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    code = PyLong_AsLong(arg);
+    if (code == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = pyexpat_ErrorString_impl(module, code);
@@ -289,4 +348,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=34d02345deee104c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0f18b756d82b78a5 input=a9049054013a1b77]*/

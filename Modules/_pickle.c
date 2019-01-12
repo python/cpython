@@ -209,19 +209,15 @@ _Pickle_ClearState(PickleState *st)
 static int
 _Pickle_InitState(PickleState *st)
 {
-    PyObject *builtins;
     PyObject *copyreg = NULL;
     PyObject *compat_pickle = NULL;
     PyObject *codecs = NULL;
     PyObject *functools = NULL;
+    _Py_IDENTIFIER(getattr);
 
-    builtins = PyEval_GetBuiltins();
-    if (builtins == NULL)
-        goto error;
-    st->getattr = PyDict_GetItemString(builtins, "getattr");
+    st->getattr = _PyEval_GetBuiltinId(&PyId_getattr);
     if (st->getattr == NULL)
         goto error;
-    Py_INCREF(st->getattr);
 
     copyreg = PyImport_ImportModule("copyreg");
     if (!copyreg)
@@ -3840,7 +3836,10 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
 
         if (obj != NULL) {
             obj_class = get_class(obj);
-            p = obj_class != cls;    /* true iff a problem */
+            if (obj_class == NULL) {
+                return -1;
+            }
+            p = obj_class != cls;
             Py_DECREF(obj_class);
             if (p) {
                 PyErr_SetString(st->PicklingError, "args[0] from "
@@ -4561,13 +4560,13 @@ PicklerMemoProxy_New(PicklerObject *pickler)
 /*****************************************************************************/
 
 static PyObject *
-Pickler_get_memo(PicklerObject *self)
+Pickler_get_memo(PicklerObject *self, void *Py_UNUSED(ignored))
 {
     return PicklerMemoProxy_New(self);
 }
 
 static int
-Pickler_set_memo(PicklerObject *self, PyObject *obj)
+Pickler_set_memo(PicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored))
 {
     PyMemoTable *new_memo = NULL;
 
@@ -4612,7 +4611,7 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "'memo' attribute must be a PicklerMemoProxy object"
+                     "'memo' attribute must be a PicklerMemoProxy object "
                      "or dict, not %.200s", Py_TYPE(obj)->tp_name);
         return -1;
     }
@@ -4629,7 +4628,7 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj)
 }
 
 static PyObject *
-Pickler_get_persid(PicklerObject *self)
+Pickler_get_persid(PicklerObject *self, void *Py_UNUSED(ignored))
 {
     if (self->pers_func == NULL) {
         PyErr_SetString(PyExc_AttributeError, "persistent_id");
@@ -4639,7 +4638,7 @@ Pickler_get_persid(PicklerObject *self)
 }
 
 static int
-Pickler_set_persid(PicklerObject *self, PyObject *value)
+Pickler_set_persid(PicklerObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -5858,14 +5857,20 @@ load_extension(UnpicklerObject *self, int nbytes)
     /* Since the extension registry is manipulable via Python code,
      * confirm that pair is really a 2-tuple of strings.
      */
-    if (!PyTuple_Check(pair) || PyTuple_Size(pair) != 2 ||
-        !PyUnicode_Check(module_name = PyTuple_GET_ITEM(pair, 0)) ||
-        !PyUnicode_Check(class_name = PyTuple_GET_ITEM(pair, 1))) {
-        Py_DECREF(py_code);
-        PyErr_Format(PyExc_ValueError, "_inverted_registry[%ld] "
-                     "isn't a 2-tuple of strings", code);
-        return -1;
+    if (!PyTuple_Check(pair) || PyTuple_Size(pair) != 2) {
+        goto error;
     }
+
+    module_name = PyTuple_GET_ITEM(pair, 0);
+    if (!PyUnicode_Check(module_name)) {
+        goto error;
+    }
+
+    class_name = PyTuple_GET_ITEM(pair, 1);
+    if (!PyUnicode_Check(class_name)) {
+        goto error;
+    }
+
     /* Load the object. */
     obj = find_class(self, module_name, class_name);
     if (obj == NULL) {
@@ -5881,6 +5886,12 @@ load_extension(UnpicklerObject *self, int nbytes)
     }
     PDATA_PUSH(self->stack, obj, -1);
     return 0;
+
+error:
+    Py_DECREF(py_code);
+    PyErr_Format(PyExc_ValueError, "_inverted_registry[%ld] "
+                 "isn't a 2-tuple of strings", code);
+    return -1;
 }
 
 static int
@@ -6792,7 +6803,7 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
 
     self->stack = (Pdata *)Pdata_New();
     if (self->stack == NULL)
-        return 1;
+        return -1;
 
     self->memo_size = 32;
     self->memo = _Unpickler_NewMemo(self->memo_size);
@@ -6987,13 +6998,13 @@ UnpicklerMemoProxy_New(UnpicklerObject *unpickler)
 
 
 static PyObject *
-Unpickler_get_memo(UnpicklerObject *self)
+Unpickler_get_memo(UnpicklerObject *self, void *Py_UNUSED(ignored))
 {
     return UnpicklerMemoProxy_New(self);
 }
 
 static int
-Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
+Unpickler_set_memo(UnpicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored))
 {
     PyObject **new_memo;
     size_t new_memo_size = 0;
@@ -7048,7 +7059,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "'memo' attribute must be an UnpicklerMemoProxy object"
+                     "'memo' attribute must be an UnpicklerMemoProxy object "
                      "or dict, not %.200s", Py_TYPE(obj)->tp_name);
         return -1;
     }
@@ -7070,7 +7081,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
 }
 
 static PyObject *
-Unpickler_get_persload(UnpicklerObject *self)
+Unpickler_get_persload(UnpicklerObject *self, void *Py_UNUSED(ignored))
 {
     if (self->pers_func == NULL) {
         PyErr_SetString(PyExc_AttributeError, "persistent_load");
@@ -7080,7 +7091,7 @@ Unpickler_get_persload(UnpicklerObject *self)
 }
 
 static int
-Unpickler_set_persload(UnpicklerObject *self, PyObject *value)
+Unpickler_set_persload(UnpicklerObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,

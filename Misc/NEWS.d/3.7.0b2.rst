@@ -399,7 +399,7 @@ Add Ttk spinbox widget to :mod:`tkinter.ttk`.  Patch by Alan D Moore.
 .. nonce: ideco_
 .. section: Library
 
-Various functions returning tuple containig IPv6 addresses now omit
+Various functions returning tuple containing IPv6 addresses now omit
 ``%scope`` part since the same information is already encoded in *scopeid*
 tuple item. Especially this speeds up :func:`socket.recvfrom` when it
 receives multicast packet since useless resolving of network interface name

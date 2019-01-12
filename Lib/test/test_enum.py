@@ -3,7 +3,6 @@ import inspect
 import pydoc
 import sys
 import unittest
-import sys
 import threading
 from collections import OrderedDict
 from enum import Enum, IntEnum, EnumMeta, Flag, IntFlag, unique, auto
@@ -12,10 +11,6 @@ from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
 from datetime import timedelta
 
-try:
-    import threading
-except ImportError:
-    threading = None
 
 # for pickle tests
 try:
@@ -1841,6 +1836,27 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(ReformedColor.RED.behavior(), 'booyah')
         self.assertEqual(ConfusedColor.RED.social(), "what's up?")
         self.assertTrue(issubclass(ReformedColor, int))
+
+    def test_multiple_inherited_mixin(self):
+        class StrEnum(str, Enum):
+            def __new__(cls, *args, **kwargs):
+                for a in args:
+                    if not isinstance(a, str):
+                        raise TypeError("Enumeration '%s' (%s) is not"
+                                        " a string" % (a, type(a).__name__))
+                return str.__new__(cls, *args, **kwargs)
+        @unique
+        class Decision1(StrEnum):
+            REVERT = "REVERT"
+            REVERT_ALL = "REVERT_ALL"
+            RETRY = "RETRY"
+        class MyEnum(StrEnum):
+            pass
+        @unique
+        class Decision2(MyEnum):
+            REVERT = "REVERT"
+            REVERT_ALL = "REVERT_ALL"
+            RETRY = "RETRY"
 
 
 class TestOrder(unittest.TestCase):

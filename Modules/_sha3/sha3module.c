@@ -589,6 +589,10 @@ _SHAKE_digest(SHA3object *self, unsigned long digestlen, int hex)
     int res;
     PyObject *result = NULL;
 
+    if (digestlen >= (1 << 29)) {
+        PyErr_SetString(PyExc_ValueError, "length is too large");
+        return NULL;
+    }
     /* ExtractLane needs at least SHA3_MAX_DIGESTSIZE + SHA3_LANESIZE and
      * SHA3_LANESIZE extra space.
      */

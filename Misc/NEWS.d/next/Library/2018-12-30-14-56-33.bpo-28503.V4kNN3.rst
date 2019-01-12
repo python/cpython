@@ -1,0 +1,2 @@
+The `crypt` module now internally uses the `crypt_r()` library function
+instead of `crypt()` when available.

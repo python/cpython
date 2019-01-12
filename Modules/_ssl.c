@@ -273,7 +273,7 @@ SSL_SESSION_get_ticket_lifetime_hint(const SSL_SESSION *s)
      #error "Py_SSL_DEFAULT_CIPHERS 0 needs Py_SSL_DEFAULT_CIPHER_STRING"
   #endif
 #elif PY_SSL_DEFAULT_CIPHERS == 1
-/* Python custom selection of sensible ciper suites
+/* Python custom selection of sensible cipher suites
  * DEFAULT: OpenSSL's default cipher list. Since 1.0.2 the list is in sensible order.
  * !aNULL:!eNULL: really no NULL ciphers
  * !MD5:!3DES:!DES:!RC4:!IDEA:!SEED: no weak or broken algorithms on old OpenSSL versions.
@@ -911,6 +911,11 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     PySSL_BEGIN_ALLOW_THREADS
     self->ssl = SSL_new(ctx);
     PySSL_END_ALLOW_THREADS
+    if (self->ssl == NULL) {
+        Py_DECREF(self);
+        _setSSLError(NULL, 0, __FILE__, __LINE__);
+        return NULL;
+    }
     SSL_set_app_data(self->ssl, self);
     if (sock) {
         SSL_set_fd(self->ssl, Py_SAFE_DOWNCAST(sock->sock_fd, SOCKET_T, int));
@@ -1240,6 +1245,10 @@ _get_peer_alt_names (X509 *certificate) {
 
     /* get a memory buffer */
     biobuf = BIO_new(BIO_s_mem());
+    if (biobuf == NULL) {
+        PyErr_SetString(PySSLErrorObject, "failed to allocate BIO");
+        return NULL;
+    }
 
     names = (GENERAL_NAMES *)X509_get_ext_d2i(
         certificate, NID_subject_alt_name, NULL, NULL);
@@ -1592,6 +1601,10 @@ _decode_certificate(X509 *certificate) {
 
     /* get a memory buffer */
     biobuf = BIO_new(BIO_s_mem());
+    if (biobuf == NULL) {
+        PyErr_SetString(PySSLErrorObject, "failed to allocate BIO");
+        goto fail0;
+    }
 
     (void) BIO_reset(biobuf);
     serialNumber = X509_get_serialNumber(certificate);
@@ -3612,6 +3625,10 @@ static int
 set_post_handshake_auth(PySSLContext *self, PyObject *arg, void *c) {
     int (*verify_cb)(int, X509_STORE_CTX *) = NULL;
     int mode = SSL_CTX_get_verify_mode(self->ctx);
+    if (arg == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
     int pha = PyObject_IsTrue(arg);
 
     if (pha == -1) {
@@ -4710,10 +4727,15 @@ _ssl_MemoryBIO_read_impl(PySSLMemoryBIO *self, int len)
         return result;
 
     nbytes = BIO_read(self->bio, PyBytes_AS_STRING(result), len);
-    /* There should never be any short reads but check anyway. */
-    if ((nbytes < len) && (_PyBytes_Resize(&result, len) < 0)) {
+    if (nbytes < 0) {
         Py_DECREF(result);
+        _setSSLError(NULL, 0, __FILE__, __LINE__);
         return NULL;
+    }
+
+    /* There should never be any short reads but check anyway. */
+    if (nbytes < len) {
+        _PyBytes_Resize(&result, nbytes);
     }
 
     return result;
@@ -5978,9 +6000,12 @@ PyInit__ssl(void)
     PyModule_AddIntConstant(m, "PROTO_TLSv1_2", PY_PROTO_TLSv1_2);
     PyModule_AddIntConstant(m, "PROTO_TLSv1_3", PY_PROTO_TLSv1_3);
 
-#define addbool(m, v, b) \
-    Py_INCREF((b) ? Py_True : Py_False); \
-    PyModule_AddObject((m), (v), (b) ? Py_True : Py_False);
+#define addbool(m, key, value) \
+    do { \
+        PyObject *bool_obj = (value) ? Py_True : Py_False; \
+        Py_INCREF(bool_obj); \
+        PyModule_AddObject((m), (key), bool_obj); \
+    } while (0)
 
 #if HAVE_SNI
     addbool(m, "HAS_SNI", 1);

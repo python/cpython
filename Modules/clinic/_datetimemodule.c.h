@@ -26,7 +26,7 @@ PyDoc_STRVAR(datetime_datetime_now__doc__,
 "If no tz is specified, uses local timezone.");
 
 #define DATETIME_DATETIME_NOW_METHODDEF    \
-    {"now", (PyCFunction)datetime_datetime_now, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, datetime_datetime_now__doc__},
+    {"now", (PyCFunction)(void(*)(void))datetime_datetime_now, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, datetime_datetime_now__doc__},
 
 static PyObject *
 datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz);
@@ -48,4 +48,4 @@ datetime_datetime_now(PyTypeObject *type, PyObject *const *args, Py_ssize_t narg
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7fd14bd67749da23 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b3d746843403a8ce input=a9049054013a1b77]*/

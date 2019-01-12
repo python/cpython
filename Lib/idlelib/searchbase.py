@@ -1,7 +1,7 @@
 '''Define SearchDialogBase used by Search, Replace, and Grep dialogs.'''
 
-from tkinter import Toplevel, Frame
-from tkinter.ttk import Entry, Label, Button, Checkbutton, Radiobutton
+from tkinter import Toplevel
+from tkinter.ttk import Frame, Entry, Label, Button, Checkbutton, Radiobutton
 
 
 class SearchDialogBase:
@@ -42,6 +42,7 @@ class SearchDialogBase:
         icon (of dialog): ditto, use unclear if cannot minimize dialog.
         '''
         self.root = root
+        self.bell = root.bell
         self.engine = engine
         self.top = None
 
@@ -80,7 +81,6 @@ class SearchDialogBase:
         top.wm_title(self.title)
         top.wm_iconname(self.icon)
         self.top = top
-        self.bell = top.bell
 
         self.row = 0
         self.top.grid_columnconfigure(0, pad=2, weight=0)

@@ -486,7 +486,7 @@ class EnumMeta(type):
                     if base is object:
                         continue
                     elif '__new__' in base.__dict__:
-                        if issubclass(base, Enum) and not hasattr(base, '__new_member__'):
+                        if issubclass(base, Enum):
                             continue
                         return base
 
@@ -499,7 +499,6 @@ class EnumMeta(type):
         member_type = _find_data_type(bases) or object
         if first_enum._member_names_:
             raise TypeError("Cannot extend enumerations")
-
         return member_type, first_enum
 
     @staticmethod
@@ -545,7 +544,6 @@ class EnumMeta(type):
             use_args = False
         else:
             use_args = True
-
         return __new__, save_new, use_args
 
 
@@ -565,8 +563,10 @@ class Enum(metaclass=EnumMeta):
         # by-value search for a matching enum member
         # see if it's in the reverse mapping (for hashable values)
         try:
-            if value in cls._value2member_map_:
-                return cls._value2member_map_[value]
+            return cls._value2member_map_[value]
+        except KeyError:
+            # Not found, no need to do long O(n) search
+            pass
         except TypeError:
             # not there, now do long search -- O(n) behavior
             for member in cls._member_map_.values():

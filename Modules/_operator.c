@@ -937,6 +937,7 @@ typedef struct {
     PyObject_HEAD
     Py_ssize_t nitems;
     PyObject *item;
+    Py_ssize_t index; // -1 unless *item* is a single non-negative integer index
 } itemgetterobject;
 
 static PyTypeObject itemgetter_type;
@@ -948,6 +949,7 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     itemgetterobject *ig;
     PyObject *item;
     Py_ssize_t nitems;
+    Py_ssize_t index;
 
     if (!_PyArg_NoKeywords("itemgetter", kwds))
         return NULL;
@@ -967,6 +969,21 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_INCREF(item);
     ig->item = item;
     ig->nitems = nitems;
+    ig->index = -1;
+    if (PyLong_CheckExact(item)) {
+        index = PyLong_AsSsize_t(item);
+        if (index < 0) {
+            /* If we get here, then either the index conversion failed
+             * due to being out of range, or the index was a negative
+             * integer.  Either way, we clear any possible exception
+             * and fall back to the slow path, where ig->index is -1.
+             */
+            PyErr_Clear();
+        }
+        else {
+            ig->index = index;
+        }
+    }
 
     PyObject_GC_Track(ig);
     return (PyObject *)ig;
@@ -993,12 +1010,24 @@ itemgetter_call(itemgetterobject *ig, PyObject *args, PyObject *kw)
     PyObject *obj, *result;
     Py_ssize_t i, nitems=ig->nitems;
 
+    assert(PyTuple_CheckExact(args));
     if (!_PyArg_NoKeywords("itemgetter", kw))
         return NULL;
-    if (!PyArg_UnpackTuple(args, "itemgetter", 1, 1, &obj))
+    if (!_PyArg_CheckPositional("itemgetter", PyTuple_GET_SIZE(args), 1, 1))
         return NULL;
-    if (nitems == 1)
+
+    obj = PyTuple_GET_ITEM(args, 0);
+    if (nitems == 1) {
+        if (ig->index >= 0
+            && PyTuple_CheckExact(obj)
+            && ig->index < PyTuple_GET_SIZE(obj))
+        {
+            result = PyTuple_GET_ITEM(obj, ig->index);
+            Py_INCREF(result);
+            return result;
+        }
         return PyObject_GetItem(obj, ig->item);
+    }
 
     assert(PyTuple_Check(ig->item));
     assert(PyTuple_GET_SIZE(ig->item) == nitems);
@@ -1285,8 +1314,9 @@ attrgetter_call(attrgetterobject *ag, PyObject *args, PyObject *kw)
 
     if (!_PyArg_NoKeywords("attrgetter", kw))
         return NULL;
-    if (!PyArg_UnpackTuple(args, "attrgetter", 1, 1, &obj))
+    if (!_PyArg_CheckPositional("attrgetter", PyTuple_GET_SIZE(args), 1, 1))
         return NULL;
+    obj = PyTuple_GET_ITEM(args, 0);
     if (ag->nattrs == 1) /* ag->attr is always a tuple */
         return dotted_getattr(obj, PyTuple_GET_ITEM(ag->attr, 0));
 
@@ -1529,8 +1559,9 @@ methodcaller_call(methodcallerobject *mc, PyObject *args, PyObject *kw)
 
     if (!_PyArg_NoKeywords("methodcaller", kw))
         return NULL;
-    if (!PyArg_UnpackTuple(args, "methodcaller", 1, 1, &obj))
+    if (!_PyArg_CheckPositional("methodcaller", PyTuple_GET_SIZE(args), 1, 1))
         return NULL;
+    obj = PyTuple_GET_ITEM(args, 0);
     method = PyObject_GetAttr(obj, mc->name);
     if (method == NULL)
         return NULL;
@@ -1583,6 +1614,7 @@ methodcaller_repr(methodcallerobject *mc)
                 goto done;
             if (i >= numtotalargs) {
                 i = -1;
+                Py_DECREF(onerepr);
                 break;
             }
             PyTuple_SET_ITEM(argreprs, i, onerepr);

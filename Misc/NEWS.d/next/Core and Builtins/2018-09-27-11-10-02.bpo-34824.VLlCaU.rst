@@ -1,0 +1,2 @@
+Fix a possible null pointer dereference in Modules/_ssl.c. Patch by Zackery
+Spytz.

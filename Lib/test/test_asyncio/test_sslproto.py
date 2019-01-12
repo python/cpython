@@ -2,6 +2,7 @@
 
 import logging
 import socket
+import sys
 import unittest
 from unittest import mock
 try:
@@ -252,7 +253,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 self.on_eof.set_result(True)
 
         async def client(addr):
-            await asyncio.sleep(0.5, loop=self.loop)
+            await asyncio.sleep(0.5)
 
             on_data = self.loop.create_future()
             on_eof = self.loop.create_future()
@@ -271,7 +272,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), loop=self.loop, timeout=10))
+                asyncio.wait_for(client(srv.addr), timeout=10))
 
     def test_start_tls_client_buf_proto_1(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
@@ -332,7 +333,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 self.on_eof.set_result(True)
 
         async def client(addr):
-            await asyncio.sleep(0.5, loop=self.loop)
+            await asyncio.sleep(0.5)
 
             on_data1 = self.loop.create_future()
             on_data2 = self.loop.create_future()
@@ -362,7 +363,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
                 asyncio.wait_for(client(srv.addr),
-                                 loop=self.loop, timeout=self.TIMEOUT))
+                                 timeout=self.TIMEOUT))
 
     def test_start_tls_slow_client_cancel(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
@@ -403,7 +404,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 self.on_eof.set_result(True)
 
         async def client(addr):
-            await asyncio.sleep(0.5, loop=self.loop)
+            await asyncio.sleep(0.5)
 
             on_data = self.loop.create_future()
             on_eof = self.loop.create_future()
@@ -418,18 +419,23 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             with self.assertRaises(asyncio.TimeoutError):
                 await asyncio.wait_for(
                     self.loop.start_tls(tr, proto, client_context),
-                    0.5,
-                    loop=self.loop)
+                    0.5)
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), loop=self.loop, timeout=10))
+                asyncio.wait_for(client(srv.addr), timeout=10))
 
     def test_start_tls_server_1(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
 
         server_context = test_utils.simple_server_sslcontext()
         client_context = test_utils.simple_client_sslcontext()
+        if sys.platform.startswith('freebsd'):
+            # bpo-35031: Some FreeBSD buildbots fail to run this test
+            # as the eof was not being received by the server if the payload
+            # size is not big enough. This behaviour only appears if the
+            # client is using TLS1.3.
+            client_context.options |= ssl.OP_NO_TLSv1_3
 
         def client(sock, addr):
             sock.settimeout(self.TIMEOUT)
@@ -496,7 +502,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                                  timeout=self.TIMEOUT):
                 await asyncio.wait_for(
                     main(proto, on_con, on_eof, on_con_lost),
-                    loop=self.loop, timeout=self.TIMEOUT)
+                    timeout=self.TIMEOUT)
 
             server.close()
             await server.wait_closed()
@@ -541,8 +547,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                     ssl=client_sslctx,
                     server_hostname='',
                     ssl_handshake_timeout=10.0),
-                0.5,
-                loop=self.loop)
+                0.5)
 
         with self.tcp_server(server,
                              max_clients=1,

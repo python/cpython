@@ -1,0 +1,2 @@
+chm document displays non-ASCII charaters properly on some MBCS Windows
+systems.

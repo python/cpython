@@ -131,6 +131,17 @@ class TestGdbm(unittest.TestCase):
             self.assertEqual(db['Unicode key \U0001f40d'],
                              'Unicode value \U0001f40d'.encode())
 
+    def test_write_readonly_file(self):
+        with gdbm.open(filename, 'c') as db:
+            db[b'bytes key'] = b'bytes value'
+        with gdbm.open(filename, 'r') as db:
+            with self.assertRaises(gdbm.error):
+                del db[b'not exist key']
+            with self.assertRaises(gdbm.error):
+                del db[b'bytes key']
+            with self.assertRaises(gdbm.error):
+                db[b'not exist key'] = b'not exist value'
+
     @unittest.skipUnless(TESTFN_NONASCII,
                          'requires OS support of non-ASCII encodings')
     def test_nonascii_filename(self):
@@ -143,6 +154,13 @@ class TestGdbm(unittest.TestCase):
             self.assertEqual(list(db.keys()), [b'key'])
             self.assertTrue(b'key' in db)
             self.assertEqual(db[b'key'], b'value')
+
+    def test_nonexisting_file(self):
+        nonexisting_file = 'nonexisting-file'
+        with self.assertRaises(gdbm.error) as cm:
+            gdbm.open(nonexisting_file)
+        self.assertIn(nonexisting_file, str(cm.exception))
+        self.assertEqual(cm.exception.filename, nonexisting_file)
 
 
 if __name__ == '__main__':

@@ -640,7 +640,7 @@ class SSLObject:
 
     When compared to ``SSLSocket``, this object lacks the following features:
 
-     * Any form of network IO incluging methods such as ``recv`` and ``send``.
+     * Any form of network IO, including methods such as ``recv`` and ``send``.
      * The ``do_handshake_on_connect`` and ``suppress_ragged_eofs`` machinery.
     """
     def __init__(self, *args, **kwargs):
@@ -884,8 +884,8 @@ class SSLSocket(socket):
             return self._sslobj.session_reused
 
     def dup(self):
-        raise NotImplemented("Can't dup() %s instances" %
-                             self.__class__.__name__)
+        raise NotImplementedError("Can't dup() %s instances" %
+                                  self.__class__.__name__)
 
     def _checkClosed(self, msg=None):
         # raise an exception here if you wish to check for spurious closes
