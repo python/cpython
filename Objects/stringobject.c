@@ -360,9 +360,15 @@ PyString_FromFormatV(const char *format, va_list vargs)
                 break;
             case 's':
                 p = va_arg(vargs, char*);
-                i = strlen(p);
-                if (n > 0 && i > n)
-                    i = n;
+                if (n <= 0) {
+                    i = strlen(p);
+                }
+                else {
+                    i = 0;
+                    while (i < n && p[i]) {
+                        i++;
+                    }
+                }
                 Py_MEMCPY(s, p, i);
                 s += i;
                 break;
