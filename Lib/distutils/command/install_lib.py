@@ -52,7 +52,7 @@ class install_lib(Command):
         # let the 'install' command dictate our installation directory
         self.install_dir = None
         self.build_dir = None
-        self.force = 0
+        self.force = None
         self.compile = None
         self.optimize = None
         self.skip_build = None
