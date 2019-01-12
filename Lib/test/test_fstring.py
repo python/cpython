@@ -116,9 +116,11 @@ f'eggs {a * x()} spam {b + y()}'"""
         self.assertEqual(type(t.body[1]), ast.Expr)
         self.assertEqual(type(t.body[1].value), ast.JoinedStr)
         self.assertEqual(len(t.body[1].value.values), 4)
-        self.assertEqual(type(t.body[1].value.values[0]), ast.Str)
+        self.assertEqual(type(t.body[1].value.values[0]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[0].value), str)
         self.assertEqual(type(t.body[1].value.values[1]), ast.FormattedValue)
-        self.assertEqual(type(t.body[1].value.values[2]), ast.Str)
+        self.assertEqual(type(t.body[1].value.values[2]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[2].value), str)
         self.assertEqual(type(t.body[1].value.values[3]), ast.FormattedValue)
         self.assertEqual(t.body[1].lineno, 3)
         self.assertEqual(t.body[1].value.lineno, 3)
@@ -183,9 +185,11 @@ f'{a * f"-{x()}-"}'"""
         self.assertEqual(binop.right.col_offset, 7)
         # check the nested call location
         self.assertEqual(len(binop.right.values), 3)
-        self.assertEqual(type(binop.right.values[0]), ast.Str)
+        self.assertEqual(type(binop.right.values[0]), ast.Constant)
+        self.assertEqual(type(binop.right.values[0].value), str)
         self.assertEqual(type(binop.right.values[1]), ast.FormattedValue)
-        self.assertEqual(type(binop.right.values[2]), ast.Str)
+        self.assertEqual(type(binop.right.values[2]), ast.Constant)
+        self.assertEqual(type(binop.right.values[2].value), str)
         self.assertEqual(binop.right.values[0].lineno, 3)
         self.assertEqual(binop.right.values[1].lineno, 3)
         self.assertEqual(binop.right.values[2].lineno, 3)
@@ -215,9 +219,11 @@ f'{a * x()} {a * x()} {a * x()}'
         self.assertEqual(type(t.body[1].value), ast.JoinedStr)
         self.assertEqual(len(t.body[1].value.values), 5)
         self.assertEqual(type(t.body[1].value.values[0]), ast.FormattedValue)
-        self.assertEqual(type(t.body[1].value.values[1]), ast.Str)
+        self.assertEqual(type(t.body[1].value.values[1]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[1].value), str)
         self.assertEqual(type(t.body[1].value.values[2]), ast.FormattedValue)
-        self.assertEqual(type(t.body[1].value.values[3]), ast.Str)
+        self.assertEqual(type(t.body[1].value.values[3]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[3].value), str)
         self.assertEqual(type(t.body[1].value.values[4]), ast.FormattedValue)
         self.assertEqual(t.body[1].lineno, 3)
         self.assertEqual(t.body[1].value.lineno, 3)
@@ -287,9 +293,11 @@ non-important content
         self.assertEqual(type(t.body[1]), ast.Expr)
         self.assertEqual(type(t.body[1].value), ast.JoinedStr)
         self.assertEqual(len(t.body[1].value.values), 3)
-        self.assertEqual(type(t.body[1].value.values[0]), ast.Str)
+        self.assertEqual(type(t.body[1].value.values[0]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[0].value), str)
         self.assertEqual(type(t.body[1].value.values[1]), ast.FormattedValue)
-        self.assertEqual(type(t.body[1].value.values[2]), ast.Str)
+        self.assertEqual(type(t.body[1].value.values[2]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[2].value), str)
         # NOTE: the following invalid behavior is described in bpo-16806.
         # - line number should be the *first* line (3), not the *last* (8)
         # - column offset should not be -1
@@ -360,9 +368,27 @@ non-important content
                              ])
 
     def test_mismatched_parens(self):
-        self.assertAllRaise(SyntaxError, 'f-string: mismatched',
+        self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\}' "
+                            r"does not match opening parenthesis '\('",
                             ["f'{((}'",
                              ])
+        self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\)' "
+                            r"does not match opening parenthesis '\['",
+                            ["f'{a[4)}'",
+                            ])
+        self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\]' "
+                            r"does not match opening parenthesis '\('",
+                            ["f'{a(4]}'",
+                            ])
+        self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\}' "
+                            r"does not match opening parenthesis '\['",
+                            ["f'{a[4}'",
+                            ])
+        self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\}' "
+                            r"does not match opening parenthesis '\('",
+                            ["f'{a(4}'",
+                            ])
+        self.assertRaises(SyntaxError, eval, "f'{" + "("*500 + "}'")
 
     def test_double_braces(self):
         self.assertEqual(f'{{', '{')
@@ -440,7 +466,9 @@ non-important content
                             ["f'{1#}'",   # error because the expression becomes "(1#)"
                              "f'{3(#)}'",
                              "f'{#}'",
-                             "f'{)#}'",   # When wrapped in parens, this becomes
+                             ])
+        self.assertAllRaise(SyntaxError, r"f-string: unmatched '\)'",
+                            ["f'{)#}'",   # When wrapped in parens, this becomes
                                           #  '()#)'.  Make sure that doesn't compile.
                              ])
 
@@ -569,7 +597,7 @@ non-important content
                              "f'{,}'",  # this is (,), which is an error
                              ])
 
-        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
+        self.assertAllRaise(SyntaxError, r"f-string: unmatched '\)'",
                             ["f'{3)+(4}'",
                              ])
 
@@ -618,7 +646,7 @@ non-important content
         self.assertEqual(f'2\x203', '2 3')
         self.assertEqual(f'\x203', ' 3')
 
-        with self.assertWarns(DeprecationWarning):  # invalid escape sequence
+        with self.assertWarns(SyntaxWarning):  # invalid escape sequence
             value = eval(r"f'\{6*7}'")
         self.assertEqual(value, '\\42')
         self.assertEqual(f'\\{6*7}', '\\42')
@@ -994,12 +1022,6 @@ non-important content
         self.assertEqual(f'{d[a]}', 'integer')
         self.assertEqual('{d[a]}'.format(d=d), 'string')
         self.assertEqual('{d[0]}'.format(d=d), 'integer')
-
-    def test_invalid_expressions(self):
-        self.assertAllRaise(SyntaxError, 'invalid syntax',
-                            [r"f'{a[4)}'",
-                             r"f'{a(4]}'",
-                            ])
 
     def test_errors(self):
         # see issue 26287

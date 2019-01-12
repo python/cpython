@@ -19,6 +19,7 @@ SKIPPED = -2
 RESOURCE_DENIED = -3
 INTERRUPTED = -4
 CHILD_ERROR = -5   # error in a child process
+TEST_DID_NOT_RUN = -6   # error in a child process
 
 _FORMAT_TEST_RESULT = {
     PASSED: '%s passed',
@@ -28,6 +29,7 @@ _FORMAT_TEST_RESULT = {
     RESOURCE_DENIED: '%s skipped (resource denied)',
     INTERRUPTED: '%s interrupted',
     CHILD_ERROR: '%s crashed',
+    TEST_DID_NOT_RUN: '%s run no tests',
 }
 
 # Minimum duration of a test to display its duration or to mention that
@@ -94,6 +96,7 @@ def runtest(ns, test):
         ENV_CHANGED      test failed because it changed the execution environment
         FAILED           test failed
         PASSED           test passed
+        EMPTY_TEST_SUITE test ran no subtests.
 
     If ns.xmlpath is not None, xml_data is a list containing each
     generated testsuite element.
@@ -159,7 +162,7 @@ def runtest_inner(ns, test, display_failure=True):
         abstest = get_abs_module(ns, test)
         clear_caches()
         with saved_test_environment(test, ns.verbose, ns.quiet, pgo=ns.pgo) as environment:
-            start_time = time.time()
+            start_time = time.perf_counter()
             the_module = importlib.import_module(abstest)
             # If the test has a test_main, that will run the appropriate
             # tests.  If not, use normal unittest test loading.
@@ -177,7 +180,7 @@ def runtest_inner(ns, test, display_failure=True):
                 refleak = dash_R(the_module, test, test_runner, ns.huntrleaks)
             else:
                 test_runner()
-            test_time = time.time() - start_time
+            test_time = time.perf_counter() - start_time
         post_test_cleanup()
     except support.ResourceDenied as msg:
         if not ns.quiet and not ns.pgo:
@@ -197,6 +200,8 @@ def runtest_inner(ns, test, display_failure=True):
             else:
                 print("test", test, "failed", file=sys.stderr, flush=True)
         return FAILED, test_time
+    except support.TestDidNotRun:
+        return TEST_DID_NOT_RUN, test_time
     except:
         msg = traceback.format_exc()
         if not ns.pgo:

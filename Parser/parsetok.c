@@ -187,6 +187,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
     parser_state *ps;
     node *n;
     int started = 0;
+    int col_offset;
 
     if ((ps = PyParser_New(g, start)) == NULL) {
         err_ret->error = E_NOMEM;
@@ -203,7 +204,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         int type;
         size_t len;
         char *str;
-        int col_offset;
+        col_offset = -1;
 
         type = PyTokenizer_Get(tok, &a, &b);
         if (type == ERRORTOKEN) {
@@ -321,7 +322,10 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         if (tok->buf != NULL) {
             size_t len;
             assert(tok->cur - tok->buf < INT_MAX);
-            err_ret->offset = (int)(tok->cur - tok->buf);
+            /* if we've managed to parse a token, point the offset to its start,
+             * else use the current reading position of the tokenizer
+             */
+            err_ret->offset = col_offset != -1 ? col_offset + 1 : ((int)(tok->cur - tok->buf));
             len = tok->inp - tok->buf;
             err_ret->text = (char *) PyObject_MALLOC(len + 1);
             if (err_ret->text != NULL) {

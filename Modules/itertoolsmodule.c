@@ -368,8 +368,9 @@ _grouper_next(_grouperobject *igo)
 static PyObject *
 _grouper_reduce(_grouperobject *lz, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     if (((groupbyobject *)lz->parent)->currgrouper != lz) {
-        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
     }
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->parent, lz->tgtkey);
 }
@@ -3475,6 +3476,7 @@ typedef struct {
     PyObject *total;
     PyObject *it;
     PyObject *binop;
+    PyObject *initial;
 } accumulateobject;
 
 static PyTypeObject accumulate_type;
@@ -3484,17 +3486,18 @@ static PyTypeObject accumulate_type;
 itertools.accumulate.__new__
     iterable: object
     func as binop: object = None
+    *
+    initial: object = None
 Return series of accumulated sums (or other binary function results).
 [clinic start generated code]*/
 
 static PyObject *
 itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
-                          PyObject *binop)
-/*[clinic end generated code: output=514d0fb30ba14d55 input=6d9d16aaa1d3cbfc]*/
+                          PyObject *binop, PyObject *initial)
+/*[clinic end generated code: output=66da2650627128f8 input=c4ce20ac59bf7ffd]*/
 {
     PyObject *it;
     accumulateobject *lz;
-
 
     /* Get iterator. */
     it = PyObject_GetIter(iterable);
@@ -3514,6 +3517,8 @@ itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
     }
     lz->total = NULL;
     lz->it = it;
+    Py_XINCREF(initial);
+    lz->initial = initial;
     return (PyObject *)lz;
 }
 
@@ -3524,6 +3529,7 @@ accumulate_dealloc(accumulateobject *lz)
     Py_XDECREF(lz->binop);
     Py_XDECREF(lz->total);
     Py_XDECREF(lz->it);
+    Py_XDECREF(lz->initial);
     Py_TYPE(lz)->tp_free(lz);
 }
 
@@ -3533,6 +3539,7 @@ accumulate_traverse(accumulateobject *lz, visitproc visit, void *arg)
     Py_VISIT(lz->binop);
     Py_VISIT(lz->it);
     Py_VISIT(lz->total);
+    Py_VISIT(lz->initial);
     return 0;
 }
 
@@ -3541,6 +3548,13 @@ accumulate_next(accumulateobject *lz)
 {
     PyObject *val, *newtotal;
 
+    if (lz->initial != Py_None) {
+        lz->total = lz->initial;
+        Py_INCREF(Py_None);
+        lz->initial = Py_None;
+        Py_INCREF(lz->total);
+        return lz->total;
+    }
     val = (*Py_TYPE(lz->it)->tp_iternext)(lz->it);
     if (val == NULL)
         return NULL;
@@ -3567,6 +3581,19 @@ accumulate_next(accumulateobject *lz)
 static PyObject *
 accumulate_reduce(accumulateobject *lz, PyObject *Py_UNUSED(ignored))
 {
+    if (lz->initial != Py_None) {
+        PyObject *it;
+
+        assert(lz->total == NULL);
+        if (PyType_Ready(&chain_type) < 0)
+            return NULL;
+        it = PyObject_CallFunction((PyObject *)&chain_type, "(O)O",
+                                   lz->initial, lz->it);
+        if (it == NULL)
+            return NULL;
+        return Py_BuildValue("O(NO)O", Py_TYPE(lz),
+                            it, lz->binop?lz->binop:Py_None, Py_None);
+    }
     if (lz->total == Py_None) {
         PyObject *it;
 

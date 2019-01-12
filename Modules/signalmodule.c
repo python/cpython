@@ -4,6 +4,8 @@
 /* XXX Signals should be recorded per thread, now we have thread state. */
 
 #include "Python.h"
+#include "pycore_atomic.h"
+
 #ifndef MS_WINDOWS
 #include "posixmodule.h"
 #endif
@@ -200,12 +202,15 @@ It raises KeyboardInterrupt.");
 static int
 report_wakeup_write_error(void *data)
 {
+    PyObject *exc, *val, *tb;
     int save_errno = errno;
     errno = (int) (intptr_t) data;
+    PyErr_Fetch(&exc, &val, &tb);
     PyErr_SetFromErrno(PyExc_OSError);
     PySys_WriteStderr("Exception ignored when trying to write to the "
                       "signal wakeup fd:\n");
     PyErr_WriteUnraisable(NULL);
+    PyErr_Restore(exc, val, tb);
     errno = save_errno;
     return 0;
 }
@@ -214,6 +219,8 @@ report_wakeup_write_error(void *data)
 static int
 report_wakeup_send_error(void* data)
 {
+    PyObject *exc, *val, *tb;
+    PyErr_Fetch(&exc, &val, &tb);
     /* PyErr_SetExcFromWindowsErr() invokes FormatMessage() which
        recognizes the error codes used by both GetLastError() and
        WSAGetLastError */
@@ -221,6 +228,7 @@ report_wakeup_send_error(void* data)
     PySys_WriteStderr("Exception ignored when trying to send to the "
                       "signal wakeup fd:\n");
     PyErr_WriteUnraisable(NULL);
+    PyErr_Restore(exc, val, tb);
     return 0;
 }
 #endif   /* MS_WINDOWS */
@@ -388,6 +396,31 @@ signal_pause_impl(PyObject *module)
 
 #endif
 
+/*[clinic input]
+signal.raise_signal
+
+    signalnum: int
+    /
+
+Send a signal to the executing process.
+[clinic start generated code]*/
+
+static PyObject *
+signal_raise_signal_impl(PyObject *module, int signalnum)
+/*[clinic end generated code: output=e2b014220aa6111d input=e90c0f9a42358de6]*/
+{
+    int err;
+    Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
+    err = raise(signalnum);
+    _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
+    
+    if (err) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    Py_RETURN_NONE;
+}
 
 /*[clinic input]
 signal.signal
@@ -1206,9 +1239,10 @@ static PyMethodDef signal_methods[] = {
     SIGNAL_SETITIMER_METHODDEF
     SIGNAL_GETITIMER_METHODDEF
     SIGNAL_SIGNAL_METHODDEF
+    SIGNAL_RAISE_SIGNAL_METHODDEF
     SIGNAL_STRSIGNAL_METHODDEF
     SIGNAL_GETSIGNAL_METHODDEF
-    {"set_wakeup_fd", (PyCFunction)signal_set_wakeup_fd, METH_VARARGS | METH_KEYWORDS, set_wakeup_fd_doc},
+    {"set_wakeup_fd", (PyCFunction)(void(*)(void))signal_set_wakeup_fd, METH_VARARGS | METH_KEYWORDS, set_wakeup_fd_doc},
     SIGNAL_SIGINTERRUPT_METHODDEF
     SIGNAL_PAUSE_METHODDEF
     SIGNAL_PTHREAD_KILL_METHODDEF

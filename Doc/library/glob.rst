@@ -10,6 +10,14 @@
 
 --------------
 
+.. index::
+   single: * (asterisk); in glob-style wildcards
+   single: ? (question mark); in glob-style wildcards
+   single: [] (square brackets); in glob-style wildcards
+   single: ! (exclamation); in glob-style wildcards
+   single: - (minus); in glob-style wildcards
+   single: . (dot); in glob-style wildcards
+
 The :mod:`glob` module finds all the pathnames matching a specified pattern
 according to the rules used by the Unix shell, although results are returned in
 arbitrary order.  No tilde expansion is done, but ``*``, ``?``, and character
@@ -34,7 +42,11 @@ For example, ``'[?]'`` matches the character ``'?'``.
    a string containing a path specification. *pathname* can be either absolute
    (like :file:`/usr/src/Python-1.5/Makefile`) or relative (like
    :file:`../../Tools/\*/\*.gif`), and can contain shell-style wildcards. Broken
-   symlinks are included in the results (as in the shell).
+   symlinks are included in the results (as in the shell). Whether or not the
+   results are sorted depends on the file system.
+
+   .. index::
+      single: **; in glob-style wildcards
 
    If *recursive* is true, the pattern "``**``" will match any files and zero or
    more directories and subdirectories.  If the pattern is followed by an

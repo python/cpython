@@ -3,7 +3,8 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
-#ifdef HAVE_GETC_UNLOCKED
+#if defined(HAVE_GETC_UNLOCKED) && !defined(_Py_MEMORY_SANITIZER)
+/* clang MemorySanitizer doesn't yet understand getc_unlocked. */
 #define GETC(f) getc_unlocked(f)
 #define FLOCKFILE(f) flockfile(f)
 #define FUNLOCKFILE(f) funlockfile(f)

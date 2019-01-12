@@ -1,6 +1,5 @@
 """Unit tests for contextlib.py, and other context managers."""
 
-import asyncio
 import io
 import sys
 import tempfile

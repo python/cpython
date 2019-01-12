@@ -54,6 +54,15 @@ typedef int socklen_t;
 #  undef AF_NETLINK
 #endif
 
+#ifdef HAVE_LINUX_QRTR_H
+# ifdef HAVE_ASM_TYPES_H
+#  include <asm/types.h>
+# endif
+# include <linux/qrtr.h>
+#else
+#  undef AF_QIPCRTR
+#endif
+
 #ifdef HAVE_BLUETOOTH_BLUETOOTH_H
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/rfcomm.h>
@@ -202,6 +211,9 @@ typedef union sock_addr {
 #endif
 #ifdef HAVE_SOCKADDR_ALG
     struct sockaddr_alg alg;
+#endif
+#ifdef AF_QIPCRTR
+    struct sockaddr_qrtr sq;
 #endif
 #ifdef AF_VSOCK
     struct sockaddr_vm vm;
