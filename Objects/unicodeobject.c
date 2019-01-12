@@ -2578,9 +2578,15 @@ unicode_fromformat_write_cstr(_PyUnicodeWriter *writer, const char *str,
     PyObject *unicode;
     int res;
 
-    length = strlen(str);
-    if (precision != -1)
-        length = Py_MIN(length, precision);
+    if (precision == -1) {
+        length = strlen(str);
+    }
+    else {
+        length = 0;
+        while (length < precision && str[length]) {
+            length++;
+        }
+    }
     unicode = PyUnicode_DecodeUTF8Stateful(str, length, "replace", NULL);
     if (unicode == NULL)
         return -1;
