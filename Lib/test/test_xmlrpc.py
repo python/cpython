@@ -821,7 +821,7 @@ class SimpleServerTestCase(BaseServerTestCase):
     def test_404(self):
         # send POST with http.client, it should return 404 header and
         # 'Not Found' message.
-        with contextlib.closing(httplib.client.HTTPConnection(ADDR, PORT)) as conn:
+        with contextlib.closing(http.client.HTTPConnection(ADDR, PORT)) as conn:
             conn.request('POST', '/this-is-not-valid')
             response = conn.getresponse()
 
