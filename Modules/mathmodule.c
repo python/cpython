@@ -997,14 +997,14 @@ math_1_to_int(PyObject *arg, double (*func) (double), int can_overflow)
 }
 
 static PyObject *
-math_2(PyObject *args, double (*func) (double, double), const char *funcname)
+math_2(PyObject *const *args, Py_ssize_t nargs,
+       double (*func) (double, double), const char *funcname)
 {
-    PyObject *ox, *oy;
     double x, y, r;
-    if (! PyArg_UnpackTuple(args, funcname, 2, 2, &ox, &oy))
+    if (!_PyArg_CheckPositional(funcname, nargs, 2, 2))
         return NULL;
-    x = PyFloat_AsDouble(ox);
-    y = PyFloat_AsDouble(oy);
+    x = PyFloat_AsDouble(args[0]);
+    y = PyFloat_AsDouble(args[1]);
     if ((x == -1.0 || y == -1.0) && PyErr_Occurred())
         return NULL;
     errno = 0;
@@ -1042,8 +1042,8 @@ math_2(PyObject *args, double (*func) (double, double), const char *funcname)
     PyDoc_STRVAR(math_##funcname##_doc, docstring);
 
 #define FUNC2(funcname, func, docstring) \
-    static PyObject * math_##funcname(PyObject *self, PyObject *args) { \
-        return math_2(args, func, #funcname); \
+    static PyObject * math_##funcname(PyObject *self, PyObject *const *args, Py_ssize_t nargs) { \
+        return math_2(args, nargs, func, #funcname); \
     }\
     PyDoc_STRVAR(math_##funcname##_doc, docstring);
 
@@ -2181,9 +2181,9 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
 
 /* AC: cannot convert yet, waiting for *args support */
 static PyObject *
-math_hypot(PyObject *self, PyObject *args)
+math_hypot(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
-    Py_ssize_t i, n;
+    Py_ssize_t i;
     PyObject *item;
     double max = 0.0;
     double x, result;
@@ -2191,15 +2191,14 @@ math_hypot(PyObject *self, PyObject *args)
     double coord_on_stack[NUM_STACK_ELEMS];
     double *coordinates = coord_on_stack;
 
-    n = PyTuple_GET_SIZE(args);
-    if (n > NUM_STACK_ELEMS) {
-        coordinates = (double *) PyObject_Malloc(n * sizeof(double));
+    if (nargs > NUM_STACK_ELEMS) {
+        coordinates = (double *) PyObject_Malloc(nargs * sizeof(double));
         if (coordinates == NULL) {
             return PyErr_NoMemory();
         }
     }
-    for (i=0 ; i<n ; i++) {
-        item = PyTuple_GET_ITEM(args, i);
+    for (i = 0; i < nargs; i++) {
+        item = args[i];
         if (PyFloat_CheckExact(item)) {
             x = PyFloat_AS_DOUBLE(item);
         } else {
@@ -2215,7 +2214,7 @@ math_hypot(PyObject *self, PyObject *args)
             max = x;
         }
     }
-    result = vector_norm(n, coordinates, max, found_nan);
+    result = vector_norm(nargs, coordinates, max, found_nan);
     if (coordinates != coord_on_stack) {
         PyObject_Free(coordinates);
     }
@@ -2497,10 +2496,10 @@ static PyMethodDef math_methods[] = {
     {"asin",            math_asin,      METH_O,         math_asin_doc},
     {"asinh",           math_asinh,     METH_O,         math_asinh_doc},
     {"atan",            math_atan,      METH_O,         math_atan_doc},
-    {"atan2",           math_atan2,     METH_VARARGS,   math_atan2_doc},
+    {"atan2",           (PyCFunction)(void(*)(void))math_atan2,     METH_FASTCALL,  math_atan2_doc},
     {"atanh",           math_atanh,     METH_O,         math_atanh_doc},
     MATH_CEIL_METHODDEF
-    {"copysign",        math_copysign,  METH_VARARGS,   math_copysign_doc},
+    {"copysign",        (PyCFunction)(void(*)(void))math_copysign,  METH_FASTCALL,  math_copysign_doc},
     {"cos",             math_cos,       METH_O,         math_cos_doc},
     {"cosh",            math_cosh,      METH_O,         math_cosh_doc},
     MATH_DEGREES_METHODDEF
@@ -2517,7 +2516,7 @@ static PyMethodDef math_methods[] = {
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
     MATH_GCD_METHODDEF
-    {"hypot",           math_hypot,     METH_VARARGS,   math_hypot_doc},
+    {"hypot",           (PyCFunction)(void(*)(void))math_hypot,     METH_FASTCALL,  math_hypot_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
     MATH_ISINF_METHODDEF
@@ -2531,7 +2530,7 @@ static PyMethodDef math_methods[] = {
     MATH_MODF_METHODDEF
     MATH_POW_METHODDEF
     MATH_RADIANS_METHODDEF
-    {"remainder",       math_remainder, METH_VARARGS,   math_remainder_doc},
+    {"remainder",       (PyCFunction)(void(*)(void))math_remainder, METH_FASTCALL,  math_remainder_doc},
     {"sin",             math_sin,       METH_O,         math_sin_doc},
     {"sinh",            math_sinh,      METH_O,         math_sinh_doc},
     {"sqrt",            math_sqrt,      METH_O,         math_sqrt_doc},
