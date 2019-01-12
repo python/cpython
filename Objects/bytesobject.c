@@ -312,9 +312,15 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
             Py_ssize_t i;
 
             p = va_arg(vargs, const char*);
-            i = strlen(p);
-            if (prec > 0 && i > prec)
-                i = prec;
+            if (prec <= 0) {
+                i = strlen(p);
+            }
+            else {
+                i = 0;
+                while (i < prec && p[i]) {
+                    i++;
+                }
+            }
             s = _PyBytesWriter_WriteBytes(&writer, s, p, i);
             if (s == NULL)
                 goto error;
