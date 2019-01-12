@@ -2331,7 +2331,7 @@ class Win32NtTests(unittest.TestCase):
         from test import support
         self.nt = support.import_module('nt')
         pass
-    
+
     def tearDown(self):
         pass
 
@@ -2340,29 +2340,29 @@ class Win32NtTests(unittest.TestCase):
             import ctypes, ctypes.wintypes
         except ImportError:
             raise unittest.SkipTest('ctypes module is required for this test')
-        
+
         kernel = ctypes.WinDLL('Kernel32.dll', use_last_error=True)
         kernel.GetCurrentProcess.restype = ctypes.wintypes.HANDLE
-        
+
         kernel.GetProcessHandleCount.restype = ctypes.wintypes.BOOL
         kernel.GetProcessHandleCount.argtypes = (ctypes.wintypes.HANDLE,
                                                  ctypes.wintypes.LPDWORD)
-        
+
         # This is a pseudo-handle that doesn't need to be closed
         hproc = kernel.GetCurrentProcess()
-        
+
         handle_count = ctypes.wintypes.DWORD()
         ok = kernel.GetProcessHandleCount(hproc, ctypes.byref(handle_count))
         self.assertEqual(1, ok)
-        
+
         before_count = handle_count.value
-        
+
         # The first two test the error path, __file__ tests the success path
-        filenames = [ r'\\?\C:', 
-                      r'\\?\NUL', 
+        filenames = [ r'\\?\C:',
+                      r'\\?\NUL',
                       r'\\?\CONIN',
                       __file__ ]
-        
+
         for i in range(10):
             for name in filenames:
                 try:
@@ -2374,14 +2374,14 @@ class Win32NtTests(unittest.TestCase):
                     tmp = os.stat(name)
                 except:
                     pass
-        
+
         ok = kernel.GetProcessHandleCount(hproc, ctypes.byref(handle_count))
         self.assertEqual(1, ok)
-        
+
         handle_delta = handle_count.value - before_count
 
-        self.assertEqual(0, handle_delta)        
-    
+        self.assertEqual(0, handle_delta)
+
 @support.skip_unless_symlink
 class NonLocalSymlinkTests(unittest.TestCase):
 
