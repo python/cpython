@@ -855,6 +855,13 @@ class _TestSubclassingProcess(BaseTestCase):
             join_process(p)
             self.assertEqual(p.exitcode, reason)
 
+        for args in ((None,), (),):
+            p = self.Process(target=sys.exit, args=args)
+            p.daemon = True
+            p.start()
+            join_process(p)
+            self.assertEqual(p.exitcode, 0)
+
 #
 #
 #
