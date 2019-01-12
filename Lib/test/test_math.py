@@ -867,6 +867,8 @@ class MathTests(unittest.TestCase):
             dist((1, 2, 3, 4), (5, 6, 7))
         with self.assertRaises(ValueError):        # Check dimension agree
             dist((1, 2, 3), (4, 5, 6, 7))
+        with self.assertRaises(TypeError):         # Rejects invalid types
+            dist("abc", "xyz")
 
         # Verify that the one dimensional case is equivalent to abs()
         for i in range(20):
