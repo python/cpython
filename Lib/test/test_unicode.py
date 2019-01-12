@@ -2676,6 +2676,12 @@ class CAPITest(unittest.TestCase):
         check_format('%.%s',
                      b'%.%s', b'abc')
 
+        # Issue #33817: empty strings
+        check_format('',
+                     b'')
+        check_format('',
+                     b'%s', b'')
+
     # Test PyUnicode_AsWideChar()
     @support.cpython_only
     def test_aswidechar(self):
