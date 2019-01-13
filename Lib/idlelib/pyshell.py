@@ -899,6 +899,9 @@ class PyShell(OutputWindow):
         if use_subprocess:
             text.bind("<<view-restart>>", self.view_restart_mark)
             text.bind("<<restart-shell>>", self.restart_shell)
+        squeezer = self.Squeezer(self)
+        text.bind("<<squeeze-current-text>>",
+                  squeezer.squeeze_current_text_event)
 
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
