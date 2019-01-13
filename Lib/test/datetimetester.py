@@ -4679,6 +4679,12 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
                 self.assertEqual(dt0.utcoffset(), offset)
                 self.assertEqual(tz.calls, i)
 
+                # Create a new datetime with replace, clearing the cache
+                dt0 = dt0.replace(microsecond=1)
+                self.assertEqual(dt0.utcoffset(), offset)
+                i += 1
+                self.assertEqual(tz.calls, i)
+
     def test_tzidx_misses(self):
         class CachableTZInfo(tzinfo):
             """Fixed DST offset time zone class intended to test tzidx_cache"""
