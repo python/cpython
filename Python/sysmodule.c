@@ -114,7 +114,6 @@ static PyObject *
 sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
 {
     assert(!PyErr_Occurred());
-    PyObject *hook;
     char *envar = Py_GETENV("PYTHONBREAKPOINT");
 
     if (envar == NULL || strlen(envar) == 0) {
@@ -134,29 +133,33 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         return NULL;
     }
     const char *last_dot = strrchr(envar, '.');
+    const char *attrname = NULL;
+    PyObject *modulepath = NULL;
 
     if (last_dot == NULL) {
         /* The breakpoint is a built-in, e.g. PYTHONBREAKPOINT=int */
-        hook = _PyObject_GetBuiltin(envar);
+        modulepath = PyUnicode_FromString("builtins");
+        attrname = envar;
     }
     else {
         /* Split on the last dot; */
-        PyObject *modulepath = PyUnicode_FromStringAndSize(envar, last_dot - envar);
-        if (modulepath == NULL) {
-            PyMem_RawFree(envar);
-            return NULL;
-        }
-
-        PyObject *module = PyImport_ImportModuleLevelObject(
-            modulepath, NULL, NULL, NULL, 0);
-        Py_DECREF(modulepath);
-        if (module == NULL) {
-            goto error;
-        }
-
-        hook = PyObject_GetAttrString(module, last_dot + 1);
-        Py_DECREF(module);
+        modulepath = PyUnicode_FromStringAndSize(envar, last_dot - envar);
+        attrname = last_dot + 1;
     }
+    if (modulepath == NULL) {
+        PyMem_RawFree(envar);
+        return NULL;
+    }
+
+    PyObject *module = PyImport_Import(modulepath);
+    Py_DECREF(modulepath);
+
+    if (module == NULL) {
+        goto error;
+    }
+
+    PyObject *hook = PyObject_GetAttrString(module, attrname);
+    Py_DECREF(module);
 
     if (hook == NULL) {
         goto error;
