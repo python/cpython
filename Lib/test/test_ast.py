@@ -579,10 +579,12 @@ class ASTHelpers_Test(unittest.TestCase):
         )
         self.assertEqual(ast.dump(node, include_attributes=True),
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load(), "
-            "lineno=1, col_offset=0), args=[Name(id='eggs', ctx=Load(), "
-            "lineno=1, col_offset=5), Constant(value='and cheese', lineno=1, "
-            "col_offset=11)], keywords=[], "
-            "lineno=1, col_offset=0), lineno=1, col_offset=0)])"
+            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=4), "
+            "args=[Name(id='eggs', ctx=Load(), lineno=1, col_offset=5, "
+            "end_lineno=1, end_col_offset=9), Constant(value='and cheese', "
+            "lineno=1, col_offset=11, end_lineno=1, end_col_offset=23)], keywords=[], "
+            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24), "
+            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24)])"
         )
 
     def test_copy_location(self):
@@ -600,15 +602,18 @@ class ASTHelpers_Test(unittest.TestCase):
         src.body.append(ast.Expr(ast.Call(ast.Name('spam', ast.Load()),
                                           [ast.Str('eggs')], [])))
         self.assertEqual(src, ast.fix_missing_locations(src))
+        self.maxDiff = None
         self.assertEqual(ast.dump(src, include_attributes=True),
             "Module(body=[Expr(value=Call(func=Name(id='write', ctx=Load(), "
-            "lineno=1, col_offset=0), args=[Constant(value='spam', lineno=1, "
-            "col_offset=6)], keywords=[], "
-            "lineno=1, col_offset=0), lineno=1, col_offset=0), "
-            "Expr(value=Call(func=Name(id='spam', ctx=Load(), lineno=1, "
-            "col_offset=0), args=[Constant(value='eggs', lineno=1, col_offset=0)], "
-            "keywords=[], lineno=1, "
-            "col_offset=0), lineno=1, col_offset=0)])"
+            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=5), "
+            "args=[Constant(value='spam', lineno=1, col_offset=6, end_lineno=1, "
+            "end_col_offset=12)], keywords=[], lineno=1, col_offset=0, end_lineno=1, "
+            "end_col_offset=13), lineno=1, col_offset=0, end_lineno=1, "
+            "end_col_offset=13), Expr(value=Call(func=Name(id='spam', ctx=Load(), "
+            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=0), "
+            "args=[Constant(value='eggs', lineno=1, col_offset=0, end_lineno=1, "
+            "end_col_offset=0)], keywords=[], lineno=1, col_offset=0, end_lineno=1, "
+            "end_col_offset=0), lineno=1, col_offset=0, end_lineno=1, end_col_offset=0)])"
         )
 
     def test_increment_lineno(self):
