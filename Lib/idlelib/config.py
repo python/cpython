@@ -161,7 +161,9 @@ class IdleConf:
         (user home dir)/.idlerc/config-{config-type}.cfg
     """
     def __init__(self, _utest=False):
-        self.config_types = ('main', 'highlight', 'keys', 'extensions')
+        self.config_types = (
+            'main', 'highlight', 'keys', 'extensions', 'checkers',
+        )
         self.defaultCfg = {}
         self.userCfg = {}
         self.cfg = {}  # TODO use to select userCfg vs defaultCfg
