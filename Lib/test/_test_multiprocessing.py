@@ -848,19 +848,20 @@ class _TestSubclassingProcess(BaseTestCase):
 
             os.unlink(testfn)
 
-        for reason in (True, False, 8):
-            p = self.Process(target=sys.exit, args=(reason,))
-            p.daemon = True
-            p.start()
-            join_process(p)
-            self.assertEqual(p.exitcode, reason)
+        cases = [
+            ((True,), 1),
+            ((False,), 0),
+            ((8,), 8),
+            ((None,), 0),
+            ((), 0),
+            ]
 
-        for args in ((None,), (),):
+        for args, expected in cases:
             p = self.Process(target=sys.exit, args=args)
             p.daemon = True
             p.start()
             join_process(p)
-            self.assertEqual(p.exitcode, 0)
+            self.assertEqual(p.exitcode, expected)
 
 #
 #
