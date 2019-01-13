@@ -271,7 +271,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         // TODO: end line for multi-line strings (and "" \ "").
         if ((err_ret->error =
              PyParser_AddToken(ps, (int)type, str,
-                               tok->lineno, col_offset, end_col_offset,
+                               tok->lineno, col_offset, tok->lineno, end_col_offset,
                                &(err_ret->expected))) != E_OK) {
             if (err_ret->error != E_DONE) {
                 PyObject_FREE(str);
@@ -367,6 +367,9 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 done:
     PyTokenizer_Free(tok);
 
+    if (n != NULL) {
+        _finalize_end_pos(n);
+    }
     return n;
 }
 

@@ -238,6 +238,10 @@ class AST_Tests(unittest.TestCase):
             elif value is not None:
                 self._assertTrueorder(value, parent_pos)
 
+    def _check_end_pos(self, ast_node, end_line, end_col_offset):
+        self.assertEqual(ast_node.end_line, end_line)
+        self.assertEqual(ast_node.end_col_offset, end_col_offset)
+
     def test_AST_objects(self):
         x = ast.AST()
         self.assertEqual(x._fields, ())

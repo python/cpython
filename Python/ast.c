@@ -739,32 +739,11 @@ num_stmts(const node *n)
     Py_UNREACHABLE();
 }
 
-void
-update_node_ends(node *n)
-{
-    int max_line = 0, max_col = -1;
-    node *ch;
-
-    if (NCH(n) == 0) {
-        return;
-    }
-
-    for (int i = 0; i < NCH(n); i++) {
-        ch = CHILD(n, i);
-        update_node_ends(ch);
-        max_line = ch->n_end_lineno > max_line ? ch->n_end_lineno : max_line;
-        max_col = ch->n_end_col_offset > max_col ? ch->n_end_col_offset : max_col;
-    }
-    n->n_end_lineno = max_line;
-    n->n_end_col_offset = max_col;
-}
-
-
 /* Transform the CST rooted at node * to the appropriate AST
 */
 
 mod_ty
-PyAST_FromNodeObject(node *n, PyCompilerFlags *flags,
+PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
                      PyObject *filename, PyArena *arena)
 {
     int i, j, k, num;
@@ -778,8 +757,6 @@ PyAST_FromNodeObject(node *n, PyCompilerFlags *flags,
     /* borrowed reference */
     c.c_filename = filename;
     c.c_normalize = NULL;
-
-    update_node_ends(n);
 
     if (TYPE(n) == encoding_decl)
         n = CHILD(n, 0);
@@ -878,7 +855,7 @@ PyAST_FromNodeObject(node *n, PyCompilerFlags *flags,
 }
 
 mod_ty
-PyAST_FromNode(node *n, PyCompilerFlags *flags, const char *filename_str,
+PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename_str,
                PyArena *arena)
 {
     mod_ty mod;

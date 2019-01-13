@@ -77,13 +77,33 @@ fancy_roundup(int n)
                fancy_roundup(n))
 
 
+void
+_finalize_end_pos(node *n)
+{
+    int nch = NCH(n);
+    node *last;
+    if (nch == 0) {
+        return;
+    }
+    last = CHILD(n, nch - 1);
+    _finalize_end_pos(last);
+    n->n_end_lineno = last->n_end_lineno;
+    n->n_end_col_offset = last->n_end_col_offset;
+}
+
 int
-PyNode_AddChild(node *n1, int type, char *str, int lineno, int col_offset, int end_col_offset)
+PyNode_AddChild(node *n1, int type, char *str, int lineno, int col_offset,
+                int end_lineno, int end_col_offset)
 {
     const int nch = n1->n_nchildren;
     int current_capacity;
     int required_capacity;
     node *n;
+
+    // finalize end position of previous node (if any)
+    if (nch > 0) {
+        _finalize_end_pos(CHILD(n1, nch - 1));
+    }
 
     if (nch == INT_MAX || nch < 0)
         return E_OVERFLOW;
@@ -109,7 +129,7 @@ PyNode_AddChild(node *n1, int type, char *str, int lineno, int col_offset, int e
     n->n_str = str;
     n->n_lineno = lineno;
     n->n_col_offset = col_offset;
-    n->n_end_lineno = lineno;  // this and below are correct only for terminals.
+    n->n_end_lineno = end_lineno;  // this and below will be updates after all children are added.
     n->n_end_col_offset = end_col_offset;
     n->n_nchildren = 0;
     n->n_child = NULL;
