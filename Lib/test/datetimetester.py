@@ -4679,6 +4679,108 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
                 self.assertEqual(dt0.utcoffset(), offset)
                 self.assertEqual(tz.calls, i)
 
+    def test_tzidx_misses(self):
+        class CachableTZInfo(tzinfo):
+            """Fixed DST offset time zone class intended to test tzidx_cache"""
+            def __init__(self):
+                self.calls = 0
+
+            def __repr__(self):
+                return f"{self.__class__.__name__}()"
+
+            def tzidx(self, dt):
+                self.calls += 1
+
+                dst_start = (3, 15, 2, 0, 0, 0)      # DST starts March 15 at 2AM
+                dst_end = (11, 2, 3, 0, 0, 0)        # DST ends November 2 at 3AM
+
+                dt_tuple = (dt.month, dt.day, dt.hour, dt.minute, dt.second,
+                            dt.microsecond)
+
+                # Not bothering with fold support here
+                if dst_start <= dt_tuple < dst_end:
+                    return timedelta(hours=1)
+                else:
+                    return timedelta(hours=0)
+
+            def dst(self, dt):
+                return dt.tzidx()
+
+            def utcoffset(self, dt):
+                return dt.tzidx()
+
+            def tzname(self, dt):
+                return str(dt.tzidx())
+
+        STD_TUPLE = (timedelta(hours=0), '0:00:00', timedelta(hours=0))
+        DST_TUPLE = (timedelta(hours=1), '1:00:00', timedelta(hours=1))
+        cases = [
+            (datetime(2014, 1, 1), STD_TUPLE),
+            (datetime(2015, 3, 15, 1), STD_TUPLE),
+            (datetime(2015, 3, 15, 3), DST_TUPLE),
+            (datetime(2015, 11, 1), DST_TUPLE),
+            (datetime(2015, 11, 4), STD_TUPLE),
+            (datetime(2015, 11, 4), STD_TUPLE),     # Repeat values with new dt
+        ]
+
+        i = 0
+        tzi = CachableTZInfo()
+
+        def advance_and_assert():
+            nonlocal i
+            i += 1
+            self.assertEqual(tzi.calls, i)
+
+        for dt, (offset, name, dst) in cases:
+            with self.subTest(dt):
+                dt = dt.replace(tzinfo=tzi)
+                self.assertEqual(tzi.calls, i)
+
+                self.assertEqual(dt.utcoffset(), offset)
+                advance_and_assert()
+
+                self.assertEqual(dt.tzname(), name)
+                advance_and_assert()
+
+                self.assertEqual(dt.dst(), dst)
+                advance_and_assert()
+
+    def test_tzidx_miss_255(self):
+        class CachableTZInfo(tzinfo):
+            idx = [timedelta(hours=0), timedelta(hours=1)]
+            def __init__(self):
+                self.calls = 0
+
+            def tzidx(self, dt):
+                self.calls += 1
+                return dt.year - 1745
+
+            def utcoffset(self, dt):
+                return self.idx[dt.tzidx() >= 255]
+
+        # tzidx is 255 after the year 2000, so those datetimes will always
+        # cause cache misses
+
+        i = 0
+        tzi = CachableTZInfo()
+
+        cases = [(datetime(1999, 1, 1), 0),
+                 (datetime(2000, 1, 1), 1),
+                 (datetime(2001, 1, 1), 1)]
+
+        for dt, cache_miss in cases:
+            with self.subTest(dt):
+                dt = dt.replace(tzinfo=tzi)
+
+                # There will be a cache miss if the utc offset is not 0:00
+                self.assertEqual(dt.utcoffset(), timedelta(hours=cache_miss))
+                i += 1
+                self.assertEqual(tzi.calls, i)
+
+                dt.utcoffset()
+                i += cache_miss
+                self.assertEqual(tzi.calls, i)
+
 
 # Pain to set up DST-aware tzinfo classes.
 
