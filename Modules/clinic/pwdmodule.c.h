@@ -34,7 +34,7 @@ pwd_getpwnam(PyObject *module, PyObject *arg)
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("getpwnam", "str", arg);
+        _PyArg_BadArgument("getpwnam", 0, "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -74,4 +74,4 @@ pwd_getpwall(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef PWD_GETPWALL_METHODDEF
     #define PWD_GETPWALL_METHODDEF
 #endif /* !defined(PWD_GETPWALL_METHODDEF) */
-/*[clinic end generated code: output=9e86e23d6ad9cd08 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f9412bdedc69706c input=a9049054013a1b77]*/

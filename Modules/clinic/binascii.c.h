@@ -189,7 +189,7 @@ binascii_rlecode_hqx(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("rlecode_hqx", "contiguous buffer", arg);
+        _PyArg_BadArgument("rlecode_hqx", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_rlecode_hqx_impl(module, &data);
@@ -225,7 +225,7 @@ binascii_b2a_hqx(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("b2a_hqx", "contiguous buffer", arg);
+        _PyArg_BadArgument("b2a_hqx", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_b2a_hqx_impl(module, &data);
@@ -261,7 +261,7 @@ binascii_rledecode_hqx(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("rledecode_hqx", "contiguous buffer", arg);
+        _PyArg_BadArgument("rledecode_hqx", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_rledecode_hqx_impl(module, &data);
@@ -295,8 +295,23 @@ binascii_crc_hqx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     unsigned int crc;
     unsigned int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*I:crc_hqx",
-        &data, &crc)) {
+    if (!_PyArg_CheckPositional("crc_hqx", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("crc_hqx", 1, "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    crc = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (crc == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = binascii_crc_hqx_impl(module, &data, crc);
@@ -334,10 +349,29 @@ binascii_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     unsigned int crc = 0;
     unsigned int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|I:crc32",
-        &data, &crc)) {
+    if (!_PyArg_CheckPositional("crc32", nargs, 1, 2)) {
         goto exit;
     }
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("crc32", 1, "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    crc = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (crc == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     _return_value = binascii_crc32_impl(module, &data, crc);
     if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
         goto exit;
@@ -378,7 +412,7 @@ binascii_b2a_hex(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("b2a_hex", "contiguous buffer", arg);
+        _PyArg_BadArgument("b2a_hex", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_b2a_hex_impl(module, &data);
@@ -416,7 +450,7 @@ binascii_hexlify(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("hexlify", "contiguous buffer", arg);
+        _PyArg_BadArgument("hexlify", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_hexlify_impl(module, &data);
@@ -574,4 +608,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=8ff0cb5717b15d1b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7210a01a718da4a0 input=a9049054013a1b77]*/

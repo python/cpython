@@ -1467,7 +1467,7 @@ _str_shared(PyObject *obj, _PyCrossInterpreterData *data)
 static PyObject *
 _new_long_object(_PyCrossInterpreterData *data)
 {
-    return PyLong_FromLongLong((int64_t)(data->data));
+    return PyLong_FromLongLong((intptr_t)(data->data));
 }
 
 static int
