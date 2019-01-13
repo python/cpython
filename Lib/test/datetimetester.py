@@ -4787,6 +4787,34 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
                 i += cache_miss
                 self.assertEqual(tzi.calls, i)
 
+    def test_tzidx_recursion_error(self):
+        class RecursionTZInfo(tzinfo):
+            """Time zone info that enters an infinite recursion loop"""
+            def tzidx(self, dt):
+                dtup = dt.timetuple()       # Calls dst() under the hood
+                return dtup[0] >= 2000
+
+            def utcoffset(self, dt):
+                return timedelta(hours=dt.tzidx())
+
+            def dst(self, dt):
+                return timedelta(hours=dt.tzidx())
+
+            def tzname(self, dt):
+                return 'DST' if dt.tzidx() else 'STD'
+
+
+        dt = datetime(2000, 1, 1, tzinfo=RecursionTZInfo())
+
+        with self.assertRaises(RecursionError):
+            dt.utcoffset()
+
+        with self.assertRaises(RecursionError):
+            dt.tzname()
+
+        with self.assertRaises(RecursionError):
+            dt.dst()
+
 
 # Pain to set up DST-aware tzinfo classes.
 
