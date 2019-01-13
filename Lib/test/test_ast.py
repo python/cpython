@@ -4,6 +4,7 @@ import os
 import sys
 import unittest
 import weakref
+from textwrap import dedent
 
 from test import support
 
@@ -237,10 +238,6 @@ class AST_Tests(unittest.TestCase):
                     self._assertTrueorder(child, first_pos)
             elif value is not None:
                 self._assertTrueorder(value, parent_pos)
-
-    def _check_end_pos(self, ast_node, end_line, end_col_offset):
-        self.assertEqual(ast_node.end_line, end_line)
-        self.assertEqual(ast_node.end_col_offset, end_col_offset)
 
     def test_AST_objects(self):
         x = ast.AST()
@@ -1274,6 +1271,78 @@ class ConstantTests(unittest.TestCase):
         binop.right = new_right
 
         self.assertEqual(ast.literal_eval(binop), 10+20j)
+
+
+class EndPositionTests(unittest.TestCase):
+    """Tests for end position of AST nodes.
+
+    Testing end positions of nodes requires a bit of extra care
+    because of how LL parsers work.
+    """
+    def _check_end_pos(self, ast_node, end_lineno, end_col_offset):
+        self.assertEqual(ast_node.end_lineno, end_lineno)
+        self.assertEqual(ast_node.end_col_offset, end_col_offset)
+
+    def _check_content(self, source, ast_node, content):
+        # should be used for one line expressions only.
+        assert ast_node.lineno == ast_node.end_lineno
+        self.assertEqual(source.splitlines()[ast_node.lineno - 1]  # lines are 1-based
+                         [ast_node.col_offset:ast_node.end_col_offset],
+                         content)
+
+    def _parse_expr(self, s):
+        return ast.parse(s).body[0].value
+
+    def test_lambda(self):
+        s = 'lambda x, *y: None'
+        lam = self._parse_expr(s)
+        self._check_content(s, lam.body, 'None')
+        self._check_content(s, lam.args.args[0], 'x')
+        self._check_content(s, lam.args.vararg, 'y')
+
+    def test_func_def(self):
+        s = dedent('''
+            def func(x: int,
+                     *args: str,
+                     z: float = 0,
+                     **kwargs: Any) -> bool:
+                return True
+            ''').strip()
+        fdef = ast.parse(s).body[0]
+        self._check_end_pos(fdef, 5, 15)
+        self._check_content(s, fdef.body[0], 'return True')
+        self._check_content(s, fdef.args.args[0], 'x: int')
+        self._check_content(s, fdef.args.args[0].annotation, 'int')
+        self._check_content(s, fdef.args.kwarg, 'kwargs: Any')
+        self._check_content(s, fdef.args.kwarg.annotation, 'Any')
+
+    def test_call(self):
+        s = 'func(x, y=2, **kw)'
+        call = self._parse_expr(s)
+        self._check_content(s, call.func, 'func')
+        self._check_content(s, call.keywords[0].value, '2')
+        self._check_content(s, call.keywords[1].value, 'kw')
+
+    def test_call_noargs(self):
+        s = 'x[0]()'
+        call = self._parse_expr(s)
+        self._check_content(s, call.func, 'x[0]')
+        self._check_end_pos(call, 1, 6)
+
+    def test_class_def(self):
+        s = dedent('''
+            class C(A, B):
+                x: int = 0
+        ''').strip()
+        cdef = ast.parse(s).body[0]
+        self._check_end_pos(cdef, 2, 14)
+        self._check_content(s, cdef.bases[1], 'B')
+        self._check_content(s, cdef.body[0], 'x: int = 0')
+
+    def test_class_kw(self):
+        s = 'class S(metaclass=abc.ABCMeta): pass'
+        cdef = ast.parse(s).body[0]
+        self._check_content(s, cdef.keywords[0].value, 'abc.ABCMeta')
 
 
 def main():

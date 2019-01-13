@@ -580,7 +580,7 @@ static stmt_ty ast_for_for_stmt(struct compiling *, const node *, bool);
 
 /* Note different signature for ast_for_call */
 static expr_ty ast_for_call(struct compiling *, const node *, expr_ty,
-                            const node *);
+                            const node *, const node *);
 
 static PyObject *parsenumber(struct compiling *, const char *);
 static expr_ty parsestrplus(struct compiling *, const node *n);
@@ -1538,7 +1538,7 @@ ast_for_decorator(struct compiling *c, const node *n)
         name_expr = NULL;
     }
     else {
-        d = ast_for_call(c, CHILD(n, 3), name_expr, CHILD(n, 2));
+        d = ast_for_call(c, CHILD(n, 3), name_expr, CHILD(n, 2), CHILD(n, 4));
         if (!d)
             return NULL;
         name_expr = NULL;
@@ -1579,6 +1579,8 @@ ast_for_funcdef_impl(struct compiling *c, const node *n0,
     asdl_seq *body;
     expr_ty returns = NULL;
     int name_i = 1;
+    int tot, end_lineno, end_col_offset;
+    stmt_ty last;
 
     REQ(n, funcdef);
 
@@ -1600,12 +1602,17 @@ ast_for_funcdef_impl(struct compiling *c, const node *n0,
     if (!body)
         return NULL;
 
+    tot = asdl_seq_LEN(body);
+    last = asdl_seq_GET(body, tot - 1);
+    end_lineno = last->end_lineno;
+    end_col_offset = last->end_col_offset;
+
     if (is_async)
         return AsyncFunctionDef(name, args, body, decorator_seq, returns,
-                                LINENO(n0), n0->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                                LINENO(n0), n0->n_col_offset, end_lineno, end_col_offset, c->c_arena);
     else
         return FunctionDef(name, args, body, decorator_seq, returns,
-                           LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                           LINENO(n), n->n_col_offset, end_lineno, end_col_offset, c->c_arena);
 }
 
 static stmt_ty
@@ -2349,13 +2356,14 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
        subscriptlist: subscript (',' subscript)* [',']
        subscript: '.' '.' '.' | test | [test] ':' [test] [sliceop]
      */
+    const node *n_copy = n;
     REQ(n, trailer);
     if (TYPE(CHILD(n, 0)) == LPAR) {
         if (NCH(n) == 2)
             return Call(left_expr, NULL, NULL, LINENO(n),
                         n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
         else
-            return ast_for_call(c, CHILD(n, 1), left_expr, CHILD(n, 0));
+            return ast_for_call(c, CHILD(n, 1), left_expr, CHILD(n, 0), CHILD(n, 2));
     }
     else if (TYPE(CHILD(n, 0)) == DOT) {
         PyObject *attr_id = NEW_IDENTIFIER(CHILD(n, 1));
@@ -2373,7 +2381,7 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
             if (!slc)
                 return NULL;
             return Subscript(left_expr, slc, Load, LINENO(n), n->n_col_offset,
-                             n->n_end_lineno, n->n_end_col_offset,
+                             n_copy->n_end_lineno, n_copy->n_end_col_offset,
                              c->c_arena);
         }
         else {
@@ -2399,7 +2407,8 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
             }
             if (!simple) {
                 return Subscript(left_expr, ExtSlice(slices, c->c_arena),
-                                 Load, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                                 Load, LINENO(n), n->n_col_offset,
+                                 n_copy->n_end_lineno, n_copy->n_end_col_offset, c->c_arena);
             }
             /* extract Index values and put them in a Tuple */
             elts = _Py_asdl_seq_new(asdl_seq_LEN(slices), c->c_arena);
@@ -2414,7 +2423,8 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
             if (!e)
                 return NULL;
             return Subscript(left_expr, Index(e, c->c_arena),
-                             Load, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                             Load, LINENO(n), n->n_col_offset,
+                             n_copy->n_end_lineno, n_copy->n_end_col_offset, c->c_arena);
         }
     }
 }
@@ -2699,7 +2709,7 @@ ast_for_expr(struct compiling *c, const node *n)
 
 static expr_ty
 ast_for_call(struct compiling *c, const node *n, expr_ty func,
-             const node *maybegenbeg)
+             const node *maybegenbeg, const node *closepar)
 {
     /*
       arglist: argument (',' argument)*  [',']
@@ -2708,6 +2718,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
 
     int i, nargs, nkeywords;
     int ndoublestars;
+    int end_lineno, end_col_offset;
     asdl_seq *args;
     asdl_seq *keywords;
 
@@ -2880,7 +2891,11 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
         }
     }
 
-    return Call(func, args, keywords, func->lineno, func->col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+    // Ideally call ends where closing parenthesis is placed.
+    end_lineno = closepar == NULL ? n->n_end_lineno : closepar->n_end_lineno;
+    end_col_offset = closepar == NULL ? n->n_end_col_offset : closepar->n_end_col_offset;
+
+    return Call(func, args, keywords, func->lineno, func->col_offset, end_lineno, end_col_offset, c->c_arena);
 }
 
 static expr_ty
@@ -3936,6 +3951,8 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
     PyObject *classname;
     asdl_seq *s;
     expr_ty call;
+    int end_lineno, end_col_offset, tot;
+    stmt_ty last;
 
     REQ(n, classdef);
 
@@ -3943,26 +3960,39 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         s = ast_for_suite(c, CHILD(n, 3));
         if (!s)
             return NULL;
+
+        // TODO: refactor this whole function to avoid code duplication.
+        tot = asdl_seq_LEN(s);
+        last = asdl_seq_GET(s, tot - 1);
+        end_lineno = last->end_lineno;
+        end_col_offset = last->end_col_offset;
+
         classname = NEW_IDENTIFIER(CHILD(n, 1));
         if (!classname)
             return NULL;
         if (forbidden_name(c, classname, CHILD(n, 3), 0))
             return NULL;
         return ClassDef(classname, NULL, NULL, s, decorator_seq,
-                        LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                        LINENO(n), n->n_col_offset, end_lineno, end_col_offset, c->c_arena);
     }
 
     if (TYPE(CHILD(n, 3)) == RPAR) { /* class NAME '(' ')' ':' suite */
         s = ast_for_suite(c, CHILD(n, 5));
         if (!s)
             return NULL;
+
+        tot = asdl_seq_LEN(s);
+        last = asdl_seq_GET(s, tot - 1);
+        end_lineno = last->end_lineno;
+        end_col_offset = last->end_col_offset;
+
         classname = NEW_IDENTIFIER(CHILD(n, 1));
         if (!classname)
             return NULL;
         if (forbidden_name(c, classname, CHILD(n, 3), 0))
             return NULL;
         return ClassDef(classname, NULL, NULL, s, decorator_seq,
-                        LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                        LINENO(n), n->n_col_offset, end_lineno, end_col_offset, c->c_arena);
     }
 
     /* class NAME '(' arglist ')' ':' suite */
@@ -3974,13 +4004,19 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         if (!dummy_name)
             return NULL;
         dummy = Name(dummy_name, Load, LINENO(n), n->n_col_offset, CHILD(n, 1)->n_end_lineno, CHILD(n, 1)->n_end_col_offset, c->c_arena);
-        call = ast_for_call(c, CHILD(n, 3), dummy, NULL);
+        call = ast_for_call(c, CHILD(n, 3), dummy, NULL, NULL);
         if (!call)
             return NULL;
     }
     s = ast_for_suite(c, CHILD(n, 6));
     if (!s)
         return NULL;
+
+    tot = asdl_seq_LEN(s);
+    last = asdl_seq_GET(s, tot - 1);
+    end_lineno = last->end_lineno;
+    end_col_offset = last->end_col_offset;
+
     classname = NEW_IDENTIFIER(CHILD(n, 1));
     if (!classname)
         return NULL;
@@ -3988,7 +4024,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         return NULL;
 
     return ClassDef(classname, call->v.Call.args, call->v.Call.keywords, s,
-                    decorator_seq, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                    decorator_seq, LINENO(n), n->n_col_offset, end_lineno, end_col_offset, c->c_arena);
 }
 
 static stmt_ty
