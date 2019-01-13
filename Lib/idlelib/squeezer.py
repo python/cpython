@@ -262,13 +262,11 @@ class Squeezer:
 
             # Only auto-squeeze text with at least the minimum
             # configured number of lines.
-
-            # First, a very quick check to skip very short texts.
-            s_len = len(s)
             auto_squeeze_min_lines = self.auto_squeeze_min_lines
-            if s_len < auto_squeeze_min_lines:
+            # First, a very quick check to skip very short texts.
+            if len(s) < auto_squeeze_min_lines:
                 return write(s, tags)
-
+            # Now the full line-count check.
             numoflines = self.count_lines(s)
             if numoflines < auto_squeeze_min_lines:
                 return write(s, tags)
