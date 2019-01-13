@@ -804,7 +804,8 @@ _sre_SRE_Pattern_findall_impl(PatternObject *self, PyObject *string,
         if (status < 0)
             goto error;
 
-        state.must_advance = (state.ptr == state.start);
+        if (state.ptr == state.start)
+            ((char*)state.ptr) += state.charsize;
         state.start = state.ptr;
     }
 
@@ -948,7 +949,8 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
         }
 
         n = n + 1;
-        state.must_advance = (state.ptr == state.start);
+        if (state.ptr == state.start)
+            ((char*)state.ptr) += state.charsize;
         last = state.start = state.ptr;
 
     }
@@ -1102,7 +1104,8 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
 
         i = e;
         n = n + 1;
-        state.must_advance = (state.ptr == state.start);
+        if (state.ptr == state.start)
+            ((char*)state.ptr) += state.charsize;
         state.start = state.ptr;
     }
 
@@ -2424,7 +2427,8 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self)
     if (status == 0)
         state->start = NULL;
     else {
-        state->must_advance = (state->ptr == state->start);
+        if (state->ptr == state->start)
+            ((char*)state->ptr) += state->charsize;
         state->start = state->ptr;
     }
 
@@ -2462,7 +2466,8 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self)
     if (status == 0)
         state->start = NULL;
     else {
-        state->must_advance = (state->ptr == state->start);
+        if (state->ptr == state->start)
+            ((char*)state->ptr) += state->charsize;
         state->start = state->ptr;
     }
 
