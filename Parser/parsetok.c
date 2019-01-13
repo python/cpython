@@ -205,6 +205,8 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         size_t len;
         char *str;
         col_offset = -1;
+        int lineno;
+        const char *line_start;
 
         type = PyTokenizer_Get(tok, &a, &b);
         if (type == ERRORTOKEN) {
@@ -253,8 +255,15 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
             }
         }
 #endif
-        if (a != NULL && a >= tok->line_start) {
-            col_offset = Py_SAFE_DOWNCAST(a - tok->line_start,
+
+        /* Nodes of type STRING, especially multi line strings
+           must be handled differently in order to get both
+           the starting line number and the column offset right.
+           (cf. issue 16806) */
+        lineno = type == STRING ? tok->first_lineno : tok->lineno;
+        line_start = type == STRING ? tok->multi_line_start : tok->line_start;
+        if (a != NULL && a >= line_start) {
+            col_offset = Py_SAFE_DOWNCAST(a - line_start,
                                           intptr_t, int);
         }
         else {
@@ -263,7 +272,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 
         if ((err_ret->error =
              PyParser_AddToken(ps, (int)type, str,
-                               tok->lineno, col_offset,
+                               lineno, col_offset,
                                &(err_ret->expected))) != E_OK) {
             if (err_ret->error != E_DONE) {
                 PyObject_FREE(str);

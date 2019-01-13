@@ -117,7 +117,7 @@ class TestLiterals(unittest.TestCase):
             eval("'''\n\\z'''")
         self.assertEqual(len(w), 1)
         self.assertEqual(w[0].filename, '<string>')
-        self.assertEqual(w[0].lineno, 2)
+        self.assertEqual(w[0].lineno, 1)
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('error', category=SyntaxWarning)
@@ -126,7 +126,7 @@ class TestLiterals(unittest.TestCase):
             exc = cm.exception
         self.assertEqual(w, [])
         self.assertEqual(exc.filename, '<string>')
-        self.assertEqual(exc.lineno, 2)
+        self.assertEqual(exc.lineno, 1)
 
     def test_eval_str_raw(self):
         self.assertEqual(eval(""" r'x' """), 'x')
@@ -166,7 +166,7 @@ class TestLiterals(unittest.TestCase):
             eval("b'''\n\\z'''")
         self.assertEqual(len(w), 1)
         self.assertEqual(w[0].filename, '<string>')
-        self.assertEqual(w[0].lineno, 2)
+        self.assertEqual(w[0].lineno, 1)
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('error', category=SyntaxWarning)
@@ -175,7 +175,7 @@ class TestLiterals(unittest.TestCase):
             exc = cm.exception
         self.assertEqual(w, [])
         self.assertEqual(exc.filename, '<string>')
-        self.assertEqual(exc.lineno, 2)
+        self.assertEqual(exc.lineno, 1)
 
     def test_eval_bytes_raw(self):
         self.assertEqual(eval(""" br'x' """), b'x')

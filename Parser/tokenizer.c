@@ -1519,6 +1519,13 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         int quote_size = 1;             /* 1 or 3 */
         int end_quote_size = 0;
 
+        /* Nodes of type STRING, especially multi line strings
+           must be handled differently in order to get both
+           the starting line number and the column offset right.
+           (cf. issue 16806) */
+        tok->first_lineno = tok->lineno;
+        tok->multi_line_start = tok->line_start;
+
         /* Find the quote size and start of string */
         c = tok_nextc(tok);
         if (c == quote) {
