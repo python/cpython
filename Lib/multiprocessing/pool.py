@@ -210,12 +210,29 @@ class Pool(object):
                 p.join()
             raise
 
+        if hasattr(self._outqueue, "_reader"):
+            task_queue_sentinels = [self._outqueue._reader]
+        else:
+            task_queue_sentinels = []
+        if hasattr(self._change_notifier, "_reader"):
+            self_notifier_sentinels = [self._change_notifier._reader]
+        else:
+            self_notifier_sentinels = []
+        try:
+            worker_sentinels = [worker.sentinel for worker in self._pool]
+        except AttributeError:
+            worker_sentinels = []
+
+        sentinels = [*task_queue_sentinels,
+                     *worker_sentinels,
+                     *self_notifier_sentinels]
+
         self._worker_handler = threading.Thread(
             target=Pool._handle_workers,
             args=(self._cache, self._taskqueue, self._ctx, self.Process,
                   self._processes, self._pool, self._inqueue, self._outqueue,
                   self._initializer, self._initargs, self._maxtasksperchild,
-                  self._wrap_exception)
+                  self._wrap_exception, sentinels, self._change_notifier)
             )
         self._worker_handler.daemon = True
         self._worker_handler._state = RUN
@@ -472,32 +489,26 @@ class Pool(object):
         )
         return result
 
-    def _wait_for_updates(self, timeout=0.2):
-        task_queue_sentinels = [self._outqueue._reader.fileno(),
-                                self._outqueue._writer.fileno()]
-        self_notifier_sentinels = [self._change_notifier._reader.fileno()]
-        worker_sentinels = [worker.sentinel for worker in self._pool]
-        sentinels = [*task_queue_sentinels,
-                     *worker_sentinels,
-                     *self_notifier_sentinels]
-        wait(sentinels, timeout=timeout)
-        while not self._change_notifier.empty():
-            self._change_notifier.get()
-
-
     @staticmethod
-    def _handle_workers(cache, taskqueue, ctx, Process, processes, pool,
-                        inqueue, outqueue, initializer, initargs,
-                        maxtasksperchild, wrap_exception):
+    def _wait_for_updates(sentinels, change_notifier, timeout=0.1):
+        wait(sentinels, timeout=timeout)
+        while not change_notifier.empty():
+            change_notifier.get()
+
+    @classmethod
+    def _handle_workers(cls, cache, taskqueue, ctx, Process, processes,
+                        pool, inqueue, outqueue, initializer, initargs,
+                        maxtasksperchild, wrap_exception, sentinels,
+                        change_notifier):
         thread = threading.current_thread()
 
         # Keep maintaining workers until the cache gets drained, unless the pool
         # is terminated.
         while thread._state == RUN or (cache and thread._state != TERMINATE):
-            Pool._maintain_pool(ctx, Process, processes, pool, inqueue,
+            cls._maintain_pool(ctx, Process, processes, pool, inqueue,
                                 outqueue, initializer, initargs,
                                 maxtasksperchild, wrap_exception)
-            pool._wait_for_updates()
+            cls._wait_for_updates(sentinels, change_notifier)
         # send sentinel to stop workers
         taskqueue.put(None)
         util.debug('worker handler exiting')
@@ -919,5 +930,5 @@ class ThreadPool(Pool):
         for i in range(size):
             inqueue.put(None)
 
-    def _wait_for_updates(self, timeout=0.2):
+    def _wait_for_updates(self, sentinels, change_notifier, timeout=0.2):
         time.sleep(timeout)
