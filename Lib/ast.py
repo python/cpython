@@ -348,7 +348,7 @@ class _ABC(type):
             else:
                 return (
                     isinstance(value, _const_types[cls]) and
-                    not isinstance(value, _const_types_not[cls])
+                    not isinstance(value, _const_types_not.get(cls, ()))
                 )
         return type.__instancecheck__(cls, inst)
 

@@ -1,2 +1,2 @@
-``isinstance(ast.Constant(True), ast.Num)`` is ``False``.  Patch by Anthony
-Sottile
+``ast.Constant(boolean)`` no longer an instance of :class:`ast.Num`.  Patch by Anthony
+Sottile.
