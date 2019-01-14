@@ -725,7 +725,8 @@ class PyBuildExt(build_ext):
         # pwd(3)
         exts.append( Extension('pwd', ['pwdmodule.c']) )
         # grp(3)
-        exts.append( Extension('grp', ['grpmodule.c']) )
+        if 'vxworks' not in host_platform:
+            exts.append( Extension('grp', ['grpmodule.c']) )
         # spwd, shadow passwords
         if (config_h_vars.get('HAVE_GETSPNAM', False) or
                 config_h_vars.get('HAVE_GETSPENT', False)):
@@ -1325,9 +1326,10 @@ class PyBuildExt(build_ext):
 
         # Unix-only modules
         if host_platform != 'win32':
-            # Steen Lumholt's termios module
-            exts.append( Extension('termios', ['termios.c']) )
-            # Jeremy Hylton's rlimit interface
+            if 'vxworks' not in host_platform :
+                # Steen Lumholt's termios module
+                exts.append( Extension('termios', ['termios.c']) )
+                # Jeremy Hylton's rlimit interface
             exts.append( Extension('resource', ['resource.c']) )
         else:
             missing.extend(['resource', 'termios'])
