@@ -1801,6 +1801,21 @@ class ReTests(unittest.TestCase):
         self.assertEqual([m.span() for m in re.finditer(r"\b|\w+", "a::bc")],
                          [(0, 0), (0, 1), (1, 1), (3, 3), (3, 5), (5, 5)])
 
+        self.assertEqual([(*m.span(), *m.groups())
+                            for m in re.finditer(r"(?=(.))|(.)?", "ab")],
+                         [(0, 0, 'a', None),
+                          (0, 1, None, 'a'),
+                          (1, 1, 'b', None),
+                          (1, 2, None, 'b'),
+                          (2, 2, None, None)])
+        self.assertEqual([(*m.span(), *m.groups())
+                            for m in re.finditer(r"(?=(.)?)|(.)", "ab")],
+                         [(0, 0, 'a', None),
+                          (0, 1, None, 'a'),
+                          (1, 1, 'b', None),
+                          (1, 2, None, 'b'),
+                          (2, 2, None, None)])
+
     def test_bug_2537(self):
         # issue 2537: empty submatches
         for outer_op in ('{0,}', '*', '+', '{1,187}'):
@@ -2066,6 +2081,40 @@ ELSE
         s[:] = b'xyz'
         self.assertEqual(m.group(), b'xyz')
         self.assertEqual(m2.group(), b'')
+
+    def test_bug_34294(self):
+        # Issue 34294: wrong capturing groups
+
+        # exists since very early version
+        s = "a\tx"
+        p = r"\b(?=(\t)|(x))x"
+        self.assertEqual(re.search(p, s).groups(), (None, 'x'))
+
+        # introduced in Python 3.7.0
+        s = "ab"
+        p = r"(?=(.)(.)?)"
+        self.assertEqual(re.findall(p, s),
+                         [('a', 'b'), ('b', '')])
+        self.assertEqual([m.groups() for m in re.finditer(p, s)],
+                         [('a', 'b'), ('b', None)])
+
+        # test-cases provided by issue34294, introduced in Python 3.7.0
+        p = r"(?=<(?P<tag>\w+)/?>(?:(?P<text>.+?)</(?P=tag)>)?)"
+        s = "<test><foo2/></test>"
+        self.assertEqual(re.findall(p, s),
+                         [('test', '<foo2/>'), ('foo2', '')])
+        self.assertEqual([m.groupdict() for m in re.finditer(p, s)],
+                         [{'tag': 'test', 'text': '<foo2/>'},
+                          {'tag': 'foo2', 'text': None}])
+        s = "<test>Hello</test><foo/>"
+        self.assertEqual([m.groupdict() for m in re.finditer(p, s)],
+                         [{'tag': 'test', 'text': 'Hello'},
+                          {'tag': 'foo', 'text': None}])
+        s = "<test>Hello</test><foo/><foo/>"
+        self.assertEqual([m.groupdict() for m in re.finditer(p, s)],
+                         [{'tag': 'test', 'text': 'Hello'},
+                          {'tag': 'foo', 'text': None},
+                          {'tag': 'foo', 'text': None}])
 
 
 class PatternReprTests(unittest.TestCase):

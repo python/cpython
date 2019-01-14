@@ -1360,8 +1360,13 @@ exit:
             break;
     }
 
-    return ret; /* should never get here */
+    /* should never get here */
+    RETURN_ERROR(SRE_ERROR_STATE);
 }
+
+/* need to reset capturing groups between two SRE(match) callings in loops */
+#define RESET_CAPTURE_GROUP() \
+    do { state->lastmark = state->lastindex = -1; } while (0)
 
 LOCAL(Py_ssize_t)
 SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
@@ -1439,6 +1444,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
             status = SRE(match)(state, pattern + 2*prefix_skip, 0);
             if (status != 0)
                 return status;
+            RESET_CAPTURE_GROUP();
             ++ptr;
         }
         return 0;
@@ -1484,6 +1490,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
                     status = SRE(match)(state, pattern + 2*prefix_skip, 0);
                     if (status != 0)
                         return status;
+                    RESET_CAPTURE_GROUP();
                     /* close but no cigar -- try again */
                     if (++ptr >= end)
                         return 0;
@@ -1509,6 +1516,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
             status = SRE(match)(state, pattern, 0);
             if (status != 0)
                 break;
+            RESET_CAPTURE_GROUP();
             ptr++;
         }
     } else {
@@ -1519,6 +1527,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
         status = SRE(match)(state, pattern, 1);
         state->must_advance = 0;
         while (status == 0 && ptr < end) {
+            RESET_CAPTURE_GROUP();
             ptr++;
             TRACE(("|%p|%p|SEARCH\n", pattern, ptr));
             state->start = state->ptr = ptr;
