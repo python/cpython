@@ -271,16 +271,15 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         }
 
         if (b != NULL && b >= line_start) {
-            end_col_offset = Py_SAFE_DOWNCAST(b - line_start,
+            end_col_offset = Py_SAFE_DOWNCAST(b - tok->line_start,
                                               intptr_t, int);
         }
         else {
             end_col_offset = -1;
         }
-        // TODO: end line for multi-line strings (and "" \ "").
         if ((err_ret->error =
              PyParser_AddToken(ps, (int)type, str,
-                               lineno, col_offset, lineno, end_col_offset,
+                               lineno, col_offset, tok->lineno, end_col_offset,
                                &(err_ret->expected))) != E_OK) {
             if (err_ret->error != E_DONE) {
                 PyObject_FREE(str);

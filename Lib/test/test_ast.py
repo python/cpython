@@ -1349,6 +1349,25 @@ class EndPositionTests(unittest.TestCase):
         cdef = ast.parse(s).body[0]
         self._check_content(s, cdef.keywords[0].value, 'abc.ABCMeta')
 
+    def test_multi_line_str(self):
+        s = dedent('''
+            x = """Some multi-line text.
+
+            It goes on starting from same indent."""
+        ''').strip()
+        assign = ast.parse(s).body[0]
+        self._check_end_pos(assign, 3, 40)
+        self._check_end_pos(assign.value, 3, 40)
+
+    def test_continued_str(self):
+        s = dedent('''
+            x = "first part" \\
+            "second part"
+        ''').strip()
+        assign = ast.parse(s).body[0]
+        self._check_end_pos(assign, 2, 13)
+        self._check_end_pos(assign.value, 2, 13)
+
 
 def main():
     if __name__ != '__main__':
