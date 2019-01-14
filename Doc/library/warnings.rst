@@ -400,7 +400,7 @@ Available Functions
    in which case *category* will be ignored and ``message.__class__`` will be used.
    In this case the message text will be ``str(message)``. This function raises an
    exception if the particular warning issued is changed into an error by the
-   warnings filter see above.  The *stacklevel* argument can be used by wrapper
+   warnings filter (see above).  The *stacklevel* argument can be used by wrapper
    functions written in Python, like this::
 
       def deprecation(message):
