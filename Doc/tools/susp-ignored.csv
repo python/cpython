@@ -349,4 +349,3 @@ whatsnew/3.7,,::,error::BytesWarning
 whatsnew/changelog,,::,error::BytesWarning
 whatsnew/changelog,,::,default::BytesWarning
 whatsnew/changelog,,::,default::DeprecationWarning
-whatsnew/changelog,,.. include:,.. include::
