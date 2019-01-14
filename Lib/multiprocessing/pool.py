@@ -175,6 +175,9 @@ class Pool(object):
         self._ctx = context or get_context()
         self._setup_queues()
         self._taskqueue = queue.SimpleQueue()
+        # The _change_notifier queue exist to wake ip self._handle_workers()
+        # when the cache (self._cache) is empty or when ther is a change in
+        # the _state variable of the thread that runs _handle_workers.
         self._change_notifier = self._ctx.SimpleQueue()
         self._cache = PoolCache(notifier=self._change_notifier)
         self._maxtasksperchild = maxtasksperchild
@@ -470,6 +473,9 @@ class Pool(object):
         sentinels = [*task_queue_sentinels,
                      *worker_sentinels,
                      *self_notifier_sentinels]
+        # The timeout in wait() exist to make sure that we do not hang/deadlock
+        # if there are some edge case/race condition in the self-pipe based solution,
+        # so we fallback to active polling to maintain backwards compatibility.
         wait(sentinels, timeout=timeout)
 
     @staticmethod
@@ -647,7 +653,7 @@ class Pool(object):
             time.sleep(0)
 
     @classmethod
-    def _terminate_pool(cls, taskqueue, inqueue, outqueue, pool, pool_notifier,
+    def _terminate_pool(cls, taskqueue, inqueue, outqueue, pool, change_notifier,
                         worker_handler, task_handler, result_handler, cache):
         # this is guaranteed to only be called once
         util.debug('finalizing pool')
@@ -663,7 +669,7 @@ class Pool(object):
                 "Cannot have cache with result_hander not alive")
 
         result_handler._state = TERMINATE
-        pool_notifier.put(None)
+        change_notifier.put(None)
         outqueue.put(None)                  # sentinel
 
         # We must wait for the worker handler to exit before terminating
