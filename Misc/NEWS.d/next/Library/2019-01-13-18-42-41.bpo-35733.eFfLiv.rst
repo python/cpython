@@ -1,0 +1,2 @@
+``isinstance(ast.Constant(True), ast.Num)`` is ``False``.  Patch by Anthony
+Sottile

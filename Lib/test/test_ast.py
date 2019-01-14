@@ -406,6 +406,8 @@ class AST_Tests(unittest.TestCase):
         self.assertTrue(isinstance(ast.Constant(None), ast.NameConstant))
         self.assertTrue(isinstance(ast.Constant(...), ast.Ellipsis))
 
+        self.assertFalse(isinstance(ast.Constant(True), ast.Num))
+        self.assertFalse(isinstance(ast.Constant(False), ast.Num))
         self.assertFalse(isinstance(ast.Str('42'), ast.Num))
         self.assertFalse(isinstance(ast.Num(42), ast.Str))
         self.assertFalse(isinstance(ast.Str('42'), ast.Bytes))
