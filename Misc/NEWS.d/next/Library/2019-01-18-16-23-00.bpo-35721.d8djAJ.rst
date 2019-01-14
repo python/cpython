@@ -1,0 +1,3 @@
+Fix :meth:`asyncio.SelectorEventLoop.subprocess_exec()` leaks file descriptors
+if ``Popen`` fails and called with ``stdin=subprocess.PIPE``.
+Patch by Niklas Fiekas.
