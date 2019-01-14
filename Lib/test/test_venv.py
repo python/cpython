@@ -122,14 +122,14 @@ class BasicTest(BaseTest):
         self.assertEqual(context.prompt, '(%s) ' % env_name)
         builder.create(self.env_dir)
         data = self.get_text_file_contents('pyvenv.cfg')
-        self.assertIn('prompt = (%s) \n' % env_name, data)
+        self.assertIn("prompt = '(%s) '\n" % env_name, data)
 
         builder = venv.EnvBuilder(prompt='My prompt')
         context = builder.ensure_directories(self.env_dir)
         self.assertEqual(context.prompt, '(My prompt) ')
         builder.create(self.env_dir)
         data = self.get_text_file_contents('pyvenv.cfg')
-        self.assertIn('prompt = (My prompt) \n', data)
+        self.assertIn("prompt = '(My prompt) '\n", data)
 
     @skipInVenv
     def test_prefixes(self):
