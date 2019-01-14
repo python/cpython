@@ -3,6 +3,7 @@
 from collections import namedtuple
 from textwrap import dedent
 from tkinter import Text, Tk
+from tkinter.font import Font
 import unittest
 from unittest.mock import Mock, NonCallableMagicMock, patch, sentinel, ANY
 from test.support import requires
@@ -18,6 +19,15 @@ from idlelib.pyshell import PyShell
 
 SENTINEL_VALUE = sentinel.SENTINEL_VALUE
 
+def get_font_family():
+    "If gui allowed, get name of font family guaranteed to exist."
+    requires('gui')
+    root = Tk()
+    root.withdraw()
+    f = Font(name='TkFixedFont', exists=True, root=root)
+    actualFont = Font.actual(f)
+    root.destroy()
+    return actualFont['family']
 
 def get_test_tk_root(test_instance):
     """Helper for tests: Create a root Tk object."""
@@ -82,6 +92,15 @@ class CountLinesTest(unittest.TestCase):
 
 class SqueezerTest(unittest.TestCase):
     """Tests for the Squeezer class."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.font_family = get_font_family()
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.font_family
+
     def tearDown(self):
         # Clean up the Squeezer class's reference to its instance,
         # to avoid side-effects from one test case upon another.
@@ -114,7 +133,7 @@ class SqueezerTest(unittest.TestCase):
         if root is None:
             root = get_test_tk_root(self)
         text_widget = Text(root)
-        text_widget["font"] = ('Courier', 10)
+        text_widget["font"] = (self.font_family, 10)
         text_widget.mark_set("iomark", "1.0")
         return text_widget
 
@@ -300,16 +319,14 @@ class SqueezerTest(unittest.TestCase):
         orig_auto_squeeze_min_lines = squeezer.auto_squeeze_min_lines
 
         # Increase both font size and auto-squeeze-min-lines.
-        text_widget["font"] = ('Courier', 20)
+        text_widget["font"] = (self.font_family, 20)
         new_auto_squeeze_min_lines = orig_auto_squeeze_min_lines + 10
         self.set_idleconf_option_with_cleanup(
             'main', 'PyShell', 'auto-squeeze-min-lines',
             str(new_auto_squeeze_min_lines))
 
         Squeezer.reload()
-        # The following failed on Gentoo buildbots.  Issue title will be
-        # IDLE: Fix squeezer test_reload.
-        #self.assertGreater(squeezer.zero_char_width, orig_zero_char_width)
+        self.assertGreater(squeezer.zero_char_width, orig_zero_char_width)
         self.assertEqual(squeezer.auto_squeeze_min_lines,
                          new_auto_squeeze_min_lines)
 
