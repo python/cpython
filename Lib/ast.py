@@ -389,8 +389,4 @@ _const_types = {
 }
 _const_types_not = {
     Num: (bool,),
-    Str: (),
-    Bytes: (),
-    NameConstant: (),
-    Ellipsis: (),
 }
