@@ -11,8 +11,8 @@
 #include <rtpLib.h>
 #include <pathLib.h>
 #include <taskLibCommon.h>
-#include "clinic/_vxwapi.c.h"
 
+#include "clinic/_vxwapi.c.h"
 
 /*[clinic input]
 module _vxwapi
@@ -31,12 +31,11 @@ Check if path is an absolute path on VxWorks (since not all VxWorks absolute pat
 static PyObject *
 _vxwapi_isAbs_impl(PyObject *module, const char *path)
 /*[clinic end generated code: output=c6929732e0e3b56e input=485a1871f58eb505]*/
-{                                                                  
+{
     long ret = (long)_pathIsAbsolute(path, NULL);
 
     return PyLong_FromLong(ret);
 }
-
 
 static PyObject *
 rtp_spawn_impl(
@@ -54,32 +53,104 @@ rtp_spawn_impl(
     unsigned int uStackSize = 0;
     int options = 0;
     int taskOptions = 0;
+    char  pwdbuf[PATH_MAX]={0};
 
     int pid = RTP_ID_ERROR;
-    (void)taskPriorityGet(taskIdSelf(), &priority);
-    (void)taskStackSizeGet(taskIdSelf(), &uStackSize);
+    int stdin_bk = -1, stdout_bk = -1, stderr_bk = -1;
 
-    char  pwdbuf[256]={0};
+    if (-1 != p2cwrite &&
+        _Py_set_inheritable_async_safe(p2cwrite, 0, NULL) < 0)
+        goto error;
+
+    if (-1 != c2pread &&
+        _Py_set_inheritable_async_safe(c2pread, 0, NULL) < 0)
+        goto error;
+
+    if (-1 != errread &&
+        _Py_set_inheritable_async_safe(errread, 0, NULL) < 0)
+        goto error;
+
+    if (-1 != errpipe_read &&
+        _Py_set_inheritable_async_safe(errpipe_read, 0, NULL) < 0)
+        goto error;
+
+    if (-1 != errpipe_write &&
+        _Py_set_inheritable_async_safe(errpipe_write, 0, NULL) < 0)
+        goto error;
+
+    if (p2cread == 0) {
+        if (_Py_set_inheritable_async_safe(p2cread, 1, NULL) < 0)
+            goto error;
+    }
+    else if (p2cread != -1) {
+        stdin_bk = dup(0);
+        if (dup2(p2cread, 0) == -1)  /* stdin */
+            goto error;
+    }
+
+    if (c2pwrite == 1) {
+        if (_Py_set_inheritable_async_safe(c2pwrite, 1, NULL) < 0)
+            goto error;
+    }
+    else if (c2pwrite != -1) {
+        stdout_bk = dup(1);
+        if (dup2(c2pwrite, 1) == -1)  /* stdout */
+            goto error;
+    }
+
+    if (errwrite == 2) {
+        if (_Py_set_inheritable_async_safe(errwrite, 1, NULL) < 0)
+            goto error;
+    }
+    else if (errwrite != -1) {
+        stderr_bk = dup(2);
+        if (dup2(errwrite, 2) == -1) /* stderr */
+            goto error;
+    }
+
     char *cwd_bk = getcwd(pwdbuf, sizeof(pwdbuf));
     if (cwd)
         chdir(cwd);
 
+    (void)taskPriorityGet(taskIdSelf(), &priority);
+    (void)taskStackSizeGet(taskIdSelf(), &uStackSize);
+
     for (int i = 0; exec_array[i] != NULL; ++i) {
         const char *executable = exec_array[i];
         pid = rtpSpawn(executable, (const char **)argvp,
-               (const char **) envpp, priority, uStackSize, options, taskOptions);
+               (const char**)envpp, priority, uStackSize, options, taskOptions);
     }
 
-    if (pid == RTP_ID_ERROR){
+    if (RTP_ID_ERROR == pid){
         PyErr_SetString(PyExc_RuntimeError, "RTPSpawn failed to spawn task");
+    }
+
+    if (stdin_bk >= 0) {
+        if (dup2(stdin_bk, 0) == -1)
+            goto error;
+        close(stdin_bk);
+    }
+    if (stdout_bk >= 0) {
+        if (dup2(stdout_bk, 1) == -1)
+            goto error;
+        close(stdout_bk);
+    }
+    if (stderr_bk >= 0) {
+        if (dup2(stderr_bk,2) == -1)
+            goto error;
+        close(stderr_bk);
     }
 
     if (cwd && cwd_bk)
         chdir(cwd_bk);
 
-    if (RTP_ID_ERROR != pid)
+    if (RTP_ID_ERROR != pid) {
         return Py_BuildValue("i", pid);
+    }
 
+error:
+
+    _Py_write_noraise(errpipe_write, "OSError:", 8);
     return NULL;
 }
 
@@ -149,8 +220,8 @@ _vxwapi_rtp_spawn_impl(PyObject *module, PyObject *process_args,
         for (arg_num = 0; arg_num < num_args; ++arg_num) {
             PyObject *borrowed_arg, *converted_arg;
             if (PySequence_Fast_GET_SIZE(fast_args) != num_args) {
-                   PyErr_SetString(PyExc_RuntimeError, 
-		   "args changed during iteration");
+                   PyErr_SetString(PyExc_RuntimeError,
+                   "args changed during iteration");
                 goto cleanup;
             }
             borrowed_arg = PySequence_Fast_GET_ITEM(fast_args, arg_num);
