@@ -21,6 +21,7 @@ import threading
 import time
 import traceback
 import warnings
+from queue import Empty
 
 # If threading is available then ThreadPool should be provided.  Therefore
 # we avoid top-level imports which are liable to fail on some systems.
@@ -146,7 +147,13 @@ def _helper_reraises_exception(ex):
 # Class representing a process pool
 #
 
-class PoolCache(dict):
+class _PoolCache(dict):
+    """
+    Class that implements a cache for the Pool class that will notify
+    the pool management threads every time the cache is emptied. The
+    notification is done by the use of a queue that is provided when
+    instantiating the cache.
+    """
     def __init__(self, *args, notifier=None, **kwds):
         self.notifier = notifier
         super().__init__(*args, **kwds)
@@ -179,7 +186,7 @@ class Pool(object):
         # when the cache (self._cache) is empty or when ther is a change in
         # the _state variable of the thread that runs _handle_workers.
         self._change_notifier = self._ctx.SimpleQueue()
-        self._cache = PoolCache(notifier=self._change_notifier)
+        self._cache = _PoolCache(notifier=self._change_notifier)
         self._maxtasksperchild = maxtasksperchild
         self._initializer = initializer
         self._initargs = initargs
@@ -465,7 +472,7 @@ class Pool(object):
         )
         return result
 
-    def _wait_for_updates(self, timeout):
+    def _wait_for_updates(self, timeout=0.2):
         task_queue_sentinels = [self._outqueue._reader.fileno(),
                                 self._outqueue._writer.fileno()]
         self_notifier_sentinels = [self._change_notifier._reader.fileno()]
@@ -473,10 +480,10 @@ class Pool(object):
         sentinels = [*task_queue_sentinels,
                      *worker_sentinels,
                      *self_notifier_sentinels]
-        # The timeout in wait() exist to make sure that we do not hang/deadlock
-        # if there are some edge case/race condition in the self-pipe based solution,
-        # so we fallback to active polling to maintain backwards compatibility.
         wait(sentinels, timeout=timeout)
+        while not self._change_notifier.empty():
+            self._change_notifier.get()
+
 
     @staticmethod
     def _handle_workers(cache, taskqueue, ctx, Process, processes, pool,
@@ -486,13 +493,11 @@ class Pool(object):
 
         # Keep maintaining workers until the cache gets drained, unless the pool
         # is terminated.
-        while True:
-            if thread._state != RUN and (not pool._cache or thread._state == TERMINATE):
-                break
+        while thread._state == RUN or (cache and thread._state != TERMINATE):
             Pool._maintain_pool(ctx, Process, processes, pool, inqueue,
                                 outqueue, initializer, initargs,
                                 maxtasksperchild, wrap_exception)
-            pool._wait_for_updates(timeout=0.2)
+            pool._wait_for_updates()
         # send sentinel to stop workers
         taskqueue.put(None)
         util.debug('worker handler exiting')
@@ -914,5 +919,5 @@ class ThreadPool(Pool):
         for i in range(size):
             inqueue.put(None)
 
-    def _wait_for_updates(self, timeout):
+    def _wait_for_updates(self, timeout=0.2):
         time.sleep(timeout)
