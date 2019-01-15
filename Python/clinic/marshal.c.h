@@ -34,10 +34,24 @@ marshal_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *file;
     int version = Py_MARSHAL_VERSION;
 
-    if (!_PyArg_ParseStack(args, nargs, "OO|i:dump",
-        &value, &file, &version)) {
+    if (!_PyArg_CheckPositional("dump", nargs, 2, 3)) {
         goto exit;
     }
+    value = args[0];
+    file = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    version = _PyLong_AsInt(args[2]);
+    if (version == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = marshal_dump_impl(module, value, file, version);
 
 exit:
@@ -90,10 +104,23 @@ marshal_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *value;
     int version = Py_MARSHAL_VERSION;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|i:dumps",
-        &value, &version)) {
+    if (!_PyArg_CheckPositional("dumps", nargs, 1, 2)) {
         goto exit;
     }
+    value = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    version = _PyLong_AsInt(args[1]);
+    if (version == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = marshal_dumps_impl(module, value, version);
 
 exit:
@@ -125,7 +152,7 @@ marshal_loads(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&bytes, 'C')) {
-        _PyArg_BadArgument("loads", "contiguous buffer", arg);
+        _PyArg_BadArgument("loads", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = marshal_loads_impl(module, &bytes);
@@ -138,4 +165,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=8262e7e6c8cbc1ef input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ae2bca1aa239e095 input=a9049054013a1b77]*/

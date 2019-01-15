@@ -125,10 +125,19 @@ signal_signal(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int signalnum;
     PyObject *handler;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO:signal",
-        &signalnum, &handler)) {
+    if (!_PyArg_CheckPositional("signal", nargs, 2, 2)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    signalnum = _PyLong_AsInt(args[0]);
+    if (signalnum == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    handler = args[1];
     return_value = signal_signal_impl(module, signalnum, handler);
 
 exit:
@@ -234,8 +243,25 @@ signal_siginterrupt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int signalnum;
     int flag;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:siginterrupt",
-        &signalnum, &flag)) {
+    if (!_PyArg_CheckPositional("siginterrupt", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    signalnum = _PyLong_AsInt(args[0]);
+    if (signalnum == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flag = _PyLong_AsInt(args[1]);
+    if (flag == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = signal_siginterrupt_impl(module, signalnum, flag);
@@ -274,10 +300,24 @@ signal_setitimer(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *seconds;
     PyObject *interval = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO|O:setitimer",
-        &which, &seconds, &interval)) {
+    if (!_PyArg_CheckPositional("setitimer", nargs, 2, 3)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    which = _PyLong_AsInt(args[0]);
+    if (which == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    seconds = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    interval = args[2];
+skip_optional:
     return_value = signal_setitimer_impl(module, which, seconds, interval);
 
 exit:
@@ -344,8 +384,19 @@ signal_pthread_sigmask(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     int how;
     sigset_t mask;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO&:pthread_sigmask",
-        &how, _Py_Sigset_Converter, &mask)) {
+    if (!_PyArg_CheckPositional("pthread_sigmask", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    how = _PyLong_AsInt(args[0]);
+    if (how == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!_Py_Sigset_Converter(args[1], &mask)) {
         goto exit;
     }
     return_value = signal_pthread_sigmask_impl(module, how, mask);
@@ -498,10 +549,13 @@ signal_sigtimedwait(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     sigset_t sigset;
     PyObject *timeout_obj;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O:sigtimedwait",
-        _Py_Sigset_Converter, &sigset, &timeout_obj)) {
+    if (!_PyArg_CheckPositional("sigtimedwait", nargs, 2, 2)) {
         goto exit;
     }
+    if (!_Py_Sigset_Converter(args[0], &sigset)) {
+        goto exit;
+    }
+    timeout_obj = args[1];
     return_value = signal_sigtimedwait_impl(module, sigset, timeout_obj);
 
 exit:
@@ -532,8 +586,21 @@ signal_pthread_kill(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     unsigned long thread_id;
     int signalnum;
 
-    if (!_PyArg_ParseStack(args, nargs, "ki:pthread_kill",
-        &thread_id, &signalnum)) {
+    if (!_PyArg_CheckPositional("pthread_kill", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyLong_Check(args[0])) {
+        _PyArg_BadArgument("pthread_kill", 1, "int", args[0]);
+        goto exit;
+    }
+    thread_id = PyLong_AsUnsignedLongMask(args[0]);
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    signalnum = _PyLong_AsInt(args[1]);
+    if (signalnum == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = signal_pthread_kill_impl(module, thread_id, signalnum);
@@ -591,4 +658,4 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=365db4e807c26d4e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f0d3a5703581da76 input=a9049054013a1b77]*/

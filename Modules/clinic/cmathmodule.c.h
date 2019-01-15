@@ -668,10 +668,18 @@ cmath_log(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_complex x;
     PyObject *y_obj = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "D|O:log",
-        &x, &y_obj)) {
+    if (!_PyArg_CheckPositional("log", nargs, 1, 2)) {
         goto exit;
     }
+    x = PyComplex_AsCComplex(args[0]);
+    if (PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    y_obj = args[1];
+skip_optional:
     return_value = cmath_log_impl(module, x, y_obj);
 
 exit:
@@ -755,8 +763,15 @@ cmath_rect(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     double r;
     double phi;
 
-    if (!_PyArg_ParseStack(args, nargs, "dd:rect",
-        &r, &phi)) {
+    if (!_PyArg_CheckPositional("rect", nargs, 2, 2)) {
+        goto exit;
+    }
+    r = PyFloat_AsDouble(args[0]);
+    if (PyErr_Occurred()) {
+        goto exit;
+    }
+    phi = PyFloat_AsDouble(args[1]);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     return_value = cmath_rect_impl(module, r, phi);
@@ -902,4 +917,4 @@ cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=50a105aa2bc5308f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=86a365d23f34aaff input=a9049054013a1b77]*/

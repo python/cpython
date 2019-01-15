@@ -158,11 +158,11 @@ _io_FileIO_readinto(fileio *self, PyObject *arg)
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
-        _PyArg_BadArgument("readinto", "read-write bytes-like object", arg);
+        _PyArg_BadArgument("readinto", 0, "read-write bytes-like object", arg);
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto", "contiguous buffer", arg);
+        _PyArg_BadArgument("readinto", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io_FileIO_readinto_impl(self, &buffer);
@@ -219,10 +219,16 @@ _io_FileIO_read(fileio *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&:read",
-        _Py_convert_optional_to_ssize_t, &size)) {
+    if (!_PyArg_CheckPositional("read", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[0], &size)) {
+        goto exit;
+    }
+skip_optional:
     return_value = _io_FileIO_read_impl(self, size);
 
 exit:
@@ -255,7 +261,7 @@ _io_FileIO_write(fileio *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&b, 'C')) {
-        _PyArg_BadArgument("write", "contiguous buffer", arg);
+        _PyArg_BadArgument("write", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io_FileIO_write_impl(self, &b);
@@ -296,10 +302,23 @@ _io_FileIO_seek(fileio *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *pos;
     int whence = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|i:seek",
-        &pos, &whence)) {
+    if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
         goto exit;
     }
+    pos = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    whence = _PyLong_AsInt(args[1]);
+    if (whence == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _io_FileIO_seek_impl(self, pos, whence);
 
 exit:
@@ -349,11 +368,14 @@ _io_FileIO_truncate(fileio *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *posobj = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "truncate",
-        0, 1,
-        &posobj)) {
+    if (!_PyArg_CheckPositional("truncate", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    posobj = args[0];
+skip_optional:
     return_value = _io_FileIO_truncate_impl(self, posobj);
 
 exit:
@@ -383,4 +405,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=8be0ea9a5ac7aa43 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b6f327457938d4dd input=a9049054013a1b77]*/
