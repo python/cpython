@@ -1553,34 +1553,34 @@ minimal file-like interface, including ``read()`` and ``readline()``.
 Functions defined by this module are used internally by the :mod:`urllib.request` module.
 The typical response object is a :class:`urllib.response.addinfourl` instance:
 
-.. class:: urllib.response.addinfourl
+.. class:: addinfourl
 
-.. attribute:: addinfourl.url
+   .. attribute:: url
 
-   URL of the resource retrieved, commonly used to determine if a redirect was followed.
+      URL of the resource retrieved, commonly used to determine if a redirect was followed.
 
-.. attribute:: addinfourl.headers
+   .. attribute:: headers
 
-   Returns the headers of the response in the form of an :class:`~email.message.EmailMessage` instance.
+      Returns the headers of the response in the form of an :class:`~email.message.EmailMessage` instance.
 
-.. attribute:: addinfourl.status
+   .. attribute:: status
 
-   .. versionadded:: 3.8
+      .. versionadded:: 3.8
 
-   Status code returned by server.
+      Status code returned by server.
 
-.. method:: addinfourl.geturl()
+   .. method:: geturl()
 
-   Deprecated method equivalent to :attr:`~addinfourl.url`.
+      Deprecated method equivalent to :attr:`~addinfourl.url`.
 
-.. method:: addinfourl.info()
+   .. method:: info()
 
-   Deprecated method equivalent to :attr:`~addinfourl.headers`.
+      Deprecated method equivalent to :attr:`~addinfourl.headers`.
 
-.. attribute:: addinfourl.code
+   .. attribute:: code
 
-   Deprecated attribute equivalent to :attr:`~addinfourl.status`.
+      Deprecated attribute equivalent to :attr:`~addinfourl.status`.
 
-.. method:: addinfourl.getstatus()
+   .. method:: getstatus()
 
-   Deprecated method equivalent to :attr:`~addinfourl.status`.
+      Deprecated method equivalent to :attr:`~addinfourl.status`.
