@@ -811,9 +811,8 @@ class IocpProactor:
         next_msg = start_time + msg_update
         while self._cache:
             if next_msg <= time.monotonic():
-                logger.debug('IocpProactor.close(): '
-                             'loop is running after closing for %.1f seconds',
-                             time.monotonic() - start_time)
+                logger.debug('%r is running after closing for %.1f seconds',
+                             self, time.monotonic() - start_time)
                 next_msg = time.monotonic() + msg_update
 
             # handle a few events, or timeout
