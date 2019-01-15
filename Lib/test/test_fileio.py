@@ -103,7 +103,7 @@ class AutoFileTests(unittest.TestCase):
 
     def testWriteUnicode(self):
         with check_py3k_warnings():
-            self.f.write('')
+            self.f.write(u'')
 
     def testRepr(self):
         self.assertEqual(repr(self.f), "<_io.FileIO name=%r mode='%s'>"
