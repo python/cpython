@@ -3943,7 +3943,7 @@ static stmt_ty
 ast_for_with_stmt(struct compiling *c, const node *n0, bool is_async)
 {
     const node * const n = is_async ? CHILD(n0, 1) : n0;
-    int i, n_items;
+    int i, n_items, end_lineno, end_col_offset;
     asdl_seq *items, *body;
 
     REQ(n, with_stmt);
@@ -3962,11 +3962,14 @@ ast_for_with_stmt(struct compiling *c, const node *n0, bool is_async)
     body = ast_for_suite(c, CHILD(n, NCH(n) - 1));
     if (!body)
         return NULL;
+    get_last_end_pos(body, &end_lineno, &end_col_offset);
 
     if (is_async)
-        return AsyncWith(items, body, LINENO(n0), n0->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        return AsyncWith(items, body, LINENO(n0), n0->n_col_offset,
+                         end_lineno, end_col_offset, c->c_arena);
     else
-        return With(items, body, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        return With(items, body, LINENO(n), n->n_col_offset,
+                    end_lineno, end_col_offset, c->c_arena);
 }
 
 static stmt_ty
