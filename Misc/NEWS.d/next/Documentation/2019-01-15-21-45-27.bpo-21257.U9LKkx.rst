@@ -1,1 +1,1 @@
-Document :func:`http.client.parse_headers`
+Document :func:`http.client.parse_headers`.
