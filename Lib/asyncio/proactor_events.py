@@ -636,7 +636,13 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             f.add_done_callback(self._loop_self_reading)
 
     def _write_to_self(self):
-        self._csock.send(b'\0')
+        try:
+            self._csock.send(b'\0')
+        except OSError:
+            if self._debug:
+                logger.debug("Fail to write a null byte into the "
+                             "self-pipe socket",
+                             exc_info=True)
 
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None, backlog=100,
