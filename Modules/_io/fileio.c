@@ -716,8 +716,16 @@ fileio_write(fileio *self, PyObject *args)
     if (!self->writable)
         return err_mode("writing");
 
-    if (!PyArg_ParseTuple(args, "s*", &pbuf))
+    if (!PyArg_ParseTuple(args, "s*:write", &pbuf)) {
         return NULL;
+    }
+    if (PyUnicode_Check(PyTuple_GET_ITEM(args, 0)) &&
+        PyErr_WarnPy3k("write() argument must be string or buffer, "
+                       "not 'unicode'", 1) < 0)
+    {
+        PyBuffer_Release(&pbuf);
+        return NULL;
+    }
 
     if (_PyVerify_fd(self->fd)) {
         Py_BEGIN_ALLOW_THREADS

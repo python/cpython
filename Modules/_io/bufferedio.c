@@ -1812,6 +1812,13 @@ bufferedwriter_write(buffered *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s*:write", &buf)) {
         return NULL;
     }
+    if (PyUnicode_Check(PyTuple_GET_ITEM(args, 0)) &&
+        PyErr_WarnPy3k("write() argument must be string or buffer, "
+                       "not 'unicode'", 1) < 0)
+    {
+        PyBuffer_Release(&buf);
+        return NULL;
+    }
 
     if (IS_CLOSED(self)) {
         PyErr_SetString(PyExc_ValueError, "write to closed file");

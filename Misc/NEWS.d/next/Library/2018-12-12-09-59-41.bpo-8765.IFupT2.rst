@@ -1,0 +1,2 @@
+The write() method of buffered and unbuffered binary streams in the io
+module emits now a DeprecationWarning in Py3k mode for unicode argument.
