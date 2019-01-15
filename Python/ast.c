@@ -584,6 +584,7 @@ static expr_ty ast_for_call(struct compiling *, const node *, expr_ty,
 
 static PyObject *parsenumber(struct compiling *, const char *);
 static expr_ty parsestrplus(struct compiling *, const node *n);
+static void get_last_end_pos(asdl_seq *, int *, int *);
 
 #define COMP_GENEXP   0
 #define COMP_LISTCOMP 1
@@ -1579,8 +1580,7 @@ ast_for_funcdef_impl(struct compiling *c, const node *n0,
     asdl_seq *body;
     expr_ty returns = NULL;
     int name_i = 1;
-    int tot, end_lineno, end_col_offset;
-    stmt_ty last;
+    int end_lineno, end_col_offset;
 
     REQ(n, funcdef);
 
@@ -1601,11 +1601,7 @@ ast_for_funcdef_impl(struct compiling *c, const node *n0,
     body = ast_for_suite(c, CHILD(n, name_i + 3));
     if (!body)
         return NULL;
-
-    tot = asdl_seq_LEN(body);
-    last = asdl_seq_GET(body, tot - 1);
-    end_lineno = last->end_lineno;
-    end_col_offset = last->end_col_offset;
+    get_last_end_pos(body, &end_lineno, &end_col_offset);
 
     if (is_async)
         return AsyncFunctionDef(name, args, body, decorator_seq, returns,
@@ -3559,6 +3555,15 @@ ast_for_suite(struct compiling *c, const node *n)
     return seq;
 }
 
+static void
+get_last_end_pos(asdl_seq *s, int *end_lineno, int *end_col_offset)
+{
+    int tot = asdl_seq_LEN(s);
+    stmt_ty last = asdl_seq_GET(s, tot - 1);
+    *end_lineno = last->end_lineno;
+    *end_col_offset = last->end_col_offset;
+}
+
 static stmt_ty
 ast_for_if_stmt(struct compiling *c, const node *n)
 {
@@ -3566,6 +3571,7 @@ ast_for_if_stmt(struct compiling *c, const node *n)
        ['else' ':' suite]
     */
     char *s;
+    int end_lineno, end_col_offset;
 
     REQ(n, if_stmt);
 
@@ -3579,10 +3585,10 @@ ast_for_if_stmt(struct compiling *c, const node *n)
         suite_seq = ast_for_suite(c, CHILD(n, 3));
         if (!suite_seq)
             return NULL;
+        get_last_end_pos(suite_seq, &end_lineno, &end_col_offset);
 
         return If(expression, suite_seq, NULL, LINENO(n), n->n_col_offset,
-                  n->n_end_lineno, n->n_end_col_offset,
-                  c->c_arena);
+                  end_lineno, end_col_offset, c->c_arena);
     }
 
     s = STR(CHILD(n, 4));
@@ -3603,10 +3609,10 @@ ast_for_if_stmt(struct compiling *c, const node *n)
         seq2 = ast_for_suite(c, CHILD(n, 6));
         if (!seq2)
             return NULL;
+        get_last_end_pos(seq2, &end_lineno, &end_col_offset);
 
         return If(expression, seq1, seq2, LINENO(n), n->n_col_offset,
-                  n->n_end_lineno, n->n_end_col_offset,
-                  c->c_arena);
+                  end_lineno, end_col_offset, c->c_arena);
     }
     else if (s[2] == 'i') {
         int i, n_elif, has_else = 0;
@@ -3638,13 +3644,13 @@ ast_for_if_stmt(struct compiling *c, const node *n)
             suite_seq2 = ast_for_suite(c, CHILD(n, NCH(n) - 1));
             if (!suite_seq2)
                 return NULL;
+            get_last_end_pos(suite_seq2, &end_lineno, &end_col_offset);
 
             asdl_seq_SET(orelse, 0,
                          If(expression, suite_seq, suite_seq2,
                             LINENO(CHILD(n, NCH(n) - 6)),
                             CHILD(n, NCH(n) - 6)->n_col_offset,
-                            n->n_end_lineno, n->n_end_col_offset,
-                            c->c_arena));
+                            end_lineno, end_col_offset, c->c_arena));
             /* the just-created orelse handled the last elif */
             n_elif--;
         }
@@ -3661,10 +3667,16 @@ ast_for_if_stmt(struct compiling *c, const node *n)
             if (!suite_seq)
                 return NULL;
 
+            if (orelse != NULL) {
+                get_last_end_pos(orelse, &end_lineno, &end_col_offset);
+            } else {
+                get_last_end_pos(suite_seq, &end_lineno, &end_col_offset);
+            }
             asdl_seq_SET(newobj, 0,
                          If(expression, suite_seq, orelse,
                             LINENO(CHILD(n, off)),
-                            CHILD(n, off)->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena));
+                            CHILD(n, off)->n_col_offset,
+                            end_lineno, end_col_offset, c->c_arena));
             orelse = newobj;
         }
         expression = ast_for_expr(c, CHILD(n, 1));
@@ -3673,8 +3685,10 @@ ast_for_if_stmt(struct compiling *c, const node *n)
         suite_seq = ast_for_suite(c, CHILD(n, 3));
         if (!suite_seq)
             return NULL;
+        get_last_end_pos(orelse, &end_lineno, &end_col_offset);
         return If(expression, suite_seq, orelse,
-                  LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                  LINENO(n), n->n_col_offset,
+                  end_lineno, end_col_offset, c->c_arena);
     }
 
     PyErr_Format(PyExc_SystemError,
@@ -3951,8 +3965,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
     PyObject *classname;
     asdl_seq *s;
     expr_ty call;
-    int end_lineno, end_col_offset, tot;
-    stmt_ty last;
+    int end_lineno, end_col_offset;
 
     REQ(n, classdef);
 
@@ -3960,12 +3973,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         s = ast_for_suite(c, CHILD(n, 3));
         if (!s)
             return NULL;
-
-        // TODO: refactor this whole function to avoid code duplication.
-        tot = asdl_seq_LEN(s);
-        last = asdl_seq_GET(s, tot - 1);
-        end_lineno = last->end_lineno;
-        end_col_offset = last->end_col_offset;
+        get_last_end_pos(s, &end_lineno, &end_col_offset);
 
         classname = NEW_IDENTIFIER(CHILD(n, 1));
         if (!classname)
@@ -3980,11 +3988,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         s = ast_for_suite(c, CHILD(n, 5));
         if (!s)
             return NULL;
-
-        tot = asdl_seq_LEN(s);
-        last = asdl_seq_GET(s, tot - 1);
-        end_lineno = last->end_lineno;
-        end_col_offset = last->end_col_offset;
+        get_last_end_pos(s, &end_lineno, &end_col_offset);
 
         classname = NEW_IDENTIFIER(CHILD(n, 1));
         if (!classname)
@@ -4011,11 +4015,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
     s = ast_for_suite(c, CHILD(n, 6));
     if (!s)
         return NULL;
-
-    tot = asdl_seq_LEN(s);
-    last = asdl_seq_GET(s, tot - 1);
-    end_lineno = last->end_lineno;
-    end_col_offset = last->end_col_offset;
+    get_last_end_pos(s, &end_lineno, &end_col_offset);
 
     classname = NEW_IDENTIFIER(CHILD(n, 1));
     if (!classname)

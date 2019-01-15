@@ -1368,6 +1368,31 @@ class EndPositionTests(unittest.TestCase):
         self._check_end_pos(assign, 2, 13)
         self._check_end_pos(assign.value, 2, 13)
 
+    def test_control_stmts(self):
+        # We intentionally put these into the same string to check
+        # that empty lines are not part of the suite.
+        s = dedent('''
+            while True:
+                pass
+
+            if one():
+                x = None
+            elif other():
+                y = None
+            else:
+                z = None
+
+            for x, y in stuff:
+                assert True
+
+            try:
+                raise RuntimeError
+            except TypeError as e:
+                pass
+
+            pass
+        ''').strip()
+
 
 def main():
     if __name__ != '__main__':
