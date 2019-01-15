@@ -1,5 +1,5 @@
 """Tests for distutils.command.check."""
-import os.path
+import os
 import textwrap
 import unittest
 from test.support import run_unittest
