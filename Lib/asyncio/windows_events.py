@@ -7,6 +7,7 @@ import math
 import msvcrt
 import socket
 import struct
+import time
 import weakref
 
 from . import events
@@ -802,10 +803,21 @@ class IocpProactor:
                             context['source_traceback'] = fut._source_traceback
                         self._loop.call_exception_handler(context)
 
-        # wait until all cancelled overlapped future complete
+        # Wait until all cancelled overlapped complete: don't exit with running
+        # overlapped to prevent a crash. Display progress every second if the
+        # loop is still running.
+        msg_update = 1.0
+        start_time = time.monotonic()
+        next_msg = start_time + msg_update
         while self._cache:
-            if not self._poll(1):
-                logger.debug('taking long time to close proactor')
+            if next_msg <= time.monotonic():
+                logger.debug('IocpProactor.close(): '
+                             'loop is running after closing for %.1f seconds',
+                             time.monotonic() - start_time)
+                next_msg = time.monotonic() + msg_update
+
+            # handle a few events, or timeout
+            self._poll(msg_update)
 
         self._results = []
 
