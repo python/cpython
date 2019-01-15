@@ -658,6 +658,7 @@ class BaseTestUUID:
 
             self.assertNotEqual(parent_value, child_value)
 
+    # bpo-35701: check that weak referencing to a UUID object can be created
     def test_uuid_weakref(self):
         strong = self.uuid.uuid4()
         weak = weakref.ref(strong)
