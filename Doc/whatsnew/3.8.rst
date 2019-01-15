@@ -275,6 +275,15 @@ xml
 Optimizations
 =============
 
+* The :mod:`subprocess` module can now use the :func:`os.posix_spawn` function
+  in some cases for better performance. Currently, it is only used on macOS
+  and Linux (using glibc 2.24 or newer) if all these conditions are met:
+
+  * *close_fds* is false;
+  * *preexec_fn*, *pass_fds*, *cwd*, *stdin*, *stdout*, *stderr* and
+    *start_new_session* parameters are not set;
+  * the *executable* path contains a directory.
+
 * :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
   :func:`shutil.copytree` and :func:`shutil.move` use platform-specific
   "fast-copy" syscalls on Linux, macOS and Solaris in order to copy the file
