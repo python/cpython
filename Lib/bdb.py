@@ -577,6 +577,9 @@ class Bdb:
             globals = __main__.__dict__
         if locals is None:
             locals = globals
+        if not hasattr(locals, '__contains__'):
+            raise TypeError(f'locals must be a mapping type (with valid definition of __contains__) or None, not {type(locals)}')
+
         self.reset()
         if isinstance(cmd, str):
             cmd = compile(cmd, "<string>", "exec")
@@ -599,6 +602,9 @@ class Bdb:
             globals = __main__.__dict__
         if locals is None:
             locals = globals
+        if not hasattr(locals, '__contains__'):
+            raise TypeError(f'locals must be a mapping type (with valid definition of __contains__) or None, not {type(locals)}')
+
         self.reset()
         sys.settrace(self.trace_dispatch)
         try:
