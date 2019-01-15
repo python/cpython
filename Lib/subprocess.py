@@ -1448,7 +1448,7 @@ class Popen(object):
 
             kwargs = {}
             if restore_signals:
-                # See _Py_RestoreSignals() of Python/pylifecycle.c
+                # See _Py_RestoreSignals() in Python/pylifecycle.c
                 sigset = []
                 for signame in ('SIGPIPE', 'SIGXFZ', 'SIGXFSZ'):
                     signum = getattr(signal, signame, None)
