@@ -317,9 +317,6 @@ class EditorWindow(object):
         text.bind("<<zoom-height>>", self.ZoomHeight(self).zoom_height_event)
         text.bind("<<toggle-code-context>>",
                   self.CodeContext(self).toggle_code_context_event)
-        squeezer = self.Squeezer(self)
-        text.bind("<<squeeze-current-text>>",
-                  squeezer.squeeze_current_text_event)
 
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so diplayable in Tk."""

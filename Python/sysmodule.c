@@ -170,6 +170,12 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     return retval;
 
   error:
+    if (!PyErr_ExceptionMatches(PyExc_ImportError)
+        && !PyErr_ExceptionMatches(PyExc_AttributeError))
+    {
+        PyMem_RawFree(envar);
+        return NULL;
+    }
     /* If any of the imports went wrong, then warn and ignore. */
     PyErr_Clear();
     int status = PyErr_WarnFormat(

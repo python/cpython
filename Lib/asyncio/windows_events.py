@@ -408,10 +408,16 @@ class IocpProactor:
         self._unregistered = []
         self._stopped_serving = weakref.WeakSet()
 
+    def _check_closed(self):
+        if self._iocp is None:
+            raise RuntimeError('IocpProactor is closed')
+
     def __repr__(self):
-        return ('<%s overlapped#=%s result#=%s>'
-                % (self.__class__.__name__, len(self._cache),
-                   len(self._results)))
+        info = ['overlapped#=%s' % len(self._cache),
+                'result#=%s' % len(self._results)]
+        if self._iocp is None:
+            info.append('closed')
+        return '<%s %s>' % (self.__class__.__name__, " ".join(info))
 
     def set_loop(self, loop):
         self._loop = loop
@@ -618,6 +624,8 @@ class IocpProactor:
         return fut
 
     def _wait_for_handle(self, handle, timeout, _is_cancel):
+        self._check_closed()
+
         if timeout is None:
             ms = _winapi.INFINITE
         else:
@@ -660,6 +668,8 @@ class IocpProactor:
             # that succeed immediately.
 
     def _register(self, ov, obj, callback):
+        self._check_closed()
+
         # Return a future which will be set with the result of the
         # operation when it completes.  The future's value is actually
         # the value returned by callback().
@@ -696,6 +706,7 @@ class IocpProactor:
         already be signalled (pending in the proactor event queue). It is also
         safe if the event is never signalled (because it was cancelled).
         """
+        self._check_closed()
         self._unregistered.append(ov)
 
     def _get_accept_socket(self, family):
@@ -765,6 +776,10 @@ class IocpProactor:
         self._stopped_serving.add(obj)
 
     def close(self):
+        if self._iocp is None:
+            # already closed
+            return
+
         # Cancel remaining registered operations.
         for address, (fut, ov, obj, callback) in list(self._cache.items()):
             if fut.cancelled():
@@ -787,14 +802,15 @@ class IocpProactor:
                             context['source_traceback'] = fut._source_traceback
                         self._loop.call_exception_handler(context)
 
+        # wait until all cancelled overlapped future complete
         while self._cache:
             if not self._poll(1):
                 logger.debug('taking long time to close proactor')
 
         self._results = []
-        if self._iocp is not None:
-            _winapi.CloseHandle(self._iocp)
-            self._iocp = None
+
+        _winapi.CloseHandle(self._iocp)
+        self._iocp = None
 
     def __del__(self):
         self.close()

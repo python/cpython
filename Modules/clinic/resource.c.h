@@ -84,10 +84,19 @@ resource_setrlimit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int resource;
     PyObject *limits;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO:setrlimit",
-        &resource, &limits)) {
+    if (!_PyArg_CheckPositional("setrlimit", nargs, 2, 2)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    resource = _PyLong_AsInt(args[0]);
+    if (resource == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    limits = args[1];
     return_value = resource_setrlimit_impl(module, resource, limits);
 
 exit:
@@ -169,4 +178,4 @@ exit:
 #ifndef RESOURCE_PRLIMIT_METHODDEF
     #define RESOURCE_PRLIMIT_METHODDEF
 #endif /* !defined(RESOURCE_PRLIMIT_METHODDEF) */
-/*[clinic end generated code: output=b16a9149639081fd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ef3034f291156a34 input=a9049054013a1b77]*/

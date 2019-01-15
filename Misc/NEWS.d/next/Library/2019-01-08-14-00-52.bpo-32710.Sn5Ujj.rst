@@ -1,0 +1,3 @@
+Fix a memory leak in asyncio in the ProactorEventLoop when ``ReadFile()`` or
+``WSASend()`` overlapped operation fail immediately: release the internal
+buffer.

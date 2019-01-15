@@ -1,0 +1,11 @@
+parameters:
+  kind: nuget
+  extraOpts: --precompile
+
+steps:
+- script: .\python.bat PC\layout -vv -s "$(Build.SourcesDirectory)" -b "$(Py_OutDir)\$(arch)" -t "$(Py_IntDir)\layout-tmp-${{ parameters['kind'] }}-$(arch)" --copy "$(Py_OutDir)\layout-${{ parameters['kind'] }}-$(arch)" ${{ parameters['extraOpts'] }} --preset-${{ parameters['kind'] }} --include-tests
+  displayName: Create ${{ parameters['kind'] }} layout
+
+- script: .\python.exe -m test.pythoninfo
+  workingDirectory: $(Py_OutDir)\layout-${{ parameters['kind'] }}-$(arch)
+  displayName: Show layout info (${{ parameters['kind'] }})
