@@ -87,6 +87,10 @@ The following exceptions are used mostly as base classes for other exceptions.
       assign a special meaning to the elements of this tuple, while others are
       usually called only with a single string giving an error message.
 
+   .. attribute:: kwargs
+
+      The dictionnary of keyword arguments given to the exception constructor.
+
    .. method:: with_traceback(tb)
 
       This method sets *tb* as the new traceback for the exception and returns

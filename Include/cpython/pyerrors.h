@@ -10,7 +10,7 @@ extern "C" {
 
 /* PyException_HEAD defines the initial segment of every exception class. */
 #define PyException_HEAD PyObject_HEAD PyObject *dict;\
-             PyObject *args; PyObject *traceback;\
+             PyObject *args; PyObject *kwargs; PyObject *traceback;\
              PyObject *context; PyObject *cause;\
              char suppress_context;
 

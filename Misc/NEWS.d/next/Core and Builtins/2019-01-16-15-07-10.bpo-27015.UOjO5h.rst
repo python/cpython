@@ -1,0 +1,3 @@
+Exceptions now save the keyword arguments given to their constructorin their
+`kwargs` attribute. Exceptions with overridden __init__ and using keyword
+arguments are now picklable. Patch contributed by Rémi Lapeyre.

@@ -1299,6 +1299,43 @@ class ExceptionTests(unittest.TestCase):
                 next(i)
                 next(i)
 
+    def test_get_kwargs(self):
+        self.assertEqual(BaseException().kwargs, {})
+        self.assertEqual(NaiveException(x=1).kwargs, {'x': 1})
+
+    def test_set_kwargs(self):
+        b = BaseException()
+        b.kwargs = {'x': 1}
+        self.assertEqual(b.kwargs, {'x': 1})
+
+        b = NaiveException(x=1)
+        b.kwargs = {'x': 2}
+        self.assertEqual(b.kwargs, {'x': 2})
+
+    def test_del_args_kwargs(self):
+        b = BaseException()
+
+        with self.assertRaisesRegex(TypeError, "args may not be deleted"):
+            del b.args
+
+        with self.assertRaisesRegex(TypeError, "kwargs may not be deleted"):
+            del b.kwargs
+
+    def test_repr(self):
+        class MixedArgsKwargs(Exception):
+            def __init__(*args, **kwargs):
+                pass
+
+        self.assertEqual(repr(BaseException()), "BaseException()")
+        self.assertEqual(repr(BaseException(1)), "BaseException(1)")
+        self.assertEqual(repr(NaiveException(1)), "NaiveException(1)")
+        self.assertEqual(repr(NaiveException(x=1)), "NaiveException(x=1)")
+        self.assertEqual(repr(MixedArgsKwargs(1, b=2)), "MixedArgsKwargs(1, b=2)")
+
+        class NoKwargs(Exception):
+            def __init__(self, foo,):
+                self.args = (foo,)
+
 
 class ImportErrorTests(unittest.TestCase):
 
@@ -1375,6 +1412,17 @@ class ImportErrorTests(unittest.TestCase):
                 self.assertEqual(exc.msg, 'test')
                 self.assertEqual(exc.name, orig.name)
                 self.assertEqual(exc.path, orig.path)
+
+    def test_pickle_overriden_init(self):
+        # Issue #27015
+        from subprocess import CalledProcessError
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            orig = CalledProcessError(returncode=2, cmd='foo')
+            exc = pickle.loads(pickle.dumps(orig, proto))
+            self.assertEqual(orig.cmd, exc.cmd)
+            self.assertEqual(orig.returncode, exc.returncode)
+
 
 
 if __name__ == '__main__':

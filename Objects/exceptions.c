@@ -41,19 +41,30 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     /* the dict is created on the fly in PyObject_GenericSetAttr */
     self->dict = NULL;
+    self->kwargs = NULL;
     self->traceback = self->cause = self->context = NULL;
     self->suppress_context = 0;
 
     if (args) {
         self->args = args;
         Py_INCREF(args);
-        return (PyObject *)self;
+    } else {
+        self->args = PyTuple_New(2);
+        if (!self->args) {
+            Py_DECREF(self);
+            return NULL;
+        }
     }
 
-    self->args = PyTuple_New(0);
-    if (!self->args) {
-        Py_DECREF(self);
-        return NULL;
+    if (kwds) {
+        self->kwargs = kwds;
+        Py_INCREF(kwds);
+    } else {
+        self->kwargs = PyDict_New();
+        if (!self->kwargs) {
+            Py_DECREF(self);
+            return NULL;
+        }
     }
 
     return (PyObject *)self;
@@ -76,6 +87,7 @@ BaseException_clear(PyBaseExceptionObject *self)
 {
     Py_CLEAR(self->dict);
     Py_CLEAR(self->args);
+    Py_CLEAR(self->kwargs);
     Py_CLEAR(self->traceback);
     Py_CLEAR(self->cause);
     Py_CLEAR(self->context);
@@ -95,6 +107,7 @@ BaseException_traverse(PyBaseExceptionObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->dict);
     Py_VISIT(self->args);
+    Py_VISIT(self->kwargs);
     Py_VISIT(self->traceback);
     Py_VISIT(self->cause);
     Py_VISIT(self->context);
@@ -118,21 +131,144 @@ static PyObject *
 BaseException_repr(PyBaseExceptionObject *self)
 {
     const char *name = _PyType_Name(Py_TYPE(self));
-    if (PyTuple_GET_SIZE(self->args) == 1)
-        return PyUnicode_FromFormat("%s(%R)", name,
-                                    PyTuple_GET_ITEM(self->args, 0));
-    else
-        return PyUnicode_FromFormat("%s%R", name, self->args);
+    PyObject *separator = NULL;
+    PyObject *args = NULL;
+    PyObject *kwargs = NULL;
+    PyObject *seq = NULL;
+    PyObject *repr = NULL;
+    PyObject *item = NULL;
+    PyObject *items = NULL;
+    PyObject *it = NULL;
+    PyObject *key = NULL;
+    PyObject *value = NULL;
+    PyObject *result = NULL;
+
+    separator = PyUnicode_FromString(", ");
+
+    if (PyTuple_Check(self->args)) {
+        const Py_ssize_t len = PyTuple_Size(self->args);
+        seq = PyTuple_New(len);
+        if (seq == NULL) {
+            goto fail;
+        }
+        for (Py_ssize_t i=0; i < len; i++) {
+            repr = PyObject_Repr(PyTuple_GET_ITEM(self->args, i));
+            if (repr == NULL) {
+                goto fail;
+            }
+            PyTuple_SET_ITEM(seq, i, repr);
+        }
+        args = PyUnicode_Join(separator, seq);
+        Py_DECREF(seq);
+    }
+
+    if (PyMapping_Check(self->kwargs)) {
+        const Py_ssize_t len = PyMapping_Length(self->kwargs);
+        if (len == -1) {
+            goto fail;
+        }
+        seq = PyTuple_New(len);
+        items = PyMapping_Items(self->kwargs);
+        if (seq == NULL || items == NULL) {
+            goto fail;
+        }
+        it = PyObject_GetIter(items);
+        if (it == NULL) {
+            goto fail;
+        }
+        Py_ssize_t i = 0;
+        while ((item = PyIter_Next(it)) != NULL) {
+            if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
+                PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
+                goto fail;
+            }
+            key = PyTuple_GET_ITEM(item, 0);
+            value = PyTuple_GET_ITEM(item, 1);
+            PyTuple_SET_ITEM(seq, i, PyUnicode_FromFormat("%S=%R", key, value));
+            i++;
+            Py_DECREF(item);
+        }
+        kwargs = PyUnicode_Join(separator, seq);
+        Py_DECREF(seq);
+        Py_DECREF(items);
+        Py_DECREF(it);
+    }
+    Py_DECREF(separator);
+
+    if (args == NULL && kwargs == NULL) {
+        result = PyUnicode_FromFormat("%s()", name, kwargs);
+    } else if (kwargs == NULL || PyUnicode_GET_LENGTH(kwargs) == 0) {
+        result = PyUnicode_FromFormat("%s(%S)", name, args);
+    } else if (args == NULL || PyUnicode_GET_LENGTH(args) == 0) {
+        result = PyUnicode_FromFormat("%s(%S)", name, kwargs);
+    } else {
+        result = PyUnicode_FromFormat("%s(%S, %S)", name, args, kwargs);
+    }
+    Py_XDECREF(args);
+    Py_XDECREF(kwargs);
+    return result;
+
+fail:
+    Py_XDECREF(separator);
+    Py_XDECREF(args);
+    Py_XDECREF(kwargs);
+    Py_XDECREF(seq);
+    Py_XDECREF(repr);
+    Py_XDECREF(item);
+    Py_XDECREF(items);
+    Py_XDECREF(it);
+    Py_XDECREF(key);
+    Py_XDECREF(value);
+    return NULL;
 }
 
 /* Pickling support */
 static PyObject *
 BaseException_reduce(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ignored))
 {
-    if (self->args && self->dict)
-        return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
-    else
-        return PyTuple_Pack(2, Py_TYPE(self), self->args);
+    PyObject *functools;
+    PyObject *partial;
+    PyObject *constructor;
+    PyObject *args;
+    PyObject *result;
+    PyObject **newargs;
+
+    _Py_IDENTIFIER(partial);
+    functools = PyImport_ImportModule("functools");
+    if (!functools)
+        return NULL;
+    partial = _PyObject_GetAttrId(functools, &PyId_partial);
+    Py_DECREF(functools);
+    if (!partial)
+        return NULL;
+
+    Py_ssize_t len = 1;
+    if (PyTuple_Check(self->args)) {
+        len += PyTuple_GET_SIZE(self->args);
+    }
+    newargs = PyMem_RawMalloc(len*sizeof(PyObject*));
+    newargs[0] = (PyObject *)Py_TYPE(self);
+
+    for (Py_ssize_t i=1; i < len; i++) {
+        newargs[i] = PyTuple_GetItem(self->args, i-1);
+    }
+    constructor = _PyObject_FastCallDict(partial, newargs, len, self->kwargs);
+    PyMem_RawFree(newargs);
+
+    Py_DECREF(partial);
+
+    args = PyTuple_New(0);
+    if (!args) {
+        return NULL;
+    }
+    if (self->args && self->dict){
+        result = PyTuple_Pack(3, constructor, args, self->dict);
+    } else {
+        result = PyTuple_Pack(2, constructor, args);
+    }
+    Py_DECREF(constructor);
+    Py_DECREF(args);
+    return result;
 }
 
 /*
@@ -203,6 +339,26 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val, void *Py_UNUS
     if (!seq)
         return -1;
     Py_XSETREF(self->args, seq);
+    return 0;
+}
+
+static PyObject *
+BaseException_get_kwargs(PyBaseExceptionObject *self, void *Py_UNUSED(ignored)) {
+    if (self->kwargs == NULL) {
+        Py_RETURN_NONE;
+    }
+    Py_INCREF(self->kwargs);
+    return self->kwargs;
+}
+
+static int
+BaseException_set_kwargs(PyBaseExceptionObject *self, PyObject *val, void *Py_UNUSED(ignored)) {
+    if (val == NULL) {
+        PyErr_SetString(PyExc_TypeError, "kwargs may not be deleted");
+        return -1;
+    }
+    Py_INCREF(val);
+    self->kwargs = val;
     return 0;
 }
 
@@ -296,6 +452,7 @@ BaseException_set_cause(PyObject *self, PyObject *arg, void *Py_UNUSED(ignored))
 static PyGetSetDef BaseException_getset[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
+    {"kwargs", (getter)BaseException_get_kwargs, (setter)BaseException_set_kwargs},
     {"__traceback__", (getter)BaseException_get_tb, (setter)BaseException_set_tb},
     {"__context__", BaseException_get_context,
      BaseException_set_context, PyDoc_STR("exception context")},
