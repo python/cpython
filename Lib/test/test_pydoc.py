@@ -743,15 +743,6 @@ class PydocDocTest(unittest.TestCase):
         self.assertEqual(pydoc.splitdoc(example_string),
                          ('I Am A Doc', '\nHere is my description'))
 
-    def test_is_object_or_method(self):
-        doc = pydoc.Doc()
-        # Bound Method
-        self.assertTrue(pydoc._is_some_method(doc.fail))
-        # Method Descriptor
-        self.assertTrue(pydoc._is_some_method(int.__add__))
-        # String
-        self.assertFalse(pydoc._is_some_method("I am not a method"))
-
     def test_is_package_when_not_package(self):
         with test.support.temp_cwd() as test_dir:
             self.assertFalse(pydoc.ispackage(test_dir))
@@ -1093,6 +1084,12 @@ class TestDescriptions(unittest.TestCase):
         assert len(lines) >= 2
         return lines[2]
 
+    @staticmethod
+    def _get_summary_lines(o):
+        text = pydoc.plain(pydoc.render_doc(o))
+        lines = text.split('\n')
+        return '\n'.join(lines[2:])
+
     # these should include "self"
     def test_unbound_python_method(self):
         self.assertEqual(self._get_summary_line(textwrap.TextWrapper.wrap),
@@ -1108,7 +1105,6 @@ class TestDescriptions(unittest.TestCase):
         t = textwrap.TextWrapper()
         self.assertEqual(self._get_summary_line(t.wrap),
             "wrap(text) method of textwrap.TextWrapper instance")
-
     def test_field_order_for_named_tuples(self):
         Person = namedtuple('Person', ['nickname', 'firstname', 'agegroup'])
         s = pydoc.render_doc(Person)
@@ -1137,6 +1133,164 @@ class TestDescriptions(unittest.TestCase):
     def test_module_level_callable(self):
         self.assertEqual(self._get_summary_line(os.stat),
             "stat(path, *, dir_fd=None, follow_symlinks=True)")
+
+    @requires_docstrings
+    def test_staticmethod(self):
+        class X:
+            @staticmethod
+            def sm(x, y):
+                '''A static method'''
+                ...
+        self.assertEqual(self._get_summary_lines(X.__dict__['sm']),
+                         "<staticmethod object>")
+        self.assertEqual(self._get_summary_lines(X.sm), """\
+sm(x, y)
+    A static method
+""")
+        self.assertIn("""
+ |  Static methods defined here:
+ |\x20\x20
+ |  sm(x, y)
+ |      A static method
+""", pydoc.plain(pydoc.render_doc(X)))
+
+    @requires_docstrings
+    def test_classmethod(self):
+        class X:
+            @classmethod
+            def cm(cls, x):
+                '''A class method'''
+                ...
+        self.assertEqual(self._get_summary_lines(X.__dict__['cm']),
+                         "<classmethod object>")
+        self.assertEqual(self._get_summary_lines(X.cm), """\
+cm(x) method of builtins.type instance
+    A class method
+""")
+        self.assertIn("""
+ |  Class methods defined here:
+ |\x20\x20
+ |  cm(x) from builtins.type
+ |      A class method
+""", pydoc.plain(pydoc.render_doc(X)))
+
+    @requires_docstrings
+    def test_getset_descriptor(self):
+        # Currently these attributes are implemented as getset descriptors
+        # in CPython.
+        self.assertEqual(self._get_summary_line(int.numerator), "numerator")
+        self.assertEqual(self._get_summary_line(float.real), "real")
+        self.assertEqual(self._get_summary_line(Exception.args), "args")
+        self.assertEqual(self._get_summary_line(memoryview.obj), "obj")
+
+    @requires_docstrings
+    def test_member_descriptor(self):
+        # Currently these attributes are implemented as member descriptors
+        # in CPython.
+        self.assertEqual(self._get_summary_line(complex.real), "real")
+        self.assertEqual(self._get_summary_line(range.start), "start")
+        self.assertEqual(self._get_summary_line(slice.start), "start")
+        self.assertEqual(self._get_summary_line(property.fget), "fget")
+        self.assertEqual(self._get_summary_line(StopIteration.value), "value")
+
+    @requires_docstrings
+    def test_slot_descriptor(self):
+        class Point:
+            __slots__ = 'x', 'y'
+        self.assertEqual(self._get_summary_line(Point.x), "x")
+
+    @requires_docstrings
+    def test_dict_attr_descriptor(self):
+        class NS:
+            pass
+        self.assertEqual(self._get_summary_line(NS.__dict__['__dict__']),
+                         "__dict__")
+
+    @requires_docstrings
+    def test_structseq_member_descriptor(self):
+        self.assertEqual(self._get_summary_line(type(sys.hash_info).width),
+                         "width")
+        self.assertEqual(self._get_summary_line(type(sys.flags).debug),
+                         "debug")
+        self.assertEqual(self._get_summary_line(type(sys.version_info).major),
+                         "major")
+        self.assertEqual(self._get_summary_line(type(sys.float_info).max),
+                         "max")
+
+    @requires_docstrings
+    def test_namedtuple_field_descriptor(self):
+        Box = namedtuple('Box', ('width', 'height'))
+        self.assertEqual(self._get_summary_lines(Box.width), """\
+    Alias for field number 0
+""")
+
+    @requires_docstrings
+    def test_property(self):
+        class Rect:
+            @property
+            def area(self):
+                '''Area of the rect'''
+                return self.w * self.h
+
+        self.assertEqual(self._get_summary_lines(Rect.area), """\
+    Area of the rect
+""")
+        self.assertIn("""
+ |  area
+ |      Area of the rect
+""", pydoc.plain(pydoc.render_doc(Rect)))
+
+    @requires_docstrings
+    def test_custom_non_data_descriptor(self):
+        class Descr:
+            def __get__(self, obj, cls):
+                if obj is None:
+                    return self
+                return 42
+        class X:
+            attr = Descr()
+
+        text = pydoc.plain(pydoc.render_doc(X.attr))
+        self.assertEqual(self._get_summary_lines(X.attr), """\
+<test.test_pydoc.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>""")
+
+        X.attr.__doc__ = 'Custom descriptor'
+        self.assertEqual(self._get_summary_lines(X.attr), """\
+<test.test_pydoc.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>""")
+
+        X.attr.__name__ = 'foo'
+        self.assertEqual(self._get_summary_lines(X.attr), """\
+foo(...)
+    Custom descriptor
+""")
+
+    @requires_docstrings
+    def test_custom_data_descriptor(self):
+        class Descr:
+            def __get__(self, obj, cls):
+                if obj is None:
+                    return self
+                return 42
+            def __set__(self, obj, cls):
+                1/0
+        class X:
+            attr = Descr()
+
+        text = pydoc.plain(pydoc.render_doc(X.attr))
+        self.assertEqual(self._get_summary_lines(X.attr), "")
+
+        X.attr.__doc__ = 'Custom descriptor'
+        text = pydoc.plain(pydoc.render_doc(X.attr))
+        self.assertEqual(self._get_summary_lines(X.attr), """\
+    Custom descriptor
+""")
+
+        X.attr.__name__ = 'foo'
+        text = pydoc.plain(pydoc.render_doc(X.attr))
+        self.assertEqual(self._get_summary_lines(X.attr), """\
+foo
+    Custom descriptor
+""")
 
 
 class PydocServerTest(unittest.TestCase):

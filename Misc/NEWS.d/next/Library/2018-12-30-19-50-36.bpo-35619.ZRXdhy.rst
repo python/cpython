@@ -1,0 +1,2 @@
+Improved support of custom data descriptors in :func:`help` and
+:mod:`pydoc`.
