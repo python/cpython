@@ -615,6 +615,9 @@ def _use_posix_spawn():
     * process attribute actions failed
     * file actions failed
     * exec() failed
+
+    Prefer an implementation which can use vfork in some cases for best
+    performances.
     """
     if _mswindows or not hasattr(os, 'posix_spawn'):
         # os.posix_spawn() is not available
@@ -635,14 +638,13 @@ def _use_posix_spawn():
         libc = parts[0]
         version = tuple(map(int, parts[1].split('.')))
 
-        if libc == 'glibc' and version >= (2, 26):
-            # glibc 2.26 added a pipe to the POSIX implementation
-            # of posix_spawn() to properly report errors to the parent process.
-            return True
         if sys.platform == 'linux' and libc == 'glibc' and version >= (2, 24):
-            # glibc 2.24 has a new Linux posix_spawn implementation
+            # glibc 2.24 has a new Linux posix_spawn implementation using vfork
             # which properly reports errors to the parent process.
             return True
+        # Note: Don't use the POSIX implementation of glibc because it doesn't
+        # use vfork (even if glibc 2.26 added a pipe to properly report errors
+        # to the parent process).
     except (AttributeError, ValueError, OSError):
         # os.confstr() or CS_GNU_LIBC_VERSION value not available
         pass
