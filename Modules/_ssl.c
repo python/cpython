@@ -1338,6 +1338,10 @@ _get_crl_dp(X509 *certificate) {
         STACK_OF(GENERAL_NAME) *gns;
 
         dp = sk_DIST_POINT_value(dps, i);
+        if (dp->distpoint == NULL) {
+            /* Ignore empty DP value, CVE-2019-5010 */
+            continue;
+        }
         gns = dp->distpoint->name.fullname;
 
         for (j=0; j < sk_GENERAL_NAME_num(gns); j++) {
