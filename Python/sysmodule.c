@@ -141,10 +141,13 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         modulepath = PyUnicode_FromString("builtins");
         attrname = envar;
     }
-    else {
+    else if (last_dot != envar) {
         /* Split on the last dot; */
         modulepath = PyUnicode_FromStringAndSize(envar, last_dot - envar);
         attrname = last_dot + 1;
+    }
+    else {
+        goto warn;
     }
     if (modulepath == NULL) {
         PyMem_RawFree(envar);
@@ -155,27 +158,29 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     Py_DECREF(modulepath);
 
     if (module == NULL) {
-        goto error;
+        if (PyErr_ExceptionMatches(PyExc_ImportError)) {
+            goto warn;
+        }
+        PyMem_RawFree(envar);
+        return NULL;
     }
 
     PyObject *hook = PyObject_GetAttrString(module, attrname);
     Py_DECREF(module);
 
     if (hook == NULL) {
-        goto error;
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            goto warn;
+        }
+        PyMem_RawFree(envar);
+        return NULL;
     }
     PyMem_RawFree(envar);
     PyObject *retval = _PyObject_FastCallKeywords(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
 
-  error:
-    if (!PyErr_ExceptionMatches(PyExc_ImportError)
-        && !PyErr_ExceptionMatches(PyExc_AttributeError))
-    {
-        PyMem_RawFree(envar);
-        return NULL;
-    }
+  warn:
     /* If any of the imports went wrong, then warn and ignore. */
     PyErr_Clear();
     int status = PyErr_WarnFormat(
