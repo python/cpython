@@ -3701,6 +3701,7 @@ ast_for_while_stmt(struct compiling *c, const node *n)
 {
     /* while_stmt: 'while' test ':' suite ['else' ':' suite] */
     REQ(n, while_stmt);
+    int end_lineno, end_col_offset;
 
     if (NCH(n) == 4) {
         expr_ty expression;
@@ -3712,7 +3713,9 @@ ast_for_while_stmt(struct compiling *c, const node *n)
         suite_seq = ast_for_suite(c, CHILD(n, 3));
         if (!suite_seq)
             return NULL;
-        return While(expression, suite_seq, NULL, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        get_last_end_pos(suite_seq, &end_lineno, &end_col_offset);
+        return While(expression, suite_seq, NULL, LINENO(n), n->n_col_offset,
+                     end_lineno, end_col_offset, c->c_arena);
     }
     else if (NCH(n) == 7) {
         expr_ty expression;
@@ -3727,8 +3730,10 @@ ast_for_while_stmt(struct compiling *c, const node *n)
         seq2 = ast_for_suite(c, CHILD(n, 6));
         if (!seq2)
             return NULL;
+        get_last_end_pos(seq2, &end_lineno, &end_col_offset);
 
-        return While(expression, seq1, seq2, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        return While(expression, seq1, seq2, LINENO(n), n->n_col_offset,
+                     end_lineno, end_col_offset, c->c_arena);
     }
 
     PyErr_Format(PyExc_SystemError,
@@ -3745,6 +3750,7 @@ ast_for_for_stmt(struct compiling *c, const node *n0, bool is_async)
     expr_ty expression;
     expr_ty target, first;
     const node *node_target;
+    int end_lineno, end_col_offset;
     /* for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite] */
     REQ(n, for_stmt);
 
@@ -3764,7 +3770,9 @@ ast_for_for_stmt(struct compiling *c, const node *n0, bool is_async)
     if (NCH(node_target) == 1)
         target = first;
     else
-        target = Tuple(_target, Store, first->lineno, first->col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        target = Tuple(_target, Store, first->lineno, first->col_offset,
+                       node_target->n_end_lineno, node_target->n_end_col_offset,
+                       c->c_arena);
 
     expression = ast_for_testlist(c, CHILD(n, 3));
     if (!expression)
@@ -3773,16 +3781,19 @@ ast_for_for_stmt(struct compiling *c, const node *n0, bool is_async)
     if (!suite_seq)
         return NULL;
 
+    if (seq != NULL) {
+        get_last_end_pos(seq, &end_lineno, &end_col_offset);
+    } else {
+        get_last_end_pos(suite_seq, &end_lineno, &end_col_offset);
+    }
     if (is_async)
         return AsyncFor(target, expression, suite_seq, seq,
                         LINENO(n0), n0->n_col_offset,
-                        n->n_end_lineno, n->n_end_col_offset,
-                        c->c_arena);
+                        end_lineno, end_col_offset, c->c_arena);
     else
         return For(target, expression, suite_seq, seq,
                    LINENO(n), n->n_col_offset,
-                   n->n_end_lineno, n->n_end_col_offset,
-                   c->c_arena);
+                   end_lineno, end_col_offset, c->c_arena);
 }
 
 static excepthandler_ty
