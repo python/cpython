@@ -3800,6 +3800,7 @@ static excepthandler_ty
 ast_for_except_clause(struct compiling *c, const node *exc, node *body)
 {
     /* except_clause: 'except' [test ['as' test]] */
+    int end_lineno, end_col_offset;
     REQ(exc, except_clause);
     REQ(body, suite);
 
@@ -3807,9 +3808,11 @@ ast_for_except_clause(struct compiling *c, const node *exc, node *body)
         asdl_seq *suite_seq = ast_for_suite(c, body);
         if (!suite_seq)
             return NULL;
+        get_last_end_pos(suite_seq, &end_lineno, &end_col_offset);
 
         return ExceptHandler(NULL, NULL, suite_seq, LINENO(exc),
-                             exc->n_col_offset, exc->n_end_lineno, exc->n_end_col_offset, c->c_arena);
+                             exc->n_col_offset,
+                             end_lineno, end_col_offset, c->c_arena);
     }
     else if (NCH(exc) == 2) {
         expr_ty expression;
@@ -3821,9 +3824,11 @@ ast_for_except_clause(struct compiling *c, const node *exc, node *body)
         suite_seq = ast_for_suite(c, body);
         if (!suite_seq)
             return NULL;
+        get_last_end_pos(suite_seq, &end_lineno, &end_col_offset);
 
         return ExceptHandler(expression, NULL, suite_seq, LINENO(exc),
-                             exc->n_col_offset, exc->n_end_lineno, exc->n_end_col_offset, c->c_arena);
+                             exc->n_col_offset,
+                             end_lineno, end_col_offset, c->c_arena);
     }
     else if (NCH(exc) == 4) {
         asdl_seq *suite_seq;
@@ -3839,9 +3844,11 @@ ast_for_except_clause(struct compiling *c, const node *exc, node *body)
         suite_seq = ast_for_suite(c, body);
         if (!suite_seq)
             return NULL;
+        get_last_end_pos(suite_seq, &end_lineno, &end_col_offset);
 
         return ExceptHandler(expression, e, suite_seq, LINENO(exc),
-                             exc->n_col_offset, exc->n_end_lineno, exc->n_end_col_offset, c->c_arena);
+                             exc->n_col_offset,
+                             end_lineno, end_col_offset, c->c_arena);
     }
 
     PyErr_Format(PyExc_SystemError,
@@ -3854,8 +3861,9 @@ static stmt_ty
 ast_for_try_stmt(struct compiling *c, const node *n)
 {
     const int nch = NCH(n);
-    int n_except = (nch - 3)/3;
+    int end_lineno, end_col_offset, n_except = (nch - 3)/3;
     asdl_seq *body, *handlers = NULL, *orelse = NULL, *finally = NULL;
+    excepthandler_ty last_handler;
 
     REQ(n, try_stmt);
 
@@ -3911,7 +3919,20 @@ ast_for_try_stmt(struct compiling *c, const node *n)
     }
 
     assert(finally != NULL || asdl_seq_LEN(handlers));
-    return Try(body, handlers, orelse, finally, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        if (finally != NULL) {
+        // finally is always last
+        get_last_end_pos(finally, &end_lineno, &end_col_offset);
+    } else if (orelse != NULL) {
+        // otherwise else is last
+        get_last_end_pos(orelse, &end_lineno, &end_col_offset);
+    } else {
+        // inline the get_last_end_pos logic due to layout mismatch
+        last_handler = (excepthandler_ty) asdl_seq_GET(handlers, n_except - 1);
+        end_lineno = last_handler->end_lineno;
+        end_col_offset = last_handler->end_col_offset;
+    }
+    return Try(body, handlers, orelse, finally, LINENO(n), n->n_col_offset,
+               end_lineno, end_col_offset, c->c_arena);
 }
 
 /* with_item: test ['as' expr] */
