@@ -37,11 +37,6 @@ if sys.platform == 'win32':  # pragma: no cover
     raise ImportError('Signals are not really supported on Windows')
 
 
-def _sighandler_noop(signum, frame):
-    """Dummy signal handler."""
-    pass
-
-
 class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     """Unix event loop.
 
@@ -51,6 +46,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     def __init__(self, selector=None):
         super().__init__(selector)
         self._signal_handlers = {}
+        self._occurred_signals = set()
 
     def close(self):
         super().close()
@@ -66,11 +62,13 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                               source=self)
                 self._signal_handlers.clear()
 
-    def _process_self_data(self, data):
-        for signum in data:
-            if not signum:
-                # ignore null bytes written by _write_to_self()
-                continue
+    def _sig_handler(self, signum, frame):
+        self._occurred_signals.add(signum)
+
+    def _process_self_data(self):
+        signals = self._occurred_signals
+        self._occurred_signals = set()
+        for signum in signals:
             self._handle_signal(signum)
 
     def add_signal_handler(self, sig, callback, *args):
@@ -90,7 +88,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             # main thread.  By calling it early we ensure that an
             # event loop running in another thread cannot add a signal
             # handler.
-            signal.set_wakeup_fd(self._csock.fileno())
+            signal.set_wakeup_fd(self._csock.fileno(),
+                                 warn_on_full_buffer=False)
         except (ValueError, OSError) as exc:
             raise RuntimeError(str(exc))
 
@@ -98,10 +97,10 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         self._signal_handlers[sig] = handle
 
         try:
-            # Register a dummy signal handler to ask Python to write the signal
-            # number in the wakup file descriptor. _process_self_data() will
-            # read signal numbers from this file descriptor to handle signals.
-            signal.signal(sig, _sighandler_noop)
+            # Register a signal handler to save signal number.
+            # _process_self_data() will
+            # handle signals by stored signal numbers.
+            signal.signal(sig, self._sig_handler)
 
             # Set SA_RESTART to limit EINTR occurrences.
             signal.siginterrupt(sig, False)

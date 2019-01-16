@@ -105,7 +105,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         self._internal_fds += 1
         self._add_reader(self._ssock.fileno(), self._read_from_self)
 
-    def _process_self_data(self, data):
+    def _process_self_data(self):
         pass
 
     def _read_from_self(self):
@@ -114,7 +114,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                 data = self._ssock.recv(4096)
                 if not data:
                     break
-                self._process_self_data(data)
+                self._process_self_data()
             except InterruptedError:
                 continue
             except BlockingIOError:
@@ -131,10 +131,9 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             try:
                 csock.send(b'\0')
             except OSError:
-                if self._debug:
-                    logger.debug("Fail to write a null byte into the "
-                                 "self-pipe socket",
-                                 exc_info=True)
+                # Ignore the error,
+                # See https://bugs.python.org/issue35749
+                pass
 
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None, backlog=100,

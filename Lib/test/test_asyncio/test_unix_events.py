@@ -114,9 +114,11 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
         m_signal.NSIG = signal.NSIG
         m_signal.valid_signals = signal.valid_signals
 
-        def set_wakeup_fd(fd):
+        def set_wakeup_fd(fd, *, warn_on_full_buffer=True):
             if fd == -1:
                 raise ValueError()
+            else:
+                self.assertFalse(warn_on_full_buffer)
         m_signal.set_wakeup_fd = set_wakeup_fd
 
         class Err(OSError):

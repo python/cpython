@@ -490,7 +490,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         proactor.set_loop(self)
         self._make_self_pipe()
         self_no = self._csock.fileno()
-        signal.set_wakeup_fd(self_no)
+        signal.set_wakeup_fd(self_no, warn_on_full_buffer=False)
 
     def _make_socket_transport(self, sock, protocol, waiter=None,
                                extra=None, server=None):
@@ -639,10 +639,9 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         try:
             self._csock.send(b'\0')
         except OSError:
-            if self._debug:
-                logger.debug("Fail to write a null byte into the "
-                             "self-pipe socket",
-                             exc_info=True)
+            # Ignore the error,
+            # See https://bugs.python.org/issue35749
+            pass
 
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None, backlog=100,
