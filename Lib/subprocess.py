@@ -655,7 +655,6 @@ def _use_posix_spawn():
 
 
 _USE_POSIX_SPAWN = _use_posix_spawn()
-_HAVE_POSIX_SPAWNP = hasattr(os, 'posix_spawnp')
 
 
 class Popen(object):
@@ -1443,10 +1442,7 @@ class Popen(object):
 
 
         def _posix_spawn(self, args, executable, env, restore_signals):
-            """Execute program using os.posix_spawnp().
-
-            Or use os.posix_spawn() if os.posix_spawnp() is not available.
-            """
+            """Execute program using os.posix_spawn()."""
             if env is None:
                 env = os.environ
 
@@ -1460,10 +1456,7 @@ class Popen(object):
                         sigset.append(signum)
                 kwargs['setsigdef'] = sigset
 
-            if _HAVE_POSIX_SPAWNP:
-                self.pid = os.posix_spawnp(executable, args, env, **kwargs)
-            else:
-                self.pid = os.posix_spawn(executable, args, env, **kwargs)
+            self.pid = os.posix_spawn(executable, args, env, **kwargs)
 
         def _execute_child(self, args, executable, preexec_fn, close_fds,
                            pass_fds, cwd, env,
@@ -1491,7 +1484,7 @@ class Popen(object):
                 executable = args[0]
 
             if (_USE_POSIX_SPAWN
-                    and (_HAVE_POSIX_SPAWNP or os.path.dirname(executable))
+                    and os.path.dirname(executable)
                     and preexec_fn is None
                     and not close_fds
                     and not pass_fds
