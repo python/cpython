@@ -732,6 +732,9 @@
 /* Define to 1 if you have the `posix_spawn' function. */
 #undef HAVE_POSIX_SPAWN
 
+/* Define to 1 if you have the `posix_spawnp' function. */
+#undef HAVE_POSIX_SPAWNP
+
 /* Define to 1 if you have the `pread' function. */
 #undef HAVE_PREAD
 
