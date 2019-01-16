@@ -568,7 +568,7 @@ class Regrtest:
             TEMPDIR = self.ns.tempdir
         elif self.ns.worker_args:
             ns_dict, _ = json.loads(self.ns.worker_args)
-            TEMPDIR = ns_dict.get("tempdir", TEMPDIR)
+            TEMPDIR = ns_dict.get("tempdir") or TEMPDIR
 
         os.makedirs(TEMPDIR, exist_ok=True)
 
