@@ -5384,10 +5384,9 @@ fail:
 
 static PyObject *
 py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *argv,
-                    PyObject *env, PyObject *file_actions,
-                    PyObject *setpgroup, int resetids, PyObject *setsigmask,
-                    PyObject *setsigdef, PyObject *scheduler)
-/*[clinic end generated code: output=45dfa4c515d09f2c input=2891c2f1d457e39b]*/
+               PyObject *env, PyObject *file_actions,
+               PyObject *setpgroup, int resetids, PyObject *setsigmask,
+               PyObject *setsigdef, PyObject *scheduler)
 {
     EXECV_CHAR **argvlist = NULL;
     EXECV_CHAR **envlist = NULL;
@@ -5463,16 +5462,19 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
     attrp = &attr;
 
     _Py_BEGIN_SUPPRESS_IPH
+#ifdef HAVE_POSIX_SPAWNP
     if (use_posix_spawnp) {
         err_code = posix_spawnp(&pid, path->narrow,
-                           file_actionsp, attrp, argvlist, envlist);
+                                file_actionsp, attrp, argvlist, envlist);
     }
-    else {
+    else
+#endif /* HAVE_POSIX_SPAWNP */
+    {
         err_code = posix_spawn(&pid, path->narrow,
-                           file_actionsp, attrp, argvlist, envlist);
+                               file_actionsp, attrp, argvlist, envlist);
     }
-
     _Py_END_SUPPRESS_IPH
+
     if (err_code) {
         errno = err_code;
         PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path->object);
@@ -5536,8 +5538,8 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
 /*[clinic end generated code: output=45dfa4c515d09f2c input=2891c2f1d457e39b]*/
 {
     return py_posix_spawn(0, module, path, argv, env, file_actions,
-                                setpgroup, resetids, setsigmask, setsigdef,
-                                scheduler);
+                          setpgroup, resetids, setsigmask, setsigdef,
+                          scheduler);
 }
  #endif /* HAVE_POSIX_SPAWN */
 
@@ -5579,8 +5581,8 @@ os_posix_spawnp_impl(PyObject *module, path_t *path, PyObject *argv,
 /*[clinic end generated code: output=7955dc0edc82b8c3 input=b7576eb25b1ed9eb]*/
 {
     return py_posix_spawn(1, module, path, argv, env, file_actions,
-                                setpgroup, resetids, setsigmask, setsigdef,
-                                scheduler);
+                          setpgroup, resetids, setsigmask, setsigdef,
+                          scheduler);
 }
 #endif /* HAVE_POSIX_SPAWNP */
 

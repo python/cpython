@@ -3471,8 +3471,7 @@ written in Python, such as a mail server's external command delivery program.
 
    Similar to :func:`posix_spawn` except that the system searches
    for the *executable* file in the list of directories specified by the
-   :envvar:`PATH` environment variable (in the same way as for ``execvp(3)``)
-   if the *path* argument contains no directory.
+   :envvar:`PATH` environment variable (in the same way as for ``execvp(3)``).
 
    .. versionadded:: 3.8
 
