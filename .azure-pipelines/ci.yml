@@ -89,7 +89,7 @@ jobs:
   steps:
   - template: ./posix-steps.yml
     parameters:
-      dependencies: false
+      dependencies: true
       xvfb: false
       patchcheck: false
 
@@ -154,3 +154,4 @@ jobs:
   - template: ./windows-layout-steps.yml
     parameters:
       kind: appx
+      fulltest: true

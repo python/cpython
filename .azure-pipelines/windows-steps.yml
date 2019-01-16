@@ -6,7 +6,8 @@ steps:
 - powershell: |
     # Relocate build outputs outside of source directory to make cleaning faster
     Write-Host '##vso[task.setvariable variable=Py_IntDir]$(Build.BinariesDirectory)\obj'
-    Write-Host '##vso[task.setvariable variable=Py_OutDir]$(Build.BinariesDirectory)\bin'
+    # UNDONE: Do not build to a different directory because of broken tests
+    Write-Host '##vso[task.setvariable variable=Py_OutDir]$(Build.SourcesDirectory)\PCbuild'
     Write-Host '##vso[task.setvariable variable=EXTERNALS_DIR]$(Build.BinariesDirectory)\externals'
   displayName: Update build locations
 
