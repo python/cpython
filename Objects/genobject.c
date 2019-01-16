@@ -1552,6 +1552,15 @@ ag_getcode(PyGenObject *gen, void *Py_UNUSED(ignored))
     return _gen_getcode(gen, "ag__code");
 }
 
+static PyObject *
+ag_getsuspended(PyAsyncGenObject *ag, void *Py_UNUSED(ignored))
+{
+    if (ag->ag_frame_state == FRAME_SUSPENDED) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
 static PyGetSetDef async_gen_getsetlist[] = {
     {"__name__", (getter)gen_get_name, (setter)gen_set_name,
      PyDoc_STR("name of the async generator")},
@@ -1561,6 +1570,7 @@ static PyGetSetDef async_gen_getsetlist[] = {
      PyDoc_STR("object being awaited on, or None")},
      {"ag_frame",  (getter)ag_getframe, NULL, NULL},
      {"ag_code",  (getter)ag_getcode, NULL, NULL},
+     {"ag_suspended",  (getter)ag_getsuspended, NULL, NULL},
     {NULL} /* Sentinel */
 };
 

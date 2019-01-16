@@ -2321,6 +2321,138 @@ class TestGetCoroutineState(unittest.TestCase):
                          {'a': None, 'gencoro': gencoro, 'b': 'spam'})
 
 
+class TestGetAsyncGenState(unittest.TestCase):
+
+    def setUp(self):
+        async def number_asyncgen():
+            for number in range(5):
+                yield number
+        self.asyncgen = number_asyncgen()
+
+    def tearDown(self):
+        try:
+            self.asyncgen.aclose().send(None)
+        except StopIteration:
+            pass
+
+    def _asyncgenstate(self):
+        return inspect.getasyncgenstate(self.asyncgen)
+
+    def test_created(self):
+        self.assertEqual(self._asyncgenstate(), inspect.AGEN_CREATED)
+
+    def test_suspended(self):
+        try:
+            next(self.asyncgen.__anext__())
+        except StopIteration as exc:
+            self.assertEqual(self._asyncgenstate(), inspect.AGEN_SUSPENDED)
+            self.assertEqual(exc.args, (0,))
+
+    def test_closed_after_exhaustion(self):
+        while True:
+            try:
+                next(self.asyncgen.__anext__())
+            except StopAsyncIteration:
+                self.assertEqual(self._asyncgenstate(), inspect.AGEN_CLOSED)
+                break
+            except StopIteration as exc:
+                if exc.args is None:
+                    self.assertEqual(self._asyncgenstate(), inspect.AGEN_CLOSED)
+                    break
+        self.assertEqual(self._asyncgenstate(), inspect.AGEN_CLOSED)
+
+    def test_closed_after_immediate_exception(self):
+        with self.assertRaises(RuntimeError):
+            self.asyncgen.athrow(RuntimeError).send(None)
+        self.assertEqual(self._asyncgenstate(), inspect.AGEN_CLOSED)
+
+    def test_running(self):
+        async def running_check_asyncgen():
+            for number in range(5):
+                self.assertEqual(self._asyncgenstate(), inspect.AGEN_RUNNING)
+                yield number
+                self.assertEqual(self._asyncgenstate(), inspect.AGEN_RUNNING)
+        self.asyncgen = running_check_asyncgen()
+        # Running up to the first yield
+        try:
+            next(self.asyncgen.__anext__())
+        except StopIteration:
+            pass
+        # Running after the first yield
+        try:
+            next(self.asyncgen.__anext__())
+        except StopIteration:
+            pass
+
+    def test_easy_debugging(self):
+        # repr() and str() of a asyncgen state should contain the state name
+        names = 'AGEN_CREATED AGEN_RUNNING AGEN_SUSPENDED AGEN_CLOSED'.split()
+        for name in names:
+            state = getattr(inspect, name)
+            self.assertIn(name, repr(state))
+            self.assertIn(name, str(state))
+
+    def test_getasyncgenlocals(self):
+        async def each(lst, a=None):
+            b=(1, 2, 3)
+            for v in lst:
+                if v == 3:
+                    c = 12
+                yield v
+
+        numbers = each([1, 2, 3])
+        self.assertEqual(inspect.getasyncgenlocals(numbers),
+                         {'a': None, 'lst': [1, 2, 3]})
+        try:
+            next(numbers.__anext__())
+        except StopIteration:
+            pass
+        self.assertEqual(inspect.getasyncgenlocals(numbers),
+                         {'a': None, 'lst': [1, 2, 3], 'v': 1,
+                          'b': (1, 2, 3)})
+        try:
+            next(numbers.__anext__())
+        except StopIteration:
+            pass
+        self.assertEqual(inspect.getasyncgenlocals(numbers),
+                         {'a': None, 'lst': [1, 2, 3], 'v': 2,
+                          'b': (1, 2, 3)})
+        try:
+            next(numbers.__anext__())
+        except StopIteration:
+            pass
+        self.assertEqual(inspect.getasyncgenlocals(numbers),
+                         {'a': None, 'lst': [1, 2, 3], 'v': 3,
+                          'b': (1, 2, 3), 'c': 12})
+        try:
+            next(numbers.__anext__())
+        except StopAsyncIteration:
+            pass
+        self.assertEqual(inspect.getasyncgenlocals(numbers), {})
+
+    def test_getasyncgenlocals_empty(self):
+        async def yield_one():
+            yield 1
+        one = yield_one()
+        self.assertEqual(inspect.getasyncgenlocals(one), {})
+        try:
+            next(one.__anext__())
+        except StopIteration:
+            pass
+        self.assertEqual(inspect.getasyncgenlocals(one), {})
+        try:
+            next(one.__anext__())
+        except StopAsyncIteration:
+            pass
+        self.assertEqual(inspect.getasyncgenlocals(one), {})
+
+    def test_getasyncgenlocals_error(self):
+        self.assertRaises(TypeError, inspect.getasyncgenlocals, 1)
+        self.assertRaises(TypeError, inspect.getasyncgenlocals, lambda x: True)
+        self.assertRaises(TypeError, inspect.getasyncgenlocals, set)
+        self.assertRaises(TypeError, inspect.getasyncgenlocals, (2,3))
+
+
 class MySignature(inspect.Signature):
     # Top-level to make it picklable;
     # used in test_signature_object_pickle
