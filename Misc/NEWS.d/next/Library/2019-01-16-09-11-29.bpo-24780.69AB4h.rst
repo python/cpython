@@ -1,0 +1,1 @@
+unittest assertEqual difference output now not foiled by newlines.
