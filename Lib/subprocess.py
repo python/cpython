@@ -1066,6 +1066,34 @@ class Popen(object):
                 pass
             raise  # resume the KeyboardInterrupt
 
+    def _close_pipe_fds(self,
+                        p2cread, p2cwrite,
+                        c2pread, c2pwrite,
+                        errread, errwrite):
+        # self._devnull is not always defined.
+        devnull_fd = getattr(self, '_devnull', None)
+
+        if _mswindows:
+            if p2cread != -1:
+                p2cread.Close()
+            if c2pwrite != -1:
+                c2pwrite.Close()
+            if errwrite != -1:
+                errwrite.Close()
+        else:
+            if p2cread != -1 and p2cwrite != -1 and p2cread != devnull_fd:
+                os.close(p2cread)
+            if c2pwrite != -1 and c2pread != -1 and c2pwrite != devnull_fd:
+                os.close(c2pwrite)
+            if errwrite != -1 and errread != -1 and errwrite != devnull_fd:
+                os.close(errwrite)
+
+        if devnull_fd is not None:
+            os.close(devnull_fd)
+
+        # Prevent a double close of these handles/fds from __init__ on error.
+        self._closed_child_pipe_fds = True
+
 
     if _mswindows:
         #
@@ -1244,17 +1272,9 @@ class Popen(object):
                 # output pipe are maintained in this process or else the
                 # pipe will not close when the child process exits and the
                 # ReadFile will hang.
-                if p2cread != -1:
-                    p2cread.Close()
-                if c2pwrite != -1:
-                    c2pwrite.Close()
-                if errwrite != -1:
-                    errwrite.Close()
-                if hasattr(self, '_devnull'):
-                    os.close(self._devnull)
-                # Prevent a double close of these handles/fds from __init__
-                # on error.
-                self._closed_child_pipe_fds = True
+                self._close_pipe_fds(p2cread, p2cwrite,
+                                     c2pread, c2pwrite,
+                                     errread, errwrite)
 
             # Retain the process handle, but close the thread handle
             self._child_created = True
@@ -1441,7 +1461,10 @@ class Popen(object):
                     errread, errwrite)
 
 
-        def _posix_spawn(self, args, executable, env, restore_signals):
+        def _posix_spawn(self, args, executable, env, restore_signals,
+                         p2cread, p2cwrite,
+                         c2pread, c2pwrite,
+                         errread, errwrite):
             """Execute program using os.posix_spawn()."""
             if env is None:
                 env = os.environ
@@ -1456,7 +1479,26 @@ class Popen(object):
                         sigset.append(signum)
                 kwargs['setsigdef'] = sigset
 
+            file_actions = []
+            for fd in (p2cwrite, c2pread, errread):
+                if fd != -1:
+                    file_actions.append((os.POSIX_SPAWN_CLOSE, fd))
+            for fd, fd2 in (
+                (p2cread, 0),
+                (c2pwrite, 1),
+                (errwrite, 2),
+            ):
+                if fd != -1:
+                    file_actions.append((os.POSIX_SPAWN_DUP2, fd, fd2))
+            if file_actions:
+                kwargs['file_actions'] = file_actions
+
             self.pid = os.posix_spawn(executable, args, env, **kwargs)
+            self._child_created = True
+
+            self._close_pipe_fds(p2cread, p2cwrite,
+                                 c2pread, c2pwrite,
+                                 errread, errwrite)
 
         def _execute_child(self, args, executable, preexec_fn, close_fds,
                            pass_fds, cwd, env,
@@ -1489,11 +1531,14 @@ class Popen(object):
                     and not close_fds
                     and not pass_fds
                     and cwd is None
-                    and p2cread == p2cwrite == -1
-                    and c2pread == c2pwrite == -1
-                    and errread == errwrite == -1
+                    and (p2cread == -1 or p2cread > 2)
+                    and (c2pwrite == -1 or c2pwrite > 2)
+                    and (errwrite == -1 or errwrite > 2)
                     and not start_new_session):
-                self._posix_spawn(args, executable, env, restore_signals)
+                self._posix_spawn(args, executable, env, restore_signals,
+                                  p2cread, p2cwrite,
+                                  c2pread, c2pwrite,
+                                  errread, errwrite)
                 return
 
             orig_executable = executable
@@ -1548,18 +1593,9 @@ class Popen(object):
                     # be sure the FD is closed no matter what
                     os.close(errpipe_write)
 
-                # self._devnull is not always defined.
-                devnull_fd = getattr(self, '_devnull', None)
-                if p2cread != -1 and p2cwrite != -1 and p2cread != devnull_fd:
-                    os.close(p2cread)
-                if c2pwrite != -1 and c2pread != -1 and c2pwrite != devnull_fd:
-                    os.close(c2pwrite)
-                if errwrite != -1 and errread != -1 and errwrite != devnull_fd:
-                    os.close(errwrite)
-                if devnull_fd is not None:
-                    os.close(devnull_fd)
-                # Prevent a double close of these fds from __init__ on error.
-                self._closed_child_pipe_fds = True
+                self._close_pipe_fds(p2cread, p2cwrite,
+                                     c2pread, c2pwrite,
+                                     errread, errwrite)
 
                 # Wait for exec to fail or succeed; possibly raising an
                 # exception (limited in size)
