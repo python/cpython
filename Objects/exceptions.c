@@ -49,7 +49,7 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->args = args;
         Py_INCREF(args);
     } else {
-        self->args = PyTuple_New(2);
+        self->args = PyTuple_New(0);
         if (!self->args) {
             Py_DECREF(self);
             return NULL;
