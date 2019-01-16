@@ -281,8 +281,7 @@ Optimizations
 
   * *close_fds* is false;
   * *preexec_fn*, *pass_fds*, *cwd*, *stdin*, *stdout*, *stderr* and
-    *start_new_session* parameters are not set;
-  * the *executable* path contains a directory.
+    *start_new_session* parameters are not set.
 
 * :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
   :func:`shutil.copytree` and :func:`shutil.move` use platform-specific
