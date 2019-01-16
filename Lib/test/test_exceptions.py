@@ -1415,14 +1415,10 @@ class ImportErrorTests(unittest.TestCase):
 
     def test_pickle_overriden_init(self):
         # Issue #27015
-        from subprocess import CalledProcessError
-
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            orig = CalledProcessError(returncode=2, cmd='foo')
+            orig = NaiveException(x='foo')
             exc = pickle.loads(pickle.dumps(orig, proto))
-            self.assertEqual(orig.cmd, exc.cmd)
-            self.assertEqual(orig.returncode, exc.returncode)
-
+            self.assertEqual(orig.x, exc.x)
 
 
 if __name__ == '__main__':

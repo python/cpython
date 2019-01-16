@@ -18,6 +18,7 @@ import shutil
 import threading
 import gc
 import textwrap
+import pickle
 from test.support import FakePath
 
 try:
@@ -1689,6 +1690,14 @@ class POSIXProcessTestCase(BaseTestCase):
         err = subprocess.CalledProcessError(2, "fake cmd")
         error_string = str(err)
         self.assertIn("non-zero exit status 2.", error_string)
+
+    def test_CalledProcessError_picklable(self):
+        # Issue #27015
+        err = subprocess.CalledProcessError(returncode=2, cmd='foo')
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            new = pickle.loads(pickle.dumps(err, proto))
+            self.assertEqual(err.returncode, new.returncode)
+            self.assertEqual(err.cmd, new.cmd)
 
     def test_preexec(self):
         # DISCLAIMER: Setting environment variables is *not* a good use
