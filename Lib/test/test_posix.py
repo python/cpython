@@ -1490,7 +1490,7 @@ class PosixGroupsTester(unittest.TestCase):
 
 
 class _PosixSpawnMixin:
-    # Program which does nothing and exit with status 0 (success)
+    # Program which does nothing and exits with status 0 (success)
     NOOP_PROGRAM = (sys.executable, '-I', '-S', '-c', 'pass')
     spawn_func = None
 
@@ -1835,7 +1835,7 @@ class TestPosixSpawnP(unittest.TestCase, _PosixSpawnMixin):
         # environment variable: posix_spawnp() uses the current environment
         # to locate the program, not its environment argument.
         args = ('-c', code)
-        #assert_python_ok(*args, PATH=path)
+        assert_python_ok(*args, PATH=path)
 
 
 def test_main():
