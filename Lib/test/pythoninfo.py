@@ -612,7 +612,8 @@ def collect_get_config(info_add):
 
 def collect_subprocess(info_add):
     import subprocess
-    copy_attributes(info_add, subprocess, 'subprocess.%s', ('_USE_POSIX_SPAWN',))
+    attrs = ('_USE_POSIX_SPAWN', '_HAVE_POSIX_SPAWNP')
+    copy_attributes(info_add, subprocess, 'subprocess.%s', attrs)
 
 
 def collect_info(info):
