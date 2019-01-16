@@ -4400,6 +4400,7 @@ decode_bytes_with_escapes(struct compiling *c, const node *n, const char *s,
 static void fstring_shift_node_locations(node *n, int lineno, int col_offset)
 {
     n->n_col_offset = n->n_col_offset + col_offset;
+    n->n_end_col_offset = n->n_end_col_offset + col_offset;
     for (int i = 0; i < NCH(n); ++i) {
         if (n->n_lineno && n->n_lineno < CHILD(n, i)->n_lineno) {
             /* Shifting column offsets unnecessary if there's been newlines. */
@@ -4408,6 +4409,7 @@ static void fstring_shift_node_locations(node *n, int lineno, int col_offset)
         fstring_shift_node_locations(CHILD(n, i), lineno, col_offset);
     }
     n->n_lineno = n->n_lineno + lineno;
+    n->n_end_lineno = n->n_end_lineno + lineno;
 }
 
 /* Fix locations for the given node and its children.
@@ -4419,7 +4421,6 @@ static void fstring_shift_node_locations(node *n, int lineno, int col_offset)
 static void
 fstring_fix_node_location(const node *parent, node *n, char *expr_str)
 {
-    // TODO: fix end positions!
     char *substr = NULL;
     char *start;
     int lines = LINENO(parent) - 1;
@@ -5072,7 +5073,8 @@ make_str_node_and_del(PyObject **str, struct compiling *c, const node* n)
         Py_DECREF(s);
         return NULL;
     }
-    return Constant(s, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+    return Constant(s, LINENO(n), n->n_col_offset,
+                    n->n_end_lineno, n->n_end_col_offset, c->c_arena);
 }
 
 /* Add a non-f-string (that is, a regular literal string). str is
@@ -5227,7 +5229,8 @@ FstringParser_Finish(FstringParser *state, struct compiling *c,
     if (!seq)
         goto error;
 
-    return JoinedStr(seq, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+    return JoinedStr(seq, LINENO(n), n->n_col_offset,
+                     n->n_end_lineno, n->n_end_col_offset, c->c_arena);
 
 error:
     FstringParser_Dealloc(state);
@@ -5437,7 +5440,8 @@ parsestrplus(struct compiling *c, const node *n)
         /* Just return the bytes object and we're done. */
         if (PyArena_AddPyObject(c->c_arena, bytes_str) < 0)
             goto error;
-        return Constant(bytes_str, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        return Constant(bytes_str, LINENO(n), n->n_col_offset,
+                        n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
 
     /* We're not a bytes string, bytes_str should never have been set. */
