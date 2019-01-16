@@ -56,16 +56,8 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
 
-    if (kwds) {
-        self->kwargs = kwds;
-        Py_INCREF(kwds);
-    } else {
-        self->kwargs = PyDict_New();
-        if (!self->kwargs) {
-            Py_DECREF(self);
-            return NULL;
-        }
-    }
+    self->kwargs = kwds;
+    Py_XINCREF(kwds);
 
     return (PyObject *)self;
 }
@@ -345,9 +337,9 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val, void *Py_UNUS
 static PyObject *
 BaseException_get_kwargs(PyBaseExceptionObject *self, void *Py_UNUSED(ignored)) {
     if (self->kwargs == NULL) {
-        Py_RETURN_NONE;
+        self->kwargs = PyDict_New();
     }
-    Py_INCREF(self->kwargs);
+    Py_XINCREF(self->kwargs);
     return self->kwargs;
 }
 
