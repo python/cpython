@@ -59,7 +59,8 @@ _MIN_CANCELLED_TIMER_HANDLES_FRACTION = 0.5
 # Exceptions which must not call the exception handler in fatal error
 # methods (_fatal_error())
 _FATAL_ERROR_IGNORE = (BrokenPipeError,
-                       ConnectionResetError, ConnectionAbortedError)
+                       ConnectionResetError, ConnectionAbortedError,
+                       TimeoutError)
 
 if ssl is not None:
     _FATAL_ERROR_IGNORE = _FATAL_ERROR_IGNORE + (ssl.SSLCertVerificationError,)

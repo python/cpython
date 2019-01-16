@@ -1,0 +1,2 @@
+Don't log exception traceback when :exc:`TimeoutError` is occurred in
+asyncio transport.
