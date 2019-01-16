@@ -2438,7 +2438,8 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
                 assert(slc->kind == Index_kind  && slc->v.Index.value);
                 asdl_seq_SET(elts, j, slc->v.Index.value);
             }
-            e = Tuple(elts, Load, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+            e = Tuple(elts, Load, LINENO(n), n->n_col_offset,
+                      n->n_end_lineno, n->n_end_col_offset, c->c_arena);
             if (!e)
                 return NULL;
             return Subscript(left_expr, Index(e, c->c_arena),
@@ -2467,9 +2468,9 @@ ast_for_factor(struct compiling *c, const node *n)
                            n->n_end_lineno, n->n_end_col_offset,
                            c->c_arena);
         case TILDE:
-            return UnaryOp(Invert, expression, LINENO(n),
+            return UnaryOp(Invert, expression, LINENO(n), n->n_col_offset,
                            n->n_end_lineno, n->n_end_col_offset,
-                           n->n_col_offset, c->c_arena);
+                           c->c_arena);
     }
     PyErr_Format(PyExc_SystemError, "unhandled factor: %d",
                  TYPE(CHILD(n, 0)));
@@ -2496,7 +2497,8 @@ ast_for_atom_expr(struct compiling *c, const node *n)
     if (nch == 1)
         return e;
     if (start && nch == 2) {
-        return Await(e, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        return Await(e, LINENO(n), n->n_col_offset,
+                     n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
 
     for (i = start + 1; i < nch; i++) {
@@ -2513,7 +2515,8 @@ ast_for_atom_expr(struct compiling *c, const node *n)
 
     if (start) {
         /* there was an 'await' */
-        return Await(e, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        return Await(e, LINENO(n), n->n_col_offset,
+                     n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
     else {
         return e;
@@ -2536,7 +2539,8 @@ ast_for_power(struct compiling *c, const node *n)
         expr_ty f = ast_for_expr(c, CHILD(n, NCH(n) - 1));
         if (!f)
             return NULL;
-        e = BinOp(e, Pow, f, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        e = BinOp(e, Pow, f, LINENO(n), n->n_col_offset,
+                  n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
     return e;
 }
@@ -2552,7 +2556,8 @@ ast_for_starred(struct compiling *c, const node *n)
         return NULL;
 
     /* The Load context is changed later. */
-    return Starred(tmp, Load, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+    return Starred(tmp, Load, LINENO(n), n->n_col_offset,
+                   n->n_end_lineno, n->n_end_col_offset, c->c_arena);
 }
 
 
@@ -2614,7 +2619,8 @@ ast_for_expr(struct compiling *c, const node *n)
                               n->n_end_lineno, n->n_end_col_offset,
                               c->c_arena);
             assert(!strcmp(STR(CHILD(n, 1)), "or"));
-            return BoolOp(Or, seq, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+            return BoolOp(Or, seq, LINENO(n), n->n_col_offset,
+                          n->n_end_lineno, n->n_end_col_offset, c->c_arena);
         case not_test:
             if (NCH(n) == 1) {
                 n = CHILD(n, 0);
@@ -2666,8 +2672,8 @@ ast_for_expr(struct compiling *c, const node *n)
                     return NULL;
                 }
 
-                return Compare(expression, ops, cmps, LINENO(n),
-                               n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                return Compare(expression, ops, cmps, LINENO(n), n->n_col_offset,
+                               n->n_end_lineno, n->n_end_col_offset, c->c_arena);
             }
             break;
 
@@ -2707,8 +2713,10 @@ ast_for_expr(struct compiling *c, const node *n)
                     return NULL;
             }
             if (is_from)
-                return YieldFrom(exp, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
-            return Yield(exp, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                return YieldFrom(exp, LINENO(n), n->n_col_offset,
+                                 n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+            return Yield(exp, LINENO(n), n->n_col_offset,
+                         n->n_end_lineno, n->n_end_col_offset, c->c_arena);
         }
         case factor:
             if (NCH(n) == 1) {
@@ -2914,7 +2922,8 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
     end_lineno = closepar == NULL ? n->n_end_lineno : closepar->n_end_lineno;
     end_col_offset = closepar == NULL ? n->n_end_col_offset : closepar->n_end_col_offset;
 
-    return Call(func, args, keywords, func->lineno, func->col_offset, end_lineno, end_col_offset, c->c_arena);
+    return Call(func, args, keywords, func->lineno, func->col_offset,
+                end_lineno, end_col_offset, c->c_arena);
 }
 
 static expr_ty
@@ -2937,7 +2946,8 @@ ast_for_testlist(struct compiling *c, const node* n)
         asdl_seq *tmp = seq_for_testlist(c, n);
         if (!tmp)
             return NULL;
-        return Tuple(tmp, Load, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        return Tuple(tmp, Load, LINENO(n), n->n_col_offset,
+                     n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
 }
 
@@ -2959,7 +2969,8 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         if (!e)
             return NULL;
 
-        return Expr(e, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        return Expr(e, LINENO(n), n->n_col_offset,
+                    n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
     else if (TYPE(CHILD(n, 1)) == augassign) {
         expr_ty expr1, expr2;
@@ -2997,7 +3008,8 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         if (!newoperator)
             return NULL;
 
-        return AugAssign(expr1, newoperator, expr2, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        return AugAssign(expr1, newoperator, expr2, LINENO(n), n->n_col_offset,
+                         n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
     else if (TYPE(CHILD(n, 1)) == annassign) {
         expr_ty expr1, expr2, expr3;
@@ -3057,7 +3069,8 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         }
         if (NCH(ann) == 2) {
             return AnnAssign(expr1, expr2, NULL, simple,
-                             LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                             LINENO(n), n->n_col_offset,
+                             n->n_end_lineno, n->n_end_col_offset, c->c_arena);
         }
         else {
             ch = CHILD(ann, 3);
@@ -3066,7 +3079,8 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
                 return NULL;
             }
             return AnnAssign(expr1, expr2, expr3, simple,
-                             LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                             LINENO(n), n->n_col_offset,
+                             n->n_end_lineno, n->n_end_col_offset, c->c_arena);
         }
     }
     else {
@@ -3104,7 +3118,8 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
             expression = ast_for_expr(c, value);
         if (!expression)
             return NULL;
-        return Assign(targets, expression, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        return Assign(targets, expression, LINENO(n), n->n_col_offset,
+                      n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
 }
 
@@ -3143,7 +3158,8 @@ ast_for_del_stmt(struct compiling *c, const node *n)
     expr_list = ast_for_exprlist(c, CHILD(n, 1), Del);
     if (!expr_list)
         return NULL;
-    return Delete(expr_list, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+    return Delete(expr_list, LINENO(n), n->n_col_offset,
+                  n->n_end_lineno, n->n_end_col_offset, c->c_arena);
 }
 
 static stmt_ty
@@ -3165,27 +3181,33 @@ ast_for_flow_stmt(struct compiling *c, const node *n)
     ch = CHILD(n, 0);
     switch (TYPE(ch)) {
         case break_stmt:
-            return Break(LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+            return Break(LINENO(n), n->n_col_offset,
+                         n->n_end_lineno, n->n_end_col_offset, c->c_arena);
         case continue_stmt:
-            return Continue(LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+            return Continue(LINENO(n), n->n_col_offset,
+                            n->n_end_lineno, n->n_end_col_offset, c->c_arena);
         case yield_stmt: { /* will reduce to yield_expr */
             expr_ty exp = ast_for_expr(c, CHILD(ch, 0));
             if (!exp)
                 return NULL;
-            return Expr(exp, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+            return Expr(exp, LINENO(n), n->n_col_offset,
+                        n->n_end_lineno, n->n_end_col_offset, c->c_arena);
         }
         case return_stmt:
             if (NCH(ch) == 1)
-                return Return(NULL, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                return Return(NULL, LINENO(n), n->n_col_offset,
+                              n->n_end_lineno, n->n_end_col_offset, c->c_arena);
             else {
                 expr_ty expression = ast_for_testlist(c, CHILD(ch, 1));
                 if (!expression)
                     return NULL;
-                return Return(expression, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                return Return(expression, LINENO(n), n->n_col_offset,
+                              n->n_end_lineno, n->n_end_col_offset, c->c_arena);
             }
         case raise_stmt:
             if (NCH(ch) == 1)
-                return Raise(NULL, NULL, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                return Raise(NULL, NULL, LINENO(n), n->n_col_offset,
+                             n->n_end_lineno, n->n_end_col_offset, c->c_arena);
             else if (NCH(ch) >= 2) {
                 expr_ty cause = NULL;
                 expr_ty expression = ast_for_expr(c, CHILD(ch, 1));
@@ -3196,7 +3218,8 @@ ast_for_flow_stmt(struct compiling *c, const node *n)
                     if (!cause)
                         return NULL;
                 }
-                return Raise(expression, cause, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                return Raise(expression, cause, LINENO(n), n->n_col_offset,
+                             n->n_end_lineno, n->n_end_col_offset, c->c_arena);
             }
             /* fall through */
         default:
@@ -3357,11 +3380,14 @@ ast_for_import_stmt(struct compiling *c, const node *n)
                 return NULL;
             asdl_seq_SET(aliases, i / 2, import_alias);
         }
-        return Import(aliases, lineno, col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        // Even though n is modified above, the end position is not changed
+        return Import(aliases, lineno, col_offset,
+                      n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
     else if (TYPE(n) == import_from) {
         int n_children;
         int idx, ndots = 0;
+        const node *n_copy = n;
         alias_ty mod = NULL;
         identifier modname = NULL;
 
@@ -3432,7 +3458,7 @@ ast_for_import_stmt(struct compiling *c, const node *n)
         if (mod != NULL)
             modname = mod->name;
         return ImportFrom(modname, aliases, ndots, lineno, col_offset,
-                          n->n_end_lineno, n->n_end_col_offset,
+                          n_copy->n_end_lineno, n_copy->n_end_col_offset,
                           c->c_arena);
     }
     PyErr_Format(PyExc_SystemError,
@@ -3459,7 +3485,8 @@ ast_for_global_stmt(struct compiling *c, const node *n)
             return NULL;
         asdl_seq_SET(s, i / 2, name);
     }
-    return Global(s, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+    return Global(s, LINENO(n), n->n_col_offset,
+                  n->n_end_lineno, n->n_end_col_offset, c->c_arena);
 }
 
 static stmt_ty
@@ -3480,7 +3507,8 @@ ast_for_nonlocal_stmt(struct compiling *c, const node *n)
             return NULL;
         asdl_seq_SET(s, i / 2, name);
     }
-    return Nonlocal(s, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+    return Nonlocal(s, LINENO(n), n->n_col_offset,
+                    n->n_end_lineno, n->n_end_col_offset, c->c_arena);
 }
 
 static stmt_ty
@@ -3492,7 +3520,8 @@ ast_for_assert_stmt(struct compiling *c, const node *n)
         expr_ty expression = ast_for_expr(c, CHILD(n, 1));
         if (!expression)
             return NULL;
-        return Assert(expression, NULL, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        return Assert(expression, NULL, LINENO(n), n->n_col_offset,
+                      n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
     else if (NCH(n) == 4) {
         expr_ty expr1, expr2;
@@ -3504,7 +3533,8 @@ ast_for_assert_stmt(struct compiling *c, const node *n)
         if (!expr2)
             return NULL;
 
-        return Assert(expr1, expr2, LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        return Assert(expr1, expr2, LINENO(n), n->n_col_offset,
+                      n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
     PyErr_Format(PyExc_SystemError,
                  "improper number of parts to 'assert' statement: %d",
@@ -4039,7 +4069,8 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         if (forbidden_name(c, classname, CHILD(n, 3), 0))
             return NULL;
         return ClassDef(classname, NULL, NULL, s, decorator_seq,
-                        LINENO(n), n->n_col_offset, end_lineno, end_col_offset, c->c_arena);
+                        LINENO(n), n->n_col_offset,
+                        end_lineno, end_col_offset, c->c_arena);
     }
 
     if (TYPE(CHILD(n, 3)) == RPAR) { /* class NAME '(' ')' ':' suite */
@@ -4054,7 +4085,8 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         if (forbidden_name(c, classname, CHILD(n, 3), 0))
             return NULL;
         return ClassDef(classname, NULL, NULL, s, decorator_seq,
-                        LINENO(n), n->n_col_offset, end_lineno, end_col_offset, c->c_arena);
+                        LINENO(n), n->n_col_offset,
+                        end_lineno, end_col_offset, c->c_arena);
     }
 
     /* class NAME '(' arglist ')' ':' suite */
@@ -4065,7 +4097,9 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         dummy_name = NEW_IDENTIFIER(CHILD(n, 1));
         if (!dummy_name)
             return NULL;
-        dummy = Name(dummy_name, Load, LINENO(n), n->n_col_offset, CHILD(n, 1)->n_end_lineno, CHILD(n, 1)->n_end_col_offset, c->c_arena);
+        dummy = Name(dummy_name, Load, LINENO(n), n->n_col_offset,
+                     CHILD(n, 1)->n_end_lineno, CHILD(n, 1)->n_end_col_offset,
+                     c->c_arena);
         call = ast_for_call(c, CHILD(n, 3), dummy, NULL, NULL);
         if (!call)
             return NULL;
@@ -4082,7 +4116,8 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         return NULL;
 
     return ClassDef(classname, call->v.Call.args, call->v.Call.keywords, s,
-                    decorator_seq, LINENO(n), n->n_col_offset, end_lineno, end_col_offset, c->c_arena);
+                    decorator_seq, LINENO(n), n->n_col_offset,
+                    end_lineno, end_col_offset, c->c_arena);
 }
 
 static stmt_ty
@@ -4107,7 +4142,8 @@ ast_for_stmt(struct compiling *c, const node *n)
             case del_stmt:
                 return ast_for_del_stmt(c, n);
             case pass_stmt:
-                return Pass(LINENO(n), n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                return Pass(LINENO(n), n->n_col_offset,
+                            n->n_end_lineno, n->n_end_col_offset, c->c_arena);
             case flow_stmt:
                 return ast_for_flow_stmt(c, n);
             case import_stmt:
