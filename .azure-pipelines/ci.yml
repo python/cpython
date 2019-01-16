@@ -1,5 +1,5 @@
 variables:
-  manylinux: true
+  manylinux: false
   coverage: false
 
 resources:
@@ -63,6 +63,8 @@ jobs:
 
   steps:
   - template: ./posix-steps.yml
+    parameters:
+      dependencies: apt
 
 
 - job: ManyLinux1_CI_Tests
@@ -90,8 +92,8 @@ jobs:
   steps:
   - template: ./posix-steps.yml
     parameters:
-      sudo_dependencies: false
-      dependencies: true
+      dependencies: yum
+      sudo_dependencies: ''
       xvfb: false
       patchcheck: false
 
@@ -119,6 +121,7 @@ jobs:
   steps:
   - template: ./posix-steps.yml
     parameters:
+      dependencies: apt
       coverage: true
 
 

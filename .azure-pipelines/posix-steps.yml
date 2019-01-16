@@ -1,7 +1,7 @@
 parameters:
   coverage: false
-  sudo_dependencies: true
-  dependencies: false
+  sudo_dependencies: sudo
+  dependencies: apt
   patchcheck: true
   xvfb: true
 
@@ -10,13 +10,8 @@ steps:
   clean: true
   fetchDepth: 5
 
-- ${{ if eq(parameters.sudo_dependencies, 'true') }}:
-  - script: sudo ./.azure-pipelines/posix-deps.sh $(openssl_version)
-    displayName: 'Install dependencies'
-
-- ${{ if eq(parameters.dependencies, 'true') }}:
-  - script: ./.azure-pipelines/posix-deps.sh $(openssl_version)
-    displayName: 'Install dependencies'
+- script: ${{ parameters.sudo_dependencies }} ./.azure-pipelines/posix-deps-${{ parameters.dependencies }}.sh $(openssl_version)
+  displayName: 'Install dependencies'
 
 - script: ./configure --with-pydebug
   displayName: 'Configure CPython (debug)'
