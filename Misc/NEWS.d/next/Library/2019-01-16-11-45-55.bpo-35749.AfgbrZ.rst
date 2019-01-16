@@ -1,0 +1,1 @@
+Don't log exception if event loop wakeup pipe is full
