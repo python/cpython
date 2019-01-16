@@ -109,16 +109,20 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         pass
 
     def _read_from_self(self):
+        wakeup = False
         while True:
             try:
                 data = self._ssock.recv(4096)
                 if not data:
                     break
-                self._process_self_data()
+                else:
+                    wakeup = True
             except InterruptedError:
                 continue
             except BlockingIOError:
                 break
+        if wakeup:
+            self._process_self_data()
 
     def _write_to_self(self):
         # This may be called from a different thread, possibly after
