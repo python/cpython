@@ -1190,10 +1190,11 @@ class DefaultCookiePolicy(CookiePolicy):
     def path_return_ok(self, path, request):
         _debug("- checking cookie path=%s", path)
         req_path = request_path(request)
+        pathlen = len(path)
         if req_path == path:
             return True
         elif (req_path.startswith(path) and
-              (path.endswith("/") or req_path[len(path)] == "/")):
+              (path.endswith("/") or req_path[pathlen:pathlen+1] == "/")):
             return True
 
         _debug("  %s does not path-match %s", req_path, path)
