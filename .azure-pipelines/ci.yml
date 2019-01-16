@@ -85,10 +85,12 @@ jobs:
   variables:
     testRunTitle: '$(build.sourceBranchName)-manylinux1'
     testRunPlatform: manylinux1
+    openssl_version: ''
 
   steps:
   - template: ./posix-steps.yml
     parameters:
+      sudo_dependencies: false
       dependencies: true
       xvfb: false
       patchcheck: false
