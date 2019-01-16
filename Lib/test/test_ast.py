@@ -1368,7 +1368,7 @@ class EndPositionTests(unittest.TestCase):
         self._check_end_pos(assign, 2, 13)
         self._check_end_pos(assign.value, 2, 13)
 
-    def test_control_stmts(self):
+    def test_suites(self):
         # We intentionally put these into the same string to check
         # that empty lines are not part of the suite.
         s = dedent('''
@@ -1392,6 +1392,72 @@ class EndPositionTests(unittest.TestCase):
 
             pass
         ''').strip()
+        mod = ast.parse(s)
+        while_loop = mod.body[0]
+        if_stmt = mod.body[1]
+        for_loop = mod.body[2]
+        try_stmt = mod.body[3]
+        pass_stmt = mod.body[4]
+
+        self._check_end_pos(while_loop, 2, 8)
+        self._check_end_pos(if_stmt, 9, 12)
+        self._check_end_pos(for_loop, 12, 15)
+        self._check_end_pos(try_stmt, 17, 8)
+        self._check_end_pos(pass_stmt, 19, 4)
+
+        self._check_content(s, while_loop.test, 'True')
+        self._check_content(s, if_stmt.body[0], 'x = None')
+        self._check_content(s, if_stmt.orelse[0].test, 'other()')
+        self._check_content(s, for_loop.target, 'x, y')
+        self._check_content(s, try_stmt.body[0], 'raise RuntimeError')
+        self._check_content(s, try_stmt.handlers[0].type, 'TypeError')
+
+    def test_fstring(self):
+        s = 'x = f"abc {x + y} abc"'
+        fstr = ast.parse(s).body[0].value
+        binop = fstr.values[1].value
+        self._check_content(s, binop, 'x + y')
+
+    def test_fstring_multi_line(self):
+        s = dedent('''
+            f"""Some multi-line text.
+            {
+            arg_one
+            +
+            arg_two
+            }
+            It goes on..."""
+        ''').strip()
+        fstr = ast.parse(s).body[0].value
+        binop = fstr.values[1].value
+        self._check_end_pos(binop, 5, 7)
+        self._check_content(s, binop.left, 'arg_one')
+        self._check_content(s, binop.right, 'arg_two')
+
+    def test_import_from_multi_line(self):
+        pass
+
+    def test_slices(self):
+        # test both simple and extended slices, single- and multi-line
+        pass
+
+    def test_binop(self):
+        # tricky pars multiline
+        pass
+
+    def test_boolop(self):
+        # ditto
+        pass
+
+    def test_tuples(self):
+        # commas, spaces, pars
+        pass
+
+    def test_attribute_spaces(self):
+        s = 'func(x. y .z)'
+        call = self._parse_expr(s)
+        self._check_content(s, call, s)
+        self._check_content(s, call.args[0], 'x. y .z')
 
 
 def main():
