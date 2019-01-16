@@ -658,11 +658,11 @@ class BaseTestUUID:
 
             self.assertNotEqual(parent_value, child_value)
 
-    # bpo-35701: check that weak referencing to a UUID object can be created
     def test_uuid_weakref(self):
+        # bpo-35701: check that weak referencing to a UUID object can be created
         strong = self.uuid.uuid4()
         weak = weakref.ref(strong)
-        assert strong is weak()
+        self.assertIs(strong, weak())
 
 class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
