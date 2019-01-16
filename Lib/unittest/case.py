@@ -1238,6 +1238,11 @@ class TestCase(object):
             msg = self._formatMessage(msg, standardMsg)
             self.fail(msg)
 
+    def addTrailingNewLine(self, line):
+        if line != '' and line[-1] != '\n':
+            line = line + '\n'
+        return line
+
     def assertMultiLineEqual(self, first, second, msg=None):
         """Assert that two multi-line strings are equal."""
         self.assertIsInstance(first, str, 'First argument is not a string')
@@ -1248,13 +1253,16 @@ class TestCase(object):
             if (len(first) > self._diffThreshold or
                 len(second) > self._diffThreshold):
                 self._baseAssertEqual(first, second, msg)
-            firstlines = first.splitlines(keepends=True)
+            firstlines = first.splitlines(keepends=True) 
             secondlines = second.splitlines(keepends=True)
             if len(firstlines) == 1 and first.strip('\r\n') == first:
                 firstlines = [first + '\n']
                 secondlines = [second + '\n']
             standardMsg = '%s != %s' % _common_shorten_repr(first, second)
-            diff = '\n' + ''.join(difflib.ndiff(firstlines, secondlines))
+            difflines = list(difflib.ndiff(firstlines, secondlines))
+            if len(difflines) > 1:
+                difflines = [self.addTrailingNewLine(line) for line in difflines]
+            diff = '\n' + ''.join(difflines)
             standardMsg = self._truncateMessage(standardMsg, diff)
             self.fail(self._formatMessage(msg, standardMsg))
 

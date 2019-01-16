@@ -1839,5 +1839,20 @@ test case
             self.assertEqual(MyException.ninstance, 0)
 
 
+class testAssertEqualSingleLine(unittest.TestCase):
+
+    def test_trailing_new_line_at_end(self):
+        self.assertEqual("abc\n", "abc\n")
+    def test_trailing_space_at_end(self):
+        self.assertEqual("abc ", "abc ")
+    def test_no_trailing_new_line(self):
+        self.assertEqual("abc", "abc")
+    def test_new_line_at_beginning(self):
+        self.assertEqual("\nabc", "\nabc")
+    def test_new_line_at_start_and_end(self):
+        self.assertEqual("\nabc\n", "\nabc\n")
+    def test_with_space_at_start_and_end(self):
+        self.assertEqual(" abc ", " abc ")
+
 if __name__ == "__main__":
     unittest.main()
