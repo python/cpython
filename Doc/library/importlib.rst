@@ -1488,7 +1488,8 @@ Python 3.6 and newer for other parts of the code).
           if spec is not None:
               break
       else:
-          raise ImportError(f'No module named {absolute_name!r}')
+          msg = f'No module named {absolute_name!r}'
+          raise ModuleNotFoundError(msg, name=absolute_name)
       module = importlib.util.module_from_spec(spec)
       spec.loader.exec_module(module)
       sys.modules[absolute_name] = module
