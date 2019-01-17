@@ -512,12 +512,14 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         year = 1900
 
 
-    # If we know the week of the year and what day of that week, we can figure
-    # out the Julian day of the year.
-    if julian is None and weekday is not None:
+    # If we know the year, the week, and the day of the week, we can figure out
+    # the Julian day of the year.  If day of the week is not specified for the
+    # directives %U and %W we assume it to be the first day of the week.
+    if julian is None:
         if week_of_year is not None:
             week_starts_Mon = True if week_of_year_start == 0 else False
-            julian = _calc_julian_from_U_or_W(year, week_of_year, weekday,
+            day_of_week = week_of_year_start if weekday is None else weekday
+            julian = _calc_julian_from_U_or_W(year, week_of_year, day_of_week,
                                                 week_starts_Mon)
         elif iso_year is not None and iso_week is not None:
             year, julian = _calc_julian_from_V(iso_year, iso_week, weekday + 1)
