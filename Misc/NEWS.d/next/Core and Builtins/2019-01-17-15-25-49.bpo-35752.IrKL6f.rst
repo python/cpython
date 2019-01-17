@@ -1,0 +1,2 @@
+Fix memoryview on 64-bit PowerPC for floats: workaround a GCC bug when a
+64-bit double is casted to a 32-bit float followed by memcpy().

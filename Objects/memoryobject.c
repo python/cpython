@@ -1836,7 +1836,15 @@ pack_single(char *ptr, PyObject *item, const char *fmt)
         if (d == -1.0 && PyErr_Occurred())
             goto err_occurred;
         if (fmt[0] == 'f') {
+#if defined(__GNUC__) && defined(__powerpc64__)
+            /* bpo-35752: Workaround GCC bug on PPC64 using volatile:
+             * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88892*/
+            volatile float x;
+            x = (float)d;
+            memcpy(ptr, (char *)&x, sizeof x);
+#else
             PACK_SINGLE(ptr, d, float);
+#endif
         }
         else {
             PACK_SINGLE(ptr, d, double);
