@@ -869,6 +869,27 @@ class Popen(object):
 
 
         def _close_fds(self, but):
+            if sys.platform.startswith("linux"):
+                # Try closing the actual opened fds (obtained via /proc),
+                # as this is way faster than iterating through MAX_FD
+                try:
+                    for f in os.listdir("/proc/self/fd"):
+                        try:
+                            fd = int(f)
+                        except (ValueError, TypeError): # should not happen
+                            continue
+                        if fd < 3 or fd == but:
+                            continue
+
+                        try:
+                            os.close(fd)
+                        except OSError:
+                            pass
+                    return
+                except OSError:
+                    # /proc not available? fall back to the old method
+                    pass
+
             if hasattr(os, 'closerange'):
                 os.closerange(3, but)
                 os.closerange(but + 1, MAXFD)
