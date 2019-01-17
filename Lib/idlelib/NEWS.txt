@@ -3,6 +3,21 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-35660: Fix imports in window module.
+
+bpo-35641: Properly format calltip for function without docstring.
+
+bpo-33987: Use ttk Frame for ttk widgets.
+
+bpo-34055: Fix erroneous 'smart' indents and newlines in IDLE Shell.
+
+bpo-28097: Add Previous/Next History entries to Shell menu.
+
+bpo-35591: Find Selection now works when selection not found.
+
+bpo-35598: Update config_key: use PEP 8 names and ttk widgets,
+make some objects global, and add tests.
+
 bpo-35196: Speed up squeezer line counting.
 
 bpo-35208: Squeezer now counts wrapped lines before newlines.
