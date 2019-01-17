@@ -1289,12 +1289,7 @@ class EndPositionTests(unittest.TestCase):
         self.assertEqual(ast_node.end_col_offset, end_col_offset)
 
     def _check_content(self, source, ast_node, content):
-        # should be used for one line expressions only.
-        assert ast_node.lineno == ast_node.end_lineno
-        # lines are 1-based
-        self.assertEqual(source.splitlines()[ast_node.lineno - 1]
-                         [ast_node.col_offset:ast_node.end_col_offset],
-                         content)
+        self.assertEqual(ast.get_source_segment(source, ast_node), content)
 
     def _parse_value(self, s):
         # Use duck-typing to support both single expression

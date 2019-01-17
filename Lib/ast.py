@@ -227,11 +227,11 @@ def get_docstring(node, clean=True):
 
 
 def get_source_segment(source, node, coding='utf-8'):
-    """Get source code segment of the 'source' that generated 'node'.
+    """Get source code segment of the *source* that generated *node*.
 
-    If some location information (lineno, end_lineno, col_offset,
-    or end_col_offset) is missing, return None. The default coding is UTF-8
-    (the one used by the Python parser).
+    If some location information (`lineno`, `end_lineno`, `col_offset`,
+    or `end_col_offset`) is missing, return None. The default *coding*
+    is UTF-8 (the one used by the Python parser).
     """
     if not hasattr(node, 'lineno'):
         return None
