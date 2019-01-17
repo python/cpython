@@ -226,6 +226,37 @@ def get_docstring(node, clean=True):
     return text
 
 
+def get_source_segment(source, node, coding='utf-8'):
+    """Get source code segment of the 'source' that generated 'node'.
+
+    If some location information (lineno, end_lineno, col_offset,
+    or end_col_offset) is missing, return None. The default coding is UTF-8
+    (the one used by the Python parser).
+    """
+    if not hasattr(node, 'lineno'):
+        return None
+    lineno = node.lineno - 1
+    if not hasattr(node, 'end_lineno'):
+        return None
+    end_lineno = node.end_lineno - 1
+    if not hasattr(node, 'col_offset'):
+        return None
+    col_offset = node.col_offset
+    if not hasattr(node, 'end_col_offset'):
+        return None
+    end_col_offset = node.end_col_offset
+
+    if end_lineno == lineno:
+        source_line = source.splitlines()[lineno]
+        return source_line.encode(coding)[col_offset:end_col_offset].decode(coding)
+
+    lines = source.splitlines()
+    first = lines[lineno].encode(coding)[col_offset:].decode(coding)
+    last = lines[end_lineno].encode(coding)[:end_col_offset].decode(coding)
+    middle_lines = lines[lineno+1:end_lineno]
+    return '\n'.join([first] + middle_lines + [last])
+
+
 def walk(node):
     """
     Recursively yield all descendant nodes in the tree starting at *node*
