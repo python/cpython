@@ -9,6 +9,7 @@ import pickle
 import shutil
 import subprocess
 import sys
+import weakref
 from unittest import mock
 
 py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
@@ -657,6 +658,11 @@ class BaseTestUUID:
 
             self.assertNotEqual(parent_value, child_value)
 
+    def test_uuid_weakref(self):
+        # bpo-35701: check that weak referencing to a UUID object can be created
+        strong = self.uuid.uuid4()
+        weak = weakref.ref(strong)
+        self.assertIs(strong, weak())
 
 class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
