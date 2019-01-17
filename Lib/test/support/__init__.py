@@ -2264,14 +2264,14 @@ def start_threads(threads, unlock=None):
                 endtime += 60
                 for t in started:
                     t.join(max(endtime - time.monotonic(), 0.01))
-                started = [t for t in started if t.isAlive()]
+                started = [t for t in started if t.is_alive()]
                 if not started:
                     break
                 if verbose:
                     print('Unable to join %d threads during a period of '
                           '%d minutes' % (len(started), timeout))
         finally:
-            started = [t for t in started if t.isAlive()]
+            started = [t for t in started if t.is_alive()]
             if started:
                 faulthandler.dump_traceback(sys.stdout)
                 raise AssertionError('Unable to join %d threads' % len(started))

@@ -394,6 +394,8 @@ Deprecated
 
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
+* The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread` has been deprecated.
+  (Contributed by Dong-hee Na in :issue:`35283`.)
 
 API and Feature Removals
 ========================
