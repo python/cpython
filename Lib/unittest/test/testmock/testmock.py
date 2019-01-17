@@ -1413,6 +1413,24 @@ class MockTest(unittest.TestCase):
         m = mock.create_autospec(object(), name='sweet_func')
         self.assertIn('sweet_func', repr(m))
 
+    #Issue23078
+    def test_create_autospec_classmethod(self):
+        class TestClass:
+            method = classmethod(lambda cls: None)
+        mock_bound_meth = mock.create_autospec(TestClass.method)
+        mock_bound_meth()
+        mock_bound_meth.assert_called_once_with()
+        self.assertRaises(TypeError, mock_bound_meth, 'extra_arg')
+
+    #Issue23078
+    def test_create_autospec_staticmethod(self):
+        class TestClass:
+            method = staticmethod(lambda: None)
+        mock_meth = mock.create_autospec(TestClass.method)
+        mock_meth()
+        mock_meth.assert_called_once_with()
+        self.assertRaises(TypeError, mock_meth, 'extra_arg')
+
     #Issue21238
     def test_mock_unsafe(self):
         m = Mock()
