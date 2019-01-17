@@ -135,7 +135,7 @@ perf_counter(_Py_clock_info_t *info)
     return _PyFloat_FromPyTime(t);
 }
 
-#if defined(MS_WINDOWS) || defined(HAVE_CLOCK)
+#if (defined(MS_WINDOWS) || defined(HAVE_CLOCK)) && !defined(__VXWORKS__)
 #define PYCLOCK
 static PyObject*
 pyclock(_Py_clock_info_t *info)
@@ -755,7 +755,7 @@ time_strftime(PyObject *self, PyObject *args)
         return NULL;
     }
 
-#if defined(_MSC_VER) || (defined(__sun) && defined(__SVR4)) || defined(_AIX)
+#if defined(_MSC_VER) || (defined(__sun) && defined(__SVR4)) || defined(_AIX) || defined(__VXWORKS__)
     if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
         PyErr_SetString(PyExc_ValueError,
                         "strftime() requires year in [1; 9999]");
