@@ -115,8 +115,8 @@ def dump(node, annotate_fields=True, include_attributes=False):
 
 def copy_location(new_node, old_node):
     """
-    Copy source location (`lineno` and `col_offset` attributes) from
-    *old_node* to *new_node* if possible, and return *new_node*.
+    Copy source location (`lineno`, `col_offset`, `end_lineno`, and `end_col_offset`
+    attributes) from *old_node* to *new_node* if possible, and return *new_node*.
     """
     for attr in 'lineno', 'col_offset', 'end_lineno', 'end_col_offset':
         if attr in old_node._attributes and attr in new_node._attributes \
@@ -162,8 +162,9 @@ def fix_missing_locations(node):
 
 def increment_lineno(node, n=1):
     """
-    Increment the line number of each node in the tree starting at *node* by *n*.
-    This is useful to "move code" to a different location in a file.
+    Increment the line number and end line number of each node in the tree
+    starting at *node* by *n*. This is useful to "move code" to a different
+    location in a file.
     """
     for child in walk(node):
         if 'lineno' in child._attributes:
