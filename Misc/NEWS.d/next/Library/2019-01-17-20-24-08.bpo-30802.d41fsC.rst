@@ -1,0 +1,4 @@
+:meth:`datetime.strptime` directives ``%U`` and ``%W`` no longer require a
+weekday to be specified in the format string and will assume the first day
+of the week if it is omitted (this is not the same as specifying the
+weekday).
