@@ -1291,16 +1291,19 @@ class EndPositionTests(unittest.TestCase):
     def _check_content(self, source, ast_node, content):
         # should be used for one line expressions only.
         assert ast_node.lineno == ast_node.end_lineno
-        self.assertEqual(source.splitlines()[ast_node.lineno - 1]  # lines are 1-based
+        # lines are 1-based
+        self.assertEqual(source.splitlines()[ast_node.lineno - 1]
                          [ast_node.col_offset:ast_node.end_col_offset],
                          content)
 
-    def _parse_expr(self, s):
+    def _parse_value(self, s):
+        # Use duck-typing to support both single expression
+        # and a right hand side of an assignment statement.
         return ast.parse(s).body[0].value
 
     def test_lambda(self):
         s = 'lambda x, *y: None'
-        lam = self._parse_expr(s)
+        lam = self._parse_value(s)
         self._check_content(s, lam.body, 'None')
         self._check_content(s, lam.args.args[0], 'x')
         self._check_content(s, lam.args.vararg, 'y')
@@ -1323,14 +1326,14 @@ class EndPositionTests(unittest.TestCase):
 
     def test_call(self):
         s = 'func(x, y=2, **kw)'
-        call = self._parse_expr(s)
+        call = self._parse_value(s)
         self._check_content(s, call.func, 'func')
         self._check_content(s, call.keywords[0].value, '2')
         self._check_content(s, call.keywords[1].value, 'kw')
 
     def test_call_noargs(self):
         s = 'x[0]()'
-        call = self._parse_expr(s)
+        call = self._parse_value(s)
         self._check_content(s, call.func, 'x[0]')
         self._check_end_pos(call, 1, 6)
 
@@ -1414,7 +1417,7 @@ class EndPositionTests(unittest.TestCase):
 
     def test_fstring(self):
         s = 'x = f"abc {x + y} abc"'
-        fstr = ast.parse(s).body[0].value
+        fstr = self._parse_value(s)
         binop = fstr.values[1].value
         self._check_content(s, binop, 'x + y')
 
@@ -1428,36 +1431,114 @@ class EndPositionTests(unittest.TestCase):
             }
             It goes on..."""
         ''').strip()
-        fstr = ast.parse(s).body[0].value
+        fstr = self._parse_value(s)
         binop = fstr.values[1].value
         self._check_end_pos(binop, 5, 7)
         self._check_content(s, binop.left, 'arg_one')
         self._check_content(s, binop.right, 'arg_two')
 
     def test_import_from_multi_line(self):
-        pass
+        s = dedent('''
+            from x.y.z import (
+                a, b, c as c
+            )
+        ''').strip()
+        imp = ast.parse(s).body[0]
+        self._check_end_pos(imp, 3, 1)
 
     def test_slices(self):
-        # test both simple and extended slices, single- and multi-line
-        pass
+        s1 = 'f()[1, 2] [0]'
+        s2 = 'x[ a.b: c.d]'
+        sm = dedent('''
+            x[ a.b: f () ,
+               g () : c.d
+              ]
+        ''').strip()
+        i1, i2, im = map(self._parse_value, (s1, s2, sm))
+        self._check_content(s1, i1.value, 'f()[1, 2]')
+        self._check_content(s1, i1.value.slice.value, '1, 2')
+        self._check_content(s2, i2.slice.lower, 'a.b')
+        self._check_content(s2, i2.slice.upper, 'c.d')
+        self._check_content(sm, im.slice.dims[0].upper, 'f ()')
+        self._check_content(sm, im.slice.dims[1].lower, 'g ()')
+        self._check_end_pos(im, 3, 3)
 
     def test_binop(self):
-        # tricky pars multiline
-        pass
+        s = dedent('''
+            (1 * 2 + (3 ) +
+                 4
+            )
+        ''').strip()
+        binop = self._parse_value(s)
+        self._check_end_pos(binop, 2, 6)
+        self._check_content(s, binop.right, '4')
+        self._check_content(s, binop.left, '1 * 2 + (3 )')
+        self._check_content(s, binop.left.right, '3')
 
     def test_boolop(self):
-        # ditto
-        pass
+        s = dedent('''
+            if (one_condition and
+                    (other_condition or yet_another_one)):
+                pass
+        ''').strip()
+        bop = ast.parse(s).body[0].test
+        self._check_end_pos(bop, 2, 44)
+        self._check_content(s, bop.values[1],
+                            'other_condition or yet_another_one')
 
     def test_tuples(self):
-        # commas, spaces, pars
-        pass
+        s1 = 'x = () ;'
+        s2 = 'x = 1 , ;'
+        s3 = 'x = (1 , 2 ) ;'
+        sm = dedent('''
+            x = (
+                a, b,
+            )
+        ''').strip()
+        t1, t2, t3, tm = map(self._parse_value, (s1, s2, s3, sm))
+        self._check_content(s1, t1, '()')
+        self._check_content(s2, t2, '1 ,')
+        self._check_content(s3, t3, '(1 , 2 )')
+        self._check_end_pos(tm, 3, 1)
 
     def test_attribute_spaces(self):
         s = 'func(x. y .z)'
-        call = self._parse_expr(s)
+        call = self._parse_value(s)
         self._check_content(s, call, s)
         self._check_content(s, call.args[0], 'x. y .z')
+
+    def test_displays(self):
+        s1 = '[{}, {1, }, {1, 2,} ]'
+        s2 = '{a: b, f (): g () ,}'
+        c1 = self._parse_value(s1)
+        c2 = self._parse_value(s2)
+        self._check_content(s1, c1.elts[0], '{}')
+        self._check_content(s1, c1.elts[1], '{1, }')
+        self._check_content(s1, c1.elts[2], '{1, 2,}')
+        self._check_content(s2, c2.keys[1], 'f ()')
+        self._check_content(s2, c2.values[1], 'g ()')
+
+    def test_comprehensions(self):
+        s = dedent('''
+            x = [{x for x, y in stuff
+                  if cond.x} for stuff in things]
+        ''').strip()
+        cmp = self._parse_value(s)
+        self._check_end_pos(cmp, 2, 37)
+        self._check_content(s, cmp.generators[0].iter, 'things')
+        self._check_content(s, cmp.elt.generators[0].iter, 'stuff')
+        self._check_content(s, cmp.elt.generators[0].ifs[0], 'cond.x')
+        self._check_content(s, cmp.elt.generators[0].target, 'x, y')
+
+    def test_yield_await(self):
+        s = dedent('''
+            async def f():
+                yield x
+                await y
+        ''').strip()
+        fdef = ast.parse(s).body[0]
+        self._check_content(s, fdef.body[0].value, 'yield x')
+        self._check_content(s, fdef.body[1].value, 'await y')
 
 
 def main():
