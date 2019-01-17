@@ -863,7 +863,12 @@ class PyBuildExt(build_ext):
             libs = ['crypt']
         else:
             libs = []
-        exts.append( Extension('_crypt', ['_cryptmodule.c'], libraries=libs) )
+
+        if 'vxworks' not in host_platform:
+            exts.append( Extension('_crypt', ['_cryptmodule.c'], libraries=libs) )
+        elif self.compiler.find_library_file(lib_dirs, 'OPENSSL'):
+            libs = ['OPENSSL']
+            exts.append( Extension('_crypt', ['_cryptmodule.c'], libraries=libs) )
 
         # CSV files
         exts.append( Extension('_csv', ['_csv.c']) )
