@@ -2251,11 +2251,14 @@ Notes:
 
 (7)
    When used with the :meth:`strptime` method, ``%U`` and ``%W`` are only used
-   in calculations when the day of the week and the calendar year (``%Y``)
-   are specified.
+   in calculations when the calendar year (``%Y``) is specified. Optionally the
+   weekday can also be specified, but if it is omitted then the first day of
+   the week is assumed. Defaulting to the first day of the week only affects
+   these directives, i.e., specifying ``%U`` without a weekday will not
+   implicitly specify the weekday as Sunday.
 
 (8)
-   Similar to ``%U`` and ``%W``, ``%V`` is only used in calculations when the
+   ``%V`` is only used in calculations when the
    day of the week and the ISO year (``%G``) are specified in a
    :meth:`strptime` format string. Also note that ``%G`` and ``%Y`` are not
    interchangeable.
