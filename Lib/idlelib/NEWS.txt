@@ -3,6 +3,11 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-35770: IDLE macosx deletes Options => Configure IDLE.
+It previously deleted Window => Zoom Height by mistake.
+(Zoom Height is now on the Options menu).  On Mac, the settings
+dialog is accessed via Preferences on the IDLE menu.
+
 bpo-35769: Change new file name from 'Untitled' to 'untitled'.
 
 bpo-35660: Fix imports in window module.
