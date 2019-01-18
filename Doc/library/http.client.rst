@@ -130,8 +130,8 @@ This module provides the following function:
    After returning, the file pointer *fp* is ready to read the HTTP body.
 
    .. note::
-      :meth:``parse_headers`` does not parse the start-line of a HTTP message;
-      it only parses the `Name: value` lines. The file has to be ready to
+      :meth:`parse_headers` does not parse the start-line of a HTTP message;
+      it only parses the ``Name: value`` lines. The file has to be ready to
       read these field lines, so the first line should already be consumed
       before calling the function.
 
