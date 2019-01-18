@@ -557,6 +557,7 @@ class EventLoopTestsMixin:
         self.loop.add_signal_handler(signal.SIGALRM, my_handler)
 
         signal.setitimer(signal.ITIMER_REAL, 0.01, 0)  # Send SIGALRM once.
+        self.loop.call_later(60, self.loop.stop)
         self.loop.run_forever()
         self.assertEqual(caught, 1)
 
@@ -569,11 +570,12 @@ class EventLoopTestsMixin:
             nonlocal caught
             caught += 1
             self.assertEqual(args, some_args)
+            self.loop.stop()
 
         self.loop.add_signal_handler(signal.SIGALRM, my_handler, *some_args)
 
         signal.setitimer(signal.ITIMER_REAL, 0.1, 0)  # Send SIGALRM once.
-        self.loop.call_later(0.5, self.loop.stop)
+        self.loop.call_later(60, self.loop.stop)
         self.loop.run_forever()
         self.assertEqual(caught, 1)
 
