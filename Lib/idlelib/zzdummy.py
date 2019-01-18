@@ -11,7 +11,7 @@ class ZzDummy:
 ##        'format': [
 ##            ('Z in', '<<z-in>>'),
 ##            ('Z out', '<<z-out>>'),
-##        ] 
+##        ]
 ##    }
 
     def __init__(self, editwin):
