@@ -1007,7 +1007,7 @@ class Thread:
         When the timeout argument is present and not None, it should be a
         floating point number specifying a timeout for the operation in seconds
         (or fractions thereof). As join() always returns None, you must call
-        isAlive() after join() to decide whether a timeout happened -- if the
+        is_alive() after join() to decide whether a timeout happened -- if the
         thread is still alive, the join() call timed out.
 
         When the timeout argument is not present or None, the operation will
@@ -1091,7 +1091,15 @@ class Thread:
         self._wait_for_tstate_lock(False)
         return not self._is_stopped
 
-    isAlive = is_alive
+    def isAlive(self):
+        """Return whether the thread is alive.
+
+        This method is deprecated, use is_alive() instead.
+        """
+        import warnings
+        warnings.warn('isAlive() is deprecated, use is_alive() instead',
+                      PendingDeprecationWarning, stacklevel=2)
+        return self.is_alive()
 
     @property
     def daemon(self):
