@@ -293,25 +293,21 @@ class SqueezerTest(unittest.TestCase):
     def test_reload(self):
         """Test the reload() class-method."""
         editwin = self.make_mock_editor_window(with_text_widget=True)
-        text_widget = editwin.text
         squeezer = self.make_squeezer_instance(editwin)
+        squeezer.load_font = Mock()
 
-        orig_zero_char_width = squeezer.zero_char_width
         orig_auto_squeeze_min_lines = squeezer.auto_squeeze_min_lines
 
-        # Increase both font size and auto-squeeze-min-lines.
-        text_widget["font"] = ('Courier', 20)
+        # Increase auto-squeeze-min-lines.
         new_auto_squeeze_min_lines = orig_auto_squeeze_min_lines + 10
         self.set_idleconf_option_with_cleanup(
             'main', 'PyShell', 'auto-squeeze-min-lines',
             str(new_auto_squeeze_min_lines))
 
         Squeezer.reload()
-        # The following failed on Gentoo buildbots.  Issue title will be
-        # IDLE: Fix squeezer test_reload.
-        #self.assertGreater(squeezer.zero_char_width, orig_zero_char_width)
         self.assertEqual(squeezer.auto_squeeze_min_lines,
                          new_auto_squeeze_min_lines)
+        squeezer.load_font.assert_called()
 
     def test_reload_no_squeezer_instances(self):
         """Test that Squeezer.reload() runs without any instances existing."""
