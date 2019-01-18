@@ -1088,8 +1088,11 @@ class ContextTests(unittest.TestCase):
                          "required OpenSSL 1.1.0g")
     def test_min_max_version(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        self.assertEqual(
-            ctx.minimum_version, ssl.TLSVersion.MINIMUM_SUPPORTED
+        # OpenSSL default is MINIMUM_SUPPORTED, however some vendors like
+        # Fedora override the setting to TLS 1.0.
+        self.assertIn(
+            ctx.minimum_version,
+            {ssl.TLSVersion.MINIMUM_SUPPORTED, ssl.TLSVersion.TLSv1}
         )
         self.assertEqual(
             ctx.maximum_version, ssl.TLSVersion.MAXIMUM_SUPPORTED
