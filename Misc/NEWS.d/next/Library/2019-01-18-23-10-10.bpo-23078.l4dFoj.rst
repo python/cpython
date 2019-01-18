@@ -1,0 +1,2 @@
+Add support for staticmethod and classmethod with autospec. Based on patch
+by Felipe.
