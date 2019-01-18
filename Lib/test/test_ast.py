@@ -411,12 +411,16 @@ class AST_Tests(unittest.TestCase):
         self.assertFalse(isinstance(ast.Str('42'), ast.Bytes))
         self.assertFalse(isinstance(ast.Num(42), ast.NameConstant))
         self.assertFalse(isinstance(ast.Num(42), ast.Ellipsis))
+        self.assertFalse(isinstance(ast.NameConstant(True), ast.Num))
+        self.assertFalse(isinstance(ast.NameConstant(False), ast.Num))
 
         self.assertFalse(isinstance(ast.Constant('42'), ast.Num))
         self.assertFalse(isinstance(ast.Constant(42), ast.Str))
         self.assertFalse(isinstance(ast.Constant('42'), ast.Bytes))
         self.assertFalse(isinstance(ast.Constant(42), ast.NameConstant))
         self.assertFalse(isinstance(ast.Constant(42), ast.Ellipsis))
+        self.assertFalse(isinstance(ast.Constant(True), ast.Num))
+        self.assertFalse(isinstance(ast.Constant(False), ast.Num))
 
         self.assertFalse(isinstance(ast.Constant(), ast.Num))
         self.assertFalse(isinstance(ast.Constant(), ast.Str))

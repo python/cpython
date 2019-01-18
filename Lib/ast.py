@@ -346,7 +346,10 @@ class _ABC(type):
             except AttributeError:
                 return False
             else:
-                return isinstance(value, _const_types[cls])
+                return (
+                    isinstance(value, _const_types[cls]) and
+                    not isinstance(value, _const_types_not.get(cls, ()))
+                )
         return type.__instancecheck__(cls, inst)
 
 def _new(cls, *args, **kwargs):
@@ -383,4 +386,7 @@ _const_types = {
     Bytes: (bytes,),
     NameConstant: (type(None), bool),
     Ellipsis: (type(...),),
+}
+_const_types_not = {
+    Num: (bool,),
 }
