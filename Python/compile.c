@@ -2284,6 +2284,47 @@ compiler_class(struct compiler *c, stmt_ty s)
     return 1;
 }
 
+/* Return 0 if the expression is a constant value except named singletons.
+   Return 1 otherwise. */
+static int
+check_is_arg(expr_ty e)
+{
+    if (e->kind != Constant_kind) {
+        return 1;
+    }
+    PyObject *value = e->v.Constant.value;
+    return (value == Py_None
+         || value == Py_False
+         || value == Py_True
+         || value == Py_Ellipsis);
+}
+
+/* Check operands of identity chacks ("is" and "is not").
+   Emit a warning if any operand is a constant except named singletons.
+   Return 0 on error.
+ */
+static int
+check_compare(struct compiler *c, expr_ty e)
+{
+    Py_ssize_t i, n;
+    int left = check_is_arg(e->v.Compare.left);
+    n = asdl_seq_LEN(e->v.Compare.ops);
+    for (i = 0; i < n; i++) {
+        cmpop_ty op = (cmpop_ty)asdl_seq_GET(e->v.Compare.ops, i);
+        int right = check_is_arg((expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
+        if (op == Is || op == IsNot) {
+            if (!right || !left) {
+                const char *msg = (op == Is)
+                        ? "\"is\" with a literal. Did you mean \"==\"?"
+                        : "\"is not\" with a literal. Did you mean \"!=\"?";
+                return compiler_warn(c, msg);
+            }
+        }
+        left = right;
+    }
+    return 1;
+}
+
 static int
 cmpop(cmpop_ty op)
 {
@@ -2363,6 +2404,9 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
         return 1;
     }
     case Compare_kind: {
+        if (!check_compare(c, e)) {
+            return 0;
+        }
         Py_ssize_t i, n = asdl_seq_LEN(e->v.Compare.ops) - 1;
         if (n > 0) {
             basicblock *cleanup = compiler_new_block(c);
@@ -3670,6 +3714,9 @@ compiler_compare(struct compiler *c, expr_ty e)
 {
     Py_ssize_t i, n;
 
+    if (!check_compare(c, e)) {
+        return 0;
+    }
     VISIT(c, expr, e->v.Compare.left);
     assert(asdl_seq_LEN(e->v.Compare.ops) > 0);
     n = asdl_seq_LEN(e->v.Compare.ops) - 1;
