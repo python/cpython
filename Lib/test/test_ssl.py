@@ -2029,6 +2029,16 @@ if _have_threads:
                                 sys.stdout.write(" server: read %r (%s), sending back %r (%s)...\n"
                                                  % (msg, ctype, msg.lower(), ctype))
                             self.write(msg.lower())
+                    except ConnectionResetError:
+                        # XXX: OpenSSL 1.1.1 sometimes raises ConnectionResetError
+                        # when connection is not shut down gracefully.
+                        if self.server.chatty and support.verbose:
+                            sys.stdout.write(
+                                " Connection reset by peer: {}\n".format(
+                                    self.addr)
+                            )
+                        self.close()
+                        self.running = False
                     except OSError:
                         if self.server.chatty:
                             handle_error("Test server failure:\n")
@@ -2108,6 +2118,11 @@ if _have_threads:
                     pass
                 except KeyboardInterrupt:
                     self.stop()
+                except BaseException as e:
+                    if support.verbose and self.chatty:
+                        sys.stdout.write(
+                            ' connection handling failed: ' + repr(e) + '\n')
+
             self.sock.close()
 
         def stop(self):
