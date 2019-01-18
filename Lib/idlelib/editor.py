@@ -818,11 +818,11 @@ class EditorWindow(object):
                 self.apply_bindings(xkeydefs)
         #update menu accelerators
         menuEventDict = {}
-        for menu in self.mainmenu.menudefs:
-            menuEventDict[menu[0]] = {}
-            for item in menu[1]:
+        for menu, items in self.mainmenu.menudefs.items():
+            menuEventDict[menu] = {}
+            for item in items:
                 if item:
-                    menuEventDict[menu[0]][prepstr(item[0])[1]] = item[1]
+                    menuEventDict[menu][prepstr(item[0])[1]] = item[1]
         for menubarItem in self.menudict:
             menu = self.menudict[menubarItem]
             end = menu.index(END)
@@ -1117,7 +1117,7 @@ class EditorWindow(object):
             keydefs = self.mainmenu.default_keydefs
         menudict = self.menudict
         text = self.text
-        for mname, entrylist in menudefs:
+        for mname, entrylist in menudefs.items():
             menu = menudict.get(mname)
             if not menu:
                 continue

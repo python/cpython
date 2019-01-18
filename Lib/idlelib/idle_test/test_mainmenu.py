@@ -8,7 +8,7 @@ import unittest
 class MainMenuTest(unittest.TestCase):
 
     def test_menudefs(self):
-        actual = [item[0] for item in mainmenu.menudefs]
+        actual = list(mainmenu.menudefs.keys())
         expect = ['file', 'edit', 'format', 'run', 'shell',
                   'debug', 'options', 'window', 'help']
         self.assertEqual(actual, expect)
