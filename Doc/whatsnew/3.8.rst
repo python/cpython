@@ -442,6 +442,13 @@ Changes in Python behavior
   in the leftmost :keyword:`!for` clause).
   (Contributed by Serhiy Storchaka in :issue:`10544`.)
 
+* The compiler now produces a :exc:`SyntaxWarning` when identity checks
+  (``is`` and ``is not``) are used with certain types of literals
+  (e.g. strings, ints).  These can often work by accident in CPython,
+  but are not guaranteed by the language spec.  The warning advises users
+  to use equality tests (``==`` and ``!=``) instead.
+  (Contributed by Serhiy Storchaka in :issue:`34850`.)
+
 
 Changes in the Python API
 -------------------------
