@@ -88,7 +88,7 @@ import numbers
 
 from fractions import Fraction
 from decimal import Decimal
-from itertools import groupby
+from itertools import groupby, islice
 from bisect import bisect_left, bisect_right
 
 
@@ -284,6 +284,23 @@ def _fail_neg(values, errmsg='negative value'):
             raise StatisticsError(errmsg)
         yield x
 
+def select(data, i, key=None):
+    """Return the i-th smallest element of data.
+
+    >>> select([21, 3, 5, 13, 8, 2, 1], 4)
+    5
+    >>> select([(1, 2), (3, 3), (4, 1)], 2, key=lambda elem: elem[0])
+    (3, 3)
+
+    if ``data`` is empty, StatisticsError will be raised.
+    """
+    if not len(data):
+        raise StatisticsError("select requires at least one data point")
+    if not (1 <= i <= len(data)):
+        raise StatisticsError(f"The index looked for must be between 1 and {len(data)}")
+    data = sorted(data, key=key)
+    data = islice(data, i-1, None)
+    return next(data)
 
 # === Measures of central tendency (averages) ===
 

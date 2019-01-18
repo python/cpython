@@ -1150,6 +1150,26 @@ class UnivariateTypeMixin:
             result = self.func(d)
             self.assertIs(type(result), kind)
 
+class TestSelect(NumericTestCase):
+    def test_select(self):
+        l = [1, 2, 3, 4, 5]
+        for i in range(1, len(l)+1):
+            self.assertEqual(i, statistics.select(l, i))
+
+        with self.assertRaises(statistics.StatisticsError):
+            statistics.select(l, -1)
+
+        with self.assertRaises(statistics.StatisticsError):
+            statistics.select(l, 6)
+
+    def test_select_key(self):
+        l = [(1, 2), (3, 3), (4, 1)]
+        self.assertEqual(statistics.select(l, 2, key=lambda elem: elem[0]), (3, 3))
+
+    def test_empty_data(self):
+        with self.assertRaises(statistics.StatisticsError):
+            statistics.select((), 1)
+
 
 class TestSumCommon(UnivariateCommonMixin, UnivariateTypeMixin):
     # Common test cases for statistics._sum() function.

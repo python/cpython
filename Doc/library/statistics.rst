@@ -38,6 +38,7 @@ These functions calculate an average or typical value from a population
 or sample.
 
 =======================  =============================================
+:func:`select`           Select the i-th smallest element of data.
 :func:`mean`             Arithmetic mean ("average") of data.
 :func:`harmonic_mean`    Harmonic mean of data.
 :func:`median`           Median (middle value) of data.
@@ -66,6 +67,29 @@ Function details
 
 Note: The functions do not require the data given to them to be sorted.
 However, for reading convenience, most of the examples show sorted sequences.
+
+.. function:: select(data)
+
+   Return the i-th smallest element of data sorted by ``key``.
+
+   if *data* is empty or i is not between 1 and ``len(data)``,
+   :exc:`StatisticsError` will be raised.
+
+   Some examples of use:
+
+   .. doctest::
+
+      >>> data = [1, 2, 3, 5, 8, 13, 21]
+      >>> select(data, 4)
+      5
+      >>> select(data, 1)  # the minimum
+      1
+      >>> select(data, len(data))  # the maximum
+      21
+
+      >>> select([(1, 2), (3, 3), (4, 1)], 3, key=lambda elem: elem[0])
+      (3, 3)
+
 
 .. function:: mean(data)
 
