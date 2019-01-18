@@ -1,0 +1,3 @@
+IDLE macosx deletes Options => Configure IDLE. It previously deleted Window
+=> Zoom Height by mistake. (Zoom Height is now on the Options menu).  On
+Mac, the settings dialog is accessed via Preferences on the IDLE menu.
