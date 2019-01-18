@@ -40,7 +40,7 @@ PyAPI_FUNC(Py_ssize_t) _PyNode_SizeOf(node *n);
 #define REQ(n, type) assert(TYPE(n) == (type))
 
 PyAPI_FUNC(void) PyNode_ListTree(node *);
-void _finalize_end_pos(node *n);  // helper also used in parsetok.c
+void _PyNode_FinalizeEndPos(node *n);  // helper also used in parsetok.c
 
 #ifdef __cplusplus
 }

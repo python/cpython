@@ -376,7 +376,7 @@ done:
     PyTokenizer_Free(tok);
 
     if (n != NULL) {
-        _finalize_end_pos(n);
+        _PyNode_FinalizeEndPos(n);
     }
     return n;
 }

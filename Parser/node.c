@@ -78,7 +78,7 @@ fancy_roundup(int n)
 
 
 void
-_finalize_end_pos(node *n)
+_PyNode_FinalizeEndPos(node *n)
 {
     int nch = NCH(n);
     node *last;
@@ -86,7 +86,7 @@ _finalize_end_pos(node *n)
         return;
     }
     last = CHILD(n, nch - 1);
-    _finalize_end_pos(last);
+    _PyNode_FinalizeEndPos(last);
     n->n_end_lineno = last->n_end_lineno;
     n->n_end_col_offset = last->n_end_col_offset;
 }
@@ -102,7 +102,7 @@ PyNode_AddChild(node *n1, int type, char *str, int lineno, int col_offset,
 
     // finalize end position of previous node (if any)
     if (nch > 0) {
-        _finalize_end_pos(CHILD(n1, nch - 1));
+        _PyNode_FinalizeEndPos(CHILD(n1, nch - 1));
     }
 
     if (nch == INT_MAX || nch < 0)

@@ -75,7 +75,7 @@ Node classes
       Note that the end positions are not required by the compiler and are
       therefore optional. The end offset if *after* the last symbol, for example
       one can get the source segment of a one-line expression node using
-      ``source_line[node.col_offset:node.end_col_offset]``.
+      ``source_line[node.col_offset : node.end_col_offset]``.
 
    The constructor of a class :class:`ast.T` parses its arguments as follows:
 
