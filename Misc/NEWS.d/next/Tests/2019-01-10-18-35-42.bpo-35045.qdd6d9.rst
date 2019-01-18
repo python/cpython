@@ -1,0 +1,2 @@
+Make ssl tests less strict and also accept TLSv1 as system default. The
+changes unbreaks test_min_max_version on Fedora 29.
