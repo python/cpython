@@ -3,6 +3,8 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-35769: Change new file name from 'Untitled' to 'untitled'.
+
 bpo-35660: Fix imports in window module.
 
 bpo-35641: Properly format calltip for function without docstring.
