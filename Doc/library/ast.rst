@@ -170,6 +170,19 @@ and classes for traversing abstract syntax trees:
       :class:`AsyncFunctionDef` is now supported.
 
 
+.. function:: get_code_segment(source, node, *, padded=False, coding='utf-8')
+
+   Get source code segment of the *source* that generated *node*.
+   If some location information (:attr:`lineno`, :attr:`end_lineno`,
+   :attr:`col_offset`, or :attr:`end_col_offset`) is missing, return ``None``.
+   The default *coding* is UTF-8 (the one used by the Python parser).
+
+   If *padded* is ``True``, the first line of a multi-line statement will
+   be padded with spaces to match its original position.
+
+   .. versionadded:: 3.8
+
+
 .. function:: fix_missing_locations(node)
 
    When you compile a node tree with :func:`compile`, the compiler expects

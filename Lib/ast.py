@@ -226,12 +226,15 @@ def get_docstring(node, clean=True):
     return text
 
 
-def get_source_segment(source, node, coding='utf-8'):
+def get_source_segment(source, node, *, padded=False, coding='utf-8'):
     """Get source code segment of the *source* that generated *node*.
 
     If some location information (`lineno`, `end_lineno`, `col_offset`,
     or `end_col_offset`) is missing, return None. The default *coding*
     is UTF-8 (the one used by the Python parser).
+
+    If *padded* is `True`, the first line of a multi-line statement will
+    be padded with spaces to match its original position.
     """
     if not hasattr(node, 'lineno'):
         return None
@@ -248,12 +251,19 @@ def get_source_segment(source, node, coding='utf-8'):
 
     if end_lineno == lineno:
         source_line = source.splitlines()[lineno]
-        return source_line.encode(coding)[col_offset:end_col_offset].decode(coding)
+        return source_line.encode()[col_offset:end_col_offset].decode(coding)
 
     lines = source.splitlines()
-    first = lines[lineno].encode(coding)[col_offset:].decode(coding)
-    last = lines[end_lineno].encode(coding)[:end_col_offset].decode(coding)
+
+    if padded:
+        padding = ' ' * len(lines[lineno].encode()[:col_offset].decode(coding))
+    else:
+        padding = ''
+
+    first = padding + lines[lineno].encode()[col_offset:].decode(coding)
+    last = lines[end_lineno].encode()[:end_col_offset].decode(coding)
     middle_lines = lines[lineno+1:end_lineno]
+
     return '\n'.join([first] + middle_lines + [last])
 
 

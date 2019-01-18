@@ -1535,6 +1535,32 @@ class EndPositionTests(unittest.TestCase):
         self._check_content(s, fdef.body[0].value, 'yield x')
         self._check_content(s, fdef.body[1].value, 'await y')
 
+    def test_source_segment_multi(self):
+        s_orig = dedent('''
+            x = (
+                a, b,
+            ) + ()
+        ''').strip()
+        s_tuple = dedent('''
+            (
+                a, b,
+            )
+        ''').strip()
+        binop = self._parse_value(s_orig)
+        self.assertEqual(ast.get_source_segment(s_orig, binop.left), s_tuple)
+
+    def test_source_segment_padded(self):
+        s_orig = dedent('''
+            class C:
+                def fun(self) -> None:
+                    "ЖЖЖЖЖ"
+        ''').strip()
+        s_method = '    def fun(self) -> None:\n' \
+                   '        "ЖЖЖЖЖ"'
+        cdef = ast.parse(s_orig).body[0]
+        self.assertEqual(ast.get_source_segment(s_orig, cdef.body[0], padded=True),
+                         s_method)
+
 
 def main():
     if __name__ != '__main__':
