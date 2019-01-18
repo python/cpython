@@ -4710,7 +4710,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
     switch (e->kind) {
     case Attribute_kind:
         auge = Attribute(e->v.Attribute.value, e->v.Attribute.attr,
-                         AugLoad, e->lineno, e->col_offset
+                         AugLoad, e->lineno, e->col_offset,
                          e->end_lineno, e->end_col_offset, c->c_arena);
         if (auge == NULL)
             return 0;
