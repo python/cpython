@@ -6722,7 +6722,13 @@ os_DirEntry___reduce_ex__(DirEntry *self, PyObject *arg)
     PyObject *return_value = NULL;
     int protocol;
 
-    if (!PyArg_Parse(arg, "i:__reduce_ex__", &protocol)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    protocol = _PyLong_AsInt(arg);
+    if (protocol == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_DirEntry___reduce_ex___impl(self, protocol);
@@ -7376,4 +7382,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=dabd0fa27bf87044 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8c980838ccf517c3 input=a9049054013a1b77]*/
