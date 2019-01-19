@@ -1,0 +1,2 @@
+:class:`multiprocessing.Pool` destructor now emits :exc:`ResourceWarning`
+if the pool is still running.

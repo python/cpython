@@ -5434,7 +5434,7 @@ check_num_args(PyObject *ob, int n)
         return 1;
     PyErr_Format(
         PyExc_TypeError,
-        "expected %d arguments, got %zd", n, PyTuple_GET_SIZE(ob));
+        "expected %d argument%s, got %zd", n, n == 1 ? "" : "s", PyTuple_GET_SIZE(ob));
     return 0;
 }
 

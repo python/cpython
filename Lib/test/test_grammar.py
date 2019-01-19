@@ -1226,11 +1226,33 @@ class GrammarTests(unittest.TestCase):
         if 1 > 1: pass
         if 1 <= 1: pass
         if 1 >= 1: pass
-        if 1 is 1: pass
-        if 1 is not 1: pass
+        if x is x: pass
+        if x is not x: pass
         if 1 in (): pass
         if 1 not in (): pass
-        if 1 < 1 > 1 == 1 >= 1 <= 1 != 1 in 1 not in 1 is 1 is not 1: pass
+        if 1 < 1 > 1 == 1 >= 1 <= 1 != 1 in 1 not in x is x is not x: pass
+
+    def test_comparison_is_literal(self):
+        def check(test, msg='"is" with a literal'):
+            with self.assertWarnsRegex(SyntaxWarning, msg):
+                compile(test, '<testcase>', 'exec')
+            with warnings.catch_warnings():
+                warnings.filterwarnings('error', category=SyntaxWarning)
+                with self.assertRaisesRegex(SyntaxError, msg):
+                    compile(test, '<testcase>', 'exec')
+
+        check('x is 1')
+        check('x is "thing"')
+        check('1 is x')
+        check('x is y is 1')
+        check('x is not 1', '"is not" with a literal')
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings('error', category=SyntaxWarning)
+            compile('x is None', '<testcase>', 'exec')
+            compile('x is False', '<testcase>', 'exec')
+            compile('x is True', '<testcase>', 'exec')
+            compile('x is ...', '<testcase>', 'exec')
 
     def test_binary_mask_ops(self):
         x = 1 & 1
@@ -1520,9 +1542,11 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual(16 // (4 // 2), 8)
         self.assertEqual((16 // 4) // 2, 2)
         self.assertEqual(16 // 4 // 2, 2)
-        self.assertTrue(False is (2 is 3))
-        self.assertFalse((False is 2) is 3)
-        self.assertFalse(False is 2 is 3)
+        x = 2
+        y = 3
+        self.assertTrue(False is (x is y))
+        self.assertFalse((False is x) is y)
+        self.assertFalse(False is x is y)
 
     def test_matrix_mul(self):
         # This is not intended to be a comprehensive test, rather just to be few

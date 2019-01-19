@@ -349,16 +349,18 @@ class SocketEINTRTest(EINTRBaseTest):
         fp = open(path, 'w')
         fp.close()
 
+    @unittest.skipIf(sys.platform == "darwin",
+                     "hangs under macOS; see bpo-25234, bpo-35363")
     def test_open(self):
         self._test_open("fp = open(path, 'r')\nfp.close()",
                         self.python_open)
 
-    @unittest.skipIf(sys.platform == 'darwin', "hangs under OS X; see issue #25234")
     def os_open(self, path):
         fd = os.open(path, os.O_WRONLY)
         os.close(fd)
 
-    @unittest.skipIf(sys.platform == "darwin", "hangs under OS X; see issue #25234")
+    @unittest.skipIf(sys.platform == "darwin",
+                     "hangs under macOS; see bpo-25234, bpo-35363")
     def test_os_open(self):
         self._test_open("fd = os.open(path, os.O_RDONLY)\nos.close(fd)",
                         self.os_open)

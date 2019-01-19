@@ -585,8 +585,8 @@ The following decorators implement test skipping and expected failures:
 
 .. decorator:: expectedFailure
 
-   Mark the test as an expected failure.  If the test fails when run, the test
-   is not counted as a failure.
+   Mark the test as an expected failure.  If the test fails it will be
+   considered a success.  If the test passes, it will be considered a failure.
 
 .. exception:: SkipTest(reason)
 

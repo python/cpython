@@ -1,0 +1,1 @@
+Fixed :c:func:`_PyBytes_Resize` for empty bytes objects.

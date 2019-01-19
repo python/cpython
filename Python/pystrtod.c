@@ -398,6 +398,9 @@ _Py_string_to_number_with_underscores(
     }
 
     dup = PyMem_Malloc(orig_len + 1);
+    if (dup == NULL) {
+        return PyErr_NoMemory();
+    }
     end = dup;
     prev = '\0';
     last = s + orig_len;

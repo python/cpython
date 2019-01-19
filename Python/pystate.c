@@ -592,6 +592,7 @@ PyState_RemoveModule(struct PyModuleDef* def)
         Py_FatalError("PyState_RemoveModule: Module index out of bounds.");
         return -1;
     }
+    Py_INCREF(Py_None);
     return PyList_SetItem(state->modules_by_index, index, Py_None);
 }
 
@@ -1466,7 +1467,7 @@ _str_shared(PyObject *obj, _PyCrossInterpreterData *data)
 static PyObject *
 _new_long_object(_PyCrossInterpreterData *data)
 {
-    return PyLong_FromLongLong((int64_t)(data->data));
+    return PyLong_FromLongLong((intptr_t)(data->data));
 }
 
 static int
