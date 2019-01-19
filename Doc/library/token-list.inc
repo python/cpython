@@ -199,6 +199,10 @@
 
 .. data:: OP
 
+.. data:: TYPE_IGNORE
+
+.. data:: TYPE_COMMENT
+
 .. data:: ERRORTOKEN
 
 .. data:: N_TOKENS

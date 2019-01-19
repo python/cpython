@@ -57,12 +57,14 @@ ATEQUAL = 50
 RARROW = 51
 ELLIPSIS = 52
 OP = 53
+TYPE_IGNORE = 54
+TYPE_COMMENT = 55
 # These aren't used by the C tokenizer but are needed for tokenize.py
-ERRORTOKEN = 54
-COMMENT = 55
-NL = 56
-ENCODING = 57
-N_TOKENS = 58
+ERRORTOKEN = 56
+COMMENT = 57
+NL = 58
+ENCODING = 59
+N_TOKENS = 60
 # Special definitions for cooperation with parser
 NT_OFFSET = 256
 

@@ -60,6 +60,8 @@ const char * const _PyParser_TokenNames[] = {
     "RARROW",
     "ELLIPSIS",
     "OP",
+    "TYPE_IGNORE",
+    "TYPE_COMMENT",
     "<ERRORTOKEN>",
     "<COMMENT>",
     "<NL>",
