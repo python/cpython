@@ -844,7 +844,7 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
 }
 
 static void
-lru_cache_extricate_link(lru_list_elem *link)
+lru_cache_extract_link(lru_list_elem *link)
 {
     lru_list_elem *link_prev = link->prev;
     lru_list_elem *link_next = link->next;
@@ -879,7 +879,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     }
     link  = (lru_list_elem *)_PyDict_GetItem_KnownHash(self->cache, key, hash);
     if (link) {
-        lru_cache_extricate_link(link);
+        lru_cache_extract_link(link);
         lru_cache_append_link(self, link);
         self->hits++;
         result = link->result;
@@ -899,9 +899,9 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     if (self->full && self->root.next != &self->root) {
         /* Use the oldest item to store the new key and result. */
         PyObject *oldkey, *oldresult, *popresult;
-        /* Extricate the oldest item. */
+        /* Extract the oldest item. */
         link = self->root.next;
-        lru_cache_extricate_link(link);
+        lru_cache_extract_link(link);
         /* Remove it from the cache.
            The cache dict holds one reference to the link,
            and the linked list holds yet one reference to it. */
