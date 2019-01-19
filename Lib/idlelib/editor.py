@@ -943,7 +943,7 @@ class EditorWindow(object):
         elif long:
             title = long
         else:
-            title = "Untitled"
+            title = "untitled"
         icon = short or long or title
         if not self.get_saved():
             title = "*%s*" % title
@@ -965,7 +965,7 @@ class EditorWindow(object):
         if filename:
             filename = os.path.basename(filename)
         else:
-            filename = "Untitled"
+            filename = "untitled"
         # return unicode string to display non-ASCII chars correctly
         return self._filename_to_unicode(filename)
 

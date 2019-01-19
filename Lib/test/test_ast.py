@@ -411,12 +411,16 @@ class AST_Tests(unittest.TestCase):
         self.assertFalse(isinstance(ast.Str('42'), ast.Bytes))
         self.assertFalse(isinstance(ast.Num(42), ast.NameConstant))
         self.assertFalse(isinstance(ast.Num(42), ast.Ellipsis))
+        self.assertFalse(isinstance(ast.NameConstant(True), ast.Num))
+        self.assertFalse(isinstance(ast.NameConstant(False), ast.Num))
 
         self.assertFalse(isinstance(ast.Constant('42'), ast.Num))
         self.assertFalse(isinstance(ast.Constant(42), ast.Str))
         self.assertFalse(isinstance(ast.Constant('42'), ast.Bytes))
         self.assertFalse(isinstance(ast.Constant(42), ast.NameConstant))
         self.assertFalse(isinstance(ast.Constant(42), ast.Ellipsis))
+        self.assertFalse(isinstance(ast.Constant(True), ast.Num))
+        self.assertFalse(isinstance(ast.Constant(False), ast.Num))
 
         self.assertFalse(isinstance(ast.Constant(), ast.Num))
         self.assertFalse(isinstance(ast.Constant(), ast.Str))
@@ -1146,11 +1150,12 @@ class ASTValidatorTests(unittest.TestCase):
         tests = [fn for fn in os.listdir(stdlib) if fn.endswith(".py")]
         tests.extend(["test/test_grammar.py", "test/test_unpack_ex.py"])
         for module in tests:
-            fn = os.path.join(stdlib, module)
-            with open(fn, "r", encoding="utf-8") as fp:
-                source = fp.read()
-            mod = ast.parse(source, fn)
-            compile(mod, fn, "exec")
+            with self.subTest(module):
+                fn = os.path.join(stdlib, module)
+                with open(fn, "r", encoding="utf-8") as fp:
+                    source = fp.read()
+                mod = ast.parse(source, fn)
+                compile(mod, fn, "exec")
 
 
 class ConstantTests(unittest.TestCase):

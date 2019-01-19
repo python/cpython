@@ -606,6 +606,57 @@ def getoutput(cmd):
     return getstatusoutput(cmd)[1]
 
 
+def _use_posix_spawn():
+    """Check is posix_spawn() can be used for subprocess.
+
+    subprocess requires a posix_spawn() implementation that reports properly
+    errors to the parent process, set errno on the following failures:
+
+    * process attribute actions failed
+    * file actions failed
+    * exec() failed
+
+    Prefer an implementation which can use vfork in some cases for best
+    performances.
+    """
+    if _mswindows or not hasattr(os, 'posix_spawn'):
+        # os.posix_spawn() is not available
+        return False
+
+    if sys.platform == 'darwin':
+        # posix_spawn() is a syscall on macOS and properly reports errors
+        return True
+
+    # Check libc name and runtime libc version
+    try:
+        ver = os.confstr('CS_GNU_LIBC_VERSION')
+        # parse 'glibc 2.28' as ('glibc', (2, 28))
+        parts = ver.split(maxsplit=1)
+        if len(parts) != 2:
+            # reject unknown format
+            raise ValueError
+        libc = parts[0]
+        version = tuple(map(int, parts[1].split('.')))
+
+        if sys.platform == 'linux' and libc == 'glibc' and version >= (2, 24):
+            # glibc 2.24 has a new Linux posix_spawn implementation using vfork
+            # which properly reports errors to the parent process.
+            return True
+        # Note: Don't use the POSIX implementation of glibc because it doesn't
+        # use vfork (even if glibc 2.26 added a pipe to properly report errors
+        # to the parent process).
+    except (AttributeError, ValueError, OSError):
+        # os.confstr() or CS_GNU_LIBC_VERSION value not available
+        pass
+
+    # By default, consider that the implementation does not properly report
+    # errors.
+    return False
+
+
+_USE_POSIX_SPAWN = _use_posix_spawn()
+
+
 class Popen(object):
     """ Execute a child program in a new process.
 
@@ -1390,6 +1441,23 @@ class Popen(object):
                     errread, errwrite)
 
 
+        def _posix_spawn(self, args, executable, env, restore_signals):
+            """Execute program using os.posix_spawn()."""
+            if env is None:
+                env = os.environ
+
+            kwargs = {}
+            if restore_signals:
+                # See _Py_RestoreSignals() in Python/pylifecycle.c
+                sigset = []
+                for signame in ('SIGPIPE', 'SIGXFZ', 'SIGXFSZ'):
+                    signum = getattr(signal, signame, None)
+                    if signum is not None:
+                        sigset.append(signum)
+                kwargs['setsigdef'] = sigset
+
+            self.pid = os.posix_spawn(executable, args, env, **kwargs)
+
         def _execute_child(self, args, executable, preexec_fn, close_fds,
                            pass_fds, cwd, env,
                            startupinfo, creationflags, shell,
@@ -1414,6 +1482,20 @@ class Popen(object):
 
             if executable is None:
                 executable = args[0]
+
+            if (_USE_POSIX_SPAWN
+                    and os.path.dirname(executable)
+                    and preexec_fn is None
+                    and not close_fds
+                    and not pass_fds
+                    and cwd is None
+                    and p2cread == p2cwrite == -1
+                    and c2pread == c2pwrite == -1
+                    and errread == errwrite == -1
+                    and not start_new_session):
+                self._posix_spawn(args, executable, env, restore_signals)
+                return
+
             orig_executable = executable
 
             # For transferring possible exec failure from child to parent.

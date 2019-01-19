@@ -275,6 +275,15 @@ xml
 Optimizations
 =============
 
+* The :mod:`subprocess` module can now use the :func:`os.posix_spawn` function
+  in some cases for better performance. Currently, it is only used on macOS
+  and Linux (using glibc 2.24 or newer) if all these conditions are met:
+
+  * *close_fds* is false;
+  * *preexec_fn*, *pass_fds*, *cwd*, *stdin*, *stdout*, *stderr* and
+    *start_new_session* parameters are not set;
+  * the *executable* path contains a directory.
+
 * :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
   :func:`shutil.copytree` and :func:`shutil.move` use platform-specific
   "fast-copy" syscalls on Linux, macOS and Solaris in order to copy the file
@@ -385,6 +394,8 @@ Deprecated
 
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
+* The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread` has been deprecated.
+  (Contributed by Dong-hee Na in :issue:`35283`.)
 
 API and Feature Removals
 ========================
@@ -430,6 +441,13 @@ Changes in Python behavior
   in comprehensions and generator expressions (aside from the iterable expression
   in the leftmost :keyword:`!for` clause).
   (Contributed by Serhiy Storchaka in :issue:`10544`.)
+
+* The compiler now produces a :exc:`SyntaxWarning` when identity checks
+  (``is`` and ``is not``) are used with certain types of literals
+  (e.g. strings, ints).  These can often work by accident in CPython,
+  but are not guaranteed by the language spec.  The warning advises users
+  to use equality tests (``==`` and ``!=``) instead.
+  (Contributed by Serhiy Storchaka in :issue:`34850`.)
 
 
 Changes in the Python API
