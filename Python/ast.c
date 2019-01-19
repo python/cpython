@@ -2745,7 +2745,6 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
 
     int i, nargs, nkeywords;
     int ndoublestars;
-    int end_lineno, end_col_offset;
     asdl_seq *args;
     asdl_seq *keywords;
 
