@@ -86,6 +86,7 @@ tok_new(void)
     tok->decoding_readline = NULL;
     tok->decoding_buffer = NULL;
 #endif
+    tok->type_comments = 0;
 
     return tok;
 }
@@ -1253,51 +1254,54 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     if (c == '#') {
         const char *prefix, *p, *type_start;
 
-        while (c != EOF && c != '\n')
+        while (c != EOF && c != '\n') {
             c = tok_nextc(tok);
-
-        p = tok->start;
-        prefix = type_comment_prefix;
-        while (*prefix && p < tok->cur) {
-            if (*prefix == ' ') {
-                while (*p == ' ' || *p == '\t')
-                    p++;
-            } else if (*prefix == *p) {
-                p++;
-            } else {
-                break;
-            }
-
-            prefix++;
         }
 
-        /* This is a type comment if we matched all of type_comment_prefix. */
-        if (!*prefix) {
-            int is_type_ignore = 1;
-            tok_backup(tok, c);  /* don't eat the newline or EOF */
+        if (tok->type_comments) {
+            p = tok->start;
+            prefix = type_comment_prefix;
+            while (*prefix && p < tok->cur) {
+                if (*prefix == ' ') {
+                    while (*p == ' ' || *p == '\t')
+                        p++;
+                } else if (*prefix == *p) {
+                    p++;
+                } else {
+                    break;
+                }
 
-            type_start = p;
-
-            is_type_ignore = tok->cur >= p + 6 && memcmp(p, "ignore", 6) == 0;
-            p += 6;
-            while (is_type_ignore && p < tok->cur) {
-              if (*p == '#')
-                  break;
-              is_type_ignore = is_type_ignore && (*p == ' ' || *p == '\t');
-              p++;
+                prefix++;
             }
 
-            if (is_type_ignore) {
-                /* If this type ignore is the only thing on the line, consume the newline also. */
-                if (blankline) {
-                    tok_nextc(tok);
-                    tok->atbol = 1;
+            /* This is a type comment if we matched all of type_comment_prefix. */
+            if (!*prefix) {
+                int is_type_ignore = 1;
+                tok_backup(tok, c);  /* don't eat the newline or EOF */
+
+                type_start = p;
+
+                is_type_ignore = tok->cur >= p + 6 && memcmp(p, "ignore", 6) == 0;
+                p += 6;
+                while (is_type_ignore && p < tok->cur) {
+                  if (*p == '#')
+                      break;
+                  is_type_ignore = is_type_ignore && (*p == ' ' || *p == '\t');
+                  p++;
                 }
-                return TYPE_IGNORE;
-            } else {
-                *p_start = (char *) type_start;  /* after type_comment_prefix */
-                *p_end = tok->cur;
-                return TYPE_COMMENT;
+
+                if (is_type_ignore) {
+                    /* If this type ignore is the only thing on the line, consume the newline also. */
+                    if (blankline) {
+                        tok_nextc(tok);
+                        tok->atbol = 1;
+                    }
+                    return TYPE_IGNORE;
+                } else {
+                    *p_start = (char *) type_start;  /* after type_comment_prefix */
+                    *p_end = tok->cur;
+                    return TYPE_COMMENT;
+                }
             }
         }
     }
