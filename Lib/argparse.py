@@ -2480,6 +2480,12 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # Exiting methods
     # ===============
     def exit(self, status=0, message=None):
+        """exit(status: integer, message)
+
+        status = 0 is considered as successful termination.
+        Any nonzero exit code is considered as an "abnormal termination"
+
+        """
         if message:
             self._print_message(message, _sys.stderr)
         _sys.exit(status)
