@@ -837,8 +837,10 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
 static void
 lru_cache_extricate_link(lru_list_elem *link)
 {
-    link->prev->next = link->next;
-    link->next->prev = link->prev;
+    lru_list_elem *link_prev = link->prev;
+    lru_list_elem *link_next = link->next;
+    link_prev->next = link->next;
+    link_next->prev = link->prev;
 }
 
 static void
