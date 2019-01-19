@@ -1,0 +1,4 @@
+Convert posixmodule.c statically allocated types ``DirEntryType`` and
+``ScandirIteratorType`` to heap-allocated types. This also modified
+`PyObject_New` and `PyObject_NewVar` to increase the type refcount for heap-
+allocated types.
