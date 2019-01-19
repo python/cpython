@@ -733,6 +733,15 @@ lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
 
     /* short path, key will match args anyway, which is a tuple */
     if (!typed && !kwds) {
+        if (PyTuple_GET_SIZE(args) == 1) {
+            key = PyTuple_GET_ITEM(args, 0);
+            if (!PySequence_Check(key)) {
+                /* For scalar keys, save space and
+                   drop the enclosing args tuple  */
+                Py_INCREF(key);
+                return key;
+            }
+        }
         Py_INCREF(args);
         return args;
     }
