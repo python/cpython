@@ -91,6 +91,9 @@ PyParser_ParseStringObject(const char *s, PyObject *filename,
         err_ret->error = PyErr_Occurred() ? E_DECODE : E_NOMEM;
         return NULL;
     }
+    if (*flags & PyPARSE_TYPE_COMMENTS) {
+        tok->type_comments = 1;
+    }
 
 #ifndef PGEN
     Py_INCREF(err_ret->filename);
@@ -158,6 +161,9 @@ PyParser_ParseFileObject(FILE *fp, PyObject *filename,
     if ((tok = PyTokenizer_FromFile(fp, enc, ps1, ps2)) == NULL) {
         err_ret->error = E_NOMEM;
         return NULL;
+    }
+    if (*flags & PyPARSE_TYPE_COMMENTS) {
+        tok->type_comments = 1;
     }
 #ifndef PGEN
     Py_INCREF(err_ret->filename);
