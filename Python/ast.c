@@ -793,7 +793,7 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
                     }
                 }
             }
-            res = Module(stmts, arena);
+            res = Module(stmts, NULL, arena);
             break;
         case eval_input: {
             expr_ty testlist_ast;
@@ -1232,7 +1232,7 @@ ast_for_arg(struct compiling *c, const node *n)
             return NULL;
     }
 
-    ret = arg(name, annotation, LINENO(n), n->n_col_offset,
+    ret = arg(name, annotation, NULL, LINENO(n), n->n_col_offset,
               n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     if (!ret)
         return NULL;
@@ -1291,7 +1291,7 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
                     goto error;
                 if (forbidden_name(c, argname, ch, 0))
                     goto error;
-                arg = arg(argname, annotation, LINENO(ch), ch->n_col_offset,
+                arg = arg(argname, annotation, NULL, LINENO(ch), ch->n_col_offset,
                           ch->n_end_lineno, ch->n_end_col_offset,
                           c->c_arena);
                 if (!arg)
@@ -1607,10 +1607,10 @@ ast_for_funcdef_impl(struct compiling *c, const node *n0,
     get_last_end_pos(body, &end_lineno, &end_col_offset);
 
     if (is_async)
-        return AsyncFunctionDef(name, args, body, decorator_seq, returns,
+        return AsyncFunctionDef(name, args, body, decorator_seq, returns, NULL,
                                 LINENO(n0), n0->n_col_offset, end_lineno, end_col_offset, c->c_arena);
     else
-        return FunctionDef(name, args, body, decorator_seq, returns,
+        return FunctionDef(name, args, body, decorator_seq, returns, NULL,
                            LINENO(n), n->n_col_offset, end_lineno, end_col_offset, c->c_arena);
 }
 
@@ -3113,7 +3113,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
             expression = ast_for_expr(c, value);
         if (!expression)
             return NULL;
-        return Assign(targets, expression, LINENO(n), n->n_col_offset,
+        return Assign(targets, expression, NULL, LINENO(n), n->n_col_offset,
                       n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
 }
@@ -3840,11 +3840,11 @@ ast_for_for_stmt(struct compiling *c, const node *n0, bool is_async)
         get_last_end_pos(suite_seq, &end_lineno, &end_col_offset);
     }
     if (is_async)
-        return AsyncFor(target, expression, suite_seq, seq,
+        return AsyncFor(target, expression, suite_seq, seq, NULL,
                         LINENO(n0), n0->n_col_offset,
                         end_lineno, end_col_offset, c->c_arena);
     else
-        return For(target, expression, suite_seq, seq,
+        return For(target, expression, suite_seq, seq, NULL,
                    LINENO(n), n->n_col_offset,
                    end_lineno, end_col_offset, c->c_arena);
 }
@@ -4039,10 +4039,10 @@ ast_for_with_stmt(struct compiling *c, const node *n0, bool is_async)
     get_last_end_pos(body, &end_lineno, &end_col_offset);
 
     if (is_async)
-        return AsyncWith(items, body, LINENO(n0), n0->n_col_offset,
+        return AsyncWith(items, body, NULL, LINENO(n0), n0->n_col_offset,
                          end_lineno, end_col_offset, c->c_arena);
     else
-        return With(items, body, LINENO(n), n->n_col_offset,
+        return With(items, body, NULL, LINENO(n), n->n_col_offset,
                     end_lineno, end_col_offset, c->c_arena);
 }
 
