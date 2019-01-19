@@ -1358,7 +1358,7 @@ if test "$Py_LTO" = 'true' ; then
   fi
 
   CFLAGS_NODIST="$CFLAGS_NODIST $LTOFLAGS"
-  LDFLAGS="$LDFLAGS $LTOFLAGS"
+  LDFLAGS_NODIST="$LDFLAGS_NODIST $LTOFLAGS"
 fi
 
 # Enable PGO flags.
@@ -1518,6 +1518,7 @@ fi
 
 AC_SUBST(BASECFLAGS)
 AC_SUBST(CFLAGS_NODIST)
+AC_SUBST(LDFLAGS_NODIST)
 
 # The -arch flags for universal builds on OSX
 UNIVERSAL_ARCH_FLAGS=
@@ -3504,7 +3505,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
- posix_fallocate posix_fadvise posix_spawn pread preadv preadv2 \
+ posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
  pthread_init pthread_kill putenv pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
  sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
@@ -3815,6 +3816,23 @@ AC_CHECK_FUNCS(gettimeofday,
       [Define if gettimeofday() does not have second (timezone) argument
        This is the case on Motorola V4 (R40V4.2)])
     ])
+)
+
+# We search for both crypt and crypt_r as one or the other may be defined
+# This gets us our -lcrypt in LIBS when required on the target platform.
+AC_SEARCH_LIBS(crypt, crypt)
+AC_SEARCH_LIBS(crypt_r, crypt)
+
+AC_CHECK_FUNC(crypt_r,
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#define _GNU_SOURCE  /* Required for crypt_r()'s prototype in glibc. */
+#include <crypt.h>
+]], [[
+struct crypt_data d;
+char *r = crypt_r("", "", &d);
+]])],
+    [AC_DEFINE(HAVE_CRYPT_R, 1, [Define if you have the crypt_r() function.])],
+    [])
 )
 
 AC_CHECK_FUNCS(clock_gettime, [], [

@@ -2376,7 +2376,7 @@ def mock_open(mock=None, read_data=''):
     default) then a `MagicMock` will be created for you, with the API limited
     to methods or attributes available on standard file handles.
 
-    `read_data` is a string for the `read` methoddline`, and `readlines` of the
+    `read_data` is a string for the `read`, `readline` and `readlines` of the
     file handle to return.  This is an empty string by default.
     """
     def _readlines_side_effect(*args, **kwargs):

@@ -216,9 +216,9 @@ or, equivalently::
 which is more concise and readable.
 
 A list comprehension consists of brackets containing an expression followed
-by a :keyword:`for` clause, then zero or more :keyword:`for` or :keyword:`if`
+by a :keyword:`!for` clause, then zero or more :keyword:`!for` or :keyword:`!if`
 clauses.  The result will be a new list resulting from evaluating the expression
-in the context of the :keyword:`for` and :keyword:`if` clauses which follow it.
+in the context of the :keyword:`!for` and :keyword:`!if` clauses which follow it.
 For example, this listcomp combines the elements of two lists if they are not
 equal::
 
@@ -330,12 +330,12 @@ See :ref:`tut-unpacking-arguments` for details on the asterisk in this line.
 
 .. _tut-del:
 
-The :keyword:`del` statement
-============================
+The :keyword:`!del` statement
+=============================
 
 There is a way to remove an item from a list given its index instead of its
 value: the :keyword:`del` statement.  This differs from the :meth:`pop` method
-which returns a value.  The :keyword:`del` statement can also be used to remove
+which returns a value.  The :keyword:`!del` statement can also be used to remove
 slices from a list or clear the entire list (which we did earlier by assignment
 of an empty list to the slice).  For example::
 

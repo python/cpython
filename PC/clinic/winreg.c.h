@@ -425,8 +425,19 @@ winreg_EnumKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HKEY key;
     int index;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i:EnumKey",
-        clinic_HKEY_converter, &key, &index)) {
+    if (!_PyArg_CheckPositional("EnumKey", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!clinic_HKEY_converter(args[0], &key)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    index = _PyLong_AsInt(args[1]);
+    if (index == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = winreg_EnumKey_impl(module, key, index);
@@ -472,8 +483,19 @@ winreg_EnumValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HKEY key;
     int index;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i:EnumValue",
-        clinic_HKEY_converter, &key, &index)) {
+    if (!_PyArg_CheckPositional("EnumValue", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!clinic_HKEY_converter(args[0], &key)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    index = _PyLong_AsInt(args[1]);
+    if (index == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = winreg_EnumValue_impl(module, key, index);
@@ -541,7 +563,7 @@ winreg_FlushKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:FlushKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_FlushKey_impl(module, key);
@@ -734,7 +756,7 @@ winreg_QueryInfoKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:QueryInfoKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_QueryInfoKey_impl(module, key);
@@ -1021,7 +1043,7 @@ winreg_DisableReflectionKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:DisableReflectionKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_DisableReflectionKey_impl(module, key);
@@ -1055,7 +1077,7 @@ winreg_EnableReflectionKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:EnableReflectionKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_EnableReflectionKey_impl(module, key);
@@ -1087,7 +1109,7 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:QueryReflectionKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_QueryReflectionKey_impl(module, key);
@@ -1095,4 +1117,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ff2cc1951ab1a56c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bd491131d343ae7a input=a9049054013a1b77]*/

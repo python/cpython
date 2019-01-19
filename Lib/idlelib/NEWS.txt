@@ -3,6 +3,42 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-35770: IDLE macosx deletes Options => Configure IDLE.
+It previously deleted Window => Zoom Height by mistake.
+(Zoom Height is now on the Options menu).  On Mac, the settings
+dialog is accessed via Preferences on the IDLE menu.
+
+bpo-35769: Change new file name from 'Untitled' to 'untitled'.
+
+bpo-35660: Fix imports in window module.
+
+bpo-35641: Properly format calltip for function without docstring.
+
+bpo-33987: Use ttk Frame for ttk widgets.
+
+bpo-34055: Fix erroneous 'smart' indents and newlines in IDLE Shell.
+
+bpo-28097: Add Previous/Next History entries to Shell menu.
+
+bpo-35591: Find Selection now works when selection not found.
+
+bpo-35598: Update config_key: use PEP 8 names and ttk widgets,
+make some objects global, and add tests.
+
+bpo-35196: Speed up squeezer line counting.
+
+bpo-35208: Squeezer now counts wrapped lines before newlines.
+
+bpo-35555: Gray out Code Context menu entry when it's not applicable.
+
+bpo-22703: Improve the Code Context and Zoom Height menu labels.
+The Code Context menu label now toggles between Show/Hide Code Context.
+The Zoom Height menu now toggles between Zoom/Restore Height.
+Zoom Height has moved from the Window menu to the Options menu.
+
+bpo-35521: Document the editor code context feature.
+Add some internal references within the IDLE doc.
+
 bpo-34864: When starting IDLE on MacOS, warn if the system setting
 "Prefer tabs when opening documents" is "Always".  As previous
 documented for this issue, running IDLE with this setting causes

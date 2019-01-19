@@ -19,9 +19,11 @@ _elementtree_Element_append(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *subelement;
 
-    if (!PyArg_Parse(arg, "O!:append", &Element_Type, &subelement)) {
+    if (!PyObject_TypeCheck(arg, &Element_Type)) {
+        _PyArg_BadArgument("append", 0, (&Element_Type)->tp_name, arg);
         goto exit;
     }
+    subelement = arg;
     return_value = _elementtree_Element_append_impl(self, subelement);
 
 exit:
@@ -79,9 +81,11 @@ _elementtree_Element___deepcopy__(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *memo;
 
-    if (!PyArg_Parse(arg, "O!:__deepcopy__", &PyDict_Type, &memo)) {
+    if (!PyDict_Check(arg)) {
+        _PyArg_BadArgument("__deepcopy__", 0, "dict", arg);
         goto exit;
     }
+    memo = arg;
     return_value = _elementtree_Element___deepcopy___impl(self, memo);
 
 exit:
@@ -416,10 +420,31 @@ _elementtree_Element_insert(ElementObject *self, PyObject *const *args, Py_ssize
     Py_ssize_t index;
     PyObject *subelement;
 
-    if (!_PyArg_ParseStack(args, nargs, "nO!:insert",
-        &index, &Element_Type, &subelement)) {
+    if (!_PyArg_CheckPositional("insert", nargs, 2, 2)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        index = ival;
+    }
+    if (!PyObject_TypeCheck(args[1], &Element_Type)) {
+        _PyArg_BadArgument("insert", 2, (&Element_Type)->tp_name, args[1]);
+        goto exit;
+    }
+    subelement = args[1];
     return_value = _elementtree_Element_insert_impl(self, index, subelement);
 
 exit:
@@ -479,11 +504,11 @@ _elementtree_Element_makeelement(ElementObject *self, PyObject *const *args, Py_
     PyObject *tag;
     PyObject *attrib;
 
-    if (!_PyArg_UnpackStack(args, nargs, "makeelement",
-        2, 2,
-        &tag, &attrib)) {
+    if (!_PyArg_CheckPositional("makeelement", nargs, 2, 2)) {
         goto exit;
     }
+    tag = args[0];
+    attrib = args[1];
     return_value = _elementtree_Element_makeelement_impl(self, tag, attrib);
 
 exit:
@@ -507,9 +532,11 @@ _elementtree_Element_remove(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *subelement;
 
-    if (!PyArg_Parse(arg, "O!:remove", &Element_Type, &subelement)) {
+    if (!PyObject_TypeCheck(arg, &Element_Type)) {
+        _PyArg_BadArgument("remove", 0, (&Element_Type)->tp_name, arg);
         goto exit;
     }
+    subelement = arg;
     return_value = _elementtree_Element_remove_impl(self, subelement);
 
 exit:
@@ -535,11 +562,11 @@ _elementtree_Element_set(ElementObject *self, PyObject *const *args, Py_ssize_t 
     PyObject *key;
     PyObject *value;
 
-    if (!_PyArg_UnpackStack(args, nargs, "set",
-        2, 2,
-        &key, &value)) {
+    if (!_PyArg_CheckPositional("set", nargs, 2, 2)) {
         goto exit;
     }
+    key = args[0];
+    value = args[1];
     return_value = _elementtree_Element_set_impl(self, key, value);
 
 exit:
@@ -620,11 +647,15 @@ _elementtree_TreeBuilder_start(TreeBuilderObject *self, PyObject *const *args, P
     PyObject *tag;
     PyObject *attrs = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "start",
-        1, 2,
-        &tag, &attrs)) {
+    if (!_PyArg_CheckPositional("start", nargs, 1, 2)) {
         goto exit;
     }
+    tag = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    attrs = args[1];
+skip_optional:
     return_value = _elementtree_TreeBuilder_start_impl(self, tag, attrs);
 
 exit:
@@ -707,14 +738,18 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *const *args, 
     PyObject *events_queue;
     PyObject *events_to_report = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "_setevents",
-        1, 2,
-        &events_queue, &events_to_report)) {
+    if (!_PyArg_CheckPositional("_setevents", nargs, 1, 2)) {
         goto exit;
     }
+    events_queue = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    events_to_report = args[1];
+skip_optional:
     return_value = _elementtree_XMLParser__setevents_impl(self, events_queue, events_to_report);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f1efdb511a5b027b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0c15c41e03a7829f input=a9049054013a1b77]*/

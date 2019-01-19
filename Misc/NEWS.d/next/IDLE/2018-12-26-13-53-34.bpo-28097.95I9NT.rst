@@ -1,0 +1,1 @@
+Add Previous/Next History entries to Shell menu.

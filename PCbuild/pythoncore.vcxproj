@@ -247,7 +247,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_abc.c" />
-    <ClCompile Include="..\Modules\_asynciomodule.c" />
     <ClCompile Include="..\Modules\_bisectmodule.c" />
     <ClCompile Include="..\Modules\_blake2\blake2module.c" />
     <ClCompile Include="..\Modules\_blake2\blake2b_impl.c" />
@@ -367,6 +366,7 @@
     <ClCompile Include="..\Parser\parser.c" />
     <ClCompile Include="..\Parser\parsetok.c" />
     <ClCompile Include="..\Parser\tokenizer.c" />
+    <ClCompile Include="..\Parser\token.c" />
     <ClCompile Include="..\PC\invalid_parameter_handler.c" />
     <ClCompile Include="..\PC\winreg.c" />
     <ClCompile Include="..\PC\config.c" />
