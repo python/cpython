@@ -87,3 +87,6 @@
 #define encoding_decl 340
 #define yield_expr 341
 #define yield_arg 342
+#define func_type_input 343
+#define func_type 344
+#define typelist 345
