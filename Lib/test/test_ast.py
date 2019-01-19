@@ -1561,6 +1561,27 @@ class EndPositionTests(unittest.TestCase):
         self.assertEqual(ast.get_source_segment(s_orig, cdef.body[0], padded=True),
                          s_method)
 
+    def test_source_segment_endings(self):
+        s = 'v = 1\r\nw = 1\nx = 1\n\ry = 1\rz = 1\r\n'
+        v, w, x, y, z = ast.parse(s).body
+        self._check_content(s, v, 'v = 1')
+        self._check_content(s, w, 'w = 1')
+        self._check_content(s, x, 'x = 1')
+        self._check_content(s, y, 'y = 1')
+        self._check_content(s, z, 'z = 1')
+
+    def test_source_segment_tabs(self):
+        s = dedent('''
+            class C:
+              \t\f  def fun(self) -> None:
+              \t\f      pass
+        ''').strip()
+        s_method = '  \t\f  def fun(self) -> None:\n' \
+                   '  \t\f      pass'
+
+        cdef = ast.parse(s).body[0]
+        self.assertEqual(ast.get_source_segment(s, cdef.body[0], padded=True), s_method)
+
 
 def main():
     if __name__ != '__main__':

@@ -226,45 +226,75 @@ def get_docstring(node, clean=True):
     return text
 
 
-def get_source_segment(source, node, *, padded=False, coding='utf-8'):
+def _splitlines_no_ff(source):
+    """Split a string into lines ignoring form feed and other chars.
+
+    This mimics how the Python parser splits source code.
+    """
+    idx = 0
+    lines = []
+    next_line = ''
+    while idx < len(source):
+        c = source[idx]
+        next_line += c
+        idx += 1
+        # Keep \r\n together
+        if c == '\r' and idx < len(source) and source[idx] == '\n':
+            next_line += '\n'
+            idx += 1
+        if c in '\r\n':
+            lines.append(next_line)
+            next_line = ''
+
+    if next_line:
+        lines.append(next_line)
+    return lines
+
+
+def _pad_whitespace(source):
+    """Replace all chars except '\f\t' in a line with spaces."""
+    result = ''
+    for c in source:
+        if c in '\f\t':
+            result += c
+        else:
+            result += ' '
+    return result
+
+
+def get_source_segment(source, node, *, padded=False):
     """Get source code segment of the *source* that generated *node*.
 
     If some location information (`lineno`, `end_lineno`, `col_offset`,
-    or `end_col_offset`) is missing, return None. The default *coding*
-    is UTF-8 (the one used by the Python parser).
+    or `end_col_offset`) is missing, return None.
 
     If *padded* is `True`, the first line of a multi-line statement will
     be padded with spaces to match its original position.
     """
-    if not hasattr(node, 'lineno'):
+    try:
+        lineno = node.lineno - 1
+        end_lineno = node.end_lineno - 1
+        col_offset = node.col_offset
+        end_col_offset = node.end_col_offset
+    except AttributeError:
         return None
-    lineno = node.lineno - 1
-    if not hasattr(node, 'end_lineno'):
-        return None
-    end_lineno = node.end_lineno - 1
-    if not hasattr(node, 'col_offset'):
-        return None
-    col_offset = node.col_offset
-    if not hasattr(node, 'end_col_offset'):
-        return None
-    end_col_offset = node.end_col_offset
 
+    lines = _splitlines_no_ff(source)
     if end_lineno == lineno:
-        source_line = source.splitlines()[lineno]
-        return source_line.encode()[col_offset:end_col_offset].decode(coding)
-
-    lines = source.splitlines()
+        return lines[lineno].encode()[col_offset:end_col_offset].decode()
 
     if padded:
-        padding = ' ' * len(lines[lineno].encode()[:col_offset].decode(coding))
+        padding = _pad_whitespace(lines[lineno].encode()[:col_offset].decode())
     else:
         padding = ''
 
-    first = padding + lines[lineno].encode()[col_offset:].decode(coding)
-    last = lines[end_lineno].encode()[:end_col_offset].decode(coding)
-    middle_lines = lines[lineno+1:end_lineno]
+    first = padding + lines[lineno].encode()[col_offset:].decode()
+    last = lines[end_lineno].encode()[:end_col_offset].decode()
+    lines = lines[lineno+1:end_lineno]
 
-    return '\n'.join([first] + middle_lines + [last])
+    lines.insert(0, first)
+    lines.append(last)
+    return ''.join(lines)
 
 
 def walk(node):
