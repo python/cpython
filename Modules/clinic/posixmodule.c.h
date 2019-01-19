@@ -6116,6 +6116,51 @@ os_DirEntry_inode(DirEntry *self, PyObject *Py_UNUSED(ignored))
     return os_DirEntry_inode_impl(self);
 }
 
+PyDoc_STRVAR(os_DirEntry___reduce____doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n"
+"returns null and raises an exception to avoid pickling");
+
+#define OS_DIRENTRY___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)os_DirEntry___reduce__, METH_NOARGS, os_DirEntry___reduce____doc__},
+
+static PyObject *
+os_DirEntry___reduce___impl(DirEntry *self);
+
+static PyObject *
+os_DirEntry___reduce__(DirEntry *self, PyObject *Py_UNUSED(ignored))
+{
+    return os_DirEntry___reduce___impl(self);
+}
+
+PyDoc_STRVAR(os_DirEntry___reduce_ex____doc__,
+"__reduce_ex__($self, protocol, /)\n"
+"--\n"
+"\n"
+"Returns NULL and raises an exception to avoid pickling");
+
+#define OS_DIRENTRY___REDUCE_EX___METHODDEF    \
+    {"__reduce_ex__", (PyCFunction)os_DirEntry___reduce_ex__, METH_O, os_DirEntry___reduce_ex____doc__},
+
+static PyObject *
+os_DirEntry___reduce_ex___impl(DirEntry *self, int protocol);
+
+static PyObject *
+os_DirEntry___reduce_ex__(DirEntry *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int protocol;
+
+    if (!PyArg_Parse(arg, "i:__reduce_ex__", &protocol)) {
+        goto exit;
+    }
+    return_value = os_DirEntry___reduce_ex___impl(self, protocol);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(os_DirEntry___fspath____doc__,
 "__fspath__($self, /)\n"
 "--\n"
@@ -6757,4 +6802,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=d62c0bb988141e70 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e061751fda697cda input=a9049054013a1b77]*/

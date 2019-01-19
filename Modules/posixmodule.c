@@ -12020,6 +12020,14 @@ typedef struct {
 #endif
 } DirEntry;
 
+static PyObject *
+DirEntry_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyErr_Format(PyExc_TypeError,
+        "cannot create '%.100s' instances", type->tp_name);
+    return NULL;
+}
+
 static void
 DirEntry_dealloc(DirEntry *entry)
 {
@@ -12027,6 +12035,7 @@ DirEntry_dealloc(DirEntry *entry)
     Py_XDECREF(entry->path);
     Py_XDECREF(entry->stat);
     Py_XDECREF(entry->lstat);
+    Py_DECREF(Py_TYPE(entry));
     Py_TYPE(entry)->tp_free((PyObject *)entry);
 }
 
@@ -12287,6 +12296,37 @@ os_DirEntry_inode_impl(DirEntry *self)
 #endif
 }
 
+/*[clinic input]
+os.DirEntry.__reduce__
+
+returns null and raises an exception to avoid pickling
+[clinic start generated code]*/
+
+static PyObject *
+os_DirEntry___reduce___impl(DirEntry *self)
+/*[clinic end generated code: output=45167543e30c210c input=c1689a589f9c38f2]*/
+{
+    PyErr_Format(PyExc_TypeError,
+        "cannot pickle '%.100s' instances", Py_TYPE(self)->tp_name);
+    return NULL;
+}
+
+/*[clinic input]
+os.DirEntry.__reduce_ex__
+
+  protocol: int
+  /
+
+Returns NULL and raises an exception to avoid pickling
+[clinic start generated code]*/
+
+static PyObject *
+os_DirEntry___reduce_ex___impl(DirEntry *self, int protocol)
+/*[clinic end generated code: output=a81881dfe241a631 input=1afbee3b136a7ece]*/
+{
+    return os_DirEntry___reduce___impl(self);
+}
+
 static PyObject *
 DirEntry_repr(DirEntry *self)
 {
@@ -12318,6 +12358,8 @@ static PyMemberDef DirEntry_members[] = {
 #include "clinic/posixmodule.c.h"
 
 static PyMethodDef DirEntry_methods[] = {
+    OS_DIRENTRY___REDUCE___METHODDEF
+    OS_DIRENTRY___REDUCE_EX___METHODDEF
     OS_DIRENTRY_IS_DIR_METHODDEF
     OS_DIRENTRY_IS_FILE_METHODDEF
     OS_DIRENTRY_IS_SYMLINK_METHODDEF
@@ -12328,6 +12370,7 @@ static PyMethodDef DirEntry_methods[] = {
 };
 
 static PyType_Slot DirEntryType_slots[] = {
+    {Py_tp_new, DirEntry_new},
     {Py_tp_dealloc, DirEntry_dealloc},
     {Py_tp_repr, DirEntry_repr},
     {Py_tp_methods, DirEntry_methods},
@@ -12734,16 +12777,41 @@ ScandirIterator_finalize(ScandirIterator *iterator)
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
+static PyObject *
+ScandirIterator_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyErr_Format(PyExc_TypeError,
+        "cannot create '%.100s' instances", type->tp_name);
+    return NULL;
+}
+
+static PyObject *
+ScandirIterator_reduce(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    PyErr_Format(PyExc_TypeError,
+        "cannot pickle '%.100s' instances", Py_TYPE(self)->tp_name);
+    return NULL;
+}
+
+static PyObject *
+ScandirIterator_reduce_ex(PyObject *self, PyObject *arg)
+{
+    return ScandirIterator_reduce(self, NULL, NULL);
+}
+
 static void
 ScandirIterator_dealloc(ScandirIterator *iterator)
 {
     if (PyObject_CallFinalizerFromDealloc((PyObject *)iterator) < 0)
         return;
 
+    Py_DECREF(Py_TYPE(iterator));
     Py_TYPE(iterator)->tp_free((PyObject *)iterator);
 }
 
 static PyMethodDef ScandirIterator_methods[] = {
+    {"__reduce__", (PyCFunction)ScandirIterator_reduce, METH_NOARGS},
+    {"__reduce_ex__", (PyCFunction)ScandirIterator_reduce_ex, METH_O},
     {"__enter__", (PyCFunction)ScandirIterator_enter, METH_NOARGS},
     {"__exit__", (PyCFunction)ScandirIterator_exit, METH_VARARGS},
     {"close", (PyCFunction)ScandirIterator_close, METH_NOARGS},
@@ -12751,6 +12819,7 @@ static PyMethodDef ScandirIterator_methods[] = {
 };
 
 static PyType_Slot ScandirIteratorType_slots[] = {
+    {Py_tp_new, ScandirIterator_new},
     {Py_tp_dealloc, ScandirIterator_dealloc},
     {Py_tp_finalize, ScandirIterator_finalize},
     {Py_tp_iter, PyObject_SelfIter},
