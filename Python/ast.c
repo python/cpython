@@ -751,6 +751,7 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
 {
     int i, j, k, num;
     asdl_seq *stmts = NULL;
+    asdl_seq *type_ignores = NULL;
     stmt_ty s;
     node *ch;
     struct compiling c;
@@ -793,7 +794,23 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
                     }
                 }
             }
-            res = Module(stmts, NULL, arena);
+
+            /* Type ignores are stored under the ENDMARKER in file_input. */
+            ch = CHILD(n, NCH(n) - 1);
+            REQ(ch, ENDMARKER);
+            num = NCH(ch);
+            type_ignores = _Py_asdl_seq_new(num, arena);
+            if (!type_ignores)
+                goto out;
+
+            for (i = 0; i < num; i++) {
+                type_ignore_ty ti = TypeIgnore(LINENO(CHILD(ch, i)), arena);
+                if (!ti)
+                   goto out;
+               asdl_seq_SET(type_ignores, i, ti);
+            }
+
+            res = Module(stmts, type_ignores, arena);
             break;
         case eval_input: {
             expr_ty testlist_ast;
