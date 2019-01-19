@@ -2918,12 +2918,8 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
         }
     }
 
-    // Ideally call ends where closing parenthesis is placed.
-    end_lineno = closepar == NULL ? n->n_end_lineno : closepar->n_end_lineno;
-    end_col_offset = closepar == NULL ? n->n_end_col_offset : closepar->n_end_col_offset;
-
     return Call(func, args, keywords, func->lineno, func->col_offset,
-                end_lineno, end_col_offset, c->c_arena);
+                closepar->n_end_lineno, closepar->n_end_col_offset, c->c_arena);
 }
 
 static expr_ty
@@ -3612,6 +3608,11 @@ static void
 get_last_end_pos(asdl_seq *s, int *end_lineno, int *end_col_offset)
 {
     int tot = asdl_seq_LEN(s);
+    // Suite should not be empty, but it is safe to just ignore it
+    // if it will ever occur.
+    if (!tot) {
+        return;
+    }
     stmt_ty last = asdl_seq_GET(s, tot - 1);
     *end_lineno = last->end_lineno;
     *end_col_offset = last->end_col_offset;
@@ -4100,7 +4101,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         dummy = Name(dummy_name, Load, LINENO(n), n->n_col_offset,
                      CHILD(n, 1)->n_end_lineno, CHILD(n, 1)->n_end_col_offset,
                      c->c_arena);
-        call = ast_for_call(c, CHILD(n, 3), dummy, NULL, NULL);
+        call = ast_for_call(c, CHILD(n, 3), dummy, NULL, CHILD(n, 4));
         if (!call)
             return NULL;
     }

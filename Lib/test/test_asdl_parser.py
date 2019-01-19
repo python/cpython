@@ -65,6 +65,8 @@ class TestAsdlParser(unittest.TestCase):
         self.assertEqual(len(stmt.attributes), 4)
         self.assertEqual(str(stmt.attributes[0]), 'Field(int, lineno)')
         self.assertEqual(str(stmt.attributes[1]), 'Field(int, col_offset)')
+        self.assertEqual(str(stmt.attributes[2]), 'Field(int, end_lineno, opt=True)')
+        self.assertEqual(str(stmt.attributes[3]), 'Field(int, end_col_offset, opt=True)')
 
     def test_constructor_fields(self):
         ehandler = self.types['excepthandler']
