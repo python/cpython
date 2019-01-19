@@ -73,7 +73,7 @@ Node classes
       The UTF-8 offset is recorded because the parser uses UTF-8 internally.
 
       Note that the end positions are not required by the compiler and are
-      therefore optional. The end offset if *after* the last symbol, for example
+      therefore optional. The end offset is *after* the last symbol, for example
       one can get the source segment of a one-line expression node using
       ``source_line[node.col_offset : node.end_col_offset]``.
 
@@ -195,7 +195,7 @@ and classes for traversing abstract syntax trees:
 
    Increment the line number and end line number of each node in the tree
    starting at *node* by *n*. This is useful to "move code" to a different
-   location in a file..
+   location in a file.
 
 
 .. function:: copy_location(new_node, old_node)
