@@ -54,6 +54,8 @@ RARROW                  '->'
 ELLIPSIS                '...'
 
 OP
+TYPE_IGNORE
+TYPE_COMMENT
 ERRORTOKEN
 
 # These aren't used by the C tokenizer but are needed for tokenize.py
