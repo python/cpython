@@ -922,10 +922,10 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
            proceed normally and update the cache with the new result. */
     }
     else {
-        /* Getting here means that either an error occurred or that this
-           same key was added to the cache during the PyObject_Call().
-           Since the link update is already done, we need only return
-           the computed result and update the count of misses. */
+        /* Getting here means that this same key was added to the cache
+           during the PyObject_Call().  Since the link update is already
+           done, we need only return the computed result and update the
+           count of misses. */
         Py_DECREF(key);
         self->misses++;
         return result;
@@ -934,7 +934,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         /* Since the cache is full, we need to evict an old key and add
            a new key.  Rather than free the old link and allocate a new
            one, we reuse the link for the new key and result and move it
-           to end of the cache.
+           to front of the cache to mark it as recently used.
 
            We try to assure all code paths (including errors) leave all
            of the links in-place (so that the "full" status remains
