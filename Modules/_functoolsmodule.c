@@ -888,11 +888,11 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         return NULL;
     }
     link  = (lru_list_elem *)_PyDict_GetItem_KnownHash(self->cache, key, hash);
-    if (link) {
+    if (link != NULL) {
         lru_cache_extract_link(link);
         lru_cache_append_link(self, link);
-        self->hits++;
         result = link->result;
+        self->hits++;
         Py_INCREF(result);
         Py_DECREF(key);
         return result;
