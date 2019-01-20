@@ -1,0 +1,6 @@
+Fix lru_cache() errors arising in recursive, reentrant, or multi-threaded
+code. The error could result in orphan links.
+
+Also apply space saving path for functions with a single positional
+argument.  In this common case, the space overhead of an lru cache entry is
+reduced by almost half.
