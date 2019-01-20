@@ -914,6 +914,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
                Treat it the same as an error in user function
                and return with the error set. */
             Py_DECREF(key);
+            Py_DECREF(result);
             return NULL;
         }
         /* This is the normal case.  The new key wasn't found before
@@ -982,7 +983,6 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
             return NULL;
         }
         else {
-            Py_DECREF(popresult);
             /* Keep a reference to the old key and old result to
                prevent their ref counts from going to zero during the
                update. That will prevent potentially arbitrary object
@@ -996,6 +996,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
             link->result = result;
             if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
                                           hash) < 0) {
+                Py_DECREF(popresult);
                 Py_DECREF(link);
                 Py_DECREF(oldkey);
                 Py_DECREF(oldresult);
@@ -1003,6 +1004,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
             }
             lru_cache_append_link(self, link);
             Py_INCREF(result); /* for return */
+            Py_DECREF(popresult);
             Py_DECREF(oldkey);
             Py_DECREF(oldresult);
         }
