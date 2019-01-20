@@ -1233,6 +1233,34 @@ class TestLRU:
         self.assertEqual(misses, 4)
         self.assertEqual(currsize, 2)
 
+    def test_lru_bug_35780(self):
+        # C version of the lru_cache was not checking to see if
+        # the user function call has already modified the cache
+        # (this arises in recursive calls and in multi-threading).
+        # This cause the cache to have orphan links not referenced
+        # by the cache dictionary.
+        global _once
+
+        _once = True
+
+        @self.module.lru_cache(maxsize=10)
+        def f(x):
+            global _once
+            rv = f'.{x}.'
+            if x == 20 and _once:
+                _once = False
+                rv = f(x)
+            return rv
+
+        # Fill the cache
+        for x in range(15):
+            self.assertEqual(f(x), f'.{x}.')
+        self.assertEqual(f.cache_info().currsize, 10)
+
+        # Make a recursive call and make sure the cache remains full
+        self.assertEqual(f(20), '.20.')
+        self.assertEqual(f.cache_info().currsize, 10)
+
     def test_lru_hash_only_once(self):
         # To protect against weird reentrancy bugs and to improve
         # efficiency when faced with slow __hash__ methods, the

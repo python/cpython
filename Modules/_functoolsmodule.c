@@ -866,7 +866,7 @@ static PyObject *
 bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds)
 {
     lru_list_elem *link;
-    PyObject *key, *result;
+    PyObject *key, *result, *testresult;
     Py_hash_t hash;
 
     key = lru_cache_make_key(args, kwds, self->typed);
@@ -896,9 +896,33 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         Py_DECREF(key);
         return NULL;
     }
+    testresult = _PyDict_GetItem_KnownHash(self->cache, key, hash);
+    if (testresult == NULL) {
+        if (PyErr_Occurred()) {
+            /* This is an unusual case since this same lookup
+               did not previously trigger an error during lookup.
+               Treat it the same as an error in user function
+               and return with the error set. */
+            Py_DECREF(key);
+            return NULL;
+        }
+        /* This is the normal case.  The new key wasn't found before
+           user function call and it is still not there.  So we
+           proceed normally and update the cache with the new result. */
+    }
+    else {
+        /* Getting here means that either an error occurred or that this
+           same key was added to the cache during the PyObject_Call().
+           Since the link update is already done, we need only return
+           the computed result and update the count of misses. */
+        Py_DECREF(key);
+        self->misses++;
+        return result;
+    }
     if (self->full && self->root.next != &self->root) {
         /* Use the oldest item to store the new key and result. */
         PyObject *oldkey, *oldresult, *popresult;
+
         /* Extract the oldest item. */
         link = self->root.next;
         lru_cache_extract_link(link);
@@ -909,10 +933,6 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
                                           link->key, link->hash,
                                           Py_None);
         if (popresult == Py_None) {
-            /* Getting here means that this same key was added to the
-               cache while the lock was released.  Since the link
-               update is already done, we need only return the
-               computed result and update the count of misses. */
             Py_DECREF(popresult);
             Py_DECREF(link);
             Py_DECREF(key);
