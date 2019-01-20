@@ -929,11 +929,12 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         self->misses++;
         return result;
     }
-    if (self->full && self->root.next != &self->root) {
+    if (self->full) {
         /* Use the oldest item to store the new key and result. */
         PyObject *oldkey, *oldresult, *popresult;
 
         /* Extract the oldest item. */
+        assert(self->root.next != &self->root);
         link = self->root.next;
         lru_cache_extract_link(link);
         /* Remove it from the cache.
