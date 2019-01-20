@@ -862,6 +862,16 @@ lru_cache_append_link(lru_cache_object *self, lru_list_elem *link)
     link->next = root;
 }
 
+static void
+lru_cache_prepend_link(lru_cache_object *self, lru_list_elem *link)
+{
+    lru_list_elem *root = &self->root;
+    lru_list_elem *first = root->next;
+    first->prev = root->next = link;
+    link->prev = root;
+    link->next = first;
+}
+
 static PyObject *
 bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds)
 {
@@ -938,7 +948,14 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
             Py_DECREF(key);
         }
         else if (popresult == NULL) {
-            lru_cache_append_link(self, link);
+            /* An error arose while trying to remove the oldest
+               key (the one being evicted) from the cache.
+               We restore the link to its original position
+               as the oldest link.  Then we allow the error
+               propagate upward; treating it the same as an
+               error arising in the user function.
+            */
+            lru_cache_prepend_link(self, link);
             Py_DECREF(key);
             Py_DECREF(result);
             return NULL;
