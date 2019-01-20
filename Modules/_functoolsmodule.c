@@ -930,7 +930,19 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         return result;
     }
     if (self->full) {
-        /* Use the oldest item to store the new key and result. */
+        /* Since the cache is full, we need to evict an old key and add
+           a new key.  Rather than free the old link and allocate a new
+           one, we reuse the link for the new key and result and move it
+           to end of the cache.
+
+           We try to assure all code paths (including errors) leave all
+           of the links in-place (so that the "full" status remains
+           unchanged).  Either the link is successfully updated and
+           moved or it is restored to its old position.
+
+           That said, if an unrecoverable error is found, the orphan
+           link is removed and the cache is no longer marked as full.
+        */
         PyObject *oldkey, *oldresult, *popresult;
 
         /* Extract the oldest item. */
@@ -944,6 +956,14 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
                                           link->key, link->hash,
                                           Py_None);
         if (popresult == Py_None) {
+            /* Getting here means that the user function call or
+               another thread has already removed the old key from the
+               dictionary.  This link is now an orpan.  Since we don't
+               want to leave the cache in an inconsistent state, we
+               don't restore the link.  Accordingly, the cache is marked
+               as no longer being full.
+            */
+            self->full = 0;
             Py_DECREF(popresult);
             Py_DECREF(link);
             Py_DECREF(key);
