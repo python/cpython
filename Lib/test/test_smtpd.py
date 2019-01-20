@@ -5,6 +5,8 @@ import socket
 import io
 import smtpd
 import asyncore
+import smtplib
+from unittest.mock import MagicMock, patch
 
 
 class DummyServer(smtpd.SMTPServer):
@@ -154,6 +156,84 @@ class DebuggingServerTest(unittest.TestCase):
              b'h\\xc3\\xa9llo\\xff'
              ------------ END MESSAGE ------------
              """))
+
+    def tearDown(self):
+        asyncore.close_all()
+        asyncore.socket = smtpd.socket = socket
+
+
+class PureProxyServerTest(unittest.TestCase):
+
+    def setUp(self):
+        smtpd.socket = asyncore.socket = mock_socket
+
+    @patch('smtplib.SMTP')
+    def test_proxy_successful(self, mock_smtp):
+        fake_smtp = MagicMock()
+        fake_smtp.sendmail = MagicMock(return_value={})
+        mock_smtp.return_value = fake_smtp
+        server = smtpd.PureProxy((support.HOST, 0), ('b', 0))
+        conn, addr = server.accept()
+        channel = smtpd.SMTPChannel(server, conn, addr)
+
+        def write_line(line):
+            channel.socket.queue_recv(line)
+            channel.handle_read()
+
+        write_line(b'EHLO example')
+        write_line(b'MAIL From:eggs@example')
+        write_line(b'RCPT To:spam@example')
+        write_line(b'DATA')
+        write_line(b'From: test\n\nhello\n')
+        write_line(b'.')
+
+        mock_smtp.assert_called_once_with()
+        fake_smtp.connect.assert_called_once_with('b', 0)
+        fake_smtp.sendmail.assert_called_once_with(
+            'eggs@example',
+            ['spam@example'],
+            b'From: test\nX-Peer: peer-address\n\nhello\n'
+        )
+        fake_smtp.quit.assert_called_once_with()
+
+    @patch('smtplib.SMTP')
+    def test_deliver_refused(self, mock_smtp):
+        fake_smtp = MagicMock()
+        exc = smtplib.SMTPRecipientsRefused({'error@example': (1, 'testing')})
+        fake_smtp.sendmail = MagicMock(side_effect=exc)
+        mock_smtp.return_value = fake_smtp
+
+        server = smtpd.PureProxy((support.HOST, 0), ('b', 0))
+        refused = server._deliver(
+            'eggs@example',
+            ['spam@example'],
+            b'From: test\nX-Peer: peer-address\n\nhello\n'
+        )
+        self.assertEqual(refused, {'error@example': (1, 'testing')})
+        fake_smtp.connect.assert_called_once_with('b', 0)
+        fake_smtp.quit.assert_called_once_with()
+
+    @patch('smtplib.SMTP')
+    def test_deliver_error(self, mock_smtp):
+        fake_smtp = MagicMock()
+        exc = OSError()
+        exc.smtp_code = 42
+        fake_smtp.sendmail = MagicMock(side_effect=exc)
+        mock_smtp.return_value = fake_smtp
+
+        server = smtpd.PureProxy((support.HOST, 0), ('b', 0))
+        refused = server._deliver(
+            'eggs@example',
+            ['spam@example'],
+            b'From: test\nX-Peer: peer-address\n\nhello\n'
+        )
+        self.assertEqual(refused, {'spam@example': (42, 'ignore')})
+        fake_smtp.connect.assert_called_once_with('b', 0)
+        fake_smtp.quit.assert_called_once_with()
+
+    def test_init_enable_SMTPUTF8(self):
+        self.assertRaises(ValueError, smtpd.PureProxy,
+                          (support.HOST, 0), ('b', 0), enable_SMTPUTF8=True)
 
     def tearDown(self):
         asyncore.close_all()

@@ -1,0 +1,1 @@
+Fix regressions in ``smtpd.PureProxy`` and ``smtpd.MailmanProxy``.

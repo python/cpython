@@ -738,16 +738,17 @@ class PureProxy(SMTPServer):
             raise ValueError("PureProxy does not support SMTPUTF8.")
         super(PureProxy, self).__init__(*args, **kwargs)
 
-    def process_message(self, peer, mailfrom, rcpttos, data):
-        lines = data.split('\n')
+    def process_message(self, peer, mailfrom, rcpttos, data, **kwargs):
+        lines = data.split(b'\n')
         # Look for the last header
         i = 0
         for line in lines:
             if not line:
                 break
             i += 1
-        lines.insert(i, 'X-Peer: %s' % peer[0])
-        data = NEWLINE.join(lines)
+        peer_address = peer[0].encode('ascii')
+        lines.insert(i, b'X-Peer: %s' % peer_address)
+        data = b'\n'.join(lines)
         refused = self._deliver(mailfrom, rcpttos, data)
         # TBD: what to do with refused addresses?
         print('we got some refusals:', refused, file=DEBUGSTREAM)
@@ -783,7 +784,7 @@ class MailmanProxy(PureProxy):
             raise ValueError("MailmanProxy does not support SMTPUTF8.")
         super(PureProxy, self).__init__(*args, **kwargs)
 
-    def process_message(self, peer, mailfrom, rcpttos, data):
+    def process_message(self, peer, mailfrom, rcpttos, data, **kwargs):
         from io import StringIO
         from Mailman import Utils
         from Mailman import Message
@@ -826,7 +827,7 @@ class MailmanProxy(PureProxy):
             print('we got refusals:', refused, file=DEBUGSTREAM)
         # Now deliver directly to the list commands
         mlists = {}
-        s = StringIO(data)
+        s = StringIO(data.decode())
         msg = Message.Message(s)
         # These headers are required for the proper execution of Mailman.  All
         # MTAs in existence seem to add these if the original message doesn't
