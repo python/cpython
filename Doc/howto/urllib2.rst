@@ -223,7 +223,7 @@ e.g. ::
     >>> req = urllib.request.Request('http://www.pretend_server.org')
     >>> try: urllib.request.urlopen(req)
     ... except urllib.error.URLError as e:
-    ...     print(e.reason)      #doctest: +SKIP
+    ...     print(e.reason, file=sys.stderr)      #doctest: +SKIP
     ...
     (4, 'getaddrinfo failed')
 
@@ -332,7 +332,7 @@ geturl, and info, methods as returned by the ``urllib.response`` module::
     >>> try:
     ...     urllib.request.urlopen(req)
     ... except urllib.error.HTTPError as e:
-    ...     print(e.code)
+    ...     print(e.code, file=sys.stderr)
     ...     print(e.read())  #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...
     404
@@ -360,11 +360,11 @@ Number 1
     try:
         response = urlopen(req)
     except HTTPError as e:
-        print('The server couldn\'t fulfill the request.')
-        print('Error code: ', e.code)
+        print('The server couldn\'t fulfill the request.', file=sys.stderr)
+        print('Error code: ', e.code, file=sys.stderr)
     except URLError as e:
-        print('We failed to reach a server.')
-        print('Reason: ', e.reason)
+        print('We failed to reach a server.', file=sys.stderr)
+        print('Reason: ', e.reason, file=sys.stderr)
     else:
         # everything is fine
 
@@ -386,11 +386,11 @@ Number 2
         response = urlopen(req)
     except URLError as e:
         if hasattr(e, 'reason'):
-            print('We failed to reach a server.')
-            print('Reason: ', e.reason)
+            print('We failed to reach a server.', file=sys.stderr)
+            print('Reason: ', e.reason, file=sys.stderr)
         elif hasattr(e, 'code'):
-            print('The server couldn\'t fulfill the request.')
-            print('Error code: ', e.code)
+            print('The server couldn\'t fulfill the request.', file=sys.stderr)
+            print('Error code: ', e.code, file=sys.stderr)
     else:
         # everything is fine
 
