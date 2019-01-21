@@ -516,6 +516,8 @@ def collect_resource(info_add):
         value = resource.getrlimit(key)
         info_add('resource.%s' % name, value)
 
+    call_func(info_add, 'resource.pagesize', resource, 'getpagesize')
+
 
 def collect_test_socket(info_add):
     try:
