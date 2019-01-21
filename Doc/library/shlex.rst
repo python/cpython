@@ -98,7 +98,9 @@ The :mod:`shlex` module defines the following class:
    characters, those characters will be used as the punctuation characters.  Any
    characters in the :attr:`wordchars` attribute that appear in
    *punctuation_chars* will be removed from :attr:`wordchars`.  See
-   :ref:`improved-shell-compatibility` for more information.
+   :ref:`improved-shell-compatibility` for more information. *punctuation_chars*
+   can be set only upon :class:`~shlex.shlex` instance creation and can't be
+   modified later.
 
    .. versionchanged:: 3.6
       The *punctuation_chars* parameter was added.
@@ -299,8 +301,8 @@ variables which either control lexical analysis or can be used for debugging:
 
 .. attribute:: shlex.punctuation_chars
 
-   Characters that will be considered punctuation. Runs of punctuation
-   characters will be returned as a single token. However, note that no
+   A read-only property. Characters that will be considered punctuation. Runs of
+   punctuation characters will be returned as a single token. However, note that no
    semantic validity checking will be performed: for example, '>>>' could be
    returned as a token, even though it may not be recognised as such by shells.
 
