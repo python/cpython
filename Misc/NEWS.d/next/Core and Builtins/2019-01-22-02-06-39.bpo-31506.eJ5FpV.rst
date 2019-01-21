@@ -1,0 +1,2 @@
+Fix the error message logic for object.__new__ and object.__init__.
+Contributed by Sanyam Khurana.
