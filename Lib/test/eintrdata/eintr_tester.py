@@ -12,6 +12,7 @@ import contextlib
 import faulthandler
 import fcntl
 import os
+import platform
 import select
 import signal
 import socket
@@ -507,7 +508,7 @@ class FNTLEINTRTest(EINTRBaseTest):
                         lock_func(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
                         lock_func(f, fcntl.LOCK_UN)
                         time.sleep(0.01)
-                    except (BlockingIOError, PermissionError):
+                    except BlockingIOError:
                         break
                 # the child locked the file just a moment ago for 'sleep_time' seconds
                 # that means that the lock below will block for 'sleep_time' minus some
@@ -518,6 +519,9 @@ class FNTLEINTRTest(EINTRBaseTest):
                 self.stop_alarm()
             proc.wait()
 
+    # Issue 35633: See https://bugs.python.org/issue35633#msg333662
+    # skip test rather than accept PermissionError from all platforms
+    @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
     def test_lockf(self):
         self._lock(fcntl.lockf, "lockf")
 
