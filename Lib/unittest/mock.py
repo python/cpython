@@ -729,11 +729,10 @@ class NonCallableMock(Base):
                 # not set on the instance itself
                 return
 
-        if name in self.__dict__:
-            object.__delattr__(self, name)
-
         obj = self._mock_children.get(name, _missing)
-        if obj is _deleted:
+        if name in self.__dict__:
+            super().__delattr__(name)
+        elif obj is _deleted:
             raise AttributeError(name)
         if obj is not _missing:
             del self._mock_children[name]
