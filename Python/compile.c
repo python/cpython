@@ -3714,9 +3714,6 @@ compiler_compare(struct compiler *c, expr_ty e)
 {
     Py_ssize_t i, n;
 
-    if (!check_compare(c, e)) {
-        return 0;
-    }
     VISIT(c, expr, e->v.Compare.left);
     assert(asdl_seq_LEN(e->v.Compare.ops) > 0);
     n = asdl_seq_LEN(e->v.Compare.ops) - 1;
