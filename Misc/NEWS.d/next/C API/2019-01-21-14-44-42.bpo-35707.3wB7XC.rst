@@ -1,0 +1,3 @@
+Various time-related functions now use the ``__index__`` and ``__float__``
+methods to convert objects to time. This affects in particular
+``time.sleep()``.

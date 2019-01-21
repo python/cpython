@@ -137,6 +137,9 @@ _PyTime_DoubleToDenominator(double d, time_t *sec, long *numerator,
     /* volatile avoids optimization changing how numbers are rounded */
     volatile double floatpart;
 
+    /* For correctly rounding ROUND_HALF_EVEN, the denominator must be even */
+    assert(idenominator % 2 == 0);
+
     floatpart = modf(d, &intpart);
 
     floatpart *= denominator;
@@ -167,57 +170,117 @@ _PyTime_ObjectToDenominator(PyObject *obj, time_t *sec, long *numerator,
 {
     assert(denominator >= 1);
 
-    if (PyFloat_Check(obj)) {
-        double d = PyFloat_AsDouble(obj);
+    /* Try the methods __index__, __float__, __int__ in this order
+     * to ensure best possible precision. See the discussion at
+     * https://bugs.python.org/issue35707 */
+
+    PyObject *intobj = NULL;
+    if (PyIndex_Check(obj)) {
+        intobj = PyNumber_Index(obj);
+        if (intobj != NULL) {
+            /* Success with __index__: skip the __float__ check */
+            obj = intobj;
+            goto convert_from_int;
+        }
+        /* If __index__ raises TypeError, try __float__ */
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Clear();
+        }
+        else {
+            return -1;
+        }
+    }
+
+    /* If we get here, then intobj is NULL */
+    double d = PyFloat_AsDouble(obj);
+    if (d == -1.0 && PyErr_Occurred()) {
+        /* If __float__ raises TypeError, try __int__ */
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Clear();
+        }
+        else {
+            return -1;
+        }
+    }
+    else {
+        /* Success with __float__ */
         if (Py_IS_NAN(d)) {
-            *numerator = 0;
             PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
             return -1;
         }
         return _PyTime_DoubleToDenominator(d, sec, numerator,
                                            denominator, round);
     }
-    else {
-        *sec = _PyLong_AsTime_t(obj);
-        *numerator = 0;
-        if (*sec == (time_t)-1 && PyErr_Occurred()) {
-            return -1;
-        }
-        return 0;
+
+convert_from_int:
+    *sec = _PyLong_AsTime_t(obj);
+    *numerator = 0;
+    Py_XDECREF(intobj);
+    if (*sec == (time_t)-1 && PyErr_Occurred()) {
+        return -1;
     }
+    return 0;
 }
+
 
 int
 _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
 {
-    if (PyFloat_Check(obj)) {
-        double intpart;
-        /* volatile avoids optimization changing how numbers are rounded */
-        volatile double d;
+    /* Try the methods __index__, __float__, __int__ in this order
+     * to ensure best possible precision. See the discussion at
+     * https://bugs.python.org/issue35707 */
 
-        d = PyFloat_AsDouble(obj);
+    PyObject *intobj = NULL;
+    if (PyIndex_Check(obj)) {
+        intobj = PyNumber_Index(obj);
+        if (intobj != NULL) {
+            /* Success with __index__: skip the __float__ check */
+            obj = intobj;
+            goto convert_from_int;
+        }
+        /* If __index__ raises TypeError, try __float__ */
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Clear();
+        }
+        else {
+            return -1;
+        }
+    }
+
+    /* If we get here, then intobj is NULL */
+    double d = PyFloat_AsDouble(obj);
+    if (d == -1.0 && PyErr_Occurred()) {
+        /* If __float__ raises TypeError, try __int__ */
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Clear();
+        }
+        else {
+            return -1;
+        }
+    }
+    else {
+        /* Success with __float__ */
         if (Py_IS_NAN(d)) {
             PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
             return -1;
         }
 
         d = _PyTime_Round(d, round);
-        (void)modf(d, &intpart);
-
-        if (!_Py_InIntegralTypeRange(time_t, intpart)) {
+        if (!_Py_InIntegralTypeRange(time_t, d)) {
             error_time_t_overflow();
             return -1;
         }
-        *sec = (time_t)intpart;
+        *sec = (time_t)d;
         return 0;
     }
-    else {
-        *sec = _PyLong_AsTime_t(obj);
-        if (*sec == (time_t)-1 && PyErr_Occurred()) {
-            return -1;
-        }
-        return 0;
+
+convert_from_int:
+    *sec = _PyLong_AsTime_t(obj);
+    Py_XDECREF(intobj);
+    if (*sec == (time_t)-1 && PyErr_Occurred()) {
+        return -1;
     }
+    return 0;
 }
 
 int
@@ -401,34 +464,65 @@ static int
 _PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round,
                    long unit_to_ns)
 {
-    if (PyFloat_Check(obj)) {
-        double d;
-        d = PyFloat_AsDouble(obj);
+    /* Try the methods __index__, __float__, __int__ in this order
+     * to ensure best possible precision. See the discussion at
+     * https://bugs.python.org/issue35707 */
+
+    PyObject *intobj = NULL;
+    if (PyIndex_Check(obj)) {
+        intobj = PyNumber_Index(obj);
+        if (intobj != NULL) {
+            /* Success with __index__: skip the __float__ check */
+            obj = intobj;
+            goto convert_from_int;
+        }
+        /* If __index__ raises TypeError, try __float__ */
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Clear();
+        }
+        else {
+            return -1;
+        }
+    }
+
+    /* If we get here, then intobj is NULL */
+    double d = PyFloat_AsDouble(obj);
+    if (d == -1.0 && PyErr_Occurred()) {
+        /* If __float__ raises TypeError, try __int__ */
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Clear();
+        }
+        else {
+            return -1;
+        }
+    }
+    else {
+        /* Success with __float__ */
         if (Py_IS_NAN(d)) {
             PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
             return -1;
         }
         return _PyTime_FromDouble(t, d, round, unit_to_ns);
     }
-    else {
-        long long sec;
-        Py_BUILD_ASSERT(sizeof(long long) <= sizeof(_PyTime_t));
 
-        sec = PyLong_AsLongLong(obj);
-        if (sec == -1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-                _PyTime_overflow();
-            }
-            return -1;
-        }
+convert_from_int:
+    Py_BUILD_ASSERT(sizeof(long long) <= sizeof(_PyTime_t));
 
-        if (_PyTime_check_mul_overflow(sec, unit_to_ns)) {
+    long long sec = PyLong_AsLongLong(obj);
+    Py_XDECREF(intobj);
+    if (sec == -1 && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             _PyTime_overflow();
-            return -1;
         }
-        *t = sec * unit_to_ns;
-        return 0;
+        return -1;
     }
+
+    if (_PyTime_check_mul_overflow(sec, unit_to_ns)) {
+        _PyTime_overflow();
+        return -1;
+    }
+    *t = sec * unit_to_ns;
+    return 0;
 }
 
 int
@@ -451,8 +545,8 @@ _PyTime_AsSecondsDouble(_PyTime_t t)
 
     if (t % SEC_TO_NS == 0) {
         _PyTime_t secs;
-        /* Divide using integers to avoid rounding issues on the integer part.
-           1e-9 cannot be stored exactly in IEEE 64-bit. */
+        /* Divide using integers to avoid rounding issues when
+         * converting t to double */
         secs = t / SEC_TO_NS;
         d = (double)secs;
     }
