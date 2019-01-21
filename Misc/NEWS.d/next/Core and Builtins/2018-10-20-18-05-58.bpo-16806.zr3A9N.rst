@@ -1,0 +1,1 @@
+Fix ``lineno`` and ``col_offset`` for multi-line string tokens.

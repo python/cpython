@@ -1658,10 +1658,13 @@ os_execv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     path_t path = PATH_T_INITIALIZE("execv", "path", 0, 0);
     PyObject *argv;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O:execv",
-        path_converter, &path, &argv)) {
+    if (!_PyArg_CheckPositional("execv", nargs, 2, 2)) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    argv = args[1];
     return_value = os_execv_impl(module, &path, argv);
 
 exit:
@@ -1788,6 +1791,75 @@ exit:
 
 #endif /* defined(HAVE_POSIX_SPAWN) */
 
+#if defined(HAVE_POSIX_SPAWNP)
+
+PyDoc_STRVAR(os_posix_spawnp__doc__,
+"posix_spawnp($module, path, argv, env, /, *, file_actions=(),\n"
+"             setpgroup=None, resetids=False, setsigmask=(),\n"
+"             setsigdef=(), scheduler=None)\n"
+"--\n"
+"\n"
+"Execute the program specified by path in a new process.\n"
+"\n"
+"  path\n"
+"    Path of executable file.\n"
+"  argv\n"
+"    Tuple or list of strings.\n"
+"  env\n"
+"    Dictionary of strings mapping to strings.\n"
+"  file_actions\n"
+"    A sequence of file action tuples.\n"
+"  setpgroup\n"
+"    The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.\n"
+"  resetids\n"
+"    If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.\n"
+"  setsigmask\n"
+"    The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.\n"
+"  setsigdef\n"
+"    The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.\n"
+"  scheduler\n"
+"    A tuple with the scheduler policy (optional) and parameters.");
+
+#define OS_POSIX_SPAWNP_METHODDEF    \
+    {"posix_spawnp", (PyCFunction)(void(*)(void))os_posix_spawnp, METH_FASTCALL|METH_KEYWORDS, os_posix_spawnp__doc__},
+
+static PyObject *
+os_posix_spawnp_impl(PyObject *module, path_t *path, PyObject *argv,
+                     PyObject *env, PyObject *file_actions,
+                     PyObject *setpgroup, int resetids, PyObject *setsigmask,
+                     PyObject *setsigdef, PyObject *scheduler);
+
+static PyObject *
+os_posix_spawnp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsigmask", "setsigdef", "scheduler", NULL};
+    static _PyArg_Parser _parser = {"O&OO|$OOiOOO:posix_spawnp", _keywords, 0};
+    path_t path = PATH_T_INITIALIZE("posix_spawnp", "path", 0, 0);
+    PyObject *argv;
+    PyObject *env;
+    PyObject *file_actions = NULL;
+    PyObject *setpgroup = NULL;
+    int resetids = 0;
+    PyObject *setsigmask = NULL;
+    PyObject *setsigdef = NULL;
+    PyObject *scheduler = NULL;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        path_converter, &path, &argv, &env, &file_actions, &setpgroup, &resetids, &setsigmask, &setsigdef, &scheduler)) {
+        goto exit;
+    }
+    return_value = os_posix_spawnp_impl(module, &path, argv, env, file_actions, setpgroup, resetids, setsigmask, setsigdef, scheduler);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_POSIX_SPAWNP) */
+
 #if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV))
 
 PyDoc_STRVAR(os_spawnv__doc__,
@@ -1817,10 +1889,22 @@ os_spawnv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     path_t path = PATH_T_INITIALIZE("spawnv", "path", 0, 0);
     PyObject *argv;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO&O:spawnv",
-        &mode, path_converter, &path, &argv)) {
+    if (!_PyArg_CheckPositional("spawnv", nargs, 3, 3)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    mode = _PyLong_AsInt(args[0]);
+    if (mode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!path_converter(args[1], &path)) {
+        goto exit;
+    }
+    argv = args[2];
     return_value = os_spawnv_impl(module, mode, &path, argv);
 
 exit:
@@ -1865,10 +1949,23 @@ os_spawnve(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *argv;
     PyObject *env;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO&OO:spawnve",
-        &mode, path_converter, &path, &argv, &env)) {
+    if (!_PyArg_CheckPositional("spawnve", nargs, 4, 4)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    mode = _PyLong_AsInt(args[0]);
+    if (mode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!path_converter(args[1], &path)) {
+        goto exit;
+    }
+    argv = args[2];
+    env = args[3];
     return_value = os_spawnve_impl(module, mode, &path, argv, env);
 
 exit:
@@ -2874,8 +2971,13 @@ os_setreuid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     uid_t ruid;
     uid_t euid;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O&:setreuid",
-        _Py_Uid_Converter, &ruid, _Py_Uid_Converter, &euid)) {
+    if (!_PyArg_CheckPositional("setreuid", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!_Py_Uid_Converter(args[0], &ruid)) {
+        goto exit;
+    }
+    if (!_Py_Uid_Converter(args[1], &euid)) {
         goto exit;
     }
     return_value = os_setreuid_impl(module, ruid, euid);
@@ -2907,8 +3009,13 @@ os_setregid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     gid_t rgid;
     gid_t egid;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O&:setregid",
-        _Py_Gid_Converter, &rgid, _Py_Gid_Converter, &egid)) {
+    if (!_PyArg_CheckPositional("setregid", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!_Py_Gid_Converter(args[0], &rgid)) {
+        goto exit;
+    }
+    if (!_Py_Gid_Converter(args[1], &egid)) {
         goto exit;
     }
     return_value = os_setregid_impl(module, rgid, egid);
@@ -3558,8 +3665,25 @@ os_closerange(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd_low;
     int fd_high;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:closerange",
-        &fd_low, &fd_high)) {
+    if (!_PyArg_CheckPositional("closerange", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd_low = _PyLong_AsInt(args[0]);
+    if (fd_low == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd_high = _PyLong_AsInt(args[1]);
+    if (fd_high == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_closerange_impl(module, fd_low, fd_high);
@@ -3672,8 +3796,28 @@ os_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int command;
     Py_off_t length;
 
-    if (!_PyArg_ParseStack(args, nargs, "iiO&:lockf",
-        &fd, &command, Py_off_t_converter, &length)) {
+    if (!_PyArg_CheckPositional("lockf", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    command = _PyLong_AsInt(args[1]);
+    if (command == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[2], &length)) {
         goto exit;
     }
     return_value = os_lockf_impl(module, fd, command, length);
@@ -3708,8 +3852,28 @@ os_lseek(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int how;
     Py_off_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO&i:lseek",
-        &fd, Py_off_t_converter, &position, &how)) {
+    if (!_PyArg_CheckPositional("lseek", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[1], &position)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    how = _PyLong_AsInt(args[2]);
+    if (how == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_lseek_impl(module, fd, position, how);
@@ -3741,9 +3905,34 @@ os_read(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     Py_ssize_t length;
 
-    if (!_PyArg_ParseStack(args, nargs, "in:read",
-        &fd, &length)) {
+    if (!_PyArg_CheckPositional("read", nargs, 2, 2)) {
         goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        length = ival;
     }
     return_value = os_read_impl(module, fd, length);
 
@@ -3781,10 +3970,19 @@ os_readv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *buffers;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO:readv",
-        &fd, &buffers)) {
+    if (!_PyArg_CheckPositional("readv", nargs, 2, 2)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    buffers = args[1];
     _return_value = os_readv_impl(module, fd, buffers);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -3822,8 +4020,28 @@ os_pread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int length;
     Py_off_t offset;
 
-    if (!_PyArg_ParseStack(args, nargs, "iiO&:pread",
-        &fd, &length, Py_off_t_converter, &offset)) {
+    if (!_PyArg_CheckPositional("pread", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    length = _PyLong_AsInt(args[1]);
+    if (length == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[2], &offset)) {
         goto exit;
     }
     return_value = os_pread_impl(module, fd, length, offset);
@@ -3873,10 +4091,35 @@ os_preadv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int flags = 0;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "iOO&|i:preadv",
-        &fd, &buffers, Py_off_t_converter, &offset, &flags)) {
+    if (!_PyArg_CheckPositional("preadv", nargs, 3, 4)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    buffers = args[1];
+    if (!Py_off_t_converter(args[2], &offset)) {
+        goto exit;
+    }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[3])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flags = _PyLong_AsInt(args[3]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     _return_value = os_preadv_impl(module, fd, buffers, offset, flags);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -3909,8 +4152,23 @@ os_write(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_buffer data = {NULL, NULL};
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "iy*:write",
-        &fd, &data)) {
+    if (!_PyArg_CheckPositional("write", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("write", 2, "contiguous buffer", args[1]);
         goto exit;
     }
     _return_value = os_write_impl(module, fd, &data);
@@ -3950,8 +4208,34 @@ os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int outfd;
     int flags;
 
-    if (!_PyArg_ParseStack(args, nargs, "iii:_fcopyfile",
-        &infd, &outfd, &flags)) {
+    if (!_PyArg_CheckPositional("_fcopyfile", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    infd = _PyLong_AsInt(args[0]);
+    if (infd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    outfd = _PyLong_AsInt(args[1]);
+    if (outfd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flags = _PyLong_AsInt(args[2]);
+    if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os__fcopyfile_impl(module, infd, outfd, flags);
@@ -4129,10 +4413,19 @@ os_writev(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *buffers;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO:writev",
-        &fd, &buffers)) {
+    if (!_PyArg_CheckPositional("writev", nargs, 2, 2)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    buffers = args[1];
     _return_value = os_writev_impl(module, fd, buffers);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -4172,8 +4465,26 @@ os_pwrite(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_off_t offset;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "iy*O&:pwrite",
-        &fd, &buffer, Py_off_t_converter, &offset)) {
+    if (!_PyArg_CheckPositional("pwrite", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+        _PyArg_BadArgument("pwrite", 2, "contiguous buffer", args[1]);
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[2], &offset)) {
         goto exit;
     }
     _return_value = os_pwrite_impl(module, fd, &buffer, offset);
@@ -4232,10 +4543,35 @@ os_pwritev(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int flags = 0;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "iOO&|i:pwritev",
-        &fd, &buffers, Py_off_t_converter, &offset, &flags)) {
+    if (!_PyArg_CheckPositional("pwritev", nargs, 3, 4)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    buffers = args[1];
+    if (!Py_off_t_converter(args[2], &offset)) {
+        goto exit;
+    }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[3])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flags = _PyLong_AsInt(args[3]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     _return_value = os_pwritev_impl(module, fd, buffers, offset, flags);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -4439,8 +4775,25 @@ os_makedev(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int minor;
     dev_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:makedev",
-        &major, &minor)) {
+    if (!_PyArg_CheckPositional("makedev", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    major = _PyLong_AsInt(args[0]);
+    if (major == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    minor = _PyLong_AsInt(args[1]);
+    if (minor == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_makedev_impl(module, major, minor);
@@ -4476,8 +4829,19 @@ os_ftruncate(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     Py_off_t length;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO&:ftruncate",
-        &fd, Py_off_t_converter, &length)) {
+    if (!_PyArg_CheckPositional("ftruncate", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[1], &length)) {
         goto exit;
     }
     return_value = os_ftruncate_impl(module, fd, length);
@@ -4555,8 +4919,22 @@ os_posix_fallocate(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_off_t offset;
     Py_off_t length;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO&O&:posix_fallocate",
-        &fd, Py_off_t_converter, &offset, Py_off_t_converter, &length)) {
+    if (!_PyArg_CheckPositional("posix_fallocate", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[1], &offset)) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[2], &length)) {
         goto exit;
     }
     return_value = os_posix_fallocate_impl(module, fd, offset, length);
@@ -4599,8 +4977,31 @@ os_posix_fadvise(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_off_t length;
     int advice;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO&O&i:posix_fadvise",
-        &fd, Py_off_t_converter, &offset, Py_off_t_converter, &length, &advice)) {
+    if (!_PyArg_CheckPositional("posix_fadvise", nargs, 4, 4)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[1], &offset)) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[2], &length)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[3])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    advice = _PyLong_AsInt(args[3]);
+    if (advice == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_posix_fadvise_impl(module, fd, offset, length, advice);
@@ -4632,10 +5033,25 @@ os_putenv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *name;
     PyObject *value;
 
-    if (!_PyArg_ParseStack(args, nargs, "UU:putenv",
-        &name, &value)) {
+    if (!_PyArg_CheckPositional("putenv", nargs, 2, 2)) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("putenv", 1, "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    name = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("putenv", 2, "str", args[1]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[1]) == -1) {
+        goto exit;
+    }
+    value = args[1];
     return_value = os_putenv_impl(module, name, value);
 
 exit:
@@ -4665,8 +5081,13 @@ os_putenv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *name = NULL;
     PyObject *value = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O&:putenv",
-        PyUnicode_FSConverter, &name, PyUnicode_FSConverter, &value)) {
+    if (!_PyArg_CheckPositional("putenv", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_FSConverter(args[0], &name)) {
+        goto exit;
+    }
+    if (!PyUnicode_FSConverter(args[1], &value)) {
         goto exit;
     }
     return_value = os_putenv_impl(module, name, value);
@@ -5208,8 +5629,19 @@ os_fpathconf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int name;
     long _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO&:fpathconf",
-        &fd, conv_path_confname, &name)) {
+    if (!_PyArg_CheckPositional("fpathconf", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!conv_path_confname(args[1], &name)) {
         goto exit;
     }
     _return_value = os_fpathconf_impl(module, fd, name);
@@ -5496,8 +5928,16 @@ os_setresuid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     uid_t euid;
     uid_t suid;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O&O&:setresuid",
-        _Py_Uid_Converter, &ruid, _Py_Uid_Converter, &euid, _Py_Uid_Converter, &suid)) {
+    if (!_PyArg_CheckPositional("setresuid", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (!_Py_Uid_Converter(args[0], &ruid)) {
+        goto exit;
+    }
+    if (!_Py_Uid_Converter(args[1], &euid)) {
+        goto exit;
+    }
+    if (!_Py_Uid_Converter(args[2], &suid)) {
         goto exit;
     }
     return_value = os_setresuid_impl(module, ruid, euid, suid);
@@ -5530,8 +5970,16 @@ os_setresgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     gid_t egid;
     gid_t sgid;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O&O&:setresgid",
-        _Py_Gid_Converter, &rgid, _Py_Gid_Converter, &egid, _Py_Gid_Converter, &sgid)) {
+    if (!_PyArg_CheckPositional("setresgid", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (!_Py_Gid_Converter(args[0], &rgid)) {
+        goto exit;
+    }
+    if (!_Py_Gid_Converter(args[1], &egid)) {
+        goto exit;
+    }
+    if (!_Py_Gid_Converter(args[2], &sgid)) {
         goto exit;
     }
     return_value = os_setresgid_impl(module, rgid, egid, sgid);
@@ -5898,8 +6346,25 @@ os_set_inheritable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     int inheritable;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:set_inheritable",
-        &fd, &inheritable)) {
+    if (!_PyArg_CheckPositional("set_inheritable", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    inheritable = _PyLong_AsInt(args[1]);
+    if (inheritable == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_set_inheritable_impl(module, fd, inheritable);
@@ -6046,8 +6511,25 @@ os_set_blocking(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     int blocking;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:set_blocking",
-        &fd, &blocking)) {
+    if (!_PyArg_CheckPositional("set_blocking", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    blocking = _PyLong_AsInt(args[1]);
+    if (blocking == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_set_blocking_impl(module, fd, blocking);
@@ -6437,6 +6919,10 @@ exit:
 #ifndef OS_POSIX_SPAWN_METHODDEF
     #define OS_POSIX_SPAWN_METHODDEF
 #endif /* !defined(OS_POSIX_SPAWN_METHODDEF) */
+
+#ifndef OS_POSIX_SPAWNP_METHODDEF
+    #define OS_POSIX_SPAWNP_METHODDEF
+#endif /* !defined(OS_POSIX_SPAWNP_METHODDEF) */
 
 #ifndef OS_SPAWNV_METHODDEF
     #define OS_SPAWNV_METHODDEF
@@ -6845,4 +7331,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=b02036b2a269b1db input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dabd0fa27bf87044 input=a9049054013a1b77]*/

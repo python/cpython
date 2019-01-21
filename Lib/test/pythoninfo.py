@@ -529,6 +529,8 @@ def collect_resource(info_add):
         value = resource.getrlimit(key)
         info_add('resource.%s' % name, value)
 
+    call_func(info_add, 'resource.pagesize', resource, 'getpagesize')
+
 
 def collect_test_socket(info_add):
     try:
@@ -610,6 +612,11 @@ def collect_get_config(info_add):
             info_add('%s[%s]' % (prefix, key), repr(config[key]))
 
 
+def collect_subprocess(info_add):
+    import subprocess
+    copy_attributes(info_add, subprocess, 'subprocess.%s', ('_USE_POSIX_SPAWN',))
+
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -639,6 +646,7 @@ def collect_info(info):
         collect_cc,
         collect_gdbm,
         collect_get_config,
+        collect_subprocess,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,
