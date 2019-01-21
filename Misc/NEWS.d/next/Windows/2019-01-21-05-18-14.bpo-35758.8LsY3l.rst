@@ -1,0 +1,1 @@
+On msvc, x87 control word is only available on x86 target. Need to disable it for other targets to prevent compiling problems.
