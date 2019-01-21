@@ -70,20 +70,10 @@ template = "tmp"
 
 _once_lock = _allocate_lock()
 
-if hasattr(_os, "lstat"):
-    _stat = _os.lstat
-elif hasattr(_os, "stat"):
-    _stat = _os.stat
-else:
-    # Fallback.  All we need is something that raises OSError if the
-    # file doesn't exist.
-    def _stat(fn):
-        fd = _os.open(fn, _os.O_RDONLY)
-        _os.close(fd)
 
 def _exists(fn):
     try:
-        _stat(fn)
+        _os.lstat(fn)
     except OSError:
         return False
     else:
