@@ -1522,7 +1522,9 @@ class _PosixSpawnMixin:
             pid = self.spawn_func(no_such_executable,
                                   [no_such_executable],
                                   os.environ)
-        except FileNotFoundError as exc:
+        # bpo-35794: PermissionError can be raised if there are
+        # directories in the $PATH that are not accessible.
+        except (FileNotFoundError, PermissionError) as exc:
             self.assertEqual(exc.filename, no_such_executable)
         else:
             pid2, status = os.waitpid(pid, 0)
