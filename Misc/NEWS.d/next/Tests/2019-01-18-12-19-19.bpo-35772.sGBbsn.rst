@@ -1,0 +1,6 @@
+Fix sparse file tests of test_tarfile on ppc64 with the tmpfs filesystem. Fix
+the function testing if the filesystem supports sparse files: create a file
+which contains data and "holes", instead of creating a file which contains no
+data. tmpfs effective block size is a page size (tmpfs lives in the page cache).
+RHEL uses 64 KiB pages on aarch64, ppc64, ppc64le, only s390x and x86_64 use 4
+KiB pages, whereas the test punch holes of 4 KiB.
