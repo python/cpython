@@ -1236,6 +1236,40 @@ Use of Basic HTTP Authentication::
    urllib.request.install_opener(opener)
    urllib.request.urlopen('http://www.example.com/login.html')
 
+.. note::
+
+   Normally, when you first try to access to a protected page, the server should
+   send back a ``401 Unauthorized`` response, with a ``WWW-Authenticate`` header,
+   containing the authentication scheme in use, and the realm of the page
+   (e.g., ``WWW-Authenticate: Basic realm="Python Documentation"``). After what,
+   you can perform a new request with a ``Authorization`` header, containing
+   your credentials encoded in base64 (e.g., ``Authorization: Basic <CREDENTIALS>``).
+
+   This is what :class:`HTTPBasicAuthHandler` is automatically doing for you by default.
+
+However, when the server doesn't properly implement Basic HTTP Authentication, you should
+instead use :class:`HTTPBasicAuthHandler` with :class:`HTTPPasswordMgrWithPriorAuth`::
+
+   import urllib.request
+
+   # Set-up an authentication handler.
+   pwd_mgr = urllib.request.HTTPPasswordMgrWithPriorAuth()
+   pwd_mgr.add_password(
+      # No realm returned by the server.
+      realm=None,
+      uri='http://www.example.com/,
+      user='jdoe',
+      passwd='foobar',
+      # No WWW-Authenticate header returned by the server.
+      is_authenticated=True,
+   )
+   auth_handler = urllib.request.HTTPBasicAuthHandler(pwd_mgr)
+
+   # And use it globally.
+   opener = urllib.request.build_opener(auth_handler)
+   urllib.request.install_opener(opener)
+   urllib.request.urlopen('http://www.example.com/something.html')
+
 :func:`build_opener` provides many handlers by default, including a
 :class:`ProxyHandler`.  By default, :class:`ProxyHandler` uses the environment
 variables named ``<scheme>_proxy``, where ``<scheme>`` is the URL scheme
