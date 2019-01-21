@@ -28,7 +28,7 @@ __all__ = [
     'urlsafe_b64encode', 'urlsafe_b64decode',
     ]
 
-
+VALID_BASE64_REGEX = re.compile(b'^[A-Za-z0-9+/]*={0,2}$')
 bytes_types = (bytes, bytearray)  # Types acceptable as binary data
 
 def _bytes_from_decode_data(s):
@@ -82,7 +82,7 @@ def b64decode(s, altchars=None, validate=False):
         altchars = _bytes_from_decode_data(altchars)
         assert len(altchars) == 2, repr(altchars)
         s = s.translate(bytes.maketrans(altchars, b'+/'))
-    if validate and not re.match(b'^[A-Za-z0-9+/]*={0,2}$', s):
+    if validate and not VALID_BASE64_REGEX.match(s):
         raise binascii.Error('Non-base64 digit found')
     return binascii.a2b_base64(s)
 
