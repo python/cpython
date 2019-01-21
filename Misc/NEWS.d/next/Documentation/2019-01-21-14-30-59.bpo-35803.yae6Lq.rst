@@ -1,0 +1,2 @@
+Document and test that ``tempfile`` functions may take a ``dir`` which
+is a :term:`path-like object`.  Patch by Anthony Sottile.
