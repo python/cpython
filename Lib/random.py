@@ -216,7 +216,7 @@ class Random(_random.Random):
         if step == 1 and width > 0:
             return istart + self._randbelow(width)
         if step == 1:
-            raise ValueError("empty range for randrange() (%d,%d, %d)" % (istart, istop, width))
+            raise ValueError("empty range for randrange() (%d, %d, %d)" % (istart, istop, width))
 
         # Non-unit step argument supplied.
         istep = _int(step)
