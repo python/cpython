@@ -1004,7 +1004,7 @@ are always available.  They are listed here in alphabetical order.
    ``'b'``   binary mode
    ``'t'``   text mode (default)
    ``'+'``   open a disk file for updating (reading and writing)
-   ``'U'``   equivalent to `newline=None` (deprecated, use *newline* option)
+   ``'U'``   equivalent to ``newline=None`` (deprecated, use *newline* option)
    ========= ===============================================================
 
    The default mode is ``'r'`` (open for reading text, synonym of ``'rt'``).
