@@ -1239,16 +1239,15 @@ class TestLRU:
         # (this arises in recursive calls and in multi-threading).
         # This cause the cache to have orphan links not referenced
         # by the cache dictionary.
-        global _once
 
-        _once = True
+        once = True                 # Modified by f(x) below
 
         @self.module.lru_cache(maxsize=10)
         def f(x):
-            global _once
+            nonlocal once
             rv = f'.{x}.'
-            if x == 20 and _once:
-                _once = False
+            if x == 20 and once:
+                once = False
                 rv = f(x)
             return rv
 
