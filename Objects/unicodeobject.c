@@ -15239,7 +15239,6 @@ _PyUnicode_Init(void)
     if (PyType_Ready(&PyFormatterIter_Type) < 0) {
         return _Py_INIT_ERR("Can't initialize formatter iter type");
     }
-
     return _Py_INIT_OK();
 }
 
