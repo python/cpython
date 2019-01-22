@@ -1,0 +1,1 @@
+Improved Azure Pipelines build steps and now verifying layouts correctly

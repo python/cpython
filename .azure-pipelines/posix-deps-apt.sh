@@ -1,6 +1,6 @@
-sudo apt-get update
+apt-get update
 
-sudo apt-get -yq install \
+apt-get -yq install \
     build-essential \
     zlib1g-dev \
     libbz2-dev \
