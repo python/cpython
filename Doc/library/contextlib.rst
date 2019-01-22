@@ -205,8 +205,6 @@ Functions and classes provided:
 
        with suppress(FileNotFoundError):
            os.remove('somefile.tmp')
-
-       with suppress(FileNotFoundError):
            os.remove('someotherfile.tmp')
 
    This code is equivalent to::
