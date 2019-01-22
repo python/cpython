@@ -322,6 +322,10 @@ equivalent :keyword:`try`\ -\ :keyword:`finally` blocks::
 
     >>> with open('workfile') as f:
     ...     read_data = f.read()
+
+After this :keyword:`with` statement, we can see that the file has been
+automatically closed::
+
     >>> f.closed
     True
 
