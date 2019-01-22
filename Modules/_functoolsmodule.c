@@ -896,6 +896,11 @@ lru_cache_prepend_link(lru_cache_object *self, lru_list_elem *link)
    either call it at the top of its code path before any cache
    state modifications (dict access #2) or be prepared to restore
    invariants at the end of the code path (dict access #4).
+
+   Another possible source of reentrancy is a decref which can trigger
+   arbitrary code execution.  To make the code easier to reason about,
+   the decrefs are deferred to the end of the each possible code path
+   so that we know the cache is a consistent state.
  */
 
 static PyObject *
