@@ -1,12 +1,16 @@
 parameters:
   coverage: false
+  sudo_dependencies: sudo
+  dependencies: apt
+  patchcheck: true
+  xvfb: true
 
 steps:
 - checkout: self
   clean: true
   fetchDepth: 5
 
-- script: ./.azure-pipelines/posix-deps.sh $(openssl_version)
+- script: ${{ parameters.sudo_dependencies }} ./.azure-pipelines/posix-deps-${{ parameters.dependencies }}.sh $(openssl_version)
   displayName: 'Install dependencies'
 
 - script: ./configure --with-pydebug
@@ -23,7 +27,7 @@ steps:
     displayName: 'Display build info'
 
   - script: |
-      xvfb-run ./venv/bin/python -m coverage run --pylib -m test \
+      $COMMAND -m coverage run --pylib -m test \
                 --fail-env-changed \
                 -uall,-cpu \
                 --junit-xml=$(build.binariesDirectory)/test-results.xml" \
@@ -32,6 +36,11 @@ steps:
                 -x test_multiprocessing_spawn \
                 -x test_concurrent_futures
     displayName: 'Tests with coverage'
+    env:
+      ${{ if eq(parameters.xvfb, 'true') }}:
+        COMMAND: xvfb-run ./venv/bin/python
+      ${{ if ne(parameters.xvfb, 'true') }}:
+        COMMAND: ./venv/bin/python
 
   - script: ./venv/bin/python -m coverage xml
     displayName: 'Generate coverage.xml'
@@ -44,13 +53,18 @@ steps:
   - script: make pythoninfo
     displayName: 'Display build info'
 
-  - script: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu --junit-xml=$(build.binariesDirectory)/test-results.xml"
+  - script: $COMMAND buildbottest TESTOPTS="-j4 -uall,-cpu --junit-xml=$(build.binariesDirectory)/test-results.xml"
     displayName: 'Tests'
+    env:
+      ${{ if eq(parameters.xvfb, 'true') }}:
+        COMMAND: xvfb-run make
+      ${{ if ne(parameters.xvfb, 'true') }}:
+        COMMAND: make
 
-
-- script: ./python Tools/scripts/patchcheck.py --travis true
-  displayName: 'Run patchcheck.py'
-  condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
+- ${{ if eq(parameters.patchcheck, 'true') }}:
+  - script: ./python Tools/scripts/patchcheck.py --travis true
+    displayName: 'Run patchcheck.py'
+    condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
 
 
 - task: PublishTestResults@2
