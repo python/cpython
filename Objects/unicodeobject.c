@@ -15199,7 +15199,8 @@ PyTypeObject PyUnicode_Type = {
 
 /* Initialize the Unicode implementation */
 
-int _PyUnicode_Init(void)
+_PyInitError
+_PyUnicode_Init(void)
 {
     /* XXX - move this array to unicodectype.c ? */
     Py_UCS2 linebreak[] = {
@@ -15215,28 +15216,31 @@ int _PyUnicode_Init(void)
 
     /* Init the implementation */
     _Py_INCREF_UNICODE_EMPTY();
-    if (!unicode_empty)
-        Py_FatalError("Can't create empty string");
+    if (!unicode_empty) {
+        return _Py_INIT_ERR("Can't create empty string");
+    }
     Py_DECREF(unicode_empty);
 
-    if (PyType_Ready(&PyUnicode_Type) < 0)
-        Py_FatalError("Can't initialize 'unicode'");
+    if (PyType_Ready(&PyUnicode_Type) < 0) {
+        return _Py_INIT_ERR("Can't initialize unicode type");
+    }
 
     /* initialize the linebreak bloom filter */
     bloom_linebreak = make_bloom_mask(
         PyUnicode_2BYTE_KIND, linebreak,
         Py_ARRAY_LENGTH(linebreak));
 
-    if (PyType_Ready(&EncodingMapType) < 0)
-         Py_FatalError("Can't initialize encoding map type");
+    if (PyType_Ready(&EncodingMapType) < 0) {
+         return _Py_INIT_ERR("Can't initialize encoding map type");
+    }
+    if (PyType_Ready(&PyFieldNameIter_Type) < 0) {
+        return _Py_INIT_ERR("Can't initialize field name iterator type");
+    }
+    if (PyType_Ready(&PyFormatterIter_Type) < 0) {
+        return _Py_INIT_ERR("Can't initialize formatter iter type");
+    }
 
-    if (PyType_Ready(&PyFieldNameIter_Type) < 0)
-        Py_FatalError("Can't initialize field name iterator type");
-
-    if (PyType_Ready(&PyFormatterIter_Type) < 0)
-        Py_FatalError("Can't initialize formatter iter type");
-
-    return 0;
+    return _Py_INIT_OK();
 }
 
 /* Finalize the Unicode implementation */

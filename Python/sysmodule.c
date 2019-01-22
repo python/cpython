@@ -2381,22 +2381,6 @@ _PySys_BeginInit(PyObject **sysmod)
     }
     sysdict = PyModule_GetDict(m);
 
-    /* Check that stdin is not a directory
-       Using shell redirection, you can redirect stdin to a directory,
-       crashing the Python interpreter. Catch this common mistake here
-       and output a useful error message. Note that under MS Windows,
-       the shell already prevents that. */
-#ifndef MS_WINDOWS
-    {
-        struct _Py_stat_struct sb;
-        if (_Py_fstat_noraise(fileno(stdin), &sb) == 0 &&
-            S_ISDIR(sb.st_mode)) {
-            return _Py_INIT_USER_ERR("<stdin> is a directory, "
-                                     "cannot continue");
-        }
-    }
-#endif
-
     /* stdin/stdout/stderr are set in pylifecycle.c */
 
     SET_SYS_FROM_STRING_BORROW("__displayhook__",

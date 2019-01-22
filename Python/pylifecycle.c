@@ -608,9 +608,6 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
     if (!_PyLong_Init())
         return _Py_INIT_ERR("can't init longs");
 
-    if (!PyByteArray_Init())
-        return _Py_INIT_ERR("can't init bytearray");
-
     if (!_PyFloat_Init())
         return _Py_INIT_ERR("can't init float");
 
@@ -634,9 +631,10 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
     PyDict_SetItemString(interp->sysdict, "modules", modules);
     _PyImport_FixupBuiltin(sysmod, "sys", modules);
 
-    /* Init Unicode implementation; relies on the codec registry */
-    if (_PyUnicode_Init() < 0)
-        return _Py_INIT_ERR("can't initialize unicode");
+    err = _PyUnicode_Init();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
     if (_PyStructSequence_Init() < 0)
         return _Py_INIT_ERR("can't initialize structseq");
@@ -651,7 +649,10 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
     Py_INCREF(interp->builtins);
 
     /* initialize builtin exceptions */
-    _PyExc_Init(bimod);
+    err = _PyExc_Init(bimod);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
     /* Set up a preliminary stderr printer until we have enough
        infrastructure for the io module in place. */
@@ -1146,7 +1147,6 @@ Py_FinalizeEx(void)
     PyList_Fini();
     PySet_Fini();
     PyBytes_Fini();
-    PyByteArray_Fini();
     PyLong_Fini();
     PyFloat_Fini();
     PyDict_Fini();
@@ -1302,7 +1302,10 @@ new_interpreter(PyThreadState **tstate_p)
     }
 
     /* initialize builtin exceptions */
-    _PyExc_Init(bimod);
+    err = _PyExc_Init(bimod);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
     if (bimod != NULL && sysmod != NULL) {
         PyObject *pstderr;
@@ -1681,6 +1684,20 @@ init_sys_streams(PyInterpreterState *interp)
     PyObject * encoding_attr;
     _PyInitError res = _Py_INIT_OK();
     _PyCoreConfig *config = &interp->core_config;
+
+    /* Check that stdin is not a directory
+       Using shell redirection, you can redirect stdin to a directory,
+       crashing the Python interpreter. Catch this common mistake here
+       and output a useful error message. Note that under MS Windows,
+       the shell already prevents that. */
+#ifndef MS_WINDOWS
+    struct _Py_stat_struct sb;
+    if (_Py_fstat_noraise(fileno(stdin), &sb) == 0 &&
+        S_ISDIR(sb.st_mode)) {
+        return _Py_INIT_USER_ERR("<stdin> is a directory, "
+                                 "cannot continue");
+    }
+#endif
 
     char *codec_name = get_codec_name(config->stdio_encoding);
     if (codec_name == NULL) {

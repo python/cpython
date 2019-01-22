@@ -56,33 +56,6 @@ PyAPI_FUNC(void) _Py_SetProgramFullPath(const wchar_t *);
 PyAPI_FUNC(const char *) _Py_gitidentifier(void);
 PyAPI_FUNC(const char *) _Py_gitversion(void);
 
-/* Internal -- various one-time initializations */
-PyAPI_FUNC(PyObject *) _PyBuiltin_Init(void);
-PyAPI_FUNC(_PyInitError) _PySys_BeginInit(PyObject **sysmod);
-PyAPI_FUNC(int) _PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp);
-PyAPI_FUNC(_PyInitError) _PyImport_Init(PyInterpreterState *interp);
-PyAPI_FUNC(void) _PyExc_Init(PyObject * bltinmod);
-PyAPI_FUNC(_PyInitError) _PyImportHooks_Init(void);
-PyAPI_FUNC(int) _PyFloat_Init(void);
-PyAPI_FUNC(int) PyByteArray_Init(void);
-PyAPI_FUNC(_PyInitError) _Py_HashRandomization_Init(const _PyCoreConfig *);
-
-/* Various internal finalizers */
-
-PyAPI_FUNC(void) PyMethod_Fini(void);
-PyAPI_FUNC(void) PyFrame_Fini(void);
-PyAPI_FUNC(void) PyCFunction_Fini(void);
-PyAPI_FUNC(void) PyDict_Fini(void);
-PyAPI_FUNC(void) PyTuple_Fini(void);
-PyAPI_FUNC(void) PyList_Fini(void);
-PyAPI_FUNC(void) PySet_Fini(void);
-PyAPI_FUNC(void) PyBytes_Fini(void);
-PyAPI_FUNC(void) PyByteArray_Fini(void);
-PyAPI_FUNC(void) PyFloat_Fini(void);
-PyAPI_FUNC(void) PyOS_FiniInterrupts(void);
-PyAPI_FUNC(void) PySlice_Fini(void);
-PyAPI_FUNC(void) PyAsyncGen_Fini(void);
-
 PyAPI_FUNC(int) _Py_IsFinalizing(void);
 
 /* Random */
