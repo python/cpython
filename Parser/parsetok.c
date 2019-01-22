@@ -21,7 +21,8 @@ typedef struct {
     size_t num_items;
 } growable_int_array;
 
-int growable_int_array_init(growable_int_array *arr, size_t initial_size) {
+static int
+growable_int_array_init(growable_int_array *arr, size_t initial_size) {
     assert(initial_size > 0);
     arr->items = malloc(initial_size * sizeof(*arr->items));
     arr->size = initial_size;
@@ -30,7 +31,8 @@ int growable_int_array_init(growable_int_array *arr, size_t initial_size) {
     return arr->items != NULL;
 }
 
-int growable_int_array_add(growable_int_array *arr, int item) {
+static int
+growable_int_array_add(growable_int_array *arr, int item) {
     if (arr->num_items >= arr->size) {
         arr->size *= 2;
         arr->items = realloc(arr->items, arr->size * sizeof(*arr->items));
@@ -43,7 +45,8 @@ int growable_int_array_add(growable_int_array *arr, int item) {
     return 1;
 }
 
-void growable_int_array_deallocate(growable_int_array *arr) {
+static void
+growable_int_array_deallocate(growable_int_array *arr) {
     free(arr->items);
 }
 
