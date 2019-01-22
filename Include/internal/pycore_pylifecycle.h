@@ -30,12 +30,13 @@ extern PyObject * _PyBuiltin_Init(void);
 extern _PyInitError _PySys_BeginInit(PyObject **sysmod);
 extern int _PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp);
 extern _PyInitError _PyImport_Init(PyInterpreterState *interp);
-extern _PyInitError _PyExc_Init(PyObject * bltinmod);
+extern _PyInitError _PyExc_Init(void);
+extern _PyInitError _PyBuiltins_AddExceptions(PyObject * bltinmod);
 extern _PyInitError _PyImportHooks_Init(void);
 extern int _PyFloat_Init(void);
 extern _PyInitError _Py_HashRandomization_Init(const _PyCoreConfig *);
 
-extern void _Py_ReadyTypes(void);
+extern _PyInitError _Py_ReadyTypes(void);
 
 /* Various internal finalizers */
 

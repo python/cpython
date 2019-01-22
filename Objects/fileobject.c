@@ -359,6 +359,9 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
     Py_ssize_t n;
     int err;
 
+    /* The function can clear the current exception */
+    assert(!PyErr_Occurred());
+
     if (self->fd < 0) {
         /* fd might be invalid on Windows
          * I can't raise an exception here. It may lead to an
@@ -367,10 +370,11 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
         Py_RETURN_NONE;
     }
 
-    if (!PyArg_ParseTuple(args, "U", &unicode))
+    if (!PyArg_ParseTuple(args, "U", &unicode)) {
         return NULL;
+    }
 
-    /* encode Unicode to UTF-8 */
+    /* Encode Unicode to UTF-8/surrogateescape */
     str = PyUnicode_AsUTF8AndSize(unicode, &n);
     if (str == NULL) {
         PyErr_Clear();

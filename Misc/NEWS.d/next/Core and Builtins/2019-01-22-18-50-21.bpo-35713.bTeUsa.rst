@@ -1,0 +1,2 @@
+Reorganize Python initialization to get working exceptions and sys.stderr
+earlier.

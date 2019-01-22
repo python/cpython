@@ -1716,200 +1716,83 @@ PyObject _Py_NotImplementedStruct = {
     1, &_PyNotImplemented_Type
 };
 
-void
+_PyInitError
 _Py_ReadyTypes(void)
 {
-    if (PyType_Ready(&PyBaseObject_Type) < 0)
-        Py_FatalError("Can't initialize object type");
+#define INIT_TYPE(TYPE, NAME) \
+    do { \
+        if (PyType_Ready(TYPE) < 0) { \
+            return _Py_INIT_ERR("Can't initialize " NAME " type"); \
+        } \
+    } while (0)
 
-    if (PyType_Ready(&PyType_Type) < 0)
-        Py_FatalError("Can't initialize type type");
+    INIT_TYPE(&PyBaseObject_Type, "object");
+    INIT_TYPE(&PyType_Type, "type");
+    INIT_TYPE(&_PyWeakref_RefType, "weakref");
+    INIT_TYPE(&_PyWeakref_CallableProxyType, "callable weakref proxy");
+    INIT_TYPE(&_PyWeakref_ProxyType, "weakref proxy");
+    INIT_TYPE(&PyLong_Type, "int");
+    INIT_TYPE(&PyBool_Type, "bool");
+    INIT_TYPE(&PyByteArray_Type, "bytearray");
+    INIT_TYPE(&PyBytes_Type, "str");
+    INIT_TYPE(&PyList_Type, "list");
+    INIT_TYPE(&_PyNone_Type, "None");
+    INIT_TYPE(&_PyNotImplemented_Type, "NotImplemented");
+    INIT_TYPE(&PyTraceBack_Type, "traceback");
+    INIT_TYPE(&PySuper_Type, "super");
+    INIT_TYPE(&PyRange_Type, "range");
+    INIT_TYPE(&PyDict_Type, "dict");
+    INIT_TYPE(&PyDictKeys_Type, "dict keys");
+    INIT_TYPE(&PyDictValues_Type, "dict values");
+    INIT_TYPE(&PyDictItems_Type, "dict items");
+    INIT_TYPE(&PyDictRevIterKey_Type, "reversed dict keys");
+    INIT_TYPE(&PyDictRevIterValue_Type, "reversed dict values");
+    INIT_TYPE(&PyDictRevIterItem_Type, "reversed dict items");
+    INIT_TYPE(&PyODict_Type, "OrderedDict");
+    INIT_TYPE(&PyODictKeys_Type, "odict_keys");
+    INIT_TYPE(&PyODictItems_Type, "odict_items");
+    INIT_TYPE(&PyODictValues_Type, "odict_values");
+    INIT_TYPE(&PyODictIter_Type, "odict_keyiterator");
+    INIT_TYPE(&PySet_Type, "set");
+    INIT_TYPE(&PyUnicode_Type, "str");
+    INIT_TYPE(&PySlice_Type, "slice");
+    INIT_TYPE(&PyStaticMethod_Type, "static method");
+    INIT_TYPE(&PyComplex_Type, "complex");
+    INIT_TYPE(&PyFloat_Type, "float");
+    INIT_TYPE(&PyFrozenSet_Type, "frozenset");
+    INIT_TYPE(&PyProperty_Type, "property");
+    INIT_TYPE(&_PyManagedBuffer_Type, "managed buffer");
+    INIT_TYPE(&PyMemoryView_Type, "memoryview");
+    INIT_TYPE(&PyTuple_Type, "tuple");
+    INIT_TYPE(&PyEnum_Type, "enumerate");
+    INIT_TYPE(&PyReversed_Type, "reversed");
+    INIT_TYPE(&PyStdPrinter_Type, "StdPrinter");
+    INIT_TYPE(&PyCode_Type, "code");
+    INIT_TYPE(&PyFrame_Type, "frame");
+    INIT_TYPE(&PyCFunction_Type, "builtin function");
+    INIT_TYPE(&PyMethod_Type, "method");
+    INIT_TYPE(&PyFunction_Type, "function");
+    INIT_TYPE(&PyDictProxy_Type, "dict proxy");
+    INIT_TYPE(&PyGen_Type, "generator");
+    INIT_TYPE(&PyGetSetDescr_Type, "get-set descriptor");
+    INIT_TYPE(&PyWrapperDescr_Type, "wrapper");
+    INIT_TYPE(&_PyMethodWrapper_Type, "method wrapper");
+    INIT_TYPE(&PyEllipsis_Type, "ellipsis");
+    INIT_TYPE(&PyMemberDescr_Type, "member descriptor");
+    INIT_TYPE(&_PyNamespace_Type, "namespace");
+    INIT_TYPE(&PyCapsule_Type, "capsule");
+    INIT_TYPE(&PyLongRangeIter_Type, "long range iterator");
+    INIT_TYPE(&PyCell_Type, "cell");
+    INIT_TYPE(&PyInstanceMethod_Type, "instance method");
+    INIT_TYPE(&PyClassMethodDescr_Type, "class method descr");
+    INIT_TYPE(&PyMethodDescr_Type, "method descr");
+    INIT_TYPE(&PyCallIter_Type, "call iter");
+    INIT_TYPE(&PySeqIter_Type, "sequence iterator");
+    INIT_TYPE(&PyCoro_Type, "coroutine");
+    INIT_TYPE(&_PyCoroWrapper_Type, "coroutine wrapper");
+    return _Py_INIT_OK();
 
-    if (PyType_Ready(&_PyWeakref_RefType) < 0)
-        Py_FatalError("Can't initialize weakref type");
-
-    if (PyType_Ready(&_PyWeakref_CallableProxyType) < 0)
-        Py_FatalError("Can't initialize callable weakref proxy type");
-
-    if (PyType_Ready(&_PyWeakref_ProxyType) < 0)
-        Py_FatalError("Can't initialize weakref proxy type");
-
-    if (PyType_Ready(&PyLong_Type) < 0)
-        Py_FatalError("Can't initialize int type");
-
-    if (PyType_Ready(&PyBool_Type) < 0)
-        Py_FatalError("Can't initialize bool type");
-
-    if (PyType_Ready(&PyByteArray_Type) < 0)
-        Py_FatalError("Can't initialize bytearray type");
-
-    if (PyType_Ready(&PyBytes_Type) < 0)
-        Py_FatalError("Can't initialize 'str'");
-
-    if (PyType_Ready(&PyList_Type) < 0)
-        Py_FatalError("Can't initialize list type");
-
-    if (PyType_Ready(&_PyNone_Type) < 0)
-        Py_FatalError("Can't initialize None type");
-
-    if (PyType_Ready(&_PyNotImplemented_Type) < 0)
-        Py_FatalError("Can't initialize NotImplemented type");
-
-    if (PyType_Ready(&PyTraceBack_Type) < 0)
-        Py_FatalError("Can't initialize traceback type");
-
-    if (PyType_Ready(&PySuper_Type) < 0)
-        Py_FatalError("Can't initialize super type");
-
-    if (PyType_Ready(&PyRange_Type) < 0)
-        Py_FatalError("Can't initialize range type");
-
-    if (PyType_Ready(&PyDict_Type) < 0)
-        Py_FatalError("Can't initialize dict type");
-
-    if (PyType_Ready(&PyDictKeys_Type) < 0)
-        Py_FatalError("Can't initialize dict keys type");
-
-    if (PyType_Ready(&PyDictValues_Type) < 0)
-        Py_FatalError("Can't initialize dict values type");
-
-    if (PyType_Ready(&PyDictItems_Type) < 0)
-        Py_FatalError("Can't initialize dict items type");
-
-    if (PyType_Ready(&PyDictRevIterKey_Type) < 0)
-        Py_FatalError("Can't initialize reversed dict keys type");
-
-    if (PyType_Ready(&PyDictRevIterValue_Type) < 0)
-        Py_FatalError("Can't initialize reversed dict values type");
-
-    if (PyType_Ready(&PyDictRevIterItem_Type) < 0)
-        Py_FatalError("Can't initialize reversed dict items type");
-
-    if (PyType_Ready(&PyODict_Type) < 0)
-        Py_FatalError("Can't initialize OrderedDict type");
-
-    if (PyType_Ready(&PyODictKeys_Type) < 0)
-        Py_FatalError("Can't initialize odict_keys type");
-
-    if (PyType_Ready(&PyODictItems_Type) < 0)
-        Py_FatalError("Can't initialize odict_items type");
-
-    if (PyType_Ready(&PyODictValues_Type) < 0)
-        Py_FatalError("Can't initialize odict_values type");
-
-    if (PyType_Ready(&PyODictIter_Type) < 0)
-        Py_FatalError("Can't initialize odict_keyiterator type");
-
-    if (PyType_Ready(&PySet_Type) < 0)
-        Py_FatalError("Can't initialize set type");
-
-    if (PyType_Ready(&PyUnicode_Type) < 0)
-        Py_FatalError("Can't initialize str type");
-
-    if (PyType_Ready(&PySlice_Type) < 0)
-        Py_FatalError("Can't initialize slice type");
-
-    if (PyType_Ready(&PyStaticMethod_Type) < 0)
-        Py_FatalError("Can't initialize static method type");
-
-    if (PyType_Ready(&PyComplex_Type) < 0)
-        Py_FatalError("Can't initialize complex type");
-
-    if (PyType_Ready(&PyFloat_Type) < 0)
-        Py_FatalError("Can't initialize float type");
-
-    if (PyType_Ready(&PyFrozenSet_Type) < 0)
-        Py_FatalError("Can't initialize frozenset type");
-
-    if (PyType_Ready(&PyProperty_Type) < 0)
-        Py_FatalError("Can't initialize property type");
-
-    if (PyType_Ready(&_PyManagedBuffer_Type) < 0)
-        Py_FatalError("Can't initialize managed buffer type");
-
-    if (PyType_Ready(&PyMemoryView_Type) < 0)
-        Py_FatalError("Can't initialize memoryview type");
-
-    if (PyType_Ready(&PyTuple_Type) < 0)
-        Py_FatalError("Can't initialize tuple type");
-
-    if (PyType_Ready(&PyEnum_Type) < 0)
-        Py_FatalError("Can't initialize enumerate type");
-
-    if (PyType_Ready(&PyReversed_Type) < 0)
-        Py_FatalError("Can't initialize reversed type");
-
-    if (PyType_Ready(&PyStdPrinter_Type) < 0)
-        Py_FatalError("Can't initialize StdPrinter");
-
-    if (PyType_Ready(&PyCode_Type) < 0)
-        Py_FatalError("Can't initialize code type");
-
-    if (PyType_Ready(&PyFrame_Type) < 0)
-        Py_FatalError("Can't initialize frame type");
-
-    if (PyType_Ready(&PyCFunction_Type) < 0)
-        Py_FatalError("Can't initialize builtin function type");
-
-    if (PyType_Ready(&PyMethod_Type) < 0)
-        Py_FatalError("Can't initialize method type");
-
-    if (PyType_Ready(&PyFunction_Type) < 0)
-        Py_FatalError("Can't initialize function type");
-
-    if (PyType_Ready(&PyDictProxy_Type) < 0)
-        Py_FatalError("Can't initialize dict proxy type");
-
-    if (PyType_Ready(&PyGen_Type) < 0)
-        Py_FatalError("Can't initialize generator type");
-
-    if (PyType_Ready(&PyGetSetDescr_Type) < 0)
-        Py_FatalError("Can't initialize get-set descriptor type");
-
-    if (PyType_Ready(&PyWrapperDescr_Type) < 0)
-        Py_FatalError("Can't initialize wrapper type");
-
-    if (PyType_Ready(&_PyMethodWrapper_Type) < 0)
-        Py_FatalError("Can't initialize method wrapper type");
-
-    if (PyType_Ready(&PyEllipsis_Type) < 0)
-        Py_FatalError("Can't initialize ellipsis type");
-
-    if (PyType_Ready(&PyMemberDescr_Type) < 0)
-        Py_FatalError("Can't initialize member descriptor type");
-
-    if (PyType_Ready(&_PyNamespace_Type) < 0)
-        Py_FatalError("Can't initialize namespace type");
-
-    if (PyType_Ready(&PyCapsule_Type) < 0)
-        Py_FatalError("Can't initialize capsule type");
-
-    if (PyType_Ready(&PyLongRangeIter_Type) < 0)
-        Py_FatalError("Can't initialize long range iterator type");
-
-    if (PyType_Ready(&PyCell_Type) < 0)
-        Py_FatalError("Can't initialize cell type");
-
-    if (PyType_Ready(&PyInstanceMethod_Type) < 0)
-        Py_FatalError("Can't initialize instance method type");
-
-    if (PyType_Ready(&PyClassMethodDescr_Type) < 0)
-        Py_FatalError("Can't initialize class method descr type");
-
-    if (PyType_Ready(&PyMethodDescr_Type) < 0)
-        Py_FatalError("Can't initialize method descr type");
-
-    if (PyType_Ready(&PyCallIter_Type) < 0)
-        Py_FatalError("Can't initialize call iter type");
-
-    if (PyType_Ready(&PySeqIter_Type) < 0)
-        Py_FatalError("Can't initialize sequence iterator type");
-
-    if (PyType_Ready(&PyCoro_Type) < 0)
-        Py_FatalError("Can't initialize coroutine type");
-
-    if (PyType_Ready(&_PyCoroWrapper_Type) < 0)
-        Py_FatalError("Can't initialize coroutine wrapper type");
+#undef INIT_TYPE
 }
 
 
