@@ -682,11 +682,11 @@ class Pool(object):
 
 class ApplyResult(object):
 
-    def __init__(self, pool, callback, error_callback, cache=None):
+    def __init__(self, pool, callback, error_callback):
         self._pool = pool
         self._event = threading.Event()
         self._job = next(job_counter)
-        self._cache = cache if cache is not None else pool._cache
+        self._cache = pool._cache
         self._callback = callback
         self._error_callback = error_callback
         self._cache[self._job] = self
@@ -729,7 +729,7 @@ AsyncResult = ApplyResult       # create alias -- see #17805
 
 class MapResult(ApplyResult):
 
-    def __init__(self, pool, chunksize, length, callback, error_callback, cache=None):
+    def __init__(self, pool, chunksize, length, callback, error_callback):
         ApplyResult.__init__(self, pool, callback,
                              error_callback=error_callback)
         self._success = True
@@ -772,11 +772,11 @@ class MapResult(ApplyResult):
 
 class IMapIterator(object):
 
-    def __init__(self, pool, cache=None):
+    def __init__(self, pool):
         self._pool = pool
         self._cond = threading.Condition(threading.Lock())
         self._job = next(job_counter)
-        self._cache = cache if cache is not None else pool._cache
+        self._cache = pool._cache
         self._items = collections.deque()
         self._index = 0
         self._length = None
