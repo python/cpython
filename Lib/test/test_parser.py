@@ -880,7 +880,7 @@ class STObjectTestCase(unittest.TestCase):
             return 1 << (n - 1).bit_length()
 
         basesize = support.calcobjsize('Pii')
-        nodesize = struct.calcsize('hP3iP0h')
+        nodesize = struct.calcsize('hP3iP0h2i')
         def sizeofchildren(node):
             if node is None:
                 return 0
