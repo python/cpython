@@ -920,7 +920,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             Py_DECREF(elem);
             return NULL;
         }
-        err = PyNode_AddChild(root, type, strn, *line_num, 0);
+        err = PyNode_AddChild(root, type, strn, *line_num, 0, *line_num, 0);
         if (err == E_NOMEM) {
             Py_DECREF(elem);
             PyObject_FREE(strn);

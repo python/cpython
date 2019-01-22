@@ -4,6 +4,7 @@ import os
 import sys
 import unittest
 import weakref
+from textwrap import dedent
 
 from test import support
 
@@ -582,19 +583,22 @@ class ASTHelpers_Test(unittest.TestCase):
         )
         self.assertEqual(ast.dump(node, include_attributes=True),
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load(), "
-            "lineno=1, col_offset=0), args=[Name(id='eggs', ctx=Load(), "
-            "lineno=1, col_offset=5), Constant(value='and cheese', lineno=1, "
-            "col_offset=11)], keywords=[], "
-            "lineno=1, col_offset=0), lineno=1, col_offset=0)])"
+            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=4), "
+            "args=[Name(id='eggs', ctx=Load(), lineno=1, col_offset=5, "
+            "end_lineno=1, end_col_offset=9), Constant(value='and cheese', "
+            "lineno=1, col_offset=11, end_lineno=1, end_col_offset=23)], keywords=[], "
+            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24), "
+            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24)])"
         )
 
     def test_copy_location(self):
         src = ast.parse('1 + 1', mode='eval')
         src.body.right = ast.copy_location(ast.Num(2), src.body.right)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, lineno=1, col_offset=0), '
-            'op=Add(), right=Constant(value=2, lineno=1, col_offset=4), lineno=1, '
-            'col_offset=0))'
+            'Expression(body=BinOp(left=Constant(value=1, lineno=1, col_offset=0, '
+            'end_lineno=1, end_col_offset=1), op=Add(), right=Constant(value=2, '
+            'lineno=1, col_offset=4, end_lineno=1, end_col_offset=5), lineno=1, '
+            'col_offset=0, end_lineno=1, end_col_offset=5))'
         )
 
     def test_fix_missing_locations(self):
@@ -602,32 +606,37 @@ class ASTHelpers_Test(unittest.TestCase):
         src.body.append(ast.Expr(ast.Call(ast.Name('spam', ast.Load()),
                                           [ast.Str('eggs')], [])))
         self.assertEqual(src, ast.fix_missing_locations(src))
+        self.maxDiff = None
         self.assertEqual(ast.dump(src, include_attributes=True),
             "Module(body=[Expr(value=Call(func=Name(id='write', ctx=Load(), "
-            "lineno=1, col_offset=0), args=[Constant(value='spam', lineno=1, "
-            "col_offset=6)], keywords=[], "
-            "lineno=1, col_offset=0), lineno=1, col_offset=0), "
-            "Expr(value=Call(func=Name(id='spam', ctx=Load(), lineno=1, "
-            "col_offset=0), args=[Constant(value='eggs', lineno=1, col_offset=0)], "
-            "keywords=[], lineno=1, "
-            "col_offset=0), lineno=1, col_offset=0)])"
+            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=5), "
+            "args=[Constant(value='spam', lineno=1, col_offset=6, end_lineno=1, "
+            "end_col_offset=12)], keywords=[], lineno=1, col_offset=0, end_lineno=1, "
+            "end_col_offset=13), lineno=1, col_offset=0, end_lineno=1, "
+            "end_col_offset=13), Expr(value=Call(func=Name(id='spam', ctx=Load(), "
+            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=0), "
+            "args=[Constant(value='eggs', lineno=1, col_offset=0, end_lineno=1, "
+            "end_col_offset=0)], keywords=[], lineno=1, col_offset=0, end_lineno=1, "
+            "end_col_offset=0), lineno=1, col_offset=0, end_lineno=1, end_col_offset=0)])"
         )
 
     def test_increment_lineno(self):
         src = ast.parse('1 + 1', mode='eval')
         self.assertEqual(ast.increment_lineno(src, n=3), src)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0), '
-            'op=Add(), right=Constant(value=1, lineno=4, col_offset=4), lineno=4, '
-            'col_offset=0))'
+            'Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0, '
+            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, '
+            'lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, '
+            'col_offset=0, end_lineno=4, end_col_offset=5))'
         )
         # issue10869: do not increment lineno of root twice
         src = ast.parse('1 + 1', mode='eval')
         self.assertEqual(ast.increment_lineno(src.body, n=3), src.body)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0), '
-            'op=Add(), right=Constant(value=1, lineno=4, col_offset=4), lineno=4, '
-            'col_offset=0))'
+            'Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0, '
+            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, '
+            'lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, '
+            'col_offset=0, end_lineno=4, end_col_offset=5))'
         )
 
     def test_iter_fields(self):
@@ -1272,6 +1281,311 @@ class ConstantTests(unittest.TestCase):
         binop.right = new_right
 
         self.assertEqual(ast.literal_eval(binop), 10+20j)
+
+
+class EndPositionTests(unittest.TestCase):
+    """Tests for end position of AST nodes.
+
+    Testing end positions of nodes requires a bit of extra care
+    because of how LL parsers work.
+    """
+    def _check_end_pos(self, ast_node, end_lineno, end_col_offset):
+        self.assertEqual(ast_node.end_lineno, end_lineno)
+        self.assertEqual(ast_node.end_col_offset, end_col_offset)
+
+    def _check_content(self, source, ast_node, content):
+        self.assertEqual(ast.get_source_segment(source, ast_node), content)
+
+    def _parse_value(self, s):
+        # Use duck-typing to support both single expression
+        # and a right hand side of an assignment statement.
+        return ast.parse(s).body[0].value
+
+    def test_lambda(self):
+        s = 'lambda x, *y: None'
+        lam = self._parse_value(s)
+        self._check_content(s, lam.body, 'None')
+        self._check_content(s, lam.args.args[0], 'x')
+        self._check_content(s, lam.args.vararg, 'y')
+
+    def test_func_def(self):
+        s = dedent('''
+            def func(x: int,
+                     *args: str,
+                     z: float = 0,
+                     **kwargs: Any) -> bool:
+                return True
+            ''').strip()
+        fdef = ast.parse(s).body[0]
+        self._check_end_pos(fdef, 5, 15)
+        self._check_content(s, fdef.body[0], 'return True')
+        self._check_content(s, fdef.args.args[0], 'x: int')
+        self._check_content(s, fdef.args.args[0].annotation, 'int')
+        self._check_content(s, fdef.args.kwarg, 'kwargs: Any')
+        self._check_content(s, fdef.args.kwarg.annotation, 'Any')
+
+    def test_call(self):
+        s = 'func(x, y=2, **kw)'
+        call = self._parse_value(s)
+        self._check_content(s, call.func, 'func')
+        self._check_content(s, call.keywords[0].value, '2')
+        self._check_content(s, call.keywords[1].value, 'kw')
+
+    def test_call_noargs(self):
+        s = 'x[0]()'
+        call = self._parse_value(s)
+        self._check_content(s, call.func, 'x[0]')
+        self._check_end_pos(call, 1, 6)
+
+    def test_class_def(self):
+        s = dedent('''
+            class C(A, B):
+                x: int = 0
+        ''').strip()
+        cdef = ast.parse(s).body[0]
+        self._check_end_pos(cdef, 2, 14)
+        self._check_content(s, cdef.bases[1], 'B')
+        self._check_content(s, cdef.body[0], 'x: int = 0')
+
+    def test_class_kw(self):
+        s = 'class S(metaclass=abc.ABCMeta): pass'
+        cdef = ast.parse(s).body[0]
+        self._check_content(s, cdef.keywords[0].value, 'abc.ABCMeta')
+
+    def test_multi_line_str(self):
+        s = dedent('''
+            x = """Some multi-line text.
+
+            It goes on starting from same indent."""
+        ''').strip()
+        assign = ast.parse(s).body[0]
+        self._check_end_pos(assign, 3, 40)
+        self._check_end_pos(assign.value, 3, 40)
+
+    def test_continued_str(self):
+        s = dedent('''
+            x = "first part" \\
+            "second part"
+        ''').strip()
+        assign = ast.parse(s).body[0]
+        self._check_end_pos(assign, 2, 13)
+        self._check_end_pos(assign.value, 2, 13)
+
+    def test_suites(self):
+        # We intentionally put these into the same string to check
+        # that empty lines are not part of the suite.
+        s = dedent('''
+            while True:
+                pass
+
+            if one():
+                x = None
+            elif other():
+                y = None
+            else:
+                z = None
+
+            for x, y in stuff:
+                assert True
+
+            try:
+                raise RuntimeError
+            except TypeError as e:
+                pass
+
+            pass
+        ''').strip()
+        mod = ast.parse(s)
+        while_loop = mod.body[0]
+        if_stmt = mod.body[1]
+        for_loop = mod.body[2]
+        try_stmt = mod.body[3]
+        pass_stmt = mod.body[4]
+
+        self._check_end_pos(while_loop, 2, 8)
+        self._check_end_pos(if_stmt, 9, 12)
+        self._check_end_pos(for_loop, 12, 15)
+        self._check_end_pos(try_stmt, 17, 8)
+        self._check_end_pos(pass_stmt, 19, 4)
+
+        self._check_content(s, while_loop.test, 'True')
+        self._check_content(s, if_stmt.body[0], 'x = None')
+        self._check_content(s, if_stmt.orelse[0].test, 'other()')
+        self._check_content(s, for_loop.target, 'x, y')
+        self._check_content(s, try_stmt.body[0], 'raise RuntimeError')
+        self._check_content(s, try_stmt.handlers[0].type, 'TypeError')
+
+    def test_fstring(self):
+        s = 'x = f"abc {x + y} abc"'
+        fstr = self._parse_value(s)
+        binop = fstr.values[1].value
+        self._check_content(s, binop, 'x + y')
+
+    def test_fstring_multi_line(self):
+        s = dedent('''
+            f"""Some multi-line text.
+            {
+            arg_one
+            +
+            arg_two
+            }
+            It goes on..."""
+        ''').strip()
+        fstr = self._parse_value(s)
+        binop = fstr.values[1].value
+        self._check_end_pos(binop, 5, 7)
+        self._check_content(s, binop.left, 'arg_one')
+        self._check_content(s, binop.right, 'arg_two')
+
+    def test_import_from_multi_line(self):
+        s = dedent('''
+            from x.y.z import (
+                a, b, c as c
+            )
+        ''').strip()
+        imp = ast.parse(s).body[0]
+        self._check_end_pos(imp, 3, 1)
+
+    def test_slices(self):
+        s1 = 'f()[1, 2] [0]'
+        s2 = 'x[ a.b: c.d]'
+        sm = dedent('''
+            x[ a.b: f () ,
+               g () : c.d
+              ]
+        ''').strip()
+        i1, i2, im = map(self._parse_value, (s1, s2, sm))
+        self._check_content(s1, i1.value, 'f()[1, 2]')
+        self._check_content(s1, i1.value.slice.value, '1, 2')
+        self._check_content(s2, i2.slice.lower, 'a.b')
+        self._check_content(s2, i2.slice.upper, 'c.d')
+        self._check_content(sm, im.slice.dims[0].upper, 'f ()')
+        self._check_content(sm, im.slice.dims[1].lower, 'g ()')
+        self._check_end_pos(im, 3, 3)
+
+    def test_binop(self):
+        s = dedent('''
+            (1 * 2 + (3 ) +
+                 4
+            )
+        ''').strip()
+        binop = self._parse_value(s)
+        self._check_end_pos(binop, 2, 6)
+        self._check_content(s, binop.right, '4')
+        self._check_content(s, binop.left, '1 * 2 + (3 )')
+        self._check_content(s, binop.left.right, '3')
+
+    def test_boolop(self):
+        s = dedent('''
+            if (one_condition and
+                    (other_condition or yet_another_one)):
+                pass
+        ''').strip()
+        bop = ast.parse(s).body[0].test
+        self._check_end_pos(bop, 2, 44)
+        self._check_content(s, bop.values[1],
+                            'other_condition or yet_another_one')
+
+    def test_tuples(self):
+        s1 = 'x = () ;'
+        s2 = 'x = 1 , ;'
+        s3 = 'x = (1 , 2 ) ;'
+        sm = dedent('''
+            x = (
+                a, b,
+            )
+        ''').strip()
+        t1, t2, t3, tm = map(self._parse_value, (s1, s2, s3, sm))
+        self._check_content(s1, t1, '()')
+        self._check_content(s2, t2, '1 ,')
+        self._check_content(s3, t3, '(1 , 2 )')
+        self._check_end_pos(tm, 3, 1)
+
+    def test_attribute_spaces(self):
+        s = 'func(x. y .z)'
+        call = self._parse_value(s)
+        self._check_content(s, call, s)
+        self._check_content(s, call.args[0], 'x. y .z')
+
+    def test_displays(self):
+        s1 = '[{}, {1, }, {1, 2,} ]'
+        s2 = '{a: b, f (): g () ,}'
+        c1 = self._parse_value(s1)
+        c2 = self._parse_value(s2)
+        self._check_content(s1, c1.elts[0], '{}')
+        self._check_content(s1, c1.elts[1], '{1, }')
+        self._check_content(s1, c1.elts[2], '{1, 2,}')
+        self._check_content(s2, c2.keys[1], 'f ()')
+        self._check_content(s2, c2.values[1], 'g ()')
+
+    def test_comprehensions(self):
+        s = dedent('''
+            x = [{x for x, y in stuff
+                  if cond.x} for stuff in things]
+        ''').strip()
+        cmp = self._parse_value(s)
+        self._check_end_pos(cmp, 2, 37)
+        self._check_content(s, cmp.generators[0].iter, 'things')
+        self._check_content(s, cmp.elt.generators[0].iter, 'stuff')
+        self._check_content(s, cmp.elt.generators[0].ifs[0], 'cond.x')
+        self._check_content(s, cmp.elt.generators[0].target, 'x, y')
+
+    def test_yield_await(self):
+        s = dedent('''
+            async def f():
+                yield x
+                await y
+        ''').strip()
+        fdef = ast.parse(s).body[0]
+        self._check_content(s, fdef.body[0].value, 'yield x')
+        self._check_content(s, fdef.body[1].value, 'await y')
+
+    def test_source_segment_multi(self):
+        s_orig = dedent('''
+            x = (
+                a, b,
+            ) + ()
+        ''').strip()
+        s_tuple = dedent('''
+            (
+                a, b,
+            )
+        ''').strip()
+        binop = self._parse_value(s_orig)
+        self.assertEqual(ast.get_source_segment(s_orig, binop.left), s_tuple)
+
+    def test_source_segment_padded(self):
+        s_orig = dedent('''
+            class C:
+                def fun(self) -> None:
+                    "ЖЖЖЖЖ"
+        ''').strip()
+        s_method = '    def fun(self) -> None:\n' \
+                   '        "ЖЖЖЖЖ"'
+        cdef = ast.parse(s_orig).body[0]
+        self.assertEqual(ast.get_source_segment(s_orig, cdef.body[0], padded=True),
+                         s_method)
+
+    def test_source_segment_endings(self):
+        s = 'v = 1\r\nw = 1\nx = 1\n\ry = 1\rz = 1\r\n'
+        v, w, x, y, z = ast.parse(s).body
+        self._check_content(s, v, 'v = 1')
+        self._check_content(s, w, 'w = 1')
+        self._check_content(s, x, 'x = 1')
+        self._check_content(s, y, 'y = 1')
+        self._check_content(s, z, 'z = 1')
+
+    def test_source_segment_tabs(self):
+        s = dedent('''
+            class C:
+              \t\f  def fun(self) -> None:
+              \t\f      pass
+        ''').strip()
+        s_method = '  \t\f  def fun(self) -> None:\n' \
+                   '  \t\f      pass'
+
+        cdef = ast.parse(s).body[0]
+        self.assertEqual(ast.get_source_segment(s, cdef.body[0], padded=True), s_method)
 
 
 def main():

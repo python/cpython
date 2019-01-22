@@ -1250,10 +1250,12 @@ def main(srcfile, dump_module=False):
             f.write('#undef Yield   /* undefine macro conflicting with <winbase.h> */\n')
             f.write('\n')
             c = ChainOfVisitors(TypeDefVisitor(f),
-                                StructVisitor(f),
-                                PrototypeVisitor(f),
-                                )
+                                StructVisitor(f))
+
             c.visit(mod)
+            f.write("// Note: these macros affect function definitions, not only call sites.\n")
+            PrototypeVisitor(f).visit(mod)
+            f.write("\n")
             f.write("PyObject* PyAST_mod2obj(mod_ty t);\n")
             f.write("mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);\n")
             f.write("int PyAST_Check(PyObject* obj);\n")

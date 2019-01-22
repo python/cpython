@@ -61,13 +61,21 @@ Node classes
 
    .. attribute:: lineno
                   col_offset
+                  end_lineno
+                  end_col_offset
 
       Instances of :class:`ast.expr` and :class:`ast.stmt` subclasses have
-      :attr:`lineno` and :attr:`col_offset` attributes.  The :attr:`lineno` is
-      the line number of source text (1-indexed so the first line is line 1) and
-      the :attr:`col_offset` is the UTF-8 byte offset of the first token that
-      generated the node.  The UTF-8 offset is recorded because the parser uses
-      UTF-8 internally.
+      :attr:`lineno`, :attr:`col_offset`, :attr:`lineno`, and :attr:`col_offset`
+      attributes.  The :attr:`lineno` and :attr:`end_lineno` are the first and
+      last line numbers of source text span (1-indexed so the first line is line 1)
+      and the :attr:`col_offset` and :attr:`end_col_offset` are the corresponding
+      UTF-8 byte offsets of the first and last tokens that generated the node.
+      The UTF-8 offset is recorded because the parser uses UTF-8 internally.
+
+      Note that the end positions are not required by the compiler and are
+      therefore optional. The end offset is *after* the last symbol, for example
+      one can get the source segment of a one-line expression node using
+      ``source_line[node.col_offset : node.end_col_offset]``.
 
    The constructor of a class :class:`ast.T` parses its arguments as follows:
 
@@ -162,6 +170,18 @@ and classes for traversing abstract syntax trees:
       :class:`AsyncFunctionDef` is now supported.
 
 
+.. function:: get_source_segment(source, node, *, padded=False)
+
+   Get source code segment of the *source* that generated *node*.
+   If some location information (:attr:`lineno`, :attr:`end_lineno`,
+   :attr:`col_offset`, or :attr:`end_col_offset`) is missing, return ``None``.
+
+   If *padded* is ``True``, the first line of a multi-line statement will
+   be padded with spaces to match its original position.
+
+   .. versionadded:: 3.8
+
+
 .. function:: fix_missing_locations(node)
 
    When you compile a node tree with :func:`compile`, the compiler expects
@@ -173,14 +193,16 @@ and classes for traversing abstract syntax trees:
 
 .. function:: increment_lineno(node, n=1)
 
-   Increment the line number of each node in the tree starting at *node* by *n*.
-   This is useful to "move code" to a different location in a file.
+   Increment the line number and end line number of each node in the tree
+   starting at *node* by *n*. This is useful to "move code" to a different
+   location in a file.
 
 
 .. function:: copy_location(new_node, old_node)
 
-   Copy source location (:attr:`lineno` and :attr:`col_offset`) from *old_node*
-   to *new_node* if possible, and return *new_node*.
+   Copy source location (:attr:`lineno`, :attr:`col_offset`, :attr:`end_lineno`,
+   and :attr:`end_col_offset`) from *old_node* to *new_node* if possible,
+   and return *new_node*.
 
 
 .. function:: iter_fields(node)
