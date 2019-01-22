@@ -880,12 +880,12 @@ lru_cache_prepend_link(lru_cache_object *self, lru_list_elem *link)
    4) The addition of the newest entry.
 
    In all four calls, we have a known hash which lets use avoid a call
-   to __hash__().  That leaves on __eq__ as a possible source of a
+   to __hash__().  That leaves only __eq__ as a possible source of a
    reentrant call.
 
    The __eq__ method call is always made for a cache hit (dict access #1).
-   Accordingly, we have to be sure that no modifications to the cache
-   state have happened before this call.
+   Accordingly, we have make sure not modify the cache state prior to
+   this call.
 
    The __eq__ method call is never made for the deletion (dict access #3)
    because it is an identity match.
