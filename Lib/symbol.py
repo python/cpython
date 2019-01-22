@@ -99,6 +99,9 @@ comp_if = 339
 encoding_decl = 340
 yield_expr = 341
 yield_arg = 342
+func_type_input = 343
+func_type = 344
+typelist = 345
 #--end constants--
 
 sym_name = {}
