@@ -872,6 +872,32 @@ lru_cache_prepend_link(lru_cache_object *self, lru_list_elem *link)
     link->next = first;
 }
 
+/* General note on reentrancy:
+
+   There are four dictionary calls in the bounded_lru_cache_wrapper():
+   1) The initial check for a cache match.  2) The post user-function
+   check for a cache match.  3) The deletion of the oldest entry.
+   4) The addition of the newest entry.
+
+   In all four calls, we have a known hash which lets use avoid a call
+   to __hash__().  That leaves on __eq__ as a possible source of a
+   reentrant call.
+
+   The __eq__ method call is always made for a cache hit (dict access #1).
+   Accordingly, we have to be sure that no modifications to the cache
+   state have happened before this call.
+
+   The __eq__ method call is never made for the deletion (dict access #3)
+   because it is an identity match.
+
+   For the other two accesses (#2 and #4), calls to __eq__ only occur
+   when some other entry happens to have an exactly matching hash (all
+   64-bits).  Though rare, this can happen, so we have to make sure to
+   either call it at the top of its code path before any cache
+   state modifications (dict access #2) or be prepared to restore
+   invariants at the end of the code path (dict access #4).
+ */
+
 static PyObject *
 bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds)
 {
