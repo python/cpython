@@ -1023,10 +1023,12 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
             if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
                                           hash) < 0) {
                 /* Somehow the cache dict update failed.
-                   Restore the old link and let the error
-                   propagate upward.  */
-                lru_cache_prepend_link(self, link);
+                   We no longer can restore the old link,
+                   so mark the cache as not being full
+                   and let the error propagate upward.  */
+                self->full = 0;
                 Py_DECREF(popresult);
+                Py_DECREF(link);
                 Py_DECREF(oldkey);
                 Py_DECREF(oldresult);
                 return NULL;
