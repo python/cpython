@@ -2817,6 +2817,7 @@ class _TestRemoteManager(BaseTestCase):
             address=(test.support.HOST, 0), authkey=authkey, serializer=SERIALIZER
             )
         manager.start()
+        self.addCleanup(manager.shutdown)
 
         p = self.Process(target=self._putter, args=(manager.address, authkey))
         p.daemon = True
@@ -2836,7 +2837,6 @@ class _TestRemoteManager(BaseTestCase):
 
         # Make queue finalizer run before the server is stopped
         del queue
-        manager.shutdown()
 
 class _TestManagerRestart(BaseTestCase):
 
@@ -2852,25 +2852,29 @@ class _TestManagerRestart(BaseTestCase):
         authkey = os.urandom(32)
         manager = QueueManager(
             address=(test.support.HOST, 0), authkey=authkey, serializer=SERIALIZER)
-        srvr = manager.get_server()
-        addr = srvr.address
-        # Close the connection.Listener socket which gets opened as a part
-        # of manager.get_server(). It's not needed for the test.
-        srvr.listener.close()
-        manager.start()
+        try:
+            srvr = manager.get_server()
+            addr = srvr.address
+            # Close the connection.Listener socket which gets opened as a part
+            # of manager.get_server(). It's not needed for the test.
+            srvr.listener.close()
+            manager.start()
 
-        p = self.Process(target=self._putter, args=(manager.address, authkey))
-        p.start()
-        p.join()
-        queue = manager.get_queue()
-        self.assertEqual(queue.get(), 'hello world')
-        del queue
-        manager.shutdown()
+            p = self.Process(target=self._putter, args=(manager.address, authkey))
+            p.start()
+            p.join()
+            queue = manager.get_queue()
+            self.assertEqual(queue.get(), 'hello world')
+            del queue
+        finally:
+            if hasattr(manager, "shutdown"):
+                manager.shutdown()
 
         manager = QueueManager(
             address=addr, authkey=authkey, serializer=SERIALIZER)
         try:
             manager.start()
+            self.addCleanup(manager.shutdown)
         except OSError as e:
             if e.errno != errno.EADDRINUSE:
                 raise
@@ -2879,7 +2883,8 @@ class _TestManagerRestart(BaseTestCase):
             time.sleep(1.0)
             manager = QueueManager(
                 address=addr, authkey=authkey, serializer=SERIALIZER)
-        manager.shutdown()
+            if hasattr(manager, "shutdown"):
+                self.addCleanup(manager.shutdown)
 
 #
 #
