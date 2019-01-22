@@ -66,7 +66,7 @@ extern "C" {
 #define COLONEQUAL      53
 #define OP              54
 #define ERRORTOKEN      55
-#define N_TOKENS        58
+#define N_TOKENS        59
 #define NT_OFFSET       256
 
 /* Special definitions for cooperation with parser */
