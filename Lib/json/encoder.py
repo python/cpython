@@ -370,10 +370,13 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             elif isinstance(key, int):
                 # see comment for int/float in _make_iterencode
                 key = _intstr(key)
+            elif type(key).__name__=='Timestamp':
+                # this works for pandas.datetime objects and doesn't require importing pandas.
+                key = str(key)
             elif _skipkeys:
                 continue
             else:
-                raise TypeError(f'keys must be str, int, float, bool or None, '
+                raise TypeError(f'keys must be str, int, float, bool, Timestamp or None, '
                                 f'not {key.__class__.__name__}')
             if first:
                 first = False
@@ -395,6 +398,9 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             elif isinstance(value, float):
                 # see comment for int/float in _make_iterencode
                 yield _floatstr(value)
+            elif type(key).__name__=='Timestamp':
+                # this works for pandas.datetime objects and doesn't require importing pandas.
+                key = str(key)
             else:
                 if isinstance(value, (list, tuple)):
                     chunks = _iterencode_list(value, _current_indent_level)
