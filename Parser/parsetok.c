@@ -245,6 +245,8 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
     if (*flags & PyPARSE_BARRY_AS_BDFL)
         ps->p_flags |= CO_FUTURE_BARRY_AS_BDFL;
+    if (*flags & PyPARSE_TYPE_COMMENTS)
+        ps->p_flags |= PyCF_TYPE_COMMENTS;
 #endif
 
     for (;;) {
