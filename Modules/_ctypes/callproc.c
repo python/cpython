@@ -729,6 +729,23 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
     }
 }
 
+#if defined(MS_WIN32) && !defined(_WIN32_WCE)
+/*
+Per: https://msdn.microsoft.com/en-us/library/7572ztz4.aspx
+To be returned by value in RAX, user-defined types must have a length 
+of 1, 2, 4, 8, 16, 32, or 64 bits
+*/
+int can_return_struct_as_int(size_t s)
+{
+  return s == 1 || s == 2 || s == 4;
+}
+
+int can_return_struct_as_sint64(size_t s)
+{
+  return s == 8;
+}
+#endif
+
 
 ffi_type *_ctypes_get_ffi_type(PyObject *obj)
 {
