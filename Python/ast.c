@@ -3674,7 +3674,9 @@ ast_for_suite(struct compiling *c, const node *n)
     int i, total, num, end, pos = 0;
     node *ch;
 
-    REQ(n, suite);
+    if (TYPE(n) != func_body_suite) {
+        REQ(n, suite);
+    }
 
     total = num_stmts(n);
     seq = _Py_asdl_seq_new(total, c->c_arena);
