@@ -20,7 +20,7 @@ decorators: decorator+
 decorated: decorators (classdef | funcdef | async_funcdef)
 
 async_funcdef: 'async' funcdef
-funcdef: 'def' NAME parameters ['->' test] ':' [TYPE_COMMENT] suite
+funcdef: 'def' NAME parameters ['->' test] ':' [TYPE_COMMENT] func_body_suite
 
 parameters: '(' [typedargslist] ')'
 typedargslist: (tfpdef ['=' test] (',' [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [',' [TYPE_COMMENT] [
@@ -85,7 +85,9 @@ with_item: test ['as' expr]
 # NB compile.c makes sure that the default except clause is last
 except_clause: 'except' [test ['as' NAME]]
 # the TYPE_COMMENT in suites is only parsed for funcdefs, but can't go elsewhere due to ambiguity
-suite: simple_stmt | NEWLINE [TYPE_COMMENT NEWLINE] INDENT stmt+ DEDENT
+func_body_suite: simple_stmt | NEWLINE [TYPE_COMMENT NEWLINE] INDENT stmt+ DEDENT
+suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
+
 
 test: or_test ['if' or_test 'else' test] | lambdef
 test_nocond: or_test | lambdef_nocond

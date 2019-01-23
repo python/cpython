@@ -730,7 +730,9 @@ num_stmts(const node *n)
         case simple_stmt:
             return NCH(n) / 2; /* Divide by 2 to remove count of semi-colons */
         case suite:
-            /* suite: simple_stmt | NEWLINE [TYPE_COMMENT NEWLINE] INDENT stmt+ DEDENT */
+        case func_body_suite:
+            /* func_body_suite: simple_stmt | NEWLINE [TYPE_COMMENT NEWLINE] INDENT stmt+ DEDENT */
+            /* suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT */
             if (NCH(n) == 1)
                 return num_stmts(CHILD(n, 0));
             else {
