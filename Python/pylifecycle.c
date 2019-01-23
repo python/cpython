@@ -589,7 +589,7 @@ pycore_create_interpreter(const _PyCoreConfig *core_config,
 static _PyInitError
 pycore_init_types(void)
 {
-    _PyInitError err = _Py_ReadyTypes();
+    _PyInitError err = _PyTypes_Init();
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -619,46 +619,6 @@ pycore_init_types(void)
     if (!_PyContext_Init()) {
         return _Py_INIT_ERR("can't init context");
     }
-    return _Py_INIT_OK();
-}
-
-
-static _PyInitError
-pycore_init_sys(PyInterpreterState *interp, PyObject **sysmod_p)
-{
-    PyObject *modules = PyDict_New();
-    if (modules == NULL)
-        return _Py_INIT_ERR("can't make modules dictionary");
-    interp->modules = modules;
-
-    PyObject *sysmod;
-    _PyInitError err = _PySys_BeginInit(&sysmod);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-    *sysmod_p = sysmod;
-
-    interp->sysdict = PyModule_GetDict(sysmod);
-    if (interp->sysdict == NULL) {
-        return _Py_INIT_ERR("can't initialize sys dict");
-    }
-
-    Py_INCREF(interp->sysdict);
-    PyDict_SetItemString(interp->sysdict, "modules", modules);
-    _PyImport_FixupBuiltin(sysmod, "sys", modules);
-
-    /* Set up a preliminary stderr printer until we have enough
-       infrastructure for the io module in place.
-
-       Use UTF-8/surrogateescape and ignore EAGAIN errors. */
-    PyObject *pstderr = PyFile_NewStdPrinter(fileno(stderr));
-    if (pstderr == NULL) {
-        return _Py_INIT_ERR("can't set preliminary stderr");
-    }
-    _PySys_SetObjectId(&PyId_stderr, pstderr);
-    PySys_SetObject("__stderr__", pstderr);
-    Py_DECREF(pstderr);
-
     return _Py_INIT_OK();
 }
 
@@ -746,7 +706,7 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
     }
 
     PyObject *sysmod;
-    err = pycore_init_sys(interp, &sysmod);
+    err = _PySys_Create(interp, &sysmod);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -887,7 +847,7 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
         return _Py_INIT_ERR("can't initialize time");
     }
 
-    if (_PySys_EndInit(interp->sysdict, interp) < 0) {
+    if (_PySys_InitMain(interp) < 0) {
         return _Py_INIT_ERR("can't finish initializing sys");
     }
 
@@ -1376,7 +1336,9 @@ new_interpreter(PyThreadState **tstate_p)
             goto handle_error;
         Py_INCREF(interp->sysdict);
         PyDict_SetItemString(interp->sysdict, "modules", modules);
-        _PySys_EndInit(interp->sysdict, interp);
+        if (_PySys_InitMain(interp) < 0) {
+            return _Py_INIT_ERR("can't finish initializing sys");
+        }
     }
     else if (PyErr_Occurred()) {
         goto handle_error;
@@ -1399,15 +1361,10 @@ new_interpreter(PyThreadState **tstate_p)
             return err;
         }
 
-        /* Set up a preliminary stderr printer until we have enough
-           infrastructure for the io module in place. */
-        PyObject *pstderr = PyFile_NewStdPrinter(fileno(stderr));
-        if (pstderr == NULL) {
-            return _Py_INIT_ERR("can't set preliminary stderr");
+        err = _PySys_SetPreliminaryStderr(interp->sysdict);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
         }
-        _PySys_SetObjectId(&PyId_stderr, pstderr);
-        PySys_SetObject("__stderr__", pstderr);
-        Py_DECREF(pstderr);
 
         err = _PyImportHooks_Init();
         if (_Py_INIT_FAILED(err)) {
