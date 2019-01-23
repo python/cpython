@@ -15,18 +15,10 @@
     <ClInclude Include="..\Modules\_ctypes\ctypes_dlfcn.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Modules\_ctypes\libffi_msvc\ffi.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\_ctypes\libffi_msvc\ffi_common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\_ctypes\libffi_msvc\fficonfig.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\_ctypes\libffi_msvc\ffitarget.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <ClInclude Include="$(libffiDir)include\ffi.h" />
+    <ClInclude Include="$(libffiDir)include\ffi_common.h" />
+    <ClInclude Include="$(libffiDir)fficonfig.h" />
+    <ClInclude Include="$(libffiDir)src\x86\ffitarget.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_ctypes\_ctypes.c">
@@ -41,25 +33,21 @@
     <ClCompile Include="..\Modules\_ctypes\cfield.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_ctypes\libffi_msvc\ffi.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Modules\_ctypes\malloc_closure.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\_ctypes\libffi_msvc\prep_cif.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_ctypes\stgdict.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_ctypes\libffi_msvc\win32.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClCompile Include="$(libffiDir)src\x86\ffi.c" />
+    <ClCompile Include="$(libffiDir)src\x86\ffiw64.c" />
+    <ClCompile Include="$(libffiDir)src\prep_cif.c" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\Modules\_ctypes\libffi_msvc\win64.asm">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
+    <CustomBuild Include="$(libffiDir)src\x86\win64_intel.S" />
+    <CustomBuild Include="$(libffiDir)src\x86\sysv.S" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\PC\python_nt.rc" />
   </ItemGroup>
 </Project>

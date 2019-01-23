@@ -89,15 +89,20 @@
     <ClInclude Include="..\Modules\_ctypes\ctypes_dlfcn.h" />
     <ClInclude Include="$(libffiDir)include\ffi.h" />
     <ClInclude Include="$(libffiDir)include\ffi_common.h" />
-    <ClInclude Include="$(libffiDir)fficonfig.h" />
-    <ClInclude Include="$(libffiDir)src\x86\ffitarget.h" />
+    <ClInclude Include="$(libffiDir)include\fficonfig.h" />
+    <ClInclude Include="$(libffiDir)include\ffitarget.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_ctypes\_ctypes.c" />
     <ClCompile Include="..\Modules\_ctypes\callbacks.c" />
     <ClCompile Include="..\Modules\_ctypes\callproc.c" />
     <ClCompile Include="..\Modules\_ctypes\cfield.c" />
-    <ClCompile Include="$(libffiDir)src\x86\ffi.c" />
+    <ClCompile Include="$(libffiDir)src\x86\ffi.c">
+      <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="$(libffiDir)src\x86\ffiw64.c">
+      <ExcludedFromBuild Condition="'$(Platform)'=='Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\Modules\_ctypes\malloc_closure.c" />
     <ClCompile Include="$(libffiDir)src\prep_cif.c">
       <DisableSpecificWarnings Condition="'$(Platform)'=='x64'">4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -105,21 +110,21 @@
     <ClCompile Include="..\Modules\_ctypes\stgdict.c" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="$(libffiDir)src\x86\win64.S">
+    <CustomBuild Include="$(libffiDir)src\x86\win64_intel.S">
       <ExcludedFromBuild Condition="'$(Platform)'=='Win32'">true</ExcludedFromBuild>
       <Command>
-        cl /nologo /I"$(libffiDir)src\x86" /I"$(libffiDir)include" /EP "%(FullPath)" > "$(IntDir)win64.asm
-        ml64 /nologo /c /Zi /Fo "$(IntDir)win64.obj" "$(IntDir)win64.asm
+        cl /nologo /I"$(libffiDir)src\x86" /I"$(libffiDir)include" /EP "%(FullPath)" &gt; "$(IntDir)win64_intel.asm
+        ml64 /nologo /c /Zi /Fo "$(IntDir)win64_intel.obj" "$(IntDir)win64_intel.asm
       </Command>
-      <Outputs>$(IntDir)win64.obj;%(Outputs)</Outputs>
+      <Outputs>$(IntDir)win64_intel.obj;%(Outputs)</Outputs>
     </CustomBuild>
-    <CustomBuild Include="$(libffiDir)src\x86\win32.S">
+    <CustomBuild Include="$(libffiDir)src\x86\sysv.S">
       <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>
       <Command>
-        cl /nologo /I"$(libffiDir)src\x86" /I"$(libffiDir)include" /EP "%(FullPath)" > "$(IntDir)win32.asm
-        ml /nologo /c /safeseh /Zi /Fo "$(IntDir)win32.obj" "$(IntDir)win32.asm
+        cl /nologo /I"$(libffiDir)src\x86" /I"$(libffiDir)include" /EP "%(FullPath)" &gt; "$(IntDir)sysv.asm
+        ml /nologo /c /safeseh /Zi /Fo "$(IntDir)sysv.obj" "$(IntDir)sysv.asm
       </Command>
-      <Outputs>$(IntDir)win32.obj;%(Outputs)</Outputs>
+      <Outputs>$(IntDir)sysv.obj;%(Outputs)</Outputs>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
