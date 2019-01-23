@@ -138,8 +138,9 @@ _PyObject_INIT(PyObject *op, PyTypeObject *typeobj)
 {
     assert(op != NULL);
     Py_TYPE(op) = typeobj;
-    if (PyType_GetFlags(typeobj) & Py_TPFLAGS_HEAPTYPE)
+    if (PyType_GetFlags(typeobj) & Py_TPFLAGS_HEAPTYPE) {
         Py_INCREF(typeobj);
+    }
     _Py_NewReference(op);
     return op;
 }
