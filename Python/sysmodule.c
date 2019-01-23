@@ -2368,18 +2368,11 @@ static struct PyModuleDef sysmodule = {
         }                                                  \
     } while (0)
 
-
-_PyInitError
-_PySys_BeginInit(PyObject **sysmod)
+static _PyInitError
+_PySys_InitCore(PyObject *sysdict)
 {
-    PyObject *m, *sysdict, *version_info;
+    PyObject *version_info;
     int res;
-
-    m = _PyModule_CreateInitialized(&sysmodule, PYTHON_API_VERSION);
-    if (m == NULL) {
-        return _Py_INIT_ERR("failed to create a module object");
-    }
-    sysdict = PyModule_GetDict(m);
 
     /* stdin/stdout/stderr are set in pylifecycle.c */
 
@@ -2508,9 +2501,6 @@ _PySys_BeginInit(PyObject **sysmod)
     if (PyErr_Occurred()) {
         goto err_occurred;
     }
-
-    *sysmod = m;
-
     return _Py_INIT_OK();
 
 type_init_failed:
@@ -2536,8 +2526,9 @@ err_occurred:
     } while (0)
 
 int
-_PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
+_PySys_InitMain(PyInterpreterState *interp)
 {
+    PyObject *sysdict = interp->sysdict;
     const _PyCoreConfig *core_config = &interp->core_config;
     const _PyMainInterpreterConfig *config = &interp->config;
     int res;
@@ -2552,9 +2543,8 @@ _PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
 
 #define COPY_LIST(KEY, ATTR) \
     do { \
-        assert(PyList_Check(config->ATTR)); \
-        PyObject *list = PyList_GetSlice(config->ATTR, \
-                                         0, PyList_GET_SIZE(config->ATTR)); \
+        assert(PyList_Check(ATTR)); \
+        PyObject *list = PyList_GetSlice(ATTR, 0, PyList_GET_SIZE(ATTR)); \
         if (list == NULL) { \
             return -1; \
         } \
@@ -2562,7 +2552,7 @@ _PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
         Py_DECREF(list); \
     } while (0)
 
-    COPY_LIST("path", module_search_path);
+    COPY_LIST("path", config->module_search_path);
 
     SET_SYS_FROM_STRING_BORROW("executable", config->executable);
     SET_SYS_FROM_STRING_BORROW("prefix", config->prefix);
@@ -2580,7 +2570,7 @@ _PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
         SET_SYS_FROM_STRING_BORROW("argv", config->argv);
     }
     if (config->warnoptions != NULL) {
-        COPY_LIST("warnoptions", warnoptions);
+        COPY_LIST("warnoptions", config->warnoptions);
     }
     if (config->xoptions != NULL) {
         PyObject *dict = PyDict_Copy(config->xoptions);
@@ -2630,6 +2620,77 @@ err_occurred:
 
 #undef SET_SYS_FROM_STRING_BORROW
 #undef SET_SYS_FROM_STRING_INT_RESULT
+
+
+/* Set up a preliminary stderr printer until we have enough
+   infrastructure for the io module in place.
+
+   Use UTF-8/surrogateescape and ignore EAGAIN errors. */
+_PyInitError
+_PySys_SetPreliminaryStderr(PyObject *sysdict)
+{
+    PyObject *pstderr = PyFile_NewStdPrinter(fileno(stderr));
+    if (pstderr == NULL) {
+        goto error;
+    }
+    if (_PyDict_SetItemId(sysdict, &PyId_stderr, pstderr) < 0) {
+        goto error;
+    }
+    if (PyDict_SetItemString(sysdict, "__stderr__", pstderr) < 0) {
+        goto error;
+    }
+    Py_DECREF(pstderr);
+    return _Py_INIT_OK();
+
+error:
+    Py_XDECREF(pstderr);
+    return _Py_INIT_ERR("can't set preliminary stderr");
+}
+
+
+/* Create sys module without all attributes: _PySys_InitMain() should be called
+   later to add remaining attributes. */
+_PyInitError
+_PySys_Create(PyInterpreterState *interp, PyObject **sysmod_p)
+{
+    PyObject *modules = PyDict_New();
+    if (modules == NULL) {
+        return _Py_INIT_ERR("can't make modules dictionary");
+    }
+    interp->modules = modules;
+
+    PyObject *sysmod = _PyModule_CreateInitialized(&sysmodule, PYTHON_API_VERSION);
+    if (sysmod == NULL) {
+        return _Py_INIT_ERR("failed to create a module object");
+    }
+
+    PyObject *sysdict = PyModule_GetDict(sysmod);
+    if (sysdict == NULL) {
+        return _Py_INIT_ERR("can't initialize sys dict");
+    }
+    Py_INCREF(sysdict);
+    interp->sysdict = sysdict;
+
+    if (PyDict_SetItemString(sysdict, "modules", interp->modules) < 0) {
+        return _Py_INIT_ERR("can't initialize sys module");
+    }
+
+    _PyInitError err = _PySys_SetPreliminaryStderr(sysdict);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    err = _PySys_InitCore(sysdict);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    _PyImport_FixupBuiltin(sysmod, "sys", interp->modules);
+
+    *sysmod_p = sysmod;
+    return _Py_INIT_OK();
+}
+
 
 static PyObject *
 makepathobject(const wchar_t *path, wchar_t delim)

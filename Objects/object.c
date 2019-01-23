@@ -1717,7 +1717,7 @@ PyObject _Py_NotImplementedStruct = {
 };
 
 _PyInitError
-_Py_ReadyTypes(void)
+_PyTypes_Init(void)
 {
 #define INIT_TYPE(TYPE, NAME) \
     do { \
