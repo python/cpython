@@ -610,7 +610,7 @@ logger, a console handler, and a simple formatter using Python code::
     # 'application' code
     logger.debug('debug message')
     logger.info('info message')
-    logger.warn('warn message')
+    logger.warning('warn message')
     logger.error('error message')
     logger.critical('critical message')
 
@@ -640,7 +640,7 @@ the names of the objects::
     # 'application' code
     logger.debug('debug message')
     logger.info('info message')
-    logger.warn('warn message')
+    logger.warning('warn message')
     logger.error('error message')
     logger.critical('critical message')
 
