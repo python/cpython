@@ -280,8 +280,8 @@ Optimizations
   and Linux (using glibc 2.24 or newer) if all these conditions are met:
 
   * *close_fds* is false;
-  * *preexec_fn*, *pass_fds*, *cwd*, *stdin*, *stdout*, *stderr* and
-    *start_new_session* parameters are not set;
+  * *preexec_fn*, *pass_fds*, *cwd* and *start_new_session* parameters
+    are not set;
   * the *executable* path contains a directory.
 
 * :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
