@@ -1592,6 +1592,12 @@ class PyBuildExt(build_ext):
             if (sysconfig.get_config_var('HAVE_SEM_OPEN') and not
                 sysconfig.get_config_var('POSIX_SEMAPHORES_NOT_ENABLED')):
                 multiprocessing_srcs.append('_multiprocessing/semaphore.c')
+            if True:  # TODO: add config for detecting POSIX shared memory
+                posixshmem_srcs = [ '_multiprocessing/posixshmem.c',
+                                  ]
+                exts.append( Extension('_posixshmem', posixshmem_srcs,
+                                       define_macros={},
+                                       include_dirs=["Modules/_multiprocessing"]))
 
         exts.append ( Extension('_multiprocessing', multiprocessing_srcs,
                                 define_macros=list(macros.items()),
