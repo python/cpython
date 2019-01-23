@@ -749,7 +749,7 @@ the new dictionary-based approach:
       simpleExample:
         level: DEBUG
         handlers: [console]
-        propagate: false
+        propagate: no
     root:
       level: DEBUG
       handlers: [console]
