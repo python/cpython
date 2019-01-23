@@ -1025,13 +1025,13 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
             link->hash = hash;
             link->key = key;
             link->result = result;
+            self->full = 0;
             if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
                                           hash) < 0) {
                 /* Somehow the cache dict update failed.
                    We no longer can restore the old link,
-                   so mark the cache as not being full
+                   so leave the cache marked as not being full
                    and let the error propagate upward.  */
-                self->full = 0;
                 Py_DECREF(popresult);
                 Py_DECREF(link);
                 Py_DECREF(oldkey);
@@ -1039,6 +1039,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
                 return NULL;
             }
             lru_cache_append_link(self, link);
+            self->full = (PyDict_GET_SIZE(self->cache) >= self->maxsize);
             Py_INCREF(result); /* for return */
             Py_DECREF(popresult);
             Py_DECREF(oldkey);
