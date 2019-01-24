@@ -635,7 +635,7 @@ skip_optional_kwonly:
     return_value = math_prod_impl(module, iterable, start);
 =======
 PyDoc_STRVAR(math_comb__doc__,
-"comb($module, /, a, b)\n"
+"comb($module, n, k, /)\n"
 "--\n"
 "\n"
 "Return the binomial coefficient indexed by the pair of integers n >= k >= 0.\n"
@@ -649,25 +649,24 @@ PyDoc_STRVAR(math_comb__doc__,
 "if argument(s) are negative or k > n.");
 
 #define MATH_COMB_METHODDEF    \
-    {"comb", (PyCFunction)(void(*)(void))math_comb, METH_FASTCALL|METH_KEYWORDS, math_comb__doc__},
+    {"comb", (PyCFunction)(void(*)(void))math_comb, METH_FASTCALL, math_comb__doc__},
 
 static PyObject *
-math_comb_impl(PyObject *module, PyObject *a, PyObject *b);
+math_comb_impl(PyObject *module, PyObject *n, PyObject *k);
 
 static PyObject *
-math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"a", "b", NULL};
-    static _PyArg_Parser _parser = {"OO:comb", _keywords, 0};
-    PyObject *a;
-    PyObject *b;
+    PyObject *n;
+    PyObject *k;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &a, &b)) {
+    if (!_PyArg_UnpackStack(args, nargs, "comb",
+        2, 2,
+        &n, &k)) {
         goto exit;
     }
-    return_value = math_comb_impl(module, a, b);
+    return_value = math_comb_impl(module, n, k);
 
 exit:
     return return_value;

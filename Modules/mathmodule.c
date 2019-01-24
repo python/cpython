@@ -3001,10 +3001,10 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 /*[clinic input]
 math.comb
 
-    a: object
+    n: object
 
-    b: object
-
+    k: object
+    /
 
 Return the binomial coefficient indexed by the pair of integers n >= k >= 0.
 
@@ -3019,34 +3019,32 @@ if argument(s) are negative or k > n.
 [clinic start generated code]*/
 
 static PyObject *
-math_comb_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=1343ae354f5dd2fa input=c7361e89712cfa3f]*/
+math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
+/*[clinic end generated code: output=bd2cec8d854f3493 input=75e1a19623bae7dc]*/
 {
-    if (!(PyLong_Check(a) && PyLong_Check(b))) {
+    if (!(PyLong_Check(n) && PyLong_Check(k))) {
         PyErr_SetString(PyExc_TypeError,
             "comb() only accepts integer arguments");
         return NULL;
     }
-    a = PyNumber_Long(a);
-    if (a == NULL)
+    n = PyNumber_Long(n);
+    if (n == NULL) {
         return NULL;
-    b = PyNumber_Long(b);
-    if (b == NULL) {
-        Py_DECREF(a);
+    }
+    k = PyNumber_Long(k);
+    if (k == NULL) {
+        Py_DECREF(n);
         return NULL;
     }
 
-    PyObject *val = PyLong_FromLong(1),
+    PyObject *val = NULL,
         *temp_obj1 = NULL,
         *temp_obj2 = NULL,
         *dump_var = NULL;
-    if (val == NULL) {
-        goto fail_comb;
-    }
     int overflow, cmp;
     long long i, terms;
 
-    cmp = PyObject_RichCompareBool(a, b, Py_LT);
+    cmp = PyObject_RichCompareBool(n, k, Py_LT);
     if (cmp == 1) {
         PyErr_Format(PyExc_ValueError,
                      "n must be an integer >= k");
@@ -3057,14 +3055,14 @@ math_comb_impl(PyObject *module, PyObject *a, PyObject *b)
     }
 
     /* b = min(b, a - b) */
-    dump_var = PyNumber_Subtract(a, b);
+    dump_var = PyNumber_Subtract(n, k);
     if (dump_var == NULL) {
         goto fail_comb;
     }
-    cmp = PyObject_RichCompareBool(b, dump_var, Py_GT);
+    cmp = PyObject_RichCompareBool(k, dump_var, Py_GT);
     if (cmp == 1) {
-        Py_DECREF(b);
-        b = dump_var;
+        Py_DECREF(k);
+        k = dump_var;
         dump_var = NULL;
     }
     else if (cmp == -1) {
@@ -3075,13 +3073,13 @@ math_comb_impl(PyObject *module, PyObject *a, PyObject *b)
         dump_var = NULL;
     }
 
-    terms = PyLong_AsLongLongAndOverflow(b, &overflow);
+    terms = PyLong_AsLongLongAndOverflow(k, &overflow);
     if (terms == -1 && PyErr_Occurred()) {
         goto fail_comb;
     }
     else if (overflow == 1) {
         PyErr_Format(PyExc_OverflowError,
-                     "minimum(n - k, n) should not exceed %lld",
+                     "minimum(n - k, k) must not exceed %lld",
                      LLONG_MAX);
         goto fail_comb;
     }
@@ -3091,12 +3089,19 @@ math_comb_impl(PyObject *module, PyObject *a, PyObject *b)
         goto fail_comb;
     }
 
-    for (i = 0; i < terms; ++i) {
+    if (terms == 0) {
+        Py_DECREF(n);
+        Py_DECREF(k);
+        return PyNumber_Long(_PyLong_One);
+    }
+
+    val = PyNumber_Long(n);
+    for (i = 1; i < terms; ++i) {
         temp_obj1 = PyLong_FromSsize_t(i);
         if (temp_obj1 == NULL) {
             goto fail_comb;
         }
-        temp_obj2 = PyNumber_Subtract(a, temp_obj1);
+        temp_obj2 = PyNumber_Subtract(n temp_obj1);
         if (temp_obj2 == NULL) {
             goto fail_comb;
         }
@@ -3121,14 +3126,14 @@ math_comb_impl(PyObject *module, PyObject *a, PyObject *b)
         Py_DECREF(temp_obj1);
         Py_DECREF(temp_obj2);
     }
-    Py_DECREF(a);
-    Py_DECREF(b);
+    Py_DECREF(n);
+    Py_DECREF(k);
 
     return val;
 
 fail_comb:
-    Py_XDECREF(a);
-    Py_XDECREF(b);
+    Py_XDECREF(n);
+    Py_XDECREF(k);
     Py_XDECREF(val);
     Py_XDECREF(dump_var);
     Py_XDECREF(temp_obj1);
