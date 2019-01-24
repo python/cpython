@@ -197,6 +197,10 @@
 
    Token value for ``"..."``.
 
+.. data:: COLONEQUAL
+
+   Token value for ``":="``.
+
 .. data:: OP
 
 .. data:: ERRORTOKEN

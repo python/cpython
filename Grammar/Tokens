@@ -52,6 +52,7 @@ AT                      '@'
 ATEQUAL                 '@='
 RARROW                  '->'
 ELLIPSIS                '...'
+COLONEQUAL              ':='
 
 OP
 ERRORTOKEN
