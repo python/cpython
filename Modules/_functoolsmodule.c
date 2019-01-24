@@ -720,7 +720,6 @@ typedef struct lru_cache_object {
     Py_ssize_t misses, hits;
     int typed;
     PyObject *dict;
-    int full;
 } lru_cache_object;
 
 static PyTypeObject lru_cache_type;
@@ -961,19 +960,19 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         self->misses++;
         return result;
     }
-    if (self->full) {
+    assert(self->maxsize > 0);
+    if (PyDict_GET_SIZE(self->cache) >= self->maxsize) {
         /* Since the cache is full, we need to evict an old key and add
            a new key.  Rather than free the old link and allocate a new
            one, we reuse the link for the new key and result and move it
            to front of the cache to mark it as recently used.
 
            We try to assure all code paths (including errors) leave all
-           of the links in-place (so that the "full" status remains
-           unchanged).  Either the link is successfully updated and
-           moved or it is restored to its old position.
-
-           That said, if an unrecoverable error is found, the orphan
-           link is removed and the cache is no longer marked as full.
+           of the links in place.  Either the link is successfully
+           updated and moved or it is restored to its old position.
+           However if an unrecoverable error is found, it doesn't
+           make sense to reinsert the link, so we leave it out
+           and the cache will no longer register as full.
         */
         PyObject *oldkey, *oldresult, *popresult;
 
@@ -992,10 +991,8 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
                another thread has already removed the old key from the
                dictionary.  This link is now an orpan.  Since we don't
                want to leave the cache in an inconsistent state, we
-               don't restore the link.  Accordingly, the cache is marked
-               as no longer being full.
+               don't restore the link.
             */
-            self->full = 0;
             Py_DECREF(popresult);
             Py_DECREF(link);
             Py_DECREF(key);
@@ -1025,13 +1022,12 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
             link->hash = hash;
             link->key = key;
             link->result = result;
-            self->full = 0;
             if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
                                           hash) < 0) {
                 /* Somehow the cache dict update failed.
-                   We no longer can restore the old link,
-                   so leave the cache marked as not being full
-                   and let the error propagate upward.  */
+                   We no longer can restore the old link.
+                   Let the error propagate upward and
+                   leave the cache short one link. */
                 Py_DECREF(popresult);
                 Py_DECREF(link);
                 Py_DECREF(oldkey);
@@ -1039,7 +1035,6 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
                 return NULL;
             }
             lru_cache_append_link(self, link);
-            self->full = (PyDict_GET_SIZE(self->cache) >= self->maxsize);
             Py_INCREF(result); /* for return */
             Py_DECREF(popresult);
             Py_DECREF(oldkey);
@@ -1065,7 +1060,6 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         }
         lru_cache_append_link(self, link);
         Py_INCREF(result); /* for return */
-        self->full = (PyDict_GET_SIZE(self->cache) >= self->maxsize);
     }
     self->misses++;
     return result;
@@ -1209,7 +1203,6 @@ lru_cache_cache_clear(lru_cache_object *self, PyObject *unused)
 {
     lru_list_elem *list = lru_cache_unlink_list(self);
     self->hits = self->misses = 0;
-    self->full = 0;
     PyDict_Clear(self->cache);
     lru_cache_clear_list(list);
     Py_RETURN_NONE;
