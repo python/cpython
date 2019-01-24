@@ -1,2 +1,1 @@
-Implement :pep:`572` (assignment expressions). Documentation and edge cases
-will be issued in separate PRs. Patch by Emily Morehouse.
+Implement :pep:`572` (assignment expressions). Patch by Emily Morehouse.
