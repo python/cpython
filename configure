@@ -11352,7 +11352,7 @@ if ${ac_cv_dtrace_link+:} false; then :
   $as_echo_n "(cached) " >&6
 else
               ac_cv_dtrace_link=no
-            echo 'BEGIN' > conftest.d
+            echo 'BEGIN{}' > conftest.d
             "$DTRACE" -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
                 ac_cv_dtrace_link=yes
 
