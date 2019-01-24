@@ -17,7 +17,7 @@ typedef struct _stmt *stmt_ty;
 typedef struct _expr *expr_ty;
 
 typedef enum _expr_context { Load=1, Store=2, Del=3, AugLoad=4, AugStore=5,
-                             Param=6 } expr_context_ty;
+                             Param=6, NamedStore=7 } expr_context_ty;
 
 typedef struct _slice *slice_ty;
 
@@ -214,14 +214,14 @@ struct _stmt {
     int end_col_offset;
 };
 
-enum _expr_kind {BoolOp_kind=1, BinOp_kind=2, UnaryOp_kind=3, Lambda_kind=4,
-                  IfExp_kind=5, Dict_kind=6, Set_kind=7, ListComp_kind=8,
-                  SetComp_kind=9, DictComp_kind=10, GeneratorExp_kind=11,
-                  Await_kind=12, Yield_kind=13, YieldFrom_kind=14,
-                  Compare_kind=15, Call_kind=16, FormattedValue_kind=17,
-                  JoinedStr_kind=18, Constant_kind=19, Attribute_kind=20,
-                  Subscript_kind=21, Starred_kind=22, Name_kind=23,
-                  List_kind=24, Tuple_kind=25};
+enum _expr_kind {BoolOp_kind=1, NamedExpr_kind=2, BinOp_kind=3, UnaryOp_kind=4,
+                  Lambda_kind=5, IfExp_kind=6, Dict_kind=7, Set_kind=8,
+                  ListComp_kind=9, SetComp_kind=10, DictComp_kind=11,
+                  GeneratorExp_kind=12, Await_kind=13, Yield_kind=14,
+                  YieldFrom_kind=15, Compare_kind=16, Call_kind=17,
+                  FormattedValue_kind=18, JoinedStr_kind=19, Constant_kind=20,
+                  Attribute_kind=21, Subscript_kind=22, Starred_kind=23,
+                  Name_kind=24, List_kind=25, Tuple_kind=26};
 struct _expr {
     enum _expr_kind kind;
     union {
@@ -229,6 +229,11 @@ struct _expr {
             boolop_ty op;
             asdl_seq *values;
         } BoolOp;
+
+        struct {
+            expr_ty target;
+            expr_ty value;
+        } NamedExpr;
 
         struct {
             expr_ty left;
@@ -541,6 +546,10 @@ stmt_ty _Py_Continue(int lineno, int col_offset, int end_lineno, int
 #define BoolOp(a0, a1, a2, a3, a4, a5, a6) _Py_BoolOp(a0, a1, a2, a3, a4, a5, a6)
 expr_ty _Py_BoolOp(boolop_ty op, asdl_seq * values, int lineno, int col_offset,
                    int end_lineno, int end_col_offset, PyArena *arena);
+#define NamedExpr(a0, a1, a2, a3, a4, a5, a6) _Py_NamedExpr(a0, a1, a2, a3, a4, a5, a6)
+expr_ty _Py_NamedExpr(expr_ty target, expr_ty value, int lineno, int
+                      col_offset, int end_lineno, int end_col_offset, PyArena
+                      *arena);
 #define BinOp(a0, a1, a2, a3, a4, a5, a6, a7) _Py_BinOp(a0, a1, a2, a3, a4, a5, a6, a7)
 expr_ty _Py_BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno, int
                   col_offset, int end_lineno, int end_col_offset, PyArena
