@@ -960,107 +960,100 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
        proceed normally and update the cache with the new result. */
 
     assert(self->maxsize > 0);
-    if (PyDict_GET_SIZE(self->cache) >= self->maxsize) {
-        /* Since the cache is full, we need to evict an old key and add
-           a new key.  Rather than free the old link and allocate a new
-           one, we reuse the link for the new key and result and move it
-           to front of the cache to mark it as recently used.
-
-           We try to assure all code paths (including errors) leave all
-           of the links in place.  Either the link is successfully
-           updated and moved or it is restored to its old position.
-           However if an unrecoverable error is found, it doesn't
-           make sense to reinsert the link, so we leave it out
-           and the cache will no longer register as full.
-        */
-        PyObject *oldkey, *oldresult, *popresult;
-
-        /* Extract the oldest item. */
-        assert(self->root.next != &self->root);
-        link = self->root.next;
-        lru_cache_extract_link(link);
-        /* Remove it from the cache.
-           The cache dict holds one reference to the link,
-           and the linked list holds yet one reference to it. */
-        popresult = _PyDict_Pop_KnownHash(self->cache,
-                                          link->key, link->hash,
-                                          Py_None);
-        if (popresult == Py_None) {
-            /* Getting here means that the user function call or
-               another thread has already removed the old key from the
-               dictionary.  This link is now an orpan.  Since we don't
-               want to leave the cache in an inconsistent state, we
-               don't restore the link.
-            */
-            Py_DECREF(popresult);
-            Py_DECREF(link);
-            Py_DECREF(key);
-            self->misses++;
-            return result;
-        }
-        if (popresult == NULL) {
-            /* An error arose while trying to remove the oldest
-               key (the one being evicted) from the cache.
-               We restore the link to its original position
-               as the oldest link.  Then we allow the error
-               propagate upward; treating it the same as an
-               error arising in the user function. */
-            lru_cache_prepend_link(self, link);
+    if (PyDict_GET_SIZE(self->cache) < self->maxsize) {
+        /* Cache is not full, so put the result in a new link */
+        link = (lru_list_elem *)PyObject_New(lru_list_elem,
+                                             &lru_list_elem_type);
+        if (link == NULL) {
             Py_DECREF(key);
             Py_DECREF(result);
             return NULL;
         }
-        /* Keep a reference to the old key and old result to
-           prevent their ref counts from going to zero during the
-           update. That will prevent potentially arbitrary object
-           clean-up code (i.e. __del__) from running while we're
-           still adjusting the links. */
-        oldkey = link->key;
-        oldresult = link->result;
 
         link->hash = hash;
         link->key = key;
         link->result = result;
         if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
                                       hash) < 0) {
-            /* Somehow the cache dict update failed.
-               We no longer can restore the old link.
-               Let the error propagate upward and
-               leave the cache short one link. */
-            Py_DECREF(popresult);
             Py_DECREF(link);
-            Py_DECREF(oldkey);
-            Py_DECREF(oldresult);
             return NULL;
         }
         lru_cache_append_link(self, link);
         Py_INCREF(result); /* for return */
-        Py_DECREF(popresult);
-        Py_DECREF(oldkey);
-        Py_DECREF(oldresult);
         self->misses++;
         return result;
     }
+    /* Since the cache is full, we need to evict an old key and add
+       a new key.  Rather than free the old link and allocate a new
+       one, we reuse the link for the new key and result and move it
+       to front of the cache to mark it as recently used.
 
-    /* Put result in a new link at the front of the queue. */
-    link = (lru_list_elem *)PyObject_New(lru_list_elem,
-                                         &lru_list_elem_type);
-    if (link == NULL) {
+       We try to assure all code paths (including errors) leave all
+       of the links in place.  Either the link is successfully
+       updated and moved or it is restored to its old position.
+       However if an unrecoverable error is found, it doesn't
+       make sense to reinsert the link, so we leave it out
+       and the cache will no longer register as full.
+    */
+    PyObject *oldkey, *oldresult, *popresult;
+
+    /* Extract the oldest item. */
+    assert(self->root.next != &self->root);
+    link = self->root.next;
+    lru_cache_extract_link(link);
+    /* Remove it from the cache.
+       The cache dict holds one reference to the link,
+       and the linked list holds yet one reference to it. */
+    popresult = _PyDict_Pop_KnownHash(self->cache, link->key,
+                                      link->hash, Py_None);
+    if (popresult == Py_None) {
+        /* Getting here means that the user function call or another
+           thread has already removed the old key from the dictionary.
+           This link is now an orpan.  Since we don't want to leave the
+           cache in an inconsistent state, we don't restore the link. */
+        Py_DECREF(popresult);
+        Py_DECREF(link);
+        Py_DECREF(key);
+        self->misses++;
+        return result;
+    }
+    if (popresult == NULL) {
+        /* An error arose while trying to remove the oldest key (the one
+           being evicted) from the cache.  We restore the link to its
+           original position as the oldest link.  Then we allow the
+           error propagate upward; treating it the same as an error
+           arising in the user function. */
+        lru_cache_prepend_link(self, link);
         Py_DECREF(key);
         Py_DECREF(result);
         return NULL;
     }
+    /* Keep a reference to the old key and old result to prevent their
+       ref counts from going to zero during the update. That will
+       prevent potentially arbitrary object clean-up code (i.e. __del__)
+       from running while we're still adjusting the links. */
+    oldkey = link->key;
+    oldresult = link->result;
 
     link->hash = hash;
     link->key = key;
     link->result = result;
     if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
                                   hash) < 0) {
+        /* Somehow the cache dict update failed.  We no longer can
+           restore the old link.  Let the error propagate upward and
+           leave the cache short one link. */
+        Py_DECREF(popresult);
         Py_DECREF(link);
+        Py_DECREF(oldkey);
+        Py_DECREF(oldresult);
         return NULL;
     }
     lru_cache_append_link(self, link);
     Py_INCREF(result); /* for return */
+    Py_DECREF(popresult);
+    Py_DECREF(oldkey);
+    Py_DECREF(oldresult);
     self->misses++;
     return result;
 }
