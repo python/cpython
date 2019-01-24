@@ -104,7 +104,7 @@ static char *
 bytes_to_c_string(PyObject* o, int lock) {
 /* Convert a bytes object to a char *. Optionally lock the buffer if it is a
    bytes array.
-   This code swiped directly from Python 3.1's posixmodule.c by Yours Truly.
+   This code swiped directly from Python 3.1's posixmodule.c by Philip S.
    The name there is bytes2str().
 */
     if (PyBytes_Check(o))
@@ -126,7 +126,7 @@ bytes_to_c_string(PyObject* o, int lock) {
 static void
 release_bytes(PyObject* o)
     /* Release the lock, decref the object.
-   This code swiped directly from Python 3.1's posixmodule.c by Yours Truly.
+   This code swiped directly from Python 3.1's posixmodule.c by Philip S.
    */
 {
     if (PyByteArray_Check(o))
@@ -587,7 +587,7 @@ static PyGetSetDef SharedMemory_getseters[] = {
 
 static PyTypeObject SharedMemoryType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "_posixshmem._PosixSharedMemory",    // tp_name
+    "_posixshmem._PosixSharedMemory",   // tp_name
     sizeof(SharedMemory),               // tp_basicsize
     0,                                  // tp_itemsize
     (destructor) SharedMemory_dealloc,  // tp_dealloc
@@ -692,8 +692,6 @@ PyInit__posixshmem(void) {
 
 
     PyModule_AddStringConstant(module, "__copyright__", "Copyright 2012 Philip Semanchuk, 2018-2019 Davin Potts");
-    PyModule_AddStringConstant(module, "__author__", "Philip Semanchuk");
-    PyModule_AddStringConstant(module, "__license__", "BSD");
 
     PyModule_AddIntConstant(module, "O_CREAT", O_CREAT);
     PyModule_AddIntConstant(module, "O_EXCL", O_EXCL);
