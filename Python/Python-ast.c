@@ -1786,8 +1786,8 @@ BoolOp(boolop_ty op, asdl_seq * values, int lineno, int col_offset, int
 }
 
 expr_ty
-NamedExpr(expr_ty target, expr_ty value, int lineno, int col_offset, PyArena
-          *arena)
+NamedExpr(expr_ty target, expr_ty value, int lineno, int col_offset, int
+          end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!target) {
@@ -1808,6 +1808,8 @@ NamedExpr(expr_ty target, expr_ty value, int lineno, int col_offset, PyArena
     p->v.NamedExpr.value = value;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
@@ -5985,7 +5987,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = NamedExpr(target, value, lineno, col_offset, arena);
+        *out = NamedExpr(target, value, lineno, col_offset, end_lineno,
+                         end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
