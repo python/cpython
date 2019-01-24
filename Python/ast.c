@@ -2661,6 +2661,7 @@ ast_for_expr(struct compiling *c, const node *n)
         case namedexpr_test:
             if (NCH(n) == 3)
                 return ast_for_namedexpr(c, n);
+            /* Fallthrough */
         case test:
         case test_nocond:
             if (TYPE(CHILD(n, 0)) == lambdef ||

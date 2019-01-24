@@ -5020,6 +5020,7 @@ compiler_handle_subscr(struct compiler *c, const char *kind,
         case AugStore:/* fall through to Store */
         case Store:   op = STORE_SUBSCR; break;
         case Del:     op = DELETE_SUBSCR; break;
+        case NamedStore:
         case Param:
             PyErr_Format(PyExc_SystemError,
                          "invalid %s kind %d in subscript\n",
