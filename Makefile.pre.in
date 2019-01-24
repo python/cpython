@@ -451,8 +451,7 @@ LIBRARY_OBJS=	\
 # On some systems, object files that reference DTrace probes need to be modified
 # in-place by dtrace(1).
 DTRACE_DEPS = \
-	Python/ceval.o
-# XXX: should gcmodule, etc. be here, too?
+	Python/ceval.o Python/import.o Modules/gcmodule.o
 
 #########################################################################
 # Rules
@@ -628,7 +627,7 @@ $(LIBRARY): $(LIBRARY_OBJS)
 	-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(LIBRARY_OBJS)
 
-libpython$(LDVERSION).so: $(LIBRARY_OBJS)
+libpython$(LDVERSION).so: $(LIBRARY_OBJS) $(DTRACE_OBJS)
 	if test $(INSTSONAME) != $(LDLIBRARY); then \
 		$(BLDSHARED) -Wl,-h$(INSTSONAME) -o $(INSTSONAME) $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM); \
 		$(LN) -f $(INSTSONAME) $@; \
@@ -640,7 +639,7 @@ libpython3.so:	libpython$(LDVERSION).so
 	$(BLDSHARED) $(NO_AS_NEEDED) -o $@ -Wl,-h$@ $^
 
 libpython$(LDVERSION).dylib: $(LIBRARY_OBJS)
-	 $(CC) -dynamiclib -Wl,-single_module $(PY_CORE_LDFLAGS) -undefined dynamic_lookup -Wl,-install_name,$(prefix)/lib/libpython$(LDVERSION).dylib -Wl,-compatibility_version,$(VERSION) -Wl,-current_version,$(VERSION) -o $@ $(LIBRARY_OBJS) $(SHLIBS) $(LIBC) $(LIBM); \
+	 $(CC) -dynamiclib -Wl,-single_module $(PY_CORE_LDFLAGS) -undefined dynamic_lookup -Wl,-install_name,$(prefix)/lib/libpython$(LDVERSION).dylib -Wl,-compatibility_version,$(VERSION) -Wl,-current_version,$(VERSION) -o $@ $(LIBRARY_OBJS) $(DTRACE_OBJS) $(SHLIBS) $(LIBC) $(LIBM); \
 
 
 libpython$(VERSION).sl: $(LIBRARY_OBJS)
@@ -752,6 +751,7 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
 		$(PYTHON_OBJS) \
 		$(MODULE_OBJS) \
 		$(MODOBJS) \
+		$(DTRACE_OBJS) \
 		$(srcdir)/Modules/getbuildinfo.c
 	$(CC) -c $(PY_CORE_CFLAGS) \
 	      -DGITVERSION="\"`LC_ALL=C $(GITVERSION)`\"" \
@@ -953,6 +953,10 @@ Include/pydtrace_probes.h: $(srcdir)/Include/pydtrace.d
 	: sed in-place edit with POSIX-only tools
 	sed 's/PYTHON_/PyDTrace_/' $@ > $@.tmp
 	mv $@.tmp $@
+
+Python/ceval.o: Include/pydtrace.h
+Python/import.o: Include/pydtrace.h
+Modules/gcmodule.o: Include/pydtrace.h
 
 Python/pydtrace.o: $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
 	$(DTRACE) $(DFLAGS) -o $@ -G -s $< $(DTRACE_DEPS)
