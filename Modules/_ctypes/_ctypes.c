@@ -1191,6 +1191,10 @@ CharArray_set_raw(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored))
     Py_ssize_t size;
     Py_buffer view;
 
+    if (value == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
     if (PyObject_GetBuffer(value, &view, PyBUF_SIMPLE) < 0)
         return -1;
     size = view.len;
@@ -3479,20 +3483,23 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 #endif
-    Py_INCREF(dll); /* for KeepRef */
-    Py_DECREF(ftuple);
-    if (!_validate_paramflags(type, paramflags))
+    if (!_validate_paramflags(type, paramflags)) {
+        Py_DECREF(ftuple);
         return NULL;
+    }
 
     self = (PyCFuncPtrObject *)GenericPyCData_new(type, args, kwds);
-    if (!self)
+    if (!self) {
+        Py_DECREF(ftuple);
         return NULL;
+    }
 
     Py_XINCREF(paramflags);
     self->paramflags = paramflags;
 
     *(void **)self->b_ptr = address;
-
+    Py_INCREF(dll);
+    Py_DECREF(ftuple);
     if (-1 == KeepRef((CDataObject *)self, 0, dll)) {
         Py_DECREF((PyObject *)self);
         return NULL;

@@ -1937,7 +1937,7 @@ def _run_suite(suite):
     if junit_xml_list is not None:
         junit_xml_list.append(result.get_xml_element())
 
-    if not result.testsRun:
+    if not result.testsRun and not result.skipped:
         raise TestDidNotRun
     if not result.wasSuccessful():
         if len(result.errors) == 1 and not result.failures:
@@ -1986,7 +1986,7 @@ def set_match_tests(patterns):
         patterns = ()
     elif all(map(_is_full_match_test, patterns)):
         # Simple case: all patterns are full test identifier.
-        # The test.bisect utility only uses such full test identifiers.
+        # The test.bisect_cmd utility only uses such full test identifiers.
         func = set(patterns).__contains__
     else:
         regex = '|'.join(map(fnmatch.translate, patterns))
@@ -2259,19 +2259,19 @@ def start_threads(threads, unlock=None):
         try:
             if unlock:
                 unlock()
-            endtime = starttime = time.time()
+            endtime = starttime = time.monotonic()
             for timeout in range(1, 16):
                 endtime += 60
                 for t in started:
-                    t.join(max(endtime - time.time(), 0.01))
-                started = [t for t in started if t.isAlive()]
+                    t.join(max(endtime - time.monotonic(), 0.01))
+                started = [t for t in started if t.is_alive()]
                 if not started:
                     break
                 if verbose:
                     print('Unable to join %d threads during a period of '
                           '%d minutes' % (len(started), timeout))
         finally:
-            started = [t for t in started if t.isAlive()]
+            started = [t for t in started if t.is_alive()]
             if started:
                 faulthandler.dump_traceback(sys.stdout)
                 raise AssertionError('Unable to join %d threads' % len(started))
@@ -2783,7 +2783,7 @@ def missing_compiler_executable(cmd_names=[]):
         if cmd_names:
             assert cmd is not None, \
                     "the '%s' executable is not configured" % name
-        elif cmd is None:
+        elif not cmd:
             continue
         if spawn.find_executable(cmd[0]) is None:
             return cmd[0]

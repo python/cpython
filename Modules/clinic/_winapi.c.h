@@ -19,7 +19,8 @@ _winapi_Overlapped_GetOverlappedResult(OverlappedObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int wait;
 
-    if (!PyArg_Parse(arg, "p:GetOverlappedResult", &wait)) {
+    wait = PyObject_IsTrue(arg);
+    if (wait < 0) {
         goto exit;
     }
     return_value = _winapi_Overlapped_GetOverlappedResult_impl(self, wait);
@@ -286,6 +287,8 @@ PyDoc_STRVAR(_winapi_CreateProcess__doc__,
 "\n"
 "Create a new process and its primary thread.\n"
 "\n"
+"  command_line\n"
+"    Can be str or None\n"
 "  proc_attrs\n"
 "    Ignored internally, can be None.\n"
 "  thread_attrs\n"
@@ -298,28 +301,29 @@ PyDoc_STRVAR(_winapi_CreateProcess__doc__,
     {"CreateProcess", (PyCFunction)(void(*)(void))_winapi_CreateProcess, METH_FASTCALL, _winapi_CreateProcess__doc__},
 
 static PyObject *
-_winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
-                           Py_UNICODE *command_line, PyObject *proc_attrs,
+_winapi_CreateProcess_impl(PyObject *module,
+                           const Py_UNICODE *application_name,
+                           PyObject *command_line, PyObject *proc_attrs,
                            PyObject *thread_attrs, BOOL inherit_handles,
                            DWORD creation_flags, PyObject *env_mapping,
-                           Py_UNICODE *current_directory,
+                           const Py_UNICODE *current_directory,
                            PyObject *startup_info);
 
 static PyObject *
 _winapi_CreateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_UNICODE *application_name;
-    Py_UNICODE *command_line;
+    const Py_UNICODE *application_name;
+    PyObject *command_line;
     PyObject *proc_attrs;
     PyObject *thread_attrs;
     BOOL inherit_handles;
     DWORD creation_flags;
     PyObject *env_mapping;
-    Py_UNICODE *current_directory;
+    const Py_UNICODE *current_directory;
     PyObject *startup_info;
 
-    if (!_PyArg_ParseStack(args, nargs, "ZZOOikOZO:CreateProcess",
+    if (!_PyArg_ParseStack(args, nargs, "ZOOOikOZO:CreateProcess",
         &application_name, &command_line, &proc_attrs, &thread_attrs, &inherit_handles, &creation_flags, &env_mapping, &current_directory, &startup_info)) {
         goto exit;
     }
@@ -941,4 +945,4 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=915dd640329de0c0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5063c84b2d125488 input=a9049054013a1b77]*/

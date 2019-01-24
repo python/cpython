@@ -57,7 +57,11 @@ Struct_unpack(PyStructObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:unpack", &buffer)) {
+    if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+        _PyArg_BadArgument("unpack", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = Struct_unpack_impl(self, &buffer);
@@ -166,7 +170,7 @@ calcsize(PyObject *module, PyObject *arg)
     PyStructObject *s_object = NULL;
     Py_ssize_t _return_value;
 
-    if (!PyArg_Parse(arg, "O&:calcsize", cache_struct_converter, &s_object)) {
+    if (!cache_struct_converter(arg, &s_object)) {
         goto exit;
     }
     _return_value = calcsize_impl(module, s_object);
@@ -205,8 +209,17 @@ unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyStructObject *s_object = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, "O&y*:unpack",
-        cache_struct_converter, &s_object, &buffer)) {
+    if (!_PyArg_CheckPositional("unpack", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!cache_struct_converter(args[0], &s_object)) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+        _PyArg_BadArgument("unpack", 2, "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = unpack_impl(module, s_object, &buffer);
@@ -291,10 +304,13 @@ iter_unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyStructObject *s_object = NULL;
     PyObject *buffer;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O:iter_unpack",
-        cache_struct_converter, &s_object, &buffer)) {
+    if (!_PyArg_CheckPositional("iter_unpack", nargs, 2, 2)) {
         goto exit;
     }
+    if (!cache_struct_converter(args[0], &s_object)) {
+        goto exit;
+    }
+    buffer = args[1];
     return_value = iter_unpack_impl(module, s_object, buffer);
 
 exit:
@@ -303,4 +319,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=a73b0453174e4b51 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ac595db9d2b271aa input=a9049054013a1b77]*/

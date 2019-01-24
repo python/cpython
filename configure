@@ -666,6 +666,7 @@ SHLIB_SUFFIX
 LIBTOOL_CRUFT
 OTHER_LIBTOOL_OPT
 UNIVERSAL_ARCH_FLAGS
+LDFLAGS_NODIST
 CFLAGS_NODIST
 BASECFLAGS
 CFLAGS_ALIASING
@@ -6627,7 +6628,7 @@ $as_echo "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
   fi
 
   CFLAGS_NODIST="$CFLAGS_NODIST $LTOFLAGS"
-  LDFLAGS="$LDFLAGS $LTOFLAGS"
+  LDFLAGS_NODIST="$LDFLAGS_NODIST $LTOFLAGS"
 fi
 
 # Enable PGO flags.
@@ -6875,6 +6876,7 @@ then
 	;;
     esac
 fi
+
 
 
 
@@ -11445,7 +11447,7 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
- posix_fallocate posix_fadvise posix_spawn pread preadv preadv2 \
+ posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
  pthread_init pthread_kill putenv pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
  sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
@@ -12673,6 +12675,150 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
 done
+
+
+# We search for both crypt and crypt_r as one or the other may be defined
+# This gets us our -lcrypt in LIBS when required on the target platform.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing crypt" >&5
+$as_echo_n "checking for library containing crypt... " >&6; }
+if ${ac_cv_search_crypt+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char crypt ();
+int
+main ()
+{
+return crypt ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' crypt; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_crypt=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_crypt+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_crypt+:} false; then :
+
+else
+  ac_cv_search_crypt=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_crypt" >&5
+$as_echo "$ac_cv_search_crypt" >&6; }
+ac_res=$ac_cv_search_crypt
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing crypt_r" >&5
+$as_echo_n "checking for library containing crypt_r... " >&6; }
+if ${ac_cv_search_crypt_r+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char crypt_r ();
+int
+main ()
+{
+return crypt_r ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' crypt; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_crypt_r=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_crypt_r+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_crypt_r+:} false; then :
+
+else
+  ac_cv_search_crypt_r=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_crypt_r" >&5
+$as_echo "$ac_cv_search_crypt_r" >&6; }
+ac_res=$ac_cv_search_crypt_r
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+fi
+
+
+ac_fn_c_check_func "$LINENO" "crypt_r" "ac_cv_func_crypt_r"
+if test "x$ac_cv_func_crypt_r" = xyes; then :
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define _GNU_SOURCE  /* Required for crypt_r()'s prototype in glibc. */
+#include <crypt.h>
+
+int
+main ()
+{
+
+struct crypt_data d;
+char *r = crypt_r("", "", &d);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_CRYPT_R 1" >>confdefs.h
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
 
 
 for ac_func in clock_gettime

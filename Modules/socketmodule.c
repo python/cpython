@@ -102,6 +102,10 @@ Local naming conventions:
 #include "Python.h"
 #include "structmember.h"
 
+#ifdef _Py_MEMORY_SANITIZER
+# include <sanitizer/msan_interface.h>
+#endif
+
 /* Socket object documentation */
 PyDoc_STRVAR(sock_doc,
 "socket(family=AF_INET, type=SOCK_STREAM, proto=0) -> socket object\n\
@@ -263,7 +267,7 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 #endif
 
 /* Solaris fails to define this variable at all. */
-#if defined(sun) && !defined(INET_ADDRSTRLEN)
+#if (defined(__sun) && defined(__SVR4)) && !defined(INET_ADDRSTRLEN)
 #define INET_ADDRSTRLEN 16
 #endif
 
@@ -5018,28 +5022,45 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
         else
 #endif
         {
-            fd = PyLong_AsSocket_t(fdobj);
-            if (fd == (SOCKET_T)(-1) && PyErr_Occurred())
-                return -1;
-            if (fd == INVALID_SOCKET) {
-                PyErr_SetString(PyExc_ValueError,
-                                "can't use invalid socket value");
+
+            if (PyFloat_Check(fdobj)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "integer argument expected, got float");
                 return -1;
             }
 
-            if (family == -1) {
-                sock_addr_t addrbuf;
-                socklen_t addrlen = sizeof(sock_addr_t);
-
-                memset(&addrbuf, 0, addrlen);
-                if (getsockname(fd, SAS2SA(&addrbuf), &addrlen) == 0) {
-                    family = SAS2SA(&addrbuf)->sa_family;
-                } else {
+            fd = PyLong_AsSocket_t(fdobj);
+            if (fd == (SOCKET_T)(-1) && PyErr_Occurred())
+                return -1;
 #ifdef MS_WINDOWS
-                    PyErr_SetFromWindowsErrWithFilename(0, "family");
+            if (fd == INVALID_SOCKET) {
 #else
-                    PyErr_SetFromErrnoWithFilename(PyExc_OSError, "family");
+            if (fd < 0) {
 #endif
+                PyErr_SetString(PyExc_ValueError, "negative file descriptor");
+                return -1;
+            }
+
+            /* validate that passed file descriptor is valid and a socket. */
+            sock_addr_t addrbuf;
+            socklen_t addrlen = sizeof(sock_addr_t);
+
+            memset(&addrbuf, 0, addrlen);
+            if (getsockname(fd, SAS2SA(&addrbuf), &addrlen) == 0) {
+                if (family == -1) {
+                    family = SAS2SA(&addrbuf)->sa_family;
+                }
+            } else {
+#ifdef MS_WINDOWS
+                /* getsockname() on an unbound socket is an error on Windows.
+                   Invalid descriptor and not a socket is same error code.
+                   Error out if family must be resolved, or bad descriptor. */
+                if (family == -1 || CHECK_ERRNO(ENOTSOCK)) {
+#else
+                /* getsockname() is not supported for SOL_ALG on Linux. */
+                if (family == -1 || CHECK_ERRNO(EBADF) || CHECK_ERRNO(ENOTSOCK)) {
+#endif
+                    set_error();
                     return -1;
                 }
             }
@@ -5052,11 +5073,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
                 {
                     type = tmp;
                 } else {
-#ifdef MS_WINDOWS
-                    PyErr_SetFromWindowsErrWithFilename(0, "type");
-#else
-                    PyErr_SetFromErrnoWithFilename(PyExc_OSError, "type");
-#endif
+                    set_error();
                     return -1;
                 }
             }
@@ -5072,11 +5089,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
                 {
                     proto = tmp;
                 } else {
-#ifdef MS_WINDOWS
-                    PyErr_SetFromWindowsErrWithFilename(0, "protocol");
-#else
-                    PyErr_SetFromErrnoWithFilename(PyExc_OSError, "protocol");
-#endif
+                    set_error();
                     return -1;
                 }
             }
@@ -6562,7 +6575,23 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
         return NULL;
     }
 
+#ifdef _Py_MEMORY_SANITIZER
+    __msan_unpoison(ni, sizeof(ni));
+    __msan_unpoison(&ni[0], sizeof(ni[0]));
+#endif
     for (i = 0; ni[i].if_index != 0 && i < INT_MAX; i++) {
+#ifdef _Py_MEMORY_SANITIZER
+        /* This one isn't the end sentinel, the next one must exist. */
+        __msan_unpoison(&ni[i+1], sizeof(ni[0]));
+        /* Otherwise Py_BuildValue internals are flagged by MSan when
+           they access the not-msan-tracked if_name string data. */
+        {
+            char *to_sanitize = ni[i].if_name;
+            do {
+                __msan_unpoison(to_sanitize, 1);
+            } while (*to_sanitize++ != '\0');
+        }
+#endif
         PyObject *ni_tuple = Py_BuildValue("IO&",
                 ni[i].if_index, PyUnicode_DecodeFSDefault, ni[i].if_name);
 

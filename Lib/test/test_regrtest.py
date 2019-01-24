@@ -26,9 +26,8 @@ ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
 
 TEST_INTERRUPTED = textwrap.dedent("""
-    from signal import SIGINT
+    from signal import SIGINT, raise_signal
     try:
-        from _testcapi import raise_signal
         raise_signal(SIGINT)
     except ImportError:
         import os
@@ -1004,6 +1003,7 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("-w", testname, exitcode=2)
         self.check_executed_tests(output, [testname],
                                   failed=testname, rerun=testname)
+
     def test_no_tests_ran(self):
         code = textwrap.dedent("""
             import unittest
@@ -1016,6 +1016,19 @@ class ArgsTestCase(BaseTestCase):
 
         output = self.run_tests(testname, "-m", "nosuchtest", exitcode=0)
         self.check_executed_tests(output, [testname], no_test_ran=testname)
+
+    def test_no_tests_ran_skip(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_skipped(self):
+                    self.skipTest("because")
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests(testname, exitcode=0)
+        self.check_executed_tests(output, [testname])
 
     def test_no_tests_ran_multiple_tests_nonexistent(self):
         code = textwrap.dedent("""
