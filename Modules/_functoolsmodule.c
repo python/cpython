@@ -712,7 +712,6 @@ typedef PyObject *(*lru_cache_ternaryfunc)(struct lru_cache_object *, PyObject *
 typedef struct lru_cache_object {
     lru_list_elem root;  /* includes PyObject_HEAD */
     Py_ssize_t maxsize;
-    PyObject *maxsize_O;
     PyObject *func;
     lru_cache_ternaryfunc wrapper;
     PyObject *cache;
@@ -1122,8 +1121,6 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     obj->root.prev = &obj->root;
     obj->root.next = &obj->root;
     obj->maxsize = maxsize;
-    Py_INCREF(maxsize_O);
-    obj->maxsize_O = maxsize_O;
     Py_INCREF(func);
     obj->func = func;
     obj->wrapper = wrapper;
@@ -1165,7 +1162,6 @@ lru_cache_dealloc(lru_cache_object *obj)
     PyObject_GC_UnTrack(obj);
 
     list = lru_cache_unlink_list(obj);
-    Py_XDECREF(obj->maxsize_O);
     Py_XDECREF(obj->func);
     Py_XDECREF(obj->cache);
     Py_XDECREF(obj->dict);
@@ -1193,8 +1189,13 @@ lru_cache_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 static PyObject *
 lru_cache_cache_info(lru_cache_object *self, PyObject *unused)
 {
-    return PyObject_CallFunction(self->cache_info_type, "nnOn",
-                                 self->hits, self->misses, self->maxsize_O,
+    if (self->maxsize == -1) {
+        return PyObject_CallFunction(self->cache_info_type, "nnOn",
+                                     self->hits, self->misses, Py_None,
+                                     PyDict_GET_SIZE(self->cache));
+    }
+    return PyObject_CallFunction(self->cache_info_type, "nnnn",
+                                 self->hits, self->misses, self->maxsize,
                                  PyDict_GET_SIZE(self->cache));
 }
 
@@ -1238,7 +1239,6 @@ lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
         Py_VISIT(link->result);
         link = next;
     }
-    Py_VISIT(self->maxsize_O);
     Py_VISIT(self->func);
     Py_VISIT(self->cache);
     Py_VISIT(self->cache_info_type);
@@ -1250,7 +1250,6 @@ static int
 lru_cache_tp_clear(lru_cache_object *self)
 {
     lru_list_elem *list = lru_cache_unlink_list(self);
-    Py_CLEAR(self->maxsize_O);
     Py_CLEAR(self->func);
     Py_CLEAR(self->cache);
     Py_CLEAR(self->cache_info_type);
