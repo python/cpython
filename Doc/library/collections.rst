@@ -139,7 +139,8 @@ Example of simulating Python's internal lookup chain::
 Example of letting user specified command-line arguments take precedence over
 environment variables which in turn take precedence over default values::
 
-        import os, argparse
+        import os
+        import argparse
 
         defaults = {'color': 'red', 'user': 'guest'}
 
