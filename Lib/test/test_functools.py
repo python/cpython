@@ -1356,7 +1356,7 @@ class TestLRU:
         for i in (0, 1):
             self.assertEqual([eq(n) for n in range(150)], list(range(150)))
         self.assertEqual(eq.cache_info(),
-            self.module._CacheInfo(hits=0, misses=300, maxsize=-10, currsize=1))
+            self.module._CacheInfo(hits=0, misses=300, maxsize=0, currsize=0))
 
     def test_lru_with_exceptions(self):
         # Verify that user_function exceptions get passed through without

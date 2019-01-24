@@ -510,8 +510,11 @@ def lru_cache(maxsize=128, typed=False):
 
     # Early detection of an erroneous call to @lru_cache without any arguments
     # resulting in the inner function being passed to maxsize instead of an
-    # integer or None.
-    if maxsize is not None and not isinstance(maxsize, int):
+    # integer or None.  Negative maxsize is treated as 0.
+    if isinstance(maxsize, int):
+        if maxsize < 0:
+            maxsize = 0
+    elif maxsize is not None:
         raise TypeError('Expected maxsize to be an integer or None')
 
     def decorating_function(user_function):

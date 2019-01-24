@@ -1103,6 +1103,9 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         maxsize = PyNumber_AsSsize_t(maxsize_O, PyExc_OverflowError);
         if (maxsize == -1 && PyErr_Occurred())
             return NULL;
+        if (maxsize < 0) {
+            maxsize = 0;
+        }
         if (maxsize == 0)
             wrapper = uncached_lru_cache_wrapper;
         else
