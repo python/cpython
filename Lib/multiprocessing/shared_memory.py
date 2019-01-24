@@ -1,6 +1,7 @@
 from functools import reduce
 import mmap
 from .managers import DictProxy, SyncManager, Server
+from . import util
 import os
 import random
 import struct
@@ -213,120 +214,6 @@ def shareable_wrap(
     return proxy_obj
 
 
-def alt_shareable_wrap(existing_type_or_obj, additional_excluded_methods=[]):
-    if isinstance(existing_type_or_obj, type):
-        existing_type = existing_type_or_obj
-        existing_obj = None
-    else:
-        existing_type = type(existing_type_or_obj)
-        existing_obj = existing_type_or_obj
-
-    excluded_methods = {
-        "__new__", "__class__", "__copy__", "__deepcopy__", "__getattribute__",
-        "__hash__", "__init__", "__init_subclass__", "__reduce__",
-        "__reduce_ex__", "__getattr__", "__setattr__", "__getstate__",
-        "__setstate__", "__sizeof__", "__subclasshook__", "__subclasscheck__",
-        "__instancecheck__", "__abstractmethods__", "__base__", "__bases__",
-        "__basicsize__", "__dict__", "__dictoffset__", "__flags__",
-        "__itemsize__", "__mro__", "__name__", "__qualname__",
-        "__text_signature__", "__weakrefoffset__", "__repr__", "__str__",
-        "__dir__",
-    }
-    excluded_methods.update(additional_excluded_methods)
-    kept_dunders = {
-        attr: (
-            lambda self, *args, _attr=attr, **kwargs:
-                getattr(existing_type, _attr)(self._wrapped_obj, *args, **kwargs)
-        )
-        for attr in dir(existing_type) if attr not in excluded_methods
-    }
-
-    class CustomShareableWrap(ShareableWrappedObject, **kept_dunders):
-        pass
-
-    CustomShareableWrap.__name__ = f"shareable_wrap({existing_type.__name__})"
-
-    if existing_obj is None:
-        return CustomShareableWrap
-    else:
-        return CustomShareableWrap(existing_type_or_obj)
-
-
-class ShareableWrappedObject:
-
-    def __init__(self, existing_obj=None, shmem_name=None, **kwargs):
-        if existing_obj is not None:
-            # TODO: replace use of reduce below with next 2 lines once available
-            #agg = existing_obj.itemsize
-            #size = [ agg := i * agg for i in existing_obj.shape ][-1]
-            size = reduce(
-                lambda x, y: x * y,
-                existing_obj.shape,
-                existing_obj.itemsize
-            )
-        else:
-            assert shmem_name is not None
-            size = 1
-        self._shm = SharedMemory(shmem_name, size=size)
-
-        existing_kwargs = self._build_kwargs(existing_obj)
-        kwargs.update(existing_kwargs)
-
-        obj_type = type(existing_obj) if "cls" not in kwargs else kwargs["cls"]
-
-        self._wrapped_obj = obj_type(buffer=self._shm.buf, **kwargs)
-
-        if existing_obj is not None:
-            mveo = memoryview(existing_obj)
-            self._shm.buf[:mveo.nbytes] = mveo.tobytes()
-
-    @staticmethod
-    def _build_kwargs(existing_obj):
-        kwargs = {
-            "shape": existing_obj.shape,
-            "strides": existing_obj.strides,
-        }
-        try:
-            kwargs["dtype"] = existing_obj.dtype
-        except AttributeError:
-            pass
-        return kwargs
-
-    def __init_subclass__(cls, **kwargs):
-        for attr, value in kwargs.items():
-            try:
-                setattr(cls, attr, value)
-            except Exception as e:
-                raise AttributeError(f"{attr!r} could not be set as attribute")
-
-    def __getattr__(self, attr):
-        return getattr(self._wrapped_obj, attr)
-
-    def __repr__(self):
-        formatted_pairs = ("%s=%r" % kv for kv in self.__getstate__().items())
-        return f"{self.__class__.__name__}({', '.join(formatted_pairs)})"
-
-    def __getstate__(self):
-        kwargs = self._build_kwargs(self._wrapped_obj)
-        kwargs["shmem_name"] = self._shm.name
-        kwargs["cls"] = type(self._wrapped_obj)
-        return kwargs
-
-    def __setstate__(self, state):
-        self.__init__(**state)
-
-
-#class ShareableWrappedObject(_ShareableWrappedObject):
-#
-#    def __new__(cls, existing_obj=None, shmem_name=None, **kwargs):
-#        wrapped_type = existing_obj.__class__ #type(existing_obj)
-#        dunders = (attr for attr in dir(wrapped_type) if attr.startswith("__"))
-#        for attr in dunders:
-#            #setattr(cls, attr, getattr(wrapped_type, attr))
-#            cls[attr] = wrapped_type[attr]
-#        return type.__new__(cls.__name__, cls.__bases__, cls.__dict__)
-
-
 encoding = "utf8"
 
 class ShareableList:
@@ -373,7 +260,8 @@ class ShareableList:
     def __init__(self, iterable=None, name=None):
         if iterable is not None:
             _formats = [
-                self.types_mapping[type(item)] if not isinstance(item, (str, bytes))
+                self.types_mapping[type(item)] 
+                    if not isinstance(item, (str, bytes))
                     else self.types_mapping[type(item)] % (
                         self.alignment * (len(item) // self.alignment + 1),
                     )
@@ -490,7 +378,8 @@ class ShareableList:
 
     def __getitem__(self, position):
         try:
-            offset = self._offset_data_start + sum(self._allocated_bytes[:position])
+            offset = self._offset_data_start \
+                     + sum(self._allocated_bytes[:position])
             (v,) = struct.unpack_from(
                 self._get_packing_format(position),
                 self.shm.buf,
@@ -506,7 +395,8 @@ class ShareableList:
 
     def __setitem__(self, position, value):
         try:
-            offset = self._offset_data_start + sum(self._allocated_bytes[:position])
+            offset = self._offset_data_start \
+                     + sum(self._allocated_bytes[:position])
             current_format = self._get_packing_format(position)
         except IndexError:
             raise IndexError("assignment index out of range")
@@ -596,11 +486,11 @@ class SharedMemoryTracker:
         self.segment_names = segment_names
 
     def register_segment(self, segment):
-        print(f"DBG Registering segment {segment.name!r} in pid {os.getpid()}")
+        util.debug(f"Registering segment {segment.name!r} in pid {os.getpid()}")
         self.segment_names.append(segment.name)
 
     def destroy_segment(self, segment_name):
-        print(f"DBG Destroying segment {segment_name!r} in pid {os.getpid()}")
+        util.debug(f"Destroying segment {segment_name!r} in pid {os.getpid()}")
         self.segment_names.remove(segment_name)
         segment = SharedMemory(segment_name, size=1)
         segment.close()
@@ -611,7 +501,7 @@ class SharedMemoryTracker:
             self.destroy_segment(segment_name)
 
     def __del__(self):
-        print(f"DBG somebody called {self.__class__.__name__}.__del__: {os.getpid()}")
+        util.debug(f"Called {self.__class__.__name__}.__del__ in {os.getpid()}")
         self.unlink()
 
     def __getstate__(self):
@@ -631,7 +521,7 @@ class AugmentedServer(Server):
         Server.__init__(self, *args, **kwargs)
         self.shared_memory_context = \
             SharedMemoryTracker(f"shmm_{self.address}_{os.getpid()}")
-        print(f"DBG AugmentedServer started by pid {os.getpid()}")
+        util.debug(f"AugmentedServer started by pid {os.getpid()}")
 
     def create(self, c, typeid, *args, **kwargs):
         # Unless set up as a shared proxy, don't make shared_memory_context
@@ -654,13 +544,11 @@ class SharedMemoryManager(SyncManager):
     _Server = AugmentedServer
 
     def __init__(self, *args, **kwargs):
-        # TODO: Remove after debugging satisfied
         SyncManager.__init__(self, *args, **kwargs)
-        print(f"{self.__class__.__name__} created by pid {os.getpid()}")
+        util.debug(f"{self.__class__.__name__} created by pid {os.getpid()}")
 
     def __del__(self):
-        # TODO: Remove after debugging satisfied
-        print(f"{self.__class__.__name__} told to die by pid {os.getpid()}")
+        util.debug(f"{self.__class__.__name__} told die by pid {os.getpid()}")
         pass
 
     def get_server(self):
