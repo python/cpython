@@ -97,14 +97,14 @@ def shareable_wrap(
             type(existing_obj)
         )
 
-        agg = existing_obj.itemsize
-        size = [ agg := i * agg for i in existing_obj.shape ][-1]
+        #agg = existing_obj.itemsize
+        #size = [ agg := i * agg for i in existing_obj.shape ][-1]
         # TODO: replace use of reduce below with above 2 lines once available
-        #size = reduce(
-        #    lambda x, y: x * y,
-        #    existing_obj.shape,
-        #    existing_obj.itemsize
-        #)
+        size = reduce(
+            lambda x, y: x * y,
+            existing_obj.shape,
+            existing_obj.itemsize
+        )
 
     else:
         assert shmem_name is not None
