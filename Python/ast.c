@@ -1753,7 +1753,8 @@ ast_for_namedexpr(struct compiling *c, const node *n)
     if (!set_context(c, target, NamedStore, n))
         return NULL;
 
-    return NamedExpr(target, value, LINENO(n), n->n_col_offset, c->c_arena);
+    return NamedExpr(target, value, LINENO(n), n->n_col_offset, n->n_end_lineno,
+                     n->n_end_col_offset, c->c_arena);
 }
 
 static expr_ty
