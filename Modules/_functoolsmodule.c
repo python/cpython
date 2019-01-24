@@ -936,21 +936,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         return NULL;
     }
     testresult = _PyDict_GetItem_KnownHash(self->cache, key, hash);
-    if (testresult == NULL) {
-        if (PyErr_Occurred()) {
-            /* This is an unusual case since this same lookup
-               did not previously trigger an error during lookup.
-               Treat it the same as an error in user function
-               and return with the error set. */
-            Py_DECREF(key);
-            Py_DECREF(result);
-            return NULL;
-        }
-        /* This is the normal case.  The new key wasn't found before
-           user function call and it is still not there.  So we
-           proceed normally and update the cache with the new result. */
-    }
-    else {
+    if (testresult != NULL) {
         /* Getting here means that this same key was added to the cache
            during the PyObject_Call().  Since the link update is already
            done, we need only return the computed result and update the
@@ -959,6 +945,19 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         self->misses++;
         return result;
     }
+    if (PyErr_Occurred()) {
+        /* This is an unusual case since this same lookup
+           did not previously trigger an error during lookup.
+           Treat it the same as an error in user function
+           and return with the error set. */
+        Py_DECREF(key);
+        Py_DECREF(result);
+        return NULL;
+    }
+    /* This is the normal case.  The new key wasn't found before
+       user function call and it is still not there.  So we
+       proceed normally and update the cache with the new result. */
+
     assert(self->maxsize > 0);
     if (PyDict_GET_SIZE(self->cache) >= self->maxsize) {
         /* Since the cache is full, we need to evict an old key and add
@@ -995,71 +994,72 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
             Py_DECREF(popresult);
             Py_DECREF(link);
             Py_DECREF(key);
+            self->misses++;
+            return result;
         }
-        else if (popresult == NULL) {
+        if (popresult == NULL) {
             /* An error arose while trying to remove the oldest
                key (the one being evicted) from the cache.
                We restore the link to its original position
                as the oldest link.  Then we allow the error
                propagate upward; treating it the same as an
-               error arising in the user function.
-            */
+               error arising in the user function. */
             lru_cache_prepend_link(self, link);
             Py_DECREF(key);
             Py_DECREF(result);
             return NULL;
         }
-        else {
-            /* Keep a reference to the old key and old result to
-               prevent their ref counts from going to zero during the
-               update. That will prevent potentially arbitrary object
-               clean-up code (i.e. __del__) from running while we're
-               still adjusting the links. */
-            oldkey = link->key;
-            oldresult = link->result;
-
-            link->hash = hash;
-            link->key = key;
-            link->result = result;
-            if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
-                                          hash) < 0) {
-                /* Somehow the cache dict update failed.
-                   We no longer can restore the old link.
-                   Let the error propagate upward and
-                   leave the cache short one link. */
-                Py_DECREF(popresult);
-                Py_DECREF(link);
-                Py_DECREF(oldkey);
-                Py_DECREF(oldresult);
-                return NULL;
-            }
-            lru_cache_append_link(self, link);
-            Py_INCREF(result); /* for return */
-            Py_DECREF(popresult);
-            Py_DECREF(oldkey);
-            Py_DECREF(oldresult);
-        }
-    } else {
-        /* Put result in a new link at the front of the queue. */
-        link = (lru_list_elem *)PyObject_New(lru_list_elem,
-                                             &lru_list_elem_type);
-        if (link == NULL) {
-            Py_DECREF(key);
-            Py_DECREF(result);
-            return NULL;
-        }
+        /* Keep a reference to the old key and old result to
+           prevent their ref counts from going to zero during the
+           update. That will prevent potentially arbitrary object
+           clean-up code (i.e. __del__) from running while we're
+           still adjusting the links. */
+        oldkey = link->key;
+        oldresult = link->result;
 
         link->hash = hash;
         link->key = key;
         link->result = result;
         if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
                                       hash) < 0) {
+            /* Somehow the cache dict update failed.
+               We no longer can restore the old link.
+               Let the error propagate upward and
+               leave the cache short one link. */
+            Py_DECREF(popresult);
             Py_DECREF(link);
+            Py_DECREF(oldkey);
+            Py_DECREF(oldresult);
             return NULL;
         }
         lru_cache_append_link(self, link);
         Py_INCREF(result); /* for return */
+        Py_DECREF(popresult);
+        Py_DECREF(oldkey);
+        Py_DECREF(oldresult);
+        self->misses++;
+        return result;
     }
+
+    /* Put result in a new link at the front of the queue. */
+    link = (lru_list_elem *)PyObject_New(lru_list_elem,
+                                         &lru_list_elem_type);
+    if (link == NULL) {
+        Py_DECREF(key);
+        Py_DECREF(result);
+        return NULL;
+    }
+
+    link->hash = hash;
+    link->key = key;
+    link->result = result;
+    if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
+                                  hash) < 0) {
+        Py_DECREF(link);
+        return NULL;
+    }
+    lru_cache_append_link(self, link);
+    Py_INCREF(result); /* for return */
     self->misses++;
     return result;
 }
