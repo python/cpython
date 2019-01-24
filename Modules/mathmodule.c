@@ -3101,7 +3101,7 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
         if (temp_obj1 == NULL) {
             goto fail_comb;
         }
-        temp_obj2 = PyNumber_Subtract(n temp_obj1);
+        temp_obj2 = PyNumber_Subtract(n, temp_obj1);
         if (temp_obj2 == NULL) {
             goto fail_comb;
         }

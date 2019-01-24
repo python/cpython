@@ -661,16 +661,16 @@ math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *n;
     PyObject *k;
 
-    if (!_PyArg_UnpackStack(args, nargs, "comb",
-        2, 2,
-        &n, &k)) {
+    if (!_PyArg_CheckPositional("comb", nargs, 2, 2)) {
         goto exit;
     }
+    n = args[0];
+    k = args[1];
     return_value = math_comb_impl(module, n, k);
 
 exit:
     return return_value;
 }
 
-/*[clinic end generated code: output=9bcf4b171e2ad3ec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=66c5583e59c57e47 input=a9049054013a1b77]*/
 
