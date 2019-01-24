@@ -1866,6 +1866,15 @@ class TestEnum(unittest.TestCase):
             REVERT_ALL = "REVERT_ALL"
             RETRY = "RETRY"
 
+    def test_empty_globals(self):
+        # bpo-35717: sys._getframe(2).f_globals['__name__'] fails with KeyError
+        # when using compile and exec because f_globals is empty
+        code = "from enum import Enum; Enum('Animal', 'ANT BEE CAT DOG')"
+        code = compile(code, "<string>", "exec")
+        global_ns = {}
+        local_ls = {}
+        exec(code, global_ns, local_ls)
+
 
 class TestOrder(unittest.TestCase):
 
