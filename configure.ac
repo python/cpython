@@ -3429,7 +3429,7 @@ then
     AC_CACHE_CHECK([whether DTrace probes require linking],
         [ac_cv_dtrace_link], [dnl
             ac_cv_dtrace_link=no
-            echo 'BEGIN' > conftest.d
+            echo 'BEGIN{}' > conftest.d
             "$DTRACE" -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
                 ac_cv_dtrace_link=yes
       ])
