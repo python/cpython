@@ -1521,6 +1521,13 @@ MiddlingExtendsException(PyExc_SyntaxError, IndentationError, SyntaxError,
 
 
 /*
+ *    TargetScopeError extends SyntaxError
+ */
+MiddlingExtendsException(PyExc_SyntaxError, TargetScopeError, SyntaxError,
+                         "Improper scope target.");
+
+
+/*
  *    TabError extends IndentationError
  */
 MiddlingExtendsException(PyExc_IndentationError, TabError, SyntaxError,
@@ -2531,6 +2538,7 @@ _PyExc_Init(void)
     PRE_INIT(AttributeError);
     PRE_INIT(SyntaxError);
     PRE_INIT(IndentationError);
+    PRE_INIT(TargetScopeError);
     PRE_INIT(TabError);
     PRE_INIT(LookupError);
     PRE_INIT(IndexError);
@@ -2671,6 +2679,7 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
     POST_INIT(AttributeError);
     POST_INIT(SyntaxError);
     POST_INIT(IndentationError);
+    POST_INIT(TargetScopeError);
     POST_INIT(TabError);
     POST_INIT(LookupError);
     POST_INIT(IndexError);
