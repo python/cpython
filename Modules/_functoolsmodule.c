@@ -711,13 +711,14 @@ typedef PyObject *(*lru_cache_ternaryfunc)(struct lru_cache_object *, PyObject *
 
 typedef struct lru_cache_object {
     lru_list_elem root;  /* includes PyObject_HEAD */
-    Py_ssize_t maxsize;
-    PyObject *func;
     lru_cache_ternaryfunc wrapper;
-    PyObject *cache;
-    PyObject *cache_info_type;
-    Py_ssize_t misses, hits;
     int typed;
+    PyObject *cache;
+    Py_ssize_t hits;
+    PyObject *func;
+    Py_ssize_t maxsize;
+    Py_ssize_t misses;
+    PyObject *cache_info_type;
     PyObject *dict;
 } lru_cache_object;
 
