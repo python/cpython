@@ -1118,18 +1118,17 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    obj->cache = cachedict;
     obj->root.prev = &obj->root;
     obj->root.next = &obj->root;
-    obj->maxsize = maxsize;
+    obj->wrapper = wrapper;
+    obj->typed = typed;
+    obj->cache = cachedict;
     Py_INCREF(func);
     obj->func = func;
-    obj->wrapper = wrapper;
     obj->misses = obj->hits = 0;
-    obj->typed = typed;
+    obj->maxsize = maxsize;
     Py_INCREF(cache_info_type);
     obj->cache_info_type = cache_info_type;
-
     return (PyObject *)obj;
 }
 
@@ -1163,10 +1162,10 @@ lru_cache_dealloc(lru_cache_object *obj)
     PyObject_GC_UnTrack(obj);
 
     list = lru_cache_unlink_list(obj);
-    Py_XDECREF(obj->func);
     Py_XDECREF(obj->cache);
-    Py_XDECREF(obj->dict);
+    Py_XDECREF(obj->func);
     Py_XDECREF(obj->cache_info_type);
+    Py_XDECREF(obj->dict);
     lru_cache_clear_list(list);
     Py_TYPE(obj)->tp_free(obj);
 }
