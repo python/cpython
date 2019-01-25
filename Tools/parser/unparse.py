@@ -79,6 +79,13 @@ class Unparser:
         self.fill()
         self.dispatch(tree.value)
 
+    def _NamedExpr(self, tree):
+        self.write("(")
+        self.dispatch(tree.target)
+        self.write(" := ")
+        self.dispatch(tree.value)
+        self.write(")")
+
     def _Import(self, t):
         self.fill("import ")
         interleave(lambda: self.write(", "), self.dispatch, t.names)
