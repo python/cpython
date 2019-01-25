@@ -931,6 +931,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         Py_DECREF(key);
         return NULL;
     }
+    self->misses++;
     result = PyObject_Call(self->func, args, kwds);
     if (!result) {
         Py_DECREF(key);
@@ -940,10 +941,8 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     if (testresult != NULL) {
         /* Getting here means that this same key was added to the cache
            during the PyObject_Call().  Since the link update is already
-           done, we need only return the computed result and update the
-           count of misses. */
+           done, we need only return the computed result. */
         Py_DECREF(key);
-        self->misses++;
         return result;
     }
     if (PyErr_Occurred()) {
@@ -980,7 +979,6 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         }
         lru_cache_append_link(self, link);
         Py_INCREF(result); /* for return */
-        self->misses++;
         return result;
     }
     /* Since the cache is full, we need to evict an old key and add
@@ -1014,7 +1012,6 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         Py_DECREF(popresult);
         Py_DECREF(link);
         Py_DECREF(key);
-        self->misses++;
         return result;
     }
     if (popresult == NULL) {
@@ -1054,7 +1051,6 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     Py_DECREF(popresult);
     Py_DECREF(oldkey);
     Py_DECREF(oldresult);
-    self->misses++;
     return result;
 }
 

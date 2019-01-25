@@ -581,6 +581,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     link[NEXT] = root
                     hits += 1
                     return result
+                misses += 1
             result = user_function(*args, **kwds)
             with lock:
                 if key in cache:
@@ -618,7 +619,6 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     # Use the cache_len bound method instead of the len() function
                     # which could potentially be wrapped in an lru_cache itself.
                     full = (cache_len() >= maxsize)
-                misses += 1
             return result
 
     def cache_info():
