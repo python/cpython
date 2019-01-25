@@ -237,24 +237,25 @@ class cls226:
 if True:
     class cls238:
         class cls239:
-            pass
+            '''if clause cls239'''
 else:
     class cls238:
         class cls239:
+            '''else clause 239'''
             pass
 
-#line 246
+#line 247
 def positional_only_arg(a, /):
     pass
 
-#line 250
+#line 251
 def all_markers(a, b, /, c, d, *, e, f):
     pass
 
-# line 254
+# line 255
 def all_markers_with_args_and_kwargs(a, b, /, c, d, *args, e, f, **kwargs):
     pass
 
-#line 258
+#line 259
 def all_markers_with_defaults(a, b=1, /, c=2, d=3, *, e=4, f=5):
     pass
