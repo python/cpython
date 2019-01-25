@@ -445,6 +445,15 @@ class GrammarTests(unittest.TestCase):
         exec('X: str', {}, CNS2())
         self.assertEqual(nonloc_ns['__annotations__']['x'], str)
 
+    def test_var_annot_rhs(self):
+        ns = {}
+        exec('x: tuple = 1, 2', ns)
+        self.assertEqual(ns['x'], (1, 2))
+        stmt = ('def f():\n'
+                '    x: int = yield')
+        exec(stmt, ns)
+        self.assertEqual(list(ns['f']()), [None])
+
     def test_funcdef(self):
         ### [decorators] 'def' NAME parameters ['->' test] ':' suite
         ### decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE

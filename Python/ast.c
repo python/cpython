@@ -3163,7 +3163,12 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         }
         else {
             ch = CHILD(ann, 3);
-            expr3 = ast_for_expr(c, ch);
+            if (TYPE(ch) == testlist) {
+                expr3 = ast_for_testlist(c, ch);
+            }
+            else {
+                expr3 = ast_for_expr(c, ch);
+            }
             if (!expr3) {
                 return NULL;
             }
