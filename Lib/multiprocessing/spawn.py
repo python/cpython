@@ -35,6 +35,14 @@ else:
 
 if WINSERVICE:
     _python_exe = os.path.join(sys.exec_prefix, 'python.exe')
+elif (sys.platform == 'win32' and sys.base_exec_prefix != sys.exec_prefix
+      and '__PYVENV_LAUNCHER__' in os.environ):
+    # bpo-35797: When running in a venv, we need to bypass the redirect
+    # executor and launch our original Python.
+    _python_exe = os.path.join(
+        sys.base_exec_prefix,
+        os.path.split(sys.executable)[-1]
+    )
 else:
     _python_exe = sys.executable
 
