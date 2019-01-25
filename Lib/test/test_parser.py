@@ -165,6 +165,8 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             exec("x, *y, z: int = range(5)", {}, {})
         with self.assertRaises(SyntaxError):
+            exec("x: int = 1, y = 2", {}, {})
+        with self.assertRaises(SyntaxError):
             exec("u = v: int", {}, {})
         with self.assertRaises(SyntaxError):
             exec("False: int", {}, {})
