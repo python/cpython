@@ -821,12 +821,9 @@ def findsource(object):
                 nonlocal line_number
                 stack.append(node.name)
                 if qualname == '.'.join(stack):
-                    if node.decorator_list:
-                        line_number = node.decorator_list[0].lineno
-                    else:
-                        line_number = node.lineno
                     # decrement by one since lines starts with indexing by zero
-                    line_number = line_number - 1
+                    line_number = node.lineno - 1
+                    raise StopIteration(line_number)
                 self.generic_visit(node)
                 stack.pop()
 
@@ -836,9 +833,10 @@ def findsource(object):
         source = ''.join(lines)
         tree = ast.parse(source)
         class_finder = ClassFinder()
-        class_finder.visit(tree)
-
-        if line_number is not None:
+        try:
+            class_finder.visit(tree)
+        except StopIteration as e:
+            line_number = e.value
             return lines, line_number
         else:
             raise OSError('could not find class definition')

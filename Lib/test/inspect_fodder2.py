@@ -232,20 +232,29 @@ class cls226:
     async def func232(self):
         class cls233:
             pass
-        return cls235
+        return cls233
 
-#line 237
+if True:
+    class cls238:
+        class cls239:
+            pass
+else:
+    class cls238:
+        class cls239:
+            pass
+
+#line 246
 def positional_only_arg(a, /):
     pass
 
-#line 241
+#line 250
 def all_markers(a, b, /, c, d, *, e, f):
     pass
 
-# line 245
+# line 254
 def all_markers_with_args_and_kwargs(a, b, /, c, d, *args, e, f, **kwargs):
     pass
 
-#line 249
+#line 258
 def all_markers_with_defaults(a, b=1, /, c=2, d=3, *, e=4, f=5):
     pass
