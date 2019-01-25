@@ -740,9 +740,6 @@ class Popen(object):
             if _vxworks:
                 if shell:
                     raise ValueError("shell is not supported on VxWorks")
-                if preexec_fn is not None:
-                    raise ValueError("Preexecution function is not supported"
-                                     "on VxWorks");
                 if start_new_session:
                     raise ValueError("VxWorks does not support sessions");
             # POSIX

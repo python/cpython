@@ -3,7 +3,7 @@
  *
  * Python interface to VxWorks methods
  *
- * Author: Oscar Shi (co-op winter2018), wenyan.xin@windriver.com
+ * Author: wenyan.xin@windriver.com
  *
  ************************************************/
 
@@ -19,23 +19,6 @@ module _vxwapi
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=6efcf3b26a262ef1]*/
 
-/*[clinic input]
-_vxwapi.isAbs
-
-     path: str
-     /
-
-Check if path is an absolute path on VxWorks (since not all VxWorks absolute paths start with /)
-[clinic start generated code]*/
-
-static PyObject *
-_vxwapi_isAbs_impl(PyObject *module, const char *path)
-/*[clinic end generated code: output=c6929732e0e3b56e input=485a1871f58eb505]*/
-{
-    long ret = (long)_pathIsAbsolute(path, NULL);
-
-    return PyLong_FromLong(ret);
-}
 
 static PyObject *
 rtp_spawn_impl(
@@ -47,7 +30,9 @@ rtp_spawn_impl(
            int c2pread, int c2pwrite,
            int errread, int errwrite,
            int errpipe_read, int errpipe_write,
-           int close_fds, int restore_signals)
+           int close_fds, int restore_signals,
+           PyObject *preexec_fn,
+           PyObject *preexec_fn_args_tuple)
 {
     int priority = 0;
     unsigned int uStackSize = 0;
@@ -57,6 +42,9 @@ rtp_spawn_impl(
 
     int pid = RTP_ID_ERROR;
     int stdin_bk = -1, stdout_bk = -1, stderr_bk = -1;
+    int saved_errno, reached_preexec = 0;
+    const char* err_msg = "";
+    char hex_errno[sizeof(saved_errno)*2+1];
 
     if (-1 != p2cwrite &&
         _Py_set_inheritable_async_safe(p2cwrite, 0, NULL) < 0)
@@ -112,18 +100,39 @@ rtp_spawn_impl(
     if (cwd)
         chdir(cwd);
 
+    reached_preexec = 1;
+    if (preexec_fn != Py_None && preexec_fn_args_tuple) {
+        PyObject *result;
+        /* This is where the user has asked us to deadlock their program. */
+        result = PyObject_Call(preexec_fn, preexec_fn_args_tuple, NULL);
+        if (result == NULL) {
+            /* Stringifying the exception or traceback would involve
+             * memory allocation and thus potential for deadlock.
+             * We've already faced potential deadlock by calling back
+             * into Python in the first place, so it probably doesn't
+             * matter but we avoid it to minimize the possibility. */
+            err_msg = "Exception occurred in preexec_fn.";
+            errno = 0;  /* We don't want to report an OSError. */
+            goto error;
+        }
+        /* Py_DECREF(result); - We're about to exec so why bother? */
+    }
+
     (void)taskPriorityGet(taskIdSelf(), &priority);
     (void)taskStackSizeGet(taskIdSelf(), &uStackSize);
 
+    saved_errno = 0;
     for (int i = 0; exec_array[i] != NULL; ++i) {
         const char *executable = exec_array[i];
         pid = rtpSpawn(executable, (const char **)argvp,
-               (const char**)envpp, priority, uStackSize, options, taskOptions);
+             (const char**)envpp, priority, uStackSize, options, taskOptions);
+        if (errno != ENOENT && errno != ENOTDIR && saved_errno == 0) {
+            saved_errno = errno;
+        }
     }
-
-    if (RTP_ID_ERROR == pid){
-        PyErr_SetString(PyExc_RuntimeError, "RTPSpawn failed to spawn task");
-    }
+    /* Report the first exec error, not the last. */
+    if (saved_errno)
+        errno = saved_errno;
 
     if (stdin_bk >= 0) {
         if (dup2(stdin_bk, 0) == -1)
@@ -149,9 +158,33 @@ rtp_spawn_impl(
     }
 
 error:
-
-    _Py_write_noraise(errpipe_write, "OSError:", 8);
-    return NULL;
+    saved_errno = errno;
+    /* Report the posix error to our parent process. */
+    /* We ignore all write() return values as the total size of our writes is
+       less than PIPEBUF and we cannot do anything about an error anyways.
+       Use _Py_write_noraise() to retry write() if it is interrupted by a
+       signal (fails with EINTR). */
+    if (saved_errno) {
+        char *cur;
+        _Py_write_noraise(errpipe_write, "OSError:", 8);
+        cur = hex_errno + sizeof(hex_errno);
+        while (saved_errno != 0 && cur != hex_errno) {
+            *--cur = Py_hexdigits[saved_errno % 16];
+            saved_errno /= 16;
+        }
+        _Py_write_noraise(errpipe_write, cur, hex_errno + sizeof(hex_errno) - cur);
+        _Py_write_noraise(errpipe_write, ":", 1);
+        if (!reached_preexec) {
+            /* Indicate to the parent that the error happened before rtpSpawn(). */
+            _Py_write_noraise(errpipe_write, "noexec", 6);
+        }
+        /* We can't call strerror(saved_errno).  It is not async signal safe.
+         * The parent process will look the error message up. */
+    } else {
+        _Py_write_noraise(errpipe_write, "SubprocessError:0:", 18);
+        _Py_write_noraise(errpipe_write, err_msg, strlen(err_msg));
+    }
+    return PyErr_SetFromErrno(PyExc_OSError);;
 }
 
 
@@ -180,6 +213,7 @@ _vxwapi.rtp_spawn
 Spawn a real time process in the vxWorks OS
 [clinic start generated code]*/
 
+
 static PyObject *
 _vxwapi_rtp_spawn_impl(PyObject *module, PyObject *process_args,
                        PyObject *executable_list, int close_fds,
@@ -189,12 +223,13 @@ _vxwapi_rtp_spawn_impl(PyObject *module, PyObject *process_args,
                        int errpipe_read, int errpipe_write,
                        int restore_signals, int call_setsid,
                        PyObject *preexec_fn)
-/*[clinic end generated code: output=5f98889b783df975 input=14080493d27112ef]*/
+/*[clinic end generated code: output=5f98889b783df975 input=30419f3fea045213]*/
 {
     PyObject *converted_args = NULL, *fast_args = NULL;
     PyObject *cwd_obj2;
     const char *cwd;
     char *const *exec_array, *const *argv = NULL, *const *envp = NULL;
+    PyObject *preexec_fn_args_tuple = NULL;
 
     PyObject *return_value = NULL;
 
@@ -202,7 +237,7 @@ _vxwapi_rtp_spawn_impl(PyObject *module, PyObject *process_args,
     if (!exec_array)
         goto cleanup;
 
-    /* Convert args and env into appropriate arguments for exec() */
+    /* Convert args and env into appropriate arguments */
     /* These conversions are done in the parent process to avoid allocating
        or freeing memory in the child process. */
     if (process_args != Py_None) {
@@ -250,11 +285,18 @@ _vxwapi_rtp_spawn_impl(PyObject *module, PyObject *process_args,
         cwd_obj2 = NULL;
     }
 
+    if (preexec_fn != Py_None) {
+        preexec_fn_args_tuple = PyTuple_New(0);
+        if (!preexec_fn_args_tuple)
+            goto cleanup;
+    }
+
     return_value = rtp_spawn_impl(
                         exec_array, argv, envp, cwd,
                         p2cread, p2cwrite, c2pread, c2pwrite,
                         errread, errwrite, errpipe_read, errpipe_write,
-                        close_fds, restore_signals );
+                        close_fds, restore_signals, preexec_fn,
+                        preexec_fn_args_tuple);
 
 cleanup:
     if (envp)
@@ -263,6 +305,7 @@ cleanup:
         _Py_FreeCharPArray(argv);
     if (exec_array)
         _Py_FreeCharPArray(exec_array);
+    Py_XDECREF(preexec_fn_args_tuple);
     Py_XDECREF(converted_args);
     Py_XDECREF(fast_args);
     return return_value;
@@ -272,7 +315,6 @@ cleanup:
 
 static PyMethodDef _vxwapiMethods[] = {
     _VXWAPI_RTP_SPAWN_METHODDEF
-    _VXWAPI_ISABS_METHODDEF
     { NULL, NULL }
 };
 
