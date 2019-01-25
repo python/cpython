@@ -29,12 +29,19 @@ __all__ = ['_main', 'freeze_support', 'set_executable', 'get_executable',
 if sys.platform != 'win32':
     WINEXE = False
     WINSERVICE = False
+    _WINENV = False
 else:
-    WINEXE = (sys.platform == 'win32' and getattr(sys, 'frozen', False))
+    WINEXE = getattr(sys, 'frozen', False)
     WINSERVICE = sys.executable.lower().endswith("pythonservice.exe")
+    _WINENV = '__PYVENV_LAUNCHER__' in os.environ
 
 if WINSERVICE:
     _python_exe = os.path.join(sys.exec_prefix, 'python.exe')
+elif _WINENV:
+    # bpo-35797: When running in a venv, we need to bypass the redirect
+    # executor and launch our base Python.
+    import _winapi
+    _python_exe = _winapi.GetModuleFileName(0)
 else:
     _python_exe = sys.executable
 

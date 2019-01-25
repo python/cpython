@@ -306,6 +306,19 @@ class BasicTest(BaseTest):
         )
         self.assertEqual(out.strip(), '0')
 
+    def test_multiprocessing(self):
+        """
+        Test that the multiprocessing is able to spawn.
+        """
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir)
+        envpy = os.path.join(os.path.realpath(self.env_dir),
+                             self.bindir, self.exe)
+        out, err = check_output([envpy, '-c',
+            'from multiprocessing import Pool; ' +
+            'print(Pool(1).apply_async("Python".lower).get(3))'])
+        self.assertEqual(out.strip(), "python".encode())
+
 @skipInVenv
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""
