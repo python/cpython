@@ -63,11 +63,12 @@ extern "C" {
 #define ATEQUAL         50
 #define RARROW          51
 #define ELLIPSIS        52
-#define OP              53
-#define TYPE_IGNORE     54
-#define TYPE_COMMENT    55
-#define ERRORTOKEN      56
-#define N_TOKENS        60
+#define COLONEQUAL      53
+#define OP              54
+#define TYPE_IGNORE     55
+#define TYPE_COMMENT    56
+#define ERRORTOKEN      57
+#define N_TOKENS        61
 #define NT_OFFSET       256
 
 /* Special definitions for cooperation with parser */

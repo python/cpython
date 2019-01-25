@@ -1521,6 +1521,13 @@ MiddlingExtendsException(PyExc_SyntaxError, IndentationError, SyntaxError,
 
 
 /*
+ *    TargetScopeError extends SyntaxError
+ */
+MiddlingExtendsException(PyExc_SyntaxError, TargetScopeError, SyntaxError,
+                         "Improper scope target.");
+
+
+/*
  *    TabError extends IndentationError
  */
 MiddlingExtendsException(PyExc_IndentationError, TabError, SyntaxError,
@@ -2492,7 +2499,7 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #endif /* MS_WINDOWS */
 
 _PyInitError
-_PyExc_Init(PyObject *bltinmod)
+_PyExc_Init(void)
 {
 #define PRE_INIT(TYPE) \
     if (!(_PyExc_ ## TYPE.tp_flags & Py_TPFLAGS_READY)) { \
@@ -2502,21 +2509,6 @@ _PyExc_Init(PyObject *bltinmod)
         Py_INCREF(PyExc_ ## TYPE); \
     }
 
-#define POST_INIT(TYPE) \
-    if (PyDict_SetItemString(bdict, # TYPE, PyExc_ ## TYPE)) { \
-        return _Py_INIT_ERR("Module dictionary insertion problem."); \
-    }
-
-#define INIT_ALIAS(NAME, TYPE) \
-    do { \
-        Py_INCREF(PyExc_ ## TYPE); \
-        Py_XDECREF(PyExc_ ## NAME); \
-        PyExc_ ## NAME = PyExc_ ## TYPE; \
-        if (PyDict_SetItemString(bdict, # NAME, PyExc_ ## NAME)) { \
-            return _Py_INIT_ERR("Module dictionary insertion problem."); \
-        } \
-    } while (0)
-
 #define ADD_ERRNO(TYPE, CODE) \
     do { \
         PyObject *_code = PyLong_FromLong(CODE); \
@@ -2525,8 +2517,6 @@ _PyExc_Init(PyObject *bltinmod)
             return _Py_INIT_ERR("errmap insertion problem."); \
         Py_DECREF(_code); \
     } while (0)
-
-    PyObject *bdict;
 
     PRE_INIT(BaseException);
     PRE_INIT(Exception);
@@ -2548,6 +2538,7 @@ _PyExc_Init(PyObject *bltinmod)
     PRE_INIT(AttributeError);
     PRE_INIT(SyntaxError);
     PRE_INIT(IndentationError);
+    PRE_INIT(TargetScopeError);
     PRE_INIT(TabError);
     PRE_INIT(LookupError);
     PRE_INIT(IndexError);
@@ -2596,6 +2587,68 @@ _PyExc_Init(PyObject *bltinmod)
     PRE_INIT(ProcessLookupError);
     PRE_INIT(TimeoutError);
 
+    if (preallocate_memerrors() < 0) {
+        return _Py_INIT_ERR("Could not preallocate MemoryError object");
+    }
+
+    /* Add exceptions to errnomap */
+    if (!errnomap) {
+        errnomap = PyDict_New();
+        if (!errnomap) {
+            return _Py_INIT_ERR("Cannot allocate map from errnos to OSError subclasses");
+        }
+    }
+
+    ADD_ERRNO(BlockingIOError, EAGAIN);
+    ADD_ERRNO(BlockingIOError, EALREADY);
+    ADD_ERRNO(BlockingIOError, EINPROGRESS);
+    ADD_ERRNO(BlockingIOError, EWOULDBLOCK);
+    ADD_ERRNO(BrokenPipeError, EPIPE);
+#ifdef ESHUTDOWN
+    ADD_ERRNO(BrokenPipeError, ESHUTDOWN);
+#endif
+    ADD_ERRNO(ChildProcessError, ECHILD);
+    ADD_ERRNO(ConnectionAbortedError, ECONNABORTED);
+    ADD_ERRNO(ConnectionRefusedError, ECONNREFUSED);
+    ADD_ERRNO(ConnectionResetError, ECONNRESET);
+    ADD_ERRNO(FileExistsError, EEXIST);
+    ADD_ERRNO(FileNotFoundError, ENOENT);
+    ADD_ERRNO(IsADirectoryError, EISDIR);
+    ADD_ERRNO(NotADirectoryError, ENOTDIR);
+    ADD_ERRNO(InterruptedError, EINTR);
+    ADD_ERRNO(PermissionError, EACCES);
+    ADD_ERRNO(PermissionError, EPERM);
+    ADD_ERRNO(ProcessLookupError, ESRCH);
+    ADD_ERRNO(TimeoutError, ETIMEDOUT);
+
+    return _Py_INIT_OK();
+
+#undef PRE_INIT
+#undef ADD_ERRNO
+}
+
+
+/* Add exception types to the builtins module */
+_PyInitError
+_PyBuiltins_AddExceptions(PyObject *bltinmod)
+{
+#define POST_INIT(TYPE) \
+    if (PyDict_SetItemString(bdict, # TYPE, PyExc_ ## TYPE)) { \
+        return _Py_INIT_ERR("Module dictionary insertion problem."); \
+    }
+
+#define INIT_ALIAS(NAME, TYPE) \
+    do { \
+        Py_INCREF(PyExc_ ## TYPE); \
+        Py_XDECREF(PyExc_ ## NAME); \
+        PyExc_ ## NAME = PyExc_ ## TYPE; \
+        if (PyDict_SetItemString(bdict, # NAME, PyExc_ ## NAME)) { \
+            return _Py_INIT_ERR("Module dictionary insertion problem."); \
+        } \
+    } while (0)
+
+    PyObject *bdict;
+
     bdict = PyModule_GetDict(bltinmod);
     if (bdict == NULL) {
         return _Py_INIT_ERR("exceptions bootstrapping error.");
@@ -2626,6 +2679,7 @@ _PyExc_Init(PyObject *bltinmod)
     POST_INIT(AttributeError);
     POST_INIT(SyntaxError);
     POST_INIT(IndentationError);
+    POST_INIT(TargetScopeError);
     POST_INIT(TabError);
     POST_INIT(LookupError);
     POST_INIT(IndexError);
@@ -2656,61 +2710,28 @@ _PyExc_Init(PyObject *bltinmod)
     POST_INIT(BytesWarning);
     POST_INIT(ResourceWarning);
 
-    if (!errnomap) {
-        errnomap = PyDict_New();
-        if (!errnomap) {
-            return _Py_INIT_ERR("Cannot allocate map from errnos to OSError subclasses");
-        }
-    }
-
     /* OSError subclasses */
     POST_INIT(ConnectionError);
 
     POST_INIT(BlockingIOError);
-    ADD_ERRNO(BlockingIOError, EAGAIN);
-    ADD_ERRNO(BlockingIOError, EALREADY);
-    ADD_ERRNO(BlockingIOError, EINPROGRESS);
-    ADD_ERRNO(BlockingIOError, EWOULDBLOCK);
     POST_INIT(BrokenPipeError);
-    ADD_ERRNO(BrokenPipeError, EPIPE);
-#ifdef ESHUTDOWN
-    ADD_ERRNO(BrokenPipeError, ESHUTDOWN);
-#endif
     POST_INIT(ChildProcessError);
-    ADD_ERRNO(ChildProcessError, ECHILD);
     POST_INIT(ConnectionAbortedError);
-    ADD_ERRNO(ConnectionAbortedError, ECONNABORTED);
     POST_INIT(ConnectionRefusedError);
-    ADD_ERRNO(ConnectionRefusedError, ECONNREFUSED);
     POST_INIT(ConnectionResetError);
-    ADD_ERRNO(ConnectionResetError, ECONNRESET);
     POST_INIT(FileExistsError);
-    ADD_ERRNO(FileExistsError, EEXIST);
     POST_INIT(FileNotFoundError);
-    ADD_ERRNO(FileNotFoundError, ENOENT);
     POST_INIT(IsADirectoryError);
-    ADD_ERRNO(IsADirectoryError, EISDIR);
     POST_INIT(NotADirectoryError);
-    ADD_ERRNO(NotADirectoryError, ENOTDIR);
     POST_INIT(InterruptedError);
-    ADD_ERRNO(InterruptedError, EINTR);
     POST_INIT(PermissionError);
-    ADD_ERRNO(PermissionError, EACCES);
-    ADD_ERRNO(PermissionError, EPERM);
     POST_INIT(ProcessLookupError);
-    ADD_ERRNO(ProcessLookupError, ESRCH);
     POST_INIT(TimeoutError);
-    ADD_ERRNO(TimeoutError, ETIMEDOUT);
 
-    if (preallocate_memerrors() < 0) {
-        return _Py_INIT_ERR("Could not preallocate MemoryError object");
-    }
     return _Py_INIT_OK();
 
-#undef PRE_INIT
 #undef POST_INIT
 #undef INIT_ALIAS
-#undef ADD_ERRNO
 }
 
 void

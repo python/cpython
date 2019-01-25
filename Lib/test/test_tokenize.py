@@ -1429,6 +1429,7 @@ class TestTokenize(TestCase):
         self.assertExactTypeEqual('**=', token.DOUBLESTAREQUAL)
         self.assertExactTypeEqual('//', token.DOUBLESLASH)
         self.assertExactTypeEqual('//=', token.DOUBLESLASHEQUAL)
+        self.assertExactTypeEqual(':=', token.COLONEQUAL)
         self.assertExactTypeEqual('...', token.ELLIPSIS)
         self.assertExactTypeEqual('->', token.RARROW)
         self.assertExactTypeEqual('@', token.AT)
