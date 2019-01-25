@@ -880,8 +880,14 @@ class PyBuildExt(build_ext):
             exts.append( Extension('_posixsubprocess', ['_posixsubprocess.c']) )
 
         # socket(2)
-        exts.append( Extension('_socket', ['socketmodule.c'],
-                               depends = ['socketmodule.h']) )
+        if 'vxworks' not in host_platform :
+            exts.append( Extension('_socket', ['socketmodule.c'],
+                                   depends = ['socketmodule.h']) )
+        elif self.compiler.find_library_file(lib_dirs, 'net'):
+            libs = ['net']
+            exts.append( Extension('_socket', ['socketmodule.c'],
+                                   depends = ['socketmodule.h'], libraries=libs) )
+
         # Detect SSL support for the socket module (via _ssl)
         ssl_ext, hashlib_ext = self._detect_openssl(inc_dirs, lib_dirs)
         if ssl_ext is not None:
