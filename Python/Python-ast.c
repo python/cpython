@@ -8710,6 +8710,8 @@ PyInit__ast(void)
     if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return NULL;
     if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)
         return NULL;
+    if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0)
+        return NULL;
     if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return NULL;
     if (PyDict_SetItemString(d, "Module", (PyObject*)Module_type) < 0) return
         NULL;
