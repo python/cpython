@@ -959,7 +959,9 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
        proceed normally and update the cache with the new result. */
 
     assert(self->maxsize > 0);
-    if (PyDict_GET_SIZE(self->cache) < self->maxsize) {
+    if (PyDict_GET_SIZE(self->cache) < self->maxsize ||
+        self->root.next == &self->root)
+    {
         /* Cache is not full, so put the result in a new link */
         link = (lru_list_elem *)PyObject_New(lru_list_elem,
                                              &lru_list_elem_type);
