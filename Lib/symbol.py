@@ -60,8 +60,8 @@ try_stmt = 300
 with_stmt = 301
 with_item = 302
 except_clause = 303
-func_body_suite = 304
-suite = 305
+suite = 304
+namedexpr_test = 305
 test = 306
 test_nocond = 307
 lambdef = 308
@@ -100,9 +100,10 @@ comp_if = 340
 encoding_decl = 341
 yield_expr = 342
 yield_arg = 343
-func_type_input = 344
-func_type = 345
-typelist = 346
+func_body_suite = 344
+func_type_input = 345
+func_type = 346
+typelist = 347
 #--end constants--
 
 sym_name = {}
