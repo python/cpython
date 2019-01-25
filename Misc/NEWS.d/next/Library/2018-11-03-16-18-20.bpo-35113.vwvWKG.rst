@@ -1,3 +1,2 @@
 :meth:`inspect.getsource` now returns correct source code for inner class
-with same name as module level class. Class decorators are also returned as
-part of the source. Patch by Karthikeyan Singaravelan.
+with same name as module level class. Patch by Karthikeyan Singaravelan.
