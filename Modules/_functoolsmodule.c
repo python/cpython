@@ -972,6 +972,11 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         link->hash = hash;
         link->key = key;
         link->result = result;
+        /* What is really needed here is a SetItem variant with a "no clobber"
+           option.  If the __eq__ call triggers a reentrant call that adds
+           this same key, then this setitem call will update the cache dict
+           with this new link, leaving the old link as an orphan (i.e. not
+           having a cache dict entry that refers to it). */
         if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
                                       hash) < 0) {
             Py_DECREF(link);
@@ -1035,6 +1040,11 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     link->hash = hash;
     link->key = key;
     link->result = result;
+    /* Note:  The link is being added to the cache dict without the
+       prev and next fields set to valid values.   We have to wait
+       for successful insertion in the cache dict before adding the
+       link to the linked list.  Otherwise, the potentially reentrant
+       __eq__ call could cause the then ophan link to be visited. */
     if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
                                   hash) < 0) {
         /* Somehow the cache dict update failed.  We no longer can
