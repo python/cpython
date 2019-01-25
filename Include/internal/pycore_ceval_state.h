@@ -22,6 +22,9 @@ struct _pending_call {
     struct _pending_call *next;
 };
 
+// We technically do not need this limit around any longer since we
+// moved from a circular queue to a linked list.  However, having a
+// size limit is still a good idea so we keep the one we already had.
 #define NPENDINGCALLS 32
 
 struct _pending_calls {
