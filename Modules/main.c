@@ -2165,6 +2165,7 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config, _PyCmdline *cmdline)
             goto done;
         }
         pymain_clear_cmdline(pymain, cmdline);
+        pymain_clear_pymain(pymain);
         memset(cmdline, 0, sizeof(*cmdline));
 
         cmdline_get_global_config(cmdline);

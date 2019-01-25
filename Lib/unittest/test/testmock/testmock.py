@@ -1739,6 +1739,33 @@ class MockTest(unittest.TestCase):
             self.assertRaises(AttributeError, getattr, mock, 'f')
 
 
+    def test_mock_does_not_raise_on_repeated_attribute_deletion(self):
+        # bpo-20239: Assigning and deleting twice an attribute raises.
+        for mock in (Mock(), MagicMock(), NonCallableMagicMock(),
+                     NonCallableMock()):
+            mock.foo = 3
+            self.assertTrue(hasattr(mock, 'foo'))
+            self.assertEqual(mock.foo, 3)
+
+            del mock.foo
+            self.assertFalse(hasattr(mock, 'foo'))
+
+            mock.foo = 4
+            self.assertTrue(hasattr(mock, 'foo'))
+            self.assertEqual(mock.foo, 4)
+
+            del mock.foo
+            self.assertFalse(hasattr(mock, 'foo'))
+
+
+    def test_mock_raises_when_deleting_nonexistent_attribute(self):
+        for mock in (Mock(), MagicMock(), NonCallableMagicMock(),
+                     NonCallableMock()):
+            del mock.foo
+            with self.assertRaises(AttributeError):
+                del mock.foo
+
+
     def test_reset_mock_does_not_raise_on_attr_deletion(self):
         # bpo-31177: reset_mock should not raise AttributeError when attributes
         # were deleted in a mock instance
