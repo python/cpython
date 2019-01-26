@@ -1444,8 +1444,8 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
             status = SRE(match)(state, pattern + 2*prefix_skip, 0);
             if (status != 0)
                 return status;
-            RESET_CAPTURE_GROUP();
             ++ptr;
+            RESET_CAPTURE_GROUP();
         }
         return 0;
     }
@@ -1490,10 +1490,10 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
                     status = SRE(match)(state, pattern + 2*prefix_skip, 0);
                     if (status != 0)
                         return status;
-                    RESET_CAPTURE_GROUP();
                     /* close but no cigar -- try again */
                     if (++ptr >= end)
                         return 0;
+                    RESET_CAPTURE_GROUP();
                 }
                 i = overlap[i];
             } while (i != 0);
@@ -1516,8 +1516,8 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
             status = SRE(match)(state, pattern, 0);
             if (status != 0)
                 break;
-            RESET_CAPTURE_GROUP();
             ptr++;
+            RESET_CAPTURE_GROUP();
         }
     } else {
         /* general case */
@@ -1527,8 +1527,8 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
         status = SRE(match)(state, pattern, 1);
         state->must_advance = 0;
         while (status == 0 && ptr < end) {
-            RESET_CAPTURE_GROUP();
             ptr++;
+            RESET_CAPTURE_GROUP();
             TRACE(("|%p|%p|SEARCH\n", pattern, ptr));
             state->start = state->ptr = ptr;
             status = SRE(match)(state, pattern, 0);
