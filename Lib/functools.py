@@ -454,7 +454,7 @@ class _HashedSeq(list):
 
 def _make_key(args, kwds, typed,
              kwd_mark = (object(),),
-             fasttypes = {int, str, frozenset, type(None)},
+             fasttypes = {int, str},
              tuple=tuple, type=type, len=len):
     """Make a cache key from optionally typed positional and keyword arguments
 
@@ -510,8 +510,11 @@ def lru_cache(maxsize=128, typed=False):
 
     # Early detection of an erroneous call to @lru_cache without any arguments
     # resulting in the inner function being passed to maxsize instead of an
-    # integer or None.
-    if maxsize is not None and not isinstance(maxsize, int):
+    # integer or None.  Negative maxsize is treated as 0.
+    if isinstance(maxsize, int):
+        if maxsize < 0:
+            maxsize = 0
+    elif maxsize is not None:
         raise TypeError('Expected maxsize to be an integer or None')
 
     def decorating_function(user_function):
@@ -578,6 +581,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     link[NEXT] = root
                     hits += 1
                     return result
+                misses += 1
             result = user_function(*args, **kwds)
             with lock:
                 if key in cache:
@@ -615,7 +619,6 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     # Use the cache_len bound method instead of the len() function
                     # which could potentially be wrapped in an lru_cache itself.
                     full = (cache_len() >= maxsize)
-                misses += 1
             return result
 
     def cache_info():
