@@ -607,17 +607,17 @@ def getoutput(cmd):
 
 
 def _use_posix_spawn():
-    """Check is posix_spawn() can be used for subprocess.
+    """Check if posix_spawn() can be used for subprocess.
 
-    subprocess requires a posix_spawn() implementation that reports properly
-    errors to the parent process, set errno on the following failures:
+    subprocess requires a posix_spawn() implementation that properly reports
+    errors to the parent process, & sets errno on the following failures:
 
-    * process attribute actions failed
-    * file actions failed
-    * exec() failed
+    * Process attribute actions failed.
+    * File actions failed.
+    * exec() failed.
 
-    Prefer an implementation which can use vfork in some cases for best
-    performances.
+    Prefer an implementation which can use vfork() in some cases for best
+    performance.
     """
     if _mswindows or not hasattr(os, 'posix_spawn'):
         # os.posix_spawn() is not available
@@ -642,15 +642,14 @@ def _use_posix_spawn():
             # glibc 2.24 has a new Linux posix_spawn implementation using vfork
             # which properly reports errors to the parent process.
             return True
-        # Note: Don't use the POSIX implementation of glibc because it doesn't
+        # Note: Don't use the implementation in earlier glibc because it doesn't
         # use vfork (even if glibc 2.26 added a pipe to properly report errors
         # to the parent process).
     except (AttributeError, ValueError, OSError):
         # os.confstr() or CS_GNU_LIBC_VERSION value not available
         pass
 
-    # By default, consider that the implementation does not properly report
-    # errors.
+    # By default, assume that posix_spawn() does not properly report errors.
     return False
 
 
