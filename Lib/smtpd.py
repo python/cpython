@@ -736,7 +736,7 @@ class PureProxy(SMTPServer):
     def __init__(self, *args, **kwargs):
         if 'enable_SMTPUTF8' in kwargs and kwargs['enable_SMTPUTF8']:
             raise ValueError("PureProxy does not support SMTPUTF8.")
-        super(PureProxy, self).__init__(*args, **kwargs)
+        super(PureProxy, self).__init__(*args, decode_data=True, **kwargs)
 
     def process_message(self, peer, mailfrom, rcpttos, data, **kwargs):
         lines = data.split('\n')
