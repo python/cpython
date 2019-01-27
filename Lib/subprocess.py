@@ -1114,10 +1114,7 @@ class Popen(object):
                 p2cread = _winapi.GetStdHandle(_winapi.STD_INPUT_HANDLE)
                 if p2cread is None:
                     p2cread, _ = _winapi.CreatePipe(None, 0)
-                    try:
-                        p2cread = Handle(p2cread)
-                    finally:
-                        _winapi.CloseHandle(_)
+                    p2cread = Handle(p2cread)
             elif stdin == PIPE:
                 p2cread, p2cwrite = _winapi.CreatePipe(None, 0)
                 p2cread, p2cwrite = Handle(p2cread), Handle(p2cwrite)
@@ -1134,10 +1131,7 @@ class Popen(object):
                 c2pwrite = _winapi.GetStdHandle(_winapi.STD_OUTPUT_HANDLE)
                 if c2pwrite is None:
                     _, c2pwrite = _winapi.CreatePipe(None, 0)
-                    try:
-                        c2pwrite = Handle(c2pwrite)
-                    finally:
-                        _winapi.CloseHandle(_)
+                    c2pwrite = Handle(c2pwrite)
             elif stdout == PIPE:
                 c2pread, c2pwrite = _winapi.CreatePipe(None, 0)
                 c2pread, c2pwrite = Handle(c2pread), Handle(c2pwrite)
