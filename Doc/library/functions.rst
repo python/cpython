@@ -1005,8 +1005,6 @@ are always available.  They are listed here in alphabetical order.
    ``'t'``   text mode (default)
    ``'+'``   open a disk file for updating (reading and writing)
    ``'U'``   :deprecated: :term:`universal newlines` is enabled by default
-             in text mode. See the :ref:` *newline* <open-newline-parameter>`
-             parameter documentation for more details.
    ========= ===============================================================
 
    The default mode is ``'r'`` (open for reading text, synonym of ``'rt'``).
@@ -1020,6 +1018,9 @@ are always available.  They are listed here in alphabetical order.
    the contents of the file are returned as :class:`str`, the bytes having been
    first decoded using a platform-dependent encoding or using the specified
    *encoding* if given.
+
+   :term:`universal newlines` is enabled by default in text mode, but can
+   be switched off with the :ref:`*newline* <open-newline-parameter>` parameter.
 
    .. note::
 
