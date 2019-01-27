@@ -47,7 +47,20 @@ class CookieTests(unittest.TestCase):
                     'Set-Cookie: d=r',
                     'Set-Cookie: f=h'
                 ))
-            }
+            },
+            # issue35824 - http.cookies._CookiePattern modifying regular expressions
+            {
+                'data': 'Hello=World; Expires=Thu, 31 Jan 2019 05:56:00 GMT;',
+                'dict': {'Hello': 'World'},
+                'repr': "<SimpleCookie: Hello='World'>",
+                'output': 'Set-Cookie: Hello=World; expires=Thu, 31 Jan 2019 05:56:00 GMT'
+            },
+            {
+                'data': 'Hello=World; Expires=Thu,31 Jan 2019 05:56:00 GMT;',
+                'dict': {'Hello': 'World'},
+                'repr': "<SimpleCookie: Hello='World'>",
+                'output': 'Set-Cookie: Hello=World; expires=Thu,31 Jan 2019 05:56:00 GMT'
+            },
         ]
 
         for case in cases:

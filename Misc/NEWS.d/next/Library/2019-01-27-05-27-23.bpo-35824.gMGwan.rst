@@ -1,0 +1,1 @@
+Modify the parsing of Expires in Set-Cookie, Spaces and commas are both treated as delimiters. Patch by MeiK.

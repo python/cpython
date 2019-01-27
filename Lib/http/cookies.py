@@ -441,7 +441,7 @@ _CookiePattern = re.compile(r"""
     (?P<val>                         # Start of group 'val'
     "(?:[^\\"]|\\.)*"                  # Any doublequoted string
     |                                  # or
-    \w{3},\s[\w\d\s-]{9,11}\s[\d:]{8}\sGMT  # Special case for "expires" attr
+    \w{3},\s?[\w\d\s-]{9,11}\s[\d:]{8}\sGMT  # Special case for "expires" attr
     |                                  # or
     [""" + _LegalValueChars + r"""]*      # Any word or empty string
     )                                # End of group 'val'
