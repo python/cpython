@@ -738,7 +738,7 @@ class PureProxy(SMTPServer):
             raise ValueError("PureProxy does not support SMTPUTF8.")
         super(PureProxy, self).__init__(*args, **kwargs)
 
-    def process_message(self, peer, mailfrom, rcpttos, data):
+    def process_message(self, peer, mailfrom, rcpttos, data, **kwargs):
         lines = data.split('\n')
         # Look for the last header
         i = 0
@@ -783,7 +783,7 @@ class MailmanProxy(PureProxy):
             raise ValueError("MailmanProxy does not support SMTPUTF8.")
         super(PureProxy, self).__init__(*args, **kwargs)
 
-    def process_message(self, peer, mailfrom, rcpttos, data):
+    def process_message(self, peer, mailfrom, rcpttos, data, **kwargs):
         from io import StringIO
         from Mailman import Utils
         from Mailman import Message
