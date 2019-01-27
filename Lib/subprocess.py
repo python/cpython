@@ -50,6 +50,7 @@ import signal
 import sys
 import threading
 import warnings
+import contextlib
 from time import monotonic as _time
 
 
@@ -1072,27 +1073,27 @@ class Popen(object):
         # self._devnull is not always defined.
         devnull_fd = getattr(self, '_devnull', None)
 
-        if _mswindows:
-            if p2cread != -1:
-                p2cread.Close()
-            if c2pwrite != -1:
-                c2pwrite.Close()
-            if errwrite != -1:
-                errwrite.Close()
-        else:
-            if p2cread != -1 and p2cwrite != -1 and p2cread != devnull_fd:
-                os.close(p2cread)
-            if c2pwrite != -1 and c2pread != -1 and c2pwrite != devnull_fd:
-                os.close(c2pwrite)
-            if errwrite != -1 and errread != -1 and errwrite != devnull_fd:
-                os.close(errwrite)
+        with contextlib.ExitStack() as stack:
+            if _mswindows:
+                if p2cread != -1:
+                    stack.callback(p2cread.Close)
+                if c2pwrite != -1:
+                    stack.callback(c2pwrite.Close)
+                if errwrite != -1:
+                    stack.callback(errwrite.Close)
+            else:
+                if p2cread != -1 and p2cwrite != -1 and p2cread != devnull_fd:
+                    stack.callback(os.close, p2cread)
+                if c2pwrite != -1 and c2pread != -1 and c2pwrite != devnull_fd:
+                    stack.callback(os.close, c2pwrite)
+                if errwrite != -1 and errread != -1 and errwrite != devnull_fd:
+                    stack.callback(os.close, errwrite)
 
-        if devnull_fd is not None:
-            os.close(devnull_fd)
+            if devnull_fd is not None:
+                stack.callback(os.close, devnull_fd)
 
         # Prevent a double close of these handles/fds from __init__ on error.
         self._closed_child_pipe_fds = True
-
 
     if _mswindows:
         #
@@ -1113,8 +1114,10 @@ class Popen(object):
                 p2cread = _winapi.GetStdHandle(_winapi.STD_INPUT_HANDLE)
                 if p2cread is None:
                     p2cread, _ = _winapi.CreatePipe(None, 0)
-                    p2cread = Handle(p2cread)
-                    _winapi.CloseHandle(_)
+                    try:
+                        p2cread = Handle(p2cread)
+                    finally:
+                        _winapi.CloseHandle(_)
             elif stdin == PIPE:
                 p2cread, p2cwrite = _winapi.CreatePipe(None, 0)
                 p2cread, p2cwrite = Handle(p2cread), Handle(p2cwrite)
@@ -1131,8 +1134,10 @@ class Popen(object):
                 c2pwrite = _winapi.GetStdHandle(_winapi.STD_OUTPUT_HANDLE)
                 if c2pwrite is None:
                     _, c2pwrite = _winapi.CreatePipe(None, 0)
-                    c2pwrite = Handle(c2pwrite)
-                    _winapi.CloseHandle(_)
+                    try:
+                        c2pwrite = Handle(c2pwrite)
+                    finally:
+                        _winapi.CloseHandle(_)
             elif stdout == PIPE:
                 c2pread, c2pwrite = _winapi.CreatePipe(None, 0)
                 c2pread, c2pwrite = Handle(c2pread), Handle(c2pwrite)
