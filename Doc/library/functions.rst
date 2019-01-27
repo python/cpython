@@ -1004,7 +1004,9 @@ are always available.  They are listed here in alphabetical order.
    ``'b'``   binary mode
    ``'t'``   text mode (default)
    ``'+'``   open a disk file for updating (reading and writing)
-   ``'U'``   equivalent to ``newline=None`` (deprecated, use *newline* option)
+   ``'U'``   :deprecated: :term:`universal newlines` is enabled by default
+             in text mode. See the :ref:` *newline* <open-newline-parameter>`
+             parameter documentation for more details.
    ========= ===============================================================
 
    The default mode is ``'r'`` (open for reading text, synonym of ``'rt'``).
@@ -1084,6 +1086,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. index::
       single: universal newlines; open() built-in function
+
+   .. _open-newline-parameter:
 
    *newline* controls how :term:`universal newlines` mode works (it only
    applies to text mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and
