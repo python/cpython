@@ -2144,7 +2144,14 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
         item = PyTuple_GET_ITEM(p, i);
         if (PyFloat_CheckExact(item)) {
             px = PyFloat_AS_DOUBLE(item);
-        } else {
+        }
+        else if (PyLong_CheckExact(item)) {
+            px = PyLong_AsDouble(item);
+            if (px == -1.0 && PyErr_Occurred()) {
+                goto error_exit;
+            }
+        }
+        else {
             px = PyFloat_AsDouble(item);
             if (px == -1.0 && PyErr_Occurred()) {
                 goto error_exit;
@@ -2153,7 +2160,14 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
         item = PyTuple_GET_ITEM(q, i);
         if (PyFloat_CheckExact(item)) {
             qx = PyFloat_AS_DOUBLE(item);
-        } else {
+        }
+        else if (PyLong_CheckExact(item)) {
+            qx = PyLong_AsDouble(item);
+            if (qx == -1.0 && PyErr_Occurred()) {
+                goto error_exit;
+            }
+        }
+        else {
             qx = PyFloat_AsDouble(item);
             if (qx == -1.0 && PyErr_Occurred()) {
                 goto error_exit;
@@ -2201,7 +2215,14 @@ math_hypot(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         item = args[i];
         if (PyFloat_CheckExact(item)) {
             x = PyFloat_AS_DOUBLE(item);
-        } else {
+        }
+        else if (PyLong_CheckExact(item)) {
+            x = PyLong_AsDouble(item);
+            if (x == -1.0 && PyErr_Occurred()) {
+                goto error_exit;
+            }
+        }
+        else {
             x = PyFloat_AsDouble(item);
             if (x == -1.0 && PyErr_Occurred()) {
                 goto error_exit;

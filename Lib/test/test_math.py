@@ -766,6 +766,9 @@ class MathTests(unittest.TestCase):
             hypot(x=1)
         with self.assertRaises(TypeError):         # Reject values without __float__
             hypot(1.1, 'string', 2.2)
+        int_too_big_for_float = 10 ** (sys.float_info.max_10_exp + 5)
+        with self.assertRaises((ValueError, OverflowError)):
+            hypot(1, int_too_big_for_float)
 
         # Any infinity gives positive infinity.
         self.assertEqual(hypot(INF), INF)
@@ -805,7 +808,8 @@ class MathTests(unittest.TestCase):
         dist = math.dist
         sqrt = math.sqrt
 
-        # Simple exact case
+        # Simple exact cases
+        self.assertEqual(dist((1.0, 2.0, 3.0), (4.0, 2.0, -1.0)), 5.0)
         self.assertEqual(dist((1, 2, 3), (4, 2, -1)), 5.0)
 
         # Test different numbers of arguments (from zero to nine)
@@ -869,6 +873,11 @@ class MathTests(unittest.TestCase):
             dist((1, 2, 3), (4, 5, 6, 7))
         with self.assertRaises(TypeError):         # Rejects invalid types
             dist("abc", "xyz")
+        int_too_big_for_float = 10 ** (sys.float_info.max_10_exp + 5)
+        with self.assertRaises((ValueError, OverflowError)):
+            dist((1, int_too_big_for_float), (2, 3))
+        with self.assertRaises((ValueError, OverflowError)):
+            dist((2, 3), (1, int_too_big_for_float))
 
         # Verify that the one dimensional case is equivalent to abs()
         for i in range(20):
