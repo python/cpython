@@ -894,6 +894,8 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
                 }
 
                 argtypes = _Py_asdl_seq_new(num, arena);
+                if (!argtypes)
+                    goto out;
 
                 j = 0;
                 for (i = 0; i < NCH(ch); i++) {
@@ -905,8 +907,11 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
                     }
                 }
             }
-            else
+            else {
                 argtypes = _Py_asdl_seq_new(0, arena);
+                if (!argtypes)
+                    goto out;
+            }
 
             ret = ast_for_expr(&c, CHILD(n, NCH(n) - 1));
             if (!ret)
