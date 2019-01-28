@@ -1752,13 +1752,17 @@ ast_for_funcdef_impl(struct compiling *c, const node *n0,
         return NULL;
     get_last_end_pos(body, &end_lineno, &end_col_offset);
 
-    if (!type_comment && NCH(CHILD(n, name_i + 3)) > 1) {
-        /* If the function doesn't have a type comment on the same line, check
-         * if the suite has a type comment in it. */
+    if (NCH(CHILD(n, name_i + 3)) > 1) {
+        /* Check if the suite has a type comment in it. */
         tc = CHILD(CHILD(n, name_i + 3), 1);
 
-        if (TYPE(tc) == TYPE_COMMENT)
+        if (TYPE(tc) == TYPE_COMMENT) {
+            if (type_comment != NULL) {
+                ast_error(c, n, "Cannot have two type comments on def");
+                return NULL;
+            }
             type_comment = NEW_TYPE_COMMENT(tc);
+        }
     }
 
     if (is_async)

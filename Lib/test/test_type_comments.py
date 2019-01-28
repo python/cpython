@@ -20,11 +20,16 @@ async def bar():  # type: () -> int
     return await bar()
 """
 
+redundantdef = """\
+def foo():  # type: () -> int
+    # type: () -> str
+    return ''
+"""
+
 forstmt = """\
 for a in []:  # type: int
     pass
 """
-
 
 withstmt = """\
 with context() as a:  # type: int
@@ -165,6 +170,10 @@ class TypeCommentTests(unittest.TestCase):
         tree = self.classic_parse(asyncdef)
         self.assertEqual(tree.body[0].type_comment, None)
         self.assertEqual(tree.body[1].type_comment, None)
+
+    def test_redundantdef(self):
+        with self.assertRaisesRegex(SyntaxError, "^Cannot have two type comments on def"):
+            tree = self.parse(redundantdef)
 
     def test_forstmt(self):
         tree = self.parse(forstmt)
