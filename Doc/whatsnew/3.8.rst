@@ -316,8 +316,6 @@ Optimizations
   (Contributed by Inada Naoki in :issue:`33597`)
 
 * :class:`uuid.UUID` now uses ``__slots__`` to reduce its memory footprint.
-  Note that this means that instances can no longer be weak-referenced and
-  that arbitrary attributes can no longer be added to them.
 
 * The :class:`list` constructor does not overallocate the internal item buffer
   if the input iterable has a known length (the input implements ``__len__``).
@@ -513,9 +511,6 @@ Changes in the Python API
 
 * The function :func:`math.factorial` no longer accepts arguments that are not
   int-like. (Contributed by Pablo Galindo in :issue:`33083`.)
-
-* :class:`uuid.UUID` now uses ``__slots__``, therefore instances can no longer
-  be weak-referenced and attributes can no longer be added.
 
 * :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
   external entities by default.
