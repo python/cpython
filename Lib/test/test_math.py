@@ -532,7 +532,7 @@ class MathTests(unittest.TestCase):
     def testCombinationsTriangle(self):
         """Test (n+1 choose k+1) = (n choose k) + (n choose k+1)"""
         for n in range(100):
-            for k in range(100):
+            for k in range(n):
                 self.assertEqual(math.combinations(n + 1, k + 1), math.combinations(n, k) + math.combinations(n, k + 1))
 
     def testCombinationsZero(self):
@@ -548,10 +548,14 @@ class MathTests(unittest.TestCase):
             self.assertEqual(1, math.combinations(n, n))
 
     def testCombinationsValueErrors(self):
-        """Test that math.combinations raises ValueError on negative inputs."""
+        """Test that math.combinations raises ValueError on negative inputs or k>n."""
         for neg in [-1, -10**100]:
             self.assertRaises(ValueError, math.combinations, 0, neg)
             self.assertRaises(ValueError, math.combinations, neg, 0)
+
+        for n in range(100):
+            for k in range(n+1, 100):
+                self.assertRaises(ValueError, math.combinations, n, k)
 
     def testCombinationsOverflow(self):
         """math.combinations raises OverflowError on inputs too large for C longs."""
