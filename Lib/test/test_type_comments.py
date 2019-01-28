@@ -26,6 +26,12 @@ def foo():  # type: () -> int
     return ''
 """
 
+nonasciidef = """\
+def foo():
+    # type: () -> àçčéñt
+    pass
+"""
+
 forstmt = """\
 for a in []:  # type: int
     pass
@@ -174,6 +180,10 @@ class TypeCommentTests(unittest.TestCase):
     def test_redundantdef(self):
         with self.assertRaisesRegex(SyntaxError, "^Cannot have two type comments on def"):
             tree = self.parse(redundantdef)
+
+    def test_nonasciidef(self):
+        tree = self.parse(nonasciidef)
+        self.assertEqual(tree.body[0].type_comment, "() -> àçčéñt")
 
     def test_forstmt(self):
         tree = self.parse(forstmt)
