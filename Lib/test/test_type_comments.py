@@ -33,7 +33,6 @@ with context() as a:  # type: int
 
 vardecl = """\
 a = 0  # type: int
-a  # type: int
 """
 
 ignores = """\
@@ -182,9 +181,6 @@ class TypeCommentTests(unittest.TestCase):
     def test_vardecl(self):
         tree = self.parse(vardecl)
         self.assertEqual(tree.body[0].type_comment, "int")
-        # Curious fact: an expression can have a type comment but it
-        # is lost in the AST, so we have this in the example source
-        # code but don't test it here.
         tree = self.classic_parse(vardecl)
         self.assertEqual(tree.body[0].type_comment, None)
 
@@ -236,6 +232,7 @@ class TypeCommentTests(unittest.TestCase):
                 ast.parse(source, type_comments=True)
 
         check_both_ways("pass  # type: int\n")
+        check_both_ways("foo()  # type: int\n")
         check_both_ways("x += 1  # type: int\n")
         check_both_ways("while True:  # type: int\n  continue\n")
         check_both_ways("while True:\n  continue  # type: int\n")
