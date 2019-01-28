@@ -629,8 +629,8 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(math_comb__doc__,
-"comb($module, n, k, /)\n"
+PyDoc_STRVAR(math_combinations__doc__,
+"combinations($module, n, k, /)\n"
 "--\n"
 "\n"
 "Return the binomial coefficient indexed by the pair of integers n >= k >= 0.\n"
@@ -643,27 +643,27 @@ PyDoc_STRVAR(math_comb__doc__,
 "Raises a TypeError if argument(s) are non-integer and ValueError\n"
 "if argument(s) are negative or k > n.");
 
-#define MATH_COMB_METHODDEF    \
-    {"comb", (PyCFunction)(void(*)(void))math_comb, METH_FASTCALL, math_comb__doc__},
+#define MATH_COMBINATIONS_METHODDEF    \
+    {"combinations", (PyCFunction)(void(*)(void))math_combinations, METH_FASTCALL, math_combinations__doc__},
 
 static PyObject *
-math_comb_impl(PyObject *module, PyObject *n, PyObject *k);
+math_combinations_impl(PyObject *module, PyObject *n, PyObject *k);
 
 static PyObject *
-math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+math_combinations(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *n;
     PyObject *k;
 
-    if (!_PyArg_CheckPositional("comb", nargs, 2, 2)) {
+    if (!_PyArg_CheckPositional("combinations", nargs, 2, 2)) {
         goto exit;
     }
     n = args[0];
     k = args[1];
-    return_value = math_comb_impl(module, n, k);
+    return_value = math_combinations_impl(module, n, k);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=333afdbd248d74d1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=62f06df6c20b08ef input=a9049054013a1b77]*/

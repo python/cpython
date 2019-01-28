@@ -2707,7 +2707,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 
 
 /*[clinic input]
-math.comb
+math.combinations
 
     n: object
 
@@ -2727,8 +2727,8 @@ if argument(s) are negative or k > n.
 [clinic start generated code]*/
 
 static PyObject *
-math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=bd2cec8d854f3493 input=75e1a19623bae7dc]*/
+math_combinations_impl(PyObject *module, PyObject *n, PyObject *k)
+/*[clinic end generated code: output=19e8a448a1be51e0 input=a1334a4fbeb72a00]*/
 {
     if (!(PyLong_Check(n) && PyLong_Check(k))) {
         PyErr_SetString(PyExc_TypeError,
