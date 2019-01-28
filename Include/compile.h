@@ -86,10 +86,10 @@ PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena, int optimize);
 
 #endif /* !Py_LIMITED_API */
 
-/* These definitions must match corresponding definitions in graminit.h.
-   There's code in compile.c that checks that they are the same. */
+/* These definitions must match corresponding definitions in graminit.h. */
 #define Py_single_input 256
 #define Py_file_input 257
 #define Py_eval_input 258
+#define Py_func_type_input 345
 
 #endif /* !Py_COMPILE_H */
