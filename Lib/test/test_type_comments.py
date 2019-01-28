@@ -198,6 +198,27 @@ class TypeCommentTests(unittest.TestCase):
                 self.assertEqual(arg.type_comment, arg.arg.upper())
             assert not todo
 
+    def test_inappropriate_type_comments(self):
+        """Tests for inappropriately-placed type comments.
+
+        These should be silently ignored with type comments off,
+        but raise SyntaxError with type comments on.
+
+        This is not meant to be exhaustive.
+        """
+
+        def check_both_ways(source):
+            ast.parse(source, type_comments=False)
+            with self.assertRaises(SyntaxError):
+                ast.parse(source, type_comments=True)
+
+        check_both_ways("pass  # type: int\n")
+        check_both_ways("x += 1  # type: int\n")
+        check_both_ways("while True:  # type: int\n  continue\n")
+        check_both_ways("while True:\n  continue  # type: int\n")
+        check_both_ways("try:  # type: int\n  pass\nfinally:\n  pass\n")
+        check_both_ways("try:\n  pass\nfinally:  # type: int\n  pass\n")
+
 
 if __name__ == '__main__':
     unittest.main()
