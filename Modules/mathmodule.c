@@ -2146,8 +2146,8 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
             px = PyFloat_AS_DOUBLE(item);
         }
         else if (PyLong_CheckExact(item)) {
-            x = PyLong_AsDouble(item);
-            if (x == -1.0 && PyErr_Occurred()) {
+            px = PyLong_AsDouble(item);
+            if (px == -1.0 && PyErr_Occurred()) {
                 goto error_exit;
             }
         }
@@ -2162,8 +2162,8 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
             qx = PyFloat_AS_DOUBLE(item);
         }
         else if (PyLong_CheckExact(item)) {
-            x = PyLong_AsDouble(item);
-            if (x == -1.0 && PyErr_Occurred()) {
+            qx = PyLong_AsDouble(item);
+            if (qx == -1.0 && PyErr_Occurred()) {
                 goto error_exit;
             }
         }
