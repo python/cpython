@@ -2732,7 +2732,7 @@ math_combinations_impl(PyObject *module, PyObject *n, PyObject *k)
 {
     if (!(PyLong_Check(n) && PyLong_Check(k))) {
         PyErr_SetString(PyExc_TypeError,
-            "comb() only accepts integer arguments");
+            "combinations() only accepts integer arguments");
         return NULL;
     }
     n = PyNumber_Long(n);
@@ -2899,7 +2899,7 @@ static PyMethodDef math_methods[] = {
     {"tanh",            math_tanh,      METH_O,         math_tanh_doc},
     MATH_TRUNC_METHODDEF
     MATH_PROD_METHODDEF
-    MATH_COMB_METHODDEF
+    MATH_COMBINATIONS_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
