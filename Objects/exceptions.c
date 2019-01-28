@@ -176,7 +176,11 @@ BaseException_repr(PyBaseExceptionObject *self)
             }
             key = PyTuple_GET_ITEM(item, 0);
             value = PyTuple_GET_ITEM(item, 1);
-            PyTuple_SET_ITEM(seq, i, PyUnicode_FromFormat("%S=%R", key, value));
+            repr = PyUnicode_FromFormat("%S=%R", key, value);
+            if (repr == NULL) {
+                goto fail;
+            }
+            PyTuple_SET_ITEM(seq, i, repr);
             i++;
             Py_DECREF(item);
         }
@@ -221,36 +225,41 @@ BaseException_reduce(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *functools;
     PyObject *partial;
     PyObject *constructor;
-    PyObject *args;
     PyObject *result;
     PyObject **newargs;
 
     _Py_IDENTIFIER(partial);
     functools = PyImport_ImportModule("functools");
-    if (!functools)
+    if (functools == NULL) {
         return NULL;
+    }
     partial = _PyObject_GetAttrId(functools, &PyId_partial);
     Py_DECREF(functools);
-    if (!partial)
+    if (partial == NULL) {
         return NULL;
+    }
 
     Py_ssize_t len = 1;
     if (PyTuple_Check(self->args)) {
         len += PyTuple_GET_SIZE(self->args);
     }
-    newargs = PyMem_RawMalloc(len*sizeof(PyObject*));
+    newargs = PyMem_New(PyObject *, len);
+    if (newargs == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     newargs[0] = (PyObject *)Py_TYPE(self);
 
     for (Py_ssize_t i=1; i < len; i++) {
         newargs[i] = PyTuple_GetItem(self->args, i-1);
     }
     constructor = _PyObject_FastCallDict(partial, newargs, len, self->kwargs);
-    PyMem_RawFree(newargs);
+    PyMem_Free(newargs);
 
     Py_DECREF(partial);
 
-    args = PyTuple_New(0);
-    if (!args) {
+    PyObject *args = PyTuple_New(0);
+    if (args == NULL) {
         return NULL;
     }
     if (self->args && self->dict){
