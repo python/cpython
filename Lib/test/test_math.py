@@ -560,7 +560,7 @@ class MathTests(unittest.TestCase):
 
     def testCombinationsOverflow(self):
         """math.combinations raises OverflowError on inputs too large for C longs."""
-        # minimum(k, n - k) > LLONG_MAX)
+        # min(k, n - k) > LLONG_MAX)
         self.assertRaises(OverflowError, math.combinations, 10**400, 10**200)
 
     def testCombinationsTypeErrors(self):

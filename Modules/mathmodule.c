@@ -2755,7 +2755,7 @@ math_combinations_impl(PyObject *module, PyObject *n, PyObject *k)
     cmp = PyObject_RichCompareBool(n, k, Py_LT);
     if (cmp == 1) {
         PyErr_Format(PyExc_ValueError,
-                     "n must be an integer >= k");
+                     "n must be an integer greater or equal to k");
         goto fail_comb;
     }
     else if (cmp == -1) {
@@ -2787,13 +2787,13 @@ math_combinations_impl(PyObject *module, PyObject *n, PyObject *k)
     }
     else if (overflow == 1) {
         PyErr_Format(PyExc_OverflowError,
-                     "minimum(n - k, k) must not exceed %lld",
+                     "(n - k) and k must not exceed %lld",
                      LLONG_MAX);
         goto fail_comb;
     }
     else if (overflow == -1 || terms < 0) {
         PyErr_Format(PyExc_ValueError,
-                     "k must be an integer >= 0");
+                     "k must be a positive integer");
         goto fail_comb;
     }
 
