@@ -549,25 +549,15 @@ class MathTests(unittest.TestCase):
 
     def testBinomialValueErrors(self):
         """Test that math.binomial raises ValueError on negative inputs."""
-        self.assertRaises(ValueError, math.binomial, 0, -1)
-        self.assertRaises(ValueError, math.binomial, 0, -10**100)
-
-        self.assertRaises(ValueError, math.binomial, -1,       0)
-        self.assertRaises(ValueError, math.binomial, -10**100, 0)
+        for neg in [-1, -10**100]:
+            self.assertRaises(ValueError, math.binomial, 0, neg)
+            self.assertRaises(ValueError, math.binomial, neg, 0)
 
     def testBinomialTypeErrors(self):
         """Test math.binomial raises TypeError on non-int inputs."""
-        self.assertRaises(TypeError, math.binomial, 0, -1e100)
-        self.assertRaises(TypeError, math.binomial, 0, -1.0)
-        self.assertRaises(TypeError, math.binomial, 0, math.pi)
-        self.assertRaises(TypeError, math.binomial, 0, decimal.Decimal(5.2))
-        self.assertRaises(TypeError, math.binomial, 0, "5")
-
-        self.assertRaises(TypeError, math.binomial, -1e100,   0)
-        self.assertRaises(ValueError, math.binomial, -1.0,     0)
-        self.assertRaises(TypeError, math.binomial, math.pi,  0)
-        self.assertRaises(TypeError, math.binomial, decimal.Decimal(5.2), 0)
-        self.assertRaises(TypeError, math.binomial, "5",                  0)
+        for non_int in [-1e100, -1.0, math.pi, decimal.Decimal(5.2), "5"]:
+            self.assertRaises(TypeError, math.binomial, 0, non_int)
+            self.assertRaises(TypeError, math.binomial, non_int, 0)
 
     def testFloor(self):
         self.assertRaises(TypeError, math.floor)
