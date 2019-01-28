@@ -523,41 +523,41 @@ class MathTests(unittest.TestCase):
         self.assertRaises(OverflowError, math.factorial, 10**100)
         self.assertRaises(OverflowError, math.factorial, 1e100)
 
-    def testBinomialFactorial(self):
+    def testCombinationsFactorial(self):
         """Test (n choose k) = n! / (k! (n-k)!) when 0 <= k <= n."""
         for n in range(100):
             for k in range(n+1):
-                self.assertEqual(math.binomial(n, k), factorial(n) // factorial(k) // factorial(n-k))
+                self.assertEqual(math.combinations(n, k), factorial(n) // factorial(k) // factorial(n-k))
 
-    def testBinomialTriangle(self):
+    def testCombinationsTriangle(self):
         """Test (n+1 choose k+1) = (n choose k) + (n choose k+1)"""
         for n in range(100):
             for k in range(100):
-                self.assertEqual(math.binomial(n + 1, k + 1), math.binomial(n, k) + math.binomial(n, k + 1))
+                self.assertEqual(math.combinations(n + 1, k + 1), math.combinations(n, k) + math.combinations(n, k + 1))
 
-    def testBinomialZero(self):
+    def testCombinationsZero(self):
         """Test (n choose k) = 0 when k>n"""
         for k in range(100):
             for n in range(k):
-                self.assertEqual(0, math.binomial(n, k))
+                self.assertEqual(0, math.combinations(n, k))
 
-    def testBinomialOne(self):
+    def testCombinationsOne(self):
         """Test (n choose 0) = (n choose n) = 1"""
         for n in range(100):
-            self.assertEqual(1, math.binomial(n, 0))
-            self.assertEqual(1, math.binomial(n, n))
+            self.assertEqual(1, math.combinations(n, 0))
+            self.assertEqual(1, math.combinations(n, n))
 
-    def testBinomialValueErrors(self):
-        """Test that math.binomial raises ValueError on negative inputs."""
+    def testCombinationsValueErrors(self):
+        """Test that math.combinations raises ValueError on negative inputs."""
         for neg in [-1, -10**100]:
-            self.assertRaises(ValueError, math.binomial, 0, neg)
-            self.assertRaises(ValueError, math.binomial, neg, 0)
+            self.assertRaises(ValueError, math.combinations, 0, neg)
+            self.assertRaises(ValueError, math.combinations, neg, 0)
 
-    def testBinomialTypeErrors(self):
-        """Test math.binomial raises TypeError on non-int inputs."""
+    def testCombinationsTypeErrors(self):
+        """Test math.combinations raises TypeError on non-int inputs."""
         for non_int in [-1e100, -1.0, math.pi, decimal.Decimal(5.2), "5"]:
-            self.assertRaises(TypeError, math.binomial, 0, non_int)
-            self.assertRaises(TypeError, math.binomial, non_int, 0)
+            self.assertRaises(TypeError, math.combinations, 0, non_int)
+            self.assertRaises(TypeError, math.combinations, non_int, 0)
 
     def testFloor(self):
         self.assertRaises(TypeError, math.floor)
