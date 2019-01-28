@@ -1372,7 +1372,7 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
         return;
     }
 
-    // Switch to the original interpreter.
+    // Get the original interpreter.
     PyInterpreterState *interp = _PyInterpreterState_LookUpID(data->interp);
     if (interp == NULL) {
         // The intepreter was already destroyed.
@@ -1381,9 +1381,16 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
         }
         return;
     }
+    // XXX There's a slight race here...
+    if (interp->finalizing) {
+        // XXX Someone leaked some memory...
+        return;
+    }
 
     // "Release" the data and/or the object.
-    _Py_AddPendingCall(interp, 0, _release_xidata, data);
+    if (_Py_AddPendingCall(interp, 0, _release_xidata, data) != 0) {
+        // XXX Queue full or couldn't get lock.  Try again somehow?
+    }
 }
 
 PyObject *
