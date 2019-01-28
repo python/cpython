@@ -148,7 +148,7 @@ MailmanProxy Objects
 
 .. class:: MailmanProxy(localaddr, remoteaddr)
 
-   .. deprecated-removed:: 3.8 3.9
+   .. deprecated-removed:: 3.8 3.10
 
       :class:`MailmanProxy` is deprecated, it depends on a ``Mailman``
       module which no long exists and therefore is already broken.
