@@ -1187,18 +1187,19 @@ PyObject* PyAST_mod2obj(mod_ty t)
 }
 
 /* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
+/* and 3 for "func_type" */
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 {
     mod_ty res;
     PyObject *req_type[3];
-    char *req_name[] = {"Module", "Expression", "Interactive"};
+    char *req_name[] = {"Module", "Expression", "Interactive", "FunctionType"};
     int isinstance;
 
     req_type[0] = (PyObject*)Module_type;
     req_type[1] = (PyObject*)Expression_type;
     req_type[2] = (PyObject*)Interactive_type;
 
-    assert(0 <= mode && mode <= 2);
+    assert(0 <= mode && mode <= 3);
 
     if (!init_types())
         return NULL;
