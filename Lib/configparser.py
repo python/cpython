@@ -745,13 +745,13 @@ class RawConfigParser(MutableMapping):
                     raise
             elements_added.add(section)
             for key, value in keys.items():
-                key = self.optionxform(str(key))
+                option_key = self.optionxform(str(key))
                 if value is not None:
                     value = str(value)
-                if self._strict and (section, key) in elements_added:
-                    raise DuplicateOptionError(section, key, source)
-                elements_added.add((section, key))
-                self.set(section, key, value)
+                if self._strict and (section, option_key) in elements_added:
+                    raise DuplicateOptionError(section, option_key, source)
+                elements_added.add((section, option_key))
+                self.set(section, str(key), value)
 
     def readfp(self, fp, filename=None):
         """Deprecated, use read_file instead."""
