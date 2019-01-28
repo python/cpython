@@ -263,6 +263,9 @@ PyParser_AddToken(parser_state *ps, int type, char *str,
                     int arrow = x & ((1<<7)-1);
                     dfa *d1;
                     if (nt == func_body_suite && !(ps->p_flags & PyCF_TYPE_COMMENTS)) {
+                        /* When parsing type comments is not requested,
+                           we can provide better errors about bad indentation
+                           by using 'suite' for the body of a funcdef */
                         D(printf(" [switch func_body_suite to suite]"));
                         nt = suite;
                     }
