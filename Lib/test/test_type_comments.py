@@ -148,23 +148,36 @@ class TypeCommentTests(unittest.TestCase):
     def parse(self, source):
         return ast.parse(source, type_comments=True)
 
+    def classic_parse(self, source):
+        return ast.parse(source)
+
     def test_funcdef(self):
         tree = self.parse(funcdef)
         self.assertEqual(tree.body[0].type_comment, "() -> int")
         self.assertEqual(tree.body[1].type_comment, "() -> None")
+        tree = self.classic_parse(funcdef)
+        self.assertEqual(tree.body[0].type_comment, None)
+        self.assertEqual(tree.body[1].type_comment, None)
 
     def test_asyncdef(self):
         tree = self.parse(asyncdef)
         self.assertEqual(tree.body[0].type_comment, "() -> int")
         self.assertEqual(tree.body[1].type_comment, "() -> int")
+        tree = self.classic_parse(asyncdef)
+        self.assertEqual(tree.body[0].type_comment, None)
+        self.assertEqual(tree.body[1].type_comment, None)
 
     def test_forstmt(self):
         tree = self.parse(forstmt)
         self.assertEqual(tree.body[0].type_comment, "int")
+        tree = self.classic_parse(forstmt)
+        self.assertEqual(tree.body[0].type_comment, None)
 
     def test_withstmt(self):
         tree = self.parse(withstmt)
         self.assertEqual(tree.body[0].type_comment, "int")
+        tree = self.classic_parse(withstmt)
+        self.assertEqual(tree.body[0].type_comment, None)
 
     def test_vardecl(self):
         tree = self.parse(vardecl)
@@ -172,10 +185,14 @@ class TypeCommentTests(unittest.TestCase):
         # Curious fact: an expression can have a type comment but it
         # is lost in the AST, so we have this in the example source
         # code but don't test it here.
+        tree = self.classic_parse(vardecl)
+        self.assertEqual(tree.body[0].type_comment, None)
 
     def test_ignores(self):
         tree = self.parse(ignores)
         self.assertEqual([ti.lineno for ti in tree.type_ignores], [2, 5])
+        tree = self.classic_parse(ignores)
+        self.assertEqual(tree.type_ignores, [])
 
     def test_longargs(self):
         tree = self.parse(longargs)
@@ -197,6 +214,12 @@ class TypeCommentTests(unittest.TestCase):
                 self.assertEqual(arg.arg, c)  # That's the argument name
                 self.assertEqual(arg.type_comment, arg.arg.upper())
             assert not todo
+        tree = self.classic_parse(longargs)
+        for t in tree.body:
+            for arg in t.args.args + [t.args.vararg, t.args.kwarg]:
+                if arg is not None:
+                    self.assertIsNone(arg.type_comment, "%s(%s:%r)" %
+                                      (t.name, arg.arg, arg.type_comment))
 
     def test_inappropriate_type_comments(self):
         """Tests for inappropriately-placed type comments.
