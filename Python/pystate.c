@@ -328,25 +328,36 @@ PyInterpreterState_GetID(PyInterpreterState *interp)
 
 
 PyInterpreterState *
-_PyInterpreterState_LookUpID(PY_INT64_T requested_id)
+interp_lookup_id(PY_INT64_T requested_id)
 {
-    if (requested_id < 0)
-        goto error;
-
     PyInterpreterState *interp = PyInterpreterState_Head();
     while (interp != NULL) {
         PY_INT64_T id = PyInterpreterState_GetID(interp);
-        if (id < 0)
+        if (id < 0) {
             return NULL;
-        if (requested_id == id)
+        }
+        if (requested_id == id) {
             return interp;
+        }
         interp = PyInterpreterState_Next(interp);
     }
-
-error:
-    PyErr_Format(PyExc_RuntimeError,
-                 "unrecognized interpreter ID %lld", requested_id);
     return NULL;
+}
+
+PyInterpreterState *
+_PyInterpreterState_LookUpID(PY_INT64_T requested_id)
+{
+    PyInterpreterState *interp = NULL;
+    if (requested_id >= 0) {
+        HEAD_UNLOCK();
+        interp = interp_lookup_id(requested_id);
+        HEAD_UNLOCK();
+    }
+    if (interp == NULL && !PyErr_Occurred()) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "unrecognized interpreter ID %lld", requested_id);
+    }
+    return interp;
 }
 
 
