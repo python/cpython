@@ -527,7 +527,8 @@ class MathTests(unittest.TestCase):
         """Test (n choose k) = n! / (k! (n-k)!) when 0 <= k <= n."""
         for n in range(100):
             for k in range(n+1):
-                self.assertEqual(math.combinations(n, k), factorial(n) // factorial(k) // factorial(n-k))
+                self.assertEqual(math.combinations(n, k),
+                                 math.factorial(n) // math.factorial(k) // math.factorial(n-k))
 
     def testCombinationsTriangle(self):
         """Test (n+1 choose k+1) = (n choose k) + (n choose k+1)"""
