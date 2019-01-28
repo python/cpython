@@ -1476,7 +1476,7 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
         return;
     }
 
-    // Switch to the original interpreter.
+    // Get the original interpreter.
     PyInterpreterState *interp = _PyInterpreterState_LookUpID(data->interp);
     if (interp == NULL) {
         // The intepreter was already destroyed.
@@ -1485,12 +1485,20 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
         }
         return;
     }
+    // XXX There's a slight race here...
+    if (interp->finalizing) {
+        // XXX Someone leaked some memory...
+        return;
+    }
 
     // "Release" the data and/or the object.
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    _PyEval_AddPendingCall(tstate,
-                           &runtime->ceval, &interp->ceval,
-                           0, _release_xidata, data);
+    int res = _PyEval_AddPendingCall(tstate,
+                                     &runtime->ceval, &interp->ceval,
+                                     0, _release_xidata, data);
+    if (res != 0) {
+        // XXX Queue full or couldn't get lock.  Try again somehow?
+    }
 }
 
 PyObject *
