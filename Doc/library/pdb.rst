@@ -77,7 +77,8 @@ the code following this statement, and continue running without the debugger
 using the :pdbcmd:`continue` command.
 
 .. versionadded:: 3.7
-   The built-in :func:`breakpoint()`, when called with defaults, can be used instead of ``import pdb; pdb.set_trace()``.
+   The built-in :func:`breakpoint()`, when called with defaults, can be used 
+   instead of ``import pdb; pdb.set_trace()``.
 
 The typical usage to inspect a crashed program is::
 
