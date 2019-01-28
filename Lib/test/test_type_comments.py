@@ -240,13 +240,11 @@ class TypeCommentTests(unittest.TestCase):
         check_both_ways("try:\n  pass\nfinally:  # type: int\n  pass\n")
 
     def test_func_type_input(self):
-        return
 
         def parse_func_type_input(source):
-            from ast import PyCF_ONLY_AST
-            return compile(source, "<unknown>", "func_type", PyCF_ONLY_AST)
+            return ast.parse(source, "<unknown>", "func_type")
 
-        # Some checks below will crash if the return structure is wrong
+        # Some checks below will crash if the returned structure is wrong
         tree = parse_func_type_input("() -> int")
         self.assertEqual(tree.argtypes, [])
         self.assertEqual(tree.returns.id, "int")
@@ -254,9 +252,24 @@ class TypeCommentTests(unittest.TestCase):
         tree = parse_func_type_input("(int) -> List[str]")
         self.assertEqual(len(tree.argtypes), 1)
         arg = tree.argtypes[0]
-        self.assertEqual(arg.value.int, "int")
+        self.assertEqual(arg.id, "int")
         self.assertEqual(tree.returns.value.id, "List")
-        self.assertEqual(tree.returns.slice.vale.id, "str")
+        self.assertEqual(tree.returns.slice.value.id, "str")
+
+        tree = parse_func_type_input("(int, *str, **Any) -> float")
+        self.assertEqual(tree.argtypes[0].id, "int")
+        self.assertEqual(tree.argtypes[1].id, "str")
+        self.assertEqual(tree.argtypes[2].id, "Any")
+        self.assertEqual(tree.returns.id, "float")
+
+        with self.assertRaises(SyntaxError):
+            tree = parse_func_type_input("(int, *str, *Any) -> float")
+
+        with self.assertRaises(SyntaxError):
+            tree = parse_func_type_input("(int, **str, Any) -> float")
+
+        with self.assertRaises(SyntaxError):
+            tree = parse_func_type_input("(**int, **str) -> float")
 
 
 if __name__ == '__main__':
