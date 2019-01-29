@@ -449,7 +449,7 @@ class Stats:
 
     def print_line(self, func):  # hack: should print percentages
         cc, nc, tt, ct, callers = self.stats[func]
-        c = str(nc)
+        c = '{0:,}'.format(nc)
         if nc != cc:
             c = c + '/' + str(cc)
         print(c.rjust(9), end=' ', file=self.stream)
@@ -550,7 +550,7 @@ def count_calls(callers):
 #**************************************************************************
 
 def f8(x):
-    return "%8.3f" % x
+    return "{0:8,.3f}".format(x)
 
 #**************************************************************************
 # Statistics browser added by ESR, April 2001
