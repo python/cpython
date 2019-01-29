@@ -11,7 +11,8 @@
 
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce', 'partial',
-           'partialmethod', 'singledispatch', 'singledispatchmethod']
+           'partialmethod', 'identity', 'compose', 'sequence',
+           'singledispatch', 'singledispatchmethod']
 
 from abc import get_cache_token
 from collections import namedtuple
@@ -429,6 +430,36 @@ def _unwrap_partial(func):
     while isinstance(func, partial):
         func = func.func
     return func
+
+
+################################################################################
+### Higher order function combinator primitives
+################################################################################
+
+def identity(x):
+    """The identity functions simply returns its argument"""
+    return x
+
+
+def compose(f, *func_list):
+    """Compose a list of functions into one new function. The resulting
+    function will thread the computation results through all of its component
+    functions, i.e. the return value of the previous function will be the
+    input to the next function. For example, for f = compose(f1, f2), f(x)
+    would be equivalent to f2(f1(x)).
+    """
+    def helper(*args, **kwargs):
+        return reduce(lambda x, f: f(x), func_list, f(*args, **kwargs))
+    return helper
+
+
+def sequence(x, f, *func_list):
+    """Thread the given input argument through all provided functions,
+    whereupon the return value of a previous function becomes the input value
+    to the next function and the overall value of the sequence will be the
+    result of the last function. For example, sequence(x, f1, f2) == f2(f1(x)).
+    """
+    return compose(f, *func_list)(x)
 
 ################################################################################
 ### LRU Cache function decorator
