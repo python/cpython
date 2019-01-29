@@ -1463,6 +1463,7 @@ _release_xidata(void *arg)
         data->free(data->data);
     }
     Py_XDECREF(data->obj);
+    PyMem_Free(data);
     return 0;
 }
 
@@ -1485,17 +1486,25 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
         }
         return;
     }
-    // XXX There's a slight race here...
+    // XXX There's an ever-so-slight race here...
     if (interp->finalizing) {
         // XXX Someone leaked some memory...
         return;
     }
 
     // "Release" the data and/or the object.
+    _PyCrossInterpreterData *copied = PyMem_Malloc(sizeof(_PyCrossInterpreterData));
+    if (copied == NULL) {
+        PyErr_SetString(PyExc_MemoryError,
+                        "Not enough memory to preserve cross-interpreter data");
+        PyErr_Print();
+        return;
+    }
+    memcpy(copied, data, sizeof(_PyCrossInterpreterData));
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     int res = _PyEval_AddPendingCall(tstate,
                                      &runtime->ceval, &interp->ceval,
-                                     0, _release_xidata, data);
+                                     0, _release_xidata, copied);
     if (res != 0) {
         // XXX Queue full or couldn't get lock.  Try again somehow?
     }
