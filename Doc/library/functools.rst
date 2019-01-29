@@ -309,6 +309,65 @@ The :mod:`functools` module defines the following functions:
    See :func:`itertools.accumulate` for an iterator that yields all intermediate
    values.
 
+
+.. function:: identity(x)
+
+   Returns its argument unchanged. This function can be used in situations
+   in which a default function argument is required.
+
+     >>> from itertools import cycle
+     >>> from functools import identity
+     >>> def negate(x): return -x
+     ...
+     >>> def inverse_second(iterable):
+     ...     return map(lambda t: t[0](t[1]), zip(cycle([identity, negate]), iterable))
+     ...
+     >>> print(list(inverse_second([1,2,3,4,5,6,7,8,9])))
+     [1, -2, 3, -4, 5, -6, 7, -8, 9]
+
+
+.. function:: compose(f1[, f2[, f3[...]]])
+
+   Return a new *function* **f**. The resulting function **f** will be a so called
+   threaded computation. A threaded computation will use the return value of the
+   first function as the input value of the second function and the return value
+   of the second function will become the input o the third function until no
+   more functions are left. The last return value will be the final return value
+   of **f**. In summary ``compose(f1,f2,f3)(x) == f3(f2(f1(x)))``.
+
+   This is also called a pipeline, because it follows the same logic as the
+   pipe character of the UNIX shell `echo x | f1 | f2 | f3`.
+
+     >>> from functools import compose, partial
+     >>> rectify_data = compose(
+     ...     lambda s: s.split('\n'),
+     ...     partial(filter, lambda s: len(s)>0),
+     ...     partial(map, lambda s: s.lower()),
+     ...     lambda ss: '\n'.join(ss)
+     ... )
+     >>> data = "Line1\nLiNe2\n\n\n\nlINE3"
+     >>> rectify_data(data)
+     'line1\nline2\nline3'
+
+
+.. function:: sequence(x, f1[, f2[, f3[...]]])
+
+   Apply the argument *x* to the composition of the functions. This is a
+   helper function and equivalent to ``compose(f1,f2,f3)(x)``.
+
+     >>> from functools import sequence, partial
+     >>> data = "Line1\nLiNe2\n\n\n\nlINE3"
+     >>> rectified_data = sequence(
+     ...     data,
+     ...     lambda s: s.split('\n'),
+     ...     partial(filter, lambda s: len(s)>0),
+     ...     partial(map, lambda s: s.lower()),
+     ...     lambda ss: '\n'.join(ss)
+     ... )
+     >>> rectified_data
+     'line1\nline2\nline3'
+
+
 .. decorator:: singledispatch
 
    Transform a function into a :term:`single-dispatch <single
