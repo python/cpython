@@ -1,0 +1,1 @@
+Higher order functions are functions which can take other functions as arguments and have functions as return value. Higher order functions allow the creation of new functions out of existing ones and support a functional programming style. The *functools* module now contains more higher order function combinators.
