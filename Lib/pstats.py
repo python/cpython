@@ -416,7 +416,7 @@ class Stats:
                 subheader = isinstance(value, tuple)
                 break
         if subheader:
-            print(" "*name_size + "    ncalls  tottime  cumtime", file=self.stream)
+            print(" "*name_size + "       ncalls     tottime     cumtime", file=self.stream)
 
     def print_call_line(self, name_size, source, call_dict, arrow="->"):
         print(func_std_string(source).ljust(name_size) + arrow, end=' ', file=self.stream)
@@ -444,7 +444,7 @@ class Stats:
             indent = " "
 
     def print_title(self):
-        print('   ncalls  tottime  percall  cumtime  percall', end=' ', file=self.stream)
+        print('      ncalls     tottime     percall     cumtime     percall', end=' ', file=self.stream)
         print('filename:lineno(function)', file=self.stream)
 
     def print_line(self, func):  # hack: should print percentages
@@ -452,15 +452,15 @@ class Stats:
         c = '{0:,}'.format(nc)
         if nc != cc:
             c = c + '/' + str(cc)
-        print(c.rjust(9), end=' ', file=self.stream)
+        print(c.rjust(12), end=' ', file=self.stream)
         print(f8(tt), end=' ', file=self.stream)
         if nc == 0:
-            print(' '*8, end=' ', file=self.stream)
+            print(' '*11, end=' ', file=self.stream)
         else:
             print(f8(tt/nc), end=' ', file=self.stream)
         print(f8(ct), end=' ', file=self.stream)
         if cc == 0:
-            print(' '*8, end=' ', file=self.stream)
+            print(' '*11, end=' ', file=self.stream)
         else:
             print(f8(ct/cc), end=' ', file=self.stream)
         print(func_std_string(func), file=self.stream)
@@ -550,7 +550,7 @@ def count_calls(callers):
 #**************************************************************************
 
 def f8(x):
-    return "{0:8,.3f}".format(x)
+    return "{0:11,.3f}".format(x)
 
 #**************************************************************************
 # Statistics browser added by ESR, April 2001
