@@ -120,17 +120,17 @@ def regenerate_expected_output(filename, cls):
     newfile = []
     with open(filename, 'r') as f:
         for line in f:
-            newfile.append(line)
+            newfile.append(line.encode())
             if line.startswith('#--cut'):
                 break
 
-    with open(filename, 'w') as f:
+    with open(filename, 'wb') as f:
         f.writelines(newfile)
-        f.write("_ProfileOutput = {}\n")
+        f.write("_ProfileOutput = {}\n".encode())
         for i, method in enumerate(cls.methodnames):
-            f.write('_ProfileOutput[%r] = """\\\n%s"""\n' % (
-                    method, results[i+1]))
-        f.write('\nif __name__ == "__main__":\n    main()\n')
+            f.write(('_ProfileOutput[%r] = """\\\n%s"""\n' % (
+                    method, results[i+1])).encode())
+        f.write('\nif __name__ == "__main__":\n    main()\n'.encode())
 
 @contextmanager
 def silent():
