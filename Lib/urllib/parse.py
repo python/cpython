@@ -489,6 +489,9 @@ def urljoin(base, url, allow_fragments=True):
     if not url:
         return base
 
+    if url[0:1] == '?':
+        url = '/' + url
+
     base, url, _coerce_result = _coerce_args(base, url)
     bscheme, bnetloc, bpath, bparams, bquery, bfragment = \
             urlparse(base, '', allow_fragments)
