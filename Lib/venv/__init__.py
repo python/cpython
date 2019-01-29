@@ -64,11 +64,10 @@ class EnvBuilder:
         self.system_site_packages = False
         self.create_configuration(context)
         self.setup_python(context)
-        if not self.upgrade:
-            self.setup_scripts(context)
         if self.with_pip:
             self._setup_pip(context)
         if not self.upgrade:
+            self.setup_scripts(context)
             self.post_setup(context)
         if true_system_site_packages:
             # We had set it to False before, now
@@ -178,6 +177,20 @@ class EnvBuilder:
         if force_copy:
             shutil.copyfile(src, dst)
 
+    if os.name == 'nt':
+        def copy_redirector(self, src, dst):
+            basename, ext = os.path.splitext(os.path.basename(src))
+            if basename.endswith('_d'):
+                ext = '_d' + ext
+                basename = basename[:-2]
+            if sysconfig.is_python_build(True):
+                if basename == 'python':
+                    basename = 'venvlauncher'
+                elif basename == 'pythonw':
+                    basename = 'venvwlauncher'
+            src = os.path.join(os.path.dirname(src), basename + ext)
+            shutil.copyfile(src, dst)
+
     def setup_python(self, context):
         """
         Set up a Python executable in the environment.
@@ -205,20 +218,18 @@ class EnvBuilder:
             # For normal cases, the venvlauncher will be copied from
             # our scripts folder. For builds, we need to copy it
             # manually.
+            copier = self.copy_redirector
+            if self.symlinks:
+                logger.warning('Venv with symlinks is not supported on Windows')
+
+            for suffix in ('python', 'pythonw'):
+                for ext in ('.exe', '_d.exe'):
+                    src = os.path.join(dirname, suffix + ext)
+                    if os.path.exists(src):
+                        copier(src, os.path.join(binpath, suffix + ext))
+
             if sysconfig.is_python_build(True):
-                suffix = '.exe'
-                if context.python_exe.lower().endswith('_d.exe'):
-                    suffix = '_d.exe'
-
-                src = os.path.join(dirname, "venvlauncher" + suffix)
-                dst = os.path.join(binpath, context.python_exe)
-                copier(src, dst)
-
-                src = os.path.join(dirname, "venvwlauncher" + suffix)
-                dst = os.path.join(binpath, "pythonw" + suffix)
-                copier(src, dst)
-
-                # copy init.tcl over
+                # copy init.tcl
                 for root, dirs, files in os.walk(context.python_dir):
                     if 'init.tcl' in files:
                         tcldir = os.path.basename(root)
@@ -229,6 +240,7 @@ class EnvBuilder:
                         dst = os.path.join(tcldir, 'init.tcl')
                         shutil.copyfile(src, dst)
                         break
+
 
     def _setup_pip(self, context):
         """Installs or upgrades pip in a virtual environment"""
@@ -282,7 +294,7 @@ class EnvBuilder:
         text = text.replace('__VENV_PYTHON__', context.env_exe)
         return text
 
-    def install_scripts(self, context, path):
+    def install_scripts(self, context, path, *, exe_scripts=False):
         """
         Install scripts into the created environment from a directory.
 
@@ -304,6 +316,9 @@ class EnvBuilder:
                         dirs.remove(d)
                 continue # ignore files in top level
             for f in files:
+                if os.name == 'nt':
+                    if f.startswith('python') and f.endswith(('.exe', '.pdb')):
+                        continue
                 srcfile = os.path.join(root, f)
                 suffix = root[plen:].split(os.sep)[2:]
                 if not suffix:
