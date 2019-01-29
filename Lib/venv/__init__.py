@@ -241,7 +241,6 @@ class EnvBuilder:
                         shutil.copyfile(src, dst)
                         break
 
-
     def _setup_pip(self, context):
         """Installs or upgrades pip in a virtual environment"""
         # We run ensurepip in isolated mode to avoid side effects from
