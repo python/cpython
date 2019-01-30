@@ -153,7 +153,8 @@ encoding_decl: NAME
 yield_expr: 'yield' [yield_arg]
 yield_arg: 'from' test | testlist_star_expr
 
-# the TYPE_COMMENT in suites is only parsed for funcdefs, but can't go elsewhere due to ambiguity
+# the TYPE_COMMENT in suites is only parsed for funcdefs,
+# but can't go elsewhere due to ambiguity
 func_body_suite: simple_stmt | NEWLINE [TYPE_COMMENT NEWLINE] INDENT stmt+ DEDENT
 
 func_type_input: func_type NEWLINE* ENDMARKER
