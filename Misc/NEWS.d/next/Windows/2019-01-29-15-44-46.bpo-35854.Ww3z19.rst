@@ -1,0 +1,1 @@
+Fix EnvBuilder and --symlinks in venv on Windows
