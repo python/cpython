@@ -889,8 +889,9 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
                  * stars on the args -- just parse them into an ordered list */
                 num = 0;
                 for (i = 0; i < NCH(ch); i++) {
-                    if (TYPE(CHILD(ch, i)) == test)
+                    if (TYPE(CHILD(ch, i)) == test) {
                         num++;
+                    }
                 }
 
                 argtypes = _Py_asdl_seq_new(num, arena);
@@ -1553,7 +1554,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                     (i+2 == NCH(n) && (TYPE(CHILD(n, i+1)) == COMMA
                                        || TYPE(CHILD(n, i+1)) == TYPE_COMMENT))) {
                     ast_error(c, CHILD(n, i),
-                        "named arguments must follow bare *");
+                              "named arguments must follow bare *");
                     return NULL;
                 }
                 ch = CHILD(n, i+1);  /* tfpdef or COMMA */
@@ -1563,7 +1564,7 @@ ast_for_arguments(struct compiling *c, const node *n)
 
                     if (i < NCH(n) && TYPE(CHILD(n, i)) == TYPE_COMMENT) {
                         ast_error(c, CHILD(n, i),
-                                "bare * has associated type comment");
+                                  "bare * has associated type comment");
                         return NULL;
                     }
 
@@ -2432,7 +2433,7 @@ ast_for_atom(struct compiling *c, const node *n)
                 /* It's a dictionary comprehension. */
                 if (is_dict) {
                     ast_error(c, n, "dict unpacking cannot be used in "
-                            "dict comprehension");
+                              "dict comprehension");
                     return NULL;
                 }
                 res = ast_for_dictcomp(c, ch);
@@ -3007,13 +3008,13 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 if (nkeywords) {
                     if (ndoublestars) {
                         ast_error(c, chch,
-                                "positional argument follows "
-                                "keyword argument unpacking");
+                                  "positional argument follows "
+                                  "keyword argument unpacking");
                     }
                     else {
                         ast_error(c, chch,
-                                "positional argument follows "
-                                "keyword argument");
+                                  "positional argument follows "
+                                  "keyword argument");
                     }
                     return NULL;
                 }
@@ -3027,8 +3028,8 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 expr_ty starred;
                 if (ndoublestars) {
                     ast_error(c, chch,
-                            "iterable argument unpacking follows "
-                            "keyword argument unpacking");
+                              "iterable argument unpacking follows "
+                              "keyword argument unpacking");
                     return NULL;
                 }
                 e = ast_for_expr(c, CHILD(ch, 1));
@@ -3066,13 +3067,13 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 if (nkeywords) {
                     if (ndoublestars) {
                         ast_error(c, chch,
-                                "positional argument follows "
-                                "keyword argument unpacking");
+                                  "positional argument follows "
+                                  "keyword argument unpacking");
                     }
                     else {
                         ast_error(c, chch,
-                                "positional argument follows "
-                                "keyword argument");
+                                  "positional argument follows "
+                                  "keyword argument");
                     }
                     return NULL;
                 }
@@ -3133,7 +3134,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                     tmp = ((keyword_ty)asdl_seq_GET(keywords, k))->arg;
                     if (tmp && !PyUnicode_Compare(tmp, key)) {
                         ast_error(c, chch,
-                                "keyword argument repeated");
+                                  "keyword argument repeated");
                         return NULL;
                     }
                 }
@@ -3182,16 +3183,16 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 {
     REQ(n, expr_stmt);
     /* expr_stmt: testlist_star_expr (annassign | augassign (yield_expr|testlist) |
-                           ('=' (yield_expr|testlist_star_expr))* [TYPE_COMMENT])
-       annassign: ':' test ['=' test]
-       testlist_star_expr: (test|star_expr) (',' test|star_expr)* [',']
-       augassign: '+=' | '-=' | '*=' | '@=' | '/=' | '%=' | '&=' | '|=' | '^='
-                | '<<=' | '>>=' | '**=' | '//='
+                     [('=' (yield_expr|testlist_star_expr))+ [TYPE_COMMENT]] )
+       annassign: ':' test ['=' (yield_expr|testlist)]
+       testlist_star_expr: (test|star_expr) (',' (test|star_expr))* [',']
+       augassign: ('+=' | '-=' | '*=' | '@=' | '/=' | '%=' | '&=' | '|=' | '^=' |
+                   '<<=' | '>>=' | '**=' | '//=')
        test: ... here starts the operator precedence dance
      */
     int num = NCH(n);
 
-    if (num == 1 || (num == 2 && TYPE(CHILD(n, 1)) == TYPE_COMMENT)) {
+    if (num == 1) {
         expr_ty e = ast_for_testlist(c, CHILD(n, 0));
         if (!e)
             return NULL;
@@ -3670,8 +3671,9 @@ ast_for_import_stmt(struct compiling *c, const node *n)
             n = CHILD(n, idx);
             n_children = NCH(n);
             if (n_children % 2 == 0) {
-                ast_error(c, n, "trailing comma not allowed without"
-                             " surrounding parentheses");
+                ast_error(c, n,
+                          "trailing comma not allowed without"
+                          " surrounding parentheses");
                 return NULL;
             }
             break;
@@ -4951,8 +4953,9 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         if (ch == '\\') {
             /* Error: can't include a backslash character, inside
                parens or strings or not. */
-            ast_error(c, n, "f-string expression part "
-                            "cannot include a backslash");
+            ast_error(c, n,
+                      "f-string expression part "
+                      "cannot include a backslash");
             return -1;
         }
         if (quote_char) {
@@ -5076,8 +5079,9 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         /* Validate the conversion. */
         if (!(conversion == 's' || conversion == 'r'
               || conversion == 'a')) {
-            ast_error(c, n, "f-string: invalid conversion character: "
-                            "expected 's', 'r', or 'a'");
+            ast_error(c, n,
+                      "f-string: invalid conversion character: "
+                      "expected 's', 'r', or 'a'");
             return -1;
         }
     }
@@ -5629,7 +5633,8 @@ parsestr(struct compiling *c, const node *n, int *bytesmode, int *rawmode,
         const char *ch;
         for (ch = s; *ch; ch++) {
             if (Py_CHARMASK(*ch) >= 0x80) {
-                ast_error(c, n, "bytes can only contain ASCII "
+                ast_error(c, n,
+                          "bytes can only contain ASCII "
                           "literal characters.");
                 return -1;
             }
