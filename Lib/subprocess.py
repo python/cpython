@@ -50,6 +50,7 @@ import signal
 import sys
 import threading
 import warnings
+import contextlib
 from time import monotonic as _time
 
 
@@ -607,17 +608,17 @@ def getoutput(cmd):
 
 
 def _use_posix_spawn():
-    """Check is posix_spawn() can be used for subprocess.
+    """Check if posix_spawn() can be used for subprocess.
 
-    subprocess requires a posix_spawn() implementation that reports properly
-    errors to the parent process, set errno on the following failures:
+    subprocess requires a posix_spawn() implementation that properly reports
+    errors to the parent process, & sets errno on the following failures:
 
-    * process attribute actions failed
-    * file actions failed
-    * exec() failed
+    * Process attribute actions failed.
+    * File actions failed.
+    * exec() failed.
 
-    Prefer an implementation which can use vfork in some cases for best
-    performances.
+    Prefer an implementation which can use vfork() in some cases for best
+    performance.
     """
     if _mswindows or not hasattr(os, 'posix_spawn'):
         # os.posix_spawn() is not available
@@ -642,15 +643,14 @@ def _use_posix_spawn():
             # glibc 2.24 has a new Linux posix_spawn implementation using vfork
             # which properly reports errors to the parent process.
             return True
-        # Note: Don't use the POSIX implementation of glibc because it doesn't
+        # Note: Don't use the implementation in earlier glibc because it doesn't
         # use vfork (even if glibc 2.26 added a pipe to properly report errors
         # to the parent process).
     except (AttributeError, ValueError, OSError):
         # os.confstr() or CS_GNU_LIBC_VERSION value not available
         pass
 
-    # By default, consider that the implementation does not properly report
-    # errors.
+    # By default, assume that posix_spawn() does not properly report errors.
     return False
 
 
@@ -1073,27 +1073,27 @@ class Popen(object):
         # self._devnull is not always defined.
         devnull_fd = getattr(self, '_devnull', None)
 
-        if _mswindows:
-            if p2cread != -1:
-                p2cread.Close()
-            if c2pwrite != -1:
-                c2pwrite.Close()
-            if errwrite != -1:
-                errwrite.Close()
-        else:
-            if p2cread != -1 and p2cwrite != -1 and p2cread != devnull_fd:
-                os.close(p2cread)
-            if c2pwrite != -1 and c2pread != -1 and c2pwrite != devnull_fd:
-                os.close(c2pwrite)
-            if errwrite != -1 and errread != -1 and errwrite != devnull_fd:
-                os.close(errwrite)
+        with contextlib.ExitStack() as stack:
+            if _mswindows:
+                if p2cread != -1:
+                    stack.callback(p2cread.Close)
+                if c2pwrite != -1:
+                    stack.callback(c2pwrite.Close)
+                if errwrite != -1:
+                    stack.callback(errwrite.Close)
+            else:
+                if p2cread != -1 and p2cwrite != -1 and p2cread != devnull_fd:
+                    stack.callback(os.close, p2cread)
+                if c2pwrite != -1 and c2pread != -1 and c2pwrite != devnull_fd:
+                    stack.callback(os.close, c2pwrite)
+                if errwrite != -1 and errread != -1 and errwrite != devnull_fd:
+                    stack.callback(os.close, errwrite)
 
-        if devnull_fd is not None:
-            os.close(devnull_fd)
+            if devnull_fd is not None:
+                stack.callback(os.close, devnull_fd)
 
         # Prevent a double close of these handles/fds from __init__ on error.
         self._closed_child_pipe_fds = True
-
 
     if _mswindows:
         #
