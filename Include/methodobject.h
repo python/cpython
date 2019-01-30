@@ -7,11 +7,13 @@
 extern "C" {
 #endif
 
-/* This is about the type 'builtin_function_or_method',
-   not Python methods in user-defined classes.  See classobject.h
-   for the latter. */
+
+/* This is about the classes 'builtin_function_or_method'
+   and 'method_descriptor', not Python methods in user-defined
+   classes.  See classobject.h for the latter. */
 
 PyAPI_DATA(PyTypeObject) PyCFunction_Type;
+PyAPI_DATA(PyTypeObject) PyMethodDescr_Type;
 
 #define PyCFunction_Check(op) (Py_TYPE(op) == &PyCFunction_Type)
 
@@ -26,32 +28,19 @@ typedef PyObject *(*PyNoArgsFunction)(PyObject *);
 
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
 PyAPI_FUNC(PyObject *) PyCFunction_GetSelf(PyObject *);
-PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
+PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);  /* deprecated and useless */
 
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
 #ifndef Py_LIMITED_API
-#define PyCFunction_GET_FUNCTION(func) \
-        (((PyCFunctionObject *)func) -> m_ml -> ml_meth)
-#define PyCFunction_GET_SELF(func) \
-        (((PyCFunctionObject *)func) -> m_ml -> ml_flags & METH_STATIC ? \
-         NULL : ((PyCFunctionObject *)func) -> m_self)
-#define PyCFunction_GET_FLAGS(func) \
-        (((PyCFunctionObject *)func) -> m_ml -> ml_flags)
+#define PyCFunction_GET_FUNCTION(func) ( \
+        (PyCFunction)((PyCFunctionObject *)func)->m_ccall->cc_func)
+#define PyCFunction_GET_SELF(func) ( \
+        (((PyCFunctionObject *)func)->m_self == Py_None) ? \
+        NULL : ((PyCFunctionObject *)func)->m_self)
+#define PyCFunction_GET_FLAGS PyCFunction_GetFlags
 #endif
 PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
-
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyCFunction_FastCallDict(PyObject *func,
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwargs);
-
-PyAPI_FUNC(PyObject *) _PyCFunction_FastCallKeywords(PyObject *func,
-    PyObject *const *stack,
-    Py_ssize_t nargs,
-    PyObject *kwnames);
-#endif
 
 struct PyMethodDef {
     const char  *ml_name;   /* The name of the built-in function/method */
@@ -89,6 +78,9 @@ PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
 
 #ifndef Py_LIMITED_API
 #define METH_FASTCALL  0x0080
+
+/* All flags influencing the signature of the C function */
+#define METH_SIGNATURE (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O | METH_KEYWORDS)
 #endif
 
 /* This bit is preserved for Stackless Python */
@@ -98,28 +90,34 @@ PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
 #define METH_STACKLESS 0x0000
 #endif
 
+PyAPI_FUNC(PyObject *) PyDescr_NewMethod(PyTypeObject *, PyMethodDef *);
+
+PyAPI_FUNC(PyObject *) PyCFunction_ClsNew(
+    PyTypeObject *cls,
+    const PyMethodDef *ml,
+    PyObject *self,
+    PyObject *module,
+    PyObject *parent);
+
+
 #ifndef Py_LIMITED_API
+#  define Py_CPYTHON_CCALL_H
+#  include  "cpython/ccall.h"
+#  undef Py_CPYTHON_CCALL_H
+
+
 typedef struct {
     PyObject_HEAD
-    PyMethodDef *m_ml; /* Description of the C function to call */
-    PyObject    *m_self; /* Passed as 'self' arg to the C func, can be NULL */
-    PyObject    *m_module; /* The __module__ attribute, can be anything */
-    PyObject    *m_weakreflist; /* List of weak references */
+    PyCCallDef  *m_ccall;
+    PyObject    *m_self;         /* Passed as 'self' arg to the C function */
+    PyCCallDef   _ccalldef;      /* Storage for m_ccall */
+    PyObject    *m_name;         /* __name__; str object (not NULL) */
+    PyObject    *m_module;       /* __module__; can be anything */
+    const char  *m_doc;          /* __doc__ and __text_signature__ */
+    PyObject    *m_weakreflist;  /* List of weak references */
 } PyCFunctionObject;
 
-PyAPI_FUNC(PyObject *) _PyMethodDef_RawFastCallDict(
-    PyMethodDef *method,
-    PyObject *self,
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwargs);
-
-PyAPI_FUNC(PyObject *) _PyMethodDef_RawFastCallKeywords(
-    PyMethodDef *method,
-    PyObject *self,
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwnames);
+PyAPI_FUNC(PyObject *) _PyCFunction_NewBoundMethod(PyCFunctionObject *func, PyObject *self);
 #endif
 
 PyAPI_FUNC(int) PyCFunction_ClearFreeList(void);

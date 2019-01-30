@@ -4856,12 +4856,11 @@ static int
 add_methods(PyTypeObject *type, PyMethodDef *meth)
 {
     PyObject *dict = type->tp_dict;
-    PyObject *name;
 
     for (; meth->ml_name != NULL; meth++) {
         PyObject *descr;
+        PyObject *name;  /* Borrowed reference */
         int err;
-        int isdescr = 1;
         if (meth->ml_flags & METH_CLASS) {
             if (meth->ml_flags & METH_STATIC) {
                 PyErr_SetString(PyExc_ValueError,
@@ -4869,51 +4868,40 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
                 return -1;
             }
             descr = PyDescr_NewClassMethod(type, meth);
+            if (descr == NULL) {
+                return -1;
+            }
+            name = PyDescr_NAME(descr);
         }
         else if (meth->ml_flags & METH_STATIC) {
             PyObject *cfunc = PyCFunction_NewEx(meth, (PyObject*)type, NULL);
             if (cfunc == NULL)
                 return -1;
+            name = ((PyCFunctionObject*)cfunc)->m_name;
             descr = PyStaticMethod_New(cfunc);
-            isdescr = 0;  // PyStaticMethod is not PyDescrObject
             Py_DECREF(cfunc);
+            if (descr == NULL) {
+                return -1;
+            }
         }
         else {
             descr = PyDescr_NewMethod(type, meth);
-        }
-        if (descr == NULL)
-            return -1;
-
-        if (isdescr) {
-            name = PyDescr_NAME(descr);
-        }
-        else {
-            name = PyUnicode_FromString(meth->ml_name);
-            if (name == NULL) {
-                Py_DECREF(descr);
+            if (descr == NULL) {
                 return -1;
             }
+            name = ((PyCFunctionObject*)descr)->m_name;
         }
 
         if (!(meth->ml_flags & METH_COEXIST)) {
             if (PyDict_GetItemWithError(dict, name)) {
-                if (!isdescr) {
-                    Py_DECREF(name);
-                }
                 Py_DECREF(descr);
                 continue;
             }
             else if (PyErr_Occurred()) {
-                if (!isdescr) {
-                    Py_DECREF(name);
-                }
                 return -1;
             }
         }
         err = PyDict_SetItem(dict, name, descr);
-        if (!isdescr) {
-            Py_DECREF(name);
-        }
         Py_DECREF(descr);
         if (err < 0)
             return -1;
@@ -5340,8 +5328,9 @@ PyType_Ready(PyTypeObject *type)
             inherit_slots(type, (PyTypeObject *)b);
     }
 
-    /* All bases of statically allocated type should be statically allocated */
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
+    {
+        /* All bases of statically allocated type should be statically allocated */
         for (i = 0; i < n; i++) {
             PyObject *b = PyTuple_GET_ITEM(bases, i);
             if (PyType_Check(b) &&
@@ -5353,6 +5342,20 @@ PyType_Ready(PyTypeObject *type)
                 goto error;
             }
         }
+
+        /* Inherit C call protocol from base if tp_call and tp_descr_get
+           are also inherited */
+        base = type->tp_base;
+        if (base != NULL &&
+            (base->tp_flags & Py_TPFLAGS_HAVE_CCALL) &&
+            (type->tp_ccalloffset == 0) &&
+            (base->tp_call == type->tp_call) &&
+            (base->tp_descr_get == type->tp_descr_get))
+        {
+            type->tp_flags |= Py_TPFLAGS_HAVE_CCALL;
+            type->tp_ccalloffset = base->tp_ccalloffset;
+        }
+    }
 
     /* Sanity check for tp_free. */
     if (PyType_IS_GC(type) && (type->tp_flags & Py_TPFLAGS_BASETYPE) &&

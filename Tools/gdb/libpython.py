@@ -367,6 +367,7 @@ class PyObjectPtr(object):
                     'set' : PySetObjectPtr,
                     'frozenset' : PySetObjectPtr,
                     'builtin_function_or_method' : PyCFunctionObjectPtr,
+                    'method_descriptor' : PyCFunctionObjectPtr,
                     'method-wrapper': wrapperobject,
                     }
         if tp_name in name_map:
@@ -593,20 +594,20 @@ class PyClassObjectPtr(PyObjectPtr):
 
 
 class BuiltInFunctionProxy(object):
-    def __init__(self, ml_name):
-        self.ml_name = ml_name
+    def __init__(self, name):
+        self.name = name
 
     def __repr__(self):
-        return "<built-in function %s>" % self.ml_name
+        return "<built-in function %s>" % self.name
 
 class BuiltInMethodProxy(object):
-    def __init__(self, ml_name, pyop_m_self):
-        self.ml_name = ml_name
+    def __init__(self, name, pyop_m_self):
+        self.name = name
         self.pyop_m_self = pyop_m_self
 
     def __repr__(self):
         return ('<built-in method %s of %s object at remote 0x%x>'
-                % (self.ml_name,
+                % (self.name,
                    self.pyop_m_self.safe_tp_name(),
                    self.pyop_m_self.as_address())
                 )
@@ -619,17 +620,12 @@ class PyCFunctionObjectPtr(PyObjectPtr):
     _typename = 'PyCFunctionObject'
 
     def proxyval(self, visited):
-        m_ml = self.field('m_ml') # m_ml is a (PyMethodDef*)
-        try:
-            ml_name = m_ml['ml_name'].string()
-        except UnicodeDecodeError:
-            ml_name = '<ml_name:UnicodeDecodeError>'
-
+        name = self.pyop_field('m_name').proxyval(visited)
         pyop_m_self = self.pyop_field('m_self')
         if pyop_m_self.is_null():
-            return BuiltInFunctionProxy(ml_name)
+            return BuiltInFunctionProxy(name)
         else:
-            return BuiltInMethodProxy(ml_name, pyop_m_self)
+            return BuiltInMethodProxy(name, pyop_m_self)
 
 
 class PyCodeObjectPtr(PyObjectPtr):

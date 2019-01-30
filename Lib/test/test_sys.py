@@ -938,7 +938,7 @@ class SizeofTest(unittest.TestCase):
         # buffer
         # XXX
         # builtin_function_or_method
-        check(len, size('4P')) # XXX check layout
+        check(len, size('2PI6P'))
         # bytearray
         samples = [b'', b'u'*100000]
         for sample in samples:
@@ -968,8 +968,8 @@ class SizeofTest(unittest.TestCase):
         check_code_size(get_cell2.__code__, size('6i13P') + calcsize('n'))
         # complex
         check(complex(0,1), size('2d'))
-        # method_descriptor (descriptor object)
-        check(str.lower, size('3PP'))
+        # method_descriptor
+        check(str.lower, size('2PI6P'))
         # classmethod_descriptor (descriptor object)
         # XXX
         # member_descriptor (descriptor object)

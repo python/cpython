@@ -1131,8 +1131,10 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     descr = _PyType_Lookup(tp, name);
     if (descr != NULL) {
         Py_INCREF(descr);
-        if (PyFunction_Check(descr) ||
-                (Py_TYPE(descr) == &PyMethodDescr_Type)) {
+        if (PyCCall_Check(descr)) {
+            meth_found = (PyCCall_SELF(descr) == NULL);
+        }
+        else if (PyFunction_Check(descr)) {
             meth_found = 1;
         } else {
             f = descr->ob_type->tp_descr_get;
@@ -1164,11 +1166,6 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
         }
     }
 
-    if (meth_found) {
-        *method = descr;
-        return 1;
-    }
-
     if (f != NULL) {
         *method = f(descr, obj, (PyObject *)Py_TYPE(obj));
         Py_DECREF(descr);
@@ -1177,7 +1174,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
 
     if (descr != NULL) {
         *method = descr;
-        return 0;
+        return meth_found;
     }
 
     PyErr_Format(PyExc_AttributeError,

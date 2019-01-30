@@ -296,6 +296,9 @@ given type object has a specified feature.
 /* Set if the type allows subclassing */
 #define Py_TPFLAGS_BASETYPE (1UL << 10)
 
+/* Set if the type implements the C call protocol (PEP 580) */
+#define Py_TPFLAGS_HAVE_CCALL (1UL << 11)
+
 /* Set if the type is 'ready' -- fully initialized */
 #define Py_TPFLAGS_READY (1UL << 12)
 

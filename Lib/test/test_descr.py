@@ -1609,8 +1609,8 @@ order (MRO) for bases """
             spam_cm(spam.spamlist())
         self.assertEqual(
             str(cm.exception),
-            "descriptor 'classmeth' requires a type "
-            "but received a 'xxsubtype.spamlist' instance")
+            "descriptor 'classmeth' for type 'xxsubtype.spamlist' needs "
+            "a type, not a 'xxsubtype.spamlist' as arg 2")
 
         with self.assertRaises(TypeError) as cm:
             spam_cm(list)
@@ -1963,13 +1963,13 @@ order (MRO) for bases """
         # different error messages.
         set_add = set.add
 
-        expected_errmsg = "descriptor 'add' of 'set' object needs an argument"
+        expected_errmsg = "add() takes exactly one argument (0 given)"
 
         with self.assertRaises(TypeError) as cm:
             set_add()
         self.assertEqual(cm.exception.args[0], expected_errmsg)
 
-        expected_errmsg = "descriptor 'add' for 'set' objects doesn't apply to a 'int' object"
+        expected_errmsg = "add() requires a 'set' object but received a 'int'"
 
         with self.assertRaises(TypeError) as cm:
             set_add(0)

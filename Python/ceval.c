@@ -38,7 +38,10 @@ typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 /* Forward declarations */
 Py_LOCAL_INLINE(PyObject *) call_function(PyObject ***, Py_ssize_t,
                                           PyObject *);
-static PyObject * do_call_core(PyObject *, PyObject *, PyObject *);
+static inline PyObject* ccall_profile_call(PyObject *, PyObject *, PyObject *);
+static inline PyObject* ccall_profile_fastcall(PyObject *,
+                                               PyObject *const *, Py_ssize_t,
+                                               PyObject *);
 
 #ifdef LLTRACE
 static int lltrace;
@@ -3351,7 +3354,12 @@ main_loop:
             }
             assert(PyTuple_CheckExact(callargs));
 
-            result = do_call_core(func, callargs, kwargs);
+            if (PyCCall_Check(func)) {
+                result = ccall_profile_call(func, callargs, kwargs);
+            }
+            else {
+                result = PyObject_Call(func, callargs, kwargs);
+            }
             Py_DECREF(func);
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
@@ -4597,31 +4605,75 @@ PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 }
 
 
+/* Return a *borrowed* reference to the Python str representing the name of the
+ * given function. If func is not a function, return a borrowed None. */
+static PyObject *
+_PyEval_GetFuncNameObject(PyObject *func)
+{
+    while (PyMethod_Check(func)) {
+        func = PyMethod_GET_FUNCTION(func);
+    }
+
+    if (!(PyCCall_Check(func) || PyFunction_Check(func))) {
+        /* Not a function */
+        return Py_None;
+    }
+
+    _Py_IDENTIFIER(__name__);
+    PyObject *name = _PyObject_GetAttrId(func, &PyId___name__);
+    if (name == NULL) {
+        return NULL;
+    }
+
+    PyObject *ret = NULL;
+    if (!PyUnicode_CheckExact(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "function __name__ must be a string, not %.100s",
+                     Py_TYPE(name)->tp_name);
+    }
+    else if (Py_REFCNT(name) <= 1) {
+        /* We cannot have a borrowed reference to a temporary object */
+        PyErr_Format(PyExc_SystemError,
+                     "function __name__ must not be a temporary object");
+    }
+    else {
+        /* Everything OK */
+        ret = name;
+    }
+
+    Py_DECREF(name);
+    return ret;
+}
+
 const char *
 PyEval_GetFuncName(PyObject *func)
 {
-    if (PyMethod_Check(func))
-        return PyEval_GetFuncName(PyMethod_GET_FUNCTION(func));
-    else if (PyFunction_Check(func))
-        return PyUnicode_AsUTF8(((PyFunctionObject*)func)->func_name);
-    else if (PyCFunction_Check(func))
-        return ((PyCFunctionObject*)func)->m_ml->ml_name;
-    else
-        return func->ob_type->tp_name;
+    PyObject *name = _PyEval_GetFuncNameObject(func);
+    if (name != Py_None) {
+        if (name != NULL) {
+            const char *s = PyUnicode_AsUTF8(name);
+            if (s) {
+                return s;
+            }
+        }
+        PyErr_WriteUnraisable(NULL);
+    }
+    return Py_TYPE(func)->tp_name;
 }
 
 const char *
 PyEval_GetFuncDesc(PyObject *func)
 {
-    if (PyMethod_Check(func))
+    PyObject *name = _PyEval_GetFuncNameObject(func);
+    if (name != Py_None) {
+        if (name == NULL) {
+            PyErr_Clear();
+        }
         return "()";
-    else if (PyFunction_Check(func))
-        return "()";
-    else if (PyCFunction_Check(func))
-        return "()";
-    else
-        return " object";
+    }
+    return " object";
 }
+
 
 #define C_TRACE(x, call) \
 if (tstate->use_tracing && tstate->c_profilefunc) { \
@@ -4652,7 +4704,57 @@ if (tstate->use_tracing && tstate->c_profilefunc) { \
     } \
 } else { \
     x = call; \
+}
+
+
+static inline PyObject*
+ccall_profile_call(PyObject *func, PyObject *args, PyObject *kwargs)
+{
+    if (PyCFunction_Check(func)) {
+        PyObject *result;
+        PyThreadState *tstate = PyThreadState_GET();
+        C_TRACE(result, PyCCall_Call(func, args, kwargs));
+        return result;
     }
+    return PyCCall_Call(func, args, kwargs);
+}
+
+
+static inline PyObject*
+ccall_profile_fastcall(PyObject *func,
+                       PyObject *const *args, Py_ssize_t nargs,
+                       PyObject *keywords)
+{
+    PyObject *result;
+
+    if (Py_TYPE(func) == &PyCFunction_Type) {
+        PyThreadState *tstate = PyThreadState_GET();
+        C_TRACE(result, PyCCall_FastCall(func, args, nargs, keywords));
+        return result;
+    }
+    else if (Py_TYPE(func) == &PyMethodDescr_Type && nargs > 0) {
+        PyThreadState *tstate = PyThreadState_GET();
+        if (tstate->use_tracing) {
+            /* We need to create a temporary bound method as argument
+               for profiling.
+
+               If nargs == 0, then this cannot work because we have no
+               "self". In any case, the call itself would raise
+               TypeError (foo needs an argument), so we just skip
+               profiling in that case. */
+            PyObject *self = args[0];
+            func = Py_TYPE(func)->tp_descr_get(func, self, (PyObject*)Py_TYPE(self));
+            if (func == NULL) {
+                return NULL;
+            }
+            C_TRACE(result, PyCCall_FastCall(func, args+1, nargs-1, keywords));
+            Py_DECREF(func);
+            return result;
+        }
+    }
+    return PyCCall_FastCall(func, args, nargs, keywords);
+}
+
 
 /* Issue #29227: Inline call_function() into _PyEval_EvalFrameDefault()
    to reduce the stack consumption. */
@@ -4666,38 +4768,8 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
     Py_ssize_t nargs = oparg - nkwargs;
     PyObject **stack = (*pp_stack) - nargs - nkwargs;
 
-    /* Always dispatch PyCFunction first, because these are
-       presumed to be the most frequent callable object.
-    */
-    if (PyCFunction_Check(func)) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        C_TRACE(x, _PyCFunction_FastCallKeywords(func, stack, nargs, kwnames));
-    }
-    else if (Py_TYPE(func) == &PyMethodDescr_Type) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        if (nargs > 0 && tstate->use_tracing) {
-            /* We need to create a temporary bound method as argument
-               for profiling.
-
-               If nargs == 0, then this cannot work because we have no
-               "self". In any case, the call itself would raise
-               TypeError (foo needs an argument), so we just skip
-               profiling. */
-            PyObject *self = stack[0];
-            func = Py_TYPE(func)->tp_descr_get(func, self, (PyObject*)Py_TYPE(self));
-            if (func != NULL) {
-                C_TRACE(x, _PyCFunction_FastCallKeywords(func,
-                                                         stack+1, nargs-1,
-                                                         kwnames));
-                Py_DECREF(func);
-            }
-            else {
-                x = NULL;
-            }
-        }
-        else {
-            x = _PyMethodDescr_FastCallKeywords(func, stack, nargs, kwnames);
-        }
+    if (PyCCall_Check(func)) {
+        x = ccall_profile_fastcall(func, stack, nargs, kwnames);
     }
     else {
         if (PyMethod_Check(func) && PyMethod_GET_SELF(func) != NULL) {
@@ -4738,43 +4810,6 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
     return x;
 }
 
-static PyObject *
-do_call_core(PyObject *func, PyObject *callargs, PyObject *kwdict)
-{
-    PyObject *result;
-
-    if (PyCFunction_Check(func)) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        C_TRACE(result, PyCFunction_Call(func, callargs, kwdict));
-        return result;
-    }
-    else if (Py_TYPE(func) == &PyMethodDescr_Type) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
-        if (nargs > 0 && tstate->use_tracing) {
-            /* We need to create a temporary bound method as argument
-               for profiling.
-
-               If nargs == 0, then this cannot work because we have no
-               "self". In any case, the call itself would raise
-               TypeError (foo needs an argument), so we just skip
-               profiling. */
-            PyObject *self = PyTuple_GET_ITEM(callargs, 0);
-            func = Py_TYPE(func)->tp_descr_get(func, self, (PyObject*)Py_TYPE(self));
-            if (func == NULL) {
-                return NULL;
-            }
-
-            C_TRACE(result, _PyCFunction_FastCallDict(func,
-                                                      &_PyTuple_ITEMS(callargs)[1],
-                                                      nargs - 1,
-                                                      kwdict));
-            Py_DECREF(func);
-            return result;
-        }
-    }
-    return PyObject_Call(func, callargs, kwdict);
-}
 
 /* Extract a slice index from a PyLong or an object with the
    nb_index slot defined, and store in *pi.

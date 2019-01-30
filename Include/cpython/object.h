@@ -167,12 +167,10 @@ typedef struct {
      releasebufferproc bf_releasebuffer;
 } PyBufferProcs;
 
-/* We can't provide a full compile-time check that limited-API
-   users won't implement tp_print. However, not defining printfunc
-   and making tp_print of a different function pointer type
-   if Py_LIMITED_API is set should at least cause a warning
-   in most cases. */
-typedef int (*printfunc)(PyObject *, FILE *, int);
+
+/* For backwards compatibility, support (printfunc)foo
+   in the tp_ccalloffset slot */
+typedef Py_ssize_t printfunc;
 
 typedef struct _typeobject {
     PyObject_VAR_HEAD
@@ -182,7 +180,7 @@ typedef struct _typeobject {
     /* Methods to implement standard operations */
 
     destructor tp_dealloc;
-    printfunc tp_print;
+    Py_ssize_t tp_ccalloffset;
     getattrfunc tp_getattr;
     setattrfunc tp_setattr;
     PyAsyncMethods *tp_as_async; /* formerly known as tp_compare (Python 2)
