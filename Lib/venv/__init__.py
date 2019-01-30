@@ -178,18 +178,30 @@ class EnvBuilder:
             shutil.copyfile(src, dst)
 
     if os.name == 'nt':
-        def copy_redirector(self, src, dst):
+        def symlink_or_copy_redirector(self, src, dst):
             basename, ext = os.path.splitext(os.path.basename(src))
             if basename.endswith('_d'):
                 ext = '_d' + ext
                 basename = basename[:-2]
-            if sysconfig.is_python_build(True):
-                if basename == 'python':
-                    basename = 'venvlauncher'
-                elif basename == 'pythonw':
-                    basename = 'venvwlauncher'
             src = os.path.join(os.path.dirname(src), basename + ext)
-            shutil.copyfile(src, dst)
+            force_copy = not self.symlinks
+            if not force_copy:
+                try:
+                    os.symlink(src, dst)
+                except Exception:
+                    logger.warning('Unable to symlink %r to %r', src, dst)
+                    force_copy = True
+            if force_copy:
+                if sysconfig.is_python_build(True):
+                    if basename == 'python':
+                        basename = 'venvlauncher'
+                    elif basename == 'pythonw':
+                        basename = 'venvwlauncher'
+                    scripts = os.path.dirname(src)
+                else:
+                    scripts = os.path.join(os.path.dirname(__file__), "scripts", "nt")
+                src = os.path.join(scripts, basename + ext)
+                shutil.copyfile(src, dst)
 
     def setup_python(self, context):
         """
@@ -215,18 +227,30 @@ class EnvBuilder:
                     if not os.path.islink(path):
                         os.chmod(path, 0o755)
         else:
-            # For normal cases, the venvlauncher will be copied from
-            # our scripts folder. For builds, we need to copy it
-            # manually.
-            copier = self.copy_redirector
-            if self.symlinks:
-                logger.warning('Venv with symlinks is not supported on Windows')
+            copier = self.symlink_or_copy_redirector
 
-            for suffix in ('python', 'pythonw'):
-                for ext in ('.exe', '_d.exe'):
-                    src = os.path.join(dirname, suffix + ext)
-                    if os.path.exists(src):
-                        copier(src, os.path.join(binpath, suffix + ext))
+            if self.symlinks:
+                # For symlinking, we need a complete copy of the root directory
+                # If symlinks fail, you'll get unnecessary copies of files, but
+                # we assume that if you've opted into symlinks on Windows then
+                # you know what you're doing.
+                suffixes = [
+                    f for f in os.listdir(dirname) if
+                    os.path.normcase(os.path.splitext(f)[1]) in ('.exe', '.dll')
+                ]
+                if sysconfig.is_python_build(True):
+                    suffixes = [
+                        f for f in suffixes if
+                        os.path.normcase(f).startswith(('python', 'vcruntime'))
+                    ]
+            else:
+                suffixes = ['python.exe', 'python_d.exe', 'pythonw.exe',
+                            'pythonw_d.exe']
+
+            for suffix in suffixes:
+                src = os.path.join(dirname, suffix)
+                if os.path.exists(src):
+                    copier(src, os.path.join(binpath, suffix))
 
             if sysconfig.is_python_build(True):
                 # copy init.tcl

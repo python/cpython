@@ -109,7 +109,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
       any existing target directory, before creating the environment.
 
     * ``symlinks`` -- a Boolean value indicating whether to attempt to symlink the
-      Python binary rather than copying. This is not used on Windows.
+      Python binary rather than copying.
 
     * ``upgrade`` -- a Boolean value which, if true, will upgrade an existing
       environment with the running Python - for use when that Python has been
@@ -176,9 +176,9 @@ creation according to their needs, the :class:`EnvBuilder` class.
     .. method:: setup_python(context)
 
         Creates a copy or symlink to the Python executable in the environment.
-        If a specific executable ``python3.x`` was used, symlinks to ``python``
-        and ``python3`` will be created pointing to that executable, unless
-        files with those names already exist.
+        On POSIX systems, if a specific executable ``python3.x`` was used,
+        symlinks to ``python`` and ``python3`` will be created pointing to that
+        executable, unless files with those names already exist.
 
     .. method:: setup_scripts(context)
 
