@@ -449,7 +449,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. class:: Process(group=None, target=None, name=None, args=(), kwargs={}, \
-                   *, daemon=None)
+                   *, env=None, daemon=None)
 
    Process objects represent activity that is run in a separate process. The
    :class:`Process` class has equivalents of all the methods of
@@ -461,9 +461,11 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    the :meth:`run()` method.  It defaults to ``None``, meaning nothing is
    called. *name* is the process name (see :attr:`name` for more details).
    *args* is the argument tuple for the target invocation.  *kwargs* is a
-   dictionary of keyword arguments for the target invocation.  If provided,
-   the keyword-only *daemon* argument sets the process :attr:`daemon` flag
-   to ``True`` or ``False``.  If ``None`` (the default), this flag will be
+   dictionary of keyword arguments for the target invocation.  The optional
+   argument *env* can be used to change the environment for the new process
+   similar to :class:`subprocess.Popen` (Windows only).  If provided, the
+   keyword-only *daemon* argument sets the process :attr:`daemon` flag to
+   ``True`` or ``False``.  If ``None`` (the default), this flag will be
    inherited from the creating process.
 
    By default, no arguments are passed to *target*.
@@ -474,6 +476,9 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
    .. versionchanged:: 3.3
       Added the *daemon* argument.
+
+   .. versionchanged:: 3.8
+      Added the *env* argument.
 
    .. method:: run()
 
