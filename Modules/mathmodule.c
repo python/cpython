@@ -76,6 +76,29 @@ static const double logpi = 1.144729885849400174143427351353058711647;
 static const double sqrtpi = 1.772453850905516027298167483341145182798;
 #endif /* !defined(HAVE_ERF) || !defined(HAVE_ERFC) */
 
+
+/* Version of PyFloat_AsDouble() with in-line fast paths
+   for exact floats and integers.  Gives a substantial
+   speed improvement for extracting float arguments.
+*/
+
+#define ASSIGN_DOUBLE(target_var, obj, error_label)        \
+    if (PyFloat_CheckExact(obj)) {                         \
+        target_var = PyFloat_AS_DOUBLE(obj);               \
+    }                                                      \
+    else if (PyLong_CheckExact(obj)) {                     \
+        target_var = PyLong_AsDouble(obj);                 \
+        if (target_var == -1.0 && PyErr_Occurred()) {      \
+            goto error_label;                              \
+        }                                                  \
+    }                                                      \
+    else {                                                 \
+        target_var = PyFloat_AsDouble(obj);                \
+        if (target_var == -1.0 && PyErr_Occurred()) {      \
+            goto error_label;                              \
+        }                                                  \
+    }
+
 static double
 sinpi(double x)
 {
@@ -1323,10 +1346,8 @@ math_fsum(PyObject *module, PyObject *seq)
                 goto _fsum_error;
             break;
         }
-        x = PyFloat_AsDouble(item);
+        ASSIGN_DOUBLE(x, item, error_with_item);
         Py_DECREF(item);
-        if (PyErr_Occurred())
-            goto _fsum_error;
 
         xsave = x;
         for (i = j = 0; j < n; j++) {       /* for y in partials */
@@ -1407,12 +1428,16 @@ math_fsum(PyObject *module, PyObject *seq)
     }
     sum = PyFloat_FromDouble(hi);
 
-_fsum_error:
+  _fsum_error:
     PyFPE_END_PROTECT(hi)
     Py_DECREF(iter);
     if (p != ps)
         PyMem_Free(p);
     return sum;
+
+  error_with_item:
+    Py_DECREF(item);
+    goto _fsum_error;
 }
 
 #undef NUM_PARTIALS
@@ -2142,37 +2167,9 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     }
     for (i=0 ; i<n ; i++) {
         item = PyTuple_GET_ITEM(p, i);
-        if (PyFloat_CheckExact(item)) {
-            px = PyFloat_AS_DOUBLE(item);
-        }
-        else if (PyLong_CheckExact(item)) {
-            px = PyLong_AsDouble(item);
-            if (px == -1.0 && PyErr_Occurred()) {
-                goto error_exit;
-            }
-        }
-        else {
-            px = PyFloat_AsDouble(item);
-            if (px == -1.0 && PyErr_Occurred()) {
-                goto error_exit;
-            }
-        }
+        ASSIGN_DOUBLE(px, item, error_exit);
         item = PyTuple_GET_ITEM(q, i);
-        if (PyFloat_CheckExact(item)) {
-            qx = PyFloat_AS_DOUBLE(item);
-        }
-        else if (PyLong_CheckExact(item)) {
-            qx = PyLong_AsDouble(item);
-            if (qx == -1.0 && PyErr_Occurred()) {
-                goto error_exit;
-            }
-        }
-        else {
-            qx = PyFloat_AsDouble(item);
-            if (qx == -1.0 && PyErr_Occurred()) {
-                goto error_exit;
-            }
-        }
+        ASSIGN_DOUBLE(qx, item, error_exit);
         x = fabs(px - qx);
         diffs[i] = x;
         found_nan |= Py_IS_NAN(x);
@@ -2213,21 +2210,7 @@ math_hypot(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     for (i = 0; i < nargs; i++) {
         item = args[i];
-        if (PyFloat_CheckExact(item)) {
-            x = PyFloat_AS_DOUBLE(item);
-        }
-        else if (PyLong_CheckExact(item)) {
-            x = PyLong_AsDouble(item);
-            if (x == -1.0 && PyErr_Occurred()) {
-                goto error_exit;
-            }
-        }
-        else {
-            x = PyFloat_AsDouble(item);
-            if (x == -1.0 && PyErr_Occurred()) {
-                goto error_exit;
-            }
-        }
+        ASSIGN_DOUBLE(x, item, error_exit);
         x = fabs(x);
         coordinates[i] = x;
         found_nan |= Py_IS_NAN(x);
