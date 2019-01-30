@@ -199,6 +199,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
     .. versionchanged:: 3.7.3
        Windows copies the redirector scripts as part of :meth:`setup_python`
        instead of :meth:`setup_scripts`. This was not the case in 3.7.2.
+       When using symlinks, the original executables will be linked.
 
     In addition, :class:`EnvBuilder` provides this utility method that can be
     called from :meth:`setup_scripts` or :meth:`post_setup` in subclasses to

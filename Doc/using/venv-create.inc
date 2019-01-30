@@ -70,6 +70,11 @@ The command, if run with ``-h``, will show the available options::
    In earlier versions, if the target directory already existed, an error was
    raised, unless the ``--clear`` or ``--upgrade`` option was provided.
 
+.. note::
+   While symlinks are supported on Windows, they are not recommended. Of
+   particular note is that double-clicking ``python.exe`` in File Explorer
+   will resolve the symlink eagerly and ignore the virtual environment.
+
 The created ``pyvenv.cfg`` file also includes the
 ``include-system-site-packages`` key, set to ``true`` if ``venv`` is
 run with the ``--system-site-packages`` option, ``false`` otherwise.

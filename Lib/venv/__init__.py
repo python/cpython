@@ -175,23 +175,13 @@ class EnvBuilder:
                 logger.warning('Unable to symlink %r to %r', src, dst)
                 force_copy = True
         if force_copy:
-            shutil.copyfile(src, dst)
-
-    if os.name == 'nt':
-        def symlink_or_copy_redirector(self, src, dst):
-            basename, ext = os.path.splitext(os.path.basename(src))
-            if basename.endswith('_d'):
-                ext = '_d' + ext
-                basename = basename[:-2]
-            src = os.path.join(os.path.dirname(src), basename + ext)
-            force_copy = not self.symlinks
-            if not force_copy:
-                try:
-                    os.symlink(src, dst)
-                except Exception:
-                    logger.warning('Unable to symlink %r to %r', src, dst)
-                    force_copy = True
-            if force_copy:
+            if os.name == 'nt':
+                # On Windows, we rewrite symlinks to our base python.exe into
+                # copies of venvlauncher.exe
+                basename, ext = os.path.splitext(os.path.basename(src))
+                if basename.endswith('_d'):
+                    ext = '_d' + ext
+                    basename = basename[:-2]
                 if sysconfig.is_python_build(True):
                     if basename == 'python':
                         basename = 'venvlauncher'
@@ -201,7 +191,8 @@ class EnvBuilder:
                 else:
                     scripts = os.path.join(os.path.dirname(__file__), "scripts", "nt")
                 src = os.path.join(scripts, basename + ext)
-                shutil.copyfile(src, dst)
+
+            shutil.copyfile(src, dst)
 
     def setup_python(self, context):
         """
@@ -227,8 +218,6 @@ class EnvBuilder:
                     if not os.path.islink(path):
                         os.chmod(path, 0o755)
         else:
-            copier = self.symlink_or_copy_redirector
-
             if self.symlinks:
                 # For symlinking, we need a complete copy of the root directory
                 # If symlinks fail, you'll get unnecessary copies of files, but
