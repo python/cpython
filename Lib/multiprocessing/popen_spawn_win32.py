@@ -55,7 +55,7 @@ class Popen(object):
             try:
                 hp, ht, pid, tid = _winapi.CreateProcess(
                     spawn.get_executable(), cmd,
-                    None, None, False, 0, None, None, None)
+                    None, None, False, 0, process_obj._env, None, None)
                 _winapi.CloseHandle(ht)
             except:
                 _winapi.CloseHandle(rhandle)

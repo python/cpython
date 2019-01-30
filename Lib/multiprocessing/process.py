@@ -70,7 +70,7 @@ class BaseProcess(object):
         raise NotImplementedError
 
     def __init__(self, group=None, target=None, name=None, args=(), kwargs={},
-                 *, daemon=None):
+                 *, env=None, daemon=None):
         assert group is None, 'group argument must be None for now'
         count = next(_process_counter)
         self._identity = _current_process._identity + (count,)
@@ -83,6 +83,7 @@ class BaseProcess(object):
         self._kwargs = dict(kwargs)
         self._name = name or type(self).__name__ + '-' + \
                      ':'.join(str(i) for i in self._identity)
+        self._env = env
         if daemon is not None:
             self.daemon = daemon
         _dangling.add(self)
