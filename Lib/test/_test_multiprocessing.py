@@ -247,6 +247,44 @@ class _TestProcess(BaseTestCase):
         proc2 = self.Process(target=self._test, daemon=False)
         self.assertFalse(proc2.daemon)
 
+    def test_env_argument(self):
+        if sys.platform != 'win32':
+            self.skipTest('"env" attribute only useful on Windows')
+        if self.TYPE == 'threads':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        proc = self.Process(target=self._test, env={})
+        self.assertEqual(proc._env, {})
+        proc = self.Process(target=self._test)
+        self.assertEqual(proc._env, None)
+
+    @classmethod
+    def _test_process_env(cls, q):
+        q.put(dict(os.environ))
+
+    def test_process_env(self):
+        if sys.platform != 'win32':
+            self.skipTest('environment only available on Windows')
+        if self.TYPE == 'threads':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        test_env = {'_TEST_ENV_VAR_239742': '01'}
+        q = self.Queue(1)
+        p = self.Process(
+            target=self._test_process_env, args=(q,),
+            env={**os.environ, **test_env}
+            )
+        p.daemon = True
+        p.start()
+        p.join()
+        self.assertTrue(not any(k in os.environ for k in test_env))
+
+        p_env = q.get()
+        self.assertTrue(
+            all(k in p_env and p_env[k] == v for k, v in test_env.items())
+            )
+        close_queue(q)
+
     @classmethod
     def _test(cls, q, *args, **kwds):
         current = cls.current_process()
