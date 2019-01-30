@@ -293,7 +293,7 @@ class EnvBuilder:
         text = text.replace('__VENV_PYTHON__', context.env_exe)
         return text
 
-    def install_scripts(self, context, path, *, exe_scripts=False):
+    def install_scripts(self, context, path):
         """
         Install scripts into the created environment from a directory.
 
@@ -315,9 +315,9 @@ class EnvBuilder:
                         dirs.remove(d)
                 continue # ignore files in top level
             for f in files:
-                if os.name == 'nt':
-                    if f.startswith('python') and f.endswith(('.exe', '.pdb')):
-                        continue
+                if (os.name == 'nt' and f.startswith('python')
+                        and f.endswith(('.exe', '.pdb'))):
+                    continue
                 srcfile = os.path.join(root, f)
                 suffix = root[plen:].split(os.sep)[2:]
                 if not suffix:
