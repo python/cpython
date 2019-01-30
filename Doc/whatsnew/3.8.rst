@@ -280,8 +280,8 @@ Optimizations
   and Linux (using glibc 2.24 or newer) if all these conditions are met:
 
   * *close_fds* is false;
-  * *preexec_fn*, *pass_fds*, *cwd*, *stdin*, *stdout*, *stderr* and
-    *start_new_session* parameters are not set;
+  * *preexec_fn*, *pass_fds*, *cwd* and *start_new_session* parameters
+    are not set;
   * the *executable* path contains a directory.
 
 * :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
@@ -316,8 +316,6 @@ Optimizations
   (Contributed by Inada Naoki in :issue:`33597`)
 
 * :class:`uuid.UUID` now uses ``__slots__`` to reduce its memory footprint.
-  Note that this means that instances can no longer be weak-referenced and
-  that arbitrary attributes can no longer be added to them.
 
 * The :class:`list` constructor does not overallocate the internal item buffer
   if the input iterable has a known length (the input implements ``__len__``).
@@ -327,6 +325,10 @@ Optimizations
 
 Build and C API Changes
 =======================
+
+* The :c:func:`PyByteArray_Init` and :c:func:`PyByteArray_Fini` functions have
+  been removed. They did nothing since Python 2.7.4 and Python 3.2.0, were
+  excluded from the limited API (stable ABI), and were not documented.
 
 * The result of :c:func:`PyExceptionClass_Name` is now of type
   ``const char *`` rather of ``char *``.
@@ -509,9 +511,6 @@ Changes in the Python API
 
 * The function :func:`math.factorial` no longer accepts arguments that are not
   int-like. (Contributed by Pablo Galindo in :issue:`33083`.)
-
-* :class:`uuid.UUID` now uses ``__slots__``, therefore instances can no longer
-  be weak-referenced and attributes can no longer be added.
 
 * :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
   external entities by default.
