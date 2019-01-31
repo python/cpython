@@ -69,6 +69,13 @@ the :mod:`tokenize` module.
    always be an ``ENCODING`` token.
 
 
+.. data:: TYPE_COMMENT
+
+   Token value indicating that a type comment was recognized.  Such
+   tokens are only produced when :func:`ast.parse()` is invoked with
+   ``type_comments=True``.
+
+
 .. versionchanged:: 3.5
    Added :data:`AWAIT` and :data:`ASYNC` tokens.
 
@@ -78,3 +85,6 @@ the :mod:`tokenize` module.
 .. versionchanged:: 3.7
    Removed :data:`AWAIT` and :data:`ASYNC` tokens. "async" and "await" are
    now tokenized as :data:`NAME` tokens.
+
+.. versionchanged:: 3.8
+   Added :data:`TYPE_COMMENT`.

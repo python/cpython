@@ -765,13 +765,13 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     int compile_mode = -1;
     int is_ast;
     PyCompilerFlags cf;
-    int start[] = {Py_file_input, Py_eval_input, Py_single_input};
+    int start[] = {Py_file_input, Py_eval_input, Py_single_input, Py_func_type_input};
     PyObject *result;
 
     cf.cf_flags = flags | PyCF_SOURCE_IS_UTF8;
 
     if (flags &
-        ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_DONT_IMPLY_DEDENT | PyCF_ONLY_AST))
+        ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_DONT_IMPLY_DEDENT | PyCF_ONLY_AST | PyCF_TYPE_COMMENTS))
     {
         PyErr_SetString(PyExc_ValueError,
                         "compile(): unrecognised flags");
@@ -795,9 +795,21 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
         compile_mode = 1;
     else if (strcmp(mode, "single") == 0)
         compile_mode = 2;
+    else if (strcmp(mode, "func_type") == 0) {
+        if (!(flags & PyCF_ONLY_AST)) {
+            PyErr_SetString(PyExc_ValueError,
+                            "compile() mode 'func_type' requires flag PyCF_ONLY_AST");
+            goto error;
+        }
+        compile_mode = 3;
+    }
     else {
-        PyErr_SetString(PyExc_ValueError,
-                        "compile() mode must be 'exec', 'eval' or 'single'");
+        const char *msg;
+        if (flags & PyCF_ONLY_AST)
+            msg = "compile() mode must be 'exec', 'eval', 'single' or 'func_type'";
+        else
+            msg = "compile() mode must be 'exec', 'eval' or 'single'";
+        PyErr_SetString(PyExc_ValueError, msg);
         goto error;
     }
 
