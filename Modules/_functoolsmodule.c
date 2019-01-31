@@ -796,10 +796,12 @@ lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
 static PyObject *
 uncached_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *result = PyObject_Call(self->func, args, kwds);
+    PyObject *result;
+
+    self->misses++;
+    result = PyObject_Call(self->func, args, kwds);
     if (!result)
         return NULL;
-    self->misses++;
     return result;
 }
 
@@ -827,6 +829,7 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
         Py_DECREF(key);
         return NULL;
     }
+    self->misses++;
     result = PyObject_Call(self->func, args, kwds);
     if (!result) {
         Py_DECREF(key);
@@ -838,7 +841,6 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
         return NULL;
     }
     Py_DECREF(key);
-    self->misses++;
     return result;
 }
 
