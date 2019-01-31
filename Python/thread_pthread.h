@@ -74,8 +74,12 @@
      defined(HAVE_SEM_TIMEDWAIT))
 #  define USE_SEMAPHORES
 #else
-#  define MONOTONIC
 #  undef USE_SEMAPHORES
+#  if HAVE_PTHREAD_CONDATTR_SETCLOCK
+#    define MONOTONIC
+#  else
+#    undef MONOTONIC
+#  endif
 #endif
 
 

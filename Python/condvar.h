@@ -62,7 +62,11 @@
 #define PyCOND_BROADCAST(cond)  pthread_cond_broadcast(cond)
 #define PyCOND_WAIT(cond, mut)  pthread_cond_wait((cond), (mut))
 
+#if HAVE_PTHREAD_CONDATTR_SETCLOCK
 #define MONOTONIC
+#else
+#undef MONOTONIC
+#endif
 
 Py_LOCAL_INLINE(int)
 PyCOND_INIT(PyCOND_T *cond)

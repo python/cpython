@@ -3157,7 +3157,7 @@ if test "$posix_threads" = "yes"; then
             [Define if pthread_sigmask() does not work on your system.])
             ;;
         esac])
-      AC_CHECK_FUNCS(pthread_getcpuclockid)
+      AC_CHECK_FUNCS([pthread_getcpuclockid pthread_condattr_setclock])
 fi
 
 
