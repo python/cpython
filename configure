@@ -10878,12 +10878,13 @@ $as_echo "#define HAVE_BROKEN_PTHREAD_SIGMASK 1" >>confdefs.h
 fi
 done
 
-      for ac_func in pthread_getcpuclockid
+      for ac_func in pthread_getcpuclockid pthread_condattr_setclock
 do :
-  ac_fn_c_check_func "$LINENO" "pthread_getcpuclockid" "ac_cv_func_pthread_getcpuclockid"
-if test "x$ac_cv_func_pthread_getcpuclockid" = xyes; then :
+  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_PTHREAD_GETCPUCLOCKID 1
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
 _ACEOF
 
 fi
