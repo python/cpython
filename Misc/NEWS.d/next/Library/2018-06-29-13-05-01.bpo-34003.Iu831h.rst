@@ -1,0 +1,2 @@
+csv.DictReader now creates dicts instead of OrderedDicts. Patch by Michael
+Selik.
