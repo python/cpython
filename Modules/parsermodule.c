@@ -663,6 +663,12 @@ validate_node(node *tree)
     for (pos = 0; pos < nch; ++pos) {
         node *ch = CHILD(tree, pos);
         int ch_type = TYPE(ch);
+        if (ch_type == suite && TYPE(tree) == funcdef) {
+            /* This is the opposite hack of what we do in parser.c
+               (search for func_body_suite), except we don't ever
+               support type comments here. */
+            ch_type = func_body_suite;
+        }
         for (arc = 0; arc < dfa_state->s_narcs; ++arc) {
             short a_label = dfa_state->s_arc[arc].a_lbl;
             assert(a_label < _PyParser_Grammar.g_ll.ll_nlabels);
