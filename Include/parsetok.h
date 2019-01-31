@@ -37,6 +37,7 @@ typedef struct {
 
 #define PyPARSE_IGNORE_COOKIE 0x0010
 #define PyPARSE_BARRY_AS_BDFL 0x0020
+#define PyPARSE_TYPE_COMMENTS 0x0040
 
 PyAPI_FUNC(node *) PyParser_ParseString(const char *, grammar *, int,
                                               perrdetail *);

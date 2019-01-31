@@ -70,6 +70,8 @@ struct tok_state {
     const char* enc;        /* Encoding for the current str. */
     const char* str;
     const char* input; /* Tokenizer's newline translated copy of the string. */
+
+    int type_comments;      /* Whether to look for type comments */
 };
 
 extern struct tok_state *PyTokenizer_FromString(const char *, int);

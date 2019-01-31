@@ -698,6 +698,13 @@ ast_error(struct compiling *c, const node *n, const char *errmsg, ...)
    small_stmt elements is returned.
 */
 
+static string
+new_type_comment(const char *s)
+{
+  return PyUnicode_DecodeUTF8(s, strlen(s), NULL);
+}
+#define NEW_TYPE_COMMENT(n) new_type_comment(STR(n))
+
 static int
 num_stmts(const node *n)
 {
@@ -725,11 +732,17 @@ num_stmts(const node *n)
         case simple_stmt:
             return NCH(n) / 2; /* Divide by 2 to remove count of semi-colons */
         case suite:
+        case func_body_suite:
+            /* func_body_suite: simple_stmt | NEWLINE [TYPE_COMMENT NEWLINE] INDENT stmt+ DEDENT */
+            /* suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT */
             if (NCH(n) == 1)
                 return num_stmts(CHILD(n, 0));
             else {
+                i = 2;
                 l = 0;
-                for (i = 2; i < (NCH(n) - 1); i++)
+                if (TYPE(CHILD(n, 1)) == TYPE_COMMENT)
+                    i += 2;
+                for (; i < (NCH(n) - 1); i++)
                     l += num_stmts(CHILD(n, i));
                 return l;
             }
@@ -753,10 +766,13 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
 {
     int i, j, k, num;
     asdl_seq *stmts = NULL;
+    asdl_seq *type_ignores = NULL;
     stmt_ty s;
     node *ch;
     struct compiling c;
     mod_ty res = NULL;
+    asdl_seq *argtypes = NULL;
+    expr_ty ret, arg;
 
     c.c_arena = arena;
     /* borrowed reference */
@@ -795,7 +811,23 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
                     }
                 }
             }
-            res = Module(stmts, arena);
+
+            /* Type ignores are stored under the ENDMARKER in file_input. */
+            ch = CHILD(n, NCH(n) - 1);
+            REQ(ch, ENDMARKER);
+            num = NCH(ch);
+            type_ignores = _Py_asdl_seq_new(num, arena);
+            if (!type_ignores)
+                goto out;
+
+            for (i = 0; i < num; i++) {
+                type_ignore_ty ti = TypeIgnore(LINENO(CHILD(ch, i)), arena);
+                if (!ti)
+                   goto out;
+               asdl_seq_SET(type_ignores, i, ti);
+            }
+
+            res = Module(stmts, type_ignores, arena);
             break;
         case eval_input: {
             expr_ty testlist_ast;
@@ -846,6 +878,46 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
 
                 res = Interactive(stmts, arena);
             }
+            break;
+        case func_type_input:
+            n = CHILD(n, 0);
+            REQ(n, func_type);
+
+            if (TYPE(CHILD(n, 1)) == typelist) {
+                ch = CHILD(n, 1);
+                /* this is overly permissive -- we don't pay any attention to
+                 * stars on the args -- just parse them into an ordered list */
+                num = 0;
+                for (i = 0; i < NCH(ch); i++) {
+                    if (TYPE(CHILD(ch, i)) == test) {
+                        num++;
+                    }
+                }
+
+                argtypes = _Py_asdl_seq_new(num, arena);
+                if (!argtypes)
+                    goto out;
+
+                j = 0;
+                for (i = 0; i < NCH(ch); i++) {
+                    if (TYPE(CHILD(ch, i)) == test) {
+                        arg = ast_for_expr(&c, CHILD(ch, i));
+                        if (!arg)
+                            goto out;
+                        asdl_seq_SET(argtypes, j++, arg);
+                    }
+                }
+            }
+            else {
+                argtypes = _Py_asdl_seq_new(0, arena);
+                if (!argtypes)
+                    goto out;
+            }
+
+            ret = ast_for_expr(&c, CHILD(n, NCH(n) - 1));
+            if (!ret)
+                goto out;
+            res = FunctionType(argtypes, ret, arena);
             break;
         default:
             PyErr_Format(PyExc_SystemError,
@@ -1269,7 +1341,7 @@ ast_for_arg(struct compiling *c, const node *n)
             return NULL;
     }
 
-    ret = arg(name, annotation, LINENO(n), n->n_col_offset,
+    ret = arg(name, annotation, NULL, LINENO(n), n->n_col_offset,
               n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     if (!ret)
         return NULL;
@@ -1328,13 +1400,22 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
                     goto error;
                 if (forbidden_name(c, argname, ch, 0))
                     goto error;
-                arg = arg(argname, annotation, LINENO(ch), ch->n_col_offset,
+                arg = arg(argname, annotation, NULL, LINENO(ch), ch->n_col_offset,
                           ch->n_end_lineno, ch->n_end_col_offset,
                           c->c_arena);
                 if (!arg)
                     goto error;
                 asdl_seq_SET(kwonlyargs, j++, arg);
-                i += 2; /* the name and the comma */
+                i += 1; /* the name */
+                if (TYPE(CHILD(n, i)) == COMMA)
+                    i += 1; /* the comma, if present */
+                break;
+            case TYPE_COMMENT:
+                /* arg will be equal to the last argument processed */
+                arg->type_comment = NEW_TYPE_COMMENT(ch);
+                if (!arg->type_comment)
+                    goto error;
+                i += 1;
                 break;
             case DOUBLESTAR:
                 return i;
@@ -1464,19 +1545,29 @@ ast_for_arguments(struct compiling *c, const node *n)
                 if (!arg)
                     return NULL;
                 asdl_seq_SET(posargs, k++, arg);
-                i += 2; /* the name and the comma */
+                i += 1; /* the name */
+                if (i < NCH(n) && TYPE(CHILD(n, i)) == COMMA)
+                    i += 1; /* the comma, if present */
                 break;
             case STAR:
                 if (i+1 >= NCH(n) ||
-                    (i+2 == NCH(n) && TYPE(CHILD(n, i+1)) == COMMA)) {
+                    (i+2 == NCH(n) && (TYPE(CHILD(n, i+1)) == COMMA
+                                       || TYPE(CHILD(n, i+1)) == TYPE_COMMENT))) {
                     ast_error(c, CHILD(n, i),
-                        "named arguments must follow bare *");
+                              "named arguments must follow bare *");
                     return NULL;
                 }
                 ch = CHILD(n, i+1);  /* tfpdef or COMMA */
                 if (TYPE(ch) == COMMA) {
                     int res = 0;
                     i += 2; /* now follows keyword only arguments */
+
+                    if (i < NCH(n) && TYPE(CHILD(n, i)) == TYPE_COMMENT) {
+                        ast_error(c, CHILD(n, i),
+                                  "bare * has associated type comment");
+                        return NULL;
+                    }
+
                     res = handle_keywordonly_args(c, n, i,
                                                   kwonlyargs, kwdefaults);
                     if (res == -1) return NULL;
@@ -1487,7 +1578,17 @@ ast_for_arguments(struct compiling *c, const node *n)
                     if (!vararg)
                         return NULL;
 
-                    i += 3;
+                i += 2; /* the star and the name */
+                if (i < NCH(n) && TYPE(CHILD(n, i)) == COMMA)
+                    i += 1; /* the comma, if present */
+
+                if (i < NCH(n) && TYPE(CHILD(n, i)) == TYPE_COMMENT) {
+                        vararg->type_comment = NEW_TYPE_COMMENT(CHILD(n, i));
+                        if (!vararg->type_comment)
+                            return NULL;
+                        i += 1;
+                    }
+
                     if (i < NCH(n) && (TYPE(CHILD(n, i)) == tfpdef
                                     || TYPE(CHILD(n, i)) == vfpdef)) {
                         int res = 0;
@@ -1504,7 +1605,21 @@ ast_for_arguments(struct compiling *c, const node *n)
                 kwarg = ast_for_arg(c, ch);
                 if (!kwarg)
                     return NULL;
-                i += 3;
+                i += 2; /* the double star and the name */
+                if (TYPE(CHILD(n, i)) == COMMA)
+                    i += 1; /* the comma, if present */
+                break;
+            case TYPE_COMMENT:
+                assert(i);
+
+                if (kwarg)
+                    arg = kwarg;
+
+                /* arg will be equal to the last argument processed */
+                arg->type_comment = NEW_TYPE_COMMENT(ch);
+                if (!arg->type_comment)
+                    return NULL;
+                i += 1;
                 break;
             default:
                 PyErr_Format(PyExc_SystemError,
@@ -1613,7 +1728,7 @@ static stmt_ty
 ast_for_funcdef_impl(struct compiling *c, const node *n0,
                      asdl_seq *decorator_seq, bool is_async)
 {
-    /* funcdef: 'def' NAME parameters ['->' test] ':' suite */
+    /* funcdef: 'def' NAME parameters ['->' test] ':' [TYPE_COMMENT] suite */
     const node * const n = is_async ? CHILD(n0, 1) : n0;
     identifier name;
     arguments_ty args;
@@ -1621,6 +1736,8 @@ ast_for_funcdef_impl(struct compiling *c, const node *n0,
     expr_ty returns = NULL;
     int name_i = 1;
     int end_lineno, end_col_offset;
+    node *tc;
+    string type_comment = NULL;
 
     REQ(n, funcdef);
 
@@ -1638,16 +1755,37 @@ ast_for_funcdef_impl(struct compiling *c, const node *n0,
             return NULL;
         name_i += 2;
     }
+    if (TYPE(CHILD(n, name_i + 3)) == TYPE_COMMENT) {
+        type_comment = NEW_TYPE_COMMENT(CHILD(n, name_i + 3));
+        if (!type_comment)
+            return NULL;
+        name_i += 1;
+    }
     body = ast_for_suite(c, CHILD(n, name_i + 3));
     if (!body)
         return NULL;
     get_last_end_pos(body, &end_lineno, &end_col_offset);
 
+    if (NCH(CHILD(n, name_i + 3)) > 1) {
+        /* Check if the suite has a type comment in it. */
+        tc = CHILD(CHILD(n, name_i + 3), 1);
+
+        if (TYPE(tc) == TYPE_COMMENT) {
+            if (type_comment != NULL) {
+                ast_error(c, n, "Cannot have two type comments on def");
+                return NULL;
+            }
+            type_comment = NEW_TYPE_COMMENT(tc);
+            if (!type_comment)
+                return NULL;
+        }
+    }
+
     if (is_async)
-        return AsyncFunctionDef(name, args, body, decorator_seq, returns,
+        return AsyncFunctionDef(name, args, body, decorator_seq, returns, type_comment,
                                 LINENO(n0), n0->n_col_offset, end_lineno, end_col_offset, c->c_arena);
     else
-        return FunctionDef(name, args, body, decorator_seq, returns,
+        return FunctionDef(name, args, body, decorator_seq, returns, type_comment,
                            LINENO(n), n->n_col_offset, end_lineno, end_col_offset, c->c_arena);
 }
 
@@ -2295,7 +2433,7 @@ ast_for_atom(struct compiling *c, const node *n)
                 /* It's a dictionary comprehension. */
                 if (is_dict) {
                     ast_error(c, n, "dict unpacking cannot be used in "
-                            "dict comprehension");
+                              "dict comprehension");
                     return NULL;
                 }
                 res = ast_for_dictcomp(c, ch);
@@ -2870,13 +3008,13 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 if (nkeywords) {
                     if (ndoublestars) {
                         ast_error(c, chch,
-                                "positional argument follows "
-                                "keyword argument unpacking");
+                                  "positional argument follows "
+                                  "keyword argument unpacking");
                     }
                     else {
                         ast_error(c, chch,
-                                "positional argument follows "
-                                "keyword argument");
+                                  "positional argument follows "
+                                  "keyword argument");
                     }
                     return NULL;
                 }
@@ -2890,8 +3028,8 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 expr_ty starred;
                 if (ndoublestars) {
                     ast_error(c, chch,
-                            "iterable argument unpacking follows "
-                            "keyword argument unpacking");
+                              "iterable argument unpacking follows "
+                              "keyword argument unpacking");
                     return NULL;
                 }
                 e = ast_for_expr(c, CHILD(ch, 1));
@@ -2929,13 +3067,13 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 if (nkeywords) {
                     if (ndoublestars) {
                         ast_error(c, chch,
-                                "positional argument follows "
-                                "keyword argument unpacking");
+                                  "positional argument follows "
+                                  "keyword argument unpacking");
                     }
                     else {
                         ast_error(c, chch,
-                                "positional argument follows "
-                                "keyword argument");
+                                  "positional argument follows "
+                                  "keyword argument");
                     }
                     return NULL;
                 }
@@ -2996,7 +3134,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                     tmp = ((keyword_ty)asdl_seq_GET(keywords, k))->arg;
                     if (tmp && !PyUnicode_Compare(tmp, key)) {
                         ast_error(c, chch,
-                                "keyword argument repeated");
+                                  "keyword argument repeated");
                         return NULL;
                     }
                 }
@@ -3045,15 +3183,16 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 {
     REQ(n, expr_stmt);
     /* expr_stmt: testlist_star_expr (annassign | augassign (yield_expr|testlist) |
-                            ('=' (yield_expr|testlist_star_expr))*)
-       annassign: ':' test ['=' test]
-       testlist_star_expr: (test|star_expr) (',' test|star_expr)* [',']
-       augassign: '+=' | '-=' | '*=' | '@=' | '/=' | '%=' | '&=' | '|=' | '^='
-                | '<<=' | '>>=' | '**=' | '//='
+                     [('=' (yield_expr|testlist_star_expr))+ [TYPE_COMMENT]] )
+       annassign: ':' test ['=' (yield_expr|testlist)]
+       testlist_star_expr: (test|star_expr) (',' (test|star_expr))* [',']
+       augassign: ('+=' | '-=' | '*=' | '@=' | '/=' | '%=' | '&=' | '|=' | '^=' |
+                   '<<=' | '>>=' | '**=' | '//=')
        test: ... here starts the operator precedence dance
      */
+    int num = NCH(n);
 
-    if (NCH(n) == 1) {
+    if (num == 1) {
         expr_ty e = ast_for_testlist(c, CHILD(n, 0));
         if (!e)
             return NULL;
@@ -3178,17 +3317,22 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         }
     }
     else {
-        int i;
+        int i, nch_minus_type, has_type_comment;
         asdl_seq *targets;
         node *value;
         expr_ty expression;
+        string type_comment;
 
         /* a normal assignment */
         REQ(CHILD(n, 1), EQUAL);
-        targets = _Py_asdl_seq_new(NCH(n) / 2, c->c_arena);
+
+        has_type_comment = TYPE(CHILD(n, num - 1)) == TYPE_COMMENT;
+        nch_minus_type = num - has_type_comment;
+
+        targets = _Py_asdl_seq_new(nch_minus_type / 2, c->c_arena);
         if (!targets)
             return NULL;
-        for (i = 0; i < NCH(n) - 2; i += 2) {
+        for (i = 0; i < nch_minus_type - 2; i += 2) {
             expr_ty e;
             node *ch = CHILD(n, i);
             if (TYPE(ch) == yield_expr) {
@@ -3205,14 +3349,21 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 
             asdl_seq_SET(targets, i / 2, e);
         }
-        value = CHILD(n, NCH(n) - 1);
+        value = CHILD(n, nch_minus_type - 1);
         if (TYPE(value) == testlist_star_expr)
             expression = ast_for_testlist(c, value);
         else
             expression = ast_for_expr(c, value);
         if (!expression)
             return NULL;
-        return Assign(targets, expression, LINENO(n), n->n_col_offset,
+        if (has_type_comment) {
+            type_comment = NEW_TYPE_COMMENT(CHILD(n, nch_minus_type));
+            if (!type_comment)
+                return NULL;
+        }
+        else
+            type_comment = NULL;
+        return Assign(targets, expression, type_comment, LINENO(n), n->n_col_offset,
                       n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
 }
@@ -3520,8 +3671,9 @@ ast_for_import_stmt(struct compiling *c, const node *n)
             n = CHILD(n, idx);
             n_children = NCH(n);
             if (n_children % 2 == 0) {
-                ast_error(c, n, "trailing comma not allowed without"
-                             " surrounding parentheses");
+                ast_error(c, n,
+                          "trailing comma not allowed without"
+                          " surrounding parentheses");
                 return NULL;
             }
             break;
@@ -3639,13 +3791,15 @@ ast_for_assert_stmt(struct compiling *c, const node *n)
 static asdl_seq *
 ast_for_suite(struct compiling *c, const node *n)
 {
-    /* suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT */
+    /* suite: simple_stmt | NEWLINE [TYPE_COMMENT NEWLINE] INDENT stmt+ DEDENT */
     asdl_seq *seq;
     stmt_ty s;
     int i, total, num, end, pos = 0;
     node *ch;
 
-    REQ(n, suite);
+    if (TYPE(n) != func_body_suite) {
+        REQ(n, suite);
+    }
 
     total = num_stmts(n);
     seq = _Py_asdl_seq_new(total, c->c_arena);
@@ -3669,7 +3823,13 @@ ast_for_suite(struct compiling *c, const node *n)
         }
     }
     else {
-        for (i = 2; i < (NCH(n) - 1); i++) {
+        i = 2;
+        if (TYPE(CHILD(n, 1)) == TYPE_COMMENT) {
+            i += 2;
+            REQ(CHILD(n, 2), NEWLINE);
+        }
+
+        for (; i < (NCH(n) - 1); i++) {
             ch = CHILD(n, i);
             REQ(ch, stmt);
             num = num_stmts(ch);
@@ -3903,11 +4063,15 @@ ast_for_for_stmt(struct compiling *c, const node *n0, bool is_async)
     expr_ty target, first;
     const node *node_target;
     int end_lineno, end_col_offset;
-    /* for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite] */
+    int has_type_comment;
+    string type_comment;
+    /* for_stmt: 'for' exprlist 'in' testlist ':' [TYPE_COMMENT] suite ['else' ':' suite] */
     REQ(n, for_stmt);
 
-    if (NCH(n) == 9) {
-        seq = ast_for_suite(c, CHILD(n, 8));
+    has_type_comment = TYPE(CHILD(n, 5)) == TYPE_COMMENT;
+
+    if (NCH(n) == 9 + has_type_comment) {
+        seq = ast_for_suite(c, CHILD(n, 8 + has_type_comment));
         if (!seq)
             return NULL;
     }
@@ -3929,7 +4093,7 @@ ast_for_for_stmt(struct compiling *c, const node *n0, bool is_async)
     expression = ast_for_testlist(c, CHILD(n, 3));
     if (!expression)
         return NULL;
-    suite_seq = ast_for_suite(c, CHILD(n, 5));
+    suite_seq = ast_for_suite(c, CHILD(n, 5 + has_type_comment));
     if (!suite_seq)
         return NULL;
 
@@ -3938,12 +4102,21 @@ ast_for_for_stmt(struct compiling *c, const node *n0, bool is_async)
     } else {
         get_last_end_pos(suite_seq, &end_lineno, &end_col_offset);
     }
+
+    if (has_type_comment) {
+        type_comment = NEW_TYPE_COMMENT(CHILD(n, 5));
+        if (!type_comment)
+            return NULL;
+    }
+    else
+        type_comment = NULL;
+
     if (is_async)
-        return AsyncFor(target, expression, suite_seq, seq,
+        return AsyncFor(target, expression, suite_seq, seq, type_comment,
                         LINENO(n0), n0->n_col_offset,
                         end_lineno, end_col_offset, c->c_arena);
     else
-        return For(target, expression, suite_seq, seq,
+        return For(target, expression, suite_seq, seq, type_comment,
                    LINENO(n), n->n_col_offset,
                    end_lineno, end_col_offset, c->c_arena);
 }
@@ -4111,21 +4284,25 @@ ast_for_with_item(struct compiling *c, const node *n)
     return withitem(context_expr, optional_vars, c->c_arena);
 }
 
-/* with_stmt: 'with' with_item (',' with_item)* ':' suite */
+/* with_stmt: 'with' with_item (',' with_item)*  ':' [TYPE_COMMENT] suite */
 static stmt_ty
 ast_for_with_stmt(struct compiling *c, const node *n0, bool is_async)
 {
     const node * const n = is_async ? CHILD(n0, 1) : n0;
-    int i, n_items, end_lineno, end_col_offset;
+    int i, n_items, nch_minus_type, has_type_comment, end_lineno, end_col_offset;
     asdl_seq *items, *body;
+    string type_comment;
 
     REQ(n, with_stmt);
 
-    n_items = (NCH(n) - 2) / 2;
+    has_type_comment = TYPE(CHILD(n, NCH(n) - 2)) == TYPE_COMMENT;
+    nch_minus_type = NCH(n) - has_type_comment;
+
+    n_items = (nch_minus_type - 2) / 2;
     items = _Py_asdl_seq_new(n_items, c->c_arena);
     if (!items)
         return NULL;
-    for (i = 1; i < NCH(n) - 2; i += 2) {
+    for (i = 1; i < nch_minus_type - 2; i += 2) {
         withitem_ty item = ast_for_with_item(c, CHILD(n, i));
         if (!item)
             return NULL;
@@ -4137,11 +4314,19 @@ ast_for_with_stmt(struct compiling *c, const node *n0, bool is_async)
         return NULL;
     get_last_end_pos(body, &end_lineno, &end_col_offset);
 
+    if (has_type_comment) {
+        type_comment = NEW_TYPE_COMMENT(CHILD(n, NCH(n) - 2));
+        if (!type_comment)
+            return NULL;
+    }
+    else
+        type_comment = NULL;
+
     if (is_async)
-        return AsyncWith(items, body, LINENO(n0), n0->n_col_offset,
+        return AsyncWith(items, body, type_comment, LINENO(n0), n0->n_col_offset,
                          end_lineno, end_col_offset, c->c_arena);
     else
-        return With(items, body, LINENO(n), n->n_col_offset,
+        return With(items, body, type_comment, LINENO(n), n->n_col_offset,
                     end_lineno, end_col_offset, c->c_arena);
 }
 
@@ -4768,8 +4953,9 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         if (ch == '\\') {
             /* Error: can't include a backslash character, inside
                parens or strings or not. */
-            ast_error(c, n, "f-string expression part "
-                            "cannot include a backslash");
+            ast_error(c, n,
+                      "f-string expression part "
+                      "cannot include a backslash");
             return -1;
         }
         if (quote_char) {
@@ -4893,8 +5079,9 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         /* Validate the conversion. */
         if (!(conversion == 's' || conversion == 'r'
               || conversion == 'a')) {
-            ast_error(c, n, "f-string: invalid conversion character: "
-                            "expected 's', 'r', or 'a'");
+            ast_error(c, n,
+                      "f-string: invalid conversion character: "
+                      "expected 's', 'r', or 'a'");
             return -1;
         }
     }
@@ -5446,7 +5633,8 @@ parsestr(struct compiling *c, const node *n, int *bytesmode, int *rawmode,
         const char *ch;
         for (ch = s; *ch; ch++) {
             if (Py_CHARMASK(*ch) >= 0x80) {
-                ast_error(c, n, "bytes can only contain ASCII "
+                ast_error(c, n,
+                          "bytes can only contain ASCII "
                           "literal characters.");
                 return -1;
             }

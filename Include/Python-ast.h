@@ -46,14 +46,17 @@ typedef struct _alias *alias_ty;
 
 typedef struct _withitem *withitem_ty;
 
+typedef struct _type_ignore *type_ignore_ty;
+
 
 enum _mod_kind {Module_kind=1, Interactive_kind=2, Expression_kind=3,
-                 Suite_kind=4};
+                 FunctionType_kind=4, Suite_kind=5};
 struct _mod {
     enum _mod_kind kind;
     union {
         struct {
             asdl_seq *body;
+            asdl_seq *type_ignores;
         } Module;
 
         struct {
@@ -63,6 +66,11 @@ struct _mod {
         struct {
             expr_ty body;
         } Expression;
+
+        struct {
+            asdl_seq *argtypes;
+            expr_ty returns;
+        } FunctionType;
 
         struct {
             asdl_seq *body;
@@ -88,6 +96,7 @@ struct _stmt {
             asdl_seq *body;
             asdl_seq *decorator_list;
             expr_ty returns;
+            string type_comment;
         } FunctionDef;
 
         struct {
@@ -96,6 +105,7 @@ struct _stmt {
             asdl_seq *body;
             asdl_seq *decorator_list;
             expr_ty returns;
+            string type_comment;
         } AsyncFunctionDef;
 
         struct {
@@ -117,6 +127,7 @@ struct _stmt {
         struct {
             asdl_seq *targets;
             expr_ty value;
+            string type_comment;
         } Assign;
 
         struct {
@@ -137,6 +148,7 @@ struct _stmt {
             expr_ty iter;
             asdl_seq *body;
             asdl_seq *orelse;
+            string type_comment;
         } For;
 
         struct {
@@ -144,6 +156,7 @@ struct _stmt {
             expr_ty iter;
             asdl_seq *body;
             asdl_seq *orelse;
+            string type_comment;
         } AsyncFor;
 
         struct {
@@ -161,11 +174,13 @@ struct _stmt {
         struct {
             asdl_seq *items;
             asdl_seq *body;
+            string type_comment;
         } With;
 
         struct {
             asdl_seq *items;
             asdl_seq *body;
+            string type_comment;
         } AsyncWith;
 
         struct {
@@ -421,6 +436,7 @@ struct _arguments {
 struct _arg {
     identifier arg;
     expr_ty annotation;
+    string type_comment;
     int lineno;
     int col_offset;
     int end_lineno;
@@ -442,26 +458,40 @@ struct _withitem {
     expr_ty optional_vars;
 };
 
+enum _type_ignore_kind {TypeIgnore_kind=1};
+struct _type_ignore {
+    enum _type_ignore_kind kind;
+    union {
+        struct {
+            int lineno;
+        } TypeIgnore;
+
+    } v;
+};
+
 
 // Note: these macros affect function definitions, not only call sites.
-#define Module(a0, a1) _Py_Module(a0, a1)
-mod_ty _Py_Module(asdl_seq * body, PyArena *arena);
+#define Module(a0, a1, a2) _Py_Module(a0, a1, a2)
+mod_ty _Py_Module(asdl_seq * body, asdl_seq * type_ignores, PyArena *arena);
 #define Interactive(a0, a1) _Py_Interactive(a0, a1)
 mod_ty _Py_Interactive(asdl_seq * body, PyArena *arena);
 #define Expression(a0, a1) _Py_Expression(a0, a1)
 mod_ty _Py_Expression(expr_ty body, PyArena *arena);
+#define FunctionType(a0, a1, a2) _Py_FunctionType(a0, a1, a2)
+mod_ty _Py_FunctionType(asdl_seq * argtypes, expr_ty returns, PyArena *arena);
 #define Suite(a0, a1) _Py_Suite(a0, a1)
 mod_ty _Py_Suite(asdl_seq * body, PyArena *arena);
-#define FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) _Py_FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
+#define FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) _Py_FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
 stmt_ty _Py_FunctionDef(identifier name, arguments_ty args, asdl_seq * body,
-                        asdl_seq * decorator_list, expr_ty returns, int lineno,
-                        int col_offset, int end_lineno, int end_col_offset,
-                        PyArena *arena);
-#define AsyncFunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) _Py_AsyncFunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
+                        asdl_seq * decorator_list, expr_ty returns, string
+                        type_comment, int lineno, int col_offset, int
+                        end_lineno, int end_col_offset, PyArena *arena);
+#define AsyncFunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) _Py_AsyncFunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
 stmt_ty _Py_AsyncFunctionDef(identifier name, arguments_ty args, asdl_seq *
                              body, asdl_seq * decorator_list, expr_ty returns,
-                             int lineno, int col_offset, int end_lineno, int
-                             end_col_offset, PyArena *arena);
+                             string type_comment, int lineno, int col_offset,
+                             int end_lineno, int end_col_offset, PyArena
+                             *arena);
 #define ClassDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) _Py_ClassDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
 stmt_ty _Py_ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords,
                      asdl_seq * body, asdl_seq * decorator_list, int lineno,
@@ -473,10 +503,10 @@ stmt_ty _Py_Return(expr_ty value, int lineno, int col_offset, int end_lineno,
 #define Delete(a0, a1, a2, a3, a4, a5) _Py_Delete(a0, a1, a2, a3, a4, a5)
 stmt_ty _Py_Delete(asdl_seq * targets, int lineno, int col_offset, int
                    end_lineno, int end_col_offset, PyArena *arena);
-#define Assign(a0, a1, a2, a3, a4, a5, a6) _Py_Assign(a0, a1, a2, a3, a4, a5, a6)
-stmt_ty _Py_Assign(asdl_seq * targets, expr_ty value, int lineno, int
-                   col_offset, int end_lineno, int end_col_offset, PyArena
-                   *arena);
+#define Assign(a0, a1, a2, a3, a4, a5, a6, a7) _Py_Assign(a0, a1, a2, a3, a4, a5, a6, a7)
+stmt_ty _Py_Assign(asdl_seq * targets, expr_ty value, string type_comment, int
+                   lineno, int col_offset, int end_lineno, int end_col_offset,
+                   PyArena *arena);
 #define AugAssign(a0, a1, a2, a3, a4, a5, a6, a7) _Py_AugAssign(a0, a1, a2, a3, a4, a5, a6, a7)
 stmt_ty _Py_AugAssign(expr_ty target, operator_ty op, expr_ty value, int
                       lineno, int col_offset, int end_lineno, int
@@ -485,14 +515,14 @@ stmt_ty _Py_AugAssign(expr_ty target, operator_ty op, expr_ty value, int
 stmt_ty _Py_AnnAssign(expr_ty target, expr_ty annotation, expr_ty value, int
                       simple, int lineno, int col_offset, int end_lineno, int
                       end_col_offset, PyArena *arena);
-#define For(a0, a1, a2, a3, a4, a5, a6, a7, a8) _Py_For(a0, a1, a2, a3, a4, a5, a6, a7, a8)
+#define For(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) _Py_For(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
 stmt_ty _Py_For(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq *
-                orelse, int lineno, int col_offset, int end_lineno, int
-                end_col_offset, PyArena *arena);
-#define AsyncFor(a0, a1, a2, a3, a4, a5, a6, a7, a8) _Py_AsyncFor(a0, a1, a2, a3, a4, a5, a6, a7, a8)
+                orelse, string type_comment, int lineno, int col_offset, int
+                end_lineno, int end_col_offset, PyArena *arena);
+#define AsyncFor(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) _Py_AsyncFor(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
 stmt_ty _Py_AsyncFor(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq *
-                     orelse, int lineno, int col_offset, int end_lineno, int
-                     end_col_offset, PyArena *arena);
+                     orelse, string type_comment, int lineno, int col_offset,
+                     int end_lineno, int end_col_offset, PyArena *arena);
 #define While(a0, a1, a2, a3, a4, a5, a6, a7) _Py_While(a0, a1, a2, a3, a4, a5, a6, a7)
 stmt_ty _Py_While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno,
                   int col_offset, int end_lineno, int end_col_offset, PyArena
@@ -501,13 +531,14 @@ stmt_ty _Py_While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno,
 stmt_ty _Py_If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno,
                int col_offset, int end_lineno, int end_col_offset, PyArena
                *arena);
-#define With(a0, a1, a2, a3, a4, a5, a6) _Py_With(a0, a1, a2, a3, a4, a5, a6)
-stmt_ty _Py_With(asdl_seq * items, asdl_seq * body, int lineno, int col_offset,
-                 int end_lineno, int end_col_offset, PyArena *arena);
-#define AsyncWith(a0, a1, a2, a3, a4, a5, a6) _Py_AsyncWith(a0, a1, a2, a3, a4, a5, a6)
-stmt_ty _Py_AsyncWith(asdl_seq * items, asdl_seq * body, int lineno, int
-                      col_offset, int end_lineno, int end_col_offset, PyArena
-                      *arena);
+#define With(a0, a1, a2, a3, a4, a5, a6, a7) _Py_With(a0, a1, a2, a3, a4, a5, a6, a7)
+stmt_ty _Py_With(asdl_seq * items, asdl_seq * body, string type_comment, int
+                 lineno, int col_offset, int end_lineno, int end_col_offset,
+                 PyArena *arena);
+#define AsyncWith(a0, a1, a2, a3, a4, a5, a6, a7) _Py_AsyncWith(a0, a1, a2, a3, a4, a5, a6, a7)
+stmt_ty _Py_AsyncWith(asdl_seq * items, asdl_seq * body, string type_comment,
+                      int lineno, int col_offset, int end_lineno, int
+                      end_col_offset, PyArena *arena);
 #define Raise(a0, a1, a2, a3, a4, a5, a6) _Py_Raise(a0, a1, a2, a3, a4, a5, a6)
 stmt_ty _Py_Raise(expr_ty exc, expr_ty cause, int lineno, int col_offset, int
                   end_lineno, int end_col_offset, PyArena *arena);
@@ -656,9 +687,10 @@ excepthandler_ty _Py_ExceptHandler(expr_ty type, identifier name, asdl_seq *
 arguments_ty _Py_arguments(asdl_seq * args, arg_ty vararg, asdl_seq *
                            kwonlyargs, asdl_seq * kw_defaults, arg_ty kwarg,
                            asdl_seq * defaults, PyArena *arena);
-#define arg(a0, a1, a2, a3, a4, a5, a6) _Py_arg(a0, a1, a2, a3, a4, a5, a6)
-arg_ty _Py_arg(identifier arg, expr_ty annotation, int lineno, int col_offset,
-               int end_lineno, int end_col_offset, PyArena *arena);
+#define arg(a0, a1, a2, a3, a4, a5, a6, a7) _Py_arg(a0, a1, a2, a3, a4, a5, a6, a7)
+arg_ty _Py_arg(identifier arg, expr_ty annotation, string type_comment, int
+               lineno, int col_offset, int end_lineno, int end_col_offset,
+               PyArena *arena);
 #define keyword(a0, a1, a2) _Py_keyword(a0, a1, a2)
 keyword_ty _Py_keyword(identifier arg, expr_ty value, PyArena *arena);
 #define alias(a0, a1, a2) _Py_alias(a0, a1, a2)
@@ -666,6 +698,8 @@ alias_ty _Py_alias(identifier name, identifier asname, PyArena *arena);
 #define withitem(a0, a1, a2) _Py_withitem(a0, a1, a2)
 withitem_ty _Py_withitem(expr_ty context_expr, expr_ty optional_vars, PyArena
                          *arena);
+#define TypeIgnore(a0, a1) _Py_TypeIgnore(a0, a1)
+type_ignore_ty _Py_TypeIgnore(int lineno, PyArena *arena);
 
 PyObject* PyAST_mod2obj(mod_ty t);
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);

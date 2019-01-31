@@ -12,6 +12,7 @@
 #include "node.h"
 #include "parser.h"
 #include "errcode.h"
+#include "graminit.h"
 
 
 #ifdef Py_DEBUG
@@ -260,7 +261,15 @@ PyParser_AddToken(parser_state *ps, int type, char *str,
                     /* Push non-terminal */
                     int nt = (x >> 8) + NT_OFFSET;
                     int arrow = x & ((1<<7)-1);
-                    dfa *d1 = PyGrammar_FindDFA(
+                    dfa *d1;
+                    if (nt == func_body_suite && !(ps->p_flags & PyCF_TYPE_COMMENTS)) {
+                        /* When parsing type comments is not requested,
+                           we can provide better errors about bad indentation
+                           by using 'suite' for the body of a funcdef */
+                        D(printf(" [switch func_body_suite to suite]"));
+                        nt = suite;
+                    }
+                    d1 = PyGrammar_FindDFA(
                         ps->p_grammar, nt);
                     if ((err = push(&ps->p_stack, nt, d1,
                         arrow, lineno, col_offset,
@@ -268,7 +277,7 @@ PyParser_AddToken(parser_state *ps, int type, char *str,
                         D(printf(" MemError: push\n"));
                         return err;
                     }
-                    D(printf(" Push ...\n"));
+                    D(printf(" Push '%s'\n", d1->d_name));
                     continue;
                 }
 

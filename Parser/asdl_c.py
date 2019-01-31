@@ -890,6 +890,15 @@ static int obj2ast_identifier(PyObject* obj, PyObject** out, PyArena* arena)
     return obj2ast_object(obj, out, arena);
 }
 
+static int obj2ast_string(PyObject* obj, PyObject** out, PyArena* arena)
+{
+    if (!PyUnicode_CheckExact(obj) && !PyBytes_CheckExact(obj)) {
+        PyErr_SetString(PyExc_TypeError, "AST string must be of type str");
+        return 1;
+    }
+    return obj2ast_object(obj, out, arena);
+}
+
 static int obj2ast_int(PyObject* obj, int* out, PyArena* arena)
 {
     int i;
@@ -992,6 +1001,8 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("d = PyModule_GetDict(m);", 1)
         self.emit('if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return NULL;', 1)
         self.emit('if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)', 1)
+        self.emit("return NULL;", 2)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0)', 1)
         self.emit("return NULL;", 2)
         for dfn in mod.dfns:
             self.visit(dfn)
@@ -1176,18 +1187,19 @@ PyObject* PyAST_mod2obj(mod_ty t)
 }
 
 /* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
+/* and 3 for "func_type" */
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 {
     mod_ty res;
     PyObject *req_type[3];
-    char *req_name[] = {"Module", "Expression", "Interactive"};
+    char *req_name[] = {"Module", "Expression", "Interactive", "FunctionType"};
     int isinstance;
 
     req_type[0] = (PyObject*)Module_type;
     req_type[1] = (PyObject*)Expression_type;
     req_type[2] = (PyObject*)Interactive_type;
 
-    assert(0 <= mode && mode <= 2);
+    assert(0 <= mode && mode <= 3);
 
     if (!init_types())
         return NULL;
