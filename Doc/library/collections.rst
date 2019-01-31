@@ -894,10 +894,17 @@ field names, the method and attribute names start with an underscore.
 
         >>> p = Point(x=11, y=22)
         >>> p._asdict()
-        OrderedDict([('x', 11), ('y', 22)])
+        {'x': 11, 'y': 22}
 
     .. versionchanged:: 3.1
         Returns an :class:`OrderedDict` instead of a regular :class:`dict`.
+
+    .. versionchanged:: 3.8
+        Returns a regular :class:`dict` instead of an :class:`OrderedDict`.
+        As of Python 3.7, regular dicts are guaranteed to be ordered.  If the
+        extra features of :class:`OrderedDict` are required, the suggested
+        remediation is to cast the result to the desired type:
+        ``OrderedDict(nt._asdict())``.
 
 .. method:: somenamedtuple._replace(**kwargs)
 
