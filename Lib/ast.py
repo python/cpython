@@ -27,12 +27,16 @@
 from _ast import *
 
 
-def parse(source, filename='<unknown>', mode='exec'):
+def parse(source, filename='<unknown>', mode='exec', *, type_comments=False):
     """
     Parse the source into an AST node.
     Equivalent to compile(source, filename, mode, PyCF_ONLY_AST).
+    Pass type_comments=True to get back type comments where the syntax allows.
     """
-    return compile(source, filename, mode, PyCF_ONLY_AST)
+    flags = PyCF_ONLY_AST
+    if type_comments:
+        flags |= PyCF_TYPE_COMMENTS
+    return compile(source, filename, mode, flags)
 
 
 def literal_eval(node_or_string):

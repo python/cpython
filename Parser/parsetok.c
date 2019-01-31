@@ -15,6 +15,42 @@
 static node *parsetok(struct tok_state *, grammar *, int, perrdetail *, int *);
 static int initerr(perrdetail *err_ret, PyObject * filename);
 
+typedef struct {
+    int *items;
+    size_t size;
+    size_t num_items;
+} growable_int_array;
+
+static int
+growable_int_array_init(growable_int_array *arr, size_t initial_size) {
+    assert(initial_size > 0);
+    arr->items = malloc(initial_size * sizeof(*arr->items));
+    arr->size = initial_size;
+    arr->num_items = 0;
+
+    return arr->items != NULL;
+}
+
+static int
+growable_int_array_add(growable_int_array *arr, int item) {
+    if (arr->num_items >= arr->size) {
+        arr->size *= 2;
+        arr->items = realloc(arr->items, arr->size * sizeof(*arr->items));
+        if (!arr->items) {
+            return 0;
+        }
+    }
+
+    arr->items[arr->num_items] = item;
+    arr->num_items++;
+    return 1;
+}
+
+static void
+growable_int_array_deallocate(growable_int_array *arr) {
+    free(arr->items);
+}
+
 /* Parse input coming from a string.  Return error code, print some errors. */
 node *
 PyParser_ParseString(const char *s, grammar *g, int start, perrdetail *err_ret)
@@ -58,6 +94,9 @@ PyParser_ParseStringObject(const char *s, PyObject *filename,
     if (tok == NULL) {
         err_ret->error = PyErr_Occurred() ? E_DECODE : E_NOMEM;
         return NULL;
+    }
+    if (*flags & PyPARSE_TYPE_COMMENTS) {
+        tok->type_comments = 1;
     }
 
 #ifndef PGEN
@@ -127,6 +166,9 @@ PyParser_ParseFileObject(FILE *fp, PyObject *filename,
         err_ret->error = E_NOMEM;
         return NULL;
     }
+    if (*flags & PyPARSE_TYPE_COMMENTS) {
+        tok->type_comments = 1;
+    }
 #ifndef PGEN
     Py_INCREF(err_ret->filename);
     tok->filename = err_ret->filename;
@@ -188,6 +230,13 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
     node *n;
     int started = 0;
     int col_offset, end_col_offset;
+    growable_int_array type_ignores;
+
+    if (!growable_int_array_init(&type_ignores, 10)) {
+        err_ret->error = E_NOMEM;
+        PyTokenizer_Free(tok);
+        return NULL;
+    }
 
     if ((ps = PyParser_New(g, start)) == NULL) {
         err_ret->error = E_NOMEM;
@@ -197,6 +246,8 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
     if (*flags & PyPARSE_BARRY_AS_BDFL)
         ps->p_flags |= CO_FUTURE_BARRY_AS_BDFL;
+    if (*flags & PyPARSE_TYPE_COMMENTS)
+        ps->p_flags |= PyCF_TYPE_COMMENTS;
 #endif
 
     for (;;) {
@@ -277,6 +328,15 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         else {
             end_col_offset = -1;
         }
+
+        if (type == TYPE_IGNORE) {
+            if (!growable_int_array_add(&type_ignores, tok->lineno)) {
+                err_ret->error = E_NOMEM;
+                break;
+            }
+            continue;
+        }
+
         if ((err_ret->error =
              PyParser_AddToken(ps, (int)type, str,
                                lineno, col_offset, tok->lineno, end_col_offset,
@@ -292,6 +352,24 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
     if (err_ret->error == E_DONE) {
         n = ps->p_tree;
         ps->p_tree = NULL;
+
+        if (n->n_type == file_input) {
+            /* Put type_ignore nodes in the ENDMARKER of file_input. */
+            int num;
+            node *ch;
+            size_t i;
+
+            num = NCH(n);
+            ch = CHILD(n, num - 1);
+            REQ(ch, ENDMARKER);
+
+            for (i = 0; i < type_ignores.num_items; i++) {
+                PyNode_AddChild(ch, TYPE_IGNORE, NULL,
+                                type_ignores.items[i], 0,
+                                type_ignores.items[i], 0);
+            }
+        }
+        growable_int_array_deallocate(&type_ignores);
 
 #ifndef PGEN
         /* Check that the source for a single input statement really
