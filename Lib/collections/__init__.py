@@ -426,9 +426,11 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         'Return a nicely formatted representation string'
         return self.__class__.__name__ + repr_fmt % self
 
+    _dict, _zip = dict, zip
+
     def _asdict(self):
         'Return a new OrderedDict which maps field names to their values.'
-        return OrderedDict(zip(self._fields, self))
+        return _dict(_zip(self._fields, self))
 
     def __getnewargs__(self):
         'Return self as a plain tuple.  Used by copy and pickle.'

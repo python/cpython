@@ -1,0 +1,2 @@
+The _asdict() method for collections.namedtuple now returns a regular dict
+instead of an OrderedDict.
