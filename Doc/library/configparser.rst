@@ -462,7 +462,8 @@ the :meth:`__init__` options:
 
   Please note: there are ways to add a set of key-value pairs in a single
   operation.  When you use a regular dictionary in those operations, the order
-  of the keys may be random.  For example:
+  of the keys will be ordered because dict preserves order from Python 3.7.
+  For example:
 
   .. doctest::
 
@@ -477,41 +478,10 @@ the :meth:`__init__` options:
      ...                                'bar': 'y',
      ...                                'baz': 'z'}
      ... })
-     >>> parser.sections()  # doctest: +SKIP
-     ['section3', 'section2', 'section1']
-     >>> [option for option in parser['section3']] # doctest: +SKIP
-     ['baz', 'foo', 'bar']
-
-  In these operations you need to use an ordered dictionary as well:
-
-  .. doctest::
-
-     >>> from collections import OrderedDict
-     >>> parser = configparser.ConfigParser()
-     >>> parser.read_dict(
-     ...   OrderedDict((
-     ...     ('s1',
-     ...      OrderedDict((
-     ...        ('1', '2'),
-     ...        ('3', '4'),
-     ...        ('5', '6'),
-     ...      ))
-     ...     ),
-     ...     ('s2',
-     ...      OrderedDict((
-     ...        ('a', 'b'),
-     ...        ('c', 'd'),
-     ...        ('e', 'f'),
-     ...      ))
-     ...     ),
-     ...   ))
-     ... )
-     >>> parser.sections()  # doctest: +SKIP
-     ['s1', 's2']
-     >>> [option for option in parser['s1']]  # doctest: +SKIP
-     ['1', '3', '5']
-     >>> [option for option in parser['s2'].values()]  # doctest: +SKIP
-     ['b', 'd', 'f']
+     >>> parser.sections()
+     ['section1', 'section2', 'section3']
+     >>> [option for option in parser['section3']]
+     ['foo', 'bar', 'baz']
 
 * *allow_no_value*, default value: ``False``
 
@@ -891,7 +861,7 @@ interpolation if an option used is not defined elsewhere. ::
 ConfigParser Objects
 --------------------
 
-.. class:: ConfigParser(defaults=None, dict_type=dict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), inline_comment_prefixes=None, strict=True, empty_lines_in_values=True, default_section=configparser.DEFAULTSECT, interpolation=BasicInterpolation(), converters={})
+.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), inline_comment_prefixes=None, strict=True, empty_lines_in_values=True, default_section=configparser.DEFAULTSECT, interpolation=BasicInterpolation(), converters={})
 
    The main configuration parser.  When *defaults* is given, it is initialized
    into the dictionary of intrinsic defaults.  When *dict_type* is given, it
@@ -952,10 +922,6 @@ ConfigParser Objects
       The *defaults* argument is read with :meth:`read_dict()`,
       providing consistent behavior across the parser: non-string
       keys and values are implicitly converted to strings.
-
-   .. versionchanged:: 3.7
-      The default *dict_type* is :class:`dict`, since it now preserves
-      insertion order.
 
    .. method:: defaults()
 
@@ -1213,7 +1179,7 @@ ConfigParser Objects
 RawConfigParser Objects
 -----------------------
 
-.. class:: RawConfigParser(defaults=None, dict_type=dict, \
+.. class:: RawConfigParser(defaults=None, dict_type=collections.OrderedDict, \
                            allow_no_value=False, *, delimiters=('=', ':'), \
                            comment_prefixes=('#', ';'), \
                            inline_comment_prefixes=None, strict=True, \
@@ -1225,10 +1191,6 @@ RawConfigParser Objects
    disabled by default and allows for non-string section names, option
    names, and values via its unsafe ``add_section`` and ``set`` methods,
    as well as the legacy ``defaults=`` keyword argument handling.
-
-   .. versionchanged:: 3.7
-      The default *dict_type* is :class:`dict`, since it now preserves
-      insertion order.
 
    .. note::
       Consider using :class:`ConfigParser` instead which checks types of
