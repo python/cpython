@@ -88,6 +88,10 @@ typedef struct _is {
     uint64_t tstate_next_unique_id;
 } PyInterpreterState;
 
+PyAPI_FUNC(_PyCoreConfig *) _PyInterpreterState_GetCoreConfig(struct _is *);
+PyAPI_FUNC(_PyMainInterpreterConfig *) _PyInterpreterState_GetMainConfig(struct _is *);
+
+
 /* State unique per thread */
 
 /* Py_tracefunc return -1 when raising an exception, or 0 for success. */
