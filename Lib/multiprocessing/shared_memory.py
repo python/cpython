@@ -260,7 +260,7 @@ class ShareableList:
     def __init__(self, iterable=None, name=None):
         if iterable is not None:
             _formats = [
-                self.types_mapping[type(item)] 
+                self.types_mapping[type(item)]
                     if not isinstance(item, (str, bytes))
                     else self.types_mapping[type(item)] % (
                         self.alignment * (len(item) // self.alignment + 1),
