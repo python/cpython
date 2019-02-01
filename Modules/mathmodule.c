@@ -2707,7 +2707,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 
 
 /*[clinic input]
-math.combinations
+math.comb
 
     n: object
 
@@ -2727,12 +2727,12 @@ if argument(s) are negative or k > n.
 [clinic start generated code]*/
 
 static PyObject *
-math_combinations_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=19e8a448a1be51e0 input=a1334a4fbeb72a00]*/
+math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
+/*[clinic end generated code: output=bd2cec8d854f3493 input=75e1a19623bae7dc]*/
 {
     if (!(PyLong_Check(n) && PyLong_Check(k))) {
         PyErr_SetString(PyExc_TypeError,
-            "combinations() only accepts integer arguments");
+            "comb() only accepts integer arguments");
         return NULL;
     }
     n = PyNumber_Long(n);
@@ -2899,7 +2899,7 @@ static PyMethodDef math_methods[] = {
     {"tanh",            math_tanh,      METH_O,         math_tanh_doc},
     MATH_TRUNC_METHODDEF
     MATH_PROD_METHODDEF
-    MATH_COMBINATIONS_METHODDEF
+    MATH_COMB_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 

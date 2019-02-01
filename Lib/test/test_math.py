@@ -527,47 +527,47 @@ class MathTests(unittest.TestCase):
         """Test (n choose k) = n! / (k! (n-k)!) when 0 <= k <= n."""
         for n in range(100):
             for k in range(n+1):
-                self.assertEqual(math.combinations(n, k),
+                self.assertEqual(math.comb(n, k),
                                  math.factorial(n) // math.factorial(k) // math.factorial(n-k))
 
     def testCombinationsTriangle(self):
         """Test (n+1 choose k+1) = (n choose k) + (n choose k+1)"""
         for n in range(100):
             for k in range(n):
-                self.assertEqual(math.combinations(n + 1, k + 1), math.combinations(n, k) + math.combinations(n, k + 1))
+                self.assertEqual(math.comb(n + 1, k + 1), math.comb(n, k) + math.comb(n, k + 1))
 
     def testCombinationsZero(self):
         """(n choose k) raises ValueError when k>n"""
         for k in range(100):
             for n in range(k):
-                self.assertRaises(ValueError, math.combinations, n, k)
+                self.assertRaises(ValueError, math.comb, n, k)
 
     def testCombinationsOne(self):
         """Test (n choose 0) = (n choose n) = 1"""
         for n in range(100):
-            self.assertEqual(1, math.combinations(n, 0))
-            self.assertEqual(1, math.combinations(n, n))
+            self.assertEqual(1, math.comb(n, 0))
+            self.assertEqual(1, math.comb(n, n))
 
     def testCombinationsValueErrors(self):
-        """Test that math.combinations raises ValueError on negative inputs or k>n."""
+        """Test that math.comb raises ValueError on negative inputs or k>n."""
         for neg in [-1, -10**100]:
-            self.assertRaises(ValueError, math.combinations, 0, neg)
-            self.assertRaises(ValueError, math.combinations, neg, 0)
+            self.assertRaises(ValueError, math.comb, 0, neg)
+            self.assertRaises(ValueError, math.comb, neg, 0)
 
         for n in range(100):
             for k in range(n+1, 100):
-                self.assertRaises(ValueError, math.combinations, n, k)
+                self.assertRaises(ValueError, math.comb, n, k)
 
     def testCombinationsOverflow(self):
-        """math.combinations raises OverflowError on inputs too large for C longs."""
+        """math.comb raises OverflowError on inputs too large for C longs."""
         # min(k, n - k) > LLONG_MAX)
-        self.assertRaises(OverflowError, math.combinations, 10**400, 10**200)
+        self.assertRaises(OverflowError, math.comb, 10**400, 10**200)
 
     def testCombinationsTypeErrors(self):
-        """Test math.combinations raises TypeError on non-int inputs."""
+        """Test math.comb raises TypeError on non-int inputs."""
         for non_int in [-1e100, -1.0, math.pi, decimal.Decimal(5.2), "5"]:
-            self.assertRaises(TypeError, math.combinations, 0, non_int)
-            self.assertRaises(TypeError, math.combinations, non_int, 0)
+            self.assertRaises(TypeError, math.comb, 0, non_int)
+            self.assertRaises(TypeError, math.comb, non_int, 0)
 
     def testFloor(self):
         self.assertRaises(TypeError, math.floor)
