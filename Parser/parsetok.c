@@ -330,6 +330,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         }
 
         if (type == TYPE_IGNORE) {
+            PyObject_FREE(str);
             if (!growable_int_array_add(&type_ignores, tok->lineno)) {
                 err_ret->error = E_NOMEM;
                 break;
