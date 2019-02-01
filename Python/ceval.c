@@ -171,6 +171,7 @@ PyEval_InitThreads(void)
 {
     if (gil_created())
         return;
+    PyThread_init_thread();
     create_gil();
     take_gil(_PyThreadState_GET());
     _PyRuntime.ceval.pending.main_thread = PyThread_get_thread_ident();
