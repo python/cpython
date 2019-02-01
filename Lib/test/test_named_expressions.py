@@ -195,7 +195,7 @@ class NamedExpressionAssignmentTest(unittest.TestCase):
         Where all variables are positive integers, and a is at least as large
         as the n'th root of x, this algorithm returns the floor of the n'th
         root of x (and roughly doubling the number of accurate bits per
-        iteration)::
+        iteration):
         """
         a = 9
         n = 2
@@ -205,6 +205,12 @@ class NamedExpressionAssignmentTest(unittest.TestCase):
             a = ((n-1)*a + d) // n
 
         self.assertEqual(a, 1)
+
+    def test_named_expression_assignment_15(self):
+        while a := False:
+            pass  # This will not run
+
+        self.assertEqual(a, False)
 
 
 class NamedExpressionScopeTest(unittest.TestCase):
