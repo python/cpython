@@ -1,1 +1,0 @@
-There is now a fix for a SyntaxWarning recently added for comparison using "is" over literals on master for a PEP 572 related test.
