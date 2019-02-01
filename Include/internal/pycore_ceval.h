@@ -36,6 +36,13 @@ struct _pending_calls {
     int last;
 };
 
+struct _ceval_interpreter_state {
+    /* This single variable consolidates all requests to break out of
+       the fast path in the eval loop. */
+    _Py_atomic_int eval_breaker;
+    struct _pending_calls pending;
+};
+
 #include "pycore_gil.h"
 
 struct _ceval_runtime_state {

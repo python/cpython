@@ -85,12 +85,7 @@ struct _is {
 
     uint64_t tstate_next_unique_id;
 
-    struct _ceval {
-        /* This single variable consolidates all requests to break out of
-           the fast path in the eval loop. */
-        _Py_atomic_int eval_breaker;
-        struct _pending_calls pending;
-    } ceval;
+    struct _ceval_interpreter_state ceval;
 };
 
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);
