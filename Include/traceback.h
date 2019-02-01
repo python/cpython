@@ -5,6 +5,9 @@
 extern "C" {
 #endif
 
+#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
+#include "internal/pycore_pystate.h"
+#endif
 #include "pystate.h"
 
 struct _frame;

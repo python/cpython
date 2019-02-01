@@ -6,8 +6,6 @@
 extern "C" {
 #endif
 
-typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
-
 /* Placeholders while working on the new configuration API
  *
  * See PEP 432 for final anticipated contents
@@ -30,63 +28,11 @@ typedef struct {
     (_PyMainInterpreterConfig){.install_signal_handlers = -1}
 /* Note: _PyMainInterpreterConfig_INIT sets other fields to 0/NULL */
 
-typedef struct _is {
-
-    struct _is *next;
-    struct _ts *tstate_head;
-
-    int64_t id;
-    int64_t id_refcount;
-    PyThread_type_lock id_mutex;
-
-    PyObject *modules;
-    PyObject *modules_by_index;
-    PyObject *sysdict;
-    PyObject *builtins;
-    PyObject *importlib;
-
-    /* Used in Python/sysmodule.c. */
-    int check_interval;
-
-    /* Used in Modules/_threadmodule.c. */
-    long num_threads;
-    /* Support for runtime thread stack size tuning.
-       A value of 0 means using the platform's default stack size
-       or the size specified by the THREAD_STACK_SIZE macro. */
-    /* Used in Python/thread.c. */
-    size_t pythread_stacksize;
-
-    PyObject *codec_search_path;
-    PyObject *codec_search_cache;
-    PyObject *codec_error_registry;
-    int codecs_initialized;
-    int fscodec_initialized;
-
-    _PyCoreConfig core_config;
-    _PyMainInterpreterConfig config;
-#ifdef HAVE_DLOPEN
-    int dlopenflags;
+#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
+typedef struct _is PyInterpreterState;
+#else
+/* PyInterpreterState is defined in internal/pycore_pystate.h */
 #endif
-
-    PyObject *builtins_copy;
-    PyObject *import_func;
-    /* Initialized to PyEval_EvalFrameDefault(). */
-    _PyFrameEvalFunction eval_frame;
-
-    Py_ssize_t co_extra_user_count;
-    freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
-
-#ifdef HAVE_FORK
-    PyObject *before_forkers;
-    PyObject *after_forkers_parent;
-    PyObject *after_forkers_child;
-#endif
-    /* AtExit module */
-    void (*pyexitfunc)(PyObject *);
-    PyObject *pyexitmodule;
-
-    uint64_t tstate_next_unique_id;
-} PyInterpreterState;
 
 PyAPI_FUNC(_PyCoreConfig *) _PyInterpreterState_GetCoreConfig(struct _is *);
 PyAPI_FUNC(_PyMainInterpreterConfig *) _PyInterpreterState_GetMainConfig(struct _is *);
@@ -131,7 +77,7 @@ typedef struct _ts {
 
     struct _ts *prev;
     struct _ts *next;
-    PyInterpreterState *interp;
+    struct _is *interp;
 
     struct _frame *frame;
     int recursion_depth;
@@ -226,11 +172,11 @@ typedef struct _ts {
    interpreter. It cannot return NULL.
 
    The caller must hold the GIL.*/
-PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
+PyAPI_FUNC(struct _is *) _PyInterpreterState_Get(void);
 
 PyAPI_FUNC(int) _PyState_AddModule(PyObject*, struct PyModuleDef*);
 PyAPI_FUNC(void) _PyState_ClearModules(void);
-PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
+PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(struct _is *);
 PyAPI_FUNC(void) _PyThreadState_Init(PyThreadState *);
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
 PyAPI_FUNC(void) _PyGILState_Reinit(void);
@@ -254,7 +200,7 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    is called and after _PyGILState_Fini() is called.
 
    See also _PyInterpreterState_Get() and _PyInterpreterState_GET_UNSAFE(). */
-PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
+PyAPI_FUNC(struct _is *) _PyGILState_GetInterpreterStateUnsafe(void);
 
 /* The implementation of sys._current_frames()  Returns a dict mapping
    thread id to that thread's current frame.
@@ -263,10 +209,10 @@ PyAPI_FUNC(PyObject *) _PyThread_CurrentFrames(void);
 
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
-PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Main(void);
-PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
-PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
-PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
+PyAPI_FUNC(struct _is *) PyInterpreterState_Main(void);
+PyAPI_FUNC(struct _is *) PyInterpreterState_Head(void);
+PyAPI_FUNC(struct _is *) PyInterpreterState_Next(struct _is *);
+PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(struct _is *);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
 
 typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
