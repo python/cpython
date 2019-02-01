@@ -537,10 +537,10 @@ class MathTests(unittest.TestCase):
                 self.assertEqual(math.combinations(n + 1, k + 1), math.combinations(n, k) + math.combinations(n, k + 1))
 
     def testCombinationsZero(self):
-        """Test (n choose k) = 0 when k>n"""
+        """(n choose k) raises ValueError when k>n"""
         for k in range(100):
             for n in range(k):
-                self.assertEqual(0, math.combinations(n, k))
+                self.assertRaises(ValueError, math.combinations, n, k)
 
     def testCombinationsOne(self):
         """Test (n choose 0) = (n choose n) = 1"""
