@@ -1726,8 +1726,8 @@ exit:
 
 PyDoc_STRVAR(os_posix_spawn__doc__,
 "posix_spawn($module, path, argv, env, /, *, file_actions=(),\n"
-"            setpgroup=None, resetids=False, setsigmask=(),\n"
-"            setsigdef=(), scheduler=None)\n"
+"            setpgroup=None, resetids=False, setsid=False,\n"
+"            setsigmask=(), setsigdef=(), scheduler=None)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -1743,7 +1743,9 @@ PyDoc_STRVAR(os_posix_spawn__doc__,
 "  setpgroup\n"
 "    The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.\n"
 "  resetids\n"
-"    If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.\n"
+"    If the value is `true` the POSIX_SPAWN_RESETIDS will be activated.\n"
+"  setsid\n"
+"    If the value is `true` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP will be activated.\n"
 "  setsigmask\n"
 "    The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.\n"
 "  setsigdef\n"
@@ -1757,30 +1759,32 @@ PyDoc_STRVAR(os_posix_spawn__doc__,
 static PyObject *
 os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *env, PyObject *file_actions,
-                    PyObject *setpgroup, int resetids, PyObject *setsigmask,
-                    PyObject *setsigdef, PyObject *scheduler);
+                    PyObject *setpgroup, int resetids, int setsid,
+                    PyObject *setsigmask, PyObject *setsigdef,
+                    PyObject *scheduler);
 
 static PyObject *
 os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsigmask", "setsigdef", "scheduler", NULL};
-    static _PyArg_Parser _parser = {"O&OO|$OOiOOO:posix_spawn", _keywords, 0};
+    static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsid", "setsigmask", "setsigdef", "scheduler", NULL};
+    static _PyArg_Parser _parser = {"O&OO|$OOiiOOO:posix_spawn", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("posix_spawn", "path", 0, 0);
     PyObject *argv;
     PyObject *env;
     PyObject *file_actions = NULL;
     PyObject *setpgroup = NULL;
     int resetids = 0;
+    int setsid = 0;
     PyObject *setsigmask = NULL;
     PyObject *setsigdef = NULL;
     PyObject *scheduler = NULL;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, &argv, &env, &file_actions, &setpgroup, &resetids, &setsigmask, &setsigdef, &scheduler)) {
+        path_converter, &path, &argv, &env, &file_actions, &setpgroup, &resetids, &setsid, &setsigmask, &setsigdef, &scheduler)) {
         goto exit;
     }
-    return_value = os_posix_spawn_impl(module, &path, argv, env, file_actions, setpgroup, resetids, setsigmask, setsigdef, scheduler);
+    return_value = os_posix_spawn_impl(module, &path, argv, env, file_actions, setpgroup, resetids, setsid, setsigmask, setsigdef, scheduler);
 
 exit:
     /* Cleanup for path */
@@ -1795,8 +1799,8 @@ exit:
 
 PyDoc_STRVAR(os_posix_spawnp__doc__,
 "posix_spawnp($module, path, argv, env, /, *, file_actions=(),\n"
-"             setpgroup=None, resetids=False, setsigmask=(),\n"
-"             setsigdef=(), scheduler=None)\n"
+"             setpgroup=None, resetids=False, setsid=False,\n"
+"             setsigmask=(), setsigdef=(), scheduler=None)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -1813,6 +1817,8 @@ PyDoc_STRVAR(os_posix_spawnp__doc__,
 "    The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.\n"
 "  resetids\n"
 "    If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.\n"
+"  setsid\n"
+"    If the value is `True` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP will be activated.\n"
 "  setsigmask\n"
 "    The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.\n"
 "  setsigdef\n"
@@ -1826,30 +1832,32 @@ PyDoc_STRVAR(os_posix_spawnp__doc__,
 static PyObject *
 os_posix_spawnp_impl(PyObject *module, path_t *path, PyObject *argv,
                      PyObject *env, PyObject *file_actions,
-                     PyObject *setpgroup, int resetids, PyObject *setsigmask,
-                     PyObject *setsigdef, PyObject *scheduler);
+                     PyObject *setpgroup, int resetids, int setsid,
+                     PyObject *setsigmask, PyObject *setsigdef,
+                     PyObject *scheduler);
 
 static PyObject *
 os_posix_spawnp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsigmask", "setsigdef", "scheduler", NULL};
-    static _PyArg_Parser _parser = {"O&OO|$OOiOOO:posix_spawnp", _keywords, 0};
+    static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsid", "setsigmask", "setsigdef", "scheduler", NULL};
+    static _PyArg_Parser _parser = {"O&OO|$OOiiOOO:posix_spawnp", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("posix_spawnp", "path", 0, 0);
     PyObject *argv;
     PyObject *env;
     PyObject *file_actions = NULL;
     PyObject *setpgroup = NULL;
     int resetids = 0;
+    int setsid = 0;
     PyObject *setsigmask = NULL;
     PyObject *setsigdef = NULL;
     PyObject *scheduler = NULL;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, &argv, &env, &file_actions, &setpgroup, &resetids, &setsigmask, &setsigdef, &scheduler)) {
+        path_converter, &path, &argv, &env, &file_actions, &setpgroup, &resetids, &setsid, &setsigmask, &setsigdef, &scheduler)) {
         goto exit;
     }
-    return_value = os_posix_spawnp_impl(module, &path, argv, env, file_actions, setpgroup, resetids, setsigmask, setsigdef, scheduler);
+    return_value = os_posix_spawnp_impl(module, &path, argv, env, file_actions, setpgroup, resetids, setsid, setsigmask, setsigdef, scheduler);
 
 exit:
     /* Cleanup for path */
@@ -7331,4 +7339,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=dabd0fa27bf87044 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d50ff73e5b5198b9 input=a9049054013a1b77]*/

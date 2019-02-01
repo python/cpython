@@ -3386,7 +3386,7 @@ written in Python, such as a mail server's external command delivery program.
 
 
 .. function:: posix_spawn(path, argv, env, *, file_actions=None, \
-                          setpgroup=None, resetids=False, setsigmask=(), \
+                          setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
                           setsigdef=(), scheduler=None)
 
    Wraps the :c:func:`posix_spawn` C library API for use from Python.
@@ -3444,6 +3444,11 @@ written in Python, such as a mail server's external command delivery program.
    setting of the effective UID and GID. This argument corresponds to the C
    library :c:data:`POSIX_SPAWN_RESETIDS` flag.
 
+   If the *setsid* argument is ``True``, it will create a new session ID
+   for `posix_spawn`. *setsid* requires :c:data:`POSIX_SPAWN_SETSID`
+   or :c:data:`POSIX_SPAWN_SETSID_NP` flag. Otherwise, :exc:`NotImplementedError`
+   is raised.
+
    The *setsigmask* argument will set the signal mask to the signal set
    specified. If the parameter is not used, then the child inherits the
    parent's signal mask. This argument corresponds to the C library
@@ -3462,9 +3467,10 @@ written in Python, such as a mail server's external command delivery program.
 
    .. versionadded:: 3.7
 
+   .. availability:: Unix.
 
 .. function:: posix_spawnp(path, argv, env, *, file_actions=None, \
-                          setpgroup=None, resetids=False, setsigmask=(), \
+                          setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
                           setsigdef=(), scheduler=None)
 
    Wraps the :c:func:`posix_spawnp` C library API for use from Python.
@@ -3474,6 +3480,8 @@ written in Python, such as a mail server's external command delivery program.
    :envvar:`PATH` environment variable (in the same way as for ``execvp(3)``).
 
    .. versionadded:: 3.8
+
+   .. availability:: See :func:`posix_spawn` documentation.
 
 
 .. function:: register_at_fork(*, before=None, after_in_parent=None, \
