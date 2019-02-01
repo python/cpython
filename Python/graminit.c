@@ -971,7 +971,7 @@ static arc arcs_42_0[1] = {
     {103, 1},
 };
 static arc arcs_42_1[1] = {
-    {26, 2},
+    {99, 2},
 };
 static arc arcs_42_2[1] = {
     {27, 3},
