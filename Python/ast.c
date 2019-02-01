@@ -699,11 +699,16 @@ ast_error(struct compiling *c, const node *n, const char *errmsg, ...)
 */
 
 static string
-new_type_comment(const char *s)
+new_type_comment(const char *s, struct compiling *c)
 {
-  return PyUnicode_DecodeUTF8(s, strlen(s), NULL);
+    PyObject *res = PyUnicode_DecodeUTF8(s, strlen(s), NULL);
+    if (PyArena_AddPyObject(c->c_arena, res) < 0) {
+        Py_DECREF(res);
+        return NULL;
+    }
+    return res;
 }
-#define NEW_TYPE_COMMENT(n) new_type_comment(STR(n))
+#define NEW_TYPE_COMMENT(n) new_type_comment(STR(n), c)
 
 static int
 num_stmts(const node *n)
