@@ -45,15 +45,6 @@ struct _is {
     /* Used in Python/sysmodule.c. */
     int check_interval;
 
-#ifdef Py_BUILD_CORE
-    struct _ceval {
-        /* This single variable consolidates all requests to break out of
-           the fast path in the eval loop. */
-        _Py_atomic_int eval_breaker;
-        struct _pending_calls pending;
-    } ceval;
-#endif
-
     /* Used in Modules/_threadmodule.c. */
     long num_threads;
     /* Support for runtime thread stack size tuning.
@@ -93,6 +84,13 @@ struct _is {
     PyObject *pyexitmodule;
 
     uint64_t tstate_next_unique_id;
+
+    struct _ceval {
+        /* This single variable consolidates all requests to break out of
+           the fast path in the eval loop. */
+        _Py_atomic_int eval_breaker;
+        struct _pending_calls pending;
+    } ceval;
 };
 
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);
