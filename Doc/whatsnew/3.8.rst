@@ -557,5 +557,5 @@ Demos and Tools
 ---------------
 
 * Added a benchmark script for timing various ways to access variables:
-  `Tools/scripts/var_access_benchmark.py'.
+  ``Tools/scripts/var_access_benchmark.py``.
   (Contributed by Raymond Hettinger in :issue:`35884`.)
