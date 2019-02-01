@@ -2787,7 +2787,7 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     }
     else if (overflow == 1) {
         PyErr_Format(PyExc_OverflowError,
-                     "(n - k) and k must not exceed %lld",
+                     "Either (n - k) or k must not exceed %lld",
                      LLONG_MAX);
         goto fail_comb;
     }
