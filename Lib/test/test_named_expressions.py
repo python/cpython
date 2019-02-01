@@ -165,7 +165,7 @@ class NamedExpressionAssignmentTest(unittest.TestCase):
         else: self.fail("variable was not assigned using named expression")
 
     def test_named_expression_assignment_10(self):
-        if (match := 10) is 10:
+        if (match := 10) == 10:
             pass
         else: self.fail("variable was not assigned using named expression")
 
