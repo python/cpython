@@ -114,8 +114,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
       any existing target directory, before creating the environment.
 
     * ``symlinks`` -- a Boolean value indicating whether to attempt to symlink the
-      Python binary (and any necessary DLLs or other binaries,
-      e.g. ``pythonw.exe``), rather than copying.
+      Python binary rather than copying.
 
     * ``upgrade`` -- a Boolean value which, if true, will upgrade an existing
       environment with the running Python - for use when that Python has been
@@ -181,15 +180,15 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     .. method:: setup_python(context)
 
-        Creates a copy of the Python executable in the environment on POSIX
-        systems. If a specific executable ``python3.x`` was used, symlinks to
-        ``python`` and ``python3`` will be created pointing to that executable,
-        unless files with those names already exist.
+        Creates a copy or symlink to the Python executable in the environment.
+        On POSIX systems, if a specific executable ``python3.x`` was used,
+        symlinks to ``python`` and ``python3`` will be created pointing to that
+        executable, unless files with those names already exist.
 
     .. method:: setup_scripts(context)
 
         Installs activation scripts appropriate to the platform into the virtual
-        environment. On Windows, also installs the ``python[w].exe`` scripts.
+        environment.
 
     .. method:: post_setup(context)
 
@@ -199,8 +198,13 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     .. versionchanged:: 3.7.2
        Windows now uses redirector scripts for ``python[w].exe`` instead of
-       copying the actual binaries, and so :meth:`setup_python` does nothing
-       unless running from a build in the source tree.
+       copying the actual binaries. In 3.7.2 only :meth:`setup_python` does
+       nothing unless running from a build in the source tree.
+
+    .. versionchanged:: 3.7.3
+       Windows copies the redirector scripts as part of :meth:`setup_python`
+       instead of :meth:`setup_scripts`. This was not the case in 3.7.2.
+       When using symlinks, the original executables will be linked.
 
     In addition, :class:`EnvBuilder` provides this utility method that can be
     called from :meth:`setup_scripts` or :meth:`post_setup` in subclasses to
