@@ -5166,11 +5166,11 @@ convert_sched_param(PyObject *param, struct sched_param *res);
 #endif
 
 static int
-parse_posix_spawn_flags(PyObject *setpgroup, int resetids, int setsid, PyObject *setsigmask,
+parse_posix_spawn_flags(const char *func_name, PyObject *setpgroup,
+                        int resetids, int setsid, PyObject *setsigmask,
                         PyObject *setsigdef, PyObject *scheduler,
                         posix_spawnattr_t *attrp)
 {
-    const char *func_name = "posix_spawnp";
     long all_flags = 0;
 
     errno = posix_spawnattr_init(attrp);
@@ -5400,6 +5400,7 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
                PyObject *setpgroup, int resetids, int setsid, PyObject *setsigmask,
                PyObject *setsigdef, PyObject *scheduler)
 {
+    const char *func_name = use_posix_spawnp ? "posix_spawnp" : "posix_spawn";
     EXECV_CHAR **argvlist = NULL;
     EXECV_CHAR **envlist = NULL;
     posix_spawn_file_actions_t file_actions_buf;
@@ -5417,19 +5418,20 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
        like posix.environ. */
 
     if (!PyList_Check(argv) && !PyTuple_Check(argv)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "posix_spawn: argv must be a tuple or list");
+        PyErr_Format(PyExc_TypeError,
+                     "%s: argv must be a tuple or list", func_name);
         goto exit;
     }
     argc = PySequence_Size(argv);
     if (argc < 1) {
-        PyErr_SetString(PyExc_ValueError, "posix_spawn: argv must not be empty");
+        PyErr_Format(PyExc_ValueError,
+                     "%s: argv must not be empty", func_name);
         return NULL;
     }
 
     if (!PyMapping_Check(env)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "posix_spawn: environment must be a mapping object");
+        PyErr_Format(PyExc_TypeError,
+                     "%s: environment must be a mapping object", func_name);
         goto exit;
     }
 
@@ -5438,8 +5440,8 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         goto exit;
     }
     if (!argvlist[0][0]) {
-        PyErr_SetString(PyExc_ValueError,
-            "posix_spawn: argv first element cannot be empty");
+        PyErr_Format(PyExc_ValueError,
+                     "%s: argv first element cannot be empty", func_name);
         goto exit;
     }
 
@@ -5467,8 +5469,8 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         file_actionsp = &file_actions_buf;
     }
 
-    if (parse_posix_spawn_flags(setpgroup, resetids, setsid, setsigmask,
-                                setsigdef, scheduler, &attr)) {
+    if (parse_posix_spawn_flags(func_name, setpgroup, resetids, setsid,
+                                setsigmask, setsigdef, scheduler, &attr)) {
         goto exit;
     }
     attrp = &attr;
