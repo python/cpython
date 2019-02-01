@@ -1624,6 +1624,22 @@ class _PosixSpawnMixin:
                             os.environ, setsigmask=[signal.NSIG,
                                                     signal.NSIG+1])
 
+    def test_start_new_session(self):
+        # For code coverage of calling setsid().  We don't care if we get an
+        # EPERM error from it depending on the test execution environment, that
+        # still indicates that it was called.
+        code = "import os; print(os.getpgid(os.getpid()))"
+        try:
+            self.spawn_func(sys.executable,
+                            [sys.executable, "-c", code],
+                            os.environ, setsid=True)
+        except NotImplementedError as exc:
+            self.skipTest("setsid is not supported: %s" % exc)
+        else:
+            parent_pgid = os.getpgid(os.getpid())
+            child_pgid = int(output)
+            self.assertNotEqual(parent_pgid, child_pgid)
+
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')
     def test_setsigdef(self):
