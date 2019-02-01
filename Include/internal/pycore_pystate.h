@@ -97,8 +97,6 @@ struct _is {
     /* Used in Python/sysmodule.c. */
     int check_interval;
 
-    struct _ceval_interpreter_state ceval;
-
     /* Used in Modules/_threadmodule.c. */
     long num_threads;
     /* Support for runtime thread stack size tuning.
@@ -146,6 +144,7 @@ struct _is {
 
     uint64_t tstate_next_unique_id;
 
+    struct _ceval_interpreter_state ceval;
     struct _warnings_runtime_state warnings;
 
     PyObject *audit_hooks;
