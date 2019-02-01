@@ -1,0 +1,2 @@
+Make parenthesis optional for named expressions in while statement. Patch by
+Karthikeyan Singaravelan.
