@@ -429,7 +429,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     _dict, _zip = dict, zip
 
     def _asdict(self):
-        'Return a new OrderedDict which maps field names to their values.'
+        'Return a new dict which maps field names to their values.'
         return _dict(_zip(self._fields, self))
 
     def __getnewargs__(self):
