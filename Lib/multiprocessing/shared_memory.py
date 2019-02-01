@@ -1,3 +1,11 @@
+"Provides shared memory for direct access across processes."
+
+
+__all__ = [ 'SharedMemory', 'PosixSharedMemory', 'WindowsNamedSharedMemory',
+            'ShareableList', 'shareable_wrap',
+            'SharedMemoryServer', 'SharedMemoryManager', 'SharedMemoryTracker' ]
+
+
 from functools import reduce
 import mmap
 from .managers import DictProxy, SyncManager, Server
@@ -516,12 +524,12 @@ class SharedMemoryTracker:
         return wrapped_obj
 
 
-class AugmentedServer(Server):
+class SharedMemoryServer(Server):
     def __init__(self, *args, **kwargs):
         Server.__init__(self, *args, **kwargs)
         self.shared_memory_context = \
             SharedMemoryTracker(f"shmm_{self.address}_{os.getpid()}")
-        util.debug(f"AugmentedServer started by pid {os.getpid()}")
+        util.debug(f"SharedMemoryServer started by pid {os.getpid()}")
 
     def create(self, c, typeid, *args, **kwargs):
         # Unless set up as a shared proxy, don't make shared_memory_context
@@ -537,11 +545,11 @@ class AugmentedServer(Server):
 
 
 class SharedMemoryManager(SyncManager):
-    """Like SyncManager but uses AugmentedServer instead of Server.
+    """Like SyncManager but uses SharedMemoryServer instead of Server.
 
-    TODO: relocate/merge into managers submodule."""
+    TODO: Consider relocate/merge into managers submodule."""
 
-    _Server = AugmentedServer
+    _Server = SharedMemoryServer
 
     def __init__(self, *args, **kwargs):
         SyncManager.__init__(self, *args, **kwargs)
@@ -561,5 +569,5 @@ class SharedMemoryManager(SyncManager):
             else:
                 raise ProcessError(
                     "Unknown state {!r}".format(self._state.value))
-        return AugmentedServer(self._registry, self._address,
-                               self._authkey, self._serializer)
+        return _Server(self._registry, self._address,
+                       self._authkey, self._serializer)
