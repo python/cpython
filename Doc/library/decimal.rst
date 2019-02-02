@@ -2118,8 +2118,8 @@ Alternatively, inputs can be rounded upon creation using the
 
 Q. Is the CPython implementation fast for large numbers?
 
-A. Yes.  In the CPython and PyPy3 implementations, the C version of
-the decimal module integrates the high speed `libmpdec
+A. Yes.  In the CPython and PyPy3 implementations, the C/CFFI versions of
+the decimal module integrate the high speed `libmpdec
 <https://www.bytereef.org/mpdecimal/doc/libmpdec/index.html>`_ library for
 arbitrary precision correctly-rounded decimal floating point arithmetic.
 ``libmpdec`` uses `Karatsuba multiplication
