@@ -15,7 +15,9 @@ import random
 import struct
 import sys
 try:
-    from _posixshmem import _PosixSharedMemory, Error, ExistentialError, O_CREX
+    from _posixshmem import _PosixSharedMemory, \
+                            Error, ExistentialError, PermissionsError, \
+                            O_CREAT, O_EXCL, O_CREX, O_TRUNC
 except ImportError as ie:
     if os.name != "nt":
         # On Windows, posixshmem is not required to be available.
@@ -24,12 +26,12 @@ except ImportError as ie:
         _PosixSharedMemory = object
         class ExistentialError(BaseException): pass
         class Error(BaseException): pass
-        O_CREX = -1
+        O_CREAT, O_EXCL, O_CREX, O_TRUNC = -1, -1, -1, -1
 
 
 class WindowsNamedSharedMemory:
 
-    def __init__(self, name, flags=None, mode=None, size=None, read_only=False):
+    def __init__(self, name, flags=None, mode=384, size=None, read_only=False):
         if name is None:
             name = f'wnsm_{os.getpid()}_{random.randrange(100000)}'
 
@@ -53,13 +55,21 @@ class WindowsNamedSharedMemory:
 
 class PosixSharedMemory(_PosixSharedMemory):
 
-    def __init__(self, name, flags=None, mode=None, size=None, read_only=False):
+    def __init__(self, name, flags=None, mode=384, size=0, read_only=False):
         if name and (flags is None):
-            _PosixSharedMemory.__init__(self, name)
+            _PosixSharedMemory.__init__(self, name, mode=mode)
         else:
             if name is None:
                 name = f'psm_{os.getpid()}_{random.randrange(100000)}'
-            _PosixSharedMemory.__init__(self, name, flags=O_CREX, size=size)
+            flags = O_CREX if flags is None else flags
+            _PosixSharedMemory.__init__(
+                self,
+                name,
+                flags=flags,
+                mode=mode,
+                size=size,
+                read_only=read_only
+            )
 
         self._mmap = mmap.mmap(self.fd, self.size)
         self.buf = memoryview(self._mmap)

@@ -54,6 +54,12 @@ except ImportError:
     HAS_SHAREDCTYPES = False
 
 try:
+    from multiprocessing import shared_memory
+    HAS_SHMEM = True
+except ImportError:
+    HAS_SHMEM = False
+
+try:
     import msvcrt
 except ImportError:
     msvcrt = None
@@ -3605,6 +3611,128 @@ class _TestSharedCTypes(BaseTestCase):
         self.assertEqual(bar.x, 2)
         self.assertAlmostEqual(bar.y, 5.0)
         self.assertEqual(bar.z, 2 ** 33)
+
+
+class _TestSharedMemory(BaseTestCase):
+
+    ALLOWED_TYPES = ('processes',)
+
+    def setUp(self):
+        if not HAS_SHMEM:
+            self.skipTest("requires multiprocessing.shared_memory")
+
+    @staticmethod
+    def _attach_existing_shmem_then_write(shmem_name, binary_data):
+        local_sms = shared_memory.SharedMemory(shmem_name)
+        local_sms.buf[:len(binary_data)] = binary_data
+        local_sms.close()
+
+    def test_shared_memory_basics(self):
+        sms = shared_memory.SharedMemory(
+            'test01_tsmb',
+            flags=shared_memory.O_CREX,
+            size=512
+        )
+        try:
+            # Verify attributes are readable.
+            self.assertEqual(sms.name, 'test01_tsmb')
+            self.assertGreaterEqual(sms.size, 512)
+            self.assertGreaterEqual(len(sms.buf), sms.size)
+            self.assertEqual(sms.mode, 0o600)
+
+            # Modify contents of shared memory segment through memoryview.
+            sms.buf[0] = 42
+            self.assertEqual(sms.buf[0], 42)
+
+            # Attach to existing shared memory segment.
+            also_sms = shared_memory.SharedMemory('test01_tsmb')
+            self.assertEqual(also_sms.buf[0], 42)
+            also_sms.close()
+
+            if isinstance(sms, shared_memory.PosixSharedMemory):
+                # Posix Shared Memory can only be unlinked once.  Here we
+                # test an implementation detail that is not observed across
+                # all supported platforms (since WindowsNamedSharedMemory
+                # manages unlinking on its own and unlink() does nothing).
+                # True release of shared memory segment does not necessarily
+                # happen until process exits, depending on the OS platform.
+                with self.assertRaises(shared_memory.ExistentialError):
+                    sms_uno = shared_memory.SharedMemory(
+                        'test01_dblunlink',
+                        flags=shared_memory.O_CREX,
+                        size=5000
+                    )
+
+                    try:
+                        self.assertGreaterEqual(sms_uno.size, 5000)
+
+                        sms_duo = shared_memory.SharedMemory('test01_dblunlink')
+                        sms_duo.unlink()  # First shm_unlink() call.
+                        sms_duo.close()
+                        sms_uno.close()
+
+                    finally:
+                        sms_uno.unlink()  # A second shm_unlink() call is bad.
+
+            # Enforcement of `mode` and `read_only` is OS platform dependent
+            # and as such will not be tested here.
+
+            with self.assertRaises(shared_memory.ExistentialError):
+                # Attempting to create a new shared memory segment with a
+                # name that is already in use triggers an exception.
+                there_can_only_be_one_sms = shared_memory.SharedMemory(
+                    'test01_tsmb',
+                    flags=shared_memory.O_CREX,
+                    size=512
+                )
+
+            # Requesting creation of a shared memory segment with the option
+            # to attach to an existing segment, if that name is currently in
+            # use, should not trigger an exception.
+            # Note:  Using a smaller size could possibly cause truncation of
+            # the existing segment but is OS platform dependent.  In the
+            # case of MacOS/darwin, requesting a smaller size is disallowed.
+            ok_if_exists_sms = shared_memory.SharedMemory(
+                'test01_tsmb',
+                flags=shared_memory.O_CREAT,
+                size=sms.size if sys.platform != 'darwin' else 0
+            )
+            self.assertEqual(ok_if_exists_sms.size, sms.size)
+            ok_if_exists_sms.close()
+
+            # Attempting to attach to an existing shared memory segment when
+            # no segment exists with the supplied name triggers an exception.
+            with self.assertRaises(shared_memory.ExistentialError):
+                nonexisting_sms = shared_memory.SharedMemory('test01_notthere')
+                nonexisting_sms.unlink()  # Error should occur on prior line.
+
+            sms.close()
+
+        finally:
+            # Prevent test failures from leading to a dangling segment.
+            sms.unlink()
+
+    def test_shared_memory_across_processes(self):
+        sms = shared_memory.SharedMemory(
+            'test02_tsmap',
+            flags=shared_memory.O_CREX,
+            size=512
+        )
+
+        try:
+            p = self.Process(
+                target=self._attach_existing_shmem_then_write,
+                args=(sms.name, b'howdy')
+            )
+            p.daemon = True
+            p.start()
+            p.join()
+            self.assertEqual(bytes(sms.buf[:5]), b'howdy')
+
+            sms.close()
+
+        finally:
+            sms.unlink()
 
 #
 #
