@@ -850,8 +850,10 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
 static void
 lru_cache_extract_link(lru_list_elem *link)
 {
-    lru_list_elem *link_prev = link->prev;
-    lru_list_elem *link_next = link->next;
+    lru_list_elem *link_prev, *link_next;
+    assert(IS_USED(link));
+    link_prev = link->prev;
+    link_next = link->next;
     link_prev->next = link->next;
     link_next->prev = link->prev;
     MARK_UNUSED(link);
@@ -860,21 +862,27 @@ lru_cache_extract_link(lru_list_elem *link)
 static void
 lru_cache_append_link(lru_cache_object *self, lru_list_elem *link)
 {
-    lru_list_elem *root = &self->root;
-    lru_list_elem *last = root->prev;
+    lru_list_elem *root, *last;
+    assert(!IS_USED(link));
+    root = &self->root;
+    last = root->prev;
     last->next = root->prev = link;
     link->prev = last;
     link->next = root;
+    assert(IS_USED(link));
 }
 
 static void
 lru_cache_prepend_link(lru_cache_object *self, lru_list_elem *link)
 {
-    lru_list_elem *root = &self->root;
-    lru_list_elem *first = root->next;
+    lru_list_elem *root, *first;
+    assert(!IS_USED(link));
+    root = &self->root;
+    first = root->next;
     first->prev = root->next = link;
     link->prev = root;
     link->next = first;
+    assert(IS_USED(link));
 }
 
 /* General note on reentrancy:
@@ -976,6 +984,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
             Py_DECREF(result);
             return NULL;
         }
+        MARK_UNUSED(link);
 
         link->hash = hash;
         link->key = key;
@@ -990,7 +999,9 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
             Py_DECREF(link);
             return NULL;
         }
-        lru_cache_append_link(self, link);
+        if (!IS_USED(link)) {
+            lru_cache_append_link(self, link);
+        }
         Py_INCREF(result); /* for return */
         return result;
     }
