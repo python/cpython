@@ -207,7 +207,7 @@ class HelpText(Text):
             fonts[tag] = tkfont.Font(self, family=fixedfont)
         self.scale_tagfonts(base_size)
 
-        FontSizer(self, self.scale_tagfonts)
+        FontSizer(self)
 
     def findfont(self, names):
         "Return name of first font family derived from names."

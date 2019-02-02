@@ -17,16 +17,13 @@ MAXIMUM_FONT_SIZE = 100
 
 class FontSizer:
     "Support dynamic text font resizing."
-    def __init__(self, text, callback=None):
+    def __init__(self, text):
         """"Add font resizing functionality to text widget.
 
         Args:
             text: Tk widget with font attribute to size.
-            callback: Function to call for additional font resizing
-                based on widget's font attribute.
         """
         self.text = text
-        self.callback = callback
         self.bind_events()
 
     def bind_events(self):
@@ -50,13 +47,17 @@ class FontSizer:
         self.text.bind('<Control-Button-5>', self.increase_font_size)
 
     def set_text_fontsize(new_size):
-        "Set the font size for this widget."
         def sizer(self, event=None):
-            font = Font(self.text, name=self.text['font'], exists=True)
-            size = new_size(font['size'])
-            font['size'] = size
-            if self.callback:
-                self.callback(size)
+            "Set the font size for this widget and its tags."
+            def resize(fontname):
+                font = Font(self.text, name=fontname, exists=True)
+                font['size'] = new_size(font['size'])
+
+            resize(self.text['font'])
+            for tag in self.text.tag_names():
+                tag_font = self.text.tag_cget(tag, 'font')
+                if tag_font:
+                    resize(tag_font)
             return 'break'
         return sizer
 

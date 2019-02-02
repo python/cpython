@@ -84,8 +84,8 @@ class HelpTextTest(unittest.TestCase):
         eq = self.assertEqual
 
         base = [14, 16, 19, 12, 12, 10]
-        larger = [15, 18, 20, 13, 13, 11]
-        smaller = [13, 15, 17, 11, 11, 9]
+        larger = [15, 17, 20, 13, 13, 11]
+        smaller = [13, 15, 18, 11, 11, 9]
 
         tests = (('<<increase_font_size>>', larger),
                  ('<<decrease_font_size>>', base),
