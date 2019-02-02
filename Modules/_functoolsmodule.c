@@ -846,7 +846,11 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
 
 /* Mark a link as unused when it is created or when it is extracted
    from the doubly-linked list.  Use this marker to avoid being
-   updated by two threads at the same time. */
+   updated by two threads at the same time.  We don't want to
+   append a link unless we know it is not already in used
+   and we don't want to extract a link that is NULL or already
+   in the process of being extracted.
+ */
 #define MARK_UNUSED(link)  {link->prev = NULL; link->next = NULL;}
 #define IS_USED(link) (link != NULL && link->prev != NULL && link->next != NULL)
 
@@ -1074,7 +1078,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
        prev and next fields set to valid values.   We have to wait
        for successful insertion in the cache dict before adding the
        link to the linked list.  Otherwise, the potentially reentrant
-       __eq__ call could cause the then ophan link to be visited. */
+       __eq__ call could cause the then orphan link to be visited. */
     if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
                                   hash) < 0) {
         /* Somehow the cache dict update failed.  We no longer can
@@ -1086,10 +1090,13 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         Py_DECREF(oldresult);
         return NULL;
     }
+    Py_INCREF(result); /* for return */
     if (!IS_USED(link)) {
         lru_cache_append_link(self, link);
     }
-    Py_INCREF(result); /* for return */
+    else {
+        Py_DECREF(link);
+    }
     Py_DECREF(popresult);
     Py_DECREF(oldkey);
     Py_DECREF(oldresult);
