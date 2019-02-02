@@ -844,6 +844,9 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
     return result;
 }
 
+/* Mark a link as unused when it is created or when it is extracted
+   from the doubly-linked list.  Use this marker to avoid being
+   updated by two threads at the same time. */
 #define MARK_UNUSED(link)  {link->prev = NULL; link->next = NULL;}
 #define IS_USED(link) (link != NULL && link->prev != NULL && link->next != NULL)
 
