@@ -940,6 +940,11 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     }
     link  = (lru_list_elem *)_PyDict_GetItem_KnownHash(self->cache, key, hash);
     if (link != NULL && IS_USED(link)) {
+        /* Either the __hash__ or __eq__ call can let another thread
+           also get to this same link, so we need to move the link
+           atomically (extract and append with in one-step guarded by
+           the GIL).  The only works if some other thread has not
+           already detached the link. */
         lru_cache_extract_link(link);
         lru_cache_append_link(self, link);
         result = link->result;
@@ -958,6 +963,10 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         Py_DECREF(key);
         return NULL;
     }
+    /* We now hold references to a key and a result. The hash value is known.
+       After the callback to the user function, we no longer know anything
+       about the contents of the cache, so we have to check to see whether
+       an equivalent key has already been added. */
     testresult = _PyDict_GetItem_KnownHash(self->cache, key, hash);
     if (testresult != NULL) {
         /* Getting here means that this same key was added to the cache
@@ -967,18 +976,24 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         return result;
     }
     if (PyErr_Occurred()) {
-        /* This is an unusual case since this same lookup
-           did not previously trigger an error during lookup.
-           Treat it the same as an error in user function
-           and return with the error set. */
+        /* This is an unusual case since this same lookup did not
+           previously trigger an error during lookup.  Treat it the same
+           as an error in user function and return with the error
+           set. */
         Py_DECREF(key);
         Py_DECREF(result);
         return NULL;
     }
-    /* This is the normal case.  The new key wasn't found before
-       user function call and it is still not there.  So we
-       proceed normally and update the cache with the new result. */
+    /* This is the normal case.  The new key wasn't found before the user
+       function call and it is still not there.  So we proceed normally
+       and update the cache with the new result.
 
+       The dict lookup can trigger arbitrary code if there is an __eq__
+       call (this only occurs when the full hash value exactly matches
+       that for another key).  That means that we don't really know
+       the key is still missing.  XXX Could state flag for the cache
+       detect this exotic event?
+    */
     assert(self->maxsize > 0);
     if (PyDict_GET_SIZE(self->cache) < self->maxsize ||
         self->root.next == &self->root)
@@ -991,28 +1006,36 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
             Py_DECREF(result);
             return NULL;
         }
-        MARK_UNUSED(link);
-
-        link->hash = hash;
-        link->key = key;
-        link->result = result;
         /* What is really needed here is a SetItem variant with a "no clobber"
            option.  If the __eq__ call triggers a reentrant call that adds
-           this same key, then this setitem call will update the cache dict
+           this same key, then this SetItem call will update the cache dict
            with this new link, leaving the old link as an orphan (i.e. not
-           having a cache dict entry that refers to it). */
+           having a cache dict entry that refers to it).
+
+           The link is marked as unused because the don't want to add it
+           to the doubly-linked list until we know that updating the
+           cache dict was successful.  Marking it as unused prevents
+           other threads from using this link before all of its fields
+           are valid.
+        */
+        MARK_UNUSED(link);
         if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
                                       hash) < 0) {
             Py_DECREF(link);
             return NULL;
         }
-        Py_INCREF(result); /* for return */
-        if (!IS_USED(link)) {
-            lru_cache_append_link(self, link);
-        }
-        else {
+        if (IS_USED(link)) {
+            /* XXX If we can prove this case can't happen, turn this test
+               into an assertion. */
+            Py_DECREF(key);
             Py_DECREF(link);
+            return result;
         }
+        Py_INCREF(result); /* for return */
+        link->hash = hash;
+        link->key = key;
+        link->result = result;
+        lru_cache_append_link(self, link);
         return result;
     }
     /* Since the cache is full, we need to evict an old key and add
