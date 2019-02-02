@@ -953,7 +953,7 @@ class HTTPConnection:
     def _get_proxy_from_environ(self):
         return self._from_environ('http_proxy')
 
-    def _from_environ(self, key)
+    def _from_environ(self, key):
         return os.environ.get(key) or os.environ.get(key)
 
     def close(self):
