@@ -384,11 +384,18 @@ inside nested parentheses.  They are:
 ``$``
    :c:func:`PyArg_ParseTupleAndKeywords` only:
    Indicates that the remaining arguments in the Python argument list are
-   keyword-only.  Currently, all keyword-only arguments must also be optional
-   arguments, so ``|`` must always be specified before ``$`` in the format
-   string.
+   keyword-only.  By default, arguments following ``$`` are optional and
+   ``|`` must be specified before ``$``. For required, keyword-only arguments,
+   specify ``@`` after ``$``.
 
    .. versionadded:: 3.3
+
+``@``
+   :c:func:`PyArg_ParseTupleAndKeywords` only:
+   Indicates that the remaining arguments in the Python argument list are
+   required keyword-only arguments. Must be specified after ``|`` and ``$``.
+
+   .. versionadded:: 3.8
 
 ``:``
    The list of format units ends here; the string after the colon is used as the

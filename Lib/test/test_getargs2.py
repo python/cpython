@@ -661,6 +661,177 @@ class KeywordOnly_TestCase(unittest.TestCase):
             "'\udc80' is an invalid keyword argument for this function"):
             getargs_keyword_only(1, 2, **{'\uDC80': 10})
 
+class RequiredKeywordOnly_TestCase(unittest.TestCase):
+    from _testcapi import getargs_required_keyword_only as getargs
+
+    def test_basic_args(self):
+        self.assertEqual(
+            self.getargs(1, kw_required=2),
+            (1, -1, 2, -1)
+        )
+        self.assertEqual(
+            self.getargs(1, 2, kw_required=3),
+            (1, 2, 3, -1)
+        )
+        self.assertEqual(
+            self.getargs(1, 2, kw_required=3, kw_optional=4),
+            (1, 2, 3, 4)
+        )
+        self.assertEqual(
+            self.getargs(1, arg2=2, kw_required=3, kw_optional=4),
+            (1, 2, 3, 4)
+        )
+        self.assertEqual(
+            self.getargs(1, arg2=2, kw_required=3),
+            (1, 2, 3, -1)
+        )
+        self.assertEqual(
+            self.getargs(arg1=1, arg2=2, kw_required=3, kw_optional=4),
+            (1, 2, 3, 4)
+        )
+        self.assertEqual(
+            self.getargs(arg1=1, arg2=2, kw_required=3),
+            (1, 2, 3, -1)
+        )
+        self.assertEqual(
+            self.getargs(arg1=1, kw_required=3, kw_optional=4),
+            (1, -1, 3, 4)
+        )
+        self.assertEqual(
+            self.getargs(arg1=1, kw_required=3),
+            (1, -1, 3, -1)
+        )
+
+    def test_required_positional_args(self):
+        # required positional arg missing
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required argument 'arg1' \(pos 1\)"):
+            self.getargs()
+
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required argument 'arg1' \(pos 1\)"):
+            self.getargs(kw_required=3)
+
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required argument 'arg1' \(pos 1\)"):
+            self.getargs(arg2=2, kw_required=4)
+
+    def test_required_keyword_args(self):
+        # required keyword arg missing
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required keyword-only argument 'kw_required'"):
+            self.getargs(1)
+
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required keyword-only argument 'kw_required'"):
+            self.getargs(1, 2)
+
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required keyword-only argument 'kw_required'"):
+            self.getargs(1, arg2=2)
+
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required keyword-only argument 'kw_required'"):
+            self.getargs(1, arg2=2, kw_optional=3)
+
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required keyword-only argument 'kw_required'"):
+            self.getargs(arg1=1, arg2=2, kw_optional=3)
+
+    def test_keyword_only(self):
+        with self.assertRaisesRegex(TypeError,
+            r"function takes at most 2 positional arguments \(3 given\)"):
+            self.getargs(1, 2, 3)
+
+class RequiredKeywordOnly2_TestCase(unittest.TestCase):
+    from _testcapi import getargs_required_keyword_only2 as getargs
+
+    def test_basic_args(self):
+        self.assertEqual(
+            self.getargs(1, kw_required=3),
+            (1, 3, -1)
+        )
+        self.assertEqual(
+            self.getargs(1, 4, kw_required=3),
+            (1, 3, 4)
+        )
+        self.assertEqual(
+            self.getargs(arg1=1, kw_required=3),
+            (1, 3, -1)
+        )
+
+    def test_required_positional_args(self):
+        # required positional arg missing
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required argument 'arg1' \(pos 1\)"):
+            self.getargs()
+
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required argument 'arg1' \(pos 1\)"):
+            self.getargs(kw_required=3)
+
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required argument 'arg1' \(pos 1\)"):
+            self.getargs(arg2=2, kw_required=4)
+
+    def test_required_keyword_args(self):
+        # required keyword arg missing
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required keyword-only argument 'kw_required'"):
+            self.getargs(1)
+
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required keyword-only argument 'kw_required'"):
+            self.getargs(1, 2)
+
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required keyword-only argument 'kw_required'"):
+            self.getargs(1, arg2=2)
+
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required keyword-only argument 'kw_required'"):
+            self.getargs(arg1=1, arg2=2)
+
+    def test_keyword_only(self):
+        with self.assertRaisesRegex(TypeError,
+            r"function takes at most 2 positional arguments \(3 given\)"):
+            self.getargs(1, 2, 3)
+
+class RequiredKeywordOnly3_TestCase(unittest.TestCase):
+    from _testcapi import getargs_required_keyword_only3 as getargs
+
+    def test_basic_args(self):
+        self.assertEqual(
+            self.getargs(1, kw_required=2),
+            (1, 2)
+        )
+        self.assertEqual(
+            self.getargs(arg1=1, kw_required=2),
+            (1, 2)
+        )
+
+    def test_required_positional_args(self):
+        # required positional arg missing
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required argument 'arg1' \(pos 1\)"):
+            self.getargs()
+
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required argument 'arg1' \(pos 1\)"):
+            self.getargs(kw_required=3)
+
+    def test_required_keyword_args(self):
+        # required keyword arg missing
+        with self.assertRaisesRegex(TypeError,
+            r"function missing required keyword-only argument 'kw_required'"):
+            self.getargs(1)
+
+    def test_keyword_only(self):
+        with self.assertRaisesRegex(TypeError,
+            r"function takes at most 1 positional argument \(2 given\)"):
+            self.getargs(1, 2)
+
+
 
 class PositionalOnlyAndKeywords_TestCase(unittest.TestCase):
     from _testcapi import getargs_positional_only_and_keywords as getargs
@@ -1001,8 +1172,8 @@ class SkipitemTest(unittest.TestCase):
 
             # skip parentheses, the error reporting is inconsistent about them
             # skip 'e', it's always a two-character code
-            # skip '|' and '$', they don't represent arguments anyway
-            if c in '()e|$':
+            # skip '|', '$', and '@', they don't represent arguments anyway
+            if c in '()e|$@':
                 continue
 
             # test the format unit when not skipped

@@ -1624,6 +1624,8 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
     const char *fname, *msg, *custom_msg;
     int min = INT_MAX;
     int max = INT_MAX;
+    int required_kwonly_start = INT_MAX;
+    int has_required_kws = 0;
     int i, pos, len;
     int skip = 0;
     Py_ssize_t nargs, nkwargs;
@@ -1707,6 +1709,11 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                                 "Invalid format string ($ before |)");
                 return cleanreturn(0, &freelist);
             }
+
+            /* If there are optional args, figure out whether we have
+             * required keyword arguments so that we don't bail without
+             * enforcing them. */
+            has_required_kws = strchr(format, '@') != NULL;
         }
         if (*format == '$') {
             if (max != INT_MAX) {
@@ -1750,6 +1757,22 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                 return cleanreturn(0, &freelist);
             }
         }
+        if (*format == '@') {
+            if (min == INT_MAX && max == INT_MAX) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Invalid format string "
+                                "(@ without preceding | and $)");
+                return cleanreturn(0, &freelist);
+            }
+            if (required_kwonly_start != INT_MAX) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Invalid format string (@ specified twice)");
+                return cleanreturn(0, &freelist);
+            }
+
+            required_kwonly_start = i;
+            format++;
+        }
         if (IS_END_OF_FORMAT(*format)) {
             PyErr_Format(PyExc_SystemError,
                          "More keyword list entries (%d) than "
@@ -1779,7 +1802,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                 continue;
             }
 
-            if (i < min) {
+            if (i < min || i >= required_kwonly_start) {
                 if (i < pos) {
                     assert (min == INT_MAX);
                     assert (max == INT_MAX);
@@ -1790,11 +1813,22 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                      * or the end of the format. */
                 }
                 else {
-                    PyErr_Format(PyExc_TypeError,  "%.200s%s missing required "
-                                 "argument '%s' (pos %d)",
-                                 (fname == NULL) ? "function" : fname,
-                                 (fname == NULL) ? "" : "()",
-                                 kwlist[i], i+1);
+                    if (i >= max) {
+                        PyErr_Format(PyExc_TypeError,
+                                     "%.200s%s missing required "
+                                     "keyword-only argument '%s'",
+                                     (fname == NULL) ? "function" : fname,
+                                     (fname == NULL) ? "" : "()",
+                                     kwlist[i]);
+                    }
+                    else {
+                        PyErr_Format(PyExc_TypeError,
+                                     "%.200s%s missing required "
+                                     "argument '%s' (pos %d)",
+                                     (fname == NULL) ? "function" : fname,
+                                     (fname == NULL) ? "" : "()",
+                                     kwlist[i], i+1);
+                    }
                     return cleanreturn(0, &freelist);
                 }
             }
@@ -1802,7 +1836,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
              * fulfilled and no keyword args left, with no further
              * validation. XXX Maybe skip this in debug build ?
              */
-            if (!nkwargs && !skip) {
+            if (!nkwargs && !skip && !has_required_kws) {
                 return cleanreturn(1, &freelist);
             }
         }

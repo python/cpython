@@ -1063,6 +1063,51 @@ getargs_positional_only_and_keywords(PyObject *self, PyObject *args, PyObject *k
     return Py_BuildValue("iii", required, optional, keyword);
 }
 
+static PyObject *
+getargs_required_keyword_only(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *keywords[] = {
+        "arg1", "arg2", "kw_optional", "kw_required", NULL};
+    int arg1 = -1;
+    int arg2 = -1;
+    int required = -1;
+    int optional = -1;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i|i$i@i", keywords,
+                                     &arg1, &arg2, &optional, &required))
+        return NULL;
+    return Py_BuildValue("iiii", arg1, arg2, required, optional);
+}
+
+static PyObject *
+getargs_required_keyword_only2(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *keywords[] = {
+        "arg1", "arg2", "kw_required", NULL};
+    int arg1 = -1;
+    int arg2 = -1;
+    int required = -1;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i|i$@i", keywords,
+                                     &arg1, &arg2, &required))
+        return NULL;
+    return Py_BuildValue("iii", arg1, required, arg2);
+}
+
+static PyObject *
+getargs_required_keyword_only3(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *keywords[] = {
+        "arg1", "kw_required", NULL};
+    int arg1 = -1;
+    int required = -1;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i|$@i", keywords,
+                                     &arg1, &required))
+        return NULL;
+    return Py_BuildValue("ii", arg1, required);
+}
+
 /* Functions to call PyArg_ParseTuple with integer format codes,
    and return the result.
 */
@@ -4776,6 +4821,15 @@ static PyMethodDef TestMethods[] = {
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_positional_only_and_keywords",
       (PyCFunction)(void(*)(void))getargs_positional_only_and_keywords,
+      METH_VARARGS|METH_KEYWORDS},
+    {"getargs_required_keyword_only",
+      (PyCFunction)(void(*)(void))getargs_required_keyword_only,
+      METH_VARARGS|METH_KEYWORDS},
+    {"getargs_required_keyword_only2",
+      (PyCFunction)(void(*)(void))getargs_required_keyword_only2,
+      METH_VARARGS|METH_KEYWORDS},
+    {"getargs_required_keyword_only3",
+      (PyCFunction)(void(*)(void))getargs_required_keyword_only3,
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_b",               getargs_b,                       METH_VARARGS},
     {"getargs_B",               getargs_B,                       METH_VARARGS},
