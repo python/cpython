@@ -3616,9 +3616,10 @@ copying.
       supports all format strings, including those that are not in
       :mod:`struct` module syntax.
 
-      *Order* can be {'C', 'F', 'A'}.  When *order* is 'C' or 'F', the data
-      of the original array is converted to C or Fortran order. 'A' returns
-      the data in the existing order. The default order is 'C'.
+      .. versionadded:: 3.8
+         *Order* can be {'C', 'F', 'A'}.  When *order* is 'C' or 'F', the data
+         of the original array is converted to C or Fortran order. 'A' returns
+         the data in the existing order. The default order is 'C'.
 
    .. method:: hex()
 
