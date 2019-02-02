@@ -1,5 +1,9 @@
 'Show relative speeds of local, nonlocal, global, and built-in access.'
 
+# Please leave this code so that it runs under older versions of
+# Python 3 (no f-strings).  That will allow benchmarking for
+# cross-version comparisons.
+
 from collections import namedtuple
 
 trials = [None] * 500
