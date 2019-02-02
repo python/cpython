@@ -3618,8 +3618,10 @@ copying.
 
       .. versionadded:: 3.8
          *Order* can be {'C', 'F', 'A'}.  When *order* is 'C' or 'F', the data
-         of the original array is converted to C or Fortran order. 'A' returns
-         the data in the existing order. The default order is 'C'.
+         of the original array is converted to C or Fortran order. For contiguous
+         views, 'A' returns an exact copy of the physical memory. In particular,
+         in-memory Fortran order is preserved. For non-contiguous views, the
+         data is converted to C first. *order=None* is the same as *order='C'*.
 
    .. method:: hex()
 

@@ -3087,8 +3087,9 @@ PyDoc_STRVAR(memory_tobytes_doc,
 \n\
 Return the data in the buffer as a byte string. Order can be {'C', 'F', 'A'}.\n\
 When order is 'C' or 'F', the data of the original array is converted to C or\n\
-Fortran order. 'A' returns the data in the existing order. The default order\n\
-is 'C'.");
+Fortran order. For contiguous views, 'A' returns an exact copy of the physical\n\
+memory. In particular, in-memory Fortran order is preserved. For non-contiguous\n\
+views, the data is converted to C first. order=None is the same as order='C'.");
 PyDoc_STRVAR(memory_hex_doc,
 "hex($self, /)\n--\n\
 \n\
