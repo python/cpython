@@ -661,6 +661,25 @@ sequence is empty.");
 
 /* lru_cache object **********************************************************/
 
+/* There are four principal algorithmic differences from the pure python version:
+
+   1). The C version relies on the GIL instead of having its own reentrant lock.
+
+   2). The prev/next link fields use borrowed references.
+
+   3). For a full cache, the pure python version rotates the location of the
+       root entry so that it never has to move individual links and it can
+       limit updates to just the key and result fields.  However, in the C
+       version, links are temporarily removed while the cache dict updates are
+       occurring. Afterwards, they are appended or prepended back into the
+       doubly-linked lists.
+
+   4)  In the Python version, a _HashSeq class is used to prevent __hash__
+       from being called more than once.  In the C version, the "known hash"
+       variants of dictionary calls as used to the same effect.
+
+*/
+
 /* this object is used delimit args and keywords in the cache keys */
 static PyObject *kwd_mark = NULL;
 
