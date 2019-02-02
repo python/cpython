@@ -1392,7 +1392,7 @@ else:
         def __init__(self, host, port=None, key_file=None, cert_file=None,
                      timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
                      source_address=None, *, context=None,
-                     check_hostname=None, blocksize=8192, use_proxy_from_environ):
+                     check_hostname=None, blocksize=8192, use_proxy_from_environ=False):
             super(HTTPSConnection, self).__init__(host, port, timeout,
                                                   source_address,
                                                   blocksize=blocksize,
