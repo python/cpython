@@ -49,26 +49,26 @@ class FontSizer:
         self.text.bind('<Control-Button-4>', self.decrease_font_size)
         self.text.bind('<Control-Button-5>', self.increase_font_size)
 
-    def set_text_size(self, new_size):
+    def set_text_fontsize(new_size):
         "Set the font size for this widget."
-        font = Font(self.text, name=self.text['font'], exists=True)
-        size = new_size(font)
-        font['size'] = size
-        if self.callback:
-            self.callback(size)
-        return 'break'
+        def sizer(self, event=None):
+            font = Font(self.text, name=self.text['font'], exists=True)
+            size = new_size(font['size'])
+            font['size'] = size
+            if self.callback:
+                self.callback(size)
+            return 'break'
+        return sizer
 
-    def increase_font_size(self, event=None):
+    @set_text_fontsize
+    def increase_font_size(fontsize):
         "Make font size larger."
-        def new_size(font):
-            return min(font['size'] + 1, MAXIMUM_FONT_SIZE)
-        return self.set_text_size(new_size)
+        return min(fontsize + 1, MAXIMUM_FONT_SIZE)
 
-    def decrease_font_size(self, event=None):
+    @set_text_fontsize
+    def decrease_font_size(fontsize):
         "Make font size smaller."
-        def new_size(font):
-            return max(font['size'] - 1, MINIMUM_FONT_SIZE)
-        return self.set_text_size(new_size)
+        return max(fontsize - 1, MINIMUM_FONT_SIZE)
 
     def update_mousewheel(self, event):
         "Adjust font size based on mouse wheel direction."
