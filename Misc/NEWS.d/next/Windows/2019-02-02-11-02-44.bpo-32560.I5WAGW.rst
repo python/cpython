@@ -1,0 +1,2 @@
+The ``py`` launcher now forwards its ``STARTUPINFO`` structure to child
+processes.
