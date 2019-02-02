@@ -1593,11 +1593,11 @@ class PyBuildExt(build_ext):
                 sysconfig.get_config_var('POSIX_SEMAPHORES_NOT_ENABLED')):
                 multiprocessing_srcs.append('_multiprocessing/semaphore.c')
             if (self.compiler.find_library_file(lib_dirs, 'rt') or
-                host_platform == 'darwin'):
+                host_platform != 'cygwin'):
                 posixshmem_srcs = [ '_multiprocessing/posixshmem.c',
                                   ]
                 libs = []
-                if host_platform != 'darwin':
+                if self.compiler.find_library_file(lib_dirs, 'rt'):
                     libs.append('rt')
                 exts.append( Extension('_posixshmem', posixshmem_srcs,
                                        define_macros={},
