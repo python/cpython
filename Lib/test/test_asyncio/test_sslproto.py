@@ -4,6 +4,7 @@ import logging
 import socket
 import sys
 import unittest
+import weakref
 from unittest import mock
 try:
     import ssl
@@ -561,6 +562,11 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
         # Python issue #23197: cancelling a handshake must not raise an
         # exception or log an error, even if the handshake failed
         self.assertEqual(messages, [])
+
+        # The 10s handshake timeout should be cancelled to free related
+        # objects without really waiting for 10s
+        client_sslctx = weakref.ref(client_sslctx)
+        self.assertIsNone(client_sslctx())
 
     def test_create_connection_ssl_slow_handshake(self):
         client_sslctx = test_utils.simple_client_sslcontext()
