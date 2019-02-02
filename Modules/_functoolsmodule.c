@@ -1059,7 +1059,12 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
            original position as the oldest link.  Then we allow the
            error propagate upward; treating it the same as an error
            arising in the user function. */
-        lru_cache_prepend_link(self, link);
+        if (!IS_USED(link)) {
+            lru_cache_prepend_link(self, link);
+        }
+        else {
+            Py_DECREF(link);
+        }
         Py_DECREF(key);
         Py_DECREF(result);
         return NULL;
