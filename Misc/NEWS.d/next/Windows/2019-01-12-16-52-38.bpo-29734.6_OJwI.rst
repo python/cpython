@@ -1,0 +1,1 @@
+Fix handle leaks in os.stat on Windows.
