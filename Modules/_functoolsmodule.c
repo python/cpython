@@ -845,7 +845,7 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
 }
 
 #define MARK_UNUSED(link)  {link->prev = NULL; link->next = NULL;}
-#define IS_USED(link) (link->prev != NULL && link->next != NULL)
+#define IS_USED(link) (link != NULL && link->prev != NULL && link->next != NULL)
 
 static void
 lru_cache_extract_link(lru_list_elem *link)
@@ -1019,9 +1019,17 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     */
     PyObject *oldkey, *oldresult, *popresult;
 
-    /* Extract the oldest item. */
+    /* Get the oldest link. */
     assert(self->root.next != &self->root);
     link = self->root.next;
+    if (!IS_USED(link)) {
+        /* Getting here means another thread is in the process of
+           removing this link, so let that proceed normally and
+           let's just return the calculated result.*/
+        Py_DECREF(key);
+        return result;
+    }
+    /* Extract the oldest item. */
     lru_cache_extract_link(link);
     /* Remove it from the cache.
        The cache dict holds one reference to the link,
@@ -1075,7 +1083,9 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         Py_DECREF(oldresult);
         return NULL;
     }
-    lru_cache_append_link(self, link);
+    if (!IS_USED(link)) {
+        lru_cache_append_link(self, link);
+    }
     Py_INCREF(result); /* for return */
     Py_DECREF(popresult);
     Py_DECREF(oldkey);
