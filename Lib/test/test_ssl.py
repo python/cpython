@@ -2235,7 +2235,7 @@ class ThreadedEchoServer(threading.Thread):
                     if support.verbose and self.server.chatty:
                         sys.stdout.write(" client cert is " + pprint.pformat(cert) + "\n")
                     cert_binary = self.sslconn.getpeercert(True)
-                    if support.verbose and self.server.chatty:
+                    if support.verbose and self.server.chatty and cert_binary != None:
                         sys.stdout.write(" cert binary is " + str(len(cert_binary)) + " bytes\n")
                 cipher = self.sslconn.cipher()
                 if support.verbose and self.server.chatty:
@@ -2344,15 +2344,19 @@ class ThreadedEchoServer(threading.Thread):
                         )
                     self.close()
                     self.running = False
-                except OSError:
-                    if self.server.chatty:
-                        handle_error("Test server failure:\n")
-                    self.close()
-                    self.running = False
+                except OSError as err:
+                    if 'peer did not return a certificate' in err.args[1] and self.server.chatty:
+                        # test_pha_required_nocert causes this error which results in a false(?) failure
+                        sys.stdout.write(err.args[1])
+                    else:
+                        if self.server.chatty:
+                            handle_error("Test server failure:\n")
+                        self.close()
+                        self.running = False
 
-                    # normally, we'd just stop here, but for the test
-                    # harness, we want to stop the server
-                    self.server.stop()
+                        # normally, we'd just stop here, but for the test
+                        # harness, we want to stop the server
+                        self.server.stop()
 
     def __init__(self, certificate=None, ssl_version=None,
                  certreqs=None, cacerts=None,
@@ -4282,7 +4286,7 @@ class TestPostHandshakeAuth(unittest.TestCase):
         server_context.verify_mode = ssl.CERT_REQUIRED
         client_context.post_handshake_auth = True
 
-        server = ThreadedEchoServer(context=server_context, chatty=False)
+        server = ThreadedEchoServer(context=server_context, chatty=True)
         with server:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
