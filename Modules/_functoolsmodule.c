@@ -1006,10 +1006,13 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
             Py_DECREF(link);
             return NULL;
         }
+        Py_INCREF(result); /* for return */
         if (!IS_USED(link)) {
             lru_cache_append_link(self, link);
         }
-        Py_INCREF(result); /* for return */
+        else {
+            Py_DECREF(link);
+        }
         return result;
     }
     /* Since the cache is full, we need to evict an old key and add
