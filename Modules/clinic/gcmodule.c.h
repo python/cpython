@@ -79,13 +79,13 @@ PyDoc_STRVAR(gc_collect__doc__,
 "The number of unreachable objects is returned.");
 
 #define GC_COLLECT_METHODDEF    \
-    {"collect", (PyCFunction)gc_collect, METH_FASTCALL|METH_KEYWORDS, gc_collect__doc__},
+    {"collect", (PyCFunction)(void(*)(void))gc_collect, METH_FASTCALL|METH_KEYWORDS, gc_collect__doc__},
 
 static Py_ssize_t
 gc_collect_impl(PyObject *module, int generation);
 
 static PyObject *
-gc_collect(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+gc_collect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"generation", NULL};
@@ -136,7 +136,13 @@ gc_set_debug(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flags;
 
-    if (!PyArg_Parse(arg, "i:set_debug", &flags)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flags = _PyLong_AsInt(arg);
+    if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = gc_set_debug_impl(module, flags);
@@ -307,22 +313,22 @@ PyDoc_STRVAR(gc_get_freeze_count__doc__,
 #define GC_GET_FREEZE_COUNT_METHODDEF    \
     {"get_freeze_count", (PyCFunction)gc_get_freeze_count, METH_NOARGS, gc_get_freeze_count__doc__},
 
-static int
+static Py_ssize_t
 gc_get_freeze_count_impl(PyObject *module);
 
 static PyObject *
 gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
-    int _return_value;
+    Py_ssize_t _return_value;
 
     _return_value = gc_get_freeze_count_impl(module);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = PyLong_FromLong((long)_return_value);
+    return_value = PyLong_FromSsize_t(_return_value);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4f41ec4588154f2b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5aa5fdc259503d5f input=a9049054013a1b77]*/

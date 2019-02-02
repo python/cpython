@@ -1,0 +1,2 @@
+For namespace packages, ensure that both ``__file__`` and
+``__spec__.origin`` are set to None.

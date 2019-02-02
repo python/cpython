@@ -1,0 +1,4 @@
+Allow ttk.Treeview.insert to insert iid that has a false boolean value.
+Note iid=0 and iid=False would be same.
+Patch by Garvit Khatri.
+

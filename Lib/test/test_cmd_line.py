@@ -5,6 +5,7 @@
 import os
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import unittest
 from test import support
@@ -12,6 +13,11 @@ from test.support.script_helper import (
     spawn_python, kill_python, assert_python_ok, assert_python_failure,
     interpreter_requires_environment
 )
+
+
+# Debug build?
+Py_DEBUG = hasattr(sys, "gettotalrefcount")
+
 
 # XXX (ncoghlan): Move to script_helper and make consistent with run_python
 def _kill_python_and_exit_code(p):
@@ -57,6 +63,8 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_ok('-vv')
         self.assertNotIn(b'stack overflow', err)
 
+    @unittest.skipIf(interpreter_requires_environment(),
+                     'Cannot run -E tests when PYTHON env vars are required.')
     def test_xoptions(self):
         def get_xoptions(*args):
             # use subprocess module directly because test.support.script_helper adds
@@ -96,7 +104,7 @@ class CmdLineTest(unittest.TestCase):
         # "-X showrefcount" shows the refcount, but only in debug builds
         rc, out, err = run_python('-X', 'showrefcount', '-c', code)
         self.assertEqual(out.rstrip(), b"{'showrefcount': True}")
-        if hasattr(sys, 'gettotalrefcount'):  # debug build
+        if Py_DEBUG:
             self.assertRegex(err, br'^\[\d+ refs, \d+ blocks\]')
         else:
             self.assertEqual(err, b'')
@@ -272,11 +280,7 @@ class CmdLineTest(unittest.TestCase):
 
     def test_displayhook_unencodable(self):
         for encoding in ('ascii', 'latin-1', 'utf-8'):
-            # We are testing a PYTHON environment variable here, so we can't
-            # use -E, -I, or script_helper (which uses them).  So instead we do
-            # poor-man's isolation by deleting the PYTHON vars from env.
-            env = {key:value for (key,value) in os.environ.copy().items()
-                   if not key.startswith('PYTHON')}
+            env = os.environ.copy()
             env['PYTHONIOENCODING'] = encoding
             p = subprocess.Popen(
                 [sys.executable, '-i'],
@@ -426,8 +430,16 @@ class CmdLineTest(unittest.TestCase):
 
         # Verify that sys.flags contains hash_randomization
         code = 'import sys; print("random is", sys.flags.hash_randomization)'
-        rc, out, err = assert_python_ok('-c', code)
-        self.assertEqual(rc, 0)
+        rc, out, err = assert_python_ok('-c', code, PYTHONHASHSEED='')
+        self.assertIn(b'random is 1', out)
+
+        rc, out, err = assert_python_ok('-c', code, PYTHONHASHSEED='random')
+        self.assertIn(b'random is 1', out)
+
+        rc, out, err = assert_python_ok('-c', code, PYTHONHASHSEED='0')
+        self.assertIn(b'random is 0', out)
+
+        rc, out, err = assert_python_ok('-R', '-c', code, PYTHONHASHSEED='0')
         self.assertIn(b'random is 1', out)
 
     def test_del___main__(self):
@@ -495,26 +507,56 @@ class CmdLineTest(unittest.TestCase):
                 PYTHONDONTWRITEBYTECODE=value,
                 PYTHONVERBOSE=value,
             )
+            dont_write_bytecode = int(bool(value))
             code = (
                 "import sys; "
                 "sys.stderr.write(str(sys.flags)); "
                 f"""sys.exit(not (
                     sys.flags.debug == sys.flags.optimize ==
-                    sys.flags.dont_write_bytecode == sys.flags.verbose ==
+                    sys.flags.verbose ==
                     {expected}
+                    and sys.flags.dont_write_bytecode == {dont_write_bytecode}
                 ))"""
             )
             with self.subTest(envar_value=value):
                 assert_python_ok('-c', code, **env_vars)
 
-    def run_xdev(self, *args, check_exitcode=True):
+    def test_set_pycache_prefix(self):
+        # sys.pycache_prefix can be set from either -X pycache_prefix or
+        # PYTHONPYCACHEPREFIX env var, with the former taking precedence.
+        NO_VALUE = object()  # `-X pycache_prefix` with no `=PATH`
+        cases = [
+            # (PYTHONPYCACHEPREFIX, -X pycache_prefix, sys.pycache_prefix)
+            (None, None, None),
+            ('foo', None, 'foo'),
+            (None, 'bar', 'bar'),
+            ('foo', 'bar', 'bar'),
+            ('foo', '', None),
+            ('foo', NO_VALUE, None),
+        ]
+        for envval, opt, expected in cases:
+            exp_clause = "is None" if expected is None else f'== "{expected}"'
+            code = f"import sys; sys.exit(not sys.pycache_prefix {exp_clause})"
+            args = ['-c', code]
+            env = {} if envval is None else {'PYTHONPYCACHEPREFIX': envval}
+            if opt is NO_VALUE:
+                args[:0] = ['-X', 'pycache_prefix']
+            elif opt is not None:
+                args[:0] = ['-X', f'pycache_prefix={opt}']
+            with self.subTest(envval=envval, opt=opt):
+                with support.temp_cwd():
+                    assert_python_ok(*args, **env)
+
+    def run_xdev(self, *args, check_exitcode=True, xdev=True):
         env = dict(os.environ)
         env.pop('PYTHONWARNINGS', None)
-        # Force malloc() to disable the debug hooks which are enabled
-        # by default for Python compiled in debug mode
-        env['PYTHONMALLOC'] = 'malloc'
+        env.pop('PYTHONDEVMODE', None)
+        env.pop('PYTHONMALLOC', None)
 
-        args = (sys.executable, '-X', 'dev', *args)
+        if xdev:
+            args = (sys.executable, '-X', 'dev', *args)
+        else:
+            args = (sys.executable, *args)
         proc = subprocess.run(args,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
@@ -525,45 +567,55 @@ class CmdLineTest(unittest.TestCase):
         return proc.stdout.rstrip()
 
     def test_xdev(self):
-        code = ("import sys, warnings; "
+        # sys.flags.dev_mode
+        code = "import sys; print(sys.flags.dev_mode)"
+        out = self.run_xdev("-c", code, xdev=False)
+        self.assertEqual(out, "False")
+        out = self.run_xdev("-c", code)
+        self.assertEqual(out, "True")
+
+        # Warnings
+        code = ("import warnings; "
                 "print(' '.join('%s::%s' % (f[0], f[2].__name__) "
                                 "for f in warnings.filters))")
+        if Py_DEBUG:
+            expected_filters = "default::Warning"
+        else:
+            expected_filters = ("default::Warning "
+                                "default::DeprecationWarning "
+                                "ignore::DeprecationWarning "
+                                "ignore::PendingDeprecationWarning "
+                                "ignore::ImportWarning "
+                                "ignore::ResourceWarning")
 
         out = self.run_xdev("-c", code)
-        self.assertEqual(out,
-                         "ignore::BytesWarning "
-                         "always::ResourceWarning "
-                         "default::Warning")
+        self.assertEqual(out, expected_filters)
 
         out = self.run_xdev("-b", "-c", code)
-        self.assertEqual(out,
-                         "default::BytesWarning "
-                         "always::ResourceWarning "
-                         "default::Warning")
+        self.assertEqual(out, f"default::BytesWarning {expected_filters}")
 
         out = self.run_xdev("-bb", "-c", code)
-        self.assertEqual(out,
-                         "error::BytesWarning "
-                         "always::ResourceWarning "
-                         "default::Warning")
+        self.assertEqual(out, f"error::BytesWarning {expected_filters}")
 
         out = self.run_xdev("-Werror", "-c", code)
-        self.assertEqual(out,
-                         "error::Warning "
-                         "ignore::BytesWarning "
-                         "always::ResourceWarning "
-                         "default::Warning")
+        self.assertEqual(out, f"error::Warning {expected_filters}")
 
+        # Memory allocator debug hooks
         try:
             import _testcapi
         except ImportError:
             pass
         else:
-            code = "import _testcapi; _testcapi.pymem_api_misuse()"
+            code = "import _testcapi; print(_testcapi.pymem_getallocatorsname())"
             with support.SuppressCrashReport():
                 out = self.run_xdev("-c", code, check_exitcode=False)
-            self.assertIn("Debug memory block at address p=", out)
+            if support.with_pymalloc():
+                alloc_name = "pymalloc_debug"
+            else:
+                alloc_name = "malloc_debug"
+            self.assertEqual(out, alloc_name)
 
+        # Faulthandler
         try:
             import faulthandler
         except ImportError:
@@ -573,20 +625,122 @@ class CmdLineTest(unittest.TestCase):
             out = self.run_xdev("-c", code)
             self.assertEqual(out, "True")
 
-        # Make sure that ResourceWarning emitted twice at the same line number
-        # is logged twice
-        filename = support.TESTFN
-        self.addCleanup(support.unlink, filename)
-        with open(filename, "w", encoding="utf8") as fp:
-            print("def func(): open(__file__)", file=fp)
-            print("func()", file=fp)
-            print("func()", file=fp)
-            fp.flush()
+    def check_warnings_filters(self, cmdline_option, envvar, use_pywarning=False):
+        if use_pywarning:
+            code = ("import sys; from test.support import import_fresh_module; "
+                    "warnings = import_fresh_module('warnings', blocked=['_warnings']); ")
+        else:
+            code = "import sys, warnings; "
+        code += ("print(' '.join('%s::%s' % (f[0], f[2].__name__) "
+                                "for f in warnings.filters))")
+        args = (sys.executable, '-W', cmdline_option, '-bb', '-c', code)
+        env = dict(os.environ)
+        env.pop('PYTHONDEVMODE', None)
+        env["PYTHONWARNINGS"] = envvar
+        proc = subprocess.run(args,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT,
+                              universal_newlines=True,
+                              env=env)
+        self.assertEqual(proc.returncode, 0, proc)
+        return proc.stdout.rstrip()
 
-        out = self.run_xdev(filename)
-        self.assertEqual(out.count(':1: ResourceWarning: '), 2, out)
+    def test_warnings_filter_precedence(self):
+        expected_filters = ("error::BytesWarning "
+                            "once::UserWarning "
+                            "always::UserWarning")
+        if not Py_DEBUG:
+            expected_filters += (" "
+                                 "default::DeprecationWarning "
+                                 "ignore::DeprecationWarning "
+                                 "ignore::PendingDeprecationWarning "
+                                 "ignore::ImportWarning "
+                                 "ignore::ResourceWarning")
 
+        out = self.check_warnings_filters("once::UserWarning",
+                                          "always::UserWarning")
+        self.assertEqual(out, expected_filters)
 
+        out = self.check_warnings_filters("once::UserWarning",
+                                          "always::UserWarning",
+                                          use_pywarning=True)
+        self.assertEqual(out, expected_filters)
+
+    def check_pythonmalloc(self, env_var, name):
+        code = 'import _testcapi; print(_testcapi.pymem_getallocatorsname())'
+        env = dict(os.environ)
+        env.pop('PYTHONDEVMODE', None)
+        if env_var is not None:
+            env['PYTHONMALLOC'] = env_var
+        else:
+            env.pop('PYTHONMALLOC', None)
+        args = (sys.executable, '-c', code)
+        proc = subprocess.run(args,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT,
+                              universal_newlines=True,
+                              env=env)
+        self.assertEqual(proc.stdout.rstrip(), name)
+        self.assertEqual(proc.returncode, 0)
+
+    def test_pythonmalloc(self):
+        # Test the PYTHONMALLOC environment variable
+        pymalloc = support.with_pymalloc()
+        if pymalloc:
+            default_name = 'pymalloc_debug' if Py_DEBUG else 'pymalloc'
+            default_name_debug = 'pymalloc_debug'
+        else:
+            default_name = 'malloc_debug' if Py_DEBUG else 'malloc'
+            default_name_debug = 'malloc_debug'
+
+        tests = [
+            (None, default_name),
+            ('debug', default_name_debug),
+            ('malloc', 'malloc'),
+            ('malloc_debug', 'malloc_debug'),
+        ]
+        if pymalloc:
+            tests.extend((
+                ('pymalloc', 'pymalloc'),
+                ('pymalloc_debug', 'pymalloc_debug'),
+            ))
+
+        for env_var, name in tests:
+            with self.subTest(env_var=env_var, name=name):
+                self.check_pythonmalloc(env_var, name)
+
+    def test_pythondevmode_env(self):
+        # Test the PYTHONDEVMODE environment variable
+        code = "import sys; print(sys.flags.dev_mode)"
+        env = dict(os.environ)
+        env.pop('PYTHONDEVMODE', None)
+        args = (sys.executable, '-c', code)
+
+        proc = subprocess.run(args, stdout=subprocess.PIPE,
+                              universal_newlines=True, env=env)
+        self.assertEqual(proc.stdout.rstrip(), 'False')
+        self.assertEqual(proc.returncode, 0, proc)
+
+        env['PYTHONDEVMODE'] = '1'
+        proc = subprocess.run(args, stdout=subprocess.PIPE,
+                              universal_newlines=True, env=env)
+        self.assertEqual(proc.stdout.rstrip(), 'True')
+        self.assertEqual(proc.returncode, 0, proc)
+
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'bpo-32457 only applies on Windows')
+    def test_argv0_normalization(self):
+        args = sys.executable, '-c', 'print(0)'
+        prefix, exe = os.path.split(sys.executable)
+        executable = prefix + '\\.\\.\\.\\' + exe
+
+        proc = subprocess.run(args, stdout=subprocess.PIPE,
+                              executable=executable)
+        self.assertEqual(proc.returncode, 0, proc)
+        self.assertEqual(proc.stdout.strip(), b'0')
+
+@unittest.skipIf(interpreter_requires_environment(),
+                 'Cannot run -I tests when PYTHON env vars are required.')
 class IgnoreEnvironmentTest(unittest.TestCase):
 
     def run_ignoring_vars(self, predicate, **env_vars):

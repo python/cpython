@@ -1,0 +1,2 @@
+Yield expressions are now disallowed in comprehensions and generator
+expressions except the expression for the outermost iterable.

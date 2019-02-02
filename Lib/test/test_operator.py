@@ -401,6 +401,19 @@ class OperatorTestCase:
         self.assertEqual(operator.itemgetter(2,10,5)(data), ('2', '10', '5'))
         self.assertRaises(TypeError, operator.itemgetter(2, 'x', 5), data)
 
+        # interesting indices
+        t = tuple('abcde')
+        self.assertEqual(operator.itemgetter(-1)(t), 'e')
+        self.assertEqual(operator.itemgetter(slice(2, 4))(t), ('c', 'd'))
+
+        # interesting sequences
+        class T(tuple):
+            'Tuple subclass'
+            pass
+        self.assertEqual(operator.itemgetter(0)(T('abc')), 'a')
+        self.assertEqual(operator.itemgetter(0)(['a', 'b', 'c']), 'a')
+        self.assertEqual(operator.itemgetter(0)(range(100, 200)), 100)
+
     def test_methodcaller(self):
         operator = self.module
         self.assertRaises(TypeError, operator.methodcaller)

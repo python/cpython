@@ -29,12 +29,12 @@ class Symbols(object):
             setattr(self, name, symbol)
 
 
-python_grammar = driver.load_grammar(_GRAMMAR_FILE)
+python_grammar = driver.load_packaged_grammar("lib2to3", _GRAMMAR_FILE)
 
 python_symbols = Symbols(python_grammar)
 
 python_grammar_no_print_statement = python_grammar.copy()
 del python_grammar_no_print_statement.keywords["print"]
 
-pattern_grammar = driver.load_grammar(_PATTERN_GRAMMAR_FILE)
+pattern_grammar = driver.load_packaged_grammar("lib2to3", _PATTERN_GRAMMAR_FILE)
 pattern_symbols = Symbols(pattern_grammar)

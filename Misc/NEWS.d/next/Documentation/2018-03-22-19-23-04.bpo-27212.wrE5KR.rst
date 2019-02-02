@@ -1,0 +1,2 @@
+Modify documentation for the :func:`islice` recipe to consume initial values
+up to the start index.

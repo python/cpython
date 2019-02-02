@@ -306,7 +306,7 @@ class BasicAuthTests(unittest.TestCase):
         try:
             self.assertTrue(urllib.request.urlopen(self.server_url))
         except urllib.error.HTTPError:
-            self.fail("Basic auth failed for the url: %s", self.server_url)
+            self.fail("Basic auth failed for the url: %s" % self.server_url)
 
     def test_basic_auth_httperror(self):
         ah = urllib.request.HTTPBasicAuthHandler()
@@ -573,7 +573,7 @@ class TestUrlopen(unittest.TestCase):
                              cafile=CERT_fakehostname)
             # Good cert, but mismatching hostname
             handler = self.start_https_server(certfile=CERT_fakehostname)
-            with self.assertRaises(ssl.CertificateError) as cm:
+            with self.assertRaises(urllib.error.URLError) as cm:
                 self.urlopen("https://localhost:%s/bizarre" % handler.port,
                              cafile=CERT_fakehostname)
 

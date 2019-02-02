@@ -57,7 +57,11 @@ Struct_unpack(PyStructObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:unpack", &buffer)) {
+    if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+        _PyArg_BadArgument("unpack", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = Struct_unpack_impl(self, &buffer);
@@ -79,19 +83,20 @@ PyDoc_STRVAR(Struct_unpack_from__doc__,
 "\n"
 "Values are unpacked according to the format string Struct.format.\n"
 "\n"
-"The buffer\'s size in bytes, minus offset, must be at least Struct.size.\n"
+"The buffer\'s size in bytes, starting at position offset, must be\n"
+"at least Struct.size.\n"
 "\n"
 "See help(struct) for more on format strings.");
 
 #define STRUCT_UNPACK_FROM_METHODDEF    \
-    {"unpack_from", (PyCFunction)Struct_unpack_from, METH_FASTCALL|METH_KEYWORDS, Struct_unpack_from__doc__},
+    {"unpack_from", (PyCFunction)(void(*)(void))Struct_unpack_from, METH_FASTCALL|METH_KEYWORDS, Struct_unpack_from__doc__},
 
 static PyObject *
 Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
                         Py_ssize_t offset);
 
 static PyObject *
-Struct_unpack_from(PyStructObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"buffer", "offset", NULL};
@@ -165,7 +170,7 @@ calcsize(PyObject *module, PyObject *arg)
     PyStructObject *s_object = NULL;
     Py_ssize_t _return_value;
 
-    if (!PyArg_Parse(arg, "O&:calcsize", cache_struct_converter, &s_object)) {
+    if (!cache_struct_converter(arg, &s_object)) {
         goto exit;
     }
     _return_value = calcsize_impl(module, s_object);
@@ -192,20 +197,29 @@ PyDoc_STRVAR(unpack__doc__,
 "See help(struct) for more on format strings.");
 
 #define UNPACK_METHODDEF    \
-    {"unpack", (PyCFunction)unpack, METH_FASTCALL, unpack__doc__},
+    {"unpack", (PyCFunction)(void(*)(void))unpack, METH_FASTCALL, unpack__doc__},
 
 static PyObject *
 unpack_impl(PyObject *module, PyStructObject *s_object, Py_buffer *buffer);
 
 static PyObject *
-unpack(PyObject *module, PyObject **args, Py_ssize_t nargs)
+unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyStructObject *s_object = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, "O&y*:unpack",
-        cache_struct_converter, &s_object, &buffer)) {
+    if (!_PyArg_CheckPositional("unpack", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!cache_struct_converter(args[0], &s_object)) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+        _PyArg_BadArgument("unpack", 2, "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = unpack_impl(module, s_object, &buffer);
@@ -232,14 +246,14 @@ PyDoc_STRVAR(unpack_from__doc__,
 "See help(struct) for more on format strings.");
 
 #define UNPACK_FROM_METHODDEF    \
-    {"unpack_from", (PyCFunction)unpack_from, METH_FASTCALL|METH_KEYWORDS, unpack_from__doc__},
+    {"unpack_from", (PyCFunction)(void(*)(void))unpack_from, METH_FASTCALL|METH_KEYWORDS, unpack_from__doc__},
 
 static PyObject *
 unpack_from_impl(PyObject *module, PyStructObject *s_object,
                  Py_buffer *buffer, Py_ssize_t offset);
 
 static PyObject *
-unpack_from(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "buffer", "offset", NULL};
@@ -277,23 +291,26 @@ PyDoc_STRVAR(iter_unpack__doc__,
 "Requires that the bytes length be a multiple of the format struct size.");
 
 #define ITER_UNPACK_METHODDEF    \
-    {"iter_unpack", (PyCFunction)iter_unpack, METH_FASTCALL, iter_unpack__doc__},
+    {"iter_unpack", (PyCFunction)(void(*)(void))iter_unpack, METH_FASTCALL, iter_unpack__doc__},
 
 static PyObject *
 iter_unpack_impl(PyObject *module, PyStructObject *s_object,
                  PyObject *buffer);
 
 static PyObject *
-iter_unpack(PyObject *module, PyObject **args, Py_ssize_t nargs)
+iter_unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyStructObject *s_object = NULL;
     PyObject *buffer;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O:iter_unpack",
-        cache_struct_converter, &s_object, &buffer)) {
+    if (!_PyArg_CheckPositional("iter_unpack", nargs, 2, 2)) {
         goto exit;
     }
+    if (!cache_struct_converter(args[0], &s_object)) {
+        goto exit;
+    }
+    buffer = args[1];
     return_value = iter_unpack_impl(module, s_object, buffer);
 
 exit:
@@ -302,4 +319,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=fce060787b4c5261 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ac595db9d2b271aa input=a9049054013a1b77]*/

@@ -19,7 +19,7 @@ standard library module.  (Eventually you'll learn what's in the standard
 library and will be able to skip this step.)
 
 For third-party packages, search the `Python Package Index
-<https://pypi.python.org/pypi>`_ or try `Google <https://www.google.com>`_ or
+<https://pypi.org>`_ or try `Google <https://www.google.com>`_ or
 another Web search engine.  Searching for "Python" plus a keyword or two for
 your topic of interest will usually find something helpful.
 
@@ -74,7 +74,9 @@ interpreter.
 
 Occasionally, a user's environment is so full that the :program:`/usr/bin/env`
 program fails; or there's no env program at all.  In that case, you can try the
-following hack (due to Alex Rezinsky)::
+following hack (due to Alex Rezinsky):
+
+.. code-block:: sh
 
    #! /bin/sh
    """:"
@@ -419,7 +421,7 @@ Python program effectively only uses one CPU, due to the insistence that
 Back in the days of Python 1.5, Greg Stein actually implemented a comprehensive
 patch set (the "free threading" patches) that removed the GIL and replaced it
 with fine-grained locking.  Adam Olsen recently did a similar experiment
-in his `python-safethread <http://code.google.com/p/python-safethread/>`_
+in his `python-safethread <https://code.google.com/archive/p/python-safethread>`_
 project.  Unfortunately, both experiments exhibited a sharp drop in single-thread
 performance (at least 30% slower), due to the amount of fine-grained locking
 necessary to compensate for the removal of the GIL.
@@ -609,7 +611,7 @@ use ``p.read(n)``.
    "expect" library.  A Python extension that interfaces to expect is called
    "expy" and available from http://expectpy.sourceforge.net.  A pure Python
    solution that works like expect is `pexpect
-   <https://pypi.python.org/pypi/pexpect/>`_.
+   <https://pypi.org/project/pexpect/>`_.
 
 
 How do I access the serial (RS232) port?

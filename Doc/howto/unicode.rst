@@ -30,7 +30,9 @@ spellings such as 'coöperate'.)
 
 For a while people just wrote programs that didn't display accents.
 In the mid-1980s an Apple II BASIC program written by a French speaker
-might have lines like these::
+might have lines like these:
+
+.. code-block:: basic
 
    PRINT "MISE A JOUR TERMINEE"
    PRINT "PARAMETRES ENREGISTRES"
@@ -214,10 +216,10 @@ difficult reading.  `A chronology <http://www.unicode.org/history/>`_ of the
 origin and development of Unicode is also available on the site.
 
 To help understand the standard, Jukka Korpela has written `an introductory
-guide <https://www.cs.tut.fi/~jkorpela/unicode/guide.html>`_ to reading the
+guide <http://jkorpela.fi/unicode/guide.html>`_ to reading the
 Unicode character tables.
 
-Another `good introductory article <http://www.joelonsoftware.com/articles/Unicode.html>`_
+Another `good introductory article <https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/>`_
 was written by Joel Spolsky.
 If this introduction didn't make things clear to you, you should try
 reading this alternate article before continuing.
@@ -463,7 +465,7 @@ The string in this example has the number 57 written in both Thai and
 Arabic numerals::
 
    import re
-   p = re.compile('\d+')
+   p = re.compile(r'\d+')
 
    s = "Over \u0e55\u0e57 57 flavours"
    m = p.search(s)
@@ -487,7 +489,7 @@ References
 Some good alternative discussions of Python's Unicode support are:
 
 * `Processing Text Files in Python 3 <http://python-notes.curiousefficiency.org/en/latest/python3/text_file_processing.html>`_, by Nick Coghlan.
-* `Pragmatic Unicode <http://nedbatchelder.com/text/unipain.html>`_, a PyCon 2012 presentation by Ned Batchelder.
+* `Pragmatic Unicode <https://nedbatchelder.com/text/unipain.html>`_, a PyCon 2012 presentation by Ned Batchelder.
 
 The :class:`str` type is described in the Python library reference at
 :ref:`textseq`.

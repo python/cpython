@@ -135,7 +135,7 @@ def _is_exception(name):
 
 def _is_compiler(name):
     return (
-        # Python/Pythyon-ast.c
+        # Python/Python-ast.c
         name.endswith('_type') or
         name.endswith('_singleton') or
         name.endswith('_attributes')

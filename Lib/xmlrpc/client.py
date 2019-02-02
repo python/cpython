@@ -1127,7 +1127,7 @@ class Transport:
     accept_gzip_encoding = True
 
     # if positive, encode request using gzip if it exceeds this threshold
-    # note that many server will get confused, so only use it if you know
+    # note that many servers will get confused, so only use it if you know
     # that they can decode such a request
     encode_threshold = None #None = don't encode
 
@@ -1214,7 +1214,7 @@ class Transport:
         if isinstance(host, tuple):
             host, x509 = host
 
-        auth, host = urllib.parse.splituser(host)
+        auth, host = urllib.parse._splituser(host)
 
         if auth:
             auth = urllib.parse.unquote_to_bytes(auth)
@@ -1258,7 +1258,7 @@ class Transport:
     # Send HTTP request.
     #
     # @param host Host descriptor (URL or (URL, x509 info) tuple).
-    # @param handler Targer RPC handler (a path relative to host)
+    # @param handler Target RPC handler (a path relative to host)
     # @param request_body The XML-RPC request body
     # @param debug Enable debugging if debug is true.
     # @return An HTTPConnection.
@@ -1413,10 +1413,10 @@ class ServerProxy:
         # establish a "logical" server connection
 
         # get the url
-        type, uri = urllib.parse.splittype(uri)
+        type, uri = urllib.parse._splittype(uri)
         if type not in ("http", "https"):
             raise OSError("unsupported XML-RPC protocol")
-        self.__host, self.__handler = urllib.parse.splithost(uri)
+        self.__host, self.__handler = urllib.parse._splithost(uri)
         if not self.__handler:
             self.__handler = "/RPC2"
 

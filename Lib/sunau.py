@@ -208,6 +208,8 @@ class Au_read:
             raise Error('unknown encoding')
         self._framerate = int(_read_u32(file))
         self._nchannels = int(_read_u32(file))
+        if not self._nchannels:
+            raise Error('bad # of channels')
         self._framesize = self._framesize * self._nchannels
         if self._hdr_size > 24:
             self._info = file.read(self._hdr_size - 24)

@@ -58,14 +58,13 @@ reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("reversed", kwargs)) {
         goto exit;
     }
-    if (!PyArg_UnpackTuple(args, "reversed",
-        1, 1,
-        &seq)) {
+    if (!_PyArg_CheckPositional("reversed", PyTuple_GET_SIZE(args), 1, 1)) {
         goto exit;
     }
+    seq = PyTuple_GET_ITEM(args, 0);
     return_value = reversed_new_impl(type, seq);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9008c36999c57218 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=831cec3db0e987c9 input=a9049054013a1b77]*/

@@ -259,6 +259,13 @@ class FileInput:
             # repeat with next file
 
     def __getitem__(self, i):
+        import warnings
+        warnings.warn(
+            "Support for indexing FileInput objects is deprecated. "
+            "Use iterator protocol instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         if i != self.lineno():
             raise RuntimeError("accessing lines out of order")
         try:

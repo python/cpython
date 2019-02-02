@@ -1,0 +1,2 @@
+Improved error messages in 'async with' when ``__aenter__()`` or
+``__aexit__()`` return non-awaitable object.

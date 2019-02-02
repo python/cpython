@@ -1,0 +1,1 @@
+Fix bugs in hangul normalization: u1176, u11a7 and u11c3

@@ -1,2 +1,0 @@
-Fixed OverflowError in the 'unicode-escape' codec and in
-codecs.escape_decode() when decode an escaped non-ascii byte.

@@ -1,0 +1,2 @@
+Remove the paragraph where we explain that os.utime() does not support a
+directory as path under Windows. Patch by Jan-Philip Gehrcke

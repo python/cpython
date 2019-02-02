@@ -1,0 +1,2 @@
+Fix a bug that causes PathFinder to appear twice on sys.meta_path. Patch by
+Pablo Galindo Salgado.

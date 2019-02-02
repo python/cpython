@@ -203,7 +203,7 @@ Number-theoretic and representation functions
 
    Return the :class:`~numbers.Real` value *x* truncated to an
    :class:`~numbers.Integral` (usually an integer). Delegates to
-   ``x.__trunc__()``.
+   :meth:`x.__trunc__() <object.__trunc__>`.
 
 
 Note that :func:`frexp` and :func:`modf` have a different call/return pattern
@@ -330,10 +330,31 @@ Trigonometric functions
    Return the cosine of *x* radians.
 
 
-.. function:: hypot(x, y)
+.. function:: dist(p, q)
 
-   Return the Euclidean norm, ``sqrt(x*x + y*y)``. This is the length of the vector
-   from the origin to point ``(x, y)``.
+   Return the Euclidean distance between two points *p* and *q*, each
+   given as a tuple of coordinates.  The two tuples must be the same size.
+
+   Roughly equivalent to::
+
+       sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
+
+   .. versionadded:: 3.8
+
+
+.. function:: hypot(*coordinates)
+
+   Return the Euclidean norm, ``sqrt(sum(x**2 for x in coordinates))``.
+   This is the length of the vector from the origin to the point
+   given by the coordinates.
+
+   For a two dimensional point ``(x, y)``, this is equivalent to computing
+   the hypotenuse of a right triangle using the Pythagorean theorem,
+   ``sqrt(x*x + y*y)``.
+
+   .. versionchanged:: 3.8
+      Added support for n-dimensional points. Formerly, only the two
+      dimensional case was supported.
 
 
 .. function:: sin(x)
@@ -461,7 +482,7 @@ Constants
    Tau is a circle constant equal to 2\ *π*, the ratio of a circle's circumference to
    its radius. To learn more about Tau, check out Vi Hart's video `Pi is (still)
    Wrong <https://www.youtube.com/watch?v=jG7vhMMXagQ>`_, and start celebrating
-   `Tau day <http://tauday.com/>`_ by eating twice as much pie!
+   `Tau day <https://tauday.com/>`_ by eating twice as much pie!
 
    .. versionadded:: 3.6
 

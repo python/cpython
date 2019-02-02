@@ -1,2 +1,0 @@
-Ensure that lexically first syntax error involving a parameter and ``global``
-or ``nonlocal`` is detected first at a given scope. Patch by Ivan Levkivskyi.

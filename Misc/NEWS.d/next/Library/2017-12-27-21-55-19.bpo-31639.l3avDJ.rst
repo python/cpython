@@ -1,0 +1,2 @@
+http.server now exposes a ThreadingHTTPServer class and uses it when the
+module is run with ``-m`` to cope with web browsers pre-opening sockets.

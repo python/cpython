@@ -1,0 +1,3 @@
+Fixed bytecode generation for "async for" with a complex target. A
+StopAsyncIteration raised on assigning or unpacking will be now propagated
+instead of stopping the iteration.

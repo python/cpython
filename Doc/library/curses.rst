@@ -685,6 +685,12 @@ the following methods and attributes:
    character previously painter at that location.  By default, the character
    position and attributes are the current settings for the window object.
 
+   .. note::
+
+      Writing outside the window, subwindow, or pad raises a :exc:`curses.error`.
+      Attempting to write to the lower right corner of a window, subwindow,
+      or pad will cause an exception to be raised after the character is printed.
+
 
 .. method:: window.addnstr(str, n[, attr])
             window.addnstr(y, x, str, n[, attr])
@@ -699,6 +705,12 @@ the following methods and attributes:
 
    Paint the character string *str* at ``(y, x)`` with attributes
    *attr*, overwriting anything previously on the display.
+
+   .. note::
+
+      Writing outside the window, subwindow, or pad raises :exc:`curses.error`.
+      Attempting to write to the lower right corner of a window, subwindow,
+      or pad will cause an exception to be raised after the string is printed.
 
 
 .. method:: window.attroff(attr)
@@ -1278,6 +1290,19 @@ The :mod:`curses` module defines the following data members:
 
    A bytes object representing the current version of the module.  Also available as
    :const:`__version__`.
+
+
+.. data:: ncurses_version
+
+   A named tuple containing the three components of the ncurses library
+   version: *major*, *minor*, and *patch*.  All values are integers.  The
+   components can also be accessed by name,  so ``curses.ncurses_version[0]``
+   is equivalent to ``curses.ncurses_version.major`` and so on.
+
+   Availability: if the ncurses library is used.
+
+   .. versionadded:: 3.8
+
 
 Some constants are available to specify character cell attributes.
 The exact constants available are system dependent.

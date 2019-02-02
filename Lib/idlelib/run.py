@@ -11,7 +11,7 @@ import warnings
 import tkinter  # Tcl, deletions, messagebox if startup fails
 
 from idlelib import autocomplete  # AutoComplete, fetch_encodings
-from idlelib import calltips  # CallTips
+from idlelib import calltip  # Calltip
 from idlelib import debugger_r  # start_debugger
 from idlelib import debugobj_r  # remote_object_tree_item
 from idlelib import iomenu  # encoding
@@ -134,13 +134,17 @@ def main(del_exitfunc=False):
                     # exiting but got an extra KBI? Try again!
                     continue
             try:
-                seq, request = rpc.request_queue.get(block=True, timeout=0.05)
+                request = rpc.request_queue.get(block=True, timeout=0.05)
             except queue.Empty:
+                request = None
+                # Issue 32207: calling handle_tk_events here adds spurious
+                # queue.Empty traceback to event handling exceptions.
+            if request:
+                seq, (method, args, kwargs) = request
+                ret = method(*args, **kwargs)
+                rpc.response_queue.put((seq, ret))
+            else:
                 handle_tk_events()
-                continue
-            method, args, kwargs = request
-            ret = method(*args, **kwargs)
-            rpc.response_queue.put((seq, ret))
         except KeyboardInterrupt:
             if quitting:
                 exit_now = True
@@ -458,7 +462,7 @@ class Executive(object):
     def __init__(self, rpchandler):
         self.rpchandler = rpchandler
         self.locals = __main__.__dict__
-        self.calltip = calltips.CallTips()
+        self.calltip = calltip.Calltip()
         self.autocomplete = autocomplete.AutoComplete()
 
     def runcode(self, code):

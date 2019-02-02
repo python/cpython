@@ -727,6 +727,123 @@ def test_pdb_next_command_for_generator():
     finished
     """
 
+def test_pdb_next_command_for_coroutine():
+    """Testing skip unwindng stack on yield for coroutines for "next" command
+
+    >>> import asyncio
+
+    >>> async def test_coro():
+    ...     await asyncio.sleep(0)
+    ...     await asyncio.sleep(0)
+    ...     await asyncio.sleep(0)
+
+    >>> async def test_main():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     await test_coro()
+
+    >>> def test_function():
+    ...     loop = asyncio.new_event_loop()
+    ...     loop.run_until_complete(test_main())
+    ...     loop.close()
+    ...     asyncio.set_event_loop_policy(None)
+    ...     print("finished")
+
+    >>> with PdbTestInput(['step',
+    ...                    'step',
+    ...                    'next',
+    ...                    'next',
+    ...                    'next',
+    ...                    'step',
+    ...                    'continue']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_next_command_for_coroutine[2]>(3)test_main()
+    -> await test_coro()
+    (Pdb) step
+    --Call--
+    > <doctest test.test_pdb.test_pdb_next_command_for_coroutine[1]>(1)test_coro()
+    -> async def test_coro():
+    (Pdb) step
+    > <doctest test.test_pdb.test_pdb_next_command_for_coroutine[1]>(2)test_coro()
+    -> await asyncio.sleep(0)
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_next_command_for_coroutine[1]>(3)test_coro()
+    -> await asyncio.sleep(0)
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_next_command_for_coroutine[1]>(4)test_coro()
+    -> await asyncio.sleep(0)
+    (Pdb) next
+    Internal StopIteration
+    > <doctest test.test_pdb.test_pdb_next_command_for_coroutine[2]>(3)test_main()
+    -> await test_coro()
+    (Pdb) step
+    --Return--
+    > <doctest test.test_pdb.test_pdb_next_command_for_coroutine[2]>(3)test_main()->None
+    -> await test_coro()
+    (Pdb) continue
+    finished
+    """
+
+def test_pdb_next_command_for_asyncgen():
+    """Testing skip unwindng stack on yield for coroutines for "next" command
+
+    >>> import asyncio
+
+    >>> async def agen():
+    ...     yield 1
+    ...     await asyncio.sleep(0)
+    ...     yield 2
+
+    >>> async def test_coro():
+    ...     async for x in agen():
+    ...         print(x)
+
+    >>> async def test_main():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     await test_coro()
+
+    >>> def test_function():
+    ...     loop = asyncio.new_event_loop()
+    ...     loop.run_until_complete(test_main())
+    ...     loop.close()
+    ...     asyncio.set_event_loop_policy(None)
+    ...     print("finished")
+
+    >>> with PdbTestInput(['step',
+    ...                    'step',
+    ...                    'next',
+    ...                    'next',
+    ...                    'step',
+    ...                    'next',
+    ...                    'continue']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_next_command_for_asyncgen[3]>(3)test_main()
+    -> await test_coro()
+    (Pdb) step
+    --Call--
+    > <doctest test.test_pdb.test_pdb_next_command_for_asyncgen[2]>(1)test_coro()
+    -> async def test_coro():
+    (Pdb) step
+    > <doctest test.test_pdb.test_pdb_next_command_for_asyncgen[2]>(2)test_coro()
+    -> async for x in agen():
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_next_command_for_asyncgen[2]>(3)test_coro()
+    -> print(x)
+    (Pdb) next
+    1
+    > <doctest test.test_pdb.test_pdb_next_command_for_asyncgen[2]>(2)test_coro()
+    -> async for x in agen():
+    (Pdb) step
+    --Call--
+    > <doctest test.test_pdb.test_pdb_next_command_for_asyncgen[1]>(2)agen()
+    -> yield 1
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_next_command_for_asyncgen[1]>(3)agen()
+    -> await asyncio.sleep(0)
+    (Pdb) continue
+    2
+    finished
+    """
+
 def test_pdb_return_command_for_generator():
     """Testing no unwindng stack on yield for generators
        for "return" command
@@ -782,6 +899,48 @@ def test_pdb_return_command_for_generator():
     finished
     """
 
+def test_pdb_return_command_for_coroutine():
+    """Testing no unwindng stack on yield for coroutines for "return" command
+
+    >>> import asyncio
+
+    >>> async def test_coro():
+    ...     await asyncio.sleep(0)
+    ...     await asyncio.sleep(0)
+    ...     await asyncio.sleep(0)
+
+    >>> async def test_main():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     await test_coro()
+
+    >>> def test_function():
+    ...     loop = asyncio.new_event_loop()
+    ...     loop.run_until_complete(test_main())
+    ...     loop.close()
+    ...     asyncio.set_event_loop_policy(None)
+    ...     print("finished")
+
+    >>> with PdbTestInput(['step',
+    ...                    'step',
+    ...                    'next',
+    ...                    'continue']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_return_command_for_coroutine[2]>(3)test_main()
+    -> await test_coro()
+    (Pdb) step
+    --Call--
+    > <doctest test.test_pdb.test_pdb_return_command_for_coroutine[1]>(1)test_coro()
+    -> async def test_coro():
+    (Pdb) step
+    > <doctest test.test_pdb.test_pdb_return_command_for_coroutine[1]>(2)test_coro()
+    -> await asyncio.sleep(0)
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_return_command_for_coroutine[1]>(3)test_coro()
+    -> await asyncio.sleep(0)
+    (Pdb) continue
+    finished
+    """
+
 def test_pdb_until_command_for_generator():
     """Testing no unwindng stack on yield for generators
        for "until" command if target breakpoing is not reached
@@ -823,6 +982,53 @@ def test_pdb_until_command_for_generator():
     -> print(i)
     (Pdb) continue
     2
+    finished
+    """
+
+def test_pdb_until_command_for_coroutine():
+    """Testing no unwindng stack for coroutines
+       for "until" command if target breakpoing is not reached
+
+    >>> import asyncio
+
+    >>> async def test_coro():
+    ...     print(0)
+    ...     await asyncio.sleep(0)
+    ...     print(1)
+    ...     await asyncio.sleep(0)
+    ...     print(2)
+    ...     await asyncio.sleep(0)
+    ...     print(3)
+
+    >>> async def test_main():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     await test_coro()
+
+    >>> def test_function():
+    ...     loop = asyncio.new_event_loop()
+    ...     loop.run_until_complete(test_main())
+    ...     loop.close()
+    ...     asyncio.set_event_loop_policy(None)
+    ...     print("finished")
+
+    >>> with PdbTestInput(['step',
+    ...                    'until 8',
+    ...                    'continue']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_until_command_for_coroutine[2]>(3)test_main()
+    -> await test_coro()
+    (Pdb) step
+    --Call--
+    > <doctest test.test_pdb.test_pdb_until_command_for_coroutine[1]>(1)test_coro()
+    -> async def test_coro():
+    (Pdb) until 8
+    0
+    1
+    2
+    > <doctest test.test_pdb.test_pdb_until_command_for_coroutine[1]>(8)test_coro()
+    -> print(3)
+    (Pdb) continue
+    3
     finished
     """
 
@@ -938,25 +1144,46 @@ def test_pdb_issue_20766():
     pdb 2: <built-in function default_int_handler>
     """
 
-class PdbTestCase(unittest.TestCase):
 
-    def run_pdb(self, script, commands):
+class PdbTestCase(unittest.TestCase):
+    def tearDown(self):
+        support.unlink(support.TESTFN)
+
+    def _run_pdb(self, pdb_args, commands):
+        self.addCleanup(support.rmtree, '__pycache__')
+        cmd = [sys.executable, '-m', 'pdb'] + pdb_args
+        with subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+        ) as proc:
+            stdout, stderr = proc.communicate(str.encode(commands))
+        stdout = stdout and bytes.decode(stdout)
+        stderr = stderr and bytes.decode(stderr)
+        return stdout, stderr
+
+    def run_pdb_script(self, script, commands):
         """Run 'script' lines with pdb and the pdb 'commands'."""
         filename = 'main.py'
         with open(filename, 'w') as f:
             f.write(textwrap.dedent(script))
         self.addCleanup(support.unlink, filename)
-        self.addCleanup(support.rmtree, '__pycache__')
-        cmd = [sys.executable, '-m', 'pdb', filename]
-        stdout = stderr = None
-        with subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                   stdin=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT,
-                                   ) as proc:
-            stdout, stderr = proc.communicate(str.encode(commands))
-        stdout = stdout and bytes.decode(stdout)
-        stderr = stderr and bytes.decode(stderr)
-        return stdout, stderr
+        return self._run_pdb([filename], commands)
+
+    def run_pdb_module(self, script, commands):
+        """Runs the script code as part of a module"""
+        self.module_name = 't_main'
+        support.rmtree(self.module_name)
+        main_file = self.module_name + '/__main__.py'
+        init_file = self.module_name + '/__init__.py'
+        os.mkdir(self.module_name)
+        with open(init_file, 'w') as f:
+            pass
+        with open(main_file, 'w') as f:
+            f.write(textwrap.dedent(script))
+        self.addCleanup(support.rmtree, self.module_name)
+        return self._run_pdb(['-m', self.module_name], commands)
 
     def _assert_find_function(self, file_content, func_name, expected):
         file_content = textwrap.dedent(file_content)
@@ -1034,7 +1261,7 @@ class PdbTestCase(unittest.TestCase):
         with open('bar.py', 'w') as f:
             f.write(textwrap.dedent(bar))
         self.addCleanup(support.unlink, 'bar.py')
-        stdout, stderr = self.run_pdb(script, commands)
+        stdout, stderr = self.run_pdb_script(script, commands)
         self.assertTrue(
             any('main.py(5)foo()->None' in l for l in stdout.splitlines()),
             'Fail to step into the caller after a return')
@@ -1071,7 +1298,7 @@ class PdbTestCase(unittest.TestCase):
         script = "def f: pass\n"
         commands = ''
         expected = "SyntaxError:"
-        stdout, stderr = self.run_pdb(script, commands)
+        stdout, stderr = self.run_pdb_script(script, commands)
         self.assertIn(expected, stdout,
             '\n\nExpected:\n{}\nGot:\n{}\n'
             'Fail to handle a syntax error in the debuggee.'
@@ -1119,13 +1346,153 @@ class PdbTestCase(unittest.TestCase):
             pdb.set_trace(header=header)
         self.assertEqual(stdout.getvalue(), header + '\n')
 
-    def tearDown(self):
-        support.unlink(support.TESTFN)
+    def test_run_module(self):
+        script = """print("SUCCESS")"""
+        commands = """
+            continue
+            quit
+        """
+        stdout, stderr = self.run_pdb_module(script, commands)
+        self.assertTrue(any("SUCCESS" in l for l in stdout.splitlines()), stdout)
+
+    def test_module_is_run_as_main(self):
+        script = """
+            if __name__ == '__main__':
+                print("SUCCESS")
+        """
+        commands = """
+            continue
+            quit
+        """
+        stdout, stderr = self.run_pdb_module(script, commands)
+        self.assertTrue(any("SUCCESS" in l for l in stdout.splitlines()), stdout)
+
+    def test_breakpoint(self):
+        script = """
+            if __name__ == '__main__':
+                pass
+                print("SUCCESS")
+                pass
+        """
+        commands = """
+            b 3
+            quit
+        """
+        stdout, stderr = self.run_pdb_module(script, commands)
+        self.assertTrue(any("Breakpoint 1 at" in l for l in stdout.splitlines()), stdout)
+        self.assertTrue(all("SUCCESS" not in l for l in stdout.splitlines()), stdout)
+
+    def test_run_pdb_with_pdb(self):
+        commands = """
+            c
+            quit
+        """
+        stdout, stderr = self._run_pdb(["-m", "pdb"], commands)
+        self.assertIn(
+            pdb._usage,
+            stdout.replace('\r', '')  # remove \r for windows
+        )
+
+    def test_module_without_a_main(self):
+        module_name = 't_main'
+        support.rmtree(module_name)
+        init_file = module_name + '/__init__.py'
+        os.mkdir(module_name)
+        with open(init_file, 'w') as f:
+            pass
+        self.addCleanup(support.rmtree, module_name)
+        stdout, stderr = self._run_pdb(['-m', module_name], "")
+        self.assertIn("ImportError: No module named t_main.__main__",
+                      stdout.splitlines())
+
+    def test_blocks_at_first_code_line(self):
+        script = """
+                #This is a comment, on line 2
+
+                print("SUCCESS")
+        """
+        commands = """
+            quit
+        """
+        stdout, stderr = self.run_pdb_module(script, commands)
+        self.assertTrue(any("__main__.py(4)<module>()"
+                            in l for l in stdout.splitlines()), stdout)
+
+    def test_relative_imports(self):
+        self.module_name = 't_main'
+        support.rmtree(self.module_name)
+        main_file = self.module_name + '/__main__.py'
+        init_file = self.module_name + '/__init__.py'
+        module_file = self.module_name + '/module.py'
+        self.addCleanup(support.rmtree, self.module_name)
+        os.mkdir(self.module_name)
+        with open(init_file, 'w') as f:
+            f.write(textwrap.dedent("""
+                top_var = "VAR from top"
+            """))
+        with open(main_file, 'w') as f:
+            f.write(textwrap.dedent("""
+                from . import top_var
+                from .module import var
+                from . import module
+                pass # We'll stop here and print the vars
+            """))
+        with open(module_file, 'w') as f:
+            f.write(textwrap.dedent("""
+                var = "VAR from module"
+                var2 = "second var"
+            """))
+        commands = """
+            b 5
+            c
+            p top_var
+            p var
+            p module.var2
+            quit
+        """
+        stdout, _ = self._run_pdb(['-m', self.module_name], commands)
+        self.assertTrue(any("VAR from module" in l for l in stdout.splitlines()), stdout)
+        self.assertTrue(any("VAR from top" in l for l in stdout.splitlines()))
+        self.assertTrue(any("second var" in l for l in stdout.splitlines()))
+
+    def test_relative_imports_on_plain_module(self):
+        # Validates running a plain module. See bpo32691
+        self.module_name = 't_main'
+        support.rmtree(self.module_name)
+        main_file = self.module_name + '/runme.py'
+        init_file = self.module_name + '/__init__.py'
+        module_file = self.module_name + '/module.py'
+        self.addCleanup(support.rmtree, self.module_name)
+        os.mkdir(self.module_name)
+        with open(init_file, 'w') as f:
+            f.write(textwrap.dedent("""
+                top_var = "VAR from top"
+            """))
+        with open(main_file, 'w') as f:
+            f.write(textwrap.dedent("""
+                from . import module
+                pass # We'll stop here and print the vars
+            """))
+        with open(module_file, 'w') as f:
+            f.write(textwrap.dedent("""
+                var = "VAR from module"
+            """))
+        commands = """
+            b 3
+            c
+            p module.var
+            quit
+        """
+        stdout, _ = self._run_pdb(['-m', self.module_name + '.runme'], commands)
+        self.assertTrue(any("VAR from module" in l for l in stdout.splitlines()), stdout)
 
 
 def load_tests(*args):
     from test import test_pdb
-    suites = [unittest.makeSuite(PdbTestCase), doctest.DocTestSuite(test_pdb)]
+    suites = [
+        unittest.makeSuite(PdbTestCase),
+        doctest.DocTestSuite(test_pdb)
+    ]
     return unittest.TestSuite(suites)
 
 

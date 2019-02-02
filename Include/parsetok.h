@@ -1,11 +1,14 @@
-
 /* Parser-tokenizer link interface */
+
 #ifndef Py_LIMITED_API
 #ifndef Py_PARSETOK_H
 #define Py_PARSETOK_H
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "grammar.h"      /* grammar */
+#include "node.h"         /* node */
 
 typedef struct {
     int error;
@@ -21,19 +24,20 @@ typedef struct {
 } perrdetail;
 
 #if 0
-#define PyPARSE_YIELD_IS_KEYWORD	0x0001
+#define PyPARSE_YIELD_IS_KEYWORD        0x0001
 #endif
 
-#define PyPARSE_DONT_IMPLY_DEDENT	0x0002
+#define PyPARSE_DONT_IMPLY_DEDENT       0x0002
 
 #if 0
-#define PyPARSE_WITH_IS_KEYWORD		0x0003
+#define PyPARSE_WITH_IS_KEYWORD         0x0003
 #define PyPARSE_PRINT_IS_FUNCTION       0x0004
 #define PyPARSE_UNICODE_LITERALS        0x0008
 #endif
 
 #define PyPARSE_IGNORE_COOKIE 0x0010
 #define PyPARSE_BARRY_AS_BDFL 0x0020
+#define PyPARSE_TYPE_COMMENTS 0x0040
 
 PyAPI_FUNC(node *) PyParser_ParseString(const char *, grammar *, int,
                                               perrdetail *);

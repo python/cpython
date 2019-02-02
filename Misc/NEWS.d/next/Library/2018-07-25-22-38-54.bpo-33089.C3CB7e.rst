@@ -1,0 +1,1 @@
+Enhanced math.hypot() to support more than two dimensions.

@@ -1,0 +1,2 @@
+Document the interaction between frozen executables and the spawn and
+forkserver start methods in multiprocessing.

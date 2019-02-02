@@ -315,6 +315,12 @@ msierror(int status)
         case ERROR_INVALID_PARAMETER:
             PyErr_SetString(MSIError, "invalid parameter");
             return NULL;
+        case ERROR_OPEN_FAILED:
+            PyErr_SetString(MSIError, "open failed");
+            return NULL;
+        case ERROR_CREATE_FAILED:
+            PyErr_SetString(MSIError, "create failed");
+            return NULL;
         default:
             PyErr_Format(MSIError, "unknown error %x", status);
             return NULL;
@@ -324,6 +330,10 @@ msierror(int status)
     code = MsiRecordGetInteger(err, 1); /* XXX code */
     if (MsiFormatRecord(0, err, res, &size) == ERROR_MORE_DATA) {
         res = malloc(size+1);
+        if (res == NULL) {
+            MsiCloseHandle(err);
+            return PyErr_NoMemory();
+        }
         MsiFormatRecord(0, err, res, &size);
         res[size]='\0';
     }
@@ -555,6 +565,9 @@ summary_getproperty(msiobj* si, PyObject *args)
     if (status == ERROR_MORE_DATA) {
         ssize++;
         sval = malloc(ssize);
+        if (sval == NULL) {
+            return PyErr_NoMemory();
+        }
         status = MsiSummaryInfoGetProperty(si->h, field, &type, &ival,
             &fval, sval, &ssize);
     }
@@ -570,6 +583,10 @@ summary_getproperty(msiobj* si, PyObject *args)
             break;
         case VT_LPSTR:
             result = PyBytes_FromStringAndSize(sval, ssize);
+            break;
+        case VT_EMPTY:
+            Py_INCREF(Py_None);
+            result = Py_None;
             break;
         default:
             PyErr_Format(PyExc_NotImplementedError, "result of type %d", type);

@@ -1,0 +1,2 @@
+Don't log SSL certificate errors in asyncio code (connection error logging
+is skipped already).

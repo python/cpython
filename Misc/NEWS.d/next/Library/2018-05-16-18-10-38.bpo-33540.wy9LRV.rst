@@ -1,0 +1,2 @@
+Add a new ``block_on_close`` class attribute to ``ForkingMixIn`` and
+``ThreadingMixIn`` classes of :mod:`socketserver`.

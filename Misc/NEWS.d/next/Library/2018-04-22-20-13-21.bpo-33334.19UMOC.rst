@@ -1,0 +1,2 @@
+:func:`dis.stack_effect` now supports all defined opcodes including NOP and
+EXTENDED_ARG.

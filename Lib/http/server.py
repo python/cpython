@@ -83,7 +83,7 @@ XXX To do:
 __version__ = "0.6"
 
 __all__ = [
-    "HTTPServer", "BaseHTTPRequestHandler",
+    "HTTPServer", "ThreadingHTTPServer", "BaseHTTPRequestHandler",
     "SimpleHTTPRequestHandler", "CGIHTTPRequestHandler",
 ]
 
@@ -138,6 +138,10 @@ class HTTPServer(socketserver.TCPServer):
         host, port = self.server_address[:2]
         self.server_name = socket.getfqdn(host)
         self.server_port = port
+
+
+class ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
+    daemon_threads = True
 
 
 class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
@@ -470,7 +474,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             })
             body = content.encode('UTF-8', 'replace')
             self.send_header("Content-Type", self.error_content_type)
-            self.send_header('Content-Length', int(len(body)))
+            self.send_header('Content-Length', str(len(body)))
         self.end_headers()
 
         if self.command != 'HEAD' and body:
@@ -688,6 +692,14 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             else:
                 return self.list_directory(path)
         ctype = self.guess_type(path)
+        # check for trailing "/" which should return 404. See Issue17324
+        # The test for this was added in test_httpserver.py
+        # However, some OS platforms accept a trailingSlash as a filename
+        # See discussion on python-dev and Issue34711 regarding
+        # parseing and rejection of filenames with a trailing slash
+        if path.endswith("/"):
+            self.send_error(HTTPStatus.NOT_FOUND, "File not found")
+            return None
         try:
             f = open(path, 'rb')
         except OSError:
@@ -1213,13 +1225,17 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
 
 
 def test(HandlerClass=BaseHTTPRequestHandler,
-         ServerClass=HTTPServer, protocol="HTTP/1.0", port=8000, bind=""):
+         ServerClass=ThreadingHTTPServer,
+         protocol="HTTP/1.0", port=8000, bind=""):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).
 
     """
     server_address = (bind, port)
+
+    if ':' in bind:
+        ServerClass.address_family = socket.AF_INET6
 
     HandlerClass.protocol_version = protocol
     with ServerClass(server_address, HandlerClass) as httpd:

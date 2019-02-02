@@ -196,17 +196,23 @@ or request "multi-phase initialization" by returning the definition struct itsel
    .. c:member:: traverseproc m_traverse
 
       A traversal function to call during GC traversal of the module object, or
-      *NULL* if not needed.
+      *NULL* if not needed. This function may be called before module state
+      is allocated (:c:func:`PyModule_GetState()` may return `NULL`),
+      and before the :c:member:`Py_mod_exec` function is executed.
 
    .. c:member:: inquiry m_clear
 
       A clear function to call during GC clearing of the module object, or
-      *NULL* if not needed.
+      *NULL* if not needed. This function may be called before module state
+      is allocated (:c:func:`PyModule_GetState()` may return `NULL`),
+      and before the :c:member:`Py_mod_exec` function is executed.
 
    .. c:member:: freefunc m_free
 
       A function to call during deallocation of the module object, or *NULL* if
-      not needed.
+      not needed. This function may be called before module state
+      is allocated (:c:func:`PyModule_GetState()` may return `NULL`),
+      and before the :c:member:`Py_mod_exec` function is executed.
 
 Single-phase initialization
 ...........................

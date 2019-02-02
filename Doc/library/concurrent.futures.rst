@@ -40,21 +40,29 @@ Executor Objects
 
     .. method:: map(func, *iterables, timeout=None, chunksize=1)
 
-       Equivalent to :func:`map(func, *iterables) <map>` except *func* is executed
-       asynchronously and several calls to *func* may be made concurrently.  The
-       returned iterator raises a :exc:`concurrent.futures.TimeoutError` if
-       :meth:`~iterator.__next__` is called and the result isn't available
+       Similar to :func:`map(func, *iterables) <map>` except:
+
+       * the *iterables* are collected immediately rather than lazily;
+
+       * *func* is executed asynchronously and several calls to
+         *func* may be made concurrently.
+
+       The returned iterator raises a :exc:`concurrent.futures.TimeoutError`
+       if :meth:`~iterator.__next__` is called and the result isn't available
        after *timeout* seconds from the original call to :meth:`Executor.map`.
        *timeout* can be an int or a float.  If *timeout* is not specified or
-       ``None``, there is no limit to the wait time.  If a call raises an
-       exception, then that exception will be raised when its value is
-       retrieved from the iterator. When using :class:`ProcessPoolExecutor`, this
-       method chops *iterables* into a number of chunks which it submits to the
-       pool as separate tasks. The (approximate) size of these chunks can be
-       specified by setting *chunksize* to a positive integer. For very long
-       iterables, using a large value for *chunksize* can significantly improve
-       performance compared to the default size of 1. With :class:`ThreadPoolExecutor`,
-       *chunksize* has no effect.
+       ``None``, there is no limit to the wait time.
+
+       If a *func* call raises an exception, then that exception will be
+       raised when its value is retrieved from the iterator.
+
+       When using :class:`ProcessPoolExecutor`, this method chops *iterables*
+       into a number of chunks which it submits to the pool as separate
+       tasks.  The (approximate) size of these chunks can be specified by
+       setting *chunksize* to a positive integer.  For very long iterables,
+       using a large value for *chunksize* can significantly improve
+       performance compared to the default size of 1.  With
+       :class:`ThreadPoolExecutor`, *chunksize* has no effect.
 
        .. versionchanged:: 3.5
           Added the *chunksize* argument.
@@ -133,7 +141,7 @@ And::
    each worker thread; *initargs* is a tuple of arguments passed to the
    initializer.  Should *initializer* raise an exception, all currently
    pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
-   as well any attempt to submit more jobs to the pool.
+   as well as any attempt to submit more jobs to the pool.
 
    .. versionchanged:: 3.5
       If *max_workers* is ``None`` or
@@ -145,7 +153,7 @@ And::
 
    .. versionadded:: 3.6
       The *thread_name_prefix* argument was added to allow users to
-      control the threading.Thread names for worker threads created by
+      control the :class:`threading.Thread` names for worker threads created by
       the pool for easier debugging.
 
    .. versionchanged:: 3.7
@@ -215,7 +223,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    *initializer* is an optional callable that is called at the start of
    each worker process; *initargs* is a tuple of arguments passed to the
    initializer.  Should *initializer* raise an exception, all currently
-   pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
+   pending jobs will raise a :exc:`~concurrent.futures.process.BrokenProcessPool`,
    as well any attempt to submit more jobs to the pool.
 
    .. versionchanged:: 3.3
@@ -249,6 +257,10 @@ ProcessPoolExecutor Example
        1099726899285419]
 
    def is_prime(n):
+       if n < 2:
+           return False
+       if n == 2:
+           return True
        if n % 2 == 0:
            return False
 
@@ -372,6 +384,11 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        This method should only be used by :class:`Executor` implementations and
        unit tests.
 
+       .. versionchanged:: 3.8
+          This method raises
+          :exc:`concurrent.futures.InvalidStateError` if the :class:`Future` is
+          already done.
+
     .. method:: set_exception(exception)
 
        Sets the result of the work associated with the :class:`Future` to the
@@ -380,6 +397,10 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        This method should only be used by :class:`Executor` implementations and
        unit tests.
 
+       .. versionchanged:: 3.8
+          This method raises
+          :exc:`concurrent.futures.InvalidStateError` if the :class:`Future` is
+          already done.
 
 Module Functions
 ----------------
@@ -457,6 +478,13 @@ Exception classes
    to submit or execute new tasks.
 
    .. versionadded:: 3.7
+
+.. exception:: InvalidStateError
+
+   Raised when an operation is performed on a future that is not allowed
+   in the current state.
+
+   .. versionadded:: 3.8
 
 .. currentmodule:: concurrent.futures.thread
 

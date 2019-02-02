@@ -1,0 +1,3 @@
+Providing an explicit error message when casting the port property to anything 
+that is not an integer value using ``urlparse()`` and ``urlsplit()``.
+Patch by Matt Eaton.

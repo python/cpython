@@ -1,0 +1,1 @@
+Remove special condition for AIX in `test_subprocess.test_undecodable_env`

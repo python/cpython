@@ -2,13 +2,16 @@ import importlib
 import importlib.util
 import os
 import os.path
+import py_compile
 import sys
 from test import support
+from test.support import script_helper
 import unittest
 import warnings
 with warnings.catch_warnings():
     warnings.simplefilter('ignore', DeprecationWarning)
     import imp
+import _imp
 
 
 def requires_load_dynamic(meth):
@@ -328,6 +331,39 @@ class ImportTests(unittest.TestCase):
             origin = 'foo'
         with self.assertRaises(TypeError):
             create_dynamic(BadSpec())
+
+    def test_source_hash(self):
+        self.assertEqual(_imp.source_hash(42, b'hi'), b'\xc6\xe7Z\r\x03:}\xab')
+        self.assertEqual(_imp.source_hash(43, b'hi'), b'\x85\x9765\xf8\x9a\x8b9')
+
+    def test_pyc_invalidation_mode_from_cmdline(self):
+        cases = [
+            ([], "default"),
+            (["--check-hash-based-pycs", "default"], "default"),
+            (["--check-hash-based-pycs", "always"], "always"),
+            (["--check-hash-based-pycs", "never"], "never"),
+        ]
+        for interp_args, expected in cases:
+            args = interp_args + [
+                "-c",
+                "import _imp; print(_imp.check_hash_based_pycs)",
+            ]
+            res = script_helper.assert_python_ok(*args)
+            self.assertEqual(res.out.strip().decode('utf-8'), expected)
+
+    def test_find_and_load_checked_pyc(self):
+        # issue 34056
+        with support.temp_cwd():
+            with open('mymod.py', 'wb') as fp:
+                fp.write(b'x = 42\n')
+            py_compile.compile(
+                'mymod.py',
+                doraise=True,
+                invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH,
+            )
+            file, path, description = imp.find_module('mymod', path=['.'])
+            mod = imp.load_module('mymod', file, path, description)
+        self.assertEqual(mod.x, 42)
 
 
 class ReloadTests(unittest.TestCase):

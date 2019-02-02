@@ -80,7 +80,7 @@ The :mod:`binascii` module defines the following functions:
    *quotetabs* is present and true, all tabs and spaces will be encoded.   If the
    optional argument *istext* is present and true, newlines are not encoded but
    trailing whitespace will be encoded. If the optional argument *header* is
-   present and true, spaces will be encoded as underscores per RFC1522. If the
+   present and true, spaces will be encoded as underscores per :rfc:`1522`. If the
    optional argument *header* is present and false, newline characters will be
    encoded as well; otherwise linefeed conversion might corrupt the binary data
    stream.
@@ -152,6 +152,8 @@ The :mod:`binascii` module defines the following functions:
    *data* is converted into the corresponding 2-digit hex representation.  The
    returned bytes object is therefore twice as long as the length of *data*.
 
+   Similar functionality (but returning a text string) is also conveniently
+   accessible using the :meth:`bytes.hex` method.
 
 .. function:: a2b_hex(hexstr)
               unhexlify(hexstr)
@@ -161,6 +163,9 @@ The :mod:`binascii` module defines the following functions:
    of hexadecimal digits (which can be upper or lower case), otherwise an
    :exc:`Error` exception is raised.
 
+   Similar functionality (accepting only text string arguments, but more
+   liberal towards whitespace) is also accessible using the
+   :meth:`bytes.fromhex` class method.
 
 .. exception:: Error
 

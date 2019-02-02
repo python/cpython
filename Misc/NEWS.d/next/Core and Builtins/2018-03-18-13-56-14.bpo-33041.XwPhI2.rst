@@ -1,0 +1,6 @@
+Added new opcode :opcode:`END_ASYNC_FOR` and fixes the following issues:
+
+* Setting global :exc:`StopAsyncIteration` no longer breaks ``async for``
+  loops.
+* Jumping into an ``async for`` loop is now disabled.
+* Jumping out of an ``async for`` loop no longer corrupts the stack.

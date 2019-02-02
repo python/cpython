@@ -1,0 +1,1 @@
+Intern the names for all anonymous code objects.  Patch by Zackery Spytz.

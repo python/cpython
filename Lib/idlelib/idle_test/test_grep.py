@@ -3,13 +3,14 @@ Non-gui unit tests for grep.GrepDialog methods.
 dummy_command calls grep_it calls findfiles.
 An exception raised in one method will fail callers.
 Otherwise, tests are mostly independent.
-*** Currently only test grep_it.
+Currently only test grep_it, coverage 51%.
 """
+from idlelib.grep import GrepDialog
 import unittest
 from test.support import captured_stdout
 from idlelib.idle_test.mock_tk import Var
-from idlelib.grep import GrepDialog
 import re
+
 
 class Dummy_searchengine:
     '''GrepDialog.__init__ calls parent SearchDiabolBase which attaches the
@@ -20,6 +21,7 @@ class Dummy_searchengine:
         return self._pat
 
 searchengine = Dummy_searchengine()
+
 
 class Dummy_grep:
     # Methods tested
@@ -34,12 +36,14 @@ class Dummy_grep:
 
 grep = Dummy_grep()
 
+
 class FindfilesTest(unittest.TestCase):
     # findfiles is really a function, not a method, could be iterator
     # test that filename return filename
     # test that idlelib has many .py files
     # test that recursive flag adds idle_test .py files
     pass
+
 
 class Grep_itTest(unittest.TestCase):
     # Test captured reports with 0 and some hits.
@@ -71,10 +75,12 @@ class Grep_itTest(unittest.TestCase):
         self.assertIn('2', lines[3])  # hits found 2
         self.assertTrue(lines[4].startswith('(Hint:'))
 
+
 class Default_commandTest(unittest.TestCase):
     # To write this, move outwin import to top of GrepDialog
     # so it can be replaced by captured_stdout in class setup/teardown.
     pass
 
+
 if __name__ == '__main__':
-    unittest.main(verbosity=2, exit=False)
+    unittest.main(verbosity=2)

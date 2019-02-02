@@ -24,7 +24,7 @@ PyDoc_STRVAR(SHA256Type_digest__doc__,
 "digest($self, /)\n"
 "--\n"
 "\n"
-"Return the digest value as a string of binary data.");
+"Return the digest value as a bytes object.");
 
 #define SHA256TYPE_DIGEST_METHODDEF    \
     {"digest", (PyCFunction)SHA256Type_digest, METH_NOARGS, SHA256Type_digest__doc__},
@@ -72,13 +72,13 @@ PyDoc_STRVAR(_sha256_sha256__doc__,
 "Return a new SHA-256 hash object; optionally initialized with a string.");
 
 #define _SHA256_SHA256_METHODDEF    \
-    {"sha256", (PyCFunction)_sha256_sha256, METH_FASTCALL|METH_KEYWORDS, _sha256_sha256__doc__},
+    {"sha256", (PyCFunction)(void(*)(void))_sha256_sha256, METH_FASTCALL|METH_KEYWORDS, _sha256_sha256__doc__},
 
 static PyObject *
 _sha256_sha256_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha256_sha256(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sha256_sha256(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", NULL};
@@ -102,13 +102,13 @@ PyDoc_STRVAR(_sha256_sha224__doc__,
 "Return a new SHA-224 hash object; optionally initialized with a string.");
 
 #define _SHA256_SHA224_METHODDEF    \
-    {"sha224", (PyCFunction)_sha256_sha224, METH_FASTCALL|METH_KEYWORDS, _sha256_sha224__doc__},
+    {"sha224", (PyCFunction)(void(*)(void))_sha256_sha224, METH_FASTCALL|METH_KEYWORDS, _sha256_sha224__doc__},
 
 static PyObject *
 _sha256_sha224_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha256_sha224(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sha256_sha224(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", NULL};
@@ -124,4 +124,4 @@ _sha256_sha224(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=84e7b8365b3ca4d3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb208641d4bc3b5f input=a9049054013a1b77]*/

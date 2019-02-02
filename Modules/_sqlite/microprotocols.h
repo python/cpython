@@ -28,10 +28,6 @@
 
 #include <Python.h>
 
-/** adapters registry **/
-
-extern PyObject *psyco_adapters;
-
 /** the names of the three mandatory methods **/
 
 #define MICROPROTOCOLS_GETQUOTED_NAME "getquoted"
