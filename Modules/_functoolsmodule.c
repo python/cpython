@@ -1085,7 +1085,11 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     lru_cache_extract_link(link);
     /* Remove it from the cache.
        The cache dict holds one reference to the link,
-       and the linked list holds yet one reference to it. */
+       and the linked list holds yet one reference to it.
+
+       XXX Double check this statement.  The linked list
+       is documented above to only have borrowed references.
+    */
     popresult = _PyDict_Pop_KnownHash(self->cache, link->key,
                                       link->hash, Py_None);
     if (popresult == Py_None) {
