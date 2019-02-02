@@ -844,6 +844,9 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
     return result;
 }
 
+#define MARK_UNUSED(link)  {link->prev = NULL; link->next = NULL;}
+#define IS_USED(link) (link->prev != NULL && link->next != NULL)
+
 static void
 lru_cache_extract_link(lru_list_elem *link)
 {
@@ -851,6 +854,7 @@ lru_cache_extract_link(lru_list_elem *link)
     lru_list_elem *link_next = link->next;
     link_prev->next = link->next;
     link_next->prev = link->prev;
+    MARK_UNUSED(link);
 }
 
 static void
@@ -920,7 +924,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         return NULL;
     }
     link  = (lru_list_elem *)_PyDict_GetItem_KnownHash(self->cache, key, hash);
-    if (link != NULL) {
+    if (link != NULL && IS_USED(link)) {
         lru_cache_extract_link(link);
         lru_cache_append_link(self, link);
         result = link->result;
