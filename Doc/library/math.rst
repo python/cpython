@@ -218,7 +218,7 @@ Number-theoretic and representation functions
    :meth:`x.__trunc__() <object.__trunc__>`.
 
 
-.. function:: combinations(n, k)
+.. function:: comb(n, k)
 
    Return the binomial coefficient indexed by the pair of integers n >= k >= 0.
 
