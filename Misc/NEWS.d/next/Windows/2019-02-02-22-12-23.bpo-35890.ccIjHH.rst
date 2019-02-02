@@ -1,0 +1,1 @@
+Call unicode version GetVersionExW in Python/sysmodule.c, and add a WCSTOK macro to Python/pathconfig.c to wrap the wcstok_s.
