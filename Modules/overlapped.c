@@ -127,8 +127,10 @@ initialize_function_pointers(void)
     closesocket(s);
 
     /* On WinXP we will have Py_CancelIoEx == NULL */
+    Py_BEGIN_ALLOW_THREADS
     hKernel32 = GetModuleHandle("KERNEL32");
     *(FARPROC *)&Py_CancelIoEx = GetProcAddress(hKernel32, "CancelIoEx");
+    Py_END_ALLOW_THREADS
     return 0;
 }
 
