@@ -1,4 +1,0 @@
-:class:`~unittest.runner.TextTestRunner` of :mod:`unittest.runner` now uses
-:func:`time.perf_counter` rather than :func:`time.time` to measure the
-execution time of a test: :func:`time.time` can go backwards, whereas
-:func:`time.perf_counter` is monotonic.

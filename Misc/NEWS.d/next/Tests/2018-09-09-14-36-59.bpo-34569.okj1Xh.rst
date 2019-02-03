@@ -1,2 +1,0 @@
-The experimental PEP 554 data channels now correctly pass negative PyLong
-objects between subinterpreters on 32-bit systems. Patch by Michael Felt.

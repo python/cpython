@@ -1,2 +1,0 @@
-Deleting a key from a read-only dbm database raises module specfic error
-instead of KeyError.
