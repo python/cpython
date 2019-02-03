@@ -57,7 +57,7 @@ templates_path = ['tools/templates']
 
 # Custom sidebar templates, filenames relative to this file.
 html_sidebars = {
-    'index': 'indexsidebar.html',
+    'index': ['indexsidebar.html'],
 }
 
 # Additional templates that should be rendered to pages.
