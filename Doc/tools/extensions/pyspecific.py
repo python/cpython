@@ -23,7 +23,6 @@ from docutils import nodes, utils
 from sphinx import addnodes
 from sphinx.builders import Builder
 from sphinx.locale import translators
-from sphinx.util import status_iterator
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.html import HTMLTranslator
 from sphinx.writers.text import TextWriter, TextTranslator
@@ -314,6 +313,11 @@ class PydocTopicsBuilder(Builder):
         return ''  # no URIs
 
     def write(self, *ignored):
+        try:  # sphinx>=1.6
+            from sphinx.util import status_iterator
+        except ImportError:  # sphinx<1.6
+            status_iterator = self.status_iterator
+
         writer = TextWriter(self)
         for label in status_iterator(pydoc_topic_labels,
                                      'building topics... ',

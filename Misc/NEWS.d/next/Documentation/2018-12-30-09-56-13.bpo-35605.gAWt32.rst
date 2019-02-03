@@ -1,0 +1,1 @@
+Fix documentation build for sphinx<1.6.  Patch by Anthony Sottile.
