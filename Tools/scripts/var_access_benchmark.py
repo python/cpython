@@ -63,7 +63,7 @@ def read_builtin(trials=trials):
         oct; oct; oct; oct; oct
         oct; oct; oct; oct; oct
 
-def read_classvar(trials=trials, A=A):
+def read_classvar_from_class(trials=trials, A=A):
     A.x = 1
     for t in trials:
         A.x;    A.x;    A.x;    A.x;    A.x
@@ -71,6 +71,16 @@ def read_classvar(trials=trials, A=A):
         A.x;    A.x;    A.x;    A.x;    A.x
         A.x;    A.x;    A.x;    A.x;    A.x
         A.x;    A.x;    A.x;    A.x;    A.x
+
+def read_classvar_from_instance(trials=trials, A=A):
+    A.x = 1
+    a = A()
+    for t in trials:
+        a.x;    a.x;    a.x;    a.x;    a.x
+        a.x;    a.x;    a.x;    a.x;    a.x
+        a.x;    a.x;    a.x;    a.x;    a.x
+        a.x;    a.x;    a.x;    a.x;    a.x
+        a.x;    a.x;    a.x;    a.x;    a.x
 
 def read_instancevar(trials=trials, a=C(1)):
     for t in trials:
@@ -238,21 +248,22 @@ if __name__=='__main__':
     from timeit import Timer
 
     for f in [
-              'Variable and attribute read access:',
-              read_local, read_nonlocal, read_global, read_builtin,
-              read_classvar, read_instancevar, read_instancevar_slots,
-              read_namedtuple, read_boundmethod,
-              '\nVariable and attribute write access:',
-              write_local, write_nonlocal, write_global,
-              write_classvar, write_instancevar, write_instancevar_slots,
-              '\nData structure read access:',
-              read_list, read_deque, read_dict,
-              '\nData structure write access:',
-              write_list, write_deque, write_dict,
-              '\nStack (or queue) operations:',
-              list_append_pop, deque_append_pop,
-              '\nTiming loop overhead:',
-              loop_overhead]:
+            'Variable and attribute read access:',
+            read_local, read_nonlocal, read_global, read_builtin,
+            read_classvar_from_class, read_classvar_from_instance,
+            read_instancevar, read_instancevar_slots,
+            read_namedtuple, read_boundmethod,
+            '\nVariable and attribute write access:',
+            write_local, write_nonlocal, write_global,
+            write_classvar, write_instancevar, write_instancevar_slots,
+            '\nData structure read access:',
+            read_list, read_deque, read_dict,
+            '\nData structure write access:',
+            write_list, write_deque, write_dict,
+            '\nStack (or queue) operations:',
+            list_append_pop, deque_append_pop,
+            '\nTiming loop overhead:',
+            loop_overhead]:
         if isinstance(f, str):
             print(f)
             continue
