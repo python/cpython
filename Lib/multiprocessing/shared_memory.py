@@ -275,7 +275,7 @@ class ShareableList:
         else:
             return 3  # NoneType
 
-    def __init__(self, iterable=None, name=None):
+    def __init__(self, iterable=None, *, name=None):
         if iterable is not None:
             _formats = [
                 self.types_mapping[type(item)]
@@ -301,7 +301,7 @@ class ShareableList:
         else:
             requested_size = 1  # Some platforms require > 0.
 
-        self.shm = SharedMemory(name, size=requested_size)
+        self.shm = SharedMemory(name, flags=O_CREX, size=requested_size)
 
         if iterable is not None:
             _enc = encoding
@@ -474,11 +474,13 @@ class ShareableList:
     def _offset_back_transform_codes(self):
         return self._offset_packing_formats + self._list_len * 8
 
-    @classmethod
-    def copy(cls, self):
+    def copy(self, *, name=None):
         "L.copy() -> ShareableList -- a shallow copy of L."
 
-        return cls(self)
+        if name is None:
+            return self.__class__(self)
+        else:
+            return self.__class__(self, name=name)
 
     def count(self, value):
         "L.count(value) -> integer -- return number of occurrences of value."

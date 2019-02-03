@@ -3734,6 +3734,87 @@ class _TestSharedMemory(BaseTestCase):
         finally:
             sms.unlink()
 
+    def test_shared_memory_ShareableList_basics(self):
+        sl = shared_memory.ShareableList(
+            ['howdy', b'HoWdY', -273.154, 100, None, True, 42]
+        )
+
+        try:
+            # Verify attributes are readable.
+            self.assertEqual(sl.alignment, 8)
+            self.assertEqual(sl.format, '8s8sdqxxxxxx?xxxxxxxx?q')
+
+            # Exercise len().
+            self.assertEqual(len(sl), 7)
+
+            # Exercise index().
+            with warnings.catch_warnings():
+                # Suppress BytesWarning when comparing against b'HoWdY'.
+                warnings.simplefilter('ignore')
+                with self.assertRaises(ValueError):
+                    sl.index('100')
+                self.assertEqual(sl.index(100), 3)
+
+            # Exercise retrieving individual values.
+            self.assertEqual(sl[0], 'howdy')
+            self.assertEqual(sl[-2], True)
+
+            # Exercise iterability.
+            self.assertEqual(
+                tuple(sl),
+                ('howdy', b'HoWdY', -273.154, 100, None, True, 42)
+            )
+
+            # Exercise modifying individual values.
+            sl[3] = 42
+            self.assertEqual(sl[3], 42)
+            sl[4] = 'some'  # Change type at a given position.
+            self.assertEqual(sl[4], 'some')
+            self.assertEqual(sl.format, '8s8sdq8sxxxxxxx?q')
+            with self.assertRaises(ValueError):
+                sl[4] = 'far too many'  # Exceeds available storage.
+            self.assertEqual(sl[4], 'some')
+
+            # Exercise count().
+            with warnings.catch_warnings():
+                # Suppress BytesWarning when comparing against b'HoWdY'.
+                warnings.simplefilter('ignore')
+                self.assertEqual(sl.count(42), 2)
+                self.assertEqual(sl.count(b'HoWdY'), 1)
+                self.assertEqual(sl.count(b'adios'), 0)
+
+            # Exercise creating a duplicate.
+            sl_copy = sl.copy(name='test03_duplicate')
+            try:
+                self.assertNotEqual(sl.shm.name, sl_copy.shm.name)
+                self.assertEqual('test03_duplicate', sl_copy.shm.name)
+                self.assertEqual(list(sl), list(sl_copy))
+                self.assertEqual(sl.format, sl_copy.format)
+                sl_copy[-1] = 77
+                self.assertEqual(sl_copy[-1], 77)
+                self.assertNotEqual(sl[-1], 77)
+                sl_copy.shm.close()
+            finally:
+                sl_copy.shm.unlink()
+
+        finally:
+            # Prevent test failures from leading to a dangling segment.
+            sl.shm.unlink()
+            sl.shm.close()
+
+        # Exercise creating an empty ShareableList.
+        empty_sl = shared_memory.ShareableList()
+        try:
+            self.assertEqual(len(empty_sl), 0)
+            self.assertEqual(empty_sl.format, '')
+            self.assertEqual(empty_sl.alignment, 8)
+            self.assertEqual(empty_sl.count('any'), 0)
+            with self.assertRaises(ValueError):
+                empty_sl.index(None)
+            empty_sl.shm.close()
+        finally:
+            empty_sl.shm.unlink()
+
 #
 #
 #
