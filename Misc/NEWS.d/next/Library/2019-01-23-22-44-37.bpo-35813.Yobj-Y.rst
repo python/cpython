@@ -1,2 +1,0 @@
-Shared memory submodule added to multiprocessing to avoid need for
-serialization between processes

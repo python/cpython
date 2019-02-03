@@ -1,5 +1,0 @@
-test_socket: Remove RDSTest.testCongestion(). The test tries to fill the
-receiver's socket buffer and expects an error. But the RDS protocol doesn't
-require that. Moreover, the Linux implementation of RDS expects that the
-producer of the messages reduces its rate, it's not the role of the receiver to
-trigger an error. The test fails on Fedora 28 by design, so just remove it.

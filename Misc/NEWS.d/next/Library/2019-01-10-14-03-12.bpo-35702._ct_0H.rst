@@ -1,1 +1,0 @@
-The :data:`time.CLOCK_UPTIME_RAW` constant is now available for macOS 10.12.

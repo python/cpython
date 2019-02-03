@@ -1,1 +1,0 @@
-PyThread_release_lock always fails

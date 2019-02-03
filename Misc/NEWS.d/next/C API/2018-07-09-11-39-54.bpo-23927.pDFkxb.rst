@@ -1,2 +1,0 @@
-Fixed :exc:`SystemError` in :c:func:`PyArg_ParseTupleAndKeywords` when the
-``w*`` format unit is used for optional parameter.

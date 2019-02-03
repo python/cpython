@@ -1,1 +1,0 @@
-Avoid blocking on file IO in sendfile fallback code

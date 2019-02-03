@@ -1,1 +1,0 @@
-Expose ``raise(signum)`` as `raise_signal`

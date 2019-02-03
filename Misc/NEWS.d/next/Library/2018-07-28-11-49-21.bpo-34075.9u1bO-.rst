@@ -1,2 +1,0 @@
-Deprecate passing non-ThreadPoolExecutor instances to
-:meth:`AbstractEventLoop.set_default_executor`.

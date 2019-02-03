@@ -1,2 +1,0 @@
-test.pythoninfo now logs information of all clocks, not only time.time() and
-time.perf_counter().

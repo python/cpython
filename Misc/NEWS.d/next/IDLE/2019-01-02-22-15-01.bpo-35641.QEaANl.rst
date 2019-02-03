@@ -1,1 +1,0 @@
-Proper format `calltip` when the function has no docstring.

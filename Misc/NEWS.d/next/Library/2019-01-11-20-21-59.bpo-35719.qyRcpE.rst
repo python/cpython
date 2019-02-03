@@ -1,2 +1,0 @@
-Sped up multi-argument :mod:`math` functions atan2(), copysign(),
-remainder() and hypot() by 1.3--2.5 times.

@@ -1,2 +1,0 @@
-:class:`asyncio.ProactorEventLoop` now catchs and logs send errors when the
-self-pipe is full.

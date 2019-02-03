@@ -1,2 +1,0 @@
-The _contextvars module is now built into the core Python library on
-Windows.

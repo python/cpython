@@ -1,2 +1,0 @@
-Adding ``max_num_fields`` to ``cgi.FieldStorage`` to make DOS attacks harder by
-limiting the number of ``MiniFieldStorage`` objects created by ``FieldStorage``.

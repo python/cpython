@@ -1,1 +1,0 @@
-Allow building on ARM with MSVC.
