@@ -1,6 +1,5 @@
 # Author: Steven J. Bethard <steven.bethard@gmail.com>.
 
-import codecs
 import inspect
 import os
 import shutil
@@ -15,8 +14,11 @@ from io import StringIO
 
 from test import support
 from unittest import mock
+
+
 class StdIOBuffer(StringIO):
     pass
+
 
 class TestCase(unittest.TestCase):
 
@@ -48,6 +50,7 @@ class TempDirMixin(object):
         with open(file_path, 'w') as file:
             file.write(filename)
         os.chmod(file_path, stat.S_IREAD)
+
 
 class Sig(object):
 
@@ -84,7 +87,8 @@ def stderr_to_parser_error(parse_args, *args, **kwargs):
     # if this is being called recursively and stderr or stdout is already being
     # redirected, simply call the function and let the enclosing function
     # catch the exception
-    if isinstance(sys.stderr, StdIOBuffer) or isinstance(sys.stdout, StdIOBuffer):
+    if isinstance(sys.stderr, StdIOBuffer) \
+            or isinstance(sys.stdout, StdIOBuffer):
         return parse_args(*args, **kwargs)
 
     # if this is not being called recursively, redirect stderr and
@@ -240,12 +244,14 @@ class ParserTesterMetaclass(type):
             for parse_args in [listargs, sysargs]:
                 AddTests(cls, add_arguments, parse_args)
 
+
 bases = TestCase,
 ParserTestCase = ParserTesterMetaclass('ParserTestCase', bases, {})
 
 # ===============
 # Optionals tests
 # ===============
+
 
 class TestOptionalsSingleDash(ParserTestCase):
     """Test an Optional with a single-dash option string"""
@@ -425,7 +431,9 @@ class TestOptionalsAlternatePrefixChars(ParserTestCase):
         Sig('::bar'),
         Sig('/baz', action='store_const', const=42),
     ]
-    failures = ['--bar', '-fbar', '-b B', 'B', '-f', '--bar B', '-baz', '-h', '--help', '+h', '::help', '/help']
+    failures = [
+        '--bar', '-fbar', '-b B', 'B', '-f', '--bar B', '-baz', '-h', '--help',
+        '+h', '::help', '/help']
     successes = [
         ('', NS(f=False, bar=None, baz=None)),
         ('+f', NS(f=True, bar=None, baz=None)),
@@ -471,8 +479,7 @@ class TestOptionalsAlternatePrefixCharsMultipleShortArgs(ParserTestCase):
                 '-xyz',
                 '+x',
                 '-y',
-                '+xyz',
-    ]
+                '+xyz']
     successes = [
         ('', NS(x=False, y=False, z=False)),
         ('-x', NS(x=True, y=False, z=False)),
@@ -789,6 +796,7 @@ class TestOptionalsDisallowLongAbbreviation(ParserTestCase):
 # ================
 # Positional tests
 # ================
+
 
 class TestPositionalsNargsNone(ParserTestCase):
     """Test a Positional that doesn't specify nargs"""
@@ -1179,6 +1187,7 @@ class TestPositionalsActionAppend(ParserTestCase):
 # Combined optionals and positionals tests
 # ========================================
 
+
 class TestOptionalsNumericAndPositionals(ParserTestCase):
     """Tests negative number args when numeric options are present"""
 
@@ -1459,6 +1468,7 @@ class TestFileTypeRepr(TestCase):
         type = argparse.FileType('r', 1, errors='replace')
         self.assertEqual("FileType('r', 1, errors='replace')", repr(type))
 
+
 class StdStreamComparer:
     def __init__(self, attr):
         self.attr = attr
@@ -1466,9 +1476,11 @@ class StdStreamComparer:
     def __eq__(self, other):
         return other == getattr(sys, self.attr)
 
+
 eq_stdin = StdStreamComparer('stdin')
 eq_stdout = StdStreamComparer('stdout')
 eq_stderr = StdStreamComparer('stderr')
+
 
 class RFile(object):
     seen = {}
@@ -1510,6 +1522,7 @@ class TestFileTypeR(TempDirMixin, ParserTestCase):
         ('-x - -', NS(x=eq_stdin, spam=eq_stdin)),
         ('readonly', NS(x=None, spam=RFile('readonly'))),
     ]
+
 
 class TestFileTypeDefaults(TempDirMixin, ParserTestCase):
     """Test that a file is not created unless the default is needed"""
@@ -1805,9 +1818,11 @@ class TestAddSubparsers(TestCase):
         # create a parser with a subparsers argument
         if prefix_chars:
             parser = ErrorRaisingArgumentParser(
-                prog='PROG', description='main description', prefix_chars=prefix_chars)
+                prog='PROG', description='main description',
+                prefix_chars=prefix_chars)
             parser.add_argument(
-                prefix_chars[0] * 2 + 'foo', action='store_true', help='foo help')
+                prefix_chars[0] * 2 + 'foo', action='store_true',
+                help='foo help')
         else:
             parser = ErrorRaisingArgumentParser(
                 prog='PROG', description='main description')
@@ -2052,11 +2067,6 @@ class TestAddSubparsers(TestCase):
                                             description='main description')
         parser.add_argument('--foo', action='store_true', help='foo help')
         parser.add_argument('bar', help='bar help')
-        subparsers = parser.add_subparsers(title='subcommands',
-                                           description='command help',
-                                           help='additional text')
-        parser1 = subparsers.add_parser('1')
-        parser2 = subparsers.add_parser('2')
         self.assertEqual(parser.format_usage(),
                          'usage: PROG [-h] [--foo] bar {1,2} ...\n')
         self.assertEqual(parser.format_help(), textwrap.dedent('''\
@@ -2153,6 +2163,7 @@ class TestAddSubparsers(TestCase):
 # Groups tests
 # ============
 
+
 class TestPositionalsGroups(TestCase):
     """Tests that order of group positionals matches construction order"""
 
@@ -2191,6 +2202,7 @@ class TestPositionalsGroups(TestCase):
 # ===================
 # Parent parser tests
 # ===================
+
 
 class TestParentParsers(TestCase):
     """Tests that parsers can be created with parent parsers"""
@@ -2335,7 +2347,7 @@ class TestParentParsers(TestCase):
 
             x:
               -y Y
-        '''.format(progname, ' ' if progname else '' )))
+        '''.format(progname, ' ' if progname else '')))
 
     def test_groups_parents(self):
         parent = ErrorRaisingArgumentParser(add_help=False)
@@ -2347,8 +2359,8 @@ class TestParentParsers(TestCase):
         m.add_argument('-z')
         parser = ErrorRaisingArgumentParser(parents=[parent])
 
-        self.assertRaises(ArgumentParserError, parser.parse_args,
-            ['-y', 'Y', '-z', 'Z'])
+        self.assertRaises(
+            ArgumentParserError, parser.parse_args, ['-y', 'Y', '-z', 'Z'])
 
         parser_help = parser.format_help()
         progname = self.main_program
@@ -2365,11 +2377,12 @@ class TestParentParsers(TestCase):
 
               -w W
               -x X
-        '''.format(progname, ' ' if progname else '' )))
+        '''.format(progname, ' ' if progname else '')))
 
 # ==============================
 # Mutually exclusive group tests
 # ==============================
+
 
 class TestMutuallyExclusiveGroupErrors(TestCase):
 
@@ -2408,6 +2421,7 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
               --nuts
               '''
         self.assertEqual(parser.format_help(), textwrap.dedent(expected))
+
 
 class MEMixin(object):
 
@@ -2776,6 +2790,7 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
 # Mutually exclusive group in parent parser tests
 # =================================================
 
+
 class MEPBase(object):
 
     def get_parser(self, required=None):
@@ -2786,47 +2801,48 @@ class MEPBase(object):
 
 
 class TestMutuallyExclusiveGroupErrorsParent(
-    MEPBase, TestMutuallyExclusiveGroupErrors):
+        MEPBase, TestMutuallyExclusiveGroupErrors):
     pass
 
 
 class TestMutuallyExclusiveSimpleParent(
-    MEPBase, TestMutuallyExclusiveSimple):
+        MEPBase, TestMutuallyExclusiveSimple):
     pass
 
 
 class TestMutuallyExclusiveLongParent(
-    MEPBase, TestMutuallyExclusiveLong):
+        MEPBase, TestMutuallyExclusiveLong):
     pass
 
 
 class TestMutuallyExclusiveFirstSuppressedParent(
-    MEPBase, TestMutuallyExclusiveFirstSuppressed):
+        MEPBase, TestMutuallyExclusiveFirstSuppressed):
     pass
 
 
 class TestMutuallyExclusiveManySuppressedParent(
-    MEPBase, TestMutuallyExclusiveManySuppressed):
+        MEPBase, TestMutuallyExclusiveManySuppressed):
     pass
 
 
 class TestMutuallyExclusiveOptionalAndPositionalParent(
-    MEPBase, TestMutuallyExclusiveOptionalAndPositional):
+        MEPBase, TestMutuallyExclusiveOptionalAndPositional):
     pass
 
 
 class TestMutuallyExclusiveOptionalsMixedParent(
-    MEPBase, TestMutuallyExclusiveOptionalsMixed):
+        MEPBase, TestMutuallyExclusiveOptionalsMixed):
     pass
 
 
 class TestMutuallyExclusiveOptionalsAndPositionalsMixedParent(
-    MEPBase, TestMutuallyExclusiveOptionalsAndPositionalsMixed):
+        MEPBase, TestMutuallyExclusiveOptionalsAndPositionalsMixed):
     pass
 
 # =================
 # Set default tests
 # =================
+
 
 class TestSetDefaults(TestCase):
 
@@ -2908,7 +2924,6 @@ class TestSetDefaults(TestCase):
         group.add_argument('y', nargs='?')
         group.add_argument('z', nargs='?', default='ZZ')
 
-
         # defaults set previously
         self.assertEqual(NS(w='W', x='XX', y='Y', z='ZZ'),
                          parser.parse_args([]))
@@ -2921,6 +2936,7 @@ class TestSetDefaults(TestCase):
 # =================
 # Get default tests
 # =================
+
 
 class TestGetDefault(TestCase):
 
@@ -2945,6 +2961,7 @@ class TestGetDefault(TestCase):
 # Namespace 'contains' tests
 # ==========================
 
+
 class TestNamespaceContainsSimple(TestCase):
 
     def test_empty(self):
@@ -2963,6 +2980,7 @@ class TestNamespaceContainsSimple(TestCase):
 # =====================
 # Help formatting tests
 # =====================
+
 
 class TestHelpFormattingMetaclass(type):
 
@@ -3008,7 +3026,7 @@ class TestHelpFormattingMetaclass(type):
                     subparsers = parser.add_subparsers()
                     for subparser_sig in subparsers_sigs:
                         subparsers.add_parser(*subparser_sig.args,
-                                               **subparser_sig.kwargs)
+                                              **subparser_sig.kwargs)
                 return parser
 
             def _test(self, tester, parser_text):
@@ -3045,6 +3063,7 @@ class TestHelpFormattingMetaclass(type):
         for func_suffix, std_name in [('usage', 'stdout'),
                                       ('help', 'stdout')]:
             AddTests(cls, func_suffix, std_name)
+
 
 bases = TestCase,
 HelpTestCase = TestHelpFormattingMetaclass('HelpTestCase', bases, {})
@@ -3086,20 +3105,23 @@ class TestHelpBiggerOptionals(HelpTestCase):
         0.1
         '''
 
+
 class TestShortColumns(HelpTestCase):
     '''Test extremely small number of columns.
 
     TestCase prevents "COLUMNS" from being too small in the tests themselves,
-    but we don't want any exceptions thrown in such cases. Only ugly representation.
+    but we don't want any exceptions thrown in such cases. Only ugly
+    representation.
     '''
     def setUp(self):
         env = support.EnvironmentVarGuard()
         env.set("COLUMNS", '15')
         self.addCleanup(env.__exit__)
 
-    parser_signature            = TestHelpBiggerOptionals.parser_signature
-    argument_signatures         = TestHelpBiggerOptionals.argument_signatures
-    argument_group_signatures   = TestHelpBiggerOptionals.argument_group_signatures
+    parser_signature = TestHelpBiggerOptionals.parser_signature
+    argument_signatures = TestHelpBiggerOptionals.argument_signatures
+    argument_group_signatures = TestHelpBiggerOptionals\
+        .argument_group_signatures
     usage = '''\
         usage: PROG
                [-h]
@@ -3138,7 +3160,7 @@ class TestShortColumns(HelpTestCase):
 
         EPILOG
     '''
-    version                     = TestHelpBiggerOptionals.version
+    version = TestHelpBiggerOptionals.version
 
 
 class TestHelpBiggerOptionalGroups(HelpTestCase):
@@ -3274,7 +3296,7 @@ be wrapped
 class TestHelpWrappingShortNames(HelpTestCase):
     """Make sure that text after short names starts on the first line"""
 
-    parser_signature = Sig(prog='PROG', description= 'D\nD' * 30)
+    parser_signature = Sig(prog='PROG', description='D\nD' * 30)
     argument_signatures = [
         Sig('-x', metavar='XX', help='XHH HX' * 20),
         Sig('y', metavar='yyy', help='YH YH' * 20),
@@ -3314,7 +3336,7 @@ HHAAHHH
 class TestHelpWrappingLongNames(HelpTestCase):
     """Make sure that text after long names starts on the next line"""
 
-    parser_signature = Sig(usage='USAGE', description= 'D D' * 30)
+    parser_signature = Sig(usage='USAGE', description='D D' * 30)
     argument_signatures = [
         Sig('-v', '--version', action='version', version='V V' * 30),
         Sig('-x', metavar='X' * 25, help='XH XH' * 20),
@@ -4104,11 +4126,13 @@ class TestHelpArgumentDefaults(HelpTestCase):
         '''
     version = ''
 
+
 class TestHelpVersionAction(HelpTestCase):
     """Test the default help for the version action"""
 
     parser_signature = Sig(prog='PROG', description='description')
-    argument_signatures = [Sig('-V', '--version', action='version', version='3.6')]
+    argument_signatures = [Sig(
+        '-V', '--version', action='version', version='3.6')]
     argument_group_signatures = []
     usage = '''\
         usage: PROG [-h] [-V]
@@ -4153,7 +4177,8 @@ class TestHelpSubparsersOrdering(HelpTestCase):
     """Test ordering of subcommands in help matches the code"""
     parser_signature = Sig(prog='PROG',
                            description='display some subcommands')
-    argument_signatures = [Sig('-v', '--version', action='version', version='0.1')]
+    argument_signatures = [Sig(
+        '-v', '--version', action='version', version='0.1')]
 
     subparsers_signatures = [Sig(name=name)
                              for name in ('a', 'b', 'c', 'd', 'e')]
@@ -4178,11 +4203,13 @@ class TestHelpSubparsersOrdering(HelpTestCase):
         0.1
         '''
 
+
 class TestHelpSubparsersWithHelpOrdering(HelpTestCase):
     """Test ordering of subcommands in help matches the code"""
     parser_signature = Sig(prog='PROG',
                            description='display some subcommands')
-    argument_signatures = [Sig('-v', '--version', action='version', version='0.1')]
+    argument_signatures = [Sig(
+        '-v', '--version', action='version', version='0.1')]
 
     subcommand_data = (('a', 'a subcommand help'),
                        ('b', 'b subcommand help'),
@@ -4218,7 +4245,6 @@ class TestHelpSubparsersWithHelpOrdering(HelpTestCase):
     version = '''\
         0.1
         '''
-
 
 
 class TestHelpMetavarTypeFormatter(HelpTestCase):
@@ -4381,6 +4407,7 @@ class TestInvalidArgumentConstructors(TestCase):
 # Actions returned by add_argument
 # ================================
 
+
 class TestActionsReturned(TestCase):
 
     def test_dest(self):
@@ -4476,7 +4503,8 @@ class TestOptionalsHelpVersionActions(TestCase):
 
     def test_version_format(self):
         parser = ErrorRaisingArgumentParser(prog='PPP')
-        parser.add_argument('-v', '--version', action='version', version='%(prog)s 3.5')
+        parser.add_argument(
+            '-v', '--version', action='version', version='%(prog)s 3.5')
         with self.assertRaises(ArgumentParserError) as cm:
             parser.parse_args(['-v'])
         self.assertEqual('PPP 3.5\n', cm.exception.stdout)
@@ -4525,7 +4553,8 @@ class TestOptionalsHelpVersionActions(TestCase):
                 format = '%s %%s %s' % (prefix, suffix)
             self.assertPrintHelpExit(parser, format % '-h')
             self.assertPrintHelpExit(parser, format % '--help')
-            self.assertRaises(AttributeError, getattr, parser, 'format_version')
+            self.assertRaises(
+                AttributeError, getattr, parser, 'format_version')
 
 
 # ======================
@@ -4603,6 +4632,7 @@ class TestStrings(TestCase):
 # Namespace tests
 # ===============
 
+
 class TestNamespace(TestCase):
 
     def test_constructor(self):
@@ -4658,6 +4688,7 @@ class TestEncoding(TestCase):
 # ArgumentError tests
 # ===================
 
+
 class TestArgumentError(TestCase):
 
     def test_argument_error(self):
@@ -4668,6 +4699,7 @@ class TestArgumentError(TestCase):
 # =======================
 # ArgumentTypeError tests
 # =======================
+
 
 class TestArgumentTypeError(TestCase):
 
@@ -4686,6 +4718,7 @@ class TestArgumentTypeError(TestCase):
 # =========================
 # MessageContentError tests
 # =========================
+
 
 class TestMessageContentError(TestCase):
 
@@ -4764,6 +4797,7 @@ class TestTypeFunctionCallOnlyOnce(TestCase):
 # Check semantics regarding the default argument and type conversion
 # ==================================================================
 
+
 class TestTypeFunctionCalledOnDefault(TestCase):
 
     def test_type_function_call_with_non_string_default(self):
@@ -4813,6 +4847,7 @@ class TestTypeFunctionCalledOnDefault(TestCase):
 # parse_known_args tests
 # ======================
 
+
 class TestParseKnownArgs(TestCase):
 
     def test_arguments_tuple(self):
@@ -4854,6 +4889,7 @@ class TestParseKnownArgs(TestCase):
 # ===========================
 # parse_intermixed_args tests
 # ===========================
+
 
 class TestIntermixedArgs(TestCase):
     def test_basic(self):
@@ -4905,7 +4941,8 @@ class TestIntermixedArgs(TestCase):
         parser.add_argument('badger', nargs='*', default='X', help='BADGER')
         args = parser.parse_intermixed_args('1 --foo 2'.split())
         self.assertEqual(NS(badger=['1', '2'], foo=True, spam=None), args)
-        self.assertRaises(ArgumentParserError, parser.parse_intermixed_args, '1 2'.split())
+        self.assertRaises(
+            ArgumentParserError, parser.parse_intermixed_args, '1 2'.split())
         self.assertEqual(group.required, True)
 
     def test_exclusive_incompatible(self):
@@ -4917,6 +4954,7 @@ class TestIntermixedArgs(TestCase):
         group.add_argument('badger', nargs='*', default='X', help='BADGER')
         self.assertRaises(TypeError, parser.parse_intermixed_args, [])
         self.assertEqual(group.required, True)
+
 
 class TestIntermixedMessageContentError(TestCase):
     # case where Intermixed gives different error message
@@ -4941,6 +4979,7 @@ class TestIntermixedMessageContentError(TestCase):
 # ==========================
 # add_argument metavar tests
 # ==========================
+
 
 class TestAddArgumentMetavar(TestCase):
 
@@ -5113,6 +5152,7 @@ class TestAddArgumentMetavar(TestCase):
 # from argparse import * tests
 # ============================
 
+
 class TestImportStar(TestCase):
 
     def test(self):
@@ -5158,7 +5198,6 @@ def test_main():
     # Remove global references to avoid looking like we have refleaks.
     RFile.seen = {}
     WFile.seen = set()
-
 
 
 if __name__ == '__main__':
