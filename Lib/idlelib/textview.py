@@ -53,13 +53,11 @@ class FontSizer:
                 try:
                     font = Font(self.text, name=fontname, exists=True)
                     font['size'] = new_size(font['size'])
-                    return font
                 except TclError:
                     font = list(self.text.tk.split(fontname))
-                    if len(font) < 2:
-                        return font
-                    font[1] = new_size(int(font[1]))
-                    return font
+                    if len(font) > 1:
+                        font[1] = new_size(int(font[1]))
+                return font
 
             self.text['font'] = resize(self.text['font'])
             for tag in self.text.tag_names():
