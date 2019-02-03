@@ -462,6 +462,8 @@ def venv(known_paths):
         executable = sys.executable
         import _winapi
         sys._base_executable = _winapi.GetModuleFileName(0)
+        # bpo-35873: Clear the environment variable to avoid it being
+        # inherited by child processes.
         del os.environ['__PYVENV_LAUNCHER__']
     else:
         executable = sys.executable
