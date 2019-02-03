@@ -50,14 +50,21 @@ class FontSizer:
         def sizer(self, event=None):
             "Set the font size for this widget and its tags."
             def resize(fontname):
-                font = Font(self.text, name=fontname, exists=True)
-                font['size'] = new_size(font['size'])
+                try:
+                    font = Font(self.text, name=fontname, exists=True)
+                    font['size'] = new_size(font['size'])
+                    return font
+                except TclError:
+                    font = self.text.tk.split(fontname)
+                    if len(font) < 2:
+                        return font
+                    return (font[0], new_size(int(font[1])), font[2:])
 
-            resize(self.text['font'])
+            self.text['font'] = resize(self.text['font'])
             for tag in self.text.tag_names():
                 tag_font = self.text.tag_cget(tag, 'font')
                 if tag_font:
-                    resize(tag_font)
+                    tag_font = resize(tag_font)
             return 'break'
         return sizer
 
