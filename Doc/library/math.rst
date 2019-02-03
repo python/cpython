@@ -227,8 +227,9 @@ Number-theoretic and representation functions
    subset of k elements from a fixed set of n elements, usually called
    *n choose k*.
 
-   Raises :exc:`TypeError` if argument(s) are non-integer and :exc:`ValueError`
-   if argument(s) are negative or k > n.
+   Raises :exc:`TypeError` if argument(s) are non-integer, :exc:`ValueError`
+   if argument(s) are negative or k > n, and :exc:`OverflowError` if k and (n-k)
+   are too large (beyond `LLONG_MAX`).
 
    .. versionadded:: 3.8
 
