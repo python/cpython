@@ -295,11 +295,14 @@ class ShareableList:
                 self._extract_recreation_code(item) for item in iterable
             ]
             requested_size = struct.calcsize(
-                "q" + self._format_size_metainfo + "".join(_formats)
+                "q" + self._format_size_metainfo +
+                "".join(_formats) +
+                self._format_packing_metainfo +
+                self._format_back_transform_codes
             )
 
         else:
-            requested_size = 1  # Some platforms require > 0.
+            requested_size = 8  # Some platforms require > 0.
 
         self.shm = SharedMemory(name, flags=O_CREX, size=requested_size)
 
