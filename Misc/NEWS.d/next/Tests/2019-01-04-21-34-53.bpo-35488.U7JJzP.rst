@@ -1,1 +1,0 @@
-Add a test to pathlib's Path.match() to verify it does not support glob-style ** recursive pattern matching.

@@ -1,2 +1,0 @@
-Update config_key: use PEP 8 names and ttk widgets,
-make some objects global, and add tests.
