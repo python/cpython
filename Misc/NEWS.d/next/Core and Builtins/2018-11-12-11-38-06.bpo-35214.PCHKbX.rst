@@ -1,4 +1,0 @@
-The interpreter and extension modules have had annotations added so that
-they work properly under clang's Memory Sanitizer.  A new configure flag
---with-memory-sanitizer has been added to make test builds of this nature
-easier to perform.
