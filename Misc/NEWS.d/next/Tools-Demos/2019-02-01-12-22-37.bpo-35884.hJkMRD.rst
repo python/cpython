@@ -1,0 +1,2 @@
+Add a benchmark script for timing various ways to access variables:
+``Tools/scripts/var_access_benchmark.py``.

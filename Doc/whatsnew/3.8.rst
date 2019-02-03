@@ -551,3 +551,11 @@ CPython bytecode changes
 * Added new opcode :opcode:`END_ASYNC_FOR` for handling exceptions raised
   when awaiting a next item in an :keyword:`async for` loop.
   (Contributed by Serhiy Storchaka in :issue:`33041`.)
+
+
+Demos and Tools
+---------------
+
+* Added a benchmark script for timing various ways to access variables:
+  ``Tools/scripts/var_access_benchmark.py``.
+  (Contributed by Raymond Hettinger in :issue:`35884`.)
