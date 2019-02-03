@@ -242,17 +242,16 @@ class FontSizerTest(unittest.TestCase):
 
     def setUp(self):
         text = self.text
-        self.font = font = tkfont.Font(text, ('courier', 30))
-        text['font'] = font
         text.insert('end', 'Test Text')
         self.sizer = tv.FontSizer(text)
 
     def tearDown(self):
-        del self.sizer, self.font
+        del self.sizer
 
     def test_increase_font_size(self):
         text = self.text
-        font = self.font
+        font = tkfont.Font(text, ('courier', 30))
+        text['font'] = font
         eq = self.assertEqual
         text.focus_set()
 
@@ -264,7 +263,8 @@ class FontSizerTest(unittest.TestCase):
 
     def test_decrease_font_size(self):
         text = self.text
-        font = self.font
+        font = tkfont.Font(text, ('courier', 30))
+        text['font'] = font
         eq = self.assertEqual
         text.focus_set()
 
@@ -273,6 +273,32 @@ class FontSizerTest(unittest.TestCase):
         eq(font['size'], 29)
         text.event_generate('<<decrease_font_size>>')
         eq(font['size'], 28)
+
+    def test_increase_font_size_tuple(self):
+        text = self.text
+        font = ('Arial', 45, 'bold italic')
+        text['font'] = font
+        eq = self.assertEqual
+        text.focus_set()
+
+        eq(text.tk.split(text['font'])[1], '45')
+        text.event_generate('<<increase_font_size>>')
+        eq(text.tk.split(text['font'])[1], '46')
+        text.event_generate('<<increase_font_size>>')
+        eq(text.tk.split(text['font'])[1], '47')
+
+    def test_decrease_font_size_tuple(self):
+        text = self.text
+        font = ('Arial', 45)
+        text['font'] = font
+        eq = self.assertEqual
+        text.focus_set()
+
+        eq(text.tk.split(text['font'])[1], '45')
+        text.event_generate('<<decrease_font_size>>')
+        eq(text.tk.split(text['font'])[1], '44')
+        text.event_generate('<<decrease_font_size>>')
+        eq(text.tk.split(text['font'])[1], '43')
 
 
 if __name__ == '__main__':
