@@ -616,6 +616,9 @@ typedef struct PicklerObject {
     PyObject *pers_func_self;   /* borrowed reference to self if pers_func
                                    is an unbound method, NULL otherwise */
     PyObject *dispatch_table;   /* private dispatch_table, can be NULL */
+    PyObject *global_hook;      /* hook for invoking user-defined callbacks
+                                   instead of save_global when pickling
+                                   functions and classes*/
 
     PyObject *write;            /* write() method of the output stream. */
     PyObject *output_buffer;    /* Write into a local bytearray buffer before
@@ -1110,6 +1113,7 @@ _Pickler_New(void)
     self->fast_memo = NULL;
     self->max_output_len = WRITE_BUF_SIZE;
     self->output_len = 0;
+    self->global_hook = NULL;
 
     self->memo = PyMemoTable_New();
     self->output_buffer = PyBytes_FromStringAndSize(NULL,
@@ -4058,7 +4062,28 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         status = save_tuple(self, obj);
         goto done;
     }
-    else if (type == &PyType_Type) {
+    /*  The switch-on-type statement ends here because the next three
+     *  conditions are not exclusive anymore. If global_hook returns
+     *  NotImplementedError, then we must fallback to save_type or save_global
+     *  */
+    if (self->global_hook != NULL){
+        PyObject *reduce_value = NULL;
+        reduce_value = PyObject_CallFunctionObjArgs(self->global_hook, self, obj,
+                                                    NULL);
+        if (reduce_value == NULL){
+            goto error;
+        }
+
+        if (reduce_value != PyExc_NotImplementedError){
+            status = save_reduce(self, reduce_value, obj);
+            Py_DECREF(reduce_value);
+            if (status < 0)
+                goto error;
+            goto done;
+        }
+    }
+
+    if (type == &PyType_Type) {
         status = save_type(self, obj);
         goto done;
     }
@@ -4700,6 +4725,7 @@ static PyMemberDef Pickler_members[] = {
     {"bin", T_INT, offsetof(PicklerObject, bin)},
     {"fast", T_INT, offsetof(PicklerObject, fast)},
     {"dispatch_table", T_OBJECT_EX, offsetof(PicklerObject, dispatch_table)},
+    {"global_hook", T_OBJECT_EX, offsetof(PicklerObject, global_hook)},
     {NULL}
 };
 
