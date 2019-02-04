@@ -37,6 +37,15 @@ __all__ = [
 # EBADF - guard agains macOS `stat` throwing EBADF
 _IGNORED_ERROS = (ENOENT, ENOTDIR, EBADF)
 
+_IGNORED_WINERRORS = (
+    21,  # ERROR_NOT_READY - drive exists but is not accessible
+)
+
+def _ignore_error(exception):
+    return (getattr(exception, 'errno', None) in _IGNORED_ERROS or
+            getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
+
+
 def _is_wildcard_pattern(pat):
     # Whether this pattern needs actual matching using fnmatch, or can
     # be looked up directly as a file.
@@ -535,7 +544,7 @@ class _RecursiveWildcardSelector(_Selector):
                 try:
                     entry_is_dir = entry.is_dir()
                 except OSError as e:
-                    if e.errno not in _IGNORED_ERROS:
+                    if not _ignore_error(e):
                         raise
                 if entry_is_dir and not entry.is_symlink():
                     path = parent_path._make_child_relpath(entry.name)
@@ -1328,7 +1337,7 @@ class Path(PurePath):
         try:
             self.stat()
         except OSError as e:
-            if e.errno not in _IGNORED_ERROS:
+            if not _ignore_error(e):
                 raise
             return False
         return True
@@ -1340,7 +1349,7 @@ class Path(PurePath):
         try:
             return S_ISDIR(self.stat().st_mode)
         except OSError as e:
-            if e.errno not in _IGNORED_ERROS:
+            if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
@@ -1354,7 +1363,7 @@ class Path(PurePath):
         try:
             return S_ISREG(self.stat().st_mode)
         except OSError as e:
-            if e.errno not in _IGNORED_ERROS:
+            if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
@@ -1388,7 +1397,7 @@ class Path(PurePath):
         try:
             return S_ISLNK(self.lstat().st_mode)
         except OSError as e:
-            if e.errno not in _IGNORED_ERROS:
+            if not _ignore_error(e):
                 raise
             # Path doesn't exist
             return False
@@ -1400,7 +1409,7 @@ class Path(PurePath):
         try:
             return S_ISBLK(self.stat().st_mode)
         except OSError as e:
-            if e.errno not in _IGNORED_ERROS:
+            if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
@@ -1413,7 +1422,7 @@ class Path(PurePath):
         try:
             return S_ISCHR(self.stat().st_mode)
         except OSError as e:
-            if e.errno not in _IGNORED_ERROS:
+            if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
@@ -1426,7 +1435,7 @@ class Path(PurePath):
         try:
             return S_ISFIFO(self.stat().st_mode)
         except OSError as e:
-            if e.errno not in _IGNORED_ERROS:
+            if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
@@ -1439,7 +1448,7 @@ class Path(PurePath):
         try:
             return S_ISSOCK(self.stat().st_mode)
         except OSError as e:
-            if e.errno not in _IGNORED_ERROS:
+            if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
