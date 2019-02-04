@@ -1014,7 +1014,7 @@ class date:
         if isinstance(other, timedelta):
             o = self.toordinal() + other.days
             if 0 < o <= _MAXORDINAL:
-                return date.fromordinal(o)
+                return type(self).fromordinal(o)
             raise OverflowError("result out of range")
         return NotImplemented
 
@@ -2024,10 +2024,10 @@ class datetime(date):
         hour, rem = divmod(delta.seconds, 3600)
         minute, second = divmod(rem, 60)
         if 0 < delta.days <= _MAXORDINAL:
-            return datetime.combine(date.fromordinal(delta.days),
-                                    time(hour, minute, second,
-                                         delta.microseconds,
-                                         tzinfo=self._tzinfo))
+            return type(self).combine(date.fromordinal(delta.days),
+                                      time(hour, minute, second,
+                                           delta.microseconds,
+                                           tzinfo=self._tzinfo))
         raise OverflowError("result out of range")
 
     __radd__ = __add__
