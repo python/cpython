@@ -7,11 +7,11 @@ Copyright (c) 2008 by Christian Heimes <christian@cheimes.de>
 Licensed to PSF under a Contributor Agreement.
 """
 
-import sys
-import site
-import os
-import winreg
 import ctypes
+import os
+import site
+import sys
+import winreg
 
 HKCU = winreg.HKEY_CURRENT_USER
 ENV = "Environment"
@@ -27,19 +27,18 @@ def modify():
             envpath, dtype = winreg.QueryValueEx(key, PATH)
         except FileNotFoundError:
             envpath, dtype = "", winreg.REG_EXPAND_SZ
-            pass
         except:
             raise OSError("Failed to load PATH value")
 
-        if hasattr(site, "USER_SITE") and dtype == winreg.REG_EXPAND_SZ:
-            usersite = site.USER_SITE.replace(appdata, "%APPDATA%")
-            userpath = os.path.dirname(usersite)
-            userscripts = os.path.join(userpath, "Scripts")
-        elif dtype == winreg.REG_SZ:
-            userpath = site.USER_SITE
-            userscripts = os.path.join(userpath, "Scripts")
-        else:
-            userscripts = None
+		userscripts = None
+        if hasattr(site, "USER_SITE"):
+            if dtype == winreg.REG_EXPAND_SZ:
+			    usersite = site.USER_SITE.replace(appdata, "%APPDATA%")
+                userpath = os.path.dirname(usersite)
+                userscripts = os.path.join(userpath, "Scripts")
+            elif dtype == winreg.REG_SZ:
+                userpath = site.USER_SITE
+                userscripts = os.path.join(userpath, "Scripts")
 
         paths = []
         for path in (pythonpath, scripts, userscripts):
