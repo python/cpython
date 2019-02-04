@@ -1263,6 +1263,64 @@ class GrammarTests(unittest.TestCase):
             compile('x is True', '<testcase>', 'exec')
             compile('x is ...', '<testcase>', 'exec')
 
+    def test_warn_missed_comma(self):
+        def check(test, msg='perhaps missed a comma'):
+            with self.assertWarnsRegex(SyntaxWarning, msg):
+                compile(test, '<testcase>', 'exec')
+            with warnings.catch_warnings():
+                warnings.filterwarnings('error', category=SyntaxWarning)
+                with self.assertRaisesRegex(SyntaxError, msg):
+                    compile(test, '<testcase>', 'exec')
+
+        check('[(1, 2) (3, 4)]')
+        check('[(x, y) (3, 4)]')
+        check('[[1, 2] (3, 4)]')
+        check('[{1, 2} (3, 4)]')
+        check('[{1: 2} (3, 4)]')
+        check('[[i for i in range(5)] (3, 4)]')
+        check('[{i for i in range(5)} (3, 4)]')
+        check('[(i for i in range(5)) (3, 4)]')
+        check('[{i: i for i in range(5)} (3, 4)]')
+        check('[f"{x}" (3, 4)]')
+        check('[f"x={x}" (3, 4)]')
+        check('["abc" (3, 4)]')
+        check('[b"abc" (3, 4)]')
+        check('[123 (3, 4)]')
+        check('[12.3 (3, 4)]')
+        check('[12.3j (3, 4)]')
+
+        check('[(1, 2) [i, j]]')
+        check('[(x, y) [i, j]]')
+        check('[[1, 2] [i, j]]')
+        check('[{1, 2} [i, j]]')
+        check('[[i for i in range(5)] [i, j]]')
+        check('[{i for i in range(5)} [i, j]]')
+        check('[(i for i in range(5)) [i, j]]')
+        check('[(lambda x: x) [i, j]]')
+        check('[f"{x}" [i, j]]')
+        check('[f"x={x}" [i, j]]')
+        check('["abc" [i, j]]')
+        check('[b"abc" [i, j]]')
+        check('[123 [i, j]]')
+        check('[12.3 [i, j]]')
+        check('[12.3j [i, j]]')
+
+        check('[(1, 2) [3, 4]]')
+        check('[(x, y) [3, 4]]')
+        check('[[1, 2] [3, 4]]')
+        check('[{1, 2} [3, 4]]')
+        check('[[i for i in range(5)] [3, 4]]')
+        check('[{i for i in range(5)} [3, 4]]')
+        check('[(i for i in range(5)) [3, 4]]')
+        check('[(lambda x: x) [3, 4]]')
+        check('[f"{x}" [3, 4]]')
+        check('[f"x={x}" [3, 4]]')
+        check('["abc" [3, 4]]')
+        check('[b"abc" [3, 4]]')
+        check('[123 [3, 4]]')
+        check('[12.3 [3, 4]]')
+        check('[12.3j [3, 4]]')
+
     def test_binary_mask_ops(self):
         x = 1 & 1
         x = 1 ^ 1
