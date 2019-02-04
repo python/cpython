@@ -1,1 +1,0 @@
-:func:`os.posix_spawn` and :func:`os.posix_spawnp` now have a *setsid* parameter.

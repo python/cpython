@@ -1,1 +1,0 @@
-GIL is released while calling functions that acquire Windows loader lock.

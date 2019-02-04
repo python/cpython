@@ -1,2 +1,0 @@
-Fix segfaults and :exc:`SystemError`\ s when deleting certain attributes.
-Patch by Zackery Spytz.

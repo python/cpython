@@ -1,3 +1,0 @@
-Update word/identifier definition from ascii to unicode. In text and entry
-boxes, this affects selection by double-click, movement left/right by
-control-left/right, and deletion left/right by control-BACKSPACE/DEL.

@@ -1,3 +1,0 @@
-:mod:`asyncio`: Enhance ``IocpProactor.close()`` log: wait 1 second before
-the first log, then log every second. Log also the number of seconds since
-``close()`` was called.
