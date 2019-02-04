@@ -1,1 +1,0 @@
-Fix `test_utf8_mode.test_cmd_line` for AIX

@@ -1,2 +1,0 @@
-Add end line and end column position information to the Python AST nodes.
-This is a C-level backwards incompatible change.
