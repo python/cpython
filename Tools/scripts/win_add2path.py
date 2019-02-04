@@ -30,10 +30,10 @@ def modify():
         except:
             raise OSError("Failed to load PATH value")
 
-		userscripts = None
+        userscripts = None
         if hasattr(site, "USER_SITE"):
             if dtype == winreg.REG_EXPAND_SZ:
-			    usersite = site.USER_SITE.replace(appdata, "%APPDATA%")
+                usersite = site.USER_SITE.replace(appdata, "%APPDATA%")
                 userpath = os.path.dirname(usersite)
                 userscripts = os.path.join(userpath, "Scripts")
             elif dtype == winreg.REG_SZ:
