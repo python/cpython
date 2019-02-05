@@ -20,6 +20,25 @@ PyCell_New(PyObject *obj)
     return (PyObject *)op;
 }
 
+static PyObject *
+cell_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *obj = NULL;
+
+    if (!_PyArg_NoKeywords("cell", kwargs)) {
+        goto exit;
+    }
+    /* min = 0: we allow the cell to be empty */
+    if (!PyArg_UnpackTuple(args, "cell", 0, 1, &obj)) {
+        goto exit;
+    }
+    return_value = PyCell_New(obj);
+
+exit:
+    return return_value;
+}
+
 PyObject *
 PyCell_Get(PyObject *op)
 {
@@ -156,4 +175,13 @@ PyTypeObject PyCell_Type = {
     0,                                          /* tp_methods */
     0,                                          /* tp_members */
     cell_getsetlist,                            /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    (newfunc)cell_new,                          /* tp_new */
+    0,                                          /* tp_free */
 };
