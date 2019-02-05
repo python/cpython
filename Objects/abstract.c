@@ -1734,7 +1734,7 @@ PySequence_SetItem(PyObject *s, Py_ssize_t i, PyObject *o)
         }
         if (m->sq_ass_item)
             return m->sq_ass_item(s, i, o);
-        else if (m->sq_ass_item){
+        else if (m->sq_item){
             // Iff you are assigning the same reference then be forgiving :)
             PyObject * old_value = m->sq_item(s, i);
             if (old_value == o)
