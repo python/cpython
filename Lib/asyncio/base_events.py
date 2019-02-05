@@ -1187,7 +1187,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                                     (local_addr, remote_addr)), )
             else:
                 # join address by (family, protocol)
-                addr_infos = collections.OrderedDict()
+                addr_infos = {}  # Using order preserving dict
                 for idx, addr in ((0, local_addr), (1, remote_addr)):
                     if addr is not None:
                         assert isinstance(addr, tuple) and len(addr) == 2, (
