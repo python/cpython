@@ -745,7 +745,8 @@ Compile source into a code object that can be executed by exec() or eval().
 The source code may represent a Python module, statement or expression.
 The filename will be used for run-time error messages.
 The mode must be 'exec' to compile a module, 'single' to compile a
-single (interactive) statement, or 'eval' to compile an expression.
+single (interactive) statement, 'eval' to compile an expression, or 'func_type'
+to compile a function type declaration.
 The flags argument, if present, controls which future statements influence
 the compilation of the code.
 The dont_inherit argument, if true, stops the compilation inheriting
