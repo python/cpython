@@ -1721,7 +1721,7 @@ PySequence_SetItem(PyObject *s, Py_ssize_t i, PyObject *o)
     }
 
     m = s->ob_type->tp_as_sequence;
-    if (m && m->sq_ass_item) {
+    if (m) {
         if (i < 0) {
             if (m->sq_length) {
                 Py_ssize_t l = (*m->sq_length)(s);
@@ -1732,7 +1732,14 @@ PySequence_SetItem(PyObject *s, Py_ssize_t i, PyObject *o)
                 i += l;
             }
         }
-        return m->sq_ass_item(s, i, o);
+        if (m->sq_ass_item)
+            return m->sq_ass_item(s, i, o);
+        else if (m->sq_ass_item){
+            // Iff you are assigning the same reference then be forgiving :)
+            PyObject * old_value = m->sq_item(s, i);
+            if (old_value == o)
+                return 0;
+            }
     }
 
     if (s->ob_type->tp_as_mapping && s->ob_type->tp_as_mapping->mp_ass_subscript) {
