@@ -1,0 +1,3 @@
+Fix duplicate calls to :meth:`configparser.ConfigParser.optionxform` on option
+while using :meth:`configparser.ConfigParser.read_dict`. Patch by Karthikeyan
+Singaravelan.
