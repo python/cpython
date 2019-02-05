@@ -269,4 +269,4 @@ if __name__=='__main__':
             continue
         timing = min(Timer(f).repeat(7, 1000))
         timing *= 1000000 / (len(trials) * steps_per_trial)
-        print(u'{:6.1f} \N{greek small letter mu}s\t{}'.format(timing, f.__name__))
+        print('{:6.1f} ns\t{}'.format(timing, f.__name__))
