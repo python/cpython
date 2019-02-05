@@ -1,0 +1,2 @@
+Use monotonic clock for ``pthread_cond_timedwait`` when
+``pthread_condattr_setclock`` and ``CLOCK_MONOTONIC`` are available.
