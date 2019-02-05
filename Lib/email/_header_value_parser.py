@@ -70,7 +70,6 @@ XXX: provide complete list of token types.
 import re
 import urllib   # For urllib.parse.unquote
 from string import hexdigits
-from collections import OrderedDict
 from operator import itemgetter
 from email import _encoded_words as _ew
 from email import errors
@@ -720,7 +719,7 @@ class MimeParameters(TokenList):
         # to assume the RFC 2231 pieces can come in any order.  However, we
         # output them in the order that we first see a given name, which gives
         # us a stable __str__.
-        params = OrderedDict()
+        params = {}  # Using order preserving dict from Python 3.7+
         for token in self:
             if not token.token_type.endswith('parameter'):
                 continue
