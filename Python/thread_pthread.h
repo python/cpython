@@ -149,20 +149,6 @@ _PyThread_cond_after(long long us, struct timespec *abs)
     *abs = ts;
 }
 
-int
-_PyThread_cond_timedwait(PyCOND_T *cond, PyMUTEX_T *mut, struct timespec *abs)
-{
-    int r = pthread_cond_timedwait(cond, mut, abs);
-    if (r == ETIMEDOUT) {
-        return 1;
-    }
-    if (r) {
-        return -1;
-    }
-    return 0;
-}
-
-
 
 /* A pthread mutex isn't sufficient to model the Python lock type
  * because, according to Draft 5 of the docs (P1003.4a/D5), both of the
@@ -595,12 +581,15 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
              * protocol */
             while (success == PY_LOCK_FAILURE) {
                 if (microseconds > 0) {
-                    status = _PyThread_cond_timedwait(
+                    status = pthread_cond_timedwait(
                         &thelock->lock_released,
                         &thelock->mut, &abs);
+                    if (status == 1) {
+                        break;
+                    }
                     if (status == ETIMEDOUT)
                         break;
-                    CHECK_STATUS_PTHREAD("pthread_cond_timed_wait");
+                    CHECK_STATUS_PTHREAD("pthread_cond_timedwait");
                 }
                 else {
                     status = pthread_cond_wait(

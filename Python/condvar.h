@@ -51,7 +51,6 @@
 /* These private functions are implemented in Python/thread_pthread.h */
 int _PyThread_cond_init(PyCOND_T *cond);
 void _PyThread_cond_after(long long us, struct timespec *abs);
-int _PyThread_cond_timedwait(PyCOND_T *cond, PyMUTEX_T *mut, struct timespec *abs);
 
 /* The following functions return 0 on success, nonzero on error */
 #define PyMUTEX_INIT(mut)       pthread_mutex_init((mut), NULL)
@@ -71,7 +70,14 @@ PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long long us)
 {
     struct timespec abs;
     _PyThread_cond_after(us, &abs);
-    return _PyThread_cond_timedwait(cond, mut, &abs);
+    int ret = pthread_cond_timedwait(cond, mut, &abs);
+    if (ret == ETIMEDOUT) {
+        return 1;
+    }
+    if (ret) {
+        return -1;
+    }
+    return 0;
 }
 
 #elif defined(NT_THREADS)
