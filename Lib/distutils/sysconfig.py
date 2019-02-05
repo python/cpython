@@ -29,9 +29,7 @@ if "_PYTHON_PROJECT_BASE" in os.environ:
     project_base = os.path.abspath(os.environ["_PYTHON_PROJECT_BASE"])
 else:
     project_base = os.path.dirname(os.path.abspath(sys.executable))
-if (os.name == 'nt' and
-    project_base.lower().endswith(('\\pcbuild\\win32', '\\pcbuild\\amd64'))):
-    project_base = os.path.dirname(os.path.dirname(project_base))
+
 
 # python_build: (Boolean) if true, we're either building Python or
 # building an extension with an un-installed Python, so we use
@@ -43,15 +41,25 @@ def _is_python_source_dir(d):
         if os.path.isfile(os.path.join(d, "Modules", fn)):
             return True
     return False
+
 _sys_home = getattr(sys, '_home', None)
-if (_sys_home and os.name == 'nt' and
-    _sys_home.lower().endswith(('\\pcbuild\\win32', '\\pcbuild\\amd64'))):
-    _sys_home = os.path.dirname(os.path.dirname(_sys_home))
+
+if os.name == 'nt':
+    def _fix_pcbuild(d):
+        if d and os.path.normcase(d).startswith(
+                os.path.normcase(os.path.join(PREFIX, "PCbuild"))):
+            return PREFIX
+        return d
+    project_base = _fix_pcbuild(project_base)
+    _sys_home = _fix_pcbuild(_sys_home)
+
 def _python_build():
     if _sys_home:
         return _is_python_source_dir(_sys_home)
     return _is_python_source_dir(project_base)
+
 python_build = _python_build()
+
 
 # Calculate the build qualifier flags if they are defined.  Adding the flags
 # to the include and lib directories only makes sense for an installation, not
@@ -101,6 +109,11 @@ def get_python_inc(plat_specific=0, prefix=None):
         python_dir = 'python' + get_python_version() + build_flags
         return os.path.join(prefix, "include", python_dir)
     elif os.name == "nt":
+        if python_build:
+            # Include both the include and PC dir to ensure we can find
+            # pyconfig.h
+            return (os.path.join(prefix, "include") + os.path.pathsep +
+                    os.path.join(prefix, "PC"))
         return os.path.join(prefix, "include")
     else:
         raise DistutilsPlatformError(
