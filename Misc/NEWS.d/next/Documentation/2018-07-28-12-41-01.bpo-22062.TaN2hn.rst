@@ -1,1 +1,1 @@
-documentation and docstrings updated, Original patch by Mike Short
+Update documentation and docstrings for pathlib. Original patch by Mike Short.
