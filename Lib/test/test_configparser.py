@@ -428,6 +428,20 @@ boolean {0[0]} NO
                 },
             })
 
+    def test_read_dict_optionxform(self):
+        config = {
+            "foo": {
+                "bar": "baz",
+            }
+        }
+
+        cf = self.newconfig()
+        cf.optionxform = lambda x: f"({x})"
+        cf.read_dict(config)
+        self.assertEqual(cf.get("foo", "bar"), "baz")
+        with self.assertRaises(KeyError):
+            cf['foo']['(bar)']
+
     def test_case_sensitivity(self):
         cf = self.newconfig()
         cf.add_section("A")
