@@ -717,6 +717,7 @@ MULTIARCH
 ac_ct_CXX
 MAINCC
 CXX
+CCACHE
 SED
 GREP
 CPP
@@ -4584,6 +4585,23 @@ $as_echo "$ac_cv_path_SED" >&6; }
  SED="$ac_cv_path_SED"
   rm -f conftest.sed
 
+
+# Check for ccache
+
+
+as_save_IFS=$IFS; IFS=:
+for as_dir in $PATH
+do
+	IFS=$as_save_IFS
+	if test -x "${as_dir}/ccache"; then
+		if test -z "${CCACHE}"; then
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: Found ccache in ${as_dir}" >&5
+$as_echo "$as_me: Found ccache in ${as_dir}" >&6;}
+			CCACHE="${as_dir}/ccache"
+		fi
+	fi
+done
+IFS=$as_save_IFS
 
 
 

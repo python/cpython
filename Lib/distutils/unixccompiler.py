@@ -13,7 +13,11 @@ the "typical" Unix-style command-line C compiler:
   * link shared library handled by 'cc -shared'
 """
 
-import os, sys, re
+import functools
+import os
+import re
+import shutil
+import sys
 
 from distutils import sysconfig
 from distutils.dep_util import newer
@@ -108,14 +112,19 @@ class UnixCCompiler(CCompiler):
             except DistutilsExecError as msg:
                 raise CompileError(msg)
 
+    @functools.cached_property
+    def _compiler_wrapper(self):
+        ccache = shutil.which('ccache')
+        return [ccache] if ccache else []
+
     def _compile(self, obj, src, ext, cc_args, extra_postargs, pp_opts):
         compiler_so = self.compiler_so
         if sys.platform == 'darwin':
             compiler_so = _osx_support.compiler_fixup(compiler_so,
                                                     cc_args + extra_postargs)
         try:
-            self.spawn(compiler_so + cc_args + [src, '-o', obj] +
-                       extra_postargs)
+            self.spawn(self._compiler_wrapper + compiler_so + cc_args +
+                       [src, '-o', obj] + extra_postargs)
         except DistutilsExecError as msg:
             raise CompileError(msg)
 

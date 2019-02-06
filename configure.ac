@@ -630,6 +630,22 @@ AC_PROG_CPP
 AC_PROG_GREP
 AC_PROG_SED
 
+# Check for ccache
+
+AC_SUBST(CCACHE)
+as_save_IFS=$IFS; IFS=:
+for as_dir in $PATH
+do
+	IFS=$as_save_IFS
+	if test -x "${as_dir}/ccache"; then
+		if test -z "${CCACHE}"; then
+			AC_MSG_NOTICE([Found ccache in ${as_dir}])
+			CCACHE="${as_dir}/ccache"
+		fi
+	fi
+done
+IFS=$as_save_IFS
+
 AC_SUBST(CXX)
 AC_SUBST(MAINCC)
 AC_MSG_CHECKING(for --with-cxx-main=<compiler>)

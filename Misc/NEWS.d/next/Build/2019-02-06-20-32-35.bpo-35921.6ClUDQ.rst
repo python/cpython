@@ -1,0 +1,2 @@
+Use ccache if available, making compilation much faster when the cache is
+primed.
