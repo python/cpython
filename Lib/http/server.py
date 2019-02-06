@@ -1224,10 +1224,14 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                 self.log_message("CGI script exited OK")
 
 
-def _get_best_family(address):
-    infos = socket.getaddrinfo(*address, type=socket.SOCK_STREAM)
+def _get_best_family(*address):
+    infos = socket.getaddrinfo(
+        *address,
+        type=socket.SOCK_STREAM,
+        flags=socket.AI_PASSIVE,
+    )
     family, type, proto, canonname, sockaddr = next(iter(infos))
-    return family
+    return family, sockaddr
 
 
 def test(HandlerClass=BaseHTTPRequestHandler,
@@ -1238,12 +1242,10 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     This runs an HTTP server on port 8000 (or the port argument).
 
     """
-    server_address = (bind, port)
-
-    ServerClass.address_family = _get_best_family(server_address)
+    ServerClass.address_family, addr = _get_best_family(bind, port)
 
     HandlerClass.protocol_version = protocol
-    with ServerClass(server_address, HandlerClass) as httpd:
+    with ServerClass(addr, HandlerClass) as httpd:
         host, port = httpd.socket.getsockname()[:2]
         url_host = f'[{host}]' if ':' in host else host
         print(
