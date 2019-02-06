@@ -140,6 +140,7 @@ Standard names are defined for the following types:
    The type for cell objects: such objects are used as containers for
    a function's free variables.
 
+   .. versionadded:: 3.8
 
 .. data:: MethodType
 
