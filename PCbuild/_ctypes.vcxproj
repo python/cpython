@@ -118,13 +118,13 @@
       </Command>
       <Outputs>$(IntDir)win64_intel.obj;%(Outputs)</Outputs>
     </CustomBuild>
-    <CustomBuild Include="$(libffiDir)src\x86\sysv.S">
+    <CustomBuild Include="$(libffiDir)src\x86\sysv_intel.S">
       <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>
       <Command>
-        cl /nologo /I"$(libffiDir)src\x86" /I"$(libffiDir)include" /EP "%(FullPath)" &gt; "$(IntDir)sysv.asm
-        ml /nologo /c /safeseh /Zi /Fo "$(IntDir)sysv.obj" "$(IntDir)sysv.asm
+        cl /nologo /I"$(libffiDir)src\x86" /I"$(libffiDir)include" /EP "%(FullPath)" &gt; "$(IntDir)sysv_intel.asm
+        ml /nologo /c /safeseh /Zi /Fo "$(IntDir)sysv_intel.obj" "$(IntDir)sysv_intel.asm
       </Command>
-      <Outputs>$(IntDir)sysv.obj;%(Outputs)</Outputs>
+      <Outputs>$(IntDir)sysv_intel.obj;%(Outputs)</Outputs>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

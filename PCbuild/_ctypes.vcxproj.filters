@@ -17,8 +17,8 @@
     </ClInclude>
     <ClInclude Include="$(libffiDir)include\ffi.h" />
     <ClInclude Include="$(libffiDir)include\ffi_common.h" />
-    <ClInclude Include="$(libffiDir)fficonfig.h" />
-    <ClInclude Include="$(libffiDir)src\x86\ffitarget.h" />
+    <ClInclude Include="$(libffiDir)include\fficonfig.h" />
+    <ClInclude Include="$(libffiDir)include\ffitarget.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_ctypes\_ctypes.c">
@@ -45,7 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="$(libffiDir)src\x86\win64_intel.S" />
-    <CustomBuild Include="$(libffiDir)src\x86\sysv.S" />
+    <CustomBuild Include="$(libffiDir)src\x86\sysv_intel.S" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
