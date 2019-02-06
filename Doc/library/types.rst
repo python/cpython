@@ -135,6 +135,11 @@ Standard names are defined for the following types:
 
    The type for code objects such as returned by :func:`compile`.
 
+.. data:: CellType
+
+   The type for cell objects: such objects are used as containers for
+   a function's free variables.
+
 
 .. data:: MethodType
 

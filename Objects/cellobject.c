@@ -20,6 +20,18 @@ PyCell_New(PyObject *obj)
     return (PyObject *)op;
 }
 
+PyDoc_STRVAR(cell_new_doc,
+"cell([contents])\n"
+"--\n"
+"\n"
+"Create a new cell object.\n"
+"\n"
+"  contents\n"
+"    the contents of the cell. If not specified, the cell will be empty,\n"
+"    and \n further attemps to access its cell_contents attribute will\n"
+"    raise a ValueError.");
+
+
 static PyObject *
 cell_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
@@ -165,7 +177,7 @@ PyTypeObject PyCell_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    0,                                          /* tp_doc */
+    cell_new_doc,                               /* tp_doc */
     (traverseproc)cell_traverse,                /* tp_traverse */
     (inquiry)cell_clear,                        /* tp_clear */
     cell_richcompare,                           /* tp_richcompare */
