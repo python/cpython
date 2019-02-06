@@ -356,8 +356,8 @@ Build and C API Changes
   :c:func:`PyObject_GC_New`, :c:func:`PyObject_GC_NewVar`, and all their
   corresponding macros.
 
-  To prevent leaks tp_dealloc has be updated to decref the Type if it's not
-  already doing so.
+  If the Type has a custom tp_dealloc, it has to be updated to decref the Type
+  if it's not already doing so.
 
   (Contributed by Eddie Elizondo in :issue:`35810`.)
 
