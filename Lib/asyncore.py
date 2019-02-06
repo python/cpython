@@ -369,6 +369,8 @@ class dispatcher:
                 raise
 
     def recv(self, buffer_size):
+        if not buffer_size:
+            return b''
         try:
             data = self.socket.recv(buffer_size)
             if not data:
