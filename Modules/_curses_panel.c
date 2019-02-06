@@ -250,8 +250,10 @@ PyCursesPanel_New(PANEL *pan, PyCursesWindowObject *wo)
 static void
 PyCursesPanel_Dealloc(PyCursesPanelObject *po)
 {
-    PyObject *tp = (PyObject *) Py_TYPE(po);
-    PyObject *obj = (PyObject *) panel_userptr(po->pan);
+    PyObject *tp, *obj;
+
+    tp = (PyObject *) Py_TYPE(po);
+    obj = (PyObject *) panel_userptr(po->pan);
     if (obj) {
         (void)set_panel_userptr(po->pan, NULL);
         Py_DECREF(obj);

@@ -347,6 +347,20 @@ Build and C API Changes
 
   (Contributed by Antoine Pitrou in :issue:`32430`.)
 
+* Heap-allocated Types will now incref through :c:func:`PyObject_Init` (and
+  its parallel macro PyObject_INIT) instead of :c:func:`PyType_GenericAlloc`.
+
+  All instance allocation C APIs that call
+  :c:func:`PyObject_Init` will incref the Type accordingly. This
+  includes: :c:func:`PyObject_New`, :c:func:`PyObject_NewVar`,
+  :c:func:`PyObject_GC_New`, :c:func:`PyObject_GC_NewVar`, and all their
+  corresponding macros.
+
+  To prevent leaks tp_dealloc has be updated to decref the Type if it's not
+  already doing so.
+
+  (Contributed by Eddie Elizondo in :issue:`35810`.)
+
 
 Deprecated
 ==========
