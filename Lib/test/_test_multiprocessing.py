@@ -4725,7 +4725,7 @@ class TestSyncManagerTypes(unittest.TestCase):
     def test_list(self):
         o = self.manager.list()
         o.append(5)
-        self.run_test(self._test_list, o)
+        self.run_worker(self._test_list, o)
         assert o[1] == 6
     """
     manager_class = multiprocessing.managers.SyncManager
@@ -4736,17 +4736,18 @@ class TestSyncManagerTypes(unittest.TestCase):
         self.proc = None
 
     def tearDown(self):
-        self.manager.shutdown()
         if self.proc is not None and self.proc.is_alive():
             self.proc.terminate()
             self.proc.join()
+        self.manager.shutdown()
 
     @classmethod
     def tearDownClass(cls):
         support.reap_children()
 
-    def run_test(self, worker, obj):
+    def run_worker(self, worker, obj):
         self.proc = multiprocessing.Process(target=worker, args=(obj, ))
+        self.proc.daemon = True
         self.proc.start()
         join_process(self.proc)
         self.assertEqual(self.proc.exitcode, 0)
@@ -4765,7 +4766,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         o = getattr(self.manager, qname)(2)
         o.put(5)
         o.put(6)
-        self.run_test(self._test_queue, o)
+        self.run_worker(self._test_queue, o)
         assert o.empty()
         assert not o.full()
 
@@ -4782,7 +4783,7 @@ class TestSyncManagerTypes(unittest.TestCase):
     def test_event(self):
         o = self.manager.Event()
         o.set()
-        self.run_test(self._test_event, o)
+        self.run_worker(self._test_event, o)
         assert not o.is_set()
         o.wait(0.001)
 
@@ -4792,7 +4793,7 @@ class TestSyncManagerTypes(unittest.TestCase):
 
     def test_lock(self, lname="Lock"):
         o = getattr(self.manager, lname)()
-        self.run_test(self._test_lock, o)
+        self.run_worker(self._test_lock, o)
         o.release()
         self.assertRaises(RuntimeError, o.release)  # already released
 
@@ -4805,7 +4806,7 @@ class TestSyncManagerTypes(unittest.TestCase):
 
     def test_semaphore(self, sname="Semaphore"):
         o = getattr(self.manager, sname)()
-        self.run_test(self._test_semaphore, o)
+        self.run_worker(self._test_semaphore, o)
         o.release()
 
     def test_bounded_semaphore(self):
@@ -4817,7 +4818,7 @@ class TestSyncManagerTypes(unittest.TestCase):
 
     def test_condition(self):
         o = self.manager.Condition()
-        self.run_test(self._test_condition, o)
+        self.run_worker(self._test_condition, o)
         o.release()
         self.assertRaises(RuntimeError, o.release)  # already released
 
@@ -4828,7 +4829,7 @@ class TestSyncManagerTypes(unittest.TestCase):
 
     def test_barrier(self):
         o = self.manager.Barrier(5)
-        self.run_test(self._test_barrier, o)
+        self.run_worker(self._test_barrier, o)
 
     @classmethod
     def _test_pool(cls, obj):
@@ -4838,7 +4839,7 @@ class TestSyncManagerTypes(unittest.TestCase):
 
     def test_pool(self):
         o = self.manager.Pool(processes=4)
-        self.run_test(self._test_pool, o)
+        self.run_worker(self._test_pool, o)
 
     @classmethod
     def _test_list(cls, obj):
@@ -4855,7 +4856,7 @@ class TestSyncManagerTypes(unittest.TestCase):
     def test_list(self):
         o = self.manager.list()
         o.append(5)
-        self.run_test(self._test_list, o)
+        self.run_worker(self._test_list, o)
         assert not o
         self.assertEqual(len(o), 0)
 
@@ -4875,7 +4876,7 @@ class TestSyncManagerTypes(unittest.TestCase):
     def test_dict(self):
         o = self.manager.dict()
         o['foo'] = 5
-        self.run_test(self._test_dict, o)
+        self.run_worker(self._test_dict, o)
         assert not o
         self.assertEqual(len(o), 0)
 
@@ -4887,7 +4888,7 @@ class TestSyncManagerTypes(unittest.TestCase):
 
     def test_value(self):
         o = self.manager.Value('i', 1)
-        self.run_test(self._test_value, o)
+        self.run_worker(self._test_value, o)
         self.assertEqual(o.value, 2)
         self.assertEqual(o.get(), 2)
 
@@ -4900,7 +4901,7 @@ class TestSyncManagerTypes(unittest.TestCase):
 
     def test_array(self):
         o = self.manager.Array('i', [0, 1])
-        self.run_test(self._test_array, o)
+        self.run_worker(self._test_array, o)
 
     @classmethod
     def _test_namespace(cls, obj):
@@ -4911,7 +4912,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         o = self.manager.Namespace()
         o.x = 0
         o.y = 1
-        self.run_test(self._test_namespace, o)
+        self.run_worker(self._test_namespace, o)
 
 
 try:
