@@ -1006,6 +1006,11 @@ def _splithost(url):
         host_port, path = match.groups()
         if path and path[0] != '/':
             path = '/' + path
+
+        splitted_path = path.splitlines()
+        if splitted_path:
+            path = splitted_path[0]
+
         return host_port, path
     return None, url
 

@@ -1036,6 +1036,10 @@ class Utility_Tests(unittest.TestCase):
         self.assertEqual(splithost("//example.net/file#"),
                          ('example.net', '/file#'))
 
+        # bpo-35906: # avoid the header injection
+        self.assertEqual(splithost('//127.0.0.1:1234/?q=HTTP/1.1\r\nHeader: Value'),
+            ('127.0.0.1:1234', '/?q=HTTP/1.1'))
+
     def test_splituser(self):
         splituser = urllib.parse._splituser
         self.assertEqual(splituser('User:Pass@www.python.org:080'),

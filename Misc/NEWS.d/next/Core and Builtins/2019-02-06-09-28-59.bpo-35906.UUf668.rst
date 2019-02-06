@@ -1,0 +1,1 @@
+Avoid headers injection with urllib.urlopen.
