@@ -374,9 +374,11 @@ class dispatcher:
         try:
             data = self.socket.recv(buffer_size)
             if not data:
-                # a closed connection is indicated by signaling
-                # a read condition, and having recv() return 0.
-                self.handle_close()
+                # When recv() return 0, it indicates that the peer has
+                # shut down its write-end and there would be no more
+                # data to read from this socket. However we can still
+                # perform write operations on it.
+                self.handle_eof()
                 return b''
             else:
                 return data
@@ -497,6 +499,10 @@ class dispatcher:
     def handle_accepted(self, sock, addr):
         sock.close()
         self.log_info('unhandled accepted event', 'warning')
+
+    def handle_eof(self):
+        self.log_info('unhandled eof event', 'warning')
+        self.handle_close()
 
     def handle_close(self):
         self.log_info('unhandled close event', 'warning')
