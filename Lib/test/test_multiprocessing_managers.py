@@ -1,7 +1,8 @@
-import unittest
 from multiprocessing import Process
 from multiprocessing.managers import SyncManager
 from test.support import reap_children
+import test._test_multiprocessing
+import unittest
 
 
 class TestSyncManagerTypes(unittest.TestCase):
@@ -211,6 +212,9 @@ else:
 
 def tearDownModule():
     reap_children()
+
+
+test._test_multiprocessing.install_tests_in_module_dict(globals(), 'managers')
 
 
 if __name__ == '__main__':
