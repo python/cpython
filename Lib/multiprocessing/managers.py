@@ -1200,4 +1200,3 @@ SyncManager.register('Namespace', Namespace, NamespaceProxy)
 # types returned by methods of PoolProxy
 SyncManager.register('Iterator', proxytype=IteratorProxy, create_method=False)
 SyncManager.register('AsyncResult', create_method=False)
-
