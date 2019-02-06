@@ -1119,9 +1119,22 @@ class MiscTestCase(unittest.TestCase):
 
 class ScriptTestCase(unittest.TestCase):
 
+    def mock_server_class(self):
+        return mock.MagicMock(
+            return_value=mock.MagicMock(
+                __enter__=mock.MagicMock(
+                    return_value=mock.MagicMock(
+                        socket=mock.MagicMock(
+                            getsockname=lambda: ('', 0),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
     @mock.patch('builtins.print')
     def test_server_test_unspec(self, _):
-        mock_server = mock.MagicMock()
+        mock_server = self.mock_server_class()
         server.test(ServerClass=mock_server, bind="")
         self.assertIn(
             mock_server.address_family,
@@ -1130,7 +1143,7 @@ class ScriptTestCase(unittest.TestCase):
 
     @mock.patch('builtins.print')
     def test_server_test_localhost(self, _):
-        mock_server = mock.MagicMock()
+        mock_server = self.mock_server_class()
         server.test(ServerClass=mock_server, bind="localhost")
         self.assertIn(
             mock_server.address_family,
@@ -1139,7 +1152,7 @@ class ScriptTestCase(unittest.TestCase):
 
     @mock.patch('builtins.print')
     def test_server_test_ipv6(self, _):
-        mock_server = mock.MagicMock()
+        mock_server = self.mock_server_class()
         server.test(ServerClass=mock_server, bind="::")
         self.assertEqual(mock_server.address_family, socket.AF_INET6)
 
@@ -1154,7 +1167,7 @@ class ScriptTestCase(unittest.TestCase):
 
     @mock.patch('builtins.print')
     def test_server_test_ipv4(self, _):
-        mock_server = mock.MagicMock()
+        mock_server = self.mock_server_class()
         server.test(ServerClass=mock_server, bind="0.0.0.0")
         self.assertEqual(mock_server.address_family, socket.AF_INET)
 
