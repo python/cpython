@@ -94,11 +94,11 @@ The :mod:`pprint` module also provides several shortcut functions:
    *width*, *depth*, *compact* and *sort_dicts* will be passed to the
    :class:`PrettyPrinter` constructor as formatting parameters.
 
-   .. versionchanged:: 3.8
-      Added the *sort_dicts* parameter.
-
    .. versionchanged:: 3.4
       Added the *compact* parameter.
+
+   .. versionchanged:: 3.8
+      Added the *sort_dicts* parameter.
 
 
 .. function:: pp(object, *args, sort_dicts=False, **kwargs)
@@ -122,11 +122,11 @@ The :mod:`pprint` module also provides several shortcut functions:
    within a scope).  *indent*, *width*, *depth*, *compact* and *sort_dicts* will
    be passed to the :class:`PrettyPrinter` constructor as formatting parameters.
 
-   .. versionchanged:: 3.8
-      Added the *sort_dicts* parameter.
-
    .. versionchanged:: 3.4
       Added the *compact* parameter.
+
+   .. versionchanged:: 3.8
+      Added the *sort_dicts* parameter.
 
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
