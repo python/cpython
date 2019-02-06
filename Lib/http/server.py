@@ -1224,6 +1224,12 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                 self.log_message("CGI script exited OK")
 
 
+def _get_best_family(address):
+    infos = socket.getaddrinfo(*address, type=socket.SOCK_STREAM)
+    family, type, proto, canonname, sockaddr = next(iter(infos))
+    return family
+
+
 def test(HandlerClass=BaseHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
          protocol="HTTP/1.0", port=8000, bind=""):
@@ -1234,8 +1240,7 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     """
     server_address = (bind, port)
 
-    if ':' in bind:
-        ServerClass.address_family = socket.AF_INET6
+    ServerClass.address_family = _get_best_family(server_address)
 
     HandlerClass.protocol_version = protocol
     with ServerClass(server_address, HandlerClass) as httpd:
