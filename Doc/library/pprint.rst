@@ -55,11 +55,13 @@ The :mod:`pprint` module defines one class:
    keys sorted alphabetically, otherwise they will be sorted by their insertion
    order.
 
+   .. versionchanged:: 3.4
+      Added the *compact* parameter.
+
    .. versionchanged:: 3.8
       Added the *sort_dicts* parameter.
 
-   .. versionchanged:: 3.4
-      Added the *compact* parameter.
+
 
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
