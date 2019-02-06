@@ -5447,9 +5447,11 @@ fi
 # shm_* may only be available if linking against librt
 save_LIBS="$LIBS"
 save_includes_default="$ac_includes_default"
-AC_SEARCH_LIBS(shm_open, rt,
-	       AC_DEFINE(HAVE_RT_SHM_OPEN, 1,
-			 [Define to 1 if librt contains shm_open().]))
+AC_SEARCH_LIBS(shm_open, rt)
+if test "$ac_cv_search_shm_open" = "-lrt"; then
+    AC_DEFINE(HAVE_RT_SHM_OPEN, 1,
+              [Define to 1 if librt contains shm_open().])
+fi
 AC_CHECK_HEADERS(sys/mman.h)
 ac_includes_default="\
 ${ac_includes_default}

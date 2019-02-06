@@ -16920,10 +16920,13 @@ ac_res=$ac_cv_search_shm_open
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
+fi
+
+if test "$ac_cv_search_shm_open" = "-lrt"; then
+
 $as_echo "#define HAVE_RT_SHM_OPEN 1" >>confdefs.h
 
 fi
-
 for ac_header in sys/mman.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "sys/mman.h" "ac_cv_header_sys_mman_h" "$ac_includes_default"
