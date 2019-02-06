@@ -1,0 +1,28 @@
+Consider this integer `x`
+
+```
+x = 1
+x = x
+```
+
+This should be effectively a nop without caring about x being global or local or whatever.
+
+Enter tuples.
+You can not modify tuples, it is an inmutable object. The tuple itself only contain the references to the different things. Though you could modify the contents of mutable things contained within a tuple. An objects in the tuple is just a reference. 
+
+```
+>>> x = 1
+>>> tp = (0, x, 2, ['a', 'b', 'c'])
+>>> tp[1] is x
+True
+>>> tp[1] = x
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: 'tuple' object does not support item assignment
+```
+Are you changing the tuple if it should always be exactly the same before and after an hypothetical instruction ?
+Things like this do not currently work and it looks counterintuitive
+```
+>>> tp[3] += ['d']
+```
+So what if the act of "re-assigning" the same reference to a tuple is _explicitly_ a no-operation. ?? hmm :thinkingface:
