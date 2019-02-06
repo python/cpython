@@ -1156,12 +1156,12 @@ class ScriptTestCase(unittest.TestCase):
         server.test(ServerClass=mock_server, bind="::")
         self.assertEqual(mock_server.address_family, socket.AF_INET6)
 
-        mock_server.reset_mock()
+        mock_server = self.mock_server_class()
         server.test(ServerClass=mock_server,
                     bind="2001:0db8:85a3:0000:0000:8a2e:0370:7334")
         self.assertEqual(mock_server.address_family, socket.AF_INET6)
 
-        mock_server.reset_mock()
+        mock_server = self.mock_server_class()
         server.test(ServerClass=mock_server, bind="::1")
         self.assertEqual(mock_server.address_family, socket.AF_INET6)
 
@@ -1171,11 +1171,11 @@ class ScriptTestCase(unittest.TestCase):
         server.test(ServerClass=mock_server, bind="0.0.0.0")
         self.assertEqual(mock_server.address_family, socket.AF_INET)
 
-        mock_server.reset_mock()
+        mock_server = self.mock_server_class()
         server.test(ServerClass=mock_server, bind="8.8.8.8")
         self.assertEqual(mock_server.address_family, socket.AF_INET)
 
-        mock_server.reset_mock()
+        mock_server = self.mock_server_class()
         server.test(ServerClass=mock_server, bind="127.0.0.1")
         self.assertEqual(mock_server.address_family, socket.AF_INET)
 
