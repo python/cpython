@@ -4723,14 +4723,14 @@ class TestSyncManagerTypes(unittest.TestCase):
     received (and handled) from within the child process. E.g.:
 
     def test_list(self):
-        def callback(obj):
+        def worker(obj):
             # === within the child process ===
             assert obj[0] == 1
 
         # === within the parent process ===
         o = self.manager.list()
         o.append(1)
-        self.run_test(callback, o)
+        self.run_test(worker, o)
     """
     manager_class = multiprocessing.managers.SyncManager
 
@@ -4745,13 +4745,13 @@ class TestSyncManagerTypes(unittest.TestCase):
             self.proc.terminate()
             self.proc.join()
 
-    def run_test(self, callback, obj):
-        self.proc = multiprocessing.Process(target=callback, args=(obj, ))
+    def run_test(self, worker, obj):
+        self.proc = multiprocessing.Process(target=worker, args=(obj, ))
         self.proc.start()
         self.proc.join()
 
     def test_queue(self, qname="Queue"):
-        def callback(obj):
+        def worker(obj):
             assert obj.qsize() == 2
             assert obj.full()
             assert not obj.empty()
@@ -4763,7 +4763,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         o = getattr(self.manager, qname)(2)
         o.put(5)
         o.put(6)
-        self.run_test(callback, o)
+        self.run_test(worker, o)
         assert o.empty()
         assert not o.full()
 
@@ -4771,7 +4771,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         self.test_queue("JoinableQueue")
 
     def test_event(self):
-        def callback(obj):
+        def worker(obj):
             assert obj.is_set()
             obj.wait()
             obj.clear()
@@ -4779,16 +4779,16 @@ class TestSyncManagerTypes(unittest.TestCase):
 
         o = self.manager.Event()
         o.set()
-        self.run_test(callback, o)
+        self.run_test(worker, o)
         assert not o.is_set()
         o.wait(0.001)
 
     def test_lock(self, lname="Lock"):
-        def callback(obj):
+        def worker(obj):
             o.acquire()
 
         o = getattr(self.manager, lname)()
-        self.run_test(callback, o)
+        self.run_test(worker, o)
         o.release()
         self.assertRaises(RuntimeError, o.release)  # already released
 
@@ -4796,35 +4796,35 @@ class TestSyncManagerTypes(unittest.TestCase):
         self.test_lock(lname="RLock")
 
     def test_semaphore(self, sname="Semaphore"):
-        def callback(obj):
+        def worker(obj):
             obj.acquire()
 
         o = getattr(self.manager, sname)()
-        self.run_test(callback, o)
+        self.run_test(worker, o)
         o.release()
 
     def test_bounded_semaphore(self):
         self.test_semaphore(sname="BoundedSemaphore")
 
     def test_condition(self):
-        def callback(obj):
+        def worker(obj):
             obj.acquire()
 
         o = self.manager.Condition()
-        self.run_test(callback, o)
+        self.run_test(worker, o)
         o.release()
         self.assertRaises(RuntimeError, o.release)  # already released
 
     def test_barrier(self):
-        def callback(obj):
+        def worker(obj):
             assert obj.parties == 5
             obj.reset()
 
         o = self.manager.Barrier(5)
-        self.run_test(callback, o)
+        self.run_test(worker, o)
 
     def test_pool(self):
-        def callback(obj):
+        def worker(obj):
             # XXX: further tests were supposed to be here but it
             # seems Pool() is broken. When using apply_async() or
             # or map() I get:
@@ -4835,10 +4835,10 @@ class TestSyncManagerTypes(unittest.TestCase):
                 pass
 
         o = self.manager.Pool(processes=4)
-        self.run_test(callback, o)
+        self.run_test(worker, o)
 
     def test_list(self):
-        def callback(obj):
+        def worker(obj):
             assert obj[0] == 5
             assert obj.count(5) == 1
             assert obj.index(5) == 0
@@ -4851,12 +4851,12 @@ class TestSyncManagerTypes(unittest.TestCase):
 
         o = self.manager.list()
         o.append(5)
-        self.run_test(callback, o)
+        self.run_test(worker, o)
         assert not o
         self.assertEqual(len(o), 0)
 
     def test_dict(self):
-        def callback(obj):
+        def worker(obj):
             assert len(obj) == 1
             assert obj['foo'] == 5
             assert obj.get('foo') == 5
@@ -4868,40 +4868,40 @@ class TestSyncManagerTypes(unittest.TestCase):
 
         o = self.manager.dict()
         o['foo'] = 5
-        self.run_test(callback, o)
+        self.run_test(worker, o)
         assert not o
         self.assertEqual(len(o), 0)
 
     def test_value(self):
-        def callback(obj):
+        def worker(obj):
             assert obj.value == 1
             assert obj.get() == 1
             obj.set(2)
 
         o = self.manager.Value('i', 1)
-        self.run_test(callback, o)
+        self.run_test(worker, o)
         self.assertEqual(o.value, 2)
         self.assertEqual(o.get(), 2)
 
     def test_array(self):
-        def callback(obj):
+        def worker(obj):
             assert obj[0] == 0
             assert obj[1] == 1
             assert len(obj) == 2
             assert list(obj) == [0, 1]
 
         o = self.manager.Array('i', [0, 1])
-        self.run_test(callback, o)
+        self.run_test(worker, o)
 
     def test_namespace(self):
-        def callback(obj):
+        def worker(obj):
             assert obj.x == 0
             assert obj.y == 1
 
         o = self.manager.Namespace()
         o.x = 0
         o.y = 1
-        self.run_test(callback, o)
+        self.run_test(worker, o)
 
 
 try:
