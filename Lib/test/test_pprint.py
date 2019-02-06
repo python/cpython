@@ -297,7 +297,7 @@ class QueryTestCase(unittest.TestCase):
     def test_sort_dict(self):
         d = dict.fromkeys('cba')
         self.assertEqual(pprint.pformat(d, sort_dicts=False), "{'c': None, 'b': None, 'a': None}")
-        self.assertEqual(pprint.pformat([d, d], sort_dicts=False), 
+        self.assertEqual(pprint.pformat([d, d], sort_dicts=False),
             "[{'c': None, 'b': None, 'a': None}, {'c': None, 'b': None, 'a': None}]")
 
     def test_ordered_dict(self):

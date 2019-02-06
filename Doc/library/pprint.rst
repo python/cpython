@@ -91,7 +91,7 @@ The :mod:`pprint` module also provides several shortcut functions:
                       compact=False, sort_dicts=True)
 
    Return the formatted representation of *object* as a string.  *indent*,
-   *width*, *depth*, *compact* and *sort_dicts* will be passed to the 
+   *width*, *depth*, *compact* and *sort_dicts* will be passed to the
    :class:`PrettyPrinter` constructor as formatting parameters.
 
    .. versionchanged:: 3.8
@@ -104,9 +104,9 @@ The :mod:`pprint` module also provides several shortcut functions:
 .. function:: pp(object, *args, sort_dicts=False, **kwargs)
 
    Prints the formatted representation of *object* followed by a newline.
-   If *sort_dicts* is false (the default), dictionaries will be displayed with 
-   their keys sorted in insertion order, otherwise they will be sorted 
-   alphabetically. *args* an *kwargs* will be passed to :function:`pprint` as 
+   If *sort_dicts* is false (the default), dictionaries will be displayed with
+   their keys sorted in insertion order, otherwise they will be sorted
+   alphabetically. *args* an *kwargs* will be passed to :function:`pprint` as
    formatting paramaters.
 
    .. versionadded:: 3.8
@@ -119,7 +119,7 @@ The :mod:`pprint` module also provides several shortcut functions:
    newline.  If *stream* is ``None``, ``sys.stdout`` is used.  This may be used
    in the interactive interpreter instead of the :func:`print` function for
    inspecting values (you can even reassign ``print = pprint.pprint`` for use
-   within a scope).  *indent*, *width*, *depth*, *compact* and *sort_dicts* will 
+   within a scope).  *indent*, *width*, *depth*, *compact* and *sort_dicts* will
    be passed to the :class:`PrettyPrinter` constructor as formatting parameters.
 
    .. versionchanged:: 3.8

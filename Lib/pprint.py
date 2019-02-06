@@ -52,7 +52,7 @@ def pprint(object, stream=None, indent=1, width=80, depth=None, *,
         compact=compact, sort_dicts=sort_dicts)
     printer.pprint(object)
 
-def pformat(object, indent=1, width=80, depth=None, *, 
+def pformat(object, indent=1, width=80, depth=None, *,
             compact=False, sort_dicts=True):
     """Format a Python object into a pretty-printed representation."""
     return PrettyPrinter(indent=indent, width=width, depth=depth,
