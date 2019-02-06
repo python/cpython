@@ -1232,7 +1232,7 @@ def _get_best_family(address):
 
 def test(HandlerClass=BaseHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
-         protocol="HTTP/1.0", port=8000, bind=""):
+         protocol="HTTP/1.0", port=8000, bind=None):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).
@@ -1262,7 +1262,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--cgi', action='store_true',
                        help='Run as CGI Server')
-    parser.add_argument('--bind', '-b', default='', metavar='ADDRESS',
+    parser.add_argument('--bind', '-b', metavar='ADDRESS',
                         help='Specify alternate bind address '
                              '[default: all interfaces]')
     parser.add_argument('--directory', '-d', default=os.getcwd(),

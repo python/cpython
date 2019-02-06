@@ -1135,7 +1135,7 @@ class ScriptTestCase(unittest.TestCase):
     @mock.patch('builtins.print')
     def test_server_test_unspec(self, _):
         mock_server = self.mock_server_class()
-        server.test(ServerClass=mock_server, bind="")
+        server.test(ServerClass=mock_server, bind=None)
         self.assertIn(
             mock_server.address_family,
             (socket.AF_INET6, socket.AF_INET),
