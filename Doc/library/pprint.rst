@@ -33,7 +33,7 @@ The :mod:`pprint` module defines one class:
 .. index:: single: ...; placeholder
 
 .. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None, *, \
-                         compact=False)
+                         compact=False, sort_dicts=True)
 
    Construct a :class:`PrettyPrinter` instance.  This constructor understands
    several keyword parameters.  An output stream may be set using the *stream*
@@ -50,7 +50,13 @@ The :mod:`pprint` module defines one class:
    structure cannot be formatted within the constrained width, a best effort will
    be made.  If *compact* is false (the default) each item of a long sequence
    will be formatted on a separate line.  If *compact* is true, as many items
-   as will fit within the *width* will be formatted on each output line.
+   as will fit within the *width* will be formatted on each output line. If
+   *sort_dicts* is true (the default), dictionaries will be formatted with their
+   keys sorted alphabetically, otherwise they will be sorted by their insertion
+   order.
+
+   .. versionchanged:: 3.8
+      Added the *sort_dicts* parameter.
 
    .. versionchanged:: 3.4
       Added the *compact* parameter.
@@ -81,25 +87,43 @@ The :mod:`pprint` module defines one class:
 
 The :mod:`pprint` module also provides several shortcut functions:
 
-.. function:: pformat(object, indent=1, width=80, depth=None, *, compact=False)
+.. function:: pformat(object, indent=1, width=80, depth=None, *, \
+                      compact=False, sort_dicts=True)
 
    Return the formatted representation of *object* as a string.  *indent*,
-   *width*, *depth* and *compact* will be passed to the :class:`PrettyPrinter`
-   constructor as formatting parameters.
+   *width*, *depth*, *compact* and *sort_dicts* will be passed to the 
+   :class:`PrettyPrinter` constructor as formatting parameters.
+
+   .. versionchanged:: 3.8
+      Added the *sort_dicts* parameter.
 
    .. versionchanged:: 3.4
       Added the *compact* parameter.
 
 
+.. function:: pp(object, *args, sort_dicts=False, **kwargs)
+
+   Prints the formatted representation of *object* followed by a newline.
+   If *sort_dicts* is false (the default), dictionaries will be displayed with 
+   their keys sorted in insertion order, otherwise they will be sorted 
+   alphabetically. *args* an *kwargs* will be passed to :function:`pprint` as 
+   formatting paramaters.
+
+   .. versionadded:: 3.8
+
+
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
-                     compact=False)
+                     compact=False, sort_dicts=True)
 
    Prints the formatted representation of *object* on *stream*, followed by a
    newline.  If *stream* is ``None``, ``sys.stdout`` is used.  This may be used
    in the interactive interpreter instead of the :func:`print` function for
    inspecting values (you can even reassign ``print = pprint.pprint`` for use
-   within a scope).  *indent*, *width*, *depth* and *compact* will be passed
-   to the :class:`PrettyPrinter` constructor as formatting parameters.
+   within a scope).  *indent*, *width*, *depth*, *compact* and *sort_dicts* will 
+   be passed to the :class:`PrettyPrinter` constructor as formatting parameters.
+
+   .. versionchanged:: 3.8
+      Added the *sort_dicts* parameter.
 
    .. versionchanged:: 3.4
       Added the *compact* parameter.
