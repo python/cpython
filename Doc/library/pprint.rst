@@ -62,7 +62,6 @@ The :mod:`pprint` module defines one class:
       Added the *sort_dicts* parameter.
 
 
-
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
       >>> stuff.insert(0, stuff[:])
