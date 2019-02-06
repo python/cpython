@@ -4748,7 +4748,7 @@ class TestSyncManagerTypes(unittest.TestCase):
     def run_test(self, worker, obj):
         self.proc = multiprocessing.Process(target=worker, args=(obj, ))
         self.proc.start()
-        self.proc.join()
+        join_process(self.proc)
         self.assertEqual(self.proc.exitcode, 0)
 
     @classmethod
