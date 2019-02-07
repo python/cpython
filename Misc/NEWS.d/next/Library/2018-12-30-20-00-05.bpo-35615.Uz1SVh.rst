@@ -1,0 +1,3 @@
+:mod:`weakref`: Fix a RuntimeError when copying a WeakKeyDictionary or a
+WeakValueDictionary, due to some keys or values disappearing while
+iterating.
