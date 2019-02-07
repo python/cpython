@@ -213,6 +213,12 @@ pathlib
 contain characters unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
+socket
+------
+
+Added :meth:`~socket.bind_socket()` a convenience function.
+(Contributed by Giampaolo Rodola in :issue:`17561`.)
+
 
 shutil
 ------

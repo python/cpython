@@ -575,7 +575,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
 .. function:: create_connection(address[, timeout[, source_address]])
 
-   Connect to a TCP service listening on the Internet *address* (a 2-tuple
+   Connect to a TCP service listening on the internet *address* (a 2-tuple
    ``(host, port)``), and return the socket object.  This is a higher-level
    function than :meth:`socket.connect`: if *host* is a non-numeric hostname,
    it will try to resolve it for both :data:`AF_INET` and :data:`AF_INET6`,
@@ -595,6 +595,20 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.2
       *source_address* was added.
 
+.. function:: bind_socket(address, family=AF_UNSPEC, type=SOCK_STREAM, *,
+                          backlog=100, reuse_port=False):
+
+    Convenience function which creates a socket bound to *address* (a 2-tuple
+    ``(host, port)``) and return the socket object upon which you can call
+    :meth:`socket.accept()` in order to accept new connections.
+    If *host* is an empty string or ``None`` all network interfaces are assumed.
+    If *family* is :data:`AF_UNSPEC` or ``None`` the address family will be
+    determined from the *host* specified in *address*.
+    *type* should be either :data:`SOCK_STREAM` or :data:`SOCK_DGRAM`.
+    *backlog* is the queue size passed to :meth:`socket.listen` if
+    :data:`SOCK_STREAM` *type* is used.
+
+   .. versionadded:: 3.8
 
 .. function:: fromfd(fd, family, type, proto=0)
 

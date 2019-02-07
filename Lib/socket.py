@@ -728,6 +728,72 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
     else:
         raise error("getaddrinfo returns an empty list")
 
+def bind_socket(address, family=AF_UNSPEC, type=SOCK_STREAM, *, backlog=100,
+                reuse_port=False):
+    """Convenience function which creates a socket bound to *address*
+    (a 2-tuple (host, port)) and return the socket object.
+
+    If *host* is an empty string or None all network interfaces are assumed.
+
+    If *family* is AF_UNSPEC or None the address family will be
+    determined from the *host* specified in *address*.
+
+    *type* should be either SOCK_STREAM or SOCK_DGRAM.
+
+    *backlog* is the queue size passed to socket.listen() and is ignored
+    for SOCK_DGRAM socket types.
+
+    >>> with bind_socket((None, 8000)) as server:
+    ...     while True:
+    ...         conn, addr = server.accept()
+    ...         # handle new connection
+    """
+    host, port = address
+    if host == "":
+        host = None  # all interfaces
+    if not family:
+        family = AF_UNSPEC
+    reuse_addr = hasattr(_socket, 'SO_REUSEADDR') and \
+        os.name == 'posix' and sys.platform != 'cygwin'
+    info = getaddrinfo(host, port, family, type, 0, AI_PASSIVE)
+    # prefer AF_INET over AF_INET6
+    if family == AF_UNSPEC:
+        info.sort(key=lambda x: x[0] == AF_INET, reverse=True)
+    err = None
+    for res in info:
+        af, socktype, proto, canonname, sa = res
+        try:
+            sock = socket(af, socktype, proto)
+        except error as _:
+            err = _
+            if err.errno == errno.EAFNOSUPPORT:
+                continue
+            else:
+                raise
+        try:
+            if reuse_addr:
+                try:
+                    sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+                except error:
+                    pass
+            if reuse_port:
+                sock.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
+            sock.bind(sa)
+            if socktype == SOCK_STREAM:
+                sock.listen(backlog)
+            # Break explicitly a reference cycle.
+            err = None
+            return sock
+        except error:
+            sock.close()
+            raise
+
+    if err is not None:
+        raise err
+    else:
+        raise error("getaddrinfo returns an empty list")
+
+
 def getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
     """Resolve host and port into list of address info entries.
 

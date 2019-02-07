@@ -6053,9 +6053,119 @@ class TestMSWindowsTCPFlags(unittest.TestCase):
         self.assertEqual([], unknown,
             "New TCP flags were discovered. See bpo-32394 for more information")
 
+
+class BindSocketTest(unittest.TestCase):
+
+    def test_address(self):
+        port = support.find_unused_port()
+        with socket.bind_socket(("127.0.0.1", port)) as sock:
+            self.assertEqual(sock.getsockname()[0], "127.0.0.1")
+            self.assertEqual(sock.getsockname()[1], port)
+
+    def test_family(self):
+        # determined by address
+        with socket.bind_socket(("127.0.0.1", 0)) as sock:
+            self.assertEqual(sock.family, socket.AF_INET)
+        if support.IPV6_ENABLED:
+            with socket.bind_socket(("::1", 0)) as sock:
+                self.assertEqual(sock.family, socket.AF_INET6)
+        # determined by 'family' arg
+        with socket.bind_socket(("localhost", 0),
+                                family=socket.AF_INET) as sock:
+            self.assertEqual(sock.family, socket.AF_INET)
+        if support.IPV6_ENABLED:
+            with socket.bind_socket(("localhost", 0),
+                                    family=socket.AF_INET6) as sock:
+                self.assertEqual(sock.family, socket.AF_INET6)
+
+    def test_type(self):
+        with socket.bind_socket((None, 0)) as sock:
+            self.assertEqual(sock.type, socket.SOCK_STREAM)
+        with socket.bind_socket((None, 0), type=socket.SOCK_DGRAM) as sock:
+            self.assertEqual(sock.type, socket.SOCK_DGRAM)
+
+    @unittest.skipIf(not hasattr(socket, "SO_REUSEPORT"),
+                     "SO_REUSEPORT not supported")
+    def test_reuse_port(self):
+        with socket.bind_socket(("127.0.0.1", 0)) as sock:
+            opt = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT)
+            self.assertEqual(opt, 0)
+        with socket.bind_socket(("127.0.0.1", 0), reuse_port=True) as sock:
+            opt = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT)
+            self.assertEqual(opt, 1)
+
+
+class BindSocketFunctionalTest(unittest.TestCase):
+    timeout = 3
+
+    def setUp(self):
+        self.thread = None
+
+    def tearDown(self):
+        if self.thread is not None:
+            self.thread.join(self.timeout)
+
+    def echo_server(self, sock):
+        def run():
+            if sock.type == socket.SOCK_STREAM:
+                conn, _ = sock.accept()
+                conn.settimeout(self.timeout)
+                event.wait(self.timeout)
+                with conn:
+                    msg = conn.recv(1024)
+                    if not msg:
+                        return
+                    conn.sendall(msg)
+            else:
+                msg, addr = sock.recvfrom(1024)
+                sock.sendto(msg, addr)
+
+        event = threading.Event()
+        sock.settimeout(self.timeout)
+        self.thread = threading.Thread(target=run)
+        self.thread.start()
+        event.set()
+
+    def echo_test(self, sock):
+        self.echo_server(sock)
+        server_addr = sock.getsockname()[:2]
+        if sock.type == socket.SOCK_STREAM:
+            with socket.create_connection(server_addr) as client:
+                client.sendall(b'foo')
+                self.assertEqual(client.recv(1024), b'foo')
+        else:
+            with socket.socket(sock.family, sock.type) as client:
+                client.sendto(b'foo', server_addr)
+                msg, _ = client.recvfrom(1024)
+                self.assertEqual(msg, b'foo')
+
+    def test_tcp4(self):
+        with socket.bind_socket(("localhost", 0),
+                                socket.AF_INET, socket.SOCK_STREAM) as sock:
+            self.echo_test(sock)
+
+    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
+    def test_tcp6(self):
+        with socket.bind_socket(("localhost", 0),
+                                socket.AF_INET6, socket.SOCK_STREAM) as sock:
+            self.echo_test(sock)
+
+    def test_udp4(self):
+        with socket.bind_socket(("localhost", 0),
+                                socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            self.echo_test(sock)
+
+    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
+    def test_udp6(self):
+        with socket.bind_socket(("localhost", 0),
+                                socket.AF_INET6, socket.SOCK_DGRAM) as sock:
+            self.echo_test(sock)
+
+
 def test_main():
     tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
-             TestExceptions, BufferIOTest, BasicTCPTest2, BasicUDPTest, UDPTimeoutTest ]
+             TestExceptions, BufferIOTest, BasicTCPTest2, BasicUDPTest,
+             UDPTimeoutTest, BindSocketTest, BindSocketFunctionalTest]
 
     tests.extend([
         NonBlockingTCPTests,
