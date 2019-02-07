@@ -69,7 +69,7 @@ class Module:
 
 class ModuleFinder:
 
-    def __init__(self, path=None, debug=0, excludes=[], replace_paths=[]):
+    def __init__(self, path=None, debug=0, excludes=None, replace_paths=None):
         if path is None:
             path = sys.path
         self.path = path
@@ -77,8 +77,8 @@ class ModuleFinder:
         self.badmodules = {}
         self.debug = debug
         self.indent = 0
-        self.excludes = excludes
-        self.replace_paths = replace_paths
+        self.excludes = excludes if excludes is not None else []
+        self.replace_paths = replace_paths if replace_paths is not None else []
         self.processed_paths = []   # Used in debugging only
 
     def msg(self, level, str, *args):
