@@ -16924,7 +16924,7 @@ fi
 
 if test "$ac_cv_search_shm_open" = "-lrt"; then
 
-$as_echo "#define HAVE_RT_SHM_OPEN 1" >>confdefs.h
+$as_echo "#define SHM_NEEDS_LIBRT 1" >>confdefs.h
 
 fi
 for ac_header in sys/mman.h
@@ -16939,6 +16939,7 @@ fi
 
 done
 
+# temporarily override ac_includes_default for AC_CHECK_FUNCS below
 ac_includes_default="\
 ${ac_includes_default}
 #ifndef __cplusplus

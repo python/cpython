@@ -5449,10 +5449,11 @@ save_LIBS="$LIBS"
 save_includes_default="$ac_includes_default"
 AC_SEARCH_LIBS(shm_open, rt)
 if test "$ac_cv_search_shm_open" = "-lrt"; then
-    AC_DEFINE(HAVE_RT_SHM_OPEN, 1,
-              [Define to 1 if librt contains shm_open().])
+    AC_DEFINE(SHM_NEEDS_LIBRT, 1,
+              [Define to 1 if you must link with -lrt for shm_open().])
 fi
 AC_CHECK_HEADERS(sys/mman.h)
+# temporarily override ac_includes_default for AC_CHECK_FUNCS below
 ac_includes_default="\
 ${ac_includes_default}
 #ifndef __cplusplus

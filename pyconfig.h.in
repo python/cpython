@@ -144,8 +144,8 @@
 /* Define to 1 if you have the `copysign' function. */
 #undef HAVE_COPYSIGN
 
-/* Define to 1 if librt contains shm_open(). */
-#undef HAVE_RT_SHM_OPEN
+/* Define to 1 if you must link with -lrt for shm_open(). */
+#undef SHM_NEEDS_LIBRT
 
 /* Define to 1 if you have the <sys/mman.h> header file. */
 #undef HAVE_SYS_MMAN_H

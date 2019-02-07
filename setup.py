@@ -1597,7 +1597,7 @@ class PyBuildExt(build_ext):
                 posixshmem_srcs = [ '_multiprocessing/posixshmem.c',
                                   ]
                 libs = []
-                if sysconfig.get_config_var('HAVE_RT_SHM_OPEN'):
+                if sysconfig.get_config_var('SHM_NEEDS_LIBRT'):
                     # need to link with librt to get shm_open()
                     libs.append('rt')
                 exts.append( Extension('_posixshmem', posixshmem_srcs,
