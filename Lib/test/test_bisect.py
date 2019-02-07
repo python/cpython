@@ -209,6 +209,12 @@ class TestBisect:
         self.module.insort_right(data, "cc", key=len)
         self.assertEqual(data, ['z', 'aa', 'yy', 'bb', 'cc', 'www'])
 
+        # check None is accepted
+        self.module.insort_right(data, "cc", key=None)
+        self.module.insort_left(data, "cc", key=None)
+        self.module.bisect_right(data, "cc", key=None)
+        self.module.bisect_left(data, "cc", key=None)
+
 class TestBisectPython(TestBisect, unittest.TestCase):
     module = py_bisect
 

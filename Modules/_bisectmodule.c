@@ -99,6 +99,9 @@ bisect_right(PyObject *self, PyObject *args, PyObject *kw)
                                          keywords, &list, &item, &lo, &hi, &key))
             return NULL;
     }
+    if (key == Py_None) {
+        key = NULL;
+    }
     index = internal_bisect_right(list, item, lo, hi, key);
     if (index < 0) {
         return NULL;
@@ -139,6 +142,9 @@ insort_right(PyObject *self, PyObject *args, PyObject *kw)
         if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nnO:insort_right",
                                          keywords, &list, &item, &lo, &hi, &key))
             return NULL;
+    }
+    if (key == Py_None) {
+        key = NULL;
     }
     index = internal_bisect_right(list, item, lo, hi, key);
     if (index < 0) {
@@ -261,6 +267,9 @@ bisect_left(PyObject *self, PyObject *args, PyObject *kw)
                                          keywords, &list, &item, &lo, &hi, &key))
             return NULL;
     }
+    if (key == Py_None) {
+        key = NULL;
+    }
     index = internal_bisect_left(list, item, lo, hi, key);
     if (index < 0) {
         return NULL;
@@ -300,6 +309,9 @@ insort_left(PyObject *self, PyObject *args, PyObject *kw)
         if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nnO:insort_left",
                                          keywords, &list, &item, &lo, &hi, &key))
             return NULL;
+    }
+    if (key == Py_None) {
+        key = NULL;
     }
     index = internal_bisect_left(list, item, lo, hi, key);
     if (index < 0)
