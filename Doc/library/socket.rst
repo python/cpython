@@ -596,7 +596,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
       *source_address* was added.
 
 .. function:: bind_socket(address, family=AF_UNSPEC, type=SOCK_STREAM, *,
-                          backlog=128, reuse_port=False):
+                          backlog=128, reuse_port=False, flags=AI_PASSIVE):
 
     Convenience function which creates a socket bound to *address* (a 2-tuple
     ``(host, port)``) and return the socket object upon which you can call
@@ -607,6 +607,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
     *type* should be either :data:`SOCK_STREAM` or :data:`SOCK_DGRAM`.
     *backlog* is the queue size passed to :meth:`socket.listen` if
     :data:`SOCK_STREAM` *type* is used.
+    *flags* is a bitmask for :meth:`getaddrinfo()`.
 
    .. versionadded:: 3.8
 
