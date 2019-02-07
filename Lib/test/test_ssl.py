@@ -752,9 +752,7 @@ class BasicSocketTests(unittest.TestCase):
 
     def test_unknown_channel_binding(self):
         # should raise ValueError for unknown type
-        s = socket.socket(socket.AF_INET)
-        s.bind(('127.0.0.1', 0))
-        s.listen()
+        s = socket.bind_socket(('127.0.0.1', 0))
         c = socket.socket(socket.AF_INET)
         c.connect(s.getsockname())
         with test_wrap_socket(c, do_handshake_on_connect=False) as ss:
