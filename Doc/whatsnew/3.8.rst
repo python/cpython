@@ -171,6 +171,15 @@ json.tool
 Add option ``--json-lines`` to parse every input line as separate JSON object.
 (Contributed by Weipeng Hong in :issue:`31553`.)
 
+
+math
+----
+
+Added new function, :func:`math.prod`, as analogous function to :func:`sum`
+that returns the product of a 'start' value (default: 1) times an iterable of
+numbers. (Contributed by Pablo Galindo in :issue:`issue35606`)
+
+
 os.path
 -------
 
