@@ -151,7 +151,7 @@ MailmanProxy Objects
    .. deprecated-removed:: 3.8 3.10
 
       :class:`MailmanProxy` is deprecated, it depends on a ``Mailman``
-      module which no long exists and therefore is already broken.
+      module which no longer exists and therefore is already broken.
 
 
    Create a new pure proxy server. Arguments are as per :class:`SMTPServer`.
