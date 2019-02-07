@@ -1,0 +1,3 @@
+Functions in the `bisect` module now takes a key parameter to specify the
+function to call before perfoming the comparison. Contributed by Rémi
+Lapeyre.

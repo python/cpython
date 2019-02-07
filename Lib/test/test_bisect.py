@@ -199,6 +199,16 @@ class TestBisect:
         self.module.insort(a=data, x=25, lo=1, hi=3)
         self.assertEqual(data, [10, 20, 25, 25, 25, 30, 40, 50])
 
+    def test_key(self):
+        data = ["z", "yy", "www"]
+        self.assertEqual(self.module.bisect_left(data, "xx", key=len), 1)
+        self.assertEqual(self.module.bisect_right(data, "xx", key=len), 2)
+        self.assertEqual(self.module.bisect(data, "xx", key=len), 2)
+        self.module.insort_left(data, "aa", key=len)
+        self.module.insort_right(data, "bb", key=len)
+        self.module.insort_right(data, "cc", key=len)
+        self.assertEqual(data, ['z', 'aa', 'yy', 'bb', 'cc', 'www'])
+
 class TestBisectPython(TestBisect, unittest.TestCase):
     module = py_bisect
 
