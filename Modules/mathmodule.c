@@ -2560,7 +2560,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 long b = PyLong_AsLongAndOverflow(item, &overflow);
                 long x = i_result * b;
                 /* Continue if there is no overflow */
-                if (overflow == 0 
+                if (overflow == 0
                     && x < INT_MAX && x > INT_MIN
                     && !(b != 0 && x / i_result != b)) {
                     i_result = x;
