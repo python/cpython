@@ -752,6 +752,7 @@ def bind_socket(address, family=AF_UNSPEC, type=SOCK_STREAM, *, backlog=128,
     """
     host, port = address
     if host == "":
+        # https://mail.python.org/pipermail/python-ideas/2013-March/019937.html
         host = None  # all interfaces
     if not family:
         family = AF_UNSPEC

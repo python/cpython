@@ -575,7 +575,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
 .. function:: create_connection(address[, timeout[, source_address]])
 
-   Connect to a TCP service listening on the internet *address* (a 2-tuple
+   Connect to a TCP service listening on the Internet *address* (a 2-tuple
    ``(host, port)``), and return the socket object.  This is a higher-level
    function than :meth:`socket.connect`: if *host* is a non-numeric hostname,
    it will try to resolve it for both :data:`AF_INET` and :data:`AF_INET6`,
