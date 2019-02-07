@@ -2,15 +2,14 @@
 
 import dis
 import importlib._bootstrap_external
+import importlib.util
 import importlib.machinery
 import marshal
 import os
 import sys
 import types
 import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import imp
+
 
 LOAD_CONST = dis.opmap['LOAD_CONST']
 IMPORT_NAME = dis.opmap['IMPORT_NAME']
@@ -18,6 +17,16 @@ STORE_NAME = dis.opmap['STORE_NAME']
 STORE_GLOBAL = dis.opmap['STORE_GLOBAL']
 STORE_OPS = STORE_NAME, STORE_GLOBAL
 EXTENDED_ARG = dis.EXTENDED_ARG
+
+# Old imp constants:
+
+_SEARCH_ERROR = 0
+_PY_SOURCE = 1
+_PY_COMPILED = 2
+_C_EXTENSION = 3
+_PKG_DIRECTORY = 5
+_C_BUILTIN = 6
+_PY_FROZEN = 7
 
 # Modulefinder does a good job at simulating Python's, but it can not
 # handle __path__ modifications packages make at runtime.  Therefore there
@@ -105,14 +114,14 @@ class ModuleFinder:
     def run_script(self, pathname):
         self.msg(2, "run_script", pathname)
         with open(pathname) as fp:
-            stuff = ("", "r", imp.PY_SOURCE)
+            stuff = ("", "r", _PY_SOURCE)
             self.load_module('__main__', fp, pathname, stuff)
 
     def load_file(self, pathname):
         dir, name = os.path.split(pathname)
         name, ext = os.path.splitext(name)
         with open(pathname) as fp:
-            stuff = (ext, "r", imp.PY_SOURCE)
+            stuff = (ext, "r", _PY_SOURCE)
             self.load_module(name, fp, pathname, stuff)
 
     def import_hook(self, name, caller=None, fromlist=None, level=-1):
@@ -279,13 +288,13 @@ class ModuleFinder:
     def load_module(self, fqname, fp, pathname, file_info):
         suffix, mode, type = file_info
         self.msgin(2, "load_module", fqname, fp and "fp", pathname)
-        if type == imp.PKG_DIRECTORY:
+        if type == _PKG_DIRECTORY:
             m = self.load_package(fqname, pathname)
             self.msgout(2, "load_module ->", m)
             return m
-        if type == imp.PY_SOURCE:
+        if type == _PY_SOURCE:
             co = compile(fp.read()+'\n', pathname, 'exec')
-        elif type == imp.PY_COMPILED:
+        elif type == _PY_COMPILED:
             try:
                 data = fp.read()
                 importlib._bootstrap_external._classify_pyc(data, fqname, {})
@@ -448,10 +457,66 @@ class ModuleFinder:
 
         if path is None:
             if name in sys.builtin_module_names:
-                return (None, None, ("", "", imp.C_BUILTIN))
+                return (None, None, ("", "", _C_BUILTIN))
 
             path = self.path
-        return imp.find_module(name, path)
+
+        old_path = sys.path
+
+        try:
+
+            sys.path = path + old_path
+
+            try:
+                spec = importlib.util.find_spec(fullname)
+            except ImportError:
+                spec = importlib.util.find_spec(name)
+
+        finally:
+
+            sys.path = old_path
+
+        if spec is None:
+            raise ImportError("No module named {name!r}".format(name=name), name=name)
+
+        if isinstance(spec.loader, type):
+
+            if issubclass(spec.loader, importlib.machinery.BuiltinImporter):
+                return None, None, ("", "", _C_BUILTIN)
+                
+            if issubclass(spec.loader, importlib.machinery.FrozenImporter):
+                return None, None, ("", "", _PY_FROZEN)
+
+        file_path = spec.origin
+
+        if os.path.commonpath(map(os.path.abspath, (file_path, os.getcwd()))) == os.getcwd():
+            file_path = os.path.relpath(file_path)
+
+        base, suffix = os.path.splitext(file_path)
+        
+        if suffix in importlib.machinery.EXTENSION_SUFFIXES:
+            file_path = os.path.abspath(file_path)
+            kind = _C_EXTENSION
+            mode = "rb"
+
+        elif suffix in importlib.machinery.SOURCE_SUFFIXES:
+            
+            if name != "__init__" and os.path.basename(base) == "__init__":
+                return (None, os.path.dirname(file_path), ("", "", _PKG_DIRECTORY))
+
+            kind = _PY_SOURCE
+            mode = "r"
+
+        elif suffix in importlib.machinery.BYTECODE_SUFFIXES:
+            kind = _PY_COMPILED
+            mode = "rb"
+
+        else:
+            return None, None, ("", "", _SEARCH_ERROR)  # Should never happen.
+
+        file = open(file_path, mode)
+
+        return file, file_path, (suffix, mode, kind)
 
     def report(self):
         """Print a report to stdout, listing the found modules with their
