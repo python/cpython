@@ -1463,9 +1463,13 @@ deque_init(dequeobject *deque, PyObject *args, PyObject *kwdargs)
     Py_ssize_t maxlen = -1;
     char *kwlist[] = {"iterable", "maxlen", 0};
 
-    if (kwdargs == NULL) {
-        if (!PyArg_UnpackTuple(args, "deque()", 0, 2, &iterable, &maxlenobj))
-            return -1;
+    if (kwdargs == NULL && PyTuple_GET_SIZE(args) <= 2) {
+        if (PyTuple_GET_SIZE(args) > 0) {
+            iterable = PyTuple_GET_ITEM(args, 0);
+        }
+        if (PyTuple_GET_SIZE(args) > 1) {
+            maxlenobj = PyTuple_GET_ITEM(args, 1);
+        }
     } else {
         if (!PyArg_ParseTupleAndKeywords(args, kwdargs, "|OO:deque", kwlist,
                                          &iterable, &maxlenobj))
@@ -2336,7 +2340,7 @@ done:
     Py_RETURN_NONE;
 }
 
-/* Helper functions for namedtuples */
+/* Helper function for namedtuple() ************************************/
 
 typedef struct {
     PyObject_HEAD
@@ -2369,9 +2373,11 @@ tuplegetter_new_impl(PyTypeObject *type, Py_ssize_t index, PyObject *doc)
 }
 
 static PyObject *
-tuplegetterdescr_get(PyObject *self, PyObject *obj, PyObject *type)
+tuplegetter_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
+    Py_ssize_t index = ((_tuplegetterobject*)self)->index;
     PyObject *result;
+
     if (obj == NULL) {
         Py_INCREF(self);
         return self;
@@ -2384,12 +2390,10 @@ tuplegetterdescr_get(PyObject *self, PyObject *obj, PyObject *type)
         PyErr_Format(PyExc_TypeError,
                      "descriptor for index '%d' for tuple subclasses "
                      "doesn't apply to '%s' object",
-                     ((_tuplegetterobject*)self)->index,
+                     index,
                      obj->ob_type->tp_name);
         return NULL;
     }
-
-    Py_ssize_t index = ((_tuplegetterobject*)self)->index;
 
     if (!valid_index(index, PyTuple_GET_SIZE(obj))) {
         PyErr_SetString(PyExc_IndexError, "tuple index out of range");
@@ -2402,7 +2406,7 @@ tuplegetterdescr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 static int
-tuplegetter_set(PyObject *self, PyObject *obj, PyObject *value)
+tuplegetter_descr_set(PyObject *self, PyObject *obj, PyObject *value)
 {
     if (value == NULL) {
         PyErr_SetString(PyExc_AttributeError, "can't delete attribute");
@@ -2476,8 +2480,8 @@ static PyTypeObject tuplegetter_type = {
     0,                                          /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
-    tuplegetterdescr_get,                       /* tp_descr_get */
-    tuplegetter_set,                            /* tp_descr_set */
+    tuplegetter_descr_get,                      /* tp_descr_get */
+    tuplegetter_descr_set,                      /* tp_descr_set */
     0,                                          /* tp_dictoffset */
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */

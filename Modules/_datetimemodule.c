@@ -1528,10 +1528,13 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ntoappend = 1;
         }
         else if ((ch = *pin++) == '\0') {
-            /* There's a lone trailing %; doesn't make sense. */
-            PyErr_SetString(PyExc_ValueError, "strftime format "
-                            "ends with raw %");
-            goto Done;
+        /* Null byte follows %, copy only '%'. 
+         * 
+         * Back the pin up one char so that we catch the null check
+         * the next time through the loop.*/
+            pin--;
+            ptoappend = pin - 1;
+            ntoappend = 1;
         }
         /* A % has been seen and ch is the character after it. */
         else if (ch == 'z') {
@@ -1616,7 +1619,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         usednew += ntoappend;
         assert(usednew <= totalnew);
     }  /* end while() */
-
+    
     if (_PyBytes_Resize(&newfmt, usednew) < 0)
         goto Done;
     {
@@ -3001,7 +3004,8 @@ add_date_timedelta(PyDateTime_Date *date, PyDateTime_Delta *delta, int negate)
     int day = GET_DAY(date) + (negate ? -deltadays : deltadays);
 
     if (normalize_date(&year, &month, &day) >= 0)
-        result = new_date(year, month, day);
+        result = new_date_subclass_ex(year, month, day,
+                                      (PyObject* )Py_TYPE(date));
     return result;
 }
 
@@ -5163,9 +5167,10 @@ add_datetime_timedelta(PyDateTime_DateTime *date, PyDateTime_Delta *delta,
         return NULL;
     }
 
-    return new_datetime(year, month, day,
-                        hour, minute, second, microsecond,
-                        HASTZINFO(date) ? date->tzinfo : Py_None, 0);
+    return new_datetime_subclass_ex(year, month, day,
+                                    hour, minute, second, microsecond,
+                                    HASTZINFO(date) ? date->tzinfo : Py_None,
+                                    (PyObject *)Py_TYPE(date));
 }
 
 static PyObject *

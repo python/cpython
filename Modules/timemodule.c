@@ -755,7 +755,7 @@ time_strftime(PyObject *self, PyObject *args)
         return NULL;
     }
 
-#if defined(_MSC_VER) || defined(sun) || defined(_AIX)
+#if defined(_MSC_VER) || (defined(__sun) && defined(__SVR4)) || defined(_AIX)
     if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
         PyErr_SetString(PyExc_ValueError,
                         "strftime() requires year in [1; 9999]");
@@ -801,7 +801,7 @@ time_strftime(PyObject *self, PyObject *args)
             return NULL;
         }
     }
-#elif (defined(_AIX) || defined(sun)) && defined(HAVE_WCSFTIME)
+#elif (defined(_AIX) || (defined(__sun) && defined(__SVR4))) && defined(HAVE_WCSFTIME)
     for (outbuf = wcschr(fmt, '%');
         outbuf != NULL;
         outbuf = wcschr(outbuf+2, '%'))
@@ -1805,6 +1805,9 @@ PyInit_time(void)
 #endif
 #ifdef CLOCK_UPTIME
     PyModule_AddIntMacro(m, CLOCK_UPTIME);
+#endif
+#ifdef CLOCK_UPTIME_RAW
+    PyModule_AddIntMacro(m, CLOCK_UPTIME_RAW);
 #endif
 
 #endif  /* defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES) */

@@ -2,6 +2,11 @@ variables:
   manylinux: false
   coverage: false
 
+resources:
+  containers:
+  - container: manylinux1
+    image: pyca/cryptography-manylinux1:x86_64
+
 jobs:
 - job: Prebuild
   displayName: Pre-build checks
@@ -54,10 +59,12 @@ jobs:
   variables:
     testRunTitle: '$(build.sourceBranchName)-linux'
     testRunPlatform: linux
-    openssl_version: 1.1.0g
+    openssl_version: 1.1.0j
 
   steps:
   - template: ./posix-steps.yml
+    parameters:
+      dependencies: apt
 
 
 - job: ManyLinux1_CI_Tests
@@ -75,13 +82,20 @@ jobs:
   pool:
     vmImage: ubuntu-16.04
 
+  container: manylinux1
+
   variables:
     testRunTitle: '$(build.sourceBranchName)-manylinux1'
     testRunPlatform: manylinux1
-    imageName: 'dockcross/manylinux-x64'
+    openssl_version: ''
 
   steps:
-  - template: ./docker-steps.yml
+  - template: ./posix-steps.yml
+    parameters:
+      dependencies: yum
+      sudo_dependencies: ''
+      xvfb: false
+      patchcheck: false
 
 
 - job: Ubuntu_Coverage_CI_Tests
@@ -102,11 +116,12 @@ jobs:
   variables:
     testRunTitle: '$(Build.SourceBranchName)-linux-coverage'
     testRunPlatform: linux-coverage
-    openssl_version: 1.1.0g
+    openssl_version: 1.1.0j
 
   steps:
   - template: ./posix-steps.yml
     parameters:
+      dependencies: apt
       coverage: true
 
 
@@ -134,3 +149,14 @@ jobs:
 
   steps:
   - template: ./windows-steps.yml
+
+  - template: ./windows-layout-steps.yml
+    parameters:
+      kind: nuget
+  - template: ./windows-layout-steps.yml
+    parameters:
+      kind: embed
+  - template: ./windows-layout-steps.yml
+    parameters:
+      kind: appx
+      fulltest: true

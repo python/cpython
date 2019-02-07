@@ -666,7 +666,7 @@ run_child(wchar_t * cmdline)
     if (!ok)
         error(RC_CREATE_PROCESS, L"Job information setting failed");
     memset(&si, 0, sizeof(si));
-    si.cb = sizeof(si);
+    GetStartupInfoW(&si);
     ok = safe_duplicate_handle(GetStdHandle(STD_INPUT_HANDLE), &si.hStdInput);
     if (!ok)
         error(RC_NO_STD_HANDLES, L"stdin duplication failed");
@@ -1706,6 +1706,17 @@ process(int argc, wchar_t ** argv)
 
     command = skip_me(GetCommandLineW());
     debug(L"Called with command line: %ls\n", command);
+
+#if !defined(VENV_REDIRECT)
+    /* bpo-35811: The __PYVENV_LAUNCHER__ variable is used to
+     * override sys.executable and locate the original prefix path. 
+     * However, if it is silently inherited by a non-venv Python
+     * process, that process will believe it is running in the venv
+     * still. This is the only place where *we* can clear it (that is,
+     * when py.exe is being used to launch Python), so we do.
+     */
+    SetEnvironmentVariableW(L"__PYVENV_LAUNCHER__", NULL);
+#endif
 
 #if defined(SCRIPT_WRAPPER)
     /* The launcher is being used in "script wrapper" mode.

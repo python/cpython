@@ -38,6 +38,8 @@ struct tok_state {
     int pendin;         /* Pending indents (if > 0) or dedents (if < 0) */
     const char *prompt, *nextprompt;          /* For interactive prompting */
     int lineno;         /* Current line number */
+    int first_lineno;   /* First line of a single line or multi line string
+                           expression (cf. issue 16806) */
     int level;          /* () [] {} Parentheses nesting level */
             /* Used to allow free continuations inside them */
 #ifndef PGEN
@@ -58,6 +60,9 @@ struct tok_state {
     char *encoding;         /* Source encoding. */
     int cont_line;          /* whether we are in a continuation line. */
     const char* line_start;     /* pointer to start of current line */
+    const char* multi_line_start; /* pointer to start of first line of
+                                     a single line or multi line string
+                                     expression (cf. issue 16806) */
 #ifndef PGEN
     PyObject *decoding_readline; /* open(...).readline */
     PyObject *decoding_buffer;
@@ -65,6 +70,8 @@ struct tok_state {
     const char* enc;        /* Encoding for the current str. */
     const char* str;
     const char* input; /* Tokenizer's newline translated copy of the string. */
+
+    int type_comments;      /* Whether to look for type comments */
 };
 
 extern struct tok_state *PyTokenizer_FromString(const char *, int);

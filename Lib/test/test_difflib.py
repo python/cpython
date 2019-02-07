@@ -238,15 +238,6 @@ class TestSFpatches(unittest.TestCase):
         with open(findfile('test_difflib_expect.html')) as fp:
             self.assertEqual(actual, fp.read())
 
-    def test_make_table_escape_table_header(self):
-        html_diff = difflib.HtmlDiff()
-        output = html_diff.make_table(patch914575_from1.splitlines(),
-                                      patch914575_to1.splitlines(),
-                                      fromdesc='<from>',
-                                      todesc='<to>')
-        self.assertIn('&lt;from&gt;', output)
-        self.assertIn('&lt;to&gt;', output)
-
     def test_recursion_limit(self):
         # Check if the problem described in patch #1413711 exists.
         limit = sys.getrecursionlimit()

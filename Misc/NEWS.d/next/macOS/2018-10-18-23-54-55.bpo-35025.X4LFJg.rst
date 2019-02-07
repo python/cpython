@@ -1,2 +1,0 @@
-Properly guard the use of the ``CLOCK_GETTIME`` et al. macros in ``timemodule``
-on macOS.

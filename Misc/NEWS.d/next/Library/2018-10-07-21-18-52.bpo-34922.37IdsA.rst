@@ -1,3 +1,0 @@
-Fixed integer overflow in the :meth:`~hashlib.shake.digest()` and
-:meth:`~hashlib.shake.hexdigest()` methods for the SHAKE algorithm
-in the :mod:`hashlib` module.

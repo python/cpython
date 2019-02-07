@@ -1,2 +1,0 @@
-shutil.copytree now accepts a new ``dirs_exist_ok`` keyword argument.
-Patch by Josh Bronson.

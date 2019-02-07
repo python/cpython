@@ -125,6 +125,14 @@ New Modules
 Improved Modules
 ================
 
+* The :meth:`_asdict()` method for :func:`collections.namedtuple` now returns
+  a :class:`dict` instead of a :class:`collections.OrderedDict`.  This works because
+  regular dicts have guaranteed ordering in since Python 3.7.  If the extra
+  features of :class:`OrderedDict` are required, the suggested remediation is
+  to cast the result to the desired type: ``OrderedDict(nt._asdict())``.
+  (Contributed by Raymond Hettinger in :issue:`35864`.)
+
+
 asyncio
 -------
 
@@ -162,6 +170,15 @@ json.tool
 
 Add option ``--json-lines`` to parse every input line as separate JSON object.
 (Contributed by Weipeng Hong in :issue:`31553`.)
+
+
+math
+----
+
+Added new function, :func:`math.prod`, as analogous function to :func:`sum`
+that returns the product of a 'start' value (default: 1) times an iterable of
+numbers. (Contributed by Pablo Galindo in :issue:`issue35606`)
+
 
 os.path
 -------
@@ -234,6 +251,12 @@ Added method :meth:`~tkinter.Canvas.moveto`
 in the :class:`tkinter.Canvas` class.
 (Contributed by Juliette Monsel in :issue:`23831`.)
 
+time
+----
+
+Added new clock :data:`~time.CLOCK_UPTIME_RAW` for macOS 10.12.
+(Contributed by Joannah Nanjekye in :issue:`35702`.)
+
 unicodedata
 -----------
 
@@ -269,6 +292,15 @@ xml
 Optimizations
 =============
 
+* The :mod:`subprocess` module can now use the :func:`os.posix_spawn` function
+  in some cases for better performance. Currently, it is only used on macOS
+  and Linux (using glibc 2.24 or newer) if all these conditions are met:
+
+  * *close_fds* is false;
+  * *preexec_fn*, *pass_fds*, *cwd* and *start_new_session* parameters
+    are not set;
+  * the *executable* path contains a directory.
+
 * :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
   :func:`shutil.copytree` and :func:`shutil.move` use platform-specific
   "fast-copy" syscalls on Linux, macOS and Solaris in order to copy the file
@@ -301,8 +333,6 @@ Optimizations
   (Contributed by Inada Naoki in :issue:`33597`)
 
 * :class:`uuid.UUID` now uses ``__slots__`` to reduce its memory footprint.
-  Note that this means that instances can no longer be weak-referenced and
-  that arbitrary attributes can no longer be added to them.
 
 * The :class:`list` constructor does not overallocate the internal item buffer
   if the input iterable has a known length (the input implements ``__len__``).
@@ -312,6 +342,10 @@ Optimizations
 
 Build and C API Changes
 =======================
+
+* The :c:func:`PyByteArray_Init` and :c:func:`PyByteArray_Fini` functions have
+  been removed. They did nothing since Python 2.7.4 and Python 3.2.0, were
+  excluded from the limited API (stable ABI), and were not documented.
 
 * The result of :c:func:`PyExceptionClass_Name` is now of type
   ``const char *`` rather of ``char *``.
@@ -379,6 +413,8 @@ Deprecated
 
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
+* The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread` has been deprecated.
+  (Contributed by Dong-hee Na in :issue:`35283`.)
 
 API and Feature Removals
 ========================
@@ -424,6 +460,13 @@ Changes in Python behavior
   in comprehensions and generator expressions (aside from the iterable expression
   in the leftmost :keyword:`!for` clause).
   (Contributed by Serhiy Storchaka in :issue:`10544`.)
+
+* The compiler now produces a :exc:`SyntaxWarning` when identity checks
+  (``is`` and ``is not``) are used with certain types of literals
+  (e.g. strings, ints).  These can often work by accident in CPython,
+  but are not guaranteed by the language spec.  The warning advises users
+  to use equality tests (``==`` and ``!=``) instead.
+  (Contributed by Serhiy Storchaka in :issue:`34850`.)
 
 
 Changes in the Python API
@@ -486,9 +529,6 @@ Changes in the Python API
 * The function :func:`math.factorial` no longer accepts arguments that are not
   int-like. (Contributed by Pablo Galindo in :issue:`33083`.)
 
-* :class:`uuid.UUID` now uses ``__slots__``, therefore instances can no longer
-  be weak-referenced and attributes can no longer be added.
-
 * :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
   external entities by default.
   (Contributed by Christian Heimes in :issue:`17239`.)
@@ -520,3 +560,11 @@ CPython bytecode changes
 * Added new opcode :opcode:`END_ASYNC_FOR` for handling exceptions raised
   when awaiting a next item in an :keyword:`async for` loop.
   (Contributed by Serhiy Storchaka in :issue:`33041`.)
+
+
+Demos and Tools
+---------------
+
+* Added a benchmark script for timing various ways to access variables:
+  ``Tools/scripts/var_access_benchmark.py``.
+  (Contributed by Raymond Hettinger in :issue:`35884`.)
