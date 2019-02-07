@@ -4815,6 +4815,9 @@ class TestSyncManagerTypes(unittest.TestCase):
     def test_lock(self, lname="Lock"):
         o = getattr(self.manager, lname)()
         self.run_worker(self._test_lock, o)
+        # See: https://ci.appveyor.com/project/python/cpython/builds/22183338
+        if os.name == 'nt':
+            time.sleep(0.3)
         o.release()
         self.assertRaises(RuntimeError, o.release)  # already released
 
@@ -4840,6 +4843,9 @@ class TestSyncManagerTypes(unittest.TestCase):
     def test_condition(self):
         o = self.manager.Condition()
         self.run_worker(self._test_condition, o)
+        # See: https://ci.appveyor.com/project/python/cpython/builds/22183338
+        if os.name == 'nt':
+            time.sleep(0.3)
         o.release()
         self.assertRaises(RuntimeError, o.release)  # already released
 
