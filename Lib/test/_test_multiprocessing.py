@@ -4815,14 +4815,17 @@ class TestSyncManagerTypes(unittest.TestCase):
     def test_lock(self, lname="Lock"):
         o = getattr(self.manager, lname)()
         self.run_worker(self._test_lock, o)
-        # See: https://ci.appveyor.com/project/python/cpython/builds/22183338
-        if os.name == 'nt':
-            time.sleep(0.3)
         o.release()
         self.assertRaises(RuntimeError, o.release)  # already released
 
-    def test_rlock(self):
-        self.test_lock(lname="RLock")
+    @classmethod
+    def _test_rlock(cls, obj):
+        obj.acquire()
+        obj.release()
+
+    def test_rlock(self, lname="Lock"):
+        o = getattr(self.manager, lname)()
+        self.run_worker(self._test_rlock, o)
 
     @classmethod
     def _test_semaphore(cls, obj):
@@ -4839,15 +4842,11 @@ class TestSyncManagerTypes(unittest.TestCase):
     @classmethod
     def _test_condition(cls, obj):
         obj.acquire()
+        obj.release()
 
     def test_condition(self):
         o = self.manager.Condition()
         self.run_worker(self._test_condition, o)
-        # See: https://ci.appveyor.com/project/python/cpython/builds/22183338
-        if os.name == 'nt':
-            time.sleep(0.3)
-        o.release()
-        self.assertRaises(RuntimeError, o.release)  # already released
 
     @classmethod
     def _test_barrier(cls, obj):
