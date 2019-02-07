@@ -51,4 +51,8 @@ if "%PERL%" == "" (echo Cannot locate perl.exe on PATH or as PERL variable & exi
 if errorlevel 1 exit /b
 %MSBUILD% "%PCBUILD%\openssl.vcxproj" /p:Configuration=Release /p:Platform=x64
 if errorlevel 1 exit /b
+%MSBUILD% "%PCBUILD%\openssl.vcxproj" /p:Configuration=Release /p:Platform=ARM
+if errorlevel 1 exit /b
+%MSBUILD% "%PCBUILD%\openssl.vcxproj" /p:Configuration=Release /p:Platform=ARM64
+if errorlevel 1 exit /b
 
