@@ -1748,11 +1748,7 @@ class MappingTestCase(TestBase):
 
         # Test exceptions
         if exc:
-            if isinstance(exc[0], RuntimeError):
-                # A RuntimeError is raised
-                self.fail("Caught a RuntimeError: \"%s\". WeakRef dictionary copying failed." % exc[0])
-            else:
-                self.fail("Caught an unexpected exception: \"%s\"." % exc[0])
+            raise exc[0]
 
     def test_threaded_weak_key_dict_copy(self):
         # Issue #35615: Weakref keys or values getting GC'ed during dict
