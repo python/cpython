@@ -728,7 +728,7 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
     else:
         raise error("getaddrinfo returns an empty list")
 
-def bind_socket(address, family=AF_UNSPEC, type=SOCK_STREAM, *, backlog=100,
+def bind_socket(address, family=AF_UNSPEC, type=SOCK_STREAM, *, backlog=128,
                 reuse_port=False):
     """Convenience function which creates a socket bound to *address*
     (a 2-tuple (host, port)) and return the socket object.
@@ -755,11 +755,14 @@ def bind_socket(address, family=AF_UNSPEC, type=SOCK_STREAM, *, backlog=100,
         family = AF_UNSPEC
     reuse_addr = hasattr(_socket, 'SO_REUSEADDR') and \
         os.name == 'posix' and sys.platform != 'cygwin'
+    if reuse_port and not hasattr(_socket, "SO_REUSEPORT"):
+        raise ValueError("SO_REUSEPORT not supported on this platform")
     info = getaddrinfo(host, port, family, type, 0, AI_PASSIVE)
     # prefer AF_INET over AF_INET6
     if family == AF_UNSPEC:
         info.sort(key=lambda x: x[0] == AF_INET, reverse=True)
     err = None
+
     for res in info:
         af, socktype, proto, canonname, sa = res
         try:

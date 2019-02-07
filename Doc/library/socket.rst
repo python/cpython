@@ -596,7 +596,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
       *source_address* was added.
 
 .. function:: bind_socket(address, family=AF_UNSPEC, type=SOCK_STREAM, *,
-                          backlog=100, reuse_port=False):
+                          backlog=128, reuse_port=False):
 
     Convenience function which creates a socket bound to *address* (a 2-tuple
     ``(host, port)``) and return the socket object upon which you can call

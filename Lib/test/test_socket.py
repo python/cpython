@@ -6084,9 +6084,12 @@ class BindSocketTest(unittest.TestCase):
         with socket.bind_socket((None, 0), type=socket.SOCK_DGRAM) as sock:
             self.assertEqual(sock.type, socket.SOCK_DGRAM)
 
-    @unittest.skipIf(not hasattr(socket, "SO_REUSEPORT"),
-                     "SO_REUSEPORT not supported")
     def test_reuse_port(self):
+        if not hasattr(socket, "SO_REUSEPORT"):
+            with self.assertRaises(ValueError, socket):
+                socket.bind_socket(("127.0.0.1", 0), reuse_port=True)
+                return
+
         with socket.bind_socket(("127.0.0.1", 0)) as sock:
             opt = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT)
             self.assertEqual(opt, 0)
