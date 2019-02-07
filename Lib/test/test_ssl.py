@@ -1644,11 +1644,8 @@ class SSLErrorTests(unittest.TestCase):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
-        with socket.socket() as s:
-            s.bind(("127.0.0.1", 0))
-            s.listen()
-            c = socket.socket()
-            c.connect(s.getsockname())
+        with socket.bind_socket(("127.0.0.1", 0)) as s:
+            c = socket.create_connection(s.getsockname())
             c.setblocking(False)
             with ctx.wrap_socket(c, False, do_handshake_on_connect=False) as c:
                 with self.assertRaises(ssl.SSLWantReadError) as cm:

@@ -41,9 +41,7 @@ except OSError as e:
 class TestEPoll(unittest.TestCase):
 
     def setUp(self):
-        self.serverSocket = socket.socket()
-        self.serverSocket.bind(('127.0.0.1', 0))
-        self.serverSocket.listen()
+        self.serverSocket = socket.bind_socket(('127.0.0.1', 0))
         self.connections = [self.serverSocket]
 
     def tearDown(self):
