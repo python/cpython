@@ -1,0 +1,1 @@
+Add socket.bind_socket() convenience function.  (patch by Giampaolo Rodola)
