@@ -1486,6 +1486,14 @@ class PdbTestCase(unittest.TestCase):
         stdout, _ = self._run_pdb(['-m', self.module_name + '.runme'], commands)
         self.assertTrue(any("VAR from module" in l for l in stdout.splitlines()), stdout)
 
+    def test_syntaxerror(self):
+        stdout, _ = self.run_pdb_module("", "print(")
+        self.assertIn('(Pdb) *** SyntaxError: unexpected EOF while parsing\n(Pdb) ', stdout)
+
+    def test_syntaxerror_debug(self):
+        stdout, _ = self.run_pdb_module("", "debug print(")
+        self.assertIn('(Pdb) *** SyntaxError: unexpected EOF while parsing\n(Pdb) ', stdout)
+
 
 def load_tests(*args):
     from test import test_pdb
