@@ -4742,14 +4742,35 @@ class TestSyncManagerTypes(unittest.TestCase):
         self.manager.shutdown()
 
     @classmethod
-    def tearDownClass(cls):
+    def setUpClass(cls):
         support.reap_children()
+
+    tearDownClass = setUpClass
+
+    def wait_proc_exit(self):
+        # Only the manager process should be returned by active_children()
+        # but this can take a bit on slow machines, so wait a few seconds
+        # if there are other children too (see #17395).
+        join_process(self.proc)
+        start_time = time.monotonic()
+        t = 0.01
+        while len(multiprocessing.active_children()) > 1:
+            time.sleep(t)
+            t *= 2
+            dt = time.monotonic() - start_time
+            if dt >= 5.0:
+                test.support.environment_altered = True
+                print("Warning -- multiprocessing.Manager still has %s active "
+                      "children after %s seconds"
+                      % (multiprocessing.active_children(), dt),
+                      file=sys.stderr)
+                break
 
     def run_worker(self, worker, obj):
         self.proc = multiprocessing.Process(target=worker, args=(obj, ))
         self.proc.daemon = True
         self.proc.start()
-        join_process(self.proc)
+        self.wait_proc_exit()
         self.assertEqual(self.proc.exitcode, 0)
 
     @classmethod
