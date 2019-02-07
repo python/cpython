@@ -28,7 +28,7 @@ PyDoc_STRVAR(cell_new_doc,
 "\n"
 "  contents\n"
 "    the contents of the cell. If not specified, the cell will be empty,\n"
-"    and \n further attemps to access its cell_contents attribute will\n"
+"    and \n further attempts to access its cell_contents attribute will\n"
 "    raise a ValueError.");
 
 
