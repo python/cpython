@@ -106,8 +106,8 @@ howto/regex,,::,
 howto/regex,,:foo,(?:foo)
 howto/urllib2,,:password,"""joe:password@example.com"""
 library/audioop,,:ipos,"# factor = audioop.findfactor(in_test[ipos*2:ipos*2+len(out_test)],"
-library/bisect,32,:hi,all(val >= x for val in a[i:hi])
-library/bisect,42,:hi,all(val > x for val in a[i:hi])
+library/bisect,42,:hi,all(val >= x for val in a[i:hi])
+library/bisect,52,:hi,all(val > x for val in a[i:hi])
 library/configparser,,:home,my_dir: ${Common:home_dir}/twosheds
 library/configparser,,:option,${section:option}
 library/configparser,,:path,python_dir: ${Frameworks:path}/Python/Versions/${Frameworks:Python}

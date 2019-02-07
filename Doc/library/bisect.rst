@@ -28,7 +28,7 @@ The following functions are provided:
    which should be considered; by default the entire list is used. The
    parameter *key* specifies a function of one argument that is used to
    extract a comparison key from each element in *a* (for example,
-   `key=str.lower`). The default value is `None` (compare the elements
+   ``key=str.lower``). The default value is ``None`` (compare the elements
    directly).
 
    If *x* is already present in *a*, the insertion point will be before
