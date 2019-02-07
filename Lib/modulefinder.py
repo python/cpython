@@ -323,6 +323,9 @@ class ModuleFinder:
         except ImportError as msg:
             self.msg(2, "ImportError:", str(msg))
             self._add_badmodule(name, caller)
+        except SyntaxError as msg:
+            self.msg(2, "SyntaxError:", str(msg))
+            self._add_badmodule(name, caller)
         else:
             if fromlist:
                 for sub in fromlist:

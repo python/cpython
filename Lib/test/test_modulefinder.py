@@ -218,6 +218,19 @@ bytecode_test = [
     ""
 ]
 
+syntax_error_test = [
+    "a.module",
+    ["a", "a.module", "b"],
+    ["b.module"], [],
+    """\
+a/__init__.py
+a/module.py
+                                import b.module
+b/__init__.py
+b/module.py
+                                ?  # SyntaxError: invalid syntax
+"""]
+
 
 def open_file(path):
     dirname = os.path.dirname(path)
@@ -298,6 +311,9 @@ class ModuleFinderTest(unittest.TestCase):
 
     def test_relative_imports_4(self):
         self._do_test(relative_import_test_4)
+
+    def test_syntax_error(self):
+        self._do_test(syntax_error_test)
 
     def test_bytecode(self):
         base_path = os.path.join(TEST_DIR, 'a')
