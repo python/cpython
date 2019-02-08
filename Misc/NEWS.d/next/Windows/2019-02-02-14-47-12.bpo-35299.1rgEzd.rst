@@ -1,0 +1,2 @@
+Fix sysconfig detection of the source directory and distutils handling of
+pyconfig.h during PGO profiling
