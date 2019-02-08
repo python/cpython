@@ -483,7 +483,7 @@ class ModuleFinder:
 
             if issubclass(spec.loader, importlib.machinery.BuiltinImporter):
                 return None, None, ("", "", _C_BUILTIN)
-                
+
             if issubclass(spec.loader, importlib.machinery.FrozenImporter):
                 return None, None, ("", "", _PY_FROZEN)
 
@@ -493,14 +493,14 @@ class ModuleFinder:
             file_path = os.path.relpath(file_path)
 
         base, suffix = os.path.splitext(file_path)
-        
+
         if suffix in importlib.machinery.EXTENSION_SUFFIXES:
             file_path = os.path.abspath(file_path)
             kind = _C_EXTENSION
             mode = "rb"
 
         elif suffix in importlib.machinery.SOURCE_SUFFIXES:
-            
+
             if name != "__init__" and os.path.basename(base) == "__init__":
                 return (None, os.path.dirname(file_path), ("", "", _PKG_DIRECTORY))
 
