@@ -1,3 +1,4 @@
-Implement :func:`math.comb` that returns binomial coefficient, that is the
-coefficient of kth term in expansion of polynomial (1 + x)^n.
-Patch by Yash Aggarwal.
+Implement :func:`math.comb` that returns binomial coefficient, that computes
+the number of ways to choose k items from n items without repetition and
+without order.
+Patch by Yash Aggarwal and Keller Fuchs.

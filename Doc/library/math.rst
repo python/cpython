@@ -234,12 +234,12 @@ Number-theoretic and representation functions
 
 .. function:: comb(n, k)
 
-   Return the binomial coefficient indexed by the pair of integers n >= k >= 0.
+   Return the number of ways to choose k items from n items without repetition
+   and without order. Also called binomial coefficient.
 
-   It is the coefficient of kth term in polynomial expansion of the expression
-   (1 + x)^n. It is also known as the number of ways to choose an unordered
-   subset of k elements from a fixed set of n elements, usually called
-   *n choose k*.
+   It is mathematically equal to the expression (n!)/(k! * (n - k)!). It is
+   equivalent to the the coefficient of kth term in polynomial expansion of
+   the expression (1 + x)^n.
 
    Raises :exc:`TypeError` if argument(s) are non-integer and :exc:`ValueError`
    if argument(s) are negative or k > n.

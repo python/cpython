@@ -3001,37 +3001,30 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 /*[clinic input]
 math.comb
 
-    n: object
-
-    k: object
+    N: long_long
+    K: long_long
     /
 
-Return the binomial coefficient indexed by the pair of integers n >= k >= 0.
+Return the number of ways to choose k items from n items without repetition.
 
-It is the coefficient of kth term in polynomial expansion of the expression
-(1 + x)^n. It is also known as the number of ways to choose an unordered
-subset of k elements from a fixed set of n elements, usually called
-*n choose k*.
+Also called binomial coefficient. It is mathematically equal to the expression
+(n!)/(k! * (n - k)!). It is equivalent to the the coefficient of kth term in
+polynomial expansion of the expression (1 + x)^n.
 
-Raises a TypeError if argument(s) are non-integer and ValueError
+Raises :exc:`TypeError` if argument(s) are non-integer and :exc:`ValueError`
 if argument(s) are negative or k > n.
 
 [clinic start generated code]*/
 
 static PyObject *
-math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=bd2cec8d854f3493 input=75e1a19623bae7dc]*/
+math_comb_impl(PyObject *module, long long N, long long K)
+/*[clinic end generated code: output=07c14ebe36fef64f input=48c80dbbff4b2d8e]*/
 {
-    if (!(PyLong_Check(n) && PyLong_Check(k))) {
-        PyErr_SetString(PyExc_TypeError,
-            "comb() only accepts integer arguments");
-        return NULL;
-    }
-    n = PyNumber_Long(n);
+    PyObject* n = PyLong_FromLongLong(N);
     if (n == NULL) {
         return NULL;
     }
-    k = PyNumber_Long(k);
+    PyObject* k = PyLong_FromLongLong(K);
     if (k == NULL) {
         Py_DECREF(n);
         return NULL;
@@ -3045,12 +3038,12 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     long long i, terms;
 
     cmp = PyObject_RichCompareBool(n, k, Py_LT);
-    if (cmp == 1) {
-        PyErr_Format(PyExc_ValueError,
-                     "n must be an integer >= k");
+    if (cmp < 0) {
         goto fail_comb;
     }
-    else if (cmp == -1) {
+    else if (cmp > 0) {
+        PyErr_Format(PyExc_ValueError,
+                     "n must be an integer greater than or equal to k");
         goto fail_comb;
     }
 
@@ -3060,13 +3053,13 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
         goto fail_comb;
     }
     cmp = PyObject_RichCompareBool(k, dump_var, Py_GT);
-    if (cmp == 1) {
+    if (cmp < 0) {
+        goto fail_comb;
+    }
+    else if (cmp > 0) {
         Py_DECREF(k);
         k = dump_var;
         dump_var = NULL;
-    }
-    else if (cmp == -1) {
-        goto fail_comb;
     }
     else {
         Py_DECREF(dump_var);
@@ -3074,18 +3067,18 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     }
 
     terms = PyLong_AsLongLongAndOverflow(k, &overflow);
-    if (terms == -1 && PyErr_Occurred()) {
+    if (terms < 0 && PyErr_Occurred()) {
         goto fail_comb;
     }
-    else if (overflow == 1) {
+    else if (overflow > 0) {
         PyErr_Format(PyExc_OverflowError,
                      "minimum(n - k, k) must not exceed %lld",
                      LLONG_MAX);
         goto fail_comb;
     }
-    else if (overflow == -1 || terms < 0) {
+    else if (overflow < 0 || terms < 0) {
         PyErr_Format(PyExc_ValueError,
-                     "k must be an integer >= 0");
+                     "k must be a positive integer");
         goto fail_comb;
     }
 

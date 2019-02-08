@@ -672,5 +672,61 @@ exit:
     return return_value;
 }
 
+<<<<<<< HEAD
 /*[clinic end generated code: output=66c5583e59c57e47 input=a9049054013a1b77]*/
 
+=======
+PyDoc_STRVAR(math_comb__doc__,
+"comb($module, N, K, /)\n"
+"--\n"
+"\n"
+"Return the number of ways to choose k items from n items without repetition.\n"
+"\n"
+"Also called binomial coefficient. It is mathematically equal to the expression\n"
+"(n!)/(k! * (n - k)!). It is equivalent to the the coefficient of kth term in\n"
+"polynomial expansion of the expression (1 + x)^n.\n"
+"\n"
+"Raises :exc:`TypeError` if argument(s) are non-integer and :exc:`ValueError`\n"
+"if argument(s) are negative or k > n.");
+
+#define MATH_COMB_METHODDEF    \
+    {"comb", (PyCFunction)(void(*)(void))math_comb, METH_FASTCALL, math_comb__doc__},
+
+static PyObject *
+math_comb_impl(PyObject *module, long long N, long long K);
+
+static PyObject *
+math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    long long N;
+    long long K;
+
+    if (!_PyArg_CheckPositional("comb", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    N = PyLong_AsLongLong(args[0]);
+    if (N == (PY_LONG_LONG)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    K = PyLong_AsLongLong(args[1]);
+    if (K == (PY_LONG_LONG)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = math_comb_impl(module, N, K);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=0084c36fc1963ba8 input=a9049054013a1b77]*/
+>>>>>>> Replicated some changes from KellerFuchs' PR and made requested changes.

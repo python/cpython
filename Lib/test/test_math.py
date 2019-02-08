@@ -1876,7 +1876,7 @@ class IsCloseTests(unittest.TestCase):
             for k in range(1, n):
                 self.assertEqual(comb(n, k), comb(n - 1, k - 1) + comb(n - 1, k))
 
-        # Test corner case
+        # Test corner cases
         for n in range(100):
             self.assertEqual(comb(n, 0), 1)
             self.assertEqual(comb(n, n), 1)
@@ -1890,10 +1890,6 @@ class IsCloseTests(unittest.TestCase):
             for k in range(n // 2):
                 self.assertEqual(comb(n, k), comb(n, n - k))
 
-        # Test OverflowError (For current implementation occurs when
-        # minimum(k, n - k) > LLONG_MAX)
-        self.assertRaises(OverflowError, comb, 10**400, 10**200)
-
         # Raises TypeError if any argument is non-integer or argument count is
         # not 2
         self.assertRaises(TypeError, comb, 10, 1.0)
@@ -1905,13 +1901,20 @@ class IsCloseTests(unittest.TestCase):
         self.assertRaises(TypeError, comb, 10, 1, 3)
         self.assertRaises(TypeError, comb)
 
-        # Raises Value error if not 0 <= k <= n
+        # Raises Value error if not k or n are negative numbers
         self.assertRaises(ValueError, comb, -1, 1)
+        self.assertRaises(ValueError, comb, -10*10, 1)
         self.assertRaises(ValueError, comb, 1, -1)
-        self.assertRaises(ValueError, comb, 1, 2)
+        self.assertRaises(ValueError, comb, 1, -10*10)
 
-        # ValueError instead of OverflowError if k is negative and overflowing
-        self.assertRaises(ValueError, comb, 10**400, -10**200)
+        # Raises value error if k is greater than n
+        self.assertRaises(ValueError, comb, 1, 10**10)
+        self.assertRaises(ValueError, comb, 0, 1)
+
+        # Raises OverflowError if n or k is greater than LLONG_MAX
+        self.assertRaises(OverflowError, comb, 10**400, 10**200)
+        self.assertRaises(OverflowError, comb, 10**400, -10**200)
+
 
 
 def test_main():
