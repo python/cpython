@@ -2345,9 +2345,12 @@ class ThreadedEchoServer(threading.Thread):
                     self.close()
                     self.running = False
                 except OSError as err:
-                    if 'peer did not return a certificate' in err.args[1] and self.server.chatty:
+                    if 'peer did not return a certificate' in err.args[1]:
                         # test_pha_required_nocert causes this error which results in a false(?) failure
-                        sys.stdout.write(err.args[1])
+                        if self.server.chatty and support.verbose:
+                            sys.stdout.write(err.args[1])
+                        # test_pha_required_nocert is expecting this exception
+                        raise ssl.SSLError('tlsv13 alert certificate required')
                     else:
                         if self.server.chatty:
                             handle_error("Test server failure:\n")
@@ -4286,7 +4289,7 @@ class TestPostHandshakeAuth(unittest.TestCase):
         server_context.verify_mode = ssl.CERT_REQUIRED
         client_context.post_handshake_auth = True
 
-        server = ThreadedEchoServer(context=server_context, chatty=True)
+        server = ThreadedEchoServer(context=server_context, chatty=False)
         with server:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
