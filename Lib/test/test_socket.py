@@ -6144,7 +6144,7 @@ class BindSocketFunctionalTest(unittest.TestCase):
         self.thread.start()
         event.set()
 
-    def echo_test(self, sock):
+    def echo_client(self, sock):
         self.echo_server(sock)
         server_addr = sock.getsockname()[:2]
         if sock.type == socket.SOCK_STREAM:
@@ -6160,24 +6160,24 @@ class BindSocketFunctionalTest(unittest.TestCase):
     def test_tcp4(self):
         with socket.bind_socket(("localhost", 0),
                                 socket.AF_INET, socket.SOCK_STREAM) as sock:
-            self.echo_test(sock)
+            self.echo_client(sock)
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
     def test_tcp6(self):
         with socket.bind_socket(("localhost", 0),
                                 socket.AF_INET6, socket.SOCK_STREAM) as sock:
-            self.echo_test(sock)
+            self.echo_client(sock)
 
     def test_udp4(self):
         with socket.bind_socket(("localhost", 0),
                                 socket.AF_INET, socket.SOCK_DGRAM) as sock:
-            self.echo_test(sock)
+            self.echo_client(sock)
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
     def test_udp6(self):
         with socket.bind_socket(("localhost", 0),
                                 socket.AF_INET6, socket.SOCK_DGRAM) as sock:
-            self.echo_test(sock)
+            self.echo_client(sock)
 
 
 def test_main():
