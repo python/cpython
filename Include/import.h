@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 #if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
-#include "internal/pycore_pystate.h"
+#include "pycore_pystate.h"
 #endif
 
 #ifndef Py_LIMITED_API
