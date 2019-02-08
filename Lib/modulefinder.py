@@ -468,7 +468,7 @@ class ModuleFinder:
             sys.path = path + old_path
 
             try:
-                spec = importlib.util.find_spec(fullname)
+                spec = importlib.util.find_spec(fullname, parent)
             except ImportError:
                 spec = importlib.util.find_spec(name)
 
