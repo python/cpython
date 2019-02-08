@@ -6158,25 +6158,25 @@ class BindSocketFunctionalTest(unittest.TestCase):
                 self.assertEqual(msg, b'foo')
 
     def test_tcp4(self):
-        with socket.bind_socket(("localhost", 0),
-                                socket.AF_INET, socket.SOCK_STREAM) as sock:
+        with socket.bind_socket(("localhost", 0), family=socket.AF_INET,
+                                type=socket.SOCK_STREAM) as sock:
             self.echo_client(sock)
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
     def test_tcp6(self):
-        with socket.bind_socket(("localhost", 0),
-                                socket.AF_INET6, socket.SOCK_STREAM) as sock:
+        with socket.bind_socket(("localhost", 0), family=socket.AF_INET6,
+                                type=socket.SOCK_STREAM) as sock:
             self.echo_client(sock)
 
     def test_udp4(self):
-        with socket.bind_socket(("localhost", 0),
-                                socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        with socket.bind_socket(("localhost", 0), family=socket.AF_INET,
+                                type=socket.SOCK_DGRAM) as sock:
             self.echo_client(sock)
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
     def test_udp6(self):
-        with socket.bind_socket(("localhost", 0),
-                                socket.AF_INET6, socket.SOCK_DGRAM) as sock:
+        with socket.bind_socket(("localhost", 0), family=socket.AF_INET6,
+                                type=socket.SOCK_DGRAM) as sock:
             self.echo_client(sock)
 
 

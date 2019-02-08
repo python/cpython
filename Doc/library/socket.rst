@@ -595,7 +595,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.2
       *source_address* was added.
 
-.. function:: bind_socket(address, family=AF_UNSPEC, type=SOCK_STREAM, *,
+.. function:: bind_socket(address, *. family=AF_UNSPEC, type=SOCK_STREAM,
                           backlog=128, reuse_addr=None, reuse_port=False,
                           flags=AI_PASSIVE):
 

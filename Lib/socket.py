@@ -728,7 +728,7 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
     else:
         raise error("getaddrinfo returns an empty list")
 
-def bind_socket(address, family=AF_UNSPEC, type=SOCK_STREAM, *, backlog=128,
+def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
                 reuse_addr=None, reuse_port=False,
                 flags=getattr(_socket, "AI_PASSIVE", 0)):
     """Convenience function which creates a socket bound to *address*
