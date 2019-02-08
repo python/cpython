@@ -729,8 +729,7 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
         raise error("getaddrinfo returns an empty list")
 
 def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
-                reuse_addr=None, reuse_port=False,
-                flags=getattr(_socket, "AI_PASSIVE", 0)):
+                reuse_addr=None, reuse_port=False, flags=AI_PASSIVE):
     """Convenience function which creates a socket bound to *address*
     (a 2-tuple (host, port)) and return the socket object.
 
@@ -754,7 +753,6 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
     ...         conn, addr = server.accept()
     ...         # handle new connection
     """
-    # --- setup
     host, port = address
     if host == "":
         # https://mail.python.org/pipermail/python-ideas/2013-March/019937.html
@@ -766,12 +764,14 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
         raise ValueError("SO_REUSEADDR not supported on this platform")
     if reuse_port and not hasattr(_socket, "SO_REUSEPORT"):
         raise ValueError("SO_REUSEPORT not supported on this platform")
+    if type not in {SOCK_STREAM, SOCK_DGRAM}:
+        raise ValueError("only %r and %r types are supported (got %r)" % (
+            SOCK_STREAM, SOCK_DGRAM, type))
     info = getaddrinfo(host, port, family, type, 0, flags)
     if family == AF_UNSPEC:
         # prefer AF_INET over AF_INET6
         info.sort(key=lambda x: x[0] == AF_INET, reverse=True)
 
-    # --- implementation
     err = None
     for res in info:
         af, socktype, proto, canonname, sa = res

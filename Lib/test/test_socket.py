@@ -6083,6 +6083,8 @@ class BindSocketTest(unittest.TestCase):
             self.assertEqual(sock.type, socket.SOCK_STREAM)
         with socket.bind_socket((None, 0), type=socket.SOCK_DGRAM) as sock:
             self.assertEqual(sock.type, socket.SOCK_DGRAM)
+        with self.assertRaises(ValueError):
+            socket.bind_socket((None, 0), type=0)
 
     def test_reuse_addr(self):
         if not hasattr(socket, "SO_REUSEADDR"):
