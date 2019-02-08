@@ -1178,6 +1178,63 @@ class AbstractUnpickleTests(unittest.TestCase):
         for p in badpickles:
             self.check_unpickling_error(self.truncated_errors, p)
 
+    @reap_threads
+    def test_unpickle_module_race(self):
+        # https://bugs.python.org/issue34572
+        locker_module = dedent("""
+        import threading
+        barrier = threading.Barrier(2)
+        """)
+        locking_import_module = dedent("""
+        import locker
+        locker.barrier.wait()
+        class ToBeUnpickled(object):
+            pass
+        """)
+
+        os.mkdir(TESTFN)
+        self.addCleanup(shutil.rmtree, TESTFN)
+        sys.path.insert(0, TESTFN)
+        self.addCleanup(sys.path.remove, TESTFN)
+        with open(os.path.join(TESTFN, "locker.py"), "wb") as f:
+            f.write(locker_module.encode('utf-8'))
+        with open(os.path.join(TESTFN, "locking_import.py"), "wb") as f:
+            f.write(locking_import_module.encode('utf-8'))
+        self.addCleanup(forget, "locker")
+        self.addCleanup(forget, "locking_import")
+
+        import locker
+
+        pickle_bytes = (
+            b'\x80\x03clocking_import\nToBeUnpickled\nq\x00)\x81q\x01.')
+
+        # Then try to unpickle two of these simultaneously
+        # One of them will cause the module import, and we want it to block
+        # until the other one either:
+        #   - fails (before the patch for this issue)
+        #   - blocks on the import lock for the module, as it should
+        results = []
+        barrier = threading.Barrier(3)
+        def t():
+            # This ensures the threads have all started
+            # presumably barrier release is faster than thread startup
+            barrier.wait()
+            results.append(pickle.loads(pickle_bytes))
+
+        t1 = threading.Thread(target=t)
+        t2 = threading.Thread(target=t)
+        t1.start()
+        t2.start()
+
+        barrier.wait()
+        # could have delay here
+        locker.barrier.wait()
+
+        t1.join()
+        t2.join()
+
+        self.assertEqual(len(results), 2)
+
 
 class AbstractPickleTests(unittest.TestCase):
     # Subclass must define self.dumps, self.loads.
@@ -2390,63 +2447,6 @@ class AbstractPickleTests(unittest.TestCase):
         for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
             with self.assertRaises((AttributeError, pickle.PicklingError)):
                 pickletools.dis(self.dumps(f, proto))
-
-    @reap_threads
-    def test_unpickle_module_race(self):
-        # https://bugs.python.org/issue34572
-        locker_module = dedent("""
-        import threading
-        barrier = threading.Barrier(2)
-        """)
-        locking_import_module = dedent("""
-        import locker
-        locker.barrier.wait()
-        class ToBeUnpickled(object):
-            pass
-        """)
-
-        os.mkdir(TESTFN)
-        self.addCleanup(shutil.rmtree, TESTFN)
-        sys.path.insert(0, TESTFN)
-        self.addCleanup(sys.path.remove, TESTFN)
-        with open(os.path.join(TESTFN, "locker.py"), "wb") as f:
-            f.write(locker_module.encode('utf-8'))
-        with open(os.path.join(TESTFN, "locking_import.py"), "wb") as f:
-            f.write(locking_import_module.encode('utf-8'))
-        self.addCleanup(forget, "locker")
-        self.addCleanup(forget, "locking_import")
-
-        import locker
-
-        pickle_bytes = (
-            b'\x80\x03clocking_import\nToBeUnpickled\nq\x00)\x81q\x01.')
-
-        # Then try to unpickle two of these simultaneously
-        # One of them will cause the module import, and we want it to block
-        # until the other one either:
-        #   - fails (before the patch for this issue)
-        #   - blocks on the import lock for the module, as it should
-        results = []
-        barrier = threading.Barrier(3)
-        def t():
-            # This ensures the threads have all started
-            # presumably barrier release is faster than thread startup
-            barrier.wait()
-            results.append(pickle.loads(pickle_bytes))
-
-        t1 = threading.Thread(target=t)
-        t2 = threading.Thread(target=t)
-        t1.start()
-        t2.start()
-
-        barrier.wait()
-        # could have delay here
-        locker.barrier.wait()
-
-        t1.join()
-        t2.join()
-
-        self.assertEqual(len(results), 2)
 
 
 class BigmemPickleTests(unittest.TestCase):
