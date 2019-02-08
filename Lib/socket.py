@@ -791,6 +791,17 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
                     pass
             if reuse_port:
                 sock.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
+            # Disable IPv4/IPv6 dual stack support (enabled by default
+            # on Linux) which makes a single socket listen on both
+            # address families. Reasons:
+            # * consistency across different platforms
+            # * the address returned by getpeername() is an exotic IPv6
+            #   address that has the IPv4 address encoded inside it
+            if has_ipv6 and af == AF_INET6:
+                try:
+                    sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 1)
+                except NameError:
+                    pass  # not supported
             sock.bind(sa)
             if socktype == SOCK_STREAM:
                 sock.listen(backlog)
