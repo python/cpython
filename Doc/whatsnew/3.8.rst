@@ -115,6 +115,14 @@ Other Language Changes
   a :exc:`SyntaxWarning` instead.
   (Contributed by Serhiy Storchaka in :issue:`32912`.)
 
+* Arithmetic operations between subclasses of :class:`datetime.date` or
+  :class:`datetime.datetime` and :class:`datetime.timedelta` objects now return
+  an instance of the subclass, rather than the base class. This also affects
+  the return type of operations whose implementation (directly or indirectly)
+  uses :class:`datetime.timedelta` arithmetic, such as
+  :meth:`datetime.datetime.astimezone`.
+  (Contributed by Paul Ganssle in :issue:`32417`.)
+
 
 New Modules
 ===========
