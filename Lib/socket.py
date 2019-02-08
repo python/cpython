@@ -801,7 +801,7 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
                 try:
                     sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 1)
                 except NameError:
-                    pass  # not supported
+                    pass
             sock.bind(sa)
             if socktype == SOCK_STREAM:
                 sock.listen(backlog)

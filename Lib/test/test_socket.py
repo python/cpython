@@ -6114,6 +6114,13 @@ class BindSocketTest(unittest.TestCase):
             opt = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT)
             self.assertEqual(opt, 1)
 
+    @unittest.skipIf(not hasattr(_socket, 'IPPROTO_IPV6') or
+                     not hasattr(_socket, 'IPV6_V6ONLY'),
+                     "IPV6_V6ONLY option not supported")
+    def test_ipv6only_default(self):
+        with socket.bind_socket(("::1", 0)) as sock:
+            assert sock.getsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY)
+
 
 class BindSocketFunctionalTest(unittest.TestCase):
     timeout = 3
