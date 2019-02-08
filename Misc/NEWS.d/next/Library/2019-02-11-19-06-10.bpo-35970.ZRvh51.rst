@@ -1,0 +1,2 @@
+Add help flag to the base64's module command line interface. Patch contributed
+by Robert Kuska.
