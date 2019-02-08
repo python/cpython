@@ -152,6 +152,8 @@ two distinct Python shells::
    'psm_21467_46075'
 
    >>> # In either the same shell or a new Python shell on the same machine
+   >>> import numpy as np
+   >>> from multiprocessing import shared_memory
    >>> # Attach to the existing shared memory block
    >>> existing_shm = shared_memory.SharedMemory('psm_21467_46075')
    >>> # Note that a.shape is (6,) and a.dtype is np.int64 in this example
@@ -184,4 +186,99 @@ two distinct Python shells::
    It provides methods for creating and returning a :class:`SharedMemory`
    instance and for creating a list-like object (:class:`ShareableList`)
    backed by shared memory.
+
+
+.. class:: ShareableList(sequence=None, *, name=None)
+
+   Provides a mutable list-like object where all values stored within are
+   stored in a shared memory block.  This constrains storable values to
+   only the ``int``, ``float``, ``bool``, ``str`` (less than 10M bytes each),
+   ``bytes`` (less than 10M bytes each), and ``None`` built-in data types.
+   It also notably differs from the built-in ``list`` type in that these
+   lists can not change their overall length (i.e. no append, insert, etc.)
+   and do not support the dynamic creation of new `ShareableList` instances
+   via slicing.
+
+   *sequence* is used in populating a new ``ShareableList`` full of values.
+   Set to ``None`` to instead attach to an already existing
+   ``ShareableList`` in shared memory by its name.
+
+   *name* is the unique name for the requested shared memory, as described
+   in the definition for :class:`SharedMemory`.  When attaching to an
+   existing ``ShareableList``, specify its shared memory block's unique
+   name while leaving ``sequence`` set to ``None``.
+
+   .. method:: copy()
+
+      Returns a shallow copy as a new instance backed by a new and distinct
+      shared memory block.
+
+   .. method:: count(value)
+
+      Returns the number of occurrences of ``value``.
+
+   .. method:: index(value)
+
+      Returns first index position of ``value``.  Raises ValueError if
+      ``value`` is not present.
+
+   .. attribute:: format
+
+      Read-only attribute containing the struct packing format used by all
+      currently stored values.
+
+   .. attribute:: shm
+
+      The :class:`SharedMemory` instance where the values are stored.
+
+
+The following example demonstrates basic use of a :class:`ShareableList`
+instance:
+
+   >>> from multiprocessing import shared_memory
+   >>> a = shared_memory.ShareableList(['howdy', b'HoWdY', -273.154, 100, None, True, 42])
+   >>> [ type(entry) for entry in a ]
+   [<class 'str'>, <class 'bytes'>, <class 'float'>, <class 'int'>, <class 'NoneType'>, <class 'bool'>, <class 'int'>]
+   >>> a[2]
+   -273.154
+   >>> a[2] = -78.5
+   >>> a[2]
+   -78.5
+   >>> a[2] = 'dry ice'  # Changing data types is supported as well.
+   >>> a[2]
+   'dry ice'
+   >>> a[2] = 'larger than previously allocated storage space'
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+     File "/usr/local/lib/python3.8/multiprocessing/shared_memory.py", line 429, in __setitem__
+       raise ValueError("exceeds available storage for existing str")
+   ValueError: exceeds available storage for existing str
+   >>> a[2]
+   'dry ice'
+   >>> len(a)
+   7
+   >>> a.index(42)
+   6
+   >>> a.count(b'howdy')
+   0
+   >>> a.count(b'HoWdY')
+   1
+   >>> a.shm.close()
+   >>> a.shm.unlink()
+   >>> del a  # Use of a ShareableList after call to unlink() is unsupported
+
+The following example depicts how one, two, or many processes may access the
+same :class:`ShareableList` by supplying the name of the shared memory block
+behind it:
+
+   >>> b = shared_memory.ShareableList(range(5))         # In a first process
+   >>> c = shared_memory.ShareableList(name=b.shm.name)  # In a second process
+   >>> c
+   ShareableList([0, 1, 2, 3, 4], name='psm_25144_23776')
+   >>> c[-1] = -999
+   >>> b[-1]
+   -999
+   >>> b.shm.close()
+   >>> c.shm.close()
+   >>> c.shm.unlink()
 

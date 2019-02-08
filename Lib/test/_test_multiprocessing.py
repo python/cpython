@@ -3741,7 +3741,6 @@ class _TestSharedMemory(BaseTestCase):
 
         try:
             # Verify attributes are readable.
-            self.assertEqual(sl.alignment, 8)
             self.assertEqual(sl.format, '8s8sdqxxxxxx?xxxxxxxx?q')
 
             # Exercise len().
@@ -3797,6 +3796,13 @@ class _TestSharedMemory(BaseTestCase):
             finally:
                 sl_copy.shm.unlink()
 
+            # Obtain a second handle on the same ShareableList.
+            sl_tethered = shared_memory.ShareableList(name=sl.shm.name)
+            self.assertEqual(sl.shm.name, sl_tethered.shm.name)
+            sl_tethered[-1] = 880
+            self.assertEqual(sl[-1], 880)
+            sl_tethered.shm.close()
+
         finally:
             # Prevent test failures from leading to a dangling segment.
             sl.shm.unlink()
@@ -3807,7 +3813,6 @@ class _TestSharedMemory(BaseTestCase):
         try:
             self.assertEqual(len(empty_sl), 0)
             self.assertEqual(empty_sl.format, '')
-            self.assertEqual(empty_sl.alignment, 8)
             self.assertEqual(empty_sl.count('any'), 0)
             with self.assertRaises(ValueError):
                 empty_sl.index(None)

@@ -244,8 +244,7 @@ class ShareableList:
     packing format for any storable value must require no more than 8
     characters to describe its format."""
 
-    # TODO: Adjust for discovered word size of machine.
-    types_mapping = {
+    _types_mapping = {
         int: "q",
         float: "d",
         bool: "xxxxxxx?",
@@ -253,8 +252,8 @@ class ShareableList:
         bytes: "%ds",
         None.__class__: "xxxxxx?x",
     }
-    alignment = 8
-    back_transform_codes = {
+    _alignment = 8
+    _back_transforms_mapping = {
         0: lambda value: value,                   # int, float, bool
         1: lambda value: value.rstrip(b'\x00').decode(encoding),  # str
         2: lambda value: value.rstrip(b'\x00'),   # bytes
@@ -263,7 +262,7 @@ class ShareableList:
 
     @staticmethod
     def _extract_recreation_code(value):
-        """Used in concert with back_transform_codes to convert values
+        """Used in concert with _back_transforms_mapping to convert values
         into the appropriate Python objects when retrieving them from
         the list as well as when storing them."""
         if not isinstance(value, (str, bytes, None.__class__)):
@@ -275,24 +274,24 @@ class ShareableList:
         else:
             return 3  # NoneType
 
-    def __init__(self, iterable=None, *, name=None):
-        if iterable is not None:
+    def __init__(self, sequence=None, *, name=None):
+        if sequence is not None:
             _formats = [
-                self.types_mapping[type(item)]
+                self._types_mapping[type(item)]
                     if not isinstance(item, (str, bytes))
-                    else self.types_mapping[type(item)] % (
-                        self.alignment * (len(item) // self.alignment + 1),
+                    else self._types_mapping[type(item)] % (
+                        self._alignment * (len(item) // self._alignment + 1),
                     )
-                for item in iterable
+                for item in sequence
             ]
             self._list_len = len(_formats)
             assert sum(len(fmt) <= 8 for fmt in _formats) == self._list_len
             self._allocated_bytes = tuple(
-                    self.alignment if fmt[-1] != "s" else int(fmt[:-1])
+                    self._alignment if fmt[-1] != "s" else int(fmt[:-1])
                     for fmt in _formats
             )
-            _back_transform_codes = [
-                self._extract_recreation_code(item) for item in iterable
+            _recreation_codes = [
+                self._extract_recreation_code(item) for item in sequence
             ]
             requested_size = struct.calcsize(
                 "q" + self._format_size_metainfo +
@@ -304,9 +303,12 @@ class ShareableList:
         else:
             requested_size = 8  # Some platforms require > 0.
 
-        self.shm = SharedMemory(name, flags=O_CREX, size=requested_size)
+        if name is not None and sequence is None:
+            self.shm = SharedMemory(name)
+        else:
+            self.shm = SharedMemory(name, flags=O_CREX, size=requested_size)
 
-        if iterable is not None:
+        if sequence is not None:
             _enc = encoding
             struct.pack_into(
                 "q" + self._format_size_metainfo,
@@ -319,7 +321,7 @@ class ShareableList:
                 "".join(_formats),
                 self.shm.buf,
                 self._offset_data_start,
-                *(v.encode(_enc) if isinstance(v, str) else v for v in iterable)
+                *(v.encode(_enc) if isinstance(v, str) else v for v in sequence)
             )
             struct.pack_into(
                 self._format_packing_metainfo,
@@ -331,7 +333,7 @@ class ShareableList:
                 self._format_back_transform_codes,
                 self.shm.buf,
                 self._offset_back_transform_codes,
-                *(_back_transform_codes)
+                *(_recreation_codes)
             )
 
         else:
@@ -370,7 +372,7 @@ class ShareableList:
             self.shm.buf,
             self._offset_back_transform_codes + position
         )[0]
-        transform_function = self.back_transform_codes[transform_code]
+        transform_function = self._back_transforms_mapping[transform_code]
 
         return transform_function
 
@@ -423,14 +425,14 @@ class ShareableList:
             raise IndexError("assignment index out of range")
 
         if not isinstance(value, (str, bytes)):
-            new_format = self.types_mapping[type(value)]
+            new_format = self._types_mapping[type(value)]
         else:
             if len(value) > self._allocated_bytes[position]:
                 raise ValueError("exceeds available storage for existing str")
             if current_format[-1] == "s":
                 new_format = current_format
             else:
-                new_format = self.types_mapping[str] % (
+                new_format = self._types_mapping[str] % (
                     self._allocated_bytes[position],
                 )
 
@@ -445,10 +447,15 @@ class ShareableList:
     def __len__(self):
         return struct.unpack_from("q", self.shm.buf, 0)[0]
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}({list(self)}, name={self.shm.name!r})'
+
     @property
     def format(self):
         "The struct packing format used by all currently stored values."
-        return "".join(self._get_packing_format(i) for i in range(self._list_len))
+        return "".join(
+            self._get_packing_format(i) for i in range(self._list_len)
+        )
 
     @property
     def _format_size_metainfo(self):
