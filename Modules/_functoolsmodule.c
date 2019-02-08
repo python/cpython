@@ -981,7 +981,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
            this same key, then this setitem call will update the cache dict
            with this new link, leaving the old link as an orphan (i.e. not
            having a cache dict entry that refers to it). */
-        if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
+        if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,                          // l/u new key 
                                       hash) < 0) {
             Py_DECREF(link);
             return NULL;
@@ -1006,12 +1006,12 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
 
     /* Extract the oldest item. */
     assert(self->root.next != &self->root);
-    link = self->root.next;
+    link = self->root.next;                                                                        // find and extract link
     lru_cache_extract_link(link);
     /* Remove it from the cache.
        The cache dict holds one reference to the link,
        and the linked list holds yet one reference to it. */
-    popresult = _PyDict_Pop_KnownHash(self->cache, link->key,
+    popresult = _PyDict_Pop_KnownHash(self->cache, link->key,                                      // can't call back if link still in dict
                                       link->hash, Py_None);
     if (popresult == Py_None) {
         /* Getting here means that the user function call or another
@@ -1023,7 +1023,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         Py_DECREF(key);
         return result;
     }
-    if (popresult == NULL) {
+    if (popresult == NULL) {                                                                       
         /* An error arose while trying to remove the oldest key (the one
            being evicted) from the cache.  We restore the link to its
            original position as the oldest link.  Then we allow the
