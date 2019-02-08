@@ -490,7 +490,7 @@ class ModuleFinder:
         file_path = spec.origin
 
         try:
-            
+
             if os.path.commonpath(map(os.path.abspath, (file_path, os.getcwd()))) == os.getcwd():
                 file_path = os.path.relpath(file_path)
 
