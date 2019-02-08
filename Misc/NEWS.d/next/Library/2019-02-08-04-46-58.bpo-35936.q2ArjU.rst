@@ -1,0 +1,2 @@
+:mod:`modulefinder` has been refactored to use the non-deprecated :mod:`importlib`. Additionally, several long-standing bugs have been fixed.
+Patch by Brandt Bucher.
