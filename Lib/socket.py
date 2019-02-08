@@ -729,19 +729,23 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
         raise error("getaddrinfo returns an empty list")
 
 def bind_socket(address, family=AF_UNSPEC, type=SOCK_STREAM, *, backlog=128,
-                reuse_port=False, flags=getattr(_socket, "AI_PASSIVE", 0)):
+                reuse_addr=None, reuse_port=False,
+                flags=getattr(_socket, "AI_PASSIVE", 0)):
     """Convenience function which creates a socket bound to *address*
     (a 2-tuple (host, port)) and return the socket object.
 
     If *host* is an empty string or None all network interfaces are assumed.
 
-    If *family* is AF_UNSPEC or None the address family will be
-    determined from the *host* specified in *address*.
+    If *family* is AF_UNSPEC the address family will be determined from the
+    *host* specified in *address*.
 
     *type* should be either SOCK_STREAM or SOCK_DGRAM.
 
     *backlog* is the queue size passed to socket.listen() and is ignored
     for SOCK_DGRAM socket types.
+
+    *reuse_addr* and *reuse_port* dictate whether to use SO_REUSEADDR
+    and SO_REUSEPORT socket options.
 
     *flags* is a bitmask for getaddrinfo().
 
@@ -750,14 +754,16 @@ def bind_socket(address, family=AF_UNSPEC, type=SOCK_STREAM, *, backlog=128,
     ...         conn, addr = server.accept()
     ...         # handle new connection
     """
+    # --- setup
     host, port = address
     if host == "":
         # https://mail.python.org/pipermail/python-ideas/2013-March/019937.html
         host = None  # all interfaces
-    if not family:
-        family = AF_UNSPEC
-    reuse_addr = hasattr(_socket, 'SO_REUSEADDR') and \
-        os.name == 'posix' and sys.platform != 'cygwin'
+    if reuse_addr is None:
+        reuse_addr = os.name == 'posix' and sys.platform != 'cygwin' and \
+            hasattr(_socket, 'SO_REUSEADDR')
+    elif reuse_addr and not hasattr(_socket, 'SO_REUSEADDR'):
+        raise ValueError("SO_REUSEADDR not supported on this platform")
     if reuse_port and not hasattr(_socket, "SO_REUSEPORT"):
         raise ValueError("SO_REUSEPORT not supported on this platform")
     info = getaddrinfo(host, port, family, type, 0, flags)
@@ -765,6 +771,7 @@ def bind_socket(address, family=AF_UNSPEC, type=SOCK_STREAM, *, backlog=128,
         # prefer AF_INET over AF_INET6
         info.sort(key=lambda x: x[0] == AF_INET, reverse=True)
 
+    # --- implementation
     err = None
     for res in info:
         af, socktype, proto, canonname, sa = res

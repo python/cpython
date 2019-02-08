@@ -6084,6 +6084,21 @@ class BindSocketTest(unittest.TestCase):
         with socket.bind_socket((None, 0), type=socket.SOCK_DGRAM) as sock:
             self.assertEqual(sock.type, socket.SOCK_DGRAM)
 
+    def test_reuse_addr(self):
+        if not hasattr(socket, "SO_REUSEADDR"):
+            with self.assertRaises(ValueError, socket):
+                socket.bind_socket(("127.0.0.1", 0), reuse_addr=True)
+                return
+        # check False
+        with socket.bind_socket(("127.0.0.1", 0), reuse_addr=False) as sock:
+            opt = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
+            self.assertEqual(opt, 0)
+            port = sock.getsockname()[1]
+        # Make sure the same port can be reused once socket is closed,
+        # meaning SO_REUSEADDR is implicitly set by default.
+        with socket.bind_socket(("127.0.0.1", port)) as sock:
+            pass
+
     def test_reuse_port(self):
         if not hasattr(socket, "SO_REUSEPORT"):
             with self.assertRaises(ValueError, socket):

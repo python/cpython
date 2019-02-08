@@ -60,7 +60,7 @@ class FunctionalTestCaseMixin:
             else:
                 addr = ('127.0.0.1', 0)
 
-        sock = socket.bind_socket(family=family, backlog=backlog)
+        sock = socket.bind_socket(addr, family=family, backlog=backlog)
         if timeout is None:
             raise RuntimeError('timeout is required')
         if timeout <= 0:
