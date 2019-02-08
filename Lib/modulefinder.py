@@ -489,8 +489,13 @@ class ModuleFinder:
 
         file_path = spec.origin
 
-        if os.path.commonpath(map(os.path.abspath, (file_path, os.getcwd()))) == os.getcwd():
-            file_path = os.path.relpath(file_path)
+        try:
+            
+            if os.path.commonpath(map(os.path.abspath, (file_path, os.getcwd()))) == os.getcwd():
+                file_path = os.path.relpath(file_path)
+
+        except ValueError:
+            pass
 
         base, suffix = os.path.splitext(file_path)
 
