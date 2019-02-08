@@ -96,6 +96,18 @@ Disallow: /
     bad = ['/cyberworld/map/index.html', '/', '/tmp/']
 
 
+class InvalidFileTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = ""
+
+    def test_request_rate(self):
+        agent, url = self.get_agent_and_url("/foo")
+        self.assertEqual(self.parser.crawl_delay(agent), None)
+
+    def test_crawl_delay(self):
+        agent, url = self.get_agent_and_url("/foo")
+        self.assertEqual(self.parser.crawl_delay(agent), None)
+
+
 class BaseRequestRateTest(BaseRobotTest):
 
     def test_request_rate(self):
