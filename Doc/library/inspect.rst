@@ -242,6 +242,12 @@ attributes:
 
    Add ``cr_origin`` attribute to coroutines.
 
+.. function:: getabsfile(object[, _filename])
+
+   Return an absolute path to the source or compiled file for an object.
+   The idea is for each object to have a unique origin, so this routine
+   normalizes the result as much as possible.
+
 .. function:: getmembers(object[, predicate])
 
    Return all the members of an object in a list of ``(name, value)``
