@@ -1152,13 +1152,14 @@ class PdbTestCase(unittest.TestCase):
     def _run_pdb(self, pdb_args, commands):
         self.addCleanup(support.rmtree, '__pycache__')
         cmd = [sys.executable, '-m', 'pdb'] + pdb_args
+        stdin = str.encode(textwrap.dedent(commands).lstrip("\n"))
         with subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stdin=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
         ) as proc:
-            stdout, stderr = proc.communicate(str.encode(commands))
+            stdout, stderr = proc.communicate(stdin)
         stdout = stdout and bytes.decode(stdout)
         stderr = stderr and bytes.decode(stderr)
         return stdout, stderr
