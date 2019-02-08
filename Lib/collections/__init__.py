@@ -390,7 +390,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     arg_list = repr(field_names).replace("'", "")[1:-1]
     repr_fmt = '(' + ', '.join(f'{name}=%r' for name in field_names) + ')'
     tuple_new = tuple.__new__
-    _len = len
+    _dict, _tuple, _len, _map, _zip = dict, tuple, len, map, zip
 
     # Create all the named tuple methods to be added to the class namespace
 
@@ -414,7 +414,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
                               'or iterable')
 
     def _replace(_self, **kwds):
-        result = _self._make(map(kwds.pop, field_names, _self))
+        result = _self._make(_map(kwds.pop, field_names, _self))
         if kwds:
             raise ValueError(f'Got unexpected field names: {list(kwds)!r}')
         return result
@@ -426,18 +426,15 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         'Return a nicely formatted representation string'
         return self.__class__.__name__ + repr_fmt % self
 
-    _dict, _zip = dict, zip
-
     def _asdict(self):
         'Return a new dict which maps field names to their values.'
         return _dict(_zip(self._fields, self))
 
     def __getnewargs__(self):
         'Return self as a plain tuple.  Used by copy and pickle.'
-        return tuple(self)
+        return _tuple(self)
 
     # Modify function metadata to help with introspection and debugging
-
     for method in (__new__, _make.__func__, _replace,
                    __repr__, _asdict, __getnewargs__):
         method.__qualname__ = f'{typename}.{method.__name__}'
