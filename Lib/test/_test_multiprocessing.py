@@ -3734,6 +3734,34 @@ class _TestSharedMemory(BaseTestCase):
         finally:
             sms.unlink()
 
+    def test_shared_memory_SharedMemoryManager_basics(self):
+        smm1 = shared_memory.SharedMemoryManager()
+        with self.assertRaises(ValueError):
+            smm1.SharedMemory(size=9)  # Fails if SharedMemoryServer not started
+        smm1.start()
+        lol = [ smm1.ShareableList(range(i)) for i in range(5, 10) ]
+        lom = [ smm1.SharedMemory(size=j) for j in range(32, 128, 16) ]
+        doppleganger_list0 = shared_memory.ShareableList(name=lol[0].shm.name)
+        self.assertEqual(len(doppleganger_list0), 5)
+        doppleganger_shm0 = shared_memory.SharedMemory(name=lom[0].name)
+        self.assertGreaterEqual(len(doppleganger_shm0.buf), 32)
+        held_name = lom[0].name
+        smm1.shutdown()
+        with self.assertRaises(shared_memory.ExistentialError):
+            # No longer there to be attached to again.
+            absent_shm = shared_memory.SharedMemory(name=held_name)
+
+        with shared_memory.SharedMemoryManager() as smm2:
+            sl = smm2.ShareableList("howdy")
+            unnecessary_lock = smm2.Lock()
+            with unnecessary_lock:
+                shm = smm2.SharedMemory(size=128)
+            held_name = sl.shm.name
+        with self.assertRaises(shared_memory.ExistentialError):
+            # No longer there to be attached to again.
+            absent_sl = shared_memory.ShareableList(name=held_name)
+
+
     def test_shared_memory_ShareableList_basics(self):
         sl = shared_memory.ShareableList(
             ['howdy', b'HoWdY', -273.154, 100, None, True, 42]
