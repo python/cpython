@@ -462,19 +462,19 @@ class ModuleFinder:
             path = self.path
 
         old_path = sys.path
+        old_modules = sys.modules
 
         try:
 
             sys.path = path + old_path
+            sys.modules = {}
 
-            try:
-                spec = importlib.util.find_spec(fullname, parent)
-            except ImportError:
-                spec = importlib.util.find_spec(name)
+            spec = importlib.util.find_spec(name)
 
         finally:
 
             sys.path = old_path
+            sys.modules = old_modules
 
         if spec is None:
             raise ImportError("No module named {name!r}".format(name=name), name=name)
