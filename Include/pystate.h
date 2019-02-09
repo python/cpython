@@ -20,13 +20,9 @@ struct _frame;
 struct _ts;
 struct _is;
 
-/* struct _is is defined in internal/pycore_pystate.h */
-typedef struct _is PyInterpreterState;
-#ifdef Py_LIMITED_API
+/* struct _is and struct _ts are defined in internal/pycore_pystate.h */
 typedef struct _ts PyThreadState;
-#else
-/* PyThreadState is defined in cpython/pystate.h */
-#endif
+typedef struct _is PyInterpreterState;
 
 /* State unique per thread */
 
@@ -45,9 +41,9 @@ PyAPI_FUNC(int) PyState_RemoveModule(struct PyModuleDef*);
 #endif
 PyAPI_FUNC(PyObject*) PyState_FindModule(struct PyModuleDef*);
 
-PyAPI_FUNC(struct _ts *) PyThreadState_New(PyInterpreterState *);
-PyAPI_FUNC(void) PyThreadState_Clear(struct _ts *);
-PyAPI_FUNC(void) PyThreadState_Delete(struct _ts *);
+PyAPI_FUNC(PyThreadState *) PyThreadState_New(PyInterpreterState *);
+PyAPI_FUNC(void) PyThreadState_Clear(PyThreadState *);
+PyAPI_FUNC(void) PyThreadState_Delete(PyThreadState *);
 PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
 /* Get the current thread state.
@@ -58,7 +54,7 @@ PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
    The caller must hold the GIL.
 
    See also PyThreadState_GET() and _PyThreadState_GET(). */
-PyAPI_FUNC(struct _ts *) PyThreadState_Get(void);
+PyAPI_FUNC(PyThreadState *) PyThreadState_Get(void);
 
 /* Get the current Python thread state.
 
@@ -71,7 +67,7 @@ PyAPI_FUNC(struct _ts *) PyThreadState_Get(void);
    See also PyThreadState_Get() and _PyThreadState_GET(). */
 #define PyThreadState_GET() PyThreadState_Get()
 
-PyAPI_FUNC(struct _ts *) PyThreadState_Swap(struct _ts *);
+PyAPI_FUNC(PyThreadState *) PyThreadState_Swap(PyThreadState *);
 PyAPI_FUNC(PyObject *) PyThreadState_GetDict(void);
 PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 
@@ -119,7 +115,7 @@ PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
    thread-state, even if no auto-thread-state call has been made
    on the main thread.
 */
-PyAPI_FUNC(struct _ts *) PyGILState_GetThisThreadState(void);
+PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
 
 #ifndef Py_LIMITED_API

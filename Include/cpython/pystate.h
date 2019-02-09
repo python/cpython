@@ -69,7 +69,8 @@ typedef struct _err_stackitem {
 } _PyErr_StackItem;
 
 
-typedef struct _ts {
+// The PyThreadState typedef is in Include/pystate.h.
+struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
     struct _ts *prev;
@@ -161,7 +162,7 @@ typedef struct _ts {
 
     /* XXX signal handlers should also be here */
 
-} PyThreadState;
+};
 
 /* Get the current interpreter state.
 
