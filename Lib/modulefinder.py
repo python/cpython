@@ -7,6 +7,7 @@ import importlib.machinery
 import marshal
 import os
 import sys
+import time
 import types
 import warnings
 
@@ -469,6 +470,7 @@ class ModuleFinder:
             sys.path = path + old_path
             sys.modules = {}
 
+            time.sleep(0.000001)
             spec = importlib.util.find_spec(name)
 
         finally:
