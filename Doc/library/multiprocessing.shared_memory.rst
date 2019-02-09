@@ -19,7 +19,7 @@ This module provides a class, :class:`SharedMemory`, for the allocation
 and management of shared memory to be accessed by one or more processes
 on a multicore or SMP machine.  To assist with the life-cycle management
 of shared memory especially across distinct processes, a
-:class:`multiprocessing.managers.BaseManager` subclass,
+:class:`~multiprocessing.managers.BaseManager` subclass,
 :class:`SharedMemoryManager`, is also provided.
 
 In this module, shared memory refers to "System V style" shared memory blocks
@@ -85,7 +85,7 @@ copying of data.
       inside the shared memory block after ``unlink()`` has been called may
       result in memory access errors.  Note: the last process relinquishing
       its hold on a shared memory block may call ``unlink()`` and
-      ``close()`` in either order.
+      :meth:`close()` in either order.
 
    .. attribute:: buf
 
@@ -180,16 +180,17 @@ two distinct Python shells::
 
 .. class:: SharedMemoryManager([address[, authkey]])
 
-   A subclass of :class:`multiprocessing.managers.BaseManager` which can be
+   A subclass of :class:`~multiprocessing.managers.BaseManager` which can be
    used for the management of shared memory blocks across processes.
 
-   Instantiation of a :class:`SharedMemoryManager` causes a new process to
-   be started.  This new process's sole purpose is to manage the life cycle
+   A call to :meth:`~multiprocessing.managers.BaseManager.start` on a
+   :class:`SharedMemoryManager` instance causes a new process to be started.
+   This new process's sole purpose is to manage the life cycle
    of all shared memory blocks created through it.  To trigger the release
    of all shared memory blocks managed by that process, call
-   :func:`multiprocessing.managers.BaseManager.shutdown()` on the instance.
-   This triggers a :func:`SharedMemory.unlink()` call on all of the
-   :class:`SharedMemory` instances managed by that process and then
+   :meth:`~multiprocessing.managers.BaseManager.shutdown()` on the instance.
+   This triggers a :meth:`SharedMemory.unlink()` call on all of the
+   :class:`SharedMemory` objects managed by that process and then
    stops the process itself.  By creating ``SharedMemory`` instances
    through a ``SharedMemoryManager``, we avoid the need to manually track
    and trigger the freeing of shared memory resources.
@@ -315,13 +316,13 @@ shared memory blocks created using that manager are all released when the
 
    .. method:: index(value)
 
-      Returns first index position of ``value``.  Raises ValueError if
+      Returns first index position of ``value``.  Raises :exc:`ValueError` if
       ``value`` is not present.
 
    .. attribute:: format
 
-      Read-only attribute containing the struct packing format used by all
-      currently stored values.
+      Read-only attribute containing the :mod:`struct` packing format used by
+      all currently stored values.
 
    .. attribute:: shm
 
@@ -340,7 +341,7 @@ instance:
    >>> a[2] = -78.5
    >>> a[2]
    -78.5
-   >>> a[2] = 'dry ice'  # Changing data types is supported as well.
+   >>> a[2] = 'dry ice'  # Changing data types is supported as well
    >>> a[2]
    'dry ice'
    >>> a[2] = 'larger than previously allocated storage space'

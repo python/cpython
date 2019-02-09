@@ -187,6 +187,22 @@ def shareable_wrap(
     format=None,
     **kwargs
 ):
+    """Provides a fast, convenient way to encapsulate objects that support
+    the buffer protocol as both producer and consumer, duplicating the
+    original object's data in shared memory and returning a new wrapped
+    object that when serialized via pickle does not serialize its data.
+
+    The function has been written in a general way to potentially work with
+    any object supporting the buffer protocol as producer and consumer.  It
+    is known to work well with NumPy ndarrays.  Among the Python core data
+    types and standard library, there are a number of objects supporting
+    the buffer protocol as a producer but not as a consumer.
+
+    Without an example of a producer+consumer of the buffer protocol in
+    the Python core to demonstrate the use of this function, this function
+    should likely be removed from this module and potentially be made
+    available instead via a pip-installable package."""
+
     augmented_kwargs = dict(kwargs)
     extras = dict(shape=shape, strides=strides, dtype=dtype, format=format)
     for key, value in extras.items():
