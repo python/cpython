@@ -586,19 +586,6 @@ class Regrtest:
             self._main(tests, kwargs)
 
     def _main(self, tests, kwargs):
-        self.ns = self.parse_args(kwargs)
-
-        self.getloadavg = None
-        if hasattr(os, 'getloadavg'):
-            def getloadavg_1m():
-                return os.getloadavg()[0]
-            self.getloadavg = getloadavg_1m
-        elif sys.platform == 'win32' and (self.ns.slaveargs is None):
-            from test.libregrtest.win_utils import WindowsLoadTracker
-
-            load_tracker = WindowsLoadTracker()
-            self.getloadavg = load_tracker.getloadavg
-
         if self.ns.huntrleaks:
             warmup, repetitions, _ = self.ns.huntrleaks
             if warmup < 1 or repetitions < 1:
@@ -628,6 +615,19 @@ class Regrtest:
         if self.ns.list_cases:
             self.list_cases()
             sys.exit(0)
+
+        self.getloadavg = None
+        # If we're on windows and this is the parent runner (not a worker),
+        # report the load average.
+        if hasattr(os, 'getloadavg'):
+            def getloadavg_1m():
+                return os.getloadavg()[0]
+            self.getloadavg = getloadavg_1m
+        elif sys.platform == 'win32' and (self.ns.worker_args is None):
+            from test.libregrtest.win_utils import WindowsLoadTracker
+
+            load_tracker = WindowsLoadTracker()
+            self.getloadavg = load_tracker.getloadavg
 
         self.run_tests()
         self.display_result()
