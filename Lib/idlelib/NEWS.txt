@@ -3,6 +3,9 @@ Released on 2019-??-??
 ======================================
 
 
+bpo-35833: Revise IDLE doc for control codes sent to Shell.
+Add a code example block.
+
 bpo-35770: IDLE macosx deletes Options => Configure IDLE.
 It previously deleted Window => Zoom Height by mistake.
 (Zoom Height is now on the Options menu).  On Mac, the settings
