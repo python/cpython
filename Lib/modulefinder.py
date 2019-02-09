@@ -7,7 +7,6 @@ import importlib.machinery
 import marshal
 import os
 import sys
-import time
 import types
 import warnings
 
@@ -470,7 +469,7 @@ class ModuleFinder:
             sys.path = path + old_path
             sys.modules = {}
 
-            time.sleep(0.00001)
+            [i for i in range(10000)]  # XXX: Busy wait.
             spec = importlib.util.find_spec(name)
 
         finally:
