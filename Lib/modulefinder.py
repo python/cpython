@@ -470,7 +470,7 @@ class ModuleFinder:
             sys.path = path + old_path
             sys.modules = {}
 
-            time.sleep(0.000001)
+            time.sleep(0.00001)
             spec = importlib.util.find_spec(name)
 
         finally:
