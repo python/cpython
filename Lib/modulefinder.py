@@ -468,13 +468,9 @@ class ModuleFinder:
 
         try:
 
-            sys._clear_type_cache()
-
             sys.path[:0] = path
             sys.modules.clear()
             sys.path_importer_cache.clear()
-
-            sys._clear_type_cache()
 
             spec = importlib.util.find_spec(name)
 
