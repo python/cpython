@@ -26,8 +26,8 @@ In this module, shared memory refers to "System V style" shared memory blocks
 (though is not necessarily implemented explicitly as such) and does not refer
 to "distributed shared memory".  This style of shared memory permits distinct
 processes to potentially read and write to a common (or shared) region of
-volatile memory.  Because processes conventionally only have access to their
-own process memory space, this construct of shared memory permits the sharing
+volatile memory.  Processes are conventionally limited to only have access to
+their own process memory space but shared memory permits the sharing
 of data between processes, avoiding the need to instead send messages between
 processes containing that data.  Sharing data directly via memory can provide
 significant performance benefits compared to sharing data via disk or socket
@@ -264,8 +264,9 @@ The following example demonstrates the basic mechanisms of a
    >>> smm.shutdown()  # Calls unlink() on sl, raw_shm, and another_sl
 
 The following example depicts a potentially more convenient pattern for using
-:class:`SharedMemoryManager` objects in a :keyword:`with` statement to ensure
-that all shared memory blocks are released after they are no longer needed:
+:class:`SharedMemoryManager` objects via the :keyword:`with` statement to
+ensure that all shared memory blocks are released after they are no longer
+needed:
 
    >>> with shared_memory.SharedMemoryManager() as smm:
    ...     sl = smm.ShareableList(range(2000))
