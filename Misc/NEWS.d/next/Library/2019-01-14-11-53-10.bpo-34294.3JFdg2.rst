@@ -1,1 +1,1 @@
-re module: reset capturing groups inside SRE(search) function, this fixes wrong capturing groups in rare cases.
+re module, fix wrong capturing groups in rare cases. Failed SRE(match) doesn't reset capturing groups, we need to reset them between two SRE(match) callings in loops.

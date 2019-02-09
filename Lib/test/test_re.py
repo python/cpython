@@ -1801,21 +1801,6 @@ class ReTests(unittest.TestCase):
         self.assertEqual([m.span() for m in re.finditer(r"\b|\w+", "a::bc")],
                          [(0, 0), (0, 1), (1, 1), (3, 3), (3, 5), (5, 5)])
 
-        self.assertEqual([(*m.span(), *m.groups())
-                            for m in re.finditer(r"(?=(.))|(.)?", "ab")],
-                         [(0, 0, 'a', None),
-                          (0, 1, None, 'a'),
-                          (1, 1, 'b', None),
-                          (1, 2, None, 'b'),
-                          (2, 2, None, None)])
-        self.assertEqual([(*m.span(), *m.groups())
-                            for m in re.finditer(r"(?=(.)?)|(.)", "ab")],
-                         [(0, 0, 'a', None),
-                          (0, 1, None, 'a'),
-                          (1, 1, 'b', None),
-                          (1, 2, None, 'b'),
-                          (2, 2, None, None)])
-
     def test_bug_2537(self):
         # issue 2537: empty submatches
         for outer_op in ('{0,}', '*', '+', '{1,187}'):
@@ -2085,7 +2070,7 @@ ELSE
     def test_bug_34294(self):
         # Issue 34294: wrong capturing groups
 
-        # exists since very early version
+        # exists since Python 2
         s = "a\tx"
         p = r"\b(?=(\t)|(x))x"
         self.assertEqual(re.search(p, s).groups(), (None, 'x'))

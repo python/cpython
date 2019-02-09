@@ -1360,8 +1360,7 @@ exit:
             break;
     }
 
-    /* should never get here */
-    RETURN_ERROR(SRE_ERROR_STATE);
+    return ret; /* should never get here */
 }
 
 /* need to reset capturing groups between two SRE(match) callings in loops */
