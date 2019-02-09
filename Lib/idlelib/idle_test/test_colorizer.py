@@ -1,4 +1,4 @@
-"Test colorizer, coverage 86%."
+"Test colorizer, coverage 93%."
 
 from functools import partial
 
