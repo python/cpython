@@ -18,24 +18,24 @@
 This module provides a class, :class:`SharedMemory`, for the allocation
 and management of shared memory to be accessed by one or more processes
 on a multicore or SMP machine.  To assist with the life-cycle management
-of shared memory across distinct processes, a
-:func:`multiprocessing.Manager` class, :class:`SharedMemoryManager`, is
-also provided.
+of shared memory especially across distinct processes, a
+:class:`multiprocessing.managers.BaseManager` subclass,
+:class:`SharedMemoryManager`, is also provided.
 
 In this module, shared memory refers to "System V style" shared memory blocks
-(though is not necessarily implemented explicitly as such).  This style
-of memory, when created, permits distinct processes to potentially read and
-write to a common (or shared) region of volatile memory.  Because processes
-conventionally only have access to their own process memory space, this
-construct of shared memory permits the sharing of data between processes,
-avoiding the need to instead send messages between processes containing
-that data.  Sharing data directly via memory can provide significant
-performance benefits compared to sharing data via disk or socket or other
-communications requiring the serialization/de-serialization and copying of
-data.
+(though is not necessarily implemented explicitly as such) and does not refer
+to "distributed shared memory".  This style of shared memory permits distinct
+processes to potentially read and write to a common (or shared) region of
+volatile memory.  Because processes conventionally only have access to their
+own process memory space, this construct of shared memory permits the sharing
+of data between processes, avoiding the need to instead send messages between
+processes containing that data.  Sharing data directly via memory can provide
+significant performance benefits compared to sharing data via disk or socket
+or other communications requiring the serialization/de-serialization and
+copying of data.
 
 
-.. class:: SharedMemory(name, flags=None, mode=384, size=0, read_only=False)
+.. class:: SharedMemory(name, flags=None, mode=0o600, size=0, read_only=False)
 
    This class creates and returns an instance of either a
    :class:`PosixSharedMemory` or :class:`NamedSharedMemory` class depending
@@ -115,16 +115,16 @@ instances::
    >>> len(buffer)
    10
    >>> buffer[:4] = bytearray([22, 33, 44, 55])  # Modify multiple at once
-   >>> buffer[4] = 100  # Modify a single byte at a time
+   >>> buffer[4] = 100                           # Modify single byte at a time
    >>> # Attach to an existing shared memory block
    >>> shm_b = shared_memory.SharedMemory(shm_a.name)
    >>> import array
    >>> array.array('b', shm_b.buf[:5])  # Copy the data into a new array.array
    array('b', [22, 33, 44, 55, 100])
    >>> shm_b.buf[:5] = b'howdy'  # Modify via shm_b using bytes
-   >>> bytes(shm_a.buf[:5])  # Access via shm_a
+   >>> bytes(shm_a.buf[:5])      # Access via shm_a
    b'howdy'
-   >>> shm_b.close()  # Close each SharedMemory instance
+   >>> shm_b.close()   # Close each SharedMemory instance
    >>> shm_a.close()
    >>> shm_a.unlink()  # Call unlink only once to release the shared memory
 
@@ -178,14 +178,109 @@ two distinct Python shells::
    >>> shm.unlink()  # Free and release the shared memory block at the very end
 
 
-.. class:: SharedMemoryManager
+.. class:: SharedMemoryManager([address[, authkey]])
 
-   A subclass of :class:`multiprocessing.managers.SyncManager` which can be
+   A subclass of :class:`multiprocessing.managers.BaseManager` which can be
    used for the management of shared memory blocks across processes.
 
-   It provides methods for creating and returning a :class:`SharedMemory`
-   instance and for creating a list-like object (:class:`ShareableList`)
-   backed by shared memory.
+   Instantiation of a :class:`SharedMemoryManager` causes a new process to
+   be started.  This new process's sole purpose is to manage the life cycle
+   of all shared memory blocks created through it.  To trigger the release
+   of all shared memory blocks managed by that process, call
+   :func:`multiprocessing.managers.BaseManager.shutdown()` on the instance.
+   This triggers a :func:`SharedMemory.unlink()` call on all of the
+   :class:`SharedMemory` instances managed by that process and then
+   stops the process itself.  By creating ``SharedMemory`` instances
+   through a ``SharedMemoryManager``, we avoid the need to manually track
+   and trigger the freeing of shared memory resources.
+
+   This class provides methods for creating and returning :class:`SharedMemory`
+   instances and for creating a list-like object (:class:`ShareableList`)
+   backed by shared memory.  It also provides methods that create and
+   return :ref:`multiprocessing-proxy_objects` that support synchronization
+   across processes (i.e. multi-process-safe locks and semaphores).
+
+   Refer to :class:`multiprocessing.managers.BaseManager` for a description
+   of the inherited *address* and *authkey* optional input arguments and how
+   they may be used to connect to an existing ``SharedMemoryManager`` service
+   from other processes.
+
+   .. method:: SharedMemory(size)
+
+      Create and return a new :class:`SharedMemory` object with the
+      specified ``size`` in bytes.
+
+   .. method:: ShareableList(sequence)
+
+      Create and return a new :class:`ShareableList` object, initialized
+      by the values from the input ``sequence``.
+
+   .. method:: Barrier(parties[, action[, timeout]])
+
+      Create a shared :class:`threading.Barrier` object and return a
+      proxy for it.
+
+   .. method:: BoundedSemaphore([value])
+
+      Create a shared :class:`threading.BoundedSemaphore` object and return
+      a proxy for it.
+
+   .. method:: Condition([lock])
+
+      Create a shared :class:`threading.Condition` object and return a proxy
+      for it.  The optional input *lock* supports a proxy for a
+      :class:`threading.Lock` or :class:`threading.RLock` object.
+
+   .. method:: Event()
+
+      Create a shared :class:`threading.Event` object and return a proxy for it.
+
+   .. method:: Lock()
+
+      Create a shared :class:`threading.Lock` object and return a proxy for it.
+
+   .. method:: RLock()
+
+      Create a shared :class:`threading.RLock` object and return a proxy for it.
+
+   .. method:: Semaphore([value])
+
+      Create a shared :class:`threading.Semaphore` object and return a proxy
+      for it.
+
+The following example demonstrates the basic mechanisms of a
+:class:`SharedMemoryManager`:
+
+   >>> from multiprocessing import shared_memory
+   >>> smm = shared_memory.SharedMemoryManager()
+   >>> smm.start()  # Start the process that manages the shared memory blocks
+   >>> sl = smm.ShareableList(range(4))
+   >>> sl
+   ShareableList([0, 1, 2, 3], name='psm_6572_7512')
+   >>> raw_shm = smm.SharedMemory(size=128)
+   >>> another_sl = smm.ShareableList('alpha')
+   >>> another_sl
+   ShareableList(['a', 'l', 'p', 'h', 'a'], name='psm_6572_12221')
+   >>> smm.shutdown()  # Calls unlink() on sl, raw_shm, and another_sl
+
+The following example depicts a potentially more convenient pattern for using
+:class:`SharedMemoryManager` objects in a :keyword:`with` statement to ensure
+that all shared memory blocks are released after they are no longer needed:
+
+   >>> with shared_memory.SharedMemoryManager() as smm:
+   ...     sl = smm.ShareableList(range(2000))
+   ...     # Divide the work among two processes, storing partial results in sl
+   ...     p1 = Process(target=do_work, args=(sl.shm.name, 0, 1000))
+   ...     p2 = Process(target=do_work, args=(sl.shm.name, 1000, 2000))
+   ...     p1.start()
+   ...     p2.start()  # A multiprocessing.Pool might be more efficient
+   ...     p1.join()
+   ...     p2.join()   # Wait for all work to complete in both processes
+   ...     total_result = sum(sl)  # Consolidate the partial results now in sl
+
+When using a :class:`SharedMemoryManager` in a :keyword:`with` statement, the
+shared memory blocks created using that manager are all released when the
+:keyword:`with` statement's code block finishes execution.
 
 
 .. class:: ShareableList(sequence=None, *, name=None)
@@ -196,12 +291,12 @@ two distinct Python shells::
    ``bytes`` (less than 10M bytes each), and ``None`` built-in data types.
    It also notably differs from the built-in ``list`` type in that these
    lists can not change their overall length (i.e. no append, insert, etc.)
-   and do not support the dynamic creation of new `ShareableList` instances
-   via slicing.
+   and do not support the dynamic creation of new :class:`ShareableList`
+   instances via slicing.
 
    *sequence* is used in populating a new ``ShareableList`` full of values.
    Set to ``None`` to instead attach to an already existing
-   ``ShareableList`` in shared memory by its name.
+   ``ShareableList`` by its unique shared memory name.
 
    *name* is the unique name for the requested shared memory, as described
    in the definition for :class:`SharedMemory`.  When attaching to an

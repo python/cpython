@@ -8,12 +8,14 @@ __all__ = [ 'SharedMemory', 'PosixSharedMemory', 'WindowsNamedSharedMemory',
 
 from functools import reduce
 import mmap
-from .managers import DictProxy, SyncManager, Server
+from .managers import dispatch, BaseManager, Server, State, ProcessError, \
+                      BarrierProxy, AcquirerProxy, ConditionProxy, EventProxy
 from . import util
 import os
 import random
 import struct
 import sys
+import threading
 try:
     from _posixshmem import _PosixSharedMemory, \
                             Error, ExistentialError, PermissionsError, \
@@ -515,14 +517,14 @@ class SharedMemoryTracker:
         self.shared_memory_context_name = name
         self.segment_names = segment_names
 
-    def register_segment(self, segment):
-        util.debug(f"Registering segment {segment.name!r} in pid {os.getpid()}")
-        self.segment_names.append(segment.name)
+    def register_segment(self, segment_name):
+        util.debug(f"Registering segment {segment_name!r} in pid {os.getpid()}")
+        self.segment_names.append(segment_name)
 
     def destroy_segment(self, segment_name):
         util.debug(f"Destroying segment {segment_name!r} in pid {os.getpid()}")
         self.segment_names.remove(segment_name)
-        segment = SharedMemory(segment_name, size=1)
+        segment = SharedMemory(segment_name)
         segment.close()
         segment.unlink()
 
@@ -542,11 +544,15 @@ class SharedMemoryTracker:
 
     def wrap(self, obj_exposing_buffer_protocol):
         wrapped_obj = shareable_wrap(obj_exposing_buffer_protocol)
-        self.register_segment(wrapped_obj._shm)
+        self.register_segment(wrapped_obj._shm.name)
         return wrapped_obj
 
 
 class SharedMemoryServer(Server):
+
+    public = Server.public + \
+             ['track_segment', 'release_segment', 'list_segments']
+
     def __init__(self, *args, **kwargs):
         Server.__init__(self, *args, **kwargs)
         self.shared_memory_context = \
@@ -565,16 +571,30 @@ class SharedMemoryServer(Server):
         self.shared_memory_context.unlink()
         return Server.shutdown(self, c)
 
+    def track_segment(self, c, segment_name):
+        self.shared_memory_context.register_segment(segment_name)
 
-class SharedMemoryManager(SyncManager):
+    def release_segment(self, c, segment_name):
+        self.shared_memory_context.destroy_segment(segment_name)
+
+    def list_segments(self, c):
+        return self.shared_memory_context.segment_names
+
+
+class SharedMemoryManager(BaseManager):
     """Like SyncManager but uses SharedMemoryServer instead of Server.
 
-    TODO: Consider relocate/merge into managers submodule."""
+    It provides methods for creating and returning SharedMemory instances
+    and for creating a list-like object (ShareableList) backed by shared
+    memory.  It also provides methods that create and return Proxy Objects
+    that support synchronization across processes (i.e. multi-process-safe
+    locks and semaphores).
+    """
 
     _Server = SharedMemoryServer
 
     def __init__(self, *args, **kwargs):
-        SyncManager.__init__(self, *args, **kwargs)
+        BaseManager.__init__(self, *args, **kwargs)
         util.debug(f"{self.__class__.__name__} created by pid {os.getpid()}")
 
     def __del__(self):
@@ -585,11 +605,53 @@ class SharedMemoryManager(SyncManager):
         'Better than monkeypatching for now; merge into Server ultimately'
         if self._state.value != State.INITIAL:
             if self._state.value == State.STARTED:
-                raise ProcessError("Already started server")
+                raise ProcessError("Already started SharedMemoryServer")
             elif self._state.value == State.SHUTDOWN:
-                raise ProcessError("Manager has shut down")
+                raise ProcessError("SharedMemoryManager has shut down")
             else:
                 raise ProcessError(
                     "Unknown state {!r}".format(self._state.value))
-        return _Server(self._registry, self._address,
-                       self._authkey, self._serializer)
+        return self._Server(self._registry, self._address,
+                            self._authkey, self._serializer)
+
+    def SharedMemory(self, size):
+        """Returns a new SharedMemory instance with the specified size in
+        bytes, to be tracked by the manager."""
+        conn = self._Client(self._address, authkey=self._authkey)
+        try:
+            sms = SharedMemory(None, flags=O_CREX, size=size)
+            try:
+                dispatch(conn, None, 'track_segment', (sms.name,))
+            except BaseException as e:
+                sms.unlink()
+                raise e
+        finally:
+            conn.close()
+        return sms
+
+    def ShareableList(self, sequence):
+        """Returns a new ShareableList instance populated with the values
+        from the input sequence, to be tracked by the manager."""
+        conn = self._Client(self._address, authkey=self._authkey)
+        try:
+            sl = ShareableList(sequence)
+            try:
+                dispatch(conn, None, 'track_segment', (sl.shm.name,))
+            except BaseException as e:
+                sl.shm.unlink()
+                raise e
+        finally:
+            conn.close()
+        return sl
+
+SharedMemoryManager.register('Barrier', threading.Barrier, BarrierProxy)
+SharedMemoryManager.register(
+    'BoundedSemaphore',
+    threading.BoundedSemaphore,
+    AcquirerProxy
+)
+SharedMemoryManager.register('Condition', threading.Condition, ConditionProxy)
+SharedMemoryManager.register('Event', threading.Event, EventProxy)
+SharedMemoryManager.register('Lock', threading.Lock, AcquirerProxy)
+SharedMemoryManager.register('RLock', threading.RLock, AcquirerProxy)
+SharedMemoryManager.register('Semaphore', threading.Semaphore, AcquirerProxy)
