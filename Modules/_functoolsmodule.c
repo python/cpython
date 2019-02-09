@@ -661,6 +661,26 @@ sequence is empty.");
 
 /* lru_cache object **********************************************************/
 
+/* There are four principal algorithmic differences from the pure python version:
+
+   1). The C version relies on the GIL instead of having its own reentrant lock.
+
+   2). The prev/next link fields use borrowed references.
+
+   3). For a full cache, the pure python version rotates the location of the
+       root entry so that it never has to move individual links and it can
+       limit updates to just the key and result fields.  However, in the C
+       version, links are temporarily removed while the cache dict updates are
+       occurring. Afterwards, they are appended or prepended back into the
+       doubly-linked lists.
+
+   4)  In the Python version, the _HashSeq class is used to prevent __hash__
+       from being called more than once.  In the C version, the "known hash"
+       variants of dictionary calls as used to the same effect.
+
+*/
+
+
 /* this object is used delimit args and keywords in the cache keys */
 static PyObject *kwd_mark = NULL;
 
@@ -796,10 +816,12 @@ lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
 static PyObject *
 uncached_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *result = PyObject_Call(self->func, args, kwds);
+    PyObject *result;
+
+    self->misses++;
+    result = PyObject_Call(self->func, args, kwds);
     if (!result)
         return NULL;
-    self->misses++;
     return result;
 }
 
@@ -827,6 +849,7 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
         Py_DECREF(key);
         return NULL;
     }
+    self->misses++;
     result = PyObject_Call(self->func, args, kwds);
     if (!result) {
         Py_DECREF(key);
@@ -838,7 +861,6 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
         return NULL;
     }
     Py_DECREF(key);
-    self->misses++;
     return result;
 }
 
@@ -1007,14 +1029,15 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     link = self->root.next;
     lru_cache_extract_link(link);
     /* Remove it from the cache.
-       The cache dict holds one reference to the link,
-       and the linked list holds yet one reference to it. */
+       The cache dict holds one reference to the link.
+       We created one other reference when the link was created.
+       The linked list only has borrowed references. */
     popresult = _PyDict_Pop_KnownHash(self->cache, link->key,
                                       link->hash, Py_None);
     if (popresult == Py_None) {
         /* Getting here means that the user function call or another
            thread has already removed the old key from the dictionary.
-           This link is now an orpan.  Since we don't want to leave the
+           This link is now an orphan.  Since we don't want to leave the
            cache in an inconsistent state, we don't restore the link. */
         Py_DECREF(popresult);
         Py_DECREF(link);
@@ -1046,7 +1069,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
        prev and next fields set to valid values.   We have to wait
        for successful insertion in the cache dict before adding the
        link to the linked list.  Otherwise, the potentially reentrant
-       __eq__ call could cause the then ophan link to be visited. */
+       __eq__ call could cause the then orphan link to be visited. */
     if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
                                   hash) < 0) {
         /* Somehow the cache dict update failed.  We no longer can

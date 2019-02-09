@@ -426,6 +426,7 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("(a := 1)")
         self.check_suite("(a := a)")
         self.check_suite("if (match := pattern.search(data)) is None: pass")
+        self.check_suite("while match := pattern.search(f.read()): pass")
         self.check_suite("[y := f(x), y**2, y**3]")
         self.check_suite("filtered_data = [y for x in data if (y := f(x)) is None]")
         self.check_suite("(y := f(x))")

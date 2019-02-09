@@ -541,10 +541,10 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
     if maxsize == 0:
 
         def wrapper(*args, **kwds):
-            # No caching -- just a statistics update after a successful call
+            # No caching -- just a statistics update
             nonlocal misses
-            result = user_function(*args, **kwds)
             misses += 1
+            result = user_function(*args, **kwds)
             return result
 
     elif maxsize is None:
@@ -557,9 +557,9 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
             if result is not sentinel:
                 hits += 1
                 return result
+            misses += 1
             result = user_function(*args, **kwds)
             cache[key] = result
-            misses += 1
             return result
 
     else:

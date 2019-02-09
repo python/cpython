@@ -126,15 +126,32 @@ The abstract grammar is currently defined as follows:
 Apart from the node classes, the :mod:`ast` module defines these utility functions
 and classes for traversing abstract syntax trees:
 
-.. function:: parse(source, filename='<unknown>', mode='exec')
+.. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False)
 
    Parse the source into an AST node.  Equivalent to ``compile(source,
    filename, mode, ast.PyCF_ONLY_AST)``.
+
+   If ``type_comments=True`` is given, the parser is modified to check
+   and return type comments as specified by :pep:`484` and :pep:`526`.
+   This is equivalent to adding :data:`ast.PyCF_TYPE_COMMENTS` to the
+   flags passed to :func:`compile()`.  This will report syntax errors
+   for misplaced type comments.  Without this flag, type comments will
+   be ignored, and the ``type_comment`` field on selected AST nodes
+   will always be ``None``.  In addition, the locations of ``# type:
+   ignore`` comments will be returned as the ``type_ignores``
+   attribute of :class:`Module` (otherwise it is always an empty list).
+
+   In addition, if ``mode`` is ``'func_type'``, the input syntax is
+   modified to correspond to :pep:`484` "signature type comments",
+   e.g. ``(str, int) -> List[str]``.
 
    .. warning::
       It is possible to crash the Python interpreter with a
       sufficiently large/complex string due to stack depth limitations
       in Python's AST compiler.
+
+   .. versionchanged:: 3.8
+      Added ``type_comments=True`` and ``mode='func_type'``.
 
 
 .. function:: literal_eval(node_or_string)

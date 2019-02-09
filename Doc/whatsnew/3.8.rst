@@ -115,6 +115,14 @@ Other Language Changes
   a :exc:`SyntaxWarning` instead.
   (Contributed by Serhiy Storchaka in :issue:`32912`.)
 
+* Arithmetic operations between subclasses of :class:`datetime.date` or
+  :class:`datetime.datetime` and :class:`datetime.timedelta` objects now return
+  an instance of the subclass, rather than the base class. This also affects
+  the return type of operations whose implementation (directly or indirectly)
+  uses :class:`datetime.timedelta` arithmetic, such as
+  :meth:`datetime.datetime.astimezone`.
+  (Contributed by Paul Ganssle in :issue:`32417`.)
+
 
 New Modules
 ===========
@@ -124,6 +132,14 @@ New Modules
 
 Improved Modules
 ================
+
+* The :meth:`_asdict()` method for :func:`collections.namedtuple` now returns
+  a :class:`dict` instead of a :class:`collections.OrderedDict`.  This works because
+  regular dicts have guaranteed ordering in since Python 3.7.  If the extra
+  features of :class:`OrderedDict` are required, the suggested remediation is
+  to cast the result to the desired type: ``OrderedDict(nt._asdict())``.
+  (Contributed by Raymond Hettinger in :issue:`35864`.)
+
 
 asyncio
 -------
@@ -162,6 +178,15 @@ json.tool
 
 Add option ``--json-lines`` to parse every input line as separate JSON object.
 (Contributed by Weipeng Hong in :issue:`31553`.)
+
+
+math
+----
+
+Added new function, :func:`math.prod`, as analogous function to :func:`sum`
+that returns the product of a 'start' value (default: 1) times an iterable of
+numbers. (Contributed by Pablo Galindo in :issue:`issue35606`)
+
 
 os.path
 -------
@@ -543,3 +568,11 @@ CPython bytecode changes
 * Added new opcode :opcode:`END_ASYNC_FOR` for handling exceptions raised
   when awaiting a next item in an :keyword:`async for` loop.
   (Contributed by Serhiy Storchaka in :issue:`33041`.)
+
+
+Demos and Tools
+---------------
+
+* Added a benchmark script for timing various ways to access variables:
+  ``Tools/scripts/var_access_benchmark.py``.
+  (Contributed by Raymond Hettinger in :issue:`35884`.)

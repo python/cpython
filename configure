@@ -16862,6 +16862,108 @@ $as_echo "#define HAVE_GETRANDOM 1" >>confdefs.h
 
 fi
 
+# checks for POSIX shared memory, used by Modules/_multiprocessing/posixshmem.c
+# shm_* may only be available if linking against librt
+save_LIBS="$LIBS"
+save_includes_default="$ac_includes_default"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing shm_open" >&5
+$as_echo_n "checking for library containing shm_open... " >&6; }
+if ${ac_cv_search_shm_open+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char shm_open ();
+int
+main ()
+{
+return shm_open ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' rt; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_shm_open=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_shm_open+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_shm_open+:} false; then :
+
+else
+  ac_cv_search_shm_open=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_shm_open" >&5
+$as_echo "$ac_cv_search_shm_open" >&6; }
+ac_res=$ac_cv_search_shm_open
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+fi
+
+if test "$ac_cv_search_shm_open" = "-lrt"; then
+
+$as_echo "#define SHM_NEEDS_LIBRT 1" >>confdefs.h
+
+fi
+for ac_header in sys/mman.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "sys/mman.h" "ac_cv_header_sys_mman_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_mman_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_SYS_MMAN_H 1
+_ACEOF
+
+fi
+
+done
+
+# temporarily override ac_includes_default for AC_CHECK_FUNCS below
+ac_includes_default="\
+${ac_includes_default}
+#ifndef __cplusplus
+#  ifdef HAVE_SYS_MMAN_H
+#    include <sys/mman.h>
+#  endif
+#endif
+"
+for ac_func in shm_open shm_unlink
+do :
+  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+# we don't want to link with librt always, restore LIBS
+LIBS="$save_LIBS"
+ac_includes_default="$save_includes_default"
+
 # Check for usable OpenSSL
 
     found=false
