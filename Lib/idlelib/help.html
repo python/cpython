@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>IDLE &#8212; Python 3.8.0a0 documentation</title>
+    <title>IDLE &#8212; Python 3.8.0a1 documentation</title>
     <link rel="stylesheet" href="../_static/pydoctheme.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
 
@@ -19,7 +19,7 @@
     <script type="text/javascript" src="../_static/sidebar.js"></script>
 
     <link rel="search" type="application/opensearchdescription+xml"
-          title="Search within Python 3.8.0a0 documentation"
+          title="Search within Python 3.8.0a1 documentation"
           href="../_static/opensearch.xml"/>
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
@@ -72,7 +72,7 @@
 
 
     <li>
-      <a href="../index.html">3.8.0a0 Documentation</a> &#187;
+      <a href="../index.html">3.8.0a1 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -673,14 +673,31 @@ output to Shell will eventually fill memory, resulting in a memory error.
 In contrast, some system text windows only keep the last n lines of output.
 A Windows console, for instance, keeps a user-settable 1 to 9999 lines,
 with 300 the default.</p>
-<p>Text widgets display a subset of Unicode, the Basic Multilingual Plane (BMP).
-Which characters get a proper glyph instead of a replacement box depends on
-the operating system and installed fonts.  Newline characters cause following
-text to appear on a new line, but other control characters are either
-replaced with a box or deleted.  However, <code class="docutils literal notranslate"><span class="pre">repr()</span></code>, which is used for
-interactive echo of expression values, replaces control characters,
-some BMP codepoints, and all non-BMP characters with escape codes
-before they are output.</p>
+<p>A Tk Text widget, and hence IDLE’s Shell, displays characters (codepoints)
+in the the BMP (Basic Multilingual Plane) subset of Unicode.
+Which characters are displayed with a proper glyph and which with a
+replacement box depends on the operating system and installed fonts.
+Tab characters cause the following text to begin after
+the next tab stop. (They occur every 8 ‘characters’).
+Newline characters cause following text to appear on a new line.
+Other control characters are ignored or displayed as a space, box, or
+something else, depending on the operating system and font.
+(Moving the text cursor through such output with arrow keys may exhibit
+some surprising spacing behavior.)</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; s = &#39;a\tb\a&lt;\x02&gt;&lt;\r&gt;\bc\nd&#39;
+&gt;&gt;&gt; len(s)
+14
+&gt;&gt;&gt; s  # Display repr(s)
+&#39;a\tb\x07&lt;\x02&gt;&lt;\r&gt;\x08c\nd&#39;
+&gt;&gt;&gt; print(s, end=&#39;&#39;)  # Display s as is.
+# Result varies by OS and font.  Try it.
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">repr</span></code> function is used for interactive echo of expression
+values.  It returns an altered version of the input string in which
+control codes, some BMP codepoints, and all non-BMP codepoints are
+replaced with escape codes. As demonstrated above, it allows one to
+identify the characters in a string, regardless of how they are displayed.</p>
 <p>Normal and error output are generally kept separate (on separate lines)
 from code input and each other.  They each get different highlight colors.</p>
 <p>For SyntaxError tracebacks, the normal ‘^’ marking where the error was
@@ -889,7 +906,7 @@ also used for testing.</p>
 
 
     <li>
-      <a href="../index.html">3.8.0a0 Documentation</a> &#187;
+      <a href="../index.html">3.8.0a1 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -912,7 +929,7 @@ also used for testing.</p>
       </ul>
     </div>
     <div class="footer">
-    &copy; <a href="../copyright.html">Copyright</a> 2001-2018, Python Software Foundation.
+    &copy; <a href="../copyright.html">Copyright</a> 2001-2019, Python Software Foundation.
     <br />
 
     The Python Software Foundation is a non-profit corporation.
@@ -920,7 +937,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Dec 28, 2018.
+    Last updated on Feb 08, 2019.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 

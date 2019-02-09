@@ -1,0 +1,1 @@
+Revise IDLE doc for control codes sent to Shell. Add a code example block.
