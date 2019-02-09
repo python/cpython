@@ -462,22 +462,27 @@ class ModuleFinder:
 
             path = self.path
 
-        with multiprocessing.RLock():
+        old_path = sys.path[:]
+        old_modules = sys.modules.copy()
+        old_path_importer_cache = sys.path_importer_cache.copy()
 
-            old_path = sys.path[:]
-            old_modules = sys.modules
+        try:
 
-            try:
+            sys._clear_type_cache()
 
-                sys.path[1:1] = path
-                sys.modules = {}
+            sys.path[:0] = path
+            sys.modules.clear()
+            sys.path_importer_cache.clear()
 
-                spec = importlib.util.find_spec(name)
+            sys._clear_type_cache()
 
-            finally:
+            spec = importlib.util.find_spec(name)
 
-                sys.path[:] = old_path
-                sys.modules = old_modules
+        finally:
+
+            sys.path[:] = old_path
+            sys.modules.update(old_modules)
+            sys.path_importer_cache.update(old_path_importer_cache)
 
         if spec is None:
             raise ImportError("No module named {name!r}".format(name=name), name=name)
