@@ -20,22 +20,23 @@ struct _frame;
 struct _ts;
 struct _is;
 
+/* struct _is is defined in internal/pycore_pystate.h */
+typedef struct _is PyInterpreterState;
 #ifdef Py_LIMITED_API
 typedef struct _ts PyThreadState;
-typedef struct _is PyInterpreterState;
 #else
-/* PyThreadState and PyInterpreterState are defined in cpython/pystate.h */
+/* PyThreadState is defined in cpython/pystate.h */
 #endif
 
 /* State unique per thread */
 
-PyAPI_FUNC(struct _is *) PyInterpreterState_New(void);
-PyAPI_FUNC(void) PyInterpreterState_Clear(struct _is *);
-PyAPI_FUNC(void) PyInterpreterState_Delete(struct _is *);
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
+PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
+PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
 /* New in 3.7 */
-PyAPI_FUNC(int64_t) PyInterpreterState_GetID(struct _is *);
+PyAPI_FUNC(int64_t) PyInterpreterState_GetID(PyInterpreterState *);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 /* New in 3.3 */
@@ -44,7 +45,7 @@ PyAPI_FUNC(int) PyState_RemoveModule(struct PyModuleDef*);
 #endif
 PyAPI_FUNC(PyObject*) PyState_FindModule(struct PyModuleDef*);
 
-PyAPI_FUNC(struct _ts *) PyThreadState_New(struct _is *);
+PyAPI_FUNC(struct _ts *) PyThreadState_New(PyInterpreterState *);
 PyAPI_FUNC(void) PyThreadState_Clear(struct _ts *);
 PyAPI_FUNC(void) PyThreadState_Delete(struct _ts *);
 PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);

@@ -7,10 +7,6 @@
 extern "C" {
 #endif
 
-#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
-#include "pycore_pystate.h"
-#endif
-
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(_PyInitError) _PyImportZip_Init(void);
 

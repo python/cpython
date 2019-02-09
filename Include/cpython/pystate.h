@@ -28,14 +28,11 @@ typedef struct {
     (_PyMainInterpreterConfig){.install_signal_handlers = -1}
 /* Note: _PyMainInterpreterConfig_INIT sets other fields to 0/NULL */
 
-#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
-typedef struct _is PyInterpreterState;
-#else
 /* PyInterpreterState is defined in internal/pycore_pystate.h */
-#endif
+//typedef struct _is PyInterpreterState;
 
-PyAPI_FUNC(_PyCoreConfig *) _PyInterpreterState_GetCoreConfig(struct _is *);
-PyAPI_FUNC(_PyMainInterpreterConfig *) _PyInterpreterState_GetMainConfig(struct _is *);
+PyAPI_FUNC(_PyCoreConfig *) _PyInterpreterState_GetCoreConfig(PyInterpreterState *);
+PyAPI_FUNC(_PyMainInterpreterConfig *) _PyInterpreterState_GetMainConfig(PyInterpreterState *);
 
 
 /* State unique per thread */
@@ -77,7 +74,7 @@ typedef struct _ts {
 
     struct _ts *prev;
     struct _ts *next;
-    struct _is *interp;
+    PyInterpreterState *interp;
 
     struct _frame *frame;
     int recursion_depth;
@@ -172,11 +169,11 @@ typedef struct _ts {
    interpreter. It cannot return NULL.
 
    The caller must hold the GIL.*/
-PyAPI_FUNC(struct _is *) _PyInterpreterState_Get(void);
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
 
 PyAPI_FUNC(int) _PyState_AddModule(PyObject*, struct PyModuleDef*);
 PyAPI_FUNC(void) _PyState_ClearModules(void);
-PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(struct _is *);
+PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
 PyAPI_FUNC(void) _PyThreadState_Init(PyThreadState *);
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
 PyAPI_FUNC(void) _PyGILState_Reinit(void);
@@ -200,7 +197,7 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    is called and after _PyGILState_Fini() is called.
 
    See also _PyInterpreterState_Get() and _PyInterpreterState_GET_UNSAFE(). */
-PyAPI_FUNC(struct _is *) _PyGILState_GetInterpreterStateUnsafe(void);
+PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
 
 /* The implementation of sys._current_frames()  Returns a dict mapping
    thread id to that thread's current frame.
@@ -209,10 +206,10 @@ PyAPI_FUNC(PyObject *) _PyThread_CurrentFrames(void);
 
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
-PyAPI_FUNC(struct _is *) PyInterpreterState_Main(void);
-PyAPI_FUNC(struct _is *) PyInterpreterState_Head(void);
-PyAPI_FUNC(struct _is *) PyInterpreterState_Next(struct _is *);
-PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(struct _is *);
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Main(void);
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
+PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
 
 typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);

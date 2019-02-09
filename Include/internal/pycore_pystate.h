@@ -21,7 +21,8 @@ extern "C" {
 
 typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
-typedef struct _is {
+// The PyInterpreterState typedef is in Include/pystate.h.
+struct _is {
 
     struct _is *next;
     struct _ts *tstate_head;
@@ -77,13 +78,13 @@ typedef struct _is {
     PyObject *pyexitmodule;
 
     uint64_t tstate_next_unique_id;
-} PyInterpreterState;
+};
 
-PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(PY_INT64_T);
+PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);
 
-PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
-PyAPI_FUNC(void) _PyInterpreterState_IDIncref(PyInterpreterState *);
-PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
+PyAPI_FUNC(int) _PyInterpreterState_IDInitref(struct _is *);
+PyAPI_FUNC(void) _PyInterpreterState_IDIncref(struct _is *);
+PyAPI_FUNC(void) _PyInterpreterState_IDDecref(struct _is *);
 
 
 /* cross-interpreter data */
