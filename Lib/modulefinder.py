@@ -469,7 +469,6 @@ class ModuleFinder:
             sys.path = path + old_path
             sys.modules = {}
 
-            [i for i in range(10000)]  # XXX: Busy wait.
             spec = importlib.util.find_spec(name)
 
         finally:
