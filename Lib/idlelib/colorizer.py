@@ -101,8 +101,7 @@ class ColorDelegator(Delegator):
     def config_colors(self):
         "Configure text widget tags with colors from tagdefs."
         for tag, cnf in self.tagdefs.items():
-            if cnf:
-                self.tag_configure(tag, **cnf)
+            self.tag_configure(tag, **cnf)
         self.tag_raise('sel')
 
     def LoadTagDefs(self):
