@@ -3747,9 +3747,12 @@ class _TestSharedMemory(BaseTestCase):
         self.assertGreaterEqual(len(doppleganger_shm0.buf), 32)
         held_name = lom[0].name
         smm1.shutdown()
-        with self.assertRaises(shared_memory.ExistentialError):
-            # No longer there to be attached to again.
-            absent_shm = shared_memory.SharedMemory(name=held_name)
+        if sys.platform != "win32":
+            # Calls to unlink() have no effect on Windows platform; shared
+            # memory will only be released once final process exits.
+            with self.assertRaises(shared_memory.ExistentialError):
+                # No longer there to be attached to again.
+                absent_shm = shared_memory.SharedMemory(name=held_name)
 
         with shared_memory.SharedMemoryManager() as smm2:
             sl = smm2.ShareableList("howdy")
@@ -3757,9 +3760,10 @@ class _TestSharedMemory(BaseTestCase):
             with unnecessary_lock:
                 shm = smm2.SharedMemory(size=128)
             held_name = sl.shm.name
-        with self.assertRaises(shared_memory.ExistentialError):
-            # No longer there to be attached to again.
-            absent_sl = shared_memory.ShareableList(name=held_name)
+        if sys.platform != "win32":
+            with self.assertRaises(shared_memory.ExistentialError):
+                # No longer there to be attached to again.
+                absent_sl = shared_memory.ShareableList(name=held_name)
 
 
     def test_shared_memory_ShareableList_basics(self):
