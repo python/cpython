@@ -5,9 +5,9 @@ import importlib._bootstrap_external
 import importlib.util
 import importlib.machinery
 import marshal
+import multiprocessing
 import os
 import sys
-import threading
 import types
 import warnings
 
@@ -462,14 +462,14 @@ class ModuleFinder:
 
             path = self.path
 
-        old_path = sys.path[:]
-        old_modules = sys.modules
+        with multiprocessing.RLock():
 
-        with threading.RLock():
+            old_path = sys.path[:]
+            old_modules = sys.modules
 
             try:
 
-                sys.path[:0] = path
+                sys.path[1:1] = path
                 sys.modules = {}
 
                 spec = importlib.util.find_spec(name)
