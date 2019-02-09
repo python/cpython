@@ -745,7 +745,7 @@ class NonCallableMock(Base):
 
 
     def _format_mock_failure_message(self, args, kwargs):
-        message = 'Expected call: %s\nActual call: %s'
+        message = 'expected call not found.\nExpected: %s\nActual: %s'
         expected_string = self._format_mock_call_signature(args, kwargs)
         call_args = self.call_args
         if len(call_args) == 3:
