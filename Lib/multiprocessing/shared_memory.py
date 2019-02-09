@@ -26,20 +26,102 @@ except ImportError as ie:
         raise ie
     else:
         _PosixSharedMemory = object
-        class ExistentialError(BaseException): pass
-        class Error(BaseException): pass
-        O_CREAT, O_EXCL, O_CREX, O_TRUNC = -1, -1, -1, -1
+        class Error(Exception): pass
+        class ExistentialError(Error): pass
+        O_CREAT, O_EXCL, O_CREX, O_TRUNC = 64, 128, 192, 512
+
+if os.name == "nt":
+    import ctypes
+    from ctypes import wintypes
+
+    #kernel32 = ctypes.wintypes.WinDLL("kernel32", use_last_error=True)
+    kernel32 = ctypes.windll.kernel32
+
+    class MEMORY_BASIC_INFORMATION(ctypes.Structure):
+        _fields_ = (
+            ('BaseAddress',       ctypes.c_void_p),
+            ('AllocationBase',    ctypes.c_void_p),
+            ('AllocationProtect', wintypes.DWORD),
+            ('RegionSize',        ctypes.c_size_t),
+            ('State',             wintypes.DWORD),
+            ('Protect',           wintypes.DWORD),
+            ('Type',              wintypes.DWORD)
+        )
+
+    PMEMORY_BASIC_INFORMATION = ctypes.POINTER(MEMORY_BASIC_INFORMATION)
+    FILE_MAP_READ = 0x0004
+
+    def _errcheck_bool(result, func, args):
+        if not result:
+            raise ctypes.WinError(ctypes.get_last_error())
+        return args
+
+    kernel32.VirtualQuery.errcheck = _errcheck_bool
+    kernel32.VirtualQuery.restype = ctypes.c_size_t
+    kernel32.VirtualQuery.argtypes = (
+        wintypes.LPCVOID,
+        PMEMORY_BASIC_INFORMATION,
+        ctypes.c_size_t
+    )
+
+    kernel32.OpenFileMappingW.errcheck = _errcheck_bool
+    kernel32.OpenFileMappingW.restype = wintypes.HANDLE
+    kernel32.OpenFileMappingW.argtypes = (
+        wintypes.DWORD,
+        wintypes.BOOL,
+        wintypes.LPCWSTR
+    )
+
+    kernel32.MapViewOfFile.errcheck = _errcheck_bool
+    kernel32.MapViewOfFile.restype = wintypes.LPVOID
+    kernel32.MapViewOfFile.argtypes = (
+        wintypes.HANDLE,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        ctypes.c_size_t
+    )
+
+    kernel32.CloseHandle.errcheck = _errcheck_bool
+    kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
 
 
 class WindowsNamedSharedMemory:
 
-    def __init__(self, name, flags=None, mode=384, size=None, read_only=False):
+    def __init__(self, name, flags=None, mode=384, size=0, read_only=False):
         if name is None:
             name = f'wnsm_{os.getpid()}_{random.randrange(100000)}'
+
+        if size == 0:
+            # Attempt to dynamically determine the existing named shared
+            # memory block's size which is likely a multiple of mmap.PAGESIZE.
+            try:
+                h_map = kernel32.OpenFileMappingW(FILE_MAP_READ, False, name)
+            except OSError as ose:
+                raise ExistentialError(*ose.args)
+            p_buf = kernel32.MapViewOfFile(h_map, FILE_MAP_READ, 0, 0, 0)
+            kernel32.CloseHandle(h_map)
+            mbi = MEMORY_BASIC_INFORMATION()
+            kernel32.VirtualQuery(p_buf, ctypes.byref(mbi), mmap.PAGESIZE)
+            size = mbi.RegionSize
+
+        if flags == O_CREX:
+            # Verify no named shared memory block already exists by this name.
+            try:
+                h_map = kernel32.OpenFileMappingW(FILE_MAP_READ, False, name)
+                kernel32.CloseHandle(h_map)
+                name_collision = True
+            except OSError as ose:
+                name_collision = False
+            if name_collision:
+                raise ExistentialError(
+                    f"Shared memory already exists with name={name}"
+                )
 
         self._mmap = mmap.mmap(-1, size, tagname=name)
         self.buf = memoryview(self._mmap)
         self.name = name
+        self.mode = mode
         self.size = size
 
     def __repr__(self):
