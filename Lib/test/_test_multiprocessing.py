@@ -4610,6 +4610,8 @@ class TestSyncManagerTypes(unittest.TestCase):
             self.proc.terminate()
             self.proc.join()
         self.manager.shutdown()
+        self.manager = None
+        self.proc = None
 
     @classmethod
     def setUpClass(cls):
