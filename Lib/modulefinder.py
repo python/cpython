@@ -7,6 +7,7 @@ import importlib.machinery
 import marshal
 import os
 import sys
+import threading
 import types
 import warnings
 
@@ -464,17 +465,19 @@ class ModuleFinder:
         old_path = sys.path[:]
         old_modules = sys.modules
 
-        try:
+        with threading.RLock():
 
-            sys.path[:0] = path
-            sys.modules = {}
+            try:
 
-            spec = importlib.util.find_spec(name)
+                sys.path[:0] = path
+                sys.modules = {}
 
-        finally:
+                spec = importlib.util.find_spec(name)
 
-            sys.path[:] = old_path
-            sys.modules = old_modules
+            finally:
+
+                sys.path[:] = old_path
+                sys.modules = old_modules
 
         if spec is None:
             raise ImportError("No module named {name!r}".format(name=name), name=name)
