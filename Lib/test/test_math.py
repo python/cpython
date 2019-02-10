@@ -1756,6 +1756,10 @@ class IsCloseTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             prod([10, 20], [30, 40])     # start is a keyword-only argument
 
+        self.assertEqual(prod([0, 1, 2, 3]), 0)
+        self.assertEqual(prod([1, 0, 2, 3]), 0)
+        self.assertEqual(prod(range(10)), 0)
+
 def test_main():
     from doctest import DocFileSuite
     suite = unittest.TestSuite()
