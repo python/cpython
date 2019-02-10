@@ -1,1 +1,1 @@
-Write expected and actual call parameters on separate lines in mock.assert_called_wtih() assertion errors.  Contributed by Susan Su.
+Write expected and actual call parameters on separate lines in mock.assert_called_with() assertion errors.  Contributed by Susan Su.
