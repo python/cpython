@@ -58,15 +58,15 @@ def _find_module(name, path=None):
     # To correctly find the module on the given path,  we need to
     # temporarily clear the import state of the program and modify sys.path.
 
-    sys_path = sys.path[:]
-    sys_modules = sys.modules.copy()
-    sys_path_importer_cache = sys.path_importer_cache.copy()
+    sys_path = sys.path
+    sys_modules = sys.modules
+    sys_path_importer_cache = sys.path_importer_cache
 
     try:
 
-        sys.path[:0] = path
-        sys.modules.clear()
-        sys.path_importer_cache.clear()
+        sys.path = path + sys.path
+        sys.modules = {}
+        sys.path_importer_cache = {}
 
         # It is important that `name` not include any dots.
         # Otherwise, the parent package could be actually imported.
@@ -75,9 +75,9 @@ def _find_module(name, path=None):
 
     finally:
 
-        sys.path[:] = sys_path
-        sys.modules.update(sys_modules)
-        sys.path_importer_cache.update(sys_path_importer_cache)
+        sys.path = sys_path
+        sys.modules = sys_modules
+        sys.path_importer_cache = sys_path_importer_cache
 
     if spec is None:
         raise ImportError("No module named {name!r}".format(name=name), name=name)
