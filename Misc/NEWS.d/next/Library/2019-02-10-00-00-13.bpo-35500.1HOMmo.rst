@@ -1,0 +1,1 @@
+When mock.assert_called_with is called, the error message that is generated currently does not possess a newline between the AssertionError and the Expected field. Now, the message "expected call not found." will follow the AssertionError. In the next lines, the Expected and Actual values will be displayed.
