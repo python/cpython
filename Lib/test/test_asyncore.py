@@ -593,6 +593,55 @@ class BaseTestAPI:
         client = TestClient(self.family, server.address)
         self.loop_waiting_for_flag(client)
 
+    def test_handle_half_close(self):
+        # make sure we are able to handle the case where the client shuts
+        # down its write end, but still expects to read the response.
+        class TestClient(BaseClient):
+            request = b'abcd'
+            response = b''
+
+            def writable(self):
+                return len(self.request) != 0
+
+            def handle_write(self):
+                sent = self.send(self.request)
+                self.request = self.request[sent:]
+                if not self.request:
+                    self.socket.shutdown(socket.SHUT_WR)
+
+            def handle_read(self):
+                data = self.recv(1024)
+                self.response = self.response + data
+                if self.response == TestClient.request:
+                    self.flag = True
+
+        class TestHandler(BaseTestHandler):
+            def __init__(self, conn):
+                BaseTestHandler.__init__(self, conn)
+                self.closing = False
+                self.buffer = b''
+
+            def readable(self):
+                return not self.closing
+
+            def handle_read(self):
+                data = self.recv(1024)
+                self.buffer += data
+
+            def handle_eof(self):
+                self.closing = True
+
+            def writable(self):
+                return len(self.buffer) != 0
+
+            def handle_write(self):
+                sent = asyncore.dispatcher.send(self, self.buffer[:1])
+                self.buffer = self.buffer[sent:]
+
+        server = BaseServer(self.family, self.addr, TestHandler)
+        client = TestClient(self.family, server.address)
+        self.loop_waiting_for_flag(client)
+
     def test_handle_close(self):
         # make sure handle_close is called when the other end closes
         # the connection
