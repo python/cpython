@@ -2561,8 +2561,8 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 long x = i_result * b;
                 /* Continue if there is no overflow */
                 if (overflow == 0
-                    && x < INT_MAX && x > INT_MIN
-                    && !(b != 0 && x / i_result != b)) {
+                    && x < LONG_MAX && x > LONG_MIN
+                    && !(b != 0 && x / b != i_result)) {
                     i_result = x;
                     Py_DECREF(item);
                     continue;
