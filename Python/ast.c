@@ -1366,7 +1366,7 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
     PyObject *argname;
     node *ch;
     expr_ty expression, annotation;
-    arg_ty arg;
+    arg_ty arg = NULL;
     int i = start;
     int j = 0; /* index for kwdefaults and kwonlyargs */
 
@@ -1462,7 +1462,7 @@ ast_for_arguments(struct compiling *c, const node *n)
     int nposdefaults = 0, found_default = 0;
     asdl_seq *posargs, *posdefaults, *kwonlyargs, *kwdefaults;
     arg_ty vararg = NULL, kwarg = NULL;
-    arg_ty arg;
+    arg_ty arg = NULL;
     node *ch;
 
     if (TYPE(n) == parameters) {
