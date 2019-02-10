@@ -5,7 +5,6 @@ import importlib._bootstrap_external
 import importlib.util
 import importlib.machinery
 import marshal
-import multiprocessing
 import os
 import sys
 import types
@@ -51,6 +50,87 @@ replacePackageMap = {}
 
 def ReplacePackage(oldname, newname):
     replacePackageMap[oldname] = newname
+
+
+def _find_module(name, path=None):
+    """`importlib`-only replacement for `imp.find_module`."""
+
+    # To correctly find the module on the given path,  we need to
+    # temporarily clear the import state of the program and modify sys.path.
+
+    sys_path = sys.path[:]
+    sys_modules = sys.modules.copy()
+    sys_path_importer_cache = sys.path_importer_cache.copy()
+
+    try:
+
+        sys.path[:0] = path
+        sys.modules.clear()
+        sys.path_importer_cache.clear()
+
+        # It is important that `name` not include any dots.
+        # Otherwise, the parent package could be actually imported.
+
+        spec = importlib.util.find_spec(name)
+
+    finally:
+
+        sys.path[:] = sys_path
+        sys.modules.update(sys_modules)
+        sys.path_importer_cache.update(sys_path_importer_cache)
+
+    if spec is None:
+        raise ImportError("No module named {name!r}".format(name=name), name=name)
+
+    if isinstance(spec.loader, type):  # Some special cases:
+
+        if issubclass(spec.loader, importlib.machinery.BuiltinImporter):
+            return None, None, ("", "", _C_BUILTIN)
+
+        if issubclass(spec.loader, importlib.machinery.FrozenImporter):
+            return None, None, ("", "", _PY_FROZEN)
+
+    file_path = spec.origin
+
+    try:
+
+        # `imp` behavior is s bit funny here:
+
+        # If the path is a descendant of the CWD, it is reported as a relative filepath
+        # ...unless it is an extension, in which case it will be absolute (see below)
+        # ...otherwise, it is fully resolved.
+
+        if os.path.commonpath(map(os.path.abspath, (file_path, os.getcwd()))) == os.getcwd():
+            file_path = os.path.relpath(file_path)  # imp has weird rules
+
+    except ValueError:
+        pass
+
+    base, suffix = os.path.splitext(file_path)
+
+    if suffix in importlib.machinery.EXTENSION_SUFFIXES:
+        file_path = os.path.abspath(file_path)
+        kind = _C_EXTENSION
+        mode = "rb"
+
+    elif suffix in importlib.machinery.SOURCE_SUFFIXES:
+
+        if name != "__init__" and os.path.basename(base) == "__init__":
+            return (None, os.path.dirname(file_path), ("", "", _PKG_DIRECTORY))
+
+        kind = _PY_SOURCE
+        mode = "r"
+
+    elif suffix in importlib.machinery.BYTECODE_SUFFIXES:
+        kind = _PY_COMPILED
+        mode = "rb"
+
+    else:  # Should never happen.
+        return None, None, ("", "", _SEARCH_ERROR)
+
+    file = open(file_path, mode)
+
+    return file, file_path, (suffix, mode, kind)
 
 
 class Module:
@@ -462,70 +542,7 @@ class ModuleFinder:
 
             path = self.path
 
-        old_path = sys.path[:]
-        old_modules = sys.modules.copy()
-        old_path_importer_cache = sys.path_importer_cache.copy()
-
-        try:
-
-            sys.path[:0] = path
-            sys.modules.clear()
-            sys.path_importer_cache.clear()
-
-            spec = importlib.util.find_spec(name)
-
-        finally:
-
-            sys.path[:] = old_path
-            sys.modules.update(old_modules)
-            sys.path_importer_cache.update(old_path_importer_cache)
-
-        if spec is None:
-            raise ImportError("No module named {name!r}".format(name=name), name=name)
-
-        if isinstance(spec.loader, type):
-
-            if issubclass(spec.loader, importlib.machinery.BuiltinImporter):
-                return None, None, ("", "", _C_BUILTIN)
-
-            if issubclass(spec.loader, importlib.machinery.FrozenImporter):
-                return None, None, ("", "", _PY_FROZEN)
-
-        file_path = spec.origin
-
-        try:
-
-            if os.path.commonpath(map(os.path.abspath, (file_path, os.getcwd()))) == os.getcwd():
-                file_path = os.path.relpath(file_path)
-
-        except ValueError:
-            pass
-
-        base, suffix = os.path.splitext(file_path)
-
-        if suffix in importlib.machinery.EXTENSION_SUFFIXES:
-            file_path = os.path.abspath(file_path)
-            kind = _C_EXTENSION
-            mode = "rb"
-
-        elif suffix in importlib.machinery.SOURCE_SUFFIXES:
-
-            if name != "__init__" and os.path.basename(base) == "__init__":
-                return (None, os.path.dirname(file_path), ("", "", _PKG_DIRECTORY))
-
-            kind = _PY_SOURCE
-            mode = "r"
-
-        elif suffix in importlib.machinery.BYTECODE_SUFFIXES:
-            kind = _PY_COMPILED
-            mode = "rb"
-
-        else:
-            return None, None, ("", "", _SEARCH_ERROR)  # Should never happen.
-
-        file = open(file_path, mode)
-
-        return file, file_path, (suffix, mode, kind)
+        return _find_module(name, path)
 
     def report(self):
         """Print a report to stdout, listing the found modules with their
