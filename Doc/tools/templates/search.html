@@ -4,14 +4,22 @@
     <script type="text/javascript">
         jQuery(function() {
             $.getJSON("_static/glossary.json", function(glossary) {
-                $("#search-results").prepend('<div style="display: none" class="admonition seealso" id="glossary-result"></div>');
+                var RESULT_TEMPLATE = '<div style="display: none" class="admonition seealso" id="glossary-result">' + 
+                                      '  <p class="glossary-title topic-title"></p>' +
+                                      '  <div class="glossary-body"></div>' +
+                                      '</div>';
+                $("#search-results").prepend(RESULT_TEMPLATE);
 
                 var params = $.getQueryParameters();
                 if (params.q) {
-                    var glossary_item = glossary[params.q[0].toLowerCase()];
+                    var search_param = params.q[0].toLowerCase();
+                    var glossary_item = glossary[search_param];
                     if (glossary_item) {
-                        glossary_item = $(glossary_item).children();
-                        $("#glossary-result").html(glossary_item).show();
+                        var resultDiv = $("#glossary-result");
+                        var body = $(glossary_item.body).children();
+                        resultDiv.find(".glossary-body").html(body);
+                        resultDiv.find(".glossary-title").text(glossary_item.title);
+                        resultDiv.show();
                     } else {
                         $("#glossary-result").hide('');
                     }
