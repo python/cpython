@@ -2,8 +2,8 @@
 
 import dis
 import importlib._bootstrap_external
-import importlib.util
 import importlib.machinery
+import importlib.util
 import marshal
 import os
 import sys
