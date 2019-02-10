@@ -594,6 +594,9 @@ class BaseTestAPI:
         self.loop_waiting_for_flag(client)
 
     def test_handle_half_close(self):
+        if sys.platform == "darwin" and self.use_poll:
+            self.skipTest("Yet another poll failure on macOS?")
+
         # make sure we are able to handle the case where the client shuts
         # down its write end, but still expects to read the response.
         class TestClient(BaseClient):
