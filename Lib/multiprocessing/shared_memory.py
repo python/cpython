@@ -244,7 +244,7 @@ def shareable_wrap(
                 assert hasattr(self, "_proxied_type")
             try:
                 existing_type.__init__(self, *args, **kwargs)
-            except:
+            except Exception:
                 pass
 
         def __repr__(self):
