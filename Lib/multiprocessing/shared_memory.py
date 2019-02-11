@@ -616,10 +616,13 @@ class SharedMemoryTracker:
         self.segment_names = segment_names
 
     def register_segment(self, segment_name):
+        "Adds the supplied shared memory block name to tracker."
         util.debug(f"Registering segment {segment_name!r} in pid {os.getpid()}")
         self.segment_names.append(segment_name)
 
     def destroy_segment(self, segment_name):
+        """Calls unlink() on the shared memory block with the supplied name
+        and removes it from the list of blocks being tracked."""
         util.debug(f"Destroying segment {segment_name!r} in pid {os.getpid()}")
         self.segment_names.remove(segment_name)
         segment = SharedMemory(segment_name)
@@ -627,6 +630,7 @@ class SharedMemoryTracker:
         segment.unlink()
 
     def unlink(self):
+        "Calls destroy_segment() on all currently tracked shared memory blocks."
         for segment_name in self.segment_names[:]:
             self.destroy_segment(segment_name)
 
@@ -658,6 +662,8 @@ class SharedMemoryServer(Server):
         util.debug(f"SharedMemoryServer started by pid {os.getpid()}")
 
     def create(self, c, typeid, *args, **kwargs):
+        """Create a new distributed-shared object (not backed by a shared
+        memory block) and return its id to be used in a Proxy Object."""
         # Unless set up as a shared proxy, don't make shared_memory_context
         # a standard part of kwargs.  This makes things easier for supplying
         # simple functions.
@@ -666,16 +672,22 @@ class SharedMemoryServer(Server):
         return Server.create(self, c, typeid, *args, **kwargs)
 
     def shutdown(self, c):
+        "Call unlink() on all tracked shared memory then terminate the Server."
         self.shared_memory_context.unlink()
         return Server.shutdown(self, c)
 
     def track_segment(self, c, segment_name):
+        "Adds the supplied shared memory block name to Server's tracker."
         self.shared_memory_context.register_segment(segment_name)
 
     def release_segment(self, c, segment_name):
+        """Calls unlink() on the shared memory block with the supplied name
+        and removes it from the tracker instance inside the Server."""
         self.shared_memory_context.destroy_segment(segment_name)
 
     def list_segments(self, c):
+        """Returns a list of names of shared memory blocks that the Server
+        is currently tracking."""
         return self.shared_memory_context.segment_names
 
 

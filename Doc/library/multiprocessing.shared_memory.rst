@@ -17,9 +17,9 @@
 
 This module provides a class, :class:`SharedMemory`, for the allocation
 and management of shared memory to be accessed by one or more processes
-on a multicore or SMP machine.  To assist with the life-cycle management
-of shared memory especially across distinct processes, a
-:class:`~multiprocessing.managers.BaseManager` subclass,
+on a multicore or symmetric multiprocessor (SMP) machine.  To assist with
+the life-cycle management of shared memory especially across distinct
+processes, a :class:`~multiprocessing.managers.BaseManager` subclass,
 :class:`SharedMemoryManager`, is also provided.
 
 In this module, shared memory refers to "System V style" shared memory blocks
@@ -31,7 +31,7 @@ their own process memory space but shared memory permits the sharing
 of data between processes, avoiding the need to instead send messages between
 processes containing that data.  Sharing data directly via memory can provide
 significant performance benefits compared to sharing data via disk or socket
-or other communications requiring the serialization/de-serialization and
+or other communications requiring the serialization/deserialization and
 copying of data.
 
 
@@ -131,8 +131,8 @@ instances::
 
 
 The following example demonstrates a practical use of the :class:`SharedMemory`
-class with ``numpy`` arrays, accessing the same ``numpy.ndarray`` from
-two distinct Python shells::
+class with `NumPy arrays <https://www.numpy.org/>`_, accessing the
+same ``numpy.ndarray`` from two distinct Python shells::
 
    >>> # In the first Python interactive shell
    >>> import numpy as np
