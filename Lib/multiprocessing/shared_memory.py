@@ -34,7 +34,6 @@ if os.name == "nt":
     import ctypes
     from ctypes import wintypes
 
-    #kernel32 = ctypes.wintypes.WinDLL("kernel32", use_last_error=True)
     kernel32 = ctypes.windll.kernel32
 
     class MEMORY_BASIC_INFORMATION(ctypes.Structure):
