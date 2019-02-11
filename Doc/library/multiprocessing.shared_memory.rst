@@ -132,7 +132,10 @@ instances::
 
 The following example demonstrates a practical use of the :class:`SharedMemory`
 class with `NumPy arrays <https://www.numpy.org/>`_, accessing the
-same ``numpy.ndarray`` from two distinct Python shells::
+same ``numpy.ndarray`` from two distinct Python shells:
+
+.. doctest::
+   :options: +SKIP
 
    >>> # In the first Python interactive shell
    >>> import numpy as np
@@ -252,6 +255,9 @@ same ``numpy.ndarray`` from two distinct Python shells::
 The following example demonstrates the basic mechanisms of a
 :class:`SharedMemoryManager`:
 
+.. doctest::
+   :options: +SKIP
+
    >>> from multiprocessing import shared_memory
    >>> smm = shared_memory.SharedMemoryManager()
    >>> smm.start()  # Start the process that manages the shared memory blocks
@@ -268,6 +274,9 @@ The following example depicts a potentially more convenient pattern for using
 :class:`SharedMemoryManager` objects via the :keyword:`with` statement to
 ensure that all shared memory blocks are released after they are no longer
 needed:
+
+.. doctest::
+   :options: +SKIP
 
    >>> with shared_memory.SharedMemoryManager() as smm:
    ...     sl = smm.ShareableList(range(2000))
@@ -346,9 +355,7 @@ instance:
    'dry ice'
    >>> a[2] = 'larger than previously allocated storage space'
    Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-     File "/usr/local/lib/python3.8/multiprocessing/shared_memory.py", line 429, in __setitem__
-       raise ValueError("exceeds available storage for existing str")
+     ...
    ValueError: exceeds available storage for existing str
    >>> a[2]
    'dry ice'
@@ -371,7 +378,7 @@ behind it:
    >>> b = shared_memory.ShareableList(range(5))         # In a first process
    >>> c = shared_memory.ShareableList(name=b.shm.name)  # In a second process
    >>> c
-   ShareableList([0, 1, 2, 3, 4], name='psm_25144_23776')
+   ShareableList([0, 1, 2, 3, 4], name='...')
    >>> c[-1] = -999
    >>> b[-1]
    -999
