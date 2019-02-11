@@ -690,9 +690,6 @@ PyInit__posixshmem(void) {
     Py_INCREF(&SharedMemoryType);
     PyModule_AddObject(module, "_PosixSharedMemory", (PyObject *)&SharedMemoryType);
 
-
-    PyModule_AddStringConstant(module, "__copyright__", "Copyright 2012 Philip Semanchuk, 2018-2019 Davin Potts");
-
     PyModule_AddIntConstant(module, "O_CREAT", O_CREAT);
     PyModule_AddIntConstant(module, "O_EXCL", O_EXCL);
     PyModule_AddIntConstant(module, "O_CREX", O_CREAT | O_EXCL);
