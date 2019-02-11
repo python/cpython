@@ -1,0 +1,1 @@
+Update documentation and docstrings for pathlib. Original patch by Mike Short.
