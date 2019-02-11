@@ -53,7 +53,7 @@ def ReplacePackage(oldname, newname):
 
 
 def _find_module(name, path=None):
-    """`importlib`-only replacement for `imp.find_module`."""
+    """An importlib reimplementation of imp.find_module (for our purposes)."""
 
     # To correctly find the module on the given path,  we need to
     # temporarily clear the import state of the program and modify sys.path.
@@ -101,7 +101,7 @@ def _find_module(name, path=None):
         # ...otherwise, it is fully resolved.
 
         if os.path.commonpath(map(os.path.abspath, (file_path, os.getcwd()))) == os.getcwd():
-            file_path = os.path.relpath(file_path)  # imp has weird rules
+            file_path = os.path.relpath(file_path)
 
     except ValueError:
         pass
