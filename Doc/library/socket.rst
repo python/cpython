@@ -601,7 +601,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    ``(host, port)``) and return the socket object upon which you can call
    :meth:`socket.accept()` in order to accept new connections.
    If *host* is an empty string or ``None`` all network interfaces are assumed.
-   If *family* is :data:`AF_UNSPEC` address family will be determined from
+   If *family* is :data:`AF_UNSPEC` the address family will be determined from
    the *host* specified in *address*.
    *type* should be either :data:`SOCK_STREAM` or :data:`SOCK_DGRAM`.
    *backlog* is the queue size passed to :meth:`socket.listen` if

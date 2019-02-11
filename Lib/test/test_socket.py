@@ -6103,7 +6103,7 @@ class BindSocketTest(unittest.TestCase):
 
     def test_reuse_port(self):
         if not hasattr(socket, "SO_REUSEPORT"):
-            with self.assertRaises(ValueError, socket):
+            with self.assertRaises(ValueError, socket.error):
                 socket.bind_socket(("127.0.0.1", 0), reuse_port=True)
                 return
 
@@ -6112,7 +6112,7 @@ class BindSocketTest(unittest.TestCase):
             self.assertEqual(opt, 0)
         with socket.bind_socket(("127.0.0.1", 0), reuse_port=True) as sock:
             opt = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT)
-            self.assertEqual(opt, 1)
+            self.assertNotEqual(opt, 0)
 
     @unittest.skipIf(not hasattr(_socket, 'IPPROTO_IPV6') or
                      not hasattr(_socket, 'IPV6_V6ONLY'),
