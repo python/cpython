@@ -1317,11 +1317,11 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
 
     if sys.platform == "win32":
         # The current directory takes precedence on Windows.
-        if not os.curdir in path:
-            if isinstance(cmd, bytes):
-                path.insert(0, os.fsencode(os.curdir))
-            else:
-                path.insert(0, os.curdir)
+        curdir = os.curdir
+        if isinstance(cmd, bytes):
+            curdir = os.fsencode(curdir)
+        if curdir not in path:
+            path.insert(0, curdir)
 
         # PATHEXT is necessary to check on Windows.
         pathext = os.environ.get("PATHEXT", "").split(os.pathsep)
