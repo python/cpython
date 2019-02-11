@@ -1592,12 +1592,13 @@ class PyBuildExt(build_ext):
             if (sysconfig.get_config_var('HAVE_SEM_OPEN') and not
                 sysconfig.get_config_var('POSIX_SEMAPHORES_NOT_ENABLED')):
                 multiprocessing_srcs.append('_multiprocessing/semaphore.c')
-            if (self.compiler.find_library_file(lib_dirs, 'rt') or
-                host_platform != 'cygwin'):
+            if (sysconfig.get_config_var('HAVE_SHM_OPEN') and
+                sysconfig.get_config_var('HAVE_SHM_UNLINK')):
                 posixshmem_srcs = [ '_multiprocessing/posixshmem.c',
                                   ]
                 libs = []
-                if self.compiler.find_library_file(lib_dirs, 'rt'):
+                if sysconfig.get_config_var('SHM_NEEDS_LIBRT'):
+                    # need to link with librt to get shm_open()
                     libs.append('rt')
                 exts.append( Extension('_posixshmem', posixshmem_srcs,
                                        define_macros={},

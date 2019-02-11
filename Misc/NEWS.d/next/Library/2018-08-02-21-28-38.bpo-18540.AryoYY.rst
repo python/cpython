@@ -1,3 +1,0 @@
-The :class:`imaplib.IMAP4` and :class:`imaplib.IMAP4_SSL` classes now
-resolve to the local host IP correctly when the default value of *host*
-parameter (``''``) is used.

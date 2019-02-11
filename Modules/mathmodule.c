@@ -2494,6 +2494,172 @@ math_isclose_impl(PyObject *module, double a, double b, double rel_tol,
 }
 
 
+/*[clinic input]
+math.prod
+
+    iterable: object
+    /
+    *
+    start: object(c_default="NULL") = 1
+
+Calculate the product of all the elements in the input iterable.
+
+The default start value for the product is 1.
+
+When the iterable is empty, return the start value.  This function is
+intended specifically for use with numeric values and may reject
+non-numeric types.
+[clinic start generated code]*/
+
+static PyObject *
+math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
+/*[clinic end generated code: output=36153bedac74a198 input=4c5ab0682782ed54]*/
+{
+    PyObject *result = start;
+    PyObject *temp, *item, *iter;
+
+    iter = PyObject_GetIter(iterable);
+    if (iter == NULL) {
+        return NULL;
+    }
+
+    if (result == NULL) {
+        result = PyLong_FromLong(1);
+        if (result == NULL) {
+            Py_DECREF(iter);
+            return NULL;
+        }
+    } else {
+        Py_INCREF(result);
+    }
+#ifndef SLOW_PROD
+    /* Fast paths for integers keeping temporary products in C.
+     * Assumes all inputs are the same type.
+     * If the assumption fails, default to use PyObjects instead.
+    */
+    if (PyLong_CheckExact(result)) {
+        int overflow;
+        long i_result = PyLong_AsLongAndOverflow(result, &overflow);
+        /* If this already overflowed, don't even enter the loop. */
+        if (overflow == 0) {
+            Py_DECREF(result);
+            result = NULL;
+        }
+        /* Loop over all the items in the iterable until we finish, we overflow
+         * or we found a non integer element */
+        while(result == NULL) {
+            item = PyIter_Next(iter);
+            if (item == NULL) {
+                Py_DECREF(iter);
+                if (PyErr_Occurred()) {
+                    return NULL;
+                }
+                return PyLong_FromLong(i_result);
+            }
+            if (PyLong_CheckExact(item)) {
+                long b = PyLong_AsLongAndOverflow(item, &overflow);
+                long x = i_result * b;
+                /* Continue if there is no overflow */
+                if (overflow == 0
+                    && x < LONG_MAX && x > LONG_MIN
+                    && !(b != 0 && x / b != i_result)) {
+                    i_result = x;
+                    Py_DECREF(item);
+                    continue;
+                }
+            }
+            /* Either overflowed or is not an int.
+             * Restore real objects and process normally */
+            result = PyLong_FromLong(i_result);
+            if (result == NULL) {
+                Py_DECREF(item);
+                Py_DECREF(iter);
+                return NULL;
+            }
+            temp = PyNumber_Multiply(result, item);
+            Py_DECREF(result);
+            Py_DECREF(item);
+            result = temp;
+            if (result == NULL) {
+                Py_DECREF(iter);
+                return NULL;
+            }
+        }
+    }
+
+    /* Fast paths for floats keeping temporary products in C.
+     * Assumes all inputs are the same type.
+     * If the assumption fails, default to use PyObjects instead.
+    */
+    if (PyFloat_CheckExact(result)) {
+        double f_result = PyFloat_AS_DOUBLE(result);
+        Py_DECREF(result);
+        result = NULL;
+        while(result == NULL) {
+            item = PyIter_Next(iter);
+            if (item == NULL) {
+                Py_DECREF(iter);
+                if (PyErr_Occurred()) {
+                    return NULL;
+                }
+                return PyFloat_FromDouble(f_result);
+            }
+            if (PyFloat_CheckExact(item)) {
+                f_result *= PyFloat_AS_DOUBLE(item);
+                Py_DECREF(item);
+                continue;
+            }
+            if (PyLong_CheckExact(item)) {
+                long value;
+                int overflow;
+                value = PyLong_AsLongAndOverflow(item, &overflow);
+                if (!overflow) {
+                    f_result *= (double)value;
+                    Py_DECREF(item);
+                    continue;
+                }
+            }
+            result = PyFloat_FromDouble(f_result);
+            if (result == NULL) {
+                Py_DECREF(item);
+                Py_DECREF(iter);
+                return NULL;
+            }
+            temp = PyNumber_Multiply(result, item);
+            Py_DECREF(result);
+            Py_DECREF(item);
+            result = temp;
+            if (result == NULL) {
+                Py_DECREF(iter);
+                return NULL;
+            }
+        }
+    }
+#endif
+    /* Consume rest of the iterable (if any) that could not be handled
+     * by specialized functions above.*/
+    for(;;) {
+        item = PyIter_Next(iter);
+        if (item == NULL) {
+            /* error, or end-of-sequence */
+            if (PyErr_Occurred()) {
+                Py_DECREF(result);
+                result = NULL;
+            }
+            break;
+        }
+        temp = PyNumber_Multiply(result, item);
+        Py_DECREF(result);
+        Py_DECREF(item);
+        result = temp;
+        if (result == NULL)
+            break;
+    }
+    Py_DECREF(iter);
+    return result;
+}
+
+
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
     {"acosh",           math_acosh,     METH_O,         math_acosh_doc},
@@ -2541,6 +2707,7 @@ static PyMethodDef math_methods[] = {
     {"tan",             math_tan,       METH_O,         math_tan_doc},
     {"tanh",            math_tanh,      METH_O,         math_tanh_doc},
     MATH_TRUNC_METHODDEF
+    MATH_PROD_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 

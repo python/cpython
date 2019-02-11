@@ -1,1 +1,0 @@
-Avoid propagating venv settings when launching via py.exe
