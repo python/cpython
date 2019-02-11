@@ -2593,7 +2593,6 @@ class _TestPool(BaseTestCase):
             pool = None
             support.gc_collect()
 
-
 def raising():
     raise KeyError("key")
 
