@@ -309,6 +309,10 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         PyErr_SetString(PyExc_RuntimeError,
                         "this compiler does not handle Suites");
         goto error;
+    case FunctionType_kind:
+        PyErr_SetString(PyExc_RuntimeError,
+                        "this compiler does not handle FunctionTypes");
+        goto error;
     }
     if (!symtable_exit_block(st, (void *)mod)) {
         PySymtable_Free(st);
