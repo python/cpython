@@ -37,7 +37,7 @@
     <ConfigurationType>Makefile</ConfigurationType>
     <Bitness>64</Bitness>
     <ArchName>amd64</ArchName>
-    <OpenSSLPlatform>VC-WIN64A</OpenSSLPlatform>
+    <OpenSSLPlatform>VC-WIN64A-masm</OpenSSLPlatform>
     <SupportSigning>true</SupportSigning>
   </PropertyGroup>
 
