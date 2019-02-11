@@ -4956,29 +4956,9 @@ class TestPoolNotLeakOnFailure(unittest.TestCase):
             any(process.is_alive() for process in forked_processes))
 
 
-class TestSyncManagerTypes(unittest.TestCase):
-    """Test all the types which can be shared between a parent and a
-    child process by using a manager which acts as an intermediary
-    between them.
+class _MixinTestCommonManagerTypes(object):
 
-    In the following unit-tests the base type is created in the parent
-    process, the @classmethod represents the worker process and the
-    shared object is readable and editable between the two.
-
-    # The child.
-    @classmethod
-    def _test_list(cls, obj):
-        assert obj[0] == 5
-        assert obj.append(6)
-
-    # The parent.
-    def test_list(self):
-        o = self.manager.list()
-        o.append(5)
-        self.run_worker(self._test_list, o)
-        assert o[1] == 6
-    """
-    manager_class = multiprocessing.managers.SyncManager
+    manager_class = None
 
     def setUp(self):
         self.manager = self.manager_class()
@@ -5024,27 +5004,6 @@ class TestSyncManagerTypes(unittest.TestCase):
         self.proc.start()
         self.wait_proc_exit()
         self.assertEqual(self.proc.exitcode, 0)
-
-    @classmethod
-    def _test_queue(cls, obj):
-        assert obj.qsize() == 2
-        assert obj.full()
-        assert not obj.empty()
-        assert obj.get() == 5
-        assert not obj.empty()
-        assert obj.get() == 6
-        assert obj.empty()
-
-    def test_queue(self, qname="Queue"):
-        o = getattr(self.manager, qname)(2)
-        o.put(5)
-        o.put(6)
-        self.run_worker(self._test_queue, o)
-        assert o.empty()
-        assert not o.full()
-
-    def test_joinable_queue(self):
-        self.test_queue("JoinableQueue")
 
     @classmethod
     def _test_event(cls, obj):
@@ -5109,6 +5068,31 @@ class TestSyncManagerTypes(unittest.TestCase):
         o = self.manager.Barrier(5)
         self.run_worker(self._test_barrier, o)
 
+
+class TestSyncManagerTypes(_MixinTestCommonManagerTypes, unittest.TestCase):
+    """Test all the types which can be shared between a parent and a
+    child process by using a manager which acts as an intermediary
+    between them.
+
+    In the following unit-tests the base type is created in the parent
+    process, the @classmethod represents the worker process and the
+    shared object is readable and editable between the two.
+
+    # The child.
+    @classmethod
+    def _test_list(cls, obj):
+        assert obj[0] == 5
+        assert obj.append(6)
+
+    # The parent.
+    def test_list(self):
+        o = self.manager.list()
+        o.append(5)
+        self.run_worker(self._test_list, o)
+        assert o[1] == 6
+    """
+    manager_class = multiprocessing.managers.SyncManager
+
     @classmethod
     def _test_pool(cls, obj):
         # TODO: fix https://bugs.python.org/issue35919
@@ -5118,6 +5102,27 @@ class TestSyncManagerTypes(unittest.TestCase):
     def test_pool(self):
         o = self.manager.Pool(processes=4)
         self.run_worker(self._test_pool, o)
+
+    @classmethod
+    def _test_queue(cls, obj):
+        assert obj.qsize() == 2
+        assert obj.full()
+        assert not obj.empty()
+        assert obj.get() == 5
+        assert not obj.empty()
+        assert obj.get() == 6
+        assert obj.empty()
+
+    def test_queue(self, qname="Queue"):
+        o = getattr(self.manager, qname)(2)
+        o.put(5)
+        o.put(6)
+        self.run_worker(self._test_queue, o)
+        assert o.empty()
+        assert not o.full()
+
+    def test_joinable_queue(self):
+        self.test_queue("JoinableQueue")
 
     @classmethod
     def _test_list(cls, obj):
@@ -5197,10 +5202,12 @@ try:
     import multiprocessing.shared_memory
 except ImportError:
     @unittest.skip("SharedMemoryManager not available on this platform")
-    class TestSharedMemoryManagerTypes(TestSyncManagerTypes):
+    class TestSharedMemoryManagerTypes(_MixinTestCommonManagerTypes,
+                                       unittest.TestCase):
         pass
 else:
-    class TestSharedMemoryManagerTypes(TestSyncManagerTypes):
+    class TestSharedMemoryManagerTypes(_MixinTestCommonManagerTypes,
+                                       unittest.TestCase):
         """Same as above but by using SharedMemoryManager."""
         manager_class = multiprocessing.shared_memory.SharedMemoryManager
 
