@@ -1,0 +1,1 @@
+Add ``repr()`` to the ``sqlite3.Row`` class.

@@ -183,6 +183,14 @@ class RowFactoryTests(unittest.TestCase):
         self.assertNotEqual(row_1, row_3)
         self.assertNotEqual(hash(row_1), hash(row_3))
 
+    def CheckSqliteRowRepr(self):
+        self.con.row_factory = sqlite.Row
+        row = self.con.execute(
+            "select 'Smith' as name, 42 as salary").fetchone()
+        self.assertEqual(
+            repr(row),
+            "<sqlite3.Row object; {'name': 'Smith', 'salary': 42}>")
+
     def CheckSqliteRowAsSequence(self):
         """ Checks if the row object can act like a sequence """
         self.con.row_factory = sqlite.Row

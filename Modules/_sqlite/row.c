@@ -204,6 +204,84 @@ static PyObject* pysqlite_row_richcompare(pysqlite_Row *self, PyObject *_other, 
     Py_RETURN_NOTIMPLEMENTED;
 }
 
+static PyObject *
+pysqlite_row_repr(pysqlite_Row *self)
+{
+    _PyUnicodeWriter writer;
+    int result;
+    Py_ssize_t nitems, i;
+    PyObject *start;
+    PyObject *name;
+    PyObject *value;
+
+    _PyUnicodeWriter_Init(&writer);
+
+    start = PyUnicode_FromFormat("<%s object; {", Py_TYPE(self)->tp_name);
+    if (start == NULL) {
+        goto error;
+    }
+    result = _PyUnicodeWriter_WriteStr(&writer, start);
+    Py_DECREF(start);
+    if (result < 0) {
+        goto error;
+    }
+
+    nitems = PyTuple_Size(self->description);
+    for (i = 0; i < nitems; i++) {
+        if (i > 0) {
+            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
+                goto error;
+            }
+        }
+
+        name = PyTuple_GET_ITEM(self->description, i);
+        if (name == NULL) {
+            goto error;
+        }
+        name = PyTuple_GET_ITEM(name, 0);
+        if (name == NULL) {
+            goto error;
+        }
+        name = PyObject_Repr(name);
+        if (name == NULL) {
+            goto error;
+        }
+        result = _PyUnicodeWriter_WriteStr(&writer, name);
+        Py_DECREF(name);
+        if (result < 0) {
+            goto error;
+        }
+
+        if (_PyUnicodeWriter_WriteASCIIString(&writer, ": ", 2) < 0) {
+            goto error;
+        }
+
+        value = PyTuple_GET_ITEM(self->data, i);
+        if (value == NULL) {
+            goto error;
+        }
+        value = PyObject_Repr(value);
+        if (value == NULL) {
+            goto error;
+        }
+        result = _PyUnicodeWriter_WriteStr(&writer, value);
+        Py_DECREF(value);
+        if (result < 0) {
+            goto error;
+        }
+    }
+
+    if (_PyUnicodeWriter_WriteASCIIString(&writer, "}>", 2) < 0) {
+        goto error;
+    }
+
+    return _PyUnicodeWriter_Finish(&writer);
+
+error:
+    _PyUnicodeWriter_Dealloc(&writer);
+    return NULL;
+}
+
 PyMappingMethods pysqlite_row_as_mapping = {
     /* mp_length        */ (lenfunc)pysqlite_row_length,
     /* mp_subscript     */ (binaryfunc)pysqlite_row_subscript,
@@ -235,7 +313,7 @@ PyTypeObject pysqlite_RowType = {
         0,                                              /* tp_getattr */
         0,                                              /* tp_setattr */
         0,                                              /* tp_reserved */
-        0,                                              /* tp_repr */
+        (reprfunc)pysqlite_row_repr,                    /* tp_repr */
         0,                                              /* tp_as_number */
         0,                                              /* tp_as_sequence */
         0,                                              /* tp_as_mapping */
