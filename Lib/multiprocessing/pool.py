@@ -265,6 +265,8 @@ class Pool(object):
         if self._state == RUN:
             _warn(f"unclosed running multiprocessing pool {self!r}",
                   ResourceWarning, source=self)
+            if getattr(self, '_change_notifier') is not None:
+                self._change_notifier.put(None)
 
     def __repr__(self):
         cls = self.__class__
