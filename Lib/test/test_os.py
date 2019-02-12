@@ -141,7 +141,6 @@ class FileTests(unittest.TestCase):
         except FileNotFoundError:
             pass
 
-
     def test_read(self):
         with open(support.TESTFN, "w+b") as fobj:
             fobj.write(b"spam")
