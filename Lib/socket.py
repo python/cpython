@@ -728,8 +728,24 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
     else:
         raise error("getaddrinfo returns an empty list")
 
+def supports_hybrid_ipv46():
+    """Return True if the platform supports creating a SOCK_STREAM socket
+    which can handle both AF_INET and AF_INET6 (IPv4 / IPv6) connections.
+    """
+    if not has_ipv6 \
+            or not hasattr(_socket, 'IPPROTO_IPV6') \
+            or not hasattr(_socket, 'IPV6_V6ONLY'):
+        return False
+    try:
+        with socket(AF_INET6, SOCK_STREAM) as sock:
+            sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 0)
+            return True
+    except error:
+        return False
+
 def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
-                reuse_addr=None, reuse_port=False, flags=None):
+                reuse_addr=None, reuse_port=False, flags=None,
+                hybrid_ipv46=False):
     """Convenience function which creates a socket bound to *address*
     (a 2-tuple (host, port)) and return the socket object.
 
@@ -747,6 +763,11 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
     and SO_REUSEPORT socket options.
 
     *flags* is a bitmask for getaddrinfo(). If None AI_PASSIVE is used.
+
+    *hybrid_ipv46*: if True and family or address is of AF_INET6 kind
+    it will create a socket able to accept both IPv4 and IPv6 connections.
+    When False it will explicitly disable this option on platforms that
+    support it or enable it by default (e.g. Linux).
 
     >>> with bind_socket((None, 8000)) as server:
     ...     while True:
@@ -769,6 +790,12 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
             SOCK_STREAM, SOCK_DGRAM, type))
     if flags is None:
         flags = AI_PASSIVE
+    if hybrid_ipv46:
+        if type != SOCK_STREAM:
+            raise ValueError("hybrid_ipv46 is allowed with %r type only "
+                             "(got %r)" % (SOCK_STREAM, type))
+        if not supports_hybrid_ipv46():
+            raise ValueError("hybrid_ipv46 not supported on this platform")
     info = getaddrinfo(host, port, family, type, 0, flags)
     if family == AF_UNSPEC:
         # prefer AF_INET over AF_INET6
@@ -793,17 +820,21 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
                     pass
             if reuse_port:
                 sock.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
-            # Disable IPv4/IPv6 dual stack support (enabled by default
-            # on Linux) which makes a single socket listen on both
-            # address families. Reasons:
-            # * consistency across different platforms
-            # * the address returned by getpeername() is an exotic IPv6
-            #   address that has the IPv4 address encoded inside it
-            if has_ipv6 and af == AF_INET6:
-                try:
-                    sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 1)
-                except NameError:
-                    pass
+            if has_ipv6 and af == AF_INET6 and type == SOCK_STREAM:
+                if not hybrid_ipv46:
+                    # Disable IPv4/IPv6 dual stack support (enabled by
+                    # default on Linux) which makes a single socket
+                    # listen on both address families. Reasons:
+                    # * consistency across different platforms
+                    # * the address returned by getpeername() is an
+                    #   exotic IPv6 address that has the IPv4 address
+                    #   encoded inside it
+                    try:
+                        sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 1)
+                    except NameError:
+                        pass
+                else:
+                    sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 0)
             sock.bind(sa)
             if socktype == SOCK_STREAM:
                 sock.listen(backlog)

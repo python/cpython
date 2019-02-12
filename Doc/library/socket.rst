@@ -595,7 +595,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.2
       *source_address* was added.
 
-.. function:: bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128, reuse_addr=None, reuse_port=False, flags=None)
+.. function:: bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128, reuse_addr=None, reuse_port=False, flags=None, hybrid_ipv46=False)
 
    Convenience function which creates a socket bound to *address* (a 2-tuple
    ``(host, port)``) and return the socket object upon which you can call
@@ -612,10 +612,27 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    *flags* is a bitmask for :meth:`getaddrinfo()`; if ``None``
    :data:`AI_PASSIVE` is used.
 
+   When *hybrid_ipv46* is ``True`` and family or address is of :data:`AF_INET6`
+   kind it will create a socket able to accept both IPv4 and IPv6 connections.
+   In this case the address returned by :meth:`socket.getpeername` when a new
+   IPv4 connection occurs will be an IPv6 address represented as an IPv4-mapped
+   IPv6 address (e.g. ``"::ffff:127.0.0.1"``).
+   When *hybrid_ipv46* is ``False`` it will explicitly disable this option on
+   platforms that support it or enable it by default (e.g. Linux).
+   For platforms not supporting this functionality natively you could use this
+   `MultipleSocketsListener recipe <http://code.activestate.com/recipes/578504/>`__.
+   This parameter can be used in conjunction with :func:`supports_hybrid_ipv46`
+   and it only affects :data:`SOCK_STREAM` type sockets, else it's ignored.
+
    .. versionadded:: 3.8
 
-   .. note:: in case of :data:`AF_INET6` family or address :data:`IPV6_V6ONLY`
-    socket option is set.
+.. function:: supports_hybrid_ipv46()
+
+   Return ``True`` if the platform supports creating a single
+   :data:`SOCK_STREAM` socket which can accept both :data:`AF_INET` and
+   :data:`AF_INET6` (IPv4 / IPv6) connections.
+
+   .. versionadded:: 3.8
 
 .. function:: fromfd(fd, family, type, proto=0)
 

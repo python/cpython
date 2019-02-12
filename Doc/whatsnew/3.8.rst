@@ -216,8 +216,8 @@ contain characters unrepresentable at the OS level.
 socket
 ------
 
-Added :meth:`~socket.bind_socket()` convenience function.
-(Contributed by Giampaolo Rodola in :issue:`17561`.)
+Added :meth:`~socket.bind_socket()` and :meth:`~socket.supports_hybrid_ipv46()`
+convenience functions.  (Contributed by Giampaolo Rodola in :issue:`17561`.)
 
 
 shutil

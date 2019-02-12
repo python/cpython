@@ -6153,9 +6153,13 @@ class BindSocketFunctionalTest(unittest.TestCase):
         self.thread.start()
         event.set()
 
-    def echo_client(self, sock):
+    def echo_client(self, sock, connect_host=None):
         self.echo_server(sock)
         server_addr = sock.getsockname()[:2]
+        if connect_host is None:
+            connect_host = sock.getsockname()[0]
+        port = sock.getsockname()[1]
+        server_addr = (connect_host, port)
         if sock.type == socket.SOCK_STREAM:
             with socket.create_connection(server_addr) as client:
                 client.sendall(b'foo')
@@ -6187,6 +6191,33 @@ class BindSocketFunctionalTest(unittest.TestCase):
         with socket.bind_socket(("localhost", 0), family=socket.AF_INET6,
                                 type=socket.SOCK_DGRAM) as sock:
             self.echo_client(sock)
+
+    # ---
+    # Dual-stack IPv4/6 tests: create a hybrid IPv4/6 server and
+    # connect with a client using IPv4 and IPv6 addresses.
+    # ---
+
+    @unittest.skipIf(not socket.supports_hybrid_ipv46(),
+                     "hybrid_ipv46 not supported")
+    def test_dual_stack_tcp4(self):
+        with socket.bind_socket((None, 0), family=socket.AF_INET6,
+                                type=socket.SOCK_STREAM,
+                                hybrid_ipv46=True) as sock:
+            self.echo_client(sock, connect_host="127.0.0.1")
+
+    @unittest.skipIf(not socket.supports_hybrid_ipv46(),
+                     "hybrid_ipv46 not supported")
+    def test_dual_stack_tcp6(self):
+        with socket.bind_socket((None, 0), family=socket.AF_INET6,
+                                type=socket.SOCK_STREAM,
+                                hybrid_ipv46=True) as sock:
+            self.echo_client(sock, connect_host="::1")
+
+    def test_dual_stack_udp4(self):
+        # Hybrid IPv4&6 UDP servers won't allow IPv4 connections.
+        with self.assertRaises(ValueError):
+            socket.bind_socket((None, 0), family=socket.AF_INET6,
+                               type=socket.SOCK_DGRAM, hybrid_ipv46=True)
 
 
 def test_main():
