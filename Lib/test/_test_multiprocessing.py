@@ -3617,13 +3617,10 @@ class _TestSharedCTypes(BaseTestCase):
         self.assertEqual(bar.z, 2 ** 33)
 
 
+@unittest.skipUnless(HAS_SHMEM, "requires multiprocessing.shared_memory")
 class _TestSharedMemory(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
-
-    def setUp(self):
-        if not HAS_SHMEM:
-            self.skipTest("requires multiprocessing.shared_memory")
 
     @staticmethod
     def _attach_existing_shmem_then_write(shmem_name, binary_data):
@@ -3637,84 +3634,81 @@ class _TestSharedMemory(BaseTestCase):
             flags=shared_memory.O_CREX,
             size=512
         )
-        try:
-            # Verify attributes are readable.
-            self.assertEqual(sms.name, 'test01_tsmb')
-            self.assertGreaterEqual(sms.size, 512)
-            self.assertGreaterEqual(len(sms.buf), sms.size)
-            self.assertEqual(sms.mode, 0o600)
+        self.addCleanup(sms.unlink)
 
-            # Modify contents of shared memory segment through memoryview.
-            sms.buf[0] = 42
-            self.assertEqual(sms.buf[0], 42)
+        # Verify attributes are readable.
+        self.assertEqual(sms.name, 'test01_tsmb')
+        self.assertGreaterEqual(sms.size, 512)
+        self.assertGreaterEqual(len(sms.buf), sms.size)
+        self.assertEqual(sms.mode, 0o600)
 
-            # Attach to existing shared memory segment.
-            also_sms = shared_memory.SharedMemory('test01_tsmb')
-            self.assertEqual(also_sms.buf[0], 42)
-            also_sms.close()
+        # Modify contents of shared memory segment through memoryview.
+        sms.buf[0] = 42
+        self.assertEqual(sms.buf[0], 42)
 
-            if isinstance(sms, shared_memory.PosixSharedMemory):
-                # Posix Shared Memory can only be unlinked once.  Here we
-                # test an implementation detail that is not observed across
-                # all supported platforms (since WindowsNamedSharedMemory
-                # manages unlinking on its own and unlink() does nothing).
-                # True release of shared memory segment does not necessarily
-                # happen until process exits, depending on the OS platform.
-                with self.assertRaises(shared_memory.ExistentialError):
-                    sms_uno = shared_memory.SharedMemory(
-                        'test01_dblunlink',
-                        flags=shared_memory.O_CREX,
-                        size=5000
-                    )
+        # Attach to existing shared memory segment.
+        also_sms = shared_memory.SharedMemory('test01_tsmb')
+        self.assertEqual(also_sms.buf[0], 42)
+        also_sms.close()
 
-                    try:
-                        self.assertGreaterEqual(sms_uno.size, 5000)
-
-                        sms_duo = shared_memory.SharedMemory('test01_dblunlink')
-                        sms_duo.unlink()  # First shm_unlink() call.
-                        sms_duo.close()
-                        sms_uno.close()
-
-                    finally:
-                        sms_uno.unlink()  # A second shm_unlink() call is bad.
-
-            # Enforcement of `mode` and `read_only` is OS platform dependent
-            # and as such will not be tested here.
-
+        if isinstance(sms, shared_memory.PosixSharedMemory):
+            # Posix Shared Memory can only be unlinked once.  Here we
+            # test an implementation detail that is not observed across
+            # all supported platforms (since WindowsNamedSharedMemory
+            # manages unlinking on its own and unlink() does nothing).
+            # True release of shared memory segment does not necessarily
+            # happen until process exits, depending on the OS platform.
             with self.assertRaises(shared_memory.ExistentialError):
-                # Attempting to create a new shared memory segment with a
-                # name that is already in use triggers an exception.
-                there_can_only_be_one_sms = shared_memory.SharedMemory(
-                    'test01_tsmb',
+                sms_uno = shared_memory.SharedMemory(
+                    'test01_dblunlink',
                     flags=shared_memory.O_CREX,
-                    size=512
+                    size=5000
                 )
 
-            # Requesting creation of a shared memory segment with the option
-            # to attach to an existing segment, if that name is currently in
-            # use, should not trigger an exception.
-            # Note:  Using a smaller size could possibly cause truncation of
-            # the existing segment but is OS platform dependent.  In the
-            # case of MacOS/darwin, requesting a smaller size is disallowed.
-            ok_if_exists_sms = shared_memory.SharedMemory(
+                try:
+                    self.assertGreaterEqual(sms_uno.size, 5000)
+
+                    sms_duo = shared_memory.SharedMemory('test01_dblunlink')
+                    sms_duo.unlink()  # First shm_unlink() call.
+                    sms_duo.close()
+                    sms_uno.close()
+
+                finally:
+                    sms_uno.unlink()  # A second shm_unlink() call is bad.
+
+        # Enforcement of `mode` and `read_only` is OS platform dependent
+        # and as such will not be tested here.
+
+        with self.assertRaises(shared_memory.ExistentialError):
+            # Attempting to create a new shared memory segment with a
+            # name that is already in use triggers an exception.
+            there_can_only_be_one_sms = shared_memory.SharedMemory(
                 'test01_tsmb',
-                flags=shared_memory.O_CREAT,
-                size=sms.size if sys.platform != 'darwin' else 0
+                flags=shared_memory.O_CREX,
+                size=512
             )
-            self.assertEqual(ok_if_exists_sms.size, sms.size)
-            ok_if_exists_sms.close()
 
-            # Attempting to attach to an existing shared memory segment when
-            # no segment exists with the supplied name triggers an exception.
-            with self.assertRaises(shared_memory.ExistentialError):
-                nonexisting_sms = shared_memory.SharedMemory('test01_notthere')
-                nonexisting_sms.unlink()  # Error should occur on prior line.
+        # Requesting creation of a shared memory segment with the option
+        # to attach to an existing segment, if that name is currently in
+        # use, should not trigger an exception.
+        # Note:  Using a smaller size could possibly cause truncation of
+        # the existing segment but is OS platform dependent.  In the
+        # case of MacOS/darwin, requesting a smaller size is disallowed.
+        ok_if_exists_sms = shared_memory.SharedMemory(
+            'test01_tsmb',
+            flags=shared_memory.O_CREAT,
+            size=sms.size if sys.platform != 'darwin' else 0
+        )
+        self.assertEqual(ok_if_exists_sms.size, sms.size)
+        ok_if_exists_sms.close()
 
-            sms.close()
+        # Attempting to attach to an existing shared memory segment when
+        # no segment exists with the supplied name triggers an exception.
+        with self.assertRaises(shared_memory.ExistentialError):
+            nonexisting_sms = shared_memory.SharedMemory('test01_notthere')
+            nonexisting_sms.unlink()  # Error should occur on prior line.
 
-        finally:
-            # Prevent test failures from leading to a dangling segment.
-            sms.unlink()
+        sms.close()
 
     def test_shared_memory_across_processes(self):
         sms = shared_memory.SharedMemory(
@@ -3722,21 +3716,18 @@ class _TestSharedMemory(BaseTestCase):
             flags=shared_memory.O_CREX,
             size=512
         )
+        self.addCleanup(sms.unlink)
 
-        try:
-            p = self.Process(
-                target=self._attach_existing_shmem_then_write,
-                args=(sms.name, b'howdy')
-            )
-            p.daemon = True
-            p.start()
-            p.join()
-            self.assertEqual(bytes(sms.buf[:5]), b'howdy')
+        p = self.Process(
+            target=self._attach_existing_shmem_then_write,
+            args=(sms.name, b'howdy')
+        )
+        p.daemon = True
+        p.start()
+        p.join()
+        self.assertEqual(bytes(sms.buf[:5]), b'howdy')
 
-            sms.close()
-
-        finally:
-            sms.unlink()
+        sms.close()
 
     def test_shared_memory_SharedMemoryManager_basics(self):
         smm1 = shared_memory.SharedMemoryManager()
@@ -3774,75 +3765,72 @@ class _TestSharedMemory(BaseTestCase):
         sl = shared_memory.ShareableList(
             ['howdy', b'HoWdY', -273.154, 100, None, True, 42]
         )
+        self.addCleanup(sl.shm.unlink)
 
-        try:
-            # Verify attributes are readable.
-            self.assertEqual(sl.format, '8s8sdqxxxxxx?xxxxxxxx?q')
+        # Verify attributes are readable.
+        self.assertEqual(sl.format, '8s8sdqxxxxxx?xxxxxxxx?q')
 
-            # Exercise len().
-            self.assertEqual(len(sl), 7)
+        # Exercise len().
+        self.assertEqual(len(sl), 7)
 
-            # Exercise index().
-            with warnings.catch_warnings():
-                # Suppress BytesWarning when comparing against b'HoWdY'.
-                warnings.simplefilter('ignore')
-                with self.assertRaises(ValueError):
-                    sl.index('100')
-                self.assertEqual(sl.index(100), 3)
-
-            # Exercise retrieving individual values.
-            self.assertEqual(sl[0], 'howdy')
-            self.assertEqual(sl[-2], True)
-
-            # Exercise iterability.
-            self.assertEqual(
-                tuple(sl),
-                ('howdy', b'HoWdY', -273.154, 100, None, True, 42)
-            )
-
-            # Exercise modifying individual values.
-            sl[3] = 42
-            self.assertEqual(sl[3], 42)
-            sl[4] = 'some'  # Change type at a given position.
-            self.assertEqual(sl[4], 'some')
-            self.assertEqual(sl.format, '8s8sdq8sxxxxxxx?q')
+        # Exercise index().
+        with warnings.catch_warnings():
+            # Suppress BytesWarning when comparing against b'HoWdY'.
+            warnings.simplefilter('ignore')
             with self.assertRaises(ValueError):
-                sl[4] = 'far too many'  # Exceeds available storage.
-            self.assertEqual(sl[4], 'some')
+                sl.index('100')
+            self.assertEqual(sl.index(100), 3)
 
-            # Exercise count().
-            with warnings.catch_warnings():
-                # Suppress BytesWarning when comparing against b'HoWdY'.
-                warnings.simplefilter('ignore')
-                self.assertEqual(sl.count(42), 2)
-                self.assertEqual(sl.count(b'HoWdY'), 1)
-                self.assertEqual(sl.count(b'adios'), 0)
+        # Exercise retrieving individual values.
+        self.assertEqual(sl[0], 'howdy')
+        self.assertEqual(sl[-2], True)
 
-            # Exercise creating a duplicate.
-            sl_copy = sl.copy(name='test03_duplicate')
-            try:
-                self.assertNotEqual(sl.shm.name, sl_copy.shm.name)
-                self.assertEqual('test03_duplicate', sl_copy.shm.name)
-                self.assertEqual(list(sl), list(sl_copy))
-                self.assertEqual(sl.format, sl_copy.format)
-                sl_copy[-1] = 77
-                self.assertEqual(sl_copy[-1], 77)
-                self.assertNotEqual(sl[-1], 77)
-                sl_copy.shm.close()
-            finally:
-                sl_copy.shm.unlink()
+        # Exercise iterability.
+        self.assertEqual(
+            tuple(sl),
+            ('howdy', b'HoWdY', -273.154, 100, None, True, 42)
+        )
 
-            # Obtain a second handle on the same ShareableList.
-            sl_tethered = shared_memory.ShareableList(name=sl.shm.name)
-            self.assertEqual(sl.shm.name, sl_tethered.shm.name)
-            sl_tethered[-1] = 880
-            self.assertEqual(sl[-1], 880)
-            sl_tethered.shm.close()
+        # Exercise modifying individual values.
+        sl[3] = 42
+        self.assertEqual(sl[3], 42)
+        sl[4] = 'some'  # Change type at a given position.
+        self.assertEqual(sl[4], 'some')
+        self.assertEqual(sl.format, '8s8sdq8sxxxxxxx?q')
+        with self.assertRaises(ValueError):
+            sl[4] = 'far too many'  # Exceeds available storage.
+        self.assertEqual(sl[4], 'some')
 
+        # Exercise count().
+        with warnings.catch_warnings():
+            # Suppress BytesWarning when comparing against b'HoWdY'.
+            warnings.simplefilter('ignore')
+            self.assertEqual(sl.count(42), 2)
+            self.assertEqual(sl.count(b'HoWdY'), 1)
+            self.assertEqual(sl.count(b'adios'), 0)
+
+        # Exercise creating a duplicate.
+        sl_copy = sl.copy(name='test03_duplicate')
+        try:
+            self.assertNotEqual(sl.shm.name, sl_copy.shm.name)
+            self.assertEqual('test03_duplicate', sl_copy.shm.name)
+            self.assertEqual(list(sl), list(sl_copy))
+            self.assertEqual(sl.format, sl_copy.format)
+            sl_copy[-1] = 77
+            self.assertEqual(sl_copy[-1], 77)
+            self.assertNotEqual(sl[-1], 77)
+            sl_copy.shm.close()
         finally:
-            # Prevent test failures from leading to a dangling segment.
-            sl.shm.unlink()
-            sl.shm.close()
+            sl_copy.shm.unlink()
+
+        # Obtain a second handle on the same ShareableList.
+        sl_tethered = shared_memory.ShareableList(name=sl.shm.name)
+        self.assertEqual(sl.shm.name, sl_tethered.shm.name)
+        sl_tethered[-1] = 880
+        self.assertEqual(sl[-1], 880)
+        sl_tethered.shm.close()
+
+        sl.shm.close()
 
         # Exercise creating an empty ShareableList.
         empty_sl = shared_memory.ShareableList()
