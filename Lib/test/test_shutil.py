@@ -1614,7 +1614,7 @@ class TestWhichBytes(TestWhich):
         self.file = os.fsencode(self.file)
         self.temp_file.name = os.fsencode(self.temp_file.name)
         self.curdir = os.fsencode(self.curdir)
-        self.ext = b".EXE"
+        self.ext = os.fsencode(".EXE")
 
 
 class TestMove(unittest.TestCase):

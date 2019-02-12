@@ -1279,12 +1279,14 @@ def get_terminal_size(fallback=(80, 24)):
 
     return os.terminal_size((columns, lines))
 
+
 # Check that a given file can be accessed with the correct mode.
 # Additionally check that `file` is not a directory, as on Windows
 # directories pass the os.access check.
 def _access_check(fn, mode):
     return (os.path.exists(fn) and os.access(fn, mode)
             and not os.path.isdir(fn))
+
 
 def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     """Given a command, mode, and a PATH string, return the path which
@@ -1304,11 +1306,13 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
             return cmd
         return None
 
+    use_bytes = isinstance(cmd, bytes)
+
     if path is None:
         path = os.environ.get("PATH", os.defpath)
     if not path:
         return None
-    if isinstance(cmd, bytes):
+    if use_bytes:
         path = os.fsencode(path)
         path = path.split(os.fsencode(os.pathsep))
     else:
@@ -1318,15 +1322,15 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     if sys.platform == "win32":
         # The current directory takes precedence on Windows.
         curdir = os.curdir
-        if isinstance(cmd, bytes):
+        if use_bytes:
             curdir = os.fsencode(curdir)
         if curdir not in path:
             path.insert(0, curdir)
 
         # PATHEXT is necessary to check on Windows.
         pathext = os.environ.get("PATHEXT", "").split(os.pathsep)
-        if isinstance(cmd, bytes):
-            pathext = list(map(os.fsencode, pathext))
+        if use_bytes:
+            pathext = [os.fsencode(ext) for ext in pathext]
         # See if the given file matches any of the expected path extensions.
         # This will allow us to short circuit when given "python.exe".
         # If it does match, only test that one, otherwise we have to try
