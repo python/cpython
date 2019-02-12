@@ -70,21 +70,15 @@ class TestImaplib(unittest.TestCase):
         for t in self.timevalues():
             imaplib.Time2Internaldate(t)
 
-    @staticmethod
-    def _check_port(address='localhost', port=imaplib.IMAP4_PORT):
-        import socket
-        # Create a TCP socket
-        with socket.socket() as s:
-            try:
-                s.connect((address, port))
-                return True
-            except socket.error:
-                return False
-
     def test_imap4_host_default_value(self):
-        if self._check_port():
-            raise unittest.SkipTest(
-                "Cannot run the test with local IMAP server running.")
+        # Check whether the IMAP4_PORT is truly unavailable.
+        with imaplib.socket.socket() as s:
+            try:
+                s.connect(('', imaplib.IMAP4_PORT))
+                self.skipTest(
+                    "Cannot run the test with local IMAP server running.")
+            except imaplib.socket.error:
+                pass
 
         expected_errnos = [
             # This is the exception that should be raised.
