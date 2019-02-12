@@ -590,13 +590,17 @@ slice_richcompare(PyObject *v, PyObject *w, int op)
     }
 
     t1 = PyTuple_New(3);
-    if (t1 == NULL)
+    if (t1 == NULL) {
         return NULL;
+    }
+    PyObject_GC_UnTrack(t1);
+
     t2 = PyTuple_New(3);
     if (t2 == NULL) {
         Py_DECREF(t1);
         return NULL;
     }
+    PyObject_GC_UnTrack(t2);
 
     PyTuple_SET_ITEM(t1, 0, ((PySliceObject *)v)->start);
     PyTuple_SET_ITEM(t1, 1, ((PySliceObject *)v)->stop);

@@ -1,0 +1,3 @@
+Fix a crash in slice_richcompare(): ensure that the 2 temporary internal
+tuples used for the comparison are not tracked by the garbage collector,
+since they use borrowed references.
