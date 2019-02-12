@@ -777,8 +777,8 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
         af, socktype, proto, canonname, sa = res
         try:
             sock = socket(af, socktype, proto)
-        except error as _:
-            err = _
+        except error as _err:
+            err = _err
             if err.errno == errno.EAFNOSUPPORT:
                 continue
             else:
