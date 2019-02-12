@@ -126,10 +126,17 @@ class FileTests(unittest.TestCase):
     @support.cpython_only
     def test_rename(self):
         path = support.TESTFN
+        not_exists = 'temp2/test'
         old = sys.getrefcount(path)
         self.assertRaises(TypeError, os.rename, path, 0)
         new = sys.getrefcount(path)
         self.assertEqual(old, new)
+
+    def test_rename_bad_dir(self):
+        path1 = 'temp/not-exists'
+        path1new = 'temp/test2/test3/test4'
+        os.rename(path1, path1new)
+        self.assertFalse(path.exists(path1new))
 
     def test_read(self):
         with open(support.TESTFN, "w+b") as fobj:

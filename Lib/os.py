@@ -263,8 +263,9 @@ def renames(old, new):
 
     """
     head, tail = path.split(new)
-    if head and tail and not path.exists(head):
-        makedirs(head)
+    if path.exists(old):
+        if head and tail and not path.exists(head):
+            makedirs(head)
     rename(old, new)
     head, tail = path.split(old)
     if head and tail:
