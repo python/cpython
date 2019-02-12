@@ -6091,12 +6091,13 @@ class BindSocketTest(unittest.TestCase):
                 self.assertEqual(sock.family, socket.AF_INET6)
 
     def test_type(self):
-        with socket.bind_socket((None, 0)) as sock:
+        with socket.bind_socket(("localhost", 0)) as sock:
             self.assertEqual(sock.type, socket.SOCK_STREAM)
-        with socket.bind_socket((None, 0), type=socket.SOCK_DGRAM) as sock:
+        with socket.bind_socket(("localhost", 0),
+                                type=socket.SOCK_DGRAM) as sock:
             self.assertEqual(sock.type, socket.SOCK_DGRAM)
         with self.assertRaises(ValueError):
-            socket.bind_socket((None, 0), type=0)
+            socket.bind_socket(("localhost", 0), type=0)
 
     def test_reuse_addr(self):
         if not hasattr(socket, "SO_REUSEADDR"):
@@ -6118,7 +6119,6 @@ class BindSocketTest(unittest.TestCase):
             with self.assertRaises(ValueError, socket.error):
                 socket.bind_socket(("127.0.0.1", 0), reuse_port=True)
                 return
-
         with socket.bind_socket(("127.0.0.1", 0)) as sock:
             opt = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT)
             self.assertEqual(opt, 0)
@@ -6142,6 +6142,12 @@ class BindSocketTest(unittest.TestCase):
     def test_hybrid_ipv6_default(self):
         with socket.bind_socket(("localhost", 0), hybrid_ipv46=True) as sock:
             self.assertEqual(sock.family, socket.AF_INET6)
+
+    def test_dual_stack_udp(self):
+        # Hybrid IPv4/6 UDP servers won't allow IPv4 connections.
+        with self.assertRaises(ValueError):
+            socket.bind_socket(("localhost", 0), type=socket.SOCK_DGRAM,
+                               hybrid_ipv46=True)
 
 
 class BindSocketFunctionalTest(unittest.TestCase):
@@ -6222,24 +6228,14 @@ class BindSocketFunctionalTest(unittest.TestCase):
     @unittest.skipIf(not socket.supports_hybrid_ipv46(),
                      "hybrid_ipv46 not supported")
     def test_dual_stack_tcp4(self):
-        with socket.bind_socket((None, 0), family=socket.AF_INET6,
-                                type=socket.SOCK_STREAM,
-                                hybrid_ipv46=True) as sock:
+        with socket.bind_socket((None, 0), hybrid_ipv46=True) as sock:
             self.echo_client(sock, connect_host="127.0.0.1")
 
     @unittest.skipIf(not socket.supports_hybrid_ipv46(),
                      "hybrid_ipv46 not supported")
     def test_dual_stack_tcp6(self):
-        with socket.bind_socket((None, 0), family=socket.AF_INET6,
-                                type=socket.SOCK_STREAM,
-                                hybrid_ipv46=True) as sock:
+        with socket.bind_socket((None, 0), hybrid_ipv46=True) as sock:
             self.echo_client(sock, connect_host="::1")
-
-    def test_dual_stack_udp4(self):
-        # Hybrid IPv4&6 UDP servers won't allow IPv4 connections.
-        with self.assertRaises(ValueError):
-            socket.bind_socket((None, 0), family=socket.AF_INET6,
-                               type=socket.SOCK_DGRAM, hybrid_ipv46=True)
 
 
 def test_main():
