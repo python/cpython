@@ -60,8 +60,8 @@ EBADF = getattr(errno, 'EBADF', 9)
 EAGAIN = getattr(errno, 'EAGAIN', 11)
 EWOULDBLOCK = getattr(errno, 'EWOULDBLOCK', 11)
 
-__all__ = ["fromfd", "getfqdn", "create_connection",
-        "AddressFamily", "SocketKind"]
+__all__ = ["fromfd", "getfqdn", "create_connection", "bind_socket",
+           "supports_hybrid_ipv46", "AddressFamily", "SocketKind"]
 __all__.extend(os._get_exports_list(_socket))
 
 # Set up the socket.AF_* socket.SOCK_* constants as members of IntEnums for
@@ -786,16 +786,17 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
     if reuse_port and not hasattr(_socket, "SO_REUSEPORT"):
         raise ValueError("SO_REUSEPORT not supported on this platform")
     if type not in {SOCK_STREAM, SOCK_DGRAM}:
-        raise ValueError("only %r and %r types are supported (got %r)" % (
-            SOCK_STREAM, SOCK_DGRAM, type))
+        raise ValueError("only SOCK_STREAM and SOCK_DGRAM types are supported")
     if flags is None:
         flags = AI_PASSIVE
     if hybrid_ipv46:
         if type != SOCK_STREAM:
-            raise ValueError("hybrid_ipv46 is allowed with %r type only "
-                             "(got %r)" % (SOCK_STREAM, type))
+            raise ValueError("hybrid_ipv46 requires SOCK_STREAM type")
+        if family not in {AF_INET6, AF_UNSPEC}:
+            raise ValueError("hybrid_ipv46 requires AF_INET family")
         if not supports_hybrid_ipv46():
             raise ValueError("hybrid_ipv46 not supported on this platform")
+        family = AF_INET6
     info = getaddrinfo(host, port, family, type, 0, flags)
     if family == AF_UNSPEC:
         # prefer AF_INET over AF_INET6
@@ -840,6 +841,8 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
                 sock.listen(backlog)
             # Break explicitly a reference cycle.
             err = None
+            if hybrid_ipv46 and sock.family != AF_INET6:
+                raise error("was not able to create an AF_INET6 socket by using address")
             return sock
         except error:
             sock.close()

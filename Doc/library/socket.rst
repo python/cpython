@@ -600,10 +600,13 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    Convenience function which creates a socket bound to *address* (a 2-tuple
    ``(host, port)``) and return the socket object upon which you can call
    :meth:`socket.accept()` in order to accept new connections.
+   Internally it relies on :meth:`getaddrinfo()` and returns the first socket
+   which can be bound to *address*.
    If *host* is an empty string or ``None`` all network interfaces are assumed.
    If *family* is :data:`AF_UNSPEC` the address family will be determined from
-   the *host* specified in *address*, and if family can't clearly be determined
-   from *host* then :data:`AF_INET` will be preferred over :data:`AF_INET6`.
+   the *host* specified in *address*. If family can't clearly be determined
+   from *host* and *hybrid_ipv46* is ``False`` then :data:`AF_INET` will be
+   preferred over :data:`AF_INET6`.
    *type* should be either :data:`SOCK_STREAM` or :data:`SOCK_DGRAM`.
    *backlog* is the queue size passed to :meth:`socket.listen` if
    :data:`SOCK_STREAM` *type* is used.
@@ -1812,6 +1815,40 @@ sends traffic to the first one connected successfully. ::
        print('could not open socket')
        sys.exit(1)
    with s:
+       s.sendall(b'Hello, world')
+       data = s.recv(1024)
+   print('Received', repr(data))
+
+
+The two examples above can be rewritten by using :meth:`socket.bind_socket`
+and :meth:`socket.create_connection` convenience functions.
+:meth:`socket.bind_socket` has the extra advantage of creating an agnostic
+IPv4/IPv6 server on platforms supporting this functionality.
+
+::
+
+   # Echo server program
+   import socket
+
+   HOST = None
+   PORT = 50007
+   s = socket.bind_socket((HOST, PORT), hybrid_ipv46=socket.supports_hybrid_ipv46())
+   conn, addr = s.accept()
+   with conn:
+       print('Connected by', addr)
+       while True:
+           data = conn.recv(1024)
+           if not data: break
+           conn.send(data)
+
+::
+
+   # Echo client program
+   import socket
+
+   HOST = 'daring.cwi.nl'
+   PORT = 50007
+   with socket.create_connection((HOST, PORT)) as s:
        s.sendall(b'Hello, world')
        data = s.recv(1024)
    print('Received', repr(data))

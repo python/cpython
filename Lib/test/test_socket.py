@@ -6062,6 +6062,18 @@ class BindSocketTest(unittest.TestCase):
             self.assertEqual(sock.getsockname()[0], "127.0.0.1")
             self.assertEqual(sock.getsockname()[1], port)
 
+    def test_address_all_nics(self):
+        # host in (None, "") == 'all NICs'
+        with socket.bind_socket(("", 0)) as sock:
+            self.assertEqual(sock.getsockname()[0], "0.0.0.0")
+        with socket.bind_socket((None, 0)) as sock:
+            self.assertEqual(sock.getsockname()[0], "0.0.0.0")
+        if support.IPV6_ENABLED:
+            with socket.bind_socket(("", 0), family=socket.AF_INET6) as sock:
+                self.assertEqual(sock.getsockname()[0], "::")
+            with socket.bind_socket((None, 0), family=socket.AF_INET6) as sock:
+                self.assertEqual(sock.getsockname()[0], "::")
+
     def test_family(self):
         # determined by address
         with socket.bind_socket(("127.0.0.1", 0)) as sock:
@@ -6120,6 +6132,16 @@ class BindSocketTest(unittest.TestCase):
     def test_ipv6only_default(self):
         with socket.bind_socket(("::1", 0)) as sock:
             assert sock.getsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY)
+
+    def test_ipv4_default(self):
+        with socket.bind_socket(("localhost", 0)) as sock:
+            self.assertEqual(sock.family, socket.AF_INET)
+
+    @unittest.skipIf(not socket.supports_hybrid_ipv46(),
+                     "hybrid_ipv46 not supported")
+    def test_hybrid_ipv6_default(self):
+        with socket.bind_socket(("localhost", 0), hybrid_ipv46=True) as sock:
+            self.assertEqual(sock.family, socket.AF_INET6)
 
 
 class BindSocketFunctionalTest(unittest.TestCase):

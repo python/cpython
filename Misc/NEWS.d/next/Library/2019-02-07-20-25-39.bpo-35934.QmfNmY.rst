@@ -1,2 +1,4 @@
-Add socket.bind_socket() and socket.supports_hybrid_ipv46() convenience
-functions.  (patch by Giampaolo Rodola)
+Added :meth:`~socket.bind_socket()` and :meth:`~socket.supports_hybrid_ipv46()`
+convenience functions to automatize the necessary tasks usually involved when
+creating a server socket, including accepting both IPv4 and IPv6 connections
+on the same socket.  (Contributed by Giampaolo Rodola in :issue:`17561`.)
