@@ -135,8 +135,12 @@ class FileTests(unittest.TestCase):
     def test_rename_bad_dir(self):
         path1 = 'temp/not-exists'
         path1new = 'temp/test2/test3/test4'
-        os.rename(path1, path1new)
-        self.assertFalse(path.exists(path1new))
+        try:
+            os.rename(path1, path1new)
+            self.assertFalse(path.exists(path1new))
+        except FileNotFoundError:
+            pass
+
 
     def test_read(self):
         with open(support.TESTFN, "w+b") as fobj:
