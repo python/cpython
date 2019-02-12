@@ -4897,8 +4897,6 @@ class TestSyncManagerTypes(unittest.TestCase):
         assert len(obj) == 1
         assert obj['foo'] == 5
         assert obj.get('foo') == 5
-        # TODO: fix https://bugs.python.org/issue35918
-        # assert obj.has_key('foo')
         assert list(obj.items()) == [('foo', 5)]
         assert list(obj.keys()) == ['foo']
         assert list(obj.values()) == [5]
