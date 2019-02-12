@@ -729,7 +729,7 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
         raise error("getaddrinfo returns an empty list")
 
 def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
-                reuse_addr=None, reuse_port=False, flags=AI_PASSIVE):
+                reuse_addr=None, reuse_port=False, flags=None):
     """Convenience function which creates a socket bound to *address*
     (a 2-tuple (host, port)) and return the socket object.
 
@@ -746,7 +746,7 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
     *reuse_addr* and *reuse_port* dictate whether to use SO_REUSEADDR
     and SO_REUSEPORT socket options.
 
-    *flags* is a bitmask for getaddrinfo().
+    *flags* is a bitmask for getaddrinfo(). If None AI_PASSIVE is used.
 
     >>> with bind_socket((None, 8000)) as server:
     ...     while True:
@@ -767,6 +767,8 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
     if type not in {SOCK_STREAM, SOCK_DGRAM}:
         raise ValueError("only %r and %r types are supported (got %r)" % (
             SOCK_STREAM, SOCK_DGRAM, type))
+    if flags is None:
+        flags = AI_PASSIVE
     info = getaddrinfo(host, port, family, type, 0, flags)
     if family == AF_UNSPEC:
         # prefer AF_INET over AF_INET6

@@ -608,7 +608,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    :data:`SOCK_STREAM` *type* is used.
    *reuse_addr* and *reuse_port* dictates whether to use :data:`SO_REUSEADDR`
    and :data:`SO_REUSEPORT` socket options.
-   *flags* is a bitmask for :meth:`getaddrinfo()`.
+   *flags* is a bitmask for :meth:`getaddrinfo()`; if ``None``
+   :data:`AI_PASSIVE` is used.
 
    .. versionadded:: 3.8
 
