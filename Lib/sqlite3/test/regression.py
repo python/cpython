@@ -415,9 +415,44 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual(val, b'')
 
 
+class ConverterProgrammingErrorTestCase(unittest.TestCase):
+    def setUp(self):
+        self.con = sqlite.connect(':memory:', detect_types=sqlite.PARSE_COLNAMES)
+        self.cur = self.con.cursor()
+        self.cur.execute('create table test(x foo)')
+
+        sqlite.converters['CURSOR_INIT'] = lambda x: self.cur.__init__(self.con)
+        sqlite.converters['CURSOR_CLOSE'] = lambda x: self.cur.close()
+        sqlite.converters['CURSOR_ITER'] = lambda x, l=[]: self.cur.fetchone() if l else l.append(None)
+
+    def tearDown(self):
+        del sqlite.converters['CURSOR_INIT']
+        del sqlite.converters['CURSOR_CLOSE']
+        del sqlite.converters['CURSOR_ITER']
+        self.cur.close()
+        self.con.close()
+
+    def test_cursor_init(self):
+        self.cur.execute('insert into test(x) values (?)', ('foo',))
+        with self.assertRaises(sqlite.ProgrammingError):
+            self.cur.execute('select x as "x [CURSOR_INIT]", x from test')
+
+    def test_cursor_close(self):
+        self.cur.execute('insert into test(x) values (?)', ('foo',))
+        with self.assertRaises(sqlite.ProgrammingError):
+            self.cur.execute('select x as "x [CURSOR_CLOSE]", x from test')
+
+    def test_cursor_iter(self):
+        self.cur.executemany('insert into test(x) values (?)', (('foo',),) * 2)
+        self.cur.execute('select x as "x [CURSOR_ITER]", x from test')
+        with self.assertRaises(sqlite.ProgrammingError):
+            self.cur.fetchone()
+
+
 def suite():
     tests = [
-        RegressionTests
+        RegressionTests,
+        ConverterProgrammingErrorTestCase,
     ]
     return unittest.TestSuite(
         [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]
