@@ -595,19 +595,20 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.2
       *source_address* was added.
 
-.. function:: bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128, reuse_addr=None, reuse_port=False, flags=AI_PASSIVE)
+.. function:: bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128, reuse_addr=None, reuse_port=False, flags=None)
 
    Convenience function which creates a socket bound to *address* (a 2-tuple
    ``(host, port)``) and return the socket object upon which you can call
    :meth:`socket.accept()` in order to accept new connections.
    If *host* is an empty string or ``None`` all network interfaces are assumed.
    If *family* is :data:`AF_UNSPEC` the address family will be determined from
-   the *host* specified in *address*.
+   the *host* specified in *address*, and if family can't clearly be determined
+   from *host* then :data:`AF_INET` will be preferred over :data:`AF_INET6`.
    *type* should be either :data:`SOCK_STREAM` or :data:`SOCK_DGRAM`.
    *backlog* is the queue size passed to :meth:`socket.listen` if
    :data:`SOCK_STREAM` *type* is used.
    *reuse_addr* and *reuse_port* dictates whether to use :data:`SO_REUSEADDR`
-   and :data:`SO_REUSEPORT` socket options.
+   and :data:`SO_REUSEPORT` socket options respectively.
    *flags* is a bitmask for :meth:`getaddrinfo()`; if ``None``
    :data:`AI_PASSIVE` is used.
 
