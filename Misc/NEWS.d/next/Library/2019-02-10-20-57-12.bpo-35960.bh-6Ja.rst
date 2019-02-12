@@ -1,0 +1,2 @@
+Fix :func:`dataclasses.field` throwing away empty mapping objects passed as
+metadata.
