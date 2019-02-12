@@ -1,4 +1,2 @@
-test_imaplib.TestImaplib.test_imap4_host_default_value fails when run on the
-computer with the local IMAP server running. This may happen for developers,
-who consequently don't need to be bothered about this test failing when
-working on other CPython patches.
+Make test_imap4_host_default_value independent on whether the 
+local IMAP server is running.
