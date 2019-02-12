@@ -612,8 +612,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    .. versionadded:: 3.8
 
-   .. note:: in case of :data:`AF_INET6` family/address :data:`IPV6_V6ONLY`
-    socket option is set
+   .. note:: in case of :data:`AF_INET6` family or address :data:`IPV6_V6ONLY`
+    socket option is set.
 
 .. function:: fromfd(fd, family, type, proto=0)
 
