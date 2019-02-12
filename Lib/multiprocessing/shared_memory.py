@@ -98,8 +98,10 @@ class WindowsNamedSharedMemory:
                 h_map = kernel32.OpenFileMappingW(FILE_MAP_READ, False, name)
             except OSError as ose:
                 raise ExistentialError(*ose.args)
-            p_buf = kernel32.MapViewOfFile(h_map, FILE_MAP_READ, 0, 0, 0)
-            kernel32.CloseHandle(h_map)
+            try:
+                p_buf = kernel32.MapViewOfFile(h_map, FILE_MAP_READ, 0, 0, 0)
+            finally:
+                kernel32.CloseHandle(h_map)
             mbi = MEMORY_BASIC_INFORMATION()
             kernel32.VirtualQuery(p_buf, ctypes.byref(mbi), mmap.PAGESIZE)
             size = mbi.RegionSize
