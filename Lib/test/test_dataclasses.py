@@ -1741,9 +1741,12 @@ class TestCase(unittest.TestCase):
         @dataclass
         class C:
             i: int = field(metadata=d)
-        self.assertEqual(fields(C)[0].metadata, d)
+        self.assertFalse(fields(C)[0].metadata)
+        self.assertEqual(len(fields(C)[0].metadata), 0)
+        # Update should work (see bpo-35960).
         d['foo'] = 1
-        self.assertEqual(fields(C)[0].metadata, d)
+        self.assertEqual(len(fields(C)[0].metadata), 1)
+        self.assertEqual(fields(C)[0].metadata['foo'], 1)
         with self.assertRaisesRegex(TypeError,
                                     'does not support item assignment'):
             fields(C)[0].metadata['test'] = 3
@@ -1753,9 +1756,14 @@ class TestCase(unittest.TestCase):
         @dataclass
         class C:
             i: int = field(metadata=d)
-        self.assertEqual(fields(C)[0].metadata, d)
+        self.assertEqual(len(fields(C)[0].metadata), 3)
+        self.assertEqual(fields(C)[0].metadata['test'], 10)
+        self.assertEqual(fields(C)[0].metadata['bar'], '42')
+        self.assertEqual(fields(C)[0].metadata[3], 'three')
+        # Update should work.
         d['foo'] = 1
-        self.assertEqual(fields(C)[0].metadata, d)
+        self.assertEqual(len(fields(C)[0].metadata), 4)
+        self.assertEqual(fields(C)[0].metadata['foo'], 1)
         with self.assertRaises(KeyError):
             # Non-existent key.
             fields(C)[0].metadata['baz']
