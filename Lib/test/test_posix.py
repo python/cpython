@@ -601,7 +601,7 @@ class PosixTester(unittest.TestCase):
             self.assertTrue(posix.stat(fp.fileno()))
 
             self.assertRaisesRegex(TypeError,
-                    'should be string, bytes, os.PathLike or integer, not',
+                    'expected str, bytes or os.PathLike object, not',
                     posix.stat, float(fp.fileno()))
         finally:
             fp.close()
@@ -616,13 +616,13 @@ class PosixTester(unittest.TestCase):
                 'should be string, bytes, os.PathLike or integer, not',
                 posix.stat, bytearray(os.fsencode(support.TESTFN)))
         self.assertRaisesRegex(TypeError,
-                'should be string, bytes, os.PathLike or integer, not',
+                'expected str, bytes or os.PathLike object, not',
                 posix.stat, None)
         self.assertRaisesRegex(TypeError,
-                'should be string, bytes, os.PathLike or integer, not',
+                'expected str, bytes or os.PathLike object, not',
                 posix.stat, list(support.TESTFN))
         self.assertRaisesRegex(TypeError,
-                'should be string, bytes, os.PathLike or integer, not',
+                'expected str, bytes or os.PathLike object, not',
                 posix.stat, list(os.fsencode(support.TESTFN)))
 
     @unittest.skipUnless(hasattr(posix, 'mkfifo'), "don't have mkfifo()")

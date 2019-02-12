@@ -954,20 +954,15 @@ path_converter(PyObject *o, void *p)
     if (!is_index && !is_buffer && !is_unicode && !is_bytes) {
         /* Inline PyOS_FSPath() for better error messages. */
         _Py_IDENTIFIER(__fspath__);
-        PyObject *func = NULL;
+        PyObject *res = NULL;
 
-        func = _PyObject_LookupSpecial(o, &PyId___fspath__);
-        if (NULL == func) {
-            goto error_format;
-        }
-        /* still owns a reference to the original object */
-        Py_DECREF(o);
-        o = _PyObject_CallNoArg(func);
-        Py_DECREF(func);
-        if (NULL == o) {
+        res = PyOS_FSPath(o);
+        if (res == NULL) {
             goto error_exit;
         }
-        else if (PyUnicode_Check(o)) {
+        Py_DECREF(o);
+        o = res;
+        if (PyUnicode_Check(o)) {
             is_unicode = 1;
         }
         else if (PyBytes_Check(o)) {
