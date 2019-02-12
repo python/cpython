@@ -728,31 +728,25 @@ class SharedMemoryManager(BaseManager):
     def SharedMemory(self, size):
         """Returns a new SharedMemory instance with the specified size in
         bytes, to be tracked by the manager."""
-        conn = self._Client(self._address, authkey=self._authkey)
-        try:
+        with self._Client(self._address, authkey=self._authkey) as conn:
             sms = SharedMemory(None, flags=O_CREX, size=size)
             try:
                 dispatch(conn, None, 'track_segment', (sms.name,))
             except BaseException as e:
                 sms.unlink()
                 raise e
-        finally:
-            conn.close()
         return sms
 
     def ShareableList(self, sequence):
         """Returns a new ShareableList instance populated with the values
         from the input sequence, to be tracked by the manager."""
-        conn = self._Client(self._address, authkey=self._authkey)
-        try:
+        with self._Client(self._address, authkey=self._authkey) as conn:
             sl = ShareableList(sequence)
             try:
                 dispatch(conn, None, 'track_segment', (sl.shm.name,))
             except BaseException as e:
                 sl.shm.unlink()
                 raise e
-        finally:
-            conn.close()
         return sl
 
 SharedMemoryManager.register('Barrier', threading.Barrier, BarrierProxy)
