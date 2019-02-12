@@ -1,0 +1,1 @@
+`os.rename()` now doesnt create directories when original directory doesn't exist.
