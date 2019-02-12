@@ -605,8 +605,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    If *host* is an empty string or ``None`` all network interfaces are assumed.
    If *family* is :data:`AF_UNSPEC` the address family will be determined from
    the *host* specified in *address*. If family can't clearly be determined
-   from *host* and *hybrid_ipv46* is ``False`` then :data:`AF_INET` will be
-   preferred over :data:`AF_INET6`.
+   from *host* and *hybrid_ipv46* is ``False`` then :data:`AF_INET` family will
+   be preferred over :data:`AF_INET6`.
    *type* should be either :data:`SOCK_STREAM` or :data:`SOCK_DGRAM`.
    *backlog* is the queue size passed to :meth:`socket.listen` if
    :data:`SOCK_STREAM` *type* is used.
@@ -615,25 +615,23 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    *flags* is a bitmask for :meth:`getaddrinfo()`; if ``None``
    :data:`AI_PASSIVE` is used.
 
-   When *hybrid_ipv46* is ``True`` and family or address is of :data:`AF_INET6`
-   kind it will create a socket able to accept both IPv4 and IPv6 connections.
+   If *hybrid_ipv46* is ``True`` and the platform supports it the socket will
+   be able to accept both IPv4 and IPv6 connections.
    In this case the address returned by :meth:`socket.getpeername` when a new
-   IPv4 connection occurs will be an IPv6 address represented as an IPv4-mapped
-   IPv6 address (e.g. ``"::ffff:127.0.0.1"``).
-   When *hybrid_ipv46* is ``False`` it will explicitly disable this option on
-   platforms that support it or enable it by default (e.g. Linux).
+   IPv4 connection is accepted will be an IPv6 address represented as an
+   IPv4-mapped IPv6 address like ``"::ffff:127.0.0.1"``.
+   If *hybrid_ipv46* is ``False`` it will explicitly disable this option on
+   platforms that enable it by default (e.g. Linux).
    For platforms not supporting this functionality natively you could use this
    `MultipleSocketsListener recipe <http://code.activestate.com/recipes/578504/>`__.
-   This parameter can be used in conjunction with :func:`supports_hybrid_ipv46`
-   and it only affects :data:`SOCK_STREAM` type sockets, else it's ignored.
+   This parameter can be used in conjunction with :func:`supports_hybrid_ipv46`.
 
    .. versionadded:: 3.8
 
 .. function:: supports_hybrid_ipv46()
 
    Return ``True`` if the platform supports creating a single
-   :data:`SOCK_STREAM` socket which can accept both :data:`AF_INET` and
-   :data:`AF_INET6` (IPv4 / IPv6) connections.
+   :data:`SOCK_STREAM` socket which can accept both IPv4 and IPv6 connections.
 
    .. versionadded:: 3.8
 

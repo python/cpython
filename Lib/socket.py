@@ -752,7 +752,8 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
     If *host* is an empty string or None all network interfaces are assumed.
 
     If *family* is AF_UNSPEC the address family will be determined from the
-    *host* specified in *address*.
+    *host* specified in *address* and AF_INET will take precedence over
+    AF_INET6 in case family can't be determined from *host*.
 
     *type* should be either SOCK_STREAM or SOCK_DGRAM.
 
@@ -762,12 +763,12 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
     *reuse_addr* and *reuse_port* dictate whether to use SO_REUSEADDR
     and SO_REUSEPORT socket options.
 
-    *flags* is a bitmask for getaddrinfo(). If None AI_PASSIVE is used.
+    *flags* is a bitmask for getaddrinfo().
 
-    *hybrid_ipv46*: if True and family or address is of AF_INET6 kind
-    it will create a socket able to accept both IPv4 and IPv6 connections.
+    *hybrid_ipv46*: if True and the platform supports it it will create
+    a socket able to accept both IPv4 and IPv6 connections.
     When False it will explicitly disable this option on platforms that
-    support it or enable it by default (e.g. Linux).
+    enable it by default (e.g. Linux).
 
     >>> with bind_socket((None, 8000)) as server:
     ...     while True:
@@ -793,10 +794,11 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
         if type != SOCK_STREAM:
             raise ValueError("hybrid_ipv46 requires SOCK_STREAM type")
         if family not in {AF_INET6, AF_UNSPEC}:
-            raise ValueError("hybrid_ipv46 requires AF_INET family")
+            raise ValueError("hybrid_ipv46 requires AF_INET6 family")
         if not supports_hybrid_ipv46():
             raise ValueError("hybrid_ipv46 not supported on this platform")
         family = AF_INET6
+
     info = getaddrinfo(host, port, family, type, 0, flags)
     if family == AF_UNSPEC:
         # prefer AF_INET over AF_INET6
@@ -818,6 +820,8 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
                 try:
                     sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
                 except error:
+                    # Fail later on on bind() for platforms which may not
+                    # support this option.
                     pass
             if reuse_port:
                 sock.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
@@ -841,8 +845,6 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
                 sock.listen(backlog)
             # Break explicitly a reference cycle.
             err = None
-            if hybrid_ipv46 and sock.family != AF_INET6:
-                raise error("was not able to create an AF_INET6 socket by using address")
             return sock
         except error:
             sock.close()
