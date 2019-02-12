@@ -218,14 +218,8 @@ class Pool(object):
             self_notifier_sentinels = [self._change_notifier._reader]
         else:
             self_notifier_sentinels = []
-        try:
-            worker_sentinels = [worker.sentinel for worker in self._pool]
-        except AttributeError:
-            worker_sentinels = []
 
-        sentinels = [*task_queue_sentinels,
-                     *worker_sentinels,
-                     *self_notifier_sentinels]
+        sentinels = [*task_queue_sentinels, *self_notifier_sentinels]
 
         self._worker_handler = threading.Thread(
             target=Pool._handle_workers,
@@ -490,7 +484,7 @@ class Pool(object):
         return result
 
     @staticmethod
-    def _wait_for_updates(sentinels, change_notifier, timeout=0.1):
+    def _wait_for_updates(sentinels, change_notifier, timeout=None):
         wait(sentinels, timeout=timeout)
         while not change_notifier.empty():
             change_notifier.get()
@@ -506,9 +500,14 @@ class Pool(object):
         # is terminated.
         while thread._state == RUN or (cache and thread._state != TERMINATE):
             cls._maintain_pool(ctx, Process, processes, pool, inqueue,
-                                outqueue, initializer, initargs,
-                                maxtasksperchild, wrap_exception)
-            cls._wait_for_updates(sentinels, change_notifier)
+                               outqueue, initializer, initargs,
+                               maxtasksperchild, wrap_exception)
+
+            worker_sentinels = [worker.sentinel for worker in
+                                pool if hasattr(worker, "sentinel")]
+            current_sentinels = [*worker_sentinels, *sentinels]
+
+            cls._wait_for_updates(current_sentinels, change_notifier)
         # send sentinel to stop workers
         taskqueue.put(None)
         util.debug('worker handler exiting')
@@ -930,5 +929,5 @@ class ThreadPool(Pool):
         for i in range(size):
             inqueue.put(None)
 
-    def _wait_for_updates(self, sentinels, change_notifier, timeout=0.2):
+    def _wait_for_updates(self, sentinels, change_notifier, timeout):
         time.sleep(timeout)
