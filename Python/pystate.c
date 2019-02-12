@@ -1473,6 +1473,10 @@ _new_long_object(_PyCrossInterpreterData *data)
 static int
 _long_shared(PyObject *obj, _PyCrossInterpreterData *data)
 {
+    /* Note that this means the size of shareable ints is bounded by
+     * sys.maxsize.  Hence on 32-bit architectures that is half the
+     * size of maximum shareable ints on 64-bit.
+     */
     Py_ssize_t value = PyLong_AsSsize_t(obj);
     if (value == -1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
