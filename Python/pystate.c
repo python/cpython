@@ -1467,13 +1467,17 @@ _str_shared(PyObject *obj, _PyCrossInterpreterData *data)
 static PyObject *
 _new_long_object(_PyCrossInterpreterData *data)
 {
-    return PyLong_FromLongLong((intptr_t)(data->data));
+    return PyLong_FromSsize_t((Py_ssize_t)(data->data));
 }
 
 static int
 _long_shared(PyObject *obj, _PyCrossInterpreterData *data)
 {
-    int64_t value = PyLong_AsLongLong(obj);
+    /* Note that this means the size of shareable ints is bounded by
+     * sys.maxsize.  Hence on 32-bit architectures that is half the
+     * size of maximum shareable ints on 64-bit.
+     */
+    Py_ssize_t value = PyLong_AsSsize_t(obj);
     if (value == -1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             PyErr_SetString(PyExc_OverflowError, "try sending as bytes");
