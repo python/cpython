@@ -159,11 +159,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.allow_kbdint = False
         self.nosigint = nosigint
 
-        # Read $HOME/.pdbrc and ./.pdbrc
+        # Read ~/.pdbrc and ./.pdbrc
         self.rcLines = []
         if readrc:
-            if 'HOME' in os.environ:
-                envHome = os.environ['HOME']
+            envHome = os.path.expanduser('~')
+            if envHome != '~':
                 try:
                     with open(os.path.join(envHome, ".pdbrc")) as rcFile:
                         self.rcLines.extend(rcFile)
