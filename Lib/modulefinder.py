@@ -3,7 +3,6 @@
 import dis
 import importlib._bootstrap_external
 import importlib.machinery
-import importlib.util
 import marshal
 import os
 import sys
@@ -55,29 +54,7 @@ def ReplacePackage(oldname, newname):
 def _find_module(name, path=None):
     """An importlib reimplementation of imp.find_module (for our purposes)."""
 
-    # To correctly find the module on the given path,  we need to
-    # temporarily clear the import state of the program and modify sys.path.
-
-    sys_path = sys.path
-    sys_modules = sys.modules
-    sys_path_importer_cache = sys.path_importer_cache
-
-    try:
-
-        sys.path = path + sys.path
-        sys.modules = {}
-        sys.path_importer_cache = {}
-
-        # It is important that `name` not include any dots.
-        # Otherwise, the parent package could be actually imported.
-
-        spec = importlib.util.find_spec(name)
-
-    finally:
-
-        sys.path = sys_path
-        sys.modules = sys_modules
-        sys.path_importer_cache = sys_path_importer_cache
+    spec = importlib.machinery.PathFinder.find_spec(name, path+sys.path)
 
     if spec is None:
         raise ImportError("No module named {name!r}".format(name=name), name=name)
