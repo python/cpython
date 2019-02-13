@@ -1,0 +1,2 @@
+http lib allows mmap'ed files to be resent when the http server responds with 401 unauthorized or similar initial responses
+and the requests has to be resend.
