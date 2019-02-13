@@ -1,1 +1,1 @@
-Add unittest for os.renames(). Contributed by Stéphane Wirtel.
+Add unittest for ``os.renames()``. Contributed by Stéphane Wirtel.
