@@ -597,9 +597,12 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
 .. function:: bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128, reuse_addr=None, reuse_port=False, flags=None, hybrid_ipv46=False)
 
-   Convenience function which creates a socket bound to *address* (a 2-tuple
-   ``(host, port)``) and return the socket object upon which you can call
-   :meth:`socket.accept()` in order to accept new connections.
+   Convenience function which aims at automating all the typical steps needed
+   when creating a server socket.
+   It creates a socket bound to *address* (a 2-tuple ``(host, port)``) and
+   return the socket object upon which you can call :meth:`socket.accept()` in
+   order to accept new connections.
+
    Internally it relies on :meth:`getaddrinfo()` and returns the first socket
    which can be bound to *address*.
    If *host* is an empty string or ``None`` all network interfaces are assumed.
@@ -619,12 +622,29 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    be able to accept both IPv4 and IPv6 connections.
    In this case the address returned by :meth:`socket.getpeername` when a new
    IPv4 connection is accepted will be an IPv6 address represented as an
-   IPv4-mapped IPv6 address like ``"::ffff:127.0.0.1"``.
+   IPv4-mapped IPv6 address like ``":ffff:127.0.0.1"``.
    If *hybrid_ipv46* is ``False`` it will explicitly disable this option on
    platforms that enable it by default (e.g. Linux).
    For platforms not supporting this functionality natively you could use this
    `MultipleSocketsListener recipe <http://code.activestate.com/recipes/578504/>`__.
    This parameter can be used in conjunction with :func:`supports_hybrid_ipv46`.
+
+   Here's an echo server example listening on all interfaces, port 8888,
+   and (possibly) hybrid IPv4/IPv6 support:
+
+   ::
+
+     import socket
+
+     with socket.bind_socket(("", 8888),
+                             hybrid_ipv46=socket.supports_hybrid_ipv46()) as server:
+         conn, addr = server.accept()
+         with conn:
+             while True:
+                 data = conn.recv(1024)
+                 if not data:
+                     break
+                 conn.send(data)
 
    .. versionadded:: 3.8
 

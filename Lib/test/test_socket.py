@@ -6102,16 +6102,16 @@ class BindSocketTest(unittest.TestCase):
     def test_reuse_addr(self):
         if not hasattr(socket, "SO_REUSEADDR"):
             with self.assertRaises(ValueError, socket):
-                socket.bind_socket(("127.0.0.1", 0), reuse_addr=True)
+                socket.bind_socket(("localhost", 0), reuse_addr=True)
                 return
         # check False
-        with socket.bind_socket(("127.0.0.1", 0), reuse_addr=False) as sock:
+        with socket.bind_socket(("localhost", 0), reuse_addr=False) as sock:
             opt = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
             self.assertEqual(opt, 0)
             port = sock.getsockname()[1]
         # Make sure the same port can be reused once socket is closed,
         # meaning SO_REUSEADDR is implicitly set by default.
-        with socket.bind_socket(("127.0.0.1", port)) as sock:
+        with socket.bind_socket(("localhost", port)) as sock:
             pass
 
     @unittest.skipIf(os.name not in ('nt', 'cygwin'), "Windows only")
@@ -6119,20 +6119,20 @@ class BindSocketTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             socket.bind_socket(("localhost, 0"), reuse_addr=True)
         s = socket.bind_socket(("localhost, 0"), reuse_addr=True,
-                               type=socket.DGRAM)
+                               type=socket.SOCK_DGRAM)
         s.close()
 
     def test_reuse_port(self):
         if not hasattr(socket, "SO_REUSEPORT"):
             with self.assertRaises(ValueError, socket.error):
-                socket.bind_socket(("127.0.0.1", 0), reuse_port=True)
-                return
-        with socket.bind_socket(("127.0.0.1", 0)) as sock:
-            opt = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT)
-            self.assertEqual(opt, 0)
-        with socket.bind_socket(("127.0.0.1", 0), reuse_port=True) as sock:
-            opt = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT)
-            self.assertNotEqual(opt, 0)
+                socket.bind_socket(("localhost", 0), reuse_port=True)
+        else:
+            with socket.bind_socket(("localhost", 0)) as sock:
+                opt = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT)
+                self.assertEqual(opt, 0)
+            with socket.bind_socket(("localhost", 0), reuse_port=True) as sock:
+                opt = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT)
+                self.assertNotEqual(opt, 0)
 
     @unittest.skipIf(not hasattr(_socket, 'IPPROTO_IPV6') or
                      not hasattr(_socket, 'IPV6_V6ONLY'),

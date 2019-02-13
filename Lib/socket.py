@@ -850,7 +850,12 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
                         pass
                 else:
                     sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 0)
-            sock.bind(sa)
+            try:
+                sock.bind(sa)
+            except error as err:
+                es = '%s (while attempting to bind on address %r)' % \
+                    (err.strerror, sa)
+                raise error(err.errno, es) from None
             if socktype == SOCK_STREAM:
                 sock.listen(backlog)
             # Break explicitly a reference cycle.
