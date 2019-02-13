@@ -724,7 +724,7 @@ class MockTest(unittest.TestCase):
 
     def test_assert_called_with_message(self):
         mock = Mock()
-        self.assertRaisesRegex(AssertionError, 'Not called',
+        self.assertRaisesRegex(AssertionError, 'not called',
                                 mock.assert_called_with)
 
 
@@ -917,10 +917,11 @@ class MockTest(unittest.TestCase):
     def test_assert_called_with_failure_message(self):
         mock = NonCallableMock()
 
+        actual = 'not called.'
         expected = "mock(1, '2', 3, bar='foo')"
-        message = 'Expected call: %s\nNot called'
+        message = 'expected call not found.\nExpected: %s\nActual: %s'
         self.assertRaisesWithMsg(
-            AssertionError, message % (expected,),
+            AssertionError, message % (expected, actual),
             mock.assert_called_with, 1, '2', 3, bar='foo'
         )
 

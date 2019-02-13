@@ -814,7 +814,10 @@ class NonCallableMock(Base):
         self = _mock_self
         if self.call_args is None:
             expected = self._format_mock_call_signature(args, kwargs)
-            raise AssertionError('Expected call: %s\nNot called' % (expected,))
+            actual = 'not called.'
+            error_message = ('expected call not found.\nExpected: %s\nActual: %s'
+                    % (expected, actual))
+            raise AssertionError(error_message)
 
         def _error_message():
             msg = self._format_mock_failure_message(args, kwargs)
