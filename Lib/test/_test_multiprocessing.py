@@ -3658,7 +3658,7 @@ class _TestSharedMemory(BaseTestCase):
             # manages unlinking on its own and unlink() does nothing).
             # True release of shared memory segment does not necessarily
             # happen until process exits, depending on the OS platform.
-            with self.assertRaises(shared_memory.ExistentialError):
+            with self.assertRaises(FileNotFoundError):
                 sms_uno = shared_memory.SharedMemory(
                     'test01_dblunlink',
                     flags=shared_memory.O_CREX,
@@ -3679,7 +3679,7 @@ class _TestSharedMemory(BaseTestCase):
         # Enforcement of `mode` and `read_only` is OS platform dependent
         # and as such will not be tested here.
 
-        with self.assertRaises(shared_memory.ExistentialError):
+        with self.assertRaises(FileExistsError):
             # Attempting to create a new shared memory segment with a
             # name that is already in use triggers an exception.
             there_can_only_be_one_sms = shared_memory.SharedMemory(
@@ -3704,7 +3704,7 @@ class _TestSharedMemory(BaseTestCase):
 
         # Attempting to attach to an existing shared memory segment when
         # no segment exists with the supplied name triggers an exception.
-        with self.assertRaises(shared_memory.ExistentialError):
+        with self.assertRaises(FileNotFoundError):
             nonexisting_sms = shared_memory.SharedMemory('test01_notthere')
             nonexisting_sms.unlink()  # Error should occur on prior line.
 
@@ -3745,7 +3745,7 @@ class _TestSharedMemory(BaseTestCase):
         if sys.platform != "win32":
             # Calls to unlink() have no effect on Windows platform; shared
             # memory will only be released once final process exits.
-            with self.assertRaises(shared_memory.ExistentialError):
+            with self.assertRaises(FileNotFoundError):
                 # No longer there to be attached to again.
                 absent_shm = shared_memory.SharedMemory(name=held_name)
 
@@ -3756,7 +3756,7 @@ class _TestSharedMemory(BaseTestCase):
                 shm = smm2.SharedMemory(size=128)
             held_name = sl.shm.name
         if sys.platform != "win32":
-            with self.assertRaises(shared_memory.ExistentialError):
+            with self.assertRaises(FileNotFoundError):
                 # No longer there to be attached to again.
                 absent_sl = shared_memory.ShareableList(name=held_name)
 

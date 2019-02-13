@@ -12,23 +12,17 @@ from .managers import dispatch, BaseManager, Server, State, ProcessError, \
                       BarrierProxy, AcquirerProxy, ConditionProxy, EventProxy
 from . import util
 import os
-import random
 import struct
 import sys
 import threading
+import secrets
 try:
-    from _posixshmem import _PosixSharedMemory, \
-                            Error, ExistentialError, PermissionsError, \
-                            O_CREAT, O_EXCL, O_CREX, O_TRUNC
+    import  _posixshmem
+    from os import O_CREAT, O_EXCL, O_TRUNC
 except ImportError as ie:
-    if os.name != "nt":
-        # On Windows, posixshmem is not required to be available.
-        raise ie
-    else:
-        _PosixSharedMemory = object
-        class Error(Exception): pass
-        class ExistentialError(Error): pass
-        O_CREAT, O_EXCL, O_CREX, O_TRUNC = 64, 128, 192, 512
+    O_CREAT, O_EXCL, O_TRUNC = 64, 128, 512
+
+O_CREX = O_CREAT | O_EXCL
 
 if os.name == "nt":
     import ctypes
@@ -89,15 +83,15 @@ class WindowsNamedSharedMemory:
 
     def __init__(self, name, flags=None, mode=384, size=0, read_only=False):
         if name is None:
-            name = f'wnsm_{os.getpid()}_{random.randrange(100000)}'
+            name = _make_filename()
 
         if size == 0:
             # Attempt to dynamically determine the existing named shared
             # memory block's size which is likely a multiple of mmap.PAGESIZE.
             try:
                 h_map = kernel32.OpenFileMappingW(FILE_MAP_READ, False, name)
-            except OSError as ose:
-                raise ExistentialError(*ose.args)
+            except OSError:
+                raise FileNotFoundError(name)
             try:
                 p_buf = kernel32.MapViewOfFile(h_map, FILE_MAP_READ, 0, 0, 0)
             finally:
@@ -115,9 +109,7 @@ class WindowsNamedSharedMemory:
             except OSError as ose:
                 name_collision = False
             if name_collision:
-                raise ExistentialError(
-                    f"Shared memory already exists with name={name}"
-                )
+                raise FileExistsError(name)
 
         self._mmap = mmap.mmap(-1, size, tagname=name)
         self.buf = memoryview(self._mmap)
@@ -138,34 +130,99 @@ class WindowsNamedSharedMemory:
         pass
 
 
-class PosixSharedMemory(_PosixSharedMemory):
+# FreeBSD (and perhaps other BSDs) limit names to 14 characters.
+_SHM_SAFE_NAME_LENGTH = 14
+
+# shared object name prefix
+if os.name == "nt":
+    _SHM_NAME_PREFIX = 'wnsm_'
+else:
+    _SHM_NAME_PREFIX = '/psm_'
+
+
+def _make_filename():
+    """Create a random filename for the shared memory object.
+    """
+    # number of random bytes to use for name
+    nbytes = (_SHM_SAFE_NAME_LENGTH - len(_SHM_NAME_PREFIX)) // 2
+    assert nbytes >= 2, '_SHM_NAME_PREFIX too long'
+    name = _SHM_NAME_PREFIX + secrets.token_hex(nbytes)
+    assert len(name) <= _SHM_SAFE_NAME_LENGTH
+    return name
+
+
+class PosixSharedMemory:
+
+    # defaults so close() and unlink() can run without errors
+    fd = -1
+    name = None
+    _mmap = None
+    buf = None
 
     def __init__(self, name, flags=None, mode=384, size=0, read_only=False):
         if name and (flags is None):
-            _PosixSharedMemory.__init__(self, name, mode=mode)
+            flags = 0
         else:
-            if name is None:
-                name = f'psm_{os.getpid()}_{random.randrange(100000)}'
             flags = O_CREX if flags is None else flags
-            _PosixSharedMemory.__init__(
-                self,
-                name,
-                flags=flags,
-                mode=mode,
-                size=size,
-                read_only=read_only
-            )
-
+        if flags & O_EXCL and not flags & O_CREAT:
+            raise ValueError("O_EXCL must be combined with O_CREAT")
+        if name is None and not flags & O_EXCL:
+            raise ValueError("'name' can only be None if O_EXCL is set")
+        flags |= os.O_RDONLY if read_only else os.O_RDWR
+        self.flags = flags
+        self.mode = mode
+        if not size >= 0:
+            raise ValueError("'size' must be a positive integer")
+        self.size = size
+        if name is None:
+            self._open_retry()
+        else:
+            self.name = name
+            self.fd = _posixshmem.shm_open(name, flags, mode=mode)
+        if self.size:
+            try:
+                os.ftruncate(self.fd, self.size)
+            except OSError:
+                self.unlink()
+                raise
         self._mmap = mmap.mmap(self.fd, self.size)
         self.buf = memoryview(self._mmap)
+
+    def _open_retry(self):
+        # generate a random name, open, retry if it exists
+        while True:
+            name = _make_filename()
+            try:
+                self.fd = _posixshmem.shm_open(name, self.flags,
+                                               mode=self.mode)
+            except FileExistsError:
+                continue
+            self.name = name
+            break
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.name!r}, size={self.size})'
 
+    def unlink(self):
+        if self.name:
+            _posixshmem.shm_unlink(self.name)
+
     def close(self):
-        self.buf.release()
-        self._mmap.close()
-        self.close_fd()
+        if self.buf is not None:
+            self.buf.release()
+            self.buf = None
+        if self._mmap is not None:
+            self._mmap.close()
+            self._mmap = None
+        if self.fd >= 0:
+            os.close(self.fd)
+            self.fd = -1
+
+    def __del__(self):
+        try:
+            self.close()
+        except OSError:
+            pass
 
 
 class SharedMemory:
