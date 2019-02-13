@@ -856,29 +856,38 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     def test_iter_error_when_changing_os_environ_values(self):
         self._test_environ_iteration(os.environ.values())
 
+
 class RenamesTests(unittest.TestCase):
     """Tests for os.renames()."""
 
-    def setUp(self):
+    def test_renames_success(self):
         self.addCleanup(support.rmtree, support.TESTFN)
 
-    def test_renames_success(self):
+        BINARY_CONTENT = b'this is a test'
+
         path = os.path.join
-        new_path = path(support.TESTFN, 'new_path')
+
         old_path = path(support.TESTFN, 'old_path')
+        sub_directory_path = path(old_path, 'test', 'sub_directory')
 
-        self.assertFalse(os.path.exists(old_path))
+        self.assertFalse(os.path.exists(sub_directory_path))
+        os.makedirs(sub_directory_path)
 
-        os.makedirs(old_path)
+        test_file_path = path(sub_directory_path, 'test.bin')
+        with open(test_file_path, 'wb') as fp:
+            fp.write(BINARY_CONTENT)
 
-        self.assertFalse(os.path.exists(new_path))
+        self.assertTrue(os.path.exists(test_file_path))
 
+        new_path = path(support.TESTFN, 'new_path')
         os.renames(old_path, new_path)
 
-        self.assertTrue(os.path.exists(new_path))
+        test_file_path = path(new_path, 'test', 'sub_directory', 'test.bin')
+        self.assertTrue(os.path.exists(test_file_path))
 
-    def test_renames_failure(self):
-        self.assertTrue(False)
+        with open(test_file_path, 'rb') as fp:
+            self.assertEqual(BINARY_CONTENT, fp.read())
+
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
