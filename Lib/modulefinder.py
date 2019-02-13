@@ -54,6 +54,8 @@ def ReplacePackage(oldname, newname):
 def _find_module(name, path=None):
     """An importlib reimplementation of imp.find_module (for our purposes)."""
 
+    importlib.machinery.PathFinder.invalidate_caches()
+    
     spec = importlib.machinery.PathFinder.find_spec(name, path+sys.path)
 
     if spec is None:
