@@ -333,6 +333,39 @@ class CAPITest(unittest.TestCase):
                          br'_Py_NegativeRefcount: Assertion failed: '
                          br'object has negative ref count')
 
+    def test_trashcan_subclass(self):
+        # bpo-35983: Check that the trashcan mechanism for "list" is NOT
+        # activated when its tp_dealloc is being called by a subclass
+        from _testcapi import MyList
+        L = None
+        for i in range(1000):
+            L = MyList((L,))
+
+    def test_trashcan_python_class(self):
+        # Check that the trashcan mechanism works properly for a Python
+        # subclass of a class using the trashcan (list in this test)
+        class PyList(list):
+            # Count the number of PyList instances to verify that there is
+            # no memory leak
+            num = 0
+            def __init__(self, *args):
+                __class__.num += 1
+                super().__init__(*args)
+            def __del__(self):
+                __class__.num -= 1
+
+        for parity in (0, 1):
+            L = None
+            for i in range(2**20):
+                L = PyList((L,))
+                L.attr = i
+            if parity:
+                # Add one additional nesting layer
+                L = (L,)
+            self.assertGreater(PyList.num, 0)
+            del L
+            self.assertEqual(PyList.num, 0)
+
 
 class TestPendingCalls(unittest.TestCase):
 
