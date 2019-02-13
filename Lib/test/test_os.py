@@ -856,6 +856,29 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     def test_iter_error_when_changing_os_environ_values(self):
         self._test_environ_iteration(os.environ.values())
 
+class RenamesTests(unittest.TestCase):
+    """Tests for os.renames()."""
+
+    def setUp(self):
+        self.addCleanup(support.rmtree, support.TESTFN)
+
+    def test_renames_success(self):
+        path = os.path.join
+        new_path = path(support.TESTFN, 'new_path')
+        old_path = path(support.TESTFN, 'old_path')
+
+        self.assertFalse(os.path.exists(old_path))
+
+        os.makedirs(old_path)
+
+        self.assertFalse(os.path.exists(new_path))
+
+        os.renames(old_path, new_path)
+
+        self.assertTrue(os.path.exists(new_path))
+
+    def test_renames_failure(self):
+        self.assertTrue(False)
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
