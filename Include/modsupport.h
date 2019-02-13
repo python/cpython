@@ -94,6 +94,7 @@ typedef struct _PyArg_Parser {
     int pos;            /* number of positional-only arguments */
     int min;            /* minimal number of arguments */
     int max;            /* maximal number of positional arguments */
+    int required_kwonly_start; /* first required kwonly argument */
     PyObject *kwtuple;  /* tuple of keyword parameter names */
     struct _PyArg_Parser *next;
 } _PyArg_Parser;

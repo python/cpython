@@ -1080,6 +1080,24 @@ getargs_required_keyword_only(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static PyObject *
+getargs_required_keyword_only_fast(
+    PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static const char * const keywords[] = {
+        "arg1", "arg2", "kw_optional", "kw_required", NULL};
+    static _PyArg_Parser parser = {"i|i$i@i", keywords, 0};
+    int arg1 = -1;
+    int arg2 = -1;
+    int required = -1;
+    int optional = -1;
+
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &parser,
+                                          &arg1, &arg2, &optional, &required))
+        return NULL;
+    return Py_BuildValue("iiii", arg1, arg2, required, optional);
+}
+
+static PyObject *
 getargs_required_keyword_only2(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     static char *keywords[] = {
@@ -1095,6 +1113,23 @@ getargs_required_keyword_only2(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static PyObject *
+getargs_required_keyword_only_fast2(
+    PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static const char * const keywords[] = {
+        "arg1", "arg2", "kw_required", NULL};
+    static _PyArg_Parser parser = {"i|i$@i", keywords, 0};
+    int arg1 = -1;
+    int arg2 = -1;
+    int required = -1;
+
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &parser,
+                                          &arg1, &arg2, &required))
+        return NULL;
+    return Py_BuildValue("iii", arg1, required, arg2);
+}
+
+static PyObject *
 getargs_required_keyword_only3(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     static char *keywords[] = {
@@ -1104,6 +1139,22 @@ getargs_required_keyword_only3(PyObject *self, PyObject *args, PyObject *kwargs)
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i|$@i", keywords,
                                      &arg1, &required))
+        return NULL;
+    return Py_BuildValue("ii", arg1, required);
+}
+
+static PyObject *
+getargs_required_keyword_only_fast3(
+    PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static const char * const keywords[] = {
+        "arg1", "kw_required", NULL};
+    static _PyArg_Parser parser = {"i|$@i", keywords, 0};
+    int arg1 = -1;
+    int required = -1;
+
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &parser,
+                                          &arg1, &required))
         return NULL;
     return Py_BuildValue("ii", arg1, required);
 }
@@ -4830,6 +4881,15 @@ static PyMethodDef TestMethods[] = {
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_required_keyword_only3",
       (PyCFunction)(void(*)(void))getargs_required_keyword_only3,
+      METH_VARARGS|METH_KEYWORDS},
+    {"getargs_required_keyword_only_fast",
+      (PyCFunction)(void(*)(void))getargs_required_keyword_only_fast,
+      METH_VARARGS|METH_KEYWORDS},
+    {"getargs_required_keyword_only_fast2",
+      (PyCFunction)(void(*)(void))getargs_required_keyword_only_fast2,
+      METH_VARARGS|METH_KEYWORDS},
+    {"getargs_required_keyword_only_fast3",
+      (PyCFunction)(void(*)(void))getargs_required_keyword_only_fast3,
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_b",               getargs_b,                       METH_VARARGS},
     {"getargs_B",               getargs_B,                       METH_VARARGS},

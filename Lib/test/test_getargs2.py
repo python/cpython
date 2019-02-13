@@ -831,7 +831,15 @@ class RequiredKeywordOnly3_TestCase(unittest.TestCase):
             r"function takes at most 1 positional argument \(2 given\)"):
             self.getargs(1, 2)
 
+# Run all the same required keywords tests against the "fast" versions
+class RequiredKeywordOnlyFast_TestCase(RequiredKeywordOnly_TestCase):
+    from _testcapi import getargs_required_keyword_only_fast as getargs
 
+class RequiredKeywordOnlyFast2_TestCase(RequiredKeywordOnly2_TestCase):
+    from _testcapi import getargs_required_keyword_only_fast2 as getargs
+
+class RequiredKeywordOnlyFast3_TestCase(RequiredKeywordOnly3_TestCase):
+    from _testcapi import getargs_required_keyword_only_fast3 as getargs
 
 class PositionalOnlyAndKeywords_TestCase(unittest.TestCase):
     from _testcapi import getargs_positional_only_and_keywords as getargs
