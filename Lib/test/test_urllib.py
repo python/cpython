@@ -1023,6 +1023,18 @@ class URLopener_Tests(unittest.TestCase):
             "spam://c:|windows%/:=&?~#+!$,;'@()*[]|/path/"),
             "//c:|windows%/:=&?~#+!$,;'@()*[]|/path/")
 
+    def test_local_file_open(self):
+        class DummyURLopener(urllib.URLopener):
+            def open_local_file(self, url):
+                return url
+        self.assertEqual(DummyURLopener().open(
+            'local-file://example'), '//example')
+        self.assertEqual(DummyURLopener().open(
+            'local_file://example'), '//example')
+        self.assertRaises(IOError, urllib.urlopen,
+            'local-file://example')
+        self.assertRaises(IOError, urllib.urlopen,
+            'local_file://example')
 
 # Just commented them out.
 # Can't really tell why keep failing in windows and sparc.
