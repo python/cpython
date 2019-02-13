@@ -840,6 +840,8 @@ class IpaddrUnitTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             ipaddress.IPv4Network(('192.0.2.1', 24))
         with self.assertRaises(ValueError):
+            ipaddress.IPv4Network(('192.0.2.1', 33))
+        with self.assertRaises(ValueError):
             ipaddress.IPv4Network((ip, 24))
         with self.assertRaises(ValueError):
             ipaddress.IPv4Network((3221225985, 24))
