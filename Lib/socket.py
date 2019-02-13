@@ -779,14 +779,27 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
     if host == "":
         # https://mail.python.org/pipermail/python-ideas/2013-March/019937.html
         host = None  # all interfaces
+    # Note about Windows: by default SO_REUSEADDR is not set because:
+    # 1) It's unnecessary: bind() will succeed even in case of a
+    # previous closed socket on the same address and still in TIME_WAIT
+    # state.
+    # 2) If set, another socket will be free to bind() on the same
+    # address, effectively preventing this one from accepting connections.
+    # Also, it sets the process in a state where it'll no longer respond
+    # to any signals or graceful kills. The option can still be set though
+    # for SOCK_DGRAM multicast sockets.
+    # See: msdn2.microsoft.com/en-us/library/ms740621(VS.85).aspx
+    iswin = os.name in ('nt', 'cygwin')
     if reuse_addr is None:
-        reuse_addr = os.name == 'posix' and sys.platform != 'cygwin' and \
-            hasattr(_socket, 'SO_REUSEADDR')
+        reuse_addr = not iswin and hasattr(_socket, 'SO_REUSEADDR')
     elif reuse_addr and not hasattr(_socket, 'SO_REUSEADDR'):
         raise ValueError("SO_REUSEADDR not supported on this platform")
+    elif reuse_addr and iswin and type != SOCK_DGRAM:
+        raise ValueError("SO_REUSEADDR allowed for SOCK_DGRAM type only")
+
     if reuse_port and not hasattr(_socket, "SO_REUSEPORT"):
         raise ValueError("SO_REUSEPORT not supported on this platform")
-    if type not in {SOCK_STREAM, SOCK_DGRAM}:
+    if type not in (SOCK_STREAM, SOCK_DGRAM):
         raise ValueError("only SOCK_STREAM and SOCK_DGRAM types are supported")
     if flags is None:
         flags = AI_PASSIVE
@@ -820,20 +833,17 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
                 try:
                     sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
                 except error:
-                    # Fail later on on bind() for platforms which may not
+                    # Fail later on on bind(), for platforms which may not
                     # support this option.
                     pass
             if reuse_port:
                 sock.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
-            if has_ipv6 and af == AF_INET6 and type == SOCK_STREAM:
+            if has_ipv6 and af == AF_INET6:
                 if not hybrid_ipv46:
                     # Disable IPv4/IPv6 dual stack support (enabled by
                     # default on Linux) which makes a single socket
-                    # listen on both address families. Reasons:
-                    # * consistency across different platforms
-                    # * the address returned by getpeername() is an
-                    #   exotic IPv6 address that has the IPv4 address
-                    #   encoded inside it
+                    # listen on both address families in order to be
+                    # consistent across different platforms.
                     try:
                         sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 1)
                     except NameError:

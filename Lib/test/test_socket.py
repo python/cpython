@@ -6114,6 +6114,14 @@ class BindSocketTest(unittest.TestCase):
         with socket.bind_socket(("127.0.0.1", port)) as sock:
             pass
 
+    @unittest.skipIf(os.name not in ('nt', 'cygwin'), "Windows only")
+    def test_reuse_addr_win(self):
+        with self.assertRaises(ValueError):
+            socket.bind_socket(("localhost, 0"), reuse_addr=True)
+        s = socket.bind_socket(("localhost, 0"), reuse_addr=True,
+                               type=socket.DGRAM)
+        s.close()
+
     def test_reuse_port(self):
         if not hasattr(socket, "SO_REUSEPORT"):
             with self.assertRaises(ValueError, socket.error):
