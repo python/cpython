@@ -1250,7 +1250,7 @@ PyDoc_STRVAR(os_replace__doc__,
 "  descriptor open to a directory, and the respective path string (src or dst)\n"
 "  should be relative; the path will then be relative to that directory.\n"
 "src_dir_fd and dst_dir_fd, may not be implemented on your platform.\n"
-"  If they are unavailable, using them will raise a NotImplementedError.\"");
+"  If they are unavailable, using them will raise a NotImplementedError.");
 
 #define OS_REPLACE_METHODDEF    \
     {"replace", (PyCFunction)(void(*)(void))os_replace, METH_FASTCALL|METH_KEYWORDS, os_replace__doc__},
@@ -7339,4 +7339,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=d50ff73e5b5198b9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bb677205c036deca input=a9049054013a1b77]*/

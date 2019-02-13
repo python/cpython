@@ -4157,13 +4157,13 @@ If either src_dir_fd or dst_dir_fd is not None, it should be a file
   descriptor open to a directory, and the respective path string (src or dst)
   should be relative; the path will then be relative to that directory.
 src_dir_fd and dst_dir_fd, may not be implemented on your platform.
-  If they are unavailable, using them will raise a NotImplementedError."
+  If they are unavailable, using them will raise a NotImplementedError.
 [clinic start generated code]*/
 
 static PyObject *
 os_replace_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
                 int dst_dir_fd)
-/*[clinic end generated code: output=1968c02e7857422b input=25515dfb107c8421]*/
+/*[clinic end generated code: output=1968c02e7857422b input=c003f0def43378ef]*/
 {
     return internal_rename(src, dst, src_dir_fd, dst_dir_fd, 1);
 }
