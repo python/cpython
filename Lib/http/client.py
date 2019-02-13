@@ -1023,6 +1023,7 @@ class HTTPConnection:
                 # is needed to allow the current position of mmap'ed
                 # files to be taken into account.
                 chunks = self._read_readable(message_body)
+                message_body.seek(0)
             else:
                 try:
                     # this is solely to check to see if message_body
