@@ -215,7 +215,7 @@ tupledealloc(register PyTupleObject *op)
     register Py_ssize_t i;
     register Py_ssize_t len =  Py_SIZE(op);
     PyObject_GC_UnTrack(op);
-    Py_TRASHCAN_SAFE_BEGIN(op)
+    Py_TRASHCAN_BEGIN(op, tupledealloc)
     if (len > 0) {
         i = len;
         while (--i >= 0)
@@ -234,7 +234,7 @@ tupledealloc(register PyTupleObject *op)
     }
     Py_TYPE(op)->tp_free((PyObject *)op);
 done:
-    Py_TRASHCAN_SAFE_END(op)
+    Py_TRASHCAN_END
 }
 
 static int

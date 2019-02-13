@@ -1078,7 +1078,7 @@ dict_dealloc(register PyDictObject *mp)
     Py_ssize_t fill = mp->ma_fill;
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(mp);
-    Py_TRASHCAN_SAFE_BEGIN(mp)
+    Py_TRASHCAN_BEGIN(mp, dict_dealloc)
     for (ep = mp->ma_table; fill > 0; ep++) {
         if (ep->me_key) {
             --fill;
@@ -1092,7 +1092,7 @@ dict_dealloc(register PyDictObject *mp)
         free_list[numfree++] = mp;
     else
         Py_TYPE(mp)->tp_free((PyObject *)mp);
-    Py_TRASHCAN_SAFE_END(mp)
+    Py_TRASHCAN_END
 }
 
 static int

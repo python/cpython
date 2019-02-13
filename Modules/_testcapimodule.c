@@ -2944,6 +2944,76 @@ static PyTypeObject test_structmembersType = {
 };
 
 
+/* Test bpo-35983: create a subclass of "list" which checks that instances
+ * are not deallocated twice */
+
+typedef struct {
+    PyListObject list;
+    int deallocated;
+} MyListObject;
+
+static PyObject *
+MyList_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject* op = PyList_Type.tp_new(type, args, kwds);
+    ((MyListObject*)op)->deallocated = 0;
+    return op;
+}
+
+void
+MyList_dealloc(MyListObject* op)
+{
+    if (op->deallocated) {
+        /* We cannot raise exceptions here but we still want the testsuite
+         * to fail when we hit this */
+        Py_FatalError("MyList instance deallocated twice");
+    }
+    op->deallocated = 1;
+    PyList_Type.tp_dealloc((PyObject *)op);
+}
+
+static PyTypeObject MyList_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "MyList",
+    sizeof(MyListObject),
+    0,
+    (destructor)MyList_dealloc,                 /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    0,                                          /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+    0,                                          /* tp_doc */
+    0,                                          /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    0,                                          /* tp_methods */
+    0,                                          /* tp_members */
+    0,                                          /* tp_getset */
+    0,  /* &PyList_Type */                      /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    MyList_new,                                 /* tp_new */
+};
+
+
 PyMODINIT_FUNC
 init_testcapi(void)
 {
@@ -2960,6 +3030,12 @@ init_testcapi(void)
     /* don't use a name starting with "test", since we don't want
        test_capi to automatically call this */
     PyModule_AddObject(m, "_test_structmembersType", (PyObject *)&test_structmembersType);
+
+    MyList_Type.tp_base = &PyList_Type;
+    if (PyType_Ready(&MyList_Type) < 0)
+        return NULL;
+    Py_INCREF(&MyList_Type);
+    PyModule_AddObject(m, "MyList", (PyObject *)&MyList_Type);
 
     PyModule_AddObject(m, "CHAR_MAX", PyInt_FromLong(CHAR_MAX));
     PyModule_AddObject(m, "CHAR_MIN", PyInt_FromLong(CHAR_MIN));

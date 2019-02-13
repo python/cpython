@@ -930,7 +930,6 @@ subtype_dealloc(PyObject *self)
 {
     PyTypeObject *type, *base;
     destructor basedealloc;
-    PyThreadState *tstate = PyThreadState_GET();
 
     /* Extract the type; we expect it to be a heap type */
     type = Py_TYPE(self);
@@ -979,16 +978,7 @@ subtype_dealloc(PyObject *self)
     /* UnTrack and re-Track around the trashcan macro, alas */
     /* See explanation at end of function for full disclosure */
     PyObject_GC_UnTrack(self);
-    ++_PyTrash_delete_nesting;
-    ++ tstate->trash_delete_nesting;
-    Py_TRASHCAN_SAFE_BEGIN(self);
-    --_PyTrash_delete_nesting;
-    -- tstate->trash_delete_nesting;
-    /* DO NOT restore GC tracking at this point.  weakref callbacks
-     * (if any, and whether directly here or indirectly in something we
-     * call) may trigger GC, and if self is tracked at that point, it
-     * will look like trash to GC and GC will try to delete self again.
-     */
+    Py_TRASHCAN_BEGIN(self, subtype_dealloc);
 
     /* Find the nearest base with a different tp_dealloc */
     base = type;
@@ -1061,11 +1051,7 @@ subtype_dealloc(PyObject *self)
     Py_DECREF(type);
 
   endlabel:
-    ++_PyTrash_delete_nesting;
-    ++ tstate->trash_delete_nesting;
-    Py_TRASHCAN_SAFE_END(self);
-    --_PyTrash_delete_nesting;
-    -- tstate->trash_delete_nesting;
+    Py_TRASHCAN_END
 
     /* Explanation of the weirdness around the trashcan macros:
 
@@ -1102,67 +1088,6 @@ subtype_dealloc(PyObject *self)
           looks like trash to gc too, and gc also tries to delete self
           then.  But we're already deleting self.  Double deallocation is
           a subtle disaster.
-
-       Q. Why the bizarre (net-zero) manipulation of
-          _PyTrash_delete_nesting around the trashcan macros?
-
-       A. Some base classes (e.g. list) also use the trashcan mechanism.
-          The following scenario used to be possible:
-
-          - suppose the trashcan level is one below the trashcan limit
-
-          - subtype_dealloc() is called
-
-          - the trashcan limit is not yet reached, so the trashcan level
-        is incremented and the code between trashcan begin and end is
-        executed
-
-          - this destroys much of the object's contents, including its
-        slots and __dict__
-
-          - basedealloc() is called; this is really list_dealloc(), or
-        some other type which also uses the trashcan macros
-
-          - the trashcan limit is now reached, so the object is put on the
-        trashcan's to-be-deleted-later list
-
-          - basedealloc() returns
-
-          - subtype_dealloc() decrefs the object's type
-
-          - subtype_dealloc() returns
-
-          - later, the trashcan code starts deleting the objects from its
-        to-be-deleted-later list
-
-          - subtype_dealloc() is called *AGAIN* for the same object
-
-          - at the very least (if the destroyed slots and __dict__ don't
-        cause problems) the object's type gets decref'ed a second
-        time, which is *BAD*!!!
-
-          The remedy is to make sure that if the code between trashcan
-          begin and end in subtype_dealloc() is called, the code between
-          trashcan begin and end in basedealloc() will also be called.
-          This is done by decrementing the level after passing into the
-          trashcan block, and incrementing it just before leaving the
-          block.
-
-          But now it's possible that a chain of objects consisting solely
-          of objects whose deallocator is subtype_dealloc() will defeat
-          the trashcan mechanism completely: the decremented level means
-          that the effective level never reaches the limit.      Therefore, we
-          *increment* the level *before* entering the trashcan block, and
-          matchingly decrement it after leaving.  This means the trashcan
-          code will trigger a little early, but that's no big deal.
-
-       Q. Are there any live examples of code in need of all this
-          complexity?
-
-       A. Yes.  See SF bug 668433 for code that crashed (when Python was
-          compiled in debug mode) before the trashcan level manipulations
-          were added.  For more discussion, see SF patches 581742, 575073
-          and bug 574207.
     */
 }
 

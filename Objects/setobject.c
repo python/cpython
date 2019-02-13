@@ -551,7 +551,7 @@ set_dealloc(PySetObject *so)
     Py_ssize_t fill = so->fill;
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(so);
-    Py_TRASHCAN_SAFE_BEGIN(so)
+    Py_TRASHCAN_BEGIN(so, set_dealloc)
     if (so->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) so);
 
@@ -567,7 +567,7 @@ set_dealloc(PySetObject *so)
         free_list[numfree++] = so;
     else
         Py_TYPE(so)->tp_free(so);
-    Py_TRASHCAN_SAFE_END(so)
+    Py_TRASHCAN_END
 }
 
 static int
