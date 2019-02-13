@@ -370,7 +370,6 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
                                 type_ignores.items[i], 0);
             }
         }
-        growable_int_array_deallocate(&type_ignores);
 
 #ifndef PGEN
         /* Check that the source for a single input statement really
@@ -404,6 +403,8 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
     }
     else
         n = NULL;
+
+    growable_int_array_deallocate(&type_ignores);
 
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
     *flags = ps->p_flags;
