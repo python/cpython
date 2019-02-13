@@ -1,0 +1,1 @@
+Enum supports empty and weird strings for the items. Contributed by Maxwell.
