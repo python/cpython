@@ -1517,6 +1517,9 @@ class TestWhich(unittest.TestCase):
         os.chmod(self.temp_file.name, stat.S_IXUSR)
         self.addCleanup(self.temp_file.close)
         self.dir, self.file = os.path.split(self.temp_file.name)
+        self.env_path = self.dir
+        self.curdir = os.curdir
+        self.ext = ".EXE"
 
     def test_basic(self):
         # Given an EXE in a directory, it should be returned.
@@ -1549,7 +1552,7 @@ class TestWhich(unittest.TestCase):
             rv = shutil.which(self.file, path=base_dir)
             if sys.platform == "win32":
                 # Windows: current directory implicitly on PATH
-                self.assertEqual(rv, os.path.join(os.curdir, self.file))
+                self.assertEqual(rv, os.path.join(self.curdir, self.file))
             else:
                 # Other platforms: shouldn't match in the current directory.
                 self.assertIsNone(rv)
@@ -1581,11 +1584,11 @@ class TestWhich(unittest.TestCase):
         # Ask for the file without the ".exe" extension, then ensure that
         # it gets found properly with the extension.
         rv = shutil.which(self.file[:-4], path=self.dir)
-        self.assertEqual(rv, self.temp_file.name[:-4] + ".EXE")
+        self.assertEqual(rv, self.temp_file.name[:-4] + self.ext)
 
     def test_environ_path(self):
         with support.EnvironmentVarGuard() as env:
-            env['PATH'] = self.dir
+            env['PATH'] = self.env_path
             rv = shutil.which(self.file)
             self.assertEqual(rv, self.temp_file.name)
 
@@ -1593,7 +1596,7 @@ class TestWhich(unittest.TestCase):
         base_dir = os.path.dirname(self.dir)
         with support.change_cwd(path=self.dir), \
              support.EnvironmentVarGuard() as env:
-            env['PATH'] = self.dir
+            env['PATH'] = self.env_path
             rv = shutil.which(self.file, path='')
             self.assertIsNone(rv)
 
@@ -1602,6 +1605,16 @@ class TestWhich(unittest.TestCase):
             env.pop('PATH', None)
             rv = shutil.which(self.file)
             self.assertIsNone(rv)
+
+
+class TestWhichBytes(TestWhich):
+    def setUp(self):
+        TestWhich.setUp(self)
+        self.dir = os.fsencode(self.dir)
+        self.file = os.fsencode(self.file)
+        self.temp_file.name = os.fsencode(self.temp_file.name)
+        self.curdir = os.fsencode(self.curdir)
+        self.ext = os.fsencode(self.ext)
 
 
 class TestMove(unittest.TestCase):

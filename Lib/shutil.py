@@ -1279,6 +1279,15 @@ def get_terminal_size(fallback=(80, 24)):
 
     return os.terminal_size((columns, lines))
 
+
+# Check that a given file can be accessed with the correct mode.
+# Additionally check that `file` is not a directory, as on Windows
+# directories pass the os.access check.
+def _access_check(fn, mode):
+    return (os.path.exists(fn) and os.access(fn, mode)
+            and not os.path.isdir(fn))
+
+
 def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     """Given a command, mode, and a PATH string, return the path which
     conforms to the given mode on the PATH, or None if there is no such
@@ -1289,13 +1298,6 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     path.
 
     """
-    # Check that a given file can be accessed with the correct mode.
-    # Additionally check that `file` is not a directory, as on Windows
-    # directories pass the os.access check.
-    def _access_check(fn, mode):
-        return (os.path.exists(fn) and os.access(fn, mode)
-                and not os.path.isdir(fn))
-
     # If we're given a path with a directory part, look it up directly rather
     # than referring to PATH directories. This includes checking relative to the
     # current directory, e.g. ./script
@@ -1304,19 +1306,31 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
             return cmd
         return None
 
+    use_bytes = isinstance(cmd, bytes)
+
     if path is None:
         path = os.environ.get("PATH", os.defpath)
     if not path:
         return None
-    path = path.split(os.pathsep)
+    if use_bytes:
+        path = os.fsencode(path)
+        path = path.split(os.fsencode(os.pathsep))
+    else:
+        path = os.fsdecode(path)
+        path = path.split(os.pathsep)
 
     if sys.platform == "win32":
         # The current directory takes precedence on Windows.
-        if not os.curdir in path:
-            path.insert(0, os.curdir)
+        curdir = os.curdir
+        if use_bytes:
+            curdir = os.fsencode(curdir)
+        if curdir not in path:
+            path.insert(0, curdir)
 
         # PATHEXT is necessary to check on Windows.
         pathext = os.environ.get("PATHEXT", "").split(os.pathsep)
+        if use_bytes:
+            pathext = [os.fsencode(ext) for ext in pathext]
         # See if the given file matches any of the expected path extensions.
         # This will allow us to short circuit when given "python.exe".
         # If it does match, only test that one, otherwise we have to try
