@@ -56,7 +56,6 @@
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="python.props" />
-  <Import Project="armasm.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -123,7 +122,4 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-    <Import Project="armasm.targets" />
-  </ImportGroup>
 </Project>
