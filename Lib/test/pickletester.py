@@ -1233,7 +1233,11 @@ class AbstractUnpickleTests(unittest.TestCase):
         t1.join()
         t2.join()
 
-        self.assertEqual(len(results), 2)
+        from locking_import import ToBeUnpickled
+        self.assertEqual(
+            [type(x) for x in results],
+            [ToBeUnpickled] * 2)
+
 
 
 class AbstractPickleTests(unittest.TestCase):
