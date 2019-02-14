@@ -3766,30 +3766,30 @@ compiler_compare(struct compiler *c, expr_ty e)
     return 1;
 }
 
-static const char *
-infer_type_name(expr_ty e)
+static PyTypeObject *
+infer_type(expr_ty e)
 {
     switch (e->kind) {
     case Tuple_kind:
-        return "tuple";
+        return &PyTuple_Type;
     case List_kind:
     case ListComp_kind:
-        return "list";
+        return &PyList_Type;
     case Dict_kind:
     case DictComp_kind:
-        return "dict";
+        return &PyDict_Type;
     case Set_kind:
     case SetComp_kind:
-        return "set";
+        return &PySet_Type;
     case GeneratorExp_kind:
-        return "generator";
+        return &PyGen_Type;
     case Lambda_kind:
-        return "function";
+        return &PyFunction_Type;
     case JoinedStr_kind:
     case FormattedValue_kind:
-        return "str";
+        return &PyUnicode_Type;
     case Constant_kind:
-        return e->v.Constant.value->ob_type->tp_name;
+        return e->v.Constant.value->ob_type;
     default:
         return NULL;
     }
@@ -3812,7 +3812,7 @@ check_caller(struct compiler *c, expr_ty e)
     case FormattedValue_kind:
         return compiler_warn(c, "'%.200s' object is not callable, "
                                 "perhaps missed a comma?",
-                                infer_type_name(e));
+                                infer_type(e)->tp_name);
     default:
         return 1;
     }
@@ -3839,17 +3839,10 @@ check_subscripter(struct compiler *c, expr_ty e)
     case Lambda_kind:
         return compiler_warn(c, "'%.200s' object is not subscriptable, "
                                 "perhaps missed a comma?",
-                                infer_type_name(e));
+                                infer_type(e)->tp_name);
     default:
         return 1;
     }
-}
-
-static int
-is_tuple(expr_ty e)
-{
-    return (e->kind == Tuple_kind ||
-            (e->kind == Constant_kind && PyTuple_Check(e->v.Constant.value)));
 }
 
 static int
@@ -3857,7 +3850,13 @@ check_index(struct compiler *c, expr_ty e, slice_ty s)
 {
     PyObject *v;
 
-    if (s->kind != Index_kind || !is_tuple(s->v.Index.value)) {
+    if (s->kind != Index_kind) {
+        return 1;
+    }
+    PyTypeObject *index_type = infer_type(s->v.Index.value);
+    if (index_type == NULL
+        || PyType_FastSubclass(index_type, Py_TPFLAGS_LONG_SUBCLASS)
+        || index_type == &PySlice_Type) {
         return 1;
     }
 
@@ -3874,9 +3873,10 @@ check_index(struct compiler *c, expr_ty e, slice_ty s)
     case JoinedStr_kind:
     case FormattedValue_kind:
         return compiler_warn(c, "%.200s indices must be integers or slices, "
-                                "not tuple, "
+                                "not %.200s, "
                                 "perhaps missed a comma?",
-                                infer_type_name(e));
+                                infer_type(e)->tp_name,
+                                index_type->tp_name);
     default:
         return 1;
     }
