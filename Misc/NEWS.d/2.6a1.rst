@@ -562,8 +562,8 @@ shifts from ints to longs.
 .. nonce: mFw2O5
 .. section: Core and Builtins
 
-Tuple's tp_repr did not take into account the possibility of having a self-
-referential tuple, which is possible from C code.  Nor did object's tp_str
+Tuple's tp_repr did not take into account the possibility of having a
+self-referential tuple, which is possible from C code.  Nor did object's tp_str
 consider that a type's tp_str could do something that could lead to an
 inifinite recursion. Py_ReprEnter() and Py_EnterRecursiveCall(),
 respectively, fixed the issues.
@@ -1592,8 +1592,8 @@ fix a bug to avoid FileHandler throwing an exception in flush().
 .. section: Library
 
 distutils' build command now uses different build directory when building
-extension modules against versions of Python compiled with ``--with-
-pydebug``.
+extension modules against versions of Python compiled with
+``--with-pydebug``.
 
 ..
 
@@ -2070,8 +2070,8 @@ with --with-system-ffi.
 .. nonce: MPohFL
 .. section: Library
 
-ctypes now does work on OS X when Python is built with --disable-toolbox-
-glue.
+ctypes now does work on OS X when Python is built with
+``--disable-toolbox-glue``.
 
 ..
 
@@ -5142,8 +5142,8 @@ platform.
 .. nonce: bwAdWN
 .. section: Build
 
-don't add -L/usr/lib/pythonX.Y/config to the LDFLAGS returned by python-
-config if Python was built with --enable-shared because that prevented the
+don't add -L/usr/lib/pythonX.Y/config to the LDFLAGS returned by
+python-config if Python was built with --enable-shared because that prevented the
 shared library from being used.
 
 ..

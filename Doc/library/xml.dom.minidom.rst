@@ -169,7 +169,7 @@ module documentation.  This section lists the differences between the API and
       the *encoding* argument was introduced; see :meth:`writexml`.
 
 
-.. method:: Node.toprettyxml([indent=""[, newl=""[, encoding=""]]])
+.. method:: Node.toprettyxml(indent="\\t", newl="\\n", encoding=None)
 
    Return a pretty-printed version of the document. *indent* specifies the
    indentation string and defaults to a tabulator; *newl* specifies the string

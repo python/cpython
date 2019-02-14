@@ -1071,9 +1071,10 @@ string functions based on regular expressions.
 .. method:: str.join(iterable)
 
    Return a string which is the concatenation of the strings in *iterable*.
-   A :exc:`TypeError` will be raised if there are any non-string values in
-   *iterable*, including :class:`bytes` objects.  The separator between
-   elements is the string providing this method.
+   If there is any Unicode object in *iterable*, return a Unicode instead.
+   A :exc:`TypeError` will be raised if there are any non-string or non Unicode
+   object values in *iterable*.  The separator between elements is the string
+   providing this method.
 
 
 .. method:: str.ljust(width[, fillchar])
@@ -1380,7 +1381,7 @@ string functions based on regular expressions.
 .. method:: str.upper()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   uppercase.  Note that ``str.upper().isupper()`` might be ``False`` if ``s``
+   uppercase.  Note that ``s.upper().isupper()`` might be ``False`` if ``s``
    contains uncased characters or if the Unicode category of the resulting
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter, titlecase).
 

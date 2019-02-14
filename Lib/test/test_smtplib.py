@@ -306,12 +306,14 @@ class TooLongLineTests(unittest.TestCase):
         self.sock.settimeout(15)
         self.port = test_support.bind_port(self.sock)
         servargs = (self.evt, self.respdata, self.sock)
-        threading.Thread(target=server, args=servargs).start()
+        self.thread = threading.Thread(target=server, args=servargs)
+        self.thread.start()
         self.evt.wait()
         self.evt.clear()
 
     def tearDown(self):
         self.evt.wait()
+        self.thread.join()
         sys.stdout = self.old_stdout
 
     def testLineTooLong(self):

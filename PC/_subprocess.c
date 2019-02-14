@@ -381,7 +381,7 @@ getenvironment(PyObject* environment)
         }
         totalsize = (p - PyString_AS_STRING(out)) + ksize + 1 +
                                                      vsize + 1 + 1;
-        if (totalsize > PyString_GET_SIZE(out)) {
+        if (totalsize > (size_t)PyString_GET_SIZE(out)) {
             size_t offset = p - PyString_AS_STRING(out);
             if (_PyString_Resize(&out, totalsize + 1024))
                 goto exit;

@@ -900,6 +900,56 @@ class Win32KillTests(unittest.TestCase):
         self._kill_with_event(signal.CTRL_BREAK_EVENT, "CTRL_BREAK_EVENT")
 
 
+@unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
+class Win32ListdirTests(unittest.TestCase):
+    """Test listdir on Windows."""
+
+    def setUp(self):
+        self.created_paths = []
+        for i in range(2):
+            dir_name = 'SUB%d' % i
+            dir_path = os.path.join(support.TESTFN, dir_name)
+            file_name = 'FILE%d' % i
+            file_path = os.path.join(support.TESTFN, file_name)
+            os.makedirs(dir_path)
+            with open(file_path, 'w') as f:
+                f.write("I'm %s and proud of it. Blame test_os.\n" % file_path)
+            self.created_paths.extend([dir_name, file_name])
+        self.created_paths.sort()
+
+    def tearDown(self):
+        shutil.rmtree(support.TESTFN)
+
+    def test_listdir_no_extended_path(self):
+        """Test when the path is not an "extended" path."""
+        # unicode
+        fs_encoding = sys.getfilesystemencoding()
+        self.assertEqual(
+                sorted(os.listdir(support.TESTFN.decode(fs_encoding))),
+                [path.decode(fs_encoding) for path in self.created_paths])
+
+        # bytes
+        self.assertEqual(
+                sorted(os.listdir(os.fsencode(support.TESTFN))),
+                self.created_paths)
+
+    def test_listdir_extended_path(self):
+        """Test when the path starts with '\\\\?\\'."""
+        # See: http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx#maxpath
+        # unicode
+        fs_encoding = sys.getfilesystemencoding()
+        path = u'\\\\?\\' + os.path.abspath(support.TESTFN.decode(fs_encoding))
+        self.assertEqual(
+                sorted(os.listdir(path)),
+                [path.decode(fs_encoding) for path in self.created_paths])
+
+        # bytes
+        path = b'\\\\?\\' + os.path.abspath(support.TESTFN)
+        self.assertEqual(
+                sorted(os.listdir(path)),
+                self.created_paths)
+
+
 class SpawnTests(unittest.TestCase):
     def _test_invalid_env(self, spawn):
         args = [sys.executable, '-c', 'pass']

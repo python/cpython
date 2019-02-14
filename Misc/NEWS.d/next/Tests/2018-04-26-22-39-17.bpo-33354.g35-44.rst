@@ -1,0 +1,2 @@
+Skip ``test_ssl.test_load_dh_params`` when Python filesystem encoding cannot encode the
+provided path.

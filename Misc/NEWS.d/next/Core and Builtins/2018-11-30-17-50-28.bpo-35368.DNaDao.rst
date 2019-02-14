@@ -1,0 +1,1 @@
+:c:func:`PyMem_Malloc` is now also thread-safe in debug mode.

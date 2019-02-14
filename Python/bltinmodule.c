@@ -54,7 +54,7 @@ PyDoc_STRVAR(import_doc,
 "__import__(name, globals={}, locals={}, fromlist=[], level=-1) -> module\n\
 \n\
 Import a module. Because this function is meant for use by the Python\n\
-interpreter and not for general use it is better to use\n\
+interpreter and not for general use, it is better to use\n\
 importlib.import_module() to programmatically import a module.\n\
 \n\
 The globals argument is only used to determine the context;\n\
@@ -63,9 +63,8 @@ should be a list of names to emulate ``from name import ...'', or an\n\
 empty list to emulate ``import name''.\n\
 When importing a module from a package, note that __import__('A.B', ...)\n\
 returns package A when fromlist is empty, but its submodule B when\n\
-fromlist is not empty.  Level is used to determine whether to perform \n\
-absolute or relative imports.  -1 is the original strategy of attempting\n\
-both absolute and relative imports, 0 is absolute, a positive number\n\
+fromlist is not empty.  The level argument is used to determine whether to\n\
+perform absolute or relative imports: 0 is absolute, while a positive number\n\
 is the number of parent directories to search relative to the current module.");
 
 
@@ -1781,7 +1780,7 @@ get_range_long_argument(PyObject *arg, const char *name)
 {
     PyObject *v;
     PyNumberMethods *nb;
-    if (PyInt_Check(arg) || PyLong_Check(arg)) {
+    if (_PyAnyInt_Check(arg)) {
         Py_INCREF(arg);
         return arg;
     }
@@ -1796,7 +1795,7 @@ get_range_long_argument(PyObject *arg, const char *name)
     v = nb->nb_int(arg);
     if (v == NULL)
         return NULL;
-    if (PyInt_Check(v) || PyLong_Check(v))
+    if (_PyAnyInt_Check(v))
         return v;
     Py_DECREF(v);
     PyErr_SetString(PyExc_TypeError,
@@ -2364,6 +2363,11 @@ builtin_sum(PyObject *self, PyObject *args)
             }
             /* Either overflowed or is not an int. Restore real objects and process normally */
             result = PyInt_FromLong(i_result);
+            if (result == NULL) {
+                Py_DECREF(item);
+                Py_DECREF(iter);
+                return NULL;
+            }
             temp = PyNumber_Add(result, item);
             Py_DECREF(result);
             Py_DECREF(item);
@@ -2402,6 +2406,11 @@ builtin_sum(PyObject *self, PyObject *args)
                 continue;
             }
             result = PyFloat_FromDouble(f_result);
+            if (result == NULL) {
+                Py_DECREF(item);
+                Py_DECREF(iter);
+                return NULL;
+            }
             temp = PyNumber_Add(result, item);
             Py_DECREF(result);
             Py_DECREF(item);

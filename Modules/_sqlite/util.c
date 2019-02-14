@@ -132,7 +132,7 @@ _pysqlite_long_from_int64(sqlite_int64 value)
     }
 # endif
 #endif
-    return PyInt_FromLong(value);
+    return PyInt_FromLong(Py_SAFE_DOWNCAST(value, sqlite_int64, long));
 }
 
 sqlite_int64

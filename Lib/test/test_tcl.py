@@ -661,6 +661,43 @@ class TclTest(unittest.TestCase):
                 expected = {'a': (1, 2, 3), 'something': 'foo', 'status': ''}
             self.assertEqual(splitdict(tcl, arg), expected)
 
+    def test_join(self):
+        join = tkinter._join
+        tcl = self.interp.tk
+        def unpack(s):
+            return tcl.call('lindex', s, 0)
+        def check(value):
+            self.assertEqual(unpack(join([value])), value)
+            self.assertEqual(unpack(join([value, 0])), value)
+            self.assertEqual(unpack(unpack(join([[value]]))), value)
+            self.assertEqual(unpack(unpack(join([[value, 0]]))), value)
+            self.assertEqual(unpack(unpack(join([[value], 0]))), value)
+            self.assertEqual(unpack(unpack(join([[value, 0], 0]))), value)
+        check('')
+        check('spam')
+        check('sp am')
+        check('sp\tam')
+        check('sp\nam')
+        check(' \t\n')
+        check('{spam}')
+        check('{sp am}')
+        check('"spam"')
+        check('"sp am"')
+        check('{"spam"}')
+        check('"{spam}"')
+        check('sp\\am')
+        check('"sp\\am"')
+        check('"{}" "{}"')
+        check('"\\')
+        check('"{')
+        check('"}')
+        check('\n\\')
+        check('\n{')
+        check('\n}')
+        check('\\\n')
+        check('{\n')
+        check('}\n')
+
 
 character_size = 4 if sys.maxunicode > 0xFFFF else 2
 

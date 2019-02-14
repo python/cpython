@@ -431,14 +431,15 @@ The :class:`SequenceMatcher` class has this constructor:
 
    .. method:: get_matching_blocks()
 
-      Return list of triples describing matching subsequences. Each triple is of
-      the form ``(i, j, n)``, and means that ``a[i:i+n] == b[j:j+n]``.  The
+      Return list of triples describing non-overlapping matching subsequences.
+      Each triple is of the form ``(i, j, n)``,
+      and means that ``a[i:i+n] == b[j:j+n]``.  The
       triples are monotonically increasing in *i* and *j*.
 
       The last triple is a dummy, and has the value ``(len(a), len(b), 0)``.  It
       is the only triple with ``n == 0``.  If ``(i, j, n)`` and ``(i', j', n')``
       are adjacent triples in the list, and the second is not the last triple in
-      the list, then ``i+n != i'`` or ``j+n != j'``; in other words, adjacent
+      the list, then ``i+n < i'`` or ``j+n < j'``; in other words, adjacent
       triples always describe non-adjacent equal blocks.
 
       .. XXX Explain why a dummy is used!
@@ -757,8 +758,10 @@ It is also contained in the Python source distribution, as
        # we're passing these as arguments to the diff function
        fromdate = time.ctime(os.stat(fromfile).st_mtime)
        todate = time.ctime(os.stat(tofile).st_mtime)
-       fromlines = open(fromfile, 'U').readlines()
-       tolines = open(tofile, 'U').readlines()
+       with open(fromfile, 'U') as f:
+           fromlines = f.readlines()
+       with open(tofile, 'U') as f:
+           tolines = f.readlines()
 
        if options.u:
            diff = difflib.unified_diff(fromlines, tolines, fromfile, tofile,

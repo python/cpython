@@ -83,7 +83,7 @@ Python currently supports seven schemes:
 - *nt*: scheme for NT platforms like Windows.
 - *nt_user*: scheme for NT platforms, when the *user* option is used.
 - *os2*: scheme for OS/2 platforms.
-- *os2_home*: scheme for OS/2 patforms, when the *user* option is used.
+- *os2_home*: scheme for OS/2 platforms, when the *user* option is used.
 
 Each scheme is itself composed of a series of paths and each path has a unique
 identifier.  Python currently uses eight paths:
@@ -188,7 +188,7 @@ Other functions
 
    Windows will return one of:
 
-   - win-amd64 (64bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
+   - win-amd64 (64bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
    - win-ia64 (64bit Windows on Itanium)
    - win32 (all others - specifically, sys.platform is returned)
 

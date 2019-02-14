@@ -697,7 +697,7 @@ class ProcessTestCase(BaseTestCase):
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
             # ignore errors that indicate the command was not found
-            if c.exception.errno not in (errno.ENOENT, errno.EACCES):
+            if c.exception.errno not in (errno.ENOENT, errno.ENOTDIR, errno.EACCES):
                 raise c.exception
 
     @unittest.skipIf(threading is None, "threading required")
@@ -843,8 +843,11 @@ class _SuppressCoreFiles(object):
             kw = {stream: subprocess.PIPE}
             with subprocess.Popen(args, **kw) as process:
                 signal.alarm(1)
-                # communicate() will be interrupted by SIGALRM
-                process.communicate()
+                try:
+                    # communicate() will be interrupted by SIGALRM
+                    process.communicate()
+                finally:
+                    signal.alarm(0)
 
 
 @unittest.skipIf(mswindows, "POSIX specific tests")

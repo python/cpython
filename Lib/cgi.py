@@ -184,11 +184,12 @@ def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
     return urlparse.parse_qs(qs, keep_blank_values, strict_parsing)
 
 
-def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
+def parse_qsl(qs, keep_blank_values=0, strict_parsing=0, max_num_fields=None):
     """Parse a query given as a string argument."""
     warn("cgi.parse_qsl is deprecated, use urlparse.parse_qsl instead",
          PendingDeprecationWarning, 2)
-    return urlparse.parse_qsl(qs, keep_blank_values, strict_parsing)
+    return urlparse.parse_qsl(qs, keep_blank_values, strict_parsing,
+                              max_num_fields)
 
 def parse_multipart(fp, pdict):
     """Parse multipart input.
@@ -393,7 +394,8 @@ class FieldStorage:
     """
 
     def __init__(self, fp=None, headers=None, outerboundary="",
-                 environ=os.environ, keep_blank_values=0, strict_parsing=0):
+                 environ=os.environ, keep_blank_values=0, strict_parsing=0,
+                 max_num_fields=None):
         """Constructor.  Read multipart/* until last part.
 
         Arguments, all optional:
@@ -420,10 +422,14 @@ class FieldStorage:
             If false (the default), errors are silently ignored.
             If true, errors raise a ValueError exception.
 
+        max_num_fields: int. If set, then __init__ throws a ValueError
+            if there are more than n fields read by parse_qsl().
+
         """
         method = 'GET'
         self.keep_blank_values = keep_blank_values
         self.strict_parsing = strict_parsing
+        self.max_num_fields = max_num_fields
         if 'REQUEST_METHOD' in environ:
             method = environ['REQUEST_METHOD'].upper()
         self.qs_on_post = None
@@ -606,10 +612,9 @@ class FieldStorage:
         qs = self.fp.read(self.length)
         if self.qs_on_post:
             qs += '&' + self.qs_on_post
-        self.list = list = []
-        for key, value in urlparse.parse_qsl(qs, self.keep_blank_values,
-                                            self.strict_parsing):
-            list.append(MiniFieldStorage(key, value))
+        query = urlparse.parse_qsl(qs, self.keep_blank_values,
+                                   self.strict_parsing, self.max_num_fields)
+        self.list = [MiniFieldStorage(key, value) for key, value in query]
         self.skip_lines()
 
     FieldStorageClass = None
@@ -621,19 +626,38 @@ class FieldStorage:
             raise ValueError, 'Invalid boundary in multipart form: %r' % (ib,)
         self.list = []
         if self.qs_on_post:
-            for key, value in urlparse.parse_qsl(self.qs_on_post,
-                                self.keep_blank_values, self.strict_parsing):
-                self.list.append(MiniFieldStorage(key, value))
+            query = urlparse.parse_qsl(self.qs_on_post,
+                                       self.keep_blank_values,
+                                       self.strict_parsing,
+                                       self.max_num_fields)
+            self.list.extend(MiniFieldStorage(key, value)
+                             for key, value in query)
             FieldStorageClass = None
+
+        # Propagate max_num_fields into the sub class appropriately
+        max_num_fields = self.max_num_fields
+        if max_num_fields is not None:
+            max_num_fields -= len(self.list)
 
         klass = self.FieldStorageClass or self.__class__
         part = klass(self.fp, {}, ib,
-                     environ, keep_blank_values, strict_parsing)
+                     environ, keep_blank_values, strict_parsing,
+                     max_num_fields)
+
         # Throw first part away
         while not part.done:
             headers = rfc822.Message(self.fp)
             part = klass(self.fp, headers, ib,
-                         environ, keep_blank_values, strict_parsing)
+                         environ, keep_blank_values, strict_parsing,
+                         max_num_fields)
+
+            if max_num_fields is not None:
+                max_num_fields -= 1
+                if part.list:
+                    max_num_fields -= len(part.list)
+                if max_num_fields < 0:
+                    raise ValueError('Max number of fields exceeded')
+
             self.list.append(part)
         self.skip_lines()
 

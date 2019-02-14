@@ -98,7 +98,7 @@ The new-style Py_buffer struct
       suboffset value that it negative indicates that no de-referencing should
       occur (striding in a contiguous memory block).
 
-      If all suboffsets are negative (i.e. no de-referencing is needed, then
+      If all suboffsets are negative (i.e. no de-referencing is needed), then
       this field must be NULL (the default value).
 
       Here is a function that returns a pointer to the element in an N-D array

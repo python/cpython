@@ -1205,10 +1205,8 @@ AsObj(PyObject *value)
     }
 #endif
 
-    if(PyTclObject_Check(value)) {
-        Tcl_Obj *v = ((PyTclObject*)value)->value;
-        Tcl_IncrRefCount(v);
-        return v;
+    if (PyTclObject_Check(value)) {
+        return ((PyTclObject*)value)->value;
     }
 
     {
@@ -2107,7 +2105,7 @@ Tkapp_GetInt(PyObject *self, PyObject *args)
 
     if (PyTuple_Size(args) == 1) {
         PyObject* o = PyTuple_GetItem(args, 0);
-        if (PyInt_Check(o) || PyLong_Check(o)) {
+        if (_PyAnyInt_Check(o)) {
             Py_INCREF(o);
             return o;
         }

@@ -666,6 +666,13 @@ class MmapTests(unittest.TestCase):
         self.assertRaises(ValueError, m.write_byte, 'b')
         self.assertRaises(ValueError, m.write, 'abc')
 
+    def test_concat_repeat_exception(self):
+        m = mmap.mmap(-1, 16)
+        with self.assertRaises(TypeError):
+            m + m
+        with self.assertRaises(TypeError):
+            m * 2
+
 
 class LargeMmapTests(unittest.TestCase):
 

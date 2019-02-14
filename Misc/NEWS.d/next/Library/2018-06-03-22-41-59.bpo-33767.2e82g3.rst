@@ -1,0 +1,3 @@
+The concatenation (``+``) and repetition (``*``) sequence operations now
+raise :exc:`TypeError` instead of :exc:`SystemError` when performed on
+:class:`mmap.mmap` objects.  Patch by Zackery Spytz.

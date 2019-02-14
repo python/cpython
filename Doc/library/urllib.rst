@@ -147,14 +147,15 @@ High-level interface
       :envvar:`no_proxy` environment variable.
 
    .. versionchanged:: 2.7.9
-      The *context* parameter was added. All the neccessary certificate and hostname checks are done by default.
+      The *context* parameter was added.  All the neccessary certificate and hostname
+      checks are done by default.
 
    .. deprecated:: 2.6
       The :func:`urlopen` function has been removed in Python 3 in favor
       of :func:`urllib2.urlopen`.
 
 
-.. function:: urlretrieve(url[, filename[, reporthook[, data]]])
+.. function:: urlretrieve(url[, filename[, reporthook[, data[, context]]]])
 
    Copy a network object denoted by a URL to a local file, if necessary. If the URL
    points to a local file, or a valid cached copy of the object exists, the object
@@ -166,9 +167,9 @@ High-level interface
 
    The second argument, if present, specifies the file location to copy to (if
    absent, the location will be a tempfile with a generated name). The third
-   argument, if present, is a hook function that will be called once on
+   argument, if present, is a callable that will be called once on
    establishment of the network connection and once after each block read
-   thereafter.  The hook will be passed three arguments; a count of blocks
+   thereafter.  The callable will be passed three arguments; a count of blocks
    transferred so far, a block size in bytes, and the total size of the file.  The
    third argument may be ``-1`` on older FTP servers which do not return a file
    size in response to a retrieval request.
@@ -178,6 +179,10 @@ High-level interface
    is ``GET``).  The *data* argument must in standard
    :mimetype:`application/x-www-form-urlencoded` format; see the :func:`urlencode`
    function below.
+
+   The *context* parameter may be set to a :class:`ssl.SSLContext` instance to
+   configure the SSL settings that are used if :func:`urlretrieve` makes a HTTPS
+   connection.
 
    .. versionchanged:: 2.5
       :func:`urlretrieve` will raise :exc:`ContentTooShortError` when it detects that
@@ -195,6 +200,10 @@ High-level interface
       If no *Content-Length* header was supplied, :func:`urlretrieve` can not check
       the size of the data it has downloaded, and just returns it.  In this case you
       just have to assume that the download was successful.
+
+   .. versionchanged:: 2.7.9
+      The *context* parameter was added.  All the neccessary certificate and hostname
+      checks are done by default.
 
 
 .. data:: _urlopener
@@ -348,6 +357,10 @@ URL Opener objects
 
    :class:`URLopener` objects will raise an :exc:`IOError` exception if the server
    returns an error code.
+
+   .. versionchanged:: 2.7.9
+      The *context* parameter was added.  All the neccessary certificate and hostname
+      checks are done by default.
 
    .. method:: open(fullurl[, data])
 

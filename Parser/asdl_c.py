@@ -830,7 +830,7 @@ static int obj2ast_string(PyObject* obj, PyObject** out, PyArena* arena)
 static int obj2ast_int(PyObject* obj, int* out, PyArena* arena)
 {
     int i;
-    if (!PyInt_Check(obj) && !PyLong_Check(obj)) {
+    if (!_PyAnyInt_Check(obj)) {
         PyObject *s = PyObject_Repr(obj);
         if (s == NULL) return 1;
         PyErr_Format(PyExc_ValueError, "invalid integer value: %.400s",

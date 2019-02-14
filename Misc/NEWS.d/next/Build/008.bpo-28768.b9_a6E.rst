@@ -1,1 +1,0 @@
-Fix implicit declaration of function _setmode. Patch by Masayuki Yamamoto

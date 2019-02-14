@@ -246,8 +246,8 @@ module.  Patch by Nickolai Zeldovich.
 .. nonce: E6rcrn
 .. section: Library
 
-Add to webbrowser's browser list: xdg-open, gvfs-open, www-browser, x-www-
-browser, chromium browsers, iceweasel, iceape.
+Add to webbrowser's browser list: xdg-open, gvfs-open, www-browser,
+x-www-browser, chromium browsers, iceweasel, iceape.
 
 ..
 

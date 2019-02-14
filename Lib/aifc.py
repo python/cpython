@@ -308,6 +308,7 @@ class Aifc_read:
         else:
             raise Error, 'not an AIFF or AIFF-C file'
         self._comm_chunk_read = 0
+        self._ssnd_chunk = None
         while 1:
             self._ssnd_seek_needed = 1
             try:

@@ -60,8 +60,8 @@ Raise a TypeError when trying to delete a T_STRING_INPLACE struct member.
 .. nonce: ZEBSAJ
 .. section: Core and Builtins
 
-Issue a PendingDeprecationWarning if object.__format__ is called with a non-
-empty format string. This is an effort to future-proof user code. If a
+Issue a PendingDeprecationWarning if object.__format__ is called with a
+non-empty format string. This is an effort to future-proof user code. If a
 derived class does not currently implement __format__ but later adds its own
 __format__, it would most likely break user code that had supplied a format
 string. This will be changed to a DeprecationWarning in Python 3.3 and it
@@ -201,8 +201,8 @@ the specification of rich comparisons.
 .. nonce: nshtA2
 .. section: Library
 
-The functools module also adds cmp_to_key() as a tool to transition old-
-style comparison functions to new-style key-functions.
+The functools module also adds cmp_to_key() as a tool to transition
+old-style comparison functions to new-style key-functions.
 
 ..
 

@@ -421,9 +421,26 @@ int _PyUnicode_Resize(PyUnicodeObject **unicode, Py_ssize_t length)
         return -1;
     }
     v = *unicode;
-    if (v == NULL || !PyUnicode_Check(v) || Py_REFCNT(v) != 1 || length < 0) {
+    if (v == NULL || !PyUnicode_Check(v) || length < 0) {
         PyErr_BadInternalCall();
         return -1;
+    }
+    if (v->length == 0) {
+        if (length == 0) {
+            return 0;
+        }
+        *unicode = _PyUnicode_New(length);
+        Py_DECREF(v);
+        return (*unicode == NULL) ? -1 : 0;
+    }
+    if (Py_REFCNT(v) != 1) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    if (length == 0) {
+        *unicode = _PyUnicode_New(0);
+        Py_DECREF(v);
+        return (*unicode == NULL) ? -1 : 0;
     }
 
     /* Resizing unicode_empty and single character objects is not
@@ -2950,7 +2967,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                 if (ucnhash_CAPI == NULL)
                     goto ucnhashError;
             }
-            if (*s == '{') {
+            if (s < end && *s == '{') {
                 const char *start = s+1;
                 /* look for the closing brace */
                 while (*s != '}' && s < end)
@@ -4222,7 +4239,7 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
                         p = PyUnicode_AS_UNICODE(v) + oldpos;
                     }
                     value -= 0x10000;
-                    *p++ = 0xD800 | (value >> 10);
+                    *p++ = 0xD800 | (Py_UNICODE)(value >> 10);
                     *p++ = 0xDC00 | (value & 0x3FF);
                     extrachars -= 2;
                 }
@@ -8628,7 +8645,7 @@ PyObject *PyUnicode_Format(PyObject *format,
                 if (PyNumber_Check(v)) {
                     PyObject *iobj=NULL;
 
-                    if (PyInt_Check(v) || (PyLong_Check(v))) {
+                    if (_PyAnyInt_Check(v)) {
                         iobj = v;
                         Py_INCREF(iobj);
                     }

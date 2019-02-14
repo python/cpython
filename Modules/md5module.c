@@ -236,7 +236,7 @@ copy() -- return a copy of the current md5 object");
 static PyTypeObject MD5type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_md5.md5",                   /*tp_name*/
-    sizeof(md5object),            /*tp_size*/
+    sizeof(md5object),            /*tp_basicsize*/
     0,                            /*tp_itemsize*/
     /* methods */
     (destructor)md5_dealloc,  /*tp_dealloc*/

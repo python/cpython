@@ -11,6 +11,10 @@
    Python 3.  The :term:`2to3` tool will automatically adapt imports when
    converting your sources to Python 3.
 
+.. warning::
+
+   mod:`SimpleHTTServer` is not recommended for production. It only implements
+   basic security checks.
 
 The :mod:`SimpleHTTPServer` module defines a single class,
 :class:`SimpleHTTPRequestHandler`, which is interface-compatible with

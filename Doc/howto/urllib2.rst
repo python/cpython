@@ -203,7 +203,7 @@ e.g. ::
 
     >>> req = urllib2.Request('http://www.pretend_server.org')
     >>> try: urllib2.urlopen(req)
-    ... except URLError as e:
+    ... except urllib2.URLError as e:
     ...    print e.reason   #doctest: +SKIP
     ...
     (4, 'getaddrinfo failed')

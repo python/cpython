@@ -221,7 +221,7 @@ incrementalnewlinedecoder_init(nldecoder_object *self,
         self->errors = errors;
     }
 
-    self->translate = translate;
+    self->translate = translate ? 1 : 0;
     self->seennl = 0;
     self->pendingcr = 0;
 
@@ -707,6 +707,8 @@ typedef struct
     PyObject *dict;
 } textio;
 
+static void
+textiowrapper_set_decoded_chars(textio *self, PyObject *chars);
 
 /* A couple of specialized cases in order to bypass the slow incremental
    encoding methods for the most popular encodings. */
@@ -1329,6 +1331,7 @@ textiowrapper_write(textio *self, PyObject *args)
         Py_DECREF(ret);
     }
 
+    textiowrapper_set_decoded_chars(self, NULL);
     Py_CLEAR(self->snapshot);
 
     if (self->decoder) {
@@ -1463,6 +1466,7 @@ textiowrapper_read_chunk(textio *self)
         /* At the snapshot point, len(dec_buffer) bytes before the read, the
          * next input to be decoded is dec_buffer + input_chunk.
          */
+        PyObject *snapshot;
         PyObject *next_input = PyNumber_Add(dec_buffer, input_chunk);
         if (next_input == NULL)
             goto fail;
@@ -1474,8 +1478,13 @@ textiowrapper_read_chunk(textio *self)
             Py_DECREF(next_input);
             goto fail;
         }
+        snapshot = Py_BuildValue("NN", dec_flags, next_input);
+        if (snapshot == NULL) {
+            dec_flags = NULL;
+            goto fail;
+        }
+        Py_XSETREF(self->snapshot, snapshot);
         Py_DECREF(dec_buffer);
-        Py_XSETREF(self->snapshot, Py_BuildValue("NN", dec_flags, next_input));
     }
     Py_DECREF(input_chunk);
 
@@ -1534,6 +1543,7 @@ textiowrapper_read(textio *self, PyObject *args)
         if (final == NULL)
             goto fail;
 
+        textiowrapper_set_decoded_chars(self, NULL);
         Py_CLEAR(self->snapshot);
         return final;
     }
@@ -2009,6 +2019,7 @@ textiowrapper_seek(textio *self, PyObject *args)
     int whence = 0;
     PyObject *res;
     int cmp;
+    PyObject *snapshot;
 
     CHECK_ATTACHED(self);
 
@@ -2145,11 +2156,11 @@ textiowrapper_seek(textio *self, PyObject *args)
             goto fail;
         }
 
-        self->snapshot = Py_BuildValue("iN", cookie.dec_flags, input_chunk);
-        if (self->snapshot == NULL) {
-            Py_DECREF(input_chunk);
+        snapshot = Py_BuildValue("iN", cookie.dec_flags, input_chunk);
+        if (snapshot == NULL) {
             goto fail;
         }
+        Py_XSETREF(self->snapshot, snapshot);
 
         decoded = PyObject_CallMethod(self->decoder, "decode",
                                       "Oi", input_chunk, (int)cookie.need_eof);
@@ -2167,9 +2178,10 @@ textiowrapper_seek(textio *self, PyObject *args)
         self->decoded_chars_used = cookie.chars_to_skip;
     }
     else {
-        self->snapshot = Py_BuildValue("is", cookie.dec_flags, "");
-        if (self->snapshot == NULL)
+        snapshot = Py_BuildValue("is", cookie.dec_flags, "");
+        if (snapshot == NULL)
             goto fail;
+        Py_XSETREF(self->snapshot, snapshot);
     }
 
     /* Finally, reset the encoder (merely useful for proper BOM handling) */
@@ -2581,6 +2593,10 @@ textiowrapper_chunk_size_set(textio *self, PyObject *arg, void *context)
 {
     Py_ssize_t n;
     CHECK_ATTACHED_INT(self);
+    if (arg == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
     n = PyNumber_AsSsize_t(arg, PyExc_TypeError);
     if (n == -1 && PyErr_Occurred())
         return -1;

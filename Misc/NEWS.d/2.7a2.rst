@@ -314,8 +314,8 @@ logging: Fix bug in Unicode encoding fallback.
 .. nonce: oAWtv2
 .. section: Library
 
-Fixed IMAP4_SSL hang when the IMAP server response is missing proper end-of-
-line termination.
+Fixed IMAP4_SSL hang when the IMAP server response is missing proper
+end-of-line termination.
 
 ..
 

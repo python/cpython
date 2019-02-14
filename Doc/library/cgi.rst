@@ -292,12 +292,12 @@ algorithms implemented in this module in other circumstances.
    passed to :func:`urlparse.parse_qs` unchanged.
 
 
-.. function:: parse_qs(qs[, keep_blank_values[, strict_parsing]])
+.. function:: parse_qs(qs[, keep_blank_values[, strict_parsing[, max_num_fields]]])
 
    This function is deprecated in this module. Use :func:`urlparse.parse_qs`
    instead. It is maintained here only for backward compatibility.
 
-.. function:: parse_qsl(qs[, keep_blank_values[, strict_parsing]])
+.. function:: parse_qsl(qs[, keep_blank_values[, strict_parsing[, max_num_fields]]])
 
    This function is deprecated in this module. Use :func:`urlparse.parse_qsl`
    instead. It is maintained here only for backward compatibility.

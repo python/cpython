@@ -130,6 +130,9 @@
 /* Define to 1 if you have the `copysign' function. */
 #undef HAVE_COPYSIGN
 
+/* Define to 1 if you have the <crypt.h> header file. */
+#undef HAVE_CRYPT_H
+
 /* Define to 1 if you have the `ctermid' function. */
 #undef HAVE_CTERMID
 
@@ -435,9 +438,6 @@
 
 /* Define to 1 if you have the 'lchflags' function. */
 #undef HAVE_LCHFLAGS
-
-/* Define to 1 if you have the `lchmod' function. */
-#undef HAVE_LCHMOD
 
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN

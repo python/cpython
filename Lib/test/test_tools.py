@@ -416,12 +416,15 @@ class FixcidTests(unittest.TestCase):
         with open(os.path.join(test_support.TESTFN, "file.py"), "w") as file:
             file.write("xx = 'unaltered'\n")
         script = os.path.join(scriptsdir, "fixcid.py")
-        output = self.run_script(args=(test_support.TESTFN,))
+        # ignore dbg() messages
+        with test_support.captured_stderr() as stderr:
+            output = self.run_script(args=(test_support.TESTFN,))
         self.assertMultiLineEqual(output,
             "{}:\n"
             "1\n"
             '< int xx;\n'
-            '> int yy;\n'.format(c_filename)
+            '> int yy;\n'.format(c_filename),
+            "stderr: %s" % stderr.getvalue()
         )
 
     def run_script(self, input="", args=("-",), substfile="xx yy\n"):

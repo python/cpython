@@ -796,7 +796,7 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
          * NotImplemented.  Only comparisons with core numeric types raise
          * TypeError.
          */
-        if (PyInt_Check(w) || PyLong_Check(w) ||
+        if (_PyAnyInt_Check(w) ||
             PyFloat_Check(w) || PyComplex_Check(w)) {
             PyErr_SetString(PyExc_TypeError,
                             "no ordering relation is defined "
@@ -809,7 +809,7 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
     assert(PyComplex_Check(v));
     TO_COMPLEX(v, i);
 
-    if (PyInt_Check(w) || PyLong_Check(w)) {
+    if (_PyAnyInt_Check(w)) {
         /* Check for 0.0 imaginary part first to avoid the rich
          * comparison when possible.
          */

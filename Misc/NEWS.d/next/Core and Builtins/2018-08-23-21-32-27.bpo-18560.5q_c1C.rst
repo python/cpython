@@ -1,0 +1,1 @@
+Fix potential NULL pointer dereference in sum().

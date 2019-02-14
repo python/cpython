@@ -1050,8 +1050,8 @@ special message when and only when there are failures.
 .. nonce: KAl7aO
 .. section: Build
 
-Prevent possible segfaults and other random failures of python --generate-
-posix-vars in pybuilddir.txt build target.
+Prevent possible segfaults and other random failures of python
+``--generate-posix-vars`` in pybuilddir.txt build target.
 
 ..
 

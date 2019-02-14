@@ -415,7 +415,7 @@ random_jumpahead(RandomObject *self, PyObject *n)
     PyObject *remobj;
     unsigned long *mt, tmp, nonzero;
 
-    if (!PyInt_Check(n) && !PyLong_Check(n)) {
+    if (!_PyAnyInt_Check(n)) {
         PyErr_Format(PyExc_TypeError, "jumpahead requires an "
                      "integer, not '%s'",
                      Py_TYPE(n)->tp_name);

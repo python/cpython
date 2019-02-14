@@ -40,7 +40,7 @@ ENCODER(cp932)
             if (c == 0xf8f0)
                 OUT1(0xa0)
             else
-                OUT1(c - 0xfef1 + 0xfd)
+                OUT1(c - 0xf8f1 + 0xfd)
             NEXT(1, 1)
             continue;
         }

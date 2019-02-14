@@ -3005,21 +3005,29 @@ dictview_repr(dictviewobject *dv)
 {
     PyObject *seq;
     PyObject *seq_str;
-    PyObject *result;
+    PyObject *result = NULL;
+    Py_ssize_t rc;
 
+    rc = Py_ReprEnter((PyObject *)dv);
+    if (rc != 0) {
+        return rc > 0 ? PyString_FromString("...") : NULL;
+    }
     seq = PySequence_List((PyObject *)dv);
-    if (seq == NULL)
-        return NULL;
-
+    if (seq == NULL) {
+        goto Done;
+    }
     seq_str = PyObject_Repr(seq);
+    Py_DECREF(seq);
+
     if (seq_str == NULL) {
-        Py_DECREF(seq);
-        return NULL;
+        goto Done;
     }
     result = PyString_FromFormat("%s(%s)", Py_TYPE(dv)->tp_name,
                                  PyString_AS_STRING(seq_str));
     Py_DECREF(seq_str);
-    Py_DECREF(seq);
+
+Done:
+    Py_ReprLeave((PyObject *)dv);
     return result;
 }
 

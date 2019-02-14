@@ -1059,10 +1059,13 @@ class ListProxy(BaseListProxy):
 
 
 DictProxy = MakeProxyType('DictProxy', (
-    '__contains__', '__delitem__', '__getitem__', '__len__',
+    '__contains__', '__delitem__', '__getitem__', '__iter__', '__len__',
     '__setitem__', 'clear', 'copy', 'get', 'has_key', 'items',
     'keys', 'pop', 'popitem', 'setdefault', 'update', 'values'
     ))
+DictProxy._method_to_typeid_ = {
+    '__iter__': 'Iterator',
+    }
 
 
 ArrayProxy = MakeProxyType('ArrayProxy', (

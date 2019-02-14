@@ -284,7 +284,7 @@ Server Objects
    .. XXX should the default implementations of these be documented, or should
       it be assumed that the user will look at SocketServer.py?
 
-   .. method:: finish_request()
+   .. method:: finish_request(request, client_address)
 
       Actually processes the request by instantiating :attr:`RequestHandlerClass` and
       calling its :meth:`~BaseRequestHandler.handle` method.

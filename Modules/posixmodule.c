@@ -984,6 +984,7 @@ win32_wchdir(LPCWSTR path)
     wchar_t _new_path[MAX_PATH+1], *new_path = _new_path;
     int result;
     wchar_t env[4] = L"=x:";
+    int is_unc_like_path;
 
     if(!SetCurrentDirectoryW(path))
         return FALSE;
@@ -1002,15 +1003,15 @@ win32_wchdir(LPCWSTR path)
             return FALSE;
         }
     }
-    if (wcsncmp(new_path, L"\\\\", 2) == 0 ||
-        wcsncmp(new_path, L"//", 2) == 0)
-        /* UNC path, nothing to do. */
-        return TRUE;
-    env[1] = new_path[0];
-    result = SetEnvironmentVariableW(env, new_path);
+    is_unc_like_path = (wcsncmp(new_path, L"\\\\", 2) == 0 ||
+                        wcsncmp(new_path, L"//", 2) == 0);
+    if (!is_unc_like_path) {
+        env[1] = new_path[0];
+        result = SetEnvironmentVariableW(env, new_path);
+    }
     if (new_path != _new_path)
         free(new_path);
-    return result;
+    return result ? TRUE : FALSE;
 }
 #endif
 
@@ -2385,7 +2386,7 @@ posix_listdir(PyObject *self, PyObject *args)
     if (len > 0) {
         char ch = namebuf[len-1];
         if (ch != SEP && ch != ALTSEP && ch != ':')
-            namebuf[len++] = '/';
+            namebuf[len++] = SEP;
         strcpy(namebuf + len, "*.*");
     }
 
@@ -3936,7 +3937,7 @@ posix_fork(PyObject *self, PyObject *noargs)
 #ifdef HAVE_STROPTS_H
 #include <stropts.h>
 #endif
-#endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX */
+#endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX) */
 
 #if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)
 PyDoc_STRVAR(posix_openpty__doc__,
@@ -6120,7 +6121,7 @@ posix_setgroups(PyObject *self, PyObject *groups)
         elem = PySequence_GetItem(groups, i);
         if (!elem)
             return NULL;
-        if (!PyInt_Check(elem) && !PyLong_Check(elem)) {
+        if (!_PyAnyInt_Check(elem)) {
             PyErr_SetString(PyExc_TypeError,
                             "groups must be integers");
             Py_DECREF(elem);

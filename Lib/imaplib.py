@@ -70,6 +70,7 @@ Commands = {
         'LOGIN':        ('NONAUTH',),
         'LOGOUT':       ('NONAUTH', 'AUTH', 'SELECTED', 'LOGOUT'),
         'LSUB':         ('AUTH', 'SELECTED'),
+        'MOVE':         ('SELECTED',),
         'NAMESPACE':    ('AUTH', 'SELECTED'),
         'NOOP':         ('NONAUTH', 'AUTH', 'SELECTED', 'LOGOUT'),
         'PARTIAL':      ('SELECTED',),                                  # NB: obsolete
@@ -1179,16 +1180,6 @@ else:
             self.sock = socket.create_connection((host, port))
             self.sslobj = ssl.wrap_socket(self.sock, self.keyfile, self.certfile)
             self.file = self.sslobj.makefile('rb')
-
-
-        def read(self, size):
-            """Read 'size' bytes from remote."""
-            return self.file.read(size)
-
-
-        def readline(self):
-            """Read line from remote."""
-            return self.file.readline()
 
 
         def send(self, data):

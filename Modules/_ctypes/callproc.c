@@ -485,11 +485,7 @@ PyCArg_repr(PyCArgObject *self)
     case 'q':
     case 'Q':
         sprintf(buffer,
-#ifdef MS_WIN32
-            "<cparam '%c' (%I64d)>",
-#else
-            "<cparam '%c' (%qd)>",
-#endif
+            "<cparam '%c' (%" PY_FORMAT_LONG_LONG "d)>",
             self->tag, self->value.q);
         break;
 #endif
@@ -747,9 +743,9 @@ ffi_type *_ctypes_get_ffi_type(PyObject *obj)
        It returns small structures in registers
     */
     if (dict->ffi_type_pointer.type == FFI_TYPE_STRUCT) {
-        if (dict->ffi_type_pointer.size <= 4)
+        if (can_return_struct_as_int(dict->ffi_type_pointer.size))
             return &ffi_type_sint32;
-        else if (dict->ffi_type_pointer.size <= 8)
+        else if (can_return_struct_as_sint64 (dict->ffi_type_pointer.size))
             return &ffi_type_sint64;
     }
 #endif

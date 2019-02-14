@@ -14,7 +14,7 @@ import gc
 import os
 import errno
 import pprint
-import tempfile
+import shutil
 import urllib2
 import traceback
 import weakref
@@ -72,8 +72,9 @@ NONEXISTINGCERT = data_file("XXXnonexisting.pem")
 BADKEY = data_file("badkey.pem")
 NOKIACERT = data_file("nokia.pem")
 NULLBYTECERT = data_file("nullbytecert.pem")
+TALOS_INVALID_CRLDP = data_file("talos-2019-0758.pem")
 
-DHFILE = data_file("dh1024.pem")
+DHFILE = data_file("ffdh3072.pem")
 BYTES_DHFILE = DHFILE.encode(sys.getfilesystemencoding())
 
 
@@ -201,9 +202,9 @@ class BasicSocketTests(unittest.TestCase):
                           (('commonName', 'localhost'),))
                         )
         # Note the next three asserts will fail if the keys are regenerated
-        self.assertEqual(p['notAfter'], asn1time('Oct  5 23:01:56 2020 GMT'))
-        self.assertEqual(p['notBefore'], asn1time('Oct  8 23:01:56 2010 GMT'))
-        self.assertEqual(p['serialNumber'], 'D7C7381919AFC24E')
+        self.assertEqual(p['notAfter'], asn1time('Aug 26 14:23:15 2028 GMT'))
+        self.assertEqual(p['notBefore'], asn1time('Aug 29 14:23:15 2018 GMT'))
+        self.assertEqual(p['serialNumber'], '98A7CF88C74A32ED')
         self.assertEqual(p['subject'],
                          ((('countryName', 'XY'),),
                           (('localityName', 'Castle Anthrax'),),
@@ -226,6 +227,27 @@ class BasicSocketTests(unittest.TestCase):
                          ('http://SVRIntl-G3-aia.verisign.com/SVRIntlG3.cer',))
         self.assertEqual(p['crlDistributionPoints'],
                          ('http://SVRIntl-G3-crl.verisign.com/SVRIntlG3.crl',))
+
+    def test_parse_cert_CVE_2019_5010(self):
+        p = ssl._ssl._test_decode_cert(TALOS_INVALID_CRLDP)
+        if support.verbose:
+            sys.stdout.write("\n" + pprint.pformat(p) + "\n")
+        self.assertEqual(
+            p,
+            {
+                'issuer': (
+                    (('countryName', 'UK'),), (('commonName', 'cody-ca'),)),
+                'notAfter': 'Jun 14 18:00:58 2028 GMT',
+                'notBefore': 'Jun 18 18:00:58 2018 GMT',
+                'serialNumber': '02',
+                'subject': ((('countryName', 'UK'),),
+                            (('commonName',
+                              'codenomicon-vm-2.test.lal.cisco.com'),)),
+                'subjectAltName': (
+                    ('DNS', 'codenomicon-vm-2.test.lal.cisco.com'),),
+                'version': 3
+            }
+        )
 
     def test_parse_cert_CVE_2013_4238(self):
         p = ssl._ssl._test_decode_cert(NULLBYTECERT)
@@ -341,6 +363,7 @@ class BasicSocketTests(unittest.TestCase):
             self.assertRaises(socket.error, ss.recvfrom_into, bytearray(b'x'), 1)
             self.assertRaises(socket.error, ss.send, b'x')
             self.assertRaises(socket.error, ss.sendto, b'x', ('0.0.0.0', 0))
+            self.assertRaises(NotImplementedError, ss.dup)
 
     def test_timeout(self):
         # Issue #8524: when creating an SSL socket, the timeout of the
@@ -989,6 +1012,13 @@ class ContextTests(unittest.TestCase):
 
 
     def test_load_dh_params(self):
+        filename = u'dhpäräm.pem'
+        fs_encoding = sys.getfilesystemencoding()
+        try:
+            filename.encode(fs_encoding)
+        except UnicodeEncodeError:
+            self.skipTest("filename %r cannot be encoded to the filesystem encoding %r" % (filename, fs_encoding))
+
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         ctx.load_dh_params(DHFILE)
         if os.name != 'nt':
@@ -1000,6 +1030,10 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(cm.exception.errno, errno.ENOENT)
         with self.assertRaises(ssl.SSLError) as cm:
             ctx.load_dh_params(CERTFILE)
+        with support.temp_dir() as d:
+            fname = os.path.join(d, filename)
+            shutil.copy(DHFILE, fname)
+            ctx.load_dh_params(fname)
 
     @skip_if_broken_ubuntu_ssl
     def test_session_stats(self):
@@ -1774,7 +1808,7 @@ else:
             else:
                 self.context = ssl.SSLContext(ssl_version
                                               if ssl_version is not None
-                                              else ssl.PROTOCOL_TLSv1)
+                                              else ssl.PROTOCOL_TLS)
                 self.context.verify_mode = (certreqs if certreqs is not None
                                             else ssl.CERT_NONE)
                 if cacerts:
@@ -2200,10 +2234,10 @@ else:
             connect to it with a wrong client certificate fails.
             """
             certfile = os.path.join(os.path.dirname(__file__) or os.curdir,
-                                       "wrongcert.pem")
-            server = ThreadedEchoServer(CERTFILE,
+                                       "keycert.pem")
+            server = ThreadedEchoServer(SIGNED_CERTFILE,
                                         certreqs=ssl.CERT_REQUIRED,
-                                        cacerts=CERTFILE, chatty=False,
+                                        cacerts=SIGNING_CA, chatty=False,
                                         connectionchatty=False)
             with server, \
                     closing(socket.socket()) as sock, \
@@ -2634,6 +2668,7 @@ else:
                 self.assertEqual(s.read(-1, buffer), len(data))
                 self.assertEqual(buffer, data)
 
+                self.assertRaises(NotImplementedError, s.dup)
                 s.write(b"over\n")
 
                 self.assertRaises(ValueError, s.recv, -1)

@@ -3,13 +3,14 @@
 # The code for testing gdb was adapted from similar work in Unladen Swallow's
 # Lib/test/test_jit_gdb.py
 
+import locale
 import os
 import re
 import subprocess
 import sys
 import sysconfig
+import textwrap
 import unittest
-import sysconfig
 
 from test import test_support
 from test.test_support import run_unittest, findfile
@@ -56,6 +57,23 @@ if sys.platform.startswith("sunos"):
 # Location of custom hooks file in a repository checkout.
 checkout_hook_path = os.path.join(os.path.dirname(sys.executable),
                                   'python-gdb.py')
+
+
+def cet_protection():
+    cflags = sysconfig.get_config_var('CFLAGS')
+    if not cflags:
+        return False
+    flags = cflags.split()
+    # True if "-mcet -fcf-protection" options are found, but false
+    # if "-fcf-protection=none" or "-fcf-protection=return" is found.
+    return (('-mcet' in flags)
+            and any((flag.startswith('-fcf-protection')
+                     and not flag.endswith(("=none", "=return")))
+                    for flag in flags))
+
+# Control-flow enforcement technology
+CET_PROTECTION = cet_protection()
+
 
 def run_gdb(*args, **env_vars):
     """Runs gdb in batch mode with the additional arguments given by *args.
@@ -170,6 +188,12 @@ class DebuggerTests(unittest.TestCase):
             commands += ['set print entry-values no']
 
         if cmds_after_breakpoint:
+            if CET_PROTECTION:
+                # bpo-32962: When Python is compiled with -mcet
+                # -fcf-protection, function arguments are unusable before
+                # running the first instruction of the function entry point.
+                # The 'next' command makes the required first step.
+                commands += ['next']
             commands += cmds_after_breakpoint
         else:
             commands += ['backtrace']
@@ -214,6 +238,15 @@ class DebuggerTests(unittest.TestCase):
         for line in errlines:
             if not line:
                 continue
+            # bpo34007: Sometimes some versions of the shared libraries that
+            # are part of the traceback are compiled in optimised mode and the
+            # Program Counter (PC) is not present, not allowing gdb to walk the
+            # frames back. When this happens, the Python bindings of gdb raise
+            # an exception, making the test impossible to succeed.
+            if "PC not saved" in line:
+                raise unittest.SkipTest("gdb cannot walk the frame object"
+                                        " because the Program Counter is"
+                                        " not present")
             if not line.startswith(ignore_patterns):
                 unexpected_errlines.append(line)
 
@@ -231,6 +264,11 @@ class DebuggerTests(unittest.TestCase):
         #
         # For a nested structure, the first time we hit the breakpoint will
         # give us the top-level structure
+
+        # NOTE: avoid decoding too much of the traceback as some
+        # undecodable characters may lurk there in optimized mode
+        # (issue #19743).
+        cmds_after_breakpoint = cmds_after_breakpoint or ["backtrace 1"]
         gdb_output = self.get_stack_trace(source, breakpoint='PyObject_Print',
                                           cmds_after_breakpoint=cmds_after_breakpoint,
                                           import_site=import_site)
@@ -385,7 +423,7 @@ except RuntimeError, e:
         # Test division by zero:
         gdb_repr, gdb_output = self.get_gdb_repr('''
 try:
-    a = 1 / 0
+    a = 1 // 0
 except ZeroDivisionError, e:
     print e
 ''')
@@ -863,7 +901,32 @@ print 42
                                           breakpoint='time_gmtime',
                                           cmds_after_breakpoint=['py-bt-full'],
                                           )
-        self.assertIn('#0 <built-in function gmtime', gdb_output)
+        self.assertIn('#1 <built-in function gmtime', gdb_output)
+
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
+    def test_wrapper_call(self):
+        cmd = textwrap.dedent('''
+            class MyList(list):
+                def __init__(self):
+                    super(MyList, self).__init__()   # wrapper_call()
+
+            print("first break point")
+            l = MyList()
+        ''')
+        cmds_after_breakpoint = ['break wrapper_call', 'continue']
+        if CET_PROTECTION:
+            # bpo-32962: same case as in get_stack_trace():
+            # we need an additional 'next' command in order to read
+            # arguments of the innermost function of the call stack.
+            cmds_after_breakpoint.append('next')
+        cmds_after_breakpoint.append('py-bt')
+
+        # Verify with "py-bt":
+        gdb_output = self.get_stack_trace(cmd,
+                                          cmds_after_breakpoint=cmds_after_breakpoint)
+        self.assertRegexpMatches(gdb_output,
+                                 r"<method-wrapper u?'__init__' of MyList object at ")
 
 
 class PyPrintTests(DebuggerTests):

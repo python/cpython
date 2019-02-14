@@ -1,1 +1,0 @@
-Pull build dependencies from GitHub rather than svn.python.org.

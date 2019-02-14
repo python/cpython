@@ -199,6 +199,7 @@ class PosixTester(unittest.TestCase):
     def test_fdopen_directory(self):
         try:
             fd = os.open('.', os.O_RDONLY)
+            self.addCleanup(os.close, fd)
         except OSError as e:
             self.assertEqual(e.errno, errno.EACCES)
             self.skipTest("system cannot open directories")

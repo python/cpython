@@ -37,6 +37,10 @@ Some facts and figures:
   character devices and block devices and is able to acquire and restore file
   information like timestamp, access permissions and owner.
 
+.. note::
+   Handling of multi-stream bzip2 files is not supported.  Modules such as
+   `bz2file <https://github.com/nvawda/bz2file>`_ let you overcome this.
+
 
 .. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, \*\*kwargs)
 

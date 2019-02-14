@@ -442,7 +442,7 @@ longer or disable the extension.
 Calltips
 ^^^^^^^^
 
-A calltip is shown when one types :kbd:`(` after the name of an *acccessible*
+A calltip is shown when one types :kbd:`(` after the name of an *accessible*
 function.  A name expression may include dots and subscripts.  A calltip
 remains until it is clicked, the cursor is moved out of the argument area,
 or :kbd:`)` is typed.  When the cursor is in the argument part of a definition,

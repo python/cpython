@@ -82,9 +82,11 @@ Directory and files operations
 
 .. function:: copy2(src, dst)
 
-   Similar to :func:`shutil.copy`, but metadata is copied as well -- in fact,
-   this is just :func:`shutil.copy` followed by :func:`copystat`.  This is
-   similar to the Unix command :program:`cp -p`.
+   Identical to :func:`~shutil.copy` except that :func:`copy2`
+   also attempts to preserve file metadata.
+
+   :func:`copy2` uses :func:`copystat` to copy the file metadata.
+   Please see :func:`copystat` for more information.
 
 
 .. function:: ignore_patterns(\*patterns)

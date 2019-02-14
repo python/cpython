@@ -1,2 +1,0 @@
-Fix dict.fromkeys(x) overallocates when x is sparce dict. Original patch by
-Rasmus Villemoes.

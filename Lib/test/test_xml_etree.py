@@ -136,6 +136,13 @@ def python_only(test):
         return test(*args)
     return wrapper
 
+def cet_only(test):
+    def wrapper(*args):
+        if ET is pyET:
+            raise unittest.SkipTest('only for the C version')
+        return test(*args)
+    return wrapper
+
 # --------------------------------------------------------------------
 # element tree tests
 
@@ -2228,6 +2235,32 @@ class TreeBuilderTest(unittest.TestCase):
         self.assertEqual(parser.close(),
             ('html', '-//W3C//DTD XHTML 1.0 Transitional//EN',
              'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
+
+    @cet_only  # PyET does not look up the attributes in XMLParser().__init__()
+    def test_builder_lookup_errors(self):
+        class RaisingBuilder(object):
+            def __init__(self, raise_in=None, what=ValueError):
+                self.raise_in = raise_in
+                self.what = what
+
+            def __getattr__(self, name):
+                if name == self.raise_in:
+                    raise self.what(self.raise_in)
+                def handle(*args):
+                    pass
+                return handle
+
+        ET.XMLParser(target=RaisingBuilder())
+        # cET also checks for 'close' and 'doctype', PyET does it only at need
+        for event in ('start', 'data', 'end', 'comment', 'pi'):
+            with self.assertRaises(ValueError):
+                ET.XMLParser(target=RaisingBuilder(event))
+
+        ET.XMLParser(target=RaisingBuilder(what=AttributeError))
+        for event in ('start', 'data', 'end', 'comment', 'pi'):
+            parser = ET.XMLParser(target=RaisingBuilder(event, what=AttributeError))
+            parser.feed(self.sample1)
+            self.assertIsNone(parser.close())
 
 
 class XMLParserTest(unittest.TestCase):

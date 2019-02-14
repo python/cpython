@@ -262,34 +262,56 @@ class PosixPathTest(unittest.TestCase):
 
     def test_expanduser(self):
         self.assertEqual(posixpath.expanduser("foo"), "foo")
-        with test_support.EnvironmentVarGuard() as env:
+
+    def test_expanduser_home_envvar(self):
+        with support.EnvironmentVarGuard() as env:
+            env['HOME'] = '/home/victor'
+            self.assertEqual(posixpath.expanduser("~"), "/home/victor")
+
+            # expanduser() strips trailing slash
+            env['HOME'] = '/home/victor/'
+            self.assertEqual(posixpath.expanduser("~"), "/home/victor")
+
             for home in '/', '', '//', '///':
                 env['HOME'] = home
                 self.assertEqual(posixpath.expanduser("~"), "/")
                 self.assertEqual(posixpath.expanduser("~/"), "/")
                 self.assertEqual(posixpath.expanduser("~/foo"), "/foo")
-        try:
-            import pwd
-        except ImportError:
-            pass
-        else:
-            self.assertIsInstance(posixpath.expanduser("~/"), basestring)
-            # if home directory == root directory, this test makes no sense
-            if posixpath.expanduser("~") != '/':
-                self.assertEqual(
-                    posixpath.expanduser("~") + "/",
-                    posixpath.expanduser("~/")
-                )
-            self.assertIsInstance(posixpath.expanduser("~root/"), basestring)
-            self.assertIsInstance(posixpath.expanduser("~foo/"), basestring)
 
-            with test_support.EnvironmentVarGuard() as env:
-                # expanduser should fall back to using the password database
-                del env['HOME']
-                home = pwd.getpwuid(os.getuid()).pw_dir
-                # $HOME can end with a trailing /, so strip it (see #17809)
-                home = home.rstrip("/") or '/'
-                self.assertEqual(posixpath.expanduser("~"), home)
+    def test_expanduser_pwd(self):
+        pwd = support.import_module('pwd')
+
+        self.assertIsInstance(posixpath.expanduser("~/"), str)
+
+        # if home directory == root directory, this test makes no sense
+        if posixpath.expanduser("~") != '/':
+            self.assertEqual(
+                posixpath.expanduser("~") + "/",
+                posixpath.expanduser("~/")
+            )
+        self.assertIsInstance(posixpath.expanduser("~root/"), str)
+        self.assertIsInstance(posixpath.expanduser("~foo/"), str)
+
+        with support.EnvironmentVarGuard() as env:
+            # expanduser should fall back to using the password database
+            del env['HOME']
+
+            home = pwd.getpwuid(os.getuid()).pw_dir
+            # $HOME can end with a trailing /, so strip it (see #17809)
+            home = home.rstrip("/") or '/'
+            self.assertEqual(posixpath.expanduser("~"), home)
+
+            # bpo-10496: If the HOME environment variable is not set and the
+            # user (current identifier or name in the path) doesn't exist in
+            # the password database (pwd.getuid() or pwd.getpwnam() fail),
+            # expanduser() must return the path unchanged.
+            def raise_keyerror(*args):
+                raise KeyError
+
+            with support.swap_attr(pwd, 'getpwuid', raise_keyerror), \
+                 support.swap_attr(pwd, 'getpwnam', raise_keyerror):
+                for path in ('~', '~/.local', '~vstinner/'):
+                    self.assertEqual(posixpath.expanduser(path), path)
 
     def test_normpath(self):
         self.assertEqual(posixpath.normpath(""), ".")
@@ -474,12 +496,10 @@ class PosixPathTest(unittest.TestCase):
         finally:
             os.getcwd = real_getcwd
 
-    @test_support.requires_unicode
+    @unittest.skipUnless(test_support.FS_NONASCII, 'need test_support.FS_NONASCII')
     def test_expandvars_nonascii_word(self):
         encoding = sys.getfilesystemencoding()
-        # Non-ASCII word characters
-        letters = test_support.u(r'\xe6\u0130\u0141\u03c6\u041a\u05d0\u062a\u0e01')
-        uwnonascii = letters.encode(encoding, 'ignore').decode(encoding)[:3]
+        uwnonascii = test_support.FS_NONASCII
         swnonascii = uwnonascii.encode(encoding)
         if not swnonascii:
             self.skipTest('Needs non-ASCII word characters')

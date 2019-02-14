@@ -14,8 +14,9 @@ Glossary
 
    ``...``
       The default Python prompt of the interactive shell when entering code for
-      an indented code block or within a pair of matching left and right
-      delimiters (parentheses, square brackets or curly braces).
+      an indented code block, when within a pair of matching left and right
+      delimiters (parentheses, square brackets, curly braces or triple quotes),
+      or after specifying a decorator.
 
    2to3
       A tool that tries to convert Python 2.x code to Python 3.x code by
@@ -296,7 +297,7 @@ Glossary
       the :func:`next` function. Each :keyword:`yield` temporarily suspends
       processing, remembering the location execution state (including local
       variables and pending try-statements).  When the generator resumes, it
-      picks-up where it left-off (in contrast to functions which start fresh on
+      picks up where it left off (in contrast to functions which start fresh on
       every invocation).
 
       .. index:: single: generator expression
@@ -457,7 +458,7 @@ Glossary
    lambda
       An anonymous inline function consisting of a single :term:`expression`
       which is evaluated when the function is called.  The syntax to create
-      a lambda function is ``lambda [arguments]: expression``
+      a lambda function is ``lambda [parameters]: expression``
 
    LBYL
       Look before you leap.  This coding style explicitly tests for
@@ -474,7 +475,7 @@ Glossary
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
       to an array in other languages than to a linked list since access to
-      elements are O(1).
+      elements is O(1).
 
    list comprehension
       A compact way to process all or part of the elements in a sequence and
@@ -625,6 +626,21 @@ Glossary
       :ref:`the difference between arguments and parameters
       <faq-argument-vs-parameter>`, and the :ref:`function` section.
 
+   PEP
+      Python Enhancement Proposal. A PEP is a design document
+      providing information to the Python community, or describing a new
+      feature for Python or its processes or environment. PEPs should
+      provide a concise technical specification and a rationale for proposed
+      features.
+
+      PEPs are intended to be the primary mechanisms for proposing major new
+      features, for collecting community input on an issue, and for documenting
+      the design decisions that have gone into Python. The PEP author is
+      responsible for building consensus within the community and documenting
+      dissenting opinions.
+
+      See :pep:`1`.
+
    positional argument
       See :term:`argument`.
 
@@ -694,7 +710,7 @@ Glossary
 
    struct sequence
       A tuple with named elements. Struct sequences expose an interface similiar
-      to :term:`named tuple` in that elements can either be accessed either by
+      to :term:`named tuple` in that elements can be accessed either by
       index or as an attribute. However, they do not have any of the named tuple
       methods like :meth:`~collections.somenamedtuple._make` or
       :meth:`~collections.somenamedtuple._asdict`. Examples of struct sequences

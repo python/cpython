@@ -1,2 +1,0 @@
-Include sys/sysmacros.h for major(), minor(), and makedev(). GNU C libray
-plans to remove the functions from sys/types.h.

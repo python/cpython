@@ -36,7 +36,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
 
 Note that the filename separator (``'/'`` on Unix) is *not* special to this
 module.  See module :mod:`glob` for pathname expansion (:mod:`glob` uses
-:func:`fnmatch` to match pathname segments).  Similarly, filenames starting with
+:func:`.filter` to match pathname segments).  Similarly, filenames starting with
 a period are not special for this module, and are matched by the ``*`` and ``?``
 patterns.
 

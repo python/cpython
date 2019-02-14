@@ -13,8 +13,8 @@ Run Clang 2.7's static analyzer for ``Objects/`` and ``Python/``.
 .. nonce: 6FLjC9
 .. section: Core and Builtins
 
-Fix inconsistency in range function argument processing: any non-float non-
-integer argument is now converted to an integer (if possible) using its
+Fix inconsistency in range function argument processing: any non-float
+non-integer argument is now converted to an integer (if possible) using its
 __int__ method.  Previously, only small arguments were treated this way;
 larger arguments (those whose __int__ was outside the range of a C long)
 would produce a TypeError.

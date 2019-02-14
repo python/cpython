@@ -86,3 +86,4 @@ TAGS
 coverage/
 externals/
 htmlcov/
+gmon.out

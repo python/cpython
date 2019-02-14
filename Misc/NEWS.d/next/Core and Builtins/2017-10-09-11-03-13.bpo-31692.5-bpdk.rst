@@ -1,4 +1,0 @@
-Add a new PYTHONSHOWALLOCCOUNT environment variable. When Python is compiled
-with COUNT_ALLOCS, PYTHONSHOWALLOCCOUNT now has to be set to dump allocation
-counts into stderr on shutdown. Moreover, allocations statistics are now dumped
-into stderr rather than stdout.

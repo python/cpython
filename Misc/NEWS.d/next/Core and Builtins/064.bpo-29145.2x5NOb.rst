@@ -1,2 +1,0 @@
-Fix overflow checks in string, bytearray and unicode. Patch by jan matejek
-and Xiang Zhang.

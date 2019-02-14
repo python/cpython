@@ -1,1 +1,0 @@
-Fix -Wint-in-bool-context warnings in PyMem_MALLOC and PyMem_REALLOC macros

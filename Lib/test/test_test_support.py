@@ -6,8 +6,10 @@ import os
 import unittest
 import socket
 import tempfile
+import textwrap
 import errno
 from test import support
+from test.support import script_helper
 
 TESTFN = support.TESTFN
 
@@ -176,6 +178,34 @@ class TestSupport(unittest.TestCase):
         expected = ['tests may fail, unable to create temp dir: ' + path]
         self.assertEqual(warnings, expected)
 
+    @unittest.skipUnless(hasattr(os, "fork"), "test requires os.fork")
+    def test_temp_dir__forked_child(self):
+        """Test that a forked child process does not remove the directory."""
+        # See bpo-30028 for details.
+        # Run the test as an external script, because it uses fork.
+        script_helper.assert_python_ok("-c", textwrap.dedent("""
+            import os
+            from test import support
+            with support.temp_cwd() as temp_path:
+                pid = os.fork()
+                if pid != 0:
+                    # parent process (child has pid == 0)
+
+                    # wait for the child to terminate
+                    (pid, status) = os.waitpid(pid, 0)
+                    if status != 0:
+                        raise AssertionError("Child process failed with exit "
+                                             "status indication "
+                                             "0x{:x}.".format(status))
+
+                    # Make sure that temp_path is still present. When the child
+                    # process leaves the 'temp_cwd'-context, the __exit__()-
+                    # method of the context must not remove the temporary
+                    # directory.
+                    if not os.path.isdir(temp_path):
+                        raise AssertionError("Child removed temp_path.")
+        """))
+
     # Tests for change_cwd()
 
     def test_change_cwd(self):
@@ -237,7 +267,7 @@ class TestSupport(unittest.TestCase):
         with support.temp_cwd(name=TESTFN):
             self.assertEqual(os.path.basename(os.getcwd()), TESTFN)
         self.assertFalse(os.path.exists(TESTFN))
-        self.assertTrue(os.path.basename(os.getcwd()), here)
+        self.assertEqual(os.getcwd(), here)
 
 
     def test_temp_cwd__name_none(self):
@@ -329,6 +359,75 @@ class TestSupport(unittest.TestCase):
         with support.swap_item(D, "y", 5):
             del D["y"]
         self.assertNotIn("y", D)
+
+    def test_match_test(self):
+        class Test:
+            def __init__(self, test_id):
+                self.test_id = test_id
+
+            def id(self):
+                return self.test_id
+
+        test_access = Test('test.test_os.FileTests.test_access')
+        test_chdir = Test('test.test_os.Win32ErrorTests.test_chdir')
+
+        with support.swap_attr(support, '_match_test_func', None):
+            # match all
+            support.set_match_tests([])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # match all using None
+            support.set_match_tests(None)
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # match the full test identifier
+            support.set_match_tests([test_access.id()])
+            self.assertTrue(support.match_test(test_access))
+            self.assertFalse(support.match_test(test_chdir))
+
+            # match the module name
+            support.set_match_tests(['test_os'])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # Test '*' pattern
+            support.set_match_tests(['test_*'])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # Test case sensitivity
+            support.set_match_tests(['filetests'])
+            self.assertFalse(support.match_test(test_access))
+            support.set_match_tests(['FileTests'])
+            self.assertTrue(support.match_test(test_access))
+
+            # Test pattern containing '.' and a '*' metacharacter
+            support.set_match_tests(['*test_os.*.test_*'])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # Multiple patterns
+            support.set_match_tests([test_access.id(), test_chdir.id()])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            support.set_match_tests(['test_access', 'DONTMATCH'])
+            self.assertTrue(support.match_test(test_access))
+            self.assertFalse(support.match_test(test_chdir))
+
+    def test_fd_count(self):
+        # We cannot test the absolute value of fd_count(): on old Linux
+        # kernel or glibc versions, os.urandom() keeps a FD open on
+        # /dev/urandom device and Python has 4 FD opens instead of 3.
+        start = support.fd_count()
+        fd = os.open(__file__, os.O_RDONLY)
+        try:
+            more = support.fd_count()
+        finally:
+            os.close(fd)
+        self.assertEqual(more - start, 1)
 
     # XXX -follows a list of untested API
     # make_legacy_pyc

@@ -15,6 +15,8 @@ class Dummy_name_dialog(object):
     name = Var()
     result = None
     destroyed = False
+    def grab_release(self):
+        pass
     def destroy(self):
         self.destroyed = True
 

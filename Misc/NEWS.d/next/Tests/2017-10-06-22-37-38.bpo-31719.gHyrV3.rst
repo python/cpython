@@ -1,3 +1,0 @@
-Fix test_regrtest.test_crashed() on s390x. Add a new _testcapi._read_null()
-function to crash Python in a reliable way on s390x. On s390x,
-ctypes.string_at(0) returns an empty string rather than crashing.

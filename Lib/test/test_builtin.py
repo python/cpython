@@ -1593,18 +1593,28 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, x.translate, "1", 1)
         self.assertRaises(TypeError, x.translate, "1"*256, 1)
 
+
+def create_exec_script(filename):
+    with open(filename, 'w') as f:
+        f.write('z = z+1\n')
+        f.write('z = z*2\n')
+
+
 class TestExecFile(unittest.TestCase):
     # Done outside of the method test_z to get the correct scope
     z = 0
-    f = open(TESTFN, 'w')
-    f.write('z = z+1\n')
-    f.write('z = z*2\n')
-    f.close()
-    with check_py3k_warnings(("execfile.. not supported in 3.x",
-                              DeprecationWarning)):
-        execfile(TESTFN)
+    try:
+        create_exec_script(TESTFN)
+        with check_py3k_warnings(("execfile.. not supported in 3.x",
+                                  DeprecationWarning)):
+            execfile(TESTFN)
+    finally:
+        unlink(TESTFN)
 
     def test_execfile(self):
+        self.addCleanup(unlink, TESTFN)
+        create_exec_script(TESTFN)
+
         globals = {'a': 1, 'b': 2}
         locals = {'b': 200, 'c': 300}
 

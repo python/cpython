@@ -689,11 +689,19 @@ PyObject *
 PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 {
 #ifdef DYNAMIC_EXECUTION_PROFILE
-  #undef USE_COMPUTED_GOTOS
+    #undef USE_COMPUTED_GOTOS
 #endif
 #ifdef HAVE_COMPUTED_GOTOS
     #ifndef USE_COMPUTED_GOTOS
-    #define USE_COMPUTED_GOTOS 1
+        #if defined(__clang__) && (__clang_major__ < 5)
+            /* Computed gotos caused significant performance regression
+             * with clang < 5.0.
+             * https://bugs.python.org/issue32616
+             */
+            #define USE_COMPUTED_GOTOS 0
+        #else
+            #define USE_COMPUTED_GOTOS 1
+        #endif
     #endif
 #else
     #if defined(USE_COMPUTED_GOTOS) && USE_COMPUTED_GOTOS
@@ -816,7 +824,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     PyObject *consts;
 #if defined(Py_DEBUG) || defined(LLTRACE)
     /* Make it easier to find out where we are with a debugger */
+#ifdef __GNUC__
+    char *filename __attribute__((unused));
+#else
     char *filename;
+#endif
 #endif
 
 /* Tuple access macros */
@@ -1280,7 +1292,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             FAST_DISPATCH();
         }
 
-       
+
         TARGET_NOARG(DUP_TOP)
         {
             v = TOP();
@@ -1827,7 +1839,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         }
 
 
-     
+
         TARGET_WITH_IMPL_NOARG(SLICE, _slice)
         TARGET_WITH_IMPL_NOARG(SLICE_1, _slice)
         TARGET_WITH_IMPL_NOARG(SLICE_2, _slice)
@@ -1852,7 +1864,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             break;
         }
 
-     
+
         TARGET_WITH_IMPL_NOARG(STORE_SLICE, _store_slice)
         TARGET_WITH_IMPL_NOARG(STORE_SLICE_1, _store_slice)
         TARGET_WITH_IMPL_NOARG(STORE_SLICE_2, _store_slice)
@@ -2590,6 +2602,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
         TARGET(IMPORT_NAME)
         {
+            long res;
             w = GETITEM(names, oparg);
             x = PyDict_GetItemString(f->f_builtins, "__import__");
             if (x == NULL) {
@@ -2600,7 +2613,12 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             Py_INCREF(x);
             v = POP();
             u = TOP();
-            if (PyInt_AsLong(u) != -1 || PyErr_Occurred())
+            res = PyInt_AsLong(u);
+            if (res != -1 || PyErr_Occurred()) {
+                if (res == -1) {
+                    assert(PyErr_Occurred());
+                    PyErr_Clear();
+                }
                 w = PyTuple_Pack(5,
                             w,
                             f->f_globals,
@@ -2608,6 +2626,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                                   Py_None : f->f_locals,
                             v,
                             u);
+            }
             else
                 w = PyTuple_Pack(4,
                             w,
@@ -4735,8 +4754,7 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
 
 
 #undef ISINDEX
-#define ISINDEX(x) ((x) == NULL || \
-                    PyInt_Check(x) || PyLong_Check(x) || PyIndex_Check(x))
+#define ISINDEX(x) ((x) == NULL || _PyAnyInt_Check(x) || PyIndex_Check(x))
 
 static PyObject *
 apply_slice(PyObject *u, PyObject *v, PyObject *w) /* return u[v:w] */
@@ -5229,7 +5247,7 @@ getarray(long a[256])
             Py_DECREF(l);
             return NULL;
         }
-        PyList_SetItem(l, i, x);
+        PyList_SET_ITEM(l, i, x);
     }
     for (i = 0; i < 256; i++)
         a[i] = 0;
@@ -5251,7 +5269,7 @@ _Py_GetDXProfile(PyObject *self, PyObject *args)
             Py_DECREF(l);
             return NULL;
         }
-        PyList_SetItem(l, i, x);
+        PyList_SET_ITEM(l, i, x);
     }
     return l;
 #endif

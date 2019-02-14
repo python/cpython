@@ -35,6 +35,10 @@ Here is a summary of the features offered by the bz2 module:
 
 * Thread safety uses individual locking mechanism.
 
+.. note::
+   Handling of multi-stream bzip2 files is not supported.  Modules such as
+   `bz2file <https://github.com/nvawda/bz2file>`_ let you overcome this.
+
 
 (De)compression of files
 ------------------------
@@ -74,7 +78,7 @@ Handling of compressed files is offered by the :class:`BZ2File` class.
       input file, only the first stream will be accessible. If you require
       support for multi-stream files, consider using the third-party
       :mod:`bz2file` module (available from
-      `PyPI <https://pypi.python.org/pypi/bz2file>`_). This module provides a
+      `PyPI <https://pypi.org/project/bz2file>`_). This module provides a
       backport of Python 3.3's :class:`BZ2File` class, which does support
       multi-stream files.
 

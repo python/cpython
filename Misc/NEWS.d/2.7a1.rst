@@ -92,8 +92,8 @@ within Python are now correctly rounded.  Places these conversions occur
 include: str for floats and complex numbers; the float and complex
 constructors; old-style and new-style numeric formatting; serialization and
 deserialization of floats and complex numbers using marshal, pickle and
-json; parsing of float and imaginary literals in Python code; Decimal-to-
-float conversion.
+json; parsing of float and imaginary literals in Python code;
+Decimal-to-float conversion.
 
 The conversions use a Python-adapted version of David Gay's well-known
 dtoa.c, providing correctly-rounded strtod and dtoa C functions.  This code
@@ -5647,8 +5647,8 @@ trailing 0 in the version number.
 .. nonce: c2vdqn
 .. section: Tests
 
-Moved tests involving loading tk from Lib/test/test_tcl to Lib/lib-
-tk/test/test_tkinter/test_loadtk. With this, these tests demonstrate the
+Moved tests involving loading tk from Lib/test/test_tcl to
+Lib/lib-tk/test/test_tkinter/test_loadtk. With this, these tests demonstrate the
 same behaviour as test_ttkguionly (and now also test_tk) which is to skip
 the tests if DISPLAY is defined but can't be used.
 

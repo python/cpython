@@ -1636,6 +1636,8 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
                                    "<> not supported in 3.x; use !=",
                                    tok->filename, tok->lineno,
                                    NULL, NULL)) {
+                tok->done = E_ERROR;
+                tok->cur = tok->inp;
                 return ERRORTOKEN;
             }
         }
@@ -1679,6 +1681,11 @@ int
 PyTokenizer_Get(struct tok_state *tok, char **p_start, char **p_end)
 {
     int result = tok_get(tok, p_start, p_end);
+    if (tok->fp && ferror(tok->fp)) {
+        clearerr(tok->fp);
+        result = ERRORTOKEN;
+        tok->done = E_IO;
+    }
     if (tok->decoding_erred) {
         result = ERRORTOKEN;
         tok->done = E_DECODE;

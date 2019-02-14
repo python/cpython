@@ -229,6 +229,9 @@ class BaseServer:
                 # shutdown request and wastes cpu at all other times.
                 r, w, e = _eintr_retry(select.select, [self], [], [],
                                        poll_interval)
+                # bpo-35017: shutdown() called during select(), exit immediately.
+                if self.__shutdown_request:
+                    break
                 if self in r:
                     self._handle_request_noblock()
         finally:

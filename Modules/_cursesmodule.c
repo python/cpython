@@ -194,7 +194,7 @@ PyCursesCheckERR(int code, char *fname)
 static int
 PyCurses_ConvertToChtype(PyObject *obj, chtype *ch)
 {
-    if (PyInt_Check(obj) || PyLong_Check(obj)) {
+    if (_PyAnyInt_Check(obj)) {
         *ch = (chtype) PyInt_AsLong(obj);
         if (*ch == (chtype) -1 && PyErr_Occurred())
             return 0;
@@ -1049,7 +1049,7 @@ PyCursesWindow_InsCh(PyCursesWindowObject *self, PyObject *args)
         use_xy = TRUE;
         break;
     default:
-        PyErr_SetString(PyExc_TypeError, "insch requires 1 or 4 arguments");
+        PyErr_SetString(PyExc_TypeError, "insch requires 1 to 4 arguments");
         return NULL;
     }
 
@@ -1082,7 +1082,7 @@ PyCursesWindow_InCh(PyCursesWindowObject *self, PyObject *args)
         rtn = mvwinch(self->win,y,x);
         break;
     default:
-        PyErr_SetString(PyExc_TypeError, "inch requires 0 or 2 arguments");
+        PyErr_SetString(PyExc_TypeError, "inch requires 0 to 2 arguments");
         return NULL;
     }
     return PyInt_FromLong((long) rtn);
@@ -2603,7 +2603,7 @@ PyCurses_UnCtrl(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args,"O;ch or int",&temp)) return NULL;
 
-    if (PyInt_Check(temp) || PyLong_Check(temp)) {
+    if (_PyAnyInt_Check(temp)) {
         ch = (chtype) PyInt_AsLong(temp);
         if (ch == (chtype) -1 && PyErr_Occurred())
             return NULL;
@@ -2628,7 +2628,7 @@ PyCurses_UngetCh(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args,"O;ch or int",&temp)) return NULL;
 
-    if (PyInt_Check(temp) || PyLong_Check(temp)) {
+    if (_PyAnyInt_Check(temp)) {
         ch = (int) PyInt_AsLong(temp);
         if (ch == -1 && PyErr_Occurred())
             return NULL;

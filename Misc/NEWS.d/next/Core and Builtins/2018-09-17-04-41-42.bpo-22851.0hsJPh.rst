@@ -1,0 +1,2 @@
+Fix a segfault when accessing ``generator.gi_frame.f_restricted`` when the
+generator is exhausted.  Patch by Zackery Spytz.

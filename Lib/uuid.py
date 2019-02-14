@@ -419,7 +419,7 @@ def _ipconfig_getnode():
         with pipe:
             for line in pipe:
                 value = line.split(':')[-1].strip().lower()
-                if re.match('([0-9a-f][0-9a-f]-){5}[0-9a-f][0-9a-f]', value):
+                if re.match('(?:[0-9a-f][0-9a-f]-){5}[0-9a-f][0-9a-f]$', value):
                     return int(value.replace('-', ''), 16)
 
 def _netbios_getnode():
@@ -522,6 +522,11 @@ def _random_getnode():
 
 _node = None
 
+_NODE_GETTERS_WIN32 = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
+
+_NODE_GETTERS_UNIX = [_unixdll_getnode, _ifconfig_getnode, _arp_getnode,
+                      _lanscan_getnode, _netstat_getnode]
+
 def getnode():
     """Get the hardware address as a 48-bit positive integer.
 
@@ -537,18 +542,19 @@ def getnode():
 
     import sys
     if sys.platform == 'win32':
-        getters = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
+        getters = _NODE_GETTERS_WIN32
     else:
-        getters = [_unixdll_getnode, _ifconfig_getnode, _arp_getnode,
-                   _lanscan_getnode, _netstat_getnode]
+        getters = _NODE_GETTERS_UNIX
 
     for getter in getters + [_random_getnode]:
         try:
             _node = getter()
         except:
             continue
-        if _node is not None:
+        if (_node is not None) and (0 <= _node < (1 << 48)):
             return _node
+    assert False, '_random_getnode() returned invalid value: {}'.format(_node)
+
 
 _last_timestamp = None
 

@@ -12,7 +12,7 @@ from functools import wraps
 from UserList import UserList
 
 from test.test_support import TESTFN, check_warnings, run_unittest, make_bad_fd
-from test.test_support import py3k_bytes as bytes, cpython_only
+from test.test_support import py3k_bytes as bytes, cpython_only, check_py3k_warnings
 from test.script_helper import run_python
 
 from _io import FileIO as _FileIO
@@ -100,6 +100,10 @@ class AutoFileTests(unittest.TestCase):
         self.f.seek(0)
         self.assertEqual(self.f.readline(None), b"hi\n")
         self.assertEqual(self.f.readlines(None), [b"bye\n", b"abc"])
+
+    def testWriteUnicode(self):
+        with check_py3k_warnings():
+            self.f.write(u'')
 
     def testRepr(self):
         self.assertEqual(repr(self.f), "<_io.FileIO name=%r mode='%s'>"
@@ -210,7 +214,7 @@ class AutoFileTests(unittest.TestCase):
 
     @ClosedFDRaises
     def testErrnoOnClosedWrite(self, f):
-        f.write('a')
+        f.write(b'a')
 
     @ClosedFDRaises
     def testErrnoOnClosedSeek(self, f):

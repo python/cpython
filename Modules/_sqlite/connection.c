@@ -675,7 +675,7 @@ void _pysqlite_func_callback(sqlite3_context* context, int argc, sqlite3_value**
         Py_DECREF(py_retval);
     }
     if (!ok) {
-        if (_enable_callback_tracebacks) {
+        if (_pysqlite_enable_callback_tracebacks) {
             PyErr_Print();
         } else {
             PyErr_Clear();
@@ -711,7 +711,7 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
 
         if (PyErr_Occurred()) {
             *aggregate_instance = 0;
-            if (_enable_callback_tracebacks) {
+            if (_pysqlite_enable_callback_tracebacks) {
                 PyErr_Print();
             } else {
                 PyErr_Clear();
@@ -735,7 +735,7 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
     Py_DECREF(args);
 
     if (!function_result) {
-        if (_enable_callback_tracebacks) {
+        if (_pysqlite_enable_callback_tracebacks) {
             PyErr_Print();
         } else {
             PyErr_Clear();
@@ -781,7 +781,7 @@ void _pysqlite_final_callback(sqlite3_context* context)
         Py_DECREF(function_result);
     }
     if (!ok) {
-        if (_enable_callback_tracebacks) {
+        if (_pysqlite_enable_callback_tracebacks) {
             PyErr_Print();
         } else {
             PyErr_Clear();
@@ -877,19 +877,17 @@ PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObjec
         return NULL;
     }
 
+    if (PyDict_SetItem(self->function_pinboard, func, Py_None) == -1) {
+        return NULL;
+    }
     rc = sqlite3_create_function(self->db, name, narg, SQLITE_UTF8, (void*)func, _pysqlite_func_callback, NULL, NULL);
 
     if (rc != SQLITE_OK) {
         /* Workaround for SQLite bug: no error code or string is available here */
         PyErr_SetString(pysqlite_OperationalError, "Error creating function");
         return NULL;
-    } else {
-        if (PyDict_SetItem(self->function_pinboard, func, Py_None) == -1)
-            return NULL;
-
-        Py_INCREF(Py_None);
-        return Py_None;
     }
+    Py_RETURN_NONE;
 }
 
 PyObject* pysqlite_connection_create_aggregate(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
@@ -910,18 +908,16 @@ PyObject* pysqlite_connection_create_aggregate(pysqlite_Connection* self, PyObje
         return NULL;
     }
 
+    if (PyDict_SetItem(self->function_pinboard, aggregate_class, Py_None) == -1) {
+        return NULL;
+    }
     rc = sqlite3_create_function(self->db, name, n_arg, SQLITE_UTF8, (void*)aggregate_class, 0, &_pysqlite_step_callback, &_pysqlite_final_callback);
     if (rc != SQLITE_OK) {
         /* Workaround for SQLite bug: no error code or string is available here */
         PyErr_SetString(pysqlite_OperationalError, "Error creating aggregate");
         return NULL;
-    } else {
-        if (PyDict_SetItem(self->function_pinboard, aggregate_class, Py_None) == -1)
-            return NULL;
-
-        Py_INCREF(Py_None);
-        return Py_None;
     }
+    Py_RETURN_NONE;
 }
 
 static int _authorizer_callback(void* user_arg, int action, const char* arg1, const char* arg2 , const char* dbname, const char* access_attempt_source)
@@ -936,7 +932,7 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
     ret = PyObject_CallFunction((PyObject*)user_arg, "issss", action, arg1, arg2, dbname, access_attempt_source);
 
     if (!ret) {
-        if (_enable_callback_tracebacks) {
+        if (_pysqlite_enable_callback_tracebacks) {
             PyErr_Print();
         } else {
             PyErr_Clear();
@@ -972,7 +968,7 @@ static int _progress_handler(void* user_arg)
     ret = PyObject_CallFunction((PyObject*)user_arg, "");
 
     if (!ret) {
-        if (_enable_callback_tracebacks) {
+        if (_pysqlite_enable_callback_tracebacks) {
             PyErr_Print();
         } else {
             PyErr_Clear();
@@ -1007,18 +1003,15 @@ static PyObject* pysqlite_connection_set_authorizer(pysqlite_Connection* self, P
         return NULL;
     }
 
+    if (PyDict_SetItem(self->function_pinboard, authorizer_cb, Py_None) == -1) {
+        return NULL;
+    }
     rc = sqlite3_set_authorizer(self->db, _authorizer_callback, (void*)authorizer_cb);
-
     if (rc != SQLITE_OK) {
         PyErr_SetString(pysqlite_OperationalError, "Error setting authorizer callback");
         return NULL;
-    } else {
-        if (PyDict_SetItem(self->function_pinboard, authorizer_cb, Py_None) == -1)
-            return NULL;
-
-        Py_INCREF(Py_None);
-        return Py_None;
     }
+    Py_RETURN_NONE;
 }
 
 static PyObject* pysqlite_connection_set_progress_handler(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
@@ -1041,9 +1034,9 @@ static PyObject* pysqlite_connection_set_progress_handler(pysqlite_Connection* s
         /* None clears the progress handler previously set */
         sqlite3_progress_handler(self->db, 0, 0, (void*)0);
     } else {
-        sqlite3_progress_handler(self->db, n, _progress_handler, progress_handler);
         if (PyDict_SetItem(self->function_pinboard, progress_handler, Py_None) == -1)
             return NULL;
+        sqlite3_progress_handler(self->db, n, _progress_handler, progress_handler);
     }
 
     Py_INCREF(Py_None);
@@ -1106,8 +1099,8 @@ int pysqlite_check_thread(pysqlite_Connection* self)
     if (self->check_same_thread) {
         if (PyThread_get_thread_ident() != self->thread_ident) {
             PyErr_Format(pysqlite_ProgrammingError,
-                        "SQLite objects created in a thread can only be used in that same thread."
-                        "The object was created in thread id %ld and this is thread id %ld",
+                        "SQLite objects created in a thread can only be used in that same thread. "
+                        "The object was created in thread id %ld and this is thread id %ld.",
                         self->thread_ident, PyThread_get_thread_ident());
             return 0;
         }
@@ -1138,6 +1131,10 @@ static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, Py
     PyObject* begin_statement;
     char* begin_statement_str;
 
+    if (isolation_level == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
     Py_XDECREF(self->isolation_level);
 
     if (self->begin_statement) {

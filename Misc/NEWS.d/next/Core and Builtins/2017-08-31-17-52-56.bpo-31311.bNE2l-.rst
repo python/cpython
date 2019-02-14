@@ -1,2 +1,0 @@
-Fix a crash in the ``__setstate__()`` method of `ctypes._CData`, in case of
-a bad ``__dict__``. Patch by Oren Milman.

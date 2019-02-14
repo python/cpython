@@ -23,6 +23,7 @@ PyAPI_FUNC(void) PySys_WriteStderr(const char *format, ...)
 #define delbitset _Py_delbitset
 #define dumptree _Py_dumptree
 #define findlabel _Py_findlabel
+#define freegrammar _Py_freegrammar
 #define mergebitset _Py_mergebitset
 #define meta_grammar _Py_meta_grammar
 #define newbitset _Py_newbitset

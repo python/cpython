@@ -1,0 +1,3 @@
+Rename Lib/test/bisect.py to Lib/test/bisect_cmd.py. The old name was in
+conflict with Lib/bisect.py, causing test failures, depending how tests
+were run.

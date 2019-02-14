@@ -41,9 +41,11 @@ On FreeBSD and OpenBSD
 
 * FreeBSD users, to add the package use::
 
-     pkg_add -r python
+     pkg install python3
 
-* OpenBSD users use::
+* OpenBSD users, to add the package use::
+
+     pkg_add -r python
 
      pkg_add ftp://ftp.openbsd.org/pub/OpenBSD/4.2/packages/<insert your architecture here>/python-<version>.tgz
 
@@ -140,7 +142,7 @@ Editors and IDEs
 ================
 
 There are a number of IDEs that support Python programming language.
-Many editors and IDEs provide syntax highlighting, debugging tools, and PEP-8 checks.
+Many editors and IDEs provide syntax highlighting, debugging tools, and :pep:`8` checks.
 
 Please go to `Python Editors <https://wiki.python.org/moin/PythonEditors>`_ and
 `Integrated Development Environments <https://wiki.python.org/moin/IntegratedDevelopmentEnvironments>`_

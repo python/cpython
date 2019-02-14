@@ -285,7 +285,7 @@ There are also many useful built-in functions people seem not to be aware of
 for some reason: :func:`min` and :func:`max` can find the minimum/maximum of
 any sequence with comparable semantics, for example, yet many people write
 their own :func:`max`/:func:`min`. Another highly useful function is
-:func:`reduce` which can be used to repeatly apply a binary operation to a
+:func:`reduce` which can be used to repeatedly apply a binary operation to a
 sequence, reducing it to a single value.  For example, compute a factorial
 with a series of multiply operations::
 

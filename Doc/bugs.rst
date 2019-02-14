@@ -14,7 +14,7 @@ Documentation bugs
 
 If you find a bug in this documentation or would like to propose an improvement,
 please submit a bug report on the :ref:`tracker <using-the-tracker>`.  If you
-have a suggestion how to fix it, include that as well.
+have a suggestion on how to fix it, include that as well.
 
 If you're short on time, you can also email documentation bug reports to
 docs@python.org (behavioral bugs can be sent to python-list@python.org).
@@ -84,5 +84,5 @@ the `core-mentorship mailing list`_ is a friendly place to get answers to
 any and all questions pertaining to the process of fixing issues in Python.
 
 .. _Documentation bugs: https://bugs.python.org/issue?@filter=status&@filter=components&components=4&status=1&@columns=id,activity,title,status&@sort=-activity
-.. _Python Developer's Guide: https://docs.python.org/devguide/
-.. _core-mentorship mailing list: https://mail.python.org/mailman/listinfo/core-mentorship/
+.. _Python Developer's Guide: https://devguide.python.org/
+.. _core-mentorship mailing list: https://mail.python.org/mailman3/lists/core-mentorship.python.org/

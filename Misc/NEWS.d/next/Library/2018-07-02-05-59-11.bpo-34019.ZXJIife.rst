@@ -1,0 +1,2 @@
+webbrowser: Correct the arguments passed to Opera Browser when opening a new URL
+using the ``webbrowser`` module. Patch by Bumsik Kim.

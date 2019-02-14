@@ -1780,7 +1780,7 @@ skipitem(const char **p_format, va_list *p_va, int flags)
                 else
                     (void) va_arg(*p_va, int *);
                 format++;
-            } else if ((c == 's' || c == 'z') && *format == '*') {
+            } else if ((c == 's' || c == 'z' || c == 'w') && *format == '*') {
                 format++;
             }
             break;

@@ -98,7 +98,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         try:
             names = tar.getnames()
             names.sort()
-            return tuple(names)
+            return names
         finally:
             tar.close()
 

@@ -261,25 +261,6 @@ def containsAny(str, set):
     return 1 in [c in str for c in set]
 
 
-def _visit_pyfiles(list, dirname, names):
-    """Helper for getFilesForName()."""
-    # get extension for python source files
-    if not globals().has_key('_py_ext'):
-        global _py_ext
-        _py_ext = [triple[0] for triple in imp.get_suffixes()
-                   if triple[2] == imp.PY_SOURCE][0]
-
-    # don't recurse into CVS directories
-    if 'CVS' in names:
-        names.remove('CVS')
-
-    # add all *.py files to list
-    list.extend(
-        [os.path.join(dirname, file) for file in names
-         if os.path.splitext(file)[1] == _py_ext]
-        )
-
-
 def _get_modpkg_path(dotted_name, pathlist=None):
     """Get the filesystem path for a module or a package.
 
@@ -340,7 +321,20 @@ def getFilesForName(name):
     if os.path.isdir(name):
         # find all python files in directory
         list = []
-        os.path.walk(name, _visit_pyfiles, list)
+        # get extension for python source files
+        if '_py_ext' not in globals():
+            global _py_ext
+            _py_ext = [triple[0] for triple in imp.get_suffixes()
+                       if triple[2] == imp.PY_SOURCE][0]
+        for root, dirs, files in os.walk(name):
+            # don't recurse into CVS directories
+            if 'CVS' in dirs:
+                dirs.remove('CVS')
+            # add all *.py files to list
+            list.extend(
+                [os.path.join(root, file) for file in files
+                 if os.path.splitext(file)[1] == _py_ext]
+                )
         return list
     elif os.path.exists(name):
         # a single file

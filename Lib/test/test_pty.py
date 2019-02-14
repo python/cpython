@@ -70,13 +70,10 @@ class PtyTest(unittest.TestCase):
     def setUp(self):
         # isatty() and close() can hang on some platforms.  Set an alarm
         # before running the test to make sure we don't hang forever.
-        self.old_alarm = signal.signal(signal.SIGALRM, self.handle_sig)
+        old_alarm = signal.signal(signal.SIGALRM, self.handle_sig)
+        self.addCleanup(signal.signal, signal.SIGALRM, old_alarm)
+        self.addCleanup(signal.alarm, 0)
         signal.alarm(10)
-
-    def tearDown(self):
-        # remove alarm, restore old alarm handler
-        signal.alarm(0)
-        signal.signal(signal.SIGALRM, self.old_alarm)
 
     def handle_sig(self, sig, frame):
         self.fail("isatty hung")

@@ -1,1 +1,0 @@
-Fix pkgutil.get_data to avoid leaking open files.

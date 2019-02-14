@@ -5,13 +5,14 @@ from test.test_support import run_unittest, check_syntax_error, \
                               check_py3k_warnings
 import unittest
 import sys
+import warnings
 # testing import *
 from sys import *
 
 
 class TokenTests(unittest.TestCase):
 
-    def testBackslash(self):
+    def test_backslash(self):
         # Backslash means line continuation:
         x = 1 \
         + 1
@@ -21,29 +22,42 @@ class TokenTests(unittest.TestCase):
         x = 0
         self.assertEqual(x, 0, 'backslash ending comment')
 
-    def testPlainIntegers(self):
+    def test_plain_integers(self):
+        self.assertEqual(type(000), type(0))
         self.assertEqual(0xff, 255)
         self.assertEqual(0377, 255)
+        self.assertEqual(0o377, 255)
         self.assertEqual(2147483647, 017777777777)
+        self.assertEqual(2147483647, 0o17777777777)
+        self.assertEqual(0b1001, 9)
         # "0x" is not a valid literal
         self.assertRaises(SyntaxError, eval, "0x")
         from sys import maxint
         if maxint == 2147483647:
-            self.assertEqual(-2147483647-1, -020000000000)
+            self.assertEqual(-2147483647-1, -0o20000000000)
             # XXX -2147483648
             self.assertTrue(037777777777 > 0)
+            self.assertTrue(0o37777777777 > 0)
             self.assertTrue(0xffffffff > 0)
-            for s in '2147483648', '040000000000', '0x100000000':
+            self.assertTrue(0b1111111111111111111111111111111 > 0)
+            for s in ('2147483648', '040000000000', '0o40000000000',
+                      '0x100000000',
+                      '0b10000000000000000000000000000000'):
                 try:
                     x = eval(s)
                 except OverflowError:
                     self.fail("OverflowError on huge integer literal %r" % s)
         elif maxint == 9223372036854775807:
             self.assertEqual(-9223372036854775807-1, -01000000000000000000000)
+            self.assertEqual(-9223372036854775807-1, -0o1000000000000000000000)
             self.assertTrue(01777777777777777777777 > 0)
+            self.assertTrue(0o1777777777777777777777 > 0)
             self.assertTrue(0xffffffffffffffff > 0)
+            self.assertTrue(0b11111111111111111111111111111111111111111111111111111111111111 > 0)
             for s in '9223372036854775808', '02000000000000000000000', \
-                     '0x10000000000000000':
+                     '0o2000000000000000000000', \
+                     '0x10000000000000000', \
+                     '0b100000000000000000000000000000000000000000000000000000000000000':
                 try:
                     x = eval(s)
                 except OverflowError:
@@ -51,7 +65,7 @@ class TokenTests(unittest.TestCase):
         else:
             self.fail('Weird maxint value %r' % maxint)
 
-    def testLongIntegers(self):
+    def test_long_integers(self):
         x = 0L
         x = 0l
         x = 0xffffffffffffffffL
@@ -61,7 +75,7 @@ class TokenTests(unittest.TestCase):
         x = 123456789012345678901234567890L
         x = 123456789012345678901234567890l
 
-    def testFloats(self):
+    def test_floats(self):
         x = 3.14
         x = 314.
         x = 0.314
@@ -81,7 +95,7 @@ class TokenTests(unittest.TestCase):
         self.assertEqual(1 if 0else 0, 0)
         self.assertRaises(SyntaxError, eval, "0 if 1Else 0")
 
-    def testStringLiterals(self):
+    def test_string_literals(self):
         x = ''; y = ""; self.assertTrue(len(x) == 0 and x == y)
         x = '\''; y = "'"; self.assertTrue(len(x) == 1 and x == y and ord(x) == 39)
         x = '"'; y = "\""; self.assertTrue(len(x) == 1 and x == y and ord(x) == 34)
@@ -133,11 +147,11 @@ class GrammarTests(unittest.TestCase):
     # expr_input: testlist NEWLINE
     # XXX Hard to test -- used only in calls to input()
 
-    def testEvalInput(self):
+    def test_eval_input(self):
         # testlist ENDMARKER
         x = eval('1, 0 or 1')
 
-    def testFuncdef(self):
+    def test_funcdef(self):
         ### 'def' NAME parameters ':' suite
         ### parameters: '(' [varargslist] ')'
         ### varargslist: (fpdef ['=' test] ',')* ('*' NAME [',' ('**'|'*' '*') NAME]
@@ -153,9 +167,10 @@ class GrammarTests(unittest.TestCase):
         f1(*(), **{})
         def f2(one_argument): pass
         def f3(two, arguments): pass
-        # Silence Py3k warning
-        exec('def f4(two, (compound, (argument, list))): pass')
-        exec('def f5((compound, first), two): pass')
+        with check_py3k_warnings(('tuple parameter unpacking has been removed',
+                                  SyntaxWarning)):
+            exec('def f4(two, (compound, (argument, list))): pass')
+            exec('def f5((compound, first), two): pass')
         self.assertEqual(f2.func_code.co_varnames, ('one_argument',))
         self.assertEqual(f3.func_code.co_varnames, ('two', 'arguments'))
         if sys.platform.startswith('java'):
@@ -174,8 +189,9 @@ class GrammarTests(unittest.TestCase):
         def v0(*rest): pass
         def v1(a, *rest): pass
         def v2(a, b, *rest): pass
-        # Silence Py3k warning
-        exec('def v3(a, (b, c), *rest): return a, b, c, rest')
+        with check_py3k_warnings(('tuple parameter unpacking has been removed',
+                                  SyntaxWarning)):
+            exec('def v3(a, (b, c), *rest): return a, b, c, rest')
 
         f1()
         f2(1)
@@ -212,7 +228,9 @@ class GrammarTests(unittest.TestCase):
         d01()
         d01(1)
         d01(*(1,))
+        d01(*[] or [2])
         d01(**{'a':2})
+        d01(**{'a':2} or {})
         def d11(a, b=1): pass
         d11(1)
         d11(1, 2)
@@ -280,9 +298,12 @@ class GrammarTests(unittest.TestCase):
         d22v(*(1, 2, 3, 4))
         d22v(1, 2, *(3, 4, 5))
         d22v(1, *(2, 3), **{'d': 4})
-        # Silence Py3k warning
-        exec('def d31v((x)): pass')
-        exec('def d32v((x,)): pass')
+        with check_py3k_warnings(('parenthesized argument names are invalid',
+                                  SyntaxWarning)):
+            exec('def d31v((x)): pass')
+        with check_py3k_warnings(('tuple parameter unpacking has been removed',
+                                  SyntaxWarning)):
+            exec('def d32v((x,)): pass')
         d31v(1)
         d32v((1,))
 
@@ -293,12 +314,19 @@ class GrammarTests(unittest.TestCase):
                                                     {'x':2, 'y':5}))
         self.assertRaises(SyntaxError, eval, "f(1, *(2,3), 4)")
         self.assertRaises(SyntaxError, eval, "f(1, x=2, *(3,4), x=5)")
+        self.assertEqual(f(**{'eggs':'scrambled', 'spam':'fried'}),
+                         ((), {'eggs':'scrambled', 'spam':'fried'}))
+        self.assertEqual(f(spam='fried', **{'eggs':'scrambled'}),
+                         ((), {'eggs':'scrambled', 'spam':'fried'}))
 
         # Check ast errors in *args and *kwargs
         check_syntax_error(self, "f(*g(1=2))")
         check_syntax_error(self, "f(**g(1=2))")
 
-    def testLambdef(self):
+        # Check trailing commas are permitted in funcdef argument list
+        def f(a,): pass
+
+    def test_lambdef(self):
         ### lambdef: 'lambda' [varargslist] ':' test
         l1 = lambda : 0
         self.assertEqual(l1(), 0)
@@ -311,12 +339,18 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual(l5(1, 2), 5)
         self.assertEqual(l5(1, 2, 3), 6)
         check_syntax_error(self, "lambda x: x = 2")
-        check_syntax_error(self, "lambda (None,): None")
+        with check_py3k_warnings(('tuple parameter unpacking has been removed',
+                                  SyntaxWarning)):
+            check_syntax_error(self, "lambda (None,): None")
+
+        # check that trailing commas are permitted
+        l10 = lambda a,: 0
+
 
     ### stmt: simple_stmt | compound_stmt
     # Tested below
 
-    def testSimpleStmt(self):
+    def test_simple_stmt(self):
         ### simple_stmt: small_stmt (';' small_stmt)* [';']
         x = 1; pass; del x
         def foo():
@@ -327,7 +361,7 @@ class GrammarTests(unittest.TestCase):
     ### small_stmt: expr_stmt | print_stmt  | pass_stmt | del_stmt | flow_stmt | import_stmt | global_stmt | access_stmt | exec_stmt
     # Tested below
 
-    def testExprStmt(self):
+    def test_expr_stmt(self):
         # (exprlist '=')* exprlist
         1
         1, 2, 3
@@ -340,7 +374,7 @@ class GrammarTests(unittest.TestCase):
         check_syntax_error(self, "x + 1 = 1")
         check_syntax_error(self, "a + 1 = b + 2")
 
-    def testPrintStmt(self):
+    def test_print_stmt(self):
         # 'print' (test ',')* [test]
         import StringIO
 
@@ -410,7 +444,7 @@ hello world
         check_syntax_error(self, 'print ,')
         check_syntax_error(self, 'print >> x,')
 
-    def testDelStmt(self):
+    def test_del_stmt(self):
         # 'del' exprlist
         abc = [1,2,3]
         x, y, z = abc
@@ -419,18 +453,18 @@ hello world
         del abc
         del x, y, (z, xyz)
 
-    def testPassStmt(self):
+    def test_pass_stmt(self):
         # 'pass'
         pass
 
     # flow_stmt: break_stmt | continue_stmt | return_stmt | raise_stmt
     # Tested below
 
-    def testBreakStmt(self):
+    def test_break_stmt(self):
         # 'break'
         while 1: break
 
-    def testContinueStmt(self):
+    def test_continue_stmt(self):
         # 'continue'
         i = 1
         while i: i = 0; continue
@@ -482,7 +516,7 @@ hello world
                 self.fail("continue then break in try/except in loop broken!")
         test_inner()
 
-    def testReturn(self):
+    def test_return(self):
         # 'return' [testlist]
         def g1(): return
         def g2(): return 1
@@ -490,17 +524,150 @@ hello world
         x = g2()
         check_syntax_error(self, "class foo:return 1")
 
-    def testYield(self):
-        check_syntax_error(self, "class foo:yield 1")
+    def test_break_in_finally(self):
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                pass
+            finally:
+                break
+        self.assertEqual(count, 1)
 
-    def testRaise(self):
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                continue
+            finally:
+                break
+        self.assertEqual(count, 1)
+
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                1.0/0.0
+            finally:
+                break
+        self.assertEqual(count, 1)
+
+        for count in [0, 1]:
+            self.assertEqual(count, 0)
+            try:
+                pass
+            finally:
+                break
+        self.assertEqual(count, 0)
+
+        for count in [0, 1]:
+            self.assertEqual(count, 0)
+            try:
+                continue
+            finally:
+                break
+        self.assertEqual(count, 0)
+
+        for count in [0, 1]:
+            self.assertEqual(count, 0)
+            try:
+                1.0/0.0
+            finally:
+                break
+        self.assertEqual(count, 0)
+
+    def test_return_in_finally(self):
+        def g1():
+            try:
+                pass
+            finally:
+                return 1
+        self.assertEqual(g1(), 1)
+
+        def g2():
+            try:
+                return 2
+            finally:
+                return 3
+        self.assertEqual(g2(), 3)
+
+        def g3():
+            try:
+                1.0/0.0
+            finally:
+                return 4
+        self.assertEqual(g3(), 4)
+
+    def test_yield(self):
+        # Allowed as standalone statement
+        def g(): yield 1
+        # Allowed as RHS of assignment
+        def g(): x = yield 1
+        # Ordinary yield accepts implicit tuples
+        def g(): yield 1, 1
+        def g(): x = yield 1, 1
+        # Requires parentheses as subexpression
+        def g(): 1, (yield 1)
+        check_syntax_error(self, "def g(): 1, yield 1")
+        # Requires parentheses as call argument
+        def g(): f((yield 1))
+        def g(): f((yield 1), 1)
+        check_syntax_error(self, "def g(): f(yield 1)")
+        check_syntax_error(self, "def g(): f(yield 1, 1)")
+        # Not allowed at top level
+        check_syntax_error(self, "yield")
+        # Not allowed at class scope
+        check_syntax_error(self, "class foo:yield 1")
+        # Check annotation refleak on SyntaxError
+        check_syntax_error(self, "def g(a:(yield)): pass")
+
+    def test_yield_in_comprehensions(self):
+        # Check yield in comprehensions
+        def g(): [x for x in [(yield 1)]]
+
+        def check(code, warntext):
+            with check_py3k_warnings((warntext, DeprecationWarning)):
+                compile(code, '<test string>', 'exec')
+            if sys.py3kwarning:
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('error', category=DeprecationWarning)
+                    with self.assertRaises(SyntaxError) as cm:
+                        compile(code, '<test string>', 'exec')
+                    self.assertIn(warntext, str(cm.exception))
+
+        check("def g(): [(yield x) for x in ()]",
+              "'yield' inside list comprehension")
+        check("def g(): [x for x in () if not (yield x)]",
+              "'yield' inside list comprehension")
+        check("def g(): [y for x in () for y in [(yield x)]]",
+              "'yield' inside list comprehension")
+        check("def g(): {(yield x) for x in ()}",
+              "'yield' inside set comprehension")
+        check("def g(): {(yield x): x for x in ()}",
+              "'yield' inside dict comprehension")
+        check("def g(): {x: (yield x) for x in ()}",
+              "'yield' inside dict comprehension")
+        check("def g(): ((yield x) for x in ())",
+              "'yield' inside generator expression")
+        with check_py3k_warnings(("'yield' inside list comprehension",
+                                  DeprecationWarning)):
+            check_syntax_error(self, "class C: [(yield x) for x in ()]")
+        check("class C: ((yield x) for x in ())",
+              "'yield' inside generator expression")
+        with check_py3k_warnings(("'yield' inside list comprehension",
+                                  DeprecationWarning)):
+            check_syntax_error(self, "[(yield x) for x in ()]")
+        check("((yield x) for x in ())",
+              "'yield' inside generator expression")
+
+    def test_raise(self):
         # 'raise' test [',' test]
         try: raise RuntimeError, 'just testing'
         except RuntimeError: pass
         try: raise KeyboardInterrupt
         except KeyboardInterrupt: pass
 
-    def testImport(self):
+    def test_import(self):
         # 'import' dotted_as_names
         import sys
         import time, sys
@@ -513,13 +680,13 @@ hello world
         from sys import (path, argv)
         from sys import (path, argv,)
 
-    def testGlobal(self):
+    def test_global(self):
         # 'global' NAME (',' NAME)*
         global a
         global a, b
         global one, two, three, four, five, six, seven, eight, nine, ten
 
-    def testExec(self):
+    def test_exec(self):
         # 'exec' expr ['in' expr [',' expr]]
         z = None
         del z
@@ -551,7 +718,7 @@ hello world
         if (g, l) != ({'a':1}, {'b':2}):
             self.fail('exec ... in g (%s), l (%s)' %(g,l))
 
-    def testAssert(self):
+    def test_assert(self):
         # assertTruestmt: 'assert' test [',' test]
         assert 1
         assert 1, 1
@@ -590,7 +757,7 @@ hello world
     ### compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
     # Tested below
 
-    def testIf(self):
+    def test_if(self):
         # 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
         if 1: pass
         if 1: pass
@@ -603,7 +770,7 @@ hello world
         elif 0: pass
         else: pass
 
-    def testWhile(self):
+    def test_while(self):
         # 'while' test ':' suite ['else' ':' suite]
         while 0: pass
         while 0: pass
@@ -618,7 +785,7 @@ hello world
             x = 2
         self.assertEqual(x, 2)
 
-    def testFor(self):
+    def test_for(self):
         # 'for' exprlist 'in' exprlist ':' suite ['else' ':' suite]
         for i in 1, 2, 3: pass
         for i, j, k in (): pass
@@ -645,30 +812,30 @@ hello world
             result.append(x)
         self.assertEqual(result, [1, 2, 3])
 
-    def testTry(self):
+    def test_try(self):
         ### try_stmt: 'try' ':' suite (except_clause ':' suite)+ ['else' ':' suite]
         ###         | 'try' ':' suite 'finally' ':' suite
         ### except_clause: 'except' [expr [('as' | ',') expr]]
         try:
-            1/0
+            1/0.0
         except ZeroDivisionError:
             pass
         else:
             pass
-        try: 1/0
+        try: 1/0.0
         except EOFError: pass
         except TypeError as msg: pass
         except RuntimeError, msg: pass
         except: pass
         else: pass
-        try: 1/0
+        try: 1/0.0
         except (EOFError, TypeError, ZeroDivisionError): pass
-        try: 1/0
+        try: 1/0.0
         except (EOFError, TypeError, ZeroDivisionError), msg: pass
         try: pass
         finally: pass
 
-    def testSuite(self):
+    def test_suite(self):
         # simple_stmt | NEWLINE INDENT NEWLINE* (stmt NEWLINE*)+ DEDENT
         if 1: pass
         if 1:
@@ -683,7 +850,7 @@ hello world
             pass
             #
 
-    def testTest(self):
+    def test_test(self):
         ### and_test ('or' and_test)*
         ### and_test: not_test ('and' not_test)*
         ### not_test: 'not' not_test | comparison
@@ -694,7 +861,7 @@ hello world
         if not 1 and 1 and 1: pass
         if 1 and 1 or 1 and 1 and 1 or not 1 and 1: pass
 
-    def testComparison(self):
+    def test_comparison(self):
         ### comparison: expr (comp_op expr)*
         ### comp_op: '<'|'>'|'=='|'>='|'<='|'<>'|'!='|'in'|'not' 'in'|'is'|'is' 'not'
         if 1: pass
@@ -710,40 +877,56 @@ hello world
         if 1 in (): pass
         if 1 not in (): pass
         if 1 < 1 > 1 == 1 >= 1 <= 1 != 1 in 1 not in 1 is 1 is not 1: pass
-        # Silence Py3k warning
-        if eval('1 <> 1'): pass
-        if eval('1 < 1 > 1 == 1 >= 1 <= 1 <> 1 != 1 in 1 not in 1 is 1 is not 1'): pass
+        with check_py3k_warnings(('<> not supported in 3.x; use !=',
+                                  DeprecationWarning)):
+            if eval('1 <> 1'): pass
+        with check_py3k_warnings(('<> not supported in 3.x; use !=',
+                                  DeprecationWarning)):
+            if eval('1 < 1 > 1 == 1 >= 1 <= 1 <> 1 != 1 in 1 not in 1 is 1 is not 1'): pass
+        if sys.py3kwarning:
+            with warnings.catch_warnings():
+                warnings.filterwarnings('error', category=DeprecationWarning)
+                with self.assertRaises(DeprecationWarning) as cm:
+                    compile('1 <> 1', '<test string>', 'eval')
+                self.assertIn('<> not supported in 3.x; use !=',
+                              str(cm.exception))
 
-    def testBinaryMaskOps(self):
+    def test_binary_mask_ops(self):
         x = 1 & 1
         x = 1 ^ 1
         x = 1 | 1
 
-    def testShiftOps(self):
+    def test_shift_ops(self):
         x = 1 << 1
         x = 1 >> 1
         x = 1 << 1 >> 1
 
-    def testAdditiveOps(self):
+    def test_additive_ops(self):
         x = 1
         x = 1 + 1
         x = 1 - 1 - 1
         x = 1 - 1 + 1 - 1 + 1
 
-    def testMultiplicativeOps(self):
+    def test_multiplicative_ops(self):
         x = 1 * 1
-        x = 1 / 1
+        with check_py3k_warnings(('classic int division', DeprecationWarning)):
+            x = 1 / 1
+        x = 1 / 1.0
         x = 1 % 1
-        x = 1 / 1 * 1 % 1
+        with check_py3k_warnings(('classic int division', DeprecationWarning)):
+            x = 1 / 1 * 1 % 1
+        x = 1 / 1.0 * 1 % 1
 
-    def testUnaryOps(self):
+    def test_unary_ops(self):
         x = +1
         x = -1
         x = ~1
         x = ~1 ^ 1 & 1 | 1 & 1 ^ -1
-        x = -1*1/1 + 1*1 - ---1*1
+        with check_py3k_warnings(('classic int division', DeprecationWarning)):
+            x = -1*1/1 + 1*1 - ---1*1
+        x = -1*1/1.0 + 1*1 - ---1*1
 
-    def testSelectors(self):
+    def test_selectors(self):
         ### trailer: '(' [testlist] ')' | '[' subscript ']' | '.' NAME
         ### subscript: expr | [expr] ':' [expr]
 
@@ -770,10 +953,10 @@ hello world
         d[1,2] = 3
         d[1,2,3] = 4
         L = list(d)
-        L.sort()
+        L.sort(key=lambda x: (type(x).__name__, x))
         self.assertEqual(str(L), '[1, (1,), (1, 2), (1, 2, 3)]')
 
-    def testAtoms(self):
+    def test_atoms(self):
         ### atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictmaker] '}' | '`' testlist '`' | NAME | NUMBER | STRING
         ### dictorsetmaker: (test ':' test (',' test ':' test)* [',']) | (test (',' test)* [','])
 
@@ -800,10 +983,10 @@ hello world
         x = {'one', 'two', 'three'}
         x = {2, 3, 4,}
 
-        # Silence Py3k warning
-        x = eval('`x`')
-        x = eval('`1 or 2 or 3`')
-        self.assertEqual(eval('`1,2`'), '(1, 2)')
+        with check_py3k_warnings(('backquote not supported', SyntaxWarning)):
+            x = eval('`x`')
+            x = eval('`1 or 2 or 3`')
+            self.assertEqual(eval('`1,2`'), '(1, 2)')
 
         x = x
         x = 'x'
@@ -813,7 +996,7 @@ hello world
     ### testlist: test (',' test)* [',']
     # These have been exercised enough above
 
-    def testClassdef(self):
+    def test_classdef(self):
         # 'class' NAME ['(' [testlist] ')'] ':' suite
         class B: pass
         class B2(): pass
@@ -824,6 +1007,7 @@ hello world
             def meth1(self): pass
             def meth2(self, arg): pass
             def meth3(self, a1, a2): pass
+
         # decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE
         # decorators: decorator+
         # decorated: decorators (classdef | funcdef)
@@ -835,14 +1019,14 @@ hello world
             pass
         self.assertEqual(G.decorated, True)
 
-    def testDictcomps(self):
+    def test_dictcomps(self):
         # dictorsetmaker: ( (test ':' test (comp_for |
         #                                   (',' test ':' test)* [','])) |
         #                   (test (comp_for | (',' test)* [','])) )
         nums = [1, 2, 3]
         self.assertEqual({i:i+1 for i in nums}, {1: 2, 2: 3, 3: 4})
 
-    def testListcomps(self):
+    def test_listcomps(self):
         # list comprehension tests
         nums = [1, 2, 3, 4, 5]
         strs = ["Apple", "Banana", "Coconut"]
@@ -865,7 +1049,7 @@ hello world
                          [[1], [1, 1], [1, 2, 4], [1, 3, 9, 27], [1, 4, 16, 64, 256]])
 
         def test_in_func(l):
-            return [None < x < 3 for x in l if x > 2]
+            return [0 < x < 3 for x in l if x > 2]
 
         self.assertEqual(test_in_func(nums), [False, False, False])
 
@@ -905,7 +1089,7 @@ hello world
         self.assertEqual(x, [('Boeing', 'Airliner'), ('Boeing', 'Engine'), ('Ford', 'Engine'),
                              ('Macdonalds', 'Cheeseburger')])
 
-    def testGenexps(self):
+    def test_genexps(self):
         # generator expression tests
         g = ([x for x in range(10)] for x in range(1))
         self.assertEqual(g.next(), [x for x in range(10)])
@@ -940,7 +1124,7 @@ hello world
         check_syntax_error(self, "foo(x for x in range(10), 100)")
         check_syntax_error(self, "foo(100, x for x in range(10))")
 
-    def testComprehensionSpecials(self):
+    def test_comprehension_specials(self):
         # test for outmost iterable precomputation
         x = 10; g = (i for i in range(x)); x = 5
         self.assertEqual(len(list(g)), 10)
@@ -979,11 +1163,11 @@ hello world
         with manager() as x, manager():
             pass
 
-    def testIfElseExpr(self):
+    def test_if_else_expr(self):
         # Test ifelse expressions in various cases
         def _checkeval(msg, ret):
             "helper to check that evaluation of expressions is done correctly"
-            print x
+            print(msg)
             return ret
 
         self.assertEqual([ x() for x in lambda: True, lambda: False if x() ], [True])
@@ -1002,7 +1186,8 @@ hello world
         self.assertEqual((6 + 1 if 1 else 2), 7)
         self.assertEqual((6 - 1 if 1 else 2), 5)
         self.assertEqual((6 * 2 if 1 else 4), 12)
-        self.assertEqual((6 / 2 if 1 else 3), 3)
+        with check_py3k_warnings(('classic int division', DeprecationWarning)):
+            self.assertEqual((6 / 2 if 1 else 3), 3)
         self.assertEqual((6 < 4 if 0 else 2), 2)
 
     def test_paren_evaluation(self):
@@ -1015,13 +1200,7 @@ hello world
 
 
 def test_main():
-    with check_py3k_warnings(
-            ("backquote not supported", SyntaxWarning),
-            ("tuple parameter unpacking has been removed", SyntaxWarning),
-            ("parenthesized argument names are invalid", SyntaxWarning),
-            ("classic int division", DeprecationWarning),
-            (".+ not supported in 3.x", DeprecationWarning)):
-        run_unittest(TokenTests, GrammarTests)
+    run_unittest(TokenTests, GrammarTests)
 
 if __name__ == '__main__':
     test_main()

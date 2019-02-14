@@ -1824,6 +1824,12 @@ class CAPITest(unittest.TestCase):
         check_format(u'%s',
                      b'%.%s', b'abc')
 
+        # Issue #33817: empty strings
+        check_format(u'',
+                     b'')
+        check_format(u'',
+                     b'%s', b'')
+
     @test_support.cpython_only
     def test_encode_decimal(self):
         from _testcapi import unicode_encodedecimal

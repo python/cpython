@@ -274,7 +274,7 @@ class POP3:
         return self._shortcmd('RPOP %s' % user)
 
 
-    timestamp = re.compile(r'\+OK.*(<[^>]+>)')
+    timestamp = re.compile(br'\+OK.[^<]*(<.*>)')
 
     def apop(self, user, secret):
         """Authorisation

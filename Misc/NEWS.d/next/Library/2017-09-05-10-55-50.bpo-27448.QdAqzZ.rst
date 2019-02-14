@@ -1,5 +1,0 @@
-Work around a `gc.disable()` race condition in the `subprocess` module that
-could leave garbage collection disabled when multiple threads are spawning
-subprocesses at once.  Users are *strongly encouraged* to use the
-`subprocess32` module from PyPI on Python 2.7 instead, it is much more
-reliable.

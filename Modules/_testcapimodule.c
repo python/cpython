@@ -1559,6 +1559,89 @@ getargs_et_hash(PyObject *self, PyObject *args)
     return result;
 }
 
+static PyObject *
+get_indices(PyObject *self, PyObject *args)
+{
+    int result;
+    PySliceObject *slice;
+    Py_ssize_t length, start, stop, step;
+
+    if (!PyArg_ParseTuple(args, "On", &slice, &length))
+        return NULL;
+
+    result = PySlice_GetIndices(slice, length, &start, &stop, &step);
+
+    if (PyErr_Occurred()) {
+        assert(result == -1);
+        return NULL;
+    }
+
+    if (result == -1) {
+        Py_RETURN_NONE;
+    }
+    return Py_BuildValue("innn", result, start, stop, step);
+}
+
+static PyObject *
+parse_tuple_and_keywords(PyObject *self, PyObject *args)
+{
+    PyObject *sub_args;
+    PyObject *sub_kwargs;
+    const char *sub_format;
+    PyObject *sub_keywords;
+
+    Py_ssize_t i, size;
+    char *keywords[8 + 1]; /* space for NULL at end */
+    PyObject *o;
+
+    int result;
+    PyObject *return_value = NULL;
+
+    double buffers[8][4]; /* double ensures alignment where necessary */
+
+    if (!PyArg_ParseTuple(args, "OOsO:parse_tuple_and_keywords",
+        &sub_args, &sub_kwargs,
+        &sub_format, &sub_keywords))
+        return NULL;
+
+    if (!(PyList_CheckExact(sub_keywords) || PyTuple_CheckExact(sub_keywords))) {
+        PyErr_SetString(PyExc_ValueError,
+            "parse_tuple_and_keywords: sub_keywords must be either list or tuple");
+        return NULL;
+    }
+
+    memset(buffers, 0, sizeof(buffers));
+    memset(keywords, 0, sizeof(keywords));
+
+    size = PySequence_Fast_GET_SIZE(sub_keywords);
+    if (size > 8) {
+        PyErr_SetString(PyExc_ValueError,
+            "parse_tuple_and_keywords: too many keywords in sub_keywords");
+        goto exit;
+    }
+
+    for (i = 0; i < size; i++) {
+        o = PySequence_Fast_GET_ITEM(sub_keywords, i);
+        keywords[i] = PyString_AsString(o);
+        if (keywords[i] == NULL) {
+            goto exit;
+        }
+    }
+
+    result = PyArg_ParseTupleAndKeywords(sub_args, sub_kwargs,
+        sub_format, keywords,
+        buffers + 0, buffers + 1, buffers + 2, buffers + 3,
+        buffers + 4, buffers + 5, buffers + 6, buffers + 7);
+
+    if (result) {
+        return_value = Py_None;
+        Py_INCREF(Py_None);
+    }
+
+exit:
+    return return_value;
+}
+
 #ifdef Py_USING_UNICODE
 
 static volatile int x;
@@ -1963,7 +2046,8 @@ static int _pending_callback(void *arg)
 /* The following requests n callbacks to _pending_callback.  It can be
  * run from any python thread.
  */
-PyObject *pending_threadfunc(PyObject *self, PyObject *arg)
+static PyObject *
+pending_threadfunc(PyObject *self, PyObject *arg)
 {
     PyObject *callable;
     int r;
@@ -2603,6 +2687,8 @@ static PyMethodDef TestMethods[] = {
 #ifdef Py_USING_UNICODE
     {"test_empty_argparse", (PyCFunction)test_empty_argparse,METH_NOARGS},
 #endif
+    {"get_indices", get_indices, METH_VARARGS},
+    {"parse_tuple_and_keywords", parse_tuple_and_keywords, METH_VARARGS},
     {"test_null_strings",       (PyCFunction)test_null_strings,  METH_NOARGS},
     {"test_string_from_format", (PyCFunction)test_string_from_format, METH_NOARGS},
     {"test_with_docstring", (PyCFunction)test_with_docstring, METH_NOARGS,

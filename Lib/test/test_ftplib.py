@@ -675,6 +675,7 @@ class TestTLS_FTPClass(TestCase):
         # clear text
         sock = self.client.transfercmd('list')
         self.assertNotIsInstance(sock, ssl.SSLSocket)
+        self.assertEqual(sock.recv(1024), LIST_DATA.encode('ascii'))
         sock.close()
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
@@ -682,6 +683,9 @@ class TestTLS_FTPClass(TestCase):
         self.client.prot_p()
         sock = self.client.transfercmd('list')
         self.assertIsInstance(sock, ssl.SSLSocket)
+        # consume from SSL socket to finalize handshake and avoid
+        # "SSLError [SSL] shutdown while in init"
+        self.assertEqual(sock.recv(1024), LIST_DATA.encode('ascii'))
         sock.close()
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
@@ -689,6 +693,7 @@ class TestTLS_FTPClass(TestCase):
         self.client.prot_c()
         sock = self.client.transfercmd('list')
         self.assertNotIsInstance(sock, ssl.SSLSocket)
+        self.assertEqual(sock.recv(1024), LIST_DATA.encode('ascii'))
         sock.close()
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
@@ -710,11 +715,11 @@ class TestTLS_FTPClass(TestCase):
             self.client.auth()
             self.assertRaises(ValueError, self.client.auth)
         finally:
-            self.client.ssl_version = ssl.PROTOCOL_TLSv1
+            self.client.ssl_version = ssl.PROTOCOL_TLS
 
     def test_context(self):
         self.client.quit()
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
         self.assertRaises(ValueError, ftplib.FTP_TLS, keyfile=CERTFILE,
                           context=ctx)
         self.assertRaises(ValueError, ftplib.FTP_TLS, certfile=CERTFILE,
@@ -739,7 +744,7 @@ class TestTLS_FTPClass(TestCase):
 
     def test_check_hostname(self):
         self.client.quit()
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
         ctx.verify_mode = ssl.CERT_REQUIRED
         ctx.check_hostname = True
         ctx.load_verify_locations(CAFILE)

@@ -155,10 +155,12 @@ class GetHelpSourceDialog(Toplevel):
                     # Mac Safari insists on using the URI form for local files
                     self.result = list(self.result)
                     self.result[1] = "file://" + path
+            self.grab_release()
             self.destroy()
 
     def Cancel(self, event=None):
         self.result = None
+        self.grab_release()
         self.destroy()
 
 if __name__ == '__main__':

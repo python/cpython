@@ -149,12 +149,12 @@ to escape quotes::
    "doesn't"
    >>> "doesn't"  # ...or use double quotes instead
    "doesn't"
-   >>> '"Yes," he said.'
-   '"Yes," he said.'
-   >>> "\"Yes,\" he said."
-   '"Yes," he said.'
-   >>> '"Isn\'t," she said.'
-   '"Isn\'t," she said.'
+   >>> '"Yes," they said.'
+   '"Yes," they said.'
+   >>> "\"Yes,\" they said."
+   '"Yes," they said.'
+   >>> '"Isn\'t," they said.'
+   '"Isn\'t," they said.'
 
 In the interactive interpreter, the output string is enclosed in quotes and
 special characters are escaped with backslashes.  While this might sometimes
@@ -165,10 +165,10 @@ enclosed in single quotes.  The :keyword:`print` statement produces a more
 readable output, by omitting the enclosing quotes and by printing escaped
 and special characters::
 
-   >>> '"Isn\'t," she said.'
-   '"Isn\'t," she said.'
-   >>> print '"Isn\'t," she said.'
-   "Isn't," she said.
+   >>> '"Isn\'t," they said.'
+   '"Isn\'t," they said.'
+   >>> print '"Isn\'t," they said.'
+   "Isn't," they said.
    >>> s = 'First line.\nSecond line.'  # \n means newline
    >>> s  # without print, \n is included in the output
    'First line.\nSecond line.'
@@ -218,6 +218,13 @@ to each other are automatically concatenated. ::
    >>> 'Py' 'thon'
    'Python'
 
+This feature is particularly useful when you want to break long strings::
+
+   >>> text = ('Put several strings within parentheses '
+   ...         'to have them joined together.')
+   >>> text
+   'Put several strings within parentheses to have them joined together.'
+
 This only works with two literals though, not with variables or expressions::
 
    >>> prefix = 'Py'
@@ -232,13 +239,6 @@ If you want to concatenate variables or a variable and a literal, use ``+``::
 
    >>> prefix + 'thon'
    'Python'
-
-This feature is particularly useful when you want to break long strings::
-
-   >>> text = ('Put several strings within parentheses '
-   ...         'to have them joined together.')
-   >>> text
-   'Put several strings within parentheses to have them joined together.'
 
 Strings can be *indexed* (subscripted), with the first character having index 0.
 There is no separate character type; a character is simply a string of size
