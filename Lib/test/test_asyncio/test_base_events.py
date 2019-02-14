@@ -1641,7 +1641,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertTrue(m_sock.close.called)
 
     def test_create_datagram_endpoint_sock(self):
-        sock = socket.create_server(('127.0.0.1', 0), type=socket.SOCK_DGRAM)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.bind(('127.0.0.1', 0))
         fut = self.loop.create_datagram_endpoint(
             lambda: MyDatagramProto(create_future=True, loop=self.loop),
             sock=sock)

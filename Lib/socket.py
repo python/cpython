@@ -747,19 +747,17 @@ def has_dualstack_ipv6():
 
 def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
                   dualstack_ipv6=False):
-    """Convenience function which creates a socket bound to *address*
-    (a 2-tuple (host, port)) and return the socket object.
+    """Convenience function which creates a SOCK_STREAM type socket
+    bound to *address* (a 2-tuple (host, port)) and return the socket
+    object.
 
     *family* should be either AF_INET or AF_INET6.
-
     *backlog* is the queue size passed to socket.listen().
-
     *reuse_port* dictate whether to use the SO_REUSEPORT socket option.
-
-    *dualstack_ipv6*: if True and the platform supports it it will create
-    a socket able to accept both IPv4 and IPv6 connections.
-    When False it will explicitly disable this option on platforms that
-    enable it by default (e.g. Linux).
+    *dualstack_ipv6*: if true and the platform supports it, it will
+    create a socket able to accept both IPv4 and IPv6 connections.
+    When false it will explicitly disable this option on platforms
+    that enable it by default (e.g. Linux).
 
     >>> with create_server((None, 8000)) as server:
     ...     while True:
@@ -771,17 +769,19 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
     if dualstack_ipv6:
         if not has_dualstack_ipv6():
             raise ValueError("dualstack_ipv6 not supported on this platform")
+        if family != AF_INET6:
+            raise ValueError("dualstack_ipv6 requires AF_INET6 family")
     sock = socket(family, SOCK_STREAM)
     try:
-        # Note about Windows: we don't set SO_REUSEADDR because:
+        # Note about Windows. We don't set SO_REUSEADDR because:
         # 1) It's unnecessary: bind() will succeed even in case of a
         # previous closed socket on the same address and still in
         # TIME_WAIT state.
         # 2) If set, another socket will be free to bind() on the same
         # address, effectively preventing this one from accepting
-        # connections.  Also, it sets the process in a state where it'll
-        # no longer respond to any signals or graceful kills. More at:
-        # msdn2.microsoft.com/en-us/library/ms740621(VS.85).aspx
+        # connections. Also, it may set the process in a state where
+        # it'll no longer respond to any signals or graceful kills.
+        # See: msdn2.microsoft.com/en-us/library/ms740621(VS.85).aspx
         if os.name not in ('nt', 'cygwin') and \
                 hasattr(_socket, 'SO_REUSEADDR'):
             try:
@@ -793,16 +793,15 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
         if reuse_port:
             sock.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
         if has_ipv6 and family == AF_INET6:
-            if not dualstack_ipv6 and \
-                    hasattr(_socket, "IPV6_V6ONLY") and \
+            if dualstack_ipv6:
+                sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 0)
+            elif hasattr(_socket, "IPV6_V6ONLY") and \
                     hasattr(_socket, "IPPROTO_IPV6"):
                 # Disable IPv4/IPv6 dual stack support (enabled by
                 # default on Linux) which makes a single socket
                 # listen on both address families in order to
                 # eliminate cross-platform differences.
                 sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 1)
-            else:
-                sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 0)
         try:
             sock.bind(address)
         except error as err:

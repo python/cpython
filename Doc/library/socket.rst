@@ -595,53 +595,36 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.2
       *source_address* was added.
 
-.. function:: create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=None, reuse_port=False, flags=None, dualstack_ipv6=False)
+.. function:: create_server(address, *, family=AF_INET, backlog=None, reuse_port=False, dualstack_ipv6=False)
 
-   Convenience function which aims at automating all the typical steps needed
-   when creating a server socket.
-   It creates a socket bound to *address* (a 2-tuple ``(host, port)``) and
-   return the socket object upon which you can call :meth:`socket.accept()` in
-   order to accept new connections.Internally it relies on :meth:`getaddrinfo()`
-   and returns the first socket which can be bound to *address*.
+   Convenience function which creates a :data:`SOCK_STREAM` type socket
+   bound to *address* (a 2-tuple ``(host, port)``) and return the socket
+   object.
 
-   If *host* is an empty string or ``None`` all network interfaces are assumed.
-
-   If *family* is :data:`AF_UNSPEC` the address family will be determined from
-   the *host* specified in *address*. If family can't clearly be determined
-   from *host* and *dualstack_ipv6* is false then :data:`AF_INET` family will
-   be preferred over :data:`AF_INET6`.
-
-   *type* should be either :data:`SOCK_STREAM` or :data:`SOCK_DGRAM`.
-
-   *backlog* is the queue size passed to :meth:`socket.listen` if
-   :data:`SOCK_STREAM` *type* is used. If left ``None`` a default reasonable
-   value is chosen.
-
+   *family* should be either :data:`AF_INET` or :data:`AF_INET6`.
+   *backlog* is the queue size passed to :meth:`socket.listen`.
    *reuse_port* dictates whether to set :data:`SO_REUSEPORT` socket option.
 
-   *flags* is a bitmask for :meth:`getaddrinfo()`; if ``None``
-   :data:`AI_PASSIVE` is used.
-
-   If *dualstack_ipv6* is tre and the platform supports it the socket will
+   If *dualstack_ipv6* is true and the platform supports it the socket will
    be able to accept both IPv4 and IPv6 connections.
-   In this case the address returned by :meth:`socket.getpeername` when a new
-   IPv4 connection is accepted will be an IPv6 address represented as an
-   IPv4-mapped IPv6 address like ``":ffff:127.0.0.1"``.
-   If *dualstack_ipv6* is false it will explicitly disable this option on
-   platforms that enable it by default (e.g. Linux).
+   In this case the address returned by :meth:`socket.getpeername` when an IPv4
+   connection occurs will be an IPv6 address represented as an IPv4-mapped IPv6
+   address like ``":ffff:127.0.0.1"``.
+   If *dualstack_ipv6* is false it will explicitly disable this functionality
+   on platforms that enable it by default (e.g. Linux).
    For platforms not supporting this functionality natively you could use this
    `MultipleSocketsListener recipe <http://code.activestate.com/recipes/578504/>`__.
    This parameter can be used in conjunction with :func:`has_dualstack_ipv6`.
 
    Here's an echo server example listening on all interfaces, port 8888,
-   and (possibly) hybrid IPv4/IPv6 support:
+   accepting both IPv4 and IPv6 connections (if supported):
 
    ::
 
      import socket
 
      with socket.create_server(("", 8888),
-                             dualstack_ipv6=socket.has_dualstack_ipv6()) as server:
+                               dualstack_ipv6=socket.has_dualstack_ipv6()) as server:
          conn, addr = server.accept()
          with conn:
              while True:
@@ -650,12 +633,18 @@ The following functions all create :ref:`socket objects <socket-objects>`.
                      break
                  conn.send(data)
 
+   .. note::
+    On POSIX :data:`SO_REUSEADDR` socket option is set in order to immediately
+    reuse previous sockets which were bound on the same *address* and remained
+    in TIME_WAIT state.
+
    .. versionadded:: 3.8
 
 .. function:: has_dualstack_ipv6()
 
-   Return ``True`` if the platform supports creating a single
-   :data:`SOCK_STREAM` socket which can accept both IPv4 and IPv6 connections.
+   Return ``True`` if the platform supports creating a :data:`SOCK_STREAM`
+   socket which can handle both :data:`AF_INET` or :data:`AF_INET6`
+   (IPv4 / IPv6) connections.
 
    .. versionadded:: 3.8
 
@@ -1844,8 +1833,8 @@ sends traffic to the first one connected successfully. ::
 
 The two examples above can be rewritten by using :meth:`socket.create_server`
 and :meth:`socket.create_connection` convenience functions.
-:meth:`socket.create_server` has the extra advantage of creating an agnostic
-IPv4/IPv6 server on platforms supporting this functionality.
+If the platform supports it, :meth:`socket.create_server` has the extra
+advantage of creating an agnostic IPv4/IPv6 server:
 
 ::
 
