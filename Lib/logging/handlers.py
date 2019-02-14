@@ -1006,7 +1006,9 @@ class SMTPHandler(logging.Handler):
             if not port:
                 port = smtplib.SMTP_PORT
             if self.username and self.secure is not None:
-                smtp = smtplib.SMTP_SSL(self.mailhost, port, timeout=self.timeout)
+                keyfile = self.secure[0] if len(self.secure) >= 1 else None
+                certfile = self.secure[1] if len(self.secure) >= 2 else None
+                smtp = smtplib.SMTP_SSL(self.mailhost, port, timeout=self.timeout, keyfile=keyfile, certfile=certfile)
             else:
                 smtp = smtplib.SMTP(self.mailhost, port, timeout=self.timeout)
             if self.username:
