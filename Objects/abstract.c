@@ -165,9 +165,10 @@ PyObject_GetItem(PyObject *o, PyObject *key)
                 return NULL;
             return PySequence_GetItem(o, key_value);
         }
-        else if (o->ob_type->tp_as_sequence->sq_item)
+        else {
             return type_error("sequence index must "
                               "be integer, not '%.200s'", key);
+        }
     }
 
     if (PyType_Check(o)) {
