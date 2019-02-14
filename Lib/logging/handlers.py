@@ -1005,19 +1005,19 @@ class SMTPHandler(logging.Handler):
             port = self.mailport
             if not port:
                 port = smtplib.SMTP_PORT
-            smtp = smtplib.SMTP(self.mailhost, port, timeout=self.timeout)
+            if self.username and self.secure is not None:
+                smtp = smtplib.SMTP_SSL(self.mailhost, port, timeout=self.timeout)
+            else:
+                smtp = smtplib.SMTP(self.mailhost, port, timeout=self.timeout)
+            if self.username:
+                smtp.login(self.username, self.password)
+
             msg = EmailMessage()
             msg['From'] = self.fromaddr
             msg['To'] = ','.join(self.toaddrs)
             msg['Subject'] = self.getSubject(record)
             msg['Date'] = email.utils.localtime()
             msg.set_content(self.format(record))
-            if self.username:
-                if self.secure is not None:
-                    smtp.ehlo()
-                    smtp.starttls(*self.secure)
-                    smtp.ehlo()
-                smtp.login(self.username, self.password)
             smtp.send_message(msg)
             smtp.quit()
         except Exception:
