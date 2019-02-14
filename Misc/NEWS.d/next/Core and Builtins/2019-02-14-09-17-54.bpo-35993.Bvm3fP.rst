@@ -1,0 +1,1 @@
+Fix an incorrect use of released memory. Contributed by Stéphane Wirtel
