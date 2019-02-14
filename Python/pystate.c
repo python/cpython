@@ -282,7 +282,7 @@ _PyInterpreterState_DeleteExceptMain()
     PyInterpreterState *interp = _PyRuntime.interpreters.head;
     PyInterpreterState *tmp_interp = NULL;
     _PyRuntime.interpreters.head = NULL;
-    for (; interp != NULL;) {
+    while (interp) {
         if (interp == _PyRuntime.interpreters.main) {
             _PyRuntime.interpreters.main->next = NULL;
             _PyRuntime.interpreters.head = interp;
