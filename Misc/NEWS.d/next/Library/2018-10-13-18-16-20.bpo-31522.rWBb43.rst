@@ -1,1 +1,0 @@
-The `mailbox.mbox.get_string` function *from_* parameter can now successfully be set to a non-default value.

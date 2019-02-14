@@ -1004,7 +1004,6 @@ are always available.  They are listed here in alphabetical order.
    ``'b'``   binary mode
    ``'t'``   text mode (default)
    ``'+'``   open a disk file for updating (reading and writing)
-   ``'U'``   :term:`universal newlines` mode (deprecated)
    ========= ===============================================================
 
    The default mode is ``'r'`` (open for reading text, synonym of ``'rt'``).
@@ -1018,6 +1017,12 @@ are always available.  They are listed here in alphabetical order.
    the contents of the file are returned as :class:`str`, the bytes having been
    first decoded using a platform-dependent encoding or using the specified
    *encoding* if given.
+
+   There is an additional mode character permitted, ``'U'``, which no longer
+   has any effect, and is considered deprecated. It previously enabled
+   :term:`universal newlines` in text mode, which became the default behaviour
+   in Python 3.0. Refer to the documentation of the
+   :ref:`newline <open-newline-parameter>` parameter for further details.
 
    .. note::
 
@@ -1084,6 +1089,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. index::
       single: universal newlines; open() built-in function
+
+   .. _open-newline-parameter:
 
    *newline* controls how :term:`universal newlines` mode works (it only
    applies to text mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and

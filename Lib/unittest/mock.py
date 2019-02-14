@@ -729,11 +729,10 @@ class NonCallableMock(Base):
                 # not set on the instance itself
                 return
 
-        if name in self.__dict__:
-            object.__delattr__(self, name)
-
         obj = self._mock_children.get(name, _missing)
-        if obj is _deleted:
+        if name in self.__dict__:
+            super().__delattr__(name)
+        elif obj is _deleted:
             raise AttributeError(name)
         if obj is not _missing:
             del self._mock_children[name]
@@ -746,7 +745,7 @@ class NonCallableMock(Base):
 
 
     def _format_mock_failure_message(self, args, kwargs):
-        message = 'Expected call: %s\nActual call: %s'
+        message = 'expected call not found.\nExpected: %s\nActual: %s'
         expected_string = self._format_mock_call_signature(args, kwargs)
         call_args = self.call_args
         if len(call_args) == 3:
@@ -815,7 +814,10 @@ class NonCallableMock(Base):
         self = _mock_self
         if self.call_args is None:
             expected = self._format_mock_call_signature(args, kwargs)
-            raise AssertionError('Expected call: %s\nNot called' % (expected,))
+            actual = 'not called.'
+            error_message = ('expected call not found.\nExpected: %s\nActual: %s'
+                    % (expected, actual))
+            raise AssertionError(error_message)
 
         def _error_message():
             msg = self._format_mock_failure_message(args, kwargs)
