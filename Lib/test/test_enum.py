@@ -2730,7 +2730,12 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(256, len(seen), 'too many composite members created')
 
 
-class TestWeirdString(unittest.TestCase):
+class TestEmptyWeirdString(unittest.TestCase):
+    def test_empty_string(self):
+        Yay = Enum('Yay', ('', 'B', 'C'))
+        item = getattr(Yay, '')
+        self.assertEqual(item.value, 1)
+
     def test_weird_character(self):
         Yay = Enum('Yay', ('!', 'B', 'C'))
         item = getattr(Yay, '!')
