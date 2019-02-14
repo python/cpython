@@ -786,7 +786,7 @@ def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=None,
     # address, effectively preventing this one from accepting connections.
     # Also, it sets the process in a state where it'll no longer respond
     # to any signals or graceful kills. More at:
-    # See: msdn2.microsoft.com/en-us/library/ms740621(VS.85).aspx
+    # msdn2.microsoft.com/en-us/library/ms740621(VS.85).aspx
     reuse_addr = os.name not in ('nt', 'cygwin') and \
         hasattr(_socket, 'SO_REUSEADDR')
     if reuse_port and not hasattr(_socket, "SO_REUSEPORT"):
@@ -807,7 +807,7 @@ def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=None,
     if family == AF_UNSPEC:
         # Prefer AF_INET over AF_INET6. Rationale:
         # 1) AF_INET is the default for socket.socket()
-        # 2) in case of unambiguous host (None or "localhost")
+        # 2) in case of ambiguous host (None or "localhost")
         # getaddrinfo() sorting order is not guaranteed, so we take a
         # stance in order to eliminate cross-platform differences.
         info.sort(key=lambda x: x[0] == AF_INET, reverse=True)
@@ -850,9 +850,9 @@ def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=None,
             try:
                 sock.bind(sa)
             except error as err:
-                es = '%s (while attempting to bind on address %r)' % \
+                err_msg = '%s (while attempting to bind on address %r)' % \
                     (err.strerror, sa)
-                raise error(err.errno, es) from None
+                raise error(err.errno, err_msg) from None
             if socktype == SOCK_STREAM:
                 sock.listen(backlog or 0)
             # Break explicitly a reference cycle.
@@ -864,8 +864,7 @@ def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=None,
 
     if err is not None:
         raise err
-    else:
-        raise error("getaddrinfo returns an empty list")
+    raise error("getaddrinfo returns an empty list")
 
 
 def getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):

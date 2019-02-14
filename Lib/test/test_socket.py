@@ -6086,7 +6086,7 @@ class CreateServerTest(unittest.TestCase):
                                   family=socket.AF_INET) as sock:
             self.assertEqual(sock.family, socket.AF_INET)
         if support.IPV6_ENABLED:
-            with socket.create_server(("localhost", 0),
+            with socket.create_server(("::1", 0),
                                       family=socket.AF_INET6) as sock:
                 self.assertEqual(sock.family, socket.AF_INET6)
 
@@ -6125,7 +6125,7 @@ class CreateServerTest(unittest.TestCase):
     @unittest.skipIf(not socket.supports_hybrid_ipv46(),
                      "hybrid_ipv46 not supported")
     def test_hybrid_ipv6_default(self):
-        with socket.create_server(("localhost", 0), hybrid_ipv46=True) as sock:
+        with socket.create_server(("::1", 0), hybrid_ipv46=True) as sock:
             self.assertEqual(sock.family, socket.AF_INET6)
 
     def test_dual_stack_udp(self):
@@ -6190,7 +6190,7 @@ class CreateServerFunctionalTest(unittest.TestCase):
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
     def test_tcp6(self):
-        with socket.create_server(("localhost", 0), family=socket.AF_INET6,
+        with socket.create_server(("::1", 0), family=socket.AF_INET6,
                                   type=socket.SOCK_STREAM) as sock:
             self.echo_client(sock)
 
@@ -6201,7 +6201,7 @@ class CreateServerFunctionalTest(unittest.TestCase):
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
     def test_udp6(self):
-        with socket.create_server(("localhost", 0), family=socket.AF_INET6,
+        with socket.create_server(("::1", 0), family=socket.AF_INET6,
                                   type=socket.SOCK_DGRAM) as sock:
             self.echo_client(sock)
 
