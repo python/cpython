@@ -292,7 +292,6 @@ random_seed(RandomObject *self, PyObject *args)
                               PY_LITTLE_ENDIAN,
                               0); /* unsigned */
     if (res == -1) {
-        PyMem_Free(key);
         goto Done;
     }
 
