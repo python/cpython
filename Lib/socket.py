@@ -60,7 +60,7 @@ EBADF = getattr(errno, 'EBADF', 9)
 EAGAIN = getattr(errno, 'EAGAIN', 11)
 EWOULDBLOCK = getattr(errno, 'EWOULDBLOCK', 11)
 
-__all__ = ["fromfd", "getfqdn", "create_connection", "bind_socket",
+__all__ = ["fromfd", "getfqdn", "create_connection", "create_server",
            "supports_hybrid_ipv46", "AddressFamily", "SocketKind"]
 __all__.extend(os._get_exports_list(_socket))
 
@@ -743,9 +743,9 @@ def supports_hybrid_ipv46():
     except error:
         return False
 
-def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
-                reuse_addr=None, reuse_port=False, flags=None,
-                hybrid_ipv46=False):
+def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
+                  reuse_addr=None, reuse_port=False, flags=None,
+                  hybrid_ipv46=False):
     """Convenience function which creates a socket bound to *address*
     (a 2-tuple (host, port)) and return the socket object.
 
@@ -770,7 +770,7 @@ def bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
     When False it will explicitly disable this option on platforms that
     enable it by default (e.g. Linux).
 
-    >>> with bind_socket((None, 8000)) as server:
+    >>> with create_server((None, 8000)) as server:
     ...     while True:
     ...         conn, addr = server.accept()
     ...         # handle new connection

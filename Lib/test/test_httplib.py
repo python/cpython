@@ -1116,7 +1116,7 @@ class BasicTest(TestCase):
 
     def test_response_fileno(self):
         # Make sure fd returned by fileno is valid.
-        serv = socket.bind_socket((HOST, 0))
+        serv = socket.create_server((HOST, 0))
         self.addCleanup(serv.close)
 
         result = None

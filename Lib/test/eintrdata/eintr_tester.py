@@ -284,7 +284,7 @@ class SocketEINTRTest(EINTRBaseTest):
         self._test_send(lambda sock, data: sock.sendmsg([data]))
 
     def test_accept(self):
-        sock = socket.bind_socket((support.HOST, 0))
+        sock = socket.create_server((support.HOST, 0))
         self.addCleanup(sock.close)
         port = sock.getsockname()[1]
 

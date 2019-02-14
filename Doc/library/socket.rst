@@ -595,7 +595,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.2
       *source_address* was added.
 
-.. function:: bind_socket(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128, reuse_addr=None, reuse_port=False, flags=None, hybrid_ipv46=False)
+.. function:: create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128, reuse_addr=None, reuse_port=False, flags=None, hybrid_ipv46=False)
 
    Convenience function which aims at automating all the typical steps needed
    when creating a server socket.
@@ -636,7 +636,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
      import socket
 
-     with socket.bind_socket(("", 8888),
+     with socket.create_server(("", 8888),
                              hybrid_ipv46=socket.supports_hybrid_ipv46()) as server:
          conn, addr = server.accept()
          with conn:
@@ -1838,9 +1838,9 @@ sends traffic to the first one connected successfully. ::
    print('Received', repr(data))
 
 
-The two examples above can be rewritten by using :meth:`socket.bind_socket`
+The two examples above can be rewritten by using :meth:`socket.create_server`
 and :meth:`socket.create_connection` convenience functions.
-:meth:`socket.bind_socket` has the extra advantage of creating an agnostic
+:meth:`socket.create_server` has the extra advantage of creating an agnostic
 IPv4/IPv6 server on platforms supporting this functionality.
 
 ::
@@ -1850,7 +1850,7 @@ IPv4/IPv6 server on platforms supporting this functionality.
 
    HOST = None
    PORT = 50007
-   s = socket.bind_socket((HOST, PORT), hybrid_ipv46=socket.supports_hybrid_ipv46())
+   s = socket.create_server((HOST, PORT), hybrid_ipv46=socket.supports_hybrid_ipv46())
    conn, addr = s.accept()
    with conn:
        print('Connected by', addr)

@@ -132,7 +132,7 @@ class DummyFTPHandler(asynchat.async_chat):
         self.push('200 active data connection established')
 
     def cmd_pasv(self, arg):
-        with socket.bind_socket((self.socket.getsockname()[0], 0)) as sock:
+        with socket.create_server((self.socket.getsockname()[0], 0)) as sock:
             sock.settimeout(TIMEOUT)
             ip, port = sock.getsockname()[:2]
             ip = ip.replace('.', ','); p1 = port / 256; p2 = port % 256
@@ -148,8 +148,8 @@ class DummyFTPHandler(asynchat.async_chat):
         self.push('200 active data connection established')
 
     def cmd_epsv(self, arg):
-        with socket.bind_socket((self.socket.getsockname()[0], 0),
-                                family=socket.AF_INET6) as sock:
+        with socket.create_server((self.socket.getsockname()[0], 0),
+                                  family=socket.AF_INET6) as sock:
             sock.settimeout(TIMEOUT)
             port = sock.getsockname()[1]
             self.push('229 entering extended passive mode (|||%d|)' %port)

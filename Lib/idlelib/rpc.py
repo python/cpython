@@ -530,7 +530,7 @@ class RPCClient(SocketIO):
     nextseq = 1 # Requests coming from the client are odd numbered
 
     def __init__(self, address, family=socket.AF_INET, type=socket.SOCK_STREAM):
-        self.listening_sock = socket.bind_socket(
+        self.listening_sock = socket.create_server(
             family=family, type=type, backlog=1)
 
     def accept(self):

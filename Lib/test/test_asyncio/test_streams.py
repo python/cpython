@@ -592,7 +592,7 @@ class StreamTests(test_utils.TestCase):
                 await client_writer.wait_closed()
 
             def start(self):
-                sock = socket.bind_socket(('127.0.0.1', 0))
+                sock = socket.create_server(('127.0.0.1', 0))
                 self.server = self.loop.run_until_complete(
                     asyncio.start_server(self.handle_client,
                                          sock=sock,
@@ -604,7 +604,7 @@ class StreamTests(test_utils.TestCase):
                                                          client_writer))
 
             def start_callback(self):
-                sock = socket.bind_socket(('127.0.0.1', 0))
+                sock = socket.create_server(('127.0.0.1', 0))
                 addr = sock.getsockname()
                 sock.close()
                 self.server = self.loop.run_until_complete(
@@ -794,7 +794,7 @@ os.close(fd)
 
         def server():
             # Runs in a separate thread.
-            with socket.bind_socket(('localhost', 0)) as sock:
+            with socket.create_server(('localhost', 0)) as sock:
                 addr = sock.getsockname()
                 q.put(addr)
                 clt, _ = sock.accept()

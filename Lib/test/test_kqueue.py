@@ -110,7 +110,7 @@ class TestKQueue(unittest.TestCase):
 
 
     def test_queue_event(self):
-        serverSocket = socket.bind_socket(('127.0.0.1', 0))
+        serverSocket = socket.create_server(('127.0.0.1', 0))
         client = socket.socket()
         client.setblocking(False)
         try:
