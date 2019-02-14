@@ -608,7 +608,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    If *family* is :data:`AF_UNSPEC` the address family will be determined from
    the *host* specified in *address*. If family can't clearly be determined
-   from *host* and *hybrid_ipv46* is ``False`` then :data:`AF_INET` family will
+   from *host* and *hybrid_ipv46* is false then :data:`AF_INET` family will
    be preferred over :data:`AF_INET6`.
 
    *type* should be either :data:`SOCK_STREAM` or :data:`SOCK_DGRAM`.
@@ -622,12 +622,12 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    *flags* is a bitmask for :meth:`getaddrinfo()`; if ``None``
    :data:`AI_PASSIVE` is used.
 
-   If *hybrid_ipv46* is ``True`` and the platform supports it the socket will
+   If *hybrid_ipv46* is tre and the platform supports it the socket will
    be able to accept both IPv4 and IPv6 connections.
    In this case the address returned by :meth:`socket.getpeername` when a new
    IPv4 connection is accepted will be an IPv6 address represented as an
    IPv4-mapped IPv6 address like ``":ffff:127.0.0.1"``.
-   If *hybrid_ipv46* is ``False`` it will explicitly disable this option on
+   If *hybrid_ipv46* is false it will explicitly disable this option on
    platforms that enable it by default (e.g. Linux).
    For platforms not supporting this functionality natively you could use this
    `MultipleSocketsListener recipe <http://code.activestate.com/recipes/578504/>`__.

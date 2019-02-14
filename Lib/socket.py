@@ -805,7 +805,11 @@ def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=None,
         family = AF_INET6
     info = getaddrinfo(host, port, family, type, 0, flags)
     if family == AF_UNSPEC:
-        # prefer AF_INET over AF_INET6
+        # Prefer AF_INET over AF_INET6. Rationale:
+        # 1) AF_INET is the default for socket.socket()
+        # 2) in case of unambiguous host (None or "localhost")
+        # getaddrinfo() sorting order is not guaranteed, so we take a
+        # stance in order to eliminate cross-platform differences.
         info.sort(key=lambda x: x[0] == AF_INET, reverse=True)
 
     err = None
@@ -830,11 +834,13 @@ def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=None,
             if reuse_port:
                 sock.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
             if has_ipv6 and af == AF_INET6:
-                if not hybrid_ipv46 and hasattr(_socket, "IPV6_V6ONLY"):
+                if not hybrid_ipv46 and \
+                        hasattr(_socket, "IPV6_V6ONLY") and \
+                        hasattr(_socket, "IPPROTO_IPV6"):
                     # Disable IPv4/IPv6 dual stack support (enabled by
                     # default on Linux) which makes a single socket
-                    # listen on both address families in order to be
-                    # consistent across different platforms.
+                    # listen on both address families in order to
+                    # eliminate cross-platform differences.
                     try:
                         sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 1)
                     except error:

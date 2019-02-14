@@ -6101,7 +6101,7 @@ class CreateServerTest(unittest.TestCase):
 
     def test_reuse_port(self):
         if not hasattr(socket, "SO_REUSEPORT"):
-            with self.assertRaises(ValueError, socket.error):
+            with self.assertRaises(ValueError):
                 socket.create_server(("localhost", 0), reuse_port=True)
         else:
             with socket.create_server(("localhost", 0)) as sock:
