@@ -961,7 +961,7 @@ class SMTPHandler(logging.Handler):
         only be used when authentication credentials are supplied. The tuple
         will be either an empty tuple, or a single-value tuple with the name
         of a keyfile, or a 2-value tuple with the names of the keyfile and
-        certificate file. (This tuple is passed to the `starttls` method).
+        certificate file. (This tuple is passed to the `ssl._create_stdlib_context` method).
         A timeout in seconds can be specified for the SMTP connection (the
         default is one second).
         """
