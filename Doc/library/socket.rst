@@ -595,7 +595,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.2
       *source_address* was added.
 
-.. function:: create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=None, reuse_port=False, flags=None, hybrid_ipv46=False)
+.. function:: create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=None, reuse_port=False, flags=None, dualstack_ipv6=False)
 
    Convenience function which aims at automating all the typical steps needed
    when creating a server socket.
@@ -608,7 +608,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    If *family* is :data:`AF_UNSPEC` the address family will be determined from
    the *host* specified in *address*. If family can't clearly be determined
-   from *host* and *hybrid_ipv46* is false then :data:`AF_INET` family will
+   from *host* and *dualstack_ipv6* is false then :data:`AF_INET` family will
    be preferred over :data:`AF_INET6`.
 
    *type* should be either :data:`SOCK_STREAM` or :data:`SOCK_DGRAM`.
@@ -622,16 +622,16 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    *flags* is a bitmask for :meth:`getaddrinfo()`; if ``None``
    :data:`AI_PASSIVE` is used.
 
-   If *hybrid_ipv46* is tre and the platform supports it the socket will
+   If *dualstack_ipv6* is tre and the platform supports it the socket will
    be able to accept both IPv4 and IPv6 connections.
    In this case the address returned by :meth:`socket.getpeername` when a new
    IPv4 connection is accepted will be an IPv6 address represented as an
    IPv4-mapped IPv6 address like ``":ffff:127.0.0.1"``.
-   If *hybrid_ipv46* is false it will explicitly disable this option on
+   If *dualstack_ipv6* is false it will explicitly disable this option on
    platforms that enable it by default (e.g. Linux).
    For platforms not supporting this functionality natively you could use this
    `MultipleSocketsListener recipe <http://code.activestate.com/recipes/578504/>`__.
-   This parameter can be used in conjunction with :func:`supports_hybrid_ipv46`.
+   This parameter can be used in conjunction with :func:`has_dualstack_ipv6`.
 
    Here's an echo server example listening on all interfaces, port 8888,
    and (possibly) hybrid IPv4/IPv6 support:
@@ -641,7 +641,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
      import socket
 
      with socket.create_server(("", 8888),
-                             hybrid_ipv46=socket.supports_hybrid_ipv46()) as server:
+                             dualstack_ipv6=socket.has_dualstack_ipv6()) as server:
          conn, addr = server.accept()
          with conn:
              while True:
@@ -652,7 +652,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    .. versionadded:: 3.8
 
-.. function:: supports_hybrid_ipv46()
+.. function:: has_dualstack_ipv6()
 
    Return ``True`` if the platform supports creating a single
    :data:`SOCK_STREAM` socket which can accept both IPv4 and IPv6 connections.
@@ -1854,7 +1854,7 @@ IPv4/IPv6 server on platforms supporting this functionality.
 
    HOST = None
    PORT = 50007
-   s = socket.create_server((HOST, PORT), hybrid_ipv46=socket.supports_hybrid_ipv46())
+   s = socket.create_server((HOST, PORT), dualstack_ipv6=socket.has_dualstack_ipv6())
    conn, addr = s.accept()
    with conn:
        print('Connected by', addr)

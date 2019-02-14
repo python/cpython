@@ -61,7 +61,7 @@ EAGAIN = getattr(errno, 'EAGAIN', 11)
 EWOULDBLOCK = getattr(errno, 'EWOULDBLOCK', 11)
 
 __all__ = ["fromfd", "getfqdn", "create_connection", "create_server",
-           "supports_hybrid_ipv46", "AddressFamily", "SocketKind"]
+           "has_dualstack_ipv6", "AddressFamily", "SocketKind"]
 __all__.extend(os._get_exports_list(_socket))
 
 # Set up the socket.AF_* socket.SOCK_* constants as members of IntEnums for
@@ -728,7 +728,8 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
     else:
         raise error("getaddrinfo returns an empty list")
 
-def supports_hybrid_ipv46():
+
+def has_dualstack_ipv6():
     """Return True if the platform supports creating a SOCK_STREAM socket
     which can handle both AF_INET and AF_INET6 (IPv4 / IPv6) connections.
     """
@@ -743,8 +744,9 @@ def supports_hybrid_ipv46():
     except error:
         return False
 
+
 def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
-                  hybrid_ipv46=False):
+                  dualstack_ipv6=False):
     """Convenience function which creates a socket bound to *address*
     (a 2-tuple (host, port)) and return the socket object.
 
@@ -754,7 +756,7 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
 
     *reuse_port* dictate whether to use the SO_REUSEPORT socket option.
 
-    *hybrid_ipv46*: if True and the platform supports it it will create
+    *dualstack_ipv6*: if True and the platform supports it it will create
     a socket able to accept both IPv4 and IPv6 connections.
     When False it will explicitly disable this option on platforms that
     enable it by default (e.g. Linux).
@@ -766,9 +768,9 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
     """
     if reuse_port and not hasattr(_socket, "SO_REUSEPORT"):
         raise ValueError("SO_REUSEPORT not supported on this platform")
-    if hybrid_ipv46:
-        if not supports_hybrid_ipv46():
-            raise ValueError("hybrid_ipv46 not supported on this platform")
+    if dualstack_ipv6:
+        if not has_dualstack_ipv6():
+            raise ValueError("dualstack_ipv6 not supported on this platform")
     sock = socket(family, SOCK_STREAM)
     try:
         # Note about Windows: we don't set SO_REUSEADDR because:
@@ -791,7 +793,7 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
         if reuse_port:
             sock.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
         if has_ipv6 and family == AF_INET6:
-            if not hybrid_ipv46 and \
+            if not dualstack_ipv6 and \
                     hasattr(_socket, "IPV6_V6ONLY") and \
                     hasattr(_socket, "IPPROTO_IPV6"):
                 # Disable IPv4/IPv6 dual stack support (enabled by
