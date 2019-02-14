@@ -1008,7 +1008,8 @@ class SMTPHandler(logging.Handler):
             if self.username and self.secure is not None:
                 keyfile = self.secure[0] if len(self.secure) >= 1 else None
                 certfile = self.secure[1] if len(self.secure) >= 2 else None
-                smtp = smtplib.SMTP_SSL(self.mailhost, port, timeout=self.timeout, keyfile=keyfile, certfile=certfile)
+                smtp = smtplib.SMTP_SSL(self.mailhost, port, timeout=self.timeout,
+                                        keyfile=keyfile, certfile=certfile)
             else:
                 smtp = smtplib.SMTP(self.mailhost, port, timeout=self.timeout)
             if self.username:
@@ -1055,7 +1056,7 @@ class NTEventLogHandler(logging.Handler):
                 logging.WARNING : win32evtlog.EVENTLOG_WARNING_TYPE,
                 logging.ERROR   : win32evtlog.EVENTLOG_ERROR_TYPE,
                 logging.CRITICAL: win32evtlog.EVENTLOG_ERROR_TYPE,
-         }
+            }
         except ImportError:
             print("The Python Win32 extensions for NT (service, event "\
                         "logging) appear not to be available.")
