@@ -595,25 +595,30 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.2
       *source_address* was added.
 
-.. function:: create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128, reuse_port=False, flags=None, hybrid_ipv46=False)
+.. function:: create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=None, reuse_port=False, flags=None, hybrid_ipv46=False)
 
    Convenience function which aims at automating all the typical steps needed
    when creating a server socket.
    It creates a socket bound to *address* (a 2-tuple ``(host, port)``) and
    return the socket object upon which you can call :meth:`socket.accept()` in
-   order to accept new connections.
+   order to accept new connections.Internally it relies on :meth:`getaddrinfo()`
+   and returns the first socket which can be bound to *address*.
 
-   Internally it relies on :meth:`getaddrinfo()` and returns the first socket
-   which can be bound to *address*.
    If *host* is an empty string or ``None`` all network interfaces are assumed.
+
    If *family* is :data:`AF_UNSPEC` the address family will be determined from
    the *host* specified in *address*. If family can't clearly be determined
    from *host* and *hybrid_ipv46* is ``False`` then :data:`AF_INET` family will
    be preferred over :data:`AF_INET6`.
+
    *type* should be either :data:`SOCK_STREAM` or :data:`SOCK_DGRAM`.
+
    *backlog* is the queue size passed to :meth:`socket.listen` if
-   :data:`SOCK_STREAM` *type* is used.
+   :data:`SOCK_STREAM` *type* is used. If left ``None`` a default reasonable
+   value is chosen.
+
    *reuse_port* dictates whether to set :data:`SO_REUSEPORT` socket option.
+
    *flags* is a bitmask for :meth:`getaddrinfo()`; if ``None``
    :data:`AI_PASSIVE` is used.
 

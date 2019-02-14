@@ -743,7 +743,7 @@ def supports_hybrid_ipv46():
     except error:
         return False
 
-def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
+def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=None,
                   reuse_port=False, flags=None, hybrid_ipv46=False):
     """Convenience function which creates a socket bound to *address*
     (a 2-tuple (host, port)) and return the socket object.
@@ -775,6 +775,7 @@ def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
     """
     host, port = address
     if host == "":
+        # When using getaddrinfo(), None is an alias for "all interfaces":
         # https://mail.python.org/pipermail/python-ideas/2013-March/019937.html
         host = None  # all interfaces
     # Note about Windows: we don't set SO_REUSEADDR because:
@@ -823,20 +824,20 @@ def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
                 try:
                     sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
                 except error:
-                    # Fail later on on bind(), for platforms which may not
+                    # Fail later on bind(), for platforms which may not
                     # support this option.
                     pass
             if reuse_port:
                 sock.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
             if has_ipv6 and af == AF_INET6:
-                if not hybrid_ipv46:
+                if not hybrid_ipv46 and hasattr(_socket, "IPV6_V6ONLY"):
                     # Disable IPv4/IPv6 dual stack support (enabled by
                     # default on Linux) which makes a single socket
                     # listen on both address families in order to be
                     # consistent across different platforms.
                     try:
                         sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 1)
-                    except NameError:
+                    except error:
                         pass
                 else:
                     sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 0)
@@ -847,7 +848,7 @@ def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
                     (err.strerror, sa)
                 raise error(err.errno, es) from None
             if socktype == SOCK_STREAM:
-                sock.listen(backlog)
+                sock.listen(backlog or 0)
             # Break explicitly a reference cycle.
             err = None
             return sock
