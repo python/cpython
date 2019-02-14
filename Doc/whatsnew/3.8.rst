@@ -350,15 +350,6 @@ Build and C API Changes
 * Heap-allocated Types will now incref through :c:func:`PyObject_Init` (and
   its parallel macro PyObject_INIT) instead of :c:func:`PyType_GenericAlloc`.
 
-  All instance allocation C APIs that call
-  :c:func:`PyObject_Init` will incref the Type accordingly. This
-  includes: :c:func:`PyObject_New`, :c:func:`PyObject_NewVar`,
-  :c:func:`PyObject_GC_New`, :c:func:`PyObject_GC_NewVar`, and all their
-  corresponding macros.
-
-  If the Type has a custom tp_dealloc, it has to be updated to decref the Type
-  if it's not already doing so.
-
   (Contributed by Eddie Elizondo in :issue:`35810`.)
 
 
@@ -535,6 +526,54 @@ Changes in the Python API
   :mod:`dbm.gnu` or :mod:`dbm.ndbm`) raises :attr:`error` (:exc:`dbm.dumb.error`,
   :exc:`dbm.gnu.error` or :exc:`dbm.ndbm.error`) instead of :exc:`KeyError`.
   (Contributed by Xiang Zhang in :issue:`33106`.)
+
+
+Changes in the C API
+--------------------------
+
+The incref to a heap-allocated type has been moved from
+:c:func:`PyType_GenericAlloc` to :c:func:`PyObject_Init` and
+:c:func:`PyObject_INIT`. This now makes types created through
+:c:func:`PyType_FromSpec` behave like any other class in managed code.
+
+For the vast mojority of cases, there should be no side effect. However, this
+might cause some types to become immortal. To correctly port these types into
+3.8, please apply the following changes:
+
+* Remove any manual incref on the itself after allocating an instance. This
+  usually happens after calling :c:func:`PyObject_New`,
+  :c:func:`PyObject_NewVar`, :c:func:`PyObject_GC_New`,
+  :c:func:`PyObject_GC_NewVar`, or any other custom allocator that uses
+  :c:func:`PyObject_Init` or :c:func:`PyObject_INIT`.
+
+Example::
+
+    static foo_struct *
+    foo_new(PyObject *type) {
+        foo_struct *foo = PyObject_GC_New(foo_struct, (PyTypeObject *) type);
+        if (foo == NULL)
+            return NULL;
+    #if PY_VERSION_HEX < 0x03080000
+        PY_INCREF(type)
+    #endif
+        return foo;
+    }
+
+* Add a decref to the type in any custom tp_dealloc. The type should always
+  decref at deallocation time.
+
+Example::
+
+    static void
+    foo_dealloc(foo_struct *instance) {
+        PyObject *type = Py_TYPE(instance);
+        PyObject_GC_Del(instance);
+    #if PY_VERSION_HEX >= 0x03080000
+        Py_DECREF(type);
+    #endif
+    }
+
+(Contributed by Eddie Elizondo in :issue:`35810`.)
 
 
 CPython bytecode changes
