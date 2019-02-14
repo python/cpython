@@ -1521,7 +1521,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
             addr = address[0]
             if len(address) > 1:
                 if isinstance(address[1], int) and 0 < address[1] > 32:
-                    raise NetmaskValueError("The netmask should be isn't valid")
+                    raise NetmaskValueError(f"The netmask is not valid {address[1]}")
                 mask = address[1]
             else:
                 mask = self._max_prefixlen
