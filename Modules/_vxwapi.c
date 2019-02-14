@@ -99,7 +99,7 @@ rtp_spawn_impl(
     int priority = 0;
     unsigned int uStackSize = 0;
     int options = 0;
-    int taskOptions = 0;
+    int taskOptions = VX_FP_TASK;
     char  pwdbuf[PATH_MAX]={0};
     const char *cwd = NULL;
     PyObject *cwd_obj2;
