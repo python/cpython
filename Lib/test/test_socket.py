@@ -6099,29 +6099,6 @@ class CreateServerTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             socket.create_server(("localhost", 0), type=0)
 
-    def test_reuse_addr(self):
-        if not hasattr(socket, "SO_REUSEADDR"):
-            with self.assertRaises(ValueError, socket):
-                socket.create_server(("localhost", 0), reuse_addr=True)
-                return
-        # check False
-        with socket.create_server(("localhost", 0), reuse_addr=False) as sock:
-            opt = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
-            self.assertEqual(opt, 0)
-            port = sock.getsockname()[1]
-        # Make sure the same port can be reused once socket is closed,
-        # meaning SO_REUSEADDR is implicitly set by default.
-        with socket.create_server(("localhost", port)) as sock:
-            pass
-
-    @unittest.skipIf(os.name not in ('nt', 'cygwin'), "Windows only")
-    def test_reuse_addr_win(self):
-        with self.assertRaises(ValueError):
-            socket.create_server(("localhost, 0"), reuse_addr=True)
-        s = socket.create_server(("localhost, 0"), reuse_addr=True,
-                                 type=socket.SOCK_DGRAM)
-        s.close()
-
     def test_reuse_port(self):
         if not hasattr(socket, "SO_REUSEPORT"):
             with self.assertRaises(ValueError, socket.error):

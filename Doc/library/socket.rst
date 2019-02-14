@@ -595,7 +595,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.2
       *source_address* was added.
 
-.. function:: create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128, reuse_addr=None, reuse_port=False, flags=None, hybrid_ipv46=False)
+.. function:: create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128, reuse_port=False, flags=None, hybrid_ipv46=False)
 
    Convenience function which aims at automating all the typical steps needed
    when creating a server socket.
@@ -613,8 +613,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    *type* should be either :data:`SOCK_STREAM` or :data:`SOCK_DGRAM`.
    *backlog* is the queue size passed to :meth:`socket.listen` if
    :data:`SOCK_STREAM` *type* is used.
-   *reuse_addr* and *reuse_port* dictates whether to use :data:`SO_REUSEADDR`
-   and :data:`SO_REUSEPORT` socket options respectively.
+   *reuse_port* dictates whether to set :data:`SO_REUSEPORT` socket option.
    *flags* is a bitmask for :meth:`getaddrinfo()`; if ``None``
    :data:`AI_PASSIVE` is used.
 

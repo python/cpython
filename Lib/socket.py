@@ -744,8 +744,7 @@ def supports_hybrid_ipv46():
         return False
 
 def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
-                  reuse_addr=None, reuse_port=False, flags=None,
-                  hybrid_ipv46=False):
+                  reuse_port=False, flags=None, hybrid_ipv46=False):
     """Convenience function which creates a socket bound to *address*
     (a 2-tuple (host, port)) and return the socket object.
 
@@ -760,8 +759,7 @@ def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
     *backlog* is the queue size passed to socket.listen() and is ignored
     for SOCK_DGRAM socket types.
 
-    *reuse_addr* and *reuse_port* dictate whether to use SO_REUSEADDR
-    and SO_REUSEPORT socket options.
+    *reuse_port* dictate whether to use the SO_REUSEPORT socket option.
 
     *flags* is a bitmask for getaddrinfo().
 
@@ -779,24 +777,17 @@ def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
     if host == "":
         # https://mail.python.org/pipermail/python-ideas/2013-March/019937.html
         host = None  # all interfaces
-    # Note about Windows: by default SO_REUSEADDR is not set because:
+    # Note about Windows: we don't set SO_REUSEADDR because:
     # 1) It's unnecessary: bind() will succeed even in case of a
     # previous closed socket on the same address and still in TIME_WAIT
     # state.
     # 2) If set, another socket will be free to bind() on the same
     # address, effectively preventing this one from accepting connections.
     # Also, it sets the process in a state where it'll no longer respond
-    # to any signals or graceful kills. The option can still be set though
-    # for SOCK_DGRAM multicast sockets.
+    # to any signals or graceful kills. More at:
     # See: msdn2.microsoft.com/en-us/library/ms740621(VS.85).aspx
-    iswin = os.name in ('nt', 'cygwin')
-    if reuse_addr is None:
-        reuse_addr = not iswin and hasattr(_socket, 'SO_REUSEADDR')
-    elif reuse_addr and not hasattr(_socket, 'SO_REUSEADDR'):
-        raise ValueError("SO_REUSEADDR not supported on this platform")
-    elif reuse_addr and iswin and type != SOCK_DGRAM:
-        raise ValueError("SO_REUSEADDR allowed for SOCK_DGRAM type only")
-
+    reuse_addr = os.name not in ('nt', 'cygwin') and \
+        hasattr(_socket, 'SO_REUSEADDR')
     if reuse_port and not hasattr(_socket, "SO_REUSEPORT"):
         raise ValueError("SO_REUSEPORT not supported on this platform")
     if type not in (SOCK_STREAM, SOCK_DGRAM):
@@ -811,7 +802,6 @@ def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=128,
         if not supports_hybrid_ipv46():
             raise ValueError("hybrid_ipv46 not supported on this platform")
         family = AF_INET6
-
     info = getaddrinfo(host, port, family, type, 0, flags)
     if family == AF_UNSPEC:
         # prefer AF_INET over AF_INET6
