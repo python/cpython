@@ -1752,41 +1752,6 @@ class AbstractPickleModuleTests(unittest.TestCase):
             f.close()
             support.unlink(TESTFN)
 
-    def test_load_text_file(self):
-        def roundtrip(value, proto=0):
-            pickled = self.module.dumps(value, proto)
-            pickled = pickled.replace('\n', '\r\n')
-            return self.module.loads(pickled)
-
-        self.assertEqual(roundtrip(123), 123)
-        self.assertIs(type(roundtrip(123)), int)
-        self.assertEqual(roundtrip(12345678910111213141516178920L),
-                         12345678910111213141516178920L)
-        self.assertEqual(roundtrip(123.5), 123.5)
-        self.assertIs(roundtrip(True), True)
-        with support.check_warnings(('', RuntimeWarning), quiet=True):
-            self.assertEqual(roundtrip('a\rb\nc'), 'a\rb\nc')
-        with support.check_warnings(('', RuntimeWarning)):
-            self.assertIsInstance(roundtrip(C()), C)
-        with support.check_warnings(('', RuntimeWarning)):
-            self.assertIs(roundtrip(C), C)
-        if have_unicode:
-            with support.check_warnings(('', RuntimeWarning)):
-                self.assertEqual(roundtrip(u'a\rb\nc'), u'a\rb\nc')
-                u = unichr(0x03c0)
-                self.assertEqual(roundtrip(u), u)
-                self.assertEqual(roundtrip(u, 1), u)
-                self.assertEqual(roundtrip(u, 2), u)
-                self.assertEqual(roundtrip(['a', u]), ['a', u])
-                x, y = roundtrip([C(), u])
-                self.assertIsInstance(x, C)
-                self.assertEqual(y, u)
-                x, y = roundtrip([C, u])
-                self.assertIs(x, C)
-                self.assertEqual(y, u)
-
-                self.assertEqual(self.module.loads("V\\u03c0\r\n."), u + '\r')
-
     def test_end_of_text_file(self):
         try:
             with open(TESTFN, "w") as f:

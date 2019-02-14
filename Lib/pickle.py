@@ -220,10 +220,8 @@ class Pickler:
 
     def dump(self, obj):
         """Write a pickled representation of obj to the open file."""
-        self._saved_newline_mark = False
         if self.proto >= 2:
             self.write(PROTO + chr(self.proto))
-            self._saved_newline_mark = True
         self.save(obj)
         self.write(STOP)
 
@@ -344,7 +342,6 @@ class Pickler:
             self.write(BINPERSID)
         else:
             self.write(PERSID + str(pid) + '\n')
-            self._saved_newline_mark = True
 
     def save_reduce(self, func, args, state=None,
                     listitems=None, dictitems=None, obj=None):
@@ -496,7 +493,6 @@ class Pickler:
                 self.write(BINSTRING + pack("<i", n) + obj)
         else:
             self.write(STRING + repr(obj) + '\n')
-            self._saved_newline_mark = True
         self.memoize(obj)
     dispatch[StringType] = save_string
 
@@ -511,9 +507,6 @@ class Pickler:
             obj = obj.replace("\n", "\\u000a")
             obj = obj.replace("\r", "\\u000d")
             obj = obj.replace("\x1a", "\\u001a")  # EOF on DOS
-            if not self._saved_newline_mark:
-                self.write(STRING + "''\n" + POP)
-                self._saved_newline_mark = True
             self.write(UNICODE + obj.encode('raw-unicode-escape') + '\n')
         self.memoize(obj)
     dispatch[UnicodeType] = save_unicode
@@ -542,14 +535,10 @@ class Pickler:
                     obj = obj.replace("\n", "\\u000a")
                     obj = obj.replace("\r", "\\u000d")
                     obj = obj.replace("\x1a", "\\u001a")  # EOF on DOS
-                    if not self._saved_newline_mark:
-                        self.write(STRING + "''\n" + POP)
-                        self._saved_newline_mark = True
                     obj = obj.encode('raw-unicode-escape')
                     self.write(UNICODE + obj + '\n')
                 else:
                     self.write(STRING + repr(obj) + '\n')
-                    self._saved_newline_mark = True
             self.memoize(obj)
         dispatch[StringType] = save_string
 
@@ -736,7 +725,6 @@ class Pickler:
             for arg in args:
                 save(arg)
             write(INST + cls.__module__ + '\n' + cls.__name__ + '\n')
-            self._saved_newline_mark = True
 
         self.memoize(obj)
 
@@ -790,7 +778,6 @@ class Pickler:
                 return
 
         write(GLOBAL + module + '\n' + name + '\n')
-        self._saved_newline_mark = True
         self.memoize(obj)
 
     dispatch[ClassType] = save_global
@@ -878,7 +865,6 @@ class Unpickler:
         self.append = self.stack.append
         read = self.read
         dispatch = self.dispatch
-        self._strip_cr = False
         try:
             while 1:
                 key = read(1)
@@ -915,12 +901,6 @@ class Unpickler:
 
     def load_persid(self):
         pid = self.readline()[:-1]
-        if pid[-1:] == '\r':
-            import warnings
-            warnings.warn('Pickle was saved in text mode',
-                          RuntimeWarning, stacklevel=3)
-            self._strip_cr = True
-            pid = pid[:-1]
         self.append(self.persistent_load(pid))
     dispatch[PERSID] = load_persid
 
@@ -943,9 +923,9 @@ class Unpickler:
 
     def load_int(self):
         data = self.readline()
-        if data == '00\n' or data == '00\r\n':
+        if data == FALSE[1:]:
             val = False
-        elif data == '01\n' or data == '01\r\n':
+        elif data == TRUE[1:]:
             val = True
         else:
             try:
@@ -994,17 +974,11 @@ class Unpickler:
     def load_string(self):
         rep = self.readline()[:-1]
         for q in "\"'": # double or single quote
-            if len(rep) >= 2 and rep[0] == q:
-                if rep[-1] == q:
-                    rep = rep[1:-1]
-                    break
-                elif len(rep) >= 3 and rep[-1] == '\r' and rep[-2] == q:
-                    import warnings
-                    warnings.warn('Pickle was saved in text mode',
-                                  RuntimeWarning, stacklevel=3)
-                    self._strip_cr = True
-                    rep = rep[1:-2]
-                    break
+            if rep.startswith(q):
+                if len(rep) < 2 or not rep.endswith(q):
+                    raise ValueError, "insecure string pickle"
+                rep = rep[len(q):-len(q)]
+                break
         else:
             raise ValueError, "insecure string pickle"
         self.append(rep.decode("string-escape"))
@@ -1016,13 +990,7 @@ class Unpickler:
     dispatch[BINSTRING] = load_binstring
 
     def load_unicode(self):
-        rep = self.readline()[:-1]
-        if self._strip_cr and rep[-1:] == '\r':
-            import warnings
-            warnings.warn('Pickle was saved in text mode',
-                          RuntimeWarning, stacklevel=3)
-            rep = rep[:-1]
-        self.append(unicode(rep, 'raw-unicode-escape'))
+        self.append(unicode(self.readline()[:-1],'raw-unicode-escape'))
     dispatch[UNICODE] = load_unicode
 
     def load_binunicode(self):
@@ -1111,13 +1079,6 @@ class Unpickler:
     def load_inst(self):
         module = self.readline()[:-1]
         name = self.readline()[:-1]
-        if module[-1:] == '\r' and name[-1:] == '\r':
-            import warnings
-            warnings.warn('Pickle was saved in text mode',
-                          RuntimeWarning, stacklevel=3)
-            self._strip_cr = True
-            module = module[:-1]
-            name = name[:-1]
         klass = self.find_class(module, name)
         self._instantiate(klass, self.marker())
     dispatch[INST] = load_inst
@@ -1139,13 +1100,6 @@ class Unpickler:
     def load_global(self):
         module = self.readline()[:-1]
         name = self.readline()[:-1]
-        if module[-1:] == '\r' and name[-1:] == '\r':
-            import warnings
-            warnings.warn('Pickle was saved in text mode',
-                          RuntimeWarning, stacklevel=3)
-            self._strip_cr = True
-            module = module[:-1]
-            name = name[:-1]
         klass = self.find_class(module, name)
         self.append(klass)
     dispatch[GLOBAL] = load_global

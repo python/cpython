@@ -156,7 +156,7 @@ an unpickler, then you call the unpickler's :meth:`load` method.  The
    For the old ASCII-based pickle protocol 0 you can use either text mode or binary
    mode as long as you stay consistent.  It is preferred to always use binary
    mode, because a pickle file written in text mode on Windows not always can
-   be correctly unpickled on Unix or in Python 3.
+   be correctly unpickled on other systems and in Python 3.
 
    A pickle file written with protocol 0 in binary mode will contain lone linefeeds
    as line terminators and therefore will look "funny" when viewed in Notepad or
