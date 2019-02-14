@@ -743,25 +743,16 @@ def supports_hybrid_ipv46():
     except error:
         return False
 
-def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=None,
-                  reuse_port=False, flags=None, hybrid_ipv46=False):
+def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
+                  hybrid_ipv46=False):
     """Convenience function which creates a socket bound to *address*
     (a 2-tuple (host, port)) and return the socket object.
 
-    If *host* is an empty string or None all network interfaces are assumed.
+    *family* should be either AF_INET or AF_INET6.
 
-    If *family* is AF_UNSPEC the address family will be determined from the
-    *host* specified in *address* and AF_INET will take precedence over
-    AF_INET6 in case family can't be determined from *host*.
-
-    *type* should be either SOCK_STREAM or SOCK_DGRAM.
-
-    *backlog* is the queue size passed to socket.listen() and is ignored
-    for SOCK_DGRAM socket types.
+    *backlog* is the queue size passed to socket.listen().
 
     *reuse_port* dictate whether to use the SO_REUSEPORT socket option.
-
-    *flags* is a bitmask for getaddrinfo().
 
     *hybrid_ipv46*: if True and the platform supports it it will create
     a socket able to accept both IPv4 and IPv6 connections.
@@ -773,98 +764,54 @@ def create_server(address, *, family=AF_UNSPEC, type=SOCK_STREAM, backlog=None,
     ...         conn, addr = server.accept()
     ...         # handle new connection
     """
-    host, port = address
-    if host == "":
-        # When using getaddrinfo(), None is an alias for "all interfaces":
-        # https://mail.python.org/pipermail/python-ideas/2013-March/019937.html
-        host = None  # all interfaces
-    # Note about Windows: we don't set SO_REUSEADDR because:
-    # 1) It's unnecessary: bind() will succeed even in case of a
-    # previous closed socket on the same address and still in TIME_WAIT
-    # state.
-    # 2) If set, another socket will be free to bind() on the same
-    # address, effectively preventing this one from accepting connections.
-    # Also, it sets the process in a state where it'll no longer respond
-    # to any signals or graceful kills. More at:
-    # msdn2.microsoft.com/en-us/library/ms740621(VS.85).aspx
-    reuse_addr = os.name not in ('nt', 'cygwin') and \
-        hasattr(_socket, 'SO_REUSEADDR')
     if reuse_port and not hasattr(_socket, "SO_REUSEPORT"):
         raise ValueError("SO_REUSEPORT not supported on this platform")
-    if type not in (SOCK_STREAM, SOCK_DGRAM):
-        raise ValueError("only SOCK_STREAM and SOCK_DGRAM types are supported")
-    if flags is None:
-        flags = AI_PASSIVE
     if hybrid_ipv46:
-        if type != SOCK_STREAM:
-            raise ValueError("hybrid_ipv46 requires SOCK_STREAM type")
-        if family not in {AF_INET6, AF_UNSPEC}:
-            raise ValueError("hybrid_ipv46 requires AF_INET6 family")
         if not supports_hybrid_ipv46():
             raise ValueError("hybrid_ipv46 not supported on this platform")
-        family = AF_INET6
-    info = getaddrinfo(host, port, family, type, 0, flags)
-    if family == AF_UNSPEC:
-        # Prefer AF_INET over AF_INET6. Rationale:
-        # 1) AF_INET is the default for socket.socket()
-        # 2) in case of ambiguous host (None or "localhost")
-        # getaddrinfo() sorting order is not guaranteed, so we take a
-        # stance in order to eliminate cross-platform differences.
-        info.sort(key=lambda x: x[0] == AF_INET, reverse=True)
-
-    err = None
-    for res in info:
-        af, socktype, proto, canonname, sa = res
-        try:
-            sock = socket(af, socktype, proto)
-        except error as _err:
-            err = _err
-            if err.errno == errno.EAFNOSUPPORT:
-                continue
-            else:
-                raise
-        try:
-            if reuse_addr:
-                try:
-                    sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-                except error:
-                    # Fail later on bind(), for platforms which may not
-                    # support this option.
-                    pass
-            if reuse_port:
-                sock.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
-            if has_ipv6 and af == AF_INET6:
-                if not hybrid_ipv46 and \
-                        hasattr(_socket, "IPV6_V6ONLY") and \
-                        hasattr(_socket, "IPPROTO_IPV6"):
-                    # Disable IPv4/IPv6 dual stack support (enabled by
-                    # default on Linux) which makes a single socket
-                    # listen on both address families in order to
-                    # eliminate cross-platform differences.
-                    try:
-                        sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 1)
-                    except error:
-                        pass
-                else:
-                    sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 0)
+    sock = socket(family, SOCK_STREAM)
+    try:
+        # Note about Windows: we don't set SO_REUSEADDR because:
+        # 1) It's unnecessary: bind() will succeed even in case of a
+        # previous closed socket on the same address and still in
+        # TIME_WAIT state.
+        # 2) If set, another socket will be free to bind() on the same
+        # address, effectively preventing this one from accepting
+        # connections.  Also, it sets the process in a state where it'll
+        # no longer respond to any signals or graceful kills. More at:
+        # msdn2.microsoft.com/en-us/library/ms740621(VS.85).aspx
+        if os.name not in ('nt', 'cygwin') and \
+                hasattr(_socket, 'SO_REUSEADDR'):
             try:
-                sock.bind(sa)
-            except error as err:
-                err_msg = '%s (while attempting to bind on address %r)' % \
-                    (err.strerror, sa)
-                raise error(err.errno, err_msg) from None
-            if socktype == SOCK_STREAM:
-                sock.listen(backlog or 0)
-            # Break explicitly a reference cycle.
-            err = None
-            return sock
-        except error:
-            sock.close()
-            raise
-
-    if err is not None:
-        raise err
-    raise error("getaddrinfo returns an empty list")
+                sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+            except error:
+                # Fail later on bind(), for platforms which may not
+                # support this option.
+                pass
+        if reuse_port:
+            sock.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
+        if has_ipv6 and family == AF_INET6:
+            if not hybrid_ipv46 and \
+                    hasattr(_socket, "IPV6_V6ONLY") and \
+                    hasattr(_socket, "IPPROTO_IPV6"):
+                # Disable IPv4/IPv6 dual stack support (enabled by
+                # default on Linux) which makes a single socket
+                # listen on both address families in order to
+                # eliminate cross-platform differences.
+                sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 1)
+            else:
+                sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 0)
+        try:
+            sock.bind(address)
+        except error as err:
+            err_msg = '%s (while attempting to bind on address %r)' % \
+                (err.strerror, address)
+            raise error(err.errno, err_msg) from None
+        sock.listen(backlog or 0)
+        return sock
+    except Exception:
+        sock.close()
+        raise
 
 
 def getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):

@@ -6061,43 +6061,20 @@ class CreateServerTest(unittest.TestCase):
         with socket.create_server(("127.0.0.1", port)) as sock:
             self.assertEqual(sock.getsockname()[0], "127.0.0.1")
             self.assertEqual(sock.getsockname()[1], port)
-
-    def test_address_all_nics(self):
-        # host in (None, "") == 'all NICs'
-        with socket.create_server(("", 0)) as sock:
-            self.assertEqual(sock.getsockname()[0], "0.0.0.0")
-        with socket.create_server((None, 0)) as sock:
-            self.assertEqual(sock.getsockname()[0], "0.0.0.0")
         if support.IPV6_ENABLED:
-            with socket.create_server(("", 0), family=socket.AF_INET6) as sock:
-                self.assertEqual(sock.getsockname()[0], "::")
-            with socket.create_server((None, 0), family=socket.AF_INET6) as sock:
-                self.assertEqual(sock.getsockname()[0], "::")
+            with socket.create_server(("::1", port),
+                                      family=socket.AF_INET6) as sock:
+                self.assertEqual(sock.getsockname()[0], "::1")
+                self.assertEqual(sock.getsockname()[1], port)
 
-    def test_family(self):
-        # determined by address
+    def test_family_and_type(self):
         with socket.create_server(("127.0.0.1", 0)) as sock:
             self.assertEqual(sock.family, socket.AF_INET)
-        if support.IPV6_ENABLED:
-            with socket.create_server(("::1", 0)) as sock:
-                self.assertEqual(sock.family, socket.AF_INET6)
-        # determined by 'family' arg
-        with socket.create_server(("localhost", 0),
-                                  family=socket.AF_INET) as sock:
-            self.assertEqual(sock.family, socket.AF_INET)
-        if support.IPV6_ENABLED:
-            with socket.create_server(("::1", 0),
-                                      family=socket.AF_INET6) as sock:
-                self.assertEqual(sock.family, socket.AF_INET6)
-
-    def test_type(self):
-        with socket.create_server(("localhost", 0)) as sock:
             self.assertEqual(sock.type, socket.SOCK_STREAM)
-        with socket.create_server(("localhost", 0),
-                                  type=socket.SOCK_DGRAM) as sock:
-            self.assertEqual(sock.type, socket.SOCK_DGRAM)
-        with self.assertRaises(ValueError):
-            socket.create_server(("localhost", 0), type=0)
+        if support.IPV6_ENABLED:
+            with socket.create_server(("::1", 0), family=socket.AF_INET6) as s:
+                self.assertEqual(s.family, socket.AF_INET6)
+                self.assertEqual(sock.type, socket.SOCK_STREAM)
 
     def test_reuse_port(self):
         if not hasattr(socket, "SO_REUSEPORT"):
@@ -6114,25 +6091,16 @@ class CreateServerTest(unittest.TestCase):
     @unittest.skipIf(not hasattr(_socket, 'IPPROTO_IPV6') or
                      not hasattr(_socket, 'IPV6_V6ONLY'),
                      "IPV6_V6ONLY option not supported")
-    def test_ipv6only_default(self):
-        with socket.create_server(("::1", 0)) as sock:
+    def test_ipv6_only_default(self):
+        with socket.create_server(("::1", 0), family=socket.AF_INET6) as sock:
             assert sock.getsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY)
-
-    def test_ipv4_default(self):
-        with socket.create_server(("localhost", 0)) as sock:
-            self.assertEqual(sock.family, socket.AF_INET)
 
     @unittest.skipIf(not socket.supports_hybrid_ipv46(),
                      "hybrid_ipv46 not supported")
-    def test_hybrid_ipv6_default(self):
-        with socket.create_server(("::1", 0), hybrid_ipv46=True) as sock:
+    def test_hybrid_ipv6_family(self):
+        with socket.create_server(("::1", 0), family=socket.AF_INET6,
+                                  hybrid_ipv46=True) as sock:
             self.assertEqual(sock.family, socket.AF_INET6)
-
-    def test_dual_stack_udp(self):
-        # Hybrid IPv4/6 UDP servers won't allow IPv4 connections.
-        with self.assertRaises(ValueError):
-            socket.create_server(("localhost", 0), type=socket.SOCK_DGRAM,
-                                 hybrid_ipv46=True)
 
 
 class CreateServerFunctionalTest(unittest.TestCase):
@@ -6184,42 +6152,27 @@ class CreateServerFunctionalTest(unittest.TestCase):
                 self.assertEqual(msg, b'foo')
 
     def test_tcp4(self):
-        with socket.create_server(("localhost", 0), family=socket.AF_INET,
-                                  type=socket.SOCK_STREAM) as sock:
+        with socket.create_server(("localhost", 0),
+                                  family=socket.AF_INET) as sock:
             self.echo_client(sock)
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
     def test_tcp6(self):
-        with socket.create_server(("::1", 0), family=socket.AF_INET6,
-                                  type=socket.SOCK_STREAM) as sock:
+        with socket.create_server(("::1", 0), family=socket.AF_INET6) as sock:
             self.echo_client(sock)
-
-    def test_udp4(self):
-        with socket.create_server(("localhost", 0), family=socket.AF_INET,
-                                  type=socket.SOCK_DGRAM) as sock:
-            self.echo_client(sock)
-
-    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
-    def test_udp6(self):
-        with socket.create_server(("::1", 0), family=socket.AF_INET6,
-                                  type=socket.SOCK_DGRAM) as sock:
-            self.echo_client(sock)
-
-    # ---
-    # Dual-stack IPv4/6 tests: create a hybrid IPv4/6 server and
-    # connect with a client using IPv4 and IPv6 addresses.
-    # ---
 
     @unittest.skipIf(not socket.supports_hybrid_ipv46(),
                      "hybrid_ipv46 not supported")
     def test_dual_stack_tcp4(self):
-        with socket.create_server((None, 0), hybrid_ipv46=True) as sock:
+        with socket.create_server(("", 0), family=socket.AF_INET6,
+                                  hybrid_ipv46=True) as sock:
             self.echo_client(sock, connect_host="127.0.0.1")
 
     @unittest.skipIf(not socket.supports_hybrid_ipv46(),
                      "hybrid_ipv46 not supported")
     def test_dual_stack_tcp6(self):
-        with socket.create_server((None, 0), hybrid_ipv46=True) as sock:
+        with socket.create_server(("", 0), family=socket.AF_INET6,
+                                  hybrid_ipv46=True) as sock:
             self.echo_client(sock, connect_host="::1")
 
 
