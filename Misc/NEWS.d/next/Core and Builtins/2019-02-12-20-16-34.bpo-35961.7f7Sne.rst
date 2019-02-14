@@ -1,0 +1,2 @@
+Fix a crash in slice_richcompare(): use strong references rather than stolen
+references for the two temporary internal tuples.
