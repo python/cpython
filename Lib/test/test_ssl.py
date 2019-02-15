@@ -1699,38 +1699,43 @@ else:
                         self.sock, server_side=True)
                     self.server.selected_npn_protocols.append(self.sslconn.selected_npn_protocol())
                     self.server.selected_alpn_protocols.append(self.sslconn.selected_alpn_protocol())
-                except socket.error as e:
-                    # We treat ConnectionResetError as though it were an
-                    # SSLError - OpenSSL on Ubuntu abruptly closes the
-                    # connection when asked to use an unsupported protocol.
-                    #
-                    # BrokenPipeError is raised in TLS 1.3 mode, when OpenSSL
-                    # tries to send session tickets after handshake.
-                    # https://github.com/openssl/openssl/issues/6342
-                    self.server.conn_errors.append(str(e))
-                    if self.server.chatty:
-                        handle_error(
-                            "\n server:  bad connection attempt from " + repr(
-                                self.addr) + ":\n")
-                    self.running = False
-                    self.close()
-                    return False
-                except (ssl.SSLError, OSError) as e:
-                    # OSError may occur with wrong protocols, e.g. both
-                    # sides use PROTOCOL_TLS_SERVER.
-                    #
-                    # XXX Various errors can have happened here, for example
-                    # a mismatching protocol version, an invalid certificate,
-                    # or a low-level bug. This should be made more discriminating.
-                    if not isinstance(e, ssl.SSLError) and e.errno != errno.ECONNRESET:
-                        raise
-                    self.server.conn_errors.append(e)
-                    if self.server.chatty:
-                        handle_error("\n server:  bad connection attempt from " + repr(self.addr) + ":\n")
-                    self.running = False
-                    self.server.stop()
-                    self.close()
-                    return False
+                except (ssl.SSLError, socket.error, OSError) as e:
+                    if e.errno in (errno.ECONNRESET, errno.EPIPE, errno.ESHUTDOWN):
+                        # Mimick Python 3:
+                        #
+                        #    except (ConnectionResetError, BrokenPipeError):
+                        #
+                        # We treat ConnectionResetError as though it were an
+                        # SSLError - OpenSSL on Ubuntu abruptly closes the
+                        # connection when asked to use an unsupported protocol.
+                        #
+                        # BrokenPipeError is raised in TLS 1.3 mode, when OpenSSL
+                        # tries to send session tickets after handshake.
+                        # https://github.com/openssl/openssl/issues/6342
+                        self.server.conn_errors.append(str(e))
+                        if self.server.chatty:
+                            handle_error(
+                                "\n server:  bad connection attempt from "
+                                + repr(self.addr) + ":\n")
+                        self.running = False
+                        self.close()
+                        return False
+                    else:
+                        # OSError may occur with wrong protocols, e.g. both
+                        # sides use PROTOCOL_TLS_SERVER.
+                        #
+                        # XXX Various errors can have happened here, for example
+                        # a mismatching protocol version, an invalid certificate,
+                        # or a low-level bug. This should be made more discriminating.
+                        if not isinstance(e, ssl.SSLError) and e.errno != errno.ECONNRESET:
+                            raise
+                        self.server.conn_errors.append(e)
+                        if self.server.chatty:
+                            handle_error("\n server:  bad connection attempt from " + repr(self.addr) + ":\n")
+                        self.running = False
+                        self.server.stop()
+                        self.close()
+                        return False
                 else:
                     if self.server.context.verify_mode == ssl.CERT_REQUIRED:
                         cert = self.sslconn.getpeercert()
