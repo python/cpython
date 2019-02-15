@@ -531,7 +531,7 @@ class RPCClient(SocketIO):
 
     def __init__(self, address, family=socket.AF_INET, type=socket.SOCK_STREAM):
         self.listening_sock = socket.create_server(
-            family=family, type=type, backlog=1)
+            address, family=family, type=type, backlog=1)
 
     def accept(self):
         working_sock, address = self.listening_sock.accept()
