@@ -845,6 +845,17 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
     return rv ? -5 : 1;
 }
 
+static void
+isocalendar_to_ymd(int* year, int* month_week, int* day) {
+    // Convert (Y, W, D) to (Y, M, D) in-place
+    int day_1 = iso_week1_monday(*year);
+
+    int day_offset = (*month_week - 1)*7 + *day - 1;
+
+    ord_to_ymd(day_1 + day_offset, year, month_week, day);
+}
+
+
 /* ---------------------------------------------------------------------------
  * Create various objects, mostly without range checking.
  */
@@ -3003,6 +3014,37 @@ invalid_string_error:
     return NULL;
 }
 
+
+static PyObject *
+date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw) {
+    static char *keywords[] = {
+        "year", "week", "day", NULL
+    };
+
+    int year, week, day;
+    if (PyArg_ParseTupleAndKeywords(args, kw, "iii:fromisocalendar",
+                keywords,
+                &year, &week, &day) == 0) {
+        return NULL;
+    }
+
+    if (week <= 0 || week >= 54) {
+        PyErr_Format(PyExc_ValueError, "Invalid week: %d", week);
+        return NULL;
+    }
+
+    if (day <= 0 || day >= 8) {
+        PyErr_Format(PyExc_ValueError, "Invalid day: %d (range is [1, 7])");
+        return NULL;
+    }
+
+    int month = week;
+    isocalendar_to_ymd(&year, &month, &day);
+
+    return new_date_subclass_ex(year, month, day, cls);
+}
+
+
 /*
  * Date arithmetic.
  */
@@ -3295,6 +3337,11 @@ static PyMethodDef date_methods[] = {
      {"fromisoformat", (PyCFunction)date_fromisoformat,  METH_O |
                                                          METH_CLASS,
       PyDoc_STR("str -> Construct a date from the output of date.isoformat()")},
+
+     {"fromisocalendar", (PyCFunction)(void(*)(void))date_fromisocalendar,
+      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
+      PyDoc_STR("int, int, int -> Construct a date from the "
+                "output of date.isocalendar()")},
 
     {"today",         (PyCFunction)date_today,   METH_NOARGS | METH_CLASS,
      PyDoc_STR("Current date or datetime:  same as "

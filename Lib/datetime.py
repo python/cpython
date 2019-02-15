@@ -884,6 +884,22 @@ class date:
         except Exception:
             raise ValueError(f'Invalid isoformat string: {date_string!r}')
 
+    @classmethod
+    def fromisocalendar(cls, year, week, day):
+        if not 0 < week < 54:
+            raise ValueError(f"Invalid week: {week}")
+
+        if not 0 < day < 8:
+            raise ValueError(f"Invalid weekday: {day} (range is [1, 7])")
+
+        # Now compute the offset from (Y, 1, 1) in days:
+        day_offset = (week - 1) * 7 + (day - 1)
+
+        # Calculate the ordinal day for monday, week 1
+        day_1 = _isoweek1monday(year)
+        ord_day = day_1 + day_offset
+
+        return cls(*_ord2ymd(ord_day))
 
     # Conversions to string
 

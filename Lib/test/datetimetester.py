@@ -1795,6 +1795,56 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             with self.assertRaises(TypeError):
                 self.theclass.fromisoformat(bad_type)
 
+    def test_fromisocalendar(self):
+        # For each test case, assert that fromisocalendar is the
+        # inverse of the isocalendar function
+        dates = [
+            (2016, 4, 3),
+            (2005, 1, 2),
+            (2008, 12, 30),
+            (2010, 1, 2),
+        ]
+
+        for datecomps in dates:
+            with self.subTest(datecomps=datecomps):
+                dobj = self.theclass(*datecomps)
+                isocal = dobj.isocalendar()
+
+                d_roundtrip = self.theclass.fromisocalendar(*isocal)
+
+                self.assertEqual(dobj, d_roundtrip)
+
+    def test_fromisocalendar_value_errors(self):
+        class KnownFailure(tuple):
+            pass
+
+        isocals = [
+            (2019, 0, 1),
+            (2019, -1, 1),
+            (2019, 54, 1),
+            (2019, 1, 0),
+            (2019, 1, -1),
+            (2019, 1, 8),
+            KnownFailure([2019, 53, 1]),
+        ]
+
+        for isocal in isocals:
+            with self.subTest(isocal=isocal):
+                with self.assertRaises(ValueError):
+                    known_failure = isinstance(isocal, KnownFailure)
+                    self.theclass.fromisocalendar(*isocal)
+
+                    if isinstance(isocal, KnownFailure):
+                        known_failure = False
+                        raise ValueError()
+
+                if known_failure:
+                    raise Exception("XPASS: Known failure condition not met")
+
+
+
+
+
 #############################################################################
 # datetime tests
 
