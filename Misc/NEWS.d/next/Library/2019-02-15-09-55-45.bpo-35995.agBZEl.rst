@@ -1,0 +1,1 @@
+use "ssl._create_stdlib_context" and "SMTP_SSL._get_socket" when init smtp, just like startssl function.
