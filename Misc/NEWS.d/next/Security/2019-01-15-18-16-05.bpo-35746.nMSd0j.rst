@@ -1,3 +1,4 @@
 [CVE-2019-5010] Fix a NULL pointer deref in ssl module. The cert parser did
 not handle CRL distribution points with empty DP or URI correctly. A
-malicious or buggy certificate can result into segfault.
+malicious or buggy certificate can result into segfault. Vulnerability
+(TALOS-2018-0758) reported by Colin Read and Nicolas Edet of Cisco.
