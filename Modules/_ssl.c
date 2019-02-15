@@ -4411,6 +4411,10 @@ init_ssl(void)
     PyModule_AddIntConstant(m, "OP_NO_COMPRESSION",
                             SSL_OP_NO_COMPRESSION);
 #endif
+#ifdef SSL_OP_ENABLE_MIDDLEBOX_COMPAT
+    PyModule_AddIntConstant(m, "OP_ENABLE_MIDDLEBOX_COMPAT",
+                            SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+#endif
 
 #if HAVE_SNI
     r = Py_True;
