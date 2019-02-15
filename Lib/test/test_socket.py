@@ -6099,7 +6099,7 @@ class CreateServerTest(unittest.TestCase):
     @unittest.skipIf(not socket.has_dualstack_ipv6(),
                      "dualstack_ipv6 not supported")
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
-    def test_hybrid_ipv6_family(self):
+    def test_dualstack_ipv6_family(self):
         with socket.create_server(("::1", 0), family=socket.AF_INET6,
                                   dualstack_ipv6=True) as sock:
             self.assertEqual(sock.family, socket.AF_INET6)

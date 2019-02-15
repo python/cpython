@@ -609,34 +609,26 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    be able to accept both IPv4 and IPv6 connections.
    In this case the address returned by :meth:`socket.getpeername` when an IPv4
    connection occurs will be an IPv6 address represented as an IPv4-mapped IPv6
-   address like ``":ffff:127.0.0.1"``.
+   address.
    If *dualstack_ipv6* is false it will explicitly disable this functionality
    on platforms that enable it by default (e.g. Linux).
    For platforms not supporting this functionality natively you could use this
    `MultipleSocketsListener recipe <http://code.activestate.com/recipes/578504/>`__.
-   This parameter can be used in conjunction with :func:`has_dualstack_ipv6`.
-
-   Here's an echo server example listening on all interfaces, port 8888,
-   accepting both IPv4 and IPv6 connections (if supported):
+   This parameter can be used in conjunction with :func:`has_dualstack_ipv6`:
 
    ::
 
      import socket
 
-     with socket.create_server(("", 8888),
-                               dualstack_ipv6=socket.has_dualstack_ipv6()) as server:
-         conn, addr = server.accept()
-         with conn:
-             while True:
-                 data = conn.recv(1024)
-                 if not data:
-                     break
-                 conn.send(data)
+     if socket.has_dualstack_ipv6():
+         s = socket.create_server(addr, family=socket.AF_INET6, dualstack_ipv6=True)
+     else:
+         s = socket.create_server(addr)
 
    .. note::
-    On POSIX :data:`SO_REUSEADDR` socket option is set in order to immediately
-    reuse previous sockets which were bound on the same *address* and remained
-    in TIME_WAIT state.
+    On POSIX platforms :data:`SO_REUSEADDR` socket option is set in order to
+    immediately reuse previous sockets which were bound on the same *address*
+    and remained in TIME_WAIT state.
 
    .. versionadded:: 3.8
 
@@ -1833,8 +1825,8 @@ sends traffic to the first one connected successfully. ::
 
 The two examples above can be rewritten by using :meth:`socket.create_server`
 and :meth:`socket.create_connection` convenience functions.
-If the platform supports it, :meth:`socket.create_server` has the extra
-advantage of creating an agnostic IPv4/IPv6 server:
+If supported by the platform, :meth:`socket.create_server` has the extra
+advantage of accepting both IPv4 or IPv6 connections on the same socket.
 
 ::
 
@@ -1843,7 +1835,10 @@ advantage of creating an agnostic IPv4/IPv6 server:
 
    HOST = None
    PORT = 50007
-   s = socket.create_server((HOST, PORT), dualstack_ipv6=socket.has_dualstack_ipv6())
+   if socket.has_dualstack_ipv6():
+       s = socket.create_server((HOST, PORT), family=socket.AF_INET6, dualstack_ipv6=True)
+   else:
+       s = socket.create_server(addr)
    conn, addr = s.accept()
    with conn:
        print('Connected by', addr)

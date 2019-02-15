@@ -753,11 +753,11 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
 
     *family* should be either AF_INET or AF_INET6.
     *backlog* is the queue size passed to socket.listen().
-    *reuse_port* dictate whether to use the SO_REUSEPORT socket option.
+    *reuse_port* dictates whether to use the SO_REUSEPORT socket option.
     *dualstack_ipv6*: if true and the platform supports it, it will
-    create a socket able to accept both IPv4 and IPv6 connections.
-    When false it will explicitly disable this option on platforms
-    that enable it by default (e.g. Linux).
+    create an AF_INET6 socket able to accept both IPv4 or IPv6
+    connections. When false it will explicitly disable this option on
+    platforms that enable it by default (e.g. Linux).
 
     >>> with create_server((None, 8000)) as server:
     ...     while True:
@@ -777,7 +777,7 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
         # 1) It's unnecessary: bind() will succeed even in case of a
         # previous closed socket on the same address and still in
         # TIME_WAIT state.
-        # 2) If set, another socket will be free to bind() on the same
+        # 2) If set, another socket may be free to bind() on the same
         # address, effectively preventing this one from accepting
         # connections. Also, it may set the process in a state where
         # it'll no longer respond to any signals or graceful kills.
@@ -805,9 +805,9 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
         try:
             sock.bind(address)
         except error as err:
-            err_msg = '%s (while attempting to bind on address %r)' % \
+            msg = '%s (while attempting to bind on address %r)' % \
                 (err.strerror, address)
-            raise error(err.errno, err_msg) from None
+            raise error(err.errno, msg) from None
         sock.listen(backlog or 0)
         return sock
     except Exception:
