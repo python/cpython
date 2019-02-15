@@ -238,7 +238,27 @@ class BasicAuthHandler(http.server.BaseHTTPRequestHandler):
             # Request Unauthorized
             self.do_AUTHHEAD()
 
-
+    def do_POST(self):
+        if not self.headers.get("Authorization", ""):
+            self.do_AUTHHEAD()
+            self.wfile.write(b"No Auth header received")
+        elif self.headers.get(
+                "Authorization", "") == "Basic " + self.ENCODED_AUTH:
+            encoding = self.headers.get("Transfer-Encoding")
+            if encoding is None:
+                length = int(self.headers.get("Content-Length"))
+            else:
+                assert encoding == "chunked"
+                length = int(self.rfile.readline(), 16)
+            request = self.rfile.read(length)
+            assert len(request) == length
+            if length > 0:
+                self.send_response(200, "OK")
+                self.end_headers()
+                self.wfile.write(request)
+            else:
+                self.send_response(400, "Empty request data")
+                self.end_headers()
 
 # Proxy test infrastructure
 
@@ -313,6 +333,19 @@ class BasicAuthTests(unittest.TestCase):
         ah.add_password(self.REALM, self.server_url, self.USER, self.INCORRECT_PASSWD)
         urllib.request.install_opener(urllib.request.build_opener(ah))
         self.assertRaises(urllib.error.HTTPError, urllib.request.urlopen, self.server_url)
+
+    def test_basic_auth_mmap_payload(self):
+        from mmap import mmap
+        data = "field=value".encode("ascii")
+        mem = mmap(-1, len(data))
+        mem[:] = data
+        auth_handler = urllib.request.HTTPBasicAuthHandler()
+        auth_handler.add_password(realm=self.REALM, uri=self.server_url,
+                                  user=self.USER, passwd=self.PASSWD)
+        opener = urllib.request.build_opener(auth_handler)
+        urllib.request.install_opener(opener)
+        response = opener.open(self.server_url, mem)
+        self.assertEqual(response.read(), data)
 
 
 class ProxyAuthTests(unittest.TestCase):
@@ -657,7 +690,6 @@ class TestUrlopen(unittest.TestCase):
                              "    Expected length was %s, got %s" %
                              (index, len(lines[index]), len(line)))
         self.assertEqual(index + 1, len(lines))
-
 
 threads_key = None
 
