@@ -113,7 +113,7 @@
     <CustomBuild Include="$(libffiDir)src\x86\win64_intel.S">
       <ExcludedFromBuild Condition="'$(Platform)'=='Win32'">true</ExcludedFromBuild>
       <Command>
-        cl /nologo /I"..\Modules\_ctypes\libffi_msvc" /I"$(libffiDir)src\x86" /I"$(libffiDir)include" /EP "%(FullPath)" &gt; "$(IntDir)win64_intel.asm
+        cl /nologo /I"$(libffiDir)src\x86" /I"$(libffiDir)include" /EP "%(FullPath)" &gt; "$(IntDir)win64_intel.asm"
         ml64 /nologo /c /Zi /Fo "$(IntDir)win64_intel.obj" "$(IntDir)win64_intel.asm
       </Command>
       <Outputs>$(IntDir)win64_intel.obj;%(Outputs)</Outputs>
@@ -121,7 +121,7 @@
     <CustomBuild Include="$(libffiDir)src\x86\sysv_intel.S">
       <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>
       <Command>
-        cl /nologo /I"..\Modules\_ctypes\libffi_msvc" /I"$(libffiDir)src\x86" /I"$(libffiDir)include" /EP "%(FullPath)" &gt; "$(IntDir)sysv_intel.asm
+        cl /nologo /I"$(libffiDir)src\x86" /I"$(libffiDir)include" /EP "%(FullPath)" &gt; "$(IntDir)sysv_intel.asm"
         ml /nologo /c /safeseh /Zi /Fo "$(IntDir)sysv_intel.obj" "$(IntDir)sysv_intel.asm
       </Command>
       <Outputs>$(IntDir)sysv_intel.obj;%(Outputs)</Outputs>

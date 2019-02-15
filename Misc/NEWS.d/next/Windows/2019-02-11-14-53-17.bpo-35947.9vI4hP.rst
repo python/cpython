@@ -1,3 +1,2 @@
 Added current version of libffi to cpython-source-deps. 
-modules/_ctypes/libffi_msvc directory only contains configured headers. 
 Change _ctypes to use current version of libffi on Windows.
