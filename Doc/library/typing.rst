@@ -958,7 +958,7 @@ The module defines the following classes, functions and decorators:
       def stop() -> NoReturn:
           raise RuntimeError('no way')
 
-   .. versionadded:: 3.6.5
+   .. versionadded:: 3.5.4
 
 .. data:: Union
 
