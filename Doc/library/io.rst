@@ -349,8 +349,8 @@ I/O Base Classes
       (on most systems, additional bytes are zero-filled).  The new file size
       is returned.
 
-   .. versionchanged:: 3.5
-      Windows will now zero-fill files when extending.
+      .. versionchanged:: 3.5
+         Windows will now zero-fill files when extending.
 
    .. method:: writable()
 
