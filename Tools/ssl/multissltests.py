@@ -270,6 +270,7 @@ class AbstractBuilder(object):
     def _build_src(self):
         """Now build openssl"""
         log.info("Running build in {}".format(self.build_dir))
+        cwd = self.build_dir
         cmd = [
             "./config",
             "shared", "--debug",
