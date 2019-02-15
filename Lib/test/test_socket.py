@@ -6091,12 +6091,14 @@ class CreateServerTest(unittest.TestCase):
     @unittest.skipIf(not hasattr(_socket, 'IPPROTO_IPV6') or
                      not hasattr(_socket, 'IPV6_V6ONLY'),
                      "IPV6_V6ONLY option not supported")
+    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
     def test_ipv6_only_default(self):
         with socket.create_server(("::1", 0), family=socket.AF_INET6) as sock:
             assert sock.getsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY)
 
     @unittest.skipIf(not socket.has_dualstack_ipv6(),
                      "dualstack_ipv6 not supported")
+    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
     def test_hybrid_ipv6_family(self):
         with socket.create_server(("::1", 0), family=socket.AF_INET6,
                                   dualstack_ipv6=True) as sock:
@@ -6163,6 +6165,7 @@ class CreateServerFunctionalTest(unittest.TestCase):
 
     @unittest.skipIf(not socket.has_dualstack_ipv6(),
                      "dualstack_ipv6 not supported")
+    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
     def test_dual_stack_tcp4(self):
         with socket.create_server(("", 0), family=socket.AF_INET6,
                                   dualstack_ipv6=True) as sock:
@@ -6170,6 +6173,7 @@ class CreateServerFunctionalTest(unittest.TestCase):
 
     @unittest.skipIf(not socket.has_dualstack_ipv6(),
                      "dualstack_ipv6 not supported")
+    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
     def test_dual_stack_tcp6(self):
         with socket.create_server(("", 0), family=socket.AF_INET6,
                                   dualstack_ipv6=True) as sock:
