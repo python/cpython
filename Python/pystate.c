@@ -280,7 +280,6 @@ _PyInterpreterState_DeleteExceptMain()
 
     HEAD_LOCK();
     PyInterpreterState *interp = _PyRuntime.interpreters.head;
-    PyInterpreterState *prev_interp = NULL;
     _PyRuntime.interpreters.head = NULL;
     while (interp != NULL) {
         if (interp == _PyRuntime.interpreters.main) {
@@ -295,7 +294,7 @@ _PyInterpreterState_DeleteExceptMain()
         if (interp->id_mutex != NULL) {
             PyThread_free_lock(interp->id_mutex);
         }
-        prev_interp = interp;
+        PyInterpreterState *prev_interp = interp;
         interp = interp->next;
         PyMem_RawFree(prev_interp);
     }
