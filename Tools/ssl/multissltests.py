@@ -48,7 +48,7 @@ OPENSSL_OLD_VERSIONS = [
 OPENSSL_RECENT_VERSIONS = [
      "1.0.2p",
      "1.1.0i",
-#     "1.1.1",
+     "1.1.1",
 ]
 
 LIBRESSL_OLD_VERSIONS = [
@@ -270,6 +270,7 @@ class AbstractBuilder(object):
     def _build_src(self):
         """Now build openssl"""
         log.info("Running build in {}".format(self.build_dir))
+        cwd = self.build_dir
         cmd = [
             "./config",
             "shared", "--debug",
