@@ -1,1 +1,0 @@
-test_so.py: add sub dir for sub2_tree in os.walk test if symlink is not supported.
