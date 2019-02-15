@@ -385,12 +385,16 @@ Simulations::
 
    >>> # Estimate the probability of getting 5 or more heads from 7 spins
    >>> # of a biased coin that settles on heads 60% of the time.
-   >>> trial = lambda: choices('HT', cum_weights=(0.60, 1.00), k=7).count('H') >= 5
+   >>> def trial():
+   ...     return choices('HT', cum_weights=(0.60, 1.00), k=7).count('H') >= 5
+   ...
    >>> sum(trial() for i in range(10000)) / 10000
    0.4169
 
    >>> # Probability of the median of 5 samples being in middle two quartiles
-   >>> trial = lambda : 2500 <= sorted(choices(range(10000), k=5))[2]  < 7500
+   >>> def trial():
+   ...     return 2500 <= sorted(choices(range(10000), k=5))[2] < 7500
+   ...
    >>> sum(trial() for i in range(10000)) / 10000
    0.7958
 
