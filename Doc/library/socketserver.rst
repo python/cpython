@@ -277,8 +277,10 @@ Server Objects
    .. attribute:: allow_reuse_address
 
       Whether the server will allow the reuse of an address.  This defaults to
-      :const:`False`, and can be set in subclasses to change the policy.
+      :const:`True` on POSIX, and can be set in subclasses to change the policy.
 
+      .. versionchanged:: 3.8
+         default changed from :const:`False` to :const:`True` on POSIX
 
    .. attribute:: request_queue_size
 
@@ -286,8 +288,11 @@ Server Objects
       request, any requests that arrive while the server is busy are placed into a
       queue, up to :attr:`request_queue_size` requests.  Once the queue is full,
       further requests from clients will get a "Connection denied" error.  The default
-      value is usually 5, but this can be overridden by subclasses.
+      value is 0, meaning a default reasonable value is chosen, but this can be
+      overridden by subclasses.
 
+      .. versionchanged:: 3.8
+         default changed from 5 to 0
 
    .. attribute:: socket_type
 

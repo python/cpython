@@ -546,6 +546,13 @@ Changes in the Python API
   :exc:`dbm.gnu.error` or :exc:`dbm.ndbm.error`) instead of :exc:`KeyError`.
   (Contributed by Xiang Zhang in :issue:`33106`.)
 
+* :class:`socketserver.TCPServer` `allow_reuse_address` default changed from
+  ``False`` to ``True`` on POSIX.
+  :attr:`socketserver.TCPServer` `request_queue_size` default changed from
+  ``5`` to ``None`` in order to choose a default reasonable value (usually 128).
+  :class:`http.server.HTTPServer` and :class:`xmlrpc.server.SimpleXMLRPCServer`
+  also inherited this change.
+  (Contributed by Giampaolo Rodola in :issue:`36003`)
 
 CPython bytecode changes
 ------------------------

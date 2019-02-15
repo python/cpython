@@ -1,0 +1,6 @@
+`socketserver.TCPServer.allow_reuse_address` default changed from ``False``
+to ``True`` on POSIX. `socketserver.TCPServer.request_queue_size` default
+changed from ``5`` to ``None`` in order to choose a default reasonable value
+(usually 128). `http.server.HTTPServer` and
+`xmlrpc.server.SimpleXMLRPCServer` also inherited this change.  (Contributed
+by Giampaolo Rodola in :issue:`36003`)

@@ -438,9 +438,10 @@ class TCPServer(BaseServer):
 
     socket_type = socket.SOCK_STREAM
 
-    request_queue_size = 5
+    request_queue_size = 0
 
-    allow_reuse_address = False
+    allow_reuse_address = \
+        os.name not in ('nt', 'cygwin') and hasattr(socket, 'SO_REUSEADDR')
 
     def __init__(self, server_address, RequestHandlerClass, bind_and_activate=True):
         """Constructor.  May be extended, do not override."""
@@ -472,7 +473,7 @@ class TCPServer(BaseServer):
         May be overridden.
 
         """
-        self.socket.listen(self.request_queue_size)
+        self.socket.listen(self.request_queue_size or 0)
 
     def server_close(self):
         """Called to clean-up the server.

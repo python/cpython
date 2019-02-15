@@ -966,8 +966,6 @@ class TestTCPServer(ControlMixin, ThreadingTCPServer):
                         the server will set up the socket and listen on it.
     """
 
-    allow_reuse_address = True
-
     def __init__(self, addr, handler, poll_interval=0.5,
                  bind_and_activate=True):
         class DelegatingTCPRequestHandler(StreamRequestHandler):

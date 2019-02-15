@@ -587,8 +587,6 @@ class SimpleXMLRPCServer(socketserver.TCPServer,
     from SimpleXMLRPCDispatcher to change this behavior.
     """
 
-    allow_reuse_address = True
-
     # Warning: this is for debugging purposes only! Never set this to True in
     # production code, as will be sending out sensitive information (exception
     # and stack trace details) when exceptions are raised inside

@@ -878,8 +878,6 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
         A simple TCP socket-based logging config receiver.
         """
 
-        allow_reuse_address = 1
-
         def __init__(self, host='localhost', port=DEFAULT_LOGGING_CONFIG_PORT,
                      handler=None, ready=None, verify=None):
             ThreadingTCPServer.__init__(self, (host, port), handler)
