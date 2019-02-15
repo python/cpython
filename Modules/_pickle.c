@@ -647,6 +647,7 @@ PyMemoTable_New(void)
 static PyMemoTable *
 PyMemoTable_Copy(PyMemoTable *self)
 {
+    size_t i;
     PyMemoTable *new = PyMemoTable_New();
     if (new == NULL)
         return NULL;
@@ -663,7 +664,7 @@ PyMemoTable_Copy(PyMemoTable *self)
         PyErr_NoMemory();
         return NULL;
     }
-    for (size_t i = 0; i < self->mt_allocated; i++) {
+    for (i = 0; i < self->mt_allocated; i++) {
         Py_XINCREF(self->mt_table[i].me_key);
     }
     memcpy(new->mt_table, self->mt_table,
@@ -4133,13 +4134,14 @@ static PyObject *
 _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
 /*[clinic end generated code: output=bb83a919d29225ef input=b73043485ac30b36]*/
 {
+    size_t i;
     PyMemoTable *memo;
     PyObject *new_memo = PyDict_New();
     if (new_memo == NULL)
         return NULL;
 
     memo = self->pickler->memo;
-    for (size_t i = 0; i < memo->mt_allocated; ++i) {
+    for (i = 0; i < memo->mt_allocated; ++i) {
         PyMemoEntry entry = memo->mt_table[i];
         if (entry.me_key != NULL) {
             int status;
@@ -6708,6 +6710,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
     }
 
     if (Py_TYPE(obj) == &UnpicklerMemoProxyType) {
+        size_t i;
         UnpicklerObject *unpickler =
             ((UnpicklerMemoProxyObject *)obj)->unpickler;
 
@@ -6716,7 +6719,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
         if (new_memo == NULL)
             return -1;
 
-        for (size_t i = 0; i < new_memo_size; i++) {
+        for (i = 0; i < new_memo_size; i++) {
             Py_XINCREF(unpickler->memo[i]);
             new_memo[i] = unpickler->memo[i];
         }
@@ -6764,7 +6767,8 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
 
   error:
     if (new_memo_size) {
-        for (size_t i = new_memo_size - 1; i != SIZE_MAX; i--) {
+        size_t i;
+        for (i = new_memo_size - 1; i != SIZE_MAX; i--) {
             Py_XDECREF(new_memo[i]);
         }
         PyMem_FREE(new_memo);
