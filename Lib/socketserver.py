@@ -473,7 +473,7 @@ class TCPServer(BaseServer):
         May be overridden.
 
         """
-        self.socket.listen(self.request_queue_size or 0)
+        self.socket.listen(self.request_queue_size)
 
     def server_close(self):
         """Called to clean-up the server.
