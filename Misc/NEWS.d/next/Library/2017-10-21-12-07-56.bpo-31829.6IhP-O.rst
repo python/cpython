@@ -1,8 +1,6 @@
-Resolved some portability issues with pickle.  Documented that files should
-be open in binary mode even for protocol 0 for portability.  ValueError is
-now raised when pickle with binary protocol to a file opened in text mode on
-Windows.  Deprecation warning is emitted when pickle with binary protocol to
-a file opened in text mode on Unix.  Deprecation warning is emitted in Py3k
-mode when pickle with protocol 0 to a file opened in text mode. ``\r``,
-`\0`` and ``\x1a`` (end-of-file on Windows) are now escaped in Unicode strings
-in protocol 0.
+Text (protocol 0) pickles dumped to files opened in binary mode can now be
+loaded from files opened in text mode without loss.  Dumping binary pickle to
+a file opened in text mode on Windows will now produce a :exc:`ValueError`,
+since it leads to data corruption.  Dumping binary pickle on other systems and
+text pickle on all systems in Py3k mode to a file opened in text mode will now
+produce a :exc:`DeprecationWarning`.
