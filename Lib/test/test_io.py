@@ -3612,6 +3612,14 @@ class TextIOWrapperTest(unittest.TestCase):
         t.write('x')
         t.tell()
 
+    def test_issue35928(self):
+        f = self.TextIOWrapper(self.BufferedRWPair(self.BytesIO(b"test1\ntest2\n"), self.BytesIO()))
+        result = f.readline()
+        self.assertEqual(result, "test1\n")
+        f.write(result)
+        result = result + f.readline()
+        self.assertEqual(result, "test1\ntest2\n")
+
 
 class MemviewBytesIO(io.BytesIO):
     '''A BytesIO object whose read method returns memoryviews

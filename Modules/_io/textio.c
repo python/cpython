@@ -1610,7 +1610,10 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         Py_DECREF(ret);
     }
 
-    textiowrapper_set_decoded_chars(self, NULL);
+    if (self->snapshot != NULL) {
+        textiowrapper_set_decoded_chars(self, NULL);
+    }
+
     Py_CLEAR(self->snapshot);
 
     if (self->decoder) {
@@ -1845,7 +1848,10 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
         if (result == NULL)
             goto fail;
 
-        textiowrapper_set_decoded_chars(self, NULL);
+        if (self->snapshot != NULL) {
+            textiowrapper_set_decoded_chars(self, NULL);
+        }
+
         Py_CLEAR(self->snapshot);
         return result;
     }
