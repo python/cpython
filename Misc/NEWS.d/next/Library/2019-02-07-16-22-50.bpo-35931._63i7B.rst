@@ -1,1 +1,1 @@
-pdb: handle SyntaxError with ``debug``.
+The :mod:`pdb` ``debug`` command now gracefully handles syntax errors.
