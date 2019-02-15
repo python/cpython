@@ -556,4 +556,41 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0664f30046da09fe input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(math_prod__doc__,
+"prod($module, iterable, /, *, start=1)\n"
+"--\n"
+"\n"
+"Calculate the product of all the elements in the input iterable.\n"
+"\n"
+"The default start value for the product is 1.\n"
+"\n"
+"When the iterable is empty, return the start value.  This function is\n"
+"intended specifically for use with numeric values and may reject\n"
+"non-numeric types.");
+
+#define MATH_PROD_METHODDEF    \
+    {"prod", (PyCFunction)(void(*)(void))math_prod, METH_FASTCALL|METH_KEYWORDS, math_prod__doc__},
+
+static PyObject *
+math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start);
+
+static PyObject *
+math_prod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "start", NULL};
+    static _PyArg_Parser _parser = {"O|$O:prod", _keywords, 0};
+    PyObject *iterable;
+    PyObject *start = NULL;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &iterable, &start)) {
+        goto exit;
+    }
+    return_value = math_prod_impl(module, iterable, start);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=20505690ca6fe402 input=a9049054013a1b77]*/
